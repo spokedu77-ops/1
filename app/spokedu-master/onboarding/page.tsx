@@ -144,7 +144,7 @@ export default function OnboardingPage() {
               <div className="space-y-3">
                 <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>사용 환경</h2>
                 <ChoiceCard title="개인 강사·교사" desc="라이브러리, SPOMOVE, 수업 기록을 먼저 체험합니다." active={role === 'teacher'} icon={UserRound} onClick={() => setRole('teacher')} />
-                <ChoiceCard title="센터·현장 운영" desc="여러 강사가 같은 수업 흐름과 준비 기준을 공유하는 환경으로 설정합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
+                <ChoiceCard title="센터·현장 운영" desc="여러 수업을 운영하는 센터·기관 환경에 맞게 설정합니다." active={role === 'director'} icon={UsersRound} onClick={() => setRole('director')} />
               </div>
             ) : null}
 

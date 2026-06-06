@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { PROGRAMS as STATIC_PROGRAMS } from '../lib/data';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useMasterStore } from '../store';
 import type { Program } from '../types';
@@ -59,10 +58,6 @@ function loadSaved(): SavedExplanation[] {
   } catch {
     return [];
   }
-}
-
-function buildProgramPool(programs: Program[]) {
-  return programs.length > 0 ? programs : STATIC_PROGRAMS;
 }
 
 function getActivityFlow(program: Program) {
@@ -162,7 +157,8 @@ function SingleChoice({ options, value, onChange }: { options: string[]; value: 
 function ReportContent() {
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
-  const programPool = useMemo(() => buildProgramPool(programs), [programs]);
+  const programsError = useMasterStore((state) => state.programsError);
+  const programPool = useMemo(() => programs, [programs]);
   const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
   const hasProgramQuery = Boolean(searchParams.get('programId') ?? searchParams.get('program'));
   const [programId, setProgramId] = useState(initialProgramId);
@@ -274,7 +270,9 @@ function ReportContent() {
                 ))
               ) : (
                 <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                  {programsError === 'forbidden'
+                    ? '이용권 만료로 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제해 주세요.'
+                    : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'}
                 </p>
               )}
             </div>
@@ -297,8 +295,8 @@ function ReportContent() {
           </section>
         </aside>
 
-        <section className={`space-y-4 ${hasProgramQuery ? 'order-1' : 'order-2'}`}>
-          <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <section className={`space-y-3 sm:space-y-4 ${hasProgramQuery ? 'order-1' : 'order-2'}`}>
+          <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>오늘 수업 정리</p>
@@ -312,24 +310,24 @@ function ReportContent() {
               ) : null}
             </div>
 
-            <div className="mt-5 grid gap-5">
+            <div className="mt-4 grid gap-4 sm:mt-5 sm:gap-5">
               <div>
                 <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>설명 대상</p>
-                <div className="grid gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-3 gap-2">
                   {AUDIENCES.map(({ id, label, description, Icon }) => {
                     const active = audience === id;
                     return (
-                      <button key={id} type="button" onClick={() => { setAudience(id); setGenerated(''); }} className="rounded-[14px] p-3 text-left" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: active ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                      <button key={id} type="button" onClick={() => { setAudience(id); setGenerated(''); }} className="rounded-[14px] p-2.5 text-left sm:p-3" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: active ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
                         <Icon size={16} color={active ? 'var(--spm-acc)' : 'var(--spm-t3)'} />
                         <strong className="mt-2 block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
-                        <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>{description}</span>
+                        <span className="mt-1 hidden text-[11px] font-semibold leading-4 sm:block" style={{ color: 'var(--spm-t3)' }}>{description}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
                 <div>
                   <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>오늘 수업 분위기</p>
                   <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); setGenerated(''); }} />
@@ -350,7 +348,7 @@ function ReportContent() {
                 <textarea
                   value={note}
                   onChange={(event) => { setNote(event.target.value); setGenerated(''); }}
-                  rows={4}
+                  rows={3}
                   placeholder="예: 처음에는 조심스러웠지만 두 번째 라운드부터 규칙을 이해하고 적극적으로 참여했습니다."
                   className="w-full resize-y rounded-[13px] border px-3 py-3 text-[13px] font-semibold leading-6 outline-none"
                   style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
@@ -359,11 +357,11 @@ function ReportContent() {
             </div>
           </section>
 
-          <section className="rounded-[18px] p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14), var(--spm-s1))', border: '1px solid rgba(99,102,241,0.22)' }}>
+          <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14), var(--spm-s1))', border: '1px solid rgba(99,102,241,0.22)' }}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: '#818cf8' }}>{audienceMeta.label}</p>
-                <h2 className="mt-1 text-[22px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{getAudienceOutputTitle(audience)}</h2>
+                <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{getAudienceOutputTitle(audience)}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setGenerated(draft)} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
@@ -380,7 +378,7 @@ function ReportContent() {
                 </button>
               </div>
             </div>
-            <p className="mt-4 whitespace-pre-line rounded-[14px] p-4 text-[15px] font-semibold leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+            <p className="mt-3 whitespace-pre-line rounded-[14px] p-3.5 text-[14px] font-semibold leading-7 sm:mt-4 sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
               {program ? output : '수업을 선택하면 설명 문구를 만들 수 있습니다.'}
             </p>
           </section>

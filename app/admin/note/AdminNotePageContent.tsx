@@ -1,7 +1,10 @@
 'use client';
 
 import {
+  Fragment,
+  createContext,
   useCallback,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -25,8 +28,9 @@ import {
   filterSiblingBlocks,
   buildReparentContentPatch,
   getBlocksInParent,
-  planBlockDrop,
+  planBlockDropAt,
   planBlockTabIndent,
+  type BlockDropPosition,
   planMergeWithPreviousBlock,
   planPromoteChildrenOnDelete,
   sortRootBlocks,
@@ -46,8 +50,85 @@ import {
 import { VideoEmbedFrame } from './_components/VideoEmbedFrame';
 import dynamic from 'next/dynamic';
 import { BOARD_DEFAULT_GROUP } from './_components/BoardView';
+import {
+  blockGutterTopPx,
+  blockHandleLeftPx,
+  NOTE_PAGE_SHELL,
+  toggleMenuAnchorOffset,
+} from './_lib/constants';
+
+const EMPTY_BLOCK_PLACEHOLDER = "명령어는 '/'를 입력하세요.";
+
+const HoveredBlockContext = createContext<string | null>(null);
+const SetHoveredBlockContext = createContext<(id: string | null) => void>(() => {});
+
+function useHoveredBlockId() {
+  return useContext(HoveredBlockContext);
+}
+
+function useSetHoveredBlockId() {
+  return useContext(SetHoveredBlockContext);
+}
+
+type BlockDropTarget = { blockId: string; position: BlockDropPosition } | null;
+
+const BlockDropTargetContext = createContext<BlockDropTarget>(null);
+const BlockDragActiveContext = createContext(false);
+
+function useBlockDropTarget() {
+  return useContext(BlockDropTargetContext);
+}
+
+function useBlockDragActive() {
+  return useContext(BlockDragActiveContext);
+}
+
+/**
+ * 포인터 실제 Y 좌표 기준으로 before/after/inside 결정.
+ * 토글: 상 25% → before, 하 25% → after, 중간 → inside
+ * 일반: 상 50% → before, 하 50% → after
+ */
+function resolveDropPosition(
+  overBlock: NoteBlock,
+  over: { rect: { top: number; height: number } },
+): BlockDropPosition {
+  const py = pointerYRef.current;
+  const { top, height } = over.rect;
+  if (overBlock.type === 'toggle') {
+    if (py < top + height * 0.25) return 'before';
+    if (py > top + height * 0.75) return 'after';
+    return 'inside';
+  }
+  return py < top + height / 2 ? 'before' : 'after';
+}
+
+function resolveBlockDropTarget(
+  overId: string,
+  blocks: NoteBlock[],
+  event: DragOverEvent | DragEndEvent,
+): BlockDropTarget {
+  const over = event.over;
+  const overBlock = blocks.find((b) => b.id === overId);
+  if (!overBlock || !over?.rect) return null;
+  return { blockId: overId, position: resolveDropPosition(overBlock, over) };
+}
 
 const noteBlockDragActive = { current: false };
+/** 드래그 중 실시간 포인터 Y (window pointermove 로 추적) */
+const pointerYRef = { current: 0 };
+if (typeof window !== 'undefined') {
+  window.addEventListener('pointermove', (e) => { pointerYRef.current = e.clientY; }, { passive: true });
+}
+
+/**
+ * 블록 드래그 충돌 감지.
+ * 포인터가 직접 위에 있는 블록 우선, 없으면 가장 가까운 블록.
+ */
+const noteBlockCollisionDetection: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  if (hits.length > 0) return hits;
+  return closestCenter(args);
+};
 
 const BoardView = dynamic(
   () => import('./_components/BoardView').then((mod) => mod.BoardView),
@@ -81,6 +162,7 @@ import {
   Home,
   LayoutGrid,
   List,
+  MoreHorizontal,
 } from 'lucide-react';
 
 import {
@@ -89,10 +171,14 @@ import {
   PointerSensor,
   TouchSensor,
   closestCenter,
+  pointerWithin,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
+  type CollisionDetection,
+  type DraggableAttributes,
+  type DraggableSyntheticListeners,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
@@ -242,6 +328,11 @@ function resolveDocIcon(properties?: NoteDocument['properties'] | null): string 
   return icon || null;
 }
 
+function resolveDocCover(properties?: NoteDocument['properties'] | null): string | null {
+  const cover = properties?.cover?.trim();
+  return cover || null;
+}
+
 function DocIconGlyph({
   icon,
   fallbackClassName = 'h-4 w-4 shrink-0 text-neutral-400',
@@ -255,18 +346,11 @@ function DocIconGlyph({
   return <FileText className={fallbackClassName} />;
 }
 
-/** 호버한 줄만 핸들 표시 (중첩 토글에서 부모 핸들 동시 노출 방지) */
-const BLOCK_HANDLE_HOVER =
-  'opacity-0 pointer-events-none transition-opacity group-hover/block:opacity-100 group-hover/block:pointer-events-auto group-has-[.group\\/block:hover]/block:opacity-0 group-has-[.group\\/block:hover]/block:pointer-events-none';
+/** 줄 왼쪽 — 거터로 이동해도 hover가 끊기지 않게 넓은 히트 영역 */
+const NOTE_BLOCK_HOVER_BRIDGE = 'absolute -left-[88px] top-0 bottom-0 z-[1] w-[88px]';
 
-/** 토글 안 블록도 루트와 같은 왼쪽 거터에 핸들 정렬 */
-function toggleInlineHandleLeft(): string {
-  return '-4.25rem';
-}
-
-function toggleMenuAnchorOffset(nestDepth: number): number {
-  return Math.max(0, nestDepth - 1) * 18;
-}
+const DROP_TARGET_ROW =
+  'z-[1] rounded-sm bg-blue-100/90 ring-2 ring-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.25)]';
 
 /** 노션형 토글 — 검정 채움 삼각형 */
 function ToggleDisclosureButton({
@@ -295,40 +379,6 @@ function ToggleDisclosureButton({
       </svg>
     </button>
   );
-}
-
-function applyBlockDropPreview(
-  blocks: NoteBlock[],
-  movingId: string,
-  overId: string,
-): NoteBlock[] | null {
-  const plan = planBlockDrop(blocks, movingId, overId);
-  if (!plan) return null;
-  const moving = blocks.find((block) => block.id === movingId);
-  if (!moving) return null;
-  const contentPatch = buildReparentContentPatch(moving.content, moving.type, plan.placedInToggle);
-  const targetMap = new Map(plan.targetSiblings.map((block) => [block.id, block]));
-  const oldParentId = moving.parent_block_id ?? null;
-  const parentChanged = oldParentId !== plan.targetParentId;
-  const oldSiblings = parentChanged
-    ? getBlocksInParent(blocks, oldParentId)
-      .filter((block) => block.id !== movingId)
-      .map((block, index) => ({ ...block, order_index: index }))
-    : [];
-  const oldMap = new Map(oldSiblings.map((block) => [block.id, block]));
-  return blocks.map((block) => {
-    if (block.id === movingId) {
-      return {
-        ...block,
-        parent_block_id: plan.targetParentId,
-        order_index: plan.targetSiblings.findIndex((item) => item.id === movingId),
-        content: contentPatch ?? block.content,
-      };
-    }
-    if (targetMap.has(block.id)) return targetMap.get(block.id)!;
-    if (oldMap.has(block.id)) return oldMap.get(block.id)!;
-    return block;
-  });
 }
 
 /* ─── DocRootDropZone (사이드바 최상위 드롭) ─────────────────────────────── */
@@ -425,7 +475,7 @@ function DocItem({
   onCreateChild,
   onEditIcon,
   hasChildren = false,
-  isExpanded = true,
+  isExpanded = false,
   onToggleExpand,
   isChildDoc = false,
 }: {
@@ -519,7 +569,7 @@ function DocItem({
         />
       </button>
       <p
-        className="min-w-0 flex-1 truncate text-[14px] leading-5"
+        className="min-w-0 flex-1 truncate text-[14px] leading-5 text-neutral-700"
         title={doc.title}
       >
         {doc.title}
@@ -713,7 +763,7 @@ function BlockContent({
     isInsideToggle || isBorderlessInlineBlock
       ? ''
       : 'rounded-lg border border-slate-200 bg-white px-2 py-2';
-  const inlineRowPadding = isInsideToggle ? 'py-1.5' : (isBorderlessInlineBlock ? 'py-2' : '');
+  const inlineRowPadding = isInsideToggle ? 'py-0.5' : (isBorderlessInlineBlock ? 'py-0.5' : '');
   const enterCreatesBlockBelow =
     !isInsideToggle || block.type === 'text' || block.type === 'todo';
 
@@ -839,7 +889,7 @@ function BlockContent({
         style={{ marginLeft: `${contentMarginLeft}px` }}
       >
         <button type="button"
-          className={`mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border transition-colors ${
+          className={`mt-[3px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border transition-colors ${
             checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-neutral-300 bg-white hover:border-blue-400'
           }`}
           onClick={() => onUpdate({ ...block.content, checked: !checked })}
@@ -850,7 +900,7 @@ function BlockContent({
           {renderFormatToolbar()}
           {renderFormattedTextarea({
             text,
-            placeholder: '할 일을 입력하세요',
+            placeholder: EMPTY_BLOCK_PLACEHOLDER,
             textClassName: `text-[16px] leading-7 ${checked ? 'text-slate-400 line-through' : 'text-slate-800'}`,
             enterCreatesBlock: enterCreatesBlockBelow,
             onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('todo') : onEnter,
@@ -1159,13 +1209,13 @@ function BlockContent({
     const isThisToggleFocused = focusedToggleId === block.id;
     const patchToggle = (partial: Record<string, unknown>) =>
       onUpdate({ ...block.content, ...partial });
-    const showToggleBody = body.trim().length > 0 || childBlocks.length === 0;
+    const showToggleBody = childBlocks.length === 0 && body.trim().length > 0;
 
     return (
       <div
         className={`relative overflow-visible py-0.5 ${
-          !isInsideToggle && isDropTarget
-            ? 'rounded-sm bg-blue-50/40 ring-1 ring-blue-200/80'
+          isDropTarget
+            ? DROP_TARGET_ROW
             : !isInsideToggle && isThisToggleFocused
               ? 'rounded-sm bg-neutral-50/60'
               : ''
@@ -1233,18 +1283,14 @@ function BlockContent({
               </>
             )}
             {childBlocks.length > 0 && (
-              <div className="space-y-0 overflow-visible">
-                {childBlocks.map((child) => renderChildBlock?.(child, toggleNestDepth + 1))}
+              <div className="note-block-children space-y-0 overflow-visible">
+                {childBlocks.map((child) => (
+                  <Fragment key={child.id}>
+                    {renderChildBlock?.(child, toggleNestDepth + 1)}
+                  </Fragment>
+                ))}
               </div>
             )}
-            <div
-              className="min-h-[28px] cursor-text"
-              onMouseDown={(e) => {
-                if (e.target !== e.currentTarget) return;
-                e.preventDefault();
-                onAddChildBelow?.('text');
-              }}
-            />
             {renderSlashMenuPortal()}
             {toggleImages.length > 0 && (
               <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
@@ -1315,7 +1361,7 @@ function BlockContent({
         {renderFormatToolbar()}
         {renderFormattedTextarea({
           text,
-          placeholder: isInsideToggle ? '' : '내용을 입력하세요… (/ 로 블록 타입 변경)',
+          placeholder: EMPTY_BLOCK_PLACEHOLDER,
           textClassName: 'text-[16px] leading-[1.7] text-slate-800',
           enterCreatesBlock: enterCreatesBlockBelow,
           onEditorEnter: enterCreatesBlockBelow ? onEnter : undefined,
@@ -1325,6 +1371,134 @@ function BlockContent({
     </div>
   );
 }
+
+/* ─── BlockRowGutter (+ · 드래그 — 줄 호버 시에만) ───────────────────────── */
+function BlockRowGutter({
+  blockId,
+  blockType,
+  nestDepth = 1,
+  gutterPinned = false,
+  onAddBelow,
+  onGripClick,
+  gripBtnRef,
+  dragAttributes,
+  dragListeners,
+  onPickerOpenChange,
+}: {
+  blockId: string;
+  blockType: NoteBlock['type'];
+  nestDepth?: number;
+  gutterPinned?: boolean;
+  onAddBelow: (type: NoteBlock['type']) => void;
+  onGripClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
+  gripBtnRef: React.RefObject<HTMLButtonElement | null>;
+  dragAttributes: DraggableAttributes;
+  dragListeners: DraggableSyntheticListeners;
+  onPickerOpenChange?: (open: boolean) => void;
+}) {
+  const hoveredBlockId = useHoveredBlockId();
+  const visible = hoveredBlockId === blockId || gutterPinned;
+  const gutterTop = blockGutterTopPx(blockType);
+  const gutterCentered = gutterTop === 'center';
+  const [addPickerAnchor, setAddPickerAnchor] = useState<{ top: number; left: number } | null>(null);
+  const addBtnRef = useRef<HTMLButtonElement>(null);
+
+  const setPickerOpen = (open: boolean, anchor: { top: number; left: number } | null = null) => {
+    setAddPickerAnchor(anchor);
+    onPickerOpenChange?.(open);
+  };
+
+  return (
+    <>
+      <div
+        className={`note-block-gutter absolute z-10 flex h-6 items-center gap-0.5 transition-none ${
+          gutterCentered ? 'top-1/2 -translate-y-1/2' : ''
+        } ${visible ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
+        style={{
+          left: blockHandleLeftPx(nestDepth),
+          ...(gutterCentered ? {} : { top: gutterTop }),
+        }}
+      >
+        <button
+          ref={addBtnRef}
+          type="button"
+          className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+          aria-label="아래에 블록 추가"
+          title="아래에 블록 추가"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (addPickerAnchor) {
+              setPickerOpen(false);
+              return;
+            }
+            const rect = addBtnRef.current!.getBoundingClientRect();
+            setPickerOpen(true, { top: rect.bottom + 4, left: rect.left });
+          }}
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+        <button
+          ref={gripBtnRef}
+          type="button"
+          className="flex h-6 w-6 cursor-grab items-center justify-center rounded text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 active:cursor-grabbing"
+          aria-label="메뉴 · 드래그"
+          title="클릭: 복제·변환·삭제 · 드래그: 이동"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={onGripClick}
+          {...dragAttributes}
+          {...dragListeners}
+        >
+          <GripVertical className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      {addPickerAnchor && (
+        <div className="fixed z-[10000]" style={{ top: addPickerAnchor.top, left: addPickerAnchor.left }}>
+          <BlockPickerMenu
+            commands={BLOCK_TYPES}
+            onSelect={(type) => {
+              onAddBelow(type);
+              setPickerOpen(false);
+            }}
+            onClose={() => setPickerOpen(false)}
+          />
+        </div>
+      )}
+    </>
+  );
+}
+
+function DropTargetIndicator({ insideToggle = false }: { insideToggle?: boolean }) {
+  return (
+    <>
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1 rounded-full bg-blue-500 shadow-sm" />
+      {insideToggle && (
+        <div className="pointer-events-none absolute right-0 top-1 z-20 rounded bg-blue-500 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm">
+          토글 안으로
+        </div>
+      )}
+    </>
+  );
+}
+
+/** 블록 위/아래에 노션처럼 삽입선을 보여주는 컴포넌트 */
+function DropInsertLine({ position }: { position: 'top' | 'bottom' }) {
+  const top = position === 'top';
+  return (
+    <div
+      className={`pointer-events-none absolute left-[-2px] right-0 z-30 flex items-center ${
+        top ? 'top-0' : 'bottom-0'
+      }`}
+    >
+      <div className="h-[6px] w-[6px] shrink-0 rounded-full border-2 border-blue-500 bg-white" />
+      <div className="h-[2px] flex-1 bg-blue-500" />
+    </div>
+  );
+}
+
+/** 토글 안으로 드롭 시 파란 배경 표시 */
+const DROP_INSIDE_TOGGLE_ROW =
+  'rounded bg-blue-50 ring-2 ring-blue-300';
 
 /* ─── SortableBlockRow ───────────────────────────────────────────────────── */
 function SortableBlockRow({
@@ -1400,59 +1574,26 @@ function SortableBlockRow({
     transition,
     isDragging,
   } = useSortable({ id: block.id });
-  const [pickerAnchor, setPickerAnchor] = useState<{ top: number; left: number } | null>(null);
   const [handleMenuAnchor, setHandleMenuAnchor] = useState<{ top: number; left: number } | null>(null);
-  const addBtnRef = useRef<HTMLButtonElement>(null);
+  const [addPickerOpen, setAddPickerOpen] = useState(false);
   const gripBtnRef = useRef<HTMLButtonElement>(null);
+  const gutterPinned = !!handleMenuAnchor || addPickerOpen;
+  const hoveredBlockId = useHoveredBlockId();
+  const setHoveredBlockId = useSetHoveredBlockId();
+  const isRowHovered = hoveredBlockId === block.id || gutterPinned;
+  const dropTarget = useBlockDropTarget();
+  const dropPos = dropTarget?.blockId === block.id ? dropTarget.position : null;
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0 : 1,
     zIndex: isDragging ? 10 : undefined,
   };
-  const blockControls = (
-    <div className="pointer-events-auto flex h-7 items-center gap-0.5 text-neutral-400">
-      <button
-        ref={addBtnRef}
-        type="button"
-        className="flex h-6 w-6 items-center justify-center rounded hover:bg-neutral-100 hover:text-neutral-600"
-        aria-label="아래에 새 블록 추가"
-        title="블록 추가"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (pickerAnchor) { setPickerAnchor(null); return; }
-          const rect = addBtnRef.current!.getBoundingClientRect();
-          setPickerAnchor({ top: rect.bottom + 4, left: rect.left });
-        }}
-      >
-        <Plus className="h-3.5 w-3.5" />
-      </button>
-      <button
-        ref={gripBtnRef}
-        type="button"
-        className="flex h-6 w-5 cursor-grab items-center justify-center rounded hover:bg-neutral-100 hover:text-neutral-600 active:cursor-grabbing"
-        aria-label="메뉴 · 드래그"
-        title="클릭: 복제·변환·삭제 · 드래그: 이동"
-        onClick={(e) => {
-          e.stopPropagation();
-          if (noteBlockDragActive.current) return;
-          if (handleMenuAnchor) { setHandleMenuAnchor(null); return; }
-          setPickerAnchor(null);
-          const rect = gripBtnRef.current!.getBoundingClientRect();
-          setHandleMenuAnchor({ top: rect.bottom + 4, left: rect.left });
-        }}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
 
   const blockContentNode = (
     <div
-      className="min-h-[30px] min-w-0 flex-1 cursor-text"
+      className="min-w-0 flex-1 cursor-text"
       onMouseDownCapture={() => {
         onFocusToggle?.(block.type === 'toggle' ? block.id : null);
       }}
@@ -1496,39 +1637,39 @@ function SortableBlockRow({
     <div
       ref={setNodeRef}
       data-note-block-row
+      data-block-id={block.id}
       style={style}
-      className={`group/block relative overflow-visible py-1 transition-colors ${
-        isDragging
-          ? 'bg-blue-50/50'
-          : isDropTarget
-            ? 'bg-blue-50/40'
-            : isFocused
-              ? 'bg-neutral-50/80'
-              : 'hover:bg-neutral-50/70'
+      className={`relative overflow-visible py-0.5 transition-colors ${
+        dropPos === 'inside' && block.type === 'toggle' ? DROP_INSIDE_TOGGLE_ROW
+          : isRowHovered ? 'bg-neutral-50/60' : ''
       }`}
+      onMouseEnter={() => setHoveredBlockId(block.id)}
+      onMouseLeave={() => setHoveredBlockId(null)}
     >
-      {isDropTarget && !isDragging && (
-        <div className="pointer-events-none absolute left-0 right-0 top-0 h-0.5 rounded-full bg-blue-400/80" />
-      )}
-      <div className={`absolute -left-[4.25rem] top-0 z-10 flex h-7 items-center ${BLOCK_HANDLE_HOVER}`}>
-        {blockControls}
-      </div>
+      <div className={NOTE_BLOCK_HOVER_BRIDGE} aria-hidden />
+      {dropPos === 'before' && <DropInsertLine position="top" />}
+      {dropPos === 'after' && <DropInsertLine position="bottom" />}
+      <BlockRowGutter
+        blockId={block.id}
+        blockType={block.type}
+        nestDepth={1}
+        gutterPinned={gutterPinned}
+        onAddBelow={(type) => onAddBelow(type)}
+        gripBtnRef={gripBtnRef}
+        dragAttributes={attributes}
+        dragListeners={listeners}
+        onPickerOpenChange={setAddPickerOpen}
+        onGripClick={(e) => {
+          e.stopPropagation();
+          if (noteBlockDragActive.current) return;
+          if (handleMenuAnchor) { setHandleMenuAnchor(null); return; }
+          const rect = gripBtnRef.current!.getBoundingClientRect();
+          setHandleMenuAnchor({ top: rect.bottom + 4, left: rect.left });
+        }}
+      />
 
       {blockContentNode}
 
-      {/* + 버튼 블록 피커 — fixed 포지셔닝 (overflow 클리핑 방지) */}
-      {pickerAnchor && (
-        <div
-          className="fixed z-[10000]"
-          style={{ top: pickerAnchor.top, left: pickerAnchor.left }}
-        >
-          <BlockPickerMenu
-            commands={BLOCK_TYPES}
-            onSelect={(type) => { onAddBelow(type); setPickerAnchor(null); }}
-            onClose={() => setPickerAnchor(null)}
-          />
-        </div>
-      )}
       {handleMenuAnchor && (
         <div
           className="fixed z-[9999]"
@@ -1627,87 +1768,60 @@ function ToggleInlineRow({
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
+    opacity: isDragging ? 0 : 1,
     zIndex: isDragging ? 10 + nestDepth : undefined,
   };
 
-  const handleLeft = toggleInlineHandleLeft();
   const menuShiftLeft = toggleMenuAnchorOffset(nestDepth);
   const menuZIndex = 10000 + nestDepth;
 
-  const [inlinePickerAnchor, setInlinePickerAnchor] = useState<{ top: number; left: number } | null>(null);
   const [inlineHandleMenuAnchor, setInlineHandleMenuAnchor] = useState<{ top: number; left: number } | null>(null);
-  const inlineAddBtnRef = useRef<HTMLButtonElement>(null);
+  const [addPickerOpen, setAddPickerOpen] = useState(false);
   const inlineGripBtnRef = useRef<HTMLButtonElement>(null);
+  const gutterPinned = !!inlineHandleMenuAnchor || addPickerOpen;
+  const hoveredBlockId = useHoveredBlockId();
+  const setHoveredBlockId = useSetHoveredBlockId();
+  const isRowHovered = hoveredBlockId === block.id || gutterPinned;
+  const dropTarget = useBlockDropTarget();
+  const dropPos = dropTarget?.blockId === block.id ? dropTarget.position : null;
 
   return (
     <div
       ref={setNodeRef}
       data-note-block-row
+      data-block-id={block.id}
       style={style}
-      className={`group/block relative overflow-visible py-0.5 transition-colors ${
-        isDragging ? 'bg-blue-50/40' : isDropTarget ? 'bg-blue-50/30' : isFocused ? 'bg-neutral-50/60' : 'hover:bg-neutral-50/50'
+      className={`relative overflow-visible py-0.5 transition-colors ${
+        dropPos === 'inside' && block.type === 'toggle' ? DROP_INSIDE_TOGGLE_ROW
+          : isRowHovered ? 'bg-neutral-50/60' : ''
       }`}
+      onMouseEnter={() => setHoveredBlockId(block.id)}
+      onMouseLeave={() => setHoveredBlockId(null)}
     >
-      {isDropTarget && !isDragging && (
-        <div className="pointer-events-none absolute left-0 right-0 top-0 h-0.5 rounded-full bg-blue-400/80" />
-      )}
-      <div
-        className={`absolute top-0 flex h-7 items-center ${BLOCK_HANDLE_HOVER}`}
-        style={{ left: handleLeft, zIndex: 12 + nestDepth }}
-      >
-        <div className="pointer-events-auto flex h-7 items-center gap-0.5 text-neutral-400">
-          <button
-            ref={inlineAddBtnRef}
-            type="button"
-            className="flex h-6 w-6 items-center justify-center rounded hover:bg-neutral-100 hover:text-neutral-600"
-            aria-label="아래에 추가"
-            title="블록 추가"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (inlinePickerAnchor) { setInlinePickerAnchor(null); return; }
-              const rect = inlineAddBtnRef.current!.getBoundingClientRect();
-              setInlinePickerAnchor({
-                top: rect.bottom + 8,
-                left: rect.left - menuShiftLeft,
-              });
-            }}
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          <button
-            ref={inlineGripBtnRef}
-            type="button"
-            className="flex h-6 w-5 cursor-grab items-center justify-center rounded hover:bg-neutral-100 hover:text-neutral-600 active:cursor-grabbing"
-            aria-label="메뉴 · 드래그"
-            title="클릭: 복제·변환·삭제 · 드래그: 이동"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (noteBlockDragActive.current) return;
-              if (inlineHandleMenuAnchor) { setInlineHandleMenuAnchor(null); return; }
-              setInlinePickerAnchor(null);
-              const rect = inlineGripBtnRef.current!.getBoundingClientRect();
-              setInlineHandleMenuAnchor({
-                top: rect.bottom + 8,
-                left: rect.left - menuShiftLeft,
-              });
-            }}
-            {...attributes}
-            {...listeners}
-          >
-            <GripVertical className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      </div>
-      {inlinePickerAnchor && (
-        <div className="fixed" style={{ top: inlinePickerAnchor.top, left: inlinePickerAnchor.left, zIndex: menuZIndex }}>
-          <BlockPickerMenu
-            commands={BLOCK_TYPES}
-            onSelect={(type) => { onAddBelow(type); setInlinePickerAnchor(null); }}
-            onClose={() => setInlinePickerAnchor(null)}
-          />
-        </div>
-      )}
+      <div className={NOTE_BLOCK_HOVER_BRIDGE} aria-hidden />
+      {dropPos === 'before' && <DropInsertLine position="top" />}
+      {dropPos === 'after' && <DropInsertLine position="bottom" />}
+      <BlockRowGutter
+        blockId={block.id}
+        blockType={block.type}
+        nestDepth={nestDepth}
+        gutterPinned={gutterPinned}
+        onAddBelow={(type) => onAddBelow(type)}
+        gripBtnRef={inlineGripBtnRef}
+        dragAttributes={attributes}
+        dragListeners={listeners}
+        onPickerOpenChange={setAddPickerOpen}
+        onGripClick={(e) => {
+          e.stopPropagation();
+          if (noteBlockDragActive.current) return;
+          if (inlineHandleMenuAnchor) { setInlineHandleMenuAnchor(null); return; }
+          const rect = inlineGripBtnRef.current!.getBoundingClientRect();
+          setInlineHandleMenuAnchor({
+            top: rect.bottom + 8,
+            left: rect.left - menuShiftLeft,
+          });
+        }}
+      />
       {inlineHandleMenuAnchor && (
         <div className="fixed" style={{ top: inlineHandleMenuAnchor.top, left: inlineHandleMenuAnchor.left, zIndex: menuZIndex }}>
           <BlockHandleMenu
@@ -1720,7 +1834,7 @@ function ToggleInlineRow({
         </div>
       )}
       <div
-        className="min-h-[30px] min-w-0 cursor-text"
+        className="min-w-0 cursor-text"
         onMouseDownCapture={() => {
           if (block.type === 'toggle') {
             onFocusToggle?.(block.id);
@@ -1768,23 +1882,16 @@ function ToggleInlineRow({
 function DragPreview({ block }: { block: NoteBlock }) {
   const text =
     block.type === 'divider' ? '── 구분선 ──'
-    : block.type === 'image' ? `🖼 ${block.content?.url || '이미지'}`
-    : block.type === 'video' ? `▶ ${block.content?.url || '영상'}`
+    : block.type === 'image' ? '🖼 이미지'
+    : block.type === 'video' ? '▶ 영상'
     : block.type === 'toggle'
-      ? ((block.content?.title as string) || (block.content?.text as string) || '(토글)')
-    : (block.content?.text as string) || '(빈 블록)';
-
-  const typeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
-  const TypeIcon = BLOCK_TYPES.find((t) => t.type === block.type)?.icon ?? FileText;
+      ? ((block.content?.title as string) || '(토글)')
+    : (block.content?.text as string) || '';
 
   return (
-    <div className="flex w-80 items-center gap-3 rounded-xl border border-blue-200 bg-white px-4 py-3 shadow-2xl ring-1 ring-blue-100">
-      <GripVertical className="h-4 w-4 shrink-0 text-blue-400" />
-      <TypeIcon className="h-4 w-4 shrink-0 text-blue-500" />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-semibold text-slate-700">{text}</p>
-        <p className="text-[11px] text-slate-400">{typeLabel}</p>
-      </div>
+    <div className="flex max-w-[520px] items-center gap-2 rounded-md bg-white/95 px-3 py-1.5 shadow-[0_4px_16px_rgba(0,0,0,0.14)] ring-1 ring-black/[0.06]">
+      <GripVertical className="h-3.5 w-3.5 shrink-0 text-neutral-400" />
+      <span className="truncate text-[15px] text-neutral-700">{text || '(빈 블록)'}</span>
     </div>
   );
 }
@@ -1800,8 +1907,6 @@ export default function AdminNotePageContent() {
   const [loadingDocuments, setLoadingDocuments] = useState(true);
   const [loadingBlocks, setLoadingBlocks] = useState(false);
   const [loadingState, setLoadingState] = useState<LoadingState>('idle');
-  const [emptyPagePickerOpen, setEmptyPagePickerOpen] = useState(false);
-  const [emptyPagePickerAnchor, setEmptyPagePickerAnchor] = useState<{ top: number; left: number } | null>(null);
   const [showDocIconPicker, setShowDocIconPicker] = useState(false);
   const [docIconDraft, setDocIconDraft] = useState('');
   const docIconInputRef = useRef<HTMLInputElement>(null);
@@ -1820,8 +1925,11 @@ export default function AdminNotePageContent() {
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [activeDragDocId, setActiveDragDocId] = useState<string | null>(null);
-  const [collapsedSidebarDocs, setCollapsedSidebarDocs] = useState<Set<string>>(() => new Set());
-  const [overBlockId, setOverBlockId] = useState<string | null>(null);
+  const [expandedSidebarDocs, setExpandedSidebarDocs] = useState<Set<string>>(() => new Set());
+  const [dropTarget, setDropTarget] = useState<BlockDropTarget>(null);
+  const dropTargetRef = useRef<BlockDropTarget>(null);
+  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
+  const autoSeededDocRef = useRef<string | null>(null);
   const [focusedEditorBlockId, setFocusedEditorBlockId] = useState<string | null>(null);
   const [focusedEditorPart, setFocusedEditorPart] = useState<'title' | 'editor' | null>(null);
   const [focusSignal, setFocusSignal] = useState(0);
@@ -1835,6 +1943,9 @@ export default function AdminNotePageContent() {
   const [trashedBlocks, setTrashedBlocks] = useState<NoteBlock[]>([]);
   const [loadingTrashedBlocks, setLoadingTrashedBlocks] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'board'>('list');
+  const [showPageMenu, setShowPageMenu] = useState(false);
+  const [backlinksExpanded, setBacklinksExpanded] = useState(false);
+  const pageMenuRef = useRef<HTMLDivElement>(null);
   const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
   const [purgingBlockId, setPurgingBlockId] = useState<string | null>(null);
   const [lastDeletedBlockId, setLastDeletedBlockId] = useState<string | null>(null);
@@ -1846,11 +1957,10 @@ export default function AdminNotePageContent() {
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
   const blocksRef = useRef<NoteBlock[]>([]);
-  const dragStartBlocksRef = useRef<NoteBlock[]>([]);
   const focusedEditorBlockIdRef = useRef<string | null>(null);
   const focusedEditorPartRef = useRef<'title' | 'editor' | null>(null);
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 3 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
   );
 
@@ -2117,9 +2227,9 @@ export default function AdminNotePageContent() {
       setActiveBlockId(activeId);
       setActiveDragDocId(null);
       noteBlockDragActive.current = true;
-      dragStartBlocksRef.current = blocksRef.current;
     }
-    setOverBlockId(null);
+    setDropTarget(null);
+    dropTargetRef.current = null;
   }, []);
 
   const normalizeDepthByOrder = useCallback((orderedBlocks: NoteBlock[]) => {
@@ -2178,7 +2288,8 @@ export default function AdminNotePageContent() {
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) {
-      setOverBlockId(null);
+      setDropTarget(null);
+      dropTargetRef.current = null;
       return;
     }
     const activeId = String(active.id);
@@ -2191,24 +2302,25 @@ export default function AdminNotePageContent() {
       overId === 'doc-root-bottom' ||
       overId === 'doc-workspace-root'
     ) {
-      setOverBlockId(null);
+      setDropTarget(null);
+      dropTargetRef.current = null;
       return;
     }
-    if (activeId === overId) return;
-    setOverBlockId(overId);
-    setBlocks((prev) => {
-      const next = applyBlockDropPreview(prev, activeId, overId);
-      return next ?? prev;
-    });
+    if (activeId === overId) {
+      setDropTarget(null);
+      dropTargetRef.current = null;
+      return;
+    }
+    const nextTarget = resolveBlockDropTarget(overId, blocksRef.current, event);
+    setDropTarget(nextTarget);
+    dropTargetRef.current = nextTarget;
   }, []);
 
   const handleDragCancel = useCallback(() => {
-    if (noteBlockDragActive.current) {
-      setBlocks(dragStartBlocksRef.current);
-    }
     setActiveBlockId(null);
     setActiveDragDocId(null);
-    setOverBlockId(null);
+    setDropTarget(null);
+    dropTargetRef.current = null;
     noteBlockDragActive.current = false;
   }, []);
 
@@ -2361,10 +2473,14 @@ export default function AdminNotePageContent() {
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
     setActiveDragDocId(null);
-    setOverBlockId(null);
     const wasBlockDrag = noteBlockDragActive.current;
     noteBlockDragActive.current = false;
     const { active, over } = event;
+    const resolvedTarget = over
+      ? resolveBlockDropTarget(String(over.id), blocksRef.current, event)
+      : dropTargetRef.current;
+    setDropTarget(null);
+    dropTargetRef.current = null;
     if (!over || active.id === over.id) return;
 
     const activeId = String(active.id);
@@ -2482,9 +2598,14 @@ export default function AdminNotePageContent() {
       }
     }
 
-    const plan = wasBlockDrag
-      ? planBlockDrop(blocksRef.current, moving.id, overId)
-      : planBlockDrop(prevBlocks, moving.id, overId);
+    const target = resolvedTarget ?? (overBlock ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
+    if (!target) return;
+    const plan = planBlockDropAt(
+      wasBlockDrag ? blocksRef.current : prevBlocks,
+      moving.id,
+      target.blockId,
+      target.position,
+    );
     if (!plan) return;
 
     const targetMap = new Map(plan.targetSiblings.map((block) => [block.id, block]));
@@ -2550,7 +2671,6 @@ export default function AdminNotePageContent() {
     setSelectedId(doc.id);
     setFocusedToggleId(null);
     setFocusedEditorBlockId(null);
-    setEmptyPagePickerOpen(false);
     setShowDocIconPicker(false);
     setSidebarIconPicker(null);
     setMobileTab('editor');
@@ -2581,6 +2701,17 @@ export default function AdminNotePageContent() {
       triggerSave();
     } catch (e) { devLogger.error('[Note] updateDocProperties', e); }
   }, [triggerSave]);
+
+  const handleSetDocumentCover = useCallback(async (docId: string, cover: string) => {
+    const doc = documents.find((d) => d.id === docId);
+    if (!doc) return;
+    const base = { ...(doc.properties ?? {}) };
+    const trimmed = cover.trim();
+    if (trimmed) base.cover = trimmed;
+    else delete base.cover;
+    const nextProperties = Object.keys(base).length > 0 ? base : null;
+    await handleUpdateDocProperties(docId, nextProperties);
+  }, [documents, handleUpdateDocProperties]);
 
   const handleSetDocumentIcon = useCallback(async (docId: string, icon: string) => {
     const doc = documents.find((d) => d.id === docId);
@@ -2687,7 +2818,6 @@ export default function AdminNotePageContent() {
     setSelectedId(documentId);
     setFocusedToggleId(null);
     setFocusedEditorBlockId(null);
-    setEmptyPagePickerOpen(false);
     setShowDocIconPicker(false);
     setSidebarIconPicker(null);
     setMobileTab('editor');
@@ -2835,8 +2965,6 @@ export default function AdminNotePageContent() {
         setSelectedId(newDoc.id);
         setFocusedToggleId(null);
         setFocusedEditorBlockId(null);
-        setEmptyPagePickerOpen(false);
-        setEmptyPagePickerAnchor(null);
         setMobileTab('editor');
         closeAll();
         router.replace(`/admin/note?id=${encodeURIComponent(newDoc.id)}`);
@@ -3338,6 +3466,13 @@ export default function AdminNotePageContent() {
     await insertBlockAmongSiblings(parentId, type, insertIndex);
   }, [insertBlockAmongSiblings, handleCreateSubPage, selectedId]);
 
+  const handleInsertBlockBefore = useCallback(async (beforeBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
+    const parentId = beforeBlock.parent_block_id ?? null;
+    const siblings = getBlocksInParent(blocksRef.current, parentId);
+    const idx = siblings.findIndex((b) => b.id === beforeBlock.id);
+    await insertBlockAmongSiblings(parentId, type, idx >= 0 ? idx : 0);
+  }, [insertBlockAmongSiblings]);
+
   const handleInsertBlockInParent = useCallback(async (parentBlockId: string, type: NoteBlock['type'] = 'text') => {
     if (!selectedId) return;
     if (type === 'page') {
@@ -3465,6 +3600,24 @@ export default function AdminNotePageContent() {
     } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
   }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor, handleInsertBlockInParent, registerCreatedBlockUndo, handleCreateSubPage]);
 
+  const handleBlockListMouseMove = useCallback((e: React.MouseEvent) => {
+    const row = (e.target as HTMLElement).closest('[data-note-block-row]');
+    const id = row?.getAttribute('data-block-id') ?? null;
+    setHoveredBlockId((prev) => (prev === id ? prev : id));
+  }, []);
+
+  const handleBlockListMouseLeave = useCallback(() => {
+    setHoveredBlockId(null);
+  }, []);
+
+  useEffect(() => {
+    autoSeededDocRef.current = null;
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (rootBlocks.length === 0) autoSeededDocRef.current = null;
+  }, [rootBlocks.length]);
+
   const handleClickEditorWhitespace = useCallback(() => {
     const roots = sortRootBlocks(blocksRef.current);
     const last = roots[roots.length - 1];
@@ -3479,6 +3632,14 @@ export default function AdminNotePageContent() {
     }
     void handleInsertBlockAfter(last, 'text');
   }, [focusBlockEditor, handleAddBlock, handleInsertBlockAfter]);
+
+  useEffect(() => {
+    if (!selectedId || loadingBlocks) return;
+    if (rootBlocks.length > 0) return;
+    if (autoSeededDocRef.current === selectedId) return;
+    autoSeededDocRef.current = selectedId;
+    void handleAddBlock('text');
+  }, [selectedId, loadingBlocks, rootBlocks.length, handleAddBlock]);
 
   const handleDocumentBodyMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
@@ -3710,7 +3871,7 @@ export default function AdminNotePageContent() {
   }, [handleUndoCreateBlock, handleUndoDeleteBlock, lastDeletedBlockId]);
 
   const toggleSidebarDocExpanded = useCallback((docId: string) => {
-    setCollapsedSidebarDocs((prev) => {
+    setExpandedSidebarDocs((prev) => {
       const next = new Set(prev);
       if (next.has(docId)) next.delete(docId);
       else next.add(docId);
@@ -3718,9 +3879,29 @@ export default function AdminNotePageContent() {
     });
   }, []);
 
+  /* 선택한 페이지까지 사이드바 트리만 펼침 (나머지는 기본 접힘 유지) */
+  useEffect(() => {
+    if (!selectedId) return;
+    const doc = documents.find((d) => d.id === selectedId);
+    if (!doc?.parent_id) return;
+    const ancestorIds: string[] = [];
+    let parentId: string | null = doc.parent_id;
+    const docMap = new Map(documents.map((d) => [d.id, d]));
+    while (parentId) {
+      ancestorIds.push(parentId);
+      parentId = docMap.get(parentId)?.parent_id ?? null;
+    }
+    if (ancestorIds.length === 0) return;
+    setExpandedSidebarDocs((prev) => {
+      const next = new Set(prev);
+      for (const id of ancestorIds) next.add(id);
+      return next;
+    });
+  }, [selectedId, documents]);
+
   const renderDocumentTree = (doc: NoteDocument, depth = 0): ReactNode => {
     const children = childrenByParent.get(doc.id) ?? [];
-    const isExpanded = !collapsedSidebarDocs.has(doc.id);
+    const isExpanded = expandedSidebarDocs.has(doc.id);
     return (
       <div key={doc.id} className="space-y-0.5">
         <DocItem
@@ -3780,7 +3961,7 @@ export default function AdminNotePageContent() {
         onFocusToggle={setFocusedToggleId}
         onTrackActiveBlock={(part) => trackActiveBlock(block.id, part)}
         uploadImage={uploadNoteImage}
-        isDropTarget={overBlockId === block.id}
+        isDropTarget={dropTarget?.blockId === block.id && dropTarget?.position === 'inside'}
         resolvePageIcon={resolvePageIcon}
         isFocused={focusedEditorBlockId === block.id}
         mergeFocusCaretOffset={focusedEditorBlockId === block.id ? mergeFocusCaretOffset : undefined}
@@ -3827,7 +4008,7 @@ export default function AdminNotePageContent() {
         onFocusToggle={setFocusedToggleId}
         onTrackActiveBlock={(part) => trackActiveBlock(block.id, part)}
         uploadImage={uploadNoteImage}
-        isDropTarget={overBlockId === block.id}
+        isDropTarget={dropTarget?.blockId === block.id && dropTarget?.position === 'inside'}
         resolvePageIcon={resolvePageIcon}
         isFocused={focusedEditorBlockId === block.id}
         mergeFocusCaretOffset={focusedEditorBlockId === block.id ? mergeFocusCaretOffset : undefined}
@@ -3846,6 +4027,17 @@ export default function AdminNotePageContent() {
   }, [showDocIconPicker]);
 
   useEffect(() => {
+    if (!showPageMenu) return;
+    const onDown = (e: MouseEvent) => {
+      if (pageMenuRef.current && !pageMenuRef.current.contains(e.target as Node)) {
+        setShowPageMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [showPageMenu]);
+
+  useEffect(() => {
     if (!sidebarIconPicker) return;
     const t = window.setTimeout(() => {
       sidebarIconInputRef.current?.focus();
@@ -3856,7 +4048,7 @@ export default function AdminNotePageContent() {
 
   /* ── render ── */
   return (
-    <div className="flex h-[calc(100vh-4rem)] max-w-full flex-col overflow-x-hidden bg-white md:h-screen md:overflow-hidden">
+    <div className="flex h-[var(--viewport-height-px,100dvh)] max-w-full flex-col overflow-x-hidden bg-white">
       <NoteRichEditorStyles />
 
       {/* 모바일 상단 탭 */}
@@ -3915,12 +4107,14 @@ export default function AdminNotePageContent() {
       {/* ── 콘텐츠 ── */}
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
+        collisionDetection={noteBlockCollisionDetection}
         onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
+        <BlockDragActiveContext.Provider value={!!activeBlockId}>
+        <BlockDropTargetContext.Provider value={dropTarget}>
         <div className="flex min-h-0 min-w-0 flex-1 overflow-x-hidden">
 
           {/* ── 노트 목록 사이드바 */}
@@ -3929,26 +4123,24 @@ export default function AdminNotePageContent() {
           } md:flex md:w-[280px] md:shrink-0`}>
 
           {/* 워크스페이스 헤더 */}
-          <div className="shrink-0 px-3 pb-2 pt-3">
-            <div className="flex items-center justify-between gap-2 px-1 py-1">
+          <div className="shrink-0 px-2 pb-2 pt-3">
+            <div className="flex items-center justify-between gap-1 px-1 py-0.5">
               <WorkspaceTitleDropTarget isDraggingDoc={!!activeDragDocId}>
                 <button
                   type="button"
                   onClick={handleNavigateToWorkspace}
-                  className="flex min-w-0 w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-neutral-200/60"
+                  className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-200/50"
                   title={activeDragDocId ? '여기에 놓으면 최상위 페이지로 이동' : undefined}
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-neutral-800 text-[11px] font-bold text-white">
-                    N
-                  </span>
-                  <span className="truncate text-[14px] font-semibold text-neutral-800">관리자 노트</span>
+                  <span className="shrink-0 text-[18px] leading-none">📋</span>
+                  <span className="truncate text-[14px] font-medium text-neutral-800">관리자 노트</span>
                 </button>
               </WorkspaceTitleDropTarget>
               <button
                 type="button"
                 onClick={() => handleCreateDocument(null)}
                 disabled={loadingState === 'loading'}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-800 disabled:opacity-50"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-200/50 hover:text-neutral-700 disabled:opacity-50"
                 title="새 페이지"
               >
                 {loadingState === 'loading' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
@@ -3960,9 +4152,8 @@ export default function AdminNotePageContent() {
               className="mt-0.5 flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-700"
             >
               <Home className="h-3.5 w-3.5" />
-              대시보드로
+              관리 홈
             </button>
-            {/* 뷰 전환 */}
             <div className="mt-2 flex items-center gap-1 rounded-md bg-neutral-200/50 p-1">
               <button
                 type="button"
@@ -4091,20 +4282,20 @@ export default function AdminNotePageContent() {
               <>
                 {pinnedDocuments.length > 0 && (
                   <div className="mb-2 mt-1">
-                    <p className="mb-1 px-2 text-[12px] font-medium text-neutral-400">고정</p>
+                    <p className="mb-0.5 px-2 text-[11px] text-neutral-400">고정</p>
                     {pinnedDocuments.map((doc) => renderDocumentTree(doc))}
                   </div>
                 )}
                 {favoriteDocuments.length > 0 && (
                   <div className="mb-2 mt-3">
-                    <p className="mb-1 px-2 text-[12px] font-medium text-neutral-400">즐겨찾기</p>
+                    <p className="mb-0.5 px-2 text-[11px] text-neutral-400">즐겨찾기</p>
                     {favoriteDocuments.map((doc) => renderDocumentTree(doc))}
                   </div>
                 )}
                 {otherDocuments.length > 0 && (
                   <div className="mt-1">
                     {(pinnedDocuments.length > 0 || favoriteDocuments.length > 0) && (
-                      <p className="mb-1 mt-3 px-2 text-[12px] font-medium text-neutral-400">페이지</p>
+                      <p className="mb-0.5 mt-2 px-2 text-[11px] text-neutral-400">개인</p>
                     )}
                     {docTab === 'trash' ? (
                       <div className="space-y-1">
@@ -4281,72 +4472,53 @@ export default function AdminNotePageContent() {
           {/* 에디터 본문 */}
           {!activeDocument ? (
             <div className="min-w-0 flex-1 overflow-y-auto bg-white">
-              <div className="mx-auto max-w-[1080px] px-5 py-10 md:px-10 lg:px-14">
-                <div className="mb-8 flex items-center gap-3">
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-neutral-800 text-[18px] font-bold text-white">
-                    N
-                  </span>
-                  <div>
-                    <h1 className="text-[32px] font-bold tracking-tight text-neutral-900">관리자 노트</h1>
-                    <p className="mt-1 text-[14px] text-neutral-500">최상위 페이지를 선택하거나 새로 만드세요</p>
-                  </div>
-                </div>
-                <div className="mb-4 flex items-center justify-between gap-3">
-                  <h2 className="text-[13px] font-semibold uppercase tracking-wide text-neutral-400">페이지</h2>
-                  <button
-                    type="button"
-                    onClick={() => handleCreateDocument(null)}
-                    className="flex items-center gap-1.5 rounded-md border border-neutral-200 px-3 py-1.5 text-[13px] font-medium text-neutral-700 transition-colors hover:bg-neutral-50"
-                  >
-                    <Plus className="h-4 w-4" />
-                    새 페이지
-                  </button>
-                </div>
-                {loadingDocuments ? (
-                  <div className="flex items-center gap-2 py-12 text-[13px] text-neutral-400">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    불러오는 중…
-                  </div>
-                ) : rootDocuments.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50/60 px-6 py-12 text-center">
-                    <FileText className="mx-auto h-10 w-10 text-neutral-300" />
-                    <p className="mt-3 text-[15px] font-medium text-neutral-600">아직 최상위 페이지가 없습니다</p>
+              <div className={`${NOTE_PAGE_SHELL} py-10`}>
+                <h1 className="text-[40px] font-bold tracking-tight text-neutral-900">관리자 노트</h1>
+                <p className="mt-1 text-[14px] text-neutral-400">최상위 페이지</p>
+                <div className="mt-8">
+                  {loadingDocuments ? (
+                    <div className="flex items-center gap-2 py-8 text-[13px] text-neutral-400">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      불러오는 중…
+                    </div>
+                  ) : rootDocuments.length === 0 ? (
                     <button
                       type="button"
                       onClick={() => handleCreateDocument(null)}
-                      className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-neutral-900 px-4 py-2 text-[14px] font-medium text-white hover:bg-neutral-800"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-[14px] text-neutral-400 transition-colors hover:bg-neutral-50 hover:text-neutral-600"
                     >
                       <Plus className="h-4 w-4" />
-                      첫 페이지 만들기
+                      새 페이지
                     </button>
-                  </div>
-                ) : (
-                  <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {rootDocuments.map((doc) => (
+                  ) : (
+                    <div className="-mx-2">
+                      {rootDocuments.map((doc) => (
+                        <button
+                          key={doc.id}
+                          type="button"
+                          onClick={() => handleSelectDocument(doc)}
+                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-neutral-50"
+                        >
+                          <DocIconGlyph
+                            icon={resolveDocIcon(doc.properties)}
+                            fallbackClassName="h-4 w-4 shrink-0 text-neutral-400"
+                            emojiClassName="shrink-0 text-[16px] leading-none"
+                          />
+                          <span className="min-w-0 flex-1 truncate text-[14px] text-neutral-800">{doc.title}</span>
+                          <span className="shrink-0 text-[12px] text-neutral-400">{relativeTime(doc.updated_at)}</span>
+                        </button>
+                      ))}
                       <button
-                        key={doc.id}
                         type="button"
-                        onClick={() => handleSelectDocument(doc)}
-                        className="flex items-start gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-left transition-colors hover:border-neutral-300 hover:bg-neutral-50"
+                        onClick={() => handleCreateDocument(null)}
+                        className="mt-1 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[14px] text-neutral-400 transition-colors hover:bg-neutral-50 hover:text-neutral-600"
                       >
-                        <DocIconGlyph
-                          icon={resolveDocIcon(doc.properties)}
-                          fallbackClassName="mt-0.5 h-5 w-5 shrink-0 text-neutral-400"
-                          emojiClassName="mt-0.5 shrink-0 text-[20px] leading-none"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[15px] font-semibold text-neutral-900">{doc.title}</p>
-                          <p className="mt-0.5 text-[12px] text-neutral-400">{relativeTime(doc.updated_at)}</p>
-                          {(childrenByParent.get(doc.id)?.length ?? 0) > 0 && (
-                            <p className="mt-1 text-[11px] text-neutral-400">
-                              하위 {(childrenByParent.get(doc.id)?.length ?? 0)}개
-                            </p>
-                          )}
-                        </div>
+                        <Plus className="h-4 w-4" />
+                        새 페이지
                       </button>
-                    ))}
-                  </div>
-                )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ) : loadingBlocks ? (
@@ -4354,83 +4526,158 @@ export default function AdminNotePageContent() {
               <Loader2 className="h-4 w-4 animate-spin" />불러오는 중…
             </div>
           ) : (
-            <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-white">
-              <div className="sticky top-0 z-40 border-b border-neutral-100 bg-white/90 backdrop-blur-md">
-                <div className="mx-auto flex max-w-[1080px] min-w-0 items-center justify-between gap-4 px-5 py-2.5 md:px-10 lg:px-14">
-                  <nav className="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto whitespace-nowrap text-[14px] md:flex">
+            <div className="min-w-0 flex-1 overflow-y-auto bg-white">
+              {resolveDocCover(activeDocument.properties) && (
+                <div className="group/cover relative h-[30vh] max-h-[280px] min-h-[120px] w-full overflow-hidden bg-neutral-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={resolveDocCover(activeDocument.properties)!}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                  <div className="absolute right-4 top-4 flex gap-1 opacity-0 transition-opacity group-hover/cover:opacity-100">
                     <button
                       type="button"
-                      onClick={handleNavigateToWorkspace}
-                      className="shrink-0 rounded px-1.5 py-0.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+                      className="rounded-md bg-white/90 px-2.5 py-1 text-[12px] text-neutral-700 shadow-sm hover:bg-white"
+                      onClick={() => {
+                        const url = window.prompt('커버 이미지 URL', resolveDocCover(activeDocument.properties) ?? '');
+                        if (url !== null) void handleSetDocumentCover(activeDocument.id, url);
+                      }}
                     >
-                      관리자 노트
+                      변경
                     </button>
-                    {documentBreadcrumb.map((crumb, idx) => (
-                      <span key={crumb.id} className="flex shrink-0 items-center gap-1">
-                        <ChevronRight className="h-3.5 w-3.5 text-neutral-300" />
-                        {idx < documentBreadcrumb.length - 1 ? (
+                    <button
+                      type="button"
+                      className="rounded-md bg-white/90 px-2.5 py-1 text-[12px] text-neutral-700 shadow-sm hover:bg-white"
+                      onClick={() => void handleSetDocumentCover(activeDocument.id, '')}
+                    >
+                      제거
+                    </button>
+                  </div>
+                </div>
+              )}
+              <div className="sticky top-0 z-30 flex justify-end px-4 py-2 md:px-8">
+                <div className="flex items-center gap-1">
+                  {loadingState === 'saving' && (
+                    <span className="flex items-center gap-1 px-2 text-[12px] text-neutral-400">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    </span>
+                  )}
+                  {loadingState === 'saved' && lastSavedAt && (
+                    <span className="hidden items-center gap-1 px-2 text-[12px] text-neutral-400 sm:flex">
+                      <Check className="h-3 w-3 text-emerald-500" />
+                      {relativeTime(lastSavedAt.toISOString())}
+                    </span>
+                  )}
+                  <div ref={pageMenuRef} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowPageMenu((v) => !v)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+                      aria-label="페이지 메뉴"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                    {showPageMenu && (
+                      <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-neutral-700 hover:bg-neutral-50"
+                          onClick={() => {
+                            setShowPageMenu(false);
+                            void handleCreateSubPage(activeDocument.id, { navigateToChild: false });
+                          }}
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          하위 페이지
+                        </button>
+                        <button
+                          type="button"
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-neutral-700 hover:bg-neutral-50"
+                          onClick={() => {
+                            setShowPageMenu(false);
+                            const url = window.prompt('커버 이미지 URL', resolveDocCover(activeDocument.properties) ?? '');
+                            if (url !== null) void handleSetDocumentCover(activeDocument.id, url);
+                          }}
+                        >
+                          <ImageIcon className="h-3.5 w-3.5" />
+                          {resolveDocCover(activeDocument.properties) ? '커버 변경' : '커버 추가'}
+                        </button>
+                        {resolveDocCover(activeDocument.properties) && (
                           <button
                             type="button"
-                            onClick={() => handleSelectDocument(crumb)}
-                            className="max-w-[180px] truncate rounded px-1.5 py-0.5 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
-                            title={crumb.title}
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-neutral-700 hover:bg-neutral-50"
+                            onClick={() => {
+                              setShowPageMenu(false);
+                              void handleSetDocumentCover(activeDocument.id, '');
+                            }}
                           >
-                            {crumb.title}
+                            <Minus className="h-3.5 w-3.5" />
+                            커버 제거
                           </button>
-                        ) : (
-                          <span className="max-w-[220px] truncate font-medium text-neutral-800" title={crumb.title}>
-                            {crumb.title}
-                          </span>
                         )}
-                      </span>
-                    ))}
-                  </nav>
-                  <div className="flex shrink-0 items-center gap-2">
-                    {loadingState === 'saving' && (
-                      <span className="hidden items-center gap-1 text-[13px] text-neutral-400 sm:flex">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />저장 중
-                      </span>
+                        <button
+                          type="button"
+                          disabled={togglingPublic}
+                          className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-neutral-700 hover:bg-neutral-50 disabled:opacity-50"
+                          onClick={() => {
+                            setShowPageMenu(false);
+                            void handleTogglePublic(activeDocument);
+                          }}
+                        >
+                          <Globe className="h-3.5 w-3.5" />
+                          {activeDocument.is_public ? '공개 해제' : '웹에 공유'}
+                        </button>
+                        {activeDocument.is_public && activeDocument.share_token && (
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-neutral-700 hover:bg-neutral-50"
+                            onClick={() => {
+                              setShowPageMenu(false);
+                              void handleCopyPublicLink(activeDocument);
+                            }}
+                          >
+                            <Copy className="h-3.5 w-3.5" />
+                            {shareLinkCopied ? '복사됨' : '링크 복사'}
+                          </button>
+                        )}
+                      </div>
                     )}
-                    {loadingState === 'saved' && lastSavedAt && (
-                      <span className="hidden items-center gap-1 text-[13px] text-neutral-400 sm:flex">
-                        <Check className="h-3.5 w-3.5 text-emerald-500" />
-                        {relativeTime(lastSavedAt.toISOString())}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => activeDocument && handleTogglePublic(activeDocument)}
-                      disabled={togglingPublic}
-                      className={`hidden items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium transition-colors disabled:opacity-50 sm:flex ${
-                        activeDocument?.is_public
-                          ? 'text-emerald-700 hover:bg-emerald-50'
-                          : 'text-neutral-500 hover:bg-neutral-100'
-                      }`}
-                    >
-                      <Globe className="h-3.5 w-3.5" />
-                      {activeDocument?.is_public ? '공개됨' : '공유'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (activeDocument) {
-                          void handleCreateSubPage(activeDocument.id, { navigateToChild: false });
-                        }
-                      }}
-                      disabled={loadingState === 'loading'}
-                      className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-neutral-600 transition-colors hover:bg-neutral-100 disabled:opacity-50"
-                      title="하위 페이지 추가 (본문에 링크 생성)"
-                    >
-                      <Plus className="h-4 w-4" />
-                      <span className="hidden lg:inline">하위 페이지</span>
-                    </button>
                   </div>
                 </div>
               </div>
               <div
-                className="mx-auto max-w-[1080px] flex-1 cursor-text overflow-x-hidden px-5 pb-32 pt-8 md:px-10 md:pt-10 lg:px-14"
+                className={`${NOTE_PAGE_SHELL} cursor-text pb-32 ${resolveDocCover(activeDocument.properties) ? 'pt-6' : 'pt-10'}`}
                 onMouseDown={handleDocumentBodyMouseDown}
               >
+                <nav className="mb-4 hidden min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap text-[13px] text-neutral-400 md:flex">
+                  <button
+                    type="button"
+                    onClick={handleNavigateToWorkspace}
+                    className="shrink-0 rounded px-1 py-0.5 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
+                  >
+                    관리자 노트
+                  </button>
+                  {documentBreadcrumb.map((crumb, idx) => (
+                    <span key={crumb.id} className="flex shrink-0 items-center gap-1">
+                      <span className="text-neutral-300">/</span>
+                      {idx < documentBreadcrumb.length - 1 ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSelectDocument(crumb)}
+                          className="max-w-[160px] truncate rounded px-1 py-0.5 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+                          title={crumb.title}
+                        >
+                          {crumb.title}
+                        </button>
+                      ) : (
+                        <span className="max-w-[200px] truncate text-neutral-500" title={crumb.title}>
+                          {crumb.title}
+                        </span>
+                      )}
+                    </span>
+                  ))}
+                </nav>
                 <EditorDocDropZone
                   documentId={activeDocument.id}
                   documentTitle={activeDocument.title}
@@ -4518,112 +4765,74 @@ export default function AdminNotePageContent() {
                   </button>
                 )}
                 {activeDocument.is_public && activeDocument.share_token && (
-                  <div className="mb-6 flex flex-wrap items-center gap-2">
-                    <a
-                      href={`/note/p/${activeDocument.share_token}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800"
-                    >
-                      <Link2 className="h-3.5 w-3.5" />
-                      공개 페이지
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyPublicLink(activeDocument)}
-                      className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[13px] text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800"
-                    >
-                      <Copy className="h-3.5 w-3.5" />
-                      {shareLinkCopied ? '복사됨' : '링크 복사'}
-                    </button>
-                  </div>
+                  <a
+                    href={`/note/p/${activeDocument.share_token}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mb-4 inline-flex items-center gap-1.5 text-[13px] text-neutral-400 transition-colors hover:text-neutral-600"
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    공개 페이지 보기
+                  </a>
                 )}
-                {(collaborators.length > 0) && (
-                  <div className="mb-8 flex items-center gap-2 text-[13px] text-neutral-400">
-                    <Users className="h-3.5 w-3.5" />
-                    최근 함께 본 관리자 {collaborators.length}명 · 수정 {relativeTime(activeDocument.updated_at)}
-                  </div>
+                {collaborators.length > 0 && (
+                  <p className="mb-6 text-[12px] text-neutral-400">
+                    <Users className="mr-1 inline h-3 w-3" />
+                    {collaborators.length}명이 최근 열람 · {relativeTime(activeDocument.updated_at)}
+                  </p>
                 )}
                 {backlinks.length > 0 && (
-                  <div className="mb-6 rounded-xl border border-blue-100 bg-blue-50/60 px-4 py-3">
-                    <p className="text-[12px] font-semibold text-blue-700">이 문서를 언급한 곳</p>
-                    <p className="mb-3 mt-0.5 text-[11px] text-blue-500">총 {backlinks.length}개 문서에서 현재 문서를 참조합니다.</p>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {backlinks.map((doc) => (
-                        <button
-                          key={doc.id}
-                          type="button"
-                          className="rounded-lg bg-white px-3 py-2 text-left shadow-sm transition hover:bg-blue-100"
-                          onClick={() => handleSelectDocument(doc)}
-                        >
-                          <span className="block truncate text-[13px] font-semibold text-blue-800">{doc.title}</span>
-                          <span className="mt-0.5 block text-[11px] text-blue-400">{relativeTime(doc.updated_at)}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-
-                {/* 블록 목록 (DnD) */}
-                <SortableContext
-                  items={allSortableBlockIds}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-0.5 pl-10 md:pl-12">
-                    {rootBlocks.map((block) => renderSortableBlock(block))}
-                  </div>
-                </SortableContext>
-
-                {/* 본문 하단 여백 — 클릭 시 텍스트 블록 포커스/추가 */}
-                {rootBlocks.length > 0 && !loadingBlocks && (
-                  <div
-                    className="min-h-[45vh] pl-10 pt-2 md:pl-12"
-                    onMouseDown={(e) => {
-                      if (e.target !== e.currentTarget) return;
-                      e.preventDefault();
-                      handleClickEditorWhitespace();
-                    }}
-                  />
-                )}
-
-                {/* 빈 문서 — 노션 스타일 (항상 + 표시) */}
-                {rootBlocks.length === 0 && !loadingBlocks && (
-                  <div className="group flex items-start gap-2 py-1 pl-10 md:pl-12" data-note-ignore-whitespace>
-                    <div className="mt-1 flex h-7 shrink-0 items-center gap-0.5">
-                      <button
-                        type="button"
-                        title="블록 추가"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (emptyPagePickerOpen) { setEmptyPagePickerOpen(false); return; }
-                          const rect = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
-                          setEmptyPagePickerAnchor({ top: rect.bottom + 4, left: rect.left });
-                          setEmptyPagePickerOpen(true);
-                        }}
-                        className="flex h-6 w-6 items-center justify-center rounded text-neutral-300 opacity-100 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+                  <div className="mb-4 border-b border-neutral-100">
                     <button
                       type="button"
-                      onClick={() => void handleAddBlock('text')}
-                      className="min-w-0 flex-1 cursor-text py-1.5 text-left text-[16px] text-neutral-300 transition-colors hover:text-neutral-400"
+                      onClick={() => setBacklinksExpanded((v) => !v)}
+                      className="flex w-full items-center gap-2 py-2 text-[13px] text-neutral-500 transition-colors hover:text-neutral-700"
                     >
-                      글을 쓰거나 &apos;/&apos; 를 입력해 블록을 추가하세요.
+                      <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${backlinksExpanded ? '' : '-rotate-90'}`} />
+                      백링크 {backlinks.length}
                     </button>
-                    {emptyPagePickerOpen && emptyPagePickerAnchor && (
-                      <div className="fixed z-[9999]" style={{ top: emptyPagePickerAnchor.top, left: emptyPagePickerAnchor.left }}>
-                        <BlockPickerMenu
-                          commands={BLOCK_TYPES}
-                          onSelect={(type) => { void handleAddBlock(type); setEmptyPagePickerOpen(false); setEmptyPagePickerAnchor(null); }}
-                          onClose={() => { setEmptyPagePickerOpen(false); setEmptyPagePickerAnchor(null); }}
-                        />
+                    {backlinksExpanded && (
+                      <div className="space-y-0.5 pb-3">
+                        {backlinks.map((doc) => (
+                          <button
+                            key={doc.id}
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-neutral-50"
+                            onClick={() => handleSelectDocument(doc)}
+                          >
+                            <DocIconGlyph
+                              icon={resolveDocIcon(doc.properties)}
+                              fallbackClassName="h-3.5 w-3.5 shrink-0 text-neutral-400"
+                              emojiClassName="shrink-0 text-[14px] leading-none"
+                            />
+                            <span className="min-w-0 flex-1 truncate text-[13px] text-neutral-700">{doc.title}</span>
+                          </button>
+                        ))}
                       </div>
                     )}
                   </div>
                 )}
+
+                {/* 블록 목록 (DnD) */}
+                <SetHoveredBlockContext.Provider value={setHoveredBlockId}>
+                <HoveredBlockContext.Provider value={hoveredBlockId}>
+                  <SortableContext
+                    items={allSortableBlockIds}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div
+                      className="overflow-visible"
+                      onMouseLeave={handleBlockListMouseLeave}
+                    >
+                      {rootBlocks.map((block) => (
+                        <Fragment key={block.id}>
+                          {renderSortableBlock(block)}
+                        </Fragment>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </HoveredBlockContext.Provider>
+                </SetHoveredBlockContext.Provider>
 
               </div>
             </div>
@@ -4644,6 +4853,8 @@ export default function AdminNotePageContent() {
             </div>
           ) : null}
         </DragOverlay>
+        </BlockDropTargetContext.Provider>
+        </BlockDragActiveContext.Provider>
       </DndContext>
 
       {formatToolbar && (

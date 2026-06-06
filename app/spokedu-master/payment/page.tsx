@@ -71,14 +71,14 @@ const PLANS: Record<PlanKey, {
     price: '79,000',
     amount: 79000,
     period: '30일',
-    badge: '강사 3명 포함',
-    description: '센터·도장·체육관에서 여러 강사가 같은 수업 품질과 설명 자료를 공유하는 플랜입니다.',
-    primaryFor: '센터, 도장, 체육관, 강사 2명 이상 운영 조직',
+    badge: '기관·센터용',
+    description: '여러 수업을 운영하는 센터·기관 운영자가 수업 자료와 설명 문구를 활용하는 플랜입니다.',
+    primaryFor: '센터, 도장, 체육관, 기관 수업 운영자',
     includes: [
       'Pro 기능 전체',
-      '강사 계정 3명 포함',
-      '센터용 수업 설명 자료',
-      '기관 도입 상담과 확장 안내',
+      '센터 수업 준비 자료 활용',
+      '기관 제출용 수업 설명 문구',
+      '추가 계정·기관 도입 별도 문의',
     ],
     accent: 'rgba(16,185,129,0.12)',
     border: 'rgba(16,185,129,0.34)',
@@ -316,14 +316,14 @@ function PaymentContent() {
         <div className="w-full max-w-[440px] space-y-6 text-center">
           <CheckCircle2 size={58} color="var(--spm-grn)" strokeWidth={1.5} className="mx-auto" />
           <div>
-            <h1 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{activePlanLabel} 구독 중입니다</h1>
+            <h1 className="text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{activePlanLabel} 이용권을 사용 중입니다</h1>
             <p className="mt-3 text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              이미 활성 구독이 있습니다. 플랜 변경이나 결제 수단 변경은 구독 관리 화면에서 이어갈 수 있습니다.
+              이미 활성 이용권이 있습니다. 플랜 변경이나 결제 관련 문의는 이용권 확인 화면에서 이어갈 수 있습니다.
             </p>
           </div>
           <div className="space-y-2">
             <Link href="/spokedu-master/subscription" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-              구독 관리로 이동
+              이용권 확인으로 이동
             </Link>
             <Link href="/spokedu-master/dashboard" className="block text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
               홈으로 돌아가기
@@ -357,7 +357,7 @@ function PaymentContent() {
               결제 전에, SPOKEDU MASTER가 매 수업에서 해줄 일을 확인하세요.
             </h2>
             <p className="mt-4 max-w-[690px] text-[14px] font-semibold leading-7 sm:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
-              이 결제는 자료 몇 개를 여는 비용이 아니라, 라이브러리에서 수업을 고르고 SPOMOVE로 실행하고 설명 문구로 수업의 가치를 남기는 구독입니다.
+              이 결제는 자료 몇 개를 여는 비용이 아니라, 30일 동안 수업을 고르고 SPOMOVE로 실행하고 설명 문구로 수업의 가치를 남기는 이용권입니다.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-3">
               {OUTCOME_STATS.map((item) => (
@@ -453,7 +453,7 @@ function PaymentContent() {
               <div>
                 <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>이메일로 계속하기</p>
                 <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                  결제 확인과 구독 관리를 위해 이메일 인증이 필요합니다.
+                  결제 확인과 이용권 관리를 위해 이메일 인증이 필요합니다.
                 </p>
               </div>
               {!otpSent ? (
@@ -517,7 +517,7 @@ function PaymentContent() {
             <ul className="mt-3 space-y-2">
               {[
                 '토스페이먼츠 보안 결제로 진행됩니다.',
-                '이용 기간 만료 전 플랜 변경이나 해지 문의를 남길 수 있습니다.',
+                '이용 기간 중 플랜 변경이나 결제 관련 문의를 남길 수 있습니다.',
                 '디지털 콘텐츠 이용 시작 후 환불은 이용 내역에 따라 제한될 수 있습니다.',
               ].map((item) => (
                 <li key={item} className="flex gap-2 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>

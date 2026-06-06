@@ -52,11 +52,11 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (subscriptionError) {
-    return NextResponse.json({ error: '구독 상태를 확인하지 못했습니다.' }, { status: 500 });
+    return NextResponse.json({ error: '이용권 상태를 확인하지 못했습니다.' }, { status: 500 });
   }
 
   if (isSpokeduMasterPaidPlanActive(subscription as SpokeduMasterSubscriptionRow | null)) {
-    return NextResponse.json({ error: '이미 활성 이용권이 있습니다. 구독 관리 화면에서 상태를 확인해 주세요.' }, { status: 409 });
+    return NextResponse.json({ error: '이미 활성 이용권이 있습니다. 이용권 확인 화면에서 상태를 확인해 주세요.' }, { status: 409 });
   }
 
   const orderId = `spm-${planKey}-${Date.now()}`;

@@ -44,14 +44,31 @@ export async function GET() {
     .eq('user_id', user.id)
     .maybeSingle()) as { data: SubscriptionRow | null };
 
+  if (
+    data &&
+    data.status === 'expired' &&
+    (data.plan === 'pro' || data.plan === 'team')
+  ) {
+    return NextResponse.json({
+      plan: data.plan,
+      status: 'expired',
+      periodEnd: data.period_end,
+      isAdmin: false,
+      userId: user.id,
+      email: user.email ?? null,
+      trialEndsAt: null,
+    });
+  }
+
   if (!data || data.status !== 'active') {
     return NextResponse.json({ plan: 'free', status: data?.status ?? 'none', isAdmin: false, userId: user.id, email: user.email ?? null, trialEndsAt });
   }
 
   if (!isSpokeduMasterPaidPlanActive(data as SpokeduMasterSubscriptionRow | null)) {
     return NextResponse.json({
-      plan: 'free',
+      plan: data.plan,
       status: 'expired',
+      periodEnd: data.period_end,
       isAdmin: false,
       userId: user.id,
       email: user.email ?? null,

@@ -52,7 +52,7 @@ export default function DirectorPage() {
       </header>
 
       <section className="grid gap-3 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
-        <Kpi label="seats" value="3명" desc="센터 플랜 기본 강사 좌석" icon={UsersRound} tone="#818cf8" />
+        <Kpi label="scope" value="기관" desc="센터·기관 운영자용 이용권" icon={UsersRound} tone="#818cf8" />
         <Kpi label="students" value={`${students.length}명`} desc="수업 기록에 연결된 학생" icon={BarChart3} tone="#10b981" />
         <Kpi label="attendance" value={`${attendance}%`} desc="최근 수업 평균 출석률" icon={CreditCard} tone="#f59e0b" />
         <Kpi label="record loop" value={`${recordRate}%`} desc={recordRate < 70 ? '기록 루프 보완 필요' : '수업 후 정리 안정'} icon={AlertTriangle} tone={recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)'} />
@@ -71,15 +71,9 @@ export default function DirectorPage() {
                 <div className="h-full rounded-full" style={{ width: `${recordRate}%`, background: recordRate < 70 ? 'var(--spm-red)' : 'linear-gradient(90deg,#6366f1,#10b981)' }} />
               </div>
             </div>
-            {[0, 1].map((n) => (
-              <div key={n} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)', opacity: 0.38 }}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t3)' }}>초대 대기 중</span>
-                  <span className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>—</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }} />
-              </div>
-            ))}
+            <div className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
+              <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>추가 강사 계정은 기관 도입 상담으로 안내합니다.</p>
+            </div>
           </div>
         </section>
 
@@ -108,7 +102,7 @@ export default function DirectorPage() {
         </Link>
         <Link href="/spokedu-master/profile" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.14)' }}><CreditCard size={19} color="var(--spm-amb)" /></span>
-          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>센터 플랜</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>도입 방식과 좌석 검토</span></span>
+          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>센터 플랜</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>이용 범위와 기관 도입 문의</span></span>
         </Link>
       </section>
 
@@ -121,12 +115,12 @@ export default function DirectorPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
           <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 플랜 사용 중</h2>
           <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            강사 3명 기본 좌석으로 센터 수업 기록과 학생 케어 흐름을 함께 확인합니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
+            센터 수업 자료와 기관용 설명 문구를 활용할 수 있습니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
           </p>
           <div className="mt-5 grid grid-cols-3 gap-2">
             {[
-              ['좌석', '3/3'],
-              ['공유', '준비 중'],
+              ['이용권', '30일'],
+              ['계정', '현재 사용자'],
               ['기록', `${records.length || students.length}건`],
             ].map(([label, value]) => (
               <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
@@ -141,14 +135,14 @@ export default function DirectorPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
           <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>Center 플랜으로 전환하기</h2>
           <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            강사 3명 좌석, 수업 기록 통합, 케어 신호 정리를 사용하려면 Center 플랜이 필요합니다.
+            센터 수업 자료와 기관용 설명 문구를 활용하려면 Center 플랜을 선택하세요. 추가 강사 계정이나 기관 도입은 별도 문의로 안내합니다.
           </p>
           <Link
             href="/spokedu-master/payment?plan=team"
             className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
-            Center 플랜 시작 — 79,000원/월
+            Center 30일 이용권 · 79,000원
           </Link>
         </section>
       )}

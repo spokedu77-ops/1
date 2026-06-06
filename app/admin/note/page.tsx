@@ -8,7 +8,7 @@ const AdminNotePageContent = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f7f5] text-sm text-neutral-500">
+      <div className="flex h-[var(--viewport-height-px,100dvh)] items-center justify-center bg-[#f7f7f5] text-sm text-neutral-500">
         노트 불러오는 중…
       </div>
     ),
@@ -19,7 +19,7 @@ export default function AdminNotePage() {
   return (
     <Suspense
       fallback={(
-        <div className="flex min-h-screen items-center justify-center bg-[#f7f7f5] text-sm text-neutral-500">
+        <div className="flex h-[var(--viewport-height-px,100dvh)] items-center justify-center bg-[#f7f7f5] text-sm text-neutral-500">
           노트 불러오는 중…
         </div>
       )}

@@ -19,7 +19,7 @@ export default function TermsPage() {
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <header className="flex items-center gap-3 px-[22px] pb-6 pt-[22px] sm:px-8">
-        <Link href="/spokedu-master/profile" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="뒤로">
+        <Link href="/spokedu-master/landing" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="서비스 소개로 돌아가기">
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
@@ -29,7 +29,7 @@ export default function TermsPage() {
       </header>
 
       <main className="mx-auto max-w-[720px] px-[22px] pb-12 sm:px-8">
-        <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 5월 15일</p>
+        <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 6월 6일</p>
 
         <Section title="제1조 (목적)">
           <p>이 약관은 SPOKEDU(이하 "회사")가 운영하는 SPOKEDU MASTER 서비스(이하 "서비스")의 이용 조건 및 절차, 회사와 이용자 간의 권리·의무 및 책임 사항을 규정함을 목적으로 합니다.</p>
@@ -38,18 +38,19 @@ export default function TermsPage() {
         <Section title="제2조 (정의)">
           <p>"서비스"란 회사가 제공하는 체육교육 프로그램 라이브러리, SPOMOVE 화면 실행, 수업 도구, 수업 기록, 학생 이력 및 설명 문구 등 일체의 온라인 서비스를 의미합니다.</p>
           <p>"이용자"란 이 약관에 동의하고 서비스를 이용하는 개인 강사, 교사, 센터 운영자 등을 의미합니다.</p>
-          <p>"구독"이란 이용자가 월정액을 결제하고 서비스의 유료 기능을 이용할 수 있는 계약을 의미합니다.</p>
+          <p>"30일 이용권"이란 결제 확인일로부터 30일 동안 서비스의 유료 기능을 이용할 수 있는 권리를 의미합니다.</p>
         </Section>
 
         <Section title="제3조 (약관의 효력 및 변경)">
           <p>이 약관은 서비스 화면에 게시하거나 이메일로 공지함으로써 효력이 발생합니다. 회사는 관련 법령을 위반하지 않는 범위에서 약관을 변경할 수 있으며, 변경 시 최소 7일 전에 공지합니다.</p>
         </Section>
 
-        <Section title="제4조 (서비스 이용 및 구독)">
-          <p>서비스는 무료 체험(14일)과 유료 구독 플랜(Pro, Center)으로 제공됩니다.</p>
-          <p>유료 구독은 토스페이먼츠를 통해 결제되며, 구독 기간은 월 단위입니다.</p>
-          <p>이용자는 다음 결제일 전에 언제든지 구독을 취소할 수 있으며, 취소 후에도 해당 기간 종료 시까지 서비스를 이용할 수 있습니다.</p>
-          <p>이미 결제된 구독료는 환불되지 않으나, 결제일로부터 7일 이내에 서비스를 이용하지 않은 경우 회사 정책에 따라 환불을 요청할 수 있습니다.</p>
+        <Section title="제4조 (서비스 이용 및 30일 이용권)">
+          <p>서비스는 무료 체험(14일)과 유료 30일 이용권(Pro, Center)으로 제공됩니다.</p>
+          <p>유료 이용권은 토스페이먼츠 단건 결제로 처리되며, 결제 확인일부터 30일 동안 이용할 수 있습니다.</p>
+          <p>Pro 및 Center 이용권은 결제한 이용자 계정에 적용됩니다. 추가 강사 계정이나 기관 단위 도입 범위는 별도 문의와 협의를 통해 안내합니다.</p>
+          <p>30일 이용권은 자동으로 갱신되지 않습니다. 이용 기간이 끝난 뒤 계속 이용하려면 이용권을 다시 결제해야 합니다.</p>
+          <p>결제 취소 및 환불은 관련 법령과 회사 정책에 따라 처리하며, 디지털 콘텐츠 이용 여부와 이용 내역에 따라 환불 가능 범위가 달라질 수 있습니다.</p>
           <p>학생 이력 및 보호자 공유 링크는 이용자가 직접 입력한 수업 기록을 바탕으로 제공되며, 의료·진단·평가 자료가 아닌 수업 운영 보조 자료입니다.</p>
         </Section>
 

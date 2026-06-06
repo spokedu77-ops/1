@@ -423,9 +423,7 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
   const heroImage = getHeroImage(program);
   const tags = uniqueLabels(getCardTags(program));
   const hasVideo = programHasPlayableVideo(program);
-  const totalLessons = kpis.find((item) => item.label === '전체 수업 자료')?.value;
-  const videoLessons = kpis.find((item) => item.label === '영상 포함 수업')?.value;
-  const spomoveCount = kpis.find((item) => item.label === 'SPOMOVE 세팅')?.value;
+  const hasContentSignals = kpis.length > 0;
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -447,11 +445,11 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
                 </span>
               ))}
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-[11px] font-bold text-slate-500 sm:mt-4 sm:text-xs">
-              {typeof totalLessons === 'number' ? <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">수업 자료 {totalLessons.toLocaleString()}개</span> : null}
-              {typeof videoLessons === 'number' ? <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">영상 중심 수업 {videoLessons.toLocaleString()}개</span> : null}
-              {typeof spomoveCount === 'number' ? <span className="rounded-full bg-slate-50 px-3 py-1.5 ring-1 ring-slate-200">SPOMOVE 세팅 {spomoveCount.toLocaleString()}개</span> : null}
-            </div>
+            {hasContentSignals ? (
+              <p className="mt-3 text-[11px] font-bold text-slate-400 sm:mt-4 sm:text-xs">
+                수업 자료, 영상, SPOMOVE 세팅을 한 곳에서 준비합니다.
+              </p>
+            ) : null}
           </div>
           <div className="mt-4 space-y-3 sm:mt-6">
             <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-row sm:gap-3">
@@ -459,12 +457,12 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
                 <BookOpen className="h-4 w-4" />
                 오늘 쓸 수업 고르기
               </Link>
-              <button type="button" onClick={onPreview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-5 text-[13px] font-bold text-slate-800 sm:text-sm">
+              <button type="button" onClick={onPreview} className="inline-flex min-h-9 items-center justify-center gap-1.5 px-2 text-[12px] font-bold text-slate-500 sm:min-h-12 sm:gap-2 sm:rounded-xl sm:border sm:border-slate-200 sm:bg-slate-50 sm:px-5 sm:text-sm sm:text-slate-800">
                 <Play className="h-4 w-4 fill-current" />
                 {hasVideo ? '대표 수업 미리보기' : '대표 수업 보기'}
               </button>
             </div>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-bold text-slate-500">
+            <div className="hidden flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-bold text-slate-500 sm:flex">
               <Link href="/spokedu-master/spomove" className="inline-flex items-center gap-1.5 text-indigo-700">
                 <MonitorPlay className="h-4 w-4" />
                 SPOMOVE 세팅 열기
@@ -835,11 +833,11 @@ function SubscriptionValueSection() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-[15px] font-black text-slate-950">수업안 · 참고 영상 · SPOMOVE 실행 · 수업 기록까지 한 번에</p>
-          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">MASTER 구독으로 전체 자료와 실행 세팅을 열람하세요.</p>
+          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">MASTER 30일 이용권으로 전체 자료와 실행 세팅을 열람하세요.</p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
           <Link href="/spokedu-master/profile?plans=1" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">
-            구독 플랜 보기
+            30일 이용권 보기
           </Link>
           <Link href="/spokedu-master/library" className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-4 text-[13px] font-bold text-slate-800">
             샘플 수업 보기
@@ -881,12 +879,10 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
   const briefingNotes = (detail?.briefingNotes ?? []).filter((item) => !isPlaceholderText(item));
   const checklistPreview = [...setupNotes, ...briefingNotes].slice(0, 4);
   const variationPreview = (detail?.variations ?? []).filter((item) => !isPlaceholderText(item)).slice(0, 2);
-  const equipmentSummary = equipment.length > 1 ? `${equipment[0]} 외 ${equipment.length - 1}` : equipment[0] ?? '';
   const previewFacts = [
     ['대상', formatGradeBadge(detail?.recommendedAge || getProgramGrade(program))],
     ['공간', formatSpaceBadge(getProgramSpace(program))],
     ['시간', displayMasterDuration(program.duration)],
-    ['준비물', equipmentSummary],
   ].filter(([, value]) => value && !isPlaceholderText(value));
   const parentCopy =
     detail?.parentNote ||
@@ -1159,7 +1155,7 @@ export default function DashboardView() {
       programsError === 'unauthorized'
         ? '로그인 후 수업 자료를 불러올 수 있습니다.'
         : programsError === 'forbidden'
-          ? '체험 기간이 종료되어 수업 자료를 불러올 수 없습니다. 구독 플랜을 확인해 주세요.'
+          ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제하면 수업 자료를 이용할 수 있습니다.'
           : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto bg-[#f5f7fb] px-4 py-16 sm:px-6 lg:px-8">
@@ -1167,7 +1163,7 @@ export default function DashboardView() {
           <h1 className="text-xl font-black text-slate-950">수업 자료를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{message}</p>
           <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
-            구독 플랜 확인
+            30일 이용권 다시 결제하기
           </Link>
         </section>
       </main>

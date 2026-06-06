@@ -6,7 +6,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 const TRIAL_DAYS = 14;
 const TRIAL_MS = TRIAL_DAYS * 24 * 60 * 60 * 1000;
 const EXPIRED_ACCESS_MESSAGE =
-  '체험 기간이 종료되어 수업 자료를 불러올 수 없습니다. 구독 플랜을 확인해 주세요.';
+  '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제해 주세요.';
 
 type MasterPlan = 'trial' | 'pro' | 'team' | 'admin';
 

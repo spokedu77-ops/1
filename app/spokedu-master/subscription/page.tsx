@@ -45,14 +45,14 @@ const PLAN_PRICES: Record<PlanKey, string> = {
 const PLAN_SUMMARY: Record<PlanKey, string> = {
   lite: '개인 선생님이 놀이체육 라이브러리와 SPOMOVE를 가볍게 시작하는 플랜',
   pro: '수업 준비, SPOMOVE 실행, 안내 문구까지 한 번에 쓰는 표준 플랜',
-  team: '여러 강사가 같은 수업 자료와 운영 기록을 공유하는 센터 플랜',
+  team: '여러 수업을 운영하는 센터·기관 운영자를 위한 30일 이용권',
   school: '학교, 기관, 대형 센터를 위한 맞춤형 체육 수업 패키지',
 };
 
 const TRUST_POINTS = [
-  '구독 및 결제 변경은 담당자가 확인한 뒤 안전하게 처리합니다.',
-  '이용 기간 만료 전까지 플랜 변경 또는 해지 문의를 남길 수 있습니다.',
-  '유료 콘텐츠 이용 내역이 있는 경우 환불 가능 여부는 사용 이력에 따라 안내됩니다.',
+  '이용권 및 결제 관련 요청은 담당자가 확인한 뒤 처리합니다.',
+  '30일 이용권은 자동 갱신되지 않으며, 계속 이용하려면 다시 결제해야 합니다.',
+  '환불 가능 여부는 관련 법령, 회사 정책, 이용 내역에 따라 안내됩니다.',
 ];
 
 const UNLOCK_ITEMS = [
@@ -63,8 +63,8 @@ const UNLOCK_ITEMS = [
 ] as const;
 
 function statusLabel(status?: string) {
-  if (status === 'active') return '활성 구독';
-  if (status === 'expired') return '만료';
+  if (status === 'active') return '이용권 활성';
+  if (status === 'expired') return '이용권 만료';
   if (status === 'cancelled') return '취소됨';
   return '체험/무료';
 }
@@ -94,32 +94,42 @@ export default function SubscriptionPage() {
     void fetch('/api/spokedu-master/subscription')
       .then((res) => res.json())
       .then((data) => setSub(data as SubData))
-      .catch(() => setError('구독 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'))
+      .catch(() => setError('이용권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'))
       .finally(() => setLoading(false));
   }, []);
 
   const isPaid = sub?.status === 'active';
+  const isExpired = sub?.status === 'expired';
   const planLabel = PLAN_LABELS[sub?.plan ?? 'free'] ?? '체험/무료';
   const currentPlanKey = (sub?.plan === 'team' || sub?.plan === 'school' || sub?.plan === 'lite' ? sub.plan : 'pro') as PlanKey;
   const periodEndDate = formatDate(sub?.periodEnd);
   const recommendedPlan: PlanKey = sub?.plan === 'pro' ? 'team' : 'pro';
+  const paymentPlan: PlanKey = isExpired && sub?.plan === 'team' ? 'team' : isExpired ? 'pro' : recommendedPlan;
   const changeRequestHref = changeRequestPlan ? planChangeMailto(sub?.plan, changeRequestPlan) : '';
 
   const heroCopy = useMemo(() => {
     if (isPaid) {
       return {
-        eyebrow: '구독이 정상 적용 중입니다',
+        eyebrow: '30일 이용권이 정상 적용 중입니다',
         title: `${planLabel} 플랜으로 수업 운영 흐름을 유지하고 있어요`,
         body: '놀이체육, SPOMOVE, 학부모 안내 기능이 하나의 수업 운영 루프로 이어집니다.',
       };
     }
 
+    if (isExpired) {
+      return {
+        eyebrow: '이용권 만료',
+        title: `${planLabel === '체험/무료' ? '30일' : planLabel} 이용권의 이용 기간이 종료되었습니다`,
+        body: '30일 이용권을 다시 결제하면 수업 자료, SPOMOVE, 수업 설명 도구를 다시 사용할 수 있습니다.',
+      };
+    }
+
     return {
-      eyebrow: '구독을 시작하면 바로 열립니다',
+      eyebrow: '30일 이용권을 결제하면 바로 열립니다',
       title: '수업 준비는 놀이체육에서, 몰입은 SPOMOVE에서 시작하세요',
-      body: '단순 자료 모음이 아니라 체육 수업을 고르고, 실행하고, 안내하는 구독형 수업 운영 환경을 제공합니다.',
+      body: '단순 자료 모음이 아니라 체육 수업을 고르고, 실행하고, 안내하는 30일 이용권 기반 수업 운영 환경을 제공합니다.',
     };
-  }, [isPaid, planLabel]);
+  }, [isExpired, isPaid, planLabel]);
 
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
@@ -137,7 +147,7 @@ export default function SubscriptionPage() {
             SPOKEDU MASTER
           </p>
           <h1 className="text-[21px] font-black leading-tight sm:text-[26px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
-            구독 관리
+            이용권 확인
           </h1>
         </div>
       </header>
@@ -191,12 +201,12 @@ export default function SubscriptionPage() {
                   })}
                 </div>
                 <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  <Link href={isPaid ? '#' : `/spokedu-master/payment?plan=${recommendedPlan}`} onClick={(event) => {
+                  <Link href={isPaid ? '#' : `/spokedu-master/payment?plan=${paymentPlan}`} onClick={(event) => {
                     if (!isPaid) return;
                     event.preventDefault();
                     setChangeRequestPlan(recommendedPlan);
                   }} className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 10px 28px rgba(99,102,241,0.28)' }}>
-                    {isPaid ? '플랜 변경 문의' : 'Pro로 수업 열기'}
+                    {isPaid ? '플랜 변경 문의' : isExpired ? '30일 이용권 다시 결제하기' : 'Pro로 수업 열기'}
                     <ChevronRight size={16} />
                   </Link>
                   <Link href="/spokedu-master/dashboard" className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-[13px] text-[14px] font-black" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.14)', color: 'var(--spm-t)' }}>
@@ -214,7 +224,7 @@ export default function SubscriptionPage() {
                   <div className="rounded-[14px] px-4 py-3 text-right" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                     <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>30일 이용료</p>
                     <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>
-                      {isPaid ? PLAN_PRICES[currentPlanKey] : '미구독'}
+                      {isPaid || isExpired ? PLAN_PRICES[currentPlanKey] : '이용권 없음'}
                     </p>
                   </div>
                 </div>
@@ -239,7 +249,7 @@ export default function SubscriptionPage() {
                 <div className="rounded-[16px] p-4" style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.24)' }}>
                   <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>플랜 변경 문의가 필요합니다</p>
                   <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                    활성 구독의 플랜 변경은 중복 결제를 방지하기 위해 담당자 확인 후 처리됩니다. 현재 플랜: {PLAN_LABELS[sub?.plan ?? 'free'] ?? 'Trial'} / 변경 희망 플랜: {PLAN_LABELS[changeRequestPlan]}
+                    활성 이용권의 플랜 변경은 중복 결제를 방지하기 위해 담당자 확인 후 처리됩니다. 현재 플랜: {PLAN_LABELS[sub?.plan ?? 'free'] ?? 'Trial'} / 변경 희망 플랜: {PLAN_LABELS[changeRequestPlan]}
                   </p>
                   <a href={changeRequestHref} className="mt-3 inline-flex h-10 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-acc)', color: '#fff' }}>
                     변경 문의 메일 보내기
@@ -266,7 +276,7 @@ export default function SubscriptionPage() {
                       <p className="mt-3 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{PLAN_SUMMARY[plan]}</p>
                       <div className="mt-4 grid grid-cols-3 gap-2">
                         {[
-                          plan === 'team' ? '강사 3명' : '개인 계정',
+                          plan === 'team' ? '기관·센터용' : '개인 계정',
                           'SPOMOVE',
                           '안내 문구',
                         ].map((item) => (
@@ -296,7 +306,7 @@ export default function SubscriptionPage() {
 
             <aside className="space-y-4">
               <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-                <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>구독 관리 요청</p>
+                <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>이용권 관련 문의</p>
                 <div className="mt-4 space-y-2">
                   <a
                     href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20결제수단%20변경%20문의"
@@ -307,16 +317,16 @@ export default function SubscriptionPage() {
                     결제 수단 변경
                   </a>
                   <a
-                    href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20구독%20취소%20문의"
+                    href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20이용권%20및%20환불%20문의"
                     className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black"
                     style={{ background: 'transparent', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
                   >
                     <Mail size={15} />
-                    구독 취소 문의
+                    이용권·환불 문의
                   </a>
                 </div>
                 <p className="mt-3 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                  결제 변경과 구독 취소는 메일로 요청을 남기면 확인 후 안내합니다.
+                  결제와 이용권 관련 문의는 메일로 요청을 남기면 확인 후 안내합니다.
                 </p>
               </section>
 
@@ -336,7 +346,7 @@ export default function SubscriptionPage() {
               <section className="rounded-[20px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>센터·기관 도입 상담</p>
                 <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-                  여러 강사 계정, 학교 라이선스, 기관 견적은 별도 상담으로 안내합니다.
+                  추가 강사 계정, 학교 라이선스, 기관 견적은 별도 상담으로 안내합니다.
                 </p>
                 <a
                   href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20기관%20도입%20상담"

@@ -70,14 +70,39 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
   return { text: '', depth: 0 };
 }
 
-/** 호버한 줄만 핸들 표시 (중첩 토글에서 부모 핸들 동시 노출 방지) */
-export const BLOCK_HANDLE_HOVER =
-  'opacity-0 pointer-events-none transition-opacity group-hover/block:opacity-100 group-hover/block:pointer-events-auto group-has-[.group\\/block:hover]/block:opacity-0 group-has-[.group\\/block:hover]/block:pointer-events-none';
+export const NOTE_PAGE_SHELL = 'mx-auto w-full max-w-[720px] px-14 md:px-16';
+export const NOTE_BLOCK_HANDLE_LEFT = '-left-[54px]';
+/** 페이지 왼쪽 거터 — 모든 블록 핸들이 여기 정렬 */
+export const NOTE_GUTTER_PX = 54;
+/** 토글 자식 한 단계 들여쓰기 (pl-[1.625rem]) */
+export const TOGGLE_INDENT_PX = 26;
 
-export function toggleInlineHandleLeft(): string {
-  return '-4.25rem';
+export function blockHandleLeftPx(nestDepth: number): number {
+  if (nestDepth <= 1) return -NOTE_GUTTER_PX;
+  return -NOTE_GUTTER_PX - (nestDepth - 1) * TOGGLE_INDENT_PX;
 }
 
 export function toggleMenuAnchorOffset(nestDepth: number): number {
   return Math.max(0, nestDepth - 1) * 18;
+}
+
+/** 노션처럼 거터는 블록 전체 중앙이 아니라 첫 줄 기준 정렬 */
+export function blockGutterTopPx(type: NoteBlock['type']): number | 'center' {
+  switch (type) {
+    case 'heading':
+      return 2;
+    case 'todo':
+    case 'text':
+    case 'page':
+    case 'toggle':
+      return 3;
+    case 'divider':
+    case 'image':
+    case 'video':
+    case 'callout':
+    case 'code':
+      return 'center';
+    default:
+      return 3;
+  }
 }

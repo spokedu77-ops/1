@@ -45,11 +45,11 @@ const PRICING = [
   {
     id: 'team',
     title: 'Center',
-    badge: '강사 3명 포함',
+    badge: '기관·센터용',
     price: '79,000',
     period: '30일',
-    desc: '센터와 도장이 강사 수업 품질을 맞추는 플랜',
-    includes: ['Pro 기능 전체', '강사 3명 계정 포함', '센터용 수업 도구', '추가 강사 확장 가능'],
+    desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
+    includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 설명 문구', '추가 계정·기관 도입 별도 문의'],
     accent: 'rgba(16,185,129,0.12)',
     border: 'rgba(16,185,129,0.38)',
     badgeColor: 'var(--spm-grn)',
@@ -79,22 +79,22 @@ const HERO_PROOF = [
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 export const metadata = {
-  title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
-  description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 OTT 구독 서비스. 14일 무료 체험으로 시작하세요.',
+  title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+  description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
     siteName: 'SPOKEDU MASTER',
-    title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
-    description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 OTT 구독 서비스. 14일 무료 체험으로 시작하세요.',
+    title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+    description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
     locale: 'ko_KR',
     images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
-    title: 'SPOKEDU MASTER — 체육교육 OTT 구독 서비스',
-    description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 OTT 구독 서비스. 14일 무료 체험으로 시작하세요.',
+    title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
+    description: '수업안, 영상, SPOMOVE 큰 화면 활동, 설명 문구를 하나로 연결한 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
@@ -136,10 +136,10 @@ export default function LandingPage() {
               SPOKEDU<br />MASTER
             </h1>
             <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
-              수업안, 영상, SPOMOVE 큰 화면 활동, 학부모 설명 문구까지 한 번에 구독합니다.
+              수업안, 영상, SPOMOVE 큰 화면 활동, 학부모 설명 문구까지 한 번에 이용합니다.
             </p>
             <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
-              오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육교육 구독 서비스입니다.
+              오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link href="/login?mode=trial&next=/spokedu-master/onboarding" className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black text-white sm:w-auto sm:min-w-[200px]" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
@@ -147,7 +147,7 @@ export default function LandingPage() {
               무료 체험으로 수업 열기
             </Link>
             <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-black sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              구독 가치 보기 <ChevronRight size={16} />
+              서비스 구성 보기 <ChevronRight size={16} />
             </Link>
             </div>
             <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>신용카드 없이 시작 · 14일 후 자동 만료 · 결제 후 30일 이용</p>

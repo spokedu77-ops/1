@@ -8,7 +8,7 @@ import { DesktopRail, TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
 import { TrialCountdownBanner } from '../ui/TrialGateWall';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
-import { isTrialExpired } from '../../lib/subscription';
+import { isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -70,6 +70,7 @@ function OperationsBanner() {
   const profile = useProfile();
   const operational = useOperationalStatus();
   const expired = isTrialExpired(profile);
+  const paidExpired = isPaidAccessExpired(profile);
   if (operational.online && !expired) return null;
 
   if (expired) {
@@ -80,10 +81,10 @@ function OperationsBanner() {
         role="status"
       >
         <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
-          체험 기간이 종료되었습니다.
+          {paidExpired ? '이용권이 만료되었습니다.' : '체험 기간이 종료되었습니다.'}
         </p>
-        <Link href="/spokedu-master/profile?plans=1" className="flex min-h-9 shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
-          Pro 전환
+        <Link href={paidExpired ? `/spokedu-master/payment?plan=${profile?.previousPaidPlan === 'team' ? 'team' : 'pro'}` : '/spokedu-master/profile?plans=1'} className="flex min-h-9 shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
+          {paidExpired ? '다시 결제하기' : 'Pro 전환'}
         </Link>
       </div>
     );
@@ -119,14 +120,19 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
-  const hideChrome = isOnboarding || isParentView || isPayment || isLanding;
+  const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
+  const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument;
 
   useEffect(() => {
     setShellMounted(true);
+    if (isLanding || isPublicDocument) {
+      setSubscriptionSynced(true);
+      return;
+    }
     void loadPrograms();
     void loadDrills();
     void syncSubscription().finally(() => setSubscriptionSynced(true));
-  }, [loadPrograms, loadDrills, syncSubscription]);
+  }, [isLanding, isPublicDocument, loadPrograms, loadDrills, syncSubscription]);
 
   useEffect(() => {
     setStoreHydrated(useMasterStore.persist.hasHydrated());
@@ -136,6 +142,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
+      if (isLanding || isPublicDocument) return;
       if (document.visibilityState !== 'visible') return;
       void reloadPrograms();
     };
@@ -145,7 +152,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [reloadPrograms]);
+  }, [isLanding, isPublicDocument, reloadPrograms]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -177,12 +184,12 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, []);
 
   useEffect(() => {
-    if (isAdmin || isLanding) return;
+    if (isAdmin || isLanding || isPublicDocument) return;
     if (!storeHydrated || !subscriptionSynced) return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
-  }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isSession, profile, router, storeHydrated, subscriptionSynced]);
+  }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isPublicDocument, isSession, profile, router, storeHydrated, subscriptionSynced]);
 
   if (isSession) {
     return (

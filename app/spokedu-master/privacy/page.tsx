@@ -19,7 +19,7 @@ export default function PrivacyPage() {
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
       <header className="flex items-center gap-3 px-[22px] pb-6 pt-[22px] sm:px-8">
-        <Link href="/spokedu-master/profile" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="뒤로">
+        <Link href="/spokedu-master/landing" className="grid h-10 w-10 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="서비스 소개로 돌아가기">
           <ArrowLeft size={18} color="var(--spm-t2)" />
         </Link>
         <div>
@@ -33,7 +33,7 @@ export default function PrivacyPage() {
 
         <Section title="1. 수집하는 개인정보 항목">
           <p>회사는 서비스 제공을 위해 다음의 개인정보를 수집합니다.</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>필수 항목</strong>: 이메일 주소 (서비스 인증 및 구독 관리용)</p>
+          <p>· <strong style={{ color: 'var(--spm-t)' }}>필수 항목</strong>: 이메일 주소 (서비스 인증 및 이용권 관리용)</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 정보</strong>: 결제 처리는 토스페이먼츠에서 담당하며, 회사는 카드 번호 등 결제 상세 정보를 직접 수집·저장하지 않습니다.</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>서비스 이용 정보</strong>: 이용자가 직접 입력한 이름, 소속, 담당 연령대, 프로그램 유형 (선택 사항)</p>
           <p>· <strong style={{ color: 'var(--spm-t)' }}>수업 운영 정보</strong>: 이용자가 직접 입력한 학생 이름, 반/그룹, 수업 출석, 관찰 메모, 동작 체크 기록 (선택 사항)</p>
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
 
         <Section title="2. 개인정보 수집 및 이용 목적">
           <p>· 서비스 회원 인증 및 관리</p>
-          <p>· 구독 결제 처리 및 구독 상태 관리</p>
+          <p>· 30일 이용권 결제 처리 및 이용권 상태 관리</p>
           <p>· 수업 기록, 학생 이력, 보호자 공유 링크 제공</p>
           <p>· 서비스 이용 통계 분석 및 개선</p>
           <p>· 이용약관 위반 사항 확인 및 분쟁 해결</p>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { BookOpen, FileText, Lock, MonitorPlay, Sparkles, Timer, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { getTrialDaysLeft, isTrialExpired } from '../../lib/subscription';
+import { getTrialDaysLeft, isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
 import { useProfile } from '../../store';
 
 const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> = {
@@ -37,6 +37,7 @@ type TrialGateWallProps = {
 export function TrialGateWall({ children, feature }: TrialGateWallProps) {
   const profile = useProfile();
   const expired = isTrialExpired(profile);
+  const paidExpired = isPaidAccessExpired(profile);
 
   if (!expired) return <>{children}</>;
 
@@ -50,9 +51,9 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px]" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}>
             <Lock size={24} color="var(--spm-red)" />
           </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-red)' }}>체험 기간 종료</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-red)' }}>{paidExpired ? '이용권 만료' : '체험 기간 종료'}</p>
           <h2 className="mt-2 text-[28px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0, wordBreak: 'keep-all' }}>
-            계속 쓰려면 플랜을 선택해 주세요.
+            30일 이용권을 다시 결제해 계속 사용하세요.
           </h2>
           <p className="mt-3 text-[14px] font-medium leading-6" style={{ color: '#64748b' }}>
             수업안, SPOMOVE 큰 화면, 설명 문구, 수업 진행 콘솔을 하나의 수업 루프로 계속 사용할 수 있습니다.
@@ -69,10 +70,10 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
           </ul>
           <div className="mt-7 space-y-2">
             <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 8px 24px rgba(99,102,241,0.32)' }}>
-              Pro로 수업 루프 계속 쓰기 · 월 39,900원
+              Pro 30일 이용권 · 39,900원
             </Link>
             <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: '#ffffff', border: '1px solid rgba(16,185,129,0.35)', color: 'var(--spm-grn)' }}>
-              Center 플랜 · 강사 3명 포함 월 79,000원
+              Center 30일 이용권 · 79,000원
             </Link>
             <Link href="/spokedu-master/subscription" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold" style={{ color: '#64748b' }}>
               플랜 비교 보기

@@ -93,6 +93,9 @@ const defaultProfile: UserProfile = {
   onboardingDone: false,
   trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
   createdAt: new Date().toISOString(),
+  subscriptionStatus: 'none',
+  previousPaidPlan: null,
+  periodEnd: null,
 };
 
 const defaultOperational: OperationalStatus = {
@@ -232,7 +235,15 @@ export const useMasterStore = create<MasterState>()(
         try {
           const res = await fetch('/api/spokedu-master/subscription');
           if (!res.ok) return;
-          const json = await res.json() as { plan?: string; status?: string; isAdmin?: boolean; userId?: string; email?: string | null; trialEndsAt?: string | null };
+          const json = await res.json() as {
+            plan?: string;
+            status?: string;
+            periodEnd?: string | null;
+            isAdmin?: boolean;
+            userId?: string;
+            email?: string | null;
+            trialEndsAt?: string | null;
+          };
           const serverPlan: 'free' | 'pro' | 'team' =
             json.isAdmin ? 'team' :
             json.status === 'active' && json.plan === 'team' ? 'team' :
@@ -247,6 +258,17 @@ export const useMasterStore = create<MasterState>()(
                   role: serverPlan === 'team' ? 'director' : 'teacher',
                   onboardingDone: hasActivePaidAccess || hasExpiredPaidAccess ? true : state.profile.onboardingDone,
                   isAdmin: json.isAdmin ?? false,
+                  subscriptionStatus:
+                    json.status === 'active' || json.status === 'expired' || json.status === 'cancelled'
+                      ? json.status
+                      : 'none',
+                  previousPaidPlan:
+                    hasExpiredPaidAccess && (json.plan === 'pro' || json.plan === 'team')
+                      ? json.plan
+                      : hasActivePaidAccess
+                        ? null
+                        : state.profile.previousPaidPlan ?? null,
+                  periodEnd: json.periodEnd ?? null,
                   ...(json.userId ? { id: json.userId } : {}),
                   ...(json.email ? { email: json.email } : {}),
                   trialEndsAt: json.isAdmin || hasExpiredPaidAccess ? null : (json.trialEndsAt ?? state.profile.trialEndsAt),

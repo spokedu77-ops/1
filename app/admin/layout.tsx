@@ -42,6 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkSlow, setCheckSlow] = useState(false);
+  const isNoteRoute = pathname != null && pathname.startsWith('/admin/note');
   const isFullscreenRoute =
     pathname != null && (pathname.startsWith('/admin/spokedu-pro') || pathname.startsWith('/admin/spokedu-master'));
   // 실제 존재하는 플레이어 라우트만 유지해 유령 prefix 재유입을 막습니다.
@@ -126,7 +127,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-[#0F172A] text-gray-900 relative'
           : isGameRoute
             ? 'flex-1 flex flex-col min-h-0 overflow-hidden text-gray-900'
-            : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
+            : isNoteRoute
+              ? 'flex-1 flex flex-col min-h-0 min-w-0 overflow-hidden bg-white text-gray-900'
+              : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
       }
     >
       {isFullscreenRoute && (

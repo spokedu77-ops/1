@@ -26,6 +26,10 @@ export function isTrialExpired(profile: UserProfile | null): boolean {
   return (profile?.plan ?? 'free') === 'free' && !isActiveTrial(profile);
 }
 
+export function isPaidAccessExpired(profile: UserProfile | null): boolean {
+  return profile?.subscriptionStatus === 'expired';
+}
+
 export function isPaidMasterPlan(profile: UserProfile | null): boolean {
   return profile?.plan === 'pro' || profile?.plan === 'team' || Boolean(profile?.isAdmin);
 }
@@ -41,11 +45,18 @@ export function getUpgradeHref(profile: UserProfile | null): string {
 }
 
 export function getUpgradeLabel(profile: UserProfile | null): string {
-  return isPaidMasterPlan(profile) ? '구독 관리' : '구독 플랜 보기';
+  return isPaidMasterPlan(profile) ? '이용권 확인' : '30일 이용권 보기';
 }
 
 export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
   if (profile?.isAdmin) return { allowed: true, label: '관리자' };
+  if (isPaidAccessExpired(profile)) {
+    return {
+      allowed: false,
+      label: '이용권 만료',
+      reason: '이용 기간이 종료되어 새 수업 기록 생성이 제한됩니다. 30일 이용권을 다시 결제해 주세요.',
+    };
+  }
   if (isTrialExpired(profile)) {
     return {
       allowed: false,

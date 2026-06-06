@@ -17,6 +17,9 @@ export interface UserProfile {
   trialEndsAt: string | null;
   createdAt: string;
   isAdmin?: boolean;
+  subscriptionStatus?: 'none' | 'active' | 'expired' | 'cancelled';
+  previousPaidPlan?: 'pro' | 'team' | null;
+  periodEnd?: string | null;
 }
 
 export interface Cue {

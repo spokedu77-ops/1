@@ -118,22 +118,22 @@ export type BlockDropPlan<T extends BlockWithMeta = BlockWithMeta> = {
   placedInToggle: boolean;
 };
 
-/** 드래그한 블록을 다른 부모(토글 안·루트·하위 토글)로 옮길 위치를 계산한다. */
-export function planBlockDrop<T extends BlockWithMeta>(
+export type BlockDropPosition = 'before' | 'after' | 'inside';
+
+/** 드래그한 블록을 before/after/inside(토글) 위치로 옮길 계획을 계산한다. */
+export function planBlockDropAt<T extends BlockWithMeta>(
   blocks: T[],
   movingId: string,
-  overId: string,
+  targetBlockId: string,
+  position: BlockDropPosition,
 ): BlockDropPlan<T> | null {
   const byId = new Map(blocks.map((block) => [block.id, block]));
   const moving = byId.get(movingId);
-  const over = byId.get(overId);
-  if (!moving || !over || moving.id === over.id) return null;
+  const target = byId.get(targetBlockId);
+  if (!moving || !target || moving.id === target.id) return null;
 
   const descendantIds = collectDescendantBlockIds(moving.id, blocks);
-  if (descendantIds.has(over.id)) return null;
-
-  const movingParentId = moving.parent_block_id ?? null;
-  const overParentId = over.parent_block_id ?? null;
+  if (descendantIds.has(target.id)) return null;
 
   const withoutMoving = (parentId: string | null) =>
     getBlocksInParent(blocks, parentId).filter((block) => block.id !== moving.id);
@@ -147,32 +147,38 @@ export function planBlockDrop<T extends BlockWithMeta>(
     };
   };
 
-  // 토글 위에 드롭 → 토글 안(맨 아래)으로 이동
-  if (over.type === 'toggle') {
-    const children = withoutMoving(over.id);
-    return finish(over.id, [...children, moving]);
+  if (position === 'inside') {
+    if (target.type !== 'toggle') return null;
+    const children = withoutMoving(target.id);
+    return finish(target.id, [...children, moving]);
   }
 
-  // 같은 부모 → 순서만 변경
-  if (movingParentId === overParentId) {
-    const siblings = getBlocksInParent(blocks, movingParentId);
-    const oldIndex = siblings.findIndex((block) => block.id === moving.id);
-    const newIndex = siblings.findIndex((block) => block.id === over.id);
-    if (oldIndex < 0 || newIndex < 0) return null;
-    const reordered = arrayMove(siblings, oldIndex, newIndex);
-    return finish(movingParentId, reordered);
-  }
-
-  // 다른 부모 → over 블록 앞에 삽입
-  const targetSiblings = withoutMoving(overParentId);
-  const insertAt = targetSiblings.findIndex((block) => block.id === over.id);
-  const at = insertAt >= 0 ? insertAt : targetSiblings.length;
+  const parentId = target.parent_block_id ?? null;
+  const siblings = withoutMoving(parentId);
+  let insertAt = siblings.findIndex((block) => block.id === target.id);
+  if (insertAt < 0) return null;
+  if (position === 'after') insertAt += 1;
   const nextSiblings = [
-    ...targetSiblings.slice(0, at),
+    ...siblings.slice(0, insertAt),
     moving,
-    ...targetSiblings.slice(at),
+    ...siblings.slice(insertAt),
   ];
-  return finish(overParentId, nextSiblings);
+  return finish(parentId, nextSiblings);
+}
+
+/** 드래그한 블록을 다른 부모(토글 안·루트·하위 토글)로 옮길 위치를 계산한다. */
+export function planBlockDrop<T extends BlockWithMeta>(
+  blocks: T[],
+  movingId: string,
+  overId: string,
+): BlockDropPlan<T> | null {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const over = byId.get(overId);
+  if (!over) return null;
+  if (over.type === 'toggle') {
+    return planBlockDropAt(blocks, movingId, overId, 'inside');
+  }
+  return planBlockDropAt(blocks, movingId, overId, 'before');
 }
 
 function arrayMove<T>(list: T[], from: number, to: number): T[] {

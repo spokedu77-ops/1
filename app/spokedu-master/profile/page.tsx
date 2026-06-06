@@ -55,7 +55,7 @@ const PLANS: PlanInfo[] = [
   {
     id: 'lite',
     title: 'Lite',
-    price: '19,900원/월',
+    price: '19,900원 / 30일',
     badge: '준비 중',
     description: '가벼운 개인 사용자를 위한 입문 플랜입니다. 현재는 Pro 전환을 우선 안내합니다.',
     includes: ['라이브러리 기본 이용', 'SPOMOVE 제한 실행', '최근 사용·즐겨찾기'],
@@ -65,7 +65,7 @@ const PLANS: PlanInfo[] = [
   {
     id: 'pro',
     title: 'Pro',
-    price: '39,900원/월',
+    price: '39,900원 / 30일',
     badge: '추천',
     description: '수업 준비, SPOMOVE 실행, 설명 문구까지 개인 강사가 매주 쓰는 표준 플랜입니다.',
     includes: ['전체 프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 설명 문구', '추천 수업·최근 사용'],
@@ -76,11 +76,11 @@ const PLANS: PlanInfo[] = [
   {
     id: 'team',
     title: 'Center',
-    price: '79,000원/월',
-    badge: '강사 3명 포함',
-    description: '센터·도장·체육관에서 여러 강사가 같은 수업 품질과 설명 자료를 공유하는 플랜입니다.',
-    includes: ['Pro 기능 전체', '강사 3명 포함', '센터용 수업 설명 자료', '추가 강사 확장'],
-    target: '센터·도장·체육관',
+    price: '79,000원 / 30일',
+    badge: '기관·센터용',
+    description: '여러 수업을 운영하는 센터·기관 운영자가 수업 자료와 설명 문구를 활용하는 플랜입니다.',
+    includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 설명 문구', '추가 계정·기관 도입 문의'],
+    target: '센터·도장·체육관·기관 운영자',
     action: 'Center 시작',
   },
   {
@@ -156,9 +156,10 @@ function planName(plan: PlanType | undefined) {
   return 'Trial';
 }
 
-function planStatusText(plan: PlanType | undefined, daysLeft: number, isAdmin?: boolean) {
+function planStatusText(plan: PlanType | undefined, daysLeft: number, isAdmin?: boolean, subscriptionStatus?: string) {
   if (isAdmin) return '관리자 패스';
-  if (plan === 'pro' || plan === 'team') return '활성 구독';
+  if (plan === 'pro' || plan === 'team') return '이용권 활성';
+  if (subscriptionStatus === 'expired') return '이용권 만료';
   if (daysLeft > 0) return `체험 ${daysLeft}일 남음`;
   return '체험 종료';
 }
@@ -334,8 +335,12 @@ function SpokeduMasterProfileContent() {
 
   const currentPlan = profile?.plan ?? 'free';
   const daysLeft = getTrialDaysLeft(profile);
-  const currentPlanName = planName(currentPlan);
-  const statusText = planStatusText(currentPlan, daysLeft, profile?.isAdmin);
+  const isPaidExpired = profile?.subscriptionStatus === 'expired';
+  const expiredPlan = profile?.previousPaidPlan;
+  const currentPlanName = isPaidExpired
+    ? `${expiredPlan === 'team' ? 'Center' : expiredPlan === 'pro' ? 'Pro' : '30일'} 이용권`
+    : planName(currentPlan);
+  const statusText = planStatusText(currentPlan, daysLeft, profile?.isAdmin, profile?.subscriptionStatus);
   const initial = (profile?.name ?? '선생님').slice(0, 1);
 
   const shouldOpenPlans = searchParams.get('plans') === '1' || searchParams.get('plan') === '1';
@@ -403,18 +408,22 @@ function SpokeduMasterProfileContent() {
             <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
               <h2 className="text-[34px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{currentPlanName}</h2>
               <Link href="/spokedu-master/subscription" className="rounded-[12px] px-4 py-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-                구독 관리
+                이용권 확인
               </Link>
             </div>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
-              <Link href="/spokedu-master/dashboard" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                홈으로 돌아가 수업 실행
+              <Link href={isPaidExpired ? `/spokedu-master/payment?plan=${expiredPlan === 'team' ? 'team' : 'pro'}` : '/spokedu-master/dashboard'} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                {isPaidExpired ? '30일 이용권 다시 결제하기' : '홈으로 돌아가 수업 실행'}
               </Link>
               <button type="button" onClick={() => setPlanOpen(true)} className="h-12 rounded-[12px] px-5 text-[14px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
                 플랜 보기
               </button>
             </div>
-            {currentPlan === 'free' ? (
+            {isPaidExpired ? (
+              <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-red)' }}>
+                이용 기간이 종료되었습니다. 30일 이용권을 다시 결제하면 수업 자료를 이용할 수 있습니다.
+              </p>
+            ) : currentPlan === 'free' ? (
               <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
                 체험 기간 동안 홈, 라이브러리, 큰 화면 실행 흐름을 먼저 확인합니다.
               </p>
@@ -448,7 +457,7 @@ function SpokeduMasterProfileContent() {
         <aside className="space-y-3">
           <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove" />
           <MenuRow icon={CalendarDays} label="수업 계획" caption="주간 수업 흐름 정리" href="/spokedu-master/plan" />
-          <MenuRow icon={CreditCard} label="구독 관리" caption="플랜 변경 · 결제 수단 · 구독 취소" href="/spokedu-master/subscription" />
+          <MenuRow icon={CreditCard} label="이용권 확인" caption="플랜 확인 · 이용 만료일 · 결제 문의" href="/spokedu-master/subscription" />
           <MenuRow icon={HelpCircle} label="도입 상담" caption="센터·학교 도입 문의" href="mailto:support@spokedu.com" />
           <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:support@spokedu.com" />
 
