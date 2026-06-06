@@ -284,14 +284,21 @@ export class FlowEngine {
 
     this.obstacles = new ObstacleManager(this.scene, BRIDGE_LENGTH, {
       onBoxHit:           () => {},
-      onBoxWarn:          () => { /* 사전 경고 없음 — 펀치 문구는 autoHit 순간에 표시 */ },
-      onUfoWarn:          () => { /* 사전 경고 없음 — 숙여 문구는 duckStart 순간에 표시 */ },
+      onBoxWarn:          (isReach: boolean) => {
+        if (!this.isBonus && !isReach && this.activeModules.has('punch')) {
+          this.showInstruction('펀치!', '#ff4400', 550, 2);
+        }
+      },
+      onUfoWarn:          () => {
+        if (!this.isBonus && this.activeModules.has('duck')) {
+          this.showInstruction('숙여!', '#ffdd00', 550, 2);
+        }
+      },
       onUfoDuckStart:     () => {
         if (!this.activeModules.has('duck')) return;
         this.duckDipOffset = -120;
         this.duckPitchX    = 0.70;
         this.duckHold      = true;
-        if (!this.isBonus) this.showInstruction('숙여!', '#ffdd00', 5000, 2);
       },
       onRockApproach:     () => { this.triggerMiniJump(); },
       onUfoPassed:        () => {
@@ -310,9 +317,6 @@ export class FlowEngine {
       onBoxAutoHit:       (isReach: boolean) => {
         this.microJolt += 0.65;
         this.audio.sfxPunch();
-        if (!this.isBonus && this.activeModules.has('punch') && !isReach) {
-          this.showInstruction('펀치!', '#ff4400', 5000, 2);
-        }
         if (isReach && this.activeModules.has('reach')) {
           this.hitShakeRemaining = 220;
           this.hitShakeIntensity = 1.2;
@@ -916,7 +920,7 @@ export class FlowEngine {
         this.hitShakeRemaining = 130;
         this.hitShakeIntensity = 0.75 + this.wallBreakHits * 0.1;
         this.hitShakeDuration  = 130;
-        if (!this.isBonus) this.showInstruction('두드려!', '#ffaa00', 5000, 2);
+        if (!this.isBonus) this.showInstruction('두드려!', '#ffaa00', 280, 2);
         if (done) {
           this.wallBreakActive = false;
           this.wallBreakHits   = 0;
@@ -925,7 +929,7 @@ export class FlowEngine {
           this.hitShakeRemaining = 300;
           this.hitShakeIntensity = 1.5;
           this.hitShakeDuration  = 300;
-          if (!this.isBonus) this.showInstruction('부숴!', '#ff6600', 5000, 3);
+          if (!this.isBonus) this.showInstruction('부숴!', '#ff6600', 900, 3);
         } else {
           this.wallBreakTimer = WALL_BREAK_INTERVAL;
         }
@@ -971,7 +975,7 @@ export class FlowEngine {
     this.microJolt    += MICROJOLT_AMOUNT;
     this.audio.sfxJump();
     if (this.jumpInstrCooldown <= 0 && !this.isBonus) {
-      this.showInstruction('점프!', '#ffffff', 5000, 1);
+      this.showInstruction('점프!', '#ffffff', 700, 1);
       this.jumpInstrCooldown = 3.0;
     }
   }

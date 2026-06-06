@@ -55,19 +55,19 @@ export default function FlowGameClient({
   onExit,
   onEngineReady,
 }: FlowGameClientProps) {
-  const canvasRef      = useRef<HTMLCanvasElement>(null);
-  const flashRef       = useRef<HTMLDivElement>(null);
-  const engineRef      = useRef<FlowEngine | null>(null);
-  const instrTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);  // 미사용, 호환 유지
-  const instrPrioRef   = useRef(0);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const flashRef     = useRef<HTMLDivElement>(null);
+  const engineRef    = useRef<FlowEngine | null>(null);
+  const cueTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [phase,          setPhase]         = useState<FlowGamePhase>('idle');
-  const [countdown,      setCountdown]     = useState<number | null>(null);
-  const [stageIdx,       setStageIdx]      = useState(0);
-  const [timerSec,       setTimerSec]      = useState(stages[0]?.durationSec ?? 25);
-  // instruction 상태 제거 — 중앙 문구 표시 없음
-  const [stats,          setStats]         = useState<FlowStats | null>(null);
-  const [totalProgress,  setTotalProgress] = useState(0);
+  const [phase,         setPhase]        = useState<FlowGamePhase>('idle');
+  const [countdown,     setCountdown]    = useState<number | null>(null);
+  const [stageIdx,      setStageIdx]     = useState(0);
+  const [timerSec,      setTimerSec]     = useState(stages[0]?.durationSec ?? 25);
+  const [cueText,       setCueText]      = useState<string | null>(null);
+  const [cueColor,      setCueColor]     = useState('#ffffff');
+  const [stats,         setStats]        = useState<FlowStats | null>(null);
+  const [totalProgress, setTotalProgress] = useState(0);
 
   // ── 엔진 초기화 ────────────────────────────────────────────────────────────
 
@@ -88,7 +88,12 @@ export default function FlowGameClient({
           setTimerSec(rem);
           setTotalProgress(prog);
         },
-        onInstruction:  () => { /* 문구 표시 제거 */ },
+        onInstruction:  (text, color, ms) => {
+          if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
+          setCueText(text);
+          setCueColor(color);
+          cueTimerRef.current = setTimeout(() => setCueText(null), ms);
+        },
         onComplete:     (s) => { setStats(s); onComplete(s); },
         onCameraShake:  () => {},
         onFlash:        () => {},
@@ -104,6 +109,7 @@ export default function FlowGameClient({
 
     return () => {
       engine.dispose();
+      if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -173,7 +179,22 @@ export default function FlowGameClient({
             <div style={{ height: '100%', width: `${totalProgress * 100}%`, background: currentStage.color, transition: 'width 0.12s linear' }} />
           </div>
 
-          {/* 지시어 플래시 제거 */}
+          {/* 큐 텍스트 */}
+          {cueText && (
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <span key={cueText + Date.now()} style={{
+                fontSize: 'clamp(3.5rem, 15vw, 7.5rem)',
+                fontWeight: 900,
+                color: cueColor,
+                fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+                letterSpacing: '0.04em',
+                textShadow: `0 0 50px ${cueColor}cc, 4px 4px 0 #000`,
+                animation: 'cuePop 0.12s ease-out',
+              }}>
+                {cueText}
+              </span>
+            </div>
+          )}
         </>
       )}
 
@@ -313,6 +334,10 @@ export default function FlowGameClient({
       )}
 
       <style>{`
+        @keyframes cuePop {
+          from { transform: scale(0.6); opacity: 0; }
+          to   { transform: scale(1);   opacity: 1; }
+        }
         @keyframes flowInstPop {
           0%   { transform: translate(-50%, -50%) scale(0.55); opacity: 0; }
           70%  { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }

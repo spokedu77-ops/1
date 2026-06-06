@@ -76,6 +76,29 @@ function replaceBlockText(
   view.dispatch(tr);
 }
 
+export type MarkdownBlockTrigger = 'heading' | 'todo' | 'toggle' | 'divider' | 'callout' | 'code';
+
+/** 줄 맨 앞 마크다운 트리거 + Space → 블록 타입 변환 */
+export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockTrigger | null {
+  const { $from } = view.state.selection;
+  if (!$from.parent.isTextblock) return null;
+
+  const blockStart = $from.start($from.depth);
+  const textBefore = view.state.doc.textBetween(blockStart, $from.pos);
+  const parsed = parseTextBlockLine(textBefore);
+  if (parsed.level > 0) return null;
+
+  const token = parsed.body.trim();
+  if (token === '#') return 'heading';
+  if (token === '##' || token === '###') return 'heading';
+  if (token === '[]' || token === '[ ]') return 'todo';
+  if (token === '>') return 'toggle';
+  if (token === '---') return 'divider';
+  if (token === '!!') return 'callout';
+  if (token === '```') return 'code';
+  return null;
+}
+
 export function tryConvertMarkdownBulletTrigger(view: EditorView): boolean {
   const { $from } = view.state.selection;
   if (!$from.parent.isTextblock) return false;

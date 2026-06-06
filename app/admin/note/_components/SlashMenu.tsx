@@ -10,7 +10,7 @@ export type SlashCommand<T extends string = string> = {
   shortcut?: string;
 };
 
-/** 인라인 전환 메뉴 (/ 슬래시 트리거, 블록 위 호버) */
+/** `/` 슬래시 메뉴 — BlockPickerMenu와 동일 톤, query는 에디터에서 제어 */
 export function SlashMenu<T extends string>({
   commands,
   query,
@@ -30,7 +30,7 @@ export function SlashMenu<T extends string>({
     const q = query.trim().toLowerCase();
     if (!q) return commands;
     return commands.filter((cmd) =>
-      `${cmd.label} ${cmd.desc} ${cmd.type}`.toLowerCase().includes(q),
+      `${cmd.label} ${cmd.desc} ${cmd.type} ${cmd.shortcut ?? ''}`.toLowerCase().includes(q),
     );
   }, [commands, query]);
 
@@ -46,11 +46,11 @@ export function SlashMenu<T extends string>({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
       if (filtered.length === 0) return;
-      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => (i + 1) % filtered.length); }
-      if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIndex((i) => (i - 1 + filtered.length) % filtered.length); }
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, filtered.length - 1)); }
+      if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); }
       if (e.key === 'Enter')     { e.preventDefault(); const cmd = filtered[activeIndex]; if (cmd) onSelect(cmd.type); onClose(); }
-      if (e.key === 'Escape')    { e.preventDefault(); onClose(); }
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
@@ -59,40 +59,76 @@ export function SlashMenu<T extends string>({
   return (
     <div
       ref={ref}
-      className="absolute left-0 top-full z-50 mt-2 w-[280px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/10"
+      className="w-[240px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl shadow-neutral-900/10"
+      onMouseDown={(e) => e.stopPropagation()}
     >
-      <div className="border-b border-slate-100 px-3 py-2.5">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{title ?? 'Turn into'}</p>
-        <p className="mt-0.5 text-[11px] text-slate-400">
-          {query.trim() ? `검색: ${query}` : '블록 종류를 선택하세요'}
+      <div className="border-b border-neutral-100 px-3 py-2">
+        <p className="text-[11px] font-semibold text-neutral-400">{title ?? '블록 선택'}</p>
+        <p className="mt-1 truncate text-[13px] text-neutral-600">
+          {query.trim() ? `/${query}` : '/'}
         </p>
       </div>
-      {filtered.length > 0 ? (
-        filtered.map(({ type, label, icon: Icon, desc, shortcut }, idx) => (
-          <button
-            key={type}
-            type="button"
-            className={`flex w-full items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-              idx === activeIndex ? 'bg-slate-100' : 'hover:bg-slate-50'
-            }`}
-            onMouseEnter={() => setActiveIndex(idx)}
-            onClick={() => { onSelect(type); onClose(); }}
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white shadow-sm">
-              <Icon className="h-4 w-4 text-slate-500" />
-            </span>
-            <span className="flex-1">
-              <p className="text-[13px] font-semibold text-slate-800">{label}</p>
-              <p className="text-[11px] text-slate-400">{desc}</p>
-            </span>
-            {shortcut && (
-              <span className="shrink-0 text-[11px] text-slate-300">{shortcut}</span>
-            )}
-          </button>
-        ))
-      ) : (
-        <p className="px-3 py-3 text-[12px] text-slate-400">일치하는 명령이 없습니다.</p>
-      )}
+      <div className="border-b border-neutral-100 px-3 py-1">
+        <p className="text-[11px] font-semibold text-neutral-400">기본 블록</p>
+      </div>
+      <div className="max-h-[280px] overflow-y-auto py-1">
+        {filtered.length > 0 ? (
+          filtered.map(({ type, label, icon: Icon, shortcut }, idx) => (
+            <button
+              key={type}
+              type="button"
+              className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
+                idx === activeIndex ? 'bg-neutral-100' : 'hover:bg-neutral-50'
+              }`}
+              onMouseEnter={() => setActiveIndex(idx)}
+              onClick={() => { onSelect(type); onClose(); }}
+            >
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white">
+                <Icon className="h-3.5 w-3.5 text-neutral-500" />
+              </span>
+              <span className="flex-1 text-[13px] font-medium text-neutral-700">{label}</span>
+              {shortcut && <span className="shrink-0 text-[11px] text-neutral-300">{shortcut}</span>}
+            </button>
+          ))
+        ) : (
+          <p className="px-3 py-2 text-[12px] text-neutral-400">결과 없음</p>
+        )}
+      </div>
+      <div className="border-t border-neutral-100 px-3 py-1.5">
+        <p className="text-[11px] text-neutral-400">메뉴 닫기 <span className="ml-1 font-medium text-neutral-300">esc</span></p>
+      </div>
+    </div>
+  );
+}
+
+/** fixed 포지션 슬래시 메뉴 (스크롤 클리핑 방지) */
+export function SlashMenuFixed<T extends string>({
+  show,
+  anchor,
+  commands,
+  query,
+  onSelect,
+  onClose,
+  title,
+}: {
+  show: boolean;
+  anchor: { top: number; left: number } | null;
+  commands: SlashCommand<T>[];
+  query: string;
+  onSelect: (type: T) => void;
+  onClose: () => void;
+  title?: string;
+}) {
+  if (!show || !anchor) return null;
+  return (
+    <div className="fixed z-[9999]" style={{ top: anchor.top, left: anchor.left }}>
+      <SlashMenu
+        commands={commands}
+        query={query}
+        onSelect={onSelect}
+        onClose={onClose}
+        title={title}
+      />
     </div>
   );
 }
@@ -100,7 +136,6 @@ export function SlashMenu<T extends string>({
 /**
  * + 버튼용 블록 피커.
  * 부모에서 fixed 좌표를 계산해서 position:fixed 컨테이너로 감싸 사용.
- * 이 컴포넌트 자체는 position-agnostic (relative 없음).
  */
 export function BlockPickerMenu<T extends string>({
   commands,
@@ -190,6 +225,92 @@ export function BlockPickerMenu<T extends string>({
       <div className="border-t border-neutral-100 px-3 py-1.5">
         <p className="text-[11px] text-neutral-400">메뉴 닫기 <span className="ml-1 font-medium text-neutral-300">esc</span></p>
       </div>
+    </div>
+  );
+}
+
+/** ⋮⋮ 핸들 메뉴 — 복제 · 변환 · 삭제 */
+export function BlockHandleMenu<T extends string>({
+  commands,
+  onDuplicate,
+  onDelete,
+  onTurnInto,
+  onClose,
+}: {
+  commands: SlashCommand<T>[];
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onTurnInto: (type: T) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [showTurnInto, setShowTurnInto] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [onClose]);
+
+  if (showTurnInto) {
+    return (
+      <div ref={ref} onMouseDown={(e) => e.stopPropagation()}>
+        <BlockPickerMenu
+          commands={commands}
+          onSelect={(type) => { onTurnInto(type); onClose(); }}
+          onClose={() => setShowTurnInto(false)}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={ref}
+      className="w-[180px] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-xl shadow-neutral-900/10"
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      <button
+        type="button"
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-neutral-700 transition-colors hover:bg-neutral-50"
+        onClick={() => { onDuplicate(); onClose(); }}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-[13px]">
+          ⧉
+        </span>
+        복제
+      </button>
+      <button
+        type="button"
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-neutral-700 transition-colors hover:bg-neutral-50"
+        onClick={() => setShowTurnInto(true)}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-neutral-200 bg-white text-[13px]">
+          ↻
+        </span>
+        변환
+      </button>
+      <div className="my-1 border-t border-neutral-100" />
+      <button
+        type="button"
+        className="flex w-full items-center gap-2.5 px-3 py-2 text-left text-[13px] text-rose-600 transition-colors hover:bg-rose-50"
+        onClick={() => { onDelete(); onClose(); }}
+      >
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-rose-100 bg-rose-50 text-[13px]">
+          ×
+        </span>
+        삭제
+      </button>
     </div>
   );
 }

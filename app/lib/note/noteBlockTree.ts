@@ -25,7 +25,13 @@ export function sortRootBlocks<T extends NoteBlockLike>(blocks: T[]) {
 }
 
 /** 토글 안에서 인라인(테두리 없음)으로 둘 타입 */
-export const TOGGLE_INLINE_CHILD_TYPES = new Set(['text', 'todo', 'toggle']);
+export const TOGGLE_INLINE_CHILD_TYPES = new Set(['text', 'todo', 'toggle', 'page']);
+
+/** Tab으로 토글 안에 넣을 수 있는 타입 (divider·이미지·영상 등 제외) */
+export const TAB_INTO_TOGGLE_BLOCKED_TYPES = new Set(['divider', 'image', 'video']);
+
+/** Backspace 병합 대상 타입 */
+export const MERGEABLE_BLOCK_TYPES = new Set(['text', 'heading', 'todo', 'callout']);
 
 type BlockWithMeta = NoteBlockLike & {
   type: string;
@@ -195,7 +201,7 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
 
     const prev = siblings[idx - 1];
     if (prev.type !== 'toggle') return null;
-    if (!TOGGLE_INLINE_CHILD_TYPES.has(moving.type)) return null;
+    if (TAB_INTO_TOGGLE_BLOCKED_TYPES.has(moving.type)) return null;
 
     const descendantIds = collectDescendantBlockIds(moving.id, blocks);
     if (descendantIds.has(prev.id)) return null;
@@ -254,4 +260,96 @@ export function buildReparentContentPatch(
     delete next.createdInsideToggle;
   }
   return next;
+}
+
+export type PromoteChildrenOnDeletePatch = {
+  id: string;
+  parent_block_id: string | null;
+  order_index: number;
+  content?: Record<string, unknown>;
+};
+
+/** 블록 삭제 시 직계 자식을 삭제 위치(부모)로 승격한다. 자손은 유지. */
+export function planPromoteChildrenOnDelete<T extends BlockWithMeta>(
+  blocks: T[],
+  blockId: string,
+): { deletedId: string; patches: PromoteChildrenOnDeletePatch[] } | null {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const deleted = byId.get(blockId);
+  if (!deleted) return null;
+
+  const parentId = deleted.parent_block_id ?? null;
+  const directChildren = getBlocksInParent(blocks, blockId);
+  const siblings = getBlocksInParent(blocks, parentId);
+  const deletedIdx = siblings.findIndex((block) => block.id === blockId);
+  if (deletedIdx < 0) return null;
+
+  const newParent = parentId ? byId.get(parentId) : undefined;
+  const placedInToggle = newParent?.type === 'toggle';
+
+  const promotedChildren = directChildren.map((child) => {
+    const contentPatch = buildReparentContentPatch(child.content, child.type, placedInToggle);
+    return {
+      ...child,
+      parent_block_id: parentId,
+      ...(contentPatch ? { content: contentPatch } : {}),
+    };
+  });
+
+  const siblingsWithoutDeleted = siblings.filter((block) => block.id !== blockId);
+  const reordered = [
+    ...siblingsWithoutDeleted.slice(0, deletedIdx),
+    ...promotedChildren,
+    ...siblingsWithoutDeleted.slice(deletedIdx),
+  ].map((block, index) => ({ ...block, order_index: index }));
+
+  const patches: PromoteChildrenOnDeletePatch[] = reordered.map((block) => ({
+    id: block.id,
+    parent_block_id: block.parent_block_id ?? null,
+    order_index: block.order_index,
+    ...(directChildren.some((child) => child.id === block.id) && block.content
+      ? { content: block.content as Record<string, unknown> }
+      : {}),
+  }));
+
+  return { deletedId: blockId, patches };
+}
+
+export function getBlockMergeText(block: BlockWithMeta): string {
+  const text = block.content?.text;
+  return typeof text === 'string' ? text : '';
+}
+
+/** 커서가 블록 맨 앞일 때 이전 블록과 텍스트 병합 계획 */
+export function planMergeWithPreviousBlock<T extends BlockWithMeta>(
+  blocks: T[],
+  blockId: string,
+): { previousId: string; deleteId: string; mergedContent: Record<string, unknown>; caretOffset: number } | null {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const current = byId.get(blockId);
+  if (!current || !MERGEABLE_BLOCK_TYPES.has(current.type)) return null;
+
+  const parentId = current.parent_block_id ?? null;
+  const siblings = getBlocksInParent(blocks, parentId);
+  const idx = siblings.findIndex((block) => block.id === blockId);
+  if (idx <= 0) return null;
+
+  const previous = siblings[idx - 1];
+  if (!MERGEABLE_BLOCK_TYPES.has(previous.type)) return null;
+
+  const prevText = getBlockMergeText(previous);
+  const currText = getBlockMergeText(current);
+  const mergedContent: Record<string, unknown> = {
+    ...(previous.content ?? {}),
+    text: prevText + currText,
+  };
+  delete mergedContent.html;
+  delete mergedContent.legacyText;
+
+  return {
+    previousId: previous.id,
+    deleteId: current.id,
+    mergedContent,
+    caretOffset: prevText.length,
+  };
 }

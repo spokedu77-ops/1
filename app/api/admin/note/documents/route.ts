@@ -3,6 +3,15 @@ import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { allocateSlugForActiveRow, slugifyTitle } from '@/app/lib/server/noteDocumentSlug';
 import { generateNoteShareToken } from '@/app/lib/server/noteShareToken';
+import {
+  enrichDocumentsWithPageBlockTitles,
+  normalizeNoteTitle,
+  syncPageBlockTitlesForDocument,
+} from '@/app/lib/note/documentTitle';
+import {
+  reconcileDocumentParents,
+  removePageBlocksForChildDocument,
+} from '@/app/lib/note/documentParentSync';
 
 type NoteDocument = {
   id: string;
@@ -154,7 +163,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ documents: (data ?? []) as NoteDocument[] });
+    const reconciled = await reconcileDocumentParents(
+      supabase,
+      (data ?? []) as NoteDocument[],
+    );
+    const documents = await enrichDocumentsWithPageBlockTitles(supabase, reconciled);
+
+    return NextResponse.json({ documents });
   } catch (err) {
     devLogger.error('[admin/note/documents] GET exception', err);
     return NextResponse.json(
@@ -235,10 +250,10 @@ export async function PATCH(request: NextRequest) {
 
     const updates: Record<string, unknown> = {};
     if (typeof body.title === 'string') {
-      const t = body.title.trim();
-      updates.title = t.length > 0 ? t : 'Untitled';
+      const normalizedTitle = normalizeNoteTitle(body.title);
+      updates.title = normalizedTitle;
       if (typeof body.slug !== 'string') {
-        const desired = slugifyTitle(t.length > 0 ? t : 'Untitled');
+        const desired = slugifyTitle(normalizedTitle);
         const supabase = getServiceSupabase();
         updates.slug = await allocateSlugForActiveRow(supabase, desired, id);
       }
@@ -312,6 +327,12 @@ export async function PATCH(request: NextRequest) {
     }
 
     const document = data as NoteDocument;
+    if (updates.parent_id === null) {
+      await removePageBlocksForChildDocument(supabase, id, auth.userId);
+    }
+    if (typeof updates.title === 'string') {
+      await syncPageBlockTitlesForDocument(supabase, id, updates.title);
+    }
     await insertAuditLog({
       documentId: document.id,
       actorId: auth.userId,

@@ -22,13 +22,19 @@ type SavedExplanation = {
 const STORAGE_KEY = 'spokedu-master-explanations-v1';
 
 const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: typeof MessageCircle }> = [
-  { id: 'parent', label: '학부모용', description: '따뜻하고 이해하기 쉬운 안내 문구', Icon: UsersRound },
-  { id: 'center', label: '기관용', description: '운영 목적과 기대 효과 중심 설명', Icon: FileText },
-  { id: 'school', label: '학교용', description: '수업 활동 기록과 참여 내용 중심', Icon: GraduationCap },
+  { id: 'parent', label: '학부모용', description: '아이들이 경험한 움직임을 쉽게 안내합니다.', Icon: UsersRound },
+  { id: 'center', label: '기관용', description: '운영 목적과 활동 구성, 기대 효과를 정리합니다.', Icon: FileText },
+  { id: 'school', label: '학교용', description: '수업 활동 기록과 참여 내용을 정리합니다.', Icon: GraduationCap },
 ];
 
-const MOODS = ['활기찼음', '차분했음', '집중도가 높았음', '도전 분위기', '협동 분위기'];
-const REACTIONS = ['적극적으로 참여함', '처음엔 조심스러웠지만 점차 참여함', '규칙을 이해하며 움직임', '친구와 상호작용이 좋았음', '반복하며 자신감이 생김'];
+const MOODS = ['활기찬 분위기', '차분한 분위기', '집중도가 높았음', '도전하는 분위기', '협동하는 분위기'];
+const REACTIONS = [
+  '적극적으로 참여함',
+  '처음에는 조심스러웠지만 점차 참여함',
+  '규칙을 이해하며 움직임',
+  '친구와 상호작용이 좋았음',
+  '반복하며 자신감이 생김',
+];
 const FOCUS_SKILLS = ['참여', '반응', '협동', '방향 전환', '공간 인식', '자기조절'];
 
 function compactList(values: Array<string | undefined | null>) {
@@ -59,6 +65,18 @@ function buildProgramPool(programs: Program[]) {
   return programs.length > 0 ? programs : STATIC_PROGRAMS;
 }
 
+function getActivityFlow(program: Program) {
+  const detail = program.lessonDetail;
+  const source = detail?.rules?.length ? detail.rules : program.steps;
+  return source.map((item) => clean(item)).filter(Boolean);
+}
+
+function getAudienceOutputTitle(audience: Audience) {
+  if (audience === 'center') return '기관 제출용 설명';
+  if (audience === 'school') return '학교 수업 활동 기록';
+  return '학부모 안내 문구';
+}
+
 function buildExplanation(input: {
   audience: Audience;
   program: Program;
@@ -70,25 +88,25 @@ function buildExplanation(input: {
   const { audience, program, mood, reaction, focusSkills, note } = input;
   const detail = program.lessonDetail;
   const title = clean(program.title, '오늘 수업');
-  const description = clean(program.description, '움직임을 경험하며 몸의 기능을 익히는 활동입니다.');
+  const description = clean(program.description, '몸을 움직이며 활동 흐름을 경험하는 수업입니다.');
   const focus = focusSkills.length ? focusSkills.join(', ') : clean(detail?.developmentFocus, program.tags.slice(0, 3).join(', '));
   const target = clean(normalizeMasterTarget(program.grade), '수업 대상');
   const space = clean(normalizeMasterSpace(program.space), '수업 공간');
   const duration = displayMasterDuration(program.duration);
   const equipment = program.equipment.length ? program.equipment.join(', ') : '현장 기본 도구';
-  const variation = detail?.variations?.[0] ? `수준에 따라 ${detail.variations[0]} 방식으로 조절할 수 있습니다.` : '';
-  const activity = (detail?.rules?.length ? detail.rules : program.steps).slice(0, 2).join(' ');
+  const activity = getActivityFlow(program).slice(0, 2).join(' ');
+  const variation = detail?.variations?.[0] ? `상황에 따라 ${detail.variations[0]} 방식으로 응용할 수 있습니다.` : '';
   const noteLine = note.trim() ? ` 특이사항: ${note.trim()}` : '';
 
   if (audience === 'parent') {
-    return `오늘은 "${title}" 수업으로 아이들이 ${focus}을 자연스럽게 경험했습니다. ${mood} 분위기 속에서 ${reaction} 모습을 보였고, ${description} 오늘의 움직임 경험이 아이들의 신체 표현과 수업 참여 자신감으로 이어질 수 있도록 마무리했습니다.${noteLine}`;
+    return `오늘은 "${title}" 활동으로 아이들이 ${focus}을(를) 몸으로 경험했습니다. ${mood} 속에서 ${reaction} 모습이 보였고, ${description} 오늘의 움직임 경험이 참여와 자신감으로 이어질 수 있도록 정리했습니다.${noteLine}`;
   }
 
   if (audience === 'center') {
-    return `"${title}"은 ${compactList([target, space, duration]) || '현장 수업'} 조건에서 운영할 수 있는 체육수업 자료입니다. 준비물은 ${equipment}이며, 활동 구성은 ${activity || '도입 안내, 주요 움직임 경험, 정리 피드백'} 흐름으로 운영했습니다. 오늘 수업은 ${mood} 분위기에서 진행되었고 아이들은 ${reaction} 흐름을 보였습니다. 기대 효과는 ${focus}을 수업 장면 안에서 확인하고 설명할 수 있다는 점입니다.${noteLine}`;
+    return `"${title}"은 ${compactList([target, space, duration]) || '현장 수업'} 조건에서 운영할 수 있는 체육수업 설명입니다. 준비물은 ${equipment}이며, 활동 흐름은 ${activity || '도입 안내, 주요 움직임 경험, 마무리 정리'} 중심으로 구성됩니다. 오늘 수업은 ${mood} 속에서 진행되었고 아이들은 ${reaction} 흐름을 보였습니다. 기대 효과는 ${focus}을(를) 수업 장면 안에서 경험하고 설명할 수 있다는 점입니다.${noteLine}`;
   }
 
-  return `수업 활동명: ${title}. 주요 참여 내용은 ${focus}을 중심으로 한 신체활동입니다. ${compactList([target, space, duration])} 조건에서 ${equipment}을 활용해 수업을 진행했으며, 학생들은 ${mood} 분위기 속에서 ${reaction} 모습을 보였습니다. ${variation} 오늘 수업은 체육수업의 의미를 움직임 경험과 참여 과정으로 남기는 활동 기록입니다.${noteLine}`;
+  return `수업 활동 기록: ${title}. 본 차시는 ${compactList([target, space, duration]) || '현장 수업'} 조건에서 ${equipment}을(를) 활용해 진행한 신체활동입니다. 학생들은 ${focus}을(를) 중심으로 활동 흐름에 참여했으며, ${mood} 속에서 ${reaction} 모습을 보였습니다. ${variation} 오늘의 움직임 경험을 수업 참여 내용으로 정리합니다.${noteLine}`;
 }
 
 function ChipGroup({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (next: string[]) => void }) {
@@ -171,8 +189,10 @@ function ReportContent() {
   const audienceMeta = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0];
   const draft = program ? buildExplanation({ audience, program, mood, reaction, focusSkills, note }) : '';
   const output = generated || draft;
+  const activityPreview = program ? getActivityFlow(program).slice(0, 2) : [];
 
   const copyOutput = async () => {
+    if (!output.trim()) return;
     await navigator.clipboard.writeText(output);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1300);
@@ -210,6 +230,11 @@ function ReportContent() {
           <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
             {compactList([normalizeMasterTarget(program.grade), normalizeMasterSpace(program.space), displayMasterDuration(program.duration)])}
           </p>
+          {activityPreview.length ? (
+            <p className="mt-3 line-clamp-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+              활동 흐름: {activityPreview.join(' ')}
+            </p>
+          ) : null}
         </section>
       ) : null}
 
@@ -218,34 +243,40 @@ function ReportContent() {
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3 flex items-center gap-2">
               <BookOpen size={16} color="var(--spm-acc)" />
-              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>수업 선택</h2>
+              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{hasProgramQuery ? '다른 수업 선택' : '수업 선택'}</h2>
             </div>
             <div className="relative mb-3">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" color="var(--spm-t3)" />
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="수업명, 주제 검색"
+                placeholder="수업명이나 주제로 검색"
                 className="h-10 w-full rounded-[11px] border pl-9 pr-3 text-[13px] font-bold outline-none"
                 style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
               />
             </div>
             <div className={`scrollbar-hide space-y-1 overflow-y-auto ${hasProgramQuery ? 'max-h-[220px] lg:max-h-[420px]' : 'max-h-[330px]'}`}>
-              {filteredPrograms.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => {
-                    setProgramId(item.id);
-                    setGenerated('');
-                  }}
-                  className="w-full rounded-[12px] px-3 py-2.5 text-left"
-                  style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
-                >
-                  <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
-                  <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space), displayMasterDuration(item.duration)]) || item.category}</span>
-                </button>
-              ))}
+              {filteredPrograms.length ? (
+                filteredPrograms.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => {
+                      setProgramId(item.id);
+                      setGenerated('');
+                    }}
+                    className="w-full rounded-[12px] px-3 py-2.5 text-left"
+                    style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
+                  >
+                    <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
+                    <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space), displayMasterDuration(item.duration)]) || item.category}</span>
+                  </button>
+                ))
+              ) : (
+                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+                  수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                </p>
+              )}
             </div>
           </section>
 
@@ -258,7 +289,9 @@ function ReportContent() {
                   <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{AUDIENCES.find((aud) => aud.id === item.audience)?.label} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
                 </button>
               )) : (
-                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장한 설명이 없습니다.</p>
+                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+                  아직 만든 설명이 없습니다. 수업을 선택하고 오늘의 활동을 정리해보세요.
+                </p>
               )}
             </div>
           </section>
@@ -269,7 +302,7 @@ function ReportContent() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>오늘 수업 정리</p>
-                <h2 className="mt-1 text-[24px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program?.title ?? '수업을 선택하세요'}</h2>
+                <h2 className="mt-1 text-[24px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program?.title ? `${program.title} 설명 만들기` : '수업을 선택하세요'}</h2>
               </div>
               {program ? (
                 <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
@@ -298,7 +331,7 @@ function ReportContent() {
 
               <div className="grid gap-5 lg:grid-cols-2">
                 <div>
-                  <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>수업 분위기</p>
+                  <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>오늘 수업 분위기</p>
                   <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); setGenerated(''); }} />
                 </div>
                 <div>
@@ -308,7 +341,7 @@ function ReportContent() {
               </div>
 
               <div>
-                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>강조 기능</p>
+                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>강조한 움직임</p>
                 <ChipGroup options={FOCUS_SKILLS} selected={focusSkills} onChange={(next) => { setFocusSkills(next); setGenerated(''); }} />
               </div>
 
@@ -318,7 +351,7 @@ function ReportContent() {
                   value={note}
                   onChange={(event) => { setNote(event.target.value); setGenerated(''); }}
                   rows={4}
-                  placeholder="예: 처음에는 어려워했지만 두 번째 라운드부터 규칙을 이해하고 적극적으로 참여함"
+                  placeholder="예: 처음에는 조심스러웠지만 두 번째 라운드부터 규칙을 이해하고 적극적으로 참여했습니다."
                   className="w-full resize-y rounded-[13px] border px-3 py-3 text-[13px] font-semibold leading-6 outline-none"
                   style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
                 />
@@ -330,16 +363,16 @@ function ReportContent() {
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: '#818cf8' }}>{audienceMeta.label}</p>
-                <h2 className="mt-1 text-[22px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>생성된 설명 문구</h2>
+                <h2 className="mt-1 text-[22px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{getAudienceOutputTitle(audience)}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setGenerated(draft)} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={14} />
-                  문구 생성
+                  설명 문구 만들기
                 </button>
                 <button type="button" onClick={copyOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
-                  {copied ? '복사 완료' : '복사'}
+                  {copied ? '복사 완료' : '복사하기'}
                 </button>
                 <button type="button" onClick={saveOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   <Save size={14} />
@@ -348,7 +381,7 @@ function ReportContent() {
               </div>
             </div>
             <p className="mt-4 whitespace-pre-line rounded-[14px] p-4 text-[15px] font-semibold leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
-              {output}
+              {program ? output : '수업을 선택하면 설명 문구를 만들 수 있습니다.'}
             </p>
           </section>
         </section>

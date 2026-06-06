@@ -18,8 +18,11 @@ import {
   adjustBulletIndent,
   continueBulletOnEnter,
   indentPlainTextBlock,
+  tryConvertMarkdownBlockTrigger,
   tryConvertMarkdownBulletTrigger,
+  type MarkdownBlockTrigger,
 } from './noteBulletInput';
+import { NoteRichEditorStyles } from './NoteRichEditorStyles';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -193,12 +196,15 @@ export function NoteEditor({
   enterCreatesBlock = false,
   autoFocusSignal = 0,
   onEmptyBackspace,
+  onMergeWithPrevious,
+  onMarkdownBlockTrigger,
   onIndent,
   onNavigatePrevious,
   onNavigateNext,
   onEditorFocus,
   tabBehavior = 'block-indent',
   resetKey,
+  focusCaretOffset,
 }: {
   content: Record<string, unknown> | null | undefined;
   field?: RichField;
@@ -218,12 +224,15 @@ export function NoteEditor({
   enterCreatesBlock?: boolean;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
+  onMergeWithPrevious?: () => void;
+  onMarkdownBlockTrigger?: (trigger: MarkdownBlockTrigger) => void;
   onIndent?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
   onEditorFocus?: () => void;
   tabBehavior?: 'block-indent' | 'insert-text-indent';
   resetKey?: string;
+  focusCaretOffset?: number;
 }) {
   const pendingChangeRef = useRef<NoteEditorChange | null>(null);
   const changeTimerRef = useRef<number | null>(null);
@@ -238,6 +247,8 @@ export function NoteEditor({
     onHideFormatToolbar,
     uploadImage,
     onEmptyBackspace,
+    onMergeWithPrevious,
+    onMarkdownBlockTrigger,
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
@@ -255,6 +266,8 @@ export function NoteEditor({
     onHideFormatToolbar,
     uploadImage,
     onEmptyBackspace,
+    onMergeWithPrevious,
+    onMarkdownBlockTrigger,
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
@@ -326,13 +339,22 @@ export function NoteEditor({
     content: sourceHtml,
     editorProps: {
       attributes: {
-        class: `note-rich-editor min-h-[1.5rem] w-full outline-none ${className}`,
+        class: `note-rich-editor min-h-[1.75rem] w-full outline-none ${className}`,
       },
       handleDOMEvents: {
         keydown: (view, event) => {
-          if (event.key === ' ' && tryConvertMarkdownBulletTrigger(view)) {
-            event.preventDefault();
-            return true;
+          if (event.key === ' ') {
+            const blockTrigger = tryConvertMarkdownBlockTrigger(view);
+            if (blockTrigger && callbacksRef.current.onMarkdownBlockTrigger) {
+              event.preventDefault();
+              callbacksRef.current.flushPendingChange();
+              callbacksRef.current.onMarkdownBlockTrigger(blockTrigger);
+              return true;
+            }
+            if (tryConvertMarkdownBulletTrigger(view)) {
+              event.preventDefault();
+              return true;
+            }
           }
           if (event.key !== 'Tab') return false;
           const { tabBehavior: currentTabBehavior, onIndent: currentOnIndent, flushPendingChange: flush } = callbacksRef.current;
@@ -354,15 +376,26 @@ export function NoteEditor({
           flushPendingChange: flush,
           onSlashChange: currentOnSlashChange,
           onEmptyBackspace: currentOnEmptyBackspace,
+          onMergeWithPrevious: currentOnMergeWithPrevious,
+          onMarkdownBlockTrigger: currentOnMarkdownBlockTrigger,
           onNavigatePrevious: currentOnNavigatePrevious,
           onNavigateNext: currentOnNavigateNext,
           onEnter: currentOnEnter,
           enterCreatesBlock: currentEnterCreatesBlock,
         } = callbacksRef.current;
 
-        if (event.key === ' ' && tryConvertMarkdownBulletTrigger(view)) {
-          event.preventDefault();
-          return true;
+        if (event.key === ' ') {
+          const blockTrigger = tryConvertMarkdownBlockTrigger(view);
+          if (blockTrigger && currentOnMarkdownBlockTrigger) {
+            event.preventDefault();
+            flush();
+            currentOnMarkdownBlockTrigger(blockTrigger);
+            return true;
+          }
+          if (tryConvertMarkdownBulletTrigger(view)) {
+            event.preventDefault();
+            return true;
+          }
         }
         if (event.key === 'Tab') {
           if (currentTabBehavior === 'insert-text-indent') {
@@ -386,6 +419,15 @@ export function NoteEditor({
           currentOnEmptyBackspace();
           return true;
         }
+        if (event.key === 'Backspace' && currentOnMergeWithPrevious) {
+          const { selection } = view.state;
+          if (selection.empty && selection.from <= 1) {
+            event.preventDefault();
+            flush();
+            currentOnMergeWithPrevious();
+            return true;
+          }
+        }
         if (event.key === 'ArrowUp' && currentOnNavigatePrevious) {
           const { selection } = view.state;
           if (selection.empty && selection.from <= 1) {
@@ -407,7 +449,8 @@ export function NoteEditor({
         if (event.key === 'Enter' && event.shiftKey) {
           return false;
         }
-        if (event.key === 'Enter' && currentTabBehavior === 'insert-text-indent' && continueBulletOnEnter(view)) {
+        // `* ` / `- ` + Space로 만든 글머리 — Enter는 같은 블록 안 다음 항목(줄)
+        if (event.key === 'Enter' && continueBulletOnEnter(view)) {
           event.preventDefault();
           return true;
         }
@@ -521,71 +564,19 @@ export function NoteEditor({
   useEffect(() => {
     if (!editor || autoFocusSignal <= 0) return;
     requestAnimationFrame(() => {
+      if (typeof focusCaretOffset === 'number' && focusCaretOffset >= 0) {
+        const pos = Math.min(focusCaretOffset + 1, editor.state.doc.content.size);
+        editor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
+        return;
+      }
       editor.commands.focus('end');
     });
-  }, [autoFocusSignal, editor]);
+  }, [autoFocusSignal, editor, focusCaretOffset]);
 
   return (
     <>
       <EditorContent editor={editor} />
-      <style jsx global>{`
-        .note-rich-editor {
-          max-width: 100%;
-          overflow-wrap: anywhere;
-          word-break: break-word;
-        }
-        .note-rich-editor p.is-editor-empty:first-child::before {
-          color: rgb(148 163 184);
-          content: attr(data-placeholder);
-          float: left;
-          height: 0;
-          pointer-events: none;
-        }
-        .note-rich-editor p {
-          margin: 0;
-        }
-        .note-rich-editor h1,
-        .note-rich-editor h2,
-        .note-rich-editor h3 {
-          margin: 0;
-          font-weight: 700;
-          color: rgb(15 23 42);
-        }
-        .note-rich-editor h1 {
-          font-size: 1.625rem;
-          line-height: 1.35;
-        }
-        .note-rich-editor h2 {
-          font-size: 1.3rem;
-          line-height: 1.4;
-        }
-        .note-rich-editor h3 {
-          font-size: 1.05rem;
-          line-height: 1.45;
-        }
-        .note-rich-editor p:empty::after {
-          content: '';
-        }
-        .note-rich-editor a {
-          color: rgb(37 99 235);
-          text-decoration: underline;
-          text-underline-offset: 2px;
-        }
-        .note-rich-editor code {
-          border-radius: 0.375rem;
-          background: rgb(241 245 249);
-          padding: 0.1rem 0.25rem;
-          color: rgb(15 23 42);
-          font-size: 0.92em;
-        }
-        .note-rich-editor img {
-          margin: 0.75rem 0;
-          max-height: 20rem;
-          width: 100%;
-          border-radius: 0.75rem;
-          object-fit: contain;
-        }
-      `}</style>
+      <NoteRichEditorStyles />
     </>
   );
 }
