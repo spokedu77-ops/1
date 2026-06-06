@@ -12,7 +12,7 @@ export type LoadedNoteBlock = {
   parent_block_id: string | null;
   type: string;
   order_index: number;
-  content: unknown;
+  content: Record<string, unknown> | null;
   created_at: string;
   updated_at: string;
   deleted_at?: string | null;

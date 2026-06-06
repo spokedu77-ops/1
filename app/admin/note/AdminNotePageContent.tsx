@@ -6,6 +6,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -29,7 +30,6 @@ import {
   planMergeWithPreviousBlock,
   planPromoteChildrenOnDelete,
   sortRootBlocks,
-  TOGGLE_INLINE_CHILD_TYPES,
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import {
@@ -93,14 +93,12 @@ import {
   useDroppable,
   useSensor,
   useSensors,
-  type DragCancelEvent,
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  arrayMove,
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
@@ -257,8 +255,6 @@ function DocIconGlyph({
   return <FileText className={fallbackClassName} />;
 }
 
-const TOGGLE_CHILD_INDENT_REM = 1.625;
-
 /** 호버한 줄만 핸들 표시 (중첩 토글에서 부모 핸들 동시 노출 방지) */
 const BLOCK_HANDLE_HOVER =
   'opacity-0 pointer-events-none transition-opacity group-hover/block:opacity-100 group-hover/block:pointer-events-auto group-has-[.group\\/block:hover]/block:opacity-0 group-has-[.group\\/block:hover]/block:pointer-events-none';
@@ -369,7 +365,7 @@ function WorkspaceTitleDropTarget({
   children,
 }: {
   isDraggingDoc: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: 'doc-workspace-root',
@@ -574,7 +570,6 @@ function DocItem({
 function BlockContent({
   block,
   onUpdate,
-  onDelete,
   onChangeType,
   onEnter,
   onAddBelow,
@@ -627,7 +622,7 @@ function BlockContent({
   focusedToggleId?: string | null;
   uploadImage?: (file: File) => Promise<string>;
   childBlocks?: NoteBlock[];
-  renderChildBlock?: (child: NoteBlock, nestDepth?: number) => React.ReactNode;
+  renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   isInsideToggle?: boolean;
@@ -1388,7 +1383,7 @@ function SortableBlockRow({
   uploadImage?: (file: File) => Promise<string>;
   isDropTarget?: boolean;
   childBlocks?: NoteBlock[];
-  renderChildBlock?: (child: NoteBlock, nestDepth?: number) => React.ReactNode;
+  renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onDuplicate?: () => void;
@@ -1416,7 +1411,6 @@ function SortableBlockRow({
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 10 : undefined,
   };
-  const isToggleBlock = block.type === 'toggle';
   const blockControls = (
     <div className="pointer-events-auto flex h-7 items-center gap-0.5 text-neutral-400">
       <button
@@ -1611,7 +1605,7 @@ function ToggleInlineRow({
   uploadImage?: (file: File) => Promise<string>;
   isDropTarget?: boolean;
   childBlocks?: NoteBlock[];
-  renderChildBlock?: (child: NoteBlock, nestDepth: number) => React.ReactNode;
+  renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onDuplicate?: () => void;
   isFocused?: boolean;
@@ -1939,7 +1933,7 @@ export default function AdminNotePageContent() {
       return [...list].sort((a, b) => new Date(b.deleted_at ?? b.updated_at).getTime() - new Date(a.deleted_at ?? a.updated_at).getTime());
     }
     return [...list].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-  }, [documents, searchQuery, sortKey]);
+  }, [documents, searchQuery, sortKey, docTab]);
 
   const boardDocuments = useMemo(
     () => filteredDocuments.filter((d) => !d.deleted_at),
@@ -2208,7 +2202,7 @@ export default function AdminNotePageContent() {
     });
   }, []);
 
-  const handleDragCancel = useCallback((_event: DragCancelEvent) => {
+  const handleDragCancel = useCallback(() => {
     if (noteBlockDragActive.current) {
       setBlocks(dragStartBlocksRef.current);
     }
@@ -3724,7 +3718,7 @@ export default function AdminNotePageContent() {
     });
   }, []);
 
-  const renderDocumentTree = (doc: NoteDocument, depth = 0): React.ReactNode => {
+  const renderDocumentTree = (doc: NoteDocument, depth = 0): ReactNode => {
     const children = childrenByParent.get(doc.id) ?? [];
     const isExpanded = !collapsedSidebarDocs.has(doc.id);
     return (
@@ -3753,7 +3747,7 @@ export default function AdminNotePageContent() {
     );
   };
 
-  const renderToggleInlineChild = (block: NoteBlock, nestDepth = 1): React.ReactNode => {
+  const renderToggleInlineChild = (block: NoteBlock, nestDepth = 1): ReactNode => {
     const childBlocks = childrenByParentBlock.get(block.id) ?? [];
     return (
       <ToggleInlineRow
@@ -3800,7 +3794,7 @@ export default function AdminNotePageContent() {
     );
   };
 
-  const renderSortableBlock = (block: NoteBlock): React.ReactNode => {
+  const renderSortableBlock = (block: NoteBlock): ReactNode => {
     const childBlocks = childrenByParentBlock.get(block.id) ?? [];
     return (
       <SortableBlockRow
@@ -4242,7 +4236,6 @@ export default function AdminNotePageContent() {
                 }}
                 onCreateDocument={handleCreateDocumentInGroup}
                 onUpdateProperties={handleUpdateDocProperties}
-                onMoveToGroup={(docId, group) => { void handleMoveDocumentToGroup(docId, group); }}
                 onRenameGroup={(oldName, newName) => { void handleRenameBoardGroup(oldName, newName); }}
                 onDeleteGroup={(group) => { void handleDeleteBoardGroup(group); }}
                 onReorderInGroup={(group, orderedIds) => { void handleReorderBoardGroup(group, orderedIds); }}

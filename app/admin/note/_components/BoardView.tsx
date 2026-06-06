@@ -41,7 +41,6 @@ type BoardViewProps = {
   onSelectDocument: (doc: BoardDocument) => void;
   onCreateDocument: (group: string) => void;
   onUpdateProperties: (docId: string, properties: BoardDocument['properties']) => void;
-  onMoveToGroup: (docId: string, group: string) => void;
   onRenameGroup: (oldName: string, newName: string) => void;
   onDeleteGroup: (group: string) => void;
   onReorderInGroup: (group: string, orderedIds: string[]) => void;
@@ -407,7 +406,6 @@ export function BoardView({
   onSelectDocument,
   onCreateDocument,
   onUpdateProperties,
-  onMoveToGroup,
   onRenameGroup,
   onDeleteGroup,
   onReorderInGroup,
