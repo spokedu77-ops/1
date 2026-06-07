@@ -102,7 +102,7 @@ export function HomeProgramSystem({ items }: HomeProgramSystemProps) {
         >
           <ProgramFeaturedCard item={featured} />
         </motion.div>
-        <div className="grid grid-cols-2 grid-rows-2 gap-2.5">
+        <div className="grid grid-cols-2 gap-2.5">
           {compact.map((item, index) => (
             <motion.div
               key={item.id}

@@ -357,7 +357,7 @@ function PaymentContent() {
               결제 전에, SPOKEDU MASTER가 매 수업에서 해줄 일을 확인하세요.
             </h2>
             <p className="mt-4 max-w-[690px] text-[14px] font-semibold leading-7 sm:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
-              이 결제는 자료 몇 개를 여는 비용이 아니라, 30일 동안 수업을 고르고 SPOMOVE로 실행하고 설명 문구로 수업의 가치를 남기는 이용권입니다.
+              이 결제는 30일 동안 수업 자료를 확인하고, 공식 SPOMOVE 큰 화면 활동을 별도 메뉴에서 실행하며, 설명 문구를 활용하는 이용권입니다.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-3">
               {OUTCOME_STATS.map((item) => (

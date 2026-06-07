@@ -10,23 +10,30 @@ import {
   MapPin,
   MonitorPlay,
   Play,
-  Zap,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
-import { cleanList, cleanText, DRILL_FALLBACK, hasBrokenText } from '../../lib/clean';
+import { cleanList, cleanText } from '../../lib/clean';
 import {
   getExternalVideoUrl,
   getVideoEmbedUrl,
   isDirectVideoUrl,
   resolveProgramHero,
 } from '../../lib/program-media';
-import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../../lib/programDisplayTags';
+import {
+  displayMasterDuration,
+  normalizeMasterSpace,
+  normalizeMasterTarget,
+} from '../../lib/programDisplayTags';
+import {
+  findOfficialSpomovePreset,
+  officialPresetSessionHref,
+} from '../../spomove/officialSpomovePresets';
 import { useMasterStore } from '../../store';
-import type { Drill, Program } from '../../types';
+import type { Program } from '../../types';
 
 const PLACEHOLDER_PATTERN = /확인 필요|정보 없음|미정|undefined|null|도구 정보 아직 없음/i;
 
@@ -40,25 +47,6 @@ function usableList(items: string[] | undefined, fallback: string[] = []) {
   return cleanList(items, fallback)
     .map((item) => usableText(item))
     .filter((item): item is string => Boolean(item));
-}
-
-function cleanDrillName(drill: Drill | undefined, fallback = 'SPOMOVE 세팅') {
-  if (!drill) return fallback;
-  if (hasBrokenText(drill.name)) return DRILL_FALLBACK[drill.id] ?? fallback;
-  return drill.name;
-}
-
-function getPrimaryDrill(program: Program, drills: Drill[]) {
-  const relatedIds = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return drills.find((drill) => relatedIds.includes(drill.id));
-}
-
-function getSpomoveUseLabel(program: Program) {
-  const text = `${program.title} ${program.category} ${program.description} ${program.tags.join(' ')} ${program.lessonDetail?.developmentFocus ?? ''}`;
-  if (/도입|집중|신호|주의/.test(text)) return '이 수업 전 도입 세팅';
-  if (/민첩|순발|반응|스피드|거리|방향/.test(text)) return 'TV·빔으로 반응 준비';
-  if (/마무리|정리|리듬|협동|기억/.test(text)) return '마무리 참여 게임';
-  return 'TV·빔 도입 활동';
 }
 
 function getParentCopy(program: Program, title: string, focus: string) {
@@ -129,7 +117,6 @@ function BookOpenFallback() {
 
 export default function LibraryDetailView({ id }: { id: string }) {
   const programs = useMasterStore((state) => state.programs);
-  const drills = useMasterStore((state) => state.drills);
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const classRecords = useMasterStore((state) => state.classRecords);
@@ -174,9 +161,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const heroImage = resolveProgramHero(program);
   const setupImage = detail?.setupImageUrl;
   const galleryImages = (detail?.galleryImageUrls ?? []).filter((url) => url.trim());
-  const primaryDrill = getPrimaryDrill(program, drills);
-  const relatedSpomoveIds = detail?.relatedSpomoveIds?.length ? detail.relatedSpomoveIds : [];
-  const primarySpomoveId = primaryDrill?.id ?? relatedSpomoveIds[0];
+  const relatedSpomovePresets = (detail?.relatedSpomoveIds ?? [])
+    .map((spomoveId) => findOfficialSpomovePreset(spomoveId))
+    .filter((preset): preset is NonNullable<typeof preset> => Boolean(preset));
+  const primarySpomovePreset = relatedSpomovePresets[0];
   const parentSectionId = 'detail-parent-note';
 
   const overviewRows = [
@@ -341,24 +329,30 @@ export default function LibraryDetailView({ id }: { id: string }) {
             </DetailSection>
           ) : null}
 
-          {relatedSpomoveIds.length > 0 ? (
-            <DetailSection id="detail-spomove" title="관련 SPOMOVE 세팅" icon={MonitorPlay}>
-              <p className="mb-4 text-sm font-semibold leading-6 text-slate-500">이 수업 전 도입이나 반응 준비 활동으로 연결해 사용할 수 있습니다.</p>
+          {relatedSpomovePresets.length > 0 ? (
+            <DetailSection id="detail-spomove" title="연결된 SPOMOVE 활동" icon={MonitorPlay}>
+              <p className="mb-4 text-sm font-semibold leading-6 text-slate-500">관리자가 이 수업에 명시적으로 연결한 공식 SPOMOVE 활동입니다.</p>
               <div className="grid gap-3 md:grid-cols-2">
-                {relatedSpomoveIds.map((spomoveId) => {
-                  const drill = drills.find((item) => item.id === spomoveId);
-                  return (
-                    <Link key={spomoveId} href={`/spokedu-master/spomove/session?drill=${spomoveId}&mode=projector&program=${program.id}`} className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                {relatedSpomovePresets.map((preset) => (
+                    <Link
+                      key={preset.id}
+                      href={officialPresetSessionHref({
+                        preset,
+                        cueSeconds: preset.defaultCueSeconds,
+                        rounds: preset.defaultRounds,
+                        soundEnabled: true,
+                      })}
+                      className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
+                    >
                       <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
-                        <Zap className="h-5 w-5" />
+                        <MonitorPlay className="h-5 w-5" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm font-black text-slate-950">{cleanDrillName(drill, spomoveId)}</strong>
-                        <span className="mt-1 block text-xs font-semibold text-indigo-700">{getSpomoveUseLabel(program)} · TV·빔 실행</span>
+                        <strong className="block truncate text-sm font-black text-slate-950">{preset.title}</strong>
+                        <span className="mt-1 block text-xs font-semibold text-indigo-700">기본 3초 · 20회 · TV·빔 실행</span>
                       </span>
                     </Link>
-                  );
-                })}
+                  ))}
               </div>
             </DetailSection>
           ) : null}
@@ -378,8 +372,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </DetailSection>
 
           <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
-            {primarySpomoveId ? (
-              <Link href={`/spokedu-master/spomove/session?drill=${primarySpomoveId}&mode=projector&program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+            {primarySpomovePreset ? (
+              <Link
+                href={officialPresetSessionHref({
+                  preset: primarySpomovePreset,
+                  cueSeconds: primarySpomovePreset.defaultCueSeconds,
+                  rounds: primarySpomovePreset.defaultRounds,
+                  soundEnabled: true,
+                })}
+                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+              >
                 <MonitorPlay className="h-4 w-4" />
                 SPOMOVE 실행
               </Link>

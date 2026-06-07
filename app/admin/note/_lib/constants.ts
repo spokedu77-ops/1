@@ -2,7 +2,11 @@ import {
   CheckSquare,
   ChevronDown,
   FileText,
+  Heading2,
+  Heading3,
   Image as ImageIcon,
+  List,
+  ListOrdered,
   MessageSquareQuote,
   Minus,
   Type,
@@ -19,6 +23,10 @@ export const BLOCK_TYPES: {
 }[] = [
   { type: 'text', label: '텍스트', icon: FileText, desc: '일반 문단' },
   { type: 'heading', label: '제목 1', icon: Type, desc: '큰 섹션 제목', shortcut: '#' },
+  { type: 'heading2', label: '제목 2', icon: Heading2, desc: '중간 섹션 제목', shortcut: '##' },
+  { type: 'heading3', label: '제목 3', icon: Heading3, desc: '소제목', shortcut: '###' },
+  { type: 'bulletList', label: '글머리 기호 목록', icon: List, desc: '순서 없는 목록', shortcut: '-' },
+  { type: 'numberedList', label: '번호 매기기 목록', icon: ListOrdered, desc: '순서 있는 목록', shortcut: '1.' },
   { type: 'todo', label: '체크리스트', icon: CheckSquare, desc: '완료 상태를 체크하는 할 일', shortcut: '[]' },
   { type: 'toggle', label: '토글 목록', icon: ChevronDown, desc: '접고 펼치는 섹션', shortcut: '>' },
   { type: 'callout', label: '콜아웃', icon: MessageSquareQuote, desc: '강조 메시지', shortcut: '!!' },
@@ -31,6 +39,10 @@ export const BLOCK_TYPES: {
 
 export function defaultBlockContent(type: NoteBlock['type'], options?: { insideToggle?: boolean }) {
   if (type === 'heading') return { text: '' };
+  if (type === 'heading2') return { text: '' };
+  if (type === 'heading3') return { text: '' };
+  if (type === 'bulletList') return { text: '', number: 1 };
+  if (type === 'numberedList') return { text: '', number: 1 };
   if (type === 'todo') {
     return {
       text: '',
@@ -91,10 +103,16 @@ export function blockGutterTopPx(type: NoteBlock['type']): number | 'center' {
   switch (type) {
     case 'heading':
       return 2;
+    case 'heading2':
+      return 2;
+    case 'heading3':
+      return 2;
     case 'todo':
     case 'text':
     case 'page':
     case 'toggle':
+    case 'bulletList':
+    case 'numberedList':
       return 3;
     case 'divider':
     case 'image':

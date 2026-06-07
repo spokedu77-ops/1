@@ -27,7 +27,6 @@ import { HomeSectionRule } from './home-section-rule';
 import { HomeHeroEditorial } from './home-hero-editorial';
 import { HomePhotoZoom } from './home-photo-zoom';
 import { HomeSectionHeading } from './home-section-heading';
-import { HomeTrustStrip } from './home-trust-strip';
 import { HomeProgramSystem } from './visual/home-program-system';
 import { MediaPanel } from './visual';
 
@@ -162,9 +161,16 @@ export default function SpokeduHomeLanding() {
               <span className={homeHeroH1Line}>{homePage.hero.lines[1]}</span>
             </motion.h1>
             <div className="mt-5 space-y-4 sm:mt-6">
-              <p className={`${landingHeroSubtitle} max-w-lg text-slate-600 ${koreanLineBreak}`}>
-                {homePage.hero.subtitle}
-              </p>
+              <div className="max-w-lg space-y-2.5">
+                {homePage.hero.subtitleParagraphs.map((paragraph) => (
+                  <p
+                    key={paragraph.slice(0, 24)}
+                    className={`${landingHeroSubtitle} text-slate-600 ${koreanLineBreak}`}
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
               <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap" aria-label="스포키듀 운영 축">
                 {homePage.hero.supportChips.map((chip) => (
                   <li
@@ -192,8 +198,6 @@ export default function SpokeduHomeLanding() {
           </div>
         </div>
         </section>
-
-        <HomeTrustStrip />
       </div>
 
       <HomeSectionRule />
@@ -249,9 +253,19 @@ export default function SpokeduHomeLanding() {
                     >
                       {card.title}
                     </h3>
-                    <p className={`mt-2 line-clamp-3 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
+                    <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                       {card.description}
                     </p>
+                    <div className="mt-2.5 flex flex-wrap gap-1.5">
+                      {card.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                        >
+                          #{tag}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                   <span
                     className={`mt-3 text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-800`}

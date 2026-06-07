@@ -8,10 +8,10 @@ import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { useStudents } from './hooks/useStudents';
 import { useIntervalTimer } from './hooks/useIntervalTimer';
 import { useTrainingTimer } from './hooks/useTrainingTimer';
+import { playBeep } from './lib/audio';
 import { tts } from './lib/tts';
 import { StudentModal } from './components/StudentModal';
 import { StudentManageScreen } from './components/StudentManageScreen';
-import { Sparkline } from './components/Sparkline';
 import { SpeedSelector } from './components/SpeedSelector';
 import { SignalDisplay } from './components/SignalDisplay';
 import { MemoryGame } from './components/MemoryGame';
@@ -126,6 +126,7 @@ export type MemoryGameAutoLaunch = {
   duration?: number;
   targetReps?: number;
   warmup?: number;
+  audioMode?: string;
   accel?: boolean;
   intervalMode?: boolean;
   /** 시지각 반응 전체 속도/스폰 간격 완화 */
@@ -161,6 +162,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       duration: s.duration,
       targetReps: s.targetReps,
       warmup: s.warmup,
+      audioMode: s.audioMode,
       accel: s.accel,
       intervalMode: s.intervalMode,
       kidsSafeMode: s.kidsSafeMode,
@@ -178,17 +180,23 @@ export default function MemoryGameApp({
   initialLevel,
   autoLaunch,
   embed = false,
+  disableBgm = false,
   onExit,
+  onComplete,
   onUnavailable,
 }: {
   initialMode?: string;
   initialLevel?: number;
   /** SPOKEDU MASTER iframe 등 외부 화면에 삽입될 때 admin용 홈/뒤로 진입을 줄인다. */
   embed?: boolean;
+  /** 부모 화면이 선택한 BGM을 직접 재생할 때 내부 무작위 BGM을 비활성화한다. */
+  disableBgm?: boolean;
   /** 제공 시 설정 화면을 건너뛰고 이 설정으로 훈련을 즉시 시작 */
   autoLaunch?: MemoryGameAutoLaunch;
   /** autoLaunch 모드에서 포털을 닫을 때 — resume에 실제 실행 세션 설정을 전달 */
   onExit?: (resume?: TrainingExitResume) => void;
+  /** autoLaunch 훈련의 설정된 횟수가 끝났을 때 호출한다. */
+  onComplete?: () => void;
   /** initialMode가 MODES에 없을 때 (매핑 누락) 부모에 알림 */
   onUnavailable?: () => void;
 }) {
@@ -236,10 +244,7 @@ export default function MemoryGameApp({
     nbackScore?: { hits: number; misses: number; falseAlarms: number; accuracy: number; level: number };
     battleResult?: unknown;
   } | null>(null);
-  const [sessionMemo, setSessionMemo] = useState('');
-  const [displayCount, setDisplayCount] = useState(0);
   /** 훈련 세션마다 증가 — 터치형 2-1 첫 신호 부트스트랩용 */
-  const [trainingKey, setTrainingKey] = useState(0);
   const countRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trainingContainerRef = useRef<HTMLDivElement>(null);
@@ -398,7 +403,6 @@ export default function MemoryGameApp({
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
-    setDisplayCount(countRef.current);
     const dupKey =
       sig.type === 'think_quad'
         ? String((sig.content as { colorId?: string })?.colorId ?? '')
@@ -433,10 +437,11 @@ export default function MemoryGameApp({
     const cfg = { ...settings };
     const count = countRef.current;
     setResult({ count, cfg, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
-    setSessionMemo('');
     setScreen('result');
-    if (cfg.audioMode !== 'off') setTimeout(() => tts('트레이닝 완료! 수고했어요!', true), 300);
-  }, [settings, selectedStudentId]);
+    if (cfg.audioMode === 'beep') setTimeout(() => playBeep('chord', 300), 200);
+    else if (cfg.audioMode !== 'off') setTimeout(() => tts('트레이닝 완료! 수고했어요!', true), 300);
+    onComplete?.();
+  }, [onComplete, settings]);
 
   const { getProgress } = useTrainingTimer({
     active: isTraining && !settings.intervalMode,
@@ -530,16 +535,12 @@ export default function MemoryGameApp({
   const startSession = useCallback(
     (cfg: Settings = settings) => {
       sessionLaunchedRef.current = true;
-      const resolved = resolveTrainingEngine(cfg.mode, cfg.level);
       // 분량 선택은 횟수만 노출/사용 → 시지각 반응(reactTrain) 제외하고 reps로 고정
       if (cfg.mode !== 'reactTrain' && cfg.timeMode !== 'reps') cfg = { ...cfg, timeMode: 'reps' };
       // 인터벌 세트는 4로 고정
       if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
-      // 신호별 음성·비프는 사용하지 않음(모든 모드 audioMode off)
-      if (cfg.audioMode !== 'off') cfg = { ...cfg, audioMode: 'off' };
       setSettings(cfg);
       countRef.current = 0;
-      setDisplayCount(0);
       setSignal(null);
       if (dupFlashClearRef.current != null) {
         clearTimeout(dupFlashClearRef.current);
@@ -579,7 +580,7 @@ export default function MemoryGameApp({
         bgmMode === 'gonogo' ||
         bgmMode === 'taskswitch' ||
         bgmMode === 'reactTrain';
-      if (shouldTryBgmParent) {
+      if (!disableBgm && shouldTryBgmParent) {
         if (spomoveBgmList.length === 0) {
           if (spomoveBgmLoading) pendingBgmStartRef.current = { mode: bgmMode };
         } else {
@@ -610,16 +611,17 @@ export default function MemoryGameApp({
         if (warmupSec <= 0) {
           setCountdown(null);
           if (nextScreen === 'training') {
-            setTrainingKey((k) => k + 1);
             setIsTraining(true);
-            if (cfg.audioMode !== 'off') tts('시작!', true);
+            if (cfg.audioMode === 'beep') playBeep('high');
+            else if (cfg.audioMode !== 'off') tts('시작!', true);
           }
           return;
         }
 
         setCountdown(warmupSec);
         let c = warmupSec;
-        if (cfg.audioMode !== 'off') tts(warmupSec === 3 ? '셋' : String(warmupSec), true);
+        if (cfg.audioMode === 'beep') playBeep('mid');
+        else if (cfg.audioMode !== 'off') tts(warmupSec === 3 ? '셋' : String(warmupSec), true);
         timerRef.current = setInterval(() => {
           c--;
           if (c <= 0) {
@@ -627,19 +629,20 @@ export default function MemoryGameApp({
             timerRef.current = null;
             setCountdown(null);
             if (nextScreen === 'training') {
-              setTrainingKey((k) => k + 1);
               setIsTraining(true);
-              if (cfg.audioMode !== 'off') tts('시작!', true);
+              if (cfg.audioMode === 'beep') playBeep('high');
+              else if (cfg.audioMode !== 'off') tts('시작!', true);
             }
           } else {
             setCountdown(c);
             const voices = ['하나', '둘', '셋', '넷', '다섯', '여섯', '일곱', '여덟', '아홉', '열'];
-            if (cfg.audioMode !== 'off') tts(voices[c - 1] ?? String(c), true);
+            if (cfg.audioMode === 'beep') playBeep('mid');
+            else if (cfg.audioMode !== 'off') tts(voices[c - 1] ?? String(c), true);
           }
         }, 900);
       }
     },
-    [settings, spomoveBgmList, spomoveBgmLoading]
+    [disableBgm, settings, spomoveBgmList, spomoveBgmLoading]
   );
 
   /** autoLaunch: 마운트 직후 startSession을 ref-cfg로 즉시 호출 (setup 화면 경유 없음) */
@@ -653,6 +656,10 @@ export default function MemoryGameApp({
   }, [pendingAutoStart, startSession]);
 
   useEffect(() => {
+    if (disableBgm) {
+      pendingBgmStartRef.current = null;
+      return;
+    }
     const pending = pendingBgmStartRef.current;
     if (!pending?.mode) return;
     if (spomoveBgmLoading) return;
@@ -681,7 +688,7 @@ export default function MemoryGameApp({
     } catch {
       // ignore
     }
-  }, [spomoveBgmLoading, spomoveBgmList, screen]);
+  }, [disableBgm, spomoveBgmLoading, spomoveBgmList, screen]);
 
   // Flow BGM 늦은 로딩 — 첫 시작 시 BGM 목록이 아직 없을 때 엔진에 주입
   useEffect(() => {
@@ -729,7 +736,7 @@ export default function MemoryGameApp({
     const completedStages = 5;
     setResult({ count: completedStages, cfg });
     setScreen('result');
-  }, [settings, selectedStudentId]);
+  }, [settings]);
 
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
@@ -802,7 +809,6 @@ export default function MemoryGameApp({
 
   // ── HOME ──
   if (screen === 'home') {
-    const M_cur = MODES[settings.mode];
     return (
       <div style={{ minHeight: '100vh', background: '#080C14', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: '#fff', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
         <style>{CSS}</style>

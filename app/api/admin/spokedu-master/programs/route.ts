@@ -128,10 +128,11 @@ function completeness(input: {
   equipment: string[];
   steps: string[];
   videoUrl: string | null;
+  setupImageUrl: string | null;
 }): MaterialStatus {
   const coreReady = Boolean(input.target && input.space && input.duration && input.equipment.length > 0 && input.steps.length > 0);
   if (!coreReady) return 'incomplete';
-  const homeReady = Boolean(input.videoUrl);
+  const homeReady = Boolean(input.videoUrl || input.setupImageUrl);
   return homeReady ? 'home-ready' : 'ready';
 }
 
@@ -181,7 +182,15 @@ async function loadPrograms() {
     const target = normalizeMasterTarget(meta?.sm_grade ?? overlay?.group_size ?? '');
     const space = normalizeMasterSpace(meta?.sm_space ?? '');
     const duration = normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '';
-    const status = completeness({ target, space, duration, equipment, steps, videoUrl });
+    const status = completeness({
+      target,
+      space,
+      duration,
+      equipment,
+      steps,
+      videoUrl,
+      setupImageUrl: meta?.sm_setup_image_url ?? null,
+    });
 
     return {
       curriculum: {

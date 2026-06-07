@@ -328,11 +328,6 @@ export async function PUT(request: NextRequest) {
     if (idSet.size !== normalizedOrders.length) {
       return NextResponse.json({ error: 'duplicate ids in orders payload' }, { status: 400 });
     }
-    const orderIndexSet = new Set(normalizedOrders.map((order) => order.order_index));
-    if (orderIndexSet.size !== normalizedOrders.length) {
-      return NextResponse.json({ error: 'duplicate order_index in orders payload' }, { status: 400 });
-    }
-
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
     const ids = normalizedOrders
@@ -345,7 +340,7 @@ export async function PUT(request: NextRequest) {
         .in('id', ids)
       : { data: [] };
 
-    await Promise.all(
+    const updateResults = await Promise.all(
       normalizedOrders.map(({ id, order_index }) =>
         supabase
           .from('note_blocks')
@@ -353,6 +348,11 @@ export async function PUT(request: NextRequest) {
           .eq('id', id),
       ),
     );
+    const failedUpdate = updateResults.find((result) => result.error);
+    if (failedUpdate?.error) {
+      devLogger.error('[admin/note/blocks] PUT update error', failedUpdate.error);
+      return NextResponse.json({ error: failedUpdate.error.message }, { status: 500 });
+    }
 
     const documentIds = [...new Set((beforeRows ?? []).map((row) => row.document_id).filter(Boolean))];
     await Promise.all(documentIds.map((documentId) => insertAuditLog({

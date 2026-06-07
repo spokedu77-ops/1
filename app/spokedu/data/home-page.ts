@@ -5,6 +5,7 @@ export type HomeVisitorGateCard = {
   audience: string;
   title: string;
   description: string;
+  tags: readonly string[];
   linkLabel: string;
   href: string;
   trackLabel: string;
@@ -32,27 +33,12 @@ export type HomeProgramSystemItem = {
 export const homePage = {
   hero: {
     kicker: '체육교육 운영 브랜드',
-    lines: ['현장 수업에서 시작해', '아이의 움직임을 설계합니다'] as const,
-    subtitle:
-      '스포키듀는 아동·청소년의 움직임 경험을 설계하는 체육교육 운영 브랜드입니다. 현장에서 아이들을 가르치고, 그 수업을 프로그램과 커리큘럼 콘텐츠로 확장합니다.',
-    supportChips: [
-      '아이에게는 맞춤 수업',
-      '기관에는 운영 프로그램',
-      '선생님에게는 커리큘럼 콘텐츠',
+    lines: ['전문성과 현장 경험으로', '아동·청소년의 움직임을 설계합니다'] as const,
+    subtitleParagraphs: [
+      '스포키듀는 연세대학교 체육교육학과 출신 운영진이 만든 아동·청소년 체육교육 전문 브랜드입니다.',
+      '현장에서 아이들을 직접 지도하며 축적한 경험을 바탕으로 개인 수업, 기관 프로그램, 커리큘럼 콘텐츠까지 아이들의 성장 단계에 맞는 움직임 경험을 설계합니다.',
     ] as const,
-  },
-  /** Hero 직후 신뢰 스트립 — 숫자 과장 없이 실제 운영 맥락만 */
-  trustStrip: {
-    eyebrow: '운영 증거',
-    /** 의도한 줄바꿈 — 모바일에서도 ‘기|관’ 분리 방지 */
-    titleLines: ['현장에서 운영해 온', '프로그램과 기관'] as const,
-    items: [
-      { label: '양천·동작 키움센터', detail: 'SPOMOVE 정규수업' },
-      { label: '지역아동센터', detail: '원데이 체육행사' },
-      { label: 'PLAYZ Lounge', detail: '방학캠프' },
-      { label: 'SPOMOVE · PAPS', detail: '기관·개인 프로그램' },
-      { label: '커리큘럼', detail: '수업안·강사교육' },
-    ] as const,
+    supportChips: ['1:1 개인과외', '기관 단체 수업', '커리큘럼 콘텐츠 제작'] as const,
   },
   heroCtas: {
     primary: {
@@ -66,22 +52,24 @@ export const homePage = {
     id: 'visitor-gate',
     eyebrow: '맞춤 선택',
     title: '어떤 수업이 필요하신가요?',
-    lead: '아이 · 기관 · 강사 — 목적에 맞는 수업을 선택하세요.',
+    lead: '목적에 맞는 수업을 선택하세요.',
     cards: [
       {
         audience: '학부모',
-        title: '개인수업',
+        title: '개인 수업',
         description:
-          '운동을 어려워하거나 더 체계적으로 배우고 싶은 아이에게 맞춘 1:1·소그룹 수업입니다.',
+          '운동을 어려워하는 아이, 수행평가를 준비하는 아이, 보다 체계적으로 운동을 배우고 싶은 아이를 위한 체육과외 수업입니다.',
+        tags: ['1:1과외', '소그룹과외', '단기과외'],
         linkLabel: '개인수업 보기',
         href: `${SPOKEDU_BASE_PATH}/private`,
         trackLabel: 'cta-home-gate-private',
       },
       {
         audience: '기관',
-        title: '기관수업',
+        title: '기관 수업',
         description:
-          '공간, 인원, 일정에 맞춰 정규수업·원데이·방학캠프 형태로 운영합니다.',
+          '공간, 인원, 일정, 맞춤 프로그램 등 기관에서 원하는 방향성으로 설계하여 운영합니다.',
+        tags: ['정규수업', '늘봄·돌봄수업', '방학캠프', '원데이특강'],
         linkLabel: '기관수업 보기',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'cta-home-gate-dispatch',
@@ -90,7 +78,8 @@ export const homePage = {
         audience: '강사·파트너',
         title: '교육 콘텐츠',
         description:
-          '수업안, 운영 매뉴얼, 강사교육, 프로그램 콘텐츠로 수업 경험을 확장합니다.',
+          '연세대 체육교육과 출신 연구진이 현장 경험을 바탕으로 얻은 노하우를 알려드립니다.',
+        tags: ['강사교육', '운영 메뉴얼', '콘텐츠 커리큘럼'],
         linkLabel: '교육 콘텐츠 보기',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
@@ -161,21 +150,21 @@ export const homePage = {
       },
       {
         id: 'paps',
-        name: 'PAPS',
+        name: 'PAPS 놀이체육',
         description:
-          '학교 체력평가 요소를 아이들이 부담 없이 경험하도록 구성한 체력 향상 프로그램입니다.',
+          '학교 체력평가 요소를 놀이형 수업으로 경험하며 참여와 움직임을 돕는 프로그램입니다.',
         mediaKey: 'programPaps',
         href: `${SPOKEDU_BASE_PATH}/programs/paps`,
         trackLabel: 'cta-home-system-paps',
       },
       {
-        id: 'oneday',
-        name: '원데이 이벤트',
+        id: 'monthly-newsports',
+        name: '월간 뉴스포츠',
         description:
-          '기관 행사나 특별활동 일정에 맞춰 짧고 몰입감 있는 체육 경험을 제공합니다.',
-        mediaKey: 'programOneday',
-        href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
-        trackLabel: 'cta-home-system-oneday',
+          '매월 뉴스포츠 테마를 중심으로 교구·협동 활동을 이어가는 월간형 체육 프로그램입니다.',
+        mediaKey: 'programMonthlyNewsports',
+        href: `${SPOKEDU_BASE_PATH}/programs/monthly-newsports`,
+        trackLabel: 'cta-home-system-monthly',
       },
       {
         id: 'camp',
@@ -187,35 +176,44 @@ export const homePage = {
         trackLabel: 'cta-home-system-camp',
       },
       {
-        id: 'curriculum',
-        name: '커리큘럼 콘텐츠',
+        id: 'oneday',
+        name: '원데이 스페셜 이벤트',
         description:
-          '수업안, 운영 매뉴얼, 강사교육 형태로 스포키듀의 수업 경험을 확장합니다.',
-        mediaKey: 'programCurriculum',
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
-        trackLabel: 'cta-home-system-curriculum',
+          '기관 행사나 특별활동 일정에 맞춰 짧고 몰입감 있는 체육 경험을 제공합니다.',
+        mediaKey: 'programOneday',
+        href: `${SPOKEDU_BASE_PATH}/programs/oneday-event`,
+        trackLabel: 'cta-home-system-oneday',
+      },
+      {
+        id: 'custom-sports',
+        name: '맞춤 스포츠 특강',
+        description:
+          '기관 목적과 대상에 맞춰 종목·난이도·운영 형태를 조정하는 맞춤형 스포츠 특강입니다.',
+        mediaKey: 'programPlay',
+        href: `${SPOKEDU_BASE_PATH}/dispatch`,
+        trackLabel: 'cta-home-system-custom',
       },
     ] satisfies HomeProgramSystemItem[],
   },
   finalCta: {
     title: '목적에 맞는 상담을 선택하세요',
     description:
-      '개인·소그룹 수업, 기관 프로그램 제안, 커리큘럼·콘텐츠 협업 — 아래에서 문의 유형을 선택하면 상담 폼으로 바로 연결됩니다.',
+      '과외수업, 기관 수업, 기타 문의 — 아래에서 유형을 선택하면 상담 폼으로 바로 연결됩니다.',
     links: [
       {
-        label: '개인수업 상담',
+        label: '과외수업 상담',
         href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
         trackLabel: 'cta-home-private-final',
       },
       {
-        label: '기관 제안받기',
+        label: '기관 수업 요청',
         href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
         trackLabel: 'cta-home-dispatch-final',
       },
       {
-        label: '콘텐츠 문의',
-        href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
-        trackLabel: 'cta-home-curriculum-final',
+        label: '기타 문의',
+        href: `${SPOKEDU_BASE_PATH}/contact`,
+        trackLabel: 'cta-home-other-final',
       },
     ],
   },

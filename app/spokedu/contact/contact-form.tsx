@@ -258,6 +258,22 @@ export default function SpokeduContactForm() {
         utilizationTarget: prev.utilizationTarget || '협업 검토',
       }));
     }
+
+    if (resolvedType === 'private') {
+      const fromQuery = searchParams.get('reportSummary')?.trim() ?? '';
+      const fromStorage =
+        typeof window !== 'undefined'
+          ? (window.localStorage.getItem('private.moveReport.summary')?.trim() ?? '')
+          : '';
+      const reportSummary = fromQuery || fromStorage;
+      if (reportSummary) {
+        const prefix = `[Move report 요약]\n${reportSummary}`;
+        setPrivateForm((prev) => ({
+          ...prev,
+          message: prev.message.trim() ? prev.message : prefix,
+        }));
+      }
+    }
   }, [searchParams]);
 
   const activeOption = useMemo(

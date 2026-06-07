@@ -18,15 +18,10 @@ export type AboutTeamRole = {
 export const aboutPage = {
   hero: {
     kicker: '체육교육 운영 브랜드',
-    lines: ['현장 수업에서 시작해', '체육교육 콘텐츠로 확장합니다'] as const,
+    lines: ['연세대 체육교육학과 출신 운영진이', '현장에서 직접 설계했습니다'] as const,
     subtitle:
-      '스포키듀는 아동·청소년의 움직임 경험을 설계하는 체육교육 운영 브랜드입니다. 현장에서 아이들을 가르치고, 그 수업을 프로그램과 커리큘럼 콘텐츠로 확장합니다.',
-    mediaKey: 'proofClass' as HomeMediaKey,
-  },
-  definition: {
-    title: '스포키듀란',
-    body: '스포키듀는 아동·청소년의 움직임 경험을 설계하는 체육교육 운영 브랜드입니다. 현장에서 아이들을 가르치고, 그 수업을 프로그램과 커리큘럼 콘텐츠로 확장합니다.',
-    pillars: ['현장 수업', '프로그램 운영', '커리큘럼 콘텐츠'] as const,
+      '스포키듀는 아동·청소년의 움직임 경험을 설계하는 체육교육 운영 브랜드입니다. 현장에서 아이들을 가르치고 얻은 경험과 체육전문가의 이론을 접목하여 체육 프로그램과 커리큘럼 콘텐츠를 제작합니다.',
+    mediaKey: 'homeHero' as HomeMediaKey,
   },
   whatWeDo: {
     title: '우리가 하는 일',

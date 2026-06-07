@@ -1,16 +1,17 @@
 'use client';
 
-import { BookOpen, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users } from 'lucide-react';
+import { BookOpen, CheckCircle2, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 
-type TabId = 'stopwatch' | 'scoreboard' | 'picker' | 'teams' | 'order';
+type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order';
 
 const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'stopwatch', label: '타이머', icon: Timer },
+  { id: 'return-timer', label: '복귀 타이머', icon: Timer },
   { id: 'scoreboard', label: '점수판', icon: LayoutList },
   { id: 'picker', label: '무작위 선택', icon: Shuffle },
   { id: 'teams', label: '팀 나누기', icon: Users },
@@ -18,13 +19,14 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
 ];
 
 const TOOL_STATUS = [
-  { label: '화면 도구', value: '타이머·점수판' },
+  { label: '화면 도구', value: '타이머·복귀·점수판' },
   { label: '명단 도구', value: '선택·팀·순서' },
   { label: '운영 방식', value: '수업 중 즉시 실행' },
 ] as const;
 
 const TOOL_HELP: Record<TabId, string> = {
   stopwatch: '운동 루틴, 스테이션, 미션 제한 시간을 화면에 크게 띄웁니다.',
+  'return-timer': '쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 10분 카운트다운 도구입니다.',
   scoreboard: '팀 경쟁 활동에서 점수를 크게 보여주고 흐름을 끊지 않습니다.',
   picker: '발표, 시범, 시작 순서를 공정하게 뽑습니다.',
   teams: '참여 수준을 고려해 팀을 빠르게 나눕니다.',
@@ -123,6 +125,304 @@ function StopwatchTab() {
         >
           <RotateCcw size={16} />초기화
         </button>
+      </div>
+    </div>
+  );
+}
+
+const RETURN_TIMER_DURATION_MS = 10 * 60 * 1000;
+
+type ReturnTimerStatus = 'idle' | 'running' | 'paused' | 'expired' | 'completed';
+
+function formatCountdown(ms: number) {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function formatElapsed(ms: number) {
+  const totalSeconds = Math.max(0, Math.round(ms / 1000));
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  if (mins === 0) return `${secs}초`;
+  return `${mins}분 ${secs}초`;
+}
+
+function ReturnTimerTab() {
+  const [remainingMs, setRemainingMs] = useState(RETURN_TIMER_DURATION_MS);
+  const [status, setStatus] = useState<ReturnTimerStatus>('idle');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [completedMs, setCompletedMs] = useState<number | null>(null);
+  const endAtRef = useRef<number | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const lastBeepSecondRef = useRef<number | null>(null);
+  const soundEnabledRef = useRef(soundEnabled);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
+
+  const ensureAudioContext = useCallback(async () => {
+    if (typeof window === 'undefined') return null;
+
+    const AudioContextConstructor = window.AudioContext
+      ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+
+    if (!audioContextRef.current || audioContextRef.current.state === 'closed') {
+      audioContextRef.current = new AudioContextConstructor();
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
+    return audioContextRef.current;
+  }, []);
+
+  const playTone = useCallback((frequency: number, duration: number, delay = 0, volume = 0.1) => {
+    const context = audioContextRef.current;
+    if (!context || !soundEnabledRef.current) return;
+
+    const startAt = context.currentTime + delay;
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, startAt);
+    gain.gain.setValueAtTime(0.0001, startAt);
+    gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(startAt);
+    oscillator.stop(startAt + duration + 0.03);
+  }, []);
+
+  const playWarning = useCallback((seconds: number) => {
+    if (!soundEnabledRef.current) return;
+    if (seconds >= 21 && seconds % 3 === 0) playTone(660, 0.12);
+    else if (seconds >= 11 && seconds % 2 === 0) playTone(720, 0.12);
+    else if (seconds >= 4) playTone(780, 0.13);
+    else playTone(980, 0.18);
+  }, [playTone]);
+
+  const playFinishAlert = useCallback(() => {
+    if (!soundEnabledRef.current) return;
+    [0, 0.28, 0.56, 0.84].forEach((delay, index) => {
+      playTone(index % 2 === 0 ? 720 : 920, 0.24, delay, 0.12);
+    });
+    playTone(820, 0.8, 1.12, 0.12);
+  }, [playTone]);
+
+  useEffect(() => {
+    if (status !== 'running') return;
+
+    const update = () => {
+      const endAt = endAtRef.current;
+      if (!endAt) return;
+
+      const nextRemainingMs = Math.max(0, endAt - Date.now());
+      const nextSecond = Math.ceil(nextRemainingMs / 1000);
+      setRemainingMs(nextRemainingMs);
+
+      if (nextSecond > 0 && nextSecond <= 30 && lastBeepSecondRef.current !== nextSecond) {
+        lastBeepSecondRef.current = nextSecond;
+        playWarning(nextSecond);
+      }
+
+      if (nextRemainingMs <= 0) {
+        endAtRef.current = null;
+        lastBeepSecondRef.current = null;
+        setStatus('expired');
+        playFinishAlert();
+      }
+    };
+
+    update();
+    const intervalId = window.setInterval(update, 100);
+    return () => window.clearInterval(intervalId);
+  }, [playFinishAlert, playWarning, status]);
+
+  useEffect(() => () => {
+    endAtRef.current = null;
+    const context = audioContextRef.current;
+    audioContextRef.current = null;
+    if (context && context.state !== 'closed') {
+      void context.close();
+    }
+  }, []);
+
+  const start = useCallback(async () => {
+    if (soundEnabledRef.current) await ensureAudioContext();
+    lastBeepSecondRef.current = null;
+    setCompletedMs(null);
+    setRemainingMs(RETURN_TIMER_DURATION_MS);
+    endAtRef.current = Date.now() + RETURN_TIMER_DURATION_MS;
+    setStatus('running');
+  }, [ensureAudioContext]);
+
+  const pause = useCallback(() => {
+    const endAt = endAtRef.current;
+    const nextRemainingMs = endAt ? Math.max(0, endAt - Date.now()) : remainingMs;
+    endAtRef.current = null;
+    setRemainingMs(nextRemainingMs);
+    setStatus('paused');
+  }, [remainingMs]);
+
+  const resume = useCallback(async () => {
+    if (soundEnabledRef.current) await ensureAudioContext();
+    lastBeepSecondRef.current = null;
+    endAtRef.current = Date.now() + remainingMs;
+    setStatus('running');
+  }, [ensureAudioContext, remainingMs]);
+
+  const reset = useCallback(() => {
+    endAtRef.current = null;
+    lastBeepSecondRef.current = null;
+    setCompletedMs(null);
+    setRemainingMs(RETURN_TIMER_DURATION_MS);
+    setStatus('idle');
+  }, []);
+
+  const complete = useCallback(() => {
+    const endAt = endAtRef.current;
+    const nextRemainingMs = status === 'running' && endAt ? Math.max(0, endAt - Date.now()) : remainingMs;
+    endAtRef.current = null;
+    lastBeepSecondRef.current = null;
+    setRemainingMs(nextRemainingMs);
+    setCompletedMs(RETURN_TIMER_DURATION_MS - nextRemainingMs);
+    setStatus('completed');
+  }, [remainingMs, status]);
+
+  const toggleSound = useCallback(async () => {
+    if (soundEnabledRef.current) {
+      soundEnabledRef.current = false;
+      setSoundEnabled(false);
+      return;
+    }
+    const context = await ensureAudioContext();
+    soundEnabledRef.current = Boolean(context);
+    setSoundEnabled(Boolean(context));
+  }, [ensureAudioContext]);
+
+  const remainingSeconds = Math.ceil(remainingMs / 1000);
+  const isFinalThirty = status === 'running' && remainingSeconds <= 30;
+  const progress = Math.max(0, Math.min(100, (remainingMs / RETURN_TIMER_DURATION_MS) * 100));
+  const statusLabel = status === 'idle'
+    ? '대기 중'
+    : status === 'paused'
+      ? '일시정지'
+      : status === 'expired'
+        ? '종료'
+        : status === 'completed'
+          ? '모두 모임 완료'
+          : isFinalThirty
+            ? '마지막 30초'
+            : '진행 중';
+  const tone = status === 'expired'
+    ? { accent: '#ef4444', soft: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.28)' }
+    : status === 'completed'
+      ? { accent: '#10b981', soft: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.28)' }
+      : isFinalThirty
+        ? { accent: '#f59e0b', soft: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.28)' }
+        : { accent: 'var(--spm-acc)', soft: 'rgba(99,102,241,0.09)', border: 'rgba(99,102,241,0.22)' };
+
+  return (
+    <div className="h-full overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+      <div
+        className="mx-auto flex min-h-full w-full max-w-[1100px] flex-col items-center justify-center rounded-[22px] px-4 py-8 text-center sm:px-8 lg:py-10"
+        style={{ background: tone.soft, border: `1px solid ${tone.border}` }}
+      >
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <span className="rounded-full px-3 py-1.5 text-[12px] font-black" style={{ background: tone.border, color: tone.accent }}>
+            {statusLabel}
+          </span>
+          <button
+            type="button"
+            onClick={toggleSound}
+            className="inline-flex h-9 items-center gap-2 rounded-full px-3 text-[12px] font-black"
+            style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
+          >
+            {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            {soundEnabled ? '소리 켜짐' : '소리 꺼짐'}
+          </button>
+        </div>
+
+        <div className="mt-5">
+          <h2 className="text-[24px] font-black sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+            쉬는 시간 복귀 타이머
+          </h2>
+          <p className="mx-auto mt-2 max-w-[620px] text-[13px] font-semibold leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>
+            쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 10분 카운트다운 도구입니다.
+          </p>
+        </div>
+
+        <div
+          className="my-7 font-mono text-[clamp(5rem,22vw,13rem)] font-black tabular-nums leading-[0.85]"
+          style={{ fontFamily: 'var(--spm-font-display)', color: tone.accent, letterSpacing: 0 }}
+          aria-live="polite"
+          aria-label={`${Math.floor(remainingSeconds / 60)}분 ${remainingSeconds % 60}초 남음`}
+        >
+          {formatCountdown(remainingMs)}
+        </div>
+
+        <div className="h-3 w-full max-w-[760px] overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
+          <div className="h-full rounded-full transition-[width] duration-100" style={{ width: `${progress}%`, background: tone.accent }} />
+        </div>
+
+        <div className="mt-5 min-h-[52px]">
+          {status === 'expired' ? (
+            <p className="text-[16px] font-black sm:text-[19px]" style={{ color: tone.accent }}>
+              시간이 종료되었습니다. 모두 제자리로 모여주세요.
+            </p>
+          ) : null}
+          {status === 'completed' && completedMs !== null ? (
+            <div className="flex items-center justify-center gap-2 text-[16px] font-black sm:text-[19px]" style={{ color: tone.accent }}>
+              <CheckCircle2 size={21} />
+              모두 모였습니다. {formatElapsed(completedMs)} 만에 모였습니다.
+            </div>
+          ) : null}
+          {isFinalThirty ? (
+            <p className="text-[15px] font-black sm:text-[18px]" style={{ color: tone.accent }}>마지막 30초입니다. 제자리로 모여주세요.</p>
+          ) : null}
+        </div>
+
+        <div className="mt-4 flex w-full max-w-[760px] flex-wrap justify-center gap-3">
+          {status === 'idle' ? (
+            <ActionButton onClick={start}>
+              <Play size={18} fill="currentColor" />타이머 시작하기
+            </ActionButton>
+          ) : null}
+          {status === 'running' ? (
+            <>
+              <ActionButton onClick={pause} accent="#f59e0b">
+                <Pause size={18} fill="currentColor" />일시정지
+              </ActionButton>
+              <ActionButton onClick={complete} accent="#10b981">
+                <CheckCircle2 size={19} />모두 모였어요
+              </ActionButton>
+            </>
+          ) : null}
+          {status === 'paused' ? (
+            <>
+              <ActionButton onClick={resume}>
+                <Play size={18} fill="currentColor" />계속하기
+              </ActionButton>
+              <ActionButton onClick={complete} accent="#10b981">
+                <CheckCircle2 size={19} />모두 모였어요
+              </ActionButton>
+            </>
+          ) : null}
+          {status !== 'idle' ? (
+            <button
+              type="button"
+              onClick={reset}
+              className="flex h-14 min-w-[132px] items-center justify-center gap-2 rounded-[14px] px-6 text-[14px] font-black"
+              style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
+            >
+              <RotateCcw size={16} />다시 시작
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -372,7 +672,7 @@ export default function ClassToolsView() {
               수업 중 바로 꺼내 쓰는 진행 콘솔
             </h1>
             <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              타이머, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
+              타이머, 쉬는 시간 복귀, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
@@ -438,6 +738,7 @@ export default function ClassToolsView() {
 
       <div className="min-h-0 flex-1 overflow-hidden">
         {tab === 'stopwatch' && <StopwatchTab />}
+        {tab === 'return-timer' && <ReturnTimerTab />}
         {tab === 'scoreboard' && <ScoreboardTab />}
         {tab === 'picker' && <PickerTab students={students} usingSample={usingSample} />}
         {tab === 'teams' && <TeamsTab students={students} usingSample={usingSample} />}

@@ -33,6 +33,8 @@ export type SpokeduImageDef = {
 type DefineImageOptions = {
   assetStatus?: SpokeduImageAssetStatus;
   placeholderNote?: string;
+  /** postimg 등 외부 CDN — 로컬 `public/images/spokedu` 대신 직접 URL */
+  externalSrc?: string;
 };
 
 function defineImage(
@@ -48,7 +50,7 @@ function defineImage(
     category,
     file,
     alt,
-    src: `${SPOKEDU_IMAGE_ROOT}/${category}/${file}`,
+    src: options?.externalSrc ?? `${SPOKEDU_IMAGE_ROOT}/${category}/${file}`,
     fallback: `${SPOKEDU_IMAGE_ROOT}/_fallback/${category}.svg`,
     assetStatus,
     ...(assetStatus === 'placeholder-copy' && options?.placeholderNote
@@ -67,6 +69,7 @@ export const SPOKEDU_IMAGES = {
       'home-hero',
       'home-hero-movement.png',
       'KBS 방송 — 스포키듀 아동 신체 측정·체육 프로그램 소개 장면',
+      { externalSrc: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png' },
     ),
     labScene: defineImage(
       'home',

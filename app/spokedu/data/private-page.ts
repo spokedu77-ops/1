@@ -6,9 +6,50 @@ export type PrivateLocationItem = {
   description: string;
 };
 
+export type PrivateInstructor = {
+  photo: string;
+  name: string;
+  degree: string;
+  badges: readonly string[];
+};
+
+export type PrivateCurriculumItem = {
+  img: string;
+  alt: string;
+  title: string;
+  description: string;
+};
+
+export type PrivateClassFlowImage = {
+  src: string;
+  alt: string;
+  large?: boolean;
+};
+
+export type PrivateClassFlowStep = {
+  num: string;
+  title: string;
+  description: string;
+};
+
+export type PrivateReview = {
+  text: string;
+  who: string;
+  course: string;
+};
+
+/** 실시간 카운팅 시뮬레이션 (과외 안내 페이지와 동일 기준) */
+export const PRIVATE_COUNTER_BASE_DATE = '2024-01-01';
+export const PRIVATE_COUNTER_BASE_STUDENTS = 1200;
+export const PRIVATE_COUNTER_BASE_SESSIONS = 8500;
+export const PRIVATE_COUNTER_DAILY_STUDENTS = 3;
+export const PRIVATE_COUNTER_DAILY_SESSIONS = 5;
+
 export const privatePage = {
   hero: {
-    lines: ['운동을 어려워하는 아이도', '자기 속도로', '시작할 수 있습니다'] as const,
+    kicker: '학부모 · 개인수업',
+    trustBadge: '연세대학교 체육교육 전문가 그룹',
+    lines: ['즐거운 신체활동으로', '평생체육의 경험을', '선물합니다'] as const,
     subtitle:
       '아이의 운동 경험, 수업 목표, 가능한 장소를 함께 확인하고 1:1·소그룹 수업 방향을 안내드립니다.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
@@ -19,8 +60,14 @@ export const privatePage = {
       href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
       trackLabel: 'private-cta-consult',
     },
+    secondary: {
+      label: 'Move report 보기',
+      href: '#move-report',
+      trackLabel: 'private-cta-move-report',
+    },
   },
   whoNeeds: {
+    eyebrow: '대상',
     title: '어떤 아이에게 맞을까요',
     items: [
       {
@@ -45,7 +92,32 @@ export const privatePage = {
       },
     ],
   },
+  instructors: {
+    eyebrow: '운영진',
+    title: '검증된 체육교육 전문가 운영진',
+    items: [
+      {
+        photo: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png',
+        name: '총괄팀장 최지훈',
+        degree: '연세대학교 체육교육학 학사',
+        badges: ['지도 경력 10년 차', '교원자격증', '시스템 구축 및 강사 교육'],
+      },
+      {
+        photo: 'https://i.postimg.cc/RZ73P8f2/IMG-7176.jpg',
+        name: '운영팀장 김윤기',
+        degree: '연세대학교 체육교육학 학사',
+        badges: ['지도 경력 8년 차', '교원자격증', '강사 관리 및 프로그램 기획'],
+      },
+      {
+        photo: 'https://i.postimg.cc/5yW4kbxr/20260403-134412.png',
+        name: '수업팀장 김구민',
+        degree: '강원대학교 체육교육학 학사',
+        badges: ['지도 경력 5년 차', '생활체육 지도자 자격증', '프로그램 개발 및 수업 총괄'],
+      },
+    ] satisfies PrivateInstructor[],
+  },
   classCompare: {
+    eyebrow: '수업 형태',
     title: '1:1과 소그룹, 이렇게 선택해요',
     items: [
       {
@@ -62,30 +134,118 @@ export const privatePage = {
       },
     ],
   },
+  curriculumPrograms: {
+    eyebrow: '종목',
+    title: '전문 커리큘럼',
+    lead: '아이의 연령과 기초 체력을 분석하여 가장 적합한 프로그램을 개별 설계합니다.',
+    items: [
+      { img: 'https://i.postimg.cc/8Cjz4T9Y/Kakao-Talk-20260415-155838324.png', alt: '줄넘기', title: '줄넘기', description: '리듬감 및 전신 협응력 강화' },
+      { img: 'https://i.postimg.cc/QMHdmjwP/Kakao-Talk-20260415-155838324-01.png', alt: '육상', title: '육상(달리기)', description: '바른 자세 교정과 반응 속도 향상' },
+      { img: 'https://i.postimg.cc/3wVJbPQZ/Kakao-Talk-20260415-155838324-02.png', alt: '자전거', title: '자전거', description: '균형 감각 및 두려움 극복' },
+      { img: 'https://i.postimg.cc/wBZTbSYW/Kakao-Talk-20260415-155838324-03.png', alt: '인라인', title: '인라인', description: '안전한 라이딩과 중심 이동 훈련' },
+      { img: 'https://i.postimg.cc/JhGzxRvn/Kakao-Talk-20260415-155337917.png', alt: '유아체육', title: '유아체육', description: '놀이 기반 기초 운동 발달' },
+      { img: 'https://i.postimg.cc/R0yVbjz5/Kakao-Talk-20260415-155848168.png', alt: '축구', title: '축구', description: '민첩성, 팀워크, 기초 구기 능력 향상' },
+      { img: 'https://i.postimg.cc/ZqC5HJ2n/Kakao-Talk-20260415-155848168-01.png', alt: '농구', title: '농구', description: '드리블과 공간 인지 능력 강화' },
+      { img: 'https://i.postimg.cc/vBcLmNQ2/Kakao-Talk-20260416-153848501.png', alt: '팝스', title: '팝스', description: '팝스 수행평가 대비 및 체력향상' },
+    ] satisfies PrivateCurriculumItem[],
+  },
+  classFlow: {
+    eyebrow: '수업 구조',
+    title: '스포키듀 수업 스케치',
+    lead: '아이의 자발적인 참여를 이끌어내는 체계적인 3단계 수업 구조입니다.',
+    steps: [
+      {
+        num: '01',
+        title: '라포 형성 및 신체기능 향상 세션',
+        description:
+          '강사와의 유대감을 형성하고, 그날 진행할 메인 세션에 필요한 신체 기능 향상 프로그램을 진행합니다.',
+      },
+      {
+        num: '02',
+        title: '메인 활동',
+        description:
+          '아동별 발달 특성과 운동 수행 수준에 따라 다양한 종목을 맞춤형으로 구성하고 기술 습득과 신체 기능 향상이 함께 이루어지는 체육 수업을 제공합니다.',
+      },
+      {
+        num: '03',
+        title: '쿨다운 및 피드백',
+        description:
+          '신체를 안정시키며 오늘 성취한 부분에 대해 스스로 이야기하게 유도하고, 긍정적인 피드백으로 자존감을 높여 마무리합니다.',
+      },
+    ] satisfies PrivateClassFlowStep[],
+    images: [
+      { src: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg', alt: '스포키듀 수업 스케치 1', large: true },
+      { src: 'https://i.postimg.cc/FHTMT3QX/IMG-1392.jpg', alt: '스포키듀 수업 스케치 2' },
+      { src: 'https://i.postimg.cc/VkKxKnPV/DSC06500.jpg', alt: '스포키듀 수업 스케치 3' },
+    ] satisfies PrivateClassFlowImage[],
+  },
   classFormat: {
+    eyebrow: '장소',
     title: '수업 장소와 방식',
     lead: '아이에게 익숙하고 안전한 공간을 우선하며, 수업 형태에 맞게 장소를 함께 정합니다.',
     locations: [
-      {
-        title: 'SPOKEDU LAB',
-        description: '정해진 공간에서 안정적으로 수업을 진행합니다.',
-      },
-      {
-        title: '아파트 커뮤니티',
-        description: '입주민 공간, 실내 체육 공간 등 환경에 맞춰 수업을 구성합니다.',
-      },
-      {
-        title: '공원·개방 체육 공간',
-        description: '날씨와 안전 동선을 확인한 뒤 야외 움직임 수업으로 운영합니다.',
-      },
-      {
-        title: '기타 협의 가능한 공간',
-        description: '거주 지역과 일정을 상담한 뒤, 함께 운영 가능한 장소를 조율합니다.',
-      },
+      { title: 'SPOKEDU LAB', description: '정해진 공간에서 안정적으로 수업을 진행합니다.' },
+      { title: '아파트 커뮤니티', description: '입주민 공간, 실내 체육 공간 등 환경에 맞춰 수업을 구성합니다.' },
+      { title: '공원·개방 체육 공간', description: '날씨와 안전 동선을 확인한 뒤 야외 움직임 수업으로 운영합니다.' },
+      { title: '기타 협의 가능한 공간', description: '거주 지역과 일정을 상담한 뒤, 함께 운영 가능한 장소를 조율합니다.' },
     ] satisfies PrivateLocationItem[],
-    mediaKey: 'trackPrivate' as HomeMediaKey,
+  },
+  sessionCycles: {
+    eyebrow: '운영 단위',
+    title: '수업 사이클',
+    lead: '아이의 상황과 목표에 맞춰 원데이·단기·정기 단위로 유연하게 운영합니다.',
+    items: [
+      { label: '원데이', description: '체험·집중 보완이 필요할 때, 짧은 단위로 시작합니다.' },
+      { label: '단기', description: '특정 목표(종목·체력 등)에 맞춘 집중 코스로 운영합니다.' },
+      {
+        label: '정기 (8회차)',
+        description:
+          '꾸준한 습관 형성을 위해 정기 단위로 이어갑니다. 정기 수업은 최대 2회까지 연기가 가능합니다.',
+      },
+    ],
+  },
+  moveReport: {
+    eyebrow: '진단',
+    title: 'Move report',
+    lead: '우리 아이의 움직임 유형을 빠르게 확인하고, 상담 시 참고할 요약을 함께 전달해 주세요.',
+    kicker: '3분 · 12문항 · 무료 테스트',
+    headline: 'Move report로 수업 설계 힌트를 먼저 확인하세요',
+    description:
+      '테스트 결과는 상담 전 아이 상태를 이해하는 참고자료입니다. 아래 순서대로 진행하면 됩니다.',
+    steps: [
+      '새 탭에서 Move report를 완료합니다.',
+      '결과 화면의 핵심 문구를 복사합니다.',
+      '이 페이지로 돌아와 붙여넣고, 상담 폼을 작성합니다.',
+    ] as const,
+    startHref: '/move-report',
+    startLabel: 'Move report 새 탭에서 시작하기',
+    contactHref: `${SPOKEDU_BASE_PATH}/contact?type=private`,
+    contactLabel: '요약 반영 후 상담하기',
+  },
+  reviews: {
+    eyebrow: '후기',
+    title: '학부모 후기',
+    lead: '스포키듀의 체계적인 교육 시스템을 먼저 경험하신 학부모님들의 솔직한 피드백입니다.',
+    items: [
+      {
+        text: '동네 학원에내면 아이가 뒤처질까 봐 걱정이었는데, 1:1로 아이 성향에 완벽하게 맞춰서 지도해주시니 아이가 매주 체육 시간만 기다려요.',
+        who: '초등 2학년 학부모',
+        course: '기초체력 및 달리기 코스',
+      },
+      {
+        text: '공을 받는 것도 무서워하고 몸을 자꾸 피했는데, 강사님이 던지기보다 보는 법, 기다리는 법, 받는 자세부터 차근차근 잡아주셨어요. 지금은 스스로 먼저 공놀이하자고 말할 만큼 자신감이 생겼습니다.',
+        who: '7세 학부모',
+        course: '기초 구기 자신감 코스',
+      },
+      {
+        text: 'PAPS 준비를 막연하게만 생각했는데, 아이 수준에 맞춰 차근차근 지도해주셔서 부담 없이 시작할 수 있었어요. 수업 후에는 아이도 체육에 대한 자신감이 조금씩 생기고, 기록도 전보다 좋아지는 게 보여 만족스러웠습니다.',
+        who: '초등 5학년 학부모',
+        course: 'PAPS 대비 체력 향상 코스',
+      },
+    ] satisfies PrivateReview[],
   },
   consultFlow: {
+    eyebrow: '상담',
     title: '상담은 이렇게 진행돼요',
     steps: [
       { label: '운동 경험 확인', detail: '아이의 운동 경험과 지금 관심 있는 활동을 함께 이야기합니다.' },
@@ -95,6 +255,7 @@ export const privatePage = {
     ] as const,
   },
   faq: {
+    eyebrow: 'FAQ',
     title: '상담 전에 많이 묻는 질문',
     items: [
       {
@@ -102,20 +263,20 @@ export const privatePage = {
         a: '가능합니다. 아이의 속도에 맞춰 작은 참여부터 이어가며, 움직임 경험과 자신감을 함께 쌓아갑니다.',
       },
       {
-        q: '1:1과 소그룹 중 무엇이 좋을까요?',
-        a: '처음이거나 아이만의 속도가 중요하면 1:1, 또래와 함께하는 경험을 넓히고 싶다면 소그룹이 잘 맞습니다. 상담에서 함께 정해요.',
+        q: '수업 가능한 시간대는 어떻게 되나요?',
+        a: '평일 및 주말(토, 일) 모두 수업 가능합니다. 희망하시는 스케줄에 맞춰 최대한 조율해드립니다.',
       },
       {
-        q: '수업 장소는 어떻게 정하나요?',
-        a: 'LAB, 아파트 커뮤니티, 공원·개방 체육 공간 등 아이에게 익숙한 곳을 우선합니다. 거주 지역과 일정을 보고 함께 정합니다.',
+        q: '선생님 배정은 어떻게 되나요? 여자 선생님도 계실까요?',
+        a: '수업 가능한 종목, 위치, 학생 희망 스케줄에 맞춰 배정됩니다. 여자 선생님 희망 시에도 배정 가능합니다.',
       },
       {
         q: '비가 오거나 일정이 바뀌면 어떻게 하나요?',
-        a: '날씨와 안전을 먼저 확인하고, 실내·대체 일정으로 조율합니다. 변경이 필요하면 미리 연락드려 부담 없이 맞춥니다.',
+        a: '날씨와 안전을 먼저 확인하고, 실내·대체 일정으로 조율합니다. 기상 악화 시 휴강 또는 보강 일정을 조율해드립니다.',
       },
       {
         q: '수업 후 피드백을 받을 수 있나요?',
-        a: '회차 후 오늘의 참여와 다음에 이어갈 방향을 짧게 안내드립니다. 학부모가 수업 흐름을 이해하기 쉽게 전달합니다.',
+        a: '매 회차 종료 후 익일 오전까지 아이가 성취한 부분과 앞으로의 방향성에 대한 피드백을 카카오 채널을 통해 전달해 드립니다.',
       },
     ] as const,
   },

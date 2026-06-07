@@ -1,9 +1,14 @@
 'use client';
 
-import { Check, ClipboardList, Clock3, Gauge, MapPin, Maximize, Minimize, Play, RotateCcw, Users, X } from 'lucide-react';
+import { Check, ClipboardList, Clock3, Gauge, MapPin, Maximize, Minimize, Music2, Play, RotateCcw, Users, Volume2, VolumeX, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
+import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
+import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
+import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 
 import { hasBrokenText } from '../../lib/clean';
 import { useSession } from '../../hooks/useSession';
@@ -13,6 +18,12 @@ import { isTrialExpired } from '../../lib/subscription';
 import { useIsPro, useMasterStore, useProfile } from '../../store';
 import type { Cue, Session, SpomoveLaunchPreset } from '../../types';
 import { EngineRouter } from './EngineRouter';
+import {
+  findOfficialSpomovePreset,
+  resolveCueSeconds,
+  resolveRounds,
+  type OfficialSpomovePreset,
+} from '../officialSpomovePresets';
 
 type SessionState = 'idle' | 'countdown' | 'running' | 'done' | 'paused';
 type LaunchMode = 'projector' | 'mobile' | 'class';
@@ -228,12 +239,84 @@ function EngineBriefing({
   );
 }
 
+function OfficialEngineBriefing({
+  preset,
+  cueSeconds,
+  rounds,
+  bgmEnabled,
+  soundEnabled,
+  startDisabled,
+  onStart,
+}: {
+  preset: OfficialSpomovePreset;
+  cueSeconds: number;
+  rounds: number;
+  bgmEnabled: boolean;
+  soundEnabled: boolean;
+  startDisabled: boolean;
+  onStart: () => void;
+}) {
+  const facts = [
+    { icon: Gauge, label: '유형', value: preset.category },
+    { icon: Clock3, label: '신호 간격', value: `${cueSeconds}초` },
+    { icon: Users, label: '반복 횟수', value: `${rounds}회` },
+    { icon: bgmEnabled ? Music2 : VolumeX, label: 'BGM', value: bgmEnabled ? '선택한 BGM' : '사용 안 함' },
+  ];
+
+  return (
+    <div className="flex h-full items-center justify-center px-5 pb-8 pt-24 sm:px-8">
+      <section className="w-full max-w-[880px] overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.06] shadow-[0_28px_90px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+        <div className="border-b border-white/10 bg-white/[0.04] px-5 py-4 sm:px-7">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-200/70">SPOMOVE official preset</p>
+          <h1 className="mt-2 text-[30px] font-black leading-tight text-white sm:text-[44px]">{preset.title}</h1>
+          <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/58">{preset.description}</p>
+        </div>
+
+        <div className="grid gap-4 p-5 sm:grid-cols-4 sm:p-7">
+          {facts.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+              <Icon className="h-4 w-4 text-indigo-200" />
+              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-white/34">{label}</p>
+              <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-4 border-t border-white/10 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-7">
+          <div>
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">큰 화면</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">
+                {soundEnabled ? <Volume2 className="mr-1 inline h-3.5 w-3.5" /> : <VolumeX className="mr-1 inline h-3.5 w-3.5" />}
+                효과음 {soundEnabled ? '켜짐' : '꺼짐'}
+              </span>
+            </div>
+            <p className="mt-3 text-xs font-semibold leading-5 text-white/42">{preset.recommendedUse}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onStart}
+            disabled={startDisabled}
+            className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-wait disabled:opacity-50"
+          >
+            <Play className="h-5 w-5 fill-black" />
+            {startDisabled ? 'BGM 준비 중' : '큰 화면으로 실행'}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const requestedDrillId = searchParams.get('drill') ?? 'reactTrain';
   const launchMode = normalizeMode(searchParams.get('mode'));
   const presetId = searchParams.get('preset') ?? '';
+  const officialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
+  const requestedBgmPath = searchParams.get('bgm') ?? '';
+  const soundEnabled = searchParams.get('sound') !== 'off';
   const requestedEngineMode = searchParams.get('engineMode') ?? '';
   const requestedLevel = Number(searchParams.get('level') ?? '');
   const requestedDuration = Number(searchParams.get('duration') ?? '');
@@ -243,14 +326,26 @@ function SpomoveSessionContent() {
   const drills = useMasterStore((state) => state.drills);
   const profile = useProfile();
   const isPro = useIsPro();
+  const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
   const { activeSession, stats, start, end, markCue, markResponse, pause, resume } = useSession();
 
-  const drill = useMemo(() => drills.find((item) => item.id === requestedDrillId || item.engine?.mode === requestedDrillId) ?? drills[0] ?? null, [drills, requestedDrillId]);
+  const drill = useMemo(
+    () =>
+      officialPreset
+        ? null
+        : drills.find((item) => item.id === requestedDrillId || item.engine?.mode === requestedDrillId) ??
+          (presetId ? null : drills[0] ?? null),
+    [drills, officialPreset, presetId, requestedDrillId],
+  );
   const preset = useMemo(() => OFFICIAL_SPOMOVE_PRESETS.find((item) => item.id === presetId) ?? null, [presetId]);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
   const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
   const cues = useMemo(() => (drill?.cues?.length ? drill.cues : SESSION_CUES).map(cleanCue), [drill]);
-  const drillName = drill ? cleanDrillName(drill.id, drill.name, drill.engine?.mode) : 'SPOMOVE';
+  const drillName = officialPreset?.title ?? (drill ? cleanDrillName(drill.id, drill.name, drill.engine?.mode) : 'SPOMOVE');
+  const cueSeconds = officialPreset ? resolveCueSeconds(officialPreset, searchParams.get('cueSeconds')) : undefined;
+  const rounds = officialPreset ? resolveRounds(officialPreset, searchParams.get('rounds')) : undefined;
+  const selectedBgmPath = requestedBgmPath && bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
+  const isBgmPending = Boolean(officialPreset && requestedBgmPath && bgmLoading);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
@@ -260,7 +355,9 @@ function SpomoveSessionContent() {
   const [lastRT, setLastRT] = useState<number | null>(null);
   const [finalSession, setFinalSession] = useState<Session | null>(null);
   const [remotePreset, setRemotePreset] = useState<SpomoveLaunchPreset | null>(null);
+  const [remotePresetChecked, setRemotePresetChecked] = useState(!presetId || Boolean(preset || officialPreset));
   const timeoutRef = useRef<number | null>(null);
+  const bgmPlayerRef = useRef<BgmPlayer | null>(null);
 
   const maxCues = modeConfig.maxCues;
   const currentCue = cues[cueIndex % cues.length] ?? CLEAN_CUES[0]!;
@@ -271,7 +368,12 @@ function SpomoveSessionContent() {
   const isScreenMode = launchMode === 'projector' || launchMode === 'class';
 
   useEffect(() => {
-    if (!presetId || preset) return;
+    if (!presetId || preset || officialPreset) {
+      setRemotePresetChecked(true);
+      return;
+    }
+    setRemotePreset(null);
+    setRemotePresetChecked(false);
     let alive = true;
     fetch('/api/spokedu-master/spomove-presets')
       .then((res) => (res.ok ? res.json() : null))
@@ -279,15 +381,22 @@ function SpomoveSessionContent() {
         if (!alive || !Array.isArray(json?.data)) return;
         setRemotePreset(json.data.find((item) => item.id === presetId) ?? null);
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (alive) setRemotePresetChecked(true);
+      });
     return () => {
       alive = false;
     };
-  }, [preset, presetId]);
+  }, [officialPreset, preset, presetId]);
 
   useEffect(() => {
+    if (officialPreset) {
+      if (isTrialExpired(profile)) router.replace('/spokedu-master/spomove');
+      return;
+    }
     if (!drill) {
-      router.replace('/spokedu-master/spomove');
+      if (!presetId) router.replace('/spokedu-master/spomove');
       return;
     }
     if (isTrialExpired(profile)) {
@@ -295,7 +404,7 @@ function SpomoveSessionContent() {
       return;
     }
     if (drill.isPro && !isPro) router.replace('/spokedu-master/spomove');
-  }, [drill, isPro, profile, router]);
+  }, [drill, isPro, officialPreset, presetId, profile, router]);
 
   const clearTimer = useCallback(() => {
     if (timeoutRef.current != null) {
@@ -304,12 +413,40 @@ function SpomoveSessionContent() {
     }
   }, []);
 
+  const stopBgm = useCallback(() => {
+    try {
+      bgmPlayerRef.current?.stop();
+    } catch {
+      // Audio cleanup must not block session exit.
+    }
+    bgmPlayerRef.current = null;
+  }, []);
+
+  const startOfficialSession = useCallback(() => {
+    if (!officialPreset || isBgmPending) return;
+    stopBgm();
+    if (launchMode === 'projector' && !document.fullscreenElement) {
+      void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    }
+    if (soundEnabled) getAudioCtx();
+    if (selectedBgmPath) {
+      const player = new BgmPlayer();
+      player.init(getPublicUrl(selectedBgmPath), 0.35);
+      bgmPlayerRef.current = player;
+      void player.play();
+      player.fadeIn(180);
+    }
+    setFinalSession(null);
+    setState('running');
+  }, [isBgmPending, launchMode, officialPreset, selectedBgmPath, soundEnabled, stopBgm]);
+
   const finishSession = useCallback(() => {
     clearTimer();
+    stopBgm();
     const session = end();
     setFinalSession(session);
     setState('done');
-  }, [clearTimer, end]);
+  }, [clearTimer, end, stopBgm]);
 
   const showNextCue = useCallback(() => {
     setCueIndex((index) => index + 1);
@@ -371,7 +508,10 @@ function SpomoveSessionContent() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === 'Space') {
         event.preventDefault();
-        if (state === 'idle' || state === 'done') startCountdown();
+        if (state === 'idle' || state === 'done') {
+          if (officialPreset) startOfficialSession();
+          else startCountdown();
+        }
         else if (state === 'running') handleResponse();
       }
       if (event.code === 'Escape') {
@@ -392,9 +532,11 @@ function SpomoveSessionContent() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleResponse, markCue, pause, resume, startCountdown, state]);
+  }, [handleResponse, markCue, officialPreset, pause, resume, startCountdown, startOfficialSession, state]);
 
   useEffect(() => clearTimer, [clearTimer]);
+
+  useEffect(() => stopBgm, [stopBgm]);
 
   useEffect(() => {
     const handler = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -404,6 +546,7 @@ function SpomoveSessionContent() {
 
   const reset = () => {
     clearTimer();
+    stopBgm();
     if (state === 'running' || state === 'paused') end();
     setFinalSession(null);
     setLastRT(null);
@@ -424,11 +567,15 @@ function SpomoveSessionContent() {
   };
 
   const resolvedPreset = remotePreset ?? preset;
-  const engineMode = requestedEngineMode || resolvedPreset?.engineMode || drill?.engine?.mode;
-  const engineLevel = Number.isFinite(requestedLevel) && requestedLevel > 0 ? requestedLevel : resolvedPreset?.engineLevel ?? drill?.engine?.level ?? 1;
+  const engineMode = officialPreset?.engine.mode || requestedEngineMode || resolvedPreset?.engineMode || drill?.engine?.mode;
+  const engineLevel = officialPreset?.engine.level ?? (Number.isFinite(requestedLevel) && requestedLevel > 0 ? requestedLevel : resolvedPreset?.engineLevel ?? drill?.engine?.level ?? 1);
   const engineDurationSec = Number.isFinite(requestedDuration) && requestedDuration > 0 ? requestedDuration : resolvedPreset?.durationSec;
-  const engineSpeedSec = Number.isFinite(requestedSpeed) && requestedSpeed > 0 ? requestedSpeed : resolvedPreset?.speedSec;
-  const canRunEngine = Boolean(drill?.engine && engineMode && isSupportedMasterEngineMode(engineMode));
+  const engineSpeedSec = cueSeconds ?? (Number.isFinite(requestedSpeed) && requestedSpeed > 0 ? requestedSpeed : resolvedPreset?.speedSec);
+  const canRunEngine = Boolean(
+    engineMode &&
+      (officialPreset ? engineMode === 'basic' : drill?.engine && isSupportedMasterEngineMode(engineMode)),
+  );
+  const invalidPreset = Boolean(presetId && remotePresetChecked && !officialPreset && !resolvedPreset);
 
   if (canRunEngine && engineMode && state === 'running') {
     return (
@@ -437,8 +584,11 @@ function SpomoveSessionContent() {
         level={engineLevel}
         durationSec={engineDurationSec}
         speedSec={engineSpeedSec}
+        rounds={rounds}
+        soundEnabled={soundEnabled}
         onExit={exitSession}
         onComplete={() => {
+          stopBgm();
           setFinalSession(null);
           setState('done');
         }}
@@ -446,7 +596,22 @@ function SpomoveSessionContent() {
     );
   }
 
-  if (!drill) return null;
+  if (invalidPreset) {
+    return (
+      <main className="flex h-dvh items-center justify-center bg-slate-950 px-5 text-white">
+        <section className="w-full max-w-lg rounded-[28px] border border-white/10 bg-white/[0.06] p-8 text-center">
+          <X className="mx-auto h-8 w-8 text-rose-300" />
+          <h1 className="mt-5 text-2xl font-black">SPOMOVE 활동을 찾을 수 없습니다.</h1>
+          <p className="mt-3 text-sm font-semibold text-white/55">목록으로 돌아가 다시 선택해 주세요.</p>
+          <Link href="/spokedu-master/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-black text-slate-950">
+            SPOMOVE 목록으로
+          </Link>
+        </section>
+      </main>
+    );
+  }
+
+  if (!drill && !officialPreset) return null;
 
   return (
     <div
@@ -459,7 +624,19 @@ function SpomoveSessionContent() {
     >
       {state !== 'running' ? <TopBar drillName={drillName} mode={launchMode} isFullscreen={isFullscreen} onToggleFullscreen={toggleFullscreen} onExit={exitSession} /> : null}
 
-      {state === 'idle' && canRunEngine && engineMode ? (
+      {state === 'idle' && officialPreset ? (
+        <OfficialEngineBriefing
+          preset={officialPreset}
+          cueSeconds={cueSeconds ?? officialPreset.defaultCueSeconds}
+          rounds={rounds ?? officialPreset.defaultRounds}
+          bgmEnabled={Boolean(selectedBgmPath)}
+          soundEnabled={soundEnabled}
+          startDisabled={isBgmPending}
+          onStart={startOfficialSession}
+        />
+      ) : null}
+
+      {state === 'idle' && !officialPreset && canRunEngine && engineMode ? (
         <EngineBriefing
           preset={resolvedPreset}
           drillName={drillName}
@@ -471,7 +648,7 @@ function SpomoveSessionContent() {
         />
       ) : null}
 
-      {state === 'idle' && !canRunEngine ? (
+      {state === 'idle' && !officialPreset && !canRunEngine ? (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
           <button
             type="button"
@@ -553,7 +730,7 @@ function SpomoveSessionContent() {
             </>
           ) : null}
           <div className={`mt-7 grid w-full max-w-[680px] gap-2 ${programId ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
-            <button type="button" onClick={startCountdown} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-bold text-white shadow-[0_16px_44px_rgba(79,70,229,0.26)]">
+            <button type="button" onClick={officialPreset ? startOfficialSession : startCountdown} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-bold text-white shadow-[0_16px_44px_rgba(79,70,229,0.26)]">
               <RotateCcw size={16} />
               다시 시작
             </button>

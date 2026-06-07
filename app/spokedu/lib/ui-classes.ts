@@ -36,6 +36,13 @@ export const landingHeroSupport =
 
 export const landingPageStack = landingTrackStack;
 
+/** 개인·기관 랜딩 — 밀도 높은 섹션 리듬 */
+export const audienceLandingStack =
+  'flex w-full flex-col gap-10 overflow-x-clip pb-8 sm:gap-12 sm:pb-10 lg:gap-16 lg:pb-12';
+
+export const landingCardShell =
+  'rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.03]';
+
 /** 서브 랜딩 Hero shell — Home `homeHeroShell`과 동일 정렬 */
 export const landingHeroShell =
   'relative overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-white via-white to-slate-50/80 py-8 shadow-sm shadow-slate-900/[0.06] ring-1 ring-slate-200/70 sm:rounded-[2rem] sm:py-10 lg:py-12';
@@ -71,7 +78,7 @@ export const homePhotoGrade =
 export const landingSectionTitle = 'text-xl font-bold tracking-tight text-slate-950 sm:text-2xl';
 
 export const landingHeroGrid =
-  'flex flex-col gap-6 sm:gap-8 lg:grid lg:grid-cols-[1fr_1.15fr] lg:items-center lg:gap-12';
+  'flex flex-col gap-6 sm:gap-8 lg:grid lg:grid-cols-[minmax(0,1.08fr)_minmax(0,1fr)] lg:items-center lg:gap-10 xl:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] xl:gap-12';
 
 /** 모바일: 카피·CTA 먼저, 이미지 다음 */
 export const landingHeroCopy = 'order-1 space-y-5 sm:space-y-6 lg:space-y-8';

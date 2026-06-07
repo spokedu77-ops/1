@@ -75,15 +75,14 @@ export function isRemoteImage(src: string) {
 
 /** 홈·라이브러리 카드/히어로 — 전용 hero 우선, 검증된 참고 영상 썸네일만 그다음 */
 export function resolveProgramHero(program: Program): string | undefined {
-  const merged = pickBestHeroUrl(program.lessonDetail?.heroImageUrl, program.thumbnailUrl);
   const videoUrl = trustedVideoUrl(program);
   const videoThumb = videoUrl ? getVideoThumbnail(videoUrl) : undefined;
+  const setupImage = program.lessonDetail?.setupImageUrl?.trim();
+  const legacyFallback = pickBestHeroUrl(program.thumbnailUrl, program.lessonDetail?.heroImageUrl);
 
-  if (isDedicatedMasterHero(merged) && !isInterimDedicatedHero(merged)) return merged;
-  if (merged && !isStockPlaceholderImage(merged) && !isInterimDedicatedHero(merged)) return merged;
-  if (isInterimDedicatedHero(merged)) return merged;
+  if (setupImage) return setupImage;
   if (videoThumb) return videoThumb;
-  return merged ?? videoThumb;
+  return legacyFallback;
 }
 
 export function programHasPlayableVideo(program: Program): boolean {

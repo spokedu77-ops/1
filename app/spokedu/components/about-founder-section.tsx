@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 import { aboutFounder, ABOUT_FOUNDER_IMAGE } from '../data/about-founder';
 import { koreanLineBreak } from '../lib/ui-classes';
+import { ExternalPhoto } from './external-photo';
 import { HomeSectionHeading } from './home-section-heading';
 
 export function AboutFounderSection() {
@@ -14,7 +14,7 @@ export function AboutFounderSection() {
       <HomeSectionHeading
         eyebrow={aboutFounder.eyebrow}
         title={aboutFounder.title}
-        lead={`${aboutFounder.role} — 현장 수업과 프로그램 운영을 이끕니다.`}
+        lead={aboutFounder.role}
       />
 
       <motion.div
@@ -24,22 +24,24 @@ export function AboutFounderSection() {
         transition={{ duration: 0.4 }}
         className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
       >
-        <div className="grid lg:grid-cols-[minmax(0,13.5rem)_1fr] lg:divide-x lg:divide-slate-100">
-          <div className="border-b border-slate-100 bg-slate-50/50 p-4 sm:p-5 lg:border-b-0 lg:p-5">
-            <div className="mx-auto w-full max-w-[13.5rem] lg:mx-0">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-slate-100">
-                <Image
+        <div className="grid lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,17.5rem)_minmax(0,1fr)] lg:divide-x lg:divide-slate-100">
+          <div className="border-b border-slate-100 bg-slate-50/50 p-5 sm:p-6 lg:border-b-0 lg:p-7 xl:p-8">
+            <div className="mx-auto w-full max-w-[17.5rem] lg:mx-0 lg:max-w-none">
+              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-slate-100 shadow-sm ring-1 ring-slate-200/80">
+                <ExternalPhoto
                   src={ABOUT_FOUNDER_IMAGE}
                   alt="스포키듀 대표 최지훈"
-                  fill
-                  className="object-cover object-top"
-                  sizes="(max-width: 1024px) 216px, 216px"
+                  className="absolute inset-0"
+                  fit="cover"
+                  priority
                 />
               </div>
-              <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
                 {aboutFounder.message.lead}
               </p>
-              <p className="mt-1 text-sm font-semibold text-slate-900">{aboutFounder.role}</p>
+              <p className={`mt-1.5 text-sm font-semibold leading-snug text-slate-900 ${koreanLineBreak}`}>
+                {aboutFounder.role}
+              </p>
             </div>
           </div>
 

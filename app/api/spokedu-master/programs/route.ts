@@ -41,7 +41,7 @@ function categoryToColors(category: string): [string, string, string, string] {
 }
 
 function extractYouTubeId(url: string): string | null {
-  const match = url.match(/(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/);
+  const match = url.match(/(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/)|youtu\.be\/)([^"&?/\s]{11})/);
   return match?.[1] ?? null;
 }
 
@@ -73,18 +73,6 @@ function normalizeImageUrl(value: string | null | undefined): string | undefined
 
 function normalizeImageUrls(value: string[] | null | undefined): string[] {
   return (value ?? []).map((item) => item.trim()).filter(Boolean);
-}
-
-function inferRelatedSpomoveIds(input: { title: string; category: string; tags: string[]; description: string; steps: string[] }): string[] {
-  const text = [input.title, input.category, input.description, ...input.tags, ...input.steps].join(' ');
-  const hasExplicitScreenCue = /SPOMOVE|스포무브|화면 활동|화면 신호|색 신호|출발 신호/i.test(text);
-
-  if (/펀스틱|펜싱|fencing|funstick|찌르기|상대|거리|타이밍/i.test(text)) return ['reactTrain', 'simon'];
-  if (hasExplicitScreenCue && /민첩|스피드|반응|출발|방향|전환|순발|사다리|스프린트/i.test(text)) return ['reactTrain', 'basic'];
-  if (hasExplicitScreenCue && /균형|자세|밸런스|멈춤|정지|중심/i.test(text)) return ['gonogo'];
-  if (hasExplicitScreenCue && /리듬|박자|표현|음악|거울|패턴 전환/i.test(text)) return ['flow'];
-
-  return [];
 }
 
 function normalizeSpomoveIds(ids: string[]): string[] {
@@ -125,15 +113,7 @@ function buildContentQuality(program: Program): Program {
   if (!detail) return program;
 
   const rules = detail.rules?.length ? detail.rules : program.steps;
-  const relatedSpomoveIds = detail.relatedSpomoveIds.length
-    ? normalizeSpomoveIds(detail.relatedSpomoveIds)
-    : inferRelatedSpomoveIds({
-      title: program.title,
-      category: program.category,
-      tags: program.tags,
-      description: program.description,
-      steps: program.steps,
-    });
+  const relatedSpomoveIds = normalizeSpomoveIds(detail.relatedSpomoveIds);
 
   return {
     ...program,
@@ -237,7 +217,7 @@ function applyPremiumContentOverlay(program: Program): Program {
         '펀스틱은 휘두르지 않고 목표물을 향해 "밀어 찌르기"로만 사용합니다.',
       ],
       relatedSpomoveIds:
-        (current?.relatedSpomoveIds?.length ?? 0) > 0 ? normalizeSpomoveIds(current?.relatedSpomoveIds ?? []) : ['reactTrain', 'simon'],
+        normalizeSpomoveIds(current?.relatedSpomoveIds ?? []),
       videoUrl: normalizeVideoUrl(current?.videoUrl),
       heroImageUrl: current?.heroImageUrl,
       setupImageUrl: current?.setupImageUrl,
@@ -347,7 +327,7 @@ function cleanFunstickProgram(program: Program): Program {
         '접시콘으로 경기 구역을 넓게 표시하고 대기 학생은 구역 밖에서 기다립니다.',
         '펀스틱은 휘두르지 않고 목표물을 향한 가벼운 찌르기로만 사용합니다.',
       ],
-      relatedSpomoveIds: ['reactTrain', 'simon'],
+      relatedSpomoveIds: normalizeSpomoveIds(program.lessonDetail?.relatedSpomoveIds ?? []),
       videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
       heroImageUrl: program.lessonDetail?.heroImageUrl,
       setupImageUrl: program.lessonDetail?.setupImageUrl,
@@ -383,15 +363,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     '규칙을 짧게 설명하고 시범을 보여줍니다.',
     '기본 라운드로 시작한 뒤 난이도를 단계적으로 올립니다.',
   ]);
-  const relatedSpomoveIds = program.lessonDetail?.relatedSpomoveIds?.length
-    ? normalizeSpomoveIds(program.lessonDetail.relatedSpomoveIds)
-    : inferRelatedSpomoveIds({
-      title,
-      category,
-      tags: program.tags,
-      description: program.description,
-      steps,
-    });
+  const relatedSpomoveIds = normalizeSpomoveIds(program.lessonDetail?.relatedSpomoveIds ?? []);
   const description = cleanText(
     program.description,
     `${title} 활동으로 ${focus}을 자연스럽게 경험하는 체육 수업 패키지입니다.`,
@@ -403,15 +375,15 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     ...program,
     title,
     category,
-    grade: cleanText(program.grade, '대상 확인 필요'),
-    space: cleanText(program.space, '공간 확인 필요'),
+    grade: cleanText(program.grade, ''),
+    space: cleanText(program.space, ''),
     description,
     steps,
     equipment,
     thumbnailUrl,
     tags: [...new Set(cleanList(program.tags, [category, focus.split('/')[0].trim()]).concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
     lessonDetail: {
-      recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '대상 확인 필요')),
+      recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '')),
       recommendedPlayers: cleanText(program.lessonDetail?.recommendedPlayers, '현장 규모에 맞게 조정'),
       objective: cleanText(program.lessonDetail?.objective, `${title}을 통해 ${focus}을 경험합니다.`),
       developmentFocus: focus,
@@ -427,7 +399,13 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
       galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
       briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['활동 흐름과 진행 순서를 수업 전에 짧게 확인합니다.']),
       rules: cleanList(program.lessonDetail?.rules, steps),
-      setupNotes: cleanList(program.lessonDetail?.setupNotes, [`공간: ${cleanText(program.space, '공간 확인 필요')}`, `준비물: ${equipment.join(', ')}`]),
+      setupNotes: cleanList(
+        program.lessonDetail?.setupNotes,
+        [
+          cleanText(program.space, '') ? `공간: ${cleanText(program.space, '')}` : '',
+          equipment.length ? `준비물: ${equipment.join(', ')}` : '',
+        ].filter(Boolean),
+      ),
     },
   };
 }
@@ -567,26 +545,18 @@ export async function GET() {
       ...(overlay?.group_size ? [overlay.group_size] : []),
     ];
     const smTags = meta?.sm_tags ?? [];
-    const inferredRelatedSpomoveIds = inferRelatedSpomoveIds({
-      title,
-      category: categoryName,
-      tags: [...proTags, ...smTags],
-      description: coachScript,
-      steps,
-    });
-    const tags = [...new Set([...proTags, ...smTags, ...(inferredRelatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])];
-    const relatedSpomoveIds =
-      (meta?.sm_related_spomove_ids?.length ?? 0) > 0
-        ? (meta!.sm_related_spomove_ids as string[])
-        : inferredRelatedSpomoveIds;
-    const fallbackThumbnailUrl = buildThumbnailUrl(videoUrl);
-    const thumbnailUrl = normalizeImageUrl(meta?.sm_thumbnail_url) ?? fallbackThumbnailUrl;
-    const heroImageUrl = normalizeImageUrl(meta?.sm_hero_image_url) ?? thumbnailUrl;
+    const relatedSpomoveIds = normalizeSpomoveIds(meta?.sm_related_spomove_ids ?? []);
+    const tags = [...new Set([...proTags, ...smTags, ...(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])];
     const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
+    const fallbackThumbnailUrl = buildThumbnailUrl(videoUrl);
+    const legacyImageFallback =
+      normalizeImageUrl(meta?.sm_thumbnail_url) ?? normalizeImageUrl(meta?.sm_hero_image_url);
+    const thumbnailUrl = setupImageUrl ?? fallbackThumbnailUrl ?? legacyImageFallback;
+    const heroImageUrl = setupImageUrl ?? fallbackThumbnailUrl ?? legacyImageFallback;
     const galleryImageUrls = normalizeImageUrls(meta?.sm_gallery_image_urls);
 
-    const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '') || '대상 확인 필요';
-    const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '') || '공간 확인 필요';
+    const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '');
+    const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '');
     const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 10;
 
     const program: Program = {

@@ -23,7 +23,13 @@ import {
 import { isPaidMasterPlan } from '../lib/subscription';
 import { isFunstickFencingProgram } from '../lib/verified-program-video';
 import { OFFICIAL_SPOMOVE_PRESETS, formatSpomovePresetDuration, spomovePresetHref } from '../lib/spomovePresets';
-import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
+import {
+  displayMasterDuration,
+  hasMasterSpace,
+  hasMasterTarget,
+  parseMasterSpaces,
+  parseMasterTargets,
+} from '../lib/programDisplayTags';
 import { useMasterStore, useProfile } from '../store';
 import type { Program, SpomoveLaunchPreset } from '../types';
 
@@ -83,7 +89,7 @@ function getProgramSpace(program: Program) {
 function isVerifiedSmallSpaceProgram(program: Program) {
   const space = getProgramSpace(program);
   if (!space || isPlaceholderText(space)) return false;
-  return /좁은|교실|복도|실내|소규모|제한된 공간/.test(space);
+  return hasMasterSpace(space, '교실');
 }
 
 function hasVerifiedGrade(program: Program) {
@@ -99,16 +105,19 @@ function getValidEquipment(program: Program) {
 }
 
 function formatSpaceBadge(space: string) {
-  return normalizeMasterSpace(space) || space;
+  return parseMasterSpaces(space).join(', ') || space;
 }
 
 function formatGradeBadge(grade: string) {
-  return normalizeMasterTarget(grade) || grade;
+  return parseMasterTargets(grade).join(', ') || grade;
 }
 
 
 function formatCompactBadge(value: string) {
-  return formatSpaceBadge(formatGradeBadge(value))
+  const target = parseMasterTargets(value);
+  const space = parseMasterSpaces(value);
+  const normalized = target.length ? target.join(', ') : space.length ? space.join(', ') : value;
+  return normalized
     .replace(/현장 규모에 맞게 조정/g, '인원 조정')
     .replace(/운영에 맞춰 확인/g, '운영')
     .trim();
@@ -183,7 +192,12 @@ function CoverImage({
 }
 
 function getProgramTags(program: Program) {
-  const tags = [getProgramCategory(program), getProgramGrade(program), getProgramSpace(program), ...program.tags]
+  const tags = [
+    getProgramCategory(program),
+    ...parseMasterTargets(getProgramGrade(program)),
+    ...parseMasterSpaces(getProgramSpace(program)),
+    ...program.tags,
+  ]
     .filter(Boolean)
     .filter((item) => !isPlaceholderText(item));
   return Array.from(new Set(tags.map(formatCompactBadge))).slice(0, 4);
@@ -195,8 +209,8 @@ function getCardTags(program: Program) {
     .map((item) => item.trim())
     .filter(Boolean);
   const tags = [
-    getProgramGrade(program),
-    getProgramSpace(program),
+    ...parseMasterTargets(getProgramGrade(program)),
+    ...parseMasterSpaces(getProgramSpace(program)),
     ...focusTags,
     ...program.tags,
   ]
@@ -212,14 +226,14 @@ function uniqueLabels(labels: string[]) {
 /** 썸네일 우측 상단 — 영상 있을 때는 비우고 좌측 「참고 영상」만 쓴다 */
 function getProgramThumbOverlayCue(program: Program) {
   if (programHasPlayableVideo(program)) return null;
-  if (normalizeMasterSpace(program.space) === '교실') return '교실 운영';
+  if (hasMasterSpace(program.space, '교실')) return '교실 운영';
   if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
   return '자료 보기';
 }
 
 function getProgramCue(program: Program) {
   if (programHasPlayableVideo(program)) return '미리보기에서 참고 영상 확인';
-  if (normalizeMasterSpace(program.space) === '교실') return '교실 운영';
+  if (hasMasterSpace(program.space, '교실')) return '교실 운영';
   if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
   return '자료 보기';
 }
@@ -227,7 +241,7 @@ function getProgramCue(program: Program) {
 function getCurationReason(program: Program, intent: 'weekly' | 'indoor' = 'weekly') {
   const detail = program.lessonDetail;
   if (intent === 'indoor') {
-    if (isPlaceholderText(program.space)) return '교실 운영 여부 확인';
+  if (isPlaceholderText(program.space)) return '교실 운영 여부 확인';
     return `${formatSpaceBadge(getProgramSpace(program))} 운영`;
   }
   if (detail?.videoUrl && (detail.rules?.length || program.steps.length)) return '영상과 순서를 함께 확인';
@@ -285,10 +299,10 @@ function getSearchText(program: Program) {
 function programMatchesCategory(program: Program, category: string) {
   if (category === '전체') return true;
   if (category === '영상') return programHasPlayableVideo(program);
-  if (category === '미취학') return normalizeMasterTarget(program.grade) === '미취학';
-  if (category === '초등학생 이상') return normalizeMasterTarget(program.grade) === '초등학생 이상';
-  if (category === '체육관') return normalizeMasterSpace(program.space) === '체육관';
-  if (category === '교실') return normalizeMasterSpace(program.space) === '교실';
+  if (category === '미취학') return hasMasterTarget(program.grade, '미취학');
+  if (category === '초등학생 이상') return hasMasterTarget(program.grade, '초등학생 이상');
+  if (category === '체육관') return hasMasterSpace(program.space, '체육관');
+  if (category === '교실') return hasMasterSpace(program.space, '교실');
   return true;
 }
 
@@ -436,7 +450,7 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
             </span>
             <h1 className="mt-3 max-w-2xl text-2xl font-black leading-tight text-slate-950 sm:mt-4 sm:text-4xl">오늘 수업 준비, 5분 안에 끝내세요</h1>
             <p className="mt-2 max-w-2xl text-[13px] font-semibold leading-5 text-slate-600 sm:mt-4 sm:text-sm sm:leading-7">
-              대상·공간·교구에 맞는 놀이체육 수업안과 참고 영상을 확인하고, SPOMOVE 활동은 TV·빔 화면으로 바로 실행할 수 있습니다.
+              대상·공간·교구에 맞는 놀이체육 수업안과 참고 영상을 확인하고, 공식 SPOMOVE 활동은 별도 메뉴에서 실행할 수 있습니다.
             </p>
             <div className="mt-3 hidden flex-wrap gap-1.5 sm:flex">
               {tags.slice(0, 4).map((tag, index) => (
@@ -447,7 +461,7 @@ function Hero({ program, kpis, onPreview }: { program: Program; kpis: DashboardK
             </div>
             {hasContentSignals ? (
               <p className="mt-3 text-[11px] font-bold text-slate-400 sm:mt-4 sm:text-xs">
-                수업 자료, 영상, SPOMOVE 세팅을 한 곳에서 준비합니다.
+                수업 자료와 영상을 확인하고, 필요한 경우 SPOMOVE 메뉴를 별도로 활용합니다.
               </p>
             ) : null}
           </div>
@@ -832,8 +846,8 @@ function SubscriptionValueSection() {
     <section className="rounded-[18px] border border-indigo-100 bg-white px-4 py-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)] sm:px-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-[15px] font-black text-slate-950">수업안 · 참고 영상 · SPOMOVE 실행 · 수업 기록까지 한 번에</p>
-          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">MASTER 30일 이용권으로 전체 자료와 실행 세팅을 열람하세요.</p>
+          <p className="text-[15px] font-black text-slate-950">수업안 · 참고 영상 · 공식 SPOMOVE 활동 · 수업 기록 제공</p>
+          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-500">SPOMOVE 세팅과 수업별 명시 연결은 순차적으로 확장됩니다.</p>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
           <Link href="/spokedu-master/profile?plans=1" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">

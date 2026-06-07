@@ -29,15 +29,28 @@ import {
   isDirectVideoUrl,
   resolveProgramHero,
 } from '../lib/program-media';
-import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
+import {
+  displayMasterDuration,
+  hasMasterSpace,
+  hasMasterTarget,
+  normalizeMasterSpace,
+  normalizeMasterTarget,
+  parseMasterSpaces,
+  parseMasterTargets,
+} from '../lib/programDisplayTags';
+import {
+  findOfficialSpomovePreset,
+  officialPresetSessionHref,
+  type OfficialSpomovePreset,
+} from '../spomove/officialSpomovePresets';
 import { useIsPro, useMasterStore } from '../store';
-import type { Drill, Program } from '../types';
+import type { Program } from '../types';
 
 const QUICK_FILTERS = ['전체', '미취학', '초등학생 이상', '체육관', '교실', '협동', '민첩', '참고 영상'];
 
 function hasSpomoveLink(program: Program) {
   const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return related.length > 0;
+  return related.some((id) => Boolean(findOfficialSpomovePreset(id)));
 }
 
 function normalizeTitle(title: string) {
@@ -66,10 +79,10 @@ function hasLowPrep(program: Program) {
 function matchesFilter(program: Program, filter: string) {
   const text = `${program.title} ${program.category} ${program.grade} ${program.space} ${program.description} ${program.tags.join(' ')}`;
   if (filter === '전체') return true;
-  if (filter === '미취학') return normalizeMasterTarget(program.grade) === '미취학';
-  if (filter === '초등학생 이상') return normalizeMasterTarget(program.grade) === '초등학생 이상';
-  if (filter === '체육관') return normalizeMasterSpace(program.space) === '체육관';
-  if (filter === '교실') return normalizeMasterSpace(program.space) === '교실';
+  if (filter === '미취학') return hasMasterTarget(program.grade, '미취학');
+  if (filter === '초등학생 이상') return hasMasterTarget(program.grade, '초등학생 이상');
+  if (filter === '체육관') return hasMasterSpace(program.space, '체육관');
+  if (filter === '교실') return hasMasterSpace(program.space, '교실');
   if (filter === '준비물 적음') return hasLowPrep(program);
   if (filter === '협동') return /협동|팀|릴레이|짝|관계/.test(text);
   if (filter === '민첩') return /민첩|순발|반응|스피드|속도/.test(text);
@@ -81,9 +94,12 @@ function getHeroImage(program: Program) {
   return resolveProgramHero(program);
 }
 
-function getPrimaryDrill(program: Program, drills: Drill[]) {
-  const relatedIds = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return drills.find((drill) => relatedIds.includes(drill.id));
+function getPrimarySpomovePreset(program: Program) {
+  for (const id of program.lessonDetail?.relatedSpomoveIds ?? []) {
+    const preset = findOfficialSpomovePreset(id);
+    if (preset) return preset;
+  }
+  return undefined;
 }
 
 function getParentCopy(program: Program) {
@@ -125,10 +141,10 @@ function getProgramInfoTags(program: Program) {
   const detail = program.lessonDetail;
   const candidates = [
     program.category,
-    normalizeMasterTarget(detail?.recommendedAge || program.grade),
+    ...parseMasterTargets(detail?.recommendedAge || program.grade),
     detail?.recommendedPlayers,
     ...splitFocusTags(detail?.developmentFocus),
-    normalizeMasterSpace(program.space),
+    ...parseMasterSpaces(program.space),
     ...(detail?.videoUrl ? ['참고 영상'] : []),
   ];
   return Array.from(new Set(candidates.filter((item): item is string => Boolean(item) && !isPlaceholderText(item)))).slice(0, 6);
@@ -168,7 +184,7 @@ function CompactMeta({ program }: { program: Program }) {
 function ValueChips({ program }: { program: Program }) {
   const chips = [
     hasLowPrep(program) ? '준비 간편' : null,
-    normalizeMasterSpace(program.space) === '교실' ? '교실' : null,
+    hasMasterSpace(program.space, '교실') ? '교실' : null,
     program.lessonDetail?.videoUrl ? '참고 영상' : null,
   ].filter(Boolean) as string[];
 
@@ -318,14 +334,14 @@ function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: 
 
 function ProgramModal({
   program,
-  drill,
+  spomovePreset,
   isPro,
   favorite,
   onFavorite,
   onClose,
 }: {
   program: Program;
-  drill?: Drill;
+  spomovePreset?: OfficialSpomovePreset;
   isPro: boolean;
   favorite: boolean;
   onFavorite: () => void;
@@ -341,9 +357,13 @@ function ProgramModal({
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
   const videoThumbnail = getVideoThumbnail(detail?.videoUrl);
-  const primaryDrillId = drill?.id ?? detail?.relatedSpomoveIds?.[0];
-  const spomoveHref = hasSpomoveLink(program) && primaryDrillId
-    ? `/spokedu-master/spomove/session?drill=${primaryDrillId}&mode=projector&program=${program.id}`
+  const spomoveHref = spomovePreset
+    ? officialPresetSessionHref({
+        preset: spomovePreset,
+        cueSeconds: spomovePreset.defaultCueSeconds,
+        rounds: spomovePreset.defaultRounds,
+        soundEnabled: true,
+      })
     : null;
   const parentCopy = getParentCopy(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;
@@ -574,7 +594,7 @@ function ProgramModal({
                 SPOMOVE 활동
               </h2>
               <p className="mt-3 text-sm leading-7 text-indigo-800">
-                {drill?.name ? `${drill.name}은(는) 이 수업에 명시 연결된 큰 화면 활동입니다.` : '이 수업에 명시 연결된 큰 화면 활동입니다.'}
+                {spomovePreset ? `${spomovePreset.title}은(는) 이 수업에 명시 연결된 큰 화면 활동입니다.` : '이 수업에 명시 연결된 큰 화면 활동입니다.'}
               </p>
               <Link href={spomoveHref} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 text-sm font-black text-white">
                 <MonitorPlay className="h-4 w-4" />
@@ -612,7 +632,7 @@ function ProgramModal({
 }
 
 export default function LibraryView() {
-  const { programs, programsLoaded, programsError, drills, classRecords, favorites, toggleFavorite } = useMasterStore();
+  const { programs, programsLoaded, programsError, classRecords, favorites, toggleFavorite } = useMasterStore();
   const isPro = useIsPro();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('전체');
@@ -644,7 +664,7 @@ export default function LibraryView() {
   const favoritePrograms = useMemo(() => pool.filter((program) => favorites.includes(program.id)).slice(0, 6), [favorites, pool]);
   const packageStats = useMemo(() => {
     const videoCount = pool.filter((program) => program.lessonDetail?.videoUrl).length;
-    const indoorCount = pool.filter((program) => normalizeMasterSpace(program.space) === '교실').length;
+    const indoorCount = pool.filter((program) => hasMasterSpace(program.space, '교실')).length;
     const lowPrepCount = pool.filter(hasLowPrep).length;
     return [
       { label: '전체 패키지', value: `${pool.length}개` },
@@ -683,7 +703,7 @@ export default function LibraryView() {
     );
   }
 
-  const selectedDrill = selected ? getPrimaryDrill(selected, drills) : undefined;
+  const selectedSpomovePreset = selected ? getPrimarySpomovePreset(selected) : undefined;
 
   return (
     <>
@@ -769,7 +789,7 @@ export default function LibraryView() {
       {selected ? (
         <ProgramModal
           program={selected}
-          drill={selectedDrill}
+          spomovePreset={selectedSpomovePreset}
           isPro={isPro}
           favorite={favorites.includes(selected.id)}
           onFavorite={() => toggleFavorite(selected.id)}

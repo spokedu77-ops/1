@@ -55,44 +55,9 @@ export function AboutLanding() {
         lines={aboutPage.hero.lines}
         subtitle={aboutPage.hero.subtitle}
         media={HOME_MEDIA[aboutPage.hero.mediaKey]}
+        visualVariant="editorial"
         priority
       />
-
-      <Section className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{aboutPage.definition.title}</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base [word-break:keep-all]">
-          {aboutPage.definition.body}
-        </p>
-        <ul className="mt-4 flex flex-wrap gap-2">
-          {aboutPage.definition.pillars.map((pillar) => (
-            <li
-              key={pillar}
-              className="rounded-full border border-indigo-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-800"
-            >
-              {pillar}
-            </li>
-          ))}
-        </ul>
-        <p className="mt-4 text-xs text-slate-500">
-          <span className="font-medium text-slate-600">더 보기</span>{' '}
-          <a
-            href="#founder"
-            className={`font-semibold text-indigo-700 underline-offset-2 ${fineHover}hover:underline ${focusRing}`}
-          >
-            대표 소개
-          </a>
-          <span className="text-slate-300" aria-hidden>
-            {' '}
-            ·{' '}
-          </span>
-          <a
-            href="#history"
-            className={`font-semibold text-indigo-700 underline-offset-2 ${fineHover}hover:underline ${focusRing}`}
-          >
-            연혁
-          </a>
-        </p>
-      </Section>
 
       <Section className="rounded-2xl border border-slate-200/80 bg-white px-4 py-6 shadow-sm sm:px-6 sm:py-8 lg:px-8">
         <AboutFounderSection />

@@ -21,6 +21,8 @@ const MemoryGame = lazy(() =>
   })),
 );
 
+const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
+
 export type EngineCompletePayload = {
   engineMode: string;
   engineLevel: number;
@@ -34,6 +36,8 @@ type Props = {
   level: number;
   durationSec?: number;
   speedSec?: number;
+  rounds?: number;
+  soundEnabled?: boolean;
   onComplete: (payload: EngineCompletePayload) => void;
   onExit: () => void;
 };
@@ -52,7 +56,7 @@ function resolveVariant(level: number): 'flow' | 'flash' | 'pattern' {
   return 'pattern';
 }
 
-export function EngineRouter({ mode, level, durationSec, speedSec, onComplete, onExit }: Props) {
+export function EngineRouter({ mode, level, durationSec, speedSec, rounds, soundEnabled = true, onComplete, onExit }: Props) {
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       onComplete({ engineMode: mode, engineLevel: level, stims: stats.stims, maxCombo: stats.maxCombo });
@@ -70,6 +74,28 @@ export function EngineRouter({ mode, level, durationSec, speedSec, onComplete, o
   const handleMemoryComplete = useCallback(() => {
     onComplete({ engineMode: mode, engineLevel: level });
   }, [level, mode, onComplete]);
+
+  if (mode === 'basic') {
+    return (
+      <Suspense fallback={<LoadingOverlay />}>
+        <MemoryGameApp
+          initialMode="basic"
+          initialLevel={Math.min(Math.max(level, 1), 4)}
+          autoLaunch={{
+            speed: speedSec ?? 3,
+            timeMode: 'reps',
+            targetReps: rounds ?? 20,
+            warmup: 3,
+            audioMode: soundEnabled ? 'beep' : 'off',
+          }}
+          embed
+          disableBgm
+          onExit={onExit}
+          onComplete={handleMemoryComplete}
+        />
+      </Suspense>
+    );
+  }
 
   if (mode === 'reactTrain' || mode === 'flow' || mode === 'flash' || mode === 'pattern') {
     const variant = mode === 'reactTrain' ? resolveVariant(level) : (mode as 'flow' | 'flash' | 'pattern');

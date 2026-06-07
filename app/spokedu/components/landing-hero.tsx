@@ -6,15 +6,16 @@ import type { HomeMediaItem } from '../data/home-media';
 import {
   btnPrimary,
   btnSecondary,
+  homeHeroH1,
+  homeHeroH1Line,
   koreanLineBreak,
   landingHeroCopy,
   landingHeroGrid,
   landingHeroShell,
   landingHeroSubtitle,
   landingHeroVisual,
-  landingH1,
 } from '../lib/ui-classes';
-import { MotionPoster } from './visual';
+import { MediaPanel, MotionPoster } from './visual';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
@@ -31,6 +32,8 @@ type LandingHeroProps = {
   lines: readonly string[];
   subtitle?: string;
   media: HomeMediaItem;
+  /** Home Hero 메인 컷과 동일 — 가로 16:10, photoPriority */
+  visualVariant?: 'poster' | 'editorial';
   priority?: boolean;
   primaryCta?: LandingHeroCta;
   secondaryCta?: LandingHeroCta;
@@ -43,6 +46,7 @@ export function LandingHero({
   lines,
   subtitle,
   media,
+  visualVariant = 'poster',
   priority = false,
   primaryCta,
   secondaryCta,
@@ -56,19 +60,24 @@ export function LandingHero({
           {kicker ? (
             <p className={`text-[11px] font-bold uppercase tracking-[0.2em] ${kickerClassName}`}>{kicker}</p>
           ) : null}
-          <h1 className={`${landingH1} mt-2 text-slate-950 sm:mt-2.5`}>
+          <motion.h1
+            className={`${homeHeroH1} mt-2 sm:mt-2.5`}
+            initial={reducedMotion ? false : { opacity: 0, y: 20 }}
+            animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
+          >
             {lines.map((line, index) => (
               <motion.span
                 key={line}
                 initial={reducedMotion ? false : { opacity: 0, y: 20 }}
                 animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
                 transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1], delay: 0.06 * index }}
-                className="block"
+                className={homeHeroH1Line}
               >
                 {line}
               </motion.span>
             ))}
-          </h1>
+          </motion.h1>
           {subtitle ? (
             <p className={`${landingHeroSubtitle} mt-4 max-w-lg text-slate-600 ${koreanLineBreak}`}>{subtitle}</p>
           ) : null}
@@ -98,7 +107,19 @@ export function LandingHero({
           ) : null}
         </div>
         <div className={landingHeroVisual}>
-          <MotionPoster media={media} variant="cinematic" priority={priority} sizes="heroSplit" />
+          {visualVariant === 'editorial' ? (
+            <div className="relative aspect-[16/10] w-full min-h-[200px] overflow-hidden rounded-[1.5rem] ring-1 ring-slate-900/10 sm:min-h-[220px] sm:rounded-[1.75rem] lg:max-h-[min(52vh,480px)] lg:rounded-[2rem]">
+              <MediaPanel
+                media={media}
+                className="absolute inset-0 h-full w-full rounded-none border-0"
+                sizes="heroEditorialMain"
+                photoPriority
+                priority={priority}
+              />
+            </div>
+          ) : (
+            <MotionPoster media={media} variant="cinematic" priority={priority} sizes="heroSplit" />
+          )}
         </div>
       </div>
     </section>

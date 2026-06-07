@@ -76,7 +76,10 @@ function replaceBlockText(
   view.dispatch(tr);
 }
 
-export type MarkdownBlockTrigger = 'heading' | 'todo' | 'toggle' | 'divider' | 'callout' | 'code';
+export type MarkdownBlockTrigger =
+  | 'heading' | 'heading2' | 'heading3'
+  | 'todo' | 'toggle' | 'divider' | 'callout' | 'code'
+  | 'bulletList' | 'numberedList';
 
 /** 줄 맨 앞 마크다운 트리거 + Space → 블록 타입 변환 */
 export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockTrigger | null {
@@ -89,13 +92,17 @@ export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockT
   if (parsed.level > 0) return null;
 
   const token = parsed.body.trim();
+  // 순서 중요: ### → ## → # 순으로 검사
+  if (token === '###') return 'heading3';
+  if (token === '##') return 'heading2';
   if (token === '#') return 'heading';
-  if (token === '##' || token === '###') return 'heading';
   if (token === '[]' || token === '[ ]') return 'todo';
   if (token === '>') return 'toggle';
   if (token === '---') return 'divider';
   if (token === '!!') return 'callout';
   if (token === '```') return 'code';
+  if (token === '-' || token === '*') return 'bulletList';
+  if (/^\d+\.$/.test(token)) return 'numberedList';
   return null;
 }
 

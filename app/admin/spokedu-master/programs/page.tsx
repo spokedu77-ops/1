@@ -23,9 +23,11 @@ import {
   MASTER_TARGET_TAGS,
   displayMasterDuration,
   normalizeMasterDuration,
-  normalizeMasterSpace,
-  normalizeMasterTarget,
+  parseMasterSpaces,
+  parseMasterTargets,
+  serializeMasterTags,
 } from '@/app/spokedu-master/lib/programDisplayTags';
+import { OFFICIAL_SPOMOVE_LIBRARY } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -258,11 +260,16 @@ function plainSectionFallback(source: string | null | undefined) {
 
 type QualityReport = {
   status: MaterialStatus;
+  score: number;
+  grade: 'A' | 'B' | 'C' | 'D';
+  thumbnailSource: '세팅 이미지' | '영상 썸네일' | '없음';
+  modalReady: boolean;
+  detailReady: boolean;
+  dashboardCandidates: string[];
   checks: {
     video: boolean;
-    thumbnail: boolean;
-    heroImage: boolean;
     setupImage: boolean;
+    indoorSpace: boolean;
     target: boolean;
     space: boolean;
     duration: boolean;
@@ -285,7 +292,7 @@ function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
   const operationReady = coreReady;
   if (!operationReady) return 'needs-improvement';
 
-  const hasHomeMedia = checks.video || checks.heroImage;
+  const hasHomeMedia = checks.video || checks.setupImage;
   const homeReady = operationReady && hasHomeMedia;
   if (homeReady) return 'home-ready';
 
@@ -295,10 +302,64 @@ function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
   return 'ready';
 }
 
+function buildQualityReport(checks: QualityReport['checks'], displayOrder: number): QualityReport {
+  const weightedChecks = [
+    checks.video,
+    checks.setupImage,
+    checks.target,
+    checks.space,
+    checks.duration,
+    checks.equipment,
+    checks.setupNotes,
+    checks.steps,
+    checks.variations,
+    checks.parentNote,
+  ];
+  const score = Math.round((weightedChecks.filter(Boolean).length / weightedChecks.length) * 100);
+  const modalReady =
+    (checks.video || checks.setupImage) &&
+    checks.target &&
+    checks.space &&
+    checks.duration &&
+    checks.equipment &&
+    checks.setupNotes &&
+    checks.steps;
+  const detailReady =
+    checks.equipment &&
+    checks.setupNotes &&
+    checks.steps &&
+    checks.variations &&
+    checks.parentNote;
+  const dashboardCandidates = [
+    checks.homeExposure && displayOrder < 100 ? '홈 첫 row 후보' : '',
+    checks.indoorSpace ? '실내/교실 row 후보' : '',
+    checks.video ? '영상 수업 row 후보' : '',
+    checks.spomove ? 'SPOMOVE 연결 후보' : '',
+  ].filter(Boolean);
+  const grade: QualityReport['grade'] =
+    score >= 90 && modalReady && detailReady && checks.homeExposure
+      ? 'A'
+      : score >= 75 && checks.steps && checks.equipment
+        ? 'B'
+        : score >= 55
+          ? 'C'
+          : 'D';
+  return {
+    status: resolveStatus(checks),
+    score,
+    grade,
+    thumbnailSource: checks.setupImage ? '세팅 이미지' : checks.video ? '영상 썸네일' : '없음',
+    modalReady,
+    detailReady,
+    dashboardCandidates,
+    checks,
+    reasons: qualityReasons(checks),
+  };
+}
+
 function qualityReasons(checks: QualityReport['checks']) {
   const items: Array<[string, boolean]> = [
     ['영상', checks.video],
-    ['대표 이미지', checks.heroImage],
     ['세팅 이미지', checks.setupImage],
     ['대상', checks.target],
     ['공간', checks.space],
@@ -325,7 +386,6 @@ function missingQualityLabels(checks: QualityReport['checks']) {
     ['활동 방법', checks.steps],
     ['응용 방법', checks.variations],
     ['학부모 문구', checks.parentNote],
-    ['대표 이미지', checks.heroImage],
     ['세팅 이미지', checks.setupImage],
     ['SPOMOVE', checks.spomove],
     ['홈 노출', checks.homeExposure],
@@ -352,14 +412,17 @@ function getItemQuality(item: ProgramItem): QualityReport {
   const activityTip = overlay?.activity_tip ?? '';
   const checks = {
     video: Boolean(item.effective.videoUrl),
-    thumbnail: Boolean(meta?.sm_thumbnail_url),
-    heroImage: Boolean(meta?.sm_hero_image_url),
     setupImage: Boolean(meta?.sm_setup_image_url),
+    indoorSpace: parseMasterSpaces(item.effective.space).includes('교실'),
     target: Boolean(item.effective.target),
     space: Boolean(item.effective.space),
     duration: Boolean(item.effective.duration),
     equipment: item.effective.equipment.length > 0,
-    setupNotes: Boolean(extractSection(checklist, '세팅 방법')),
+    setupNotes: Boolean(
+      extractSection(checklist, '세팅 방법') ||
+      extractSection(checklist, '사전 교육') ||
+      splitLines(checklist).length,
+    ),
     steps: item.effective.steps.length > 0,
     variations: Boolean(extractSection(activityTip, '난이도 낮추기') || extractSection(activityTip, '난이도 높이기') || extractSection(activityTip, '응용 방법')),
     operationTips: Boolean(extractSection(activityTip, '운영 팁') || activityTip.trim()),
@@ -367,20 +430,19 @@ function getItemQuality(item: ProgramItem): QualityReport {
     spomove: item.effective.relatedSpomoveIds.length > 0,
     homeExposure: item.effective.publicationStatus === 'featured' || Boolean(meta?.sm_is_hot),
   };
-  return { status: resolveStatus(checks), checks, reasons: qualityReasons(checks) };
+  return buildQualityReport(checks, meta?.sm_display_order ?? item.curriculum.displayOrder ?? 9999);
 }
 
 function getFormQuality(form: EditForm): QualityReport {
   const checks = {
     video: Boolean(form.videoUrl.trim()),
-    thumbnail: Boolean(form.thumbnailUrl.trim()),
-    heroImage: Boolean(form.heroImageUrl.trim()),
     setupImage: Boolean(form.setupImageUrl.trim()),
+    indoorSpace: parseMasterSpaces(form.space).includes('교실'),
     target: Boolean(form.target.trim()),
     space: Boolean(form.space.trim()),
     duration: Boolean(form.duration.trim()),
     equipment: splitLines(form.equipment).length > 0,
-    setupNotes: Boolean(form.setupNotes.trim()),
+    setupNotes: Boolean(form.setupNotes.trim() || form.briefingNotes.trim()),
     steps: splitLines(form.steps).length > 0,
     variations: Boolean(form.easier.trim() || form.harder.trim() || form.variations.trim()),
     operationTips: Boolean(form.operationTips.trim()),
@@ -388,14 +450,14 @@ function getFormQuality(form: EditForm): QualityReport {
     spomove: csvToList(form.relatedSpomoveIds).length > 0,
     homeExposure: form.showHome || form.publicationStatus === 'featured',
   };
-  return { status: resolveStatus(checks), checks, reasons: qualityReasons(checks) };
+  return buildQualityReport(checks, form.displayOrder);
 }
 
 function matchesFilter(item: ProgramItem, filter: FilterKey) {
   const quality = getItemQuality(item);
   if (filter === 'all') return true;
   if (filter === 'incomplete' || filter === 'ready' || filter === 'home-ready') return quality.status === filter;
-  if (filter === 'image-needed') return !quality.checks.heroImage || !quality.checks.setupImage;
+  if (filter === 'image-needed') return !quality.checks.setupImage;
   if (filter === 'spomove-needed') return !quality.checks.spomove;
   return true;
 }
@@ -426,8 +488,8 @@ function toForm(item: ProgramItem): EditForm {
     title: overlay?.title || item.curriculum.title,
     description: meta?.sm_coach_script || activityTip || '',
     objective: meta?.sm_objective || '',
-    target: normalizeMasterTarget(meta?.sm_grade || ''),
-    space: normalizeMasterSpace(meta?.sm_space || ''),
+    target: serializeMasterTags(parseMasterTargets(meta?.sm_grade || '')),
+    space: serializeMasterTags(parseMasterSpaces(meta?.sm_space || '')),
     duration: normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '',
     theme: meta?.sm_theme || overlay?.main_theme || '',
     tags: listToCsv(meta?.sm_tags),
@@ -537,11 +599,10 @@ function Flag({ ok, label }: { ok: boolean; label: string }) {
 }
 
 function QualityFlags({ report }: { report: QualityReport }) {
-  const hasImage = report.checks.heroImage && report.checks.setupImage;
   return (
     <div className="flex flex-wrap gap-1">
       <Flag ok={report.checks.video} label="영상" />
-      <Flag ok={hasImage} label="이미지" />
+      <Flag ok={report.checks.setupImage} label="세팅 이미지" />
       <Flag ok={report.checks.spomove} label="SPOMOVE" />
       <Flag ok={report.checks.homeExposure} label="홈" />
     </div>
@@ -553,7 +614,7 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   const tags = csvToList(form.tags).slice(0, 4);
   const equipment = splitLines(form.equipment).slice(0, 4);
   const steps = splitLines(form.steps).slice(0, 4);
-  const mediaLabel = form.heroImageUrl || form.thumbnailUrl || form.videoUrl || item.curriculum.url || '미디어 URL 없음';
+  const mediaLabel = form.setupImageUrl || form.videoUrl || item.curriculum.url || '미디어 URL 없음';
 
   return (
     <div className="grid gap-4 xl:grid-cols-3">
@@ -697,8 +758,8 @@ export default function AdminSmProgramsPage() {
           meta: {
             sm_tags: csvToList(form.tags),
             sm_theme: form.theme.trim() || null,
-            sm_grade: normalizeMasterTarget(form.target) || null,
-            sm_space: normalizeMasterSpace(form.space) || null,
+            sm_grade: serializeMasterTags(parseMasterTargets(form.target)) || null,
+            sm_space: serializeMasterTags(parseMasterSpaces(form.space)) || null,
             sm_duration: normalizeMasterDuration(form.duration),
             sm_is_pro: form.dashboardVisible,
             sm_is_new: form.isNew,
@@ -723,7 +784,7 @@ export default function AdminSmProgramsPage() {
             activity_tip: activityTip || form.operationTips.trim() || null,
             function_types: csvToList(form.tags),
             main_theme: form.theme.trim() || null,
-            group_size: form.target.trim() || null,
+            group_size: serializeMasterTags(parseMasterTargets(form.target)) || null,
             is_published: form.publicationStatus !== 'hidden',
           },
           publicationStatus: form.publicationStatus,
@@ -747,6 +808,13 @@ export default function AdminSmProgramsPage() {
 
   const selectedQuality = form ? getFormQuality(form) : null;
   const selectedQualitySummary = selectedQuality ? qualitySummary(selectedQuality) : '';
+  const relatedSpomoveDiagnostics = form
+    ? csvToList(form.relatedSpomoveIds).map((id) => ({
+        id,
+        preset: OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === id) ?? null,
+      }))
+    : [];
+  const hasInvalidSpomoveId = relatedSpomoveDiagnostics.some((item) => !item.preset);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -852,7 +920,10 @@ export default function AdminSmProgramsPage() {
                       <p className="truncate text-[13px] font-black text-slate-950">{item.effective.title}</p>
                       <p className="mt-0.5 text-[11px] font-bold text-slate-500">curriculumId {item.curriculum.id}</p>
                     </div>
-                    <StatusPill status={quality.status} />
+                    <div className="shrink-0 text-right">
+                      <StatusPill status={quality.status} />
+                      <p className="mt-1 text-[10px] font-black text-slate-400">{quality.score}점 · {quality.grade}</p>
+                    </div>
                   </div>
                   <div className="mt-2">
                     <QualityFlags report={quality} />
@@ -885,7 +956,9 @@ export default function AdminSmProgramsPage() {
                 <div className="rounded-lg border border-slate-200 bg-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-[13px] font-black text-slate-900">홈 노출 가능 조건</p>
+                      <p className="text-[13px] font-black text-slate-900">
+                        콘텐츠 완성도 {selectedQuality.score}점 · {selectedQuality.grade}등급
+                      </p>
                       <p className="mt-1 text-[12px] font-semibold text-slate-500">{selectedQualitySummary}</p>
                     </div>
                     <StatusPill status={selectedQuality.status} />
@@ -893,6 +966,17 @@ export default function AdminSmProgramsPage() {
                   <div className="mt-3">
                     <QualityFlags report={selectedQuality} />
                   </div>
+                  <div className="mt-3 grid gap-2 text-[12px] font-bold text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
+                    <span>썸네일: {selectedQuality.thumbnailSource}</span>
+                    <span>모달: {selectedQuality.modalReady ? '준비 완료' : '보강 필요'}</span>
+                    <span>상세: {selectedQuality.detailReady ? '운영 가능' : '보강 필요'}</span>
+                    <span>Dashboard: {selectedQuality.dashboardCandidates.join(', ') || '배치 전 보강'}</span>
+                  </div>
+                  {missingQualityLabels(selectedQuality.checks).length ? (
+                    <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800">
+                      부족 항목: {missingQualityLabels(selectedQuality.checks).join(', ')}
+                    </p>
+                  ) : null}
                   <details className="mt-3">
                     <summary className="cursor-pointer text-[11px] font-black text-slate-400">세부 조건 보기</summary>
                     <div className="mt-2 flex flex-wrap gap-1.5">
@@ -924,10 +1008,18 @@ export default function AdminSmProgramsPage() {
                   </div>
                   <div className="mt-4 grid gap-4">
                     <Field label="공간">
-                      <ChoiceChips options={SPACE_OPTIONS} selected={form.space ? [normalizeMasterSpace(form.space)] : []} onChange={(next) => updateForm('space', next.at(-1) ?? '')} />
+                      <ChoiceChips
+                        options={SPACE_OPTIONS}
+                        selected={parseMasterSpaces(form.space)}
+                        onChange={(next) => updateForm('space', serializeMasterTags(next))}
+                      />
                     </Field>
                     <Field label="대상">
-                      <ChoiceChips options={TARGET_OPTIONS} selected={form.target ? [normalizeMasterTarget(form.target)] : []} onChange={(next) => updateForm('target', next.at(-1) ?? '')} />
+                      <ChoiceChips
+                        options={TARGET_OPTIONS}
+                        selected={parseMasterTargets(form.target)}
+                        onChange={(next) => updateForm('target', serializeMasterTags(next))}
+                      />
                     </Field>
                     <Field label="주제/테마">
                       <ChoiceChips options={THEME_OPTIONS} selected={csvToList(form.theme)} onChange={(next) => updateForm('theme', listToCsvValue(next))} />
@@ -965,10 +1057,11 @@ export default function AdminSmProgramsPage() {
                   <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Video size={16} />미디어</h3>
                   <div className="grid gap-3">
                     <Field label="참고 영상 URL"><TextInput value={form.videoUrl} placeholder={selected.curriculum.url ?? 'curriculum.url fallback 없음'} onChange={(e) => updateForm('videoUrl', e.target.value)} /></Field>
-                    <Field label="대표 이미지 URL"><TextInput value={form.heroImageUrl} onChange={(e) => updateForm('heroImageUrl', e.target.value)} placeholder="/images/spokedu-master/programs/.../hero.jpeg" /></Field>
                     <Field label="세팅 이미지 URL"><TextInput value={form.setupImageUrl} onChange={(e) => updateForm('setupImageUrl', e.target.value)} placeholder="/images/spokedu-master/programs/.../setup.jpeg" /></Field>
                   </div>
-                  <p className="mt-3 text-[12px] font-semibold text-slate-500">썸네일을 따로 입력하지 않으면 대표 이미지, 영상 썸네일, 기존 fallback 순서로 사용됩니다.</p>
+                  <p className="mt-3 text-[12px] font-semibold text-slate-500">
+                    카드 이미지는 세팅 이미지가 있으면 세팅 이미지를, 없으면 참고 영상의 썸네일을 사용합니다.
+                  </p>
                 </section>
 
                 <section className="rounded-lg border border-slate-200 bg-white p-5">
@@ -1019,9 +1112,38 @@ export default function AdminSmProgramsPage() {
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
                     <Field label="기존 수업 목표"><TextArea rows={5} value={form.objective} onChange={(e) => updateForm('objective', e.target.value)} /></Field>
                     <Field label="기존 안전 포인트"><TextArea rows={5} value={form.safetyNotes} onChange={(e) => updateForm('safetyNotes', e.target.value)} /></Field>
-                    <Field label="썸네일 이미지 URL"><TextInput value={form.thumbnailUrl} onChange={(e) => updateForm('thumbnailUrl', e.target.value)} placeholder="/images/spokedu-master/programs/.../thumb.jpeg" /></Field>
+                    <Field label="기존 대표 이미지 URL (보존용)"><TextInput value={form.heroImageUrl} onChange={(e) => updateForm('heroImageUrl', e.target.value)} /></Field>
+                    <Field label="기존 썸네일 이미지 URL (보존용)"><TextInput value={form.thumbnailUrl} onChange={(e) => updateForm('thumbnailUrl', e.target.value)} /></Field>
                     <Field label="갤러리 이미지 URL(줄바꿈 또는 쉼표 구분)"><TextArea rows={5} value={form.galleryImageUrls} onChange={(e) => updateForm('galleryImageUrls', e.target.value)} placeholder="/images/.../scene-1.jpeg&#10;/images/.../scene-2.jpeg" /></Field>
-                    <Field label="관련 SPOMOVE preset/drill"><TextArea rows={5} value={form.relatedSpomoveIds} onChange={(e) => updateForm('relatedSpomoveIds', e.target.value)} placeholder="reactTrain, simon" /></Field>
+                    <Field label="관련 SPOMOVE preset ID">
+                      <TextArea
+                        rows={5}
+                        value={form.relatedSpomoveIds}
+                        onChange={(e) => updateForm('relatedSpomoveIds', e.target.value)}
+                        placeholder="reaction-cognition-space-direction-01"
+                      />
+                      <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <p className={`text-[12px] font-black ${hasInvalidSpomoveId ? 'text-amber-700' : 'text-emerald-700'}`}>
+                          {relatedSpomoveDiagnostics.length === 0
+                            ? '연결 없음'
+                            : hasInvalidSpomoveId
+                              ? '확인 필요'
+                              : '공식 preset 연결 · 실행 가능'}
+                        </p>
+                        {relatedSpomoveDiagnostics.length > 0 ? (
+                          <div className="mt-2 space-y-1.5">
+                            {relatedSpomoveDiagnostics.map(({ id, preset }) => (
+                              <div key={id} className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold">
+                                <span className="break-all text-slate-700">{id}</span>
+                                <span className={preset ? 'text-emerald-700' : 'text-rose-700'}>
+                                  {preset ? `공식 preset · 실행 가능 · ${preset.title}` : '존재하지 않는 ID · 확인 필요'}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
+                    </Field>
                     <Field label="운영 팁"><TextArea rows={5} value={form.operationTips} onChange={(e) => updateForm('operationTips', e.target.value)} /></Field>
                     <Field label="난이도 낮추기"><TextArea rows={5} value={form.easier} onChange={(e) => updateForm('easier', e.target.value)} /></Field>
                     <Field label="난이도 높이기"><TextArea rows={5} value={form.harder} onChange={(e) => updateForm('harder', e.target.value)} /></Field>
