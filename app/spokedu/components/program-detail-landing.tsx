@@ -167,7 +167,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
           },
           {
             label: '전체 프로그램 보기',
-            href: '/spokedu/programs',
+            href: '/spokedu#program-system',
             trackLabel: 'program-all-link',
             variant: 'on-light-outline',
           },

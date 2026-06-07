@@ -240,18 +240,23 @@ function EngineBriefing({
 function OfficialEngineBriefing({
   preset,
   startDisabled,
-  notReady,
   onStart,
 }: {
   preset: OfficialSpomovePreset;
   startDisabled: boolean;
-  notReady: boolean;
   onStart: () => void;
 }) {
+  const { mode } = preset.engine;
+  const countFact =
+    mode === 'reactTrain'
+      ? { icon: Users, label: '실행 시간', value: '약 75초' }
+      : mode === 'spatial'
+        ? { icon: Users, label: '라운드', value: '10라운드' }
+        : { icon: Users, label: '반복 횟수', value: `${preset.rounds}회` };
   const facts = [
     { icon: Gauge, label: '프로그램', value: `${preset.axisTitle} · ${preset.programTitle}` },
     { icon: Clock3, label: '신호 간격', value: `${preset.cueSeconds}초` },
-    { icon: Users, label: '반복 횟수', value: `${preset.rounds}회` },
+    countFact,
     { icon: Music2, label: 'BGM', value: 'BGM 자동 재생' },
   ];
 
@@ -284,11 +289,6 @@ function OfficialEngineBriefing({
               </span>
             </div>
             <p className="mt-3 text-xs font-semibold leading-5 text-white/42">{preset.recommendedUse}</p>
-            {notReady ? (
-              <p className="mt-2 text-xs font-semibold leading-5 text-amber-300/70">
-                {preset.readyLabel ?? '구독자 세션 이식 필요'} — 관리자 훈련 모드에서는 준비되어 있습니다.
-              </p>
-            ) : null}
           </div>
           <button
             type="button"
@@ -297,7 +297,7 @@ function OfficialEngineBriefing({
             className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5 fill-black" />
-            {notReady ? (preset.readyLabel ?? '이식 필요') : startDisabled ? 'BGM 준비 중' : '큰 화면으로 실행'}
+            {startDisabled ? 'BGM 준비 중' : '큰 화면으로 실행'}
           </button>
         </div>
       </section>
@@ -341,8 +341,12 @@ function SpomoveSessionContent() {
   const drillName = officialPreset?.title ?? (drill ? cleanDrillName(drill.id, drill.name, drill.engine?.mode) : 'SPOMOVE');
   const cueSeconds = officialPreset?.cueSeconds;
   const rounds = officialPreset?.rounds;
-  const selectedBgmPath = requestedBgmPath && bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
-  const isBgmPending = Boolean(officialPreset && requestedBgmPath && bgmLoading);
+  const selectedBgmPath = useMemo(() => {
+    if (requestedBgmPath) return bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
+    if (officialPreset && bgmList.length > 0) return bgmList[0]!;
+    return '';
+  }, [bgmList, officialPreset, requestedBgmPath]);
+  const isBgmPending = Boolean(officialPreset && bgmLoading);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [state, setState] = useState<SessionState>('idle');
@@ -624,8 +628,7 @@ function SpomoveSessionContent() {
       {state === 'idle' && officialPreset ? (
         <OfficialEngineBriefing
           preset={officialPreset}
-          startDisabled={isBgmPending || !officialPreset.isReady}
-          notReady={!officialPreset.isReady}
+          startDisabled={isBgmPending}
           onStart={startOfficialSession}
         />
       ) : null}

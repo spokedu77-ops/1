@@ -2,7 +2,7 @@ import { SPOKEDU_IMAGES } from './images';
 import type { HomeMediaKey } from './home-media';
 import { SPOKEDU_BASE_PATH } from './site';
 
-/** /spokedu/programs 목록·링크·트랙 매핑의 단일 기준 */
+/** 프로그램 상세·링크·트랙 매핑의 단일 기준 (목록은 홈 #program-system) */
 export type ProgramCategory = '에듀테크' | '기초체력' | '월간형' | '놀이체육' | '행사형' | '캠프형' | '콘텐츠';
 export type ProgramSlug =
   | 'spomove'

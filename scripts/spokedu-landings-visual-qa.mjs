@@ -25,7 +25,6 @@ const PAGES = [
   { path: '/spokedu/private', slug: 'private' },
   { path: '/spokedu/dispatch', slug: 'dispatch' },
   { path: '/spokedu/curriculum', slug: 'curriculum' },
-  { path: '/spokedu/programs', slug: 'programs' },
   { path: '/spokedu/records', slug: 'records' },
   { path: '/spokedu/cases', slug: 'cases' },
 ];

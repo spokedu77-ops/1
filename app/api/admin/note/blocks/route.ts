@@ -379,18 +379,32 @@ export async function DELETE(request: NextRequest) {
     if (!auth.ok) return auth.response;
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    if (!id) {
-      return NextResponse.json({ error: 'id required' }, { status: 400 });
+    const singleId = searchParams.get('id');
+    const idsParam = searchParams.get('ids');
+    let ids: string[] = [];
+    if (singleId) {
+      ids = [singleId];
+    } else if (idsParam) {
+      ids = idsParam.split(',').map((value) => value.trim()).filter(Boolean);
+    } else {
+      const body = await request.json().catch(() => ({}));
+      if (Array.isArray(body.ids)) {
+        ids = body.ids.filter((value: unknown): value is string => typeof value === 'string' && value.length > 0);
+      }
     }
 
+    if (ids.length === 0) {
+      return NextResponse.json({ error: 'id or ids required' }, { status: 400 });
+    }
+
+    const uniqueIds = [...new Set(ids)];
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
-    const { data: beforeBlock, error: beforeError } = await supabase
+
+    const { data: beforeBlocks, error: beforeError } = await supabase
       .from('note_blocks')
       .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
-      .eq('id', id)
-      .maybeSingle();
+      .in('id', uniqueIds);
     if (beforeError) {
       devLogger.error('[admin/note/blocks] DELETE before error', beforeError);
       return NextResponse.json({ error: beforeError.message }, { status: 500 });
@@ -404,7 +418,7 @@ export async function DELETE(request: NextRequest) {
         updated_at: now,
         updated_by: auth.userId,
       })
-      .eq('id', id)
+      .in('id', uniqueIds)
       .is('deleted_at', null);
 
     if (error) {
@@ -412,18 +426,22 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    if (beforeBlock?.document_id) {
-      await insertAuditLog({
-        documentId: beforeBlock.document_id,
-        blockId: beforeBlock.id,
-        actorId: auth.userId,
-        action: 'trash_block',
-        summary: '블록 휴지통 이동',
-        diff: { before: beforeBlock, after: { deleted_at: now, deleted_by: auth.userId } },
-      });
-    }
+    await Promise.all(
+      (beforeBlocks ?? []).map((beforeBlock) =>
+        beforeBlock.document_id
+          ? insertAuditLog({
+            documentId: beforeBlock.document_id,
+            blockId: beforeBlock.id,
+            actorId: auth.userId,
+            action: 'trash_block',
+            summary: uniqueIds.length > 1 ? '블록 일괄 휴지통 이동' : '블록 휴지통 이동',
+            diff: { before: beforeBlock, after: { deleted_at: now, deleted_by: auth.userId } },
+          })
+          : Promise.resolve(),
+      ),
+    );
 
-    return NextResponse.json({ ok: true, softDeleted: true });
+    return NextResponse.json({ ok: true, softDeleted: true, count: uniqueIds.length });
   } catch (err) {
     devLogger.error('[admin/note/blocks] DELETE exception', err);
     return NextResponse.json(

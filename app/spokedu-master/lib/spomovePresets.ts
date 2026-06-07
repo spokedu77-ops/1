@@ -10,6 +10,9 @@ export const SUPPORTED_MASTER_ENGINE_MODES = [
   'diagonal',
   'memory',
   'spatial',
+  'simon',
+  'flanker',
+  'stroop',
 ] as const;
 
 export function isSupportedMasterEngineMode(mode: string | null | undefined) {

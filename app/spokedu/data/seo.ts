@@ -34,7 +34,7 @@ const CANONICAL: Record<SpokeduSeoPageKey, string> = {
   private: '/spokedu/private',
   dispatch: '/spokedu/dispatch',
   curriculum: '/spokedu/curriculum',
-  programs: '/spokedu/programs',
+  programs: '/spokedu',
   records: '/spokedu/records',
   cases: '/spokedu/cases',
   monthly: '/spokedu/monthly',

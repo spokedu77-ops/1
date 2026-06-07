@@ -51,6 +51,38 @@ export async function deleteCenterTbdClass(classId: string): Promise<void> {
   }
 }
 
+export async function fetchCenterTbdMonthNote(year: number, month: number): Promise<string> {
+  const params = new URLSearchParams({
+    year: String(year),
+    month: String(month + 1),
+  });
+  const res = await fetch(`/api/admin/center-tbd-schedule/note?${params}`, { cache: 'no-store' });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `메모 불러오기 실패 (${res.status})`);
+  }
+  const data = (await res.json()) as { note?: string };
+  return typeof data.note === 'string' ? data.note : '';
+}
+
+export async function saveCenterTbdMonthNote(
+  year: number,
+  month: number,
+  note: string
+): Promise<string> {
+  const res = await fetch('/api/admin/center-tbd-schedule/note', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ year, month: month + 1, note }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `메모 저장 실패 (${res.status})`);
+  }
+  const data = (await res.json()) as { note?: string };
+  return typeof data.note === 'string' ? data.note : note;
+}
+
 export async function importCenterTbdClasses(classes: CenterTbdClass[]): Promise<CenterTbdClass[]> {
   const res = await fetch('/api/admin/center-tbd-schedule', {
     method: 'POST',

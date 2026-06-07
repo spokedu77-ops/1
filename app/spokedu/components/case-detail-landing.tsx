@@ -10,7 +10,7 @@ import type { CaseData } from '../data/cases';
 import { casesPage } from '../data/cases-page';
 import { HOME_MEDIA, type HomeMediaItem } from '../data/home-media';
 import { getProgramBySlug } from '../data/programs';
-import { SPOKEDU_BASE_PATH } from '../data/site';
+import { HOME_PROGRAM_SYSTEM_HREF, SPOKEDU_BASE_PATH } from '../data/site';
 import { fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -40,7 +40,7 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
   const heroMedia = HOME_MEDIA[item.mediaKey];
   const backHref = `${SPOKEDU_BASE_PATH}/cases`;
   const dispatchHref = `${SPOKEDU_BASE_PATH}/contact?type=dispatch`;
-  const programHref = relatedProgram?.href ?? `${SPOKEDU_BASE_PATH}/programs`;
+  const programHref = relatedProgram?.href ?? HOME_PROGRAM_SYSTEM_HREF;
   const primaryImage = item.images[0];
 
   const overviewRows = [

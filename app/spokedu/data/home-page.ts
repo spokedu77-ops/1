@@ -132,11 +132,6 @@ export const homePage = {
     eyebrow: '수업 콘텐츠',
     title: '수업은 프로그램이 되고,\n프로그램은 커리큘럼이 됩니다',
     lead: '현장에서 검증한 프로그램을, 기관·강사가 바로 운영할 수 있는 형태로 정리합니다.',
-    cta: {
-      label: '프로그램 살펴보기',
-      href: `${SPOKEDU_BASE_PATH}/programs`,
-      trackLabel: 'cta-home-programs-system',
-    },
     items: [
       {
         id: 'spomove',

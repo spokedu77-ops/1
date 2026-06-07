@@ -37,10 +37,13 @@ export type OfficialSpomovePreset = {
   recommendedUse: string;
   isReady: boolean;
   readyLabel?: string;
+  /** 카드/모달 표시용 실행 조건 요약 문구 */
+  settingSummary: string;
+  /** 카드 하단 실행 조건 칩 목록 */
+  settingChips: string[];
 };
 
 export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
-  // ── 기존 반응인지 공식 4개 (ID 유지) ─────────────────────────────────────
   {
     id: 'reaction-cognition-space-direction-01',
     title: '반응인지 1번 · 공간 방향',
@@ -50,12 +53,15 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 1 },
     description: '화면에 제시되는 공간·방향 신호를 보고 빠르게 이동 방향을 선택하는 활동',
+    salesCopy: '화면 방향을 보고 빠르게 움직이는 반응력',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '수업 도입, 방향 인지, 민첩 반응',
     isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
   {
     id: 'reaction-cognition-quad-color-02',
@@ -66,12 +72,15 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 2 },
     description: '네 영역에 제시되는 색상 신호를 보고 정해진 색상 또는 위치에 맞춰 반응하는 활동',
+    salesCopy: '색과 위치를 함께 보는 선택 반응력',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '색상 인지, 위치 선택, 준비운동',
     isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
   {
     id: 'reaction-cognition-full-color-03',
@@ -82,12 +91,15 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 3 },
     description: '전면에 제시되는 색상 신호를 보고 빠르게 판단하고 움직이는 활동',
+    salesCopy: '큰 색 자극에 즉시 반응하는 집중력',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '전신 반응, 색상 판단, 집중 전환',
     isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
   {
     id: 'reaction-cognition-split-color-04',
@@ -98,15 +110,16 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 4 },
     description: '좌우 또는 상하로 나뉜 두 영역의 색상 신호를 보고 빠르게 선택 반응하는 활동',
+    salesCopy: '좌우 정보를 빠르게 구분하는 판단력',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '선택 반응, 양측 이동, 난이도 확장',
     isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
-
-  // ── 대표 프로그램 5개 (반응·주의·실행 각 1번) ────────────────────────────
   {
     id: 'visual-reaction-flow-05',
     title: '시지각 반응 1번 · FLOW',
@@ -124,6 +137,8 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     bgmCategory: 'spomove-training',
     recommendedUse: '수업 도입, 시선 집중, 기본 반응 깨우기',
     isReady: true,
+    settingSummary: '3초 간격 · 약 75초 · BGM 자동',
+    settingChips: ['3초 간격', '약 75초', 'BGM 자동'],
   },
   {
     id: 'simon-pole-shape-06',
@@ -141,8 +156,9 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '위치 간섭 조절, 선택주의, 집중 반응',
-    isReady: false,
-    readyLabel: '구독자 세션 이식 필요',
+    isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
   {
     id: 'flanker-uniform-07',
@@ -160,8 +176,9 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '선택주의, 목표 집중, 방해 정보 조절',
-    isReady: false,
-    readyLabel: '구독자 세션 이식 필요',
+    isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
   {
     id: 'stroop-arrow-reverse-08',
@@ -179,8 +196,9 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '규칙 조절, 충돌 정보 처리, 실행력',
-    isReady: false,
-    readyLabel: '구독자 세션 이식 필요',
+    isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
   },
   {
     id: 'sequential-memory-3color-09',
@@ -199,6 +217,8 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     bgmCategory: 'spomove-training',
     recommendedUse: '순서 기억, 작업기억, 차분한 마무리 활동',
     isReady: true,
+    settingSummary: '3색 기억 · 10라운드 · BGM 자동',
+    settingChips: ['3색 기억', '10라운드', 'BGM 자동'],
   },
 ];
 

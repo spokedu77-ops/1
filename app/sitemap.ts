@@ -12,7 +12,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/spokedu/private',
     '/spokedu/dispatch',
     '/spokedu/curriculum',
-    '/spokedu/programs',
     '/spokedu/programs/spomove',
     '/spokedu/programs/paps',
     '/spokedu/programs/monthly-newsports',

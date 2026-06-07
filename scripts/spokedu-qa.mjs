@@ -23,7 +23,6 @@ const PAGES = [
   '/spokedu/private',
   '/spokedu/dispatch',
   '/spokedu/curriculum',
-  '/spokedu/programs',
   '/spokedu/programs/spomove',
   '/spokedu/programs/paps',
   '/spokedu/programs/oneday-event',

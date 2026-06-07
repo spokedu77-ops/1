@@ -678,6 +678,7 @@ export default function AdminSmProgramsPage() {
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -733,6 +734,54 @@ export default function AdminSmProgramsPage() {
 
   const updateForm = <K extends keyof EditForm>(key: K, value: EditForm[K]) => {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
+  };
+
+  const syncFromCenter = async () => {
+    setSyncing(true);
+    try {
+      const previewRes = await fetch('/api/admin/spokedu-master/programs/sync-center', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: true }),
+      });
+      const preview = await previewRes.json() as {
+        error?: string;
+        summary?: { toInsert: number; toUpdate: number };
+        changes?: Array<{ title: string; fields: string[] }>;
+        message?: string;
+      };
+      if (!previewRes.ok) throw new Error(preview.error ?? '동기화 미리보기에 실패했습니다.');
+
+      const total = (preview.summary?.toInsert ?? 0) + (preview.summary?.toUpdate ?? 0);
+      if (total === 0) {
+        toast.success(preview.message ?? '커리큘럼과 overlay가 이미 일치합니다.');
+        return;
+      }
+
+      const sample = (preview.changes ?? [])
+        .slice(0, 5)
+        .map((item) => `• ${item.title} (${item.fields.join(', ')})`)
+        .join('\n');
+      const confirmed = window.confirm(
+        `커리큘럼 본문을 overlay에 반영합니다.\n\n신규 ${preview.summary?.toInsert ?? 0}개 · 갱신 ${preview.summary?.toUpdate ?? 0}개\n\n${sample}${total > 5 ? `\n…외 ${total - 5}개` : ''}\n\n제목·태그·MASTER 메타는 그대로 두고, 영상 URL·체크리스트·교구·활동 단계·전문가 팁만 덮어씁니다.`,
+      );
+      if (!confirmed) return;
+
+      const applyRes = await fetch('/api/admin/spokedu-master/programs/sync-center', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dryRun: false }),
+      });
+      const applied = await applyRes.json() as { error?: string; message?: string; applied?: number };
+      if (!applyRes.ok) throw new Error(applied.error ?? '동기화 적용에 실패했습니다.');
+
+      await load();
+      toast.success(applied.message ?? `커리큘럼 동기화 ${applied.applied ?? 0}건 완료`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '커리큘럼 동기화에 실패했습니다.');
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const save = async () => {
@@ -829,8 +878,18 @@ export default function AdminSmProgramsPage() {
           </div>
           <button
             type="button"
+            onClick={() => void syncFromCenter()}
+            disabled={syncing || loading}
+            className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-800 disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
+            {syncing ? '동기화 확인 중' : '커리큘럼 동기화'}
+          </button>
+          <button
+            type="button"
             onClick={() => void load()}
-            className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-600"
+            disabled={loading}
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-600"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             새로고침

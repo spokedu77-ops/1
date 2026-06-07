@@ -32,6 +32,8 @@ import {
   planBlockTabIndent,
   type BlockDropPosition,
   planMergeWithPreviousBlock,
+  planBatchDeleteBlocks,
+  planMoveRootBlockGroup,
   planPromoteChildrenOnDelete,
   sortRootBlocks,
   type BlockDropPlan,
@@ -88,6 +90,52 @@ const OnBlockSelectContext = createContext<((id: string, e: React.MouseEvent) =>
 
 function useSelectedBlockIds() { return useContext(SelectedBlockIdsContext); }
 function useOnBlockSelect() { return useContext(OnBlockSelectContext); }
+
+/** 같은 부모 안 형제 블록 id 구간 (Shift·거터 드래그 선택용) */
+function getSiblingBlockRangeIds(
+  blocks: NoteBlock[],
+  fromId: string,
+  toId: string,
+): string[] {
+  const from = blocks.find((b) => b.id === fromId);
+  const to = blocks.find((b) => b.id === toId);
+  if (!from || !to) return toId ? [toId] : fromId ? [fromId] : [];
+  if (from.parent_block_id !== to.parent_block_id) return [toId];
+  const siblings = getBlocksInParent(blocks, from.parent_block_id ?? null);
+  const ids = siblings.map((b) => b.id);
+  const startIdx = ids.indexOf(fromId);
+  const endIdx = ids.indexOf(toId);
+  if (startIdx < 0 || endIdx < 0) return [toId];
+  return ids.slice(Math.min(startIdx, endIdx), Math.max(startIdx, endIdx) + 1);
+}
+
+const SuppressGripMenuRefContext = createContext<React.RefObject<boolean>>({ current: false });
+
+function useSuppressGripMenuRef() {
+  return useContext(SuppressGripMenuRefContext);
+}
+
+type MarqueeRect = { left: number; top: number; right: number; bottom: number };
+
+function rectsIntersect(a: DOMRect, b: MarqueeRect): boolean {
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+
+function getMarqueeSelectedBlockIds(marquee: MarqueeRect): string[] {
+  const ids: string[] = [];
+  document.querySelectorAll<HTMLElement>('[data-note-block-row]').forEach((row) => {
+    if (!rectsIntersect(row.getBoundingClientRect(), marquee)) return;
+    const id = row.getAttribute('data-block-id');
+    if (id) ids.push(id);
+  });
+  return ids;
+}
+
+function isMarqueeSelectStartBlocked(target: HTMLElement): boolean {
+  return !!target.closest(
+    'button, input, textarea, a, .note-block-gutter, [data-note-ignore-whitespace]',
+  );
+}
 
 /**
  * 포인터 실제 Y 좌표 기준으로 before/after/inside 결정.
@@ -1771,12 +1819,13 @@ function SortableBlockRow({
   const isDragActive = useBlockDragActive();
   const selectedBlockIds = useSelectedBlockIds();
   const onBlockSelect = useOnBlockSelect();
+  const suppressGripMenuRef = useSuppressGripMenuRef();
   const isSelected = selectedBlockIds.has(block.id);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0 : 1,
+    opacity: isDragging ? 0 : isSelected && isDragActive && selectedBlockIds.size > 1 ? 0.4 : 1,
     zIndex: isDragging ? 10 : undefined,
   };
 
@@ -1827,6 +1876,7 @@ function SortableBlockRow({
       ref={setNodeRef}
       data-note-block-row
       data-block-id={block.id}
+      data-nest-depth="1"
       style={style}
       className={`relative overflow-visible py-0.5 transition-colors ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
@@ -1852,6 +1902,10 @@ function SortableBlockRow({
         onGripClick={(e) => {
           e.stopPropagation();
           if (isDragActive) return;
+          if (suppressGripMenuRef.current) {
+            suppressGripMenuRef.current = false;
+            return;
+          }
           if ((e.ctrlKey || e.metaKey || e.shiftKey) && onBlockSelect) {
             onBlockSelect(block.id, e);
             return;
@@ -1959,10 +2013,16 @@ function ToggleInlineRow({
     isDragging,
   } = useSortable({ id: block.id });
 
+  const isDragActive = useBlockDragActive();
+  const selectedBlockIds = useSelectedBlockIds();
+  const onBlockSelect = useOnBlockSelect();
+  const suppressGripMenuRef = useSuppressGripMenuRef();
+  const isSelected = selectedBlockIds.has(block.id);
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0 : 1,
+    opacity: isDragging ? 0 : isSelected && isDragActive && selectedBlockIds.size > 1 ? 0.4 : 1,
     zIndex: isDragging ? 10 + nestDepth : undefined,
   };
 
@@ -1978,16 +2038,13 @@ function ToggleInlineRow({
   const isRowHovered = hoveredBlockId === block.id || gutterPinned;
   const dropTarget = useBlockDropTarget();
   const dropPos = dropTarget?.blockId === block.id ? dropTarget.position : null;
-  const isDragActive = useBlockDragActive();
-  const selectedBlockIds = useSelectedBlockIds();
-  const onBlockSelect = useOnBlockSelect();
-  const isSelected = selectedBlockIds.has(block.id);
 
   return (
     <div
       ref={setNodeRef}
       data-note-block-row
       data-block-id={block.id}
+      data-nest-depth={String(nestDepth)}
       style={style}
       className={`relative overflow-visible py-0.5 transition-colors ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
@@ -2013,6 +2070,10 @@ function ToggleInlineRow({
         onGripClick={(e) => {
           e.stopPropagation();
           if (isDragActive) return;
+          if (suppressGripMenuRef.current) {
+            suppressGripMenuRef.current = false;
+            return;
+          }
           if ((e.ctrlKey || e.metaKey || e.shiftKey) && onBlockSelect) {
             onBlockSelect(block.id, e);
             return;
@@ -2155,8 +2216,19 @@ export default function AdminNotePageContent() {
   const undoCreateBlockIdRef = useRef<string | null>(null);
   const [showCreateUndo, setShowCreateUndo] = useState(false);
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(() => new Set());
+  const [marqueeBox, setMarqueeBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
+  const [multiDragCount, setMultiDragCount] = useState(0);
   const selectedBlockIdsRef = useRef<Set<string>>(new Set());
   const lastClickedBlockIdRef = useRef<string | null>(null);
+  const blockMarqueeRef = useRef<{
+    additive: boolean;
+    shiftAnchor: boolean;
+    started: boolean;
+    startX: number;
+    startY: number;
+  } | null>(null);
+  const multiDragBlockIdsRef = useRef<string[] | null>(null);
+  const suppressGripMenuRef = useRef(false);
 
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
   const savedTimerRef = useRef<number | undefined>(undefined);
@@ -2166,7 +2238,7 @@ export default function AdminNotePageContent() {
   const focusedEditorBlockIdRef = useRef<string | null>(null);
   const focusedEditorPartRef = useRef<'title' | 'editor' | null>(null);
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
@@ -2180,6 +2252,7 @@ export default function AdminNotePageContent() {
   }, []);
   useEffect(() => { selectedBlockIdsRef.current = selectedBlockIds; }, [selectedBlockIds]);
   const handleDeleteBlockRef = useRef<typeof handleDeleteBlock | null>(null);
+  const handleDeleteBlocksRef = useRef<typeof handleDeleteBlocks | null>(null);
 
   const activeDocument = useMemo(
     () => documents.find((d) => d.id === selectedId) ?? null,
@@ -2240,6 +2313,9 @@ export default function AdminNotePageContent() {
     part: 'title' | 'editor' = 'editor',
   ) => {
     if (!blockId) return;
+    if (selectedBlockIdsRef.current.size > 0) {
+      setSelectedBlockIds(new Set());
+    }
     focusedEditorBlockIdRef.current = blockId;
     focusedEditorPartRef.current = part;
     setFocusedEditorBlockId(blockId);
@@ -2444,6 +2520,17 @@ export default function AdminNotePageContent() {
       setActiveBlockId(activeId);
       setActiveDragDocId(null);
       noteBlockDragActiveRef.current = true;
+      const selected = selectedBlockIdsRef.current;
+      if (selected.size > 1 && selected.has(activeId)) {
+        const rootIds = sortRootBlocks(blocksRef.current)
+          .filter((block) => selected.has(block.id))
+          .map((block) => block.id);
+        multiDragBlockIdsRef.current = rootIds.length > 1 ? rootIds : null;
+        setMultiDragCount(rootIds.length > 1 ? rootIds.length : 0);
+      } else {
+        multiDragBlockIdsRef.current = null;
+        setMultiDragCount(0);
+      }
     }
     setDropTarget(null);
     dropTargetRef.current = null;
@@ -2701,6 +2788,9 @@ export default function AdminNotePageContent() {
     setActiveBlockId(null);
     setActiveDragDocId(null);
     const wasBlockDrag = noteBlockDragActiveRef.current;
+    const groupDragIds = multiDragBlockIdsRef.current;
+    multiDragBlockIdsRef.current = null;
+    setMultiDragCount(0);
     noteBlockDragActiveRef.current = false;
     const { active, over } = event;
     const resolvedTarget = over
@@ -2812,6 +2902,33 @@ export default function AdminNotePageContent() {
       ? overId.slice('block-inside:'.length)
       : overId;
     const overBlock = prevBlocks.find((block) => block.id === resolvedOverBlockId);
+
+    if (groupDragIds && groupDragIds.length > 1) {
+      const target = resolvedTarget ?? (overBlock ? { blockId: resolvedOverBlockId, position: 'before' as BlockDropPosition } : null);
+      if (target && !groupDragIds.includes(target.blockId) && target.position !== 'inside') {
+        const nextRoots = planMoveRootBlockGroup(
+          prevBlocks,
+          groupDragIds,
+          target.blockId,
+          target.position,
+        );
+        if (nextRoots) {
+          const { normalized, depthPatches } = normalizeDepthByOrder(nextRoots);
+          const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
+          const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
+          setBlocks(nextBlocks);
+          try {
+            await persistOrderAndDepth(normalized, depthPatches);
+          } catch (e) {
+            devLogger.error('[Note] moveBlockGroup', e);
+            setBlocks(prevBlocks);
+            setError(e instanceof Error ? e.message : '블록 묶음 이동 저장 실패');
+          }
+          return;
+        }
+      }
+    }
+
     if (overBlock?.type === 'page') {
       const targetDocId =
         typeof overBlock.content?.page_document_id === 'string'
@@ -3903,6 +4020,7 @@ export default function AdminNotePageContent() {
     )) {
       return;
     }
+    setSelectedBlockIds(new Set());
     e.preventDefault();
     handleClickEditorWhitespace();
   }, [handleClickEditorWhitespace]);
@@ -3916,6 +4034,65 @@ export default function AdminNotePageContent() {
       triggerSave();
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
   }, [focusBlockEditor, triggerSave]);
+
+  const persistDeletePromotionPatches = useCallback(async (
+    patches: Array<{
+      id: string;
+      parent_block_id: string | null;
+      order_index: number;
+      content?: Record<string, unknown>;
+    }>,
+  ) => {
+    if (patches.length === 0) return;
+    const responses = await Promise.all(
+      patches.map((patch) =>
+        fetch('/api/admin/note/blocks', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            id: patch.id,
+            parent_block_id: patch.parent_block_id,
+            order_index: patch.order_index,
+            ...(patch.content ? { content: patch.content } : {}),
+          }),
+        }),
+      ),
+    );
+    const failed = responses.find((response) => !response.ok);
+    if (failed) {
+      const j = await failed.json().catch(() => null);
+      throw new Error(j?.error || '블록 승격 저장 실패');
+    }
+  }, []);
+
+  const softDeleteBlockIds = useCallback(async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const res = await fetch('/api/admin/note/blocks', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ ids }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      throw new Error(j?.error || '삭제 실패');
+    }
+  }, []);
+
+  const finalizeBlockDelete = useCallback(async (options?: {
+    skipDeleteUndo?: boolean;
+    lastDeletedId?: string | null;
+  }) => {
+    if (!options?.skipDeleteUndo && options?.lastDeletedId) {
+      setLastDeletedBlockId(options.lastDeletedId);
+    }
+    if (docTab === 'block-trash') {
+      setMobileTab('list');
+      await loadTrashedBlocks();
+    }
+    triggerSave();
+  }, [docTab, loadTrashedBlocks, triggerSave]);
 
   const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false, skipDeleteUndo = false) => {
     const prevBlocks = blocksRef.current;
@@ -3955,62 +4132,81 @@ export default function AdminNotePageContent() {
 
     try {
       if (patchMap && patchMap.size > 0) {
-        await Promise.all(
-          [...patchMap.values()].map((patch) =>
-            fetch('/api/admin/note/blocks', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                id: patch.id,
-                parent_block_id: patch.parent_block_id,
-                order_index: patch.order_index,
-                ...(patch.content ? { content: patch.content } : {}),
-              }),
-            }),
-          ),
-        );
+        await persistDeletePromotionPatches([...patchMap.values()]);
       }
-      const res = await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(block.id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
+      await softDeleteBlockIds([block.id]);
+      await finalizeBlockDelete({
+        skipDeleteUndo,
+        lastDeletedId: block.id,
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '삭제 실패');
-      }
-      if (!skipDeleteUndo) {
-        setLastDeletedBlockId(block.id);
-      }
-      if (docTab === 'block-trash') {
-        setMobileTab('list');
-      }
-      await loadTrashedBlocks();
-      triggerSave();
     } catch (e) {
       devLogger.error('[Note] deleteBlock', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
       setBlocks(prevBlocks);
     }
-  }, [docTab, focusBlockEditor, loadTrashedBlocks, triggerSave]);
+  }, [finalizeBlockDelete, focusBlockEditor, persistDeletePromotionPatches, softDeleteBlockIds]);
 
-  // selectedBlockIds 키보드 핸들러에서 최신 handleDeleteBlock을 쓰기 위한 ref 동기화
+  const handleDeleteBlocks = useCallback(async (
+    blocksToDelete: NoteBlock[],
+    options?: { skipDeleteUndo?: boolean; focusPrevious?: boolean },
+  ) => {
+    const targets = blocksToDelete.filter((block) =>
+      blocksRef.current.some((item) => item.id === block.id),
+    );
+    if (targets.length === 0) return;
+
+    if (targets.length === 1) {
+      await handleDeleteBlock(targets[0], options?.focusPrevious ?? false, options?.skipDeleteUndo ?? false);
+      return;
+    }
+
+    const prevBlocks = blocksRef.current;
+    const plan = planBatchDeleteBlocks(prevBlocks, targets.map((block) => block.id));
+    if (!plan || plan.deletedIds.length === 0) return;
+
+    setBlocks(plan.nextBlocks);
+
+    try {
+      await persistDeletePromotionPatches(plan.patches);
+      await softDeleteBlockIds(plan.deletedIds);
+      await finalizeBlockDelete({
+        skipDeleteUndo: options?.skipDeleteUndo,
+        lastDeletedId: plan.deletedIds[plan.deletedIds.length - 1] ?? null,
+      });
+    } catch (e) {
+      devLogger.error('[Note] deleteBlocks', e);
+      setError(e instanceof Error ? e.message : '블록 삭제 실패');
+      setBlocks(prevBlocks);
+    }
+  }, [finalizeBlockDelete, handleDeleteBlock, persistDeletePromotionPatches, softDeleteBlockIds]);
+
+  // selectedBlockIds 키보드 핸들러에서 최신 삭제 핸들러를 쓰기 위한 ref 동기화
   handleDeleteBlockRef.current = handleDeleteBlock;
+  handleDeleteBlocksRef.current = handleDeleteBlocks;
+
+  const applyBlockSelectRange = useCallback((
+    anchorId: string,
+    endId: string,
+    options?: { additive?: boolean },
+  ) => {
+    const range = getSiblingBlockRangeIds(blocksRef.current, anchorId, endId);
+    if (range.length === 0) return;
+    if (options?.additive) {
+      setSelectedBlockIds((prev) => {
+        const next = new Set(prev);
+        for (const rid of range) next.add(rid);
+        return next;
+      });
+    } else {
+      setSelectedBlockIds(new Set(range));
+    }
+  }, []);
 
   const handleBlockSelect = useCallback((id: string, e: React.MouseEvent) => {
-    const allIds = [...blocksRef.current]
-      .sort((a, b) => a.order_index - b.order_index)
-      .map((b) => b.id);
     if (e.shiftKey && lastClickedBlockIdRef.current) {
-      const startIdx = allIds.indexOf(lastClickedBlockIdRef.current);
-      const endIdx = allIds.indexOf(id);
-      if (startIdx >= 0 && endIdx >= 0) {
-        const from = Math.min(startIdx, endIdx);
-        const to = Math.max(startIdx, endIdx);
-        setSelectedBlockIds(new Set(allIds.slice(from, to + 1)));
-        lastClickedBlockIdRef.current = id;
-        return;
-      }
+      applyBlockSelectRange(lastClickedBlockIdRef.current, id);
+      lastClickedBlockIdRef.current = id;
+      return;
     }
     if (e.ctrlKey || e.metaKey) {
       setSelectedBlockIds((prev) => {
@@ -4022,6 +4218,124 @@ export default function AdminNotePageContent() {
       setSelectedBlockIds(new Set([id]));
     }
     lastClickedBlockIdRef.current = id;
+  }, [applyBlockSelectRange]);
+
+  const applyMarqueeSelection = useCallback((marquee: MarqueeRect, options: { additive: boolean; shiftAnchor: boolean }) => {
+    const ids = getMarqueeSelectedBlockIds(marquee);
+    if (ids.length === 0) {
+      if (!options.additive && !options.shiftAnchor) setSelectedBlockIds(new Set());
+      return;
+    }
+
+    let nextIds = ids;
+    if (options.shiftAnchor && lastClickedBlockIdRef.current) {
+      const anchorId = lastClickedBlockIdRef.current;
+      const sorted = [...ids].sort((a, b) => {
+        const blockA = blocksRef.current.find((item) => item.id === a);
+        const blockB = blocksRef.current.find((item) => item.id === b);
+        return (blockA?.order_index ?? 0) - (blockB?.order_index ?? 0);
+      });
+      const rangeIds = getSiblingBlockRangeIds(
+        blocksRef.current,
+        anchorId,
+        sorted[sorted.length - 1] ?? anchorId,
+      );
+      nextIds = [...new Set([...rangeIds, ...ids])];
+    }
+
+    if (options.additive && !options.shiftAnchor) {
+      setSelectedBlockIds((prev) => {
+        const next = new Set(prev);
+        for (const id of nextIds) next.add(id);
+        return next;
+      });
+      return;
+    }
+
+    setSelectedBlockIds(new Set(nextIds));
+    lastClickedBlockIdRef.current = nextIds[nextIds.length - 1] ?? null;
+  }, []);
+
+  const handleBlockListPointerDownCapture = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    if (noteBlockDragActiveRef.current) return;
+    if (blockMarqueeRef.current) return;
+
+    const target = e.target as HTMLElement;
+    if (isMarqueeSelectStartBlocked(target)) return;
+
+    const row = target.closest<HTMLElement>('[data-note-block-row]');
+    if (!row && !target.closest('[data-note-block-list]')) return;
+
+    blockMarqueeRef.current = {
+      additive: e.ctrlKey || e.metaKey,
+      shiftAnchor: e.shiftKey,
+      started: false,
+      startX: e.clientX,
+      startY: e.clientY,
+    };
+
+    const onMove = (ev: PointerEvent) => {
+      const state = blockMarqueeRef.current;
+      if (!state) return;
+
+      const dx = Math.abs(ev.clientX - state.startX);
+      const dy = Math.abs(ev.clientY - state.startY);
+      if (!state.started) {
+        if (dx < 4 && dy < 4) return;
+        state.started = true;
+        suppressGripMenuRef.current = true;
+        window.getSelection()?.removeAllRanges();
+        document.body.style.userSelect = 'none';
+        setFocusedEditorBlockId(null);
+        focusedEditorBlockIdRef.current = null;
+      }
+
+      const left = Math.min(state.startX, ev.clientX);
+      const top = Math.min(state.startY, ev.clientY);
+      const width = Math.abs(ev.clientX - state.startX);
+      const height = Math.abs(ev.clientY - state.startY);
+      setMarqueeBox({ left, top, width, height });
+
+      applyMarqueeSelection(
+        { left, top, right: left + width, bottom: top + height },
+        { additive: state.additive, shiftAnchor: state.shiftAnchor },
+      );
+    };
+
+    const onUp = () => {
+      const state = blockMarqueeRef.current;
+      document.body.style.userSelect = '';
+      setMarqueeBox(null);
+      blockMarqueeRef.current = null;
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      document.removeEventListener('pointercancel', onUp);
+
+      // 드래그 없이 클릭만 한 경우 → 멀티 선택 해제 (노션: 다른 블록·여백 클릭)
+      if (state && !state.started && !state.additive && !state.shiftAnchor) {
+        setSelectedBlockIds(new Set());
+      }
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+    document.addEventListener('pointercancel', onUp);
+  }, [applyMarqueeSelection]);
+
+  useEffect(() => {
+    const onDown = (e: MouseEvent) => {
+      if (selectedBlockIdsRef.current.size === 0) return;
+      const target = e.target as HTMLElement;
+      if (target.closest(
+        '[data-note-block-list], [data-note-format-toolbar], button, input, textarea, a',
+      )) {
+        return;
+      }
+      setSelectedBlockIds(new Set());
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
   const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {
@@ -4180,12 +4494,10 @@ export default function AdminNotePageContent() {
         e.preventDefault();
         const ids = [...selectedBlockIdsRef.current];
         setSelectedBlockIds(new Set());
-        void (async () => {
-          for (const id of ids) {
-            const block = blocksRef.current.find((b) => b.id === id);
-            if (block) await handleDeleteBlockRef.current?.(block, false, true);
-          }
-        })();
+        const blocks = ids
+          .map((id) => blocksRef.current.find((b) => b.id === id))
+          .filter((block): block is NoteBlock => !!block);
+        void handleDeleteBlocksRef.current?.(blocks, { skipDeleteUndo: true });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -5064,6 +5376,7 @@ export default function AdminNotePageContent() {
                   rows={1}
                   className="mb-1 w-full resize-none overflow-hidden bg-transparent text-[40px] font-bold leading-[1.2] tracking-tight text-neutral-900 outline-none placeholder:text-neutral-300"
                   placeholder="제목 없음"
+                  onMouseDown={() => setSelectedBlockIds(new Set())}
                   value={
                     activeDocument.title === '제목 없음' || activeDocument.title === 'Untitled'
                       ? ''
@@ -5139,6 +5452,7 @@ export default function AdminNotePageContent() {
                 {/* 블록 목록 (DnD) */}
                 <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
                 <OnBlockSelectContext.Provider value={handleBlockSelect}>
+                <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
                 <SetHoveredBlockContext.Provider value={setHoveredBlockId}>
                 <HoveredBlockContext.Provider value={hoveredBlockId}>
                   <SortableContext
@@ -5146,9 +5460,22 @@ export default function AdminNotePageContent() {
                     strategy={verticalListSortingStrategy}
                   >
                     <div
-                      className="overflow-visible"
+                      data-note-block-list
+                      className="relative overflow-visible"
+                      onPointerDownCapture={handleBlockListPointerDownCapture}
                       onMouseLeave={handleBlockListMouseLeave}
                     >
+                      {marqueeBox && (
+                        <div
+                          className="pointer-events-none fixed z-[60] border border-blue-400 bg-blue-500/20"
+                          style={{
+                            left: marqueeBox.left,
+                            top: marqueeBox.top,
+                            width: marqueeBox.width,
+                            height: marqueeBox.height,
+                          }}
+                        />
+                      )}
                       {rootBlocks.map((block) => (
                         <Fragment key={block.id}>
                           {renderSortableBlock(block)}
@@ -5158,6 +5485,7 @@ export default function AdminNotePageContent() {
                   </SortableContext>
                 </HoveredBlockContext.Provider>
                 </SetHoveredBlockContext.Provider>
+                </SuppressGripMenuRefContext.Provider>
                 </OnBlockSelectContext.Provider>
                 </SelectedBlockIdsContext.Provider>
 
@@ -5170,7 +5498,16 @@ export default function AdminNotePageContent() {
         {/* 드래그 중 미리보기 (사이드바 드롭 포함) */}
         <DragOverlay dropAnimation={{ duration: 160, easing: 'ease' }}>
           {activeBlock ? (
-            <DragPreview block={activeBlock} />
+            multiDragCount > 1 ? (
+              <div className="flex items-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 py-2 shadow-lg">
+                <GripVertical className="h-4 w-4 text-blue-500" />
+                <span className="text-[14px] font-medium text-blue-800">
+                  {multiDragCount}개 블록
+                </span>
+              </div>
+            ) : (
+              <DragPreview block={activeBlock} />
+            )
           ) : activeDragDocument ? (
             <div className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-2 shadow-lg">
               <DocIconGlyph icon={resolveDocIcon(activeDragDocument.properties)} />

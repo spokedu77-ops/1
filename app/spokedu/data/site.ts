@@ -3,6 +3,10 @@ import { getLiveExternalChannels } from './external-channels';
 
 export const SPOKEDU_BASE_PATH = '/spokedu';
 
+/** 홈 Program System 섹션 앵커 (구 /programs 목록 대체) */
+export const HOME_PROGRAM_SYSTEM_ID = 'program-system';
+export const HOME_PROGRAM_SYSTEM_HREF = `${SPOKEDU_BASE_PATH}#${HOME_PROGRAM_SYSTEM_ID}`;
+
 export const siteBrand = {
   brandName: brandProfile.nameEn,
   koreanName: brandProfile.nameKo,
@@ -28,7 +32,6 @@ export const siteNavItems: SiteNavItem[] = [
   { label: '개인수업', path: '/private', href: `${SPOKEDU_BASE_PATH}/private` },
   { label: '기관수업', path: '/dispatch', href: `${SPOKEDU_BASE_PATH}/dispatch` },
   { label: '커리큘럼', path: '/curriculum', href: `${SPOKEDU_BASE_PATH}/curriculum` },
-  { label: '프로그램', path: '/programs', href: `${SPOKEDU_BASE_PATH}/programs` },
   { label: '현장기록', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
   { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
 ];

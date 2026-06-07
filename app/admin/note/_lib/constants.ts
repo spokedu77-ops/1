@@ -86,6 +86,8 @@ export const NOTE_PAGE_SHELL = 'mx-auto w-full max-w-[720px] px-14 md:px-16';
 export const NOTE_BLOCK_HANDLE_LEFT = '-left-[54px]';
 /** 페이지 왼쪽 거터 — 모든 블록 핸들이 여기 정렬 */
 export const NOTE_GUTTER_PX = 54;
+/** 거터(+·⋮⋮) 포함 왼쪽 드래그 선택 히트 폭 (nest 1 기준) */
+export const NOTE_GUTTER_SELECT_HIT_PX = 96;
 /** 토글 자식 한 단계 들여쓰기 (pl-[1.625rem]) */
 export const TOGGLE_INDENT_PX = 26;
 

@@ -321,6 +321,103 @@ export function planPromoteChildrenOnDelete<T extends BlockWithMeta>(
   return { deletedId: blockId, patches };
 }
 
+export function getBlockAncestorDepth<T extends NoteBlockLike>(block: T, blocks: T[]): number {
+  let depth = 0;
+  let parentId = block.parent_block_id ?? null;
+  while (parentId) {
+    depth += 1;
+    parentId = blocks.find((item) => item.id === parentId)?.parent_block_id ?? null;
+  }
+  return depth;
+}
+
+/** 여러 블록을 한 번에 삭제할 때 로컬 상태·승격 PATCH를 계산한다. */
+export function planBatchDeleteBlocks<T extends BlockWithMeta>(
+  blocks: T[],
+  deleteIds: Iterable<string>,
+): { nextBlocks: T[]; patches: PromoteChildrenOnDeletePatch[]; deletedIds: string[] } | null {
+  const deleteSet = new Set(deleteIds);
+  if (deleteSet.size === 0) return null;
+
+  const patchById = new Map<string, PromoteChildrenOnDeletePatch>();
+  let working = blocks;
+  const deletedIds: string[] = [];
+
+  const targets = working
+    .filter((block) => deleteSet.has(block.id))
+    .sort((a, b) => {
+      const depthDiff = getBlockAncestorDepth(b, working) - getBlockAncestorDepth(a, working);
+      return depthDiff !== 0 ? depthDiff : b.order_index - a.order_index;
+    });
+
+  for (const target of targets) {
+    if (!working.some((block) => block.id === target.id)) continue;
+
+    const plan = planPromoteChildrenOnDelete(working, target.id);
+    deletedIds.push(target.id);
+
+    if (!plan) {
+      working = working.filter((block) => block.id !== target.id);
+      continue;
+    }
+
+    const patchesToApply = plan.patches.filter(
+      (patch) => patch.id !== target.id && !deleteSet.has(patch.id),
+    );
+    for (const patch of patchesToApply) {
+      patchById.set(patch.id, patch);
+    }
+
+    const patchMap = new Map(patchesToApply.map((patch) => [patch.id, patch]));
+    working = working
+      .filter((block) => block.id !== target.id)
+      .map((block) => {
+        const patch = patchMap.get(block.id);
+        if (!patch) return block;
+        return {
+          ...block,
+          parent_block_id: patch.parent_block_id,
+          order_index: patch.order_index,
+          ...(patch.content ? { content: patch.content } : {}),
+        };
+      });
+  }
+
+  return {
+    nextBlocks: working,
+    patches: [...patchById.values()],
+    deletedIds,
+  };
+}
+
+/** 루트 블록 여러 개를 한 덩어리로 before/after 이동 */
+export function planMoveRootBlockGroup<T extends BlockWithMeta>(
+  blocks: T[],
+  movingIds: Iterable<string>,
+  targetBlockId: string,
+  position: BlockDropPosition,
+): T[] | null {
+  if (position === 'inside') return null;
+
+  const moveSet = new Set(movingIds);
+  const roots = sortRootBlocks(blocks);
+  const moving = roots.filter((block) => moveSet.has(block.id));
+  if (moving.length === 0) return null;
+
+  const remaining = roots.filter((block) => !moveSet.has(block.id));
+  const targetIdx = remaining.findIndex((block) => block.id === targetBlockId);
+  let insertIdx = remaining.length;
+  if (targetIdx >= 0) {
+    insertIdx = position === 'before' ? targetIdx : targetIdx + 1;
+  }
+
+  return [
+    ...remaining.slice(0, insertIdx),
+    ...moving,
+    ...remaining.slice(insertIdx),
+  ].map((block, index) => ({ ...block, order_index: index, parent_block_id: null }));
+}
+
 export function getBlockMergeText(block: BlockWithMeta): string {
   const text = block.content?.text;
   return typeof text === 'string' ? text : '';

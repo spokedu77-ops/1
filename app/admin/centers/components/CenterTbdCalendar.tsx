@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Plus, Upload, RefreshCw } from 'lucide-react';
 import CenterTbdEventPanel from './CenterTbdEventPanel';
 import { useCenterTbdSchedule } from '../hooks/useCenterTbdSchedule';
+import { fetchCenterTbdMonthNote, saveCenterTbdMonthNote } from '../lib/centerTbdApi';
 import {
   createDefaultCenterTbdClass,
   flattenClassesToCalendarItems,
@@ -38,6 +39,14 @@ function chunkWeeks(cells: (Date | null)[]) {
     rows.push(cells.slice(i, i + 7));
   }
   return rows;
+}
+
+function trimTrailingEmptyWeeks(rows: (Date | null)[][]) {
+  let end = rows.length;
+  while (end > 0 && rows[end - 1].every((cell) => cell === null)) {
+    end -= 1;
+  }
+  return rows.slice(0, end);
 }
 
 function formatTimeShort(iso: string) {
@@ -138,11 +147,21 @@ export default function CenterTbdCalendar() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelClass, setPanelClass] = useState<CenterTbdClass | null>(null);
   const [panelIsNew, setPanelIsNew] = useState(false);
+  const [monthNote, setMonthNote] = useState('');
+  const [monthNoteDraft, setMonthNoteDraft] = useState('');
+  const [monthNoteLoading, setMonthNoteLoading] = useState(false);
+  const [monthNoteSaving, setMonthNoteSaving] = useState(false);
+  const [monthNoteError, setMonthNoteError] = useState<string | null>(null);
+  const monthNoteSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const monthNoteRequestIdRef = useRef(0);
 
   const calendarItems = useMemo(() => flattenClassesToCalendarItems(classes), [classes]);
 
   const monthInfo = useMemo(() => getMonthGrid(monthAnchor), [monthAnchor]);
-  const monthWeekRows = useMemo(() => chunkWeeks(monthInfo.cells), [monthInfo.cells]);
+  const monthWeekRows = useMemo(
+    () => trimTrailingEmptyWeeks(chunkWeeks(monthInfo.cells)),
+    [monthInfo.cells]
+  );
 
   const eventsByMonthDay = useMemo(() => {
     const map = new Map<string, LocalTbdCalendarItem[]>();
@@ -182,6 +201,82 @@ export default function CenterTbdCalendar() {
     setPanelClass(null);
     setPanelIsNew(false);
   }, []);
+
+  const persistMonthNote = useCallback(
+    async (note: string, year: number, month: number) => {
+      setMonthNoteSaving(true);
+      setMonthNoteError(null);
+      try {
+        const saved = await saveCenterTbdMonthNote(year, month, note);
+        setMonthNote(saved);
+        setMonthNoteDraft(saved);
+      } catch (err) {
+        setMonthNoteError(err instanceof Error ? err.message : '메모 저장 실패');
+      } finally {
+        setMonthNoteSaving(false);
+      }
+    },
+    []
+  );
+
+  const scheduleMonthNoteSave = useCallback(
+    (note: string) => {
+      if (monthNoteSaveTimerRef.current) {
+        clearTimeout(monthNoteSaveTimerRef.current);
+      }
+      monthNoteSaveTimerRef.current = setTimeout(() => {
+        void persistMonthNote(note, monthInfo.y, monthInfo.m);
+      }, 600);
+    },
+    [monthInfo.m, monthInfo.y, persistMonthNote]
+  );
+
+  useEffect(() => {
+    const requestId = ++monthNoteRequestIdRef.current;
+    setMonthNoteLoading(true);
+    setMonthNoteError(null);
+    setMonthNote('');
+    setMonthNoteDraft('');
+
+    void fetchCenterTbdMonthNote(monthInfo.y, monthInfo.m)
+      .then((note) => {
+        if (monthNoteRequestIdRef.current !== requestId) return;
+        setMonthNote(note);
+        setMonthNoteDraft(note);
+      })
+      .catch((err) => {
+        if (monthNoteRequestIdRef.current !== requestId) return;
+        setMonthNoteError(err instanceof Error ? err.message : '메모 불러오기 실패');
+      })
+      .finally(() => {
+        if (monthNoteRequestIdRef.current !== requestId) return;
+        setMonthNoteLoading(false);
+      });
+
+    return () => {
+      if (monthNoteSaveTimerRef.current) {
+        clearTimeout(monthNoteSaveTimerRef.current);
+        monthNoteSaveTimerRef.current = null;
+      }
+    };
+  }, [monthInfo.m, monthInfo.y]);
+
+  const handleMonthNoteChange = useCallback(
+    (value: string) => {
+      setMonthNoteDraft(value);
+      scheduleMonthNoteSave(value);
+    },
+    [scheduleMonthNoteSave]
+  );
+
+  const flushMonthNoteSave = useCallback(() => {
+    if (monthNoteSaveTimerRef.current) {
+      clearTimeout(monthNoteSaveTimerRef.current);
+      monthNoteSaveTimerRef.current = null;
+    }
+    if (monthNoteDraft === monthNote) return;
+    void persistMonthNote(monthNoteDraft, monthInfo.y, monthInfo.m);
+  }, [monthInfo.m, monthInfo.y, monthNote, monthNoteDraft, persistMonthNote]);
 
   const today = new Date();
 
@@ -285,7 +380,7 @@ export default function CenterTbdCalendar() {
         </div>
       ) : (
         <div className="rounded-lg mx-4 sm:mx-6 mt-3 mb-1 border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs text-indigo-900">
-          관리자 간 공유 · 수업 관리 DB(classes-v2)와 연동되지 않습니다.
+          수업·메모는 서버에 저장되어 관리자 간 공유됩니다. 수업 관리(classes-v2)와는 연동되지 않습니다.
         </div>
       )}
 
@@ -311,7 +406,7 @@ export default function CenterTbdCalendar() {
               {monthWeekRows.map((weekCells, wIdx) => (
                 <div
                   key={`week-${wIdx}`}
-                  className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300 last:border-b-0 items-stretch"
+                  className="grid grid-cols-7 gap-px bg-slate-300 border-b border-slate-300 items-stretch"
                 >
                   {weekCells.map((cell, dIdx) => {
                     if (!cell) {
@@ -373,6 +468,34 @@ export default function CenterTbdCalendar() {
                   })}
                 </div>
               ))}
+
+              <div className="border-t border-slate-300 bg-amber-50/60 px-3 py-2">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wide text-amber-800/80">
+                    메모
+                  </span>
+                  {monthNoteSaving ? (
+                    <span className="text-[10px] font-bold text-amber-700">저장 중…</span>
+                  ) : null}
+                </div>
+                <textarea
+                  value={monthNoteDraft}
+                  onChange={(e) => handleMonthNoteChange(e.target.value)}
+                  onBlur={flushMonthNoteSave}
+                  disabled={monthNoteLoading || loading}
+                  rows={4}
+                  placeholder={
+                    monthNoteLoading
+                      ? '메모 불러오는 중…'
+                      : '한 줄에 한 항목 · Enter로 줄 추가'
+                  }
+                  className="w-full min-h-[88px] resize-y rounded-md border border-amber-200/80 bg-white px-2.5 py-1.5 text-xs font-medium leading-relaxed text-slate-800 placeholder:text-slate-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:opacity-60"
+                  aria-label={`${monthInfo.monthLabel} 메모`}
+                />
+                {monthNoteError ? (
+                  <p className="mt-1 text-[10px] font-bold text-rose-700">{monthNoteError}</p>
+                ) : null}
+              </div>
             </div>
 
             <p className="mt-3 text-[11px] font-bold text-slate-500">

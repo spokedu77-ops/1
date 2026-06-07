@@ -18,7 +18,6 @@ const NAV_PATHS = [
   '/spokedu/private',
   '/spokedu/dispatch',
   '/spokedu/curriculum',
-  '/spokedu/programs',
   '/spokedu/records',
   '/spokedu/cases',
   '/spokedu/monthly',

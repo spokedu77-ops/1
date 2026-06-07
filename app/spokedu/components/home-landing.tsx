@@ -357,7 +357,7 @@ export default function SpokeduHomeLanding() {
       <HomeSectionRule />
 
       {/* 4. Program System */}
-      <Section className={homeSectionInner} delay={0.02}>
+      <Section id="program-system" className={homeSectionInner} delay={0.02}>
         <HomeSectionHeading
           eyebrow={homePage.programSystem.eyebrow}
           title={homePage.programSystem.title}
@@ -365,16 +365,6 @@ export default function SpokeduHomeLanding() {
           multilineTitle
         />
         <HomeProgramSystem items={homePage.programSystem.items} />
-        <p className="sm:pt-1">
-          <Link
-            href={homePage.programSystem.cta.href}
-            data-track={inferTrackFromHref(homePage.programSystem.cta.href)}
-            data-track-label={homePage.programSystem.cta.trackLabel}
-            className={`inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-7 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-200 ${fineHover}hover:bg-indigo-50 ${fineHover}hover:text-indigo-900 ${focusRing}`}
-          >
-            {homePage.programSystem.cta.label} →
-          </Link>
-        </p>
       </Section>
 
       <Section delay={0.03}>

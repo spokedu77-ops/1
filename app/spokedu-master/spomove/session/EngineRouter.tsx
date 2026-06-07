@@ -75,12 +75,13 @@ export function EngineRouter({ mode, level, durationSec, speedSec, rounds, sound
     onComplete({ engineMode: mode, engineLevel: level });
   }, [level, mode, onComplete]);
 
-  if (mode === 'basic') {
+  if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
+    const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 4) : Math.max(level, 1);
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <MemoryGameApp
-          initialMode="basic"
-          initialLevel={Math.min(Math.max(level, 1), 4)}
+          initialMode={mode}
+          initialLevel={safeLevel}
           autoLaunch={{
             speed: speedSec ?? 3,
             timeMode: 'reps',
