@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
-import { MODES, SPOMOVE_CATALOG_SLOT_IDS, isSpomoveCatalogTbdMode } from '@/app/admin/spomove/training/_player/constants';
+import { MODES, SPOMOVE_CATALOG_SLOT_IDS } from '@/app/admin/spomove/training/_player/constants';
 import type { Drill } from '@/app/spokedu-master/types';
 
 const SESSION_CUES = [
@@ -42,9 +42,12 @@ export async function GET() {
   }
 
   const drills: Drill[] = SPOMOVE_CATALOG_SLOT_IDS
-    .filter((modeId) => !isSpomoveCatalogTbdMode(modeId))
+    .filter((modeId) => {
+      const m = MODES[modeId];
+      return m && !m.isHidden;
+    })
     .map<DrillWithOrder | null>((modeId, index) => {
-      const mode = MODES[modeId];
+      const mode = MODES[modeId]!;
       const meta = metaByDrillId.get(modeId);
       if (meta && !meta.is_visible) return null;
       const firstLevel = mode.levels[0];

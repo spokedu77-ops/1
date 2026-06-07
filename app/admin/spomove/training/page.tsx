@@ -11,7 +11,7 @@ import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 import { USER_SPOMOVE_PRESETS_KEY, isSupportedMasterEngineMode } from '@/app/spokedu-master/lib/spomovePresets';
 import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
-import { isSpomoveCatalogTbdMode, MODES, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
+import { MODES, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
@@ -53,45 +53,44 @@ const T = {
   textDim:     'rgba(255,255,255,0.48)',
 };
 
-type TabCode = 'ALL' | 'VM' | 'IC' | 'EWM';
+type TabCode = 'ALL' | 'response' | 'attention' | 'executive';
 
-const TRAINING_MATRIX_HEADERS = ['축', '1단계', '2단계', '3단계', '4단계'] as const;
-
-const TRAINING_MATRIX_ROWS: ReadonlyArray<{
-  axis: string;
-  s1: string;
-  s2: string;
-  s3: string;
-  s4: string;
-}> = [
-  {
-    axis: '시지각-반응 처리',
-    s1: '시지각 반응',
-    s2: '반응 인지',
-    s3: 'Dive Mode / 시각-운동 추적',
-    s4: '미정',
-  },
-  {
-    axis: '선택주의와 간섭통제',
-    s1: '사이먼 효과',
-    s2: '플랭커',
-    s3: '스트룹 과제',
-    s4: '미정',
-  },
-  {
-    axis: '실행조절과 작업기억',
-    s1: 'Go / No-Go',
-    s2: 'Task Switching',
-    s3: '순차 기억',
-    s4: '미정',
-  },
-];
 
 const TABS: { code: TabCode; label: string; sub: string }[] = [
-  { code: 'ALL', label: '전체', sub: '모든 SPOMOVE 프로그램' },
-  { code: 'VM', label: '시지각-반응 처리', sub: '시지각 반응 · 반응 인지 · 플로우' },
-  { code: 'IC', label: '선택주의와 간섭통제', sub: '사이먼 · 플랭커 · 스트룹' },
-  { code: 'EWM', label: '실행조절과 작업기억', sub: 'Go/No-Go · Task Switching · 순차 기억' },
+  { code: 'ALL',       label: '전체', sub: '6개 핵심 프로그램 전체' },
+  { code: 'response',  label: '반응', sub: '시지각 반응 · 반응 인지' },
+  { code: 'attention', label: '주의', sub: '사이먼 효과 · 플랭커' },
+  { code: 'executive', label: '실행', sub: '스트룹 과제 · 순차 기억' },
+];
+
+const AXIS_GROUPS: ReadonlyArray<{
+  axisCode: 'response' | 'attention' | 'executive';
+  title: string;
+  enTitle: string;
+  salesCopy: string;
+  desc: string;
+}> = [
+  {
+    axisCode: 'response',
+    title: '반응',
+    enTitle: 'Response',
+    salesCopy: '보고 바로 움직이는 반응력',
+    desc: '화면 신호를 보고 몸으로 즉시 연결하는 영역',
+  },
+  {
+    axisCode: 'attention',
+    title: '주의',
+    enTitle: 'Attention',
+    salesCopy: '필요한 정보에 집중하는 집중력',
+    desc: '방해 정보 속에서 필요한 정보를 선택하는 영역',
+  },
+  {
+    axisCode: 'executive',
+    title: '실행',
+    enTitle: 'Executive',
+    salesCopy: '기억하고 조절해 수행하는 실행력',
+    desc: '규칙을 조절하고 정보를 기억해 움직임으로 수행하는 영역',
+  },
 ];
 
 type TopTab = 'training' | 'teacher' | 'app';
@@ -403,111 +402,101 @@ function CatalogModeCard({
   onPick: (modeId: string) => void;
 }) {
   const m = MODES[modeId];
-  if (!m) return null;
-  const isTbd = isSpomoveCatalogTbdMode(modeId);
+  if (!m || m.isHidden) return null;
 
   return (
     <button
       type="button"
-      onClick={() => {
-        if (isTbd) return;
-        onPick(modeId);
-      }}
+      onClick={() => onPick(modeId)}
       className="spmt-card"
       style={{
         position: 'relative',
         border: `1px solid ${T.border}`,
         borderRadius: 18,
-        background: `linear-gradient(180deg, ${m.accent}12 0%, rgba(255,255,255,0.02) 22%, rgba(255,255,255,0.00) 100%)`,
+        background: T.card,
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 248,
-        cursor: isTbd ? 'not-allowed' : 'pointer',
+        minHeight: 240,
+        cursor: 'pointer',
         textAlign: 'left',
         fontFamily: 'inherit',
         padding: 0,
-        boxShadow: '0 10px 28px rgba(0,0,0,0.35)',
-        opacity: isTbd ? 0.55 : 1,
+        boxShadow: '0 6px 20px rgba(0,0,0,0.28)',
         transform: 'translateY(0px)',
         transition: 'transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease',
-    }}>
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(650px 220px at 22% 0%, ${m.accent}22 0%, transparent 60%)`,
-          pointerEvents: 'none',
-        }}
-      />
-      <div style={{ padding: '14px 16px 10px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+      }}>
+      <div aria-hidden style={{
+        position: 'absolute',
+        top: 0, left: 0, right: 0,
+        height: 3,
+        background: m.accent,
+        borderRadius: '18px 18px 0 0',
+      }} />
+      <div style={{ padding: '18px 18px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
           <span
             aria-hidden
             style={{
-              width: 36,
-              height: 36,
+              width: 40,
+              height: 40,
               borderRadius: 12,
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
               background: `${m.accent}18`,
               border: `1px solid ${m.accent}33`,
-              boxShadow: `0 6px 18px ${m.accent}22`,
-              fontSize: 18,
+              fontSize: 20,
               flexShrink: 0,
             }}
           >
             {m.icon}
           </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="spmt-title" style={{ fontWeight: 950, color: T.text, lineHeight: 1.16, letterSpacing: '-0.015em', wordBreak: 'keep-all' }}>
-              {m.title} : {m.en}
-            </div>
+          {m.axisTitle ? (
+            <span style={{
+              padding: '3px 9px',
+              borderRadius: 999,
+              fontSize: 10,
+              fontWeight: 800,
+              letterSpacing: '0.06em',
+              background: `${m.accent}18`,
+              color: m.accent,
+              border: `1px solid ${m.accent}30`,
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
+            }}>
+              {m.axisTitle}
+            </span>
+          ) : null}
+        </div>
+        <div style={{ marginTop: 12 }}>
+          <div className="spmt-title" style={{ fontWeight: 950, color: T.text, lineHeight: 1.2, letterSpacing: '-0.02em', wordBreak: 'keep-all' }}>
+            {m.title}
+          </div>
+          <div style={{ marginTop: 3, fontSize: 11, fontWeight: 700, color: T.muted, letterSpacing: '0.05em' }}>
+            {m.en}
           </div>
         </div>
-        <p className="spmt-desc" style={{ margin: '12px 0 0', color: T.textDim, lineHeight: 1.62, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden', minHeight: 78 }}>
+        <p className="spmt-desc" style={{ margin: '10px 0 0', color: T.textDim, lineHeight: 1.62, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
           {m.desc}
         </p>
       </div>
 
-      <div style={{ padding: '0 16px 16px', marginTop: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 7,
-              padding: '7px 10px',
-              borderRadius: 999,
-              border: `1px solid ${isTbd ? T.border : `${m.accent}50`}`,
-              background: isTbd ? 'rgba(255,255,255,0.03)' : `${m.accent}14`,
-              color: isTbd ? T.textDim : `${m.accent}ee`,
-              fontSize: 12,
-              fontWeight: 900,
-              letterSpacing: '0.02em',
-            }}
-          >
-            <span>설정으로</span>
-            <span
-              aria-hidden
-              style={{
-                width: 20,
-                height: 20,
-                borderRadius: '50%',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                fontWeight: 900,
-                color: isTbd ? 'rgba(255,255,255,0.45)' : '#fff',
-                background: isTbd ? 'rgba(255,255,255,0.12)' : `${m.accent}`,
-              }}
-            >
-              ▶
-            </span>
-          </div>
+      <div style={{ marginTop: 'auto', padding: '0 18px 18px' }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '10px 16px',
+          borderRadius: 12,
+          border: `1px solid ${m.accent}40`,
+          background: `${m.accent}12`,
+          color: m.accent,
+          fontSize: 12,
+          fontWeight: 900,
+          letterSpacing: '0.04em',
+        }}>
+          설정으로 →
         </div>
       </div>
     </button>
@@ -1369,18 +1358,20 @@ function SpomoveTrainingPageContent() {
   );
 
   const modeIdsByTab = useMemo(() => {
-    const ids = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => id in MODES);
-    const byCore = new Map<TabCode, string[]>();
-    for (const tab of TABS) byCore.set(tab.code, []);
-    byCore.set('ALL', []);
+    const ids = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => {
+      const m = MODES[id];
+      return m && !m.isHidden;
+    });
+    const byAxis = new Map<TabCode, string[]>();
+    for (const tab of TABS) byAxis.set(tab.code, []);
     for (const id of ids) {
       const m = MODES[id];
       if (!m) continue;
-      const core = m.coreCode as TabCode | undefined;
-      byCore.get('ALL')!.push(id);
-      if (core && byCore.has(core)) byCore.get(core)!.push(id);
+      byAxis.get('ALL')!.push(id);
+      const axis = m.axis as TabCode | undefined;
+      if (axis && byAxis.has(axis)) byAxis.get(axis)!.push(id);
     }
-    return byCore;
+    return byAxis;
   }, []);
 
   const visibleModeIds = useMemo(() => {
@@ -1484,7 +1475,7 @@ function SpomoveTrainingPageContent() {
           borderBottom: `1px solid ${T.border}`,
           padding: '18px 24px 14px',
         }}>
-          <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <div style={{ maxWidth: 1024, margin: '0 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 200 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1508,101 +1499,61 @@ function SpomoveTrainingPageContent() {
                   >
                     S
                   </span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <p style={{ fontSize: 10, letterSpacing: '0.22em', color: T.muted, fontWeight: 800, margin: 0 }}>
                       SPOKEDU · SPOMOVE
                     </p>
                     <h1 style={{
-                      fontSize: 'clamp(20px, 2.6vw, 28px)',
+                      fontSize: 'clamp(15px, 2vw, 22px)',
                       fontWeight: 950,
                       color: T.text,
                       margin: 0,
-                      letterSpacing: '-0.03em',
-                      lineHeight: 1.05,
+                      letterSpacing: '-0.02em',
+                      lineHeight: 1.15,
+                      wordBreak: 'keep-all',
                     }}>
-                      트레이닝
+                      반응·주의·실행을 움직임으로 경험하는 SPOMOVE
                     </h1>
+                    <p style={{ margin: 0, fontSize: 11, color: T.textDim, lineHeight: 1.65, maxWidth: 540 }}>
+                      SPOMOVE는 4색 패드 위에서 화면 신호를 보고, 필요한 정보를 선택하고, 기억한 규칙을 몸으로 수행하는 스크린 기반 인지운동 프로그램입니다.
+                    </p>
+                    <p style={{ margin: 0, fontSize: 10, color: T.muted, lineHeight: 1.6, maxWidth: 540 }}>
+                      6개 핵심 프로그램을 기본·심화로 반복하며 반응력, 집중력, 실행력을 단계적으로 경험합니다.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div
-              style={{
-                marginTop: 14,
-                overflowX: 'auto',
-                WebkitOverflowScrolling: 'touch',
-                borderRadius: 12,
-                border: `1px solid ${T.border}`,
-                background: 'rgba(255,255,255,0.02)',
-              }}
-            >
-              <table
-                style={{
-                  width: '100%',
-                  borderCollapse: 'collapse',
-                  fontSize: 11,
-                  minWidth: 560,
-                  fontFamily: 'inherit',
-                }}
-              >
-                <thead>
-                  <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
-                    {TRAINING_MATRIX_HEADERS.map((h) => (
-                      <th
-                        key={h}
-                        scope="col"
-                        style={{
-                          padding: '9px 10px',
-                          textAlign: h === '축' ? 'left' : 'center',
-                          borderBottom: `1px solid ${T.border}`,
-                          color: T.text,
-                          fontWeight: 900,
-                          letterSpacing: h === '축' ? '0.02em' : '0.04em',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {TRAINING_MATRIX_ROWS.map((row) => (
-                    <tr key={row.axis}>
-                      <th
-                        scope="row"
-                        style={{
-                          padding: '9px 10px',
-                          fontWeight: 900,
-                          color: T.text,
-                          borderBottom: `1px solid ${T.border}`,
-                          textAlign: 'left',
-                          whiteSpace: 'nowrap',
-                          verticalAlign: 'middle',
-                        }}
-                      >
-                        {row.axis}
-                      </th>
-                      {[row.s1, row.s2, row.s3, row.s4].map((cell, ci) => (
-                        <td
-                          key={`${row.axis}-${ci}`}
-                          style={{
-                            padding: '9px 10px',
-                            color: T.textDim,
-                            borderBottom: `1px solid ${T.border}`,
-                            textAlign: 'center',
-                            fontWeight: 650,
-                            lineHeight: 1.35,
-                          }}
-                        >
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
+              {AXIS_GROUPS.map((group) => {
+                const gAccent = Object.values(MODES).find((m) => !m.isHidden && m.axis === group.axisCode)?.accent ?? 'rgba(255,255,255,0.65)';
+                const programs = SPOMOVE_CATALOG_SLOT_IDS
+                  .filter((id) => { const m = MODES[id]; return m && !m.isHidden && m.axis === group.axisCode; })
+                  .map((id) => MODES[id]!.title)
+                  .join(' · ');
+                return (
+                  <div
+                    key={group.axisCode}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      border: `1px solid ${gAccent}30`,
+                      background: `${gAccent}08`,
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: 9, fontWeight: 800, color: gAccent, letterSpacing: '0.2em' }}>
+                      {group.title.toUpperCase()} · {group.enTitle.toUpperCase()}
+                    </p>
+                    <p style={{ margin: '4px 0 3px', fontSize: 13, fontWeight: 900, color: T.text, lineHeight: 1.25, letterSpacing: '-0.01em', wordBreak: 'keep-all' }}>
+                      {group.salesCopy}
+                    </p>
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: T.muted, letterSpacing: '0.03em' }}>
+                      {programs}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
 
             <nav style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(148px, 1fr))', gap: 6, marginTop: 12, paddingBottom: 2 }}>
@@ -1611,9 +1562,7 @@ function SpomoveTrainingPageContent() {
                 const accent =
                   tab.code === 'ALL'
                     ? 'rgba(255,255,255,0.72)'
-                    : tab.code === 'EWM'
-                      ? MODES.gonogo?.accent ?? '#F97316'
-                      : Object.values(MODES).find((m) => m.coreCode === tab.code)?.accent ?? 'rgba(255,255,255,0.65)';
+                    : Object.values(MODES).find((m) => !m.isHidden && m.axis === tab.code)?.accent ?? 'rgba(255,255,255,0.65)';
                 return (
                   <button
                     key={tab.code}
@@ -1648,28 +1597,17 @@ function SpomoveTrainingPageContent() {
           </div>
         </header>
 
-        <main style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 24px 0' }}>
+        <main style={{ maxWidth: 1024, margin: '0 auto', padding: '28px 24px 0' }}>
           <style>{`
-            .spmt-card:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,0.16) !important; box-shadow: 0 16px 38px rgba(0,0,0,0.45) !important; }
+            .spmt-card:hover { transform: translateY(-2px) !important; border-color: rgba(255,255,255,0.18) !important; box-shadow: 0 16px 36px rgba(0,0,0,0.40) !important; }
             .spmt-card:active { transform: translateY(-1px) scale(0.99) !important; }
-            .spmt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-            .spmt-title { font-size: 1.4rem; }
-            .spmt-desc { font-size: 0.95rem; }
-            @media (max-width: 767px) {
-              .spmt-title { font-size: 1.02rem; }
-              .spmt-desc { font-size: 0.84rem; min-height: 68px !important; }
-              .spmt-card { min-height: 220px !important; }
-            }
-            @media (min-width: 768px) and (max-width: 1199px) {
-              .spmt-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-              .spmt-title { font-size: 1.12rem; }
-              .spmt-desc { font-size: 0.88rem; }
-              .spmt-card { min-height: 236px !important; }
-            }
-            @media (min-width: 1200px) {
-              .spmt-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-              .spmt-title { font-size: 1.26rem; }
-              .spmt-desc { font-size: 0.92rem; }
+            .spmt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+            .spmt-title { font-size: 1.3rem; }
+            .spmt-desc { font-size: 0.9rem; }
+            @media (max-width: 599px) {
+              .spmt-grid { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+              .spmt-title { font-size: 1.05rem; }
+              .spmt-desc { font-size: 0.85rem; }
             }
             @media (prefers-reduced-motion: reduce) {
               .spmt-card { transition: none !important; }
@@ -1677,11 +1615,57 @@ function SpomoveTrainingPageContent() {
               .spmt-card:active { transform: none !important; }
             }
           `}</style>
-          <div className="spmt-grid">
-            {visibleModeIds.map((modeId) => (
-              <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
-            ))}
-          </div>
+          {activeTab === 'ALL' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+              {AXIS_GROUPS.map((group) => {
+                const groupIds = visibleModeIds.filter((id) => MODES[id]?.axis === group.axisCode);
+                if (groupIds.length === 0) return null;
+                const groupAccent = MODES[groupIds[0]]?.accent ?? 'rgba(255,255,255,0.65)';
+                return (
+                  <section key={group.axisCode}>
+                    <div style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `3px solid ${groupAccent}` }}>
+                      <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: groupAccent, letterSpacing: '0.2em' }}>
+                        {group.title.toUpperCase()} · {group.enTitle.toUpperCase()}
+                      </p>
+                      <h2 style={{ margin: '4px 0 4px', fontSize: 20, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
+                        {group.salesCopy}
+                      </h2>
+                      <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.55 }}>{group.desc}</p>
+                    </div>
+                    <div className="spmt-grid">
+                      {groupIds.map((modeId) => (
+                        <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <div>
+              {(() => {
+                const group = AXIS_GROUPS.find((g) => g.axisCode === activeTab);
+                const groupAccent = Object.values(MODES).find((m) => !m.isHidden && m.axis === activeTab)?.accent ?? 'rgba(255,255,255,0.65)';
+                if (!group) return null;
+                return (
+                  <div style={{ marginBottom: 20, paddingLeft: 14, borderLeft: `3px solid ${groupAccent}` }}>
+                    <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: groupAccent, letterSpacing: '0.2em' }}>
+                      {group.title.toUpperCase()} · {group.enTitle.toUpperCase()}
+                    </p>
+                    <h2 style={{ margin: '4px 0 4px', fontSize: 20, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
+                      {group.salesCopy}
+                    </h2>
+                    <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.55 }}>{group.desc}</p>
+                  </div>
+                );
+              })()}
+              <div className="spmt-grid">
+                {visibleModeIds.map((modeId) => (
+                  <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
+                ))}
+              </div>
+            </div>
+          )}
         </main>
           </>
         ) : topTab === 'app' ? (

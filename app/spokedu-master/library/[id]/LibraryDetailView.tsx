@@ -336,12 +336,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 {relatedSpomovePresets.map((preset) => (
                     <Link
                       key={preset.id}
-                      href={officialPresetSessionHref({
-                        preset,
-                        cueSeconds: preset.defaultCueSeconds,
-                        rounds: preset.defaultRounds,
-                        soundEnabled: true,
-                      })}
+                      href={officialPresetSessionHref(preset)}
                       className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
                     >
                       <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
@@ -374,12 +369,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
             {primarySpomovePreset ? (
               <Link
-                href={officialPresetSessionHref({
-                  preset: primarySpomovePreset,
-                  cueSeconds: primarySpomovePreset.defaultCueSeconds,
-                  rounds: primarySpomovePreset.defaultRounds,
-                  soundEnabled: true,
-                })}
+                href={officialPresetSessionHref(primarySpomovePreset)}
                 className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
               >
                 <MonitorPlay className="h-4 w-4" />

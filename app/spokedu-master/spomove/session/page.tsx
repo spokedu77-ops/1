@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ClipboardList, Clock3, Gauge, MapPin, Maximize, Minimize, Music2, Play, RotateCcw, Users, Volume2, VolumeX, X } from 'lucide-react';
+import { Check, ClipboardList, Clock3, Gauge, MapPin, Maximize, Minimize, Music2, Play, RotateCcw, Users, Volume2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -20,8 +20,6 @@ import type { Cue, Session, SpomoveLaunchPreset } from '../../types';
 import { EngineRouter } from './EngineRouter';
 import {
   findOfficialSpomovePreset,
-  resolveCueSeconds,
-  resolveRounds,
   type OfficialSpomovePreset,
 } from '../officialSpomovePresets';
 
@@ -241,26 +239,20 @@ function EngineBriefing({
 
 function OfficialEngineBriefing({
   preset,
-  cueSeconds,
-  rounds,
-  bgmEnabled,
-  soundEnabled,
   startDisabled,
+  notReady,
   onStart,
 }: {
   preset: OfficialSpomovePreset;
-  cueSeconds: number;
-  rounds: number;
-  bgmEnabled: boolean;
-  soundEnabled: boolean;
   startDisabled: boolean;
+  notReady: boolean;
   onStart: () => void;
 }) {
   const facts = [
-    { icon: Gauge, label: '유형', value: preset.category },
-    { icon: Clock3, label: '신호 간격', value: `${cueSeconds}초` },
-    { icon: Users, label: '반복 횟수', value: `${rounds}회` },
-    { icon: bgmEnabled ? Music2 : VolumeX, label: 'BGM', value: bgmEnabled ? '선택한 BGM' : '사용 안 함' },
+    { icon: Gauge, label: '프로그램', value: `${preset.axisTitle} · ${preset.programTitle}` },
+    { icon: Clock3, label: '신호 간격', value: `${preset.cueSeconds}초` },
+    { icon: Users, label: '반복 횟수', value: `${preset.rounds}회` },
+    { icon: Music2, label: 'BGM', value: 'BGM 자동 재생' },
   ];
 
   return (
@@ -287,20 +279,25 @@ function OfficialEngineBriefing({
             <div className="flex flex-wrap gap-2">
               <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">큰 화면</span>
               <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">
-                {soundEnabled ? <Volume2 className="mr-1 inline h-3.5 w-3.5" /> : <VolumeX className="mr-1 inline h-3.5 w-3.5" />}
-                효과음 {soundEnabled ? '켜짐' : '꺼짐'}
+                <Volume2 className="mr-1 inline h-3.5 w-3.5" />
+                효과음 자동
               </span>
             </div>
             <p className="mt-3 text-xs font-semibold leading-5 text-white/42">{preset.recommendedUse}</p>
+            {notReady ? (
+              <p className="mt-2 text-xs font-semibold leading-5 text-amber-300/70">
+                {preset.readyLabel ?? '구독자 세션 이식 필요'} — 관리자 훈련 모드에서는 준비되어 있습니다.
+              </p>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={onStart}
             disabled={startDisabled}
-            className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-wait disabled:opacity-50"
+            className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5 fill-black" />
-            {startDisabled ? 'BGM 준비 중' : '큰 화면으로 실행'}
+            {notReady ? (preset.readyLabel ?? '이식 필요') : startDisabled ? 'BGM 준비 중' : '큰 화면으로 실행'}
           </button>
         </div>
       </section>
@@ -342,8 +339,8 @@ function SpomoveSessionContent() {
   const modeConfig = useMemo(() => getModeConfig(launchMode), [launchMode]);
   const cues = useMemo(() => (drill?.cues?.length ? drill.cues : SESSION_CUES).map(cleanCue), [drill]);
   const drillName = officialPreset?.title ?? (drill ? cleanDrillName(drill.id, drill.name, drill.engine?.mode) : 'SPOMOVE');
-  const cueSeconds = officialPreset ? resolveCueSeconds(officialPreset, searchParams.get('cueSeconds')) : undefined;
-  const rounds = officialPreset ? resolveRounds(officialPreset, searchParams.get('rounds')) : undefined;
+  const cueSeconds = officialPreset?.cueSeconds;
+  const rounds = officialPreset?.rounds;
   const selectedBgmPath = requestedBgmPath && bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
   const isBgmPending = Boolean(officialPreset && requestedBgmPath && bgmLoading);
 
@@ -423,7 +420,7 @@ function SpomoveSessionContent() {
   }, []);
 
   const startOfficialSession = useCallback(() => {
-    if (!officialPreset || isBgmPending) return;
+    if (!officialPreset || isBgmPending || !officialPreset.isReady) return;
     stopBgm();
     if (launchMode === 'projector' && !document.fullscreenElement) {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -573,7 +570,7 @@ function SpomoveSessionContent() {
   const engineSpeedSec = cueSeconds ?? (Number.isFinite(requestedSpeed) && requestedSpeed > 0 ? requestedSpeed : resolvedPreset?.speedSec);
   const canRunEngine = Boolean(
     engineMode &&
-      (officialPreset ? engineMode === 'basic' : drill?.engine && isSupportedMasterEngineMode(engineMode)),
+      (officialPreset ? officialPreset.isReady : drill?.engine && isSupportedMasterEngineMode(engineMode)),
   );
   const invalidPreset = Boolean(presetId && remotePresetChecked && !officialPreset && !resolvedPreset);
 
@@ -627,11 +624,8 @@ function SpomoveSessionContent() {
       {state === 'idle' && officialPreset ? (
         <OfficialEngineBriefing
           preset={officialPreset}
-          cueSeconds={cueSeconds ?? officialPreset.defaultCueSeconds}
-          rounds={rounds ?? officialPreset.defaultRounds}
-          bgmEnabled={Boolean(selectedBgmPath)}
-          soundEnabled={soundEnabled}
-          startDisabled={isBgmPending}
+          startDisabled={isBgmPending || !officialPreset.isReady}
+          notReady={!officialPreset.isReady}
           onStart={startOfficialSession}
         />
       ) : null}

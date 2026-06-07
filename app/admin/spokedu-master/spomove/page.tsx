@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ExternalLink, Eye, EyeOff, Play, Save, Trash2 } from 'lucide-react';
-import { MODES, SPOMOVE_CATALOG_SLOT_IDS, isSpomoveCatalogTbdMode } from '@/app/admin/spomove/training/_player/constants';
+import { MODES, SPOMOVE_CATALOG_SLOT_IDS } from '@/app/admin/spomove/training/_player/constants';
 import { isSupportedMasterEngineMode } from '@/app/spokedu-master/lib/spomovePresets';
 import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
@@ -208,7 +208,7 @@ function PresetManager() {
 
 function ModeCard({ modeId }: { modeId: string }) {
   const mode = MODES[modeId];
-  if (!mode || isSpomoveCatalogTbdMode(modeId)) return null;
+  if (!mode || mode.isHidden) return null;
 
   const firstLevel = mode.levels[0];
 
@@ -227,12 +227,14 @@ function ModeCard({ modeId }: { modeId: string }) {
             {mode.tag}
           </p>
         </div>
-        <span
-          className="shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black"
-          style={{ background: `${mode.accent}20`, color: mode.accent, border: `1px solid ${mode.accent}44` }}
-        >
-          {mode.coreCode}
-        </span>
+        {mode.axisTitle ? (
+          <span
+            className="shrink-0 rounded-full px-2.5 py-1 text-[9px] font-black"
+            style={{ background: `${mode.accent}20`, color: mode.accent, border: `1px solid ${mode.accent}44` }}
+          >
+            {mode.axisTitle}
+          </span>
+        ) : null}
       </div>
       <p className="mb-3 text-[11px] font-medium leading-5" style={{ color: 'var(--spm-t3)' }}>{mode.desc}</p>
       <div className="mb-3 flex flex-wrap gap-1">
@@ -263,7 +265,10 @@ function ModeCard({ modeId }: { modeId: string }) {
 }
 
 export default function AdminSpokeduMasterSpomovePage() {
-  const visibleSlots = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !isSpomoveCatalogTbdMode(id));
+  const visibleSlots = SPOMOVE_CATALOG_SLOT_IDS.filter((id) => {
+    const m = MODES[id];
+    return m && !m.isHidden;
+  });
 
   return (
     <div className="h-full overflow-y-auto pb-7" style={{ background: 'var(--spm-bg)' }}>

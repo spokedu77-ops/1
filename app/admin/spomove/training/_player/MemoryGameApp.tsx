@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { COLORS, isSpomoveCatalogTbdMode, MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS, MEMORY_ROUNDS } from './constants';
+import { COLORS, MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS, MEMORY_ROUNDS } from './constants';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
@@ -852,7 +852,7 @@ export default function MemoryGameApp({
             </h1>
             <p style={{ fontSize: 'clamp(0.92rem,2.2vw,1.05rem)', color: 'rgba(255,255,255,0.4)', lineHeight: 1.75, fontWeight: 400 }}>신체 활동과 인지 트레이닝을 통합한<br />교육 기반 퍼포먼스 도구 — SPOMOVE 트레이닝</p>
             <div className="home-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-              {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !isSpomoveCatalogTbdMode(id)).map((id) => {
+              {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !MODES[id]?.isHidden).map((id) => {
                 const m = MODES[id];
                 if (!m) return null;
                 const rgbMap: Record<string, string> = {
@@ -939,7 +939,7 @@ export default function MemoryGameApp({
             <div style={S.sec}>
               {stepNum(1, '어떤 트레이닝을 할까요?')}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.55rem' }}>
-                {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !isSpomoveCatalogTbdMode(id)).map((id) => {
+                {SPOMOVE_CATALOG_SLOT_IDS.filter((id) => !MODES[id]?.isHidden).map((id) => {
                   const m = MODES[id];
                   if (!m) return null;
                   return (

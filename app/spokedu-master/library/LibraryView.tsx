@@ -358,12 +358,7 @@ function ProgramModal({
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
   const videoThumbnail = getVideoThumbnail(detail?.videoUrl);
   const spomoveHref = spomovePreset
-    ? officialPresetSessionHref({
-        preset: spomovePreset,
-        cueSeconds: spomovePreset.defaultCueSeconds,
-        rounds: spomovePreset.defaultRounds,
-        soundEnabled: true,
-      })
+    ? officialPresetSessionHref(spomovePreset)
     : null;
   const parentCopy = getParentCopy(program);
   const rules = detail?.rules?.length ? detail.rules : program.steps;

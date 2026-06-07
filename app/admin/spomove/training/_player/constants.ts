@@ -27,6 +27,9 @@ export const NUMBERS = Array.from({ length: 9 }, (_, i) => ({
 
 export const MEMORY_ROUNDS = 10;
 
+/** SPOMOVE 3대 인지운동 축: 반응 · 주의 · 실행 */
+export type SpomoveAxis = 'response' | 'attention' | 'executive';
+
 type SpomoveMode = {
   id: string;
   title: string;
@@ -35,11 +38,19 @@ type SpomoveMode = {
   accent: string;
   tag: string;
   desc: string;
+  /** @legacy Use axis / axisTitle for new display logic */
   coreCode?: string;
+  /** 3대 축 분류 */
+  axis?: SpomoveAxis;
+  /** 한글 축 이름 (반응 / 주의 / 실행) */
+  axisTitle?: string;
+  /** 카탈로그 비노출 모드 */
+  isHidden?: boolean;
   levels: Array<{ id: number; name: string; enName: string; desc: string }>;
 };
 
 export const MODES: Record<string, SpomoveMode> = {
+  // ── 반응 Response ──────────────────────────────────────────────────────────
   reactTrain: {
     id: 'reactTrain',
     title: '시지각 반응',
@@ -47,6 +58,8 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '◆',
     accent: '#E11D48',
     coreCode: 'VM',
+    axis: 'response',
+    axisTitle: '반응',
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
@@ -69,6 +82,8 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '⚡',
     accent: '#3B82F6',
     coreCode: 'VM',
+    axis: 'response',
+    axisTitle: '반응',
     tag: '화면 신호 · 지각 훈련',
     desc: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
     levels: [
@@ -80,6 +95,8 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 6, name: '전면 3패널 (서로 다른 색)', enName: 'Variant 3', desc: '전면 3패널에 서로 다른 색 신호가 나타납니다.' },
     ],
   },
+
+  // ── 주의 Attention ─────────────────────────────────────────────────────────
   simon: {
     id: 'simon',
     title: '사이먼 효과',
@@ -87,6 +104,8 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '◈',
     accent: '#EC4899',
     coreCode: 'IC',
+    axis: 'attention',
+    axisTitle: '주의',
     tag: '공간 위치 · 색 반응',
     desc: '원, 삼각형, 사각형이 화면 어디에나 하나씩 나타납니다. 채워진 색에 맞는 색 위치로 이동합니다.',
     levels: [
@@ -101,6 +120,8 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '◎',
     accent: '#6366F1',
     coreCode: 'IC',
+    axis: 'attention',
+    axisTitle: '주의',
     tag: '방해 자극 · 목표 선택',
     desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로만 이동합니다.',
     levels: [
@@ -112,6 +133,50 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 6, name: '6단계', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
     ],
   },
+
+  // ── 실행 Executive ─────────────────────────────────────────────────────────
+  stroop: {
+    id: 'stroop',
+    title: '스트룹 과제',
+    en: 'Stroop Task',
+    icon: '🧠',
+    accent: '#A855F7',
+    coreCode: 'IC',
+    axis: 'executive',
+    axisTitle: '실행',
+    tag: '통제 제어 · 인지 지연',
+    desc: '배경은 기본 흰색입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
+    levels: [
+      { id: 1, name: '1단계', enName: 'Arrow Stroop / Reverse', desc: '화살표와 반대 규칙을 처리합니다.' },
+      { id: 2, name: '2단계', enName: 'Arrow + BG Interference', desc: '화살표와 배경 간섭을 함께 처리합니다.' },
+      { id: 3, name: '3단계', enName: 'Word Stroop / Reverse', desc: '글자 의미와 반대 규칙을 처리합니다.' },
+      { id: 4, name: '4단계', enName: 'Word + BG', desc: '글자와 배경색 간섭을 함께 처리합니다.' },
+      { id: 5, name: '5단계', enName: 'Missing Color', desc: '나오지 않은 색을 찾아 말합니다.' },
+    ],
+  },
+  spatial: {
+    id: 'spatial',
+    title: '순차 기억',
+    en: 'Sequential Memory',
+    icon: '🎨',
+    accent: '#22C55E',
+    coreCode: 'EWM',
+    axis: 'executive',
+    axisTitle: '실행',
+    tag: '작업기억 · 순서 재생',
+    desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
+    levels: [
+      { id: 1, name: '1단계', enName: '3 Color Memory', desc: '색 3개 순서를 기억합니다.' },
+      { id: 2, name: '2단계', enName: '5 Color Memory', desc: '색 5개 순서를 기억합니다.' },
+      { id: 3, name: '3단계', enName: '10 Color Memory', desc: '색 10개 순서를 기억합니다.' },
+      { id: 4, name: '4단계', enName: 'Color-Number Memory', desc: '색과 번호를 함께 기억합니다.' },
+      { id: 5, name: '5단계', enName: 'Full Reveal', desc: '전체 정답을 확인하며 기억 전략을 점검합니다.' },
+    ],
+  },
+
+  // ── Legacy / Hidden ────────────────────────────────────────────────────────
+  // Go / No-Go and Task Switching are no longer standalone catalog modes.
+  // They may return later as modifiers such as noGoSignal or ruleSwitch.
   gonogo: {
     id: 'gonogo',
     title: 'Go / No-Go',
@@ -119,6 +184,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '🛑',
     accent: '#F97316',
     coreCode: 'EWM',
+    isHidden: true,
     tag: '반응 억제',
     desc: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 조절합니다.',
     levels: [
@@ -135,6 +201,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '🔀',
     accent: '#EA580C',
     coreCode: 'EWM',
+    isHidden: true,
     tag: '규칙 전환',
     desc: 'cue에 따라 색, 위치, 반대로 규칙을 바꿔 반응합니다.',
     levels: [
@@ -143,6 +210,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 3, name: '3단계', enName: 'Task Switching (Border Cues)', desc: '테두리 cue만 보고 규칙을 읽어냅니다.' },
     ],
   },
+  // Executive Control was a combined mode of Go/No-Go + Task Switching. Removed from catalog.
   executive: {
     id: 'executive',
     title: '실행 조절',
@@ -150,6 +218,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '🧠',
     accent: '#F97316',
     coreCode: 'EWM',
+    isHidden: true,
     tag: '반응 억제 · 규칙 전환',
     desc: 'Go / No-Go와 Task Switching을 통합한 실행 조절 훈련입니다.',
     levels: [
@@ -162,40 +231,6 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 7, name: '7단계', enName: 'Task Switching (Border Cues)', desc: '테두리 cue 규칙 전환.' },
     ],
   },
-  spatial: {
-    id: 'spatial',
-    title: '순차 기억',
-    en: 'Sequential Memory',
-    icon: '🎨',
-    accent: '#22C55E',
-    coreCode: 'EWM',
-    tag: '작업기억 · 순서 재생',
-    desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
-    levels: [
-      { id: 1, name: '1단계', enName: '3 Color Memory', desc: '색 3개 순서를 기억합니다.' },
-      { id: 2, name: '2단계', enName: '5 Color Memory', desc: '색 5개 순서를 기억합니다.' },
-      { id: 3, name: '3단계', enName: '10 Color Memory', desc: '색 10개 순서를 기억합니다.' },
-      { id: 4, name: '4단계', enName: 'Color-Number Memory', desc: '색과 번호를 함께 기억합니다.' },
-      { id: 5, name: '5단계', enName: 'Full Reveal', desc: '전체 정답을 확인하며 기억 전략을 점검합니다.' },
-    ],
-  },
-  stroop: {
-    id: 'stroop',
-    title: '스트룹 과제',
-    en: 'Stroop Task',
-    icon: '🧠',
-    accent: '#A855F7',
-    coreCode: 'IC',
-    tag: '통제 제어 · 인지 지연',
-    desc: '배경은 기본 흰색입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
-    levels: [
-      { id: 1, name: '1단계', enName: 'Arrow Stroop / Reverse', desc: '화살표와 반대 규칙을 처리합니다.' },
-      { id: 2, name: '2단계', enName: 'Arrow + BG Interference', desc: '화살표와 배경 간섭을 함께 처리합니다.' },
-      { id: 3, name: '3단계', enName: 'Word Stroop / Reverse', desc: '글자 의미와 반대 규칙을 처리합니다.' },
-      { id: 4, name: '4단계', enName: 'Word + BG', desc: '글자와 배경색 간섭을 함께 처리합니다.' },
-      { id: 5, name: '5단계', enName: 'Missing Color', desc: '나오지 않은 색을 찾아 말합니다.' },
-    ],
-  },
   flow: {
     id: 'flow',
     title: '다이브',
@@ -203,6 +238,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '🌀',
     accent: '#06B6D4',
     coreCode: 'VM',
+    isHidden: true,
     tag: '몰입 러닝 · 반응 전환',
     desc: '3D 몰입 환경에서 달리고, 점프하고, 동작을 수행하는 DIVE 트레이닝입니다.',
     levels: [{ id: 1, name: '1단계', enName: 'Dive Program', desc: 'DIVE 전체 시퀀스를 진행합니다.' }],
@@ -214,6 +250,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '＋',
     accent: 'rgba(148,163,184,0.55)',
     coreCode: 'VM',
+    isHidden: true,
     tag: '보류',
     desc: '추후 확정할 SPOMOVE 모드입니다.',
     levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
@@ -225,6 +262,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '＋',
     accent: 'rgba(148,163,184,0.55)',
     coreCode: 'IC',
+    isHidden: true,
     tag: '보류',
     desc: '추후 확정할 SPOMOVE 모드입니다.',
     levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
@@ -236,6 +274,7 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '＋',
     accent: 'rgba(148,163,184,0.55)',
     coreCode: 'EWM',
+    isHidden: true,
     tag: '보류',
     desc: '추후 확정할 SPOMOVE 모드입니다.',
     levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
@@ -247,26 +286,27 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '＋',
     accent: 'rgba(148,163,184,0.55)',
     coreCode: 'VM',
+    isHidden: true,
     tag: '보류',
     desc: '추후 확정할 SPOMOVE 모드입니다.',
     levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
   },
 };
 
+/**
+ * SPOMOVE 3대 축 × 2개 핵심 프로그램 카탈로그 (반응 → 주의 → 실행 순)
+ *
+ * 반응: 시지각 반응 / 반응 인지
+ * 주의: 사이먼 효과 / 플랭커
+ * 실행: 스트룹 과제 / 순차 기억
+ */
 export const SPOMOVE_CATALOG_SLOT_IDS = [
-  'reactTrain',
-  'basic',
-  'simon',
-  'flanker',
-  'gonogo',
-  'taskswitch',
-  'spatial',
-  'stroop',
-  'flow',
-  'tbd1',
-  'tbd2',
-  'tbd3',
-  'tbd4',
+  'reactTrain', // 반응 1 — 시지각 반응 / Visual Reaction
+  'basic',      // 반응 2 — 반응 인지 / Reactive Cognition
+  'simon',      // 주의 1 — 사이먼 효과 / Simon Effect
+  'flanker',    // 주의 2 — 플랭커 / Flanker
+  'stroop',     // 실행 1 — 스트룹 과제 / Stroop Task
+  'spatial',    // 실행 2 — 순차 기억 / Sequential Memory
 ] as const;
 
 export function isSpomoveCatalogTbdMode(modeId: string): boolean {
