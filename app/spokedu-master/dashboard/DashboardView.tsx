@@ -375,11 +375,26 @@ function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limi
   return selected;
 }
 
-const HERO_FEATURE_TAGS = ['수업 준비 시간 단축', '영상·수업안 통합', 'TV·빔 바로 실행', '수업 후 설명 도구'] as const;
+function getHeroTags(program: Program) {
+  const tags: string[] = [];
+  const grade = getProgramGrade(program);
+  const space = getProgramSpace(program);
+  const gradeTokens = grade ? parseMasterTargets(grade).filter(Boolean) : [];
+  const spaceTokens = space ? parseMasterSpaces(space).filter(Boolean) : [];
+  if (gradeTokens.length) tags.push(gradeTokens[0]);
+  if (spaceTokens.length) tags.push(spaceTokens[0]);
+  if (programHasPlayableVideo(program)) tags.push('영상 포함');
+  else if (program.lessonDetail?.rules?.length || program.steps.length) tags.push('수업안 포함');
+  const equipment = getValidEquipment(program);
+  if (equipment.length > 0 && equipment.length <= 3) tags.push('준비물 간단');
+  return tags.slice(0, 4);
+}
 
 function Hero({ program, onPreview }: { program: Program; onPreview: () => void }) {
   const heroImage = getHeroImage(program);
   const hasVideo = programHasPlayableVideo(program);
+  const heroTags = getHeroTags(program);
+  const heroDesc = !isPlaceholderText(program.description) ? program.description : getCurationReason(program);
 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
@@ -388,29 +403,37 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-indigo-600 sm:text-xs sm:tracking-[0.14em]">
               <Sparkles className="h-3.5 w-3.5" />
-              체육수업 운영 대시보드
+              오늘의 추천 수업
             </span>
-            <h1 className="mt-3 max-w-2xl text-[28px] font-black leading-tight text-slate-950 sm:mt-4 sm:text-[40px]">수업 자료와 실행 도구를 한 화면에서</h1>
-            <p className="mt-3 max-w-xl text-sm font-medium leading-6 text-slate-600">
-              오늘 운영할 수업 자료를 빠르게 찾고, 참고 영상과 SPOMOVE 실행을 한 화면에서 연결합니다.
+            <h1 className="mt-3 max-w-2xl text-[26px] font-black leading-tight text-slate-950 sm:mt-4 sm:text-[36px]">
+              {getProgramTitle(program)}
+            </h1>
+            <p className="mt-2 line-clamp-2 max-w-xl text-sm font-medium leading-6 text-slate-500">
+              {heroDesc}
             </p>
-            <div className="mt-3 hidden flex-wrap gap-1.5 sm:flex">
-              {HERO_FEATURE_TAGS.map((tag) => (
-                <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1.5 text-[11px] font-black text-slate-700">
-                  {tag}
-                </span>
-              ))}
-            </div>
+            {heroTags.length > 0 ? (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {heroTags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-1.5 text-[11px] font-black text-slate-700">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-black text-white shadow-[0_10px_24px_rgba(79,70,229,0.22)]">
+            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-black text-white shadow-[0_10px_24px_rgba(79,70,229,0.22)]">
               <BookOpen className="h-4 w-4" />
-              오늘 쓸 수업 찾기
+              수업 자료 열기
             </Link>
-            <Link href="/spokedu-master/spomove" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-5 text-sm font-black text-slate-800 transition-colors hover:border-indigo-200 hover:text-indigo-700">
-              <MonitorPlay className="h-4 w-4" />
-              SPOMOVE 실행하기
-            </Link>
+            <button
+              type="button"
+              onClick={onPreview}
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-5 text-sm font-black text-slate-800 transition-colors hover:border-indigo-200 hover:text-indigo-700"
+            >
+              <Play className="h-4 w-4" />
+              {hasVideo ? '영상 미리보기' : '수업 미리보기'}
+            </button>
           </div>
         </div>
         <button type="button" onClick={onPreview} className="relative hidden min-h-[250px] overflow-hidden bg-slate-100 sm:block">
@@ -430,7 +453,7 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-slate-100 to-white" />
           )}
           <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
-            <p className="text-[12px] font-bold text-slate-500">{hasVideo ? '참고 영상' : '수업 준비'}</p>
+            <p className="text-[12px] font-bold text-slate-500">{hasVideo ? '참고 영상 포함' : '수업 준비'}</p>
             <p className="mt-1 text-[15px] font-black leading-5 text-slate-950">
               {hasVideo ? '탭하면 미리보기에서 바로 재생' : getProgramCue(program)}
             </p>
@@ -444,14 +467,11 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
 function KpiStrip({ kpis }: { kpis: DashboardKpi[] }) {
   if (kpis.length === 0) return null;
   return (
-    <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-5 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 px-1">
       {kpis.map((kpi) => (
-        <div
-          key={kpi.label}
-          className="w-[44vw] min-w-[150px] shrink-0 rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-[0_4px_14px_rgba(15,23,42,0.05)] sm:w-auto sm:shrink sm:py-4"
-        >
-          <p className="text-[22px] font-black tabular-nums leading-none text-slate-950">{kpi.value}</p>
-          <p className="mt-1.5 text-[12px] font-semibold leading-none text-slate-500">{kpi.label}</p>
+        <div key={kpi.label} className="flex items-baseline gap-1.5">
+          <span className="text-[17px] font-black tabular-nums leading-none text-slate-900">{kpi.value}</span>
+          <span className="text-[12px] font-medium leading-none text-slate-400">{kpi.label}</span>
         </div>
       ))}
     </div>
@@ -571,12 +591,12 @@ function VideoRow({
   if (videos.length === 0 && !emptyMessage) return null;
 
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-[#f8fafc] px-5 pt-5 shadow-sm sm:px-6 sm:pt-6">
-      <div className="mb-5 flex items-end justify-between gap-4">
+    <section>
+      <div className="mb-4 flex items-end justify-between gap-4">
         <div>
           {eyebrow ? <p className="mb-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-indigo-500">{eyebrow}</p> : null}
           <h2 className="text-[21px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[24px]">{title}</h2>
-          <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-slate-600">{subtitle}</p>
+          <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-slate-500">{subtitle}</p>
         </div>
         {videos.length > 0 ? (
           <Link href={actionHref} className="shrink-0 text-[13px] font-bold text-indigo-600 transition hover:text-indigo-800">
@@ -585,12 +605,10 @@ function VideoRow({
         ) : null}
       </div>
       {videos.length === 0 && emptyMessage ? (
-        <div className="pb-5">
-          <CurationEmptyState message={emptyMessage} />
-        </div>
+        <CurationEmptyState message={emptyMessage} />
       ) : null}
       {videos.length > 0 ? (
-        <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-5 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 sm:pb-6 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 sm:pb-0 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
           {videos.map((item, index) => (
             <div key={item.id} className="w-[72vw] min-w-[250px] max-w-[340px] shrink-0 sm:w-[290px] xl:w-[340px]">
               <VideoCard item={item} onPreview={onPreview} premiumLabel={showPremiumBadges && index >= 2 ? 'MASTER' : undefined} />
@@ -606,11 +624,11 @@ function ContinueLessonsSection({ lessons, onPreview }: { lessons: VideoItem[]; 
   if (lessons.length === 0) return null;
 
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white px-5 pt-5 shadow-sm sm:px-6 sm:pt-6">
+    <section>
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-[18px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[20px]">내 수업 이어하기</h2>
-          <p className="mt-1 text-sm font-semibold leading-5 text-slate-600">최근 기록과 저장한 수업을 빠르게 다시 열 수 있습니다.</p>
+          <p className="mt-1 text-sm font-semibold leading-5 text-slate-500">최근 기록과 저장한 수업을 빠르게 다시 열 수 있습니다.</p>
         </div>
         <div className="flex gap-3 text-[13px] font-bold text-indigo-600">
           <Link href="/spokedu-master/class-record" className="transition hover:text-indigo-800">
@@ -621,7 +639,7 @@ function ContinueLessonsSection({ lessons, onPreview }: { lessons: VideoItem[]; 
           </Link>
         </div>
       </div>
-      <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-5 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:pb-6 [&::-webkit-scrollbar]:hidden">
+      <div className="-mx-4 flex gap-3 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:-mx-6 sm:px-6 sm:pb-0 [&::-webkit-scrollbar]:hidden">
         {lessons.map((item) => (
           <div key={item.id} className="w-[64vw] min-w-[220px] max-w-[270px] shrink-0 sm:w-[240px]">
             <VideoCard item={item} onPreview={onPreview} />
@@ -717,23 +735,21 @@ function OfficialSpomoveDashboardCard({ preset }: { preset: OfficialSpomovePrese
 
 function SpomoveOfficialRow({ presets }: { presets: readonly OfficialSpomovePreset[] }) {
   return (
-    <section className="rounded-[24px] border border-indigo-100 bg-indigo-50 px-5 pt-5 shadow-sm sm:px-6 sm:pt-6">
+    <section className="-mx-4 bg-indigo-50 px-4 py-5 sm:-mx-6 sm:px-6 sm:py-6 lg:-mx-8 lg:px-8">
       <div className="mb-5 flex items-end justify-between gap-4">
         <div>
           <p className="mb-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-indigo-600">SPOMOVE</p>
-          <h2 className="text-[21px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[24px]">TV·빔으로 바로 실행하는 SPOMOVE</h2>
-          <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-indigo-800/60">공식 세팅으로 큰 화면에서 바로 실행합니다.</p>
+          <h2 className="text-[21px] font-bold tracking-[-0.01em] text-slate-950 sm:text-[24px]">큰 화면으로 움직이는 SPOMOVE</h2>
+          <p className="mt-1 max-w-2xl text-sm font-semibold leading-5 text-indigo-800/60">별도 설정 없이 TV·빔에서 바로 시작합니다.</p>
         </div>
         <Link href="/spokedu-master/spomove" className="shrink-0 text-[13px] font-bold text-indigo-600 transition hover:text-indigo-800">
           전체 프로그램 보기
         </Link>
       </div>
       {presets.length === 0 ? (
-        <div className="pb-5">
-          <CurationEmptyState message="지금 표시할 공식 SPOMOVE 세팅이 없습니다. 스포무브 화면에서 전체 목록을 확인해 주세요." />
-        </div>
+        <CurationEmptyState message="지금 표시할 공식 SPOMOVE 세팅이 없습니다. 스포무브 화면에서 전체 목록을 확인해 주세요." />
       ) : (
-        <div className="-mx-5 flex gap-4 overflow-x-auto px-5 pb-5 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 sm:pb-6 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 sm:pb-0 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
           {presets.map((preset) => (
             <div key={preset.id} className="w-[72vw] min-w-[250px] max-w-[340px] shrink-0 sm:w-[290px] xl:w-[340px]">
               <OfficialSpomoveDashboardCard preset={preset} />
@@ -747,7 +763,7 @@ function SpomoveOfficialRow({ presets }: { presets: readonly OfficialSpomovePres
 
 function SubscriptionValueSection() {
   return (
-    <section className="rounded-[24px] border border-indigo-100 bg-white px-5 py-5 shadow-sm sm:px-6 sm:py-6">
+    <section className="rounded-[20px] border border-slate-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-[15px] font-black text-slate-950">수업안 · 참고 영상 · 공식 SPOMOVE 활동 · 수업 기록 제공</p>
@@ -768,7 +784,7 @@ function SubscriptionValueSection() {
 
 function ExplanationToolEntry({ program }: { program: Program }) {
   return (
-    <section className="rounded-[24px] border border-slate-200 bg-white px-5 py-5 shadow-sm sm:px-6 sm:py-6">
+    <section className="rounded-[20px] border border-slate-100 bg-white px-5 py-4 sm:px-6 sm:py-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-[17px] font-black text-slate-950">수업 후 설명과 기록을 빠르게 정리하세요</p>
@@ -952,9 +968,9 @@ export default function DashboardView() {
     () => [
       { label: '전체 수업 자료', value: programPool.length },
       { label: '영상 포함 수업', value: homeStats.withVideo },
-      { label: '저장한 수업', value: favorites.length || '저장하기' },
-      { label: '최근 기록', value: classRecords.length || '기록하기' },
-      { label: 'SPOMOVE 공식 프로그램', value: OFFICIAL_SPOMOVE_LIBRARY.length },
+      { label: '저장한 수업', value: favorites.length },
+      { label: '최근 기록', value: classRecords.length },
+      { label: 'SPOMOVE', value: OFFICIAL_SPOMOVE_LIBRARY.length },
     ],
     [classRecords.length, favorites.length, homeStats.withVideo, programPool.length],
   );
