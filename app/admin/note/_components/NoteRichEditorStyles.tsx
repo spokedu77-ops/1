@@ -57,6 +57,7 @@ export function NoteRichEditorStyles() {
         width: 100%;
         border-radius: 0.75rem;
         object-fit: contain;
+        cursor: zoom-in;
       }
     `}</style>
   );

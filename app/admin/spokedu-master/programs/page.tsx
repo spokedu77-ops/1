@@ -152,7 +152,6 @@ const STATUS_STYLE: Record<MaterialStatus, { bg: string; color: string }> = {
   'home-ready': { bg: '#eef2ff', color: '#4338ca' },
 };
 
-const PUBLICATION_OPTIONS: PublicationStatus[] = ['draft', 'ready', 'featured', 'hidden'];
 const FILTER_OPTIONS: Array<{ key: FilterKey; label: string }> = [
   { key: 'all', label: '전체' },
   { key: 'incomplete', label: '미완성' },
@@ -168,7 +167,6 @@ const THEME_OPTIONS = [...LESSON_THEME_OPTIONS];
 const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 const MOVEMENT_OPTIONS = ['동적', '정적'];
 const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근지구력', '심폐지구력', '리듬감', '평형성', '근력'];
-const GROUP_SIZE_OPTIONS = ['1:1', '소수', '다수', 'ALL'];
 const TAG_PREFIX = {
   movement: '움직임:',
   bodyFunction: '신체 기능:',
@@ -404,7 +402,6 @@ function qualitySummary(report: QualityReport) {
 function getItemQuality(item: ProgramItem): QualityReport {
   const meta = item.meta;
   const overlay = item.overlay;
-  const checklist = overlay?.checklist ?? joinLines(item.curriculum.checklist);
   const activityTip = overlay?.activity_tip ?? '';
   const checks = {
     video: Boolean(item.effective.videoUrl),
@@ -587,7 +584,6 @@ function SetupImageUpload({
       ) : null}
       {previewSrc ? (
         <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={previewSrc} alt="초기 교구 세팅 미리보기" className="max-h-64 w-full object-contain" />
           <div className="flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
             <p className="truncate text-[11px] font-semibold text-slate-500">{value}</p>

@@ -45,7 +45,7 @@ export const landingCardShell =
 
 /** 서브 랜딩 Hero shell — Home `homeHeroShell`과 동일 정렬 */
 export const landingHeroShell =
-  'relative overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-white via-white to-slate-50/80 py-8 shadow-sm shadow-slate-900/[0.06] ring-1 ring-slate-200/70 sm:rounded-[2rem] sm:py-10 lg:py-12';
+  'relative overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-white via-white to-slate-50/80 px-5 py-8 shadow-sm shadow-slate-900/[0.06] ring-1 ring-slate-200/70 sm:rounded-[2rem] sm:px-8 sm:py-10 lg:px-10 lg:py-12';
 
 /** 서브 랜딩 섹션 내부 간격 — Home `homeSectionInner`와 동일 */
 export const landingSectionInner = 'space-y-6 sm:space-y-8';
@@ -103,7 +103,7 @@ export const homeSectionEyebrow =
   'text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600';
 
 export const homeHeroShell =
-  'relative overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-white via-white to-slate-50/80 py-8 shadow-sm shadow-slate-900/[0.06] ring-1 ring-slate-200/70 sm:rounded-[2rem] sm:py-10 lg:py-12';
+  'relative overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-white via-white to-slate-50/80 px-5 py-8 shadow-sm shadow-slate-900/[0.06] ring-1 ring-slate-200/70 sm:rounded-[2rem] sm:px-8 sm:py-10 lg:px-10 lg:py-12';
 
 /** 다크 CTA 그리드 — 모바일 2줄·높이 균일 */
 export const landingDarkCtaButton = `${btnPrimaryOnDark} text-center`;

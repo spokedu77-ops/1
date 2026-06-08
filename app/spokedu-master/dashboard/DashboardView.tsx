@@ -10,12 +10,9 @@ import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent'
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
+import { getLessonFunction, getLessonSpace, getLessonTarget, getLessonTheme } from '../lib/lessonDisplay';
 import {
-  getExternalVideoUrl,
   getImageFallbackSrc,
-  getTrustedProgramVideoUrl,
-  getVideoEmbedUrl,
-  isDirectVideoUrl,
   isRemoteImage,
   normalizeImageSrc,
   programHasPlayableVideo,
@@ -29,7 +26,6 @@ import {
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
 import {
-  displayMasterDuration,
   hasMasterSpace,
   parseMasterSpaces,
   parseMasterTargets,
@@ -103,11 +99,6 @@ function getValidEquipment(program: Program) {
 function formatSpaceBadge(space: string) {
   return parseMasterSpaces(space).join(', ') || space;
 }
-
-function formatGradeBadge(grade: string) {
-  return parseMasterTargets(grade).join(', ') || grade;
-}
-
 
 function formatCompactBadge(value: string) {
   const target = parseMasterTargets(value);
@@ -217,10 +208,6 @@ function getCardTags(program: Program) {
     .slice(0, 5);
 }
 
-function uniqueLabels(labels: string[]) {
-  return Array.from(new Set(labels.map(formatCompactBadge).filter(Boolean)));
-}
-
 /** 썸네일 우측 상단 — 영상 있을 때는 비우고 좌측 「참고 영상」만 쓴다 */
 function getProgramThumbOverlayCue(program: Program) {
   if (programHasPlayableVideo(program)) return null;
@@ -229,24 +216,61 @@ function getProgramThumbOverlayCue(program: Program) {
   return '자료 보기';
 }
 
-function getProgramCue(program: Program) {
-  if (programHasPlayableVideo(program)) return '미리보기에서 참고 영상 확인';
-  if (hasMasterSpace(program.space, '교실')) return '교실 운영';
-  if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
-  return '자료 보기';
+function getHeroVisualMeta(program: Program) {
+  const tags = getHeroTags(program);
+  return tags.length ? tags.slice(0, 3).join(' · ') : getProgramTitle(program);
 }
 
 function getCurationReason(program: Program, intent: 'weekly' | 'indoor' = 'weekly') {
   const detail = program.lessonDetail;
   if (intent === 'indoor') {
-  if (isPlaceholderText(program.space)) return '교실 운영 여부 확인';
-    return `${formatSpaceBadge(getProgramSpace(program))} 운영`;
+    if (isPlaceholderText(program.space)) return '실내 수업안';
+    return `${formatSpaceBadge(getProgramSpace(program))} 수업`;
   }
-  if (detail?.videoUrl && (detail.rules?.length || program.steps.length)) return '영상과 순서를 함께 확인';
-  if (program.description && detail?.developmentFocus) return '설명과 진행 흐름 정리';
-  if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 적은 수업';
-  if (program.isHot) return '현장 활용도 높은 수업';
-  return '오늘 바로 준비';
+  if (detail?.videoUrl && (detail.rules?.length || program.steps.length)) return '추천 수업안';
+  if (detail?.developmentFocus && !isInstructionalCopy(detail.developmentFocus)) return formatCompactBadge(detail.developmentFocus.split(/[\/,·]/)[0]?.trim() || '체육 수업');
+  if (program.equipment.filter((item) => !isPlaceholderText(item)).length <= 2) return '준비물 간단';
+  if (program.isHot) return '추천 수업안';
+  return '추천 수업안';
+}
+
+function isInstructionalCopy(value: string) {
+  return /처음에는|해주세요|주의하세요|탭하면|클릭하면|바로 재생|영상과 순서를 함께 확인|미리보기에서 바로 재생|오늘 바로 준비|설명과 진행 흐름 정리|준비물 적은 수업/.test(value);
+}
+
+function splitMetaTokens(value: string) {
+  return value
+    .split(/[\/,·]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function cleanMetaToken(value?: string | null) {
+  const text = cleanText(value ?? undefined, '').trim();
+  if (!text || isPlaceholderText(text) || isInstructionalCopy(text)) return '';
+  if (/영상 포함|수업안 포함/.test(text)) return '';
+  if (text.length > 16) return '';
+  return formatCompactBadge(text);
+}
+
+function normalizeDashboardTarget(value: string) {
+  const tokens = splitMetaTokens(value).map(cleanMetaToken).filter(Boolean);
+  const hasPreschool = tokens.some((token) => token.includes('미취학'));
+  const hasElementary = tokens.some((token) => token.includes('초등'));
+  if (hasPreschool && hasElementary) return '전 연령';
+  return tokens[0] ?? '';
+}
+
+function getDashboardMetaTokens(program: Program) {
+  const theme = cleanMetaToken(getLessonTheme(program));
+  const functionTokens = splitMetaTokens(getLessonFunction(program)).map(cleanMetaToken).filter(Boolean);
+  const target = cleanMetaToken(normalizeDashboardTarget(getLessonTarget(program)));
+  const space = cleanMetaToken(getLessonSpace(program));
+  return Array.from(new Set([theme, ...functionTokens, target, space].filter(Boolean))).slice(0, 3);
+}
+
+function getCardMetaLine(program: Program) {
+  return getDashboardMetaTokens(program).join(' · ');
 }
 
 function getHomeReadiness(program: Program) {
@@ -324,7 +348,7 @@ function toVideoItem(program: Program, intent: 'weekly' | 'indoor' = 'weekly'): 
     meta: tags[0] || '체육 수업',
     hasVideo: programHasPlayableVideo(program),
     tags: getCardTags(program),
-    reason: getCurationReason(program, intent),
+    reason: getCardMetaLine(program) || getCurationReason(program, intent),
     program,
   };
 }
@@ -377,18 +401,7 @@ function takeHomeCuratedPrograms(programs: Program[], usedIds: Set<string>, limi
 }
 
 function getHeroTags(program: Program) {
-  const tags: string[] = [];
-  const grade = getProgramGrade(program);
-  const space = getProgramSpace(program);
-  const gradeTokens = grade ? parseMasterTargets(grade).filter(Boolean) : [];
-  const spaceTokens = space ? parseMasterSpaces(space).filter(Boolean) : [];
-  if (gradeTokens.length) tags.push(gradeTokens[0]);
-  if (spaceTokens.length) tags.push(spaceTokens[0]);
-  if (programHasPlayableVideo(program)) tags.push('영상 포함');
-  else if (program.lessonDetail?.rules?.length || program.steps.length) tags.push('수업안 포함');
-  const equipment = getValidEquipment(program);
-  if (equipment.length > 0 && equipment.length <= 3) tags.push('준비물 간단');
-  return tags.slice(0, 4);
+  return getDashboardMetaTokens(program);
 }
 
 function Hero({ program, onPreview }: { program: Program; onPreview: () => void }) {
@@ -400,13 +413,13 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
   return (
     <section className="overflow-hidden rounded-[22px] border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
       <div className="grid lg:grid-cols-[1fr_460px]">
-        <div className="flex min-h-[200px] flex-col justify-between p-4 sm:min-h-[340px] sm:p-7 lg:p-8">
+        <div className="flex min-h-[200px] flex-col justify-start p-4 sm:min-h-[300px] sm:p-7 lg:p-8">
           <div>
             <span className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-indigo-600 sm:text-xs sm:tracking-[0.14em]">
               <Sparkles className="h-3.5 w-3.5" />
-              오늘의 추천 수업
+              오늘 바로 쓸 추천 수업
             </span>
-            <h1 className="mt-3 max-w-2xl text-[26px] font-black leading-tight text-slate-950 sm:mt-4 sm:text-[36px]">
+            <h1 className="mt-3 max-w-2xl text-[30px] font-black leading-tight text-slate-950 sm:mt-4 sm:text-[40px]">
               {getProgramTitle(program)}
             </h1>
             <p className="mt-2 line-clamp-2 max-w-xl text-sm font-medium leading-6 text-slate-500">
@@ -421,6 +434,22 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
                 ))}
               </div>
             ) : null}
+            <button type="button" onClick={onPreview} className="relative mt-4 block aspect-video w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 text-left shadow-[0_12px_28px_rgba(15,23,42,0.08)] sm:hidden">
+              {heroImage ? (
+                <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="100vw" className="object-cover" priority quality={90} />
+              ) : (
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-slate-100 to-white" />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/78 via-slate-950/18 to-transparent" />
+              {hasVideo ? (
+                <span className="absolute left-1/2 top-1/2 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-indigo-600 shadow-xl ring-4 ring-white/35 backdrop-blur">
+                  <Play className="ml-0.5 h-5 w-5 fill-current" />
+                </span>
+              ) : null}
+              <span className="absolute bottom-3 left-3 right-3 text-[12px] font-black text-white">
+                {getHeroVisualMeta(program)}
+              </span>
+            </button>
           </div>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-black text-white shadow-[0_10px_24px_rgba(79,70,229,0.22)]">
@@ -437,14 +466,14 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
             </button>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative hidden aspect-square w-full max-w-[1250px] overflow-hidden bg-slate-100 sm:block">
+        <button type="button" onClick={onPreview} className="relative hidden aspect-[5/4] w-full max-w-[1250px] overflow-hidden bg-slate-100 sm:block">
           {heroImage ? (
             <>
               <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 460px, 100vw" className="object-cover" priority quality={92} />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/36 to-transparent" />
               {hasVideo ? (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-red-600 text-white shadow-2xl ring-4 ring-white/40">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/92 text-indigo-600 shadow-2xl ring-4 ring-white/45 backdrop-blur">
                     <Play className="ml-1 h-7 w-7 fill-current" />
                   </span>
                 </div>
@@ -454,9 +483,8 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-slate-100 to-white" />
           )}
           <div className="absolute bottom-5 left-5 right-5 rounded-[18px] border border-white/25 bg-white/88 p-4 text-left shadow-[0_18px_46px_rgba(15,23,42,0.2)] backdrop-blur-xl">
-            <p className="text-[12px] font-bold text-slate-500">{hasVideo ? '참고 영상 포함' : '수업 준비'}</p>
-            <p className="mt-1 text-[15px] font-black leading-5 text-slate-950">
-              {hasVideo ? '탭하면 미리보기에서 바로 재생' : getProgramCue(program)}
+            <p className="text-[15px] font-black leading-5 text-slate-950">
+              {getHeroVisualMeta(program)}
             </p>
           </div>
         </button>
@@ -472,31 +500,28 @@ function KpiStrip({ kpis }: { kpis: DashboardKpi[] }) {
       {kpis.map((kpi) => (
         <div key={kpi.label} className="flex items-baseline gap-1.5">
           <span className="text-[17px] font-black tabular-nums leading-none text-slate-900">{kpi.value}</span>
-          <span className="text-[12px] font-medium leading-none text-slate-400">{kpi.label}</span>
+          <span className="text-[12px] font-medium leading-none text-slate-500">{kpi.label}</span>
         </div>
       ))}
     </div>
   );
 }
 
-function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPreview: (program: Program) => void; premiumLabel?: string }) {
+function VideoCard({ item, onPreview }: { item: VideoItem; onPreview: (program: Program) => void }) {
   const showPlay = item.hasVideo;
-  const detail = item.program?.lessonDetail;
-  const target = item.program ? formatGradeBadge(detail?.recommendedAge || getProgramGrade(item.program)) : '';
   const space = item.program ? formatSpaceBadge(getProgramSpace(item.program)) : '';
-  const operationBadges = uniqueLabels(
-    [
-      target && !isPlaceholderText(target) ? target : null,
-      space && !isPlaceholderText(space) ? space : null,
-    ].filter((badge): badge is string => Boolean(badge)),
-  ).slice(0, 2);
+  const primaryBadge = showPlay
+    ? '참고 영상'
+    : space && !isPlaceholderText(space)
+      ? space
+      : '';
   const thumbOverlayCue = !showPlay && item.program ? getProgramThumbOverlayCue(item.program) : null;
   const cleanOverlayCue = thumbOverlayCue && !isPlaceholderText(thumbOverlayCue) ? thumbOverlayCue : null;
   return (
     <button type="button" onClick={() => item.program && onPreview(item.program)} className="group block w-full cursor-pointer text-left">
-      <div className="relative aspect-square w-full max-w-[1250px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_14px_32px_rgba(99,102,241,0.10)]">
+      <div className="relative aspect-[6/5] w-full max-w-[1250px] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_18px_38px_rgba(99,102,241,0.14)]">
         {item.thumbnail ? (
-          <CoverImage src={item.thumbnail} alt={item.title} sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw" className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]" quality={90} />
+          <CoverImage src={item.thumbnail} alt={item.title} sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw" className="object-cover object-[center_38%] transition-transform duration-500 ease-out group-hover:scale-[1.015]" quality={90} />
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-100 via-slate-50 to-white">
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white text-indigo-600 ring-1 ring-indigo-100 shadow-sm">
@@ -505,52 +530,40 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
           </div>
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/56 via-slate-950/10 to-transparent" />
 
         {showPlay ? (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-xl ring-4 ring-white/30">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/92 text-indigo-600 shadow-xl ring-4 ring-white/30 backdrop-blur transition-transform duration-300 group-hover:scale-105">
               <Play className="ml-0.5 h-5 w-5 fill-current" />
             </div>
           </div>
         ) : null}
 
-        {showPlay ? (
-          <div className="absolute left-3 top-3 rounded-lg bg-red-600/95 px-2.5 py-1 text-[12px] font-black text-white shadow-md">
-            참고 영상
+        {primaryBadge ? (
+          <div className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-black shadow-md backdrop-blur ${
+            showPlay ? 'bg-indigo-600 text-white' : 'bg-white/90 text-slate-800'
+          }`}>
+            {primaryBadge}
           </div>
         ) : null}
 
-        {premiumLabel ? (
-          <div className="absolute right-3 top-3 rounded-lg border border-indigo-100 bg-white/92 px-2.5 py-1 text-[12px] font-black text-indigo-700 shadow-sm backdrop-blur-sm">
-            {premiumLabel}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/82 via-slate-950/44 to-transparent px-3 pb-2.5 pt-7">
+          <h3 className="line-clamp-2 text-[15px] font-black leading-[1.18] text-white sm:text-[16px]">{item.title}</h3>
+          <p className="mt-1 line-clamp-1 text-[12px] font-semibold leading-4 text-white/75">{item.reason}</p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            {cleanOverlayCue && !primaryBadge ? (
+              <span className="min-w-0 truncate text-[11px] font-bold text-white/60">{cleanOverlayCue}</span>
+            ) : (
+              <span className="min-w-0" />
+            )}
+            <span className={`inline-flex h-8 shrink-0 items-center justify-center rounded-full px-3 text-[12px] font-black ${
+              item.hasVideo ? 'bg-white text-slate-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)]' : 'bg-white/14 text-white ring-1 ring-white/24'
+            }`}>
+              {item.hasVideo ? '영상 미리보기' : '수업 미리보기'}
+            </span>
           </div>
-        ) : cleanOverlayCue ? (
-          <div className="absolute right-3 top-3 rounded-lg border border-white/20 bg-black/50 px-3 py-1.5 text-[12px] font-bold text-white backdrop-blur-sm">
-            {cleanOverlayCue}
-          </div>
-        ) : null}
-      </div>
-
-      <div className="mt-3 space-y-2.5">
-        <div>
-          <h3 className="line-clamp-1 text-[17px] font-extrabold leading-5 text-slate-950">{item.title}</h3>
-          <p className="mt-1 line-clamp-1 text-[13px] font-semibold leading-4 text-slate-600">{item.reason}</p>
         </div>
-        {operationBadges.length > 0 ? (
-          <div className="flex min-w-0 flex-wrap gap-1.5">
-            {operationBadges.map((badge, index) => (
-              <span key={`${badge}-${index}`} className="max-w-full truncate rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[12px] font-bold leading-none text-slate-600">
-                {badge}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <span className={`inline-flex h-9 w-fit items-center justify-center rounded-lg px-3.5 text-sm font-bold ${
-          item.hasVideo ? 'bg-indigo-600 text-white shadow-[0_6px_14px_rgba(79,70,229,0.18)]' : 'border border-slate-200 bg-white text-slate-800'
-        }`}>
-          {item.hasVideo ? '영상 보기' : '수업 열기'}
-        </span>
       </div>
     </button>
   );
@@ -577,7 +590,6 @@ function VideoRow({
   actionHref = '/spokedu-master/library',
   actionLabel = '놀이체육 보기',
   emptyMessage,
-  showPremiumBadges = false,
 }: {
   title: string;
   subtitle: string;
@@ -587,7 +599,6 @@ function VideoRow({
   actionHref?: string;
   actionLabel?: string;
   emptyMessage?: string;
-  showPremiumBadges?: boolean;
 }) {
   if (videos.length === 0 && !emptyMessage) return null;
 
@@ -610,9 +621,9 @@ function VideoRow({
       ) : null}
       {videos.length > 0 ? (
         <div className="-mx-4 flex gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:-mx-6 sm:gap-5 sm:px-6 sm:pb-0 lg:-mx-8 lg:px-8 [&::-webkit-scrollbar]:hidden">
-          {videos.map((item, index) => (
+          {videos.map((item) => (
             <div key={item.id} className="w-[72vw] min-w-[250px] max-w-[340px] shrink-0 sm:w-[290px] xl:w-[340px]">
-              <VideoCard item={item} onPreview={onPreview} premiumLabel={showPremiumBadges && index >= 2 ? 'MASTER' : undefined} />
+              <VideoCard item={item} onPreview={onPreview} />
             </div>
           ))}
         </div>
@@ -859,7 +870,7 @@ export default function DashboardView() {
   const dashboardKpis = useMemo(
     () => [
       { label: '전체 수업 자료', value: programPool.length },
-      { label: '영상 포함 수업', value: homeStats.withVideo },
+      { label: '영상 수업', value: homeStats.withVideo },
       { label: '저장한 수업', value: favorites.length },
       { label: '최근 기록', value: classRecords.length },
       { label: 'SPOMOVE', value: OFFICIAL_SPOMOVE_LIBRARY.length },
@@ -958,7 +969,6 @@ export default function DashboardView() {
         onPreview={setSelectedProgram}
         actionLabel="전체 수업 보기"
         emptyMessage="표시할 수업이 없습니다. 놀이체육에서 전체 목록을 확인해 주세요."
-        showPremiumBadges={!isSubscribed}
       />
       <ContinueLessonsSection lessons={continueLessons} onPreview={setSelectedProgram} />
       <SpomoveOfficialRow presets={OFFICIAL_SPOMOVE_LIBRARY} />

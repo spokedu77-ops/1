@@ -60,6 +60,101 @@ function parseOffset(value: string | null): number {
   return parsed;
 }
 
+const BATCH_PATCH_MAX = 200;
+
+type BlockFieldPatch = {
+  id: string;
+  type?: string;
+  content?: unknown;
+  order_index?: number;
+  parent_block_id?: string | null;
+};
+
+function parseBlockFieldPatch(raw: unknown): BlockFieldPatch | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const item = raw as Record<string, unknown>;
+  const id = typeof item.id === 'string' ? item.id : null;
+  if (!id) return null;
+
+  const patch: BlockFieldPatch = { id };
+  if (typeof item.type === 'string') patch.type = item.type;
+  if (item.content !== undefined) patch.content = item.content;
+  if (typeof item.order_index === 'number') patch.order_index = item.order_index;
+  if (item.parent_block_id === null || typeof item.parent_block_id === 'string') {
+    patch.parent_block_id = item.parent_block_id;
+  } else if (item.parentBlockId === null || typeof item.parentBlockId === 'string') {
+    patch.parent_block_id = item.parentBlockId;
+  }
+
+  if (Object.keys(patch).length <= 1) return null;
+  return patch;
+}
+
+function patchToRowFields(patch: BlockFieldPatch): Record<string, unknown> {
+  const fields: Record<string, unknown> = {};
+  if (typeof patch.type === 'string') fields.type = patch.type;
+  if (patch.content !== undefined) fields.content = patch.content;
+  if (typeof patch.order_index === 'number') fields.order_index = patch.order_index;
+  if (patch.parent_block_id === null || typeof patch.parent_block_id === 'string') {
+    fields.parent_block_id = patch.parent_block_id;
+  }
+  return fields;
+}
+
+async function applyBlockFieldPatches(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  patches: BlockFieldPatch[],
+  userId: string,
+  now: string,
+): Promise<{ error?: string }> {
+  if (patches.length === 0) return {};
+
+  const results = await Promise.all(
+    patches.map(async (patch) => {
+      const fields = patchToRowFields(patch);
+      if (Object.keys(fields).length === 0) return { error: null as { message: string } | null };
+      const { error } = await supabase
+        .from('note_blocks')
+        .update({ ...fields, updated_at: now, updated_by: userId })
+        .eq('id', patch.id)
+        .is('deleted_at', null);
+      return { error };
+    }),
+  );
+
+  const failed = results.find((result) => result.error);
+  if (failed?.error) return { error: failed.error.message };
+  return {};
+}
+
+async function auditBatchBlockUpdates(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  patches: BlockFieldPatch[],
+  actorId: string,
+  summary: string,
+) {
+  const ids = patches.map((patch) => patch.id);
+  const { data: rows } = ids.length > 0
+    ? await supabase
+      .from('note_blocks')
+      .select('document_id')
+      .in('id', ids)
+    : { data: [] };
+
+  const documentIds = [...new Set((rows ?? []).map((row) => row.document_id).filter(Boolean))] as string[];
+  await Promise.all(
+    documentIds.map((documentId) =>
+      insertAuditLog({
+        documentId,
+        actorId,
+        action: 'batch_update_blocks',
+        summary,
+        diff: { count: patches.length, ids: patches.map((patch) => patch.id) },
+      }),
+    ),
+  );
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAdmin();
@@ -203,6 +298,36 @@ export async function PATCH(request: NextRequest) {
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));
+
+    if (Array.isArray(body.updates)) {
+      const patches = body.updates
+        .map((item: unknown) => parseBlockFieldPatch(item))
+        .filter((item: BlockFieldPatch | null): item is BlockFieldPatch => !!item);
+      if (patches.length === 0) {
+        return NextResponse.json({ error: 'updates array required' }, { status: 400 });
+      }
+      if (patches.length > BATCH_PATCH_MAX) {
+        return NextResponse.json({ error: `updates max ${BATCH_PATCH_MAX}` }, { status: 400 });
+      }
+
+      const supabase = getServiceSupabase();
+      const now = new Date().toISOString();
+      const result = await applyBlockFieldPatches(supabase, patches, auth.userId, now);
+      if (result.error) {
+        devLogger.error('[admin/note/blocks] PATCH batch error', result.error);
+        return NextResponse.json({ error: result.error }, { status: 500 });
+      }
+
+      void auditBatchBlockUpdates(
+        supabase,
+        patches,
+        auth.userId,
+        patches.length > 1 ? `블록 ${patches.length}개 일괄 수정` : '블록 수정',
+      );
+
+      return NextResponse.json({ ok: true, count: patches.length });
+    }
+
     const id = typeof body.id === 'string' ? body.id : null;
     if (!id) {
       return NextResponse.json({ error: 'id required' }, { status: 400 });
@@ -301,8 +426,8 @@ export async function PATCH(request: NextRequest) {
 
 /**
  * PUT /api/admin/note/blocks
- * Body: { orders: { id: string; order_index: number }[] }
- * 드래그 앤 드롭 후 블록 순서를 일괄 업데이트합니다.
+ * Body: { orders?: { id, order_index }[], updates?: BlockFieldPatch[] }
+ * 순서 변경 + depth/content 등 필드 일괄 갱신.
  */
 export async function PUT(request: NextRequest) {
   try {
@@ -311,57 +436,89 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json().catch(() => ({}));
     const orders = body.orders;
-    if (!Array.isArray(orders) || orders.length === 0) {
-      return NextResponse.json({ error: 'orders array required' }, { status: 400 });
+    const fieldPatches = Array.isArray(body.updates)
+      ? body.updates
+        .map((item: unknown) => parseBlockFieldPatch(item))
+        .filter((item: BlockFieldPatch | null): item is BlockFieldPatch => !!item)
+      : [];
+
+    const hasOrders = Array.isArray(orders) && orders.length > 0;
+    if (!hasOrders && fieldPatches.length === 0) {
+      return NextResponse.json({ error: 'orders or updates array required' }, { status: 400 });
     }
-    const normalizedOrders = orders.map((order: { id?: unknown; order_index?: unknown }) => ({
-      id: typeof order.id === 'string' ? order.id : '',
-      order_index: typeof order.order_index === 'number' ? order.order_index : Number.NaN,
-    }));
-    const hasInvalid = normalizedOrders.some(
-      (order) => !order.id || !Number.isFinite(order.order_index) || order.order_index < 0,
-    );
-    if (hasInvalid) {
-      return NextResponse.json({ error: 'invalid orders payload' }, { status: 400 });
+    if (fieldPatches.length > BATCH_PATCH_MAX) {
+      return NextResponse.json({ error: `updates max ${BATCH_PATCH_MAX}` }, { status: 400 });
     }
-    const idSet = new Set(normalizedOrders.map((order) => order.id));
-    if (idSet.size !== normalizedOrders.length) {
-      return NextResponse.json({ error: 'duplicate ids in orders payload' }, { status: 400 });
+
+    const normalizedOrders = hasOrders
+      ? orders.map((order: { id?: unknown; order_index?: unknown }) => ({
+        id: typeof order.id === 'string' ? order.id : '',
+        order_index: typeof order.order_index === 'number' ? order.order_index : Number.NaN,
+      }))
+      : [];
+
+    if (hasOrders) {
+      const hasInvalid = normalizedOrders.some(
+        (order) => !order.id || !Number.isFinite(order.order_index) || order.order_index < 0,
+      );
+      if (hasInvalid) {
+        return NextResponse.json({ error: 'invalid orders payload' }, { status: 400 });
+      }
+      const idSet = new Set(normalizedOrders.map((order) => order.id));
+      if (idSet.size !== normalizedOrders.length) {
+        return NextResponse.json({ error: 'duplicate ids in orders payload' }, { status: 400 });
+      }
     }
+
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
-    const ids = normalizedOrders
-      .map((order: { id?: unknown }) => (typeof order.id === 'string' ? order.id : null))
-      .filter((id: string | null): id is string => !!id);
-    const { data: beforeRows } = ids.length > 0
-      ? await supabase
-        .from('note_blocks')
-        .select('id, document_id, parent_block_id, order_index')
-        .in('id', ids)
-      : { data: [] };
 
-    const updateResults = await Promise.all(
-      normalizedOrders.map(({ id, order_index }) =>
-        supabase
+    if (hasOrders) {
+      const ids = normalizedOrders.map((order) => order.id);
+      const { data: beforeRows } = ids.length > 0
+        ? await supabase
           .from('note_blocks')
-          .update({ order_index, updated_at: now, updated_by: auth.userId })
-          .eq('id', id),
-      ),
-    );
-    const failedUpdate = updateResults.find((result) => result.error);
-    if (failedUpdate?.error) {
-      devLogger.error('[admin/note/blocks] PUT update error', failedUpdate.error);
-      return NextResponse.json({ error: failedUpdate.error.message }, { status: 500 });
+          .select('id, document_id, parent_block_id, order_index')
+          .in('id', ids)
+        : { data: [] };
+
+      const updateResults = await Promise.all(
+        normalizedOrders.map(({ id, order_index }) =>
+          supabase
+            .from('note_blocks')
+            .update({ order_index, updated_at: now, updated_by: auth.userId })
+            .eq('id', id),
+        ),
+      );
+      const failedUpdate = updateResults.find((result) => result.error);
+      if (failedUpdate?.error) {
+        devLogger.error('[admin/note/blocks] PUT order error', failedUpdate.error);
+        return NextResponse.json({ error: failedUpdate.error.message }, { status: 500 });
+      }
+
+      const documentIds = [...new Set((beforeRows ?? []).map((row) => row.document_id).filter(Boolean))];
+      await Promise.all(documentIds.map((documentId) => insertAuditLog({
+        documentId,
+        actorId: auth.userId,
+        action: 'reorder_blocks',
+        summary: '블록 순서 변경',
+        diff: { before: beforeRows, after: orders },
+      })));
     }
 
-    const documentIds = [...new Set((beforeRows ?? []).map((row) => row.document_id).filter(Boolean))];
-    await Promise.all(documentIds.map((documentId) => insertAuditLog({
-      documentId,
-      actorId: auth.userId,
-      action: 'reorder_blocks',
-      summary: '블록 순서 변경',
-      diff: { before: beforeRows, after: orders },
-    })));
+    if (fieldPatches.length > 0) {
+      const patchResult = await applyBlockFieldPatches(supabase, fieldPatches, auth.userId, now);
+      if (patchResult.error) {
+        devLogger.error('[admin/note/blocks] PUT field patch error', patchResult.error);
+        return NextResponse.json({ error: patchResult.error }, { status: 500 });
+      }
+      void auditBatchBlockUpdates(
+        supabase,
+        fieldPatches,
+        auth.userId,
+        fieldPatches.length > 1 ? `블록 ${fieldPatches.length}개 필드 일괄 수정` : '블록 필드 수정',
+      );
+    }
 
     return NextResponse.json({ ok: true });
   } catch (err) {

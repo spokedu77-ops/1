@@ -18,6 +18,7 @@ import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { BlockTextPreview } from './_components/blocks/BlockTextPreview';
 import { LazyNoteEditor } from './_components/blocks/LazyNoteEditor';
 import { NoteRichEditorStyles } from './_components/NoteRichEditorStyles';
+import { NoteImageLightboxProvider, useNoteImageLightbox } from './_components/NoteImageLightbox';
 import { useDeferredNoteMeta } from './_hooks/useDeferredNoteMeta';
 import { BubbleToolbar } from './_components/BubbleToolbar';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from './_components/SlashMenu';
@@ -55,9 +56,11 @@ import { BOARD_DEFAULT_GROUP } from './_components/BoardView';
 import {
   blockGutterTopPx,
   blockHandleLeftPx,
+  NOTE_MARQUEE_ZONE,
   NOTE_PAGE_SHELL,
   toggleMenuAnchorOffset,
 } from './_lib/constants';
+import { patchNoteBlocks, putNoteBlockOrders } from './_lib/noteBlocksApi';
 
 const EMPTY_BLOCK_PLACEHOLDER = "명령어는 '/'를 입력하세요.";
 
@@ -134,6 +137,13 @@ function getMarqueeSelectedBlockIds(marquee: MarqueeRect): string[] {
 function isMarqueeSelectStartBlocked(target: HTMLElement): boolean {
   return !!target.closest(
     'button, input, textarea, a, .note-block-gutter, [data-note-ignore-whitespace]',
+  );
+}
+
+/** 텍스트 편집·선택 영역 — 여기서는 마퀴 대신 글자 드래그 */
+function isMarqueeSelectTextTarget(target: HTMLElement): boolean {
+  return !!target.closest(
+    '.ProseMirror, .note-rich-editor, [contenteditable="true"], input, textarea, [data-toggle-title]',
   );
 }
 
@@ -436,8 +446,8 @@ function DocIconGlyph({
   return <FileText className={fallbackClassName} />;
 }
 
-/** 줄 왼쪽 — 거터로 이동해도 hover가 끊기지 않게 넓은 히트 영역 */
-const NOTE_BLOCK_HOVER_BRIDGE = 'absolute -left-[88px] top-0 bottom-0 z-[1] w-[88px]';
+/** 줄 왼쪽 — 거터·마퀴 시작 여백 (hover·선택 히트) */
+const NOTE_BLOCK_HOVER_BRIDGE = 'absolute -left-[120px] top-0 bottom-0 z-[1] w-[120px]';
 
 const DROP_TARGET_ROW =
   'z-[1] rounded-sm bg-blue-100/90 ring-2 ring-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.25)]';
@@ -817,6 +827,7 @@ function BlockContent({
   autoFocusTitleSignal?: number;
 }) {
   const isBlockDragActive = useBlockDragActive();
+  const imageLightbox = useNoteImageLightbox();
   const [showSlash, setShowSlash] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
   const slashHostRef = useRef<HTMLDivElement>(null);
@@ -1268,7 +1279,15 @@ function BlockContent({
             if (file) await handleImageFile(file);
           }}
         >
-          <img src={url} alt={caption || ''} className="w-full object-contain" />
+          <img
+            src={url}
+            alt={caption || ''}
+            className="w-full cursor-zoom-in object-contain"
+            onClick={(e) => {
+              e.stopPropagation();
+              imageLightbox?.open(url, caption || undefined);
+            }}
+          />
           {imgDragOver && (
             <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-blue-500/20 text-[14px] font-medium text-blue-700">
               이미지 교체
@@ -1554,7 +1573,12 @@ function BlockContent({
                     {url.trim() ? (
                       <div className="overflow-hidden rounded-md bg-white">
                         { }
-                        <img src={url.trim()} alt="" className="max-h-56 w-full object-contain" />
+                        <img
+                          src={url.trim()}
+                          alt=""
+                          className="max-h-56 w-full cursor-zoom-in object-contain"
+                          onClick={() => imageLightbox?.open(url.trim())}
+                        />
                       </div>
                     ) : null}
                   </div>
@@ -2564,33 +2588,8 @@ export default function AdminNotePageContent() {
     depthPatches: Array<{ id: string; content: Record<string, unknown> }>,
   ) => {
     const orders = orderedBlocks.map((block) => ({ id: block.id, order_index: block.order_index }));
-    const orderRes = await fetch('/api/admin/note/blocks', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ orders }),
-    });
-    if (!orderRes.ok) {
-      const json = await orderRes.json().catch(() => null);
-      throw new Error(json?.error || '블록 순서 저장 실패');
-    }
-    if (depthPatches.length > 0) {
-      const responses = await Promise.all(
-        depthPatches.map((patch) =>
-          fetch('/api/admin/note/blocks', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ id: patch.id, content: patch.content }),
-          }),
-        ),
-      );
-      const failed = responses.find((response) => !response.ok);
-      if (failed) {
-        const json = await failed.json().catch(() => null);
-        throw new Error(json?.error || '블록 들여쓰기 저장 실패');
-      }
-    }
+    const fieldUpdates = depthPatches.map((patch) => ({ id: patch.id, content: patch.content }));
+    await putNoteBlockOrders(orders, fieldUpdates.length > 0 ? fieldUpdates : undefined);
     triggerSave();
   }, [triggerSave]);
 
@@ -2739,6 +2738,7 @@ export default function AdminNotePageContent() {
     moving: NoteBlock,
     plan: BlockDropPlan<NoteBlock>,
     prevBlocks: NoteBlock[],
+    extraFieldUpdates: Array<{ id: string; content: Record<string, unknown> }> = [],
   ) => {
     if (!plan) return;
     const oldParentId = moving.parent_block_id ?? null;
@@ -2755,32 +2755,17 @@ export default function AdminNotePageContent() {
       ...oldSiblings.map((block) => ({ id: block.id, order_index: block.order_index })),
     ];
 
-    const reparentRes = await fetch('/api/admin/note/blocks', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({
+    const fieldUpdates = [
+      {
         id: moving.id,
         parent_block_id: plan.targetParentId,
         order_index: plan.targetSiblings.findIndex((block) => block.id === moving.id),
         ...(contentPatch ? { content: contentPatch } : {}),
-      }),
-    });
-    if (!reparentRes.ok) {
-      const json = await reparentRes.json().catch(() => null);
-      throw new Error(json?.error || '블록 위치 저장 실패');
-    }
+      },
+      ...extraFieldUpdates.map((patch) => ({ id: patch.id, content: patch.content })),
+    ];
 
-    const orderRes = await fetch('/api/admin/note/blocks', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ orders }),
-    });
-    if (!orderRes.ok) {
-      const json = await orderRes.json().catch(() => null);
-      throw new Error(json?.error || '블록 순서 저장 실패');
-    }
+    await putNoteBlockOrders(orders, fieldUpdates);
     triggerSave();
   }, [triggerSave]);
 
@@ -3009,22 +2994,7 @@ export default function AdminNotePageContent() {
 
     setBlocks(nextBlocks);
     try {
-      await persistBlockReparent(moving, plan, prevBlocks);
-      if (depthPatches.length > 0) {
-        const responses = await Promise.all(
-          depthPatches.map((patch) =>
-            fetch('/api/admin/note/blocks', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({ id: patch.id, content: patch.content }),
-            }),
-          ),
-        );
-        if (responses.some((response) => !response.ok)) {
-          throw new Error('블록 들여쓰기 저장 실패');
-        }
-      }
+      await persistBlockReparent(moving, plan, prevBlocks, depthPatches);
     } catch (e) {
       devLogger.error('[Note] reparentBlock', e);
       setBlocks(prevBlocks);
@@ -3613,12 +3583,7 @@ export default function AdminNotePageContent() {
       try {
         const latest = blocksRef.current.find((b) => b.id === block.id);
         const contentToSave = latest?.content ?? content;
-        await fetch('/api/admin/note/blocks', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ id: block.id, content: contentToSave }),
-        });
+        await patchNoteBlocks([{ id: block.id, content: contentToSave }]);
         delete timers[block.id];
         if (Object.keys(timers).filter((k) => !k.startsWith('doc_')).length === 0) triggerSave();
       } catch (e) { devLogger.error('[Note] updateBlock', e); setLoadingState('idle'); }
@@ -3663,19 +3628,8 @@ export default function AdminNotePageContent() {
         const { normalized, depthPatches } = normalizeDepthByOrder(rootOnly);
         const depthMap = new Map(normalized.map((item) => [item.id, item]));
         const withDepth = next.map((item) => depthMap.get(item.id) ?? item);
-        void persistBlockReparent(moving, plan, prevBlocks);
-        if (depthPatches.length > 0) {
-          void Promise.all(
-            depthPatches.map((patch) =>
-              fetch('/api/admin/note/blocks', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({ id: patch.id, content: patch.content }),
-              }),
-            ),
-          ).catch((e) => devLogger.error('[Note] depth-sync-after-tab-reparent', e));
-        }
+        void persistBlockReparent(moving, plan, prevBlocks, depthPatches)
+          .catch((e) => devLogger.error('[Note] depth-sync-after-tab-reparent', e));
         return withDepth;
       }
 
@@ -4030,7 +3984,7 @@ export default function AdminNotePageContent() {
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: defaultContent } : b)));
     focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor');
     try {
-      await fetch('/api/admin/note/blocks', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: block.id, type, content: defaultContent }) });
+      await patchNoteBlocks([{ id: block.id, type, content: defaultContent }]);
       triggerSave();
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
   }, [focusBlockEditor, triggerSave]);
@@ -4043,27 +3997,14 @@ export default function AdminNotePageContent() {
       content?: Record<string, unknown>;
     }>,
   ) => {
-    if (patches.length === 0) return;
-    const responses = await Promise.all(
-      patches.map((patch) =>
-        fetch('/api/admin/note/blocks', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            id: patch.id,
-            parent_block_id: patch.parent_block_id,
-            order_index: patch.order_index,
-            ...(patch.content ? { content: patch.content } : {}),
-          }),
-        }),
-      ),
+    await patchNoteBlocks(
+      patches.map((patch) => ({
+        id: patch.id,
+        parent_block_id: patch.parent_block_id,
+        order_index: patch.order_index,
+        ...(patch.content ? { content: patch.content } : {}),
+      })),
     );
-    const failed = responses.find((response) => !response.ok);
-    if (failed) {
-      const j = await failed.json().catch(() => null);
-      throw new Error(j?.error || '블록 승격 저장 실패');
-    }
   }, []);
 
   const softDeleteBlockIds = useCallback(async (ids: string[]) => {
@@ -4264,8 +4205,15 @@ export default function AdminNotePageContent() {
     const target = e.target as HTMLElement;
     if (isMarqueeSelectStartBlocked(target)) return;
 
+    if (isMarqueeSelectTextTarget(target)) {
+      if (selectedBlockIdsRef.current.size > 0) {
+        setSelectedBlockIds(new Set());
+      }
+      return;
+    }
+
     const row = target.closest<HTMLElement>('[data-note-block-row]');
-    if (!row && !target.closest('[data-note-block-list]')) return;
+    if (!row && !target.closest('[data-note-marquee-zone]')) return;
 
     blockMarqueeRef.current = {
       additive: e.ctrlKey || e.metaKey,
@@ -4328,7 +4276,7 @@ export default function AdminNotePageContent() {
       if (selectedBlockIdsRef.current.size === 0) return;
       const target = e.target as HTMLElement;
       if (target.closest(
-        '[data-note-block-list], [data-note-format-toolbar], button, input, textarea, a',
+        '[data-note-marquee-zone], [data-note-format-toolbar], button, input, textarea, a',
       )) {
         return;
       }
@@ -4355,12 +4303,7 @@ export default function AdminNotePageContent() {
     focusBlockEditor(plan.previousId);
 
     try {
-      await fetch('/api/admin/note/blocks', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: plan.previousId, content: plan.mergedContent }),
-      });
+      await patchNoteBlocks([{ id: plan.previousId, content: plan.mergedContent }]);
       await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(plan.deleteId)}`, {
         method: 'DELETE',
         credentials: 'include',
@@ -4682,6 +4625,7 @@ export default function AdminNotePageContent() {
 
   /* ── render ── */
   return (
+    <NoteImageLightboxProvider>
     <div className="flex h-[var(--viewport-height-px,100dvh)] max-w-full flex-col overflow-x-hidden bg-white">
       <NoteRichEditorStyles />
 
@@ -5282,7 +5226,7 @@ export default function AdminNotePageContent() {
                 </div>
               </div>
               <div
-                className={`${NOTE_PAGE_SHELL} cursor-text pb-32 ${resolveDocCover(activeDocument.properties) ? 'pt-6' : 'pt-10'}`}
+                className={`${NOTE_PAGE_SHELL} cursor-text ${resolveDocCover(activeDocument.properties) ? 'pt-6' : 'pt-10'}`}
                 onMouseDown={handleDocumentBodyMouseDown}
               >
                 <nav className="mb-4 hidden min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap text-[13px] text-neutral-400 md:flex">
@@ -5449,47 +5393,51 @@ export default function AdminNotePageContent() {
                   </div>
                 )}
 
-                {/* 블록 목록 (DnD) */}
+              </div>
+
+                {/* 블록 목록 — 에디터 열 전체 너비에서 마퀴 선택 (사이드바 옆 여백 포함) */}
                 <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
                 <OnBlockSelectContext.Provider value={handleBlockSelect}>
                 <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
                 <SetHoveredBlockContext.Provider value={setHoveredBlockId}>
                 <HoveredBlockContext.Provider value={hoveredBlockId}>
-                  <SortableContext
-                    items={rootSortableBlockIds}
-                    strategy={verticalListSortingStrategy}
+                  <div
+                    data-note-marquee-zone
+                    className={NOTE_MARQUEE_ZONE}
+                    onPointerDownCapture={handleBlockListPointerDownCapture}
+                    onMouseLeave={handleBlockListMouseLeave}
                   >
-                    <div
-                      data-note-block-list
-                      className="relative overflow-visible"
-                      onPointerDownCapture={handleBlockListPointerDownCapture}
-                      onMouseLeave={handleBlockListMouseLeave}
-                    >
-                      {marqueeBox && (
-                        <div
-                          className="pointer-events-none fixed z-[60] border border-blue-400 bg-blue-500/20"
-                          style={{
-                            left: marqueeBox.left,
-                            top: marqueeBox.top,
-                            width: marqueeBox.width,
-                            height: marqueeBox.height,
-                          }}
-                        />
-                      )}
-                      {rootBlocks.map((block) => (
-                        <Fragment key={block.id}>
-                          {renderSortableBlock(block)}
-                        </Fragment>
-                      ))}
+                    {marqueeBox && (
+                      <div
+                        className="pointer-events-none fixed z-[60] border border-blue-400 bg-blue-500/20"
+                        style={{
+                          left: marqueeBox.left,
+                          top: marqueeBox.top,
+                          width: marqueeBox.width,
+                          height: marqueeBox.height,
+                        }}
+                      />
+                    )}
+                    <div className={`${NOTE_PAGE_SHELL} overflow-visible pb-32`}>
+                      <SortableContext
+                        items={rootSortableBlockIds}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div data-note-block-list className="relative overflow-visible">
+                          {rootBlocks.map((block) => (
+                            <Fragment key={block.id}>
+                              {renderSortableBlock(block)}
+                            </Fragment>
+                          ))}
+                        </div>
+                      </SortableContext>
                     </div>
-                  </SortableContext>
+                  </div>
                 </HoveredBlockContext.Provider>
                 </SetHoveredBlockContext.Provider>
                 </SuppressGripMenuRefContext.Provider>
                 </OnBlockSelectContext.Provider>
                 </SelectedBlockIdsContext.Provider>
-
-              </div>
             </div>
           )}
           </div>
@@ -5566,5 +5514,6 @@ export default function AdminNotePageContent() {
         </div>
       )}
     </div>
+    </NoteImageLightboxProvider>
   );
 }

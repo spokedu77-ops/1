@@ -24,14 +24,24 @@ import {
 } from './LessonPanels';
 
 function PreviewEquipmentCard({ items }: { items: string[] }) {
+  const visibleItems = items.slice(0, 6);
+  const hiddenCount = Math.max(items.length - visibleItems.length, 0);
+
   return (
     <div className="shrink-0 rounded-[12px] border border-slate-200 bg-slate-50 p-3">
       <p className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-600">준비물</p>
       <div className="mt-2">
-        <LessonEquipmentChecklist items={items} compact />
+        <LessonEquipmentChecklist items={visibleItems} compact />
+        {hiddenCount > 0 ? (
+          <p className="mt-2 text-[11px] font-bold text-slate-500">+{hiddenCount}개 더 있음</p>
+        ) : null}
       </div>
     </div>
   );
+}
+
+function getPreviewScript(script: string) {
+  return script.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 1).join('\n');
 }
 
 export function LessonPreviewContent({
@@ -47,6 +57,8 @@ export function LessonPreviewContent({
   const equipment = getLessonEquipment(program);
   const script = getLessonScript(program);
   const rules = getLessonRules(program);
+  const previewRules = rules.slice(0, 3);
+  const hiddenRuleCount = Math.max(rules.length - previewRules.length, 0);
 
   const metaGrid = (
     <LessonQuadGrid
@@ -74,10 +86,15 @@ export function LessonPreviewContent({
           <PreviewEquipmentCard items={equipment} />
           <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
             <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">수업 스크립트</p>
-            <LessonCoachScript text={script} prominent />
+            <LessonCoachScript text={getPreviewScript(script)} prominent />
           </div>
           <LessonFullSection title="활동 방법">
-            <LessonNumberedList items={rules} />
+            <LessonNumberedList items={previewRules} />
+            {hiddenRuleCount > 0 ? (
+              <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-500">
+                전체 진행 순서는 수업 자료에서 확인하세요.
+              </p>
+            ) : null}
           </LessonFullSection>
           {footer}
         </div>

@@ -85,56 +85,25 @@ export function InsightsLanding() {
       </LandingSection>
 
       <LandingSection className="space-y-4" delay={0.06}>
-        <h2 className={landingSectionTitle}>{insightsPage.roleCompare.title}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">현장 기록</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-              {insightsPage.roleCompare.recordsLead}
-            </p>
-            <Link
-              href={insightsPage.roleCompare.recordsHref}
-              data-track={inferTrackFromHref(insightsPage.roleCompare.recordsHref)}
-              data-track-label="insights-to-records"
-              className={`mt-2 inline-flex text-xs font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+        <h2 className={landingSectionTitle}>{insightsPage.relatedPages.title}</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {insightsPage.relatedPages.items.map((item) => (
+            <div
+              key={item.href}
+              className="rounded-xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5 sm:py-5"
             >
-              {insightsPage.roleCompare.recordsLinkLabel} →
-            </Link>
-          </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">운영 사례</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-              {insightsPage.roleCompare.casesLead}
-            </p>
-            <Link
-              href={insightsPage.roleCompare.casesHref}
-              data-track={inferTrackFromHref(insightsPage.roleCompare.casesHref)}
-              data-track-label="insights-to-cases"
-              className={`mt-2 inline-flex text-xs font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
-            >
-              {insightsPage.roleCompare.casesLinkLabel} →
-            </Link>
-          </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">월간 수업</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-              {insightsPage.roleCompare.monthlyLead}
-            </p>
-            <Link
-              href={insightsPage.roleCompare.monthlyHref}
-              data-track={inferTrackFromHref(insightsPage.roleCompare.monthlyHref)}
-              data-track-label="insights-to-monthly"
-              className={`mt-2 inline-flex text-xs font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
-            >
-              {insightsPage.roleCompare.monthlyLinkLabel} →
-            </Link>
-          </div>
-          <div className="rounded-xl border border-indigo-200/60 bg-white px-4 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-indigo-700">교육 관점</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-              {insightsPage.roleCompare.insightsLead}
-            </p>
-          </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">{item.label}</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{item.lead}</p>
+              <Link
+                href={item.href}
+                data-track={inferTrackFromHref(item.href)}
+                data-track-label={`insights-to-${item.label}`}
+                className={`mt-3 inline-flex text-sm font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+              >
+                {item.linkLabel} →
+              </Link>
+            </div>
+          ))}
         </div>
       </LandingSection>
 

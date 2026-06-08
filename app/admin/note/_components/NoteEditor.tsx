@@ -23,6 +23,7 @@ import {
   type MarkdownBlockTrigger,
 } from './noteBulletInput';
 import { NoteRichEditorStyles } from './NoteRichEditorStyles';
+import { useNoteImageLightbox } from './NoteImageLightbox';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -238,6 +239,9 @@ export function NoteEditor({
   const changeTimerRef = useRef<number | null>(null);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
   const editorRef = useRef<Editor | null>(null);
+  const imageLightbox = useNoteImageLightbox();
+  const imageLightboxRef = useRef(imageLightbox);
+  imageLightboxRef.current = imageLightbox;
 
   const callbacksRef = useRef({
     onChange,
@@ -340,6 +344,19 @@ export function NoteEditor({
     editorProps: {
       attributes: {
         class: `note-rich-editor min-h-[1.75rem] w-full outline-none ${className}`,
+      },
+      handleClick: (_view, _pos, event) => {
+        const target = event.target as HTMLElement;
+        if (target.tagName !== 'IMG') return false;
+        const src =
+          (target as HTMLImageElement).currentSrc || target.getAttribute('src');
+        if (!src) return false;
+        event.preventDefault();
+        imageLightboxRef.current?.open(
+          src,
+          target.getAttribute('alt') ?? undefined,
+        );
+        return true;
       },
       handleDOMEvents: {
         keydown: (view, event) => {

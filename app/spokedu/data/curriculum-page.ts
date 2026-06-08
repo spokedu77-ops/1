@@ -5,7 +5,7 @@ export const curriculumPage = {
   hero: {
     lines: ['현장 수업을', '커리큘럼 콘텐츠로', '확장합니다'] as const,
     subtitle:
-      '수업안, 운영 매뉴얼, 교구 활용 콘텐츠, 강사교육, 라이선싱까지 현장에서 검증한 수업 경험을 활용 가능한 형태로 정리합니다.',
+      '수업안, 운영 매뉴얼, 강사교육, 라이선싱까지 현장에서 검증한 수업 경험을 활용 가능한 형태로 정리합니다.',
     mediaKey: 'trackCurriculum' as HomeMediaKey,
   },
   heroCtas: {
@@ -16,7 +16,7 @@ export const curriculumPage = {
     },
   },
   contentProducts: {
-    title: '현장 수업에서 확장하는 5가지 콘텐츠',
+    title: '현장 수업에서 확장하는 4가지 콘텐츠',
     lead: '자료 나열이 아니라, 강사·기관·파트너가 바로 운영에 쓸 수 있는 형태로 정리합니다.',
     items: [
       {
@@ -32,12 +32,6 @@ export const curriculumPage = {
         mediaKey: 'proofLab' as HomeMediaKey,
       },
       {
-        title: '교구 활용 콘텐츠',
-        description:
-          '하나의 교구를 여러 연령과 목적에 맞게 확장할 수 있도록 활동 예시와 응용법을 제공합니다.',
-        mediaKey: 'programCurriculum' as HomeMediaKey,
-      },
-      {
         title: '강사 교육',
         description:
           '프로그램의 의도, 진행 방식, 현장 대응 기준을 이해하고 수업에 적용할 수 있도록 교육합니다.',
@@ -51,47 +45,39 @@ export const curriculumPage = {
       },
     ],
   },
-  packages: {
-    title: '활용 목적별 구성',
-    lead: '가격 등급이 아니라, 도입 범위와 운영 목적에 맞춰 콘텐츠 조합을 제안합니다.',
+  serviceExamples: {
+    title: '실제 운영 사례',
+    lead: '현장에서 검증한 수업 경험을 강사교육, 커리큘럼 판매, 구독 서비스로 이어가고 있습니다.',
     items: [
       {
-        title: '문서 중심 패키지',
+        title: '강사 세미나',
+        date: '2023. 10~12',
+        venue: '서초여성가족플라자',
         description:
-          '수업안과 활동 자료를 중심으로 내부 수업 준비에 활용합니다.',
+          '아동체육 인큐베이팅 강의 — 파트너 강사 대상 수업 설계·현장 운영 기준을 공유했습니다.',
+        status: '운영 완료',
+        mediaKey: 'proofLab' as HomeMediaKey,
       },
       {
-        title: '현장 실행 패키지',
+        title: '커리큘럼 판매',
+        date: '2025. 03',
+        venue: '이마트 문화센터',
         description:
-          '수업안, 운영 매뉴얼, 교구 활용법을 함께 제공해 실제 수업 운영까지 연결합니다.',
+          '미니올림픽 특강 수업안·운영 패키지 — 서울·경기·대전 문화센터에 맞춘 활동 구성을 제공했습니다.',
+        status: '판매·적용',
+        mediaKey: 'programCurriculum' as HomeMediaKey,
       },
       {
-        title: '확장 운영 패키지',
+        title: '구독 서비스',
+        date: '2026',
+        venue: 'SPOKEDU MASTER',
         description:
-          '강사교육과 라이선싱 구조를 포함해 기관·파트너 단위 운영으로 확장합니다.',
+          '강사용 수업 운영 플랫폼 — 프로그램 라이브러리, 스크린 실행 도구, 수업 기록을 한 곳에서 제공합니다. 오픈 예정.',
+        status: '오픈 예정',
+        mediaKey: 'trackCurriculum' as HomeMediaKey,
+        href: '/spokedu-master/landing',
       },
     ],
-  },
-  productionFlow: {
-    title: '현장 수업에서 시작하는 제작 흐름',
-    steps: [
-      {
-        label: '현장 수업 분석',
-        detail: '실제 수업에서 아이들의 반응, 난이도, 운영 변수를 확인합니다.',
-      },
-      {
-        label: '활동 구조화',
-        detail: '수업 목표, 진행 순서, 변형 방법, 안전 기준을 정리합니다.',
-      },
-      {
-        label: '콘텐츠 문서화',
-        detail: '강사가 이해하고 바로 적용할 수 있도록 수업안과 매뉴얼 형태로 정리합니다.',
-      },
-      {
-        label: '교육·운영 적용',
-        detail: '강사 교육, 기관 운영, 파트너 적용 과정에서 피드백을 반영합니다.',
-      },
-    ] as const,
   },
   finalCta: {
     title: '스포키듀의 수업 콘텐츠를 함께 활용하고 싶다면',

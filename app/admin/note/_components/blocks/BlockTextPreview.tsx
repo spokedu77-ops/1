@@ -5,6 +5,7 @@ import {
   resolveRichPreviewHtml,
   type RichPreviewField,
 } from '@/app/lib/note/richTextPreview';
+import { useNoteImageLightbox } from '../NoteImageLightbox';
 
 type BlockTextPreviewProps = {
   content: Record<string, unknown> | null | undefined;
@@ -26,6 +27,7 @@ export function BlockTextPreview({
 }: BlockTextPreviewProps) {
   const html = resolveRichPreviewHtml({ content, field, text });
   const empty = isRichPreviewEmpty(html, text);
+  const imageLightbox = useNoteImageLightbox();
 
   return (
     <div
@@ -33,8 +35,43 @@ export function BlockTextPreview({
       onMouseDown={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest('a, button')) return;
-        e.preventDefault();
-        onActivate?.();
+
+        const imgEl =
+          target.tagName === 'IMG' ? target : target.closest('img');
+        if (imgEl instanceof HTMLImageElement) {
+          const src = imgEl.currentSrc || imgEl.getAttribute('src');
+          if (src && imageLightbox) {
+            e.preventDefault();
+            imageLightbox.open(src, imgEl.alt || undefined);
+            return;
+          }
+        }
+
+        if (empty) {
+          e.preventDefault();
+          onActivate?.();
+          return;
+        }
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const onMove = (ev: MouseEvent) => {
+          if (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4) {
+            cleanup();
+          }
+        };
+        const onUp = (ev: MouseEvent) => {
+          const dragged =
+            Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4;
+          cleanup();
+          if (!dragged) onActivate?.();
+        };
+        const cleanup = () => {
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+        };
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
       }}
     >
       {empty ? (

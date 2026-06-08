@@ -123,9 +123,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       'SPOMOVE, PAPS, 원데이, 방학캠프, 커리큘럼 콘텐츠. 개인·기관·강사 운영에 맞는 프로그램을 한곳에서 확인합니다.',
   },
   records: {
-    title: '현장기록 | 키움센터·학교·아동시설 수업 운영 기록',
+    title: '수업 사례 | 키움센터·학교·아동시설 운영 후기',
     description:
-      '키움센터, 학교, 아동시설, 문화공간 등 실제 운영 현장에서 진행한 수업과 프로그램 기록. 어디서, 누구에게, 어떤 프로그램을 운영했는지 확인하세요.',
+      '키움센터, 학교, 아동시설, 문화공간 등 실제 운영 현장의 활동 사진과 운영 설명을 블로그 후기로 정리했습니다.',
   },
   cases: {
     title: '수업 운영 사례 | 기관 협업 SPOKEDU',
@@ -156,7 +156,7 @@ export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
   dispatch: ['기관 체육수업', '키움센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],
   curriculum: ['체육 커리큘럼', '놀이체육 수업안', '강사 교육', 'SPOMOVE'],
   programs: ['SPOMOVE', 'PAPS', '놀이체육', '방학캠프', '체육 커리큘럼'],
-  records: ['현장기록', '키움센터 체육', 'SPOMOVE', '기관 체육수업', '방학캠프'],
+  records: ['수업 사례', '키움센터 체육', 'SPOMOVE', '기관 체육수업', '방학캠프'],
   cases: ['수업 운영 사례', '기관 협업', '키움센터 체육', 'SPOMOVE', '방학캠프'],
   monthly: ['월간형 체육수업', '월별 테마', '기관 정규수업', '방과후 체육'],
   insights: ['체육교육 관점', '수업 설계', '아동 체육', 'SPOMOVE', '기관 체육'],

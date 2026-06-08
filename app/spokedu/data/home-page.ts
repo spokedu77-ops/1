@@ -12,12 +12,14 @@ export type HomeVisitorGateCard = {
 };
 
 export type HomeFieldRecordCard = {
-  proofId: 'proof-spomove' | 'proof-rhythm' | 'proof-oneday' | 'proof-camp';
+  proofId: 'proof-spomove' | 'proof-rhythm' | 'proof-oneday' | 'proof-booth';
   tagline: string;
   venue: string;
   sessionLine: string;
   href: string;
   trackLabel: string;
+  /** 네이버 블로그 본문 사진 순서 — records 페이지와 동일 인덱스 */
+  blogImageIndex?: number;
 };
 
 export type HomeProgramSystemItem = {
@@ -55,22 +57,12 @@ export const homePage = {
     lead: '목적에 맞는 수업을 선택하세요.',
     cards: [
       {
-        audience: '학부모',
-        title: '개인 수업',
-        description:
-          '운동을 어려워하는 아이, 수행평가를 준비하는 아이, 보다 체계적으로 운동을 배우고 싶은 아이를 위한 체육과외 수업입니다.',
-        tags: ['1:1과외', '소그룹과외', '단기과외'],
-        linkLabel: '개인수업 보기',
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        trackLabel: 'cta-home-gate-private',
-      },
-      {
         audience: '기관',
-        title: '기관 수업',
+        title: '기관 및 단체 수업',
         description:
           '공간, 인원, 일정, 맞춤 프로그램 등 기관에서 원하는 방향성으로 설계하여 운영합니다.',
         tags: ['정규수업', '늘봄·돌봄수업', '방학캠프', '원데이특강'],
-        linkLabel: '기관수업 보기',
+        linkLabel: '기관 및 단체 수업 보기',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'cta-home-gate-dispatch',
       },
@@ -84,47 +76,57 @@ export const homePage = {
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
       },
+      {
+        audience: '학부모',
+        title: '개인 수업',
+        description:
+          '운동을 어려워하는 아이, 수행평가를 준비하는 아이, 보다 체계적으로 운동을 배우고 싶은 아이를 위한 체육과외 수업입니다.',
+        tags: ['1:1과외', '소그룹과외', '단기과외'],
+        linkLabel: '개인수업 보기',
+        href: `${SPOKEDU_BASE_PATH}/private`,
+        trackLabel: 'cta-home-gate-private',
+      },
     ] satisfies HomeVisitorGateCard[],
   },
   fieldRecords: {
-    eyebrow: '운영 사례',
-    title: '현장 기록',
-    lead: 'LAB·기관·행사·캠프까지, 스포키듀가 실제로 운영해 온 현장입니다.',
+    eyebrow: '수업 사례',
+    title: '현장에서 운영한 수업',
+    lead: '어디서, 누구에게, 어떤 프로그램을 진행했는지 블로그 후기로 확인할 수 있습니다.',
     recordsHref: `${SPOKEDU_BASE_PATH}/records`,
     recordsTrackLabel: 'cta-home-field-records',
-    recordsCtaLabel: '현장 기록 더 보기',
+    recordsCtaLabel: '수업 사례 더 보기',
     cards: [
-      {
-        proofId: 'proof-spomove',
-        tagline: 'SPOMOVE',
-        venue: '양천거점형키움센터',
-        sessionLine: '초등 저학년 SPOMOVE 정규수업',
-        href: `${SPOKEDU_BASE_PATH}/cases/yangcheon-spomove`,
-        trackLabel: 'cta-home-proof-spomove',
-      },
       {
         proofId: 'proof-rhythm',
         tagline: 'SPOMOVE',
-        venue: '동작거점형키움센터',
-        sessionLine: '초등학생 · SPOMOVE 연계 수업',
-        href: `${SPOKEDU_BASE_PATH}/cases/dongjak-rhythm`,
-        trackLabel: 'cta-home-proof-dongjak',
+        venue: '동작거점형 우리동네키움센터',
+        sessionLine: '초등학생 · SPOMOVE 에듀테크',
+        href: 'https://blog.naver.com/spokedutogether/224288724087',
+        trackLabel: 'cta-home-proof-dongjak-blog',
+      },
+      {
+        proofId: 'proof-spomove',
+        tagline: 'PAPS',
+        venue: '양천거점형키움센터',
+        sessionLine: '초등 1~2학년 · PAPS 놀이체육',
+        href: 'https://blog.naver.com/spokedutogether/224286265879',
+        trackLabel: 'cta-home-proof-yangcheon-paps-blog',
       },
       {
         proofId: 'proof-oneday',
         tagline: '원데이',
         venue: '다사랑영등포지역아동센터',
-        sessionLine: '지역아동센터 원데이 체육행사',
-        href: `${SPOKEDU_BASE_PATH}/cases/dasarang-oneday`,
-        trackLabel: 'cta-home-proof-oneday',
+        sessionLine: '초등 2~6학년 · 펑셔널 놀이체육',
+        href: 'https://blog.naver.com/spokedutogether/224286297222',
+        trackLabel: 'cta-home-proof-dasarang-blog',
       },
       {
-        proofId: 'proof-camp',
-        tagline: '방학캠프',
-        venue: '서울숲 PLAYZ Lounge',
-        sessionLine: '방학 원데이 캠프 운영',
-        href: `${SPOKEDU_BASE_PATH}/cases/playz-camp`,
-        trackLabel: 'cta-home-proof-camp',
+        proofId: 'proof-booth',
+        tagline: '원데이·행사',
+        venue: '서대문구 독립문공원',
+        sessionLine: '어린이날 SPOMOVE 체험부스',
+        href: 'https://blog.naver.com/spokedu77/224282789801',
+        trackLabel: 'cta-home-proof-seodaemun-blog',
       },
     ] satisfies HomeFieldRecordCard[],
   },
@@ -138,7 +140,7 @@ export const homePage = {
         featured: true,
         name: 'SPOMOVE',
         description:
-          '시각 자극을 보고 몸으로 반응하는 빔 기반 에듀테크 놀이체육입니다.',
+          '시각 자극을 보고 몸으로 반응하는 스크린 기반 에듀테크 놀이체육입니다.',
         mediaKey: 'programSpomove',
         href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
         trackLabel: 'cta-home-system-spomove',

@@ -64,7 +64,7 @@ function ProgramCompactCard({ item }: { item: HomeProgramSystemItem }) {
           />
         </HomePhotoZoom>
       </div>
-      <div className="border-t border-slate-100 bg-white px-2.5 py-2.5 sm:px-3">
+      <div className="border-t border-slate-100 bg-white px-3.5 py-3 sm:px-4">
         <h3 className={`text-sm font-bold text-slate-950 sm:text-[15px] ${koreanLineBreak}`}>{item.name}</h3>
         <p className={`mt-0.5 line-clamp-2 text-[11px] leading-snug text-slate-600 ${koreanLineBreak}`}>
           {item.description}

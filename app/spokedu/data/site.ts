@@ -32,7 +32,7 @@ export const siteNavItems: SiteNavItem[] = [
   { label: '개인수업', path: '/private', href: `${SPOKEDU_BASE_PATH}/private` },
   { label: '기관수업', path: '/dispatch', href: `${SPOKEDU_BASE_PATH}/dispatch` },
   { label: '커리큘럼', path: '/curriculum', href: `${SPOKEDU_BASE_PATH}/curriculum` },
-  { label: '현장기록', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
+  { label: '수업 사례', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
   { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
 ];
 

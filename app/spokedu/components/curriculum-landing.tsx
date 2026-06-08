@@ -13,8 +13,8 @@ import { MediaPanel } from './visual';
 const contentCardShell =
   'flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white';
 
-const packageCardShell =
-  'flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white px-4 py-5 sm:px-5 sm:py-6';
+const exampleCardShell =
+  'flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white';
 
 function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
@@ -51,7 +51,7 @@ export default function CurriculumLanding() {
             {curriculumPage.contentProducts.lead}
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-4">
           {curriculumPage.contentProducts.items.map((item, index) => (
             <article key={item.title} className={contentCardShell}>
               <MediaPanel
@@ -59,7 +59,7 @@ export default function CurriculumLanding() {
                 className="aspect-[5/3] min-h-[120px] shrink-0 rounded-none border-0 sm:min-h-0"
                 photoPriority={index === 0}
               />
-              <div className="flex flex-1 flex-col border-t border-slate-100 p-4">
+              <div className="flex flex-1 flex-col border-t border-slate-100 p-5">
                 <h3 className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</h3>
                 <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
                   {item.description}
@@ -72,41 +72,57 @@ export default function CurriculumLanding() {
 
       <Section className="space-y-5 sm:space-y-7">
         <div>
-          <h2 className={landingSectionTitle}>{curriculumPage.packages.title}</h2>
+          <h2 className={landingSectionTitle}>{curriculumPage.serviceExamples.title}</h2>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {curriculumPage.packages.lead}
+            {curriculumPage.serviceExamples.lead}
           </p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-stretch sm:gap-4">
-          {curriculumPage.packages.items.map((item) => (
-            <article key={item.title} className={packageCardShell}>
-              <h3 className="text-base font-semibold text-slate-950 sm:text-lg [word-break:keep-all]">
-                {item.title}
-              </h3>
-              <p className="mt-2 flex-1 line-clamp-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-                {item.description}
-              </p>
-            </article>
-          ))}
-        </div>
-      </Section>
+          {curriculumPage.serviceExamples.items.map((item) => {
+            const inner = (
+              <>
+                <MediaPanel
+                  media={HOME_MEDIA[item.mediaKey]}
+                  className="aspect-[16/10] shrink-0 rounded-none border-0"
+                />
+                <div className="flex flex-1 flex-col p-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full border border-teal-200 bg-teal-50 px-2.5 py-0.5 text-[11px] font-semibold text-teal-800">
+                      {item.status}
+                    </span>
+                    <span className="text-xs text-slate-500">{item.date}</span>
+                  </div>
+                  <h3 className="mt-2 text-base font-semibold text-slate-950 sm:text-lg [word-break:keep-all]">
+                    {item.title}
+                  </h3>
+                  <p className="mt-1 text-sm font-medium text-slate-700 [word-break:keep-all]">{item.venue}</p>
+                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+                    {item.description}
+                  </p>
+                  {'href' in item && item.href ? (
+                    <span className="mt-3 text-sm font-semibold text-indigo-700">자세히 보기 →</span>
+                  ) : null}
+                </div>
+              </>
+            );
 
-      <Section className="overflow-hidden rounded-[1.75rem] border border-teal-200/60 bg-white px-5 py-8 sm:rounded-[2rem] sm:px-8 sm:py-10">
-        <h2 className={landingSectionTitle}>{curriculumPage.productionFlow.title}</h2>
-        <ol className="mt-5 flex gap-2.5 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin] sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible lg:grid-cols-4">
-          {curriculumPage.productionFlow.steps.map((step, index) => (
-            <li
-              key={step.label}
-              className="flex min-w-[10.5rem] shrink-0 flex-col rounded-xl border border-teal-100 bg-teal-50/30 px-3.5 py-3.5 sm:min-w-0"
-            >
-              <span className="text-[10px] font-semibold tracking-[0.08em] text-teal-700">{index + 1}단계</span>
-              <span className="mt-1 text-sm font-semibold text-slate-900 [word-break:keep-all]">{step.label}</span>
-              <span className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-slate-600 [word-break:keep-all]">
-                {step.detail}
-              </span>
-            </li>
-          ))}
-        </ol>
+            return 'href' in item && item.href ? (
+              <Link
+                key={item.title}
+                href={item.href}
+                data-track="curriculum-example-link"
+                data-track-label={`curriculum-example-${item.title}`}
+                className={`${exampleCardShell} transition hover:border-teal-200 hover:shadow-md`}
+              >
+                {inner}
+              </Link>
+            ) : (
+              <article key={item.title} className={exampleCardShell}>
+                {inner}
+              </article>
+            );
+          })}
+        </div>
       </Section>
 
       <Section className="overflow-hidden rounded-[1.75rem] border border-indigo-200/60 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/40 px-5 py-8 sm:rounded-[2rem] sm:px-8 sm:py-10">

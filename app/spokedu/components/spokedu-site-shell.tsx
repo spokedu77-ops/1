@@ -11,7 +11,7 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-6xl px-3.5 py-5 sm:px-6 sm:py-10">{children}</main>
+      <main className="mx-auto w-full max-w-6xl px-5 py-5 sm:px-8 sm:py-10">{children}</main>
       {isContactPage ? null : <SiteFooter />}
     </>
   );

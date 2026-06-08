@@ -305,7 +305,7 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     media: HOME_MEDIA.programSpomove,
     badge: 'EdTech Play',
     name: 'SPOMOVE',
-    description: '보고, 선택하고, 판단하고, 움직이는 빔 기반 에듀테크 놀이체육',
+    description: '보고, 선택하고, 판단하고, 움직이는 스크린 기반 에듀테크 놀이체육',
     tracks: ['Private', 'Dispatch', 'Curriculum'],
     cta: 'SPOMOVE 보기',
     href: '/spokedu/programs/spomove',

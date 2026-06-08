@@ -3,8 +3,11 @@
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
+import type { HomeMediaItem } from '../data/home-media';
 import { HOME_MEDIA, HOME_PROOF_FIELDS } from '../data/home-media';
 import { homePage } from '../data/home-page';
+import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
+import { externalLinkProps, isExternalHref } from '../lib/external-link';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
   btnPrimary,
@@ -29,12 +32,13 @@ import { HomePhotoZoom } from './home-photo-zoom';
 import { HomeSectionHeading } from './home-section-heading';
 import { HomeProgramSystem } from './visual/home-program-system';
 import { MediaPanel } from './visual';
+import { ExternalPhoto } from './external-photo';
 
 const heroMain = HOME_MEDIA.homeHero;
 const heroThumbA = HOME_MEDIA.proofLab;
 const heroThumbB = HOME_MEDIA.heroThumbMedia;
 
-const gateMedia = [HOME_MEDIA.trackPrivate, HOME_MEDIA.trackDispatch, HOME_MEDIA.gateCurriculum] as const;
+const gateMedia = [HOME_MEDIA.trackDispatch, HOME_MEDIA.gateCurriculum, HOME_MEDIA.trackPrivate] as const;
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
@@ -71,7 +75,7 @@ function Section({
   );
 }
 
-function resolveFieldProof(card: (typeof homePage.fieldRecords.cards)[number]) {
+function resolveFieldProof(card: HomeFieldRecordCardWithThumbnail) {
   const field = HOME_PROOF_FIELDS.find((f) => f.id === card.proofId);
   if (!field) return null;
   return {
@@ -81,7 +85,44 @@ function resolveFieldProof(card: (typeof homePage.fieldRecords.cards)[number]) {
     sessionLine: card.sessionLine,
     href: card.href,
     trackLabel: card.trackLabel,
+    thumbnailSrc: card.thumbnailSrc,
   };
+}
+
+function FieldProofMedia({
+  thumbnailSrc,
+  media,
+  alt,
+  sizes,
+  photoPriority,
+  className,
+}: {
+  thumbnailSrc?: string;
+  media: HomeMediaItem;
+  alt: string;
+  sizes: 'fieldFeatured' | 'fieldSecondary';
+  photoPriority?: boolean;
+  className: string;
+}) {
+  return (
+    <HomePhotoZoom className={className}>
+      {thumbnailSrc ? (
+        <ExternalPhoto
+          src={thumbnailSrc}
+          alt={alt}
+          className="absolute inset-0 h-full w-full"
+          priority={photoPriority}
+        />
+      ) : (
+        <MediaPanel
+          media={media}
+          className="absolute inset-0 h-full w-full rounded-none border-0"
+          sizes={sizes}
+          photoPriority={photoPriority}
+        />
+      )}
+    </HomePhotoZoom>
+  );
 }
 
 function FieldProofCaption({
@@ -117,25 +158,45 @@ function FieldProofLink({
   featured?: boolean;
   children: ReactNode;
 }) {
+  const className = `group grid w-full grid-cols-1 grid-rows-1 overflow-hidden rounded-2xl border border-slate-200/90 shadow-md shadow-slate-900/10 transition duration-300 sm:rounded-[1.35rem] ${
+    featured
+      ? 'min-h-[300px] sm:min-h-[340px] lg:min-h-[520px] lg:max-h-[560px]'
+      : 'min-h-[280px] sm:min-h-[300px] lg:min-h-[260px] lg:max-h-[300px]'
+  } ${cardInteractive} ${focusRing}`;
+
+  if (isExternalHref(href)) {
+    return (
+      <a
+        href={href}
+        {...externalLinkProps}
+        data-track="external-naver-blog"
+        data-track-label={trackLabel}
+        className={className}
+      >
+        {children}
+      </a>
+    );
+  }
+
   return (
     <Link
       href={href}
       data-track={inferTrackFromHref(href)}
       data-track-label={trackLabel}
-      className={`group grid w-full grid-cols-1 grid-rows-1 overflow-hidden rounded-2xl border border-slate-200/90 shadow-md shadow-slate-900/10 transition duration-300 sm:rounded-[1.35rem] ${
-        featured
-          ? 'min-h-[300px] sm:min-h-[340px] lg:min-h-[520px] lg:max-h-[560px]'
-          : 'min-h-[280px] sm:min-h-[300px] lg:min-h-[260px] lg:max-h-[300px]'
-      } ${cardInteractive} ${focusRing}`}
+      className={className}
     >
       {children}
     </Link>
   );
 }
 
-export default function SpokeduHomeLanding() {
+type SpokeduHomeLandingProps = {
+  fieldRecordCards: HomeFieldRecordCardWithThumbnail[];
+};
+
+export default function SpokeduHomeLanding({ fieldRecordCards }: SpokeduHomeLandingProps) {
   const reducedMotion = useReducedMotion();
-  const fieldProofItems = homePage.fieldRecords.cards
+  const fieldProofItems = fieldRecordCards
     .map((c) => resolveFieldProof(c))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
   const [featuredField, ...secondaryFields] = fieldProofItems;
@@ -245,7 +306,7 @@ export default function SpokeduHomeLanding() {
                     aria-hidden
                   />
                 </div>
-                <div className="flex min-h-[160px] flex-1 flex-col justify-between p-4 sm:min-h-[170px] sm:p-5 md:min-h-[180px]">
+                <div className="flex min-h-[160px] flex-1 flex-col justify-between p-5 sm:min-h-[170px] sm:p-6 md:min-h-[180px]">
                   <div>
                     <p className="text-xs font-medium text-slate-500">{card.audience}</p>
                     <h3
@@ -302,14 +363,14 @@ export default function SpokeduHomeLanding() {
                 trackLabel={featuredField.trackLabel}
                 featured
               >
-                <HomePhotoZoom className="col-start-1 row-start-1 h-full min-h-[300px] w-full lg:min-h-[520px]">
-                  <MediaPanel
-                    media={featuredField.field.media}
-                    className="absolute inset-0 h-full w-full rounded-none border-0"
-                    sizes="fieldFeatured"
-                    photoPriority
-                  />
-                </HomePhotoZoom>
+                <FieldProofMedia
+                  thumbnailSrc={featuredField.thumbnailSrc}
+                  media={featuredField.field.media}
+                  alt={`${featuredField.venue} 수업 사례`}
+                  sizes="fieldFeatured"
+                  photoPriority
+                  className="col-start-1 row-start-1 h-full min-h-[300px] w-full lg:min-h-[520px]"
+                />
                 <FieldProofCaption
                   tagline={featuredField.tagline}
                   venue={featuredField.venue}
@@ -319,7 +380,7 @@ export default function SpokeduHomeLanding() {
             </motion.div>
           ) : null}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {secondaryFields.map(({ field, tagline, venue, sessionLine, href, trackLabel }, index) => (
+            {secondaryFields.map(({ field, tagline, venue, sessionLine, href, trackLabel, thumbnailSrc }, index) => (
               <motion.div
                 key={field.id}
                 role="listitem"
@@ -329,13 +390,13 @@ export default function SpokeduHomeLanding() {
                 transition={{ duration: 0.45, delay: 0.05 * (index + 1) }}
               >
                 <FieldProofLink href={href} trackLabel={trackLabel}>
-                  <HomePhotoZoom className="col-start-1 row-start-1 h-full min-h-[280px] w-full lg:min-h-[240px]">
-                    <MediaPanel
-                      media={field.media}
-                      className="absolute inset-0 h-full w-full rounded-none border-0"
-                      sizes="fieldSecondary"
-                    />
-                  </HomePhotoZoom>
+                  <FieldProofMedia
+                    thumbnailSrc={thumbnailSrc}
+                    media={field.media}
+                    alt={`${venue} 수업 사례`}
+                    sizes="fieldSecondary"
+                    className="col-start-1 row-start-1 h-full min-h-[280px] w-full lg:min-h-[240px]"
+                  />
                   <FieldProofCaption tagline={tagline} venue={venue} sessionLine={sessionLine} />
                 </FieldProofLink>
               </motion.div>

@@ -5,45 +5,57 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useMemo, useState } from 'react';
 import { LandingSection } from './landing-section';
 import { MediaPanel } from './visual';
-import {
-  recordFilters,
-  recordsPage,
-  type RecordFilterId,
-  type FieldRecordItem,
-} from '../data/records-page';
+import { recordFilters, recordsPage, type RecordFilterId } from '../data/records-page';
 import { HOME_MEDIA } from '../data/home-media';
+import type { FieldRecordWithThumbnail } from '../lib/resolve-field-records';
+import { ExternalPhoto } from './external-photo';
 import {
   cardInteractive,
   fineHover,
-  landingPageStack,
-  landingSectionTitle,
 } from '../lib/ui-classes';
+import { externalLinkProps, isExternalHref } from '../lib/external-link';
 import { inferTrackFromHref } from '../lib/tracking';
 import { LandingFinalCta } from './landing-final-cta';
-import { LandingHero } from './landing-hero';
+
+const recordsPageStack =
+  'flex w-full flex-col gap-8 overflow-x-clip pb-8 sm:gap-10 sm:pb-10 lg:pb-12';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
-function matchesFilter(record: FieldRecordItem, filter: RecordFilterId): boolean {
+function matchesFilter(record: FieldRecordWithThumbnail, filter: RecordFilterId): boolean {
   if (filter === 'all') return true;
   return record.filters.includes(filter);
 }
 
-function RecordCard({ record, photoPriority = false }: { record: FieldRecordItem; photoPriority?: boolean }) {
-  return (
-    <Link
-      href={record.href}
-      data-track={inferTrackFromHref(record.href)}
-      data-track-label={record.trackLabel}
-      className={`group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`}
-    >
-      <MediaPanel
-        media={HOME_MEDIA[record.mediaKey]}
-        className="aspect-[5/4] max-h-[220px] shrink-0 rounded-none border-0 sm:aspect-[16/10] sm:max-h-none"
-        sizes="card3"
-        photoPriority={photoPriority}
-      />
+function RecordCard({
+  record,
+  photoPriority = false,
+}: {
+  record: FieldRecordWithThumbnail;
+  photoPriority?: boolean;
+}) {
+  const external = isExternalHref(record.href);
+  const className = `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`;
+  const inner = (
+    <>
+      {record.thumbnailSrc ? (
+        <div className="aspect-[5/4] max-h-[220px] shrink-0 overflow-hidden bg-slate-200 sm:aspect-[16/10] sm:max-h-none">
+          <ExternalPhoto
+            src={record.thumbnailSrc}
+            alt={`${record.venue} 수업 사례`}
+            className="h-full w-full"
+            priority={photoPriority}
+          />
+        </div>
+      ) : (
+        <MediaPanel
+          media={HOME_MEDIA[record.mediaKey]}
+          className="aspect-[5/4] max-h-[220px] shrink-0 rounded-none border-0 sm:aspect-[16/10] sm:max-h-none"
+          sizes="card3"
+          photoPriority={photoPriority}
+        />
+      )}
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
           {record.operationType}
@@ -61,61 +73,91 @@ function RecordCard({ record, photoPriority = false }: { record: FieldRecordItem
           {record.ctaLabel} →
         </span>
       </div>
+    </>
+  );
+
+  if (external) {
+    return (
+      <a
+        href={record.href}
+        {...externalLinkProps}
+        data-track="external-naver-blog"
+        data-track-label={record.trackLabel}
+        className={className}
+      >
+        {inner}
+      </a>
+    );
+  }
+
+  return (
+    <Link
+      href={record.href}
+      data-track={inferTrackFromHref(record.href)}
+      data-track-label={record.trackLabel}
+      className={className}
+    >
+      {inner}
     </Link>
   );
 }
 
-export function RecordsLanding() {
+/** 목록형 페이지 헤더 — 사진은 카드에만 (히어로·카드 썸네일 중복 방지) */
+function RecordsPageHeader() {
+  const reducedMotion = useReducedMotion();
+
+  return (
+    <header className="border-b border-slate-200/80 pb-6 sm:pb-7">
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">
+        {recordsPage.hero.kicker}
+      </p>
+      <motion.h1
+        className="mt-2 max-w-2xl text-2xl font-black tracking-tight text-slate-950 [word-break:keep-all] sm:text-3xl"
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+        animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        {recordsPage.hero.lines.join(' ')}
+      </motion.h1>
+      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] [word-break:keep-all]">
+        {recordsPage.hero.subtitle}
+      </p>
+      <ul className="mt-4 flex flex-wrap gap-2" aria-label="운영 현장 유형">
+        {recordsPage.hero.venueTypes.map((venue) => (
+          <li
+            key={venue}
+            className="rounded-full border border-slate-200/80 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600"
+          >
+            {venue}
+          </li>
+        ))}
+      </ul>
+    </header>
+  );
+}
+
+type RecordsLandingProps = {
+  fieldRecords: FieldRecordWithThumbnail[];
+};
+
+export function RecordsLanding({ fieldRecords }: RecordsLandingProps) {
   const reducedMotion = useReducedMotion();
   const [activeFilter, setActiveFilter] = useState<RecordFilterId>('all');
 
   const filteredRecords = useMemo(
-    () => recordsPage.fieldRecords.filter((r) => matchesFilter(r, activeFilter)),
-    [activeFilter],
+    () => fieldRecords.filter((r) => matchesFilter(r, activeFilter)),
+    [activeFilter, fieldRecords],
   );
 
   return (
-    <div className={landingPageStack}>
-      <LandingHero
-        kicker={recordsPage.hero.kicker}
-        lines={recordsPage.hero.lines}
-        subtitle={recordsPage.hero.subtitle}
-        media={HOME_MEDIA[recordsPage.hero.mediaKey]}
-        priority
-      />
-
-      <LandingSection className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7">
-        <h2 className={landingSectionTitle}>{recordsPage.roleCompare.title}</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5">
-          <div className="rounded-xl border border-indigo-200/60 bg-white px-4 py-4 sm:px-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-indigo-700">현장 기록</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-              {recordsPage.roleCompare.recordsLead}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-200/80 bg-white px-4 py-4 sm:px-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">수업 사례</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
-              {recordsPage.roleCompare.casesLead}
-            </p>
-            <Link
-              href={recordsPage.roleCompare.casesHref}
-              data-track={inferTrackFromHref(recordsPage.roleCompare.casesHref)}
-              data-track-label="records-to-cases"
-              className={`mt-3 inline-flex text-sm font-semibold text-indigo-700 ${fineHover}hover:text-indigo-900 ${focusRing}`}
-            >
-              {recordsPage.roleCompare.casesLinkLabel} →
-            </Link>
-          </div>
-        </div>
-      </LandingSection>
+    <div className={recordsPageStack}>
+      <RecordsPageHeader />
 
       <LandingSection className="space-y-4 sm:space-y-5">
-        <h2 className={landingSectionTitle}>{recordsPage.recordsSectionTitle}</h2>
         <div
           className="flex gap-2 overflow-x-auto pb-1 scroll-smooth [scrollbar-width:thin]"
           role="tablist"
-          aria-label="기록 분류"
+          aria-label="수업 사례 분류"
         >
           {recordFilters.map((filter) => {
             const active = activeFilter === filter.id;
