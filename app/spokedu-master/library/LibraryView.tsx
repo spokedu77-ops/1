@@ -17,7 +17,6 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent';
-import { LessonPreviewMedia } from '../components/lesson/LessonPreviewMedia';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
@@ -351,11 +350,9 @@ function ProgramModal({
 
   return (
     <BottomSheet open title="빠른 미리보기" onClose={onClose} size="document">
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)]">
-        <LessonPreviewMedia program={program} />
-        <LessonPreviewContent
-          program={program}
-          badges={
+      <LessonPreviewContent
+        program={program}
+        badges={
             <>
               {locked ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">PRO 전용</span> : null}
               {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">SPOMOVE 명시 연결</span> : null}
@@ -378,7 +375,6 @@ function ProgramModal({
             </div>
           }
         />
-      </div>
     </BottomSheet>
   );
 }

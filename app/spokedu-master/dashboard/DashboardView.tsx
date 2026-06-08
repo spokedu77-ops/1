@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { BookOpen, Clipboard, MonitorPlay, Play, Sparkles } from 'lucide-react';
 import Image from 'next/image';
@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent';
-import { LessonPreviewMedia } from '../components/lesson/LessonPreviewMedia';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
@@ -816,11 +815,9 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 
   return (
     <BottomSheet open title="수업 미리보기" onClose={onClose} size="document">
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)]">
-        <LessonPreviewMedia program={program} />
-        <LessonPreviewContent
-          program={program}
-          footer={
+      <LessonPreviewContent
+        program={program}
+        footer={
             <div className="grid gap-2 sm:grid-cols-2">
               <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)]">
                 <BookOpen className="h-4 w-4" />
@@ -833,7 +830,6 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
             </div>
           }
         />
-      </div>
     </BottomSheet>
   );
 }

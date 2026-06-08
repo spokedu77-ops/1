@@ -153,10 +153,7 @@ function buildContentQuality(program: Program): Program {
         '시범을 한 번 보여준 뒤 짧은 라운드로 시작합니다.',
         '라운드가 끝나면 성공 기준과 안전 규칙을 다시 확인합니다.',
       ],
-      setupNotes: detail.setupNotes?.length ? detail.setupNotes : [
-        '시작선과 반환 지점을 명확히 표시합니다.',
-        '대기 학생이 활동 구역 안으로 들어오지 않도록 위치를 분리합니다.',
-      ],
+      setupNotes: detail.setupNotes?.length ? detail.setupNotes : [],
     },
   };
 }
@@ -263,6 +260,23 @@ function extractLabeledSection(lines: string[], label: string) {
     if (line) values.push(line);
   }
   return values;
+}
+
+function extractVariationsFromActivityTip(source: string | null | undefined): string[] {
+  const lines = (source ?? '').split('\n');
+  const application = extractLabeledSection(lines, '응용 방법');
+  if (application.length > 0) return application;
+
+  const easier = extractLabeledSection(lines, '난이도 낮추기');
+  const harder = extractLabeledSection(lines, '난이도 높이기');
+  const combined: string[] = [];
+  for (const line of easier) {
+    combined.push(line.startsWith('난이도 낮추기') ? line : `난이도 낮추기: ${line}`);
+  }
+  for (const line of harder) {
+    combined.push(line.startsWith('난이도 높이기') ? line : `난이도 높이기: ${line}`);
+  }
+  return combined;
 }
 
 function inferCleanCategory(text: string) {
@@ -400,13 +414,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
       galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
       briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['활동 흐름과 진행 순서를 수업 전에 짧게 확인합니다.']),
       rules: cleanList(program.lessonDetail?.rules, steps),
-      setupNotes: cleanList(
-        program.lessonDetail?.setupNotes,
-        [
-          cleanText(program.space, '') ? `공간: ${cleanText(program.space, '')}` : '',
-          equipment.length ? `준비물: ${equipment.join(', ')}` : '',
-        ].filter(Boolean),
-      ),
+      setupNotes: cleanList(program.lessonDetail?.setupNotes, []),
     },
   };
 }
@@ -524,7 +532,9 @@ export async function GET() {
     const steps = overlay?.activity_method
       ? String(overlay.activity_method).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.steps ?? []).filter(Boolean);
-    const coachScript = (overlay?.activity_tip ?? row.expert_tip ?? '').trim() || '';
+    const activityTipSource = overlay?.activity_tip ?? row.expert_tip ?? '';
+    const coachScript = activityTipSource.trim() || '';
+    const variations = extractVariationsFromActivityTip(activityTipSource);
     const checklistLines = overlay?.checklist
       ? String(overlay.checklist).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.check_list ?? []).filter(Boolean);
@@ -587,7 +597,7 @@ export async function GET() {
         coachScript: meta?.sm_coach_script ?? coachScript,
         parentNote: meta?.sm_parent_note ?? '',
         fieldTips,
-        variations: [],
+        variations,
         safetyNotes,
         relatedSpomoveIds,
         videoUrl,

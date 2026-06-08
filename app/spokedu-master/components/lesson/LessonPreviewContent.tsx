@@ -13,15 +13,26 @@ import {
   getLessonTitle,
 } from '../../lib/lessonDisplay';
 import type { Program } from '../../types';
+import { LessonPreviewMedia } from './LessonPreviewMedia';
 import {
-  LessonBulletList,
+  LessonCoachScript,
+  LessonEquipmentChecklist,
   LessonFullSection,
   LessonNumberedList,
-  LessonPairGrid,
   LessonQuadGrid,
-  LessonScriptText,
   LessonTitle,
 } from './LessonPanels';
+
+function PreviewEquipmentCard({ items }: { items: string[] }) {
+  return (
+    <div className="shrink-0 rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+      <p className="text-[10px] font-black uppercase tracking-[0.1em] text-emerald-600">준비물</p>
+      <div className="mt-2">
+        <LessonEquipmentChecklist items={items} compact />
+      </div>
+    </div>
+  );
+}
 
 export function LessonPreviewContent({
   program,
@@ -37,25 +48,40 @@ export function LessonPreviewContent({
   const script = getLessonScript(program);
   const rules = getLessonRules(program);
 
+  const metaGrid = (
+    <LessonQuadGrid
+      compact
+      cells={[
+        { label: '테마', value: getLessonTheme(program) },
+        { label: '대상', value: getLessonTarget(program) },
+        { label: '기능', value: getLessonFunction(program) },
+        { label: '공간', value: getLessonSpace(program) },
+      ]}
+    />
+  );
+
   return (
-    <div className="space-y-3.5">
+    <div className="flex flex-col gap-4">
       <LessonTitle title={title} badges={badges} />
-      <LessonQuadGrid
-        cells={[
-          { label: '테마', value: getLessonTheme(program) },
-          { label: '대상', value: getLessonTarget(program) },
-          { label: '기능', value: getLessonFunction(program) },
-          { label: '공간', value: getLessonSpace(program) },
-        ]}
-      />
-      <LessonPairGrid
-        left={{ label: '준비물', content: <LessonBulletList items={equipment} /> }}
-        right={{ label: '수업 스크립트', content: <LessonScriptText text={script} /> }}
-      />
-      <LessonFullSection title="활동 방법">
-        <LessonNumberedList items={rules} />
-      </LessonFullSection>
-      {footer}
+
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(240px,0.65fr)]">
+        <div className="flex min-w-0 flex-col gap-3">
+          <LessonPreviewMedia program={program} layout="preview" />
+          {metaGrid}
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3">
+          <PreviewEquipmentCard items={equipment} />
+          <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">수업 스크립트</p>
+            <LessonCoachScript text={script} prominent />
+          </div>
+          <LessonFullSection title="활동 방법">
+            <LessonNumberedList items={rules} />
+          </LessonFullSection>
+          {footer}
+        </div>
+      </div>
     </div>
   );
 }

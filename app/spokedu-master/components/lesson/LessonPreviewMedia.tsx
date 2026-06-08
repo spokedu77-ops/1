@@ -19,7 +19,13 @@ function CoverImage({ src, alt, sizes, className }: { src: string; alt: string; 
   return <Image src={src} alt={alt} fill sizes={sizes} className={className} unoptimized />;
 }
 
-export function LessonPreviewMedia({ program }: { program: Program }) {
+export function LessonPreviewMedia({
+  program,
+  layout = 'default',
+}: {
+  program: Program;
+  layout?: 'default' | 'preview';
+}) {
   const heroImage = resolveProgramHero(program);
   const trustedVideoUrl = getTrustedProgramVideoUrl(program);
   const videoEmbedUrl = getVideoEmbedUrl(trustedVideoUrl, { autoplay: true });
@@ -70,12 +76,25 @@ export function LessonPreviewMedia({ program }: { program: Program }) {
     );
   }
 
+  const frameClass =
+    layout === 'preview'
+      ? hasVideo
+        ? 'relative aspect-video w-full min-h-[200px] sm:min-h-[260px] lg:min-h-[300px]'
+        : 'relative aspect-[4/3] w-full sm:aspect-video'
+      : hasVideo
+        ? 'relative mx-auto aspect-video w-full'
+        : 'relative mx-auto aspect-square w-full max-w-[1250px]';
+
   return (
-    <div className="lg:h-fit lg:self-start">
-      <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
-        <div className={`relative mx-auto ${hasVideo ? 'aspect-video w-full' : 'aspect-square w-full max-w-[1250px]'}`}>
-          {media}
-        </div>
+    <div className={layout === 'preview' ? 'min-w-0 w-full' : 'lg:h-fit lg:self-start'}>
+      <div
+        className={
+          layout === 'preview'
+            ? 'w-full overflow-hidden rounded-[14px] border border-slate-200 bg-slate-950 shadow-[0_12px_40px_rgba(15,23,42,0.14)]'
+            : 'overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.16)]'
+        }
+      >
+        <div className={frameClass}>{media}</div>
       </div>
     </div>
   );

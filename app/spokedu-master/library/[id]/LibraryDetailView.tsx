@@ -15,11 +15,13 @@ import { useMemo, useState } from 'react';
 
 import {
   LessonBulletList,
+  LessonChecklistCard,
+  LessonCoachScript,
   LessonFullSection,
+  LessonMetaGrid,
   LessonNumberedList,
-  LessonPairGrid,
-  LessonScriptText,
   LessonTitle,
+  LessonVariationText,
 } from '../../components/lesson/LessonPanels';
 import { cleanText } from '../../lib/clean';
 import {
@@ -29,7 +31,6 @@ import {
   getLessonMovement,
   getLessonRules,
   getLessonScript,
-  getLessonSetupNotes,
   getLessonSpace,
   getLessonTarget,
   getLessonTheme,
@@ -94,7 +95,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const title = getLessonTitle(program);
   const focus = getLessonFunction(program) || getLessonTheme(program);
   const equipment = getLessonEquipment(program);
-  const setupNotes = getLessonSetupNotes(program);
   const script = getLessonScript(program);
   const briefingNotes = getLessonBriefingNotes(program);
   const ruleItems = getLessonRules(program);
@@ -142,52 +142,45 @@ export default function LibraryDetailView({ id }: { id: string }) {
             title={title}
             badges={usageCount > 0 ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">{usageCount}회 사용</span> : undefined}
           />
-          <div className="mt-4 space-y-3">
-            <LessonPairGrid
-              left={{ label: '테마', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonTheme(program) || '—'}</p> }}
-              right={{ label: '대상', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonTarget(program) || '—'}</p> }}
-            />
-            <LessonPairGrid
-              left={{ label: '기능', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonFunction(program) || '—'}</p> }}
-              right={{ label: '움직임', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonMovement(program) || '—'}</p> }}
-            />
-            <LessonPairGrid
-              left={{ label: '공간', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonSpace(program) || '—'}</p> }}
-              right={{ label: '시간', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonTime(program) || '—'}</p> }}
+          <div className="mt-3">
+            <LessonMetaGrid
+              cells={[
+                { label: '테마', value: getLessonTheme(program) || '—' },
+                { label: '대상', value: getLessonTarget(program) || '—' },
+                { label: '기능', value: getLessonFunction(program) || '—' },
+                { label: '움직임', value: getLessonMovement(program) || '—' },
+                { label: '공간', value: getLessonSpace(program) || '—' },
+                { label: '시간', value: getLessonTime(program) || '—' },
+              ]}
             />
           </div>
         </section>
 
         <LessonFullSection title="사전 체크리스트">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-emerald-600">준비물</p>
-              <LessonBulletList items={equipment} />
-            </div>
-            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-indigo-600">초기 교구 세팅</p>
+          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-4">
+            <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">초기 교구 세팅</p>
               {setupImage ? (
-                <div className="mt-3 overflow-hidden rounded-[12px] border border-slate-200 bg-white">
-                  <div className={THUMBNAIL_FRAME}>
-                    <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes={THUMBNAIL_SIZES} className="object-cover" unoptimized />
+                <div className="mt-2 overflow-hidden rounded-[10px] border border-slate-200 bg-white">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-square lg:aspect-[4/5]">
+                    <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes="(min-width: 1024px) 480px, 100vw" className="object-cover" unoptimized />
                   </div>
                 </div>
-              ) : null}
-              {setupNotes.length > 0 ? (
-                <ul className="mt-3 space-y-2">
-                  {setupNotes.map((item) => (
-                    <li key={item} className="text-[13px] font-semibold leading-5 text-slate-700">{item}</li>
-                  ))}
-                </ul>
-              ) : !setupImage ? <p className="mt-2 text-[13px] text-slate-400">—</p> : null}
+              ) : (
+                <p className="mt-2 text-[12px] text-slate-400">—</p>
+              )}
             </div>
-            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-600">수업 스크립트</p>
-              <LessonScriptText text={script} />
-            </div>
-            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-600">사전 교육</p>
-              <LessonBulletList items={briefingNotes} />
+
+            <div className="flex flex-col gap-3">
+              <LessonChecklistCard label="준비물" accent="emerald">
+                <LessonBulletList items={equipment} compact />
+              </LessonChecklistCard>
+              <LessonChecklistCard label="수업 스크립트" accent="indigo">
+                <LessonCoachScript text={script} />
+              </LessonChecklistCard>
+              <LessonChecklistCard label="사전 교육">
+                <LessonBulletList items={briefingNotes} compact />
+              </LessonChecklistCard>
             </div>
           </div>
         </LessonFullSection>
@@ -230,7 +223,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
         {variations.length > 0 ? (
           <LessonFullSection title="변형 방법">
-            <LessonBulletList items={variations} />
+            <LessonVariationText text={variations.join('\n')} />
           </LessonFullSection>
         ) : null}
 

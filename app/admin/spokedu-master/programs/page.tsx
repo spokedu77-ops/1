@@ -121,7 +121,6 @@ type EditForm = {
   setupImageUrl: string;
   galleryImageUrls: string;
   equipment: string;
-  setupNotes: string;
   briefingNotes: string;
   safetyNotes: string;
   steps: string;
@@ -273,7 +272,6 @@ type QualityReport = {
     space: boolean;
     duration: boolean;
     equipment: boolean;
-    setupNotes: boolean;
     steps: boolean;
     variations: boolean;
     operationTips: boolean;
@@ -309,7 +307,6 @@ function buildQualityReport(checks: QualityReport['checks'], displayOrder: numbe
     checks.space,
     checks.duration,
     checks.equipment,
-    checks.setupNotes,
     checks.steps,
     checks.variations,
     checks.parentNote,
@@ -321,11 +318,11 @@ function buildQualityReport(checks: QualityReport['checks'], displayOrder: numbe
     checks.space &&
     checks.duration &&
     checks.equipment &&
-    checks.setupNotes &&
+    checks.setupImage &&
     checks.steps;
   const detailReady =
     checks.equipment &&
-    checks.setupNotes &&
+    checks.setupImage &&
     checks.steps &&
     checks.variations &&
     checks.parentNote;
@@ -364,7 +361,7 @@ function qualityReasons(checks: QualityReport['checks']) {
     ['공간', checks.space],
     ['시간', checks.duration],
     ['준비물', checks.equipment],
-    ['세팅 방법', checks.setupNotes],
+    ['세팅 이미지', checks.setupImage],
     ['진행 순서', checks.steps],
     ['난이도 조절', checks.variations],
     ['운영 팁', checks.operationTips],
@@ -381,7 +378,7 @@ function missingQualityLabels(checks: QualityReport['checks']) {
     ['공간', checks.space],
     ['시간', checks.duration],
     ['준비물', checks.equipment],
-    ['세팅 방법', checks.setupNotes],
+    ['세팅 이미지', checks.setupImage],
     ['활동 방법', checks.steps],
     ['응용 방법', checks.variations],
     ['학부모 문구', checks.parentNote],
@@ -417,11 +414,6 @@ function getItemQuality(item: ProgramItem): QualityReport {
     space: Boolean(item.effective.space),
     duration: Boolean(item.effective.duration),
     equipment: item.effective.equipment.length > 0,
-    setupNotes: Boolean(
-      extractSection(checklist, '세팅 방법') ||
-      extractSection(checklist, '사전 교육') ||
-      splitLines(checklist).length,
-    ),
     steps: item.effective.steps.length > 0,
     variations: Boolean(extractSection(activityTip, '난이도 낮추기') || extractSection(activityTip, '난이도 높이기') || extractSection(activityTip, '응용 방법')),
     operationTips: Boolean(extractSection(activityTip, '운영 팁') || activityTip.trim()),
@@ -441,7 +433,6 @@ function getFormQuality(form: EditForm): QualityReport {
     space: Boolean(form.space.trim()),
     duration: Boolean(form.duration.trim()),
     equipment: splitLines(form.equipment).length > 0,
-    setupNotes: Boolean(form.setupNotes.trim() || form.briefingNotes.trim()),
     steps: splitLines(form.steps).length > 0,
     variations: Boolean(form.easier.trim() || form.harder.trim() || form.variations.trim()),
     operationTips: Boolean(form.operationTips.trim()),
@@ -499,7 +490,6 @@ function toForm(item: ProgramItem): EditForm {
     setupImageUrl: meta?.sm_setup_image_url || '',
     galleryImageUrls: (meta?.sm_gallery_image_urls ?? []).join('\n'),
     equipment: overlay?.equipment || joinLines(item.curriculum.equipment),
-    setupNotes: extractSection(checklist, '세팅 방법'),
     briefingNotes: extractSection(checklist, '사전 교육'),
     safetyNotes: extractSection(checklist, '안전 포인트') || plainSectionFallback(checklist),
     steps: overlay?.activity_method || joinLines(item.curriculum.steps),
@@ -855,7 +845,6 @@ export default function AdminSmProgramsPage() {
     setSaving(true);
     try {
       const checklist = [
-        sectionText('세팅 방법', form.setupNotes),
         sectionText('사전 교육', form.briefingNotes),
         sectionText('안전 포인트', form.safetyNotes),
       ].filter(Boolean).join('\n');
@@ -1140,7 +1129,6 @@ export default function AdminSmProgramsPage() {
                         onChange={(next) => updateForm('setupImageUrl', next)}
                       />
                     </Field>
-                    <Field label="초기 교구 세팅 (메모)"><TextArea rows={5} value={form.setupNotes} onChange={(e) => updateForm('setupNotes', e.target.value)} /></Field>
                     <Field label="수업 스크립트"><TextArea rows={6} value={form.coachScript} onChange={(e) => updateForm('coachScript', e.target.value)} /></Field>
                     <Field label="사전 교육"><TextArea rows={5} value={form.briefingNotes} onChange={(e) => updateForm('briefingNotes', e.target.value)} /></Field>
                   </div>

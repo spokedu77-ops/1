@@ -33,6 +33,30 @@ export function formatTaggedValues(tags: string[] | undefined, prefix: string, f
   return values.length ? values.join(', ') : fallback;
 }
 
+const STRENGTH_BODY_FUNCTIONS = new Set(['근력', '근지구력']);
+
+export function mergeStrengthBodyFunctions(values: string[]): string[] {
+  const merged: string[] = [];
+  let strengthAdded = false;
+
+  for (const value of values) {
+    if (STRENGTH_BODY_FUNCTIONS.has(value)) {
+      if (!strengthAdded) {
+        merged.push('근력·근지구력');
+        strengthAdded = true;
+      }
+      continue;
+    }
+    merged.push(value);
+  }
+
+  return merged;
+}
+
+export function formatBodyFunctions(values: string[]) {
+  return mergeStrengthBodyFunctions(values).join(', ');
+}
+
 export function getLessonTitle(program: Program, fallback = 'SPOKEDU 수업') {
   return cleanText(program.title, fallback);
 }
@@ -51,8 +75,8 @@ export function getLessonTarget(program: Program) {
 }
 
 export function getLessonFunction(program: Program) {
-  const fromTags = formatTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction);
-  if (fromTags) return fromTags;
+  const fromTags = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction);
+  if (fromTags.length > 0) return formatBodyFunctions(fromTags);
   const focus = cleanText(program.lessonDetail?.developmentFocus, '');
   return isLessonPlaceholder(focus) ? '' : focus;
 }
