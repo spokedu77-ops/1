@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { BookOpen, Clipboard, MonitorPlay, Play, Sparkles } from 'lucide-react';
 import Image from 'next/image';
@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
 import { CategoryIcon } from '../components/ui/ProgramThumb';
+import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent';
+import { LessonPreviewMedia } from '../components/lesson/LessonPreviewMedia';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
@@ -436,7 +438,7 @@ function Hero({ program, onPreview }: { program: Program; onPreview: () => void 
             </button>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative hidden min-h-[250px] overflow-hidden bg-slate-100 sm:block">
+        <button type="button" onClick={onPreview} className="relative hidden aspect-square w-full max-w-[1250px] overflow-hidden bg-slate-100 sm:block">
           {heroImage ? (
             <>
               <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 460px, 100vw" className="object-cover" priority quality={92} />
@@ -493,9 +495,9 @@ function VideoCard({ item, onPreview, premiumLabel }: { item: VideoItem; onPrevi
   const cleanOverlayCue = thumbOverlayCue && !isPlaceholderText(thumbOverlayCue) ? thumbOverlayCue : null;
   return (
     <button type="button" onClick={() => item.program && onPreview(item.program)} className="group block w-full cursor-pointer text-left">
-      <div className="relative aspect-video overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_14px_32px_rgba(99,102,241,0.10)]">
+      <div className="relative aspect-square w-full max-w-[1250px] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_8px_24px_rgba(15,23,42,0.06)] transition-all duration-300 group-hover:border-indigo-200 group-hover:shadow-[0_14px_32px_rgba(99,102,241,0.10)]">
         {item.thumbnail ? (
-          <CoverImage src={item.thumbnail} alt={item.title} sizes="(min-width: 1024px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]" quality={90} />
+          <CoverImage src={item.thumbnail} alt={item.title} sizes="(min-width: 1024px) 400px, (min-width: 768px) 50vw, 100vw" className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]" quality={90} />
         ) : (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-100 via-slate-50 to-white">
             <div className="grid h-14 w-14 place-items-center rounded-2xl bg-white text-indigo-600 ring-1 ring-indigo-100 shadow-sm">
@@ -802,21 +804,6 @@ function ExplanationToolEntry({ program }: { program: Program }) {
 function HomeProgramPreview({ program, onClose }: { program: Program; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const detail = program.lessonDetail;
-  const heroImage = getHeroImage(program);
-  const trustedVideoUrl = getTrustedProgramVideoUrl(program);
-  const videoEmbedUrl = getVideoEmbedUrl(trustedVideoUrl, { autoplay: true });
-  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(trustedVideoUrl) ? trustedVideoUrl : undefined;
-  const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(trustedVideoUrl) : undefined;
-  const rules = detail?.rules?.length ? detail.rules : program.steps;
-  const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
-  const setupNotes = (detail?.setupNotes ?? []).filter((item) => !isPlaceholderText(item));
-  const briefingNotes = (detail?.briefingNotes ?? []).filter((item) => !isPlaceholderText(item));
-  const checklistPreview = [...setupNotes, ...briefingNotes].slice(0, 2);
-  const previewFacts = [
-    ['대상', formatGradeBadge(detail?.recommendedAge || getProgramGrade(program))],
-    ['공간', formatSpaceBadge(getProgramSpace(program))],
-    ['시간', displayMasterDuration(program.duration)],
-  ].filter(([, value]) => value && !isPlaceholderText(value));
   const parentCopy =
     detail?.parentNote ||
     `오늘은 ${getProgramTitle(program)} 활동으로 ${detail?.developmentFocus || getProgramCategory(program)}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`;
@@ -830,113 +817,22 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
   return (
     <BottomSheet open title="수업 미리보기" onClose={onClose} size="document">
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)]">
-        <div className="lg:h-fit lg:self-start">
-          <div className="overflow-hidden rounded-[18px] border border-slate-200 bg-slate-950 shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
-            <div className="relative aspect-video">
-              {videoEmbedUrl ? (
-                <iframe
-                  key={`${program.id}-${videoEmbedUrl}`}
-                  src={videoEmbedUrl}
-                  title={`${getProgramTitle(program)} 참고 영상`}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                />
-              ) : directVideoUrl ? (
-                <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
-              ) : externalVideoUrl ? (
-                <div className="grid h-full place-items-center bg-slate-950 p-6 text-center text-white">
-                  <div>
-                    <Play className="mx-auto h-10 w-10 fill-current text-red-500" />
-                    <p className="mt-4 text-base font-black">참고 영상 링크</p>
-                    <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-black text-slate-950">
-                      유튜브에서 열기
-                    </a>
-                  </div>
-                </div>
-              ) : heroImage ? (
-                <CoverImage src={heroImage} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 720px, 100vw" className="object-cover" quality={92} />
-              ) : (
-                <div className="grid h-full place-items-center bg-slate-900 text-white">
-                  <CategoryIcon category={getProgramCategory(program)} size={48} />
-                </div>
-              )}
+        <LessonPreviewMedia program={program} />
+        <LessonPreviewContent
+          program={program}
+          footer={
+            <div className="grid gap-2 sm:grid-cols-2">
+              <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)]">
+                <BookOpen className="h-4 w-4" />
+                수업 자료 보기
+              </Link>
+              <button type="button" onClick={copyParentNote} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+                <Clipboard className="h-4 w-4" />
+                {copied ? '복사 완료 ✓' : '알림장 문구 복사'}
+              </button>
             </div>
-          </div>
-        </div>
-        <div className="space-y-3.5">
-          <header>
-            <p className="text-xs font-black tracking-[0.14em] text-indigo-600">{getProgramCategory(program)}</p>
-            <h2 className="mt-2 text-2xl font-black leading-tight text-slate-950">{getProgramTitle(program)}</h2>
-            <p className="mt-2 line-clamp-2 text-sm font-semibold leading-6 text-slate-600">{program.description}</p>
-          </header>
-          {previewFacts.length > 0 ? (
-            <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
-              {previewFacts.map(([label, value]) => (
-                <div key={label} className="rounded-[10px] border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
-                  <p className="text-[12px] font-black tracking-[0.08em] text-indigo-500">{label}</p>
-                  <p className="mt-1 line-clamp-2 text-[13px] font-black leading-4 text-slate-950">{value}</p>
-                </div>
-              ))}
-            </section>
-          ) : null}
-          {equipment.length > 0 || checklistPreview.length > 0 ? (
-            <section className={`grid gap-3 ${equipment.length > 0 && checklistPreview.length > 0 ? 'md:grid-cols-2' : ''}`}>
-              {equipment.length > 0 ? (
-                <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-                  <h3 className="text-[13px] font-black uppercase tracking-[0.08em] text-emerald-700">준비물</h3>
-                  <ul className="mt-3 space-y-2">
-                    {equipment.slice(0, 6).map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-[13px] font-bold leading-5 text-slate-700">
-                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" />
-                        <span className="min-w-0">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-              {checklistPreview.length > 0 ? (
-                <div className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-                  <h3 className="text-[13px] font-black uppercase tracking-[0.08em] text-indigo-700">수업 전 체크</h3>
-                  <ul className="mt-3 space-y-2">
-                    {checklistPreview.map((item) => (
-                      <li key={item} className="flex items-start gap-2 text-[13px] font-bold leading-5 text-slate-700">
-                        <span className="mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded border border-indigo-200 bg-indigo-50 text-[10px] font-black text-indigo-600">✓</span>
-                        <span className="min-w-0">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-          {rules.length > 0 ? (
-            <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
-              <h3 className="flex items-center gap-2 text-sm font-black text-slate-950">
-                <BookOpen className="h-4 w-4 text-indigo-600" />
-                활동 방법
-              </h3>
-              <ul className="mt-3 space-y-2">
-                {rules.slice(0, 2).map((step, index) => (
-                  <li key={`${step}-${index}`} className="grid grid-cols-[28px_1fr] gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">
-                    <span className="grid h-7 w-7 place-items-center rounded-full bg-white text-xs font-black text-indigo-600 ring-1 ring-slate-200">{index + 1}</span>
-                    <span className="min-w-0 font-semibold">{step}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)]">
-              <BookOpen className="h-4 w-4" />
-              수업 자료 보기
-            </Link>
-            <button type="button" onClick={copyParentNote} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
-              <Clipboard className="h-4 w-4" />
-              {copied ? '복사 완료 ✓' : '알림장 문구 복사'}
-            </button>
-          </div>
-        </div>
+          }
+        />
       </div>
     </BottomSheet>
   );

@@ -3,31 +3,45 @@
 import {
   ArrowLeft,
   Bookmark,
-  CheckCircle2,
   Clipboard,
   ExternalLink,
   FileText,
-  MapPin,
   MonitorPlay,
   Play,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import type { ReactNode } from 'react';
 import { useMemo, useState } from 'react';
 
-import { cleanList, cleanText } from '../../lib/clean';
+import {
+  LessonBulletList,
+  LessonFullSection,
+  LessonNumberedList,
+  LessonPairGrid,
+  LessonScriptText,
+  LessonTitle,
+} from '../../components/lesson/LessonPanels';
+import { cleanText } from '../../lib/clean';
+import {
+  getLessonBriefingNotes,
+  getLessonEquipment,
+  getLessonFunction,
+  getLessonMovement,
+  getLessonRules,
+  getLessonScript,
+  getLessonSetupNotes,
+  getLessonSpace,
+  getLessonTarget,
+  getLessonTheme,
+  getLessonTime,
+  getLessonTitle,
+  getLessonVariations,
+} from '../../lib/lessonDisplay';
 import {
   getExternalVideoUrl,
   getVideoEmbedUrl,
   isDirectVideoUrl,
-  resolveProgramHero,
 } from '../../lib/program-media';
-import {
-  displayMasterDuration,
-  normalizeMasterSpace,
-  normalizeMasterTarget,
-} from '../../lib/programDisplayTags';
 import {
   findOfficialSpomovePreset,
   officialPresetSessionHref,
@@ -35,75 +49,13 @@ import {
 import { useMasterStore } from '../../store';
 import type { Program } from '../../types';
 
-const PLACEHOLDER_PATTERN = /확인 필요|정보 없음|미정|undefined|null|도구 정보 아직 없음/i;
-
-function usableText(value: string | undefined | null, fallback = '') {
-  const text = cleanText(value ?? undefined, fallback).trim();
-  if (!text || PLACEHOLDER_PATTERN.test(text)) return '';
-  return text;
-}
-
-function usableList(items: string[] | undefined, fallback: string[] = []) {
-  return cleanList(items, fallback)
-    .map((item) => usableText(item))
-    .filter((item): item is string => Boolean(item));
-}
+const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
+const THUMBNAIL_SIZES = '(min-width: 1024px) 1250px, 100vw';
 
 function getParentCopy(program: Program, title: string, focus: string) {
   return cleanText(
     program.lessonDetail?.parentNote,
     `오늘은 ${title} 활동으로 ${focus}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`,
-  );
-}
-
-function DetailSection({ title, icon: Icon, children, id }: { title: string; icon: typeof FileText; children: ReactNode; id?: string }) {
-  return (
-    <section id={id} className="scroll-mt-24 rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)] sm:p-5">
-      <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-        <Icon className="h-4 w-4 text-indigo-600" />
-        {title}
-      </h2>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
-
-function FactGrid({ rows }: { rows: Array<[string, string]> }) {
-  return (
-    <div className="grid grid-cols-2 gap-2 xl:grid-cols-4">
-      {rows.map(([label, value]) => (
-        <div key={label} className="rounded-[13px] border border-indigo-100 bg-indigo-50/60 px-3 py-2.5">
-          <p className="text-[10px] font-black tracking-[0.12em] text-indigo-500">{label}</p>
-          <p className="mt-1 line-clamp-2 text-[13px] font-black leading-4 text-slate-950">{value}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function BulletList({ items }: { items: string[] }) {
-  return (
-    <ul className="space-y-2">
-      {items.map((item) => (
-        <li key={item} className="flex gap-2 text-sm leading-6 text-slate-700">
-          <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function Checklist({ items }: { items: string[] }) {
-  return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {items.map((item) => (
-        <div key={item} className="flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-700">
-          <span className="grid h-4 w-4 shrink-0 place-items-center rounded border border-indigo-200 bg-white text-[10px] font-black text-indigo-600">✓</span>
-          <span className="min-w-0 leading-5">{item}</span>
-        </div>
-      ))}
-    </div>
   );
 }
 
@@ -139,40 +91,27 @@ export default function LibraryDetailView({ id }: { id: string }) {
   }
 
   const detail = program.lessonDetail;
-  const title = usableText(program.title, 'SPOKEDU 수업');
-  const category = usableText(program.category, '체육 수업');
-  const grade = usableText(normalizeMasterTarget(program.grade));
-  const space = usableText(normalizeMasterSpace(program.space));
-  const description = usableText(program.description, `${title} 수업 운영안입니다.`);
-  const equipment = usableList(program.equipment);
-  const recommendedAge = usableText(normalizeMasterTarget(detail?.recommendedAge), grade);
-  const focus = usableText(detail?.developmentFocus, category);
-  const ruleItems = usableList(detail?.rules?.length ? detail.rules : program.steps);
-  const setupNotes = usableList(detail?.setupNotes);
-  const briefingNotes = usableList(detail?.briefingNotes);
-  const fieldTips = usableList(detail?.fieldTips);
-  const variations = usableList(detail?.variations);
+  const title = getLessonTitle(program);
+  const focus = getLessonFunction(program) || getLessonTheme(program);
+  const equipment = getLessonEquipment(program);
+  const setupNotes = getLessonSetupNotes(program);
+  const script = getLessonScript(program);
+  const briefingNotes = getLessonBriefingNotes(program);
+  const ruleItems = getLessonRules(program);
+  const variations = getLessonVariations(program);
   const parentCopy = getParentCopy(program, title, focus);
   const favorite = favorites.includes(program.id);
   const usageCount = usageRecords.length;
   const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
-  const heroImage = resolveProgramHero(program);
-  const setupImage = detail?.setupImageUrl;
+  const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
+  const setupImage = detail?.setupImageUrl?.trim();
   const galleryImages = (detail?.galleryImageUrls ?? []).filter((url) => url.trim());
   const relatedSpomovePresets = (detail?.relatedSpomoveIds ?? [])
     .map((spomoveId) => findOfficialSpomovePreset(spomoveId))
     .filter((preset): preset is NonNullable<typeof preset> => Boolean(preset));
   const primarySpomovePreset = relatedSpomovePresets[0];
-  const parentSectionId = 'detail-parent-note';
-
-  const overviewRows = [
-    ['대상', recommendedAge],
-    ['공간', space],
-    ['시간', displayMasterDuration(program.duration)],
-    ['준비물', equipment.length > 1 ? `${equipment[0]} 외 ${equipment.length - 1}` : equipment[0] ?? ''],
-  ].filter(([, value]) => value && !PLACEHOLDER_PATTERN.test(value)) as Array<[string, string]>;
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -187,212 +126,175 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <ArrowLeft className="h-4 w-4" />
           목록
         </Link>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => toggleFavorite(program.id)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600"
-            aria-label={favorite ? '저장한 수업 해제' : '수업 저장'}
-          >
-            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => toggleFavorite(program.id)}
+          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600"
+          aria-label={favorite ? '저장한 수업 해제' : '수업 저장'}
+        >
+          <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
+        </button>
       </header>
 
-      <div className="mx-auto grid w-full max-w-[1360px] gap-5 px-4 py-6 sm:px-6 lg:grid-cols-[180px_minmax(0,1fr)] lg:px-8">
-        <aside className="hidden lg:block">
-          <nav className="sticky top-20 rounded-[14px] border border-slate-200 bg-white/80 p-2.5">
-            {[
-              ['개요', 'detail-overview'],
-              ['준비물', 'detail-equipment'],
-              ['세팅 방법', 'detail-setup'],
-              ['활동 방법', 'detail-steps'],
-              ['응용 방법', 'detail-variations'],
-              ['운영 팁', 'detail-tips'],
-              ['학부모 설명', parentSectionId],
-            ].map(([label, href]) => (
-              <a key={href} href={`#${href}`} className="block rounded-lg px-2.5 py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-50 hover:text-slate-950">
-                {label}
-              </a>
-            ))}
-          </nav>
-        </aside>
+      <div className="mx-auto w-full max-w-[1360px] space-y-4 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-6">
+          <LessonTitle
+            title={title}
+            badges={usageCount > 0 ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">{usageCount}회 사용</span> : undefined}
+          />
+          <div className="mt-4 space-y-3">
+            <LessonPairGrid
+              left={{ label: '테마', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonTheme(program) || '—'}</p> }}
+              right={{ label: '대상', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonTarget(program) || '—'}</p> }}
+            />
+            <LessonPairGrid
+              left={{ label: '기능', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonFunction(program) || '—'}</p> }}
+              right={{ label: '움직임', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonMovement(program) || '—'}</p> }}
+            />
+            <LessonPairGrid
+              left={{ label: '공간', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonSpace(program) || '—'}</p> }}
+              right={{ label: '시간', content: <p className="mt-2 text-[13px] font-black leading-5 text-slate-950">{getLessonTime(program) || '—'}</p> }}
+            />
+          </div>
+        </section>
 
-        <div className="min-w-0 space-y-4">
-          <section id="detail-overview" className="overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.06)]">
-            <div className="relative aspect-video bg-slate-950">
-              {videoEmbedUrl ? (
-                <iframe
-                  key={`${program.id}-${videoEmbedUrl}`}
-                  src={videoEmbedUrl}
-                  title={`${title} 참고 영상`}
-                  className="h-full w-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                  allowFullScreen
-                />
-              ) : directVideoUrl ? (
-                <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
-              ) : externalVideoUrl ? (
-                <div className="grid h-full place-items-center p-6 text-center text-white">
-                  <div>
-                    <Play className="mx-auto h-10 w-10 fill-current text-red-500" />
-                    <p className="mt-4 text-base font-black">참고 영상 링크</p>
-                    <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950">
-                      유튜브에서 열기
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
-                </div>
-              ) : heroImage ? (
-                <Image src={heroImage} alt={title} fill sizes="(min-width: 1024px) 1180px, 100vw" className="object-cover" unoptimized />
-              ) : (
-                <div className="grid h-full place-items-center text-white">
-                  <FileText className="h-10 w-10" />
-                </div>
-              )}
-              {videoEmbedUrl || directVideoUrl ? (
-                <div className="pointer-events-none absolute left-4 top-4 rounded-full bg-red-600/95 px-3 py-1.5 text-xs font-black text-white shadow-lg">
-                  참고 영상 먼저 보기
-                </div>
-              ) : null}
+        <LessonFullSection title="사전 체크리스트">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-emerald-600">준비물</p>
+              <LessonBulletList items={equipment} />
             </div>
-            <div className="p-5 sm:p-6 lg:p-7">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">{category}</span>
-                {usageCount > 0 ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">{usageCount}회 사용</span> : null}
-              </div>
-              <h1 className="mt-4 text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{title}</h1>
-              <p className="mt-3 max-w-3xl text-sm font-semibold leading-7 text-slate-700">{description}</p>
-              {overviewRows.length > 0 ? (
-                <div className="mt-5">
-                  <FactGrid rows={overviewRows} />
-                </div>
-              ) : null}
-            </div>
-          </section>
-
-          {equipment.length > 0 ? (
-            <DetailSection id="detail-equipment" title="준비물" icon={CheckCircle2}>
-              <Checklist items={equipment} />
-            </DetailSection>
-          ) : null}
-
-          {(setupImage || setupNotes.length > 0) ? (
-            <DetailSection id="detail-setup" title="세팅 방법" icon={MapPin}>
+            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-indigo-600">초기 교구 세팅</p>
               {setupImage ? (
-                <div className="mb-4 overflow-hidden rounded-[14px] border border-indigo-100 bg-indigo-50/40">
-                  <div className="relative aspect-video min-h-[200px]">
-                    <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes="(min-width: 1024px) 900px, 100vw" className="object-cover" unoptimized />
+                <div className="mt-3 overflow-hidden rounded-[12px] border border-slate-200 bg-white">
+                  <div className={THUMBNAIL_FRAME}>
+                    <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes={THUMBNAIL_SIZES} className="object-cover" unoptimized />
                   </div>
                 </div>
               ) : null}
-              {setupNotes.length > 0 ? <BulletList items={setupNotes} /> : null}
-            </DetailSection>
-          ) : null}
+              {setupNotes.length > 0 ? (
+                <ul className="mt-3 space-y-2">
+                  {setupNotes.map((item) => (
+                    <li key={item} className="text-[13px] font-semibold leading-5 text-slate-700">{item}</li>
+                  ))}
+                </ul>
+              ) : !setupImage ? <p className="mt-2 text-[13px] text-slate-400">—</p> : null}
+            </div>
+            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-600">수업 스크립트</p>
+              <LessonScriptText text={script} />
+            </div>
+            <div className="rounded-[14px] border border-slate-200 bg-slate-50 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.1em] text-slate-600">사전 교육</p>
+              <LessonBulletList items={briefingNotes} />
+            </div>
+          </div>
+        </LessonFullSection>
 
-          {galleryImages.length > 0 ? (
-            <DetailSection id="detail-gallery" title="수업 장면" icon={FileText}>
+        {hasVideo ? (
+          <LessonFullSection title="영상">
+            <div className="overflow-hidden rounded-[14px] bg-slate-950">
+              <div className="relative aspect-video">
+                {videoEmbedUrl ? (
+                  <iframe
+                    key={`${program.id}-${videoEmbedUrl}`}
+                    src={videoEmbedUrl}
+                    title={`${title} 참고 영상`}
+                    className="h-full w-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                    allowFullScreen
+                  />
+                ) : directVideoUrl ? (
+                  <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
+                ) : (
+                  <div className="grid h-full place-items-center p-6 text-center text-white">
+                    <div>
+                      <Play className="mx-auto h-10 w-10 fill-current text-red-500" />
+                      <p className="mt-4 text-base font-black">참고 영상 링크</p>
+                      <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950">
+                        유튜브에서 열기
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </LessonFullSection>
+        ) : null}
+
+        <LessonFullSection title="활동 방법">
+          <LessonNumberedList items={ruleItems} />
+        </LessonFullSection>
+
+        {variations.length > 0 ? (
+          <LessonFullSection title="변형 방법">
+            <LessonBulletList items={variations} />
+          </LessonFullSection>
+        ) : null}
+
+        <details className="rounded-[14px] border border-slate-200 bg-white p-5">
+          <summary className="cursor-pointer text-sm font-black text-slate-700">추가 자료 (학부모 문구 · SPOMOVE · 수업 장면)</summary>
+          <div className="mt-4 space-y-4">
+            <div className="rounded-xl bg-emerald-50 p-4">
+              <p className="text-xs font-black text-emerald-800">학부모 설명 문구</p>
+              <p className="mt-2 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
+              <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
+                <Clipboard className="h-4 w-4" />
+                {copied ? '복사 완료' : '학부모 문구 복사'}
+              </button>
+            </div>
+
+            {relatedSpomovePresets.length > 0 ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {relatedSpomovePresets.map((preset) => (
+                  <Link
+                    key={preset.id}
+                    href={officialPresetSessionHref(preset)}
+                    className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
+                  >
+                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
+                      <MonitorPlay className="h-5 w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <strong className="block truncate text-sm font-black text-slate-950">{preset.title}</strong>
+                      <span className="mt-1 block text-xs font-semibold text-indigo-700">TV·빔 실행</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+
+            {galleryImages.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2">
                 {galleryImages.map((imageUrl, index) => (
                   <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
-                    <div className="relative aspect-video">
-                      <Image src={imageUrl} alt={`${title} 수업 장면 ${index + 1}`} fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" unoptimized />
+                    <div className={THUMBNAIL_FRAME}>
+                      <Image src={imageUrl} alt={`${title} 수업 장면 ${index + 1}`} fill sizes="(min-width: 1024px) 600px, 100vw" className="object-cover" unoptimized />
                     </div>
                   </div>
                 ))}
               </div>
-            </DetailSection>
-          ) : null}
-
-          {ruleItems.length > 0 ? (
-            <DetailSection id="detail-steps" title="활동 방법" icon={FileText}>
-              <ol className="space-y-3">
-                {ruleItems.map((step, index) => (
-                  <li key={`${step}-${index}`} className="grid grid-cols-[32px_1fr] gap-3 rounded-xl bg-slate-50 px-3 py-3 text-sm leading-6 text-slate-800">
-                    <span className="grid h-8 w-8 place-items-center rounded-full bg-white text-xs font-black text-indigo-600 ring-1 ring-slate-200">{index + 1}</span>
-                    <span className="font-semibold">{step}</span>
-                  </li>
-                ))}
-              </ol>
-            </DetailSection>
-          ) : null}
-
-          {variations.length > 0 ? (
-            <DetailSection id="detail-variations" title="응용 방법" icon={FileText}>
-              <BulletList items={variations} />
-            </DetailSection>
-          ) : null}
-
-          {(fieldTips.length > 0 || briefingNotes.length > 0) ? (
-            <DetailSection id="detail-tips" title="운영 팁" icon={FileText}>
-              <BulletList items={[...fieldTips, ...briefingNotes]} />
-            </DetailSection>
-          ) : null}
-
-          {relatedSpomovePresets.length > 0 ? (
-            <DetailSection id="detail-spomove" title="연결된 SPOMOVE 활동" icon={MonitorPlay}>
-              <p className="mb-4 text-sm font-semibold leading-6 text-slate-500">관리자가 이 수업에 명시적으로 연결한 공식 SPOMOVE 활동입니다.</p>
-              <div className="grid gap-3 md:grid-cols-2">
-                {relatedSpomovePresets.map((preset) => (
-                    <Link
-                      key={preset.id}
-                      href={officialPresetSessionHref(preset)}
-                      className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
-                    >
-                      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
-                        <MonitorPlay className="h-5 w-5" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm font-black text-slate-950">{preset.title}</strong>
-                        <span className="mt-1 block text-xs font-semibold text-indigo-700">기본 3초 · 20회 · TV·빔 실행</span>
-                      </span>
-                    </Link>
-                  ))}
-              </div>
-            </DetailSection>
-          ) : null}
-
-          <DetailSection id={parentSectionId} title="학부모 설명 문구" icon={Clipboard}>
-            <p className="rounded-xl bg-emerald-50 p-4 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" onClick={copyParentNote} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
-                <Clipboard className="h-4 w-4" />
-                {copied ? '복사 완료' : '학부모 문구 복사'}
-              </button>
-              <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
-                <FileText className="h-4 w-4" />
-                수업 설명 만들기
-              </Link>
-            </div>
-          </DetailSection>
-
-          <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
-            {primarySpomovePreset ? (
-              <Link
-                href={officialPresetSessionHref(primarySpomovePreset)}
-                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
-              >
-                <MonitorPlay className="h-4 w-4" />
-                SPOMOVE 실행
-              </Link>
             ) : null}
-            <button type="button" onClick={copyParentNote} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 text-sm font-bold text-slate-700">
-              <Clipboard className="h-4 w-4" />
-              {copied ? '복사 완료' : '문구 복사'}
-            </button>
-            <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
-              <FileText className="h-4 w-4" />
-              설명 만들기
-            </Link>
-            <button
-              type="button"
-              onClick={() => toggleFavorite(program.id)}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700"
-            >
-              <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-              {favorite ? '저장됨' : '저장'}
-            </button>
           </div>
+        </details>
+
+        <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
+          {primarySpomovePreset ? (
+            <Link href={officialPresetSessionHref(primarySpomovePreset)} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+              <MonitorPlay className="h-4 w-4" />
+              SPOMOVE 실행
+            </Link>
+          ) : null}
+          <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+            <FileText className="h-4 w-4" />
+            설명 만들기
+          </Link>
+          <button type="button" onClick={() => toggleFavorite(program.id)} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
+            {favorite ? '저장됨' : '저장'}
+          </button>
         </div>
       </div>
     </main>

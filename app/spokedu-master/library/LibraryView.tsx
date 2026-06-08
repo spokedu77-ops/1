@@ -6,12 +6,9 @@ import {
   Check,
   ChevronRight,
   Clipboard,
-  ExternalLink,
   FileText,
   Lock,
-  MapPin,
   MonitorPlay,
-  Play,
   Search,
   Sparkles,
 } from 'lucide-react';
@@ -19,22 +16,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent';
+import { LessonPreviewMedia } from '../components/lesson/LessonPreviewMedia';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
+import { resolveProgramHero } from '../lib/program-media';
 import {
-  getExternalVideoUrl,
-  getVideoEmbedUrl,
-  getVideoThumbnail,
-  isDirectVideoUrl,
-  resolveProgramHero,
-} from '../lib/program-media';
-import {
-  displayMasterDuration,
   hasMasterSpace,
   hasMasterTarget,
-  normalizeMasterSpace,
-  normalizeMasterTarget,
   parseMasterSpaces,
   parseMasterTargets,
 } from '../lib/programDisplayTags';
@@ -47,6 +37,9 @@ import { useIsPro, useMasterStore } from '../store';
 import type { Program } from '../types';
 
 const QUICK_FILTERS = ['전체', '미취학', '초등학생 이상', '체육관', '교실', '협동', '민첩', '참고 영상'];
+
+/** 정사각 썸네일 프레임 — 원본 권장 1250×1250 */
+const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
 
 function hasSpomoveLink(program: Program) {
   const related = program.lessonDetail?.relatedSpomoveIds ?? [];
@@ -217,11 +210,11 @@ function ProgramCard({
   const heroImage = getHeroImage(program);
 
   return (
-    <article className="group flex min-h-[350px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
-      <button type="button" onClick={onPreview} className="relative h-44 overflow-hidden text-left">
+    <article className="group flex flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
+      <button type="button" onClick={onPreview} className={`${THUMBNAIL_FRAME} text-left`}>
         {heroImage ? (
           <>
-            <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 25vw, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
+            <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
           </>
         ) : (
@@ -309,10 +302,10 @@ function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: 
             </Link>
           </div>
         </div>
-        <button type="button" onClick={onPreview} className="relative min-h-[260px] overflow-hidden" style={{ background: 'var(--spm-s2)' }}>
+        <button type="button" onClick={onPreview} className={THUMBNAIL_FRAME} style={{ background: 'var(--spm-s2)' }}>
           {heroImage ? (
             <>
-              <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 420px, 100vw" className="object-cover" priority unoptimized />
+              <Image src={heroImage} alt="" fill sizes="(min-width: 1024px) 460px, 100vw" className="object-cover" priority unoptimized />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/45 to-transparent" />
             </>
           ) : (
@@ -334,7 +327,6 @@ function FeaturedProgram({ program, onPreview }: { program: Program; onPreview: 
 
 function ProgramModal({
   program,
-  spomovePreset,
   isPro,
   favorite,
   onFavorite,
@@ -348,48 +340,8 @@ function ProgramModal({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
-  const [activeMedia, setActiveMedia] = useState<'video' | number>('video');
   const locked = program.isPro && !isPro;
-  const detail = program.lessonDetail;
-  const setupImage = detail?.setupImageUrl;
-  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
-  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
-  const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
-  const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
-  const videoThumbnail = getVideoThumbnail(detail?.videoUrl);
-  const spomoveHref = spomovePreset
-    ? officialPresetSessionHref(spomovePreset)
-    : null;
   const parentCopy = getParentCopy(program);
-  const rules = detail?.rules?.length ? detail.rules : program.steps;
-  const equipment = program.equipment.filter((item) => !isPlaceholderText(item));
-  const setupFallback = [`공간: ${normalizeMasterSpace(program.space)}`, `준비물: ${equipment.join(', ') || '현장 기본 도구'}`].filter((item) => !isPlaceholderText(item));
-  const setupNotes = (detail?.setupNotes?.length ? detail.setupNotes : setupFallback).filter((item) => !isPlaceholderText(item));
-  const variations = detail?.variations?.length ? detail.variations : detail?.fieldTips ?? [];
-  const overviewRows = [
-    ['테마', program.category],
-    ['대상', normalizeMasterTarget(detail?.recommendedAge || program.grade)],
-    ['인원', detail?.recommendedPlayers || '소그룹~학급'],
-    ['기능', detail?.developmentFocus || program.category],
-    ['공간', normalizeMasterSpace(program.space)],
-    ['시간', displayMasterDuration(program.duration)],
-  ].filter(([, value]) => value && !isPlaceholderText(value));
-  const focusTags = getProgramInfoTags(program).slice(0, 6);
-  const decisionCards = [
-    { label: '영상', value: hasVideo ? '있음' : '없음', tone: hasVideo ? 'text-red-600 bg-red-50 border-red-100' : 'text-slate-500 bg-slate-50 border-slate-200' },
-    { label: '교구', value: equipment.length ? `${equipment.length}개` : '기본', tone: 'text-emerald-700 bg-emerald-50 border-emerald-100' },
-    { label: '진행', value: rules.length ? `${rules.length}단계` : '확인', tone: 'text-indigo-700 bg-indigo-50 border-indigo-100' },
-    { label: '공간', value: normalizeMasterSpace(program.space), tone: 'text-slate-700 bg-slate-50 border-slate-200' },
-  ];
-  const sectionNavItems = [
-    '개요',
-    '수업 전 체크',
-    setupNotes.length || setupImage ? '교구 세팅' : null,
-    hasVideo ? '참고 영상' : null,
-    rules.length ? '활동 방법' : null,
-    variations.length ? '응용' : null,
-    '설명 문구',
-  ].filter((item): item is string => Boolean(item));
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -399,228 +351,33 @@ function ProgramModal({
 
   return (
     <BottomSheet open title="빠른 미리보기" onClose={onClose} size="document">
-      <div className="grid gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-        <aside className="hidden lg:block">
-          <nav className="sticky top-0 rounded-[10px] border border-slate-200 bg-slate-50 p-3">
-            {sectionNavItems.map((item) => (
-              <a key={item} href={`#program-${item}`} className="block rounded-lg px-3 py-2 text-xs font-black text-slate-600 transition hover:bg-white hover:text-slate-950">
-                {item}
-              </a>
-            ))}
-          </nav>
-        </aside>
-
-        <div className="min-w-0 space-y-4">
-          <header className="rounded-[10px] border border-slate-200 bg-white p-5 sm:p-7">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <span className="grid h-12 w-12 place-items-center rounded-full bg-rose-50 text-rose-600">
-                <CategoryIcon category={program.category} size={28} />
-              </span>
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.02fr)_minmax(360px,0.98fr)]">
+        <LessonPreviewMedia program={program} />
+        <LessonPreviewContent
+          program={program}
+          badges={
+            <>
               {locked ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">PRO 전용</span> : null}
               {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">SPOMOVE 명시 연결</span> : null}
+            </>
+          }
+          footer={
+            <div className="sticky bottom-0 z-10 grid grid-cols-[1fr_auto] gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
+              <button type="button" onClick={copyParentNote} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
+                <Clipboard className="h-4 w-4" />
+                {copied ? '복사 완료' : '문구 복사'}
+              </button>
+              <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '저장 해제' : '저장'}>
+                <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+                <span className="hidden sm:inline">저장</span>
+              </button>
+              <button type="button" onClick={() => window.print()} className="hidden h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700 sm:inline-flex">
+                <FileText className="h-4 w-4" />
+                인쇄
+              </button>
             </div>
-            <h1 className="text-3xl font-black leading-tight text-slate-950 sm:text-4xl">{program.title}</h1>
-            <p className="mt-4 border-l-2 border-slate-900 pl-4 text-sm font-semibold leading-7 text-slate-700">
-              {program.description}
-            </p>
-            <div className="mt-5 grid gap-2 sm:grid-cols-4">
-              {decisionCards.map((item) => (
-                <div key={item.label} className={`rounded-[12px] border px-3 py-3 ${item.tone}`}>
-                  <p className="text-[11px] font-black">{item.label}</p>
-                  <p className="mt-1 truncate text-sm font-black">{item.value}</p>
-                </div>
-              ))}
-            </div>
-            {focusTags.length > 0 ? (
-              <div className="mt-4 flex flex-wrap gap-2">
-                {focusTags.map((tag) => (
-                  <span key={tag} className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-black text-slate-700">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-          </header>
-
-          <section id="program-개요" className="rounded-[10px] border border-slate-200 bg-white p-5">
-            <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-              <BookOpen className="h-4 w-4 text-rose-600" />
-              프로그램 개요
-            </h2>
-            <div className="mt-4 grid gap-2 sm:grid-cols-2">
-              {overviewRows.map(([label, value]) => (
-                <div key={label} className="rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3">
-                  <p className="text-[11px] font-black text-slate-500">{label}</p>
-                  <p className="mt-1 text-sm font-black text-slate-900">{value}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section id="program-수업 전 체크" className="rounded-[10px] border border-slate-200 bg-white p-5">
-            <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-              <Check className="h-4 w-4 text-emerald-600" />
-              수업 전 체크
-            </h2>
-            <div className="mt-4 rounded-[12px] border border-slate-200 bg-slate-50 p-4">
-              <p className="text-xs font-black text-slate-700">필요 교구</p>
-              <ul className="mt-3 flex flex-wrap gap-2">
-                {(equipment.length ? equipment : ['현장 기본 도구']).map((item) => (
-                  <li key={item} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700">
-                    <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </section>
-
-          {setupNotes.length || setupImage ? (
-          <section id="program-교구 세팅" className="rounded-[10px] border border-slate-200 bg-white p-5">
-            <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-              <MapPin className="h-4 w-4 text-indigo-600" />
-              초기 교구 세팅
-            </h2>
-            <div className="mt-4 overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
-              {setupImage ? (
-                <div className="relative aspect-[16/7] min-h-[220px]">
-                  <Image src={setupImage} alt="" fill sizes="(min-width: 1024px) 900px, 100vw" className="object-cover" unoptimized />
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 bg-white px-4 py-4">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-400">
-                    <MapPin className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-black text-slate-800">세팅 사진 없음</p>
-                    <p className="mt-1 text-xs font-semibold text-slate-500">사진이 없는 수업은 아래 세팅 메모만 표시합니다.</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            <ul className="mt-4 grid gap-2">
-              {setupNotes.slice(0, 5).map((item) => (
-                <li key={item} className="rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold leading-6 text-slate-700">{item}</li>
-              ))}
-            </ul>
-          </section>
-          ) : null}
-
-          {hasVideo ? (
-            <section id="program-참고 영상" className="rounded-[10px] border border-slate-200 bg-white p-5">
-              <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-                <Play className="h-4 w-4 fill-current text-red-600" />
-                참고 영상
-              </h2>
-              <div className="mt-4 overflow-hidden rounded-[10px] bg-slate-950">
-                <div className="relative aspect-video">
-                  {activeMedia === 'video' && videoEmbedUrl ? (
-                    <iframe
-                      key={`${program.id}-${videoEmbedUrl}`}
-                      src={videoEmbedUrl}
-                      title={`${program.title} 참고 영상`}
-                      className="h-full w-full"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                      allowFullScreen
-                    />
-                  ) : activeMedia === 'video' && directVideoUrl ? (
-                    <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
-                  ) : activeMedia === 'video' && externalVideoUrl ? (
-                    <div className="grid h-full place-items-center bg-slate-950 p-6 text-center text-white">
-                      <div>
-                        <Play className="mx-auto h-10 w-10 fill-current text-red-500" />
-                        <p className="mt-4 text-base font-black">외부 참고 영상</p>
-                        <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-white px-4 text-sm font-black text-slate-950">
-                          영상 열기
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid h-full place-items-center bg-slate-900 text-white">
-                      <CategoryIcon category={program.category} size={54} />
-                    </div>
-                  )}
-                </div>
-              </div>
-              {hasVideo ? (
-                <div className="mt-3 flex gap-2 overflow-x-auto">
-                  <button type="button" onClick={() => setActiveMedia('video')} className={`relative h-16 w-28 shrink-0 overflow-hidden rounded-lg border ${activeMedia === 'video' ? 'border-slate-950' : 'border-slate-200'}`} aria-label="수업 영상 보기">
-                    {videoThumbnail ? <Image src={videoThumbnail} alt="" fill sizes="112px" className="object-cover" unoptimized /> : null}
-                    <span className="absolute inset-0 grid place-items-center bg-black/30 text-white">
-                      <Play className="h-4 w-4 fill-current" />
-                    </span>
-                  </button>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
-
-          <section id="program-활동 방법" className="rounded-[10px] border border-slate-200 bg-white p-5">
-            <h2 className="text-base font-black text-slate-950">활동 방법</h2>
-            <ol className="mt-4 grid gap-2">
-              {rules.map((step, index) => (
-                <li key={`${step}-${index}`} className="grid grid-cols-[34px_1fr] gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800">
-                  <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-950 text-xs font-black text-white">{index + 1}</span>
-                  <span className="font-semibold">{step}</span>
-                </li>
-              ))}
-            </ol>
-          </section>
-
-          {variations.length > 0 ? (
-            <section id="program-응용" className="rounded-[10px] border border-slate-200 bg-white p-5">
-              <h2 className="text-base font-black text-slate-950">응용 방법</h2>
-              <ul className="mt-4 grid gap-2">
-                {variations.map((item, index) => (
-                  <li key={`${item}-${index}`} className="grid grid-cols-[18px_1fr] gap-3 rounded-[12px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-800">
-                    <span className="mt-2 h-1.5 w-1.5 rounded-full bg-slate-500" />
-                    <span className="font-semibold">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          ) : null}
-
-          {spomoveHref ? (
-            <section className="rounded-[10px] border border-indigo-200 bg-indigo-50 p-5">
-              <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-                <MonitorPlay className="h-4 w-4 text-indigo-700" />
-                SPOMOVE 활동
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-indigo-800">
-                {spomovePreset ? `${spomovePreset.title}은(는) 이 수업에 명시 연결된 큰 화면 활동입니다.` : '이 수업에 명시 연결된 큰 화면 활동입니다.'}
-              </p>
-              <Link href={spomoveHref} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-5 text-sm font-black text-white">
-                <MonitorPlay className="h-4 w-4" />
-                큰 화면 실행
-              </Link>
-            </section>
-          ) : null}
-
-          <section id="program-설명 문구" className="rounded-[10px] border border-emerald-200 bg-emerald-50 p-5">
-            <h2 className="flex items-center gap-2 text-base font-black text-slate-950">
-              <FileText className="h-4 w-4 text-emerald-700" />
-              학부모·기관 설명 문구
-            </h2>
-            <p className="mt-3 rounded-lg bg-white p-4 text-sm leading-7 text-emerald-900">{parentCopy}</p>
-          </section>
-
-          <div className="sticky bottom-0 z-10 grid grid-cols-[1fr_auto] gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
-            <button type="button" onClick={copyParentNote} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
-              <Clipboard className="h-4 w-4" />
-              {copied ? '복사 완료' : '문구 복사'}
-            </button>
-            <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '저장 해제' : '저장'}>
-              <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">저장</span>
-            </button>
-            <button type="button" onClick={() => window.print()} className="hidden h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700 sm:inline-flex">
-              <FileText className="h-4 w-4" />
-              인쇄
-            </button>
-          </div>
-        </div>
+          }
+        />
       </div>
     </BottomSheet>
   );

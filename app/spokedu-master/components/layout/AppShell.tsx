@@ -121,7 +121,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
   const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
-  const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument;
+  const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
+  const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor;
 
   useEffect(() => {
     setShellMounted(true);

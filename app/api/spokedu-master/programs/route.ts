@@ -13,6 +13,7 @@ import {
   normalizeMasterSpace,
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
+import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -512,7 +513,8 @@ export async function GET() {
     const meta = metaByCurriculumId.get(row.id);
     const overlay = overlayByCurriculumId.get(row.id);
     const title = (overlay?.title ?? row.title ?? '').trim() || `커리큘럼 #${row.id}`;
-    const categoryName = (meta?.sm_theme ?? overlay?.main_theme ?? '일반').trim() || '일반';
+    const rawCategory = (meta?.sm_theme ?? overlay?.main_theme ?? '').trim();
+    const categoryName = normalizeLessonTheme(rawCategory) || '일반';
     const programForTrust = { id: String(row.id), title };
     const rawVideoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
     const videoUrl = resolveTrustedReferenceVideoUrl(rawVideoUrl, programForTrust);

@@ -5,17 +5,16 @@ import Link from 'next/link';
 import {
   CheckCircle2,
   ChevronLeft,
-  Eye,
   Home,
-  Image as ImageIcon,
+  Loader2,
   RefreshCw,
   Save,
   Search,
-  Settings,
   ShieldAlert,
   Sparkles,
-  Video,
 } from 'lucide-react';
+import { getPublicUrl, uploadToStorage } from '@/app/lib/admin/assets/storageClient';
+import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { toast } from 'sonner';
 import {
   MASTER_DURATION_TAGS,
@@ -27,8 +26,6 @@ import {
   parseMasterTargets,
   serializeMasterTags,
 } from '@/app/spokedu-master/lib/programDisplayTags';
-import { OFFICIAL_SPOMOVE_LIBRARY } from '@/app/spokedu-master/spomove/officialSpomovePresets';
-
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'incomplete' | 'ready' | 'home-ready' | 'image-needed' | 'spomove-needed';
@@ -110,6 +107,7 @@ type ProgramsResponse = {
 
 type EditForm = {
   title: string;
+  coachScript: string;
   description: string;
   objective: string;
   target: string;
@@ -167,7 +165,8 @@ const FILTER_OPTIONS: Array<{ key: FilterKey; label: string }> = [
 
 const SPACE_OPTIONS = [...MASTER_SPACE_TAGS];
 const TARGET_OPTIONS = [...MASTER_TARGET_TAGS];
-const THEME_OPTIONS = ['육상 놀이체육', '술래형(대결)', '도전형(챌린지)', '경쟁형(개인 또는 팀 간)', '협동형(팀 내)'];
+const THEME_OPTIONS = [...LESSON_THEME_OPTIONS];
+const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 const MOVEMENT_OPTIONS = ['동적', '정적'];
 const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근지구력', '심폐지구력', '리듬감', '평형성', '근력'];
 const GROUP_SIZE_OPTIONS = ['1:1', '소수', '다수', 'ALL'];
@@ -486,12 +485,13 @@ function toForm(item: ProgramItem): EditForm {
 
   return {
     title: overlay?.title || item.curriculum.title,
-    description: meta?.sm_coach_script || activityTip || '',
+    coachScript: meta?.sm_coach_script || activityTip || '',
+    description: meta?.sm_development_focus || '',
     objective: meta?.sm_objective || '',
     target: serializeMasterTags(parseMasterTargets(meta?.sm_grade || '')),
     space: serializeMasterTags(parseMasterSpaces(meta?.sm_space || '')),
     duration: normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '',
-    theme: meta?.sm_theme || overlay?.main_theme || '',
+    theme: normalizeLessonTheme(meta?.sm_theme || overlay?.main_theme || ''),
     tags: listToCsv(meta?.sm_tags),
     videoUrl: overlay?.video_url || '',
     thumbnailUrl: meta?.sm_thumbnail_url || '',
@@ -516,6 +516,105 @@ function toForm(item: ProgramItem): EditForm {
     publicationStatus: item.effective.publicationStatus,
     dashboardVisible: meta?.sm_is_pro ?? true,
   };
+}
+
+function safeImageExtension(fileName: string, contentType: string) {
+  const fromName = fileName.split('.').pop()?.toLowerCase();
+  if (fromName && /^[a-z0-9]+$/.test(fromName) && fromName.length <= 8) return fromName;
+  if (contentType === 'image/png') return 'png';
+  if (contentType === 'image/gif') return 'gif';
+  if (contentType === 'image/webp') return 'webp';
+  return 'jpg';
+}
+
+function resolveSetupImageSrc(url: string) {
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+  try {
+    return getPublicUrl(trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
+function SetupImageUpload({
+  curriculumId,
+  value,
+  onChange,
+}: {
+  curriculumId: number;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const previewSrc = resolveSetupImageSrc(value);
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > MAX_SETUP_IMAGE_BYTES) {
+      toast.error('이미지는 10MB 이하만 업로드할 수 있습니다.');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = safeImageExtension(file.name, file.type);
+      const path = `spokedu-master/programs/${curriculumId}/setup.${ext}`;
+      await uploadToStorage(path, file, file.type || 'image/jpeg');
+      onChange(getPublicUrl(path));
+      toast.success('세팅 이미지를 업로드했습니다.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2">
+      <input
+        type="file"
+        accept="image/*"
+        disabled={uploading}
+        className="block w-full text-[12px] font-semibold text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-[12px] file:font-black file:text-indigo-700 hover:file:bg-indigo-100"
+        onChange={async (event) => {
+          const file = event.target.files?.[0];
+          if (file) await handleFile(file);
+          event.target.value = '';
+        }}
+      />
+      {uploading ? (
+        <div className="flex items-center gap-2 text-[12px] font-semibold text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          업로드 중…
+        </div>
+      ) : null}
+      {previewSrc ? (
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={previewSrc} alt="초기 교구 세팅 미리보기" className="max-h-64 w-full object-contain" />
+          <div className="flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
+            <p className="truncate text-[11px] font-semibold text-slate-500">{value}</p>
+            <button
+              type="button"
+              className="shrink-0 text-[11px] font-black text-rose-600"
+              onClick={() => onChange('')}
+            >
+              제거
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[11px] font-semibold text-slate-400">이미지를 선택하면 자동 업로드됩니다.</p>
+      )}
+    </div>
+  );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -611,65 +710,32 @@ function QualityFlags({ report }: { report: QualityReport }) {
 
 function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   const title = form.title.trim() || item.curriculum.title;
-  const tags = csvToList(form.tags).slice(0, 4);
   const equipment = splitLines(form.equipment).slice(0, 4);
   const steps = splitLines(form.steps).slice(0, 4);
-  const mediaLabel = form.setupImageUrl || form.videoUrl || item.curriculum.url || '미디어 URL 없음';
+  const functionLabel = selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction).join(', ');
 
   return (
-    <div className="grid gap-4 xl:grid-cols-3">
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="mb-3 flex items-center gap-2 text-[12px] font-black text-slate-500">
-          <Home size={14} />
-          카드 미리보기
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px]">
+        <p className="font-black text-slate-950">{title}</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <span>테마: {normalizeLessonTheme(form.theme) || '—'}</span>
+          <span>대상: {form.target || '—'}</span>
+          <span>기능: {functionLabel || '—'}</span>
+          <span>공간: {form.space || '—'}</span>
         </div>
-        <div className="overflow-hidden rounded-lg border border-slate-200">
-          <div className="flex aspect-video items-center justify-center bg-slate-100 px-4 text-center text-[11px] font-bold text-slate-500">
-            {mediaLabel}
-          </div>
-          <div className="p-3">
-            <p className="line-clamp-2 text-[15px] font-black text-slate-950">{title}</p>
-            <p className="mt-1 text-[12px] font-bold text-slate-500">{form.target || '대상 미입력'} · {displayMasterDuration(form.duration) || '시간 미입력'}</p>
-            <div className="mt-2 flex flex-wrap gap-1">
-              {tags.map((tag) => <span key={tag} className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-black text-indigo-700">{tag}</span>)}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="mb-3 flex items-center gap-2 text-[12px] font-black text-slate-500">
-          <Eye size={14} />
-          모달 미리보기
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4">
-          <p className="text-[16px] font-black text-slate-950">{title}</p>
-          <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-600">{form.description || '한 줄 설명이 필요합니다.'}</p>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-600">
-            <span>공간: {form.space || '미입력'}</span>
-            <span>SPOMOVE: {form.relatedSpomoveIds || '없음'}</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="mb-3 flex items-center gap-2 text-[12px] font-black text-slate-500">
-          <Settings size={14} />
-          상세 페이지 미리보기
-        </div>
-        <div className="space-y-3 text-[12px] text-slate-700">
-          <div>
-            <p className="font-black text-slate-900">준비물</p>
-            <p className="mt-1 font-semibold">{equipment.join(', ') || '미입력'}</p>
-          </div>
-          <div>
-            <p className="font-black text-slate-900">진행 순서</p>
-            <ol className="mt-1 list-decimal space-y-1 pl-4 font-semibold">
-              {(steps.length ? steps : ['진행 순서 미입력']).map((step) => <li key={step}>{step}</li>)}
-            </ol>
-          </div>
-        </div>
-      </section>
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px]">
+        <p className="font-black text-slate-900">준비물 / 수업 스크립트</p>
+        <p className="mt-1 font-semibold text-slate-600">{equipment.join(', ') || '—'}</p>
+        <p className="mt-2 line-clamp-3 font-semibold text-slate-600">{form.coachScript || '—'}</p>
+      </div>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-[12px] sm:col-span-2">
+        <p className="font-black text-slate-900">활동 방법</p>
+        <ol className="mt-1 list-decimal space-y-1 pl-4 font-semibold text-slate-600">
+          {(steps.length ? steps : ['미입력']).map((step) => <li key={step}>{step}</li>)}
+        </ol>
+      </div>
     </div>
   );
 }
@@ -806,7 +872,7 @@ export default function AdminSmProgramsPage() {
         body: JSON.stringify({
           meta: {
             sm_tags: csvToList(form.tags),
-            sm_theme: form.theme.trim() || null,
+            sm_theme: normalizeLessonTheme(form.theme) || null,
             sm_grade: serializeMasterTags(parseMasterTargets(form.target)) || null,
             sm_space: serializeMasterTags(parseMasterSpaces(form.space)) || null,
             sm_duration: normalizeMasterDuration(form.duration),
@@ -815,8 +881,8 @@ export default function AdminSmProgramsPage() {
             sm_is_hot: form.showHome || form.isHot || form.publicationStatus === 'featured',
             sm_display_order: Number.isFinite(form.displayOrder) ? form.displayOrder : 999,
             sm_objective: form.objective.trim() || null,
-            sm_development_focus: form.description.trim() || null,
-            sm_coach_script: form.description.trim() || null,
+            sm_development_focus: normalizeLessonTheme(form.theme) || null,
+            sm_coach_script: form.coachScript.trim() || null,
             sm_parent_note: form.parentNote.trim() || null,
             sm_related_spomove_ids: csvToList(form.relatedSpomoveIds),
             sm_thumbnail_url: form.thumbnailUrl.trim() || null,
@@ -832,7 +898,7 @@ export default function AdminSmProgramsPage() {
             activity_method: form.steps.trim() || null,
             activity_tip: activityTip || form.operationTips.trim() || null,
             function_types: csvToList(form.tags),
-            main_theme: form.theme.trim() || null,
+            main_theme: normalizeLessonTheme(form.theme) || null,
             group_size: serializeMasterTags(parseMasterTargets(form.target)) || null,
             is_published: form.publicationStatus !== 'hidden',
           },
@@ -857,13 +923,6 @@ export default function AdminSmProgramsPage() {
 
   const selectedQuality = form ? getFormQuality(form) : null;
   const selectedQualitySummary = selectedQuality ? qualitySummary(selectedQuality) : '';
-  const relatedSpomoveDiagnostics = form
-    ? csvToList(form.relatedSpomoveIds).map((id) => ({
-        id,
-        preset: OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === id) ?? null,
-      }))
-    : [];
-  const hasInvalidSpomoveId = relatedSpomoveDiagnostics.some((item) => !item.preset);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-950">
@@ -1012,123 +1071,78 @@ export default function AdminSmProgramsPage() {
               </div>
 
               {selectedQuality ? (
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[13px] font-black text-slate-900">
-                        콘텐츠 완성도 {selectedQuality.score}점 · {selectedQuality.grade}등급
-                      </p>
-                      <p className="mt-1 text-[12px] font-semibold text-slate-500">{selectedQualitySummary}</p>
-                    </div>
-                    <StatusPill status={selectedQuality.status} />
-                  </div>
-                  <div className="mt-3">
-                    <QualityFlags report={selectedQuality} />
-                  </div>
-                  <div className="mt-3 grid gap-2 text-[12px] font-bold text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
-                    <span>썸네일: {selectedQuality.thumbnailSource}</span>
-                    <span>모달: {selectedQuality.modalReady ? '준비 완료' : '보강 필요'}</span>
-                    <span>상세: {selectedQuality.detailReady ? '운영 가능' : '보강 필요'}</span>
-                    <span>Dashboard: {selectedQuality.dashboardCandidates.join(', ') || '배치 전 보강'}</span>
-                  </div>
-                  {missingQualityLabels(selectedQuality.checks).length ? (
-                    <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800">
-                      부족 항목: {missingQualityLabels(selectedQuality.checks).join(', ')}
-                    </p>
-                  ) : null}
-                  <details className="mt-3">
-                    <summary className="cursor-pointer text-[11px] font-black text-slate-400">세부 조건 보기</summary>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
-                      {selectedQuality.reasons.map((reason) => {
-                        const ok = reason.endsWith('있음') || reason.endsWith('입력됨');
-                        return <Flag key={reason} ok={ok} label={reason} />;
-                      })}
-                    </div>
-                  </details>
-                </div>
+                <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-[12px] font-semibold text-slate-600">
+                  완성도 {selectedQuality.score}점 · {selectedQualitySummary}
+                </p>
               ) : null}
+
+              <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold text-slate-600">
+                커리큘럼 연동(동기화): 제목 · 준비물 · 활동 방법 — 원본 제목 <strong>{selected.curriculum.title}</strong>
+              </p>
 
               <div className="space-y-5">
                 <section className="rounded-lg border border-slate-200 bg-white p-5">
-                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Sparkles size={16} />기본 정보</h3>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    <Field label="수업명"><TextInput value={form.title} onChange={(e) => updateForm('title', e.target.value)} /></Field>
+                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Sparkles size={16} />기본</h3>
+                  <div className="grid gap-4">
+                    <Field label="제목"><TextInput value={form.title} onChange={(e) => updateForm('title', e.target.value)} /></Field>
+                    <Field label="영상 첨부 링크 (URL)"><TextInput value={form.videoUrl} placeholder={selected.curriculum.url ?? 'curriculum.url fallback 없음'} onChange={(e) => updateForm('videoUrl', e.target.value)} /></Field>
+                  </div>
+                </section>
+
+                <section className="rounded-lg border border-slate-200 bg-white p-5">
+                  <h3 className="mb-4 text-[15px] font-black">분류</h3>
+                  <div className="grid gap-4">
+                    <Field label="테마">
+                      <ChoiceChips options={THEME_OPTIONS} selected={csvToList(form.theme)} onChange={(next) => updateForm('theme', listToCsvValue(next))} />
+                    </Field>
+                    <Field label="대상">
+                      <ChoiceChips options={TARGET_OPTIONS} selected={parseMasterTargets(form.target)} onChange={(next) => updateForm('target', serializeMasterTags(next))} />
+                    </Field>
+                    <Field label="기능">
+                      <ChoiceChips
+                        options={BODY_FUNCTION_OPTIONS}
+                        selected={selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction)}
+                        onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.bodyFunction, next))}
+                      />
+                    </Field>
+                    <Field label="움직임">
+                      <ChoiceChips
+                        options={MOVEMENT_OPTIONS}
+                        selected={selectedTaggedOptions(form.tags, TAG_PREFIX.movement)}
+                        onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.movement, next))}
+                      />
+                    </Field>
+                    <Field label="공간">
+                      <ChoiceChips options={SPACE_OPTIONS} selected={parseMasterSpaces(form.space)} onChange={(next) => updateForm('space', serializeMasterTags(next))} />
+                    </Field>
                     <Field label="시간">
                       <ChoiceChips
                         options={MASTER_DURATION_TAGS.map((item) => item.label)}
                         selected={displayMasterDuration(form.duration) ? [displayMasterDuration(form.duration)] : []}
                         onChange={(next) => {
-                          const selected = next.at(-1) ?? '';
-                          const option = MASTER_DURATION_TAGS.find((item) => item.label === selected);
+                          const selectedDuration = next.at(-1) ?? '';
+                          const option = MASTER_DURATION_TAGS.find((item) => item.label === selectedDuration);
                           updateForm('duration', option ? String(option.value) : '');
                         }}
                       />
                     </Field>
                   </div>
-                  <div className="mt-4 grid gap-4">
-                    <Field label="공간">
-                      <ChoiceChips
-                        options={SPACE_OPTIONS}
-                        selected={parseMasterSpaces(form.space)}
-                        onChange={(next) => updateForm('space', serializeMasterTags(next))}
-                      />
-                    </Field>
-                    <Field label="대상">
-                      <ChoiceChips
-                        options={TARGET_OPTIONS}
-                        selected={parseMasterTargets(form.target)}
-                        onChange={(next) => updateForm('target', serializeMasterTags(next))}
-                      />
-                    </Field>
-                    <Field label="주제/테마">
-                      <ChoiceChips options={THEME_OPTIONS} selected={csvToList(form.theme)} onChange={(next) => updateForm('theme', listToCsvValue(next))} />
-                    </Field>
-                    <div className="grid gap-4 lg:grid-cols-3">
-                      <Field label="움직임">
-                        <ChoiceChips
-                          options={MOVEMENT_OPTIONS}
-                          selected={selectedTaggedOptions(form.tags, TAG_PREFIX.movement)}
-                          onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.movement, next))}
-                        />
-                      </Field>
-                      <Field label="신체 기능">
-                        <ChoiceChips
-                          options={BODY_FUNCTION_OPTIONS}
-                          selected={selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction)}
-                          onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.bodyFunction, next))}
-                        />
-                      </Field>
-                      <Field label="인원">
-                        <ChoiceChips
-                          options={GROUP_SIZE_OPTIONS}
-                          selected={selectedTaggedOptions(form.tags, TAG_PREFIX.groupSize)}
-                          onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.groupSize, next))}
-                        />
-                      </Field>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-4">
-                    <Field label="한 줄 설명"><TextArea rows={4} value={form.description} onChange={(e) => updateForm('description', e.target.value)} /></Field>
-                  </div>
                 </section>
 
                 <section className="rounded-lg border border-slate-200 bg-white p-5">
-                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Video size={16} />미디어</h3>
-                  <div className="grid gap-3">
-                    <Field label="참고 영상 URL"><TextInput value={form.videoUrl} placeholder={selected.curriculum.url ?? 'curriculum.url fallback 없음'} onChange={(e) => updateForm('videoUrl', e.target.value)} /></Field>
-                    <Field label="세팅 이미지 URL"><TextInput value={form.setupImageUrl} onChange={(e) => updateForm('setupImageUrl', e.target.value)} placeholder="/images/spokedu-master/programs/.../setup.jpeg" /></Field>
-                  </div>
-                  <p className="mt-3 text-[12px] font-semibold text-slate-500">
-                    카드 이미지는 세팅 이미지가 있으면 세팅 이미지를, 없으면 참고 영상의 썸네일을 사용합니다.
-                  </p>
-                </section>
-
-                <section className="rounded-lg border border-slate-200 bg-white p-5">
-                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><ShieldAlert size={16} />수업 준비</h3>
-                  <div className="grid gap-4 lg:grid-cols-2">
-                    <Field label="준비물"><TextArea rows={7} value={form.equipment} onChange={(e) => updateForm('equipment', e.target.value)} /></Field>
-                    <Field label="세팅 방법"><TextArea rows={7} value={form.setupNotes} onChange={(e) => updateForm('setupNotes', e.target.value)} /></Field>
-                    <Field label="활동 전 사전 교육"><TextArea rows={6} value={form.briefingNotes} onChange={(e) => updateForm('briefingNotes', e.target.value)} /></Field>
+                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><ShieldAlert size={16} />사전 체크리스트</h3>
+                  <div className="grid gap-4">
+                    <Field label="준비물"><TextArea rows={6} value={form.equipment} onChange={(e) => updateForm('equipment', e.target.value)} /></Field>
+                    <Field label="초기 교구 세팅 (이미지)">
+                      <SetupImageUpload
+                        curriculumId={selected.curriculum.id}
+                        value={form.setupImageUrl}
+                        onChange={(next) => updateForm('setupImageUrl', next)}
+                      />
+                    </Field>
+                    <Field label="초기 교구 세팅 (메모)"><TextArea rows={5} value={form.setupNotes} onChange={(e) => updateForm('setupNotes', e.target.value)} /></Field>
+                    <Field label="수업 스크립트"><TextArea rows={6} value={form.coachScript} onChange={(e) => updateForm('coachScript', e.target.value)} /></Field>
+                    <Field label="사전 교육"><TextArea rows={5} value={form.briefingNotes} onChange={(e) => updateForm('briefingNotes', e.target.value)} /></Field>
                   </div>
                 </section>
 
@@ -1136,94 +1150,20 @@ export default function AdminSmProgramsPage() {
                   <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><CheckCircle2 size={16} />수업 운영</h3>
                   <div className="grid gap-4">
                     <Field label="활동 방법"><TextArea rows={12} value={form.steps} onChange={(e) => updateForm('steps', e.target.value)} /></Field>
-                    <Field label="응용 방법"><TextArea rows={9} value={form.variations} onChange={(e) => updateForm('variations', e.target.value)} /></Field>
+                    <Field label="변형 방법"><TextArea rows={8} value={form.variations} onChange={(e) => updateForm('variations', e.target.value)} /></Field>
                   </div>
                 </section>
 
                 <section className="rounded-lg border border-slate-200 bg-white p-5">
-                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Home size={16} />학부모 문구와 노출 설정</h3>
-                  <Field label="학부모 설명 문구"><TextArea rows={7} value={form.parentNote} onChange={(e) => updateForm('parentNote', e.target.value)} /></Field>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <Field label="자료 상태">
-                      <select value={form.publicationStatus} onChange={(e) => updateForm('publicationStatus', e.target.value as PublicationStatus)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[13px] font-black">
-                        {PUBLICATION_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
-                      </select>
-                    </Field>
+                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Home size={16} />홈 노출</h3>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 text-[12px] font-black text-slate-700">
+                      <input type="checkbox" checked={form.showHome} onChange={(e) => updateForm('showHome', e.target.checked)} />
+                      홈 노출
+                    </label>
                     <Field label="display order"><TextInput type="number" value={form.displayOrder} onChange={(e) => updateForm('displayOrder', Number(e.target.value))} /></Field>
                   </div>
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {[
-                      ['showHome', '홈 노출'],
-                      ['isHot', 'HOT'],
-                      ['isNew', 'NEW'],
-                      ['dashboardVisible', 'Dashboard 노출'],
-                    ].map(([key, label]) => (
-                      <label key={key} className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 text-[12px] font-black text-slate-700">
-                        <input type="checkbox" checked={Boolean(form[key as keyof EditForm])} onChange={(e) => updateForm(key as keyof EditForm, e.target.checked as never)} />
-                        {label}
-                      </label>
-                    ))}
-                  </div>
                 </section>
-
-                <details className="rounded-lg border border-slate-200 bg-white p-5">
-                  <summary className="cursor-pointer text-[15px] font-black text-slate-900">고급 설정</summary>
-                  <div className="mt-4 grid gap-4 lg:grid-cols-2">
-                    <Field label="기존 수업 목표"><TextArea rows={5} value={form.objective} onChange={(e) => updateForm('objective', e.target.value)} /></Field>
-                    <Field label="기존 안전 포인트"><TextArea rows={5} value={form.safetyNotes} onChange={(e) => updateForm('safetyNotes', e.target.value)} /></Field>
-                    <Field label="기존 대표 이미지 URL (보존용)"><TextInput value={form.heroImageUrl} onChange={(e) => updateForm('heroImageUrl', e.target.value)} /></Field>
-                    <Field label="기존 썸네일 이미지 URL (보존용)"><TextInput value={form.thumbnailUrl} onChange={(e) => updateForm('thumbnailUrl', e.target.value)} /></Field>
-                    <Field label="갤러리 이미지 URL(줄바꿈 또는 쉼표 구분)"><TextArea rows={5} value={form.galleryImageUrls} onChange={(e) => updateForm('galleryImageUrls', e.target.value)} placeholder="/images/.../scene-1.jpeg&#10;/images/.../scene-2.jpeg" /></Field>
-                    <Field label="관련 SPOMOVE preset ID">
-                      <TextArea
-                        rows={5}
-                        value={form.relatedSpomoveIds}
-                        onChange={(e) => updateForm('relatedSpomoveIds', e.target.value)}
-                        placeholder="reaction-cognition-space-direction-01"
-                      />
-                      <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                        <p className={`text-[12px] font-black ${hasInvalidSpomoveId ? 'text-amber-700' : 'text-emerald-700'}`}>
-                          {relatedSpomoveDiagnostics.length === 0
-                            ? '연결 없음'
-                            : hasInvalidSpomoveId
-                              ? '확인 필요'
-                              : '공식 preset 연결 · 실행 가능'}
-                        </p>
-                        {relatedSpomoveDiagnostics.length > 0 ? (
-                          <div className="mt-2 space-y-1.5">
-                            {relatedSpomoveDiagnostics.map(({ id, preset }) => (
-                              <div key={id} className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-bold">
-                                <span className="break-all text-slate-700">{id}</span>
-                                <span className={preset ? 'text-emerald-700' : 'text-rose-700'}>
-                                  {preset ? `공식 preset · 실행 가능 · ${preset.title}` : '존재하지 않는 ID · 확인 필요'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        ) : null}
-                      </div>
-                    </Field>
-                    <Field label="운영 팁"><TextArea rows={5} value={form.operationTips} onChange={(e) => updateForm('operationTips', e.target.value)} /></Field>
-                    <Field label="난이도 낮추기"><TextArea rows={5} value={form.easier} onChange={(e) => updateForm('easier', e.target.value)} /></Field>
-                    <Field label="난이도 높이기"><TextArea rows={5} value={form.harder} onChange={(e) => updateForm('harder', e.target.value)} /></Field>
-                    <Field label="세부 태그(쉼표 구분)"><TextInput value={form.tags} onChange={(e) => updateForm('tags', e.target.value)} /></Field>
-                  </div>
-                </details>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                    <p className="flex items-center gap-2 text-[12px] font-black text-amber-900"><ImageIcon size={15} />저장 메모</p>
-                    <p className="mt-2 text-[12px] font-semibold leading-5 text-amber-800">
-                      영상은 `spokedu_pro_programs.video_url`에 저장됩니다. 비워두면 `/api/spokedu-master/programs`가 `curriculum.url`을 fallback으로 사용합니다.
-                    </p>
-                  </div>
-                  <div className="rounded-lg border border-slate-200 bg-white p-4">
-                    <p className="text-[12px] font-black text-slate-500">원본 보존</p>
-                    <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-600">
-                      이 화면은 `curriculum`을 update하지 않습니다. 저장은 MASTER 메타와 PRO 운영 overlay에만 반영됩니다.
-                    </p>
-                  </div>
-                </div>
 
                 <details className="rounded-lg border border-slate-200 bg-white p-5">
                   <summary className="cursor-pointer text-[15px] font-black text-slate-900">미리보기</summary>
