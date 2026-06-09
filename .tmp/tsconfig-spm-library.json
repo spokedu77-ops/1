@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "../next-env.d.ts",
+    "../app/spokedu-master/library/LibraryView.tsx"
+  ],
+  "exclude": []
+}

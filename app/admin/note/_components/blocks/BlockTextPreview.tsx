@@ -47,31 +47,8 @@ export function BlockTextPreview({
           }
         }
 
-        if (empty) {
-          e.preventDefault();
-          onActivate?.();
-          return;
-        }
-
-        const startX = e.clientX;
-        const startY = e.clientY;
-        const onMove = (ev: MouseEvent) => {
-          if (Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4) {
-            cleanup();
-          }
-        };
-        const onUp = (ev: MouseEvent) => {
-          const dragged =
-            Math.abs(ev.clientX - startX) > 4 || Math.abs(ev.clientY - startY) > 4;
-          cleanup();
-          if (!dragged) onActivate?.();
-        };
-        const cleanup = () => {
-          window.removeEventListener('mousemove', onMove);
-          window.removeEventListener('mouseup', onUp);
-        };
-        window.addEventListener('mousemove', onMove);
-        window.addEventListener('mouseup', onUp);
+        onActivate?.();
+        if (empty) e.preventDefault();
       }}
     >
       {empty ? (

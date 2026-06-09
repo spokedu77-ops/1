@@ -11,10 +11,34 @@ type SpokeduMasterSubscription = {
   period_end: string | null;
 };
 
-const SPM_ADMIN_EMAILS = (process.env.SPM_ADMIN_EMAILS ?? 'choijihoon@spokedu.com')
-  .split(',')
-  .map((email) => email.trim().toLowerCase())
-  .filter(Boolean);
+const DEFAULT_PLATFORM_ADMIN_EMAILS = [
+  'choijihoon@spokedu.com',
+  'kimkoomin@spokedu.com',
+  'kimyoonki@spokedu.com',
+];
+
+function parseEmailList(value?: string | null): string[] {
+  return Array.from(
+    new Set(
+      (value ?? '')
+        .split(',')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function getSpokeduMasterAdminEmails(): string[] {
+  const spmAdminEmails = parseEmailList(process.env.SPM_ADMIN_EMAILS);
+  if (spmAdminEmails.length > 0) return spmAdminEmails;
+
+  const adminEmails = parseEmailList(process.env.ADMIN_EMAILS);
+  if (adminEmails.length > 0) return adminEmails;
+
+  return DEFAULT_PLATFORM_ADMIN_EMAILS;
+}
+
+const SPM_ADMIN_EMAILS = getSpokeduMasterAdminEmails();
 
 const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/landing',

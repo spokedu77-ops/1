@@ -15,11 +15,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
-import { BlockTextPreview } from './_components/blocks/BlockTextPreview';
 import { LazyNoteEditor } from './_components/blocks/LazyNoteEditor';
+import type { NoteEditorEnterContext } from './_components/NoteEditor';
 import { NoteRichEditorStyles } from './_components/NoteRichEditorStyles';
 import { NoteImageLightboxProvider, useNoteImageLightbox } from './_components/NoteImageLightbox';
 import { useDeferredNoteMeta } from './_hooks/useDeferredNoteMeta';
+import { useNoteBlockUndo, type NoteUndoEntry } from './_hooks/useNoteBlockUndo';
 import { BubbleToolbar } from './_components/BubbleToolbar';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from './_components/SlashMenu';
 import type { MarkdownBlockTrigger } from './_components/noteBulletInput';
@@ -36,9 +37,13 @@ import {
   planBatchDeleteBlocks,
   planMoveRootBlockGroup,
   planPromoteChildrenOnDelete,
+  numberedListIndexAmongSiblings,
   sortRootBlocks,
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
+import { bulletMarkerForLevel } from './_components/noteBulletInput';
+import { pendingEditorClickRef } from './_components/noteEditorRegistry';
+import { bindNoteListCrossTextSelect } from './_components/noteListCrossSelect';
 import {
   findOrphanSubPageDocuments,
   isDocumentDescendantOf,
@@ -63,6 +68,24 @@ import {
 import { patchNoteBlocks, putNoteBlockOrders } from './_lib/noteBlocksApi';
 
 const EMPTY_BLOCK_PLACEHOLDER = "명령어는 '/'를 입력하세요.";
+
+function blockRowBgClass(content: Record<string, unknown> | null | undefined): string {
+  switch (content?.blockColor) {
+    case 'gray':
+      return 'rounded-sm bg-neutral-100/90';
+    case 'brown':
+      return 'rounded-sm bg-amber-50/90';
+    case 'orange':
+      return 'rounded-sm bg-orange-50/90';
+    default:
+      return '';
+  }
+}
+
+function readBlockColor(content: Record<string, unknown> | null | undefined): string {
+  const color = content?.blockColor;
+  return typeof color === 'string' && color.length > 0 ? color : 'default';
+}
 
 const HoveredBlockContext = createContext<string | null>(null);
 const SetHoveredBlockContext = createContext<(id: string | null) => void>(() => {});
@@ -143,7 +166,7 @@ function isMarqueeSelectStartBlocked(target: HTMLElement): boolean {
 /** 텍스트 편집·선택 영역 — 여기서는 마퀴 대신 글자 드래그 */
 function isMarqueeSelectTextTarget(target: HTMLElement): boolean {
   return !!target.closest(
-    '.ProseMirror, .note-rich-editor, [contenteditable="true"], input, textarea, [data-toggle-title]',
+    '.ProseMirror, .note-rich-editor, [contenteditable="true"], input, textarea, [data-toggle-title], [data-note-list-text], [data-note-editor-host]',
   );
 }
 
@@ -332,7 +355,7 @@ const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.Element
   { type: 'heading',       label: '제목 1',      icon: Type,               desc: '큰 섹션 제목',              shortcut: '#' },
   { type: 'heading2',      label: '제목 2',      icon: Heading2Icon,       desc: '중간 섹션 제목',            shortcut: '##' },
   { type: 'heading3',      label: '제목 3',      icon: Heading3Icon,       desc: '작은 섹션 제목',            shortcut: '###' },
-  { type: 'bulletList',    label: '글머리 목록', icon: List,               desc: '점으로 구분된 목록',        shortcut: '-' },
+  { type: 'bulletList',    label: '글머리 기호 목록', icon: List,           desc: '점으로 구분된 목록',        shortcut: '-' },
   { type: 'numberedList',  label: '번호 목록',   icon: ListOrdered,        desc: '번호로 구분된 목록',        shortcut: '1.' },
   { type: 'todo',          label: '체크리스트',  icon: CheckSquare,        desc: '완료 상태를 체크하는 할 일', shortcut: '[]' },
   { type: 'toggle',        label: '토글 목록',   icon: ChevronDown,        desc: '접고 펼치는 섹션',          shortcut: '>' },
@@ -390,6 +413,33 @@ function defaultBlockContent(type: NoteBlock['type'], options?: { insideToggle?:
     };
   }
   return { text: '', depth: 0 };
+}
+
+const TEXT_CARRYING_BLOCK_TYPES = new Set<NoteBlock['type']>([
+  'text', 'heading', 'heading2', 'heading3', 'bulletList', 'numberedList', 'todo', 'callout', 'code',
+]);
+
+/** 블록 타입 변환 시 본문(text/html)을 가능한 한 유지한다. */
+function buildContentForTypeChange(
+  prevContent: Record<string, unknown> | null | undefined,
+  prevType: NoteBlock['type'],
+  nextType: NoteBlock['type'],
+): Record<string, unknown> {
+  const base = defaultBlockContent(nextType);
+  if (!TEXT_CARRYING_BLOCK_TYPES.has(prevType) || !TEXT_CARRYING_BLOCK_TYPES.has(nextType)) {
+    return base;
+  }
+  const prev = prevContent ?? {};
+  const text = typeof prev.text === 'string' ? prev.text : '';
+  const html = typeof prev.html === 'string' ? prev.html : undefined;
+  const bodyHtml = typeof prev.bodyHtml === 'string' ? prev.bodyHtml : undefined;
+  return {
+    ...base,
+    text,
+    ...(html !== undefined ? { html } : {}),
+    ...(bodyHtml !== undefined ? { bodyHtml } : {}),
+    ...(typeof prev.checked === 'boolean' && nextType === 'todo' ? { checked: prev.checked } : {}),
+  };
 }
 
 /* ─── helpers ───────────────────────────────────────────────────────────── */
@@ -773,6 +823,7 @@ function BlockContent({
   autoFocusSignal,
   onEmptyBackspace,
   onMergeWithPrevious,
+  canMergeWithPrevious,
   onIndentChange,
   onNavigatePrevious,
   onNavigateNext,
@@ -787,16 +838,18 @@ function BlockContent({
   isDropTarget = false,
   isFocused = false,
   mergeFocusCaretOffset,
+  onRequestCaretOffset,
   toggleNestDepth = 1,
   onFocusBlock,
   autoFocusTitleSignal = 0,
+  numberedListIndex,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type']) => void;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
   onShowFormatToolbar?: (
@@ -808,6 +861,7 @@ function BlockContent({
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
+  canMergeWithPrevious?: () => boolean;
   onIndentChange?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
@@ -823,8 +877,10 @@ function BlockContent({
   isDropTarget?: boolean;
   isFocused?: boolean;
   mergeFocusCaretOffset?: number;
+  onRequestCaretOffset?: (offset: number) => void;
   onFocusBlock?: () => void;
   autoFocusTitleSignal?: number;
+  numberedListIndex?: number;
 }) {
   const isBlockDragActive = useBlockDragActive();
   const imageLightbox = useNoteImageLightbox();
@@ -839,6 +895,11 @@ function BlockContent({
   const [showUrlInput, setShowUrlInput] = useState(false);
   const imgFileInputRef = useRef<HTMLInputElement>(null);
   const pageBtnRef = useRef<HTMLButtonElement>(null);
+  const editorStayMountedRef = useRef(false);
+
+  useEffect(() => {
+    editorStayMountedRef.current = false;
+  }, [block.id]);
 
   useEffect(() => {
     if (block.type !== 'page' || !isFocused) return;
@@ -903,14 +964,23 @@ function BlockContent({
 
   const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
   const contentMarginLeft = isInsideToggle ? 0 : blockDepth * 20;
-  const isBorderlessInlineBlock = block.type === 'text' || block.type === 'todo' || block.type === 'page';
+  const isBorderlessInlineBlock =
+    block.type === 'text'
+    || block.type === 'todo'
+    || block.type === 'page'
+    || block.type === 'bulletList'
+    || block.type === 'numberedList';
   const rootBlockShell =
     isInsideToggle || isBorderlessInlineBlock
       ? ''
       : 'rounded-lg border border-slate-200 bg-white px-2 py-2';
   const inlineRowPadding = isInsideToggle ? 'py-0.5' : (isBorderlessInlineBlock ? 'py-0.5' : '');
   const enterCreatesBlockBelow =
-    !isInsideToggle || block.type === 'text' || block.type === 'todo';
+    !isInsideToggle
+    || block.type === 'text'
+    || block.type === 'todo'
+    || block.type === 'bulletList'
+    || block.type === 'numberedList';
 
   const renderFormatToolbar = () => null;
 
@@ -921,9 +991,12 @@ function BlockContent({
     field = 'text',
     tabBehavior = 'block-indent',
     enterCreatesBlock = false,
+    enterSplitOnMidBlock = false,
     onEditorEnter = onEnter,
     onEditorBackspace,
+    onEditorBackspaceAtBlockStart,
     onEditorMergeWithPrevious,
+    onEditorCanMergeWithPrevious,
     editorMergeFocusCaretOffset,
   }: {
     text: string;
@@ -932,29 +1005,36 @@ function BlockContent({
     field?: 'text' | 'body';
     tabBehavior?: 'block-indent' | 'insert-text-indent';
     enterCreatesBlock?: boolean;
-    onEditorEnter?: () => void;
+    enterSplitOnMidBlock?: boolean;
+    onEditorEnter?: (ctx?: NoteEditorEnterContext) => void;
     /** false면 빈 본문 Backspace로 블록 삭제하지 않음 (토글 본문 등) */
     onEditorBackspace?: (() => void) | false;
+    onEditorBackspaceAtBlockStart?: () => boolean;
     onEditorMergeWithPrevious?: () => void;
+    onEditorCanMergeWithPrevious?: () => boolean;
     editorMergeFocusCaretOffset?: number;
   }) => {
     const resolvedEditorBackspace =
       onEditorBackspace === false ? undefined : (onEditorBackspace ?? onEmptyBackspace);
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
     const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
-    const mountEditor = isFocused || (autoFocusSignal ?? 0) > 0;
+    editorStayMountedRef.current = true;
     const editorSharedProps = {
       content: block.content,
       field,
       text,
       resetKey: `${block.id}:${block.type}:${field}`,
+      editorBlockId: block.id,
       placeholder,
       className: textClassName,
       onEnter: onEditorEnter,
       enterCreatesBlock,
+      enterSplitOnMidBlock,
       autoFocusSignal: autoFocusSignal ?? 0,
       onEmptyBackspace: resolvedEditorBackspace,
+      onBackspaceAtBlockStart: onEditorBackspaceAtBlockStart ?? handleListItemBackspaceAtStart,
       onMergeWithPrevious: onEditorMergeWithPrevious ?? onMergeWithPrevious,
+      canMergeWithPrevious: onEditorCanMergeWithPrevious ?? canMergeWithPrevious,
       onMarkdownBlockTrigger:
         block.type === 'text' || block.type === 'heading' || block.type === 'heading2'
           || block.type === 'heading3' || block.type === 'todo' || block.type === 'callout'
@@ -991,29 +1071,77 @@ function BlockContent({
     return (
       <div
         ref={slashHostRef}
-        className="relative min-h-[1.75rem] min-w-0 max-w-full cursor-text"
+        data-note-editor-host
+        className="relative min-h-[1.75rem] min-w-0 max-w-full cursor-text select-text"
         onMouseDown={(e) => {
           const target = e.target as HTMLElement;
-          if (target.closest('.ProseMirror, button, input, textarea, a')) return;
-          onFocusBlock?.();
+          if (target.closest('button, input, textarea, a')) return;
+          if (!target.closest('.ProseMirror')) {
+            pendingEditorClickRef.current = {
+              blockId: block.id,
+              x: e.clientX,
+              y: e.clientY,
+            };
+            onFocusBlock?.();
+          }
         }}
       >
-        {mountEditor ? (
-          <LazyNoteEditor {...editorSharedProps} />
-        ) : (
-          <BlockTextPreview
-            content={block.content}
-            field={field}
-            text={text}
-            className={textClassName}
-            placeholder={placeholder}
-            onActivate={onFocusBlock}
-          />
-        )}
+        <LazyNoteEditor {...editorSharedProps} />
       </div>
     );
   };
 
+  const listNestLevel = Math.max(0, Math.min(2, toggleNestDepth - 1));
+
+  const handleListItemBackspaceAtStart = (): boolean => {
+    if (block.type !== 'bulletList' && block.type !== 'numberedList') return false;
+    const itemText = typeof block.content?.text === 'string' ? block.content.text : '';
+    if (itemText.length === 0) return false;
+    onRequestCaretOffset?.(0);
+    onChangeType('text');
+    return true;
+  };
+
+  const handleListItemEnter = (listType: 'bulletList' | 'numberedList', ctx?: NoteEditorEnterContext) => {
+    if (ctx?.split) {
+      onAddBelow(listType, {
+        text: ctx.split.afterText,
+        html: ctx.split.afterHtml,
+        depth: 0,
+      });
+      return;
+    }
+    const isEmpty = ctx?.isEmpty ?? text.trim().length === 0;
+    if (!isEmpty) {
+      onAddBelow(listType);
+      return;
+    }
+    if (block.parent_block_id) {
+      onIndentChange?.('out');
+      return;
+    }
+    onChangeType('text');
+  };
+
+  const renderListChildBlocks = () => {
+    if (!childBlocks?.length || !renderChildBlock) return null;
+    return (
+      <div className="overflow-visible pl-[1.625rem]">
+        <SortableContext
+          items={childBlocks.map((child) => child.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="note-block-children space-y-0 overflow-visible">
+            {childBlocks.map((child) => (
+              <Fragment key={child.id}>
+                {renderChildBlock(child, toggleNestDepth + 1)}
+              </Fragment>
+            ))}
+          </div>
+        </SortableContext>
+      </div>
+    );
+  };
 
   if (block.type === 'divider') {
     return (
@@ -1116,22 +1244,31 @@ function BlockContent({
 
   if (block.type === 'bulletList') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const bulletGlyph = bulletMarkerForLevel(listNestLevel).trim();
     return (
-      <div
-        className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}
-        style={{ marginLeft: `${contentMarginLeft}px` }}
-      >
-        <span className="mt-[10px] h-[6px] w-[6px] shrink-0 rounded-full bg-slate-700" aria-hidden />
-        <div className="relative min-w-0 flex-1">
-          {renderFormatToolbar()}
-          {renderFormattedTextarea({
-            text,
-            placeholder: '글머리 목록',
-            textClassName: 'text-[16px] leading-7 text-slate-800',
-            enterCreatesBlock: enterCreatesBlockBelow,
-            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('bulletList') : onEnter,
-          })}
+      <div style={{ marginLeft: `${contentMarginLeft}px` }}>
+        <div className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}>
+          <span
+            className="mt-[2px] min-w-[1.25rem] shrink-0 text-center text-[16px] leading-7 text-slate-600 select-none"
+            aria-hidden
+          >
+            {bulletGlyph}
+          </span>
+          <div className="relative min-w-0 flex-1" data-note-list-text>
+            {renderFormatToolbar()}
+            {renderFormattedTextarea({
+              text,
+              placeholder: '글머리 목록',
+              textClassName: 'text-[16px] leading-7 text-slate-800',
+              enterCreatesBlock: enterCreatesBlockBelow,
+              enterSplitOnMidBlock: enterCreatesBlockBelow,
+              onEditorEnter: enterCreatesBlockBelow
+                ? (ctx) => handleListItemEnter('bulletList', ctx)
+                : onEnter,
+            })}
+          </div>
         </div>
+        {renderListChildBlocks()}
         {renderSlashMenuPortal()}
       </div>
     );
@@ -1139,25 +1276,29 @@ function BlockContent({
 
   if (block.type === 'numberedList') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
-    const rawNum = typeof block.content?.number === 'number' ? block.content.number : 1;
+    const displayNum = numberedListIndex
+      ?? (typeof block.content?.number === 'number' ? block.content.number : 1);
     return (
-      <div
-        className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}
-        style={{ marginLeft: `${contentMarginLeft}px` }}
-      >
-        <span className="mt-[2px] min-w-[1.25rem] shrink-0 text-right text-[16px] leading-7 text-slate-500 select-none" aria-hidden>
-          {rawNum}.
-        </span>
-        <div className="relative min-w-0 flex-1">
-          {renderFormatToolbar()}
-          {renderFormattedTextarea({
-            text,
-            placeholder: '번호 목록',
-            textClassName: 'text-[16px] leading-7 text-slate-800',
-            enterCreatesBlock: enterCreatesBlockBelow,
-            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('numberedList') : onEnter,
-          })}
+      <div style={{ marginLeft: `${contentMarginLeft}px` }}>
+        <div className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}>
+          <span className="mt-[2px] min-w-[1.25rem] shrink-0 text-right text-[16px] leading-7 text-slate-500 select-none" aria-hidden>
+            {displayNum}.
+          </span>
+          <div className="relative min-w-0 flex-1" data-note-list-text>
+            {renderFormatToolbar()}
+            {renderFormattedTextarea({
+              text,
+              placeholder: '번호 목록',
+              textClassName: 'text-[16px] leading-7 text-slate-800',
+              enterCreatesBlock: enterCreatesBlockBelow,
+              enterSplitOnMidBlock: enterCreatesBlockBelow,
+              onEditorEnter: enterCreatesBlockBelow
+                ? (ctx) => handleListItemEnter('numberedList', ctx)
+                : onEnter,
+            })}
+          </div>
         </div>
+        {renderListChildBlocks()}
         {renderSlashMenuPortal()}
       </div>
     );
@@ -1608,6 +1749,7 @@ function BlockContent({
       style={{ marginLeft: `${contentMarginLeft}px` }}
     >
       <div
+        data-note-editor-host
         className="relative min-h-[1.75rem] min-w-0 flex-1 cursor-text"
         onMouseDown={(e) => {
           const target = e.target as HTMLElement;
@@ -1772,6 +1914,7 @@ function SortableBlockRow({
   autoFocusSignal,
   onEmptyBackspace,
   onMergeWithPrevious,
+  canMergeWithPrevious,
   onIndentChange,
   onNavigatePrevious,
   onNavigateNext,
@@ -1784,17 +1927,21 @@ function SortableBlockRow({
   onAddChildBelow,
   onTrackActiveBlock,
   onDuplicate,
+  onCopyBlockLink,
+  onRecordBlockUndo,
   isFocused = false,
   mergeFocusCaretOffset,
+  onRequestCaretOffset,
   onFocusBlock,
   autoFocusTitleSignal = 0,
+  numberedListIndex,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type']) => void;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
   onShowFormatToolbar?: (
@@ -1806,6 +1953,7 @@ function SortableBlockRow({
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
+  canMergeWithPrevious?: () => boolean;
   onIndentChange?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
@@ -1818,10 +1966,14 @@ function SortableBlockRow({
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onDuplicate?: () => void;
+  onCopyBlockLink?: () => void;
+  onRecordBlockUndo?: () => void;
   isFocused?: boolean;
   mergeFocusCaretOffset?: number;
+  onRequestCaretOffset?: (offset: number) => void;
   onFocusBlock?: () => void;
   autoFocusTitleSignal?: number;
+  numberedListIndex?: number;
 }) {
   const {
     attributes,
@@ -1831,6 +1983,8 @@ function SortableBlockRow({
     transition,
     isDragging,
   } = useSortable({ id: block.id });
+  const isListSibling = block.type === 'bulletList' || block.type === 'numberedList';
+  const blockTypeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
   const [handleMenuAnchor, setHandleMenuAnchor] = useState<{ top: number; left: number } | null>(null);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
   const gripBtnRef = useRef<HTMLButtonElement>(null);
@@ -1855,9 +2009,10 @@ function SortableBlockRow({
 
   const blockContentNode = (
     <div
+      data-note-editor-host
       className="min-w-0 flex-1 cursor-text"
       onMouseDownCapture={() => {
-        onFocusToggle?.(block.type === 'toggle' ? block.id : null);
+        if (block.type === 'toggle') onFocusToggle?.(block.id);
       }}
     >
       <BlockContent
@@ -1874,6 +2029,7 @@ function SortableBlockRow({
         autoFocusSignal={autoFocusSignal}
         onEmptyBackspace={onEmptyBackspace}
         onMergeWithPrevious={onMergeWithPrevious}
+        canMergeWithPrevious={canMergeWithPrevious}
         onIndentChange={onIndentChange}
         onNavigatePrevious={onNavigatePrevious}
         onNavigateNext={onNavigateNext}
@@ -1888,9 +2044,11 @@ function SortableBlockRow({
         isDropTarget={isDropTarget}
         isFocused={isFocused}
         mergeFocusCaretOffset={mergeFocusCaretOffset}
+        onRequestCaretOffset={onRequestCaretOffset}
         toggleNestDepth={1}
         onFocusBlock={onFocusBlock}
         autoFocusTitleSignal={autoFocusTitleSignal}
+        numberedListIndex={numberedListIndex}
       />
     </div>
   );
@@ -1900,17 +2058,22 @@ function SortableBlockRow({
       ref={setNodeRef}
       data-note-block-row
       data-block-id={block.id}
+      data-parent-block-id={block.parent_block_id ?? ''}
+      data-list-sibling={isListSibling ? 'true' : undefined}
       data-nest-depth="1"
       style={style}
-      className={`relative overflow-visible py-0.5 transition-colors ${
+      className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
           : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
-          : isRowHovered ? 'bg-neutral-50/60' : ''
+          : isRowHovered && !block.content?.blockColor ? 'bg-neutral-50/60' : ''
       }`}
       onMouseEnter={() => setHoveredBlockId(block.id)}
-      onMouseLeave={() => setHoveredBlockId(null)}
     >
-      <div className={NOTE_BLOCK_HOVER_BRIDGE} aria-hidden />
+      <div
+        className={NOTE_BLOCK_HOVER_BRIDGE}
+        aria-hidden
+        onMouseEnter={() => setHoveredBlockId(block.id)}
+      />
       {dropPos === 'before' && <DropInsertLine position="top" />}
       {dropPos === 'after' && <DropInsertLine position="bottom" />}
       <BlockRowGutter
@@ -1948,10 +2111,21 @@ function SortableBlockRow({
           style={{ top: handleMenuAnchor.top, left: handleMenuAnchor.left }}
         >
           <BlockHandleMenu
+            blockTypeLabel={blockTypeLabel}
+            blockType={block.type}
             commands={BLOCK_TYPES}
+            currentBlockColor={readBlockColor(block.content)}
             onDuplicate={() => onDuplicate?.()}
             onDelete={onDelete}
             onTurnInto={(type) => onChangeType(type)}
+            onCopyBlockLink={onCopyBlockLink}
+            onColorChange={(colorId) => {
+              onRecordBlockUndo?.();
+              const next = { ...(block.content ?? {}) } as Record<string, unknown>;
+              if (colorId === 'default') delete next.blockColor;
+              else next.blockColor = colorId;
+              onUpdate(next);
+            }}
             onClose={() => setHandleMenuAnchor(null)}
           />
         </div>
@@ -1975,6 +2149,7 @@ function ToggleInlineRow({
   autoFocusSignal,
   onEmptyBackspace,
   onMergeWithPrevious,
+  canMergeWithPrevious,
   onIndentChange,
   onNavigatePrevious,
   onNavigateNext,
@@ -1986,19 +2161,23 @@ function ToggleInlineRow({
   renderChildBlock,
   onTrackActiveBlock,
   onDuplicate,
+  onCopyBlockLink,
+  onRecordBlockUndo,
   isFocused = false,
   mergeFocusCaretOffset,
+  onRequestCaretOffset,
   nestDepth = 1,
   onFocusBlock,
   onAddChildBelow,
   autoFocusTitleSignal = 0,
+  numberedListIndex,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
-  onAddBelow: (type?: NoteBlock['type']) => void;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
   onShowFormatToolbar?: (
@@ -2010,6 +2189,7 @@ function ToggleInlineRow({
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
+  canMergeWithPrevious?: () => boolean;
   onIndentChange?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
@@ -2021,13 +2201,19 @@ function ToggleInlineRow({
   renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onDuplicate?: () => void;
+  onCopyBlockLink?: () => void;
+  onRecordBlockUndo?: () => void;
   isFocused?: boolean;
   mergeFocusCaretOffset?: number;
+  onRequestCaretOffset?: (offset: number) => void;
   nestDepth?: number;
   onFocusBlock?: () => void;
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
   autoFocusTitleSignal?: number;
+  numberedListIndex?: number;
 }) {
+  const isListSibling = block.type === 'bulletList' || block.type === 'numberedList';
+  const blockTypeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
   const {
     attributes,
     listeners,
@@ -2068,17 +2254,22 @@ function ToggleInlineRow({
       ref={setNodeRef}
       data-note-block-row
       data-block-id={block.id}
+      data-parent-block-id={block.parent_block_id ?? ''}
+      data-list-sibling={isListSibling ? 'true' : undefined}
       data-nest-depth={String(nestDepth)}
       style={style}
-      className={`relative overflow-visible py-0.5 transition-colors ${
+      className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
           : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
-          : isRowHovered ? 'bg-neutral-50/60' : ''
+          : isRowHovered && !block.content?.blockColor ? 'bg-neutral-50/60' : ''
       }`}
       onMouseEnter={() => setHoveredBlockId(block.id)}
-      onMouseLeave={() => setHoveredBlockId(null)}
     >
-      <div className={NOTE_BLOCK_HOVER_BRIDGE} aria-hidden />
+      <div
+        className={NOTE_BLOCK_HOVER_BRIDGE}
+        aria-hidden
+        onMouseEnter={() => setHoveredBlockId(block.id)}
+      />
       {dropPos === 'before' && <DropInsertLine position="top" />}
       {dropPos === 'after' && <DropInsertLine position="bottom" />}
       <BlockRowGutter
@@ -2113,10 +2304,21 @@ function ToggleInlineRow({
       {inlineHandleMenuAnchor && (
         <div className="fixed" style={{ top: inlineHandleMenuAnchor.top, left: inlineHandleMenuAnchor.left, zIndex: menuZIndex }}>
           <BlockHandleMenu
+            blockTypeLabel={blockTypeLabel}
+            blockType={block.type}
             commands={BLOCK_TYPES}
+            currentBlockColor={readBlockColor(block.content)}
             onDuplicate={() => onDuplicate?.()}
             onDelete={onDelete}
             onTurnInto={(type) => onChangeType(type)}
+            onCopyBlockLink={onCopyBlockLink}
+            onColorChange={(colorId) => {
+              onRecordBlockUndo?.();
+              const next = { ...(block.content ?? {}) } as Record<string, unknown>;
+              if (colorId === 'default') delete next.blockColor;
+              else next.blockColor = colorId;
+              onUpdate(next);
+            }}
             onClose={() => setInlineHandleMenuAnchor(null)}
           />
         </div>
@@ -2143,6 +2345,7 @@ function ToggleInlineRow({
           autoFocusSignal={autoFocusSignal}
           onEmptyBackspace={onEmptyBackspace}
           onMergeWithPrevious={onMergeWithPrevious}
+          canMergeWithPrevious={canMergeWithPrevious}
           onIndentChange={onIndentChange}
           onNavigatePrevious={onNavigatePrevious}
           onNavigateNext={onNavigateNext}
@@ -2150,16 +2353,22 @@ function ToggleInlineRow({
           focusedToggleId={focusedToggleId}
           uploadImage={uploadImage}
           childBlocks={childBlocks}
-          renderChildBlock={block.type === 'toggle' ? renderChildBlock : undefined}
+          renderChildBlock={
+            block.type === 'toggle' || block.type === 'bulletList' || block.type === 'numberedList'
+              ? renderChildBlock
+              : undefined
+          }
           onAddChildBelow={onAddChildBelow}
           onTrackActiveBlock={onTrackActiveBlock}
           isInsideToggle
           isDropTarget={isDropTarget}
           isFocused={isFocused}
           mergeFocusCaretOffset={mergeFocusCaretOffset}
+          onRequestCaretOffset={onRequestCaretOffset}
           toggleNestDepth={nestDepth}
           onFocusBlock={onFocusBlock}
           autoFocusTitleSignal={autoFocusTitleSignal}
+          numberedListIndex={numberedListIndex}
         />
       </div>
     </div>
@@ -2202,6 +2411,10 @@ export default function AdminNotePageContent() {
   const [sidebarIconDraft, setSidebarIconDraft] = useState('');
   const sidebarIconInputRef = useRef<HTMLInputElement>(null);
   const [mergeFocusCaretOffset, setMergeFocusCaretOffset] = useState<number | undefined>(undefined);
+  const requestCaretOffset = useCallback((offset: number) => {
+    setMergeFocusCaretOffset(offset);
+    window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
+  }, []);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [collaborators, setCollaborators] = useState<NoteCollaborator[]>([]);
@@ -2217,7 +2430,6 @@ export default function AdminNotePageContent() {
   const [dropTarget, setDropTarget] = useState<BlockDropTarget>(null);
   const dropTargetRef = useRef<BlockDropTarget>(null);
   const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
-  const autoSeededDocRef = useRef<string | null>(null);
   const [focusedEditorBlockId, setFocusedEditorBlockId] = useState<string | null>(null);
   const [focusedEditorPart, setFocusedEditorPart] = useState<'title' | 'editor' | null>(null);
   const [focusSignal, setFocusSignal] = useState(0);
@@ -2236,9 +2448,11 @@ export default function AdminNotePageContent() {
   const pageMenuRef = useRef<HTMLDivElement>(null);
   const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
   const [purgingBlockId, setPurgingBlockId] = useState<string | null>(null);
-  const [lastDeletedBlockId, setLastDeletedBlockId] = useState<string | null>(null);
-  const undoCreateBlockIdRef = useRef<string | null>(null);
-  const [showCreateUndo, setShowCreateUndo] = useState(false);
+  const lastDeletedBlockIdRef = useRef<string | null>(null);
+  const noteUndo = useNoteBlockUndo();
+  const setPendingDeleteUndo = useCallback((blockId: string | null) => {
+    lastDeletedBlockIdRef.current = blockId;
+  }, []);
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(() => new Set());
   const [marqueeBox, setMarqueeBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [multiDragCount, setMultiDragCount] = useState(0);
@@ -2335,19 +2549,31 @@ export default function AdminNotePageContent() {
   const focusBlockEditor = useCallback((
     blockId: string | null,
     part: 'title' | 'editor' = 'editor',
+    caretOffset?: number,
   ) => {
     if (!blockId) return;
+    const alreadyFocused =
+      focusedEditorBlockIdRef.current === blockId
+      && focusedEditorPartRef.current === part;
     if (selectedBlockIdsRef.current.size > 0) {
       setSelectedBlockIds(new Set());
+    }
+    if (caretOffset !== undefined) {
+      setMergeFocusCaretOffset(caretOffset);
+      window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
+    } else if (!alreadyFocused) {
+      setMergeFocusCaretOffset(undefined);
     }
     focusedEditorBlockIdRef.current = blockId;
     focusedEditorPartRef.current = part;
     setFocusedEditorBlockId(blockId);
     setFocusedEditorPart(part);
-    if (part === 'title') {
-      setFocusTitleSignal((v) => v + 1);
-    } else {
-      setFocusSignal((v) => v + 1);
+    if (!alreadyFocused) {
+      if (part === 'title') {
+        setFocusTitleSignal((v) => v + 1);
+      } else {
+        setFocusSignal((v) => v + 1);
+      }
     }
     syncFocusedToggleFromBlock(blockId);
   }, [syncFocusedToggleFromBlock]);
@@ -2459,6 +2685,8 @@ export default function AdminNotePageContent() {
   /* load blocks — 서버 1회 (복구·승격·고아 page 보정 포함) */
   useEffect(() => {
     if (!selectedId) { setBlocks([]); return; }
+    let cancelled = false;
+    setBlocks([]);
     const load = async () => {
       try {
         setLoadingBlocks(true); setError(null);
@@ -2471,21 +2699,22 @@ export default function AdminNotePageContent() {
           throw new Error(j?.error || '블록 로드 실패');
         }
         const json = (await res.json()) as { blocks: NoteBlock[] };
-        setBlocks(json.blocks ?? []);
+        if (!cancelled) setBlocks(json.blocks ?? []);
       } catch (e) {
         devLogger.error('[Note] loadBlocks', e);
-        setError(e instanceof Error ? e.message : '로드 실패');
+        if (!cancelled) setError(e instanceof Error ? e.message : '로드 실패');
       } finally {
-        setLoadingBlocks(false);
+        if (!cancelled) setLoadingBlocks(false);
       }
     };
     load();
+    return () => { cancelled = true; };
   }, [selectedId]);
 
   useEffect(() => {
     setTrashedBlocks([]);
-    setLastDeletedBlockId(null);
-  }, [selectedId]);
+    setPendingDeleteUndo(null);
+  }, [selectedId, setPendingDeleteUndo]);
 
   useEffect(() => {
     blocksRef.current = blocks;
@@ -3179,6 +3408,18 @@ export default function AdminNotePageContent() {
     setFormatToolbar(null);
   }, []);
 
+  useEffect(() => {
+    const onHide = () => hideFormatToolbar();
+    document.addEventListener('note-hide-format-toolbar', onHide);
+    return () => document.removeEventListener('note-hide-format-toolbar', onHide);
+  }, [hideFormatToolbar]);
+
+  const handleCopyBlockLink = useCallback((block: NoteBlock) => {
+    if (!selectedId) return;
+    const url = `${window.location.origin}/admin/note?id=${encodeURIComponent(selectedId)}#block-${block.id}`;
+    void navigator.clipboard.writeText(url);
+  }, [selectedId]);
+
   const uploadNoteImage = useCallback(async (file: File) => {
     if (!selectedId) throw new Error('문서를 먼저 선택해야 합니다.');
     const formData = new FormData();
@@ -3289,8 +3530,7 @@ export default function AdminNotePageContent() {
           const others = prev.filter((b) => !siblingIds.has(b.id));
           return [...others, ...nextSiblings];
         });
-        undoCreateBlockIdRef.current = newBlock.id;
-        setShowCreateUndo(true);
+        noteUndo.pushUndoCreate(newBlock.id);
         void fetch('/api/admin/note/blocks', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -3317,7 +3557,7 @@ export default function AdminNotePageContent() {
     } finally {
       setLoadingState('idle');
     }
-  }, [selectedId, triggerSave, closeAll, router]);
+  }, [selectedId, triggerSave, closeAll, router, noteUndo]);
 
   const handleCreateDocument = async (
     parentId: string | null = null,
@@ -3590,10 +3830,13 @@ export default function AdminNotePageContent() {
     }, 600);
   }, [triggerSave]);
 
+  const recordBlockUndo = useCallback((blockIds: string[]) => {
+    noteUndo.pushRestoreBlocksUndo(blocksRef.current, blockIds);
+  }, [noteUndo]);
+
   const registerCreatedBlockUndo = useCallback((blockId: string) => {
-    undoCreateBlockIdRef.current = blockId;
-    setShowCreateUndo(true);
-  }, []);
+    noteUndo.pushUndoCreate(blockId);
+  }, [noteUndo]);
 
   const applyBlockReparentPlan = useCallback((moving: NoteBlock, plan: BlockDropPlan<NoteBlock>) => {
     const prevBlocks = blocksRef.current;
@@ -3647,6 +3890,9 @@ export default function AdminNotePageContent() {
       return;
     }
 
+    // 글머리·번호 목록은 부모-자식 구조로만 들여쓰기
+    if (block.type === 'bulletList' || block.type === 'numberedList') return;
+
     // 루트 블록만 content.depth 시각 들여쓰기 (토글 없는 경우 폴백)
     if (block.parent_block_id) return;
 
@@ -3679,7 +3925,13 @@ export default function AdminNotePageContent() {
     const idx = siblings.findIndex((b) => b.id === block.id);
     if (idx < 0) return;
     const target = direction === 'previous' ? siblings[idx - 1] : siblings[idx + 1];
-    if (target) focusBlockEditor(target.id);
+    if (!target) return;
+    if (direction === 'previous') {
+      const targetText = typeof target.content?.text === 'string' ? target.content.text : '';
+      focusBlockEditor(target.id, 'editor', targetText.length);
+      return;
+    }
+    focusBlockEditor(target.id, 'editor', 0);
   }, [blocks, focusBlockEditor]);
 
   const insertBlockAmongSiblings = useCallback(async (
@@ -3714,10 +3966,20 @@ export default function AdminNotePageContent() {
         throw new Error(j?.error || '블록 추가 실패');
       }
       const json = (await res.json()) as { block: NoteBlock };
-      const nextSiblings = [...siblings.slice(0, clampedIndex), json.block, ...siblings.slice(clampedIndex)]
-        .map((block, index) => ({ ...block, order_index: index }));
-      const siblingIds = new Set(nextSiblings.map((block) => block.id));
+      let orderPayload: { id: string; order_index: number }[] = [];
       setBlocks((prev) => {
+        // split 직후 onChange로 갱신된 본문을 유지 — blocksRef 스냅샷으로 덮어쓰지 않음
+        const latestSiblings = prev
+          .filter((b) => (b.parent_block_id ?? null) === parentId)
+          .sort((a, b) => a.order_index - b.order_index);
+        const latestIndex = Math.max(0, Math.min(insertIndex, latestSiblings.length));
+        const nextSiblings = [
+          ...latestSiblings.slice(0, latestIndex),
+          json.block,
+          ...latestSiblings.slice(latestIndex),
+        ].map((block, index) => ({ ...block, order_index: index }));
+        orderPayload = nextSiblings.map((block) => ({ id: block.id, order_index: block.order_index }));
+        const siblingIds = new Set(nextSiblings.map((block) => block.id));
         const others = prev.filter((block) => !siblingIds.has(block.id));
         return [...others, ...nextSiblings];
       });
@@ -3729,7 +3991,7 @@ export default function AdminNotePageContent() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ orders: nextSiblings.map((block) => ({ id: block.id, order_index: block.order_index })) }),
+        body: JSON.stringify({ orders: orderPayload }),
       }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
       return json.block;
     } catch (e) {
@@ -3773,7 +4035,11 @@ export default function AdminNotePageContent() {
     }
   }, [selectedId, duplicateBlockRecursive, focusBlockEditor, registerCreatedBlockUndo]);
 
-  const handleInsertBlockAfter = useCallback(async (afterBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
+  const handleInsertBlockAfter = useCallback(async (
+    afterBlock: NoteBlock,
+    type: NoteBlock['type'] = 'text',
+    content?: Record<string, unknown>,
+  ) => {
     if (type === 'page') {
       if (!selectedId) return;
       await handleCreateSubPage(selectedId, {
@@ -3789,7 +4055,7 @@ export default function AdminNotePageContent() {
       .sort((a, b) => a.order_index - b.order_index);
     const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
     const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
-    await insertBlockAmongSiblings(parentId, type, insertIndex);
+    await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
   }, [insertBlockAmongSiblings, handleCreateSubPage, selectedId]);
 
   const handleInsertBlockBefore = useCallback(async (beforeBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
@@ -3936,14 +4202,6 @@ export default function AdminNotePageContent() {
     setHoveredBlockId(null);
   }, []);
 
-  useEffect(() => {
-    autoSeededDocRef.current = null;
-  }, [selectedId]);
-
-  useEffect(() => {
-    if (rootBlocks.length === 0) autoSeededDocRef.current = null;
-  }, [rootBlocks.length]);
-
   const handleClickEditorWhitespace = useCallback(() => {
     const roots = sortRootBlocks(blocksRef.current);
     const last = roots[roots.length - 1];
@@ -3959,14 +4217,6 @@ export default function AdminNotePageContent() {
     void handleInsertBlockAfter(last, 'text');
   }, [focusBlockEditor, handleAddBlock, handleInsertBlockAfter]);
 
-  useEffect(() => {
-    if (!selectedId || loadingBlocks) return;
-    if (rootBlocks.length > 0) return;
-    if (autoSeededDocRef.current === selectedId) return;
-    autoSeededDocRef.current = selectedId;
-    void handleAddBlock('text');
-  }, [selectedId, loadingBlocks, rootBlocks.length, handleAddBlock]);
-
   const handleDocumentBodyMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (target.closest(
@@ -3980,14 +4230,18 @@ export default function AdminNotePageContent() {
   }, [handleClickEditorWhitespace]);
 
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
-    const defaultContent = defaultBlockContent(type);
-    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: defaultContent } : b)));
-    focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor');
+    recordBlockUndo([block.id]);
+    const nextContent = buildContentForTypeChange(block.content, block.type, type);
+    const alreadyFocused = focusedEditorBlockIdRef.current === block.id;
+    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: nextContent } : b)));
+    if (!alreadyFocused) {
+      focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor');
+    }
     try {
-      await patchNoteBlocks([{ id: block.id, type, content: defaultContent }]);
+      await patchNoteBlocks([{ id: block.id, type, content: nextContent }]);
       triggerSave();
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
-  }, [focusBlockEditor, triggerSave]);
+  }, [focusBlockEditor, recordBlockUndo, triggerSave]);
 
   const persistDeletePromotionPatches = useCallback(async (
     patches: Array<{
@@ -4026,14 +4280,15 @@ export default function AdminNotePageContent() {
     lastDeletedId?: string | null;
   }) => {
     if (!options?.skipDeleteUndo && options?.lastDeletedId) {
-      setLastDeletedBlockId(options.lastDeletedId);
+      noteUndo.pushUndoDelete(options.lastDeletedId);
+      setPendingDeleteUndo(options.lastDeletedId);
     }
     if (docTab === 'block-trash') {
       setMobileTab('list');
       await loadTrashedBlocks();
     }
     triggerSave();
-  }, [docTab, loadTrashedBlocks, triggerSave]);
+  }, [docTab, loadTrashedBlocks, noteUndo, setPendingDeleteUndo, triggerSave]);
 
   const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false, skipDeleteUndo = false) => {
     const prevBlocks = blocksRef.current;
@@ -4299,8 +4554,7 @@ export default function AdminNotePageContent() {
         .map((b) => (b.id === livePlan.previousId ? { ...b, content: livePlan.mergedContent } : b));
     });
 
-    setMergeFocusCaretOffset(plan.caretOffset);
-    focusBlockEditor(plan.previousId);
+    focusBlockEditor(plan.previousId, 'editor', plan.caretOffset);
 
     try {
       await patchNoteBlocks([{ id: plan.previousId, content: plan.mergedContent }]);
@@ -4334,7 +4588,7 @@ export default function AdminNotePageContent() {
       const json = (await res.json()) as { block: NoteBlock };
       const restoredBlock = json.block;
       setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
-      if (lastDeletedBlockId === block.id) setLastDeletedBlockId(null);
+      if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
       setBlocks((prev) => {
         if (prev.some((b) => b.id === restoredBlock.id)) return prev;
         return [...prev, restoredBlock].sort((a, b) => a.order_index - b.order_index);
@@ -4347,7 +4601,50 @@ export default function AdminNotePageContent() {
     } finally {
       setRestoringBlockId(null);
     }
-  }, [focusBlockEditor, lastDeletedBlockId, triggerSave]);
+  }, [focusBlockEditor, setPendingDeleteUndo, triggerSave]);
+
+  const applyNoteUndoEntry = useCallback(async (entry: NoteUndoEntry | null) => {
+    if (!entry) return;
+    if (entry.kind === 'restore-blocks') {
+      setBlocks((prev) => {
+        const map = new Map(entry.snapshots.map((snapshot) => [snapshot.id, snapshot]));
+        return prev.map((block) => {
+          const snapshot = map.get(block.id);
+          if (!snapshot) return block;
+          return {
+            ...block,
+            type: snapshot.type,
+            content: snapshot.content,
+            parent_block_id: snapshot.parent_block_id,
+            order_index: snapshot.order_index,
+          };
+        });
+      });
+      try {
+        await patchNoteBlocks(entry.snapshots.map((snapshot) => ({
+          id: snapshot.id,
+          type: snapshot.type,
+          content: snapshot.content,
+          parent_block_id: snapshot.parent_block_id,
+          order_index: snapshot.order_index,
+        })));
+        triggerSave();
+      } catch (e) {
+        devLogger.error('[Note] undo restore-blocks', e);
+        setError(e instanceof Error ? e.message : '실행 취소 실패');
+      }
+      return;
+    }
+    if (entry.kind === 'undo-create') {
+      const block = blocksRef.current.find((item) => item.id === entry.blockId);
+      if (block) await handleDeleteBlock(block, false, true);
+      return;
+    }
+    if (entry.kind === 'undo-delete') {
+      setPendingDeleteUndo(null);
+      await handleRestoreBlockFromTrash({ id: entry.blockId } as NoteBlock);
+    }
+  }, [handleDeleteBlock, handleRestoreBlockFromTrash, setPendingDeleteUndo, triggerSave]);
 
   const handlePurgeBlockFromTrash = useCallback(async (block: NoteBlock) => {
     if (!confirm('이 블록을 영구삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
@@ -4361,7 +4658,7 @@ export default function AdminNotePageContent() {
         const j = await res.json().catch(() => null);
         throw new Error(j?.error || '블록 영구삭제 실패');
       }
-      if (lastDeletedBlockId === block.id) setLastDeletedBlockId(null);
+      if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
       setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
       triggerSave();
     } catch (e) {
@@ -4370,47 +4667,33 @@ export default function AdminNotePageContent() {
     } finally {
       setPurgingBlockId(null);
     }
-  }, [lastDeletedBlockId, triggerSave]);
-
-  const handleUndoDeleteBlock = useCallback(async () => {
-    const candidate = trashedBlocks.find((b) => b.id === lastDeletedBlockId) ?? trashedBlocks[0];
-    if (!candidate) return;
-    await handleRestoreBlockFromTrash(candidate);
-  }, [handleRestoreBlockFromTrash, lastDeletedBlockId, trashedBlocks]);
-
-  const handleUndoCreateBlock = useCallback(async () => {
-    const blockId = undoCreateBlockIdRef.current;
-    if (!blockId) return;
-    undoCreateBlockIdRef.current = null;
-    setShowCreateUndo(false);
-    const block = blocksRef.current.find((b) => b.id === blockId);
-    if (!block) return;
-    await handleDeleteBlock(block, false, true);
-  }, [handleDeleteBlock]);
+  }, [setPendingDeleteUndo, triggerSave]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
       if (!isUndo) return;
+      if (!noteUndo.hasUndo()) return;
+
       const target = e.target as HTMLElement | null;
-      const isEditingTarget = !!target && (
+      const isEditing = !!target && (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
         target.isContentEditable ||
-        !!target.closest('[contenteditable="true"]')
+        !!target.closest(
+          '[contenteditable="true"], .ProseMirror, .note-rich-editor, [data-toggle-title], [data-note-list-text]',
+        )
       );
-      if (isEditingTarget) return;
-      if (!undoCreateBlockIdRef.current && !lastDeletedBlockId) return;
+      if (isEditing) return;
+
       e.preventDefault();
-      if (undoCreateBlockIdRef.current) {
-        void handleUndoCreateBlock();
-        return;
-      }
-      void handleUndoDeleteBlock();
+      e.stopImmediatePropagation();
+      const entry = noteUndo.popUndo();
+      void applyNoteUndoEntry(entry);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [handleUndoCreateBlock, handleUndoDeleteBlock, lastDeletedBlockId]);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [applyNoteUndoEntry, noteUndo]);
 
   // 멀티 블록 선택: Ctrl+A / Escape / Delete
   useEffect(() => {
@@ -4507,18 +4790,23 @@ export default function AdminNotePageContent() {
 
   const renderToggleInlineChild = (block: NoteBlock, nestDepth = 1): ReactNode => {
     const childBlocks = childrenByParentBlock.get(block.id) ?? [];
+    const siblings = getBlocksInParent(blocks, block.parent_block_id ?? null);
+    const numberedListIndex = block.type === 'numberedList'
+      ? numberedListIndexAmongSiblings(block, siblings)
+      : undefined;
     return (
       <ToggleInlineRow
         key={block.id}
         block={block}
         nestDepth={nestDepth}
         childBlocks={childBlocks}
+        numberedListIndex={numberedListIndex}
         renderChildBlock={renderToggleInlineChild}
         onUpdate={(content) => handleUpdateBlock(block, content)}
         onDelete={() => handleDeleteBlock(block)}
         onChangeType={(type) => handleChangeBlockType(block, type)}
         onEnter={() => handleInsertBlockAfter(block, 'text')}
-        onAddBelow={(type) => { void handleInsertBlockAfter(block, type ?? block.type); }}
+        onAddBelow={(type, content) => { void handleInsertBlockAfter(block, type ?? block.type, content); }}
         onOpenDocument={handleOpenDocumentById}
         onShowFormatToolbar={showFormatToolbar}
         onHideFormatToolbar={hideFormatToolbar}
@@ -4530,7 +4818,10 @@ export default function AdminNotePageContent() {
         }
         onEmptyBackspace={() => handleDeleteBlock(block, true)}
         onMergeWithPrevious={() => { void handleMergeWithPreviousBlock(block); }}
+        canMergeWithPrevious={() => !!planMergeWithPreviousBlock(blocksRef.current, block.id)}
         onDuplicate={() => { void handleDuplicateBlock(block); }}
+        onCopyBlockLink={() => handleCopyBlockLink(block)}
+        onRecordBlockUndo={() => recordBlockUndo([block.id])}
         onIndentChange={(direction) => handleIndentBlock(block, direction)}
         onNavigatePrevious={() => handleNavigateBlock(block, 'previous')}
         onNavigateNext={() => handleNavigateBlock(block, 'next')}
@@ -4542,6 +4833,7 @@ export default function AdminNotePageContent() {
         resolvePageIcon={resolvePageIcon}
         isFocused={focusedEditorBlockId === block.id}
         mergeFocusCaretOffset={focusedEditorBlockId === block.id ? mergeFocusCaretOffset : undefined}
+        onRequestCaretOffset={requestCaretOffset}
         onFocusBlock={() => focusBlockEditor(block.id)}
         onAddChildBelow={
           block.type === 'toggle'
@@ -4554,18 +4846,23 @@ export default function AdminNotePageContent() {
 
   const renderSortableBlock = (block: NoteBlock): ReactNode => {
     const childBlocks = childrenByParentBlock.get(block.id) ?? [];
+    const siblings = getBlocksInParent(blocks, block.parent_block_id ?? null);
+    const numberedListIndex = block.type === 'numberedList'
+      ? numberedListIndexAmongSiblings(block, siblings)
+      : undefined;
     return (
       <SortableBlockRow
         key={block.id}
         block={block}
         childBlocks={childBlocks}
+        numberedListIndex={numberedListIndex}
         renderChildBlock={renderToggleInlineChild}
         onAddChildBelow={(type) => { void handleInsertBlockInParent(block.id, type ?? 'text'); }}
         onUpdate={(content) => handleUpdateBlock(block, content)}
         onDelete={() => handleDeleteBlock(block)}
         onChangeType={(type) => handleChangeBlockType(block, type)}
         onEnter={() => handleInsertBlockAfter(block, 'text')}
-        onAddBelow={(type) => handleInsertBlockAfter(block, type ?? 'text')}
+        onAddBelow={(type, content) => { void handleInsertBlockAfter(block, type ?? 'text', content); }}
         onOpenDocument={handleOpenDocumentById}
         onShowFormatToolbar={showFormatToolbar}
         onHideFormatToolbar={hideFormatToolbar}
@@ -4577,7 +4874,10 @@ export default function AdminNotePageContent() {
         }
         onEmptyBackspace={() => handleDeleteBlock(block, true)}
         onMergeWithPrevious={() => { void handleMergeWithPreviousBlock(block); }}
+        canMergeWithPrevious={() => !!planMergeWithPreviousBlock(blocksRef.current, block.id)}
         onDuplicate={() => { void handleDuplicateBlock(block); }}
+        onCopyBlockLink={() => handleCopyBlockLink(block)}
+        onRecordBlockUndo={() => recordBlockUndo([block.id])}
         onIndentChange={(direction) => handleIndentBlock(block, direction)}
         onNavigatePrevious={() => handleNavigateBlock(block, 'previous')}
         onNavigateNext={() => handleNavigateBlock(block, 'next')}
@@ -4589,10 +4889,13 @@ export default function AdminNotePageContent() {
         resolvePageIcon={resolvePageIcon}
         isFocused={focusedEditorBlockId === block.id}
         mergeFocusCaretOffset={focusedEditorBlockId === block.id ? mergeFocusCaretOffset : undefined}
+        onRequestCaretOffset={requestCaretOffset}
         onFocusBlock={() => focusBlockEditor(block.id)}
       />
     );
   };
+
+  useEffect(() => bindNoteListCrossTextSelect(), []);
 
   useEffect(() => {
     if (!showDocIconPicker) return;
@@ -4658,28 +4961,6 @@ export default function AdminNotePageContent() {
         <div className="shrink-0 border-b border-rose-200 bg-rose-50 px-4 py-2 text-[12px] font-medium text-rose-700">
           {error}
           <button type="button" className="ml-2 underline" onClick={() => setError(null)}>닫기</button>
-        </div>
-      )}
-      {showCreateUndo && (
-        <div className="shrink-0 border-b border-sky-200 bg-sky-50 px-4 py-2 text-[12px] font-medium text-sky-700">
-          블록을 추가했습니다.
-          <button type="button" className="ml-2 underline" onClick={() => void handleUndoCreateBlock()}>
-            실행 취소
-          </button>
-          <span className="ml-2 text-[11px] text-sky-600">
-            (<kbd className="rounded border border-sky-300 bg-white px-1 py-0.5 text-[10px]">Ctrl/Cmd+Z</kbd>)
-          </span>
-        </div>
-      )}
-      {lastDeletedBlockId && (
-        <div className="shrink-0 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[12px] font-medium text-amber-700">
-          블록을 휴지통으로 이동했습니다.
-          <button type="button" className="ml-2 underline" onClick={() => void handleUndoDeleteBlock()}>
-            실행 취소
-          </button>
-          <span className="ml-2 text-[11px] text-amber-600">
-            (<kbd className="rounded border border-amber-300 bg-white px-1 py-0.5 text-[10px]">Ctrl/Cmd+Z</kbd>)
-          </span>
         </div>
       )}
       {/* ── 콘텐츠 ── */}
@@ -5423,7 +5704,11 @@ export default function AdminNotePageContent() {
                         items={rootSortableBlockIds}
                         strategy={verticalListSortingStrategy}
                       >
-                        <div data-note-block-list className="relative overflow-visible">
+                        <div
+                          data-note-block-list
+                          className="relative overflow-visible"
+                          onMouseMove={handleBlockListMouseMove}
+                        >
                           {rootBlocks.map((block) => (
                             <Fragment key={block.id}>
                               {renderSortableBlock(block)}

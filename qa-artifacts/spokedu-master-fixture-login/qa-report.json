@@ -1,0 +1,23 @@
+{
+  "login": true,
+  "dashboardPath": "/spokedu-master/dashboard",
+  "sections": {
+    "오늘 필요한 체육수업을 바로 고르세요": true,
+    "이번주 추천 프로그램": true,
+    "SPOMOVE": true,
+    "교실에서 할 수 있는 프로그램": true,
+    "미취학 아동이 할 수 있는 프로그램": true
+  },
+  "consoleErrors": [],
+  "admin": {
+    "accessible": false,
+    "currentPath": "/teacher/my-classes",
+    "initialProgramsFetches": 0,
+    "selectionProgramsFetches": null,
+    "selectionSpinnerVisible": null
+  },
+  "artifacts": [
+    "qa-artifacts/spokedu-master-fixture-login/dashboard-desktop.png",
+    "qa-artifacts/spokedu-master-fixture-login/dashboard-390.png"
+  ]
+}

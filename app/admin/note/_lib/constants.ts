@@ -84,7 +84,7 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
 
 export const NOTE_PAGE_SHELL = 'mx-auto w-full max-w-[720px] px-14 md:px-16';
 /** 마퀴 선택 — 에디터 열 전체(사이드바 바로 옆 여백 포함) */
-export const NOTE_MARQUEE_ZONE = 'w-full min-h-[36vh] cursor-default select-none';
+export const NOTE_MARQUEE_ZONE = 'w-full min-h-[36vh] cursor-default';
 export const NOTE_BLOCK_HANDLE_LEFT = '-left-[54px]';
 /** 페이지 왼쪽 거터 — 모든 블록 핸들이 여기 정렬 */
 export const NOTE_GUTTER_PX = 54;

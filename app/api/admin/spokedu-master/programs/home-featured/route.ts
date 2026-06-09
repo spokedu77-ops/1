@@ -1,172 +1,61 @@
 import { NextResponse } from 'next/server';
-import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { PROGRAMS as STATIC_PROGRAMS } from '@/app/spokedu-master/lib/data';
-import { isDedicatedMasterHero } from '@/app/spokedu-master/lib/program-visual';
+import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 
-const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
+const SLOT_COUNT = 4;
 
-function normalizeVideoUrl(value: string | null | undefined): string | undefined {
-  const text = (value ?? '').trim();
-  if (!text || INVALID_VIDEO.has(text.toLowerCase().replace(/\s+/g, ''))) return undefined;
-  try {
-    const url = new URL(text);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? text : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-type CurriculumRow = {
-  id: number;
-  title: string | null;
-  url: string | null;
-  display_order: number | null;
-};
-
-type MetaRow = {
+type SlotMetaRow = {
   curriculum_id: number;
-  sm_tags: string[] | null;
-  sm_theme: string | null;
-  sm_grade: string | null;
-  sm_space: string | null;
-  sm_duration: number | null;
-  sm_is_pro: boolean;
-  sm_is_new: boolean;
-  sm_is_hot: boolean;
-  sm_display_order: number;
-  sm_objective: string | null;
-  sm_development_focus: string | null;
-  sm_coach_script: string | null;
-  sm_parent_note: string | null;
-  sm_related_spomove_ids: string[] | null;
+  sm_display_order: number | null;
 };
 
-type OverlayRow = {
-  source_center_curriculum_id: number | null;
-  video_url: string | null;
-  updated_at: string | null;
-};
-
-function normalizeTitle(title: string) {
-  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
+function normalizeSlotIds(value: unknown): Array<number | null> {
+  const source = Array.isArray(value) ? value.slice(0, SLOT_COUNT) : [];
+  const slots = Array.from({ length: SLOT_COUNT }, (_, index) => {
+    const raw = source[index];
+    if (raw == null || raw === '') return null;
+    const id = Number(raw);
+    return Number.isInteger(id) && id > 0 ? id : null;
+  });
+  const selectedIds = slots.filter((id): id is number => id != null);
+  if (new Set(selectedIds).size !== selectedIds.length) {
+    throw new Error('같은 프로그램을 여러 추천 슬롯에 선택할 수 없습니다.');
+  }
+  return slots;
 }
 
-const staticDedicatedByTitle = new Map<string, boolean>();
-for (const program of STATIC_PROGRAMS) {
-  const hero = program.lessonDetail?.heroImageUrl ?? program.thumbnailUrl;
-  staticDedicatedByTitle.set(normalizeTitle(program.title), isDedicatedMasterHero(hero));
-}
-
-function scoreHomeFeatured(row: CurriculumRow, meta: MetaRow | null, videoUrl: string | undefined) {
-  let score = 0;
-  if (videoUrl) score += 50;
-  if (staticDedicatedByTitle.get(normalizeTitle((row.title ?? '').trim()))) score += 18;
-  if (meta?.sm_objective?.trim()) score += 12;
-  if (meta?.sm_development_focus?.trim()) score += 8;
-  if (meta?.sm_coach_script?.trim()) score += 8;
-  if (meta?.sm_grade?.trim()) score += 5;
-  if (meta?.sm_space?.trim()) score += 5;
-  const order = meta?.sm_display_order ?? row.display_order;
-  if (typeof order === 'number') score += Math.max(0, 25 - Math.min(order, 25));
-  if (meta?.sm_is_hot) score += 3;
-  return score;
-}
-
-async function loadHomeFeaturedCandidates(limit: number) {
+async function loadWeeklySlots() {
   const supabase = getServiceSupabase();
+  const { data, error } = await supabase
+    .from('spokedu_master_program_meta')
+    .select('curriculum_id,sm_display_order')
+    .eq('sm_is_hot', true)
+    .gte('sm_display_order', 1)
+    .lte('sm_display_order', SLOT_COUNT)
+    .order('sm_display_order', { ascending: true });
 
-  const { data: curriculumRows, error: currErr } = await supabase
-    .from('curriculum')
-    .select('id,title,url,display_order')
-    .eq('is_sub', false);
+  if (error) throw error;
 
-  if (currErr || !curriculumRows) {
-    throw new Error(currErr?.message ?? 'curriculum load failed');
-  }
-
-  const curriculumIds = (curriculumRows as CurriculumRow[]).map((row) => row.id);
-
-  const metaById = new Map<number, MetaRow>();
-  if (curriculumIds.length > 0) {
-    const { data: metaRows } = await supabase.from('spokedu_master_program_meta').select('*').in('curriculum_id', curriculumIds);
-    for (const meta of (metaRows ?? []) as MetaRow[]) {
-      metaById.set(meta.curriculum_id, meta);
+  const slots: Array<number | null> = Array(SLOT_COUNT).fill(null);
+  for (const row of (data ?? []) as SlotMetaRow[]) {
+    const order = Number(row.sm_display_order);
+    if (order >= 1 && order <= SLOT_COUNT && slots[order - 1] == null) {
+      slots[order - 1] = row.curriculum_id;
     }
   }
-
-  const overlayById = new Map<number, OverlayRow>();
-  if (curriculumIds.length > 0) {
-    const { data: overlayRows } = await supabase
-      .from('spokedu_pro_programs')
-      .select('source_center_curriculum_id,video_url,updated_at')
-      .in('source_center_curriculum_id', curriculumIds);
-
-    for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
-      const id = overlay.source_center_curriculum_id;
-      if (id == null) continue;
-      const prev = overlayById.get(id);
-      if (!prev) {
-        overlayById.set(id, overlay);
-        continue;
-      }
-      const prevTime = prev.updated_at ? Date.parse(prev.updated_at) : 0;
-      const nextTime = overlay.updated_at ? Date.parse(overlay.updated_at) : 0;
-      if (nextTime >= prevTime) overlayById.set(id, overlay);
-    }
-  }
-
-  const ranked = (curriculumRows as CurriculumRow[])
-    .map((row) => {
-      const meta = metaById.get(row.id) ?? null;
-      const overlay = overlayById.get(row.id);
-      const videoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
-      return {
-        curriculumId: row.id,
-        title: (row.title ?? '').trim() || `커리큘럼 #${row.id}`,
-        score: scoreHomeFeatured(row, meta, videoUrl),
-        hasVideo: Boolean(videoUrl),
-        currentHot: Boolean(meta?.sm_is_hot),
-        currentOrder: meta?.sm_display_order ?? row.display_order ?? null,
-        meta,
-      };
-    })
-    .sort((a, b) => b.score - a.score || a.curriculumId - b.curriculumId);
-
-  return ranked.slice(0, Math.max(1, Math.min(limit, 20)));
+  return slots;
 }
 
-function buildMetaPatch(meta: MetaRow | null, curriculumId: number, index: number): MetaRow {
-  return {
-    curriculum_id: curriculumId,
-    sm_tags: meta?.sm_tags ?? [],
-    sm_theme: meta?.sm_theme ?? null,
-    sm_grade: meta?.sm_grade ?? null,
-    sm_space: meta?.sm_space ?? null,
-    sm_duration: meta?.sm_duration ?? 20,
-    sm_is_pro: meta?.sm_is_pro ?? false,
-    sm_is_new: meta?.sm_is_new ?? false,
-    sm_is_hot: true,
-    sm_display_order: index,
-    sm_objective: meta?.sm_objective ?? null,
-    sm_development_focus: meta?.sm_development_focus ?? null,
-    sm_coach_script: meta?.sm_coach_script ?? null,
-    sm_parent_note: meta?.sm_parent_note ?? null,
-    sm_related_spomove_ids: meta?.sm_related_spomove_ids ?? [],
-  };
-}
-
-export async function GET(request: Request) {
+export async function GET() {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
-  const { searchParams } = new URL(request.url);
-  const limit = Math.min(20, Math.max(1, Number(searchParams.get('limit') ?? 8) || 8));
-
   try {
-    const candidates = await loadHomeFeaturedCandidates(limit);
-    return NextResponse.json({ data: candidates });
+    return NextResponse.json({ slots: await loadWeeklySlots() });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'preview failed' }, { status: 500 });
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : '추천 슬롯을 불러오지 못했습니다.' },
+      { status: 500 },
+    );
   }
 }
 
@@ -174,38 +63,56 @@ export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;
 
-  let body: { limit?: number; replaceHot?: boolean } = {};
   try {
-    body = await request.json();
-  } catch {
-    body = {};
-  }
-
-  const limit = Math.min(20, Math.max(1, Number(body.limit ?? 8) || 8));
-  const replaceHot = body.replaceHot !== false;
-
-  try {
+    const body = (await request.json()) as { slots?: unknown };
+    const slots = normalizeSlotIds(body.slots);
+    const selectedIds = slots.filter((id): id is number => id != null);
+    const currentSlots = await loadWeeklySlots();
+    const removedIds = currentSlots.filter(
+      (id): id is number => id != null && !selectedIds.includes(id),
+    );
     const supabase = getServiceSupabase();
-    const candidates = await loadHomeFeaturedCandidates(limit);
-    const selectedIds = candidates.map((item) => item.curriculumId);
 
-    if (replaceHot) {
-      const { error: clearError } = await supabase.from('spokedu_master_program_meta').update({ sm_is_hot: false }).neq('curriculum_id', 0);
-      if (clearError) throw clearError;
+    if (selectedIds.length > 0) {
+      const { data, error } = await supabase
+        .from('curriculum')
+        .select('id')
+        .in('id', selectedIds)
+        .eq('is_sub', false);
+      if (error) throw error;
+      if ((data ?? []).length !== selectedIds.length) {
+        throw new Error('선택한 프로그램 중 추천에 사용할 수 없는 항목이 있습니다.');
+      }
     }
 
-    const patches = candidates.map((item, index) => buildMetaPatch(item.meta, item.curriculumId, index));
-    const { error: upsertError } = await supabase.from('spokedu_master_program_meta').upsert(patches, { onConflict: 'curriculum_id' });
-    if (upsertError) throw upsertError;
+    if (removedIds.length > 0) {
+      const { error } = await supabase
+        .from('spokedu_master_program_meta')
+        .update({ sm_is_hot: false, sm_display_order: 999 })
+        .in('curriculum_id', removedIds);
+      if (error) throw error;
+    }
+
+    const patches = slots.flatMap((curriculumId, index) =>
+      curriculumId == null
+        ? []
+        : [{ curriculum_id: curriculumId, sm_is_hot: true, sm_display_order: index + 1 }],
+    );
+    if (patches.length > 0) {
+      const { error } = await supabase
+        .from('spokedu_master_program_meta')
+        .upsert(patches, { onConflict: 'curriculum_id' });
+      if (error) throw error;
+    }
 
     return NextResponse.json({
       ok: true,
-      applied: patches.length,
-      selectedIds,
-      replaceHot,
-      message: '홈 추천 8개가 저장되었습니다. MASTER 홈에서 새로고침해 확인하세요.',
+      slots,
+      message: '이번주 추천 프로그램 슬롯을 저장했습니다.',
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'apply failed' }, { status: 500 });
+    const message =
+      error instanceof Error ? error.message : '추천 슬롯 저장에 실패했습니다.';
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

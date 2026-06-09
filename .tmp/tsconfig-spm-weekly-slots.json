@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": [
+    "../next-env.d.ts",
+    "../app/admin/spokedu-master/programs/page.tsx",
+    "../app/api/admin/spokedu-master/programs/home-featured/route.ts",
+    "../app/spokedu-master/dashboard/DashboardView.tsx"
+  ],
+  "exclude": []
+}

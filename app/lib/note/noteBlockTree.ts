@@ -30,8 +30,13 @@ export const TOGGLE_INLINE_CHILD_TYPES = new Set(['text', 'todo', 'toggle', 'pag
 /** Tab으로 토글 안에 넣을 수 있는 타입 (divider·이미지·영상 등 제외) */
 export const TAB_INTO_TOGGLE_BLOCKED_TYPES = new Set(['divider', 'image', 'video']);
 
+/** Tab으로 하위 항목을 받을 수 있는 목록 블록 타입 */
+export const LIST_CONTAINER_TYPES = new Set(['bulletList', 'numberedList']);
+
 /** Backspace 병합 대상 타입 */
-export const MERGEABLE_BLOCK_TYPES = new Set(['text', 'heading', 'todo', 'callout']);
+export const MERGEABLE_BLOCK_TYPES = new Set([
+  'text', 'heading', 'heading2', 'heading3', 'todo', 'callout', 'bulletList', 'numberedList',
+]);
 
 type BlockWithMeta = NoteBlockLike & {
   type: string;
@@ -206,18 +211,21 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
     if (idx <= 0) return null;
 
     const prev = siblings[idx - 1];
-    if (prev.type !== 'toggle') return null;
     if (TAB_INTO_TOGGLE_BLOCKED_TYPES.has(moving.type)) return null;
 
     const descendantIds = collectDescendantBlockIds(moving.id, blocks);
     if (descendantIds.has(prev.id)) return null;
+
+    const nestIntoToggle = prev.type === 'toggle';
+    const nestIntoList = LIST_CONTAINER_TYPES.has(prev.type) && moving.type === prev.type;
+    if (!nestIntoToggle && !nestIntoList) return null;
 
     const children = getBlocksInParent(blocks, prev.id).filter((block) => block.id !== moving.id);
     const targetSiblings = [...children, moving].map((block, index) => ({ ...block, order_index: index }));
     return {
       targetParentId: prev.id,
       targetSiblings,
-      placedInToggle: true,
+      placedInToggle: nestIntoToggle,
     };
   }
 
@@ -244,6 +252,18 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
     targetSiblings,
     placedInToggle: grandParent?.type === 'toggle',
   };
+}
+
+/** 같은 부모 아래 번호 목록 형제 중 표시 순번 (1부터) */
+export function numberedListIndexAmongSiblings<T extends BlockWithMeta>(
+  block: T,
+  siblings: T[],
+): number {
+  const ordered = [...siblings]
+    .filter((item) => item.type === 'numberedList')
+    .sort((a, b) => a.order_index - b.order_index);
+  const idx = ordered.findIndex((item) => item.id === block.id);
+  return idx >= 0 ? idx + 1 : 1;
 }
 
 export function buildReparentContentPatch(

@@ -4,7 +4,9 @@
       "Bash(npx tsc *)",
       "Bash(npx eslint *)",
       "Bash(echo \"TSC exit: $?\")",
-      "Bash(echo \"ESLint exit: $?\")"
+      "Bash(echo \"ESLint exit: $?\")",
+      "Bash(npm run *)",
+      "Bash(curl -s http://localhost:3000/spokedu-master/library -o /dev/null -w \"%{http_code}\")"
     ]
   }
 }

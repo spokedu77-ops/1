@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planBlockDropAt } from './noteBlockTree';
+import { numberedListIndexAmongSiblings, planBlockDropAt, planBlockTabIndent } from './noteBlockTree';
 
 type Block = {
   id: string;
@@ -72,5 +72,46 @@ describe('planBlockDropAt', () => {
     ];
 
     expect(planBlockDropAt(blocks, 'toggle', 'child-toggle', 'inside')).toBeNull();
+  });
+});
+
+describe('planBlockTabIndent', () => {
+  it('nests a bullet list item under the previous bullet sibling', () => {
+    const blocks = [
+      block('a', 0, null, 'bulletList'),
+      block('b', 1, null, 'bulletList'),
+    ];
+
+    const plan = planBlockTabIndent(blocks, 'b', 'in');
+
+    expect(plan?.targetParentId).toBe('a');
+    expect(plan?.placedInToggle).toBe(false);
+    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['b']);
+  });
+
+  it('moves a nested bullet list item out after its parent', () => {
+    const blocks = [
+      block('a', 0, null, 'bulletList'),
+      block('b', 0, 'a', 'bulletList'),
+      block('c', 1, null, 'bulletList'),
+    ];
+
+    const plan = planBlockTabIndent(blocks, 'b', 'out');
+
+    expect(plan?.targetParentId).toBeNull();
+    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('numberedListIndexAmongSiblings', () => {
+  it('returns 1-based index among numbered list siblings', () => {
+    const siblings = [
+      block('a', 0, null, 'numberedList'),
+      block('b', 1, null, 'text'),
+      block('c', 2, null, 'numberedList'),
+    ];
+
+    expect(numberedListIndexAmongSiblings(siblings[0], siblings)).toBe(1);
+    expect(numberedListIndexAmongSiblings(siblings[2], siblings)).toBe(2);
   });
 });

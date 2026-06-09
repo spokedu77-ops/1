@@ -1,11 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   CheckCircle2,
   ChevronLeft,
-  Home,
   Loader2,
   RefreshCw,
   Save,
@@ -130,10 +129,7 @@ type EditForm = {
   variations: string;
   parentNote: string;
   relatedSpomoveIds: string;
-  showHome: boolean;
-  isHot: boolean;
   isNew: boolean;
-  displayOrder: number;
   publicationStatus: PublicationStatus;
   dashboardVisible: boolean;
 };
@@ -435,9 +431,9 @@ function getFormQuality(form: EditForm): QualityReport {
     operationTips: Boolean(form.operationTips.trim()),
     parentNote: Boolean(form.parentNote.trim()),
     spomove: csvToList(form.relatedSpomoveIds).length > 0,
-    homeExposure: form.showHome || form.publicationStatus === 'featured',
+    homeExposure: form.publicationStatus === 'featured',
   };
-  return buildQualityReport(checks, form.displayOrder);
+  return buildQualityReport(checks, 999);
 }
 
 function matchesFilter(item: ProgramItem, filter: FilterKey) {
@@ -496,10 +492,7 @@ function toForm(item: ProgramItem): EditForm {
     variations: extractSection(activityTip, '응용 방법'),
     parentNote: meta?.sm_parent_note || '',
     relatedSpomoveIds: listToCsv(meta?.sm_related_spomove_ids),
-    showHome: Boolean(meta?.sm_is_hot && (meta.sm_display_order ?? 9999) < 100),
-    isHot: Boolean(meta?.sm_is_hot),
     isNew: Boolean(meta?.sm_is_new),
-    displayOrder: meta?.sm_display_order ?? item.curriculum.displayOrder ?? 999,
     publicationStatus: item.effective.publicationStatus,
     dashboardVisible: meta?.sm_is_pro ?? true,
   };
@@ -726,6 +719,188 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   );
 }
 
+function WeeklyRecommendationManager({
+  items,
+  onSaved,
+}: {
+  items: ProgramItem[];
+  onSaved: () => Promise<void>;
+}) {
+  const [slots, setSlots] = useState<Array<number | null>>([null, null, null, null]);
+  const [queries, setQueries] = useState(['', '', '', '']);
+  const [loadingSlots, setLoadingSlots] = useState(true);
+  const [savingSlots, setSavingSlots] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const loadSlots = async () => {
+      try {
+        const res = await fetch('/api/admin/spokedu-master/programs/home-featured', {
+          cache: 'no-store',
+        });
+        const json = (await res.json()) as {
+          slots?: Array<number | null>;
+          error?: string;
+        };
+        if (!res.ok) throw new Error(json.error ?? '추천 슬롯을 불러오지 못했습니다.');
+        if (active) {
+          setSlots(
+            Array.from({ length: 4 }, (_, index) => json.slots?.[index] ?? null),
+          );
+        }
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : '추천 슬롯을 불러오지 못했습니다.',
+        );
+      } finally {
+        if (active) setLoadingSlots(false);
+      }
+    };
+    void loadSlots();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const updateSlot = (index: number, curriculumId: number | null) => {
+    setSlots((current) => {
+      if (
+        curriculumId != null &&
+        current.some((id, slotIndex) => slotIndex !== index && id === curriculumId)
+      ) {
+        toast.error('같은 프로그램을 여러 추천 슬롯에 선택할 수 없습니다.');
+        return current;
+      }
+      return current.map((id, slotIndex) => (slotIndex === index ? curriculumId : id));
+    });
+  };
+
+  const saveSlots = async () => {
+    setSavingSlots(true);
+    try {
+      const res = await fetch('/api/admin/spokedu-master/programs/home-featured', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slots }),
+      });
+      const json = (await res.json()) as {
+        slots?: Array<number | null>;
+        message?: string;
+        error?: string;
+      };
+      if (!res.ok) throw new Error(json.error ?? '추천 슬롯 저장에 실패했습니다.');
+      setSlots(Array.from({ length: 4 }, (_, index) => json.slots?.[index] ?? null));
+      await onSaved();
+      toast.success(json.message ?? '이번주 추천 프로그램을 저장했습니다.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '추천 슬롯 저장에 실패했습니다.');
+    } finally {
+      setSavingSlots(false);
+    }
+  };
+
+  return (
+    <section className="border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-5">
+      <div className="mx-auto max-w-[1500px] rounded-xl border border-indigo-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.12em] text-indigo-600">
+              Weekly recommendation
+            </p>
+            <h2 className="mt-1 text-[17px] font-black text-slate-950">
+              이번주 추천 프로그램 관리
+            </h2>
+            <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+              홈에 노출할 프로그램을 슬롯 순서대로 지정합니다. 빈 슬롯은 홈에서 제외됩니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void saveSlots()}
+            disabled={loadingSlots || savingSlots}
+            className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-[12px] font-black text-white disabled:opacity-50"
+          >
+            <Save size={14} />
+            {savingSlots ? '추천 저장 중' : '추천 슬롯 저장'}
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          {slots.map((selectedId, index) => {
+            const query = queries[index].trim().toLowerCase();
+            const selectedElsewhere = new Set(
+              slots.filter((id, slotIndex) => slotIndex !== index && id != null),
+            );
+            const options = items.filter((item) => {
+              if (item.curriculum.id === selectedId) return true;
+              if (!query) return true;
+              const text =
+                `${item.effective.title} ${item.curriculum.title} ${item.curriculum.id}`.toLowerCase();
+              return text.includes(query);
+            });
+
+            return (
+              <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[13px] font-black text-slate-900">
+                    {index + 1}번 추천 슬롯
+                  </p>
+                  {selectedId != null ? (
+                    <button
+                      type="button"
+                      onClick={() => updateSlot(index, null)}
+                      className="text-[11px] font-black text-slate-400 hover:text-rose-600"
+                    >
+                      비우기
+                    </button>
+                  ) : null}
+                </div>
+                <div className="relative mt-2">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={14}
+                  />
+                  <input
+                    value={queries[index]}
+                    onChange={(event) =>
+                      setQueries((current) =>
+                        current.map((value, queryIndex) =>
+                          queryIndex === index ? event.target.value : value,
+                        ),
+                      )
+                    }
+                    placeholder="프로그램 검색"
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                  />
+                </div>
+                <select
+                  value={selectedId ?? ''}
+                  disabled={loadingSlots}
+                  onChange={(event) =>
+                    updateSlot(index, event.target.value ? Number(event.target.value) : null)
+                  }
+                  className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-700 outline-none focus:border-indigo-400"
+                >
+                  <option value="">빈 슬롯</option>
+                  {options.map((item) => (
+                    <option
+                      key={item.curriculum.id}
+                      value={item.curriculum.id}
+                      disabled={selectedElsewhere.has(item.curriculum.id)}
+                    >
+                      {item.effective.title} · #{item.curriculum.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function AdminSmProgramsPage() {
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -735,6 +910,7 @@ export default function AdminSmProgramsPage() {
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
+  const selectedIdRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -742,10 +918,18 @@ export default function AdminSmProgramsPage() {
       const res = await fetch('/api/admin/spokedu-master/programs', { cache: 'no-store' });
       const json = (await res.json()) as ProgramsResponse & { error?: string };
       if (!res.ok) throw new Error(json.error ?? '프로그램 목록을 불러오지 못했습니다.');
-      setItems(json.data ?? []);
-      if (json.data?.length && selectedId == null) {
-        setSelectedId(json.data[0].curriculum.id);
-        setForm(toForm(json.data[0]));
+      const nextItems = json.data ?? [];
+      setItems(nextItems);
+      const nextSelected =
+        nextItems.find((item) => item.curriculum.id === selectedIdRef.current) ??
+        nextItems[0] ??
+        null;
+      if (nextSelected) {
+        setSelectedId(nextSelected.curriculum.id);
+        setForm(toForm(nextSelected));
+      } else {
+        setSelectedId(null);
+        setForm(null);
       }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '프로그램 목록을 불러오지 못했습니다.');
@@ -753,11 +937,15 @@ export default function AdminSmProgramsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedId]);
+  }, []);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
 
   const selected = useMemo(() => items.find((item) => item.curriculum.id === selectedId) ?? null, [items, selectedId]);
 
@@ -863,8 +1051,6 @@ export default function AdminSmProgramsPage() {
             sm_duration: normalizeMasterDuration(form.duration),
             sm_is_pro: form.dashboardVisible,
             sm_is_new: form.isNew,
-            sm_is_hot: form.showHome || form.isHot || form.publicationStatus === 'featured',
-            sm_display_order: Number.isFinite(form.displayOrder) ? form.displayOrder : 999,
             sm_objective: form.objective.trim() || null,
             sm_development_focus: normalizeLessonTheme(form.theme) || null,
             sm_coach_script: form.coachScript.trim() || null,
@@ -949,6 +1135,8 @@ export default function AdminSmProgramsPage() {
           </button>
         </div>
       </header>
+
+      <WeeklyRecommendationManager items={items} onSaved={load} />
 
       <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-white">
@@ -1135,17 +1323,6 @@ export default function AdminSmProgramsPage() {
                   <div className="grid gap-4">
                     <Field label="활동 방법"><TextArea rows={12} value={form.steps} onChange={(e) => updateForm('steps', e.target.value)} /></Field>
                     <Field label="변형 방법"><TextArea rows={8} value={form.variations} onChange={(e) => updateForm('variations', e.target.value)} /></Field>
-                  </div>
-                </section>
-
-                <section className="rounded-lg border border-slate-200 bg-white p-5">
-                  <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black"><Home size={16} />홈 노출</h3>
-                  <div className="flex flex-wrap items-center gap-4">
-                    <label className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 text-[12px] font-black text-slate-700">
-                      <input type="checkbox" checked={form.showHome} onChange={(e) => updateForm('showHome', e.target.checked)} />
-                      홈 노출
-                    </label>
-                    <Field label="display order"><TextInput type="number" value={form.displayOrder} onChange={(e) => updateForm('displayOrder', Number(e.target.value))} /></Field>
                   </div>
                 </section>
 

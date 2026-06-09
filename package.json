@@ -13,7 +13,8 @@
     "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
     "verify:spokedu-plan-copy": "node scripts/verify-spokedu-plan-copy.mjs",
-    "qa:spokedu-master": "node scripts/seed-spokedu-master-placeholder-heroes.mjs && node scripts/spokedu-master-home-content-audit.mjs && node scripts/spokedu-master-home-visual-audit.mjs && node scripts/spokedu-master-copy-scan.mjs"
+    "qa:spokedu-master": "node scripts/seed-spokedu-master-placeholder-heroes.mjs && node scripts/spokedu-master-home-content-audit.mjs && node scripts/spokedu-master-home-visual-audit.mjs && node scripts/spokedu-master-copy-scan.mjs",
+    "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",

@@ -3,6 +3,7 @@
 /* eslint-disable react-hooks/refs */
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { Extension } from '@tiptap/core';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Heading from '@tiptap/extension-heading';
@@ -24,6 +25,14 @@ import {
 } from './noteBulletInput';
 import { NoteRichEditorStyles } from './NoteRichEditorStyles';
 import { useNoteImageLightbox } from './NoteImageLightbox';
+import {
+  focusNoteEditorAtClick,
+  pendingEditorClickRef,
+  registerNoteEditor,
+  unregisterNoteEditor,
+} from './noteEditorRegistry';
+import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
+import { shouldSuppressListFormatToolbar } from './noteListCrossSelect';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -51,6 +60,18 @@ type NoteEditorChange = {
   html: string;
 };
 
+export type NoteEditorEnterSplit = {
+  beforeText: string;
+  beforeHtml: string;
+  afterText: string;
+  afterHtml: string;
+};
+
+export type NoteEditorEnterContext = {
+  isEmpty: boolean;
+  split?: NoteEditorEnterSplit;
+};
+
 type ToolbarPosition = {
   top: number;
   left: number;
@@ -63,6 +84,60 @@ function legacyTextToEditorHtml(text: string): string {
   const html = text.trim().length > 0 ? parseInlineMarkupToHtml(text) : '';
   const lines = html.split('\n');
   return lines.map((line) => `<p>${line || '<br>'}</p>`).join('');
+}
+
+type BlockListEnterHandler = (editor: Editor, shiftKey: boolean) => boolean;
+
+declare module '@tiptap/core' {
+  interface Storage {
+    noteBlockEnter: {
+      handler: BlockListEnterHandler | null;
+    };
+  }
+}
+
+/** 글머리·번호 항목 Enter — Keymap splitBlock보다 먼저 처리 */
+const NoteBlockEnterExtension = Extension.create({
+  name: 'noteBlockEnter',
+  priority: 10000,
+  addStorage() {
+    return { handler: null as BlockListEnterHandler | null };
+  },
+  addKeyboardShortcuts() {
+    return {
+      Enter: () => {
+        const handler = this.storage.handler;
+        return handler ? handler(this.editor, false) : false;
+      },
+      'Shift-Enter': () => {
+        const handler = this.storage.handler;
+        return handler ? handler(this.editor, true) : false;
+      },
+    };
+  },
+});
+
+/** 글머리 항목 중간에서 Enter — 커서 뒤 내용을 새 항목으로 분리 */
+function resolveListEnterSplit(editor: Editor): NoteEditorEnterSplit | null {
+  const { state } = editor;
+  const { selection } = state;
+  if (!selection.empty) return null;
+
+  const from = selection.from;
+  const docEnd = state.doc.content.size;
+  const afterText = state.doc.textBetween(from, docEnd, '\n', '\n').replace(/^\n+/, '');
+  if (!afterText) return null;
+
+  const beforeText = state.doc.textBetween(0, from, '\n', '\n');
+  const deleted = editor.chain().focus().deleteRange({ from, to: docEnd }).run();
+  if (!deleted) return null;
+
+  return {
+    beforeText,
+    beforeHtml: editor.getHTML(),
+    afterText,
+    afterHtml: legacyTextToEditorHtml(afterText),
+  };
 }
 
 function richTextSourceHtml({
@@ -164,19 +239,6 @@ function resolveToolbarPosition(editor: Editor): ToolbarPosition | null {
   };
 }
 
-function selectLineAtPos(editor: Editor, pos: number): boolean {
-  const $pos = editor.state.doc.resolve(pos);
-  for (let depth = $pos.depth; depth > 0; depth -= 1) {
-    if (!$pos.node(depth).isTextblock) continue;
-    const from = $pos.start(depth);
-    const to = $pos.end(depth);
-    if (to <= from) return false;
-    editor.chain().focus().setTextSelection({ from, to }).run();
-    return true;
-  }
-  return false;
-}
-
 function handleTextIndent(view: EditorView, direction: 'in' | 'out') {
   if (adjustBulletIndent(view, direction)) return true;
   return indentPlainTextBlock(view, direction);
@@ -195,9 +257,12 @@ export function NoteEditor({
   onHideFormatToolbar,
   uploadImage,
   enterCreatesBlock = false,
+  enterSplitOnMidBlock = false,
   autoFocusSignal = 0,
   onEmptyBackspace,
+  onBackspaceAtBlockStart,
   onMergeWithPrevious,
+  canMergeWithPrevious,
   onMarkdownBlockTrigger,
   onIndent,
   onNavigatePrevious,
@@ -205,6 +270,7 @@ export function NoteEditor({
   onEditorFocus,
   tabBehavior = 'block-indent',
   resetKey,
+  editorBlockId,
   focusCaretOffset,
 }: {
   content: Record<string, unknown> | null | undefined;
@@ -213,7 +279,7 @@ export function NoteEditor({
   placeholder: string;
   className: string;
   onChange: (change: NoteEditorChange) => void;
-  onEnter: () => void;
+  onEnter: (ctx?: NoteEditorEnterContext) => void;
   onSlashChange?: (show: boolean, query: string) => void;
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
@@ -223,9 +289,15 @@ export function NoteEditor({
   onHideFormatToolbar?: () => void;
   uploadImage?: (file: File) => Promise<string>;
   enterCreatesBlock?: boolean;
+  /** Enter 시 커서 뒤 텍스트를 다음 블록으로 분리 (글머리·번호 목록) */
+  enterSplitOnMidBlock?: boolean;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
+  /** 블록 맨 앞 Backspace — 글머리 해제 등. true면 처리 완료 */
+  onBackspaceAtBlockStart?: () => boolean;
   onMergeWithPrevious?: () => void;
+  /** false면 이전 블록 병합 불가 — 기본 Backspace 허용 */
+  canMergeWithPrevious?: () => boolean;
   onMarkdownBlockTrigger?: (trigger: MarkdownBlockTrigger) => void;
   onIndent?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
@@ -233,12 +305,16 @@ export function NoteEditor({
   onEditorFocus?: () => void;
   tabBehavior?: 'block-indent' | 'insert-text-indent';
   resetKey?: string;
+  editorBlockId?: string;
   focusCaretOffset?: number;
 }) {
   const pendingChangeRef = useRef<NoteEditorChange | null>(null);
   const changeTimerRef = useRef<number | null>(null);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
+  const isEditingRef = useRef(false);
+  const lastAutoFocusSignalRef = useRef(0);
   const editorRef = useRef<Editor | null>(null);
+  const focusClickRafRef = useRef<number | null>(null);
   const imageLightbox = useNoteImageLightbox();
   const imageLightboxRef = useRef(imageLightbox);
   imageLightboxRef.current = imageLightbox;
@@ -251,13 +327,16 @@ export function NoteEditor({
     onHideFormatToolbar,
     uploadImage,
     onEmptyBackspace,
+    onBackspaceAtBlockStart,
     onMergeWithPrevious,
+    canMergeWithPrevious,
     onMarkdownBlockTrigger,
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
     onEditorFocus,
     enterCreatesBlock,
+    enterSplitOnMidBlock,
     tabBehavior,
     flushPendingChange: () => {},
   });
@@ -270,13 +349,16 @@ export function NoteEditor({
     onHideFormatToolbar,
     uploadImage,
     onEmptyBackspace,
+    onBackspaceAtBlockStart,
     onMergeWithPrevious,
+    canMergeWithPrevious,
     onMarkdownBlockTrigger,
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
     onEditorFocus,
     enterCreatesBlock,
+    enterSplitOnMidBlock,
     tabBehavior,
     flushPendingChange: callbacksRef.current.flushPendingChange,
   };
@@ -308,6 +390,10 @@ export function NoteEditor({
   }, [flushPendingChange]);
 
   const notifyFormatToolbar = useCallback((currentEditor: Editor) => {
+    if (shouldSuppressListFormatToolbar()) {
+      callbacksRef.current.onHideFormatToolbar?.();
+      return;
+    }
     const position = resolveToolbarPosition(currentEditor);
     if (!position) {
       callbacksRef.current.onHideFormatToolbar?.();
@@ -320,9 +406,9 @@ export function NoteEditor({
     );
   }, []);
 
-  const editor = useEditor({
-    immediatelyRender: false,
-    extensions: [
+  const extensions = useMemo(
+    () => [
+      NoteBlockEnterExtension,
       StarterKit.configure({
         heading: false,
         bulletList: false,
@@ -339,11 +425,18 @@ export function NoteEditor({
       Image.configure({ inline: false, allowBase64: false }),
       CharacterCount,
       Placeholder.configure({ placeholder }),
+      NoteListCrossHighlightExtension,
     ],
+    [placeholder],
+  );
+
+  const editor = useEditor({
+    immediatelyRender: false,
+    extensions,
     content: sourceHtml,
     editorProps: {
       attributes: {
-        class: `note-rich-editor min-h-[1.75rem] w-full outline-none ${className}`,
+        class: `note-rich-editor min-h-[1.75rem] w-full select-text outline-none ${className}`,
       },
       handleClick: (_view, _pos, event) => {
         const target = event.target as HTMLElement;
@@ -393,12 +486,15 @@ export function NoteEditor({
           flushPendingChange: flush,
           onSlashChange: currentOnSlashChange,
           onEmptyBackspace: currentOnEmptyBackspace,
+          onBackspaceAtBlockStart: currentOnBackspaceAtBlockStart,
           onMergeWithPrevious: currentOnMergeWithPrevious,
+          canMergeWithPrevious: currentCanMergeWithPrevious,
           onMarkdownBlockTrigger: currentOnMarkdownBlockTrigger,
           onNavigatePrevious: currentOnNavigatePrevious,
           onNavigateNext: currentOnNavigateNext,
           onEnter: currentOnEnter,
           enterCreatesBlock: currentEnterCreatesBlock,
+          enterSplitOnMidBlock: currentEnterSplitOnMidBlock,
         } = callbacksRef.current;
 
         if (event.key === ' ') {
@@ -430,22 +526,33 @@ export function NoteEditor({
           currentOnSlashChange?.(false, '');
           return false;
         }
-        if (event.key === 'Backspace' && editorRef.current?.isEmpty && currentOnEmptyBackspace) {
-          event.preventDefault();
-          flush();
-          currentOnEmptyBackspace();
-          return true;
-        }
-        if (event.key === 'Backspace' && currentOnMergeWithPrevious) {
+        if (event.key === 'Backspace') {
           const { selection } = view.state;
           if (selection.empty && selection.from <= 1) {
-            event.preventDefault();
-            flush();
-            currentOnMergeWithPrevious();
-            return true;
+            if (editorRef.current?.isEmpty && currentOnEmptyBackspace) {
+              event.preventDefault();
+              flush();
+              currentOnEmptyBackspace();
+              return true;
+            }
+            if (currentOnBackspaceAtBlockStart?.()) {
+              event.preventDefault();
+              flush();
+              return true;
+            }
+            const canMerge = currentCanMergeWithPrevious?.() ?? true;
+            if (canMerge && currentOnMergeWithPrevious) {
+              event.preventDefault();
+              flush();
+              currentOnMergeWithPrevious();
+              return true;
+            }
           }
         }
-        if (event.key === 'ArrowUp' && currentOnNavigatePrevious) {
+        if (
+          (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
+          && currentOnNavigatePrevious
+        ) {
           const { selection } = view.state;
           if (selection.empty && selection.from <= 1) {
             event.preventDefault();
@@ -454,7 +561,10 @@ export function NoteEditor({
             return true;
           }
         }
-        if (event.key === 'ArrowDown' && currentOnNavigateNext) {
+        if (
+          (event.key === 'ArrowRight' || event.key === 'ArrowDown')
+          && currentOnNavigateNext
+        ) {
           const { doc, selection } = view.state;
           if (selection.empty && selection.to >= doc.content.size - 1) {
             event.preventDefault();
@@ -462,6 +572,10 @@ export function NoteEditor({
             currentOnNavigateNext();
             return true;
           }
+        }
+        // 글머리·번호 블록 — NoteBlockEnterExtension이 Keymap Enter보다 먼저 처리
+        if (event.key === 'Enter' && currentEnterCreatesBlock) {
+          return false;
         }
         if (event.key === 'Enter' && event.shiftKey) {
           return false;
@@ -475,14 +589,7 @@ export function NoteEditor({
           event.preventDefault();
           currentOnSlashChange?.(false, '');
           flush();
-          currentOnEnter();
-          return true;
-        }
-        if (event.key === 'Enter' && currentEnterCreatesBlock) {
-          event.preventDefault();
-          currentOnSlashChange?.(false, '');
-          flush();
-          currentOnEnter();
+          currentOnEnter({ isEmpty: editorRef.current?.isEmpty ?? false });
           return true;
         }
         return false;
@@ -514,7 +621,17 @@ export function NoteEditor({
       callbacksRef.current.onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');
       scheduleChange({ text: nextText, html: currentEditor.getHTML() });
     },
+    onCreate: ({ editor: currentEditor }) => {
+      requestAnimationFrame(() => {
+        if (editorBlockId && focusNoteEditorAtClick(editorBlockId, currentEditor)) return;
+        if (typeof focusCaretOffset === 'number' && focusCaretOffset >= 0) {
+          const pos = Math.min(focusCaretOffset + 1, currentEditor.state.doc.content.size);
+          currentEditor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
+        }
+      });
+    },
     onFocus: ({ editor: currentEditor }) => {
+      isEditingRef.current = true;
       callbacksRef.current.onEditorFocus?.();
       notifyFormatToolbar(currentEditor);
     },
@@ -526,6 +643,7 @@ export function NoteEditor({
       notifyFormatToolbar(currentEditor);
     },
     onBlur: () => {
+      isEditingRef.current = false;
       flushPendingChange();
       callbacksRef.current.onHideFormatToolbar?.();
       callbacksRef.current.onSlashChange?.(false, '');
@@ -536,21 +654,54 @@ export function NoteEditor({
 
   useEffect(() => {
     if (!editor) return;
-    const handleDoubleClick = (event: MouseEvent) => {
-      const coords = editor.view.posAtCoords({ left: event.clientX, top: event.clientY });
-      if (!coords) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      if (!selectLineAtPos(editor, coords.pos)) return;
-      requestAnimationFrame(() => {
-        notifyFormatToolbar(editor);
+    const storage = editor.storage.noteBlockEnter;
+    if (!enterCreatesBlock) {
+      storage.handler = null;
+      return;
+    }
+    storage.handler = (currentEditor, shiftKey) => {
+      if (shiftKey) {
+        return currentEditor.commands.setHardBreak();
+      }
+      const cbs = callbacksRef.current;
+      cbs.onSlashChange?.(false, '');
+      let split: NoteEditorEnterSplit | undefined;
+      if (cbs.enterSplitOnMidBlock) {
+        const splitResult = resolveListEnterSplit(currentEditor);
+        if (splitResult) {
+          split = splitResult;
+          if (changeTimerRef.current !== null) {
+            window.clearTimeout(changeTimerRef.current);
+            changeTimerRef.current = null;
+          }
+          pendingChangeRef.current = null;
+          cbs.onChange({
+            text: splitResult.beforeText,
+            html: splitResult.beforeHtml,
+          });
+        } else {
+          flushPendingChange();
+        }
+      } else {
+        flushPendingChange();
+      }
+      cbs.onEnter({
+        isEmpty: currentEditor.isEmpty,
+        split,
       });
+      return true;
     };
-    editor.view.dom.addEventListener('dblclick', handleDoubleClick, true);
     return () => {
-      editor.view.dom.removeEventListener('dblclick', handleDoubleClick, true);
+      storage.handler = null;
     };
-  }, [editor, notifyFormatToolbar]);
+  }, [editor, enterCreatesBlock, flushPendingChange]);
+
+  const cancelPendingFocusClick = useCallback(() => {
+    if (focusClickRafRef.current !== null) {
+      cancelAnimationFrame(focusClickRafRef.current);
+      focusClickRafRef.current = null;
+    }
+  }, []);
 
   useEffect(() => () => {
     flushPendingChange();
@@ -561,11 +712,14 @@ export function NoteEditor({
     if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
     const resetKeyChanged = lastResetKeyRef.current !== resetKey;
     if (resetKeyChanged) lastResetKeyRef.current = resetKey;
-    if (!resetKeyChanged && editor.isFocused) return;
+    if (!resetKeyChanged && (isEditingRef.current || pendingChangeRef.current)) return;
     let currentHtml = '';
     try {
       currentHtml = editor.getHTML();
     } catch {
+      return;
+    }
+    if (resetKeyChanged && isEditingRef.current && editor.getText() === text) {
       return;
     }
     if (resetKeyChanged || currentHtml !== sourceHtml) {
@@ -574,21 +728,97 @@ export function NoteEditor({
         changeTimerRef.current = null;
       }
       pendingChangeRef.current = null;
+      const caret = editor.state.selection.from;
       editor.commands.setContent(sourceHtml, { emitUpdate: false });
+      if (isEditingRef.current) {
+        const pos = Math.min(caret, editor.state.doc.content.size - 1);
+        editor.commands.setTextSelection({ from: pos, to: pos });
+      }
     }
-  }, [editor, resetKey, sourceHtml]);
+  }, [editor, resetKey, sourceHtml, text]);
+
+  useEffect(() => {
+    lastAutoFocusSignalRef.current = 0;
+  }, [resetKey]);
+
+  useEffect(() => {
+    if (!editor || typeof focusCaretOffset !== 'number' || focusCaretOffset < 0) return;
+    requestAnimationFrame(() => {
+      const pos = Math.min(focusCaretOffset + 1, editor.state.doc.content.size);
+      editor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
+    });
+  }, [focusCaretOffset, editor]);
 
   useEffect(() => {
     if (!editor || autoFocusSignal <= 0) return;
+    if (autoFocusSignal === lastAutoFocusSignalRef.current) return;
+    lastAutoFocusSignalRef.current = autoFocusSignal;
     requestAnimationFrame(() => {
+      if (editorBlockId && focusNoteEditorAtClick(editorBlockId, editor)) return;
       if (typeof focusCaretOffset === 'number' && focusCaretOffset >= 0) {
         const pos = Math.min(focusCaretOffset + 1, editor.state.doc.content.size);
         editor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
         return;
       }
-      editor.commands.focus('end');
+      if (!isEditingRef.current) {
+        editor.commands.focus('start');
+      }
     });
-  }, [autoFocusSignal, editor, focusCaretOffset]);
+  }, [autoFocusSignal, editor, editorBlockId, focusCaretOffset]);
+
+  useEffect(() => {
+    if (!editor || !editorBlockId) return;
+    registerNoteEditor(editorBlockId, editor);
+    let downX = 0;
+    let downY = 0;
+    let didDrag = false;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      cancelPendingFocusClick();
+      didDrag = false;
+      pendingEditorClickRef.current = {
+        blockId: editorBlockId,
+        x: event.clientX,
+        y: event.clientY,
+      };
+      downX = event.clientX;
+      downY = event.clientY;
+    };
+    const handleMouseMove = (event: MouseEvent) => {
+      if (event.buttons !== 1) return;
+      if (Math.abs(event.clientX - downX) > 3 || Math.abs(event.clientY - downY) > 3) {
+        didDrag = true;
+        cancelPendingFocusClick();
+      }
+    };
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.detail >= 2 || didDrag) {
+        cancelPendingFocusClick();
+        return;
+      }
+      const dx = Math.abs(event.clientX - downX);
+      const dy = Math.abs(event.clientY - downY);
+      if (dx >= 4 || dy >= 4) return;
+      if (!editor.state.selection.empty) return;
+      focusClickRafRef.current = requestAnimationFrame(() => {
+        focusClickRafRef.current = null;
+        if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
+        if (!editor.state.selection.empty) return;
+        focusNoteEditorAtClick(editorBlockId, editor);
+      });
+    };
+    const dom = editor.view.dom;
+    dom.addEventListener('mousedown', handleMouseDown, true);
+    dom.addEventListener('mousemove', handleMouseMove, true);
+    dom.addEventListener('mouseup', handleMouseUp, true);
+    return () => {
+      cancelPendingFocusClick();
+      dom.removeEventListener('mousedown', handleMouseDown, true);
+      dom.removeEventListener('mousemove', handleMouseMove, true);
+      dom.removeEventListener('mouseup', handleMouseUp, true);
+      unregisterNoteEditor(editorBlockId);
+    };
+  }, [cancelPendingFocusClick, editor, editorBlockId]);
 
   return (
     <>
