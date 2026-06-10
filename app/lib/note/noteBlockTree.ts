@@ -254,6 +254,24 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
   };
 }
 
+/** 글머리 목록 마커 단계 — 목록 컨테이너(bullet/numbered) 조상만 센다. 토글 안 첫 항목은 0(•). */
+export function bulletListNestLevelAmongContainers<T extends NoteBlockLike>(
+  block: T,
+  blocks: T[],
+): number {
+  let level = 0;
+  let parentId = block.parent_block_id ?? null;
+  while (parentId) {
+    const parent = blocks.find((item) => item.id === parentId);
+    if (!parent) break;
+    if (LIST_CONTAINER_TYPES.has(parent.type)) {
+      level += 1;
+    }
+    parentId = parent.parent_block_id ?? null;
+  }
+  return Math.max(0, Math.min(2, level));
+}
+
 /** 같은 부모 아래 번호 목록 형제 중 표시 순번 (1부터) */
 export function numberedListIndexAmongSiblings<T extends BlockWithMeta>(
   block: T,

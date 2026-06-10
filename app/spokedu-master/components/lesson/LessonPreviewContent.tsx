@@ -83,19 +83,23 @@ export function LessonPreviewContent({
         </div>
 
         <div className="flex min-w-0 flex-col gap-3">
-          <PreviewEquipmentCard items={equipment} />
-          <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-            <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">수업 스크립트</p>
-            <LessonCoachScript text={getPreviewScript(script)} prominent />
-          </div>
-          <LessonFullSection title="활동 방법">
-            <LessonNumberedList items={previewRules} />
-            {hiddenRuleCount > 0 ? (
-              <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-500">
-                전체 진행 순서는 수업 자료에서 확인하세요.
-              </p>
-            ) : null}
-          </LessonFullSection>
+          {equipment.length > 0 ? <PreviewEquipmentCard items={equipment} /> : null}
+          {script ? (
+            <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">수업 스크립트</p>
+              <LessonCoachScript text={getPreviewScript(script)} prominent />
+            </div>
+          ) : null}
+          {previewRules.length > 0 ? (
+            <LessonFullSection title="활동 방법">
+              <LessonNumberedList items={previewRules} />
+              {hiddenRuleCount > 0 ? (
+                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-500">
+                  전체 진행 순서는 수업 자료에서 확인하세요.
+                </p>
+              ) : null}
+            </LessonFullSection>
+          ) : null}
           {footer}
         </div>
       </div>

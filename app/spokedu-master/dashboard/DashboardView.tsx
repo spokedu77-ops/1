@@ -757,9 +757,7 @@ function ExplanationToolEntry({ program }: { program: Program }) {
 function HomeProgramPreview({ program, onClose }: { program: Program; onClose: () => void }) {
   const [copied, setCopied] = useState(false);
   const detail = program.lessonDetail;
-  const parentCopy =
-    detail?.parentNote ||
-    `오늘은 ${getProgramTitle(program)} 활동으로 ${detail?.developmentFocus || getProgramCategory(program)}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`;
+  const parentCopy = detail?.parentNote?.trim() ?? '';
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -772,15 +770,17 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
       <LessonPreviewContent
         program={program}
         footer={
-            <div className="grid gap-2 sm:grid-cols-2">
+            <div className={parentCopy ? 'grid gap-2 sm:grid-cols-2' : ''}>
               <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white shadow-[0_10px_22px_rgba(79,70,229,0.18)]">
                 <BookOpen className="h-4 w-4" />
                 수업 자료 보기
               </Link>
-              <button type="button" onClick={copyParentNote} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
-                <Clipboard className="h-4 w-4" />
-                {copied ? '복사 완료 ✓' : '알림장 문구 복사'}
-              </button>
+              {parentCopy ? (
+                <button type="button" onClick={copyParentNote} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+                  <Clipboard className="h-4 w-4" />
+                  {copied ? '복사 완료 ✓' : '알림장 문구 복사'}
+                </button>
+              ) : null}
             </div>
           }
         />

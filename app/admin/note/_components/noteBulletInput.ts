@@ -106,6 +106,46 @@ export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockT
   return null;
 }
 
+/** 마크다운 트리거(+ Space)만으로 타입 변환할 때 본문에 남은 트리거 문자 제거 */
+export function stripMarkdownTriggerForTypeChange(
+  text: string,
+  nextType: MarkdownBlockTrigger,
+): string {
+  const parsed = parseTextBlockLine(text);
+  if (parsed.level > 0) return text;
+
+  const token = parsed.body.trim();
+  const body = parsed.body;
+  const isTriggerOnly = (() => {
+    switch (nextType) {
+      case 'heading3':
+        return token === '###';
+      case 'heading2':
+        return token === '##';
+      case 'heading':
+        return token === '#';
+      case 'todo':
+        return token === '[]' || token === '[ ]';
+      case 'toggle':
+        return token === '>';
+      case 'divider':
+        return token === '---';
+      case 'callout':
+        return token === '!!';
+      case 'code':
+        return token === '```';
+      case 'bulletList':
+        return body === '*' || body === '-';
+      case 'numberedList':
+        return /^\d+\.$/.test(token);
+      default:
+        return false;
+    }
+  })();
+
+  return isTriggerOnly ? '' : text;
+}
+
 export function tryConvertMarkdownBulletTrigger(view: EditorView): boolean {
   const { $from } = view.state.selection;
   if (!$from.parent.isTextblock) return false;

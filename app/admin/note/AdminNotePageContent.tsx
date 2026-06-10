@@ -38,10 +38,11 @@ import {
   planMoveRootBlockGroup,
   planPromoteChildrenOnDelete,
   numberedListIndexAmongSiblings,
+  bulletListNestLevelAmongContainers,
   sortRootBlocks,
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
-import { bulletMarkerForLevel } from './_components/noteBulletInput';
+import { bulletMarkerForLevel, stripMarkdownTriggerForTypeChange } from './_components/noteBulletInput';
 import { pendingEditorClickRef } from './_components/noteEditorRegistry';
 import { bindNoteListCrossTextSelect } from './_components/noteListCrossSelect';
 import {
@@ -430,14 +431,18 @@ function buildContentForTypeChange(
     return base;
   }
   const prev = prevContent ?? {};
-  const text = typeof prev.text === 'string' ? prev.text : '';
+  const rawText = typeof prev.text === 'string' ? prev.text : '';
+  const text = TEXT_CARRYING_BLOCK_TYPES.has(nextType)
+    ? stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger)
+    : rawText;
+  const didStripTrigger = text !== rawText;
   const html = typeof prev.html === 'string' ? prev.html : undefined;
   const bodyHtml = typeof prev.bodyHtml === 'string' ? prev.bodyHtml : undefined;
   return {
     ...base,
     text,
-    ...(html !== undefined ? { html } : {}),
-    ...(bodyHtml !== undefined ? { bodyHtml } : {}),
+    ...(!didStripTrigger && html !== undefined ? { html } : {}),
+    ...(!didStripTrigger && bodyHtml !== undefined ? { bodyHtml } : {}),
     ...(typeof prev.checked === 'boolean' && nextType === 'todo' ? { checked: prev.checked } : {}),
   };
 }
@@ -843,6 +848,7 @@ function BlockContent({
   onFocusBlock,
   autoFocusTitleSignal = 0,
   numberedListIndex,
+  bulletListNestLevel = 0,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -881,6 +887,7 @@ function BlockContent({
   onFocusBlock?: () => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
+  bulletListNestLevel?: number;
 }) {
   const isBlockDragActive = useBlockDragActive();
   const imageLightbox = useNoteImageLightbox();
@@ -1091,7 +1098,7 @@ function BlockContent({
     );
   };
 
-  const listNestLevel = Math.max(0, Math.min(2, toggleNestDepth - 1));
+  const listNestLevel = bulletListNestLevel;
 
   const handleListItemBackspaceAtStart = (): boolean => {
     if (block.type !== 'bulletList' && block.type !== 'numberedList') return false;
@@ -1249,7 +1256,9 @@ function BlockContent({
       <div style={{ marginLeft: `${contentMarginLeft}px` }}>
         <div className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}>
           <span
-            className="mt-[2px] min-w-[1.25rem] shrink-0 text-center text-[16px] leading-7 text-slate-600 select-none"
+            className={`mt-[2px] min-w-[1.25rem] shrink-0 text-center text-[16px] leading-7 select-none ${
+              listNestLevel === 0 ? 'text-neutral-900' : 'text-slate-600'
+            }`}
             aria-hidden
           >
             {bulletGlyph}
@@ -1638,7 +1647,11 @@ function BlockContent({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                onAddBelow('toggle');
+                if (collapsed) {
+                  onAddBelow('toggle');
+                } else {
+                  onAddChildBelow?.('text');
+                }
                 return;
               }
               if (e.key === 'Tab' && onIndentChange) {
@@ -1670,7 +1683,7 @@ function BlockContent({
                 })}
               </>
             )}
-            {childBlocks.length > 0 && (
+            {childBlocks.length > 0 ? (
               <SortableContext
                 items={childBlocks.map((child) => child.id)}
                 strategy={verticalListSortingStrategy}
@@ -1683,7 +1696,19 @@ function BlockContent({
                   ))}
                 </div>
               </SortableContext>
-            )}
+            ) : !showToggleBody && onAddChildBelow ? (
+              <div
+                className="min-h-[30px] cursor-text py-0.5"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onAddChildBelow('text');
+                }}
+              >
+                <span className="text-[16px] leading-[1.7] text-neutral-400">
+                  {EMPTY_BLOCK_PLACEHOLDER}
+                </span>
+              </div>
+            ) : null}
             {renderSlashMenuPortal()}
             {toggleImages.length > 0 && (
               <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
@@ -1935,6 +1960,7 @@ function SortableBlockRow({
   onFocusBlock,
   autoFocusTitleSignal = 0,
   numberedListIndex,
+  bulletListNestLevel = 0,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -1974,6 +2000,7 @@ function SortableBlockRow({
   onFocusBlock?: () => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
+  bulletListNestLevel?: number;
 }) {
   const {
     attributes,
@@ -2049,6 +2076,7 @@ function SortableBlockRow({
         onFocusBlock={onFocusBlock}
         autoFocusTitleSignal={autoFocusTitleSignal}
         numberedListIndex={numberedListIndex}
+        bulletListNestLevel={bulletListNestLevel}
       />
     </div>
   );
@@ -2171,6 +2199,7 @@ function ToggleInlineRow({
   onAddChildBelow,
   autoFocusTitleSignal = 0,
   numberedListIndex,
+  bulletListNestLevel = 0,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
@@ -2211,6 +2240,7 @@ function ToggleInlineRow({
   onAddChildBelow?: (type?: NoteBlock['type']) => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
+  bulletListNestLevel?: number;
 }) {
   const isListSibling = block.type === 'bulletList' || block.type === 'numberedList';
   const blockTypeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
@@ -2369,6 +2399,7 @@ function ToggleInlineRow({
           onFocusBlock={onFocusBlock}
           autoFocusTitleSignal={autoFocusTitleSignal}
           numberedListIndex={numberedListIndex}
+          bulletListNestLevel={bulletListNestLevel}
         />
       </div>
     </div>
@@ -4794,6 +4825,9 @@ export default function AdminNotePageContent() {
     const numberedListIndex = block.type === 'numberedList'
       ? numberedListIndexAmongSiblings(block, siblings)
       : undefined;
+    const bulletListNestLevel = block.type === 'bulletList'
+      ? bulletListNestLevelAmongContainers(block, blocks)
+      : undefined;
     return (
       <ToggleInlineRow
         key={block.id}
@@ -4801,6 +4835,7 @@ export default function AdminNotePageContent() {
         nestDepth={nestDepth}
         childBlocks={childBlocks}
         numberedListIndex={numberedListIndex}
+        bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
         onUpdate={(content) => handleUpdateBlock(block, content)}
         onDelete={() => handleDeleteBlock(block)}
@@ -4850,12 +4885,16 @@ export default function AdminNotePageContent() {
     const numberedListIndex = block.type === 'numberedList'
       ? numberedListIndexAmongSiblings(block, siblings)
       : undefined;
+    const bulletListNestLevel = block.type === 'bulletList'
+      ? bulletListNestLevelAmongContainers(block, blocks)
+      : undefined;
     return (
       <SortableBlockRow
         key={block.id}
         block={block}
         childBlocks={childBlocks}
         numberedListIndex={numberedListIndex}
+        bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
         onAddChildBelow={(type) => { void handleInsertBlockInParent(block.id, type ?? 'text'); }}
         onUpdate={(content) => handleUpdateBlock(block, content)}

@@ -125,10 +125,7 @@ function getHeroImage(program: Program) {
 }
 
 function getParentCopy(program: Program) {
-  return (
-    program.lessonDetail?.parentNote ||
-    `오늘은 ${program.title} 활동으로 ${program.lessonDetail?.developmentFocus || program.category}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`
-  );
+  return program.lessonDetail?.parentNote?.trim() ?? '';
 }
 
 function getSearchText(program: Program) {
@@ -306,10 +303,14 @@ function ProgramModal({
         }
         footer={
           <div className="sticky bottom-0 z-10 grid grid-cols-[1fr_auto] gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
-            <button type="button" onClick={copyParentNote} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
-              <Clipboard className="h-4 w-4" />
-              {copied ? '복사 완료' : '문구 복사'}
-            </button>
+            {parentCopy ? (
+              <button type="button" onClick={copyParentNote} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
+                <Clipboard className="h-4 w-4" />
+                {copied ? '복사 완료' : '문구 복사'}
+              </button>
+            ) : (
+              <span />
+            )}
             <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '저장 해제' : '저장'}>
               <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
               <span className="hidden sm:inline">저장</span>

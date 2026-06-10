@@ -24,6 +24,10 @@ import {
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import {
+  ADMIN_CONSULT_PENDING_REFRESH,
+  loadConsultPendingCount,
+} from '@/app/lib/admin/consultPendingBadge';
 
 interface SidebarProps {
   isDesktopOpen?: boolean;
@@ -46,6 +50,13 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
   const pathname = usePathname();
   const { isMobileOpen, setMobileOpen, toggleMobile } = useAppSidebar();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [consultPendingCount, setConsultPendingCount] = useState(0);
+
+  const isAdminRoute =
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/spokedu-master') ||
+    pathname.startsWith('/master') ||
+    pathname.startsWith('/class');
 
   useEffect(() => {
     setMobileOpen(false);
@@ -61,6 +72,40 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (!isAdminRoute) return;
+
+    let cancelled = false;
+
+    const refresh = async () => {
+      const count = await loadConsultPendingCount();
+      if (!cancelled && count !== null) {
+        setConsultPendingCount(count);
+      }
+    };
+
+    void refresh();
+
+    const interval = window.setInterval(() => void refresh(), 60_000);
+    const onRefresh = () => void refresh();
+    const onFocus = () => void refresh();
+    const onVisibility = () => {
+      if (!document.hidden) void refresh();
+    };
+
+    window.addEventListener(ADMIN_CONSULT_PENDING_REFRESH, onRefresh);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      window.removeEventListener(ADMIN_CONSULT_PENDING_REFRESH, onRefresh);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [isAdminRoute]);
 
   const handleLogout = async () => {
     try {
@@ -117,14 +162,9 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     },
   ];
 
-  const isAdmin =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/spokedu-master') ||
-    pathname.startsWith('/master') ||
-    pathname.startsWith('/class');
   const isSubscriber = pathname.startsWith('/billing');
 
-  if (!isAdmin && !isSubscriber) return null;
+  if (!isAdminRoute && !isSubscriber) return null;
 
   const groups = isSubscriber ? subscriberMenuItems : adminMenuItems;
 
@@ -187,7 +227,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       >
         <div className="hidden border-b border-slate-700 p-6 text-left md:block">
           <h1 className="text-xl font-semibold uppercase italic tracking-tighter text-blue-400">SPOKEDU</h1>
-          <p className="mt-1 text-[10px] font-medium uppercase text-slate-400">{isAdmin ? 'Admin Portal' : 'Warm-up Portal'}</p>
+          <p className="mt-1 text-[10px] font-medium uppercase text-slate-400">{isAdminRoute ? 'Admin Portal' : 'Warm-up Portal'}</p>
         </div>
 
         <nav className="flex-1 space-y-3 overflow-y-auto p-3 pt-[calc(3rem+env(safe-area-inset-top,0px))] text-left md:pt-3">
@@ -220,6 +260,11 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
                     <Link key={item.href} href={item.href} onClick={(event) => handleMenuClick(event, item)} className={baseClass}>
                       <Icon size={18} className={isActive ? 'text-white' : 'group-hover:text-blue-400'} />
                       <span className="text-sm font-medium">{item.name}</span>
+                      {item.href === '/admin' && consultPendingCount > 0 && (
+                        <span className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                          +{consultPendingCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}

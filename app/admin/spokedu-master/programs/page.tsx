@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { getPublicUrl, uploadToStorage } from '@/app/lib/admin/assets/storageClient';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
+import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import { toast } from 'sonner';
 import {
   MASTER_DURATION_TAGS,
@@ -162,7 +163,7 @@ const TARGET_OPTIONS = [...MASTER_TARGET_TAGS];
 const THEME_OPTIONS = [...LESSON_THEME_OPTIONS];
 const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 const MOVEMENT_OPTIONS = ['동적', '정적'];
-const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근지구력', '심폐지구력', '리듬감', '평형성', '근력'];
+const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근력·근지구력', '심폐지구력', '리듬감', '평형성'];
 const TAG_PREFIX = {
   movement: '움직임:',
   bodyFunction: '신체 기능:',
@@ -691,7 +692,7 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   const title = form.title.trim() || item.curriculum.title;
   const equipment = splitLines(form.equipment).slice(0, 4);
   const steps = splitLines(form.steps).slice(0, 4);
-  const functionLabel = selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction).join(', ');
+  const functionLabel = mergeStrengthBodyFunctions(selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction)).join(', ');
 
   return (
     <div className="grid gap-3 sm:grid-cols-2">
@@ -1274,7 +1275,7 @@ export default function AdminSmProgramsPage() {
                     <Field label="기능">
                       <ChoiceChips
                         options={BODY_FUNCTION_OPTIONS}
-                        selected={selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction)}
+                        selected={mergeStrengthBodyFunctions(selectedTaggedOptions(form.tags, TAG_PREFIX.bodyFunction))}
                         onChange={(next) => updateForm('tags', updateTaggedOptions(form.tags, TAG_PREFIX.bodyFunction, next))}
                       />
                     </Field>

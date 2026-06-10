@@ -23,7 +23,6 @@ import {
   LessonTitle,
   LessonVariationText,
 } from '../../components/lesson/LessonPanels';
-import { cleanText } from '../../lib/clean';
 import {
   getLessonBriefingNotes,
   getLessonEquipment,
@@ -51,13 +50,9 @@ import { useMasterStore } from '../../store';
 import type { Program } from '../../types';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
-const THUMBNAIL_SIZES = '(min-width: 1024px) 1250px, 100vw';
 
-function getParentCopy(program: Program, title: string, focus: string) {
-  return cleanText(
-    program.lessonDetail?.parentNote,
-    `오늘은 ${title} 활동으로 ${focus}을 자연스럽게 경험했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`,
-  );
+function getParentCopy(program: Program) {
+  return program.lessonDetail?.parentNote?.trim() ?? '';
 }
 
 function BookOpenFallback() {
@@ -93,13 +88,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const detail = program.lessonDetail;
   const title = getLessonTitle(program);
-  const focus = getLessonFunction(program) || getLessonTheme(program);
   const equipment = getLessonEquipment(program);
   const script = getLessonScript(program);
   const briefingNotes = getLessonBriefingNotes(program);
   const ruleItems = getLessonRules(program);
   const variations = getLessonVariations(program);
-  const parentCopy = getParentCopy(program, title, focus);
+  const parentCopy = getParentCopy(program);
   const favorite = favorites.includes(program.id);
   const usageCount = usageRecords.length;
   const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
@@ -230,14 +224,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <details className="rounded-[14px] border border-slate-200 bg-white p-5">
           <summary className="cursor-pointer text-sm font-black text-slate-700">추가 자료 (학부모 문구 · SPOMOVE · 수업 장면)</summary>
           <div className="mt-4 space-y-4">
-            <div className="rounded-xl bg-emerald-50 p-4">
-              <p className="text-xs font-black text-emerald-800">학부모 설명 문구</p>
-              <p className="mt-2 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
-              <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
-                <Clipboard className="h-4 w-4" />
-                {copied ? '복사 완료' : '학부모 문구 복사'}
-              </button>
-            </div>
+            {parentCopy ? (
+              <div className="rounded-xl bg-emerald-50 p-4">
+                <p className="text-xs font-black text-emerald-800">학부모 설명 문구</p>
+                <p className="mt-2 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
+                <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
+                  <Clipboard className="h-4 w-4" />
+                  {copied ? '복사 완료' : '학부모 문구 복사'}
+                </button>
+              </div>
+            ) : null}
 
             {relatedSpomovePresets.length > 0 ? (
               <div className="grid gap-3 md:grid-cols-2">

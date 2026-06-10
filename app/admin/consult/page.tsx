@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, RefreshCw, X } from 'lucide-react';
+import { notifyConsultPendingRefresh } from '@/app/lib/admin/consultPendingBadge';
 
 type ConsultRow = {
   id: string;
@@ -148,6 +149,7 @@ export default function AdminConsultPage() {
         return;
       }
       setRows((prev) => prev.map((r) => (r.id === id ? json.row! : r)));
+      notifyConsultPendingRefresh();
     } catch {
       setError('네트워크 오류가 발생했습니다.');
     } finally {
@@ -175,6 +177,7 @@ export default function AdminConsultPage() {
       }
       setRows((prev) => prev.filter((r) => r.id !== row.id));
       if (detail?.id === row.id) setDetail(null);
+      notifyConsultPendingRefresh();
     } catch {
       setError('네트워크 오류가 발생했습니다.');
     } finally {

@@ -89,74 +89,6 @@ function normalizeSpomoveIds(ids: string[]): string[] {
   return [...new Set(ids.flatMap((id) => legacyMap[id] ?? [id]))].slice(0, 3);
 }
 
-function inferFocus(program: Program) {
-  const text = [program.title, program.category, program.description, ...program.tags].join(' ');
-  if (/펀스틱|펜싱|경쟁|상대|타이밍|거리/.test(text)) return '거리 판단 / 반응 타이밍 / 균형 유지 / 스포츠맨십';
-  if (/민첩|순발|방향|전환|스피드/.test(text)) return '민첩성 / 방향 전환 / 시각 신호 반응';
-  if (/협동|팀|릴레이|역할/.test(text)) return '협동성 / 출발 반응 / 역할 수행';
-  if (/균형|자세|중심|멈춤/.test(text)) return '균형 감각 / 자세 조절 / 충동 조절';
-  if (/리듬|표현|박자|음악/.test(text)) return '리듬 감각 / 표현 움직임 / 신체 협응';
-  return '신체 협응 / 집중력 / 참여 경험';
-}
-
-function inferObjective(program: Program) {
-  const focus = inferFocus(program);
-  return `${program.title} 활동을 통해 ${focus}을(를) 놀이 흐름 안에서 경험합니다.`;
-}
-
-function buildParentNote(program: Program) {
-  const focus = inferFocus(program);
-  return `오늘은 "${program.title}" 활동으로 ${focus}을(를) 연습했습니다. 아이들이 규칙을 이해하고, 몸을 조절하며, 친구들과 함께 움직이는 경험을 했습니다.`;
-}
-
-function buildContentQuality(program: Program): Program {
-  const detail = program.lessonDetail;
-  if (!detail) return program;
-
-  const rules = detail.rules?.length ? detail.rules : program.steps;
-  const relatedSpomoveIds = normalizeSpomoveIds(detail.relatedSpomoveIds);
-
-  return {
-    ...program,
-    description: program.description || detail.objective || inferObjective(program),
-    tags: [...new Set([...program.tags, ...(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])],
-    lessonDetail: {
-      ...detail,
-      recommendedAge: detail.recommendedAge || program.grade || '대상 확인 필요',
-      recommendedPlayers: detail.recommendedPlayers || '현장 규모에 맞게 조정',
-      objective: detail.objective || inferObjective(program),
-      developmentFocus: detail.developmentFocus || inferFocus(program),
-      coachScript:
-        detail.coachScript ||
-        `${program.title}은(는) 속도보다 규칙 이해와 안전한 움직임을 먼저 잡는 것이 중요합니다. 첫 라운드는 천천히 진행하고, 이후 움직임 정확도와 참여 밀도를 올립니다.`,
-      parentNote: detail.parentNote || buildParentNote(program),
-      fieldTips: detail.fieldTips.length > 0 ? detail.fieldTips : [
-        '첫 라운드는 성공 경험을 만드는 데 집중합니다.',
-        '대기 학생에게 관찰 역할을 주면 참여 밀도가 유지됩니다.',
-      ],
-      variations: detail.variations.length > 0 ? detail.variations : [
-        '초급: 이동 거리와 제한 시간을 줄입니다.',
-        '중급: 역할이나 이동 조건을 추가해 판단 요소를 늘립니다.',
-        '고급: 팀전 또는 라운드제로 확장합니다.',
-      ],
-      safetyNotes: detail.safetyNotes.length > 0 ? detail.safetyNotes : [
-        '시작 전 이동 방향과 안전 구역을 먼저 안내합니다.',
-        '충돌을 막기 위해 출발 간격과 대기 위치를 분리합니다.',
-      ],
-      relatedSpomoveIds,
-      briefingNotes: detail.briefingNotes?.length ? detail.briefingNotes : [
-        '오늘 활동의 목표와 성공 기준을 30초 안에 안내합니다.',
-        relatedSpomoveIds.length > 0 ? '화면 활동을 사용할 구간과 멈춤 기준을 미리 정합니다.' : '활동 중 관찰할 움직임 포인트를 먼저 정합니다.',
-      ],
-      rules: rules.length > 0 ? rules : [
-        '활동 구역과 대기 구역을 나눕니다.',
-        '시범을 한 번 보여준 뒤 짧은 라운드로 시작합니다.',
-        '라운드가 끝나면 성공 기준과 안전 규칙을 다시 확인합니다.',
-      ],
-      setupNotes: detail.setupNotes?.length ? detail.setupNotes : [],
-    },
-  };
-}
 
 function applyPremiumContentOverlay(program: Program): Program {
   return program;
@@ -279,21 +211,6 @@ function extractVariationsFromActivityTip(source: string | null | undefined): st
   return combined;
 }
 
-function inferCleanCategory(text: string) {
-  if (/펀스틱|펜싱|fencing|funstick|민첩|반응|스피드|방향/.test(text)) return '민첩·반응';
-  if (/협동|팀|릴레이|관계/.test(text)) return '협동';
-  if (/균형|밸런스|자세|정지/.test(text)) return '균형 조절';
-  if (/리듬|표현|음악|창의/.test(text)) return '리듬·표현';
-  return '일반 체육';
-}
-
-function inferCleanFocus(category: string) {
-  if (category.includes('민첩')) return '민첩성 / 반응 조절 / 방향 전환';
-  if (category.includes('협동')) return '협동성 / 역할 수행 / 팀 커뮤니케이션';
-  if (category.includes('균형')) return '균형 감각 / 자세 조절 / 충동 조절';
-  if (category.includes('리듬')) return '리듬 감각 / 표현 움직임 / 신체 조절';
-  return '신체 조절 / 집중력 / 참여 경험';
-}
 
 function cleanFunstickProgram(program: Program): Program {
   return program;
@@ -370,52 +287,43 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
   if (/funstick|fencing|펀스틱|펜싱/.test(identity)) return cleanFunstickProgram(program);
 
   const title = cleanText(program.title, `수업 패키지 ${index + 1}`);
-  const category = cleanText(program.category, inferCleanCategory(`${title} ${program.description} ${program.tags.join(' ')}`));
-  const focus = cleanText(program.lessonDetail?.developmentFocus, inferCleanFocus(category));
-  const equipment = cleanList(program.equipment, ['현장 기본 도구']);
-  const steps = cleanList(program.steps, [
-    '공간과 준비물을 확인합니다.',
-    '규칙을 짧게 설명하고 시범을 보여줍니다.',
-    '기본 라운드로 시작한 뒤 난이도를 단계적으로 올립니다.',
-  ]);
   const relatedSpomoveIds = normalizeSpomoveIds(program.lessonDetail?.relatedSpomoveIds ?? []);
-  const description = cleanText(
-    program.description,
-    `${title} 활동으로 ${focus}을 자연스럽게 경험하는 체육 수업 패키지입니다.`,
-  );
   const youtubeThumb = buildThumbnailUrl(program.lessonDetail?.videoUrl);
   const thumbnailUrl = pickBestHeroUrl(program.thumbnailUrl, youtubeThumb);
 
   return {
     ...program,
     title,
-    category,
+    category: cleanText(program.category, ''),
     grade: cleanText(program.grade, ''),
     space: cleanText(program.space, ''),
-    description,
-    steps,
-    equipment,
+    description: cleanText(program.description, ''),
+    steps: program.steps.filter(Boolean),
+    equipment: program.equipment.filter(Boolean),
     thumbnailUrl,
-    tags: [...new Set(cleanList(program.tags, [category, focus.split('/')[0].trim()]).concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
-    lessonDetail: {
-      recommendedAge: cleanText(program.lessonDetail?.recommendedAge, cleanText(program.grade, '')),
-      recommendedPlayers: cleanText(program.lessonDetail?.recommendedPlayers, '현장 규모에 맞게 조정'),
-      objective: cleanText(program.lessonDetail?.objective, `${title}을 통해 ${focus}을 경험합니다.`),
-      developmentFocus: focus,
-      coachScript: cleanText(program.lessonDetail?.coachScript, `${title}은 속도보다 규칙 이해와 안전한 움직임을 먼저 확인한 뒤 진행합니다.`),
-      parentNote: cleanText(program.lessonDetail?.parentNote, `오늘은 ${title} 활동으로 ${focus}을 연습했습니다. 아이들이 규칙을 이해하고 움직임을 조절하는 과정을 함께 확인했습니다.`),
-      fieldTips: cleanList(program.lessonDetail?.fieldTips, ['처음 라운드는 성공 경험을 만들고, 이후 이동 거리, 역할, 난이도를 조정합니다.']),
-      variations: cleanList(program.lessonDetail?.variations, ['도구 수를 줄여 난이도를 낮춥니다.', '개인전에서 팀전으로 확장합니다.']),
-      safetyNotes: cleanList(program.lessonDetail?.safetyNotes, ['충돌 위험이 있는 구간은 대기선과 이동선을 분리합니다.']),
-      relatedSpomoveIds,
-      videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
-      heroImageUrl: pickBestHeroUrl(program.lessonDetail?.heroImageUrl, thumbnailUrl),
-      setupImageUrl: program.lessonDetail?.setupImageUrl,
-      galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
-      briefingNotes: cleanList(program.lessonDetail?.briefingNotes, ['활동 흐름과 진행 순서를 수업 전에 짧게 확인합니다.']),
-      rules: cleanList(program.lessonDetail?.rules, steps),
-      setupNotes: cleanList(program.lessonDetail?.setupNotes, []),
-    },
+    tags: [...new Set(program.tags.concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
+    lessonDetail: program.lessonDetail
+      ? {
+          ...program.lessonDetail,
+          recommendedAge: cleanText(program.lessonDetail.recommendedAge, ''),
+          recommendedPlayers: cleanText(program.lessonDetail.recommendedPlayers, ''),
+          objective: cleanText(program.lessonDetail.objective, ''),
+          developmentFocus: cleanText(program.lessonDetail.developmentFocus, ''),
+          coachScript: cleanText(program.lessonDetail.coachScript, ''),
+          parentNote: cleanText(program.lessonDetail.parentNote, ''),
+          fieldTips: cleanList(program.lessonDetail.fieldTips, []),
+          variations: cleanList(program.lessonDetail.variations, []),
+          safetyNotes: cleanList(program.lessonDetail.safetyNotes, []),
+          briefingNotes: cleanList(program.lessonDetail.briefingNotes ?? [], []),
+          rules: cleanList(program.lessonDetail.rules ?? [], []),
+          setupNotes: cleanList(program.lessonDetail.setupNotes ?? [], []),
+          relatedSpomoveIds,
+          videoUrl: normalizeVideoUrl(program.lessonDetail.videoUrl),
+          heroImageUrl: pickBestHeroUrl(program.lessonDetail.heroImageUrl, thumbnailUrl),
+          setupImageUrl: program.lessonDetail.setupImageUrl,
+          galleryImageUrls: program.lessonDetail.galleryImageUrls ?? [],
+        }
+      : program.lessonDetail,
   };
 }
 
@@ -579,7 +487,7 @@ export async function GET() {
       grade: displayGrade,
       duration: displayDuration,
       space: displaySpace,
-      description: coachScript,
+      description: '',
       steps,
       equipment,
       tags,
@@ -591,7 +499,7 @@ export async function GET() {
       thumbnailUrl,
       lessonDetail: {
         recommendedAge: displayGrade,
-        recommendedPlayers: overlay?.group_size ?? '현장 규모에 맞게 조정',
+        recommendedPlayers: overlay?.group_size ?? '',
         objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
         coachScript: meta?.sm_coach_script ?? coachScript,
@@ -611,7 +519,7 @@ export async function GET() {
     };
 
     return normalizeProgramForMaster(
-      applyTrustedReferenceVideo(buildContentQuality(applyPremiumContentOverlay(program))),
+      applyTrustedReferenceVideo(applyPremiumContentOverlay(program)),
       index,
     );
   });
