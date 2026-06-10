@@ -255,7 +255,7 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
 }
 
 /** 글머리 목록 마커 단계 — 목록 컨테이너(bullet/numbered) 조상만 센다. 토글 안 첫 항목은 0(•). */
-export function bulletListNestLevelAmongContainers<T extends NoteBlockLike>(
+export function bulletListNestLevelAmongContainers<T extends BlockWithMeta>(
   block: T,
   blocks: T[],
 ): number {
