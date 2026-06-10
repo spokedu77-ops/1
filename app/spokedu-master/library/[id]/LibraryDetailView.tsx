@@ -158,7 +158,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
     };
     saveQuickClassRecord(record);
     setQuickSaved(true);
-    window.setTimeout(() => setQuickModalOpen(false), 900);
   };
   const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
@@ -188,7 +187,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           type="button"
           onClick={() => toggleFavorite(program.id)}
           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600"
-          aria-label={favorite ? '저장한 수업 해제' : '수업 저장'}
+          aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
         >
           <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
         </button>
@@ -347,20 +346,20 @@ export default function LibraryDetailView({ id }: { id: string }) {
           ) : null}
           <button type="button" onClick={openQuickModal} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white">
             <Check className="h-4 w-4" />
-            이 수업 사용함
+            오늘 수업으로 기록
           </button>
           <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
             <FileText className="h-4 w-4" />
-            설명 만들기
+            안내문 만들기
           </Link>
           <button type="button" onClick={() => toggleFavorite(program.id)} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-            {favorite ? '저장됨' : '저장'}
+            {favorite ? '즐겨찾기됨' : '즐겨찾기'}
           </button>
         </div>
       </div>
 
-      <BottomSheet open={quickModalOpen} title="이 수업 사용함" onClose={() => setQuickModalOpen(false)}>
+      <BottomSheet open={quickModalOpen} title="오늘 수업으로 기록" onClose={() => setQuickModalOpen(false)}>
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-black text-slate-700">날짜 <span className="font-semibold text-red-400">*</span></label>
@@ -406,28 +405,37 @@ export default function LibraryDetailView({ id }: { id: string }) {
             />
             <p className="mt-1 text-[11px] font-semibold text-slate-400">필요 없으면 비워도 됩니다. 저장된 문구는 수업 기록에만 남고, 원본 수업 자료는 변경되지 않습니다.</p>
           </div>
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => setQuickModalOpen(false)}
-              className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"
-            >
-              취소
-            </button>
-            <button
-              type="button"
-              onClick={handleQuickSave}
-              disabled={!canSaveQuickRecord || quickSaved}
-              className="inline-flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-50"
-            >
-              {quickSaved ? (
-                <>
-                  <Check className="h-4 w-4" />
-                  저장됨
-                </>
-              ) : '저장'}
-            </button>
-          </div>
+          {quickSaved ? (
+            <div className="rounded-xl bg-emerald-50 p-4">
+              <p className="flex items-center gap-1.5 text-sm font-bold text-emerald-700">
+                <Check className="h-4 w-4" />
+                사용 기록이 저장되었습니다.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link href="/spokedu-master/class-record" onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">수업 기록 보기</Link>
+                <Link href={`/spokedu-master/report?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">안내문 만들기</Link>
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">학생 기록 작성</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setQuickModalOpen(false)}
+                className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleQuickSave}
+                disabled={!canSaveQuickRecord}
+                className="inline-flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-50"
+              >
+                사용 기록 저장
+              </button>
+            </div>
+          )}
         </div>
       </BottomSheet>
     </main>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { isSameDay } from 'date-fns';
-import { AlertTriangle, BookOpen, CalendarDays, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, Play, Send, Shuffle, Star, UserCheck, UserPlus, UserX } from 'lucide-react';
+import { AlertTriangle, BookOpen, Check, ChevronRight, ClipboardList, ExternalLink, FileText, History, MessageCircle, Send, Star, UserCheck, UserPlus, UserX } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -12,12 +12,14 @@ import { canCreateClassRecord, canUseMonthlyLimit, createParentShareToken, getUp
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
 
+type TypeFilter = 'all' | 'quick' | 'detailed';
+
 const DEFAULT_SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
 
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <p className="text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone }}>{value}</p>
+    <div className="rounded-[12px] p-2.5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: tone }}>{value}</p>
       <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
     </div>
   );
@@ -41,14 +43,14 @@ function EmptyRecordState() {
       <span className="mx-auto grid h-12 w-12 place-items-center rounded-[14px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
         <ClipboardList size={22} color="var(--spm-acc)" />
       </span>
-      <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>아직 수업 기록이 없습니다.</h2>
-      <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업안을 고르거나 학생 명단을 먼저 등록해 첫 기록을 시작하세요. 기록이 쌓이면 학생 이력과 설명 문구의 근거가 됩니다.</p>
+      <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>아직 저장된 수업 기록이 없습니다.</h2>
+      <p className="mx-auto mt-2 max-w-[440px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업을 열고 "오늘 수업으로 기록"을 누르면 간단한 사용 기록이 남습니다. 학생별 출석·관찰 기록이 필요할 때는 학생 기록을 추가로 작성할 수 있습니다.</p>
       <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
         <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-          <BookOpen size={15} /> 수업 고르기
+          <BookOpen size={15} /> 수업 라이브러리로 이동
         </Link>
         <Link href="/spokedu-master/students" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-          <UserPlus size={15} /> 학생 명단
+          <UserPlus size={15} /> 학생 명단 관리
         </Link>
       </div>
     </div>
@@ -56,66 +58,103 @@ function EmptyRecordState() {
 }
 
 function RecordCard({ record }: { record: ClassRecord }) {
-  const total = record.present + record.absent;
   const isQuick = record.recordType === 'quick';
-  const statusLabel = record.kakaoSent ? '공유 준비' : isQuick ? '사용 기록' : '기록 완료';
-  const statusBg = record.kakaoSent ? 'rgba(16,185,129,0.13)' : isQuick ? 'rgba(99,102,241,0.08)' : 'rgba(99,102,241,0.13)';
-  const statusColor = record.kakaoSent ? 'var(--spm-grn)' : 'var(--spm-acc)';
+
+  let statusLabel: string;
+  let statusBg: string;
+  let statusColor: string;
+  if (record.kakaoSent) {
+    statusLabel = '안내문 준비';
+    statusBg = 'rgba(16,185,129,0.13)';
+    statusColor = 'var(--spm-grn)';
+  } else if (isQuick) {
+    statusLabel = '사용 기록';
+    statusBg = 'rgba(99,102,241,0.08)';
+    statusColor = 'var(--spm-acc)';
+  } else {
+    statusLabel = '학생 기록';
+    statusBg = 'rgba(99,102,241,0.13)';
+    statusColor = 'var(--spm-acc)';
+  }
+
   return (
     <article className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {record.classId}</p>
+          <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>
+            {new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {record.classId}
+          </p>
           <h2 className="mt-1 text-[18px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all' }}>{record.programTitle}</h2>
         </div>
         <span className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: statusBg, color: statusColor }}>{statusLabel}</span>
       </div>
+
       {isQuick ? (
-        <div className="mt-3 space-y-1">
+        <div className="mt-3 space-y-1.5">
           {record.memo ? <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{record.memo}</p> : null}
           {record.parentNoteSnapshot ? (
             <p className="rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{record.parentNoteSnapshot}</p>
           ) : null}
         </div>
       ) : (
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <SummaryPill label="출석" value={`${record.present}/${total || 0}`} tone="var(--spm-grn)" />
+        <div className="mt-4 grid grid-cols-4 gap-1.5">
+          <SummaryPill label="출석" value={String(record.present)} tone="var(--spm-grn)" />
+          <SummaryPill label="결석" value={String(record.absent)} tone="var(--spm-red)" />
           <SummaryPill label="관찰" value={String(record.focusCount)} tone="var(--spm-amb)" />
           <SummaryPill label="동작" value={String(record.skillCount)} tone="var(--spm-acc)" />
         </div>
       )}
-      <Link href={`/spokedu-master/report?program=${record.programId}`} className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 문구에서 보기</Link>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link href={`/spokedu-master/library/${record.programId}`} className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+          <BookOpen size={13} /> 원본 수업 보기
+        </Link>
+        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+          <FileText size={13} /> 안내문 만들기
+        </Link>
+        {!isQuick ? (
+          <Link href={`/spokedu-master/class-record?program=${record.programId}`} className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+            <ClipboardList size={13} /> 학생 기록 작성
+          </Link>
+        ) : null}
+      </div>
     </article>
   );
 }
 
 function RecordListView() {
-  const programs = useMasterStore((state) => state.programs);
-  const lessons = useMasterStore((state) => state.lessons);
   const records = useMasterStore((state) => state.classRecords);
   const [classFilter, setClassFilter] = useState('전체');
   const [periodFilter, setPeriodFilter] = useState<'week' | 'month' | 'all'>('week');
-  const classes = useMemo(() => ['전체', ...Array.from(new Set([...lessons.map((lesson) => lesson.classId), ...records.map((record) => record.classId)]))], [lessons, records]);
-  const incompleteLessons = lessons.filter((lesson) => !lesson.done);
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
+  const classes = useMemo(
+    () => ['전체', ...Array.from(new Set(records.map((r) => r.classId)))],
+    [records],
+  );
   const filteredRecords = records.filter((record) => {
     const classMatched = classFilter === '전체' || record.classId === classFilter;
-    const recordDate = new Date(record.date);
     const now = Date.now();
-    const periodMatched = periodFilter === 'all' || (periodFilter === 'week' ? now - recordDate.getTime() <= 7 * 24 * 3600 * 1000 : now - recordDate.getTime() <= 31 * 24 * 3600 * 1000);
-    return classMatched && periodMatched;
+    const recordDate = new Date(record.date);
+    const periodMatched = periodFilter === 'all' || (periodFilter === 'week'
+      ? now - recordDate.getTime() <= 7 * 24 * 3600 * 1000
+      : now - recordDate.getTime() <= 31 * 24 * 3600 * 1000);
+    const typeMatched = typeFilter === 'all' || (typeFilter === 'quick'
+      ? record.recordType === 'quick'
+      : record.recordType !== 'quick');
+    return classMatched && periodMatched && typeMatched;
   });
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class records</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 기록</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 출석, 관찰, 동작 기록을 저장해 학생 이력과 설명 문구의 근거로 남깁니다.</p>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>진행한 수업 기록을 모아 확인합니다. 수업 사용 기록과 학생 기록을 구분해 관리할 수 있습니다.</p>
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
           {[
-            { label: '수업 고르기', href: '/spokedu-master/library', icon: BookOpen },
-            { label: '수업 도구', href: '/spokedu-master/class-tools', icon: Shuffle },
+            { label: '수업 라이브러리', href: '/spokedu-master/library', icon: BookOpen },
             { label: '학생 명단', href: '/spokedu-master/students', icon: UserPlus },
+            { label: '학생 기록 작성', href: '/spokedu-master/library', icon: ClipboardList },
           ].map(({ label, href, icon: Icon }) => (
             <Link key={label} href={href} className="flex h-12 items-center justify-center gap-2 rounded-[14px] text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
               <Icon size={15} />
@@ -126,40 +165,29 @@ function RecordListView() {
       </header>
 
       <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
+        {classes.length > 1 ? (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {classes.map((cls) => (
+              <button key={cls} type="button" onClick={() => setClassFilter(cls)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === cls ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === cls ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{cls}</button>
+            ))}
+          </div>
+        ) : null}
         <div className="flex flex-wrap gap-2">
-          {classes.map((className) => (
-            <button key={className} type="button" onClick={() => setClassFilter(className)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === className ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === className ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{className}</button>
+          {([['all', '전체 유형'], ['quick', '사용 기록'], ['detailed', '학생 기록']] as const).map(([value, label]) => (
+            <button key={value} type="button" onClick={() => setTypeFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: typeFilter === value ? 'rgba(99,102,241,0.15)' : 'var(--spm-s2)', color: typeFilter === value ? 'var(--spm-acc)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
           ))}
         </div>
         <div className="mt-2 flex flex-wrap gap-2">
-          {[
-            ['week', '이번 주'],
-            ['month', '이번 달'],
-            ['all', '전체 기간'],
-          ].map(([value, label]) => (
-            <button key={value} type="button" onClick={() => setPeriodFilter(value as 'week' | 'month' | 'all')} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
+          {([['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']] as const).map(([value, label]) => (
+            <button key={value} type="button" onClick={() => setPeriodFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
           ))}
         </div>
       </section>
 
-      {incompleteLessons.length ? (
-        <section className="mx-[22px] mb-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.14), var(--spm-s2))', border: '1px solid rgba(245,158,11,0.26)' }}>
-          <div className="flex items-start gap-3">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(245,158,11,0.16)' }}><CalendarDays size={18} color="var(--spm-amb)" /></span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[13px] font-black" style={{ color: 'var(--spm-amb)' }}>미완료 수업 보완</p>
-              <h2 className="mt-1 text-[20px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{incompleteLessons[0]?.title}</h2>
-              <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>{incompleteLessons[0]?.classId} · {incompleteLessons[0]?.period}교시</p>
-            </div>
-            <Link href={`/spokedu-master/class-record?program=${programs.find((p) => incompleteLessons[0]?.title.includes(p.title.split(':')[0]))?.id ?? programs[0]?.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-amb)' }} aria-label="미완료 수업 기록">
-              <Play size={16} color="#fff" fill="#fff" />
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
       <section className="grid gap-3 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
-        {filteredRecords.length ? filteredRecords.map((record) => <RecordCard key={record.id} record={record} />) : <div className="md:col-span-2 xl:col-span-3"><EmptyRecordState /></div>}
+        {filteredRecords.length
+          ? filteredRecords.map((record) => <RecordCard key={record.id} record={record} />)
+          : <div className="md:col-span-2 xl:col-span-3"><EmptyRecordState /></div>}
       </section>
     </div>
   );
@@ -248,7 +276,12 @@ function RecordEntryView() {
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
   const canPreviewKakao = canSaveRecord && present > 0;
   const parentToken = firstPresentStudent ? createParentShareToken(firstPresentStudent.id) : '';
-  const parentCopyPreview = `오늘 ${activeClassId}은 "${program?.title ?? activeLessonTitle}" 수업을 진행했습니다. ${packageFocus}을(를) 중심으로 아이들의 참여와 움직임 조절 과정을 관찰했습니다.`;
+  const focusParts = packageFocus.split(',').map((f) => f.trim()).filter(Boolean);
+  const focusPhrase = focusParts.length === 0 ? '활동 흐름'
+    : focusParts.length === 1 ? focusParts[0]
+    : focusParts.length === 2 ? `${focusParts[0]}와 ${focusParts[1]}`
+    : `${focusParts.slice(0, 2).join(', ')} 등`;
+  const parentCopyPreview = `오늘은 "${program?.title ?? activeLessonTitle}" 수업을 진행했습니다. ${focusPhrase} 요소를 중심으로 아이들의 참여와 움직임 조절 과정을 관찰했습니다.`;
 
   useEffect(() => {
     setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
@@ -259,9 +292,9 @@ function RecordEntryView() {
       <div className="h-full overflow-y-auto p-[22px] pb-28 lg:pb-[22px]" style={{ background: 'var(--spm-bg)' }}>
         <div className="rounded-[18px] p-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h1 className="text-[20px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>기록할 수업안이 없습니다</h1>
-          <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리 데이터를 불러온 뒤 다시 시도해 주세요.</p>
+          <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업을 선택해 주세요.</p>
           <Link href="/spokedu-master/library" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-            <BookOpen size={15} /> 라이브러리로 이동
+            <BookOpen size={15} /> 수업 라이브러리로 이동
           </Link>
         </div>
       </div>
@@ -333,7 +366,7 @@ function RecordEntryView() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class record</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
         <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          오늘 수업의 출석, 관찰, 동작 체크를 남겨 학생 이력과 설명 문구의 근거로 사용합니다.
+          학생별 출석, 관찰, 동작 체크를 남기는 학생 기록 작성 화면입니다.
         </p>
       </header>
 
@@ -357,8 +390,8 @@ function RecordEntryView() {
             <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{activeLessonTitle}</h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{[packageMeta, packageFocus].filter(Boolean).join(' · ')}</p>
           </div>
-          <Link href={`/spokedu-master/class-mode/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="수업 시작">
-            <Play size={18} color="#fff" fill="#fff" />
+          <Link href={`/spokedu-master/library/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="수업 자료 보기">
+            <BookOpen size={18} color="#fff" />
           </Link>
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }}>
@@ -376,10 +409,9 @@ function RecordEntryView() {
         {hasStudents ? students.map((student) => <StudentRow key={student.id} student={student} attendance={attendance[student.id] ?? 'pending'} focused={!!focused[student.id]} disabled={!recordStatus.allowed} onAttendance={(status) => setAttendance((prev) => ({ ...prev, [student.id]: status }))} onFocus={() => setFocused((prev) => ({ ...prev, [student.id]: !prev[student.id] }))} onOpen={() => setSelectedId(student.id)} />) : (
           <div className="rounded-[18px] p-5 md:col-span-2 xl:col-span-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>등록된 학생이 없습니다.</p>
-            <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생 명단이 있어야 출석, 동작 기록, 보호자 공유까지 이어지는 수업 기록을 만들 수 있습니다.</p>
+            <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생 명단이 있어야 출석, 동작 기록, 보호자 공유까지 이어지는 학생 기록을 만들 수 있습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
               <Link href="/spokedu-master/students" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가하기</Link>
-              <Link href="/spokedu-master/class-tools" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>수업 도구로 이동</Link>
             </div>
           </div>
         )}
@@ -393,28 +425,28 @@ function RecordEntryView() {
           </div>
           <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.13)', color: 'var(--spm-acc)' }}>발송 전 복사 검토</span>
         </div>
-        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업이 끝나면 기록은 학생 이력에 남고, 프로그램 맥락은 보호자·센터·학교용 설명 문구의 근거로 활용됩니다.</p>
+        <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업이 끝나면 기록은 학생 이력에 남고, 프로그램 맥락은 보호자·센터·학교용 안내문의 근거로 활용됩니다.</p>
         <div className="mt-4 grid gap-2 md:grid-cols-3">
           <OutcomeCard icon={<History size={15} color="var(--spm-acc)" />} label="학생 이력" value={`출석 ${present}명 · 관찰 ${focusCount}명`} />
-          <OutcomeCard icon={<FileText size={15} color="var(--spm-acc)" />} label="설명 근거" value={packageFocus || '활동 목표와 관찰 포인트'} />
-          <OutcomeCard icon={<MessageCircle size={15} color="var(--spm-acc)" />} label="안내 문구" value="자동 발송 전 복사해서 검토" />
+          <OutcomeCard icon={<FileText size={15} color="var(--spm-acc)" />} label="기록 근거" value={packageFocus || '활동 목표와 관찰 포인트'} />
+          <OutcomeCard icon={<MessageCircle size={15} color="var(--spm-acc)" />} label="안내문" value="발송 전 복사해서 검토" />
         </div>
-        {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 수업 기록을 만들 수 없습니다.</p> : null}
+        {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 학생 기록을 만들 수 없습니다.</p> : null}
         {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
         {hasAttendance && present === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 학생이 있어야 보호자 공유를 보낼 수 있습니다. 결석 기록은 저장만 가능합니다.</p> : null}
         {kakaoStep === 'preview' ? (
           <div className="mt-4 rounded-[16px] p-4" style={{ background: '#fef3c7', color: '#2d1b05' }}>
-            <p className="text-[12px] font-black">보호자 안내 미리보기</p>
+            <p className="text-[12px] font-black">안내문 미리보기</p>
             <p className="mt-2 text-[13px] font-semibold leading-6">{parentCopyPreview} 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장됩니다.</p>
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}
         {savedOnly && kakaoStep !== 'done' ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
-            <p className="text-[12px] font-bold">수업 기록이 학생 이력에 저장되었습니다.</p>
+            <p className="text-[12px] font-bold">상세 기록이 학생 이력에 저장되었습니다.</p>
             <div className="mt-2 flex flex-wrap gap-3">
               <Link href="/spokedu-master/class-record" className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>기록 목록 보기</Link>
-              <Link href={`/spokedu-master/report?program=${program.id}`} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>설명 문구 만들기</Link>
+              <Link href={`/spokedu-master/report?program=${program.id}`} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>안내문 만들기</Link>
             </div>
           </div>
         ) : null}
@@ -432,11 +464,11 @@ function RecordEntryView() {
           </div>
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr_1fr]">
-          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || kakaoStep === 'sending'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />기록만 저장</button>
-          <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />설명 문구 만들기</Link>
+          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || kakaoStep === 'sending'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />학생 기록 저장</button>
+          <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들기</Link>
           <button type="button" onClick={kakaoStep === 'summary' ? () => setKakaoStep('preview') : sendKakao} disabled={!canPreviewKakao || !kakaoStatus.allowed || kakaoStep === 'sending' || kakaoStep === 'done'} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
             {kakaoStep === 'summary' ? <MessageCircle size={16} /> : <Send size={16} />}
-            {kakaoStep === 'summary' ? '보호자 안내 미리보기' : kakaoStep === 'preview' ? '공유 준비' : kakaoStep === 'done' ? '준비 완료' : '준비 중'}
+            {kakaoStep === 'summary' ? '안내문 미리보기' : kakaoStep === 'preview' ? '안내문 준비' : kakaoStep === 'done' ? '준비 완료' : '준비 중'}
           </button>
         </div>
       </section>

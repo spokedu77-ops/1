@@ -311,9 +311,9 @@ function ProgramModal({
             ) : (
               <span />
             )}
-            <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '저장 해제' : '저장'}>
+            <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기'}>
               <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">저장</span>
+              <span className="hidden sm:inline">즐겨찾기</span>
             </button>
             <button type="button" onClick={() => window.print()} className="hidden h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700 sm:inline-flex">
               <FileText className="h-4 w-4" />

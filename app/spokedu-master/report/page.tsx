@@ -6,7 +6,7 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useMasterStore } from '../store';
-import type { Program } from '../types';
+import type { ClassRecord, Program } from '../types';
 
 type Audience = 'parent' | 'center' | 'school';
 type SavedExplanation = {
@@ -72,6 +72,85 @@ function getAudienceOutputTitle(audience: Audience) {
   return '학부모 안내 문구';
 }
 
+function buildRecordNote(record: ClassRecord): string {
+  if (record.memo?.trim()) return record.memo.trim();
+  if (record.recordType !== 'quick') {
+    const parts: string[] = [];
+    if (record.present > 0) parts.push(`출석 ${record.present}명`);
+    if (record.absent > 0) parts.push(`결석 ${record.absent}명`);
+    if (record.focusCount > 0) parts.push(`집중 관찰 ${record.focusCount}명`);
+    const studentMemos = record.students
+      .filter((s) => s.memo)
+      .map((s) => `${s.studentName}: ${s.memo}`)
+      .join(', ');
+    if (studentMemos) parts.push(studentMemos);
+    return parts.join('. ');
+  }
+  return '';
+}
+
+function addJosa(word: string, consonantForm: string, vowelForm: string): string {
+  if (!word) return '';
+  let lastKorean = 0;
+  for (let i = word.length - 1; i >= 0; i--) {
+    const c = word.charCodeAt(i);
+    if (c >= 0xAC00 && c <= 0xD7A3) { lastKorean = c; break; }
+  }
+  return word + (lastKorean > 0 && (lastKorean - 0xAC00) % 28 !== 0 ? consonantForm : vowelForm);
+}
+
+function buildFocusText(focus: string): string {
+  if (!focus.trim()) return '해당 움직임';
+  const parts = focus.split(/[,，]/).map((f) => f.trim()).filter(Boolean);
+  if (parts.length <= 1) return parts[0] ?? '해당 움직임';
+  if (parts.length === 2) return `${addJosa(parts[0], '과', '와')} ${parts[1]}`;
+  return `${parts.slice(0, 2).join(', ')} 등`;
+}
+
+function buildContextPhrase(target: string, space: string, duration: string): string {
+  const parts: string[] = [];
+  if (target) parts.push(`${addJosa(target, '을', '를')} 대상으로`);
+  if (space) parts.push(`${space}에서`);
+  if (duration) parts.push(`${duration} 동안`);
+  return parts.join(' ');
+}
+
+function stripStepPrefix(step: string): string {
+  return step.replace(/^\s*\d+단계\s*[:：]\s*/, '').replace(/^\s*step\s*\d+\s*[:：]\s*/i, '').trim();
+}
+
+function buildEquipmentNames(items: string[]): string {
+  if (!items.length) return '';
+  const cleaned = items.map((raw) => {
+    const match = raw.match(/^([^(（]+?)\s*[（(]([^)）]*)[)）]/);
+    if (match) {
+      const qtyMatch = match[2].match(/(\d+개)/);
+      return qtyMatch ? `${match[1].trim()} ${qtyMatch[1]}` : match[1].trim();
+    }
+    return raw.trim();
+  });
+  if (cleaned.length === 1) return cleaned[0];
+  if (cleaned.length === 2) return `${addJosa(cleaned[0], '과', '와')} ${cleaned[1]}`;
+  return `${cleaned.slice(0, -1).join(', ')}${addJosa(cleaned[cleaned.length - 2], '과', '와')} ${cleaned[cleaned.length - 1]}`;
+}
+
+function moodPhrase(mood: string): string {
+  if (mood === '집중도가 높았음') return '집중도 높은 분위기 속에서';
+  return `${mood} 속에서`;
+}
+
+const REACTION_SENTENCES: Record<string, string> = {
+  '적극적으로 참여함': '적극적으로 수업에 참여하는 모습을 보였습니다',
+  '처음에는 조심스러웠지만 점차 참여함': '처음에는 조심스러워했지만 점차 활동 흐름에 참여하는 모습을 보였습니다',
+  '규칙을 이해하며 움직임': '규칙을 이해하며 활동에 참여하는 모습이 관찰되었습니다',
+  '친구와 상호작용이 좋았음': '친구와 적극적으로 상호작용하는 모습이 관찰되었습니다',
+  '반복하며 자신감이 생김': '반복 시도를 통해 점차 자신감 있게 참여하는 모습이 관찰되었습니다',
+};
+
+function buildReactionSentence(reaction: string): string {
+  return REACTION_SENTENCES[reaction] ?? `${reaction} 모습을 보였습니다`;
+}
+
 function buildExplanation(input: {
   audience: Audience;
   program: Program;
@@ -83,25 +162,42 @@ function buildExplanation(input: {
   const { audience, program, mood, reaction, focusSkills, note } = input;
   const detail = program.lessonDetail;
   const title = clean(program.title, '오늘 수업');
-  const description = clean(program.description, '몸을 움직이며 활동 흐름을 경험하는 수업입니다.');
-  const focus = focusSkills.length ? focusSkills.join(', ') : clean(detail?.developmentFocus, program.tags.slice(0, 3).join(', '));
-  const target = clean(normalizeMasterTarget(program.grade), '수업 대상');
-  const space = clean(normalizeMasterSpace(program.space), '수업 공간');
+  const focus = focusSkills.length
+    ? focusSkills.join(', ')
+    : clean(detail?.developmentFocus, program.tags.slice(0, 3).join(', '));
+  const target = clean(normalizeMasterTarget(program.grade), '');
+  const space = clean(normalizeMasterSpace(program.space), '');
   const duration = displayMasterDuration(program.duration);
-  const equipment = program.equipment.length ? program.equipment.join(', ') : '현장 기본 도구';
-  const activity = getActivityFlow(program).slice(0, 2).join(' ');
-  const variation = detail?.variations?.[0] ? `상황에 따라 ${detail.variations[0]} 방식으로 응용할 수 있습니다.` : '';
+  const allSteps = getActivityFlow(program);
   const noteLine = note.trim() ? ` 특이사항: ${note.trim()}` : '';
+  const focusText = buildFocusText(focus);
+  const contextPhrase = buildContextPhrase(target, space, duration);
+  const reactionText = buildReactionSentence(reaction);
+  const mood_ = moodPhrase(mood);
 
   if (audience === 'parent') {
-    return `오늘은 "${title}" 활동으로 아이들이 ${focus}을(를) 몸으로 경험했습니다. ${mood} 속에서 ${reaction} 모습이 보였고, ${description} 오늘의 움직임 경험이 참여와 자신감으로 이어질 수 있도록 정리했습니다.${noteLine}`;
+    return `오늘은 "${title}" 활동을 진행했습니다. ${mood_} ${reactionText}. 학생들은 ${focusText} 요소를 중심으로 정해진 규칙 안에서 움직임을 경험했습니다.${noteLine}`;
   }
+
+  const equipText = buildEquipmentNames(program.equipment);
+  const cleanedSteps = allSteps.map(stripStepPrefix).filter(Boolean);
 
   if (audience === 'center') {
-    return `"${title}"은 ${compactList([target, space, duration]) || '현장 수업'} 조건에서 운영할 수 있는 체육수업 설명입니다. 준비물은 ${equipment}이며, 활동 흐름은 ${activity || '도입 안내, 주요 움직임 경험, 마무리 정리'} 중심으로 구성됩니다. 오늘 수업은 ${mood} 속에서 진행되었고 아이들은 ${reaction} 흐름을 보였습니다. 기대 효과는 ${focus}을(를) 수업 장면 안에서 경험하고 설명할 수 있다는 점입니다.${noteLine}`;
+    const context = contextPhrase ? `${contextPhrase} ` : '';
+    const equipPart = equipText ? `${addJosa(equipText, '을', '를')} 준비해 진행하며, ` : '';
+    const flowPart = cleanedSteps.length
+      ? `활동은 ${cleanedSteps.slice(0, 3).join(', ')} 순서로 진행됩니다. `
+      : '';
+    return `${addJosa(`"${title}"`, '은', '는')} ${context}운영할 수 있는 신체활동 수업입니다. ${equipPart}${flowPart}수업에서는 ${focusText} 요소를 중심으로 학생들이 정해진 규칙 안에서 움직임을 시도하고 활동 흐름에 참여하는 경험을 제공합니다. 오늘 수업은 ${mood} 속에서 진행되었고, ${reactionText}.${noteLine}`;
   }
 
-  return `수업 활동 기록: ${title}. 본 차시는 ${compactList([target, space, duration]) || '현장 수업'} 조건에서 ${equipment}을(를) 활용해 진행한 신체활동입니다. 학생들은 ${focus}을(를) 중심으로 활동 흐름에 참여했으며, ${mood} 속에서 ${reaction} 모습을 보였습니다. ${variation} 오늘의 움직임 경험을 수업 참여 내용으로 정리합니다.${noteLine}`;
+  // school
+  const context = contextPhrase ? `${contextPhrase} ` : '';
+  const equipPart = equipText ? `${addJosa(equipText, '을', '를')} 활용해 ` : '';
+  const flowPart = cleanedSteps.length
+    ? `학생들은 ${cleanedSteps.slice(0, 2).join(', ')} 순서로 활동에 참여했습니다. `
+    : '학생들은 정해진 규칙 안에서 움직임을 시도하고 활동 흐름에 참여했습니다. ';
+  return `오늘은 "${title}" 수업을 진행했습니다. ${context}${equipPart}수업을 운영했습니다. ${flowPart}${reactionText}.${noteLine}`;
 }
 
 function ChipGroup({ options, selected, onChange }: { options: string[]; selected: string[]; onChange: (next: string[]) => void }) {
@@ -158,21 +254,36 @@ function ReportContent() {
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
   const programsError = useMasterStore((state) => state.programsError);
+  const classRecords = useMasterStore((state) => state.classRecords);
   const programPool = useMemo(() => programs, [programs]);
   const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
   const hasProgramQuery = Boolean(searchParams.get('programId') ?? searchParams.get('program'));
+  const recordId = searchParams.get('record');
+  const selectedRecord = useMemo(
+    () => (recordId ? classRecords.find((r) => r.id === recordId) ?? null : null),
+    [classRecords, recordId],
+  );
   const [programId, setProgramId] = useState(initialProgramId);
   const [audience, setAudience] = useState<Audience>('parent');
   const [mood, setMood] = useState(MOODS[0]);
   const [reaction, setReaction] = useState(REACTIONS[0]);
   const [focusSkills, setFocusSkills] = useState<string[]>(['참여', '반응']);
   const [note, setNote] = useState('');
+  const [recordNoteApplied, setRecordNoteApplied] = useState(false);
   const [search, setSearch] = useState('');
   const [generated, setGenerated] = useState('');
   const [copied, setCopied] = useState(false);
   const [saved, setSaved] = useState<SavedExplanation[]>([]);
 
   useEffect(() => setSaved(loadSaved()), []);
+
+  useEffect(() => {
+    if (selectedRecord && !recordNoteApplied) {
+      const n = buildRecordNote(selectedRecord);
+      if (n) setNote(n);
+      setRecordNoteApplied(true);
+    }
+  }, [selectedRecord, recordNoteApplied]);
 
   useEffect(() => {
     if (!programId && programPool[0]?.id) setProgramId(programPool[0].id);
@@ -213,15 +324,32 @@ function ReportContent() {
     <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>lesson explanation</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 설명 도구</h1>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 안내문 만들기</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
           수업이 끝나면 오늘의 활동이 설명 가능한 문장으로 정리됩니다. 체육수업의 의미를 학부모, 기관, 학교에 맞는 언어로 남깁니다.
         </p>
       </header>
 
-      {hasProgramQuery && program ? (
+      {selectedRecord ? (
         <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.24)' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>selected lesson</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>
+            {selectedRecord.recordType === 'quick' ? '사용 기록 기반 안내문' : '학생 기록 기반 안내문'}
+          </p>
+          <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{selectedRecord.programTitle} 안내문 만들기</h2>
+          <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
+            {new Date(selectedRecord.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {selectedRecord.classId}
+            {selectedRecord.present > 0 ? ` · 출석 ${selectedRecord.present}명` : ''}
+            {selectedRecord.focusCount > 0 ? ` · 관찰 ${selectedRecord.focusCount}명` : ''}
+          </p>
+          {selectedRecord.parentNoteSnapshot ? (
+            <p className="mt-3 rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--spm-t2)' }}>
+              저장된 안내문: {selectedRecord.parentNoteSnapshot}
+            </p>
+          ) : null}
+        </section>
+      ) : hasProgramQuery && program ? (
+        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.24)' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>수업 자료 기반 문구</p>
           <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program.title} 설명 만들기</h2>
           <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
             {compactList([normalizeMasterTarget(program.grade), normalizeMasterSpace(program.space), displayMasterDuration(program.duration)])}
@@ -366,15 +494,15 @@ function ReportContent() {
               <div className="flex flex-wrap gap-2">
                 <button type="button" onClick={() => setGenerated(draft)} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={14} />
-                  설명 문구 만들기
+                  안내문 다시 생성
                 </button>
                 <button type="button" onClick={copyOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
-                  {copied ? '복사 완료' : '복사하기'}
+                  {copied ? '복사 완료' : '현재 문구 복사'}
                 </button>
                 <button type="button" onClick={saveOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   <Save size={14} />
-                  저장
+                  만든 문구 보관
                 </button>
               </div>
             </div>
