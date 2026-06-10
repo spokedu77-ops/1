@@ -14,6 +14,7 @@ import Typography from '@tiptap/extension-typography';
 import Image from '@tiptap/extension-image';
 import CharacterCount from '@tiptap/extension-character-count';
 import type { EditorView } from '@tiptap/pm/view';
+import { TextSelection } from '@tiptap/pm/state';
 import { parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   adjustBulletIndent,
@@ -32,7 +33,13 @@ import {
   unregisterNoteEditor,
 } from './noteEditorRegistry';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
-import { shouldSuppressListFormatToolbar } from './noteListCrossSelect';
+import {
+  bindNoteCrossSelectCopy,
+  shouldSuppressCrossFormatToolbar,
+} from './noteCrossSelect';
+import { bindListCrossHighlightEditorLookup } from './noteListCrossHighlight';
+import { getNoteEditor } from './noteEditorRegistry';
+import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -314,7 +321,6 @@ export function NoteEditor({
   const isEditingRef = useRef(false);
   const lastAutoFocusSignalRef = useRef(0);
   const editorRef = useRef<Editor | null>(null);
-  const focusClickRafRef = useRef<number | null>(null);
   const imageLightbox = useNoteImageLightbox();
   const imageLightboxRef = useRef(imageLightbox);
   imageLightboxRef.current = imageLightbox;
@@ -390,7 +396,7 @@ export function NoteEditor({
   }, [flushPendingChange]);
 
   const notifyFormatToolbar = useCallback((currentEditor: Editor) => {
-    if (shouldSuppressListFormatToolbar()) {
+    if (shouldSuppressCrossFormatToolbar()) {
       callbacksRef.current.onHideFormatToolbar?.();
       return;
     }
@@ -426,6 +432,7 @@ export function NoteEditor({
       CharacterCount,
       Placeholder.configure({ placeholder }),
       NoteListCrossHighlightExtension,
+      NoteTextDragSelectExtension,
     ],
     [placeholder],
   );
@@ -452,6 +459,23 @@ export function NoteEditor({
         return true;
       },
       handleDOMEvents: {
+        dblclick: (view, event) => {
+          event.preventDefault();
+          const doc = view.state.doc;
+          const from = 1;
+          const to = Math.max(from, doc.content.size - 1);
+          if (to > from) {
+            view.dispatch(
+              view.state.tr.setSelection(TextSelection.create(doc, from, to)),
+            );
+          }
+          requestAnimationFrame(() => {
+            const ed = editorRef.current;
+            if (!ed || (ed as { isDestroyed?: boolean }).isDestroyed) return;
+            notifyFormatToolbar(ed);
+          });
+          return true;
+        },
         keydown: (view, event) => {
           if (event.key === ' ') {
             const blockTrigger = tryConvertMarkdownBlockTrigger(view);
@@ -633,7 +657,9 @@ export function NoteEditor({
     onFocus: ({ editor: currentEditor }) => {
       isEditingRef.current = true;
       callbacksRef.current.onEditorFocus?.();
-      notifyFormatToolbar(currentEditor);
+      if (!currentEditor.state.selection.empty) {
+        notifyFormatToolbar(currentEditor);
+      }
     },
     onSelectionUpdate: ({ editor: currentEditor }) => {
       if (!currentEditor.isFocused) {
@@ -696,16 +722,14 @@ export function NoteEditor({
     };
   }, [editor, enterCreatesBlock, flushPendingChange]);
 
-  const cancelPendingFocusClick = useCallback(() => {
-    if (focusClickRafRef.current !== null) {
-      cancelAnimationFrame(focusClickRafRef.current);
-      focusClickRafRef.current = null;
-    }
-  }, []);
-
   useEffect(() => () => {
     flushPendingChange();
   }, [flushPendingChange]);
+
+  useEffect(() => {
+    bindListCrossHighlightEditorLookup(getNoteEditor);
+    return bindNoteCrossSelectCopy();
+  }, []);
 
   useEffect(() => {
     if (!editor) return;
@@ -728,11 +752,18 @@ export function NoteEditor({
         changeTimerRef.current = null;
       }
       pendingChangeRef.current = null;
-      const caret = editor.state.selection.from;
+      const { from, to, empty } = editor.state.selection;
       editor.commands.setContent(sourceHtml, { emitUpdate: false });
       if (isEditingRef.current) {
-        const pos = Math.min(caret, editor.state.doc.content.size - 1);
-        editor.commands.setTextSelection({ from: pos, to: pos });
+        if (!empty && from < to) {
+          const docSize = editor.state.doc.content.size;
+          const safeFrom = Math.min(from, docSize - 1);
+          const safeTo = Math.min(to, docSize - 1);
+          editor.commands.setTextSelection({ from: safeFrom, to: Math.max(safeFrom, safeTo) });
+        } else {
+          const pos = Math.min(from, editor.state.doc.content.size - 1);
+          editor.commands.setTextSelection({ from: pos, to: pos });
+        }
       }
     }
   }, [editor, resetKey, sourceHtml, text]);
@@ -769,56 +800,10 @@ export function NoteEditor({
   useEffect(() => {
     if (!editor || !editorBlockId) return;
     registerNoteEditor(editorBlockId, editor);
-    let downX = 0;
-    let downY = 0;
-    let didDrag = false;
-
-    const handleMouseDown = (event: MouseEvent) => {
-      cancelPendingFocusClick();
-      didDrag = false;
-      pendingEditorClickRef.current = {
-        blockId: editorBlockId,
-        x: event.clientX,
-        y: event.clientY,
-      };
-      downX = event.clientX;
-      downY = event.clientY;
-    };
-    const handleMouseMove = (event: MouseEvent) => {
-      if (event.buttons !== 1) return;
-      if (Math.abs(event.clientX - downX) > 3 || Math.abs(event.clientY - downY) > 3) {
-        didDrag = true;
-        cancelPendingFocusClick();
-      }
-    };
-    const handleMouseUp = (event: MouseEvent) => {
-      if (event.detail >= 2 || didDrag) {
-        cancelPendingFocusClick();
-        return;
-      }
-      const dx = Math.abs(event.clientX - downX);
-      const dy = Math.abs(event.clientY - downY);
-      if (dx >= 4 || dy >= 4) return;
-      if (!editor.state.selection.empty) return;
-      focusClickRafRef.current = requestAnimationFrame(() => {
-        focusClickRafRef.current = null;
-        if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
-        if (!editor.state.selection.empty) return;
-        focusNoteEditorAtClick(editorBlockId, editor);
-      });
-    };
-    const dom = editor.view.dom;
-    dom.addEventListener('mousedown', handleMouseDown, true);
-    dom.addEventListener('mousemove', handleMouseMove, true);
-    dom.addEventListener('mouseup', handleMouseUp, true);
     return () => {
-      cancelPendingFocusClick();
-      dom.removeEventListener('mousedown', handleMouseDown, true);
-      dom.removeEventListener('mousemove', handleMouseMove, true);
-      dom.removeEventListener('mouseup', handleMouseUp, true);
       unregisterNoteEditor(editorBlockId);
     };
-  }, [cancelPendingFocusClick, editor, editorBlockId]);
+  }, [editor, editorBlockId]);
 
   return (
     <>

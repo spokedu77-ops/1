@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   Bookmark,
+  Check,
   Clipboard,
   ExternalLink,
   FileText,
@@ -12,6 +13,8 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
+
+import { BottomSheet } from '../../components/ui/BottomSheet';
 
 import {
   LessonBulletList,
@@ -47,12 +50,27 @@ import {
   officialPresetSessionHref,
 } from '../../spomove/officialSpomovePresets';
 import { useMasterStore } from '../../store';
-import type { Program } from '../../types';
+import type { ClassRecord, Program } from '../../types';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
 
 function getParentCopy(program: Program) {
   return program.lessonDetail?.parentNote?.trim() ?? '';
+}
+
+function buildQuickParentNote(program: Program): string {
+  if (program.lessonDetail?.parentNote?.trim()) {
+    return program.lessonDetail.parentNote.trim();
+  }
+  const title = program.title;
+  const focus = program.lessonDetail?.developmentFocus?.trim() ?? '';
+  if (focus) {
+    const focusPart = focus.split(/[,·\/]/).map((f) => f.trim()).filter((f) => f.length >= 2).slice(0, 2).join(', ');
+    if (focusPart) {
+      return `오늘은 "${title}" 활동을 진행했습니다. 아이들은 ${focusPart} 요소를 중심으로 정해진 규칙 안에서 움직임을 경험했습니다.`;
+    }
+  }
+  return `오늘은 "${title}" 활동을 진행했습니다. 아이들은 정해진 활동 규칙 안에서 움직임을 시도하고, 차례를 지키며 수업에 참여했습니다.`;
 }
 
 function BookOpenFallback() {
@@ -68,7 +86,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const classRecords = useMasterStore((state) => state.classRecords);
+  const saveQuickClassRecord = useMasterStore((state) => state.saveQuickClassRecord);
   const [copied, setCopied] = useState(false);
+  const [quickModalOpen, setQuickModalOpen] = useState(false);
+  const [quickDate, setQuickDate] = useState('');
+  const [quickClassId, setQuickClassId] = useState('');
+  const [quickMemo, setQuickMemo] = useState('');
+  const [quickParentNote, setQuickParentNote] = useState('');
+  const [quickSaved, setQuickSaved] = useState(false);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
@@ -96,6 +121,45 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const parentCopy = getParentCopy(program);
   const favorite = favorites.includes(program.id);
   const usageCount = usageRecords.length;
+  const latestUsageDate = usageRecords.length > 0
+    ? new Date([...usageRecords].sort((a, b) => b.date.localeCompare(a.date))[0].date)
+        .toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+    : null;
+
+  const openQuickModal = () => {
+    setQuickDate(new Date().toISOString().slice(0, 10));
+    setQuickClassId('');
+    setQuickMemo('');
+    setQuickParentNote(buildQuickParentNote(program));
+    setQuickSaved(false);
+    setQuickModalOpen(true);
+  };
+
+  const canSaveQuickRecord = Boolean(quickDate.trim());
+
+  const handleQuickSave = () => {
+    if (!canSaveQuickRecord) return;
+    const record: ClassRecord = {
+      id: Date.now().toString(),
+      lessonTitle: title,
+      classId: quickClassId.trim() || '수업',
+      programId: program.id,
+      programTitle: program.title,
+      date: new Date(quickDate).toISOString(),
+      present: 0,
+      absent: 0,
+      focusCount: 0,
+      skillCount: 0,
+      kakaoSent: false,
+      students: [],
+      memo: quickMemo.trim() || undefined,
+      parentNoteSnapshot: quickParentNote.trim() || undefined,
+      recordType: 'quick',
+    };
+    saveQuickClassRecord(record);
+    setQuickSaved(true);
+    window.setTimeout(() => setQuickModalOpen(false), 900);
+  };
   const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
@@ -134,7 +198,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-6">
           <LessonTitle
             title={title}
-            badges={usageCount > 0 ? <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">{usageCount}회 사용</span> : undefined}
+            badges={usageCount > 0 ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
+                <Check className="h-3 w-3" />
+                {usageCount}회 사용{latestUsageDate ? ` · 최근 ${latestUsageDate}` : ''}
+              </span>
+            ) : undefined}
           />
           <div className="mt-3">
             <LessonMetaGrid
@@ -276,6 +345,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
               SPOMOVE 실행
             </Link>
           ) : null}
+          <button type="button" onClick={openQuickModal} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white">
+            <Check className="h-4 w-4" />
+            이 수업 사용함
+          </button>
           <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
             <FileText className="h-4 w-4" />
             설명 만들기
@@ -286,6 +359,77 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </button>
         </div>
       </div>
+
+      <BottomSheet open={quickModalOpen} title="이 수업 사용함" onClose={() => setQuickModalOpen(false)}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-black text-slate-700">날짜 <span className="font-semibold text-red-400">*</span></label>
+            <input
+              type="date"
+              value={quickDate}
+              onChange={(e) => setQuickDate(e.target.value)}
+              className={`mt-1.5 h-11 w-full rounded-xl border bg-slate-50 px-3 text-sm font-semibold text-slate-900 outline-none focus:ring-2 ${!quickDate ? 'border-red-300 focus:border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-emerald-400 focus:ring-emerald-100'}`}
+            />
+            {!quickDate ? (
+              <p className="mt-1 text-[11px] font-semibold text-red-400">날짜를 선택해야 저장할 수 있습니다.</p>
+            ) : null}
+          </div>
+          <div>
+            <label className="block text-xs font-black text-slate-700">반/기관명</label>
+            <input
+              type="text"
+              value={quickClassId}
+              onChange={(e) => setQuickClassId(e.target.value)}
+              placeholder="예: 토끼반, ○○초등학교"
+              className="mt-1.5 h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-black text-slate-700">메모 <span className="font-semibold text-slate-400">(선택)</span></label>
+            <textarea
+              value={quickMemo}
+              onChange={(e) => setQuickMemo(e.target.value)}
+              placeholder="수업 중 특이사항, 다음 수업 준비 메모"
+              rows={2}
+              className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-black text-slate-700">
+              학부모 안내 문구 <span className="font-semibold text-slate-400">(수정 가능)</span>
+            </label>
+            <textarea
+              value={quickParentNote}
+              onChange={(e) => setQuickParentNote(e.target.value)}
+              rows={4}
+              className="mt-1.5 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold leading-6 text-slate-900 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+            />
+            <p className="mt-1 text-[11px] font-semibold text-slate-400">필요 없으면 비워도 됩니다. 저장된 문구는 수업 기록에만 남고, 원본 수업 자료는 변경되지 않습니다.</p>
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setQuickModalOpen(false)}
+              className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={handleQuickSave}
+              disabled={!canSaveQuickRecord || quickSaved}
+              className="inline-flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-50"
+            >
+              {quickSaved ? (
+                <>
+                  <Check className="h-4 w-4" />
+                  저장됨
+                </>
+              ) : '저장'}
+            </button>
+          </div>
+        </div>
+      </BottomSheet>
     </main>
   );
 }

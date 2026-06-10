@@ -53,8 +53,15 @@ function blockIdFromPoint(x: number, y: number): string | null {
   return null;
 }
 
+function listTextTargetElement(target: EventTarget | null): HTMLElement | null {
+  if (!target) return null;
+  if (target instanceof HTMLElement) return target;
+  if (target instanceof Node) return target.parentElement;
+  return null;
+}
+
 function isListTextTarget(target: EventTarget | null): boolean {
-  return !!(target as HTMLElement | null)?.closest?.('[data-note-list-text] .ProseMirror');
+  return !!listTextTargetElement(target)?.closest('[data-note-list-text] .ProseMirror');
 }
 
 function listRow(blockId: string): HTMLElement | null {
@@ -159,9 +166,9 @@ function collapseEditorSelection(editor: Editor, pos?: number) {
   view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, safe)));
 }
 
-function suppressNativeSelections(siblings: string[]) {
-  window.getSelection()?.removeAllRanges();
+function suppressNativeSelections(siblings: string[], activeBlockId?: string) {
   siblings.forEach((id) => {
+    if (id === activeBlockId) return;
     const editor = getNoteEditor(id);
     if (editor) collapseEditorSelection(editor, 1);
   });
@@ -192,6 +199,9 @@ function clearCrossSelectState() {
 
 function onPointerDown(e: PointerEvent) {
   if (e.button !== 0) return;
+  if (isListTextTarget(e.target)) {
+    document.body.style.userSelect = '';
+  }
   if (!isListTextTarget(e.target)) {
     if (activeCrossRanges.length > 0) {
       const siblings = getListSiblingIds(activeCrossRanges[0].blockId);
@@ -272,7 +282,7 @@ function onPointerMove(e: PointerEvent) {
     e.preventDefault();
     listCrossDragActive = true;
     syncBodyCrossClass();
-    suppressNativeSelections(siblings);
+    suppressNativeSelections(siblings, hoverId);
     applyCrossDecorations(ranges);
     document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
   }
@@ -320,12 +330,12 @@ function onPointerUp(e: PointerEvent) {
   e.preventDefault();
   e.stopPropagation();
 
+  const focusRange = ranges.find((range) => range.blockId === hoverId) ?? ranges[ranges.length - 1];
+
   activeCrossRanges = ranges;
   syncBodyCrossClass();
-  suppressNativeSelections(siblings);
+  suppressNativeSelections(siblings, focusRange.blockId);
   applyCrossDecorations(ranges);
-
-  const focusRange = ranges.find((range) => range.blockId === hoverId) ?? ranges[ranges.length - 1];
   const focusEditor = getNoteEditor(focusRange.blockId);
   if (focusEditor) {
     focusEditor.commands.focus();

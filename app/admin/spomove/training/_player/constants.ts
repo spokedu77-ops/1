@@ -238,7 +238,6 @@ export const MODES: Record<string, SpomoveMode> = {
     icon: '🌀',
     accent: '#06B6D4',
     coreCode: 'VM',
-    isHidden: true,
     tag: '몰입 러닝 · 반응 전환',
     desc: '3D 몰입 환경에서 달리고, 점프하고, 동작을 수행하는 DIVE 트레이닝입니다.',
     levels: [{ id: 1, name: '1단계', enName: 'Dive Program', desc: 'DIVE 전체 시퀀스를 진행합니다.' }],
@@ -307,6 +306,11 @@ export const SPOMOVE_CATALOG_SLOT_IDS = [
   'flanker',    // 주의 2 — 플랭커 / Flanker
   'stroop',     // 실행 1 — 스트룹 과제 / Stroop Task
   'spatial',    // 실행 2 — 순차 기억 / Sequential Memory
+] as const;
+
+/** 3대 축 그리드 밖, 카탈로그 맨 하단에 단독 노출하는 프로그램 */
+export const SPOMOVE_BOTTOM_CATALOG_SLOT_IDS = [
+  'flow', // 다이브 / Dive Mode
 ] as const;
 
 export function isSpomoveCatalogTbdMode(modeId: string): boolean {

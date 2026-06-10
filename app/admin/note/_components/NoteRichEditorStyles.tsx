@@ -6,28 +6,26 @@ export function NoteRichEditorStyles() {
         max-width: 100%;
         overflow-wrap: anywhere;
         word-break: break-word;
-        user-select: text;
-        -webkit-user-select: text;
+        user-select: text !important;
+        -webkit-user-select: text !important;
       }
       .note-rich-editor .ProseMirror {
-        user-select: text;
-        -webkit-user-select: text;
+        user-select: text !important;
+        -webkit-user-select: text !important;
       }
+      .note-rich-editor.ProseMirror ::selection,
       .note-rich-editor .ProseMirror ::selection {
-        background: rgb(191 219 254);
+        background: rgb(191 219 254) !important;
+        color: inherit;
       }
+      .note-rich-editor.ProseMirror::-moz-selection,
       .note-rich-editor .ProseMirror::-moz-selection {
-        background: rgb(191 219 254);
+        background: rgb(191 219 254) !important;
+        color: inherit;
       }
       .note-list-cross-selected {
         background: rgb(147 197 253 / 0.65);
         border-radius: 0.125rem;
-      }
-      body.note-list-cross-active .note-rich-editor .ProseMirror ::selection {
-        background: transparent;
-      }
-      body.note-list-cross-active .note-rich-editor .ProseMirror::-moz-selection {
-        background: transparent;
       }
       .note-rich-editor p.is-editor-empty:first-child::before {
         color: rgb(148 163 184);

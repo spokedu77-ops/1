@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/react';
+import { TextSelection } from '@tiptap/pm/state';
 
 const editors = new Map<string, Editor>();
 
@@ -28,4 +29,14 @@ export function focusNoteEditorAtClick(blockId: string, editor: Editor): boolean
   if (!coords) return false;
   editor.chain().focus().setTextSelection(coords.pos).run();
   return true;
+}
+
+export function collapseAllNoteEditorSelections() {
+  editors.forEach((editor) => {
+    if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
+    const { state, view } = editor;
+    const pos = Math.min(state.selection.from, state.doc.content.size - 1);
+    const safe = Math.max(1, pos);
+    view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, safe)));
+  });
 }

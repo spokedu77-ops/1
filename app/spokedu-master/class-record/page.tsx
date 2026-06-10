@@ -57,6 +57,10 @@ function EmptyRecordState() {
 
 function RecordCard({ record }: { record: ClassRecord }) {
   const total = record.present + record.absent;
+  const isQuick = record.recordType === 'quick';
+  const statusLabel = record.kakaoSent ? '공유 준비' : isQuick ? '사용 기록' : '기록 완료';
+  const statusBg = record.kakaoSent ? 'rgba(16,185,129,0.13)' : isQuick ? 'rgba(99,102,241,0.08)' : 'rgba(99,102,241,0.13)';
+  const statusColor = record.kakaoSent ? 'var(--spm-grn)' : 'var(--spm-acc)';
   return (
     <article className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex items-start justify-between gap-3">
@@ -64,13 +68,22 @@ function RecordCard({ record }: { record: ClassRecord }) {
           <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {record.classId}</p>
           <h2 className="mt-1 text-[18px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all' }}>{record.programTitle}</h2>
         </div>
-        <span className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: record.kakaoSent ? 'rgba(16,185,129,0.13)' : 'rgba(99,102,241,0.13)', color: record.kakaoSent ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>{record.kakaoSent ? '공유 준비' : '기록 완료'}</span>
+        <span className="shrink-0 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: statusBg, color: statusColor }}>{statusLabel}</span>
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        <SummaryPill label="출석" value={`${record.present}/${total || 0}`} tone="var(--spm-grn)" />
-        <SummaryPill label="관찰" value={String(record.focusCount)} tone="var(--spm-amb)" />
-        <SummaryPill label="동작" value={String(record.skillCount)} tone="var(--spm-acc)" />
-      </div>
+      {isQuick ? (
+        <div className="mt-3 space-y-1">
+          {record.memo ? <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{record.memo}</p> : null}
+          {record.parentNoteSnapshot ? (
+            <p className="rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{record.parentNoteSnapshot}</p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          <SummaryPill label="출석" value={`${record.present}/${total || 0}`} tone="var(--spm-grn)" />
+          <SummaryPill label="관찰" value={String(record.focusCount)} tone="var(--spm-amb)" />
+          <SummaryPill label="동작" value={String(record.skillCount)} tone="var(--spm-acc)" />
+        </div>
+      )}
       <Link href={`/spokedu-master/report?program=${record.programId}`} className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>설명 문구에서 보기</Link>
     </article>
   );

@@ -44,7 +44,9 @@ import {
 } from '@/app/lib/note/noteBlockTree';
 import { bulletMarkerForLevel, stripMarkdownTriggerForTypeChange } from './_components/noteBulletInput';
 import { pendingEditorClickRef } from './_components/noteEditorRegistry';
-import { bindNoteListCrossTextSelect } from './_components/noteListCrossSelect';
+import { clearAllCrossSelectState } from './_components/noteCrossSelect';
+import { noteBlockMarqueeGuard } from './_lib/noteBlockMarqueeGuard';
+import { collapseAllNoteEditorSelections } from './_components/noteEditorRegistry';
 import {
   findOrphanSubPageDocuments,
   isDocumentDescendantOf,
@@ -67,6 +69,11 @@ import {
   toggleMenuAnchorOffset,
 } from './_lib/constants';
 import { patchNoteBlocks, putNoteBlockOrders } from './_lib/noteBlocksApi';
+import {
+  isNoteTextSurfaceTarget,
+  notePointerTargetElement,
+  stopNoteEditorPointerBubble,
+} from './_lib/notePointerTarget';
 
 const EMPTY_BLOCK_PLACEHOLDER = "명령어는 '/'를 입력하세요.";
 
@@ -144,30 +151,31 @@ function useSuppressGripMenuRef() {
 
 type MarqueeRect = { left: number; top: number; right: number; bottom: number };
 
-function rectsIntersect(a: DOMRect, b: MarqueeRect): boolean {
-  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+function rowSubstantiallyInMarquee(row: DOMRect, marquee: MarqueeRect): boolean {
+  const overlapTop = Math.max(row.top, marquee.top);
+  const overlapBottom = Math.min(row.bottom, marquee.bottom);
+  const overlapHeight = Math.max(0, overlapBottom - overlapTop);
+  if (overlapHeight < row.height * 0.45) return false;
+  const cx = (row.left + row.right) / 2;
+  const cy = (row.top + row.bottom) / 2;
+  return cx >= marquee.left && cx <= marquee.right && cy >= marquee.top && cy <= marquee.bottom;
 }
 
 function getMarqueeSelectedBlockIds(marquee: MarqueeRect): string[] {
   const ids: string[] = [];
   document.querySelectorAll<HTMLElement>('[data-note-block-row]').forEach((row) => {
-    if (!rectsIntersect(row.getBoundingClientRect(), marquee)) return;
+    if (!rowSubstantiallyInMarquee(row.getBoundingClientRect(), marquee)) return;
     const id = row.getAttribute('data-block-id');
     if (id) ids.push(id);
   });
   return ids;
 }
 
-function isMarqueeSelectStartBlocked(target: HTMLElement): boolean {
-  return !!target.closest(
+function isMarqueeSelectStartBlocked(target: EventTarget | null): boolean {
+  const el = notePointerTargetElement(target);
+  if (!el) return false;
+  return !!el.closest(
     'button, input, textarea, a, .note-block-gutter, [data-note-ignore-whitespace]',
-  );
-}
-
-/** 텍스트 편집·선택 영역 — 여기서는 마퀴 대신 글자 드래그 */
-function isMarqueeSelectTextTarget(target: HTMLElement): boolean {
-  return !!target.closest(
-    '.ProseMirror, .note-rich-editor, [contenteditable="true"], input, textarea, [data-toggle-title], [data-note-list-text], [data-note-editor-host]',
   );
 }
 
@@ -1080,17 +1088,22 @@ function BlockContent({
         ref={slashHostRef}
         data-note-editor-host
         className="relative min-h-[1.75rem] min-w-0 max-w-full cursor-text select-text"
+        onPointerDown={stopNoteEditorPointerBubble}
         onMouseDown={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.closest('button, input, textarea, a')) return;
-          if (!target.closest('.ProseMirror')) {
-            pendingEditorClickRef.current = {
-              blockId: block.id,
-              x: e.clientX,
-              y: e.clientY,
-            };
-            onFocusBlock?.();
-          }
+          const target = notePointerTargetElement(e.target);
+          if (!target) return;
+          if (target.closest('button, input, textarea, a, .ProseMirror')) return;
+          pendingEditorClickRef.current = {
+            blockId: block.id,
+            x: e.clientX,
+            y: e.clientY,
+          };
+        }}
+        onClick={(e) => {
+          const target = notePointerTargetElement(e.target);
+          if (!target) return;
+          if (target.closest('button, input, textarea, a, .ProseMirror')) return;
+          onFocusBlock?.();
         }}
       >
         <LazyNoteEditor {...editorSharedProps} />
@@ -1775,9 +1788,21 @@ function BlockContent({
     >
       <div
         data-note-editor-host
-        className="relative min-h-[1.75rem] min-w-0 flex-1 cursor-text"
+        className="relative min-h-[1.75rem] min-w-0 flex-1 cursor-text select-text"
+        onPointerDown={stopNoteEditorPointerBubble}
         onMouseDown={(e) => {
-          const target = e.target as HTMLElement;
+          const target = notePointerTargetElement(e.target);
+          if (!target) return;
+          if (target.closest('.ProseMirror, button, input, textarea, a')) return;
+          pendingEditorClickRef.current = {
+            blockId: block.id,
+            x: e.clientX,
+            y: e.clientY,
+          };
+        }}
+        onClick={(e) => {
+          const target = notePointerTargetElement(e.target);
+          if (!target) return;
           if (target.closest('.ProseMirror, button, input, textarea, a')) return;
           onFocusBlock?.();
         }}
@@ -2037,7 +2062,8 @@ function SortableBlockRow({
   const blockContentNode = (
     <div
       data-note-editor-host
-      className="min-w-0 flex-1 cursor-text"
+      className="min-w-0 flex-1 cursor-text select-text"
+      onPointerDown={stopNoteEditorPointerBubble}
       onMouseDownCapture={() => {
         if (block.type === 'toggle') onFocusToggle?.(block.id);
       }}
@@ -2354,7 +2380,8 @@ function ToggleInlineRow({
         </div>
       )}
       <div
-        className="min-w-0 cursor-text"
+        className="min-w-0 cursor-text select-text"
+        onPointerDown={stopNoteEditorPointerBubble}
         onMouseDownCapture={() => {
           if (block.type === 'toggle') {
             onFocusToggle?.(block.id);
@@ -2495,6 +2522,10 @@ export default function AdminNotePageContent() {
     started: boolean;
     startX: number;
     startY: number;
+  } | null>(null);
+  const blockMarqueeListenersRef = useRef<{
+    onMove: (ev: PointerEvent) => void;
+    onUp: () => void;
   } | null>(null);
   const multiDragBlockIdsRef = useRef<string[] | null>(null);
   const suppressGripMenuRef = useRef(false);
@@ -4249,12 +4280,14 @@ export default function AdminNotePageContent() {
   }, [focusBlockEditor, handleAddBlock, handleInsertBlockAfter]);
 
   const handleDocumentBodyMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
+    const target = notePointerTargetElement(e.target);
+    if (!target) return;
     if (target.closest(
-      '[data-note-block-row], button, input, textarea, a, .ProseMirror, [data-toggle-title], [data-note-ignore-whitespace]',
+      '[data-note-block-row], [data-note-editor-host], button, input, textarea, a, .ProseMirror, [data-toggle-title], [data-note-ignore-whitespace]',
     )) {
       return;
     }
+    clearAllCrossSelectState();
     setSelectedBlockIds(new Set());
     e.preventDefault();
     handleClickEditorWhitespace();
@@ -4483,23 +4516,48 @@ export default function AdminNotePageContent() {
     lastClickedBlockIdRef.current = nextIds[nextIds.length - 1] ?? null;
   }, []);
 
-  const handleBlockListPointerDownCapture = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+  const handleBlockListPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     if (noteBlockDragActiveRef.current) return;
-    if (blockMarqueeRef.current) return;
+    if (isMarqueeSelectStartBlocked(e.target)) return;
 
-    const target = e.target as HTMLElement;
-    if (isMarqueeSelectStartBlocked(target)) return;
+    const abortBlockMarquee = () => {
+      noteBlockMarqueeGuard.active = false;
+      document.body.style.userSelect = '';
+      document.body.classList.remove('note-list-cross-active');
+      setMarqueeBox(null);
+      blockMarqueeRef.current = null;
+      const listeners = blockMarqueeListenersRef.current;
+      if (listeners) {
+        document.removeEventListener('pointermove', listeners.onMove);
+        document.removeEventListener('pointerup', listeners.onUp);
+        document.removeEventListener('pointercancel', listeners.onUp);
+        blockMarqueeListenersRef.current = null;
+      }
+    };
 
-    if (isMarqueeSelectTextTarget(target)) {
+    // 텍스트 위: 일반 드래그=글자 선택. Shift/Ctrl+드래그=블록 마퀴
+    const hasModifier = e.shiftKey || e.ctrlKey || e.metaKey;
+    if (isNoteTextSurfaceTarget(e.target) && !hasModifier) {
+      return;
+    }
+
+    clearAllCrossSelectState();
+
+    const target = notePointerTargetElement(e.target);
+    if (!target?.closest('[data-note-marquee-zone]')) return;
+
+    abortBlockMarquee();
+
+    const inBlockRow = target.closest('[data-note-block-row]');
+
+    // 블록 행 안: Shift/Ctrl+드래그만 마퀴. 여백(pb-32 등): 일반 드래그로 마퀴
+    if (inBlockRow && !hasModifier) {
       if (selectedBlockIdsRef.current.size > 0) {
         setSelectedBlockIds(new Set());
       }
       return;
     }
-
-    const row = target.closest<HTMLElement>('[data-note-block-row]');
-    if (!row && !target.closest('[data-note-marquee-zone]')) return;
 
     blockMarqueeRef.current = {
       additive: e.ctrlKey || e.metaKey,
@@ -4508,6 +4566,7 @@ export default function AdminNotePageContent() {
       startX: e.clientX,
       startY: e.clientY,
     };
+    noteBlockMarqueeGuard.active = true;
 
     const onMove = (ev: PointerEvent) => {
       const state = blockMarqueeRef.current;
@@ -4519,10 +4578,9 @@ export default function AdminNotePageContent() {
         if (dx < 4 && dy < 4) return;
         state.started = true;
         suppressGripMenuRef.current = true;
-        window.getSelection()?.removeAllRanges();
         document.body.style.userSelect = 'none';
-        setFocusedEditorBlockId(null);
-        focusedEditorBlockIdRef.current = null;
+        clearAllCrossSelectState();
+        collapseAllNoteEditorSelections();
       }
 
       const left = Math.min(state.startX, ev.clientX);
@@ -4539,9 +4597,11 @@ export default function AdminNotePageContent() {
 
     const onUp = () => {
       const state = blockMarqueeRef.current;
+      noteBlockMarqueeGuard.active = false;
       document.body.style.userSelect = '';
       setMarqueeBox(null);
       blockMarqueeRef.current = null;
+      blockMarqueeListenersRef.current = null;
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
@@ -4552,6 +4612,7 @@ export default function AdminNotePageContent() {
       }
     };
 
+    blockMarqueeListenersRef.current = { onMove, onUp };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
@@ -4934,7 +4995,10 @@ export default function AdminNotePageContent() {
     );
   };
 
-  useEffect(() => bindNoteListCrossTextSelect(), []);
+  useEffect(() => () => {
+    document.body.style.userSelect = '';
+    document.body.classList.remove('note-list-cross-active');
+  }, []);
 
   useEffect(() => {
     if (!showDocIconPicker) return;
@@ -5724,7 +5788,7 @@ export default function AdminNotePageContent() {
                   <div
                     data-note-marquee-zone
                     className={NOTE_MARQUEE_ZONE}
-                    onPointerDownCapture={handleBlockListPointerDownCapture}
+                    onPointerDownCapture={handleBlockListPointerDown}
                     onMouseLeave={handleBlockListMouseLeave}
                   >
                     {marqueeBox && (

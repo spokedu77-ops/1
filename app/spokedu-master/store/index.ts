@@ -61,6 +61,7 @@ interface MasterState {
   removeStudent: (id: string) => void;
   classRecords: ClassRecord[];
   saveClassRecord: (record: ClassRecord) => void;
+  saveQuickClassRecord: (record: ClassRecord) => void;
   favorites: string[];
   toggleFavorite: (id: string) => void;
   cart: CartItem[];
@@ -337,6 +338,24 @@ export const useMasterStore = create<MasterState>()(
               type: 'report' as const,
               title: `${record.classId} 수업 기록 저장`,
               body: `${record.programTitle} 기록 ${record.skillCount}개가 학생 이력에 반영되었습니다.`,
+              read: false,
+              createdAt: record.date,
+            },
+            ...state.notifications,
+          ].slice(0, 50),
+          operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
+        })),
+      saveQuickClassRecord: (record) =>
+        // TODO: quick records and detailed records currently share the same cap of 100.
+        // Consider separate retention limits if quick usage logs grow quickly.
+        set((state) => ({
+          classRecords: [record, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
+          notifications: [
+            {
+              id: `quick-${record.id}`,
+              type: 'report' as const,
+              title: `수업 사용 기록 저장`,
+              body: `${record.programTitle} 사용 기록이 저장되었습니다.`,
               read: false,
               createdAt: record.date,
             },

@@ -11,7 +11,7 @@ import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 import { USER_SPOMOVE_PRESETS_KEY, isSupportedMasterEngineMode } from '@/app/spokedu-master/lib/spomovePresets';
 import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
-import { MODES, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
+import { MODES, resolveTrainingEngine, SPOMOVE_BOTTOM_CATALOG_SLOT_IDS, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
@@ -500,6 +500,37 @@ function CatalogModeCard({
         </div>
       </div>
     </button>
+  );
+}
+
+function CatalogBottomPrograms({ onPick }: { onPick: (modeId: string) => void }) {
+  const ids = SPOMOVE_BOTTOM_CATALOG_SLOT_IDS.filter((id) => {
+    const m = MODES[id];
+    return m && !m.isHidden;
+  });
+  if (ids.length === 0) return null;
+
+  const accent = MODES[ids[0]]?.accent ?? '#06B6D4';
+
+  return (
+    <section style={{ marginTop: 48, paddingTop: 32, borderTop: `1px solid ${T.border}` }}>
+      <div style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `3px solid ${accent}` }}>
+        <p style={{ margin: 0, fontSize: 10, fontWeight: 800, color: accent, letterSpacing: '0.2em' }}>
+          IMMERSION · DIVE
+        </p>
+        <h2 style={{ margin: '4px 0 4px', fontSize: 20, fontWeight: 900, color: T.text, letterSpacing: '-0.02em' }}>
+          3D 몰입 프로그램
+        </h2>
+        <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.55 }}>
+          4색 패드 훈련과 별도로, 화면 안에서 달리고 동작하는 몰입형 DIVE MODE입니다.
+        </p>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, maxWidth: 520 }}>
+        {ids.map((modeId) => (
+          <CatalogModeCard key={modeId} modeId={modeId} onPick={onPick} />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -1640,6 +1671,7 @@ function SpomoveTrainingPageContent() {
                   </section>
                 );
               })}
+              <CatalogBottomPrograms onPick={handlePick} />
             </div>
           ) : (
             <div>
@@ -1664,6 +1696,7 @@ function SpomoveTrainingPageContent() {
                   <CatalogModeCard key={modeId} modeId={modeId} onPick={handlePick} />
                 ))}
               </div>
+              <CatalogBottomPrograms onPick={handlePick} />
             </div>
           )}
         </main>

@@ -168,6 +168,9 @@ export interface ClassRecord {
   skillCount: number;
   kakaoSent: boolean;
   students: ClassStudentRecord[];
+  memo?: string;
+  parentNoteSnapshot?: string;
+  recordType?: 'quick' | 'detailed';
 }
 
 export interface CartItem {

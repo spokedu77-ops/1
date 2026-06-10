@@ -19,7 +19,6 @@ import {
   LessonEquipmentChecklist,
   LessonFullSection,
   LessonNumberedList,
-  LessonQuadGrid,
   LessonTitle,
 } from './LessonPanels';
 
@@ -44,6 +43,31 @@ function getPreviewScript(script: string) {
   return script.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 1).join('\n');
 }
 
+function buildMetaHashTags(program: Program): string[] {
+  const theme = getLessonTheme(program);
+  const target = getLessonTarget(program);
+  const func = getLessonFunction(program);
+  const space = getLessonSpace(program);
+
+  const tokens = [
+    ...(theme ? [theme] : []),
+    ...(target ? target.split(',').map((t) => t.trim()) : []),
+    ...(func ? func.split(',').map((f) => f.trim()) : []),
+    ...(space ? [space] : []),
+  ]
+    .map((v) => v.replace(/\s+/g, ''))
+    .filter(Boolean);
+
+  const seen = new Set<string>();
+  return tokens
+    .filter((v) => {
+      if (seen.has(v)) return false;
+      seen.add(v);
+      return true;
+    })
+    .slice(0, 6);
+}
+
 export function LessonPreviewContent({
   program,
   badges,
@@ -59,49 +83,55 @@ export function LessonPreviewContent({
   const rules = getLessonRules(program);
   const previewRules = rules.slice(0, 3);
   const hiddenRuleCount = Math.max(rules.length - previewRules.length, 0);
-
-  const metaGrid = (
-    <LessonQuadGrid
-      compact
-      cells={[
-        { label: '테마', value: getLessonTheme(program) },
-        { label: '대상', value: getLessonTarget(program) },
-        { label: '기능', value: getLessonFunction(program) },
-        { label: '공간', value: getLessonSpace(program) },
-      ]}
-    />
-  );
+  const hashTags = buildMetaHashTags(program);
 
   return (
     <div className="flex flex-col gap-4">
       <LessonTitle title={title} badges={badges} />
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(240px,0.65fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,0.95fr)] lg:items-stretch">
         <div className="flex min-w-0 flex-col gap-3">
-          <LessonPreviewMedia program={program} layout="preview" />
-          {metaGrid}
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-3">
-          {equipment.length > 0 ? <PreviewEquipmentCard items={equipment} /> : null}
-          {script ? (
-            <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">수업 스크립트</p>
-              <LessonCoachScript text={getPreviewScript(script)} prominent />
+          {hashTags.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {hashTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600"
+                >
+                  #{tag}
+                </span>
+              ))}
             </div>
           ) : null}
-          {previewRules.length > 0 ? (
-            <LessonFullSection title="활동 방법">
-              <LessonNumberedList items={previewRules} />
-              {hiddenRuleCount > 0 ? (
-                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-500">
-                  전체 진행 순서는 수업 자료에서 확인하세요.
-                </p>
-              ) : null}
-            </LessonFullSection>
-          ) : null}
-          {footer}
+          <LessonPreviewMedia program={program} layout="preview" />
         </div>
+
+        <aside className="flex min-w-0 flex-col lg:h-full">
+          <div className="flex-1 space-y-3">
+            {equipment.length > 0 ? <PreviewEquipmentCard items={equipment} /> : null}
+            {script ? (
+              <div className="rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">수업 스크립트</p>
+                <LessonCoachScript text={getPreviewScript(script)} prominent />
+              </div>
+            ) : null}
+            {previewRules.length > 0 ? (
+              <LessonFullSection title="활동 방법">
+                <LessonNumberedList items={previewRules} />
+                {hiddenRuleCount > 0 ? (
+                  <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-[12px] font-bold text-slate-500">
+                    전체 진행 순서는 수업 자료에서 확인하세요.
+                  </p>
+                ) : null}
+              </LessonFullSection>
+            ) : null}
+          </div>
+          {footer ? (
+            <div className="mt-3 shrink-0">
+              {footer}
+            </div>
+          ) : null}
+        </aside>
       </div>
     </div>
   );
