@@ -1,7 +1,54 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+
+const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
+
+type TeacherSpomovePreset = {
+  id: string;
+  title: string;
+  mode: string;
+  level: number;
+  variantColorTheme?: 'color' | 'animal' | 'vehicle';
+};
+
+const TEACHER_SPOMOVE_PRESETS: TeacherSpomovePreset[] = [
+  {
+    id: 'rc-1-arrow',
+    title: '반응인지 1번 · 공간 방향',
+    mode: 'basic',
+    level: 1,
+  },
+  {
+    id: 'rc-3-color',
+    title: '반응인지 3번 · 전면 색상 반응 (색상)',
+    mode: 'basic',
+    level: 3,
+    variantColorTheme: 'color',
+  },
+  {
+    id: 'rc-3-animal',
+    title: '반응인지 3번 · 전면 색상 반응 (동물)',
+    mode: 'basic',
+    level: 3,
+    variantColorTheme: 'animal',
+  },
+  {
+    id: 'rc-3-vehicle',
+    title: '반응인지 3번 · 전면 색상 반응 (탈것)',
+    mode: 'basic',
+    level: 3,
+    variantColorTheme: 'vehicle',
+  },
+  {
+    id: 'rc-4-split',
+    title: '반응인지 4번 · 2분할 색상 반응',
+    mode: 'basic',
+    level: 4,
+    variantColorTheme: 'color',
+  },
+];
 
 const COLOR_OPTIONS = [
   { id: 'red', label: '빨강', hex: '#FF3B3B' },
@@ -1654,6 +1701,264 @@ button {
     min-height: 56px;
   }
 }
+
+/* ── 프리셋 목록 ──────────────────────────────────────────── */
+
+.spm-presetlist {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.spm-presetlist-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.spm-presetlist-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.spm-presetlist-back:hover {
+  border-color: var(--line-3);
+  color: var(--text);
+}
+
+.spm-presetlist-title {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.spm-presetlist-count {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+}
+
+.spm-preset-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.spm-preset-item {
+  position: relative;
+  overflow: hidden;
+  padding: 20px 18px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(20,23,33,0.94) 0%, rgba(13,15,23,0.94) 100%);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.spm-preset-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(200,255,0,0.2);
+  box-shadow: 0 12px 24px rgba(200,255,0,0.06);
+}
+
+.spm-preset-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.spm-preset-num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+
+.spm-preset-title {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.35;
+}
+
+.spm-preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.spm-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--accent-line);
+  background: rgba(200,255,0,0.07);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--accent-2);
+}
+
+.spm-preset-arrow {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid var(--line-2);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-3);
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.spm-preset-item:hover .spm-preset-arrow {
+  border-color: rgba(200,255,0,0.28);
+  color: var(--accent);
+  background: rgba(200,255,0,0.07);
+}
+
+.spm-runner-loading {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #07080C;
+}
+
+.spm-runner-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(200,255,0,0.18);
+  border-top-color: var(--accent);
+  animation: spm-spin 0.8s linear infinite;
+}
+
+@keyframes spm-spin {
+  to { transform: rotate(360deg); }
+}
+
+.spm-home-btn-left {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 10001;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line-2);
+  background: rgba(12, 14, 20, 0.88);
+  backdrop-filter: blur(18px);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.spm-home-btn-left:hover {
+  border-color: var(--line-3);
+  color: var(--text-2);
+  transform: translateY(-1px);
+}
+
+.spm-complete {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 100px 20px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.spm-complete-card {
+  position: relative;
+  overflow: hidden;
+  padding: 36px 28px 32px;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(200,255,0,0.12), transparent 28%),
+    linear-gradient(180deg, rgba(24, 27, 38, 0.96) 0%, rgba(12, 14, 20, 0.96) 100%);
+  box-shadow: var(--shadow);
+}
+
+.spm-complete-eyebrow {
+  display: inline-flex;
+  margin-bottom: 18px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(200,255,0,0.16);
+  background: rgba(200,255,0,0.08);
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.spm-complete-title {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(48px, 13vw, 62px);
+  font-weight: 900;
+  line-height: 0.96;
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+
+.spm-complete-sub {
+  max-width: 320px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.spm-complete-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 28px;
+}
 `;
 
 const L = (
@@ -1906,9 +2211,11 @@ function ResultScreen({
 function IntroScreen({
   onCreate,
   onFavorite,
+  onSpomove,
 }: {
   onCreate: () => void;
   onFavorite: () => void;
+  onSpomove: () => void;
 }) {
   return (
     <ScreenShell>
@@ -1928,6 +2235,11 @@ function IntroScreen({
             <div className="spm-intro-btn-num">02</div>
             <div className="spm-intro-btn-title">Favorite</div>
             <div className="spm-intro-btn-desc">저장된 설정을 불러와 바로 시작합니다.</div>
+          </button>
+          <button className="spm-intro-btn fav" onClick={onSpomove}>
+            <div className="spm-intro-btn-num">03</div>
+            <div className="spm-intro-btn-title">Spomove</div>
+            <div className="spm-intro-btn-desc">반응인지 프로그램 5종을 바로 실행합니다.</div>
           </button>
         </div>
       </div>
@@ -2044,6 +2356,158 @@ function FavoriteListScreen({
   );
 }
 
+function PresetListScreen({
+  onBack,
+  onSelect,
+}: {
+  onBack: () => void;
+  onSelect: (preset: TeacherSpomovePreset) => void;
+}) {
+  return (
+    <ScreenShell>
+      <div className="spm-presetlist">
+        <div className="spm-presetlist-head">
+          <button className="spm-presetlist-back" onClick={onBack} aria-label="뒤로">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <span className="spm-presetlist-title">Spomove</span>
+          <span className="spm-presetlist-count">{TEACHER_SPOMOVE_PRESETS.length} 프로그램</span>
+        </div>
+
+        <div className="spm-preset-items">
+          {TEACHER_SPOMOVE_PRESETS.map((preset, idx) => (
+            <button
+              key={preset.id}
+              className="spm-preset-item"
+              onClick={() => onSelect(preset)}
+            >
+              <div className="spm-preset-item-body">
+                <div className="spm-preset-num">{String(idx + 1).padStart(2, '0')}</div>
+                <div className="spm-preset-title">{preset.title}</div>
+                <div className="spm-preset-chips">
+                  <span className="spm-preset-chip">2초</span>
+                  <span className="spm-preset-chip">15회</span>
+                  <span className="spm-preset-chip">BGM 자동</span>
+                </div>
+              </div>
+              <div className="spm-preset-arrow" aria-hidden>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScreenShell>
+  );
+}
+
+function PresetRunnerLoadingOverlay() {
+  return (
+    <div className="spm-runner-loading">
+      <div className="spm-runner-spinner" />
+    </div>
+  );
+}
+
+function PresetRunnerScreen({
+  preset,
+  runKey,
+  onExit,
+  onComplete,
+}: {
+  preset: TeacherSpomovePreset;
+  runKey: number;
+  onExit: () => void;
+  onComplete: () => void;
+}) {
+  return (
+    <>
+      <style>{CSS}</style>
+      <Suspense fallback={<PresetRunnerLoadingOverlay />}>
+        <MemoryGameApp
+          key={runKey}
+          initialMode={preset.mode}
+          initialLevel={preset.level}
+          autoLaunch={{
+            speed: 2,
+            timeMode: 'reps',
+            targetReps: 15,
+            warmup: 3,
+            audioMode: 'beep',
+            variantColorTheme: preset.variantColorTheme,
+          }}
+          embed
+          disableBgm={false}
+          onExit={onExit}
+          onComplete={onComplete}
+        />
+      </Suspense>
+    </>
+  );
+}
+
+function PresetCompleteScreen({
+  onRetry,
+  onBack,
+}: {
+  onRetry: () => void;
+  onBack: () => void;
+}) {
+  return (
+    <>
+      <style>{CSS}</style>
+      <div className="spm-wrap">
+        <button
+          type="button"
+          className="spm-home-btn-left"
+          onClick={onBack}
+          aria-label="프로그램 목록으로"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          뒤로
+        </button>
+        <button
+          type="button"
+          className="spm-home-btn"
+          onClick={onRetry}
+          aria-label="다시 실행"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <polyline points="23 4 23 10 17 10" />
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+          </svg>
+          다시
+        </button>
+        <div className="spm-complete">
+          <div className="spm-complete-card">
+            <div className="spm-complete-eyebrow">Complete</div>
+            <div className="spm-complete-title">수고했어요.</div>
+            <p className="spm-complete-sub">훈련이 끝났습니다.<br />같은 프로그램을 다시 실행하거나<br />다른 프로그램을 선택하세요.</p>
+          </div>
+          <div className="spm-complete-bottom">
+            <button className="spm-btn-cta spm-cta-ac" onClick={onRetry}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+                <polyline points="23 4 23 10 17 10" />
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+              </svg>
+              다시 실행
+            </button>
+            <button className="spm-btn-cta spm-cta-w" onClick={onBack}>
+              프로그램 목록
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 function CountdownScreen({ onDone }: { onDone: () => void }) {
   const [count, setCount] = useState(3);
 
@@ -2128,6 +2592,8 @@ export default function SpomovePage() {
   const [screen, setScreen] = useState('intro');
   const [step, setStep] = useState(1);
   const [tab, setTab] = useState('basic');
+  const [selectedPreset, setSelectedPreset] = useState<TeacherSpomovePreset | null>(null);
+  const [runKey, setRunKey] = useState(0);
 
   // 저장 모달
   const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -2463,6 +2929,7 @@ export default function SpomovePage() {
           setScreen('settings');
         }}
         onFavorite={() => setScreen('favoriteList')}
+        onSpomove={() => setScreen('presetList')}
       />
     );
   }
@@ -2472,6 +2939,42 @@ export default function SpomovePage() {
       <FavoriteListScreen
         onBack={() => setScreen('intro')}
         onSelect={hydrateFromFavorite}
+      />
+    );
+  }
+
+  if (screen === 'presetList') {
+    return (
+      <PresetListScreen
+        onBack={() => setScreen('intro')}
+        onSelect={(preset) => {
+          setSelectedPreset(preset);
+          setRunKey((k) => k + 1);
+          setScreen('presetRunner');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'presetRunner' && selectedPreset) {
+    return (
+      <PresetRunnerScreen
+        preset={selectedPreset}
+        runKey={runKey}
+        onExit={() => setScreen('presetList')}
+        onComplete={() => setScreen('presetComplete')}
+      />
+    );
+  }
+
+  if (screen === 'presetComplete' && selectedPreset) {
+    return (
+      <PresetCompleteScreen
+        onRetry={() => {
+          setRunKey((k) => k + 1);
+          setScreen('presetRunner');
+        }}
+        onBack={() => setScreen('presetList')}
       />
     );
   }
