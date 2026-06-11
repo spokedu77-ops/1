@@ -11,7 +11,15 @@ import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
 import { USER_SPOMOVE_PRESETS_KEY, isSupportedMasterEngineMode } from '@/app/spokedu-master/lib/spomovePresets';
 import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
-import { MODES, resolveTrainingEngine, SPOMOVE_BOTTOM_CATALOG_SLOT_IDS, SPOMOVE_CATALOG_SLOT_IDS } from './_player/constants';
+import {
+  MODES,
+  resolveTrainingEngine,
+  SPOMOVE_AXIS_META,
+  SPOMOVE_AXIS_ORDER,
+  SPOMOVE_BOTTOM_CATALOG_SLOT_IDS,
+  SPOMOVE_CATALOG_SLOT_IDS,
+  type SpomoveAxis,
+} from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
 import type { MemoryGameAutoLaunch, TrainingExitResume } from './_player/MemoryGameApp';
 import { SpomoveCatalogHero } from './_player/components/SpomoveCatalogHero';
@@ -57,41 +65,27 @@ type TabCode = 'ALL' | 'response' | 'attention' | 'executive';
 
 
 const TABS: { code: TabCode; label: string; sub: string }[] = [
-  { code: 'ALL',       label: '전체', sub: '6개 핵심 프로그램 전체' },
-  { code: 'response',  label: '반응', sub: '시지각 반응 · 반응 인지' },
-  { code: 'attention', label: '주의', sub: '사이먼 효과 · 플랭커' },
-  { code: 'executive', label: '실행', sub: '스트룹 과제 · 순차 기억' },
+  { code: 'ALL', label: '전체', sub: '6개 핵심 프로그램 전체' },
+  ...SPOMOVE_AXIS_ORDER.map((axis) => ({
+    code: axis as TabCode,
+    label: SPOMOVE_AXIS_META[axis].title,
+    sub: SPOMOVE_AXIS_META[axis].tabSub,
+  })),
 ];
 
 const AXIS_GROUPS: ReadonlyArray<{
-  axisCode: 'response' | 'attention' | 'executive';
+  axisCode: SpomoveAxis;
   title: string;
   enTitle: string;
   salesCopy: string;
   desc: string;
-}> = [
-  {
-    axisCode: 'response',
-    title: '반응',
-    enTitle: 'Response',
-    salesCopy: '보고 바로 움직이는 반응력',
-    desc: '화면 신호를 보고 몸으로 즉시 연결하는 영역',
-  },
-  {
-    axisCode: 'attention',
-    title: '주의',
-    enTitle: 'Attention',
-    salesCopy: '필요한 정보에 집중하는 집중력',
-    desc: '방해 정보 속에서 필요한 정보를 선택하는 영역',
-  },
-  {
-    axisCode: 'executive',
-    title: '실행',
-    enTitle: 'Executive',
-    salesCopy: '기억하고 조절해 수행하는 실행력',
-    desc: '규칙을 조절하고 정보를 기억해 움직임으로 수행하는 영역',
-  },
-];
+}> = SPOMOVE_AXIS_ORDER.map((axisCode) => ({
+  axisCode,
+  title: SPOMOVE_AXIS_META[axisCode].title,
+  enTitle: SPOMOVE_AXIS_META[axisCode].enTitle,
+  salesCopy: SPOMOVE_AXIS_META[axisCode].salesCopy,
+  desc: SPOMOVE_AXIS_META[axisCode].desc,
+}));
 
 type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = '/teacher/spomove';
@@ -1543,13 +1537,13 @@ function SpomoveTrainingPageContent() {
                       lineHeight: 1.15,
                       wordBreak: 'keep-all',
                     }}>
-                      반응·주의·실행을 움직임으로 경험하는 SPOMOVE
+                      단순·선택·복합 반응을 움직임으로 경험하는 SPOMOVE
                     </h1>
                     <p style={{ margin: 0, fontSize: 11, color: T.textDim, lineHeight: 1.65, maxWidth: 540 }}>
                       SPOMOVE는 4색 패드 위에서 화면 신호를 보고, 필요한 정보를 선택하고, 기억한 규칙을 몸으로 수행하는 스크린 기반 인지운동 프로그램입니다.
                     </p>
                     <p style={{ margin: 0, fontSize: 10, color: T.muted, lineHeight: 1.6, maxWidth: 540 }}>
-                      6개 핵심 프로그램을 기본·심화로 반복하며 반응력, 집중력, 실행력을 단계적으로 경험합니다.
+                      6개 핵심 프로그램을 기본·심화로 반복하며 단순·선택·복합 반응력을 단계적으로 경험합니다.
                     </p>
                   </div>
                 </div>

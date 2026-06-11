@@ -3,6 +3,14 @@
  * This file is shared by the admin trainer and SPOKEDU MASTER iframe player.
  */
 
+import {
+  SPOMOVE_AXIS_META,
+  SPOMOVE_AXIS_ORDER,
+  type SpomoveAxis,
+} from '@/app/lib/spomove/spomoveAxisMeta';
+
+export { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER, type SpomoveAxis };
+
 export const COLORS = [
   { id: 'red', name: '빨강', bg: '#EF4444', text: '#fff', symbol: '🔴' },
   { id: 'blue', name: '파랑', bg: '#3B82F6', text: '#fff', symbol: '🔵' },
@@ -27,9 +35,6 @@ export const NUMBERS = Array.from({ length: 9 }, (_, i) => ({
 
 export const MEMORY_ROUNDS = 10;
 
-/** SPOMOVE 3대 인지운동 축: 반응 · 주의 · 실행 */
-export type SpomoveAxis = 'response' | 'attention' | 'executive';
-
 type SpomoveMode = {
   id: string;
   title: string;
@@ -42,7 +47,7 @@ type SpomoveMode = {
   coreCode?: string;
   /** 3대 축 분류 */
   axis?: SpomoveAxis;
-  /** 한글 축 이름 (반응 / 주의 / 실행) */
+  /** 한글 축 이름 (단순 반응 / 선택 반응 / 복합 반응) */
   axisTitle?: string;
   /** 카탈로그 비노출 모드 */
   isHidden?: boolean;
@@ -50,7 +55,7 @@ type SpomoveMode = {
 };
 
 export const MODES: Record<string, SpomoveMode> = {
-  // ── 반응 Response ──────────────────────────────────────────────────────────
+  // ── 단순 반응 Simple Reaction ──────────────────────────────────────────────
   reactTrain: {
     id: 'reactTrain',
     title: '시지각 반응',
@@ -59,7 +64,7 @@ export const MODES: Record<string, SpomoveMode> = {
     accent: '#E11D48',
     coreCode: 'VM',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
@@ -83,7 +88,7 @@ export const MODES: Record<string, SpomoveMode> = {
     accent: '#3B82F6',
     coreCode: 'VM',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     tag: '화면 신호 · 지각 훈련',
     desc: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
     levels: [
@@ -96,7 +101,7 @@ export const MODES: Record<string, SpomoveMode> = {
     ],
   },
 
-  // ── 주의 Attention ─────────────────────────────────────────────────────────
+  // ── 선택 반응 Choice Reaction ──────────────────────────────────────────────
   simon: {
     id: 'simon',
     title: '사이먼 효과',
@@ -105,7 +110,7 @@ export const MODES: Record<string, SpomoveMode> = {
     accent: '#EC4899',
     coreCode: 'IC',
     axis: 'attention',
-    axisTitle: '주의',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
     tag: '공간 위치 · 색 반응',
     desc: '원, 삼각형, 사각형이 화면 어디에나 하나씩 나타납니다. 채워진 색에 맞는 색 위치로 이동합니다.',
     levels: [
@@ -121,7 +126,7 @@ export const MODES: Record<string, SpomoveMode> = {
     accent: '#6366F1',
     coreCode: 'IC',
     axis: 'attention',
-    axisTitle: '주의',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
     tag: '방해 자극 · 목표 선택',
     desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로만 이동합니다.',
     levels: [
@@ -134,7 +139,7 @@ export const MODES: Record<string, SpomoveMode> = {
     ],
   },
 
-  // ── 실행 Executive ─────────────────────────────────────────────────────────
+  // ── 복합 반응 Complex Reaction ─────────────────────────────────────────────
   stroop: {
     id: 'stroop',
     title: '스트룹 과제',
@@ -143,7 +148,7 @@ export const MODES: Record<string, SpomoveMode> = {
     accent: '#A855F7',
     coreCode: 'IC',
     axis: 'executive',
-    axisTitle: '실행',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
     tag: '통제 제어 · 인지 지연',
     desc: '배경은 기본 흰색입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
     levels: [
@@ -162,7 +167,7 @@ export const MODES: Record<string, SpomoveMode> = {
     accent: '#22C55E',
     coreCode: 'EWM',
     axis: 'executive',
-    axisTitle: '실행',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
@@ -293,19 +298,19 @@ export const MODES: Record<string, SpomoveMode> = {
 };
 
 /**
- * SPOMOVE 3대 축 × 2개 핵심 프로그램 카탈로그 (반응 → 주의 → 실행 순)
+ * SPOMOVE 3대 축 × 2개 핵심 프로그램 카탈로그 (단순 → 선택 → 복합 반응 순)
  *
- * 반응: 시지각 반응 / 반응 인지
- * 주의: 사이먼 효과 / 플랭커
- * 실행: 스트룹 과제 / 순차 기억
+ * 단순 반응: 시지각 반응 / 반응 인지
+ * 선택 반응: 사이먼 효과 / 플랭커
+ * 복합 반응: 스트룹 과제 / 순차 기억
  */
 export const SPOMOVE_CATALOG_SLOT_IDS = [
-  'reactTrain', // 반응 1 — 시지각 반응 / Visual Reaction
-  'basic',      // 반응 2 — 반응 인지 / Reactive Cognition
-  'simon',      // 주의 1 — 사이먼 효과 / Simon Effect
-  'flanker',    // 주의 2 — 플랭커 / Flanker
-  'stroop',     // 실행 1 — 스트룹 과제 / Stroop Task
-  'spatial',    // 실행 2 — 순차 기억 / Sequential Memory
+  'reactTrain', // 단순 1 — 시지각 반응 / Visual Reaction
+  'basic',      // 단순 2 — 반응 인지 / Reactive Cognition
+  'simon',      // 선택 1 — 사이먼 효과 / Simon Effect
+  'flanker',    // 선택 2 — 플랭커 / Flanker
+  'stroop',     // 복합 1 — 스트룹 과제 / Stroop Task
+  'spatial',    // 복합 2 — 순차 기억 / Sequential Memory
 ] as const;
 
 /** 3대 축 그리드 밖, 카탈로그 맨 하단에 단독 노출하는 프로그램 */

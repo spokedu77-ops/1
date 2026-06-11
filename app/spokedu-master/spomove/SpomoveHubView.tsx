@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { SPOMOVE_AXIS_META } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 
 import { useMasterStore } from '../store';
@@ -20,9 +21,9 @@ const TABS: OfficialLibraryTab[] = ['all', 'response', 'attention', 'executive']
 
 const TAB_LABELS: Record<OfficialLibraryTab, string> = {
   all: '전체',
-  response: '반응',
-  attention: '주의',
-  executive: '실행',
+  response: SPOMOVE_AXIS_META.response.title,
+  attention: SPOMOVE_AXIS_META.attention.title,
+  executive: SPOMOVE_AXIS_META.executive.title,
 };
 
 const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
@@ -303,7 +304,7 @@ export default function SpomoveHubView() {
             SPOMOVE 공식 프로그램
           </h1>
           <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
-            바로 실행할 수 있는 구독자용 SPOMOVE 공식 세팅 라이브러리입니다. 반응·주의·실행 축을 기준으로
+            바로 실행할 수 있는 구독자용 SPOMOVE 공식 세팅 라이브러리입니다. 단순·선택·복합 반응 축을 기준으로
             아이들이 보고, 고르고, 기억하고, 움직이는 경험을 제공합니다.
           </p>
           <p className="mt-3 text-[12px] font-semibold text-white/30">

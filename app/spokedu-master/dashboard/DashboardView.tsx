@@ -18,7 +18,7 @@ import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
-import { isPaidMasterPlan } from '../lib/subscription';
+import { hasMasterAccess } from '../lib/subscription';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   officialPresetSessionHref,
@@ -396,7 +396,7 @@ function Hero({
         <div className="mt-5 flex flex-wrap items-center gap-x-2 gap-y-1 border-y border-indigo-100/80 py-3 text-[11px] font-bold text-slate-500 sm:text-[12px]">
           <span>추천 슬롯 {recommendations.length}개</span>
           <span className="text-indigo-300">·</span>
-          <span>수업안/영상 포함</span>
+          <span>수업안 포함</span>
           <span className="text-indigo-300">·</span>
           <span>상황별 수업은 아래에서 탐색</span>
         </div>
@@ -791,7 +791,7 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 export default function DashboardView() {
   const { programs, programsLoaded, programsError, favorites, classRecords, reloadPrograms } = useMasterStore();
   const profile = useProfile();
-  const isSubscribed = isPaidMasterPlan(profile);
+  const showSubscriptionCta = !hasMasterAccess(profile);
   const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   useEffect(() => {
@@ -880,20 +880,33 @@ export default function DashboardView() {
   }
 
   if (programPool.length === 0) {
-    const message =
-      programsError === 'unauthorized'
-        ? '로그인 후 수업 자료를 불러올 수 있습니다.'
-        : programsError === 'forbidden'
-          ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제하면 수업 자료를 이용할 수 있습니다.'
+    const isUnauthorized = programsError === 'unauthorized';
+    const isForbidden = programsError === 'forbidden';
+    const message = isUnauthorized
+      ? '로그인 후 수업 자료를 불러올 수 있습니다.'
+      : isForbidden
+        ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제하면 수업 자료를 이용할 수 있습니다.'
+        : programsError === 'network'
+          ? '네트워크 문제로 수업 자료를 불러오지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.'
           : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto bg-[#f5f7fb] px-4 py-16 sm:px-6 lg:px-8">
         <section className="w-full max-w-xl rounded-[22px] border border-slate-200 bg-white p-6 text-center shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
           <h1 className="text-xl font-black text-slate-950">수업 자료를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{message}</p>
-          <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
-            30일 이용권 다시 결제하기
-          </Link>
+          {isUnauthorized ? (
+            <Link href="/login?next=/spokedu-master/dashboard" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
+              로그인하기
+            </Link>
+          ) : isForbidden ? (
+            <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
+              30일 이용권 다시 결제하기
+            </Link>
+          ) : (
+            <button type="button" onClick={() => void reloadPrograms()} className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
+              다시 시도하기
+            </button>
+          )}
         </section>
       </main>
     );
@@ -929,7 +942,7 @@ export default function DashboardView() {
       />
       <ContinueLessonsSection lessons={continueLessons} onPreview={setSelectedProgram} />
       <ExplanationToolEntry program={supportProgram} />
-      {!isSubscribed ? <SubscriptionValueSection /> : null}
+      {showSubscriptionCta ? <SubscriptionValueSection /> : null}
       {selectedProgram ? <HomeProgramPreview program={selectedProgram} onClose={() => setSelectedProgram(null)} /> : null}
     </main>
   );

@@ -122,3 +122,11 @@ export function getLessonBriefingNotes(program: Program) {
 export function getLessonSetupNotes(program: Program) {
   return (program.lessonDetail?.setupNotes ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
 }
+
+export function getLessonSafetyNotes(program: Program) {
+  return (program.lessonDetail?.safetyNotes ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
+}
+
+export function getLessonFieldTips(program: Program) {
+  return (program.lessonDetail?.fieldTips ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
+}

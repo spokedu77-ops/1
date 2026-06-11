@@ -1,4 +1,8 @@
-export type OfficialSpomoveAxis = 'response' | 'attention' | 'executive';
+import { SPOMOVE_AXIS_META, type SpomoveAxis } from '@/app/lib/spomove/spomoveAxisMeta';
+
+export type OfficialSpomoveAxis = SpomoveAxis;
+
+export type SpomoveAxisTitle = (typeof SPOMOVE_AXIS_META)[OfficialSpomoveAxis]['title'];
 
 export type OfficialSpomoveProgramGroup =
   | 'reaction-cognition'
@@ -21,7 +25,7 @@ export type OfficialSpomovePreset = {
   title: string;
   en?: string;
   axis: OfficialSpomoveAxis;
-  axisTitle: '반응' | '주의' | '실행';
+  axisTitle: SpomoveAxisTitle;
   programGroup: OfficialSpomoveProgramGroup;
   programTitle: string;
   description: string;
@@ -31,7 +35,7 @@ export type OfficialSpomovePreset = {
     level: number;
   };
   cueSeconds: 3;
-  rounds: 20;
+  rounds: number;
   bgmAutoPlay: true;
   bgmCategory: 'spomove-training';
   recommendedUse: string;
@@ -48,7 +52,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     id: 'reaction-cognition-space-direction-01',
     title: '반응인지 1번 · 공간 방향',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 1 },
@@ -67,7 +71,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     id: 'reaction-cognition-quad-color-02',
     title: '반응인지 2번 · 사분할 색상 반응',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 2 },
@@ -86,7 +90,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     id: 'reaction-cognition-full-color-03',
     title: '반응인지 3번 · 전면 색상 반응',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 3 },
@@ -105,7 +109,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     id: 'reaction-cognition-split-color-04',
     title: '반응인지 4번 · 2분할 색상 반응',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
     engine: { mode: 'basic', level: 4 },
@@ -125,10 +129,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     title: '시지각 반응 1번 · FLOW',
     en: 'Visual Reaction',
     axis: 'response',
-    axisTitle: '반응',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
-    salesCopy: '보고 바로 움직이는 반응력',
+    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 1 },
     description: '색 자극이 자연스럽게 흘러내릴 때 해당 색 위치로 이동하는 시지각 반응 활동',
     cueSeconds: 3,
@@ -145,12 +149,12 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     title: '사이먼 효과 1번 · Pole Shape',
     en: 'Simon Effect',
     axis: 'attention',
-    axisTitle: '주의',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
     programGroup: 'simon',
     programTitle: '사이먼 효과',
-    salesCopy: '위치에 끌리지 않고 필요한 정보에 집중하는 힘',
+    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
     engine: { mode: 'simon', level: 1 },
-    description: '도형이 나타난 위치에 끌려가지 않고, 도형의 색을 기준으로 반응하는 주의 활동',
+    description: '도형이 나타난 위치에 끌려가지 않고, 도형의 색을 기준으로 반응하는 선택 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
@@ -165,12 +169,12 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     title: '플랭커 1번 · Uniform Flankers',
     en: 'Flanker',
     axis: 'attention',
-    axisTitle: '주의',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
     programGroup: 'flanker',
     programTitle: '플랭커',
-    salesCopy: '방해 정보 속에서 목표를 고르는 집중력',
+    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
     engine: { mode: 'flanker', level: 1 },
-    description: '가로로 나란히 제시되는 다섯 원 중 가운데 목표 색에 반응하는 주의 활동',
+    description: '가로로 나란히 제시되는 다섯 원 중 가운데 목표 색에 반응하는 선택 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
@@ -185,12 +189,12 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     title: '스트룹 과제 1번 · Arrow Reverse',
     en: 'Stroop Task',
     axis: 'executive',
-    axisTitle: '실행',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
     programGroup: 'stroop',
     programTitle: '스트룹 과제',
-    salesCopy: '자동 반응을 조절해 규칙대로 수행하는 실행력',
+    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
     engine: { mode: 'stroop', level: 1 },
-    description: '화살표 방향을 그대로 따라가지 않고, 반대 규칙에 맞춰 반응하는 실행 활동',
+    description: '화살표 방향을 그대로 따라가지 않고, 반대 규칙에 맞춰 반응하는 복합 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
@@ -205,14 +209,14 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     title: '순차 기억 1번 · 3 Color Memory',
     en: 'Sequential Memory',
     axis: 'executive',
-    axisTitle: '실행',
+    axisTitle: SPOMOVE_AXIS_META.executive.title,
     programGroup: 'sequential-memory',
     programTitle: '순차 기억',
-    salesCopy: '순서를 기억하고 몸으로 재현하는 실행력',
+    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
     engine: { mode: 'spatial', level: 1 },
     description: '차례로 제시되는 색 3개의 순서를 기억하고 몸으로 재현하는 기억 수행 활동',
     cueSeconds: 3,
-    rounds: 20,
+    rounds: 10,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '순서 기억, 작업기억, 차분한 마무리 활동',

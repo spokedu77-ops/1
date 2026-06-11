@@ -276,12 +276,7 @@ function RecordEntryView() {
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
   const canPreviewKakao = canSaveRecord && present > 0;
   const parentToken = firstPresentStudent ? createParentShareToken(firstPresentStudent.id) : '';
-  const focusParts = packageFocus.split(',').map((f) => f.trim()).filter(Boolean);
-  const focusPhrase = focusParts.length === 0 ? '활동 흐름'
-    : focusParts.length === 1 ? focusParts[0]
-    : focusParts.length === 2 ? `${focusParts[0]}와 ${focusParts[1]}`
-    : `${focusParts.slice(0, 2).join(', ')} 등`;
-  const parentCopyPreview = `오늘은 "${program?.title ?? activeLessonTitle}" 수업을 진행했습니다. ${focusPhrase} 요소를 중심으로 아이들의 참여와 움직임 조절 과정을 관찰했습니다.`;
+  const parentCopyPreview = program?.lessonDetail?.parentNote?.trim() ?? '';
 
   useEffect(() => {
     setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
@@ -437,7 +432,7 @@ function RecordEntryView() {
         {kakaoStep === 'preview' ? (
           <div className="mt-4 rounded-[16px] p-4" style={{ background: '#fef3c7', color: '#2d1b05' }}>
             <p className="text-[12px] font-black">안내문 미리보기</p>
-            <p className="mt-2 text-[13px] font-semibold leading-6">{parentCopyPreview} 출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장됩니다.</p>
+            <p className="mt-2 text-[13px] font-semibold leading-6">{parentCopyPreview ? `${parentCopyPreview} ` : null}출석 {present}명, 집중 관찰 {focusCount}명 기록이 저장됩니다.</p>
           </div>
         ) : null}
         {!kakaoStatus.allowed ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{kakaoStatus.reason}</p> : null}

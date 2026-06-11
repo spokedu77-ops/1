@@ -29,9 +29,11 @@ import {
 import {
   getLessonBriefingNotes,
   getLessonEquipment,
+  getLessonFieldTips,
   getLessonFunction,
   getLessonMovement,
   getLessonRules,
+  getLessonSafetyNotes,
   getLessonScript,
   getLessonSpace,
   getLessonTarget,
@@ -56,21 +58,6 @@ const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-h
 
 function getParentCopy(program: Program) {
   return program.lessonDetail?.parentNote?.trim() ?? '';
-}
-
-function buildQuickParentNote(program: Program): string {
-  if (program.lessonDetail?.parentNote?.trim()) {
-    return program.lessonDetail.parentNote.trim();
-  }
-  const title = program.title;
-  const focus = program.lessonDetail?.developmentFocus?.trim() ?? '';
-  if (focus) {
-    const focusPart = focus.split(/[,·\/]/).map((f) => f.trim()).filter((f) => f.length >= 2).slice(0, 2).join(', ');
-    if (focusPart) {
-      return `오늘은 "${title}" 활동을 진행했습니다. 아이들은 ${focusPart} 요소를 중심으로 정해진 규칙 안에서 움직임을 경험했습니다.`;
-    }
-  }
-  return `오늘은 "${title}" 활동을 진행했습니다. 아이들은 정해진 활동 규칙 안에서 움직임을 시도하고, 차례를 지키며 수업에 참여했습니다.`;
 }
 
 function BookOpenFallback() {
@@ -118,6 +105,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const briefingNotes = getLessonBriefingNotes(program);
   const ruleItems = getLessonRules(program);
   const variations = getLessonVariations(program);
+  const safetyNotes = getLessonSafetyNotes(program);
+  const fieldTips = getLessonFieldTips(program);
   const parentCopy = getParentCopy(program);
   const favorite = favorites.includes(program.id);
   const usageCount = usageRecords.length;
@@ -130,7 +119,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickDate(new Date().toISOString().slice(0, 10));
     setQuickClassId('');
     setQuickMemo('');
-    setQuickParentNote(buildQuickParentNote(program));
+    setQuickParentNote(getParentCopy(program));
     setQuickSaved(false);
     setQuickModalOpen(true);
   };
@@ -283,59 +272,75 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <LessonNumberedList items={ruleItems} />
         </LessonFullSection>
 
+        {/* 보호자 문구 — 등록된 값이 있을 때만 표시 (6순위) */}
+        {parentCopy ? (
+          <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 p-5">
+            <p className="text-xs font-black text-emerald-800">학부모 설명 문구</p>
+            <p className="mt-2 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
+            <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
+              <Clipboard className="h-4 w-4" />
+              {copied ? '복사 완료' : '학부모 문구 복사'}
+            </button>
+          </div>
+        ) : null}
+
+        {/* 변형 / 안전 / 현장 팁 — 7순위, 값이 있을 때만 표시 */}
         {variations.length > 0 ? (
           <LessonFullSection title="변형 방법">
             <LessonVariationText text={variations.join('\n')} />
           </LessonFullSection>
         ) : null}
 
-        <details className="rounded-[14px] border border-slate-200 bg-white p-5">
-          <summary className="cursor-pointer text-sm font-black text-slate-700">추가 자료 (학부모 문구 · SPOMOVE · 수업 장면)</summary>
-          <div className="mt-4 space-y-4">
-            {parentCopy ? (
-              <div className="rounded-xl bg-emerald-50 p-4">
-                <p className="text-xs font-black text-emerald-800">학부모 설명 문구</p>
-                <p className="mt-2 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
-                <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
-                  <Clipboard className="h-4 w-4" />
-                  {copied ? '복사 완료' : '학부모 문구 복사'}
-                </button>
-              </div>
-            ) : null}
+        {safetyNotes.length > 0 ? (
+          <LessonFullSection title="안전">
+            <LessonBulletList items={safetyNotes} compact />
+          </LessonFullSection>
+        ) : null}
 
-            {relatedSpomovePresets.length > 0 ? (
-              <div className="grid gap-3 md:grid-cols-2">
-                {relatedSpomovePresets.map((preset) => (
-                  <Link
-                    key={preset.id}
-                    href={officialPresetSessionHref(preset)}
-                    className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
-                  >
-                    <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
-                      <MonitorPlay className="h-5 w-5" />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <strong className="block truncate text-sm font-black text-slate-950">{preset.title}</strong>
-                      <span className="mt-1 block text-xs font-semibold text-indigo-700">TV·빔 실행</span>
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            ) : null}
+        {fieldTips.length > 0 ? (
+          <LessonFullSection title="현장 팁">
+            <LessonBulletList items={fieldTips} compact />
+          </LessonFullSection>
+        ) : null}
 
-            {galleryImages.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {galleryImages.map((imageUrl, index) => (
-                  <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
-                    <div className={THUMBNAIL_FRAME}>
-                      <Image src={imageUrl} alt={`${title} 수업 장면 ${index + 1}`} fill sizes="(min-width: 1024px) 600px, 100vw" className="object-cover" unoptimized />
+        {(relatedSpomovePresets.length > 0 || galleryImages.length > 0) ? (
+          <details className="rounded-[14px] border border-slate-200 bg-white p-5">
+            <summary className="cursor-pointer text-sm font-black text-slate-700">추가 자료 (SPOMOVE · 수업 장면)</summary>
+            <div className="mt-4 space-y-4">
+              {relatedSpomovePresets.length > 0 ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {relatedSpomovePresets.map((preset) => (
+                    <Link
+                      key={preset.id}
+                      href={officialPresetSessionHref(preset)}
+                      className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
+                    >
+                      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
+                        <MonitorPlay className="h-5 w-5" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <strong className="block truncate text-sm font-black text-slate-950">{preset.title}</strong>
+                        <span className="mt-1 block text-xs font-semibold text-indigo-700">TV·빔 실행</span>
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              ) : null}
+
+              {galleryImages.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {galleryImages.map((imageUrl, index) => (
+                    <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
+                      <div className={THUMBNAIL_FRAME}>
+                        <Image src={imageUrl} alt={`${title} 수업 장면 ${index + 1}`} fill sizes="(min-width: 1024px) 600px, 100vw" className="object-cover" unoptimized />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </details>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </details>
+        ) : null}
 
         <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
           {primarySpomovePreset ? (
