@@ -71,8 +71,12 @@ await context.addCookies(
 
 const page = await context.newPage();
 const consoleErrors = [];
+const notFoundUrls = new Set();
 page.on('console', (message) => {
   if (message.type() === 'error') consoleErrors.push(message.text());
+});
+page.on('response', (response) => {
+  if (response.status() === 404) notFoundUrls.add(response.url());
 });
 
 const viewports = {};
@@ -99,6 +103,20 @@ for (const width of [1440, 768, 430, 390, 360]) {
     pageFitsViewport: await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth + 2,
     ),
+    cardAspect: await page.locator('article').first().evaluate((article) => {
+      const card = article.querySelector(':scope > button');
+      if (!card) return null;
+      const rect = card.getBoundingClientRect();
+      return Math.round((rect.width / rect.height) * 100) / 100;
+    }),
+    noBelowCardBody: await page.locator('article').first().evaluate((article) => {
+      const children = Array.from(article.children);
+      return children.every(
+        (child) =>
+          child.tagName === 'BUTTON' &&
+          (child.classList.contains('absolute') || child === children[0]),
+      );
+    }),
   };
 
   await page.screenshot({
@@ -127,7 +145,7 @@ await search.fill(firstTitle);
 await page.waitForTimeout(100);
 const combinedCount = await page.locator('article').count();
 
-await page.locator('article').first().getByRole('button', { name: '자세히' }).click();
+await page.locator('article').first().locator(':scope > button').first().click();
 const previewVisible = await page
   .getByText('빠른 미리보기', { exact: true })
   .first()
@@ -156,6 +174,8 @@ console.log(
       spomoveBadges: await page.getByText('SPOMOVE', { exact: true }).count(),
       videoBadges: await page.getByText('참고 영상', { exact: true }).count(),
       consoleErrorCount: consoleErrors.length,
+      consoleErrors: consoleErrors.slice(0, 10),
+      notFoundUrls: Array.from(notFoundUrls).slice(0, 10),
       artifacts: [1440, 768, 430, 390, 360].map(
         (width) => `qa-artifacts/spokedu-master-library/library-${width}.png`,
       ),

@@ -9,6 +9,7 @@ import {
   FileText,
   Lock,
   MonitorPlay,
+  Play,
   Search,
   SlidersHorizontal,
 } from 'lucide-react';
@@ -37,8 +38,8 @@ import {
 import { useIsPro, useMasterStore } from '../store';
 import type { Program } from '../types';
 
-/** 정사각 썸네일 프레임 — 원본 권장 1250×1250 */
-const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
+const THUMBNAIL_FRAME =
+  'relative aspect-[6/5] w-full max-w-[1250px] overflow-hidden rounded-2xl';
 
 // Display-only label mapping — stored matching value는 변경하지 않음
 const TARGET_LABEL: Record<string, string> = {
@@ -180,14 +181,6 @@ function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   );
 }
 
-function CompactMeta({ program }: { program: Program }) {
-  const meta = getCardMetaLine(program);
-  if (!meta) return null;
-  return (
-    <p className="mt-2 truncate text-[12px] font-semibold text-slate-500">{meta}</p>
-  );
-}
-
 function ProgramCard({
   program,
   locked,
@@ -204,66 +197,101 @@ function ProgramCard({
   onFavorite: () => void;
 }) {
   const heroImage = getHeroImage(program);
+  const meta = getCardMetaLine(program);
+  const hasVideo = Boolean(program.lessonDetail?.videoUrl);
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white shadow-[0_14px_36px_rgba(15,23,42,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.1)]">
-      <button type="button" onClick={onPreview} className={`${THUMBNAIL_FRAME} text-left`}>
+    <article className="group relative">
+      <button
+        type="button"
+        onClick={onPreview}
+        className={`${THUMBNAIL_FRAME} block w-full border border-slate-200 bg-white text-left shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-indigo-200 group-hover:shadow-[0_18px_38px_rgba(99,102,241,0.14)]`}
+      >
         {heroImage ? (
           <>
-            <Image src={heroImage} alt="" fill sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw" className="object-cover transition duration-500 group-hover:scale-105" unoptimized />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/25 to-transparent" />
+            <Image
+              src={heroImage}
+              alt=""
+              fill
+              sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"
+              className="object-cover object-[center_38%] transition duration-500 group-hover:scale-[1.015]"
+              unoptimized
+            />
           </>
         ) : (
-          <div className="grid h-full w-full place-items-center" style={{ background: 'linear-gradient(135deg, var(--spm-s3) 0%, var(--spm-s4) 100%)' }}>
+          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-indigo-100 via-slate-50 to-white">
             <CategoryIcon category={program.category} size={42} />
           </div>
         )}
-        {/* 상태 뱃지: 썸네일 좌상단 */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/82 via-slate-950/20 to-transparent" />
+
         <div className="absolute left-3 top-3 flex gap-1">
-          {program.lessonDetail?.videoUrl ? (
-            <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-black text-indigo-700 shadow-sm backdrop-blur">영상</span>
+          {hasVideo ? (
+            <span className="rounded-full bg-indigo-600 px-2.5 py-1 text-[10px] font-black text-white shadow-md">
+              참고 영상
+            </span>
           ) : null}
           {hasSpomoveLink(program) ? (
-            <span className="rounded-full bg-indigo-500 px-2 py-0.5 text-[10px] font-black text-white">SPOMOVE</span>
+            <span className="rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-black text-indigo-700 shadow-md backdrop-blur">
+              SPOMOVE
+            </span>
           ) : null}
           {locked ? (
-            <span className="rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-black text-white">PRO</span>
-          ) : null}
-        </div>
-        {locked ? (
-          <span className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur">
-            <Lock className="h-3.5 w-3.5" />
-          </span>
-        ) : null}
-      </button>
-
-      <div className="flex flex-1 flex-col p-4">
-        <button type="button" onClick={onPreview} className="flex-1 text-left">
-          <h3 className="line-clamp-2 text-base font-black leading-snug text-slate-950">{program.title}</h3>
-          <CompactMeta program={program} />
-        </button>
-
-        <div className="mt-auto flex items-center gap-2 pt-3">
-          <button
-            type="button"
-            onClick={onFavorite}
-            className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition ${
-              favorite ? 'border-amber-200 bg-amber-50 text-amber-600' : 'border-slate-200 bg-slate-50 text-slate-400 hover:text-slate-700'
-            }`}
-            aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-          >
-            <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
-          </button>
-          <button type="button" onClick={onPreview} className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-indigo-600 text-[13px] font-extrabold text-white transition hover:bg-indigo-500">
-            자세히
-          </button>
-          {used ? (
-            <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600" title="사용 이력 있음">
-              <Check className="h-3.5 w-3.5" />
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black text-white">
+              <Lock className="h-3 w-3" />
+              PRO
             </span>
           ) : null}
         </div>
-      </div>
+
+        {hasVideo ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/92 text-indigo-600 shadow-xl ring-4 ring-white/30 backdrop-blur transition-transform duration-300 group-hover:scale-105">
+              <Play className="ml-0.5 h-5 w-5 fill-current" />
+            </span>
+          </div>
+        ) : null}
+
+        <div className="absolute inset-x-0 bottom-0 px-3 pb-3 pt-8">
+          <h3 className="line-clamp-2 text-[15px] font-black leading-[1.18] text-white sm:text-[16px]">
+            {program.title}
+          </h3>
+          {meta ? (
+            <p className="mt-1 line-clamp-1 text-[12px] font-semibold leading-4 text-white/72">
+              {meta}
+            </p>
+          ) : null}
+          <div className="mt-2 flex items-center justify-between gap-2">
+            {used ? (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-400/90 px-2.5 py-1 text-[10px] font-black text-emerald-950"
+                title="사용 이력 있음"
+              >
+                <Check className="h-3 w-3" />
+                사용함
+              </span>
+            ) : (
+              <span />
+            )}
+            <span className="inline-flex h-8 shrink-0 items-center justify-center rounded-full bg-white px-3 text-[12px] font-black text-slate-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)]">
+              {hasVideo ? '영상 미리보기' : '수업 미리보기'}
+            </span>
+          </div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={onFavorite}
+        className={`absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full shadow-lg backdrop-blur transition ${
+          favorite
+            ? 'bg-amber-50 text-amber-600'
+            : 'bg-white/90 text-slate-500 hover:bg-white hover:text-slate-900'
+        }`}
+        aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+      >
+        <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+      </button>
     </article>
   );
 }

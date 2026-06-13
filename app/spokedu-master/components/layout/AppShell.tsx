@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { DesktopRail, TabBar } from './TabBar';
+import { TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
 import { TrialCountdownBanner } from '../ui/TrialGateWall';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
@@ -26,9 +26,8 @@ function FloatingTimerPill() {
       setDisplayMs(ms);
       return;
     }
-
-    const id = setInterval(() => setDisplayMs(ms + (startedAt ? Date.now() - startedAt : 0)), 500);
-    return () => clearInterval(id);
+    const id = window.setInterval(() => setDisplayMs(ms + (startedAt ? Date.now() - startedAt : 0)), 500);
+    return () => window.clearInterval(id);
   }, [running, ms, startedAt]);
 
   if (ms === 0 && !running) return null;
@@ -38,28 +37,22 @@ function FloatingTimerPill() {
 
   return (
     <div className="flex shrink-0 justify-center px-4 pb-2">
-      <div
-        className="flex items-center gap-3 rounded-full px-4 py-2.5"
-        style={{ background: 'rgba(12,12,18,0.96)', border: '1px solid var(--spm-br2)', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}
-      >
-        <span className="h-2 w-2 rounded-full" style={{ background: running ? 'var(--spm-grn)' : 'var(--spm-amb)' }} />
-        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="font-mono text-[15px] font-black tabular-nums" style={{ color: 'var(--spm-t)' }}>
+      <div className="flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/95 px-4 py-2.5 shadow-xl">
+        <span className={`h-2 w-2 rounded-full ${running ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="font-mono text-[15px] font-black tabular-nums text-white">
           {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
         </button>
-        <span className="text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-          {running ? '진행 중' : '일시정지'}
-        </span>
+        <span className="text-[11px] font-semibold text-slate-300">{running ? '진행 중' : '일시정지'}</span>
         <button
           type="button"
           onClick={() => {
             timerReset();
             setDisplayMs(0);
           }}
-          className="grid h-5 w-5 place-items-center rounded-full text-[11px] font-black"
-          style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}
+          className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-[11px] font-black text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
           aria-label="타이머 초기화"
         >
-          x
+          ×
         </button>
       </div>
     </div>
@@ -75,15 +68,12 @@ function OperationsBanner() {
 
   if (expired) {
     return (
-      <div
-        className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] px-3 py-2 sm:mx-8 lg:mx-10"
-        style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)' }}
-        role="status"
-      >
-        <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
-          {paidExpired ? '이용권이 만료되었습니다.' : '체험 기간이 종료되었습니다.'}
-        </p>
-        <Link href={paidExpired ? `/spokedu-master/payment?plan=${profile?.previousPaidPlan === 'team' ? 'team' : 'pro'}` : '/spokedu-master/profile?plans=1'} className="flex min-h-9 shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)' }}>
+      <div className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 sm:mx-8 lg:mx-10" role="status">
+        <p className="text-[12px] font-bold text-red-700">{paidExpired ? '이용권이 만료되었습니다.' : '체험 기간이 종료되었습니다.'}</p>
+        <Link
+          href={paidExpired ? `/spokedu-master/payment?plan=${profile?.previousPaidPlan === 'team' ? 'team' : 'pro'}` : '/spokedu-master/profile?plans=1'}
+          className="flex min-h-9 shrink-0 items-center rounded-full bg-red-100 px-3 py-1 text-[11px] font-black text-red-700"
+        >
           {paidExpired ? '다시 결제하기' : 'Pro 전환'}
         </Link>
       </div>
@@ -91,12 +81,8 @@ function OperationsBanner() {
   }
 
   return (
-    <div
-      className="mx-[22px] mt-3 rounded-[12px] px-3 py-2 text-[12px] font-bold sm:mx-8 lg:mx-10"
-      style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)', border: '1px solid rgba(245,158,11,0.25)' }}
-      role="status"
-    >
-      오프라인 상태입니다. 이미 불러온 라이브러리와 SPOMOVE 화면은 계속 확인할 수 있습니다.
+    <div className="mx-[22px] mt-3 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800 sm:mx-8 lg:mx-10" role="status">
+      오프라인 상태입니다. 이미 불러온 수업 자료와 SPOMOVE 화면은 계속 확인할 수 있습니다.
     </div>
   );
 }
@@ -143,8 +129,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
-      if (isLanding || isPublicDocument) return;
-      if (document.visibilityState !== 'visible') return;
+      if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       void reloadPrograms();
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
@@ -168,7 +153,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-
     if (process.env.NODE_ENV !== 'production') {
       navigator.serviceWorker
         .getRegistrations()
@@ -180,41 +164,26 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         .catch(() => undefined);
       return;
     }
-
     navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
   }, []);
 
   useEffect(() => {
-    if (isAdmin || isLanding || isPublicDocument) return;
-    if (!storeHydrated || !subscriptionSynced) return;
+    if (isAdmin || isLanding || isPublicDocument || !storeHydrated || !subscriptionSynced) return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
   }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isPublicDocument, isSession, profile, router, storeHydrated, subscriptionSynced]);
 
   if (isSession) {
-    return (
-      <div className="min-h-dvh bg-black" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
-        {children}
-      </div>
-    );
+    return <div className="min-h-dvh bg-black" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>{children}</div>;
   }
 
   return (
-    <div className="min-h-dvh" style={{ background: '#eef2f7', color: '#0f172a' }}>
-      <div
-        className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x"
-        style={{
-          background: '#f5f7fb',
-          borderColor: '#e2e8f0',
-          color: '#0f172a',
-          fontFamily: SPOKEDU_MASTER_FONT,
-        }}
-      >
-        {hideChrome ? null : <DesktopRail basePath={basePath} />}
+    <div className="min-h-dvh bg-[#eef2f7] text-slate-900">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[#f5f7fb]" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
-          <main className="min-h-0 flex-1 overflow-hidden" style={{ background: '#f5f7fb' }}>
+          <main className="min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
             {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
             <ErrorBoundary>{children}</ErrorBoundary>

@@ -1617,7 +1617,9 @@ function BlockContent({
     const isThisToggleFocused = focusedToggleId === block.id;
     const patchToggle = (partial: Record<string, unknown>) =>
       onUpdate({ ...block.content, ...partial });
-    const showToggleBody = childBlocks.length === 0 && body.trim().length > 0;
+    const rawShowToggleBody = childBlocks.length === 0 && body.trim().length > 0;
+    if (rawShowToggleBody) editorStayMountedRef.current = true;
+    const showToggleBody = rawShowToggleBody || (childBlocks.length === 0 && editorStayMountedRef.current);
 
     return (
       <div
@@ -1917,18 +1919,6 @@ function BlockRowGutter({
   );
 }
 
-function DropTargetIndicator({ insideToggle = false }: { insideToggle?: boolean }) {
-  return (
-    <>
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-20 h-1 rounded-full bg-blue-500 shadow-sm" />
-      {insideToggle && (
-        <div className="pointer-events-none absolute right-0 top-1 z-20 rounded bg-blue-500 px-2 py-0.5 text-[11px] font-medium text-white shadow-sm">
-          토글 안으로
-        </div>
-      )}
-    </>
-  );
-}
 
 /** 블록 위/아래에 노션처럼 삽입선을 보여주는 컴포넌트 */
 function DropInsertLine({ position }: { position: 'top' | 'bottom' }) {
@@ -4011,6 +4001,11 @@ export default function AdminNotePageContent() {
       const clampedIndex = Math.max(0, Math.min(insertIndex, siblings.length));
       const parentBlock = parentId ? blocksRef.current.find((b) => b.id === parentId) : null;
       const insideToggle = parentBlock?.type === 'toggle';
+      const baseContent = options?.content ?? defaultBlockContent(type, { insideToggle });
+      const baseContentMap = baseContent as Record<string, unknown>;
+      const blockContent = (insideToggle && baseContent && !baseContentMap.placedInToggle)
+        ? { ...baseContent, placedInToggle: true }
+        : baseContent;
       const res = await fetch('/api/admin/note/blocks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -4018,7 +4013,7 @@ export default function AdminNotePageContent() {
         body: JSON.stringify({
           documentId: selectedId,
           type,
-          content: options?.content ?? defaultBlockContent(type, { insideToggle }),
+          content: blockContent,
           order_index: clampedIndex,
           parent_block_id: parentId,
         }),
@@ -4119,13 +4114,6 @@ export default function AdminNotePageContent() {
     const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
     await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
   }, [insertBlockAmongSiblings, handleCreateSubPage, selectedId]);
-
-  const handleInsertBlockBefore = useCallback(async (beforeBlock: NoteBlock, type: NoteBlock['type'] = 'text') => {
-    const parentId = beforeBlock.parent_block_id ?? null;
-    const siblings = getBlocksInParent(blocksRef.current, parentId);
-    const idx = siblings.findIndex((b) => b.id === beforeBlock.id);
-    await insertBlockAmongSiblings(parentId, type, idx >= 0 ? idx : 0);
-  }, [insertBlockAmongSiblings]);
 
   const handleInsertBlockInParent = useCallback(async (parentBlockId: string, type: NoteBlock['type'] = 'text') => {
     if (!selectedId) return;
@@ -4539,6 +4527,7 @@ export default function AdminNotePageContent() {
     // 텍스트 위: 일반 드래그=글자 선택. Shift/Ctrl+드래그=블록 마퀴
     const hasModifier = e.shiftKey || e.ctrlKey || e.metaKey;
     if (isNoteTextSurfaceTarget(e.target) && !hasModifier) {
+      clearAllCrossSelectState();
       return;
     }
 
@@ -4549,16 +4538,6 @@ export default function AdminNotePageContent() {
 
     abortBlockMarquee();
 
-    const inBlockRow = target.closest('[data-note-block-row]');
-
-    // 블록 행 안: Shift/Ctrl+드래그만 마퀴. 여백(pb-32 등): 일반 드래그로 마퀴
-    if (inBlockRow && !hasModifier) {
-      if (selectedBlockIdsRef.current.size > 0) {
-        setSelectedBlockIds(new Set());
-      }
-      return;
-    }
-
     blockMarqueeRef.current = {
       additive: e.ctrlKey || e.metaKey,
       shiftAnchor: e.shiftKey,
@@ -4567,6 +4546,9 @@ export default function AdminNotePageContent() {
       startY: e.clientY,
     };
     noteBlockMarqueeGuard.active = true;
+    // e.preventDefault() 없음 — click 이벤트를 살려야 블록 클릭 포커스가 유지됨
+    // userSelect 즉시 차단으로 텍스트 드래그 이미지만 방지
+    document.body.style.userSelect = 'none';
 
     const onMove = (ev: PointerEvent) => {
       const state = blockMarqueeRef.current;
@@ -4578,7 +4560,6 @@ export default function AdminNotePageContent() {
         if (dx < 4 && dy < 4) return;
         state.started = true;
         suppressGripMenuRef.current = true;
-        document.body.style.userSelect = 'none';
         clearAllCrossSelectState();
         collapseAllNoteEditorSelections();
       }
@@ -5492,7 +5473,6 @@ export default function AdminNotePageContent() {
             <div className="min-w-0 flex-1 overflow-y-auto bg-white">
               {resolveDocCover(activeDocument.properties) && (
                 <div className="group/cover relative h-[30vh] max-h-[280px] min-h-[120px] w-full overflow-hidden bg-neutral-100">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={resolveDocCover(activeDocument.properties)!}
                     alt=""

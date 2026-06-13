@@ -125,7 +125,7 @@ export function getPublicUrl(path: string): string {
 
 /**
  * 같은 Storage 객체 경로를 덮어써도 공개 URL 문자열은 동일해 브라우저가 구버전 이미지를 캐시할 수 있습니다.
- * 미리보기·훈련 로드 시 `cacheBust`(예: Date.now())를 넘겨 쿼리 버전을 붙입니다.
+ * 미리보기·훈련 로드 시 `cacheBust`(pack `updated_at` ms 등)를 넘겨 쿼리 버전을 붙입니다.
  */
 export function withPublicUrlCacheBust(publicUrl: string, cacheBust?: number): string {
   if (cacheBust == null || !Number.isFinite(cacheBust)) return publicUrl;

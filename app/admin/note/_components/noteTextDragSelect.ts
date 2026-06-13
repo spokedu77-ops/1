@@ -20,9 +20,10 @@ export const NoteTextDragSelectExtension = Extension.create({
       new Plugin({
         props: {
           handleDOMEvents: {
-            mousedown(view, event) {
+            pointerdown(view, event) {
               if (event.button !== 0) return false;
               if (event.shiftKey || event.ctrlKey || event.metaKey) return false;
+              // 마퀴 드래그 중이면 텍스트 선택 차단 (pointerdown 이벤트로 통일하여 guard가 항상 먼저 설정됨)
               if (noteBlockMarqueeGuard.active) return false;
 
               const target = event.target as HTMLElement | null;
@@ -57,8 +58,15 @@ export const NoteTextDragSelectExtension = Extension.create({
 
               applyIntraBlockRange(anchorPos);
 
-              const onMove = (ev: MouseEvent) => {
+              const onMove = (ev: PointerEvent) => {
                 if (ev.buttons !== 1) return;
+                // 마퀴가 중간에 시작되면 텍스트 드래그 즉시 취소
+                if (noteBlockMarqueeGuard.active) {
+                  document.removeEventListener('pointermove', onMove);
+                  document.removeEventListener('pointerup', onUp);
+                  clearAllCrossSelectState();
+                  return;
+                }
                 const dx = Math.abs(ev.clientX - startX);
                 const dy = Math.abs(ev.clientY - startY);
                 if (!dragActive) {
@@ -87,16 +95,16 @@ export const NoteTextDragSelectExtension = Extension.create({
                 applyCrossBlockSelection(anchor, hoverBlockId, ev.clientX, ev.clientY);
               };
 
-              const onUp = (ev: MouseEvent) => {
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
+              const onUp = (ev: PointerEvent) => {
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
                 if (crossBlockActive && dragActive) {
                   finalizeCrossSelection(anchor, ev.clientX, ev.clientY);
                 }
               };
 
-              document.addEventListener('mousemove', onMove);
-              document.addEventListener('mouseup', onUp);
+              document.addEventListener('pointermove', onMove);
+              document.addEventListener('pointerup', onUp);
 
               return true;
             },

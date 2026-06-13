@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   uploadToStorage,
   deleteFromStorage,
@@ -65,7 +66,11 @@ export function useSpomoveVariantThemedPack({
     setError(null);
     try {
       const supabase = getSupabaseBrowserClient();
-      const { data, error: e } = await supabase.from('think_asset_packs').select('assets_json').eq('id', packId).maybeSingle();
+      const { data, error: e } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json, updated_at')
+        .eq('id', packId)
+        .maybeSingle();
       if (e && e.code !== 'PGRST116') {
         setError(e.message);
         return;
@@ -73,7 +78,13 @@ export function useSpomoveVariantThemedPack({
       const next = normalizePaths(data?.assets_json, slotCount);
       setPaths(next);
       pathsRef.current = next;
-      setPreviewUrls(pathsToPreviewUrls(next, slotCount, Date.now()));
+      setPreviewUrls(
+        pathsToPreviewUrls(
+          next,
+          slotCount,
+          resolveSpomovePackCacheBust(data?.updated_at as string | undefined, next),
+        ),
+      );
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -101,11 +112,17 @@ export function useSpomoveVariantThemedPack({
             assets_json: { paths: next } satisfies SpomoveVariantThemedAssetsJson,
           }),
         });
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        const body = (await res.json().catch(() => ({}))) as { error?: string; updated_at?: string };
         if (!res.ok) throw new Error(body.error ?? res.statusText);
         setPaths(next);
         pathsRef.current = next;
-        setPreviewUrls(pathsToPreviewUrls(next, slotCount, Date.now()));
+        setPreviewUrls(
+          pathsToPreviewUrls(
+            next,
+            slotCount,
+            resolveSpomovePackCacheBust(body.updated_at, next) ?? Date.now(),
+          ),
+        );
       } catch (err) {
         setError((err as Error).message);
       } finally {

@@ -1,7 +1,5 @@
 'use client';
 
-/* eslint-disable react-hooks/refs */
-
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Extension } from '@tiptap/core';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
@@ -28,7 +26,6 @@ import { NoteRichEditorStyles } from './NoteRichEditorStyles';
 import { useNoteImageLightbox } from './NoteImageLightbox';
 import {
   focusNoteEditorAtClick,
-  pendingEditorClickRef,
   registerNoteEditor,
   unregisterNoteEditor,
 } from './noteEditorRegistry';
@@ -423,6 +420,7 @@ export function NoteEditor({
         blockquote: false,
         codeBlock: false,
         horizontalRule: false,
+        undoRedo: { depth: 100, newGroupDelay: 300 },
       }),
       HeadingWithShortcuts,
       UnderlineWithShortcut,
@@ -494,6 +492,7 @@ export function NoteEditor({
           const { tabBehavior: currentTabBehavior, onIndent: currentOnIndent, flushPendingChange: flush } = callbacksRef.current;
           if (currentTabBehavior === 'insert-text-indent') {
             event.preventDefault();
+            flush();
             return handleTextIndent(view, event.shiftKey ? 'out' : 'in');
           }
           if (!currentOnIndent) return false;
@@ -518,7 +517,6 @@ export function NoteEditor({
           onNavigateNext: currentOnNavigateNext,
           onEnter: currentOnEnter,
           enterCreatesBlock: currentEnterCreatesBlock,
-          enterSplitOnMidBlock: currentEnterSplitOnMidBlock,
         } = callbacksRef.current;
 
         if (event.key === ' ') {
@@ -537,6 +535,7 @@ export function NoteEditor({
         if (event.key === 'Tab') {
           if (currentTabBehavior === 'insert-text-indent') {
             event.preventDefault();
+            flush();
             return handleTextIndent(view, event.shiftKey ? 'out' : 'in');
           }
           if (currentOnIndent) {
@@ -753,7 +752,11 @@ export function NoteEditor({
       }
       pendingChangeRef.current = null;
       const { from, to, empty } = editor.state.selection;
-      editor.commands.setContent(sourceHtml, { emitUpdate: false });
+      editor
+        .chain()
+        .command(({ tr }) => { tr.setMeta('addToHistory', false); return true; })
+        .setContent(sourceHtml, { emitUpdate: false })
+        .run();
       if (isEditingRef.current) {
         if (!empty && from < to) {
           const docSize = editor.state.doc.content.size;

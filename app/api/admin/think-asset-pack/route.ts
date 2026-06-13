@@ -23,13 +23,14 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = getServiceSupabase();
+    const updatedAt = new Date().toISOString();
     const { error } = await supabase.from('think_asset_packs').upsert(
       {
         id,
         name,
         theme,
         assets_json,
-        updated_at: new Date().toISOString(),
+        updated_at: updatedAt,
       },
       { onConflict: 'id' }
     );
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, updated_at: updatedAt });
   } catch (err) {
     devLogger.error('[think-asset-pack]', err);
     return NextResponse.json({ error: '저장 처리 중 오류가 발생했습니다.' }, { status: 500 });

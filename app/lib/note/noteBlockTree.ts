@@ -47,7 +47,10 @@ export function shouldStayToggleInlineChild(
   block: BlockWithMeta,
   parent: BlockWithMeta | undefined,
 ): boolean {
-  if (!parent || parent.type !== 'toggle') return false;
+  if (!parent) return false;
+  // 글머리·번호 목록 안의 블록은 중첩 목록 아이템 — 루트로 승격하지 않음
+  if (LIST_CONTAINER_TYPES.has(parent.type)) return true;
+  if (parent.type !== 'toggle') return false;
   if (block.content?.migratedFromToggleBody === true) return false;
   if (block.content?.placedInToggle === true) return true;
   if (block.content?.createdInsideToggle === true) {
@@ -184,13 +187,6 @@ export function planBlockDrop<T extends BlockWithMeta>(
     return planBlockDropAt(blocks, movingId, overId, 'inside');
   }
   return planBlockDropAt(blocks, movingId, overId, 'before');
-}
-
-function arrayMove<T>(list: T[], from: number, to: number): T[] {
-  const next = [...list];
-  const [item] = next.splice(from, 1);
-  next.splice(to, 0, item);
-  return next;
 }
 
 /** Tab/Shift+Tab으로 블록을 한 단계 안쪽(이전 형제 토글 안) 또는 바깥(부모 다음)으로 옮길 계획. */

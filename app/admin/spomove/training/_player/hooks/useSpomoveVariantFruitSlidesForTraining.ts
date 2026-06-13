@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   fruitSlidesForTrainingFromPaths,
   SPOMOVE_VARIANT_PACK_ID,
@@ -36,21 +37,34 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
       }
       if (variantColorTheme === 'fruit') {
         const supabase = getSupabaseBrowserClient();
-        const { data } = await supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_VARIANT_PACK_ID).maybeSingle();
+        const { data } = await supabase
+          .from('think_asset_packs')
+          .select('assets_json, updated_at')
+          .eq('id', SPOMOVE_VARIANT_PACK_ID)
+          .maybeSingle();
         const raw = data?.assets_json as SpomoveVariantAssetsJson | null;
-        setSlides(fruitSlidesForTrainingFromPaths(raw?.paths, Date.now()));
+        const paths = raw?.paths;
+        const cacheBust = resolveSpomovePackCacheBust(
+          data?.updated_at as string | undefined,
+          Array.isArray(paths) ? paths : [],
+        );
+        setSlides(fruitSlidesForTrainingFromPaths(raw?.paths, cacheBust));
         return;
       }
 
       const def = SPOMOVE_THEMED_PACK_BY_THEME[variantColorTheme];
       const supabase = getSupabaseBrowserClient();
-      const { data } = await supabase.from('think_asset_packs').select('assets_json').eq('id', def.packId).maybeSingle();
+      const { data } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json, updated_at')
+        .eq('id', def.packId)
+        .maybeSingle();
       const paths = normalizeThemedPaths(data?.assets_json, SPOMOVE_THEMED_SLOT_COUNT);
-      const bust = Date.now();
+      const cacheBust = resolveSpomovePackCacheBust(data?.updated_at as string | undefined, paths);
       const urls = paths.map((p) => {
         if (p == null || !p.trim()) return '';
         try {
-          return withPublicUrlCacheBust(getPublicUrl(p.trim()), bust);
+          return withPublicUrlCacheBust(getPublicUrl(p.trim()), cacheBust);
         } catch {
           return '';
         }

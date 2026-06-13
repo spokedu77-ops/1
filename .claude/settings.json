@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(xargs grep -l \"drag\\\\|Drag\\\\|marquee\\\\|Marquee\")",
+      "Bash(xargs wc -l)",
+      "Bash(xargs grep -l \"TabBar\\\\|ClassToolsView\\\\|toggleLessonDone\\\\|addLesson\\\\|deleteLessonById\\\\|toggle\")",
+      "Bash(xargs grep -l \"toggle\\\\|Toggle\")",
+      "Bash(xargs grep -l \"contentEditable\\\\|onKeyDown.*Tab\\\\|indent\\\\|BlockEditor\\\\|RichTextEditor\")",
+      "Bash(xargs grep -l \"BlockEditor\\\\|toggleBlock\\\\|toggleNode\\\\|ToggleBlock\\\\|marqueeSelect\\\\|dragSelect\")",
+      "Bash(node -e \"const sk = require\\('@tiptap/starter-kit'\\); console.log\\(Object.keys\\(sk\\)\\)\")",
+      "Bash(node -e \"const t = require\\('@tiptap/starter-kit'\\); const sk = t.StarterKit; console.log\\(typeof sk.configure\\)\")"
+    ]
+  }
+}

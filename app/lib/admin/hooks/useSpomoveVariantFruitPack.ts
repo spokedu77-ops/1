@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { uploadToStorage, deleteFromStorage } from '@/app/lib/admin/assets/storageClient';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import { spomoveVariantFruitPath } from '@/app/lib/admin/assets/storagePaths';
 import {
   mergeSpomoveVariantPaths,
@@ -34,14 +35,23 @@ export function useSpomoveVariantFruitPack() {
     setError(null);
     try {
       const supabase = getSupabaseBrowserClient();
-      const { data, error: e } = await supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_VARIANT_PACK_ID).maybeSingle();
+      const { data, error: e } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json, updated_at')
+        .eq('id', SPOMOVE_VARIANT_PACK_ID)
+        .maybeSingle();
       if (e && e.code !== 'PGRST116') {
         setError(e.message);
         return;
       }
       const next = normalizeSpomoveVariantFruitPaths(data?.assets_json);
       setPaths(next);
-      setPreviewSlides(mergeSpomoveVariantPaths(next, Date.now()));
+      setPreviewSlides(
+        mergeSpomoveVariantPaths(
+          next,
+          resolveSpomovePackCacheBust(data?.updated_at as string | undefined, next),
+        ),
+      );
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -71,10 +81,15 @@ export function useSpomoveVariantFruitPack() {
           assets_json: { paths: next } satisfies SpomoveVariantAssetsJson,
         }),
       });
-      const body = (await res.json().catch(() => ({}))) as { error?: string };
+      const body = (await res.json().catch(() => ({}))) as { error?: string; updated_at?: string };
       if (!res.ok) throw new Error(body.error ?? res.statusText);
       setPaths(next);
-      setPreviewSlides(mergeSpomoveVariantPaths(next, Date.now()));
+      setPreviewSlides(
+        mergeSpomoveVariantPaths(
+          next,
+          resolveSpomovePackCacheBust(body.updated_at, next) ?? Date.now(),
+        ),
+      );
     } catch (err) {
       const e = err as Error;
       const msg = e?.name === 'AbortError' ? '저장 시간이 초과되었습니다. 네트워크·서버(.env SUPABASE_SERVICE_ROLE_KEY)를 확인하세요.' : e.message;
