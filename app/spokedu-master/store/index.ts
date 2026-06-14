@@ -6,7 +6,9 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { hasMasterAccess } from '../lib/subscription';
 import {
+  getRecentActivityOwner,
   getRecentActivityOwnerId,
+  migrateRecentActivitiesToOwner,
   type RecentProgramActivity,
   type RecentProgramActivityInput,
   upsertRecentProgramActivity,
@@ -69,6 +71,8 @@ interface MasterState {
   saveClassRecord: (record: ClassRecord) => void;
   saveQuickClassRecord: (record: ClassRecord) => void;
   recentProgramActivities: RecentProgramActivity[];
+  pendingRecentProgramActivities: RecentProgramActivityInput[];
+  recentActivityOwnerResolved: boolean;
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
   favorites: string[];
   toggleFavorite: (id: string) => void;
@@ -140,7 +144,15 @@ function migrateMasterStore(persisted: unknown): Partial<MasterState> {
     classRecords: hasBrokenText(state.classRecords) ? [] : state.classRecords ?? [],
     recentProgramActivities: hasBrokenText(state.recentProgramActivities)
       ? []
-      : state.recentProgramActivities ?? [],
+      : (state.recentProgramActivities ?? []).map((activity) => ({
+          ownerId: activity.ownerId,
+          programId: activity.programId,
+          programTitle: activity.programTitle,
+          action: activity.action,
+          occurredAt: activity.occurredAt,
+        })),
+    pendingRecentProgramActivities: [],
+    recentActivityOwnerResolved: false,
     notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
     cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
   };
@@ -241,8 +253,35 @@ export const useMasterStore = create<MasterState>()(
         set((state) => ({ drills: state.drills, drillsLoaded: true, drillsError: 'server' }));
       },
       profile: defaultProfile,
-      setProfile: (profile) => set((state) => ({ profile: state.profile ? { ...state.profile, ...profile } : { ...defaultProfile, ...profile } })),
-      resetProfile: () => set({ profile: { ...defaultProfile, trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), createdAt: new Date().toISOString() } }),
+      setProfile: (profile) =>
+        set((state) => {
+          const nextProfile = state.profile
+            ? { ...state.profile, ...profile }
+            : { ...defaultProfile, ...profile };
+          if (!state.recentActivityOwnerResolved) return { profile: nextProfile };
+          const owner = getRecentActivityOwner(nextProfile);
+          if (!owner) return { profile: nextProfile };
+          const migrated = migrateRecentActivitiesToOwner(state.recentProgramActivities, owner);
+          return {
+            profile: nextProfile,
+            recentProgramActivities: state.pendingRecentProgramActivities.reduce(
+              (activities, activity) =>
+                upsertRecentProgramActivity(activities, activity, owner.ownerId),
+              migrated,
+            ),
+            pendingRecentProgramActivities: [],
+          };
+        }),
+      resetProfile: () =>
+        set({
+          profile: {
+            ...defaultProfile,
+            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+            createdAt: new Date().toISOString(),
+          },
+          pendingRecentProgramActivities: [],
+          recentActivityOwnerResolved: false,
+        }),
       syncSubscription: async () => {
         try {
           const res = await fetch('/api/spokedu-master/subscription');
@@ -262,8 +301,8 @@ export const useMasterStore = create<MasterState>()(
             json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
           const hasActivePaidAccess = json.isAdmin || serverPlan === 'pro' || serverPlan === 'team';
           const hasExpiredPaidAccess = json.status === 'expired';
-          set((state) => ({
-            profile: state.profile
+          set((state) => {
+            const nextProfile: UserProfile | null = state.profile
               ? {
                   ...state.profile,
                   plan: serverPlan,
@@ -285,8 +324,35 @@ export const useMasterStore = create<MasterState>()(
                   ...(json.email ? { email: json.email } : {}),
                   trialEndsAt: json.isAdmin || hasExpiredPaidAccess ? null : (json.trialEndsAt ?? state.profile.trialEndsAt),
                 }
-              : state.profile,
-          }));
+              : state.profile;
+            const identityResolved = Boolean(json.userId || json.email);
+            if (!identityResolved) {
+              return {
+                profile: nextProfile,
+                pendingRecentProgramActivities: [],
+                recentActivityOwnerResolved: false,
+              };
+            }
+            const owner = getRecentActivityOwner(nextProfile);
+            if (!owner) {
+              return {
+                profile: nextProfile,
+                pendingRecentProgramActivities: [],
+                recentActivityOwnerResolved: false,
+              };
+            }
+            const migrated = migrateRecentActivitiesToOwner(state.recentProgramActivities, owner);
+            return {
+              profile: nextProfile,
+              recentProgramActivities: state.pendingRecentProgramActivities.reduce(
+                (activities, activity) =>
+                  upsertRecentProgramActivity(activities, activity, owner.ownerId),
+                migrated,
+              ),
+              pendingRecentProgramActivities: [],
+              recentActivityOwnerResolved: true,
+            };
+          });
         } catch {
           // Keep current plan when offline.
         }
@@ -337,13 +403,18 @@ export const useMasterStore = create<MasterState>()(
       removeStudent: (id) => set((state) => ({ students: state.students.filter((student) => student.id !== id) })),
       classRecords: [],
       saveClassRecord: (record) =>
-        set((state) => ({
-          classRecords: [record, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
-          students: state.students.map((student) => {
-            const studentRecord = record.students.find((item) => item.studentId === student.id);
-            return studentRecord ? applyStudentRecord(student, studentRecord, record) : student;
-          }),
-          notifications: [
+        set((state) => {
+          const ownerId = state.recentActivityOwnerResolved
+            ? getRecentActivityOwnerId(state.profile)
+            : null;
+          const ownedRecord = ownerId ? { ...record, ownerId } : record;
+          return {
+            classRecords: [ownedRecord, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
+            students: state.students.map((student) => {
+              const studentRecord = record.students.find((item) => item.studentId === student.id);
+              return studentRecord ? applyStudentRecord(student, studentRecord, record) : student;
+            }),
+            notifications: [
             {
               id: `record-${record.id}`,
               type: 'report' as const,
@@ -353,15 +424,21 @@ export const useMasterStore = create<MasterState>()(
               createdAt: record.date,
             },
             ...state.notifications,
-          ].slice(0, 50),
-          operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
-        })),
+            ].slice(0, 50),
+            operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
+          };
+        }),
       saveQuickClassRecord: (record) =>
         // TODO: quick records and detailed records currently share the same cap of 100.
         // Consider separate retention limits if quick usage logs grow quickly.
-        set((state) => ({
-          classRecords: [record, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
-          notifications: [
+        set((state) => {
+          const ownerId = state.recentActivityOwnerResolved
+            ? getRecentActivityOwnerId(state.profile)
+            : null;
+          const ownedRecord = ownerId ? { ...record, ownerId } : record;
+          return {
+            classRecords: [ownedRecord, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
+            notifications: [
             {
               id: `quick-${record.id}`,
               type: 'report' as const,
@@ -371,18 +448,44 @@ export const useMasterStore = create<MasterState>()(
               createdAt: record.date,
             },
             ...state.notifications,
-          ].slice(0, 50),
-          operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
-        })),
+            ].slice(0, 50),
+            operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
+          };
+        }),
       recentProgramActivities: [],
+      pendingRecentProgramActivities: [],
+      recentActivityOwnerResolved: false,
       recordRecentProgramActivity: (activity) =>
-        set((state) => ({
-          recentProgramActivities: upsertRecentProgramActivity(
-            state.recentProgramActivities,
-            activity,
-            getRecentActivityOwnerId(state.profile),
-          ),
-        })),
+        set((state) => {
+          if (!state.recentActivityOwnerResolved) {
+            return {
+              pendingRecentProgramActivities: [
+                activity,
+                ...state.pendingRecentProgramActivities.filter(
+                  (pending) => pending.programId !== activity.programId,
+                ),
+              ].slice(0, 50),
+            };
+          }
+          const owner = getRecentActivityOwner(state.profile);
+          if (!owner) {
+            return {
+              pendingRecentProgramActivities: [
+                activity,
+                ...state.pendingRecentProgramActivities.filter(
+                  (pending) => pending.programId !== activity.programId,
+                ),
+              ].slice(0, 50),
+            };
+          }
+          return {
+            recentProgramActivities: upsertRecentProgramActivity(
+              migrateRecentActivitiesToOwner(state.recentProgramActivities, owner),
+              activity,
+              owner.ownerId,
+            ),
+          };
+        }),
       favorites: [],
       toggleFavorite: (id) => set((state) => ({ favorites: state.favorites.includes(id) ? state.favorites.filter((favorite) => favorite !== id) : [...state.favorites, id] })),
       cart: [],
@@ -411,7 +514,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 10,
+      version: 11,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,

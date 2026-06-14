@@ -24,7 +24,6 @@ const ROUTES = [
   '/spokedu-master/library',
   '/spokedu-master/spomove',
   '/spokedu-master/report',
-  '/spokedu-master/report?program=197',
 ];
 
 async function loadPlaywright() {
@@ -77,7 +76,7 @@ async function login(context) {
   await page.close();
 }
 
-async function routeSnapshot(context, route) {
+async function routeSnapshot(context, route, expectedProgramTitle = '') {
   const page = await context.newPage();
   const consoleErrors = [];
   page.on('console', (msg) => {
@@ -102,7 +101,7 @@ async function routeSnapshot(context, route) {
     hasLibrary: text.includes('라이브러리') || text.includes('수업 자료'),
     hasSpomove: text.includes('SPOMOVE'),
     hasReport: text.includes('수업 설명') || text.includes('오늘 수업 정리'),
-    selectedProgram197: text.includes('따라 무브'),
+    selectedProgram: expectedProgramTitle ? text.includes(expectedProgramTitle) : false,
     hasExpiredCopy: text.includes('체험 기간') || text.includes('구독 플랜') || text.includes('이용 만료'),
     hasKnownFallbackContent: text.includes('스위치 러닝') || text.includes('따라 무브'),
     consoleErrors,
@@ -128,13 +127,23 @@ async function main() {
   try {
     await login(context);
 
-    for (const route of ROUTES) {
-      const snapshot = await routeSnapshot(context, route);
+    const programsResponse = await context.request.get(`${BASE}/api/spokedu-master/programs`);
+    const programsPayload = programsResponse.ok() ? await programsResponse.json() : { data: [] };
+    const reportProgram = programsPayload.data?.[0];
+    const routes = reportProgram
+      ? [...ROUTES, `/spokedu-master/report?program=${reportProgram.id}`]
+      : ROUTES;
+
+    for (const route of routes) {
+      const expectedProgramTitle = route.includes('?program=')
+        ? reportProgram?.title ?? ''
+        : '';
+      const snapshot = await routeSnapshot(context, route, expectedProgramTitle);
       const expectedPath = route;
       const stayedOnRoute = snapshot.currentPath === expectedPath;
       const routeOk = stayedOnRoute;
       const consoleOk = snapshot.consoleErrors.length === 0;
-      const reportProgramOk = QA_EXPIRED || route !== '/spokedu-master/report?program=197' || snapshot.selectedProgram197;
+      const reportProgramOk = QA_EXPIRED || !expectedProgramTitle || snapshot.selectedProgram;
 
       if (!routeOk || !consoleOk || !reportProgramOk) failed += 1;
       console.log(JSON.stringify({
@@ -145,7 +154,7 @@ async function main() {
         hasLibrary: snapshot.hasLibrary,
         hasSpomove: snapshot.hasSpomove,
         hasReport: snapshot.hasReport,
-        selectedProgram197: snapshot.selectedProgram197,
+        selectedProgram: snapshot.selectedProgram,
         hasExpiredCopy: snapshot.hasExpiredCopy,
         consoleErrors: snapshot.consoleErrors.slice(0, 3),
       }));

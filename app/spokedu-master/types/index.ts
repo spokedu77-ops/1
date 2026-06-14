@@ -157,6 +157,7 @@ export interface ClassStudentRecord {
 
 export interface ClassRecord {
   id: string;
+  ownerId?: string;
   lessonTitle: string;
   classId: string;
   programId: string;

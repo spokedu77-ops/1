@@ -34,7 +34,7 @@ export function getYouTubeId(url?: string) {
 
 export function getVideoThumbnail(url?: string) {
   const youtubeId = getYouTubeId(url);
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg` : undefined;
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : undefined;
 }
 
 export function getVideoEmbedUrl(url?: string, options?: { autoplay?: boolean }) {

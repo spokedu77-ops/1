@@ -71,21 +71,22 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
+  const section = searchParams.get('section');
+  const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
 
   useEffect(() => {
-    if (!program || openedProgramRef.current === program.id) return;
+    if (!program || shouldAutoplayVideo || openedProgramRef.current === program.id) return;
     openedProgramRef.current = program.id;
     recordRecentProgramActivity({
       programId: program.id,
       programTitle: program.title,
       action: 'lesson_opened',
       occurredAt: new Date().toISOString(),
-      resumeHref: `/spokedu-master/library/${program.id}`,
     });
-  }, [program, recordRecentProgramActivity]);
+  }, [program, recordRecentProgramActivity, shouldAutoplayVideo]);
 
   useEffect(() => {
-    if (searchParams.get('section') !== 'video') return;
+    if (section !== 'video') return;
     const frame = window.requestAnimationFrame(() => {
       document.getElementById('lesson-video')?.scrollIntoView({
         behavior: 'smooth',
@@ -93,7 +94,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
       });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [searchParams]);
+  }, [section]);
 
   const recordVideoStarted = useCallback(() => {
     if (!program || videoReportedRef.current === program.id) return;
@@ -103,7 +104,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
       programTitle: program.title,
       action: 'video_started',
       occurredAt: new Date().toISOString(),
-      resumeHref: `/spokedu-master/library/${program.id}?section=video`,
     });
   }, [program, recordRecentProgramActivity]);
 
@@ -165,7 +165,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickSaved(true);
   };
   const videoUrl = model.videoUrl ?? undefined;
-  const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: true });
+  const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: shouldAutoplayVideo });
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(videoUrl) ? videoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(videoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
@@ -273,7 +273,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                       onPlaybackStarted={recordVideoStarted}
                     />
                   ) : directVideoUrl ? (
-                    <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted onPlay={recordVideoStarted} />
+                    <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay={shouldAutoplayVideo} muted onPlay={recordVideoStarted} />
                   ) : (
                     <div className="grid h-full place-items-center p-6 text-center text-white">
                       <div>

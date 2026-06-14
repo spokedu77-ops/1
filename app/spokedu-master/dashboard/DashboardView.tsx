@@ -32,6 +32,7 @@ import {
 import { getTrialDaysLeft, isActiveTrial } from '../lib/subscription';
 import {
   getRecentActivityOwnerId,
+  reconcileRecentProgramActivities,
   selectLatestProgramResume,
   type RecentProgramActivity,
 } from '../lib/recentProgramActivity';
@@ -310,21 +311,19 @@ function WeeklyProgramCard({
   program,
   cornerLabel,
   onPreview,
-  onPlay,
   scope = 'weekly',
   priority = false,
 }: {
   program: Program;
   cornerLabel: string;
   onPreview: (program: Program) => void;
-  onPlay: (program: Program) => void;
   scope?: 'weekly' | 'context';
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
   const image = model.heroImageUrl;
   const meta = [model.theme, model.target, model.space].filter(Boolean).slice(0, 3);
-  const hasVideo = Boolean(model.videoUrl);
+  const hasVideo = programHasPlayableVideo(program);
 
   return (
     <article
@@ -352,16 +351,14 @@ function WeeklyProgramCard({
           {cornerLabel}
         </span>
         {hasVideo ? (
-          <button
-            type="button"
-            onClick={() => onPlay(program)}
-            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-indigo-600 text-white shadow-[0_10px_28px_rgba(49,46,129,0.3)] ring-4 ring-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:h-9 lg:w-9"
-            aria-label={`${model.title} 영상 재생`}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-indigo-600 text-white shadow-[0_10px_28px_rgba(49,46,129,0.3)] ring-4 ring-white/70 lg:h-9 lg:w-9"
           >
             <Play className="h-[18px] w-[18px] fill-current lg:h-4 lg:w-4" />
-          </button>
+          </span>
         ) : null}
-        <div className="absolute inset-x-0 bottom-0 p-3.5">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3.5">
           <h3 className="line-clamp-2 text-[16px] font-black leading-5 text-white">{model.title}</h3>
           {meta.length > 0 ? (
             <p className="mt-1 truncate text-[11px] font-bold text-white/85 sm:text-[12px]">{meta.join(' · ')}</p>
@@ -539,16 +536,19 @@ function HomeProgramPreview({
 function buildContinueItems(
   classRecords: ClassRecord[],
   recentProgramActivities: RecentProgramActivity[],
-  recentActivityOwnerId: string,
+  recentActivityOwnerId: string | null,
   savedReports: SavedExplanation[],
   programs: Program[],
 ) {
   const programsById = new Map(programs.map((program) => [program.id, program]));
-  const recentProgram = selectLatestProgramResume(
-    recentProgramActivities,
-    classRecords.filter((record) => programsById.has(record.programId)),
-    recentActivityOwnerId,
-  );
+  const validActivities = reconcileRecentProgramActivities(recentProgramActivities, programs);
+  const recentProgram = recentActivityOwnerId
+    ? selectLatestProgramResume(
+        validActivities,
+        classRecords.filter((record) => programsById.has(record.programId)),
+        recentActivityOwnerId,
+      )
+    : null;
   const recentReport = [...savedReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
 
   return [
@@ -606,11 +606,14 @@ export default function DashboardView() {
     programsError,
     classRecords,
     recentProgramActivities,
+    recentActivityOwnerResolved,
     recordRecentProgramActivity,
     reloadPrograms,
   } = useMasterStore();
   const profile = useProfile();
-  const recentActivityOwnerId = getRecentActivityOwnerId(profile);
+  const recentActivityOwnerId = recentActivityOwnerResolved
+    ? getRecentActivityOwnerId(profile)
+    : null;
   const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
@@ -670,15 +673,6 @@ export default function DashboardView() {
   }, [availableContextTabs, contextTab]);
 
   const openPreview = (program: Program, autoplayVideo = false) => {
-    if (autoplayVideo) {
-      recordRecentProgramActivity({
-        programId: program.id,
-        programTitle: program.title,
-        action: 'video_started',
-        occurredAt: new Date().toISOString(),
-        resumeHref: `/spokedu-master/library/${program.id}?section=video`,
-      });
-    }
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
@@ -689,9 +683,9 @@ export default function DashboardView() {
         recentProgramActivities,
         recentActivityOwnerId,
         savedReports,
-        programPool,
+        programs,
       ),
-    [classRecords, programPool, recentActivityOwnerId, recentProgramActivities, savedReports],
+    [classRecords, programs, recentActivityOwnerId, recentProgramActivities, savedReports],
   );
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
@@ -770,8 +764,7 @@ export default function DashboardView() {
               <WeeklyProgramCard
                 program={program}
                 cornerLabel={`추천 ${String(index + 1).padStart(2, '0')}`}
-                onPreview={(item) => openPreview(item)}
-                onPlay={(item) => openPreview(item, true)}
+                onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
                 priority={index < 2}
               />
             </div>
@@ -840,8 +833,7 @@ export default function DashboardView() {
                 <WeeklyProgramCard
                   program={program}
                   cornerLabel={contextTab === 'classroom' ? '교실 체육' : '미취학 체육'}
-                  onPreview={setSelectedProgram}
-                  onPlay={(item) => openPreview(item, true)}
+                  onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
                   scope="context"
                 />
               </div>
@@ -867,13 +859,11 @@ export default function DashboardView() {
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           onPlaybackStarted={() => {
-            if (previewAutoplay) return;
             recordRecentProgramActivity({
               programId: selectedProgram.id,
               programTitle: selectedProgram.title,
               action: 'video_started',
               occurredAt: new Date().toISOString(),
-              resumeHref: `/spokedu-master/library/${selectedProgram.id}?section=video`,
             });
           }}
           onClose={() => {

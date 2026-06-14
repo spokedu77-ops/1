@@ -28,7 +28,7 @@ import {
 } from '../lib/lessonDisplay';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
-import { resolveProgramHero } from '../lib/program-media';
+import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
   parseMasterSpaces,
   parseMasterTargets,
@@ -199,7 +199,7 @@ function ProgramCard({
 }) {
   const heroImage = getHeroImage(program);
   const meta = getCardMetaLine(program);
-  const hasVideo = Boolean(program.lessonDetail?.videoUrl);
+  const hasVideo = programHasPlayableVideo(program);
 
   return (
     <article className="group relative">
@@ -299,12 +299,14 @@ function ProgramCard({
 
 function ProgramModal({
   program,
+  autoplayVideo,
   isPro,
   favorite,
   onFavorite,
   onClose,
 }: {
   program: Program;
+  autoplayVideo: boolean;
   isPro: boolean;
   favorite: boolean;
   onFavorite: () => void;
@@ -325,13 +327,13 @@ function ProgramModal({
     <BottomSheet open title="빠른 미리보기" onClose={onClose} size="document">
       <LessonPreviewContent
         program={program}
+        autoplayVideo={autoplayVideo}
         onPlaybackStarted={() => {
           recordRecentProgramActivity({
             programId: program.id,
             programTitle: program.title,
             action: 'video_started',
             occurredAt: new Date().toISOString(),
-            resumeHref: `/spokedu-master/library/${program.id}?section=video`,
           });
         }}
         badges={
@@ -406,7 +408,7 @@ export default function LibraryView() {
   const isPro = useIsPro();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ActiveFilter>(null);
-  const [selected, setSelected] = useState<Program | null>(null);
+  const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const pool = useMemo(() => buildProgramPool(programs), [programs]);
@@ -424,7 +426,7 @@ export default function LibraryView() {
   }, [filter, pool, query]);
 
   const packageStats = useMemo(() => {
-    const videoCount = pool.filter((program) => program.lessonDetail?.videoUrl).length;
+    const videoCount = pool.filter(programHasPlayableVideo).length;
     const spomoveCount = pool.filter(hasSpomoveLink).length;
     const lessonPlanCount = pool.filter(
       (program) => program.steps.length > 0 || Boolean(program.lessonDetail?.objective),
@@ -628,10 +630,11 @@ export default function LibraryView() {
 
       {selected ? (
         <ProgramModal
-          program={selected}
+          program={selected.program}
+          autoplayVideo={selected.autoplayVideo}
           isPro={isPro}
-          favorite={favorites.includes(selected.id)}
-          onFavorite={() => toggleFavorite(selected.id)}
+          favorite={favorites.includes(selected.program.id)}
+          onFavorite={() => toggleFavorite(selected.program.id)}
           onClose={() => setSelected(null)}
         />
       ) : null}
@@ -652,7 +655,7 @@ function ProgramGrid({
   favorites: string[];
   usedProgramIds: Set<string>;
   toggleFavorite: (id: string) => void;
-  setSelected: (program: Program) => void;
+  setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
 }) {
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -664,7 +667,12 @@ function ProgramGrid({
           favorite={favorites.includes(program.id)}
           used={usedProgramIds.has(program.id)}
           onFavorite={() => toggleFavorite(program.id)}
-          onPreview={() => setSelected(program)}
+          onPreview={() =>
+            setSelected({
+              program,
+              autoplayVideo: programHasPlayableVideo(program),
+            })
+          }
         />
       ))}
     </div>

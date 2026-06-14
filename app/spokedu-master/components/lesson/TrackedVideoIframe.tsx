@@ -69,7 +69,7 @@ export function TrackedVideoIframe({
       src={src}
       title={title}
       className={className}
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+      allow="accelerometer; autoplay; clipboard-write; compute-pressure; encrypted-media; gyroscope; picture-in-picture; fullscreen"
       allowFullScreen
       onLoad={listenForPlayback}
     />

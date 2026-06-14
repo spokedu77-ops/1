@@ -376,13 +376,14 @@ export async function GET() {
     function_types: string[] | null;
     main_theme: string | null;
     group_size: string | null;
+    is_published: boolean | null;
   };
 
   const overlayByCurriculumId = new Map<number, OverlayRow>();
   if (curriculumIds.length > 0) {
     const { data: overlayRows } = await supabase
       .from('spokedu_pro_programs')
-      .select('title,source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size')
+      .select('title,source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size,is_published')
       .in('source_center_curriculum_id', curriculumIds);
     for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
       const curriculumId = overlay.source_center_curriculum_id;
@@ -409,7 +410,9 @@ export async function GET() {
     display_order: number | null;
   };
 
-  const programs: Program[] = (curriculumRows as CurrRow[]).map((row, index) => {
+  const programs: Program[] = (curriculumRows as CurrRow[])
+    .filter((row) => overlayByCurriculumId.get(row.id)?.is_published !== false)
+    .map((row, index) => {
     const meta = metaByCurriculumId.get(row.id);
     const overlay = overlayByCurriculumId.get(row.id);
     const title = (overlay?.title ?? row.title ?? '').trim() || `커리큘럼 #${row.id}`;
@@ -494,7 +497,7 @@ export async function GET() {
       applyTrustedReferenceVideo(applyPremiumContentOverlay(program)),
       index,
     );
-  });
+    });
 
   return NextResponse.json({ data: programs, total: programs.length });
 }
