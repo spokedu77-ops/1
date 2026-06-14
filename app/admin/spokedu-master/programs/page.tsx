@@ -15,6 +15,11 @@ import {
 import { getPublicUrl, uploadToStorage } from '@/app/lib/admin/assets/storageClient';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
+import {
+  parseVariationMethod,
+  serializeVariationMethod,
+} from '@/app/spokedu-master/lib/lessonContentContract';
+import { useMasterStore } from '@/app/spokedu-master/store';
 import { toast } from 'sonner';
 import {
   MASTER_DURATION_TAGS,
@@ -92,7 +97,6 @@ type ProgramItem = {
     equipment: string[];
     checklist: string[];
     steps: string[];
-    safetyNotes: string[];
     parentNote: string;
     relatedSpomoveIds: string[];
     status: MaterialStatus;
@@ -122,11 +126,7 @@ type EditForm = {
   galleryImageUrls: string;
   equipment: string;
   briefingNotes: string;
-  safetyNotes: string;
   steps: string;
-  operationTips: string;
-  easier: string;
-  harder: string;
   variations: string;
   parentNote: string;
   relatedSpomoveIds: string;
@@ -169,6 +169,10 @@ const TAG_PREFIX = {
   bodyFunction: '신체 기능:',
   groupSize: '인원:',
 } as const;
+const koreanTitleCollator = new Intl.Collator('ko-KR', {
+  sensitivity: 'base',
+  numeric: true,
+});
 
 function splitLines(value: string) {
   return value
@@ -243,14 +247,6 @@ function extractSection(source: string | null | undefined, label: string) {
   return collected.join('\n');
 }
 
-function plainSectionFallback(source: string | null | undefined) {
-  return (source ?? '')
-    .split('\n')
-    .filter((line) => !/^\[[^\]]+\]$/.test(line.trim()))
-    .join('\n')
-    .trim();
-}
-
 type QualityReport = {
   status: MaterialStatus;
   score: number;
@@ -269,7 +265,6 @@ type QualityReport = {
     equipment: boolean;
     steps: boolean;
     variations: boolean;
-    operationTips: boolean;
     parentNote: boolean;
     spomove: boolean;
     homeExposure: boolean;
@@ -358,8 +353,7 @@ function qualityReasons(checks: QualityReport['checks']) {
     ['준비물', checks.equipment],
     ['세팅 이미지', checks.setupImage],
     ['진행 순서', checks.steps],
-    ['난이도 조절', checks.variations],
-    ['운영 팁', checks.operationTips],
+    ['변형 방법', checks.variations],
     ['학부모 문구', checks.parentNote],
     ['SPOMOVE', checks.spomove],
     ['홈 노출', checks.homeExposure],
@@ -375,7 +369,7 @@ function missingQualityLabels(checks: QualityReport['checks']) {
     ['준비물', checks.equipment],
     ['세팅 이미지', checks.setupImage],
     ['활동 방법', checks.steps],
-    ['응용 방법', checks.variations],
+    ['변형 방법', checks.variations],
     ['학부모 문구', checks.parentNote],
     ['세팅 이미지', checks.setupImage],
     ['SPOMOVE', checks.spomove],
@@ -399,7 +393,6 @@ function qualitySummary(report: QualityReport) {
 function getItemQuality(item: ProgramItem): QualityReport {
   const meta = item.meta;
   const overlay = item.overlay;
-  const activityTip = overlay?.activity_tip ?? '';
   const checks = {
     video: Boolean(item.effective.videoUrl),
     setupImage: Boolean(meta?.sm_setup_image_url),
@@ -409,8 +402,7 @@ function getItemQuality(item: ProgramItem): QualityReport {
     duration: Boolean(item.effective.duration),
     equipment: item.effective.equipment.length > 0,
     steps: item.effective.steps.length > 0,
-    variations: Boolean(extractSection(activityTip, '난이도 낮추기') || extractSection(activityTip, '난이도 높이기') || extractSection(activityTip, '응용 방법')),
-    operationTips: Boolean(extractSection(activityTip, '운영 팁') || activityTip.trim()),
+    variations: parseVariationMethod(overlay?.activity_tip).length > 0,
     parentNote: Boolean(item.effective.parentNote),
     spomove: item.effective.relatedSpomoveIds.length > 0,
     homeExposure: item.effective.publicationStatus === 'featured' || Boolean(meta?.sm_is_hot),
@@ -428,8 +420,7 @@ function getFormQuality(form: EditForm): QualityReport {
     duration: Boolean(form.duration.trim()),
     equipment: splitLines(form.equipment).length > 0,
     steps: splitLines(form.steps).length > 0,
-    variations: Boolean(form.easier.trim() || form.harder.trim() || form.variations.trim()),
-    operationTips: Boolean(form.operationTips.trim()),
+    variations: Boolean(form.variations.trim()),
     parentNote: Boolean(form.parentNote.trim()),
     spomove: csvToList(form.relatedSpomoveIds).length > 0,
     homeExposure: form.publicationStatus === 'featured',
@@ -485,12 +476,8 @@ function toForm(item: ProgramItem): EditForm {
     galleryImageUrls: (meta?.sm_gallery_image_urls ?? []).join('\n'),
     equipment: overlay?.equipment || joinLines(item.curriculum.equipment),
     briefingNotes: extractSection(checklist, '사전 교육'),
-    safetyNotes: extractSection(checklist, '안전 포인트') || plainSectionFallback(checklist),
     steps: overlay?.activity_method || joinLines(item.curriculum.steps),
-    operationTips: extractSection(activityTip, '운영 팁') || activityTip,
-    easier: extractSection(activityTip, '난이도 낮추기'),
-    harder: extractSection(activityTip, '난이도 높이기'),
-    variations: extractSection(activityTip, '응용 방법'),
+    variations: parseVariationMethod(activityTip).join('\n'),
     parentNote: meta?.sm_parent_note || '',
     relatedSpomoveIds: listToCsv(meta?.sm_related_spomove_ids),
     isNew: Boolean(meta?.sm_is_new),
@@ -791,6 +778,7 @@ function WeeklyRecommendationManager({
       };
       if (!res.ok) throw new Error(json.error ?? '추천 슬롯 저장에 실패했습니다.');
       setSlots(Array.from({ length: 4 }, (_, index) => json.slots?.[index] ?? null));
+      await useMasterStore.getState().reloadPrograms();
       await onSaved();
       toast.success(json.message ?? '이번주 추천 프로그램을 저장했습니다.');
     } catch (error) {
@@ -812,7 +800,7 @@ function WeeklyRecommendationManager({
               이번주 추천 프로그램 관리
             </h2>
             <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-              홈에 노출할 프로그램을 슬롯 순서대로 지정합니다. 빈 슬롯은 홈에서 제외됩니다.
+              선택한 프로그램은 슬롯 순서대로 홈에 반영되며, 빈 슬롯은 자동 추천으로 보완됩니다.
             </p>
           </div>
           <button
@@ -832,13 +820,21 @@ function WeeklyRecommendationManager({
             const selectedElsewhere = new Set(
               slots.filter((id, slotIndex) => slotIndex !== index && id != null),
             );
-            const options = items.filter((item) => {
-              if (item.curriculum.id === selectedId) return true;
-              if (!query) return true;
-              const text =
-                `${item.effective.title} ${item.curriculum.title} ${item.curriculum.id}`.toLowerCase();
-              return text.includes(query);
-            });
+            const options = items
+              .filter((item) => {
+                if (item.curriculum.id === selectedId) return true;
+                if (!query) return true;
+                const text =
+                  `${item.effective.title} ${item.curriculum.title} ${item.curriculum.id}`.toLowerCase();
+                return text.includes(query);
+              })
+              .sort((a, b) => {
+                const titleCompare = koreanTitleCollator.compare(
+                  a.effective.title.trim(),
+                  b.effective.title.trim(),
+                );
+                return titleCompare || a.curriculum.id - b.curriculum.id;
+              });
 
             return (
               <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -1029,16 +1025,8 @@ export default function AdminSmProgramsPage() {
     if (!selected || !form) return;
     setSaving(true);
     try {
-      const checklist = [
-        sectionText('사전 교육', form.briefingNotes),
-        sectionText('안전 포인트', form.safetyNotes),
-      ].filter(Boolean).join('\n');
-      const activityTip = [
-        sectionText('운영 팁', form.operationTips),
-        sectionText('난이도 낮추기', form.easier),
-        sectionText('난이도 높이기', form.harder),
-        sectionText('응용 방법', form.variations),
-      ].filter(Boolean).join('\n');
+      const checklist = sectionText('사전 교육', form.briefingNotes);
+      const activityTip = serializeVariationMethod(form.variations);
 
       const res = await fetch(`/api/admin/spokedu-master/programs?id=${selected.curriculum.id}`, {
         method: 'PATCH',
@@ -1068,7 +1056,7 @@ export default function AdminSmProgramsPage() {
             equipment: form.equipment.trim() || null,
             checklist: checklist || null,
             activity_method: form.steps.trim() || null,
-            activity_tip: activityTip || form.operationTips.trim() || null,
+            activity_tip: activityTip || null,
             function_types: csvToList(form.tags),
             main_theme: normalizeLessonTheme(form.theme) || null,
             group_size: serializeMasterTags(parseMasterTargets(form.target)) || null,
@@ -1085,6 +1073,7 @@ export default function AdminSmProgramsPage() {
         setSelectedId(next.curriculum.id);
         setForm(toForm(next));
       }
+      await useMasterStore.getState().reloadPrograms();
       toast.success('MASTER 편집 값이 저장되었습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '저장에 실패했습니다.');

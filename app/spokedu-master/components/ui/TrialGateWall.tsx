@@ -93,10 +93,13 @@ export function TrialCountdownBanner() {
   if (daysLeft <= 0 || daysLeft > 7) return null;
 
   return (
-    <div className="mx-[22px] mt-3 flex items-center justify-end sm:mx-8 lg:mx-10" role="status">
+    <div className="mx-[22px] mt-3 flex items-center justify-end gap-2 sm:mx-8 lg:mx-10" role="status">
       <span className="inline-flex min-h-8 items-center rounded-full border border-amber-200 bg-amber-50 px-3 text-[11px] font-black text-amber-800">
         무료 체험 D-{daysLeft}
       </span>
+      <Link href="/spokedu-master/profile?plans=1" className="inline-flex min-h-8 items-center rounded-full bg-amber-100 px-3 text-[11px] font-black text-amber-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600">
+        이용권 보기
+      </Link>
     </div>
   );
 }

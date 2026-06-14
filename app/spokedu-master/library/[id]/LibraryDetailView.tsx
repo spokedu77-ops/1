@@ -12,7 +12,8 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BottomSheet } from '../../components/ui/BottomSheet';
 
@@ -26,22 +27,8 @@ import {
   LessonTitle,
   LessonVariationText,
 } from '../../components/lesson/LessonPanels';
-import {
-  getLessonBriefingNotes,
-  getLessonEquipment,
-  getLessonFieldTips,
-  getLessonFunction,
-  getLessonMovement,
-  getLessonRules,
-  getLessonSafetyNotes,
-  getLessonScript,
-  getLessonSpace,
-  getLessonTarget,
-  getLessonTheme,
-  getLessonTime,
-  getLessonTitle,
-  getLessonVariations,
-} from '../../lib/lessonDisplay';
+import { TrackedVideoIframe } from '../../components/lesson/TrackedVideoIframe';
+import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import {
   getExternalVideoUrl,
   getVideoEmbedUrl,
@@ -52,13 +39,9 @@ import {
   officialPresetSessionHref,
 } from '../../spomove/officialSpomovePresets';
 import { useMasterStore } from '../../store';
-import type { ClassRecord, Program } from '../../types';
+import type { ClassRecord } from '../../types';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
-
-function getParentCopy(program: Program) {
-  return program.lessonDetail?.parentNote?.trim() ?? '';
-}
 
 function BookOpenFallback() {
   return (
@@ -74,6 +57,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
   const classRecords = useMasterStore((state) => state.classRecords);
   const saveQuickClassRecord = useMasterStore((state) => state.saveQuickClassRecord);
+  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
+  const searchParams = useSearchParams();
+  const openedProgramRef = useRef<string | null>(null);
+  const videoReportedRef = useRef<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [quickModalOpen, setQuickModalOpen] = useState(false);
   const [quickDate, setQuickDate] = useState('');
@@ -84,6 +71,41 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
+
+  useEffect(() => {
+    if (!program || openedProgramRef.current === program.id) return;
+    openedProgramRef.current = program.id;
+    recordRecentProgramActivity({
+      programId: program.id,
+      programTitle: program.title,
+      action: 'lesson_opened',
+      occurredAt: new Date().toISOString(),
+      resumeHref: `/spokedu-master/library/${program.id}`,
+    });
+  }, [program, recordRecentProgramActivity]);
+
+  useEffect(() => {
+    if (searchParams.get('section') !== 'video') return;
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById('lesson-video')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [searchParams]);
+
+  const recordVideoStarted = useCallback(() => {
+    if (!program || videoReportedRef.current === program.id) return;
+    videoReportedRef.current = program.id;
+    recordRecentProgramActivity({
+      programId: program.id,
+      programTitle: program.title,
+      action: 'video_started',
+      occurredAt: new Date().toISOString(),
+      resumeHref: `/spokedu-master/library/${program.id}?section=video`,
+    });
+  }, [program, recordRecentProgramActivity]);
 
   if (!program) {
     return (
@@ -99,15 +121,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
   }
 
   const detail = program.lessonDetail;
-  const title = getLessonTitle(program);
-  const equipment = getLessonEquipment(program);
-  const script = getLessonScript(program);
-  const briefingNotes = getLessonBriefingNotes(program);
-  const ruleItems = getLessonRules(program);
-  const variations = getLessonVariations(program);
-  const safetyNotes = getLessonSafetyNotes(program);
-  const fieldTips = getLessonFieldTips(program);
-  const parentCopy = getParentCopy(program);
+  const model = buildLessonDisplayModel(program);
+  const title = model.title;
+  const parentCopy = model.parentNote;
   const favorite = favorites.includes(program.id);
   const usageCount = usageRecords.length;
   const latestUsageDate = usageRecords.length > 0
@@ -119,7 +135,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickDate(new Date().toISOString().slice(0, 10));
     setQuickClassId('');
     setQuickMemo('');
-    setQuickParentNote(getParentCopy(program));
+    setQuickParentNote(model.parentNote);
     setQuickSaved(false);
     setQuickModalOpen(true);
   };
@@ -148,12 +164,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
     saveQuickClassRecord(record);
     setQuickSaved(true);
   };
-  const videoEmbedUrl = getVideoEmbedUrl(detail?.videoUrl, { autoplay: true });
-  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(detail?.videoUrl) ? detail?.videoUrl : undefined;
-  const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(detail?.videoUrl) : undefined;
+  const videoUrl = model.videoUrl ?? undefined;
+  const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: true });
+  const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(videoUrl) ? videoUrl : undefined;
+  const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(videoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
-  const setupImage = detail?.setupImageUrl?.trim();
-  const galleryImages = (detail?.galleryImageUrls ?? []).filter((url) => url.trim());
+  const setupImage = model.setupImageUrl;
+  const galleryImages = model.galleryImageUrls;
   const relatedSpomovePresets = (detail?.relatedSpomoveIds ?? [])
     .map((spomoveId) => findOfficialSpomovePreset(spomoveId))
     .filter((preset): preset is NonNullable<typeof preset> => Boolean(preset));
@@ -196,13 +213,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
           <div className="mt-3">
             <LessonMetaGrid
               cells={[
-                { label: '테마', value: getLessonTheme(program) || '—' },
-                { label: '대상', value: getLessonTarget(program) || '—' },
-                { label: '기능', value: getLessonFunction(program) || '—' },
-                { label: '움직임', value: getLessonMovement(program) || '—' },
-                { label: '공간', value: getLessonSpace(program) || '—' },
-                { label: '시간', value: getLessonTime(program) || '—' },
-              ]}
+                { label: '테마', value: model.theme },
+                { label: '대상', value: model.target },
+                { label: '기능', value: model.functions.join(', ') },
+                { label: '움직임', value: model.movements.join(', ') },
+                { label: '공간', value: model.space },
+                { label: '시간', value: model.duration },
+              ].filter((cell) => cell.value)}
             />
           </div>
         </section>
@@ -223,54 +240,71 @@ export default function LibraryDetailView({ id }: { id: string }) {
             </div>
 
             <div className="flex flex-col gap-3">
-              <LessonChecklistCard label="준비물" accent="emerald">
-                <LessonBulletList items={equipment} compact />
-              </LessonChecklistCard>
-              <LessonChecklistCard label="수업 스크립트" accent="indigo">
-                <LessonCoachScript text={script} />
-              </LessonChecklistCard>
-              <LessonChecklistCard label="사전 교육">
-                <LessonBulletList items={briefingNotes} compact />
-              </LessonChecklistCard>
+              {model.equipment.length > 0 ? (
+                <LessonChecklistCard label="준비물" accent="emerald">
+                  <LessonBulletList items={model.equipment} compact />
+                </LessonChecklistCard>
+              ) : null}
+              {model.coachScript ? (
+                <LessonChecklistCard label="수업 스크립트" accent="indigo">
+                  <LessonCoachScript text={model.coachScript} />
+                </LessonChecklistCard>
+              ) : null}
+              {model.briefingNotes.length > 0 ? (
+                <LessonChecklistCard label="사전 교육">
+                  <LessonBulletList items={model.briefingNotes} compact />
+                </LessonChecklistCard>
+              ) : null}
             </div>
           </div>
         </LessonFullSection>
 
         {hasVideo ? (
-          <LessonFullSection title="영상">
-            <div className="overflow-hidden rounded-[14px] bg-slate-950">
-              <div className="relative aspect-video">
-                {videoEmbedUrl ? (
-                  <iframe
-                    key={`${program.id}-${videoEmbedUrl}`}
-                    src={videoEmbedUrl}
-                    title={`${title} 참고 영상`}
-                    className="h-full w-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-                    allowFullScreen
-                  />
-                ) : directVideoUrl ? (
-                  <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted />
-                ) : (
-                  <div className="grid h-full place-items-center p-6 text-center text-white">
-                    <div>
-                      <Play className="mx-auto h-10 w-10 fill-current text-red-500" />
-                      <p className="mt-4 text-base font-black">참고 영상 링크</p>
-                      <a href={externalVideoUrl} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950">
-                        유튜브에서 열기
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
+          <div id="lesson-video" className="scroll-mt-20">
+            <LessonFullSection title="영상">
+              <div className="overflow-hidden rounded-[14px] bg-slate-950">
+                <div className="relative aspect-video">
+                  {videoEmbedUrl ? (
+                    <TrackedVideoIframe
+                      key={`${program.id}-${videoEmbedUrl}`}
+                      src={videoEmbedUrl}
+                      title={`${title} 참고 영상`}
+                      className="h-full w-full"
+                      onPlaybackStarted={recordVideoStarted}
+                    />
+                  ) : directVideoUrl ? (
+                    <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay muted onPlay={recordVideoStarted} />
+                  ) : (
+                    <div className="grid h-full place-items-center p-6 text-center text-white">
+                      <div>
+                        <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-indigo-600 text-white ring-4 ring-white/70">
+                          <Play className="h-5 w-5 fill-current" />
+                        </span>
+                        <p className="mt-4 text-base font-black">참고 영상 링크</p>
+                        <a href={externalVideoUrl} target="_blank" rel="noreferrer" onClick={recordVideoStarted} className="mt-4 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 text-sm font-black text-slate-950">
+                          유튜브에서 열기
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
+            </LessonFullSection>
+          </div>
+        ) : null}
+
+        {model.activityMethod.length > 0 ? (
+          <LessonFullSection title="활동 방법">
+            <LessonNumberedList items={model.activityMethod} />
           </LessonFullSection>
         ) : null}
 
-        <LessonFullSection title="활동 방법">
-          <LessonNumberedList items={ruleItems} />
-        </LessonFullSection>
+        {model.variationMethod.length > 0 ? (
+          <LessonFullSection title="변형 방법">
+            <LessonVariationText text={model.variationMethod.join('\n')} />
+          </LessonFullSection>
+        ) : null}
 
         {/* 보호자 문구 — 등록된 값이 있을 때만 표시 (6순위) */}
         {parentCopy ? (
@@ -282,25 +316,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
               {copied ? '복사 완료' : '학부모 문구 복사'}
             </button>
           </div>
-        ) : null}
-
-        {/* 변형 / 안전 / 현장 팁 — 7순위, 값이 있을 때만 표시 */}
-        {variations.length > 0 ? (
-          <LessonFullSection title="변형 방법">
-            <LessonVariationText text={variations.join('\n')} />
-          </LessonFullSection>
-        ) : null}
-
-        {safetyNotes.length > 0 ? (
-          <LessonFullSection title="안전">
-            <LessonBulletList items={safetyNotes} compact />
-          </LessonFullSection>
-        ) : null}
-
-        {fieldTips.length > 0 ? (
-          <LessonFullSection title="현장 팁">
-            <LessonBulletList items={fieldTips} compact />
-          </LessonFullSection>
         ) : null}
 
         {(relatedSpomovePresets.length > 0 || galleryImages.length > 0) ? (

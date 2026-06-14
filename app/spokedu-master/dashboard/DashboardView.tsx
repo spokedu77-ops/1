@@ -4,10 +4,9 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  Clipboard,
-  Clock3,
   FileText,
   MonitorPlay,
+  Play,
   Settings2,
   Sparkles,
   UsersRound,
@@ -22,7 +21,7 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { getLessonFunction, getLessonSpace, getLessonTarget, getLessonTheme } from '../lib/lessonDisplay';
+import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   getImageFallbackSrc,
   isRemoteImage,
@@ -32,13 +31,19 @@ import {
 } from '../lib/program-media';
 import { getTrialDaysLeft, isActiveTrial } from '../lib/subscription';
 import {
+  getRecentActivityOwnerId,
+  selectLatestProgramResume,
+  type RecentProgramActivity,
+} from '../lib/recentProgramActivity';
+import {
   OFFICIAL_SPOMOVE_LIBRARY,
   officialPresetSessionHref,
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
+import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { useMasterStore, useProfile } from '../store';
-import type { ClassRecord, Program, Session, UserProfile } from '../types';
+import type { ClassRecord, Program, UserProfile } from '../types';
 
 type SavedExplanation = {
   id: string;
@@ -51,14 +56,13 @@ type ContinueItem = {
   id: string;
   type: string;
   title: string;
-  time: string;
+  status: string;
+  action: string;
+  time?: string;
   href: string;
 };
 
 const REPORT_STORAGE_KEY = 'spokedu-master-explanations-v1';
-const OFFICIAL_PRESET_IDS = new Set(
-  OFFICIAL_SPOMOVE_LIBRARY.flatMap((preset) => [preset.id, preset.engine.mode, preset.programGroup]),
-);
 
 function isPlaceholderText(value?: string | null) {
   const text = (value ?? '').trim();
@@ -72,10 +76,6 @@ function displayText(value: string | undefined, fallback: string) {
 
 function getProgramTitle(program: Program) {
   return displayText(program.title, 'SPOKEDU 수업');
-}
-
-function getProgramCategory(program: Program) {
-  return displayText(program.category, '체육 수업');
 }
 
 function getProgramGrade(program: Program) {
@@ -144,30 +144,6 @@ function compareHomePrograms(a: Program, b: Program) {
   );
 }
 
-function selectWeeklyPrograms(programs: Program[]) {
-  const selected: Program[] = [];
-  const seen = new Set<string>();
-
-  const append = (candidates: Program[]) => {
-    for (const program of candidates) {
-      if (selected.length >= 4) return;
-      if (seen.has(program.id) || !isHomeDisplayable(program)) continue;
-      selected.push(program);
-      seen.add(program.id);
-    }
-  };
-
-  append(
-    programs
-      .filter((program) => getHomeSortOrder(program) >= 1 && getHomeSortOrder(program) <= 4)
-      .sort((a, b) => getHomeSortOrder(a) - getHomeSortOrder(b)),
-  );
-  append(programs.filter((program) => program.isHot).sort(compareHomePrograms));
-  append(programs.filter(isHomeDisplayable).sort(compareHomePrograms));
-
-  return selected;
-}
-
 function selectFeaturedSpomove() {
   const ready = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.isReady);
   const selected: OfficialSpomovePreset[] = [];
@@ -194,35 +170,71 @@ function selectFeaturedSpomove() {
   return selected;
 }
 
-function hasExplicitOfficialSpomove(program: Program) {
-  return (program.lessonDetail?.relatedSpomoveIds ?? []).some((id) => OFFICIAL_PRESET_IDS.has(id));
+type ContextProgramTab = 'classroom' | 'preschool';
+
+const CONTEXT_PROGRAM_TABS: Array<{ key: ContextProgramTab; label: string }> = [
+  { key: 'classroom', label: '교실 체육' },
+  { key: 'preschool', label: '미취학 체육' },
+];
+
+const isClassroomProgram = (program: Program) =>
+  parseMasterSpaces(program.space).includes('교실');
+
+const isPreschoolProgram = (program: Program) => {
+  const target =
+    program.lessonDetail?.recommendedAge ||
+    program.grade ||
+    '';
+
+  return parseMasterTargets(target).includes('미취학');
+};
+
+function matchesContextTab(program: Program, tab: ContextProgramTab) {
+  return tab === 'classroom'
+    ? isClassroomProgram(program)
+    : isPreschoolProgram(program);
 }
 
-function compactToken(value?: string | null) {
-  const text = cleanText(value ?? undefined, '').trim();
-  if (!text || isPlaceholderText(text) || text.length > 18) return '';
-  return text;
+function compareContextPrograms(a: Program, b: Program) {
+  return (
+    Number(isHomeDisplayable(b)) - Number(isHomeDisplayable(a)) ||
+    Number(b.isHot) - Number(a.isHot) ||
+    getHomeSortOrder(a) - getHomeSortOrder(b) ||
+    getHomeReadiness(b) - getHomeReadiness(a) ||
+    Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
+    Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
+    Number(b.isNew) - Number(a.isNew)
+  );
 }
 
-function getProgramMeta(program: Program) {
-  const target = parseMasterTargets(getLessonTarget(program))[0] ?? compactToken(getLessonTarget(program));
-  const space = parseMasterSpaces(getLessonSpace(program))[0] ?? compactToken(getLessonSpace(program));
-  const equipment = program.equipment.find((item) => !isPlaceholderText(item)) ?? '';
-  return Array.from(new Set([target, space, equipment].filter(Boolean))).slice(0, 3);
-}
+function selectContextPrograms(programs: Program[], tab: ContextProgramTab, weeklyIds: Set<string>) {
+  const selected: Program[] = [];
+  const usedIds = new Set<string>();
+  const usedTitles = new Set<string>();
+  const matched = programs.filter((program) => matchesContextTab(program, tab));
+  const tiers = [
+    matched.filter((program) => !weeklyIds.has(program.id)).sort(compareContextPrograms),
+    matched.filter((program) => weeklyIds.has(program.id)).sort(compareContextPrograms),
+  ];
 
-function getNewProgramMeta(program: Program) {
-  const theme = compactToken(getLessonTheme(program));
-  const feature = getLessonFunction(program)
-    .split(/[\/,·]/)
-    .map((value) => compactToken(value))
-    .find(Boolean);
-  return Array.from(new Set([theme, ...getProgramMeta(program), feature].filter(Boolean))).slice(0, 2);
+  for (const tier of tiers) {
+    for (const program of tier) {
+      if (selected.length >= 4) return selected;
+      const titleKey = normalizeTitle(getProgramTitle(program));
+      if (!titleKey || usedIds.has(program.id) || usedTitles.has(titleKey)) continue;
+      selected.push(program);
+      usedIds.add(program.id);
+      usedTitles.add(titleKey);
+    }
+  }
+  return selected;
 }
 
 function formatRelativeDate(value: string) {
   const time = new Date(value).getTime();
   if (!Number.isFinite(time)) return '최근';
+  const diffMs = Date.now() - time;
+  if (diffMs >= 0 && diffMs < 60 * 60 * 1000) return '방금';
   const diffDays = Math.floor((Date.now() - time) / 86_400_000);
   if (diffDays <= 0) return '오늘';
   if (diffDays === 1) return '어제';
@@ -296,121 +308,99 @@ function SectionHeader({
 
 function WeeklyProgramCard({
   program,
-  index,
+  cornerLabel,
   onPreview,
+  onPlay,
+  scope = 'weekly',
+  priority = false,
 }: {
   program: Program;
-  index: number;
+  cornerLabel: string;
   onPreview: (program: Program) => void;
+  onPlay: (program: Program) => void;
+  scope?: 'weekly' | 'context';
+  priority?: boolean;
 }) {
-  const image = getHeroImage(program);
-  const meta = getProgramMeta(program);
-  const hasVideo = programHasPlayableVideo(program);
-  const hasParentNote = Boolean(program.lessonDetail?.parentNote?.trim());
-  const hasSpomove = hasExplicitOfficialSpomove(program);
+  const model = buildLessonDisplayModel(program);
+  const image = model.heroImageUrl;
+  const meta = [model.theme, model.target, model.space].filter(Boolean).slice(0, 3);
+  const hasVideo = Boolean(model.videoUrl);
 
   return (
-    <article data-weekly-program={program.id} className="flex h-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.07)]">
-      <button
-        type="button"
-        onClick={() => onPreview(program)}
-        className="group relative aspect-[6/5] w-full overflow-hidden bg-slate-100 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-indigo-500"
-        aria-label={`${getProgramTitle(program)} 미리보기`}
-      >
-        {image ? (
-          <CoverImage src={image} alt={getProgramTitle(program)} sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw" className="object-cover object-[center_38%] transition-transform duration-300 group-hover:scale-[1.01]" priority={index < 2} />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-100 to-slate-50">
-            <CategoryIcon category={getProgramCategory(program)} size={30} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/16 to-transparent" />
+    <article
+      data-weekly-program={scope === 'weekly' ? program.id : undefined}
+      data-context-program={scope === 'context' ? program.id : undefined}
+      className="flex h-full flex-col overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.07)]"
+    >
+      <div data-card-media className="group relative h-[calc(83.333333cqw+32px)] w-full overflow-hidden bg-slate-100 lg:h-[calc(83.333333cqw+42px)]">
+        <button
+          type="button"
+          onClick={() => onPreview(program)}
+          className="absolute inset-0 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-indigo-500"
+          aria-label={`${model.title} 미리보기`}
+        >
+          {image ? (
+            <CoverImage src={image} alt={model.title} sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw" className="object-cover object-[center_38%] transition-transform duration-300 group-hover:scale-[1.01]" priority={priority} />
+          ) : (
+            <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-100 to-slate-50">
+              <CategoryIcon category={model.theme || '체육 수업'} size={30} />
+            </div>
+          )}
+        </button>
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-transparent" />
         <span className="absolute left-3 top-3 rounded-full border border-white/30 bg-white/92 px-2.5 py-1 text-[10px] font-black tracking-[0.06em] text-indigo-700">
-          추천 {String(index + 1).padStart(2, '0')}
+          {cornerLabel}
         </span>
+        {hasVideo ? (
+          <button
+            type="button"
+            onClick={() => onPlay(program)}
+            className="absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-indigo-600 text-white shadow-[0_10px_28px_rgba(49,46,129,0.3)] ring-4 ring-white/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white lg:h-9 lg:w-9"
+            aria-label={`${model.title} 영상 재생`}
+          >
+            <Play className="h-[18px] w-[18px] fill-current lg:h-4 lg:w-4" />
+          </button>
+        ) : null}
         <div className="absolute inset-x-0 bottom-0 p-3.5">
-          <h3 className="line-clamp-2 min-h-10 text-[17px] font-black leading-5 text-white">{getProgramTitle(program)}</h3>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {meta.map((item) => (
-              <span key={item} className="rounded-md bg-white/14 px-2 py-1 text-[11px] font-bold text-white ring-1 ring-white/20 backdrop-blur">
-                {item}
-              </span>
-            ))}
-          </div>
+          <h3 className="line-clamp-2 text-[16px] font-black leading-5 text-white">{model.title}</h3>
+          {meta.length > 0 ? (
+            <p className="mt-1 truncate text-[11px] font-bold text-white/85 sm:text-[12px]">{meta.join(' · ')}</p>
+          ) : null}
         </div>
-      </button>
-      <div className="flex min-h-[98px] flex-1 flex-col justify-between gap-3 p-3.5">
-        <div className="flex flex-wrap gap-1.5">
-          <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-1 text-[11px] font-bold text-slate-600">
-            <Clock3 size={12} />
-            {program.duration}분
-          </span>
-          {hasVideo ? <span className="rounded-full bg-indigo-50 px-2 py-1 text-[11px] font-bold text-indigo-700">영상</span> : null}
-          {hasParentNote ? <span className="rounded-full bg-emerald-50 px-2 py-1 text-[11px] font-bold text-emerald-700">안내문</span> : null}
-          {hasSpomove ? <span className="rounded-full bg-slate-900 px-2 py-1 text-[11px] font-bold text-white">SPOMOVE</span> : null}
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[13px] font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500">
+      </div>
+      <div data-card-footer className="flex h-16 items-center px-2.5 py-2 lg:h-[54px]">
+        <div data-card-actions className="flex w-full items-center gap-1.5">
+          <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 basis-[60%] items-center justify-center rounded-[10px] bg-indigo-600 px-2.5 text-[12px] font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 lg:h-9">
             수업 자료
           </Link>
-          <button type="button" onClick={() => onPreview(program)} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 px-3 text-[13px] font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
+          <button type="button" onClick={() => onPreview(program)} className="inline-flex h-11 basis-[40%] items-center justify-center rounded-[10px] border border-slate-200 px-2.5 text-[12px] font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 lg:h-9">
             미리보기
           </button>
-          {hasParentNote ? (
-            <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 items-center px-1 text-[12px] font-black text-emerald-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-600">
-              안내문
-            </Link>
-          ) : null}
         </div>
       </div>
     </article>
   );
 }
 
-function CompactProgramCard({ program, onPreview }: { program: Program; onPreview: (program: Program) => void }) {
-  const image = getHeroImage(program);
-  return (
-    <button
-      type="button"
-      onClick={() => onPreview(program)}
-      className="group block w-full text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
-      aria-label={`${getProgramTitle(program)} 보기`}
-    >
-      <div className="relative aspect-[6/5] overflow-hidden rounded-[17px] border border-slate-200 bg-white shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-        {image ? (
-          <CoverImage src={image} alt={getProgramTitle(program)} sizes="(min-width: 1024px) 250px, 72vw" className="object-cover object-[center_38%] transition-transform duration-300 group-hover:scale-[1.01]" />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center bg-slate-100">
-            <CategoryIcon category={getProgramCategory(program)} size={28} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/12 to-transparent" />
-        {programHasPlayableVideo(program) ? <span className="absolute left-3 top-3 rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-black text-indigo-700">영상 포함</span> : null}
-        <div className="absolute inset-x-0 bottom-0 p-3">
-          <h3 className="line-clamp-2 text-[15px] font-black leading-5 text-white">{getProgramTitle(program)}</h3>
-          <p className="mt-1 line-clamp-1 text-[12px] font-semibold text-white/72">{getNewProgramMeta(program).join(' · ')}</p>
-        </div>
-      </div>
-    </button>
-  );
-}
-
 function ContinueSection({ items }: { items: ContinueItem[] }) {
-  if (items.length === 0) return null;
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] sm:p-5">
       <SectionHeader title="계속 사용하기" description="최근 작업을 바로 이어서 열 수 있습니다." />
       <div className="grid gap-2 lg:grid-cols-3">
         {items.map((item) => (
-          <Link key={item.id} href={item.href} className="flex min-h-[68px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
+          <Link data-continue-item={item.id} key={item.id} href={item.href} className="flex min-h-[82px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 py-2 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-white text-indigo-600 shadow-sm">
               {item.type === '수업' ? <BookOpen size={18} /> : item.type === 'SPOMOVE' ? <MonitorPlay size={18} /> : <FileText size={18} />}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-[11px] font-black text-indigo-600">{item.type}</span>
               <span className="mt-0.5 block truncate text-[13px] font-black text-slate-900">{item.title}</span>
+              <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{item.status}</span>
             </span>
-            <span className="shrink-0 text-[11px] font-bold text-slate-400">{item.time}</span>
+            <span className="shrink-0 text-right">
+              {item.time ? <span className="block text-[11px] font-bold text-slate-400">{item.time}</span> : null}
+              <span className="mt-1 block text-[11px] font-black text-indigo-600">{item.action}</span>
+            </span>
           </Link>
         ))}
       </div>
@@ -474,7 +464,7 @@ function ActivityPanel({
     href: string;
     Icon: typeof FileText;
   }> = [
-    { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
+    { label: '저장 안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
     { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
     { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
     { label: '수업 도구', value: undefined, href: '/spokedu-master/class-tools', Icon: Wrench },
@@ -484,7 +474,7 @@ function ActivityPanel({
     <section className="rounded-[20px] border border-slate-200 bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[18px] font-black text-slate-950">내 활동</h2>
+          <h2 className="text-[18px] font-black text-slate-950">내 활동·기록</h2>
           <p className="mt-1 text-[13px] font-semibold text-slate-500">안내문과 수업 운영 기록을 한곳에서 이어가세요.</p>
         </div>
         <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-indigo-50 px-3 text-[12px] font-black text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
@@ -493,7 +483,12 @@ function ActivityPanel({
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
         {activities.map(({ label, value, href, Icon }) => (
-          <Link key={label} href={href} className="flex min-h-[70px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
+          <Link
+            key={label}
+            href={href}
+            className="flex min-h-[70px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+            title={label === '학생 메모' ? '저장된 수업 기록 내 학생 메모 수' : undefined}
+          >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-white text-emerald-700 shadow-sm"><Icon size={17} /></span>
             <span>
               <span className="block text-[12px] font-bold text-slate-500">{label}</span>
@@ -508,32 +503,32 @@ function ActivityPanel({
   );
 }
 
-function HomeProgramPreview({ program, onClose }: { program: Program; onClose: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const parentCopy = program.lessonDetail?.parentNote?.trim() ?? '';
-
-  const copyParentNote = async () => {
-    await navigator.clipboard.writeText(parentCopy);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
-  };
-
+function HomeProgramPreview({
+  program,
+  autoplayVideo,
+  onPlaybackStarted,
+  onClose,
+}: {
+  program: Program;
+  autoplayVideo: boolean;
+  onPlaybackStarted: () => void;
+  onClose: () => void;
+}) {
   return (
-    <BottomSheet open title="수업 미리보기" onClose={onClose} size="document">
+    <BottomSheet open title="수업 미리보기" onClose={onClose} size="preview">
       <LessonPreviewContent
         program={program}
+        autoplayVideo={autoplayVideo}
+        onPlaybackStarted={onPlaybackStarted}
         footer={
-          <div className={parentCopy ? 'grid gap-2 sm:grid-cols-2' : ''}>
-            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+            <button type="button" onClick={onClose} className="hidden h-10 w-[96px] items-center justify-center rounded-[10px] border border-slate-200 px-4 text-[13px] font-black text-slate-700 sm:inline-flex">
+              닫기
+            </button>
+            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[160px]">
               <BookOpen className="h-4 w-4" />
               수업 자료 보기
             </Link>
-            {parentCopy ? (
-              <button type="button" onClick={copyParentNote} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
-                <Clipboard className="h-4 w-4" />
-                {copied ? '복사 완료' : '안내문 문구 복사'}
-              </button>
-            ) : null}
           </div>
         }
       />
@@ -543,44 +538,65 @@ function HomeProgramPreview({ program, onClose }: { program: Program; onClose: (
 
 function buildContinueItems(
   classRecords: ClassRecord[],
-  sessions: Session[],
+  recentProgramActivities: RecentProgramActivity[],
+  recentActivityOwnerId: string,
   savedReports: SavedExplanation[],
   programs: Program[],
 ) {
-  const items: ContinueItem[] = [];
   const programsById = new Map(programs.map((program) => [program.id, program]));
-  const recentRecord = [...classRecords]
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .find((record) => programsById.has(record.programId));
+  const recentProgram = selectLatestProgramResume(
+    recentProgramActivities,
+    classRecords.filter((record) => programsById.has(record.programId)),
+    recentActivityOwnerId,
+  );
+  const recentReport = [...savedReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
 
-  if (recentRecord) {
-    items.push({
-      id: `lesson-${recentRecord.id}`,
-      type: '수업',
-      title: recentRecord.programTitle || recentRecord.lessonTitle,
-      time: formatRelativeDate(recentRecord.date),
-      href: `/spokedu-master/library/${recentRecord.programId}`,
-    });
-  }
-  if (sessions[0]) {
-    items.push({
-      id: `spomove-${sessions[0].id}`,
+  return [
+    recentProgram
+      ? {
+          id: `lesson-${recentProgram.programId}`,
+          type: '수업',
+          title: recentProgram.programTitle,
+          status: recentProgram.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
+          action: '수업 열기',
+          time: formatRelativeDate(recentProgram.occurredAt),
+          href: recentProgram.resumeHref,
+        }
+      : {
+          id: 'lesson-empty',
+          type: '수업',
+          title: '최근 수업',
+          status: '아직 사용한 수업이 없습니다.',
+          action: '수업안 보기',
+          href: '/spokedu-master/library',
+        },
+    {
+      id: 'spomove-official',
       type: 'SPOMOVE',
-      title: sessions[0].drillName,
-      time: formatRelativeDate(sessions[0].date),
+      title: '공식 활동 9개',
+      status: '화면 활동을 선택해 바로 실행하세요.',
+      action: 'SPOMOVE 보기',
       href: '/spokedu-master/spomove',
-    });
-  }
-  if (savedReports[0]) {
-    items.push({
-      id: `report-${savedReports[0].id}`,
-      type: '안내문',
-      title: savedReports[0].programTitle,
-      time: formatRelativeDate(savedReports[0].createdAt),
-      href: `/spokedu-master/report?program=${savedReports[0].programId}`,
-    });
-  }
-  return items;
+    },
+    recentReport
+      ? {
+          id: `report-${recentReport.id}`,
+          type: '안내문',
+          title: recentReport.programTitle,
+          status: '이 기기에 저장된 안내문',
+          action: '안내문 열기',
+          time: formatRelativeDate(recentReport.createdAt),
+          href: `/spokedu-master/report?program=${recentReport.programId}`,
+        }
+      : {
+          id: 'report-empty',
+          type: '안내문',
+          title: '최근 저장 안내문',
+          status: '저장한 안내문이 없습니다.',
+          action: '안내문 만들기',
+          href: '/spokedu-master/report',
+        },
+  ] satisfies ContinueItem[];
 }
 
 export default function DashboardView() {
@@ -589,14 +605,18 @@ export default function DashboardView() {
     programsLoaded,
     programsError,
     classRecords,
-    sessions,
+    recentProgramActivities,
+    recordRecentProgramActivity,
     reloadPrograms,
   } = useMasterStore();
   const profile = useProfile();
+  const recentActivityOwnerId = getRecentActivityOwnerId(profile);
   const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [previewAutoplay, setPreviewAutoplay] = useState(false);
   const [savedReports, setSavedReports] = useState<SavedExplanation[]>([]);
   const [reportsLoaded, setReportsLoaded] = useState(false);
+  const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
 
   useEffect(() => {
     setMounted(true);
@@ -610,20 +630,68 @@ export default function DashboardView() {
     }
   }, []);
 
+  const weeklySelection = useMemo(
+    () =>
+      selectWeeklyRecommendationSlots(programs, {
+        isFallbackEligible: isHomeDisplayable,
+        compareFallback: (a, b) =>
+          Number(b.isHot) - Number(a.isHot) ||
+          getHomeReadiness(b) - getHomeReadiness(a) ||
+          Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
+          Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
+          Number(b.isNew) - Number(a.isNew) ||
+          getHomeSortOrder(a) - getHomeSortOrder(b),
+        normalizeTitle,
+      }),
+    [programs],
+  );
+  const weeklyPrograms = weeklySelection.programs;
   const programPool = useMemo(() => uniquePrograms(programs).sort(compareHomePrograms), [programs]);
-  const weeklyPrograms = useMemo(() => selectWeeklyPrograms(programPool), [programPool]);
   const weeklyIds = useMemo(() => new Set(weeklyPrograms.map((program) => program.id)), [weeklyPrograms]);
   const featuredSpomove = useMemo(() => selectFeaturedSpomove(), []);
-  const newPrograms = useMemo(() => {
-    const candidates = programPool.filter((program) => !weeklyIds.has(program.id) && isHomeDisplayable(program));
-    return [
-      ...candidates.filter((program) => program.isNew),
-      ...candidates.filter((program) => !program.isNew),
-    ].slice(0, 5);
-  }, [programPool, weeklyIds]);
+  const contextPrograms = useMemo(() => {
+    const tab = CONTEXT_PROGRAM_TABS.find((item) => item.key === contextTab) ?? CONTEXT_PROGRAM_TABS[0];
+    return selectContextPrograms(programs, tab.key, weeklyIds);
+  }, [contextTab, programs, weeklyIds]);
+  const contextProgramCounts = useMemo(
+    () =>
+      CONTEXT_PROGRAM_TABS.map((tab) => ({
+        ...tab,
+        count: selectContextPrograms(programs, tab.key, weeklyIds).length,
+      })),
+    [programs, weeklyIds],
+  );
+  const availableContextTabs = contextProgramCounts.filter((tab) => tab.count > 0);
+
+  useEffect(() => {
+    if (availableContextTabs.length === 1 && contextTab !== availableContextTabs[0].key) {
+      setContextTab(availableContextTabs[0].key);
+    }
+  }, [availableContextTabs, contextTab]);
+
+  const openPreview = (program: Program, autoplayVideo = false) => {
+    if (autoplayVideo) {
+      recordRecentProgramActivity({
+        programId: program.id,
+        programTitle: program.title,
+        action: 'video_started',
+        occurredAt: new Date().toISOString(),
+        resumeHref: `/spokedu-master/library/${program.id}?section=video`,
+      });
+    }
+    setPreviewAutoplay(autoplayVideo);
+    setSelectedProgram(program);
+  };
   const continueItems = useMemo(
-    () => buildContinueItems(classRecords, sessions, savedReports, programPool),
-    [classRecords, programPool, savedReports, sessions],
+    () =>
+      buildContinueItems(
+        classRecords,
+        recentProgramActivities,
+        recentActivityOwnerId,
+        savedReports,
+        programPool,
+      ),
+    [classRecords, programPool, recentActivityOwnerId, recentProgramActivities, savedReports],
   );
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
@@ -634,7 +702,10 @@ export default function DashboardView() {
     if (programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
       console.error('[SPOKEDU MASTER] Weekly recommendations could not be filled to four items.');
     }
-  }, [programPool.length, programsLoaded, weeklyPrograms.length]);
+    if (weeklySelection.slotConflicts.length > 0) {
+      console.error('[SPOKEDU MASTER] Conflicting explicit weekly slots.', weeklySelection.slotConflicts);
+    }
+  }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts]);
 
   if (!mounted || !programsLoaded) return <DashboardSkeleton />;
 
@@ -687,7 +758,7 @@ export default function DashboardView() {
           <div>
             <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-indigo-600"><Sparkles size={13} />Weekly selection</p>
             <h2 id="weekly-heading" className="text-[22px] font-black tracking-[-0.03em] text-slate-950 sm:text-[26px]">이번 주 추천 프로그램</h2>
-            <p className="mt-1 text-[13px] font-semibold text-slate-500">관리자 추천을 우선하고, 운영 준비도가 높은 수업으로 4개를 완성합니다.</p>
+            <p className="mt-1 text-[13px] font-semibold text-slate-500">이번 주 현장에서 바로 활용하기 좋은 수업 4개를 골랐습니다.</p>
           </div>
           {profile?.isAdmin ? (
             <Link href="/admin/spokedu-master/programs" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[12px] font-black text-indigo-600"><Settings2 size={14} />추천 관리</Link>
@@ -695,12 +766,18 @@ export default function DashboardView() {
         </div>
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
           {weeklyPrograms.map((program, index) => (
-            <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start md:w-auto md:max-w-none">
-              <WeeklyProgramCard program={program} index={index} onPreview={setSelectedProgram} />
+            <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+              <WeeklyProgramCard
+                program={program}
+                cornerLabel={`추천 ${String(index + 1).padStart(2, '0')}`}
+                onPreview={(item) => openPreview(item)}
+                onPlay={(item) => openPreview(item, true)}
+                priority={index < 2}
+              />
             </div>
           ))}
         </div>
-        {hasRecommendationDataIssue ? (
+        {hasRecommendationDataIssue && profile?.isAdmin ? (
           <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800" role="status">
             추천 가능한 수업 데이터가 4개보다 적습니다. 관리자에서 이미지와 수업 정보를 확인해 주세요.
           </p>
@@ -726,23 +803,56 @@ export default function DashboardView() {
         </div>
       </section>
 
-      {newPrograms.length > 0 ? (
-        <section data-dashboard-section="new-programs">
-          <SectionHeader
-            eyebrow="Explore more"
-            title="새로운 수업안"
-            description="추천 프로그램과 겹치지 않는 새 콘텐츠를 더 살펴보세요."
-            href="/spokedu-master/library"
-            action="라이브러리 보기"
-          />
-          <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:-mx-0 lg:grid lg:grid-cols-5 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-            {newPrograms.map((program) => (
-              <div key={program.id} className="w-[66vw] max-w-[270px] shrink-0 snap-start lg:w-auto lg:max-w-none">
-                <CompactProgramCard program={program} onPreview={setSelectedProgram} />
+      {availableContextTabs.length > 0 || profile?.isAdmin ? (
+      <section data-dashboard-section="context-programs">
+        <SectionHeader
+          title="현장 맞춤 프로그램"
+          description="교실 체육과 미취학 체육 프로그램을 바로 찾아보세요."
+          href="/spokedu-master/library"
+          action="라이브러리 보기"
+        />
+        <div className="mb-4 flex gap-2" role="tablist" aria-label="현장 맞춤 프로그램 유형">
+          {(availableContextTabs.length > 0 ? availableContextTabs : CONTEXT_PROGRAM_TABS).map((tab) => {
+            const active = contextTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setContextTab(tab.key)}
+                className="inline-flex min-h-11 items-center rounded-full px-4 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+                style={{
+                  background: active ? '#4f46e5' : '#ffffff',
+                  color: active ? '#ffffff' : '#475569',
+                  border: active ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                }}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+        {contextPrograms.length > 0 ? (
+          <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            {contextPrograms.map((program) => (
+              <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+                <WeeklyProgramCard
+                  program={program}
+                  cornerLabel={contextTab === 'classroom' ? '교실 체육' : '미취학 체육'}
+                  onPreview={setSelectedProgram}
+                  onPlay={(item) => openPreview(item, true)}
+                  scope="context"
+                />
               </div>
             ))}
           </div>
-        </section>
+        ) : profile?.isAdmin ? (
+          <p className="rounded-[14px] border border-slate-200 bg-white px-4 py-3 text-[13px] font-semibold text-slate-500">
+            교실체육 또는 미취학 태그가 저장된 프로그램을 확인해 주세요.
+          </p>
+        ) : null}
+      </section>
       ) : null}
 
       <ActivityPanel
@@ -752,7 +862,26 @@ export default function DashboardView() {
         profile={profile}
       />
 
-      {selectedProgram ? <HomeProgramPreview program={selectedProgram} onClose={() => setSelectedProgram(null)} /> : null}
+      {selectedProgram ? (
+        <HomeProgramPreview
+          program={selectedProgram}
+          autoplayVideo={previewAutoplay}
+          onPlaybackStarted={() => {
+            if (previewAutoplay) return;
+            recordRecentProgramActivity({
+              programId: selectedProgram.id,
+              programTitle: selectedProgram.title,
+              action: 'video_started',
+              occurredAt: new Date().toISOString(),
+              resumeHref: `/spokedu-master/library/${selectedProgram.id}?section=video`,
+            });
+          }}
+          onClose={() => {
+            setSelectedProgram(null);
+            setPreviewAutoplay(false);
+          }}
+        />
+      ) : null}
     </main>
   );
 }

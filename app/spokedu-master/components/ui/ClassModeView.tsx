@@ -157,13 +157,11 @@ export default function ClassModeView({ programId }: { programId: string }) {
       '기본 라운드 후 학생 반응에 맞춰 난이도를 조절합니다.',
     ]);
     const coachScript = cleanText(program.lessonDetail?.coachScript, '');
-    const fieldTips = cleanList(program.lessonDetail?.fieldTips, []);
     const spomoveId = program.lessonDetail?.relatedSpomoveIds?.[0];
     const spomoveDrill = drills.find((drill) => drill.id === spomoveId);
     const cards = [
       ...steps.map((text, index) => ({ type: 'step' as const, label: `${index + 1}단계`, text })),
       ...(coachScript ? [{ type: 'coach' as const, label: '코치 멘트', text: coachScript }] : []),
-      ...fieldTips.slice(0, 3).map((text) => ({ type: 'tip' as const, label: '현장 팁', text })),
     ];
 
     return {
@@ -208,7 +206,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
 
   const current = lesson.cards[stepIndex] ?? lesson.cards[0]!;
   const isLast = stepIndex === lesson.cards.length - 1;
-  const stepTone = current.type === 'coach' ? '#fbbf24' : current.type === 'tip' ? '#34d399' : '#a5b4fc';
+  const stepTone = current.type === 'coach' ? '#fbbf24' : '#a5b4fc';
 
   const finishClass = () => {
     timerStop();
@@ -350,8 +348,8 @@ export default function ClassModeView({ programId }: { programId: string }) {
             <div
               className="w-full max-w-3xl rounded-[28px] p-8 sm:p-10"
               style={{
-                background: current.type === 'coach' ? 'rgba(245,158,11,0.08)' : current.type === 'tip' ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.045)',
-                border: `1px solid ${stepExpired ? 'rgba(251,113,133,0.55)' : current.type === 'coach' ? 'rgba(245,158,11,0.22)' : current.type === 'tip' ? 'rgba(16,185,129,0.22)' : 'rgba(255,255,255,0.1)'}`,
+                background: current.type === 'coach' ? 'rgba(245,158,11,0.08)' : 'rgba(255,255,255,0.045)',
+                border: `1px solid ${stepExpired ? 'rgba(251,113,133,0.55)' : current.type === 'coach' ? 'rgba(245,158,11,0.22)' : 'rgba(255,255,255,0.1)'}`,
               }}
             >
               <p

@@ -83,19 +83,6 @@ function safeArray(value: string[] | null | undefined): string[] {
   return Array.isArray(value) ? value.filter(Boolean) : [];
 }
 
-function extractSection(source: string | null | undefined, label: string): string[] {
-  const lines = (source ?? '').split('\n');
-  const start = lines.findIndex((line) => line.trim() === `[${label}]`);
-  if (start < 0) return [];
-  const collected: string[] = [];
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i].trim();
-    if (/^\[[^\]]+\]$/.test(line)) break;
-    if (line) collected.push(line);
-  }
-  return collected;
-}
-
 function latestOverlay(rows: OverlayRow[]) {
   const map = new Map<number, OverlayRow>();
   for (const row of rows) {
@@ -178,7 +165,6 @@ async function loadPrograms() {
     const equipment = overlay?.equipment ? splitLines(overlay.equipment) : safeArray(row.equipment);
     const checklist = overlay?.checklist ? splitLines(overlay.checklist) : safeArray(row.check_list);
     const steps = overlay?.activity_method ? splitLines(overlay.activity_method) : safeArray(row.steps);
-    const safetyNotes = extractSection(overlay?.checklist, '안전 포인트');
     const target = normalizeMasterTarget(meta?.sm_grade ?? overlay?.group_size ?? '');
     const space = normalizeMasterSpace(meta?.sm_space ?? '');
     const duration = normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '';
@@ -215,7 +201,6 @@ async function loadPrograms() {
         equipment,
         checklist,
         steps,
-        safetyNotes,
         parentNote: (meta?.sm_parent_note ?? '').trim(),
         relatedSpomoveIds: safeArray(meta?.sm_related_spomove_ids),
         status,

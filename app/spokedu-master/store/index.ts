@@ -5,6 +5,12 @@ import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { hasMasterAccess } from '../lib/subscription';
+import {
+  getRecentActivityOwnerId,
+  type RecentProgramActivity,
+  type RecentProgramActivityInput,
+  upsertRecentProgramActivity,
+} from '../lib/recentProgramActivity';
 import type { CartItem, ClassRecord, ClassStudentRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 
@@ -62,6 +68,8 @@ interface MasterState {
   classRecords: ClassRecord[];
   saveClassRecord: (record: ClassRecord) => void;
   saveQuickClassRecord: (record: ClassRecord) => void;
+  recentProgramActivities: RecentProgramActivity[];
+  recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
   favorites: string[];
   toggleFavorite: (id: string) => void;
   cart: CartItem[];
@@ -130,6 +138,9 @@ function migrateMasterStore(persisted: unknown): Partial<MasterState> {
     lessons: hasBrokenText(state.lessons) ? defaultLessons : state.lessons ?? defaultLessons,
     students: hasBrokenText(state.students) ? defaultStudents : state.students ?? defaultStudents,
     classRecords: hasBrokenText(state.classRecords) ? [] : state.classRecords ?? [],
+    recentProgramActivities: hasBrokenText(state.recentProgramActivities)
+      ? []
+      : state.recentProgramActivities ?? [],
     notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
     cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
   };
@@ -363,6 +374,15 @@ export const useMasterStore = create<MasterState>()(
           ].slice(0, 50),
           operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
         })),
+      recentProgramActivities: [],
+      recordRecentProgramActivity: (activity) =>
+        set((state) => ({
+          recentProgramActivities: upsertRecentProgramActivity(
+            state.recentProgramActivities,
+            activity,
+            getRecentActivityOwnerId(state.profile),
+          ),
+        })),
       favorites: [],
       toggleFavorite: (id) => set((state) => ({ favorites: state.favorites.includes(id) ? state.favorites.filter((favorite) => favorite !== id) : [...state.favorites, id] })),
       cart: [],
@@ -391,7 +411,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 9,
+      version: 10,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
@@ -400,6 +420,7 @@ export const useMasterStore = create<MasterState>()(
         lessons: state.lessons,
         students: state.students,
         classRecords: state.classRecords,
+        recentProgramActivities: state.recentProgramActivities,
         favorites: state.favorites,
         cart: state.cart,
         notifications: state.notifications,

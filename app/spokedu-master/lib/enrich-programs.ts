@@ -1,5 +1,4 @@
 import { PROGRAMS as STATIC_PROGRAMS } from './data';
-import { pickBestHeroUrl } from './program-visual';
 import { applyTrustedReferenceVideo, resolveTrustedReferenceVideoUrl } from './verified-program-video';
 import type { Program } from '../types';
 
@@ -20,15 +19,16 @@ export function enrichProgramsWithStaticVisuals(programs: Program[]): Program[] 
 
     const staticHero = patch.lessonDetail?.heroImageUrl ?? patch.thumbnailUrl;
     const apiHero = program.lessonDetail?.heroImageUrl ?? program.thumbnailUrl;
-    const mergedHero = pickBestHeroUrl(apiHero, staticHero);
-    const mergedThumb = pickBestHeroUrl(program.thumbnailUrl, patch.thumbnailUrl, mergedHero);
+    const mergedHero = apiHero || staticHero;
+    const mergedThumb = program.thumbnailUrl || mergedHero || patch.thumbnailUrl;
 
-    const apiOrder = program.homeSortOrder ?? 9999;
-    const patchOrder = patch.homeSortOrder ?? 9999;
-    const mergedOrder = Math.min(apiOrder, patchOrder);
-
-    const detail = program.lessonDetail ?? patch.lessonDetail;
-    if (!detail) return program;
+    const detail = program.lessonDetail;
+    if (!detail) {
+      return {
+        ...program,
+        thumbnailUrl: mergedThumb,
+      };
+    }
 
     const mergedVideo =
       resolveTrustedReferenceVideoUrl(detail.videoUrl, program) ||
@@ -37,16 +37,10 @@ export function enrichProgramsWithStaticVisuals(programs: Program[]): Program[] 
     return applyTrustedReferenceVideo({
       ...program,
       thumbnailUrl: mergedThumb,
-      isHot: program.isHot || Boolean(patch.isHot),
-      homeSortOrder: mergedOrder,
       lessonDetail: {
         ...detail,
         heroImageUrl: mergedHero,
-        rules: detail.rules?.length ? detail.rules : patch.lessonDetail?.rules ?? detail.rules,
-        setupNotes: detail.setupNotes?.length ? detail.setupNotes : patch.lessonDetail?.setupNotes ?? [],
         videoUrl: mergedVideo,
-        objective: detail.objective || patch.lessonDetail?.objective || program.description,
-        developmentFocus: detail.developmentFocus || patch.lessonDetail?.developmentFocus || '',
       },
     });
   });

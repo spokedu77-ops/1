@@ -1,11 +1,12 @@
 'use client';
 
-import { BookOpen, CircleUserRound, ClipboardList, MessageSquare, Search, Tv, Wifi, WifiOff } from 'lucide-react';
+import { BookOpen, CircleUserRound, ClipboardList, Home, MessageSquare, Search, Tv, Wifi, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
 
 const APP_LINKS = [
+  { href: '/spokedu-master/dashboard', label: '홈', Icon: Home },
   { href: '/spokedu-master/library', label: '수업 라이브러리', Icon: BookOpen },
   { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Tv },
   { href: '/spokedu-master/report', label: '안내문', Icon: MessageSquare },

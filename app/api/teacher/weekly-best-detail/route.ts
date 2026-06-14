@@ -9,6 +9,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { formatWeeklyBestFeedbackText } from '@/app/lib/weeklyBestFeedback';
 
 export const runtime = 'nodejs';
 
@@ -19,6 +20,8 @@ type ReqBody = {
 type FeedbackRow = {
   feedback_fields: Record<string, unknown> | null;
   students_text: string | null;
+  file_url: string[] | null;
+  session_type: string | null;
 };
 
 export async function POST(req: Request) {
@@ -40,7 +43,7 @@ export async function POST(req: Request) {
     const svc = getServiceSupabase();
     const { data: wb, error: wbErr } = await svc
       .from('weekly_best')
-      .select('lesson_plan_session_id, feedback_session_id')
+      .select('lesson_plan_session_id, feedback_session_id, feedback_note')
       .eq('id', weeklyBestId)
       .maybeSingle();
 
@@ -56,7 +59,11 @@ export async function POST(req: Request) {
     const feedbackSessionId = wb.feedback_session_id as string | null;
 
     if (!lessonPlanSessionId && !feedbackSessionId) {
-      return NextResponse.json({ lessonPlanContent: null, feedback: null }, { status: 200 });
+      const noteOnly = typeof wb.feedback_note === 'string' ? wb.feedback_note.trim() : '';
+      return NextResponse.json(
+        { lessonPlanContent: null, feedback: noteOnly ? { displayText: noteOnly } : null },
+        { status: 200 },
+      );
     }
 
     const [lpRes, fbRes] = await Promise.all([
@@ -66,7 +73,7 @@ export async function POST(req: Request) {
       feedbackSessionId
         ? svc
             .from('sessions')
-            .select('feedback_fields, students_text')
+            .select('feedback_fields, students_text, file_url, session_type')
             .eq('id', feedbackSessionId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null as { message: string } | null }),
@@ -82,14 +89,22 @@ export async function POST(req: Request) {
     const lpData = lpRes && 'data' in lpRes ? lpRes.data : null;
     const fbData = fbRes && 'data' in fbRes ? (fbRes.data as FeedbackRow | null) : null;
 
+    const feedbackNote = typeof wb.feedback_note === 'string' ? wb.feedback_note : null;
+    const displayText = formatWeeklyBestFeedbackText(feedbackNote, fbData);
+
     return NextResponse.json(
       {
         lessonPlanContent: lpData && typeof lpData === 'object' && 'content' in lpData
           ? (lpData as { content: string | null }).content ?? null
           : null,
-        feedback: fbData ?? null,
+        feedback: fbData || feedbackNote
+          ? {
+              ...fbData,
+              displayText,
+            }
+          : null,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (err) {
     devLogger.error('[teacher/weekly-best-detail]', err);

@@ -42,7 +42,7 @@ export function getVideoEmbedUrl(url?: string, options?: { autoplay?: boolean })
   if (!youtubeId) return undefined;
   const autoplay = options?.autoplay ? '1' : '0';
   const mute = options?.autoplay ? '1' : '0';
-  return `https://www.youtube.com/embed/${youtubeId}?autoplay=${autoplay}&mute=${mute}&playsinline=1&rel=0&modestbranding=1`;
+  return `https://www.youtube.com/embed/${youtubeId}?autoplay=${autoplay}&mute=${mute}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1`;
 }
 
 export function isDirectVideoUrl(url?: string) {

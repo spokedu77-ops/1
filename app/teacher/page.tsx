@@ -15,6 +15,7 @@ interface WeeklyBest {
   lesson_plan_session_id: string | null;
   photo_urls: string[];
   feedback_session_id: string | null;
+  feedback_note: string | null;
   created_at: string;
 }
 
@@ -80,11 +81,11 @@ function TeacherWeeklyBestCard({
 
   useEffect(() => {
     if (!supabase || !isExpanded) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id) return;
+    if (!row.lesson_plan_session_id && !row.feedback_session_id && !row.feedback_note) return;
     (async () => {
       setDetailError(null);
       setDetailLesson(row.lesson_plan_session_id ? undefined : null);
-      setDetailFeedback(row.feedback_session_id ? undefined : null);
+      setDetailFeedback(row.feedback_session_id || row.feedback_note ? undefined : null);
 
       try {
         const res = await fetch('/api/teacher/weekly-best-detail', {
@@ -105,43 +106,15 @@ function TeacherWeeklyBestCard({
           | {
               lessonPlanContent?: string | null;
               feedback?: {
-                feedback_fields?: {
-                  main_activity?: string;
-                  strengths?: string;
-                  next_goals?: string;
-                  improvements?: string;
-                  condition_notes?: string;
-                };
-                students_text?: string;
+                displayText?: string | null;
               } | null;
             }
           | null;
 
         setDetailLesson(json?.lessonPlanContent ?? null);
-        const fb = (json?.feedback ?? null) as
-          | {
-              feedback_fields?: {
-                main_activity?: string;
-                strengths?: string;
-                next_goals?: string;
-                improvements?: string;
-                condition_notes?: string;
-              };
-              students_text?: string;
-            }
-          | null;
-
-        if (fb?.students_text) setDetailFeedback(fb.students_text);
-        else if (fb?.feedback_fields) {
-          const f = fb.feedback_fields;
-          const parts: string[] = [];
-          if (f.main_activity) parts.push(`✅ 주요 활동\n${f.main_activity}`);
-          if (f.strengths) parts.push(`✅ 강점\n${f.strengths}`);
-          if (f.improvements) parts.push(`✅ 개선점\n${f.improvements}`);
-          if (f.next_goals) parts.push(`✅ 다음 목표\n${f.next_goals}`);
-          if (f.condition_notes) parts.push(`✅ 특이사항 및 시작/종료 시간\n${f.condition_notes}`);
-          setDetailFeedback(parts.join('\n\n'));
-        } else setDetailFeedback(null);
+        const displayText =
+          typeof json?.feedback?.displayText === 'string' ? json.feedback.displayText.trim() : '';
+        setDetailFeedback(displayText || null);
       } catch (err) {
         devLogger.error('[teacher weekly-best detail fetch]', err);
         setDetailError('네트워크 오류로 불러오지 못했습니다.');
@@ -149,7 +122,7 @@ function TeacherWeeklyBestCard({
         setDetailFeedback(null);
       }
     })();
-  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id]);
+  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id, row.feedback_note]);
 
   return (
     <div className="bg-white rounded-[28px] transition-all duration-300 border overflow-hidden shadow-sm hover:border-amber-100 border-amber-100/80">
@@ -200,7 +173,7 @@ function TeacherWeeklyBestCard({
             <div className="text-[14px] text-slate-600 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl border border-slate-100 min-h-[60px]">
               {detailError
                 ? detailError
-                : row.feedback_session_id
+                : row.feedback_session_id || row.feedback_note
                   ? (detailFeedback === undefined ? '로딩 중...' : (detailFeedback ?? '— 없음'))
                   : '— 없음'}
             </div>

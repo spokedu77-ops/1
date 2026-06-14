@@ -7,6 +7,7 @@ type WeeklyBestPayload = {
   lesson_plan_session_id?: string | null;
   photo_urls?: string[];
   feedback_session_id?: string | null;
+  feedback_note?: string | null;
 };
 
 export async function POST(request: Request) {
@@ -29,6 +30,10 @@ export async function POST(request: Request) {
     feedback_session_id: typeof body.feedback_session_id === 'string' && body.feedback_session_id.trim()
       ? body.feedback_session_id.trim()
       : null,
+    feedback_note:
+      typeof body.feedback_note === 'string' && body.feedback_note.trim()
+        ? body.feedback_note.trim()
+        : null,
   };
 
   const { data, error } = await supabase
@@ -63,6 +68,12 @@ export async function PATCH(request: Request) {
     update.feedback_session_id =
       typeof body?.feedback_session_id === 'string' && body.feedback_session_id.trim()
         ? body.feedback_session_id.trim()
+        : null;
+  }
+  if ('feedback_note' in (body ?? {})) {
+    update.feedback_note =
+      typeof body?.feedback_note === 'string' && body.feedback_note.trim()
+        ? body.feedback_note.trim()
         : null;
   }
 

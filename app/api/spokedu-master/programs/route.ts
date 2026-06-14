@@ -14,6 +14,7 @@ import {
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
+import { parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -194,23 +195,6 @@ function extractLabeledSection(lines: string[], label: string) {
   return values;
 }
 
-function extractVariationsFromActivityTip(source: string | null | undefined): string[] {
-  const lines = (source ?? '').split('\n');
-  const application = extractLabeledSection(lines, '응용 방법');
-  if (application.length > 0) return application;
-
-  const easier = extractLabeledSection(lines, '난이도 낮추기');
-  const harder = extractLabeledSection(lines, '난이도 높이기');
-  const combined: string[] = [];
-  for (const line of easier) {
-    combined.push(line.startsWith('난이도 낮추기') ? line : `난이도 낮추기: ${line}`);
-  }
-  for (const line of harder) {
-    combined.push(line.startsWith('난이도 높이기') ? line : `난이도 높이기: ${line}`);
-  }
-  return combined;
-}
-
 
 function cleanFunstickProgram(program: Program): Program {
   return program;
@@ -301,7 +285,7 @@ function normalizeProgramForMaster(program: Program, index: number): Program {
     steps: program.steps.filter(Boolean),
     equipment: program.equipment.filter(Boolean),
     thumbnailUrl,
-    tags: [...new Set(program.tags.concat(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : []))],
+    tags: [...new Set(program.tags)],
     lessonDetail: program.lessonDetail
       ? {
           ...program.lessonDetail,
@@ -440,16 +424,11 @@ export async function GET() {
     const steps = overlay?.activity_method
       ? String(overlay.activity_method).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.steps ?? []).filter(Boolean);
-    const activityTipSource = overlay?.activity_tip ?? row.expert_tip ?? '';
-    const coachScript = activityTipSource.trim() || '';
-    const variations = extractVariationsFromActivityTip(activityTipSource);
+    const variations = parseVariationMethod(overlay?.activity_tip);
     const checklistLines = overlay?.checklist
       ? String(overlay.checklist).split('\n').map((item) => item.trim()).filter(Boolean)
       : (row.check_list ?? []).filter(Boolean);
-    const fieldTips = checklistLines.filter((item) => !/^\[[^\]]+\]$/.test(item));
-    const setupNotes = extractLabeledSection(checklistLines, '세팅 방법');
     const briefingNotes = extractLabeledSection(checklistLines, '사전 교육');
-    const safetyNotes = extractLabeledSection(checklistLines, '안전 포인트');
 
     const smColors = meta?.sm_colors;
     const colors: [string, string, string, string] =
@@ -457,16 +436,9 @@ export async function GET() {
         ? [smColors[0], smColors[1], smColors[2], smColors[3]]
         : categoryToColors(categoryName);
 
-    const proTags: string[] = [
-      ...(Array.isArray(overlay?.function_types) && overlay.function_types.length > 0
-        ? overlay.function_types
-        : overlay?.function_type ? [overlay.function_type] : []),
-      ...(overlay?.main_theme ? [overlay.main_theme] : []),
-      ...(overlay?.group_size ? [overlay.group_size] : []),
-    ];
     const smTags = meta?.sm_tags ?? [];
     const relatedSpomoveIds = normalizeSpomoveIds(meta?.sm_related_spomove_ids ?? []);
-    const tags = [...new Set([...proTags, ...smTags, ...(relatedSpomoveIds.length > 0 ? ['SPOMOVE'] : [])])];
+    const tags = [...new Set(smTags.map((tag) => tag.trim()).filter(Boolean))];
     const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
     const fallbackThumbnailUrl = buildThumbnailUrl(videoUrl);
     const legacyImageFallback =
@@ -502,11 +474,11 @@ export async function GET() {
         recommendedPlayers: overlay?.group_size ?? '',
         objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
-        coachScript: meta?.sm_coach_script ?? coachScript,
+        coachScript: meta?.sm_coach_script ?? '',
         parentNote: meta?.sm_parent_note ?? '',
-        fieldTips,
+        fieldTips: [],
         variations,
-        safetyNotes,
+        safetyNotes: [],
         relatedSpomoveIds,
         videoUrl,
         heroImageUrl,
@@ -514,7 +486,7 @@ export async function GET() {
         galleryImageUrls,
         briefingNotes,
         rules: steps,
-        setupNotes,
+        setupNotes: [],
       },
     };
 

@@ -15,7 +15,7 @@ export function BottomSheet({
   title: string;
   children: ReactNode;
   onClose: () => void;
-  size?: 'default' | 'document';
+  size?: 'default' | 'document' | 'preview';
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -68,7 +68,9 @@ export function BottomSheet({
   if (!open) return null;
 
   const panelClassName =
-    size === 'document'
+    size === 'preview'
+      ? 'relative max-h-[88dvh] w-full max-w-[1160px] overflow-y-auto rounded-t-[16px] p-4 shadow-2xl outline-none sm:rounded-[16px] sm:p-5'
+      : size === 'document'
       ? 'relative max-h-[92dvh] w-full max-w-[1360px] overflow-y-auto rounded-t-[14px] p-4 shadow-2xl outline-none sm:rounded-[14px] sm:p-6'
       : 'relative max-h-[88dvh] w-full max-w-[720px] overflow-y-auto rounded-t-[22px] p-5 shadow-2xl outline-none sm:rounded-[22px] sm:p-6';
 
@@ -84,7 +86,7 @@ export function BottomSheet({
         aria-labelledby={titleId}
         tabIndex={-1}
       >
-        <div className="mb-5 flex items-center justify-between gap-3">
+        <div className={size === 'preview' ? 'mb-3 flex items-center justify-between gap-3' : 'mb-5 flex items-center justify-between gap-3'}>
           <h2 id={titleId} className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}>
             {title}
           </h2>

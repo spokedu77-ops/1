@@ -94,39 +94,3 @@ export function getLessonTime(program: Program) {
   const value = displayMasterDuration(program.duration);
   return isLessonPlaceholder(value) ? '' : value;
 }
-
-export function getLessonScript(program: Program) {
-  const detail = program.lessonDetail;
-  const script = cleanText(detail?.coachScript, '') || cleanText(program.description, '');
-  return isLessonPlaceholder(script) ? '' : script;
-}
-
-export function getLessonEquipment(program: Program) {
-  return program.equipment.map((item) => item.trim()).filter((item) => item && !isLessonPlaceholder(item));
-}
-
-export function getLessonRules(program: Program) {
-  const detail = program.lessonDetail;
-  const rules = detail?.rules?.length ? detail.rules : program.steps;
-  return rules.filter((item) => item.trim() && !isLessonPlaceholder(item));
-}
-
-export function getLessonVariations(program: Program) {
-  return (program.lessonDetail?.variations ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
-}
-
-export function getLessonBriefingNotes(program: Program) {
-  return (program.lessonDetail?.briefingNotes ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
-}
-
-export function getLessonSetupNotes(program: Program) {
-  return (program.lessonDetail?.setupNotes ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
-}
-
-export function getLessonSafetyNotes(program: Program) {
-  return (program.lessonDetail?.safetyNotes ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
-}
-
-export function getLessonFieldTips(program: Program) {
-  return (program.lessonDetail?.fieldTips ?? []).filter((item) => item.trim() && !isLessonPlaceholder(item));
-}

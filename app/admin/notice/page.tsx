@@ -10,6 +10,17 @@ import { uploadToStorageSigned, getPublicUrl } from '@/app/lib/admin/assets/stor
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { parseTemplateToFields, isFieldValid } from '@/app/lib/feedbackValidation';
 import type { FeedbackFields } from '@/app/lib/feedbackValidation';
+import { sessionFileDisplayName } from '@/app/lib/feedbackValidation';
+import {
+  CENTER_SESSION_TYPE_VALUES,
+  isCenterSessionType,
+} from '@/app/admin/classes-v2/lib/sessionTypeCategory';
+import {
+  formatFeedbackFieldsForDisplay,
+  formatWeeklyBestFeedbackText,
+  isCenterFeedbackEmpty,
+} from '@/app/lib/weeklyBestFeedback';
+import { WeeklyBestSessionPicker } from '@/app/admin/notice/WeeklyBestSessionPicker';
 
 const CATEGORIES = [
   { id: 'ALL', label: '전체' },
@@ -79,8 +90,32 @@ export interface WeeklyBest {
   lesson_plan_session_id: string | null;
   photo_urls: string[];
   feedback_session_id: string | null;
+  feedback_note: string | null;
   created_at: string;
 }
+
+type WbFeedbackSession = {
+  id: string;
+  title: string;
+  start_at: string;
+  created_by: string;
+  session_type?: string | null;
+  file_url?: string[] | null;
+  feedback_fields?: FeedbackFields;
+  students_text?: string;
+  users?: { name?: string } | null;
+};
+
+type WbFeedbackScope = 'private' | 'center';
+
+type WbLessonSession = {
+  id: string;
+  title: string;
+  start_at: string;
+  created_by: string;
+  lesson_plans?: { content?: string }[] | { content?: string } | null;
+  users?: { name?: string } | null;
+};
 
 type MainTab = 'notice' | 'weekly_best';
 
@@ -142,7 +177,7 @@ function WeeklyBestCard({
           <section>
             <h4 className="text-[10px] font-black text-slate-400 uppercase mb-2">베스트 피드백</h4>
             <div className="text-sm text-slate-700 whitespace-pre-wrap bg-slate-50 p-4 rounded-xl min-h-[80px]">
-              {row.feedback_session_id ? (detailFeedback ?? '로딩 중...') : '— 없음'}
+              {row.feedback_session_id || row.feedback_note ? (detailFeedback ?? '로딩 중...') : '— 없음'}
             </div>
           </section>
           <div className="flex justify-end gap-2 flex-wrap">
@@ -195,19 +230,20 @@ function WeeklyBestList({
     if (!supabase || !expandedId) return;
     const row = list.find((r) => r.id === expandedId);
     if (!row) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id) return;
+    if (!row.lesson_plan_session_id && !row.feedback_session_id && !row.feedback_note) return;
     (async () => {
       const [lpRes, fbRes] = await Promise.all([
         row.lesson_plan_session_id
           ? supabase.from('lesson_plans').select('content').eq('session_id', row.lesson_plan_session_id).maybeSingle()
           : Promise.resolve({ data: null }),
         row.feedback_session_id
-          ? supabase.from('sessions').select('feedback_fields, students_text').eq('id', row.feedback_session_id).maybeSingle()
+          ? supabase.from('sessions').select('feedback_fields, students_text, file_url, session_type').eq('id', row.feedback_session_id).maybeSingle()
           : Promise.resolve({ data: null }),
       ]);
       setDetailLesson(lpRes.data?.content ?? null);
-      const fb = fbRes.data as { feedback_fields?: FeedbackFields; students_text?: string } | null;
-      setDetailFeedback(fb?.students_text ?? (fb?.feedback_fields ? formatFeedbackFields(fb.feedback_fields) : null));
+      setDetailFeedback(
+        formatWeeklyBestFeedbackText(row.feedback_note, fbRes.data as WbFeedbackSession | null),
+      );
     })();
   }, [supabase, expandedId, list]);
 
@@ -245,13 +281,49 @@ function WeeklyBestList({
 }
 
 function formatFeedbackFields(f: FeedbackFields): string {
-  const parts: string[] = [];
-  if (f.main_activity) parts.push(`✅ 주요 활동\n${f.main_activity}`);
-  if (f.strengths) parts.push(`✅ 강점\n${f.strengths}`);
-  if (f.improvements) parts.push(`✅ 개선점\n${f.improvements}`);
-  if (f.next_goals) parts.push(`✅ 다음 목표\n${f.next_goals}`);
-  if (f.condition_notes) parts.push(`✅ 특이사항 및 시작/종료 시간\n${f.condition_notes}`);
-  return parts.join('\n\n');
+  return formatFeedbackFieldsForDisplay(f);
+}
+
+function getLessonPlanContent(s: WbLessonSession): string {
+  const raw = s.lesson_plans;
+  const lp = Array.isArray(raw) ? raw[0] : raw;
+  return lp && typeof (lp as { content?: string }).content === 'string'
+    ? (lp as { content: string }).content
+    : '';
+}
+
+function getFeedbackPreviewFull(s: WbFeedbackSession): string {
+  const fileUrls = Array.isArray(s.file_url)
+    ? s.file_url.filter((u): u is string => typeof u === 'string' && !!u.trim())
+    : [];
+  if (isCenterSessionType(s.session_type)) {
+    if (fileUrls.length === 0) {
+      return '첨부 없음 — 아래 메모 입력란에 직접 작성할 수 있습니다.';
+    }
+    const ff = s.feedback_fields ?? {};
+    const names = fileUrls.map((url, i) =>
+      sessionFileDisplayName(url, i, ff.center_document_names ?? null),
+    );
+    return `센터 피드백 첨부 (${fileUrls.length}개)\n\n${names.map((n) => `· ${n}`).join('\n')}`;
+  }
+  const text = s.students_text ?? (s.feedback_fields ? formatFeedbackFields(s.feedback_fields) : '');
+  return text || '— 내용 없음';
+}
+
+function getFeedbackSessionPreview(s: WbFeedbackSession): string {
+  const fileUrls = Array.isArray(s.file_url)
+    ? s.file_url.filter((u): u is string => typeof u === 'string' && !!u.trim())
+    : [];
+  if (isCenterSessionType(s.session_type)) {
+    if (fileUrls.length > 0) {
+      const ff = s.feedback_fields ?? {};
+      return fileUrls
+        .map((url, i) => sessionFileDisplayName(url, i, ff.center_document_names ?? null))
+        .join(', ');
+    }
+    return '센터 피드백 미작성';
+  }
+  return s.students_text ?? (s.feedback_fields ? formatFeedbackFields(s.feedback_fields) : '');
 }
 
 function WeeklyBestCardWithState({
@@ -271,17 +343,18 @@ function WeeklyBestCardWithState({
 
   useEffect(() => {
     if (!supabase || !isExpanded) return;
-    if (!row.lesson_plan_session_id && !row.feedback_session_id) return;
+    if (!row.lesson_plan_session_id && !row.feedback_session_id && !row.feedback_note) return;
     (async () => {
       const [lpRes, fbRes] = await Promise.all([
         row.lesson_plan_session_id ? supabase.from('lesson_plans').select('content').eq('session_id', row.lesson_plan_session_id).maybeSingle() : Promise.resolve({ data: null }),
-        row.feedback_session_id ? supabase.from('sessions').select('feedback_fields, students_text').eq('id', row.feedback_session_id).maybeSingle() : Promise.resolve({ data: null }),
+        row.feedback_session_id ? supabase.from('sessions').select('feedback_fields, students_text, file_url, session_type').eq('id', row.feedback_session_id).maybeSingle() : Promise.resolve({ data: null }),
       ]);
       setDetailLesson(lpRes.data?.content ?? null);
-      const fb = fbRes.data as { feedback_fields?: FeedbackFields; students_text?: string } | null;
-      setDetailFeedback(fb?.students_text ?? (fb?.feedback_fields ? formatFeedbackFields(fb.feedback_fields) : null));
+      setDetailFeedback(
+        formatWeeklyBestFeedbackText(row.feedback_note, fbRes.data as WbFeedbackSession | null),
+      );
     })();
-  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id]);
+  }, [supabase, isExpanded, row.id, row.lesson_plan_session_id, row.feedback_session_id, row.feedback_note]);
 
   return (
     <WeeklyBestCard
@@ -326,11 +399,13 @@ export default function NoticePage() {
     lesson_plan_session_id: string;
     photo_urls: string[];
     feedback_session_id: string;
-  }>({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '' });
+    feedback_note: string;
+  }>({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '', feedback_note: '' });
+  const [wbFeedbackScope, setWbFeedbackScope] = useState<WbFeedbackScope>('private');
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([]);
   const [wbCoachFilter, setWbCoachFilter] = useState('all');
-  const [lessonSessions, setLessonSessions] = useState<{ id: string; title: string; start_at: string; created_by: string; lesson_plans?: { content?: string }[]; users?: { name?: string } | null }[]>([]);
-  const [feedbackSessions, setFeedbackSessions] = useState<{ id: string; title: string; start_at: string; created_by: string; feedback_fields?: FeedbackFields; students_text?: string; users?: { name?: string } | null }[]>([]);
+  const [lessonSessions, setLessonSessions] = useState<WbLessonSession[]>([]);
+  const [feedbackSessions, setFeedbackSessions] = useState<WbFeedbackSession[]>([]);
   const [wbStepLoading, setWbStepLoading] = useState(false);
   const [wbSaving, setWbSaving] = useState(false);
   const wbPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -406,6 +481,11 @@ export default function NoticePage() {
     return { start, end };
   }, [wizardOpenDate]);
 
+  const wbDateRangeLabel = useMemo(() => {
+    const { start, end } = getWeeklyBestDateRange();
+    return `${start.toLocaleDateString('ko-KR')} ~ ${end.toLocaleDateString('ko-KR')}`;
+  }, [getWeeklyBestDateRange]);
+
   const fetchLessonCandidates = useCallback(async () => {
     if (!supabase) return;
     setWbStepLoading(true);
@@ -425,7 +505,7 @@ export default function NoticePage() {
         const content = Array.isArray(lp) ? lp[0]?.content : (lp as { content?: string } | null)?.content;
         return !!content;
       });
-      setLessonSessions(withPlan as typeof lessonSessions);
+      setLessonSessions(withPlan as WbLessonSession[]);
     } catch (err) {
       devLogger.error('[notice] fetch lesson candidates error:', err);
       toast.error(err instanceof Error ? err.message : '수업안 후보를 불러오지 못했습니다.');
@@ -441,25 +521,32 @@ export default function NoticePage() {
       const { start, end } = getWeeklyBestDateRange();
       let q = supabase
         .from('sessions')
-        .select('id, title, start_at, created_by, feedback_fields, students_text, users!created_by(id, name)')
+        .select('id, title, start_at, created_by, feedback_fields, students_text, file_url, session_type, users!created_by(id, name)')
         .gte('start_at', start.toISOString())
         .lte('start_at', end.toISOString())
         .order('start_at', { ascending: false });
       if (wbCoachFilter !== 'all') q = q.eq('created_by', wbCoachFilter);
+      if (wbFeedbackScope === 'center') {
+        q = q.in('session_type', [...CENTER_SESSION_TYPE_VALUES]);
+      } else {
+        q = q.in('session_type', ['one_day', 'one_day_private', 'regular_private']);
+      }
       const { data, error } = await q;
       if (error) throw error;
-      const withFeedback = ((data ?? []) as { feedback_fields?: FeedbackFields; students_text?: string }[]).filter((s) => {
+      const rows = (data ?? []) as WbFeedbackSession[];
+      const withFeedback = rows.filter((s) => {
+        if (wbFeedbackScope === 'center') return true;
         const fields = s.feedback_fields ?? parseTemplateToFields(s.students_text || '');
         return isFieldValid(fields.main_activity) || isFieldValid(fields.strengths) || isFieldValid(fields.next_goals);
       });
-      setFeedbackSessions(withFeedback as typeof feedbackSessions);
+      setFeedbackSessions(withFeedback);
     } catch (err) {
       devLogger.error('[notice] fetch feedback candidates error:', err);
       toast.error(err instanceof Error ? err.message : '피드백 후보를 불러오지 못했습니다.');
     } finally {
       setWbStepLoading(false);
     }
-  }, [supabase, getWeeklyBestDateRange, wbCoachFilter]);
+  }, [supabase, getWeeklyBestDateRange, wbCoachFilter, wbFeedbackScope]);
 
   useEffect(() => {
     if (showWeeklyBestWizard && wizardStep === 1 && coaches.length === 0 && supabase) {
@@ -487,6 +574,12 @@ export default function NoticePage() {
     if (showWeeklyBestWizard && wizardStep === 4) fetchFeedbackCandidates();
   }, [showWeeklyBestWizard, wizardStep, fetchFeedbackCandidates]);
 
+  const selectedFeedbackSession = useMemo(
+    () => feedbackSessions.find((s) => s.id === wbForm.feedback_session_id) ?? null,
+    [feedbackSessions, wbForm.feedback_session_id],
+  );
+  const showCenterFeedbackNoteInput = wbFeedbackScope === 'center' && isCenterFeedbackEmpty(selectedFeedbackSession);
+
   const openNoticeForm = () => {
     setShowWriteChoiceModal(false);
     setEditingId(null);
@@ -499,17 +592,19 @@ export default function NoticePage() {
     setEditingWeeklyBestId(null);
     setWizardOpenDate(new Date());
     setWizardStep(1);
-    setWbForm({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '' });
+    setWbFeedbackScope('private');
+    setWbForm({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '', feedback_note: '' });
     setShowWeeklyBestWizard(true);
   };
 
   const openWeeklyBestEdit = async (row: WeeklyBest) => {
     setShowWriteChoiceModal(false);
     let anchor = new Date();
+    let feedbackScope: WbFeedbackScope = 'private';
     if (supabase) {
       const sid = row.lesson_plan_session_id || row.feedback_session_id;
       if (sid) {
-        const { data } = await supabase.from('sessions').select('start_at').eq('id', sid).maybeSingle();
+        const { data } = await supabase.from('sessions').select('start_at, session_type').eq('id', sid).maybeSingle();
         if (data?.start_at) {
           const d = new Date(data.start_at);
           anchor = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -522,16 +617,28 @@ export default function NoticePage() {
         const c = new Date(row.created_at);
         anchor = new Date(c.getFullYear(), c.getMonth(), c.getDate());
       }
+      if (row.feedback_session_id) {
+        const { data: fbSession } = await supabase
+          .from('sessions')
+          .select('session_type')
+          .eq('id', row.feedback_session_id)
+          .maybeSingle();
+        if (fbSession && isCenterSessionType(fbSession.session_type)) {
+          feedbackScope = 'center';
+        }
+      }
     }
     setWizardOpenDate(anchor);
     setEditingWeeklyBestId(row.id);
     setWizardStep(1);
+    setWbFeedbackScope(feedbackScope);
     setWbForm({
       title: row.title,
       content: row.content ?? '',
       lesson_plan_session_id: row.lesson_plan_session_id ?? '',
       photo_urls: [...(row.photo_urls ?? [])],
       feedback_session_id: row.feedback_session_id ?? '',
+      feedback_note: row.feedback_note ?? '',
     });
     setWbCoachFilter('all');
     setShowWeeklyBestWizard(true);
@@ -579,6 +686,10 @@ export default function NoticePage() {
         lesson_plan_session_id: wbForm.lesson_plan_session_id || null,
         photo_urls: wbForm.photo_urls,
         feedback_session_id: wbForm.feedback_session_id || null,
+        feedback_note:
+          showCenterFeedbackNoteInput && wbForm.feedback_note.trim()
+            ? wbForm.feedback_note.trim()
+            : null,
       };
       const res = await fetch('/api/admin/weekly-best', {
         method: editingWeeklyBestId ? 'PATCH' : 'POST',
@@ -1080,7 +1191,7 @@ export default function NoticePage() {
 
       {showWeeklyBestWizard && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-md">
-          <div className="bg-white w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col">
+          <div className={`bg-white w-full max-h-[90vh] overflow-y-auto rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col ${wizardStep === 2 || wizardStep === 4 ? 'max-w-2xl' : 'max-w-lg'}`}>
             <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
               <h3 className="text-lg font-black text-slate-900">
                 {editingWeeklyBestId ? '주간베스트 수정' : '주간베스트 작성'} ({wizardStep}/4)
@@ -1118,44 +1229,23 @@ export default function NoticePage() {
               )}
               {wizardStep === 2 && (
                 <>
-                  <p className="text-[11px] text-slate-500">작성 시점 기준 -7일 ~ -1일 세션만 후보에 표시됩니다.</p>
-                  <select value={wbCoachFilter} onChange={(e) => setWbCoachFilter(e.target.value)} className="w-full min-h-[44px] px-4 bg-slate-50 rounded-xl font-bold text-slate-800 border-none outline-none">
-                    <option value="all">전체 선생님</option>
-                    {coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  {wbStepLoading ? (
-                    <div className="py-8 text-center text-slate-400 font-bold">불러오는 중...</div>
-                  ) : (
-                    <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                      <button
-                        type="button"
-                        onClick={() => setWbForm((p) => ({ ...p, lesson_plan_session_id: '' }))}
-                        className={`w-full p-4 rounded-xl text-left border-2 transition-all ${!wbForm.lesson_plan_session_id ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}
-                      >
-                        <p className="font-bold text-slate-600">없음</p>
-                        <p className="text-[11px] text-slate-400">선택하지 않고 넘어갑니다</p>
-                      </button>
-                      {lessonSessions.map((s) => {
-                        const raw = s.lesson_plans;
-                        const lp = Array.isArray(raw) ? raw[0] : raw;
-                        const content = lp && typeof (lp as { content?: string }).content === 'string' ? (lp as { content: string }).content : '';
-                        const selected = wbForm.lesson_plan_session_id === s.id;
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setWbForm((p) => ({ ...p, lesson_plan_session_id: s.id }))}
-                            className={`w-full p-4 rounded-xl text-left border-2 transition-all ${selected ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}
-                          >
-                            <p className="font-bold text-slate-800 truncate">{s.title}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">{new Date(s.start_at).toLocaleDateString('ko-KR')} · {(s.users as { name?: string })?.name ?? ''}</p>
-                            {content && <p className="text-xs text-slate-600 mt-2 line-clamp-2">{content.replace(/\n/g, ' ')}</p>}
-                          </button>
-                        );
-                      })}
-                      {lessonSessions.length === 0 && <p className="text-slate-400 text-sm py-2">해당 기간에 수업안이 없습니다.</p>}
-                    </div>
-                  )}
+                  <p className="text-[11px] text-slate-500">작성 시점 기준 -7일 ~ -1일 세션 중 수업안이 있는 것만 표시됩니다.</p>
+                  <WeeklyBestSessionPicker
+                    items={lessonSessions}
+                    selectedId={wbForm.lesson_plan_session_id}
+                    onSelect={(id) => setWbForm((p) => ({ ...p, lesson_plan_session_id: id }))}
+                    loading={wbStepLoading}
+                    emptyMessage="해당 기간에 수업안이 없습니다."
+                    coaches={coaches}
+                    coachFilter={wbCoachFilter}
+                    onCoachFilterChange={setWbCoachFilter}
+                    anchorDate={wizardOpenDate}
+                    onAnchorDateChange={setWizardOpenDate}
+                    dateRangeLabel={wbDateRangeLabel}
+                    getSearchText={(s) => `${s.title} ${(s.users as { name?: string })?.name ?? ''} ${getLessonPlanContent(s)}`}
+                    getSummary={(s) => getLessonPlanContent(s)}
+                    renderPreview={(item) => (item ? getLessonPlanContent(item) || '— 내용 없음' : null)}
+                  />
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setWizardStep(1)} className="flex-1 min-h-[48px] bg-slate-100 text-slate-700 rounded-2xl font-bold">이전</button>
                     <button type="button" onClick={() => setWizardStep(3)} className="flex-1 min-h-[48px] bg-slate-900 text-white rounded-2xl font-bold">다음: 베스트 포토</button>
@@ -1203,40 +1293,84 @@ export default function NoticePage() {
               )}
               {wizardStep === 4 && (
                 <>
-                  <p className="text-[11px] text-slate-500">작성 시점 기준 -7일 ~ -1일 세션 중 피드백이 있는 것만 표시됩니다.</p>
-                  <select value={wbCoachFilter} onChange={(e) => setWbCoachFilter(e.target.value)} className="w-full min-h-[44px] px-4 bg-slate-50 rounded-xl font-bold text-slate-800 border-none outline-none">
-                    <option value="all">전체 선생님</option>
-                    {coaches.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                  {wbStepLoading ? (
-                    <div className="py-8 text-center text-slate-400 font-bold">불러오는 중...</div>
-                  ) : (
-                    <div className="space-y-2 max-h-[280px] overflow-y-auto">
-                      <button
-                        type="button"
-                        onClick={() => setWbForm((p) => ({ ...p, feedback_session_id: '' }))}
-                        className={`w-full p-4 rounded-xl text-left border-2 transition-all ${!wbForm.feedback_session_id ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}
-                      >
-                        <p className="font-bold text-slate-600">없음</p>
-                        <p className="text-[11px] text-slate-400">선택하지 않고 넘어갑니다</p>
-                      </button>
-                      {feedbackSessions.map((s) => {
-                        const selected = wbForm.feedback_session_id === s.id;
-                        const text = s.students_text ?? (s.feedback_fields ? formatFeedbackFields(s.feedback_fields) : '');
-                        return (
-                          <button
-                            key={s.id}
-                            type="button"
-                            onClick={() => setWbForm((p) => ({ ...p, feedback_session_id: s.id }))}
-                            className={`w-full p-4 rounded-xl text-left border-2 transition-all ${selected ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300'}`}
-                          >
-                            <p className="font-bold text-slate-800 truncate">{s.title}</p>
-                            <p className="text-[11px] text-slate-500 mt-1">{new Date(s.start_at).toLocaleDateString('ko-KR')} · {(s.users as { name?: string })?.name ?? ''}</p>
-                            {text && <p className="text-xs text-slate-600 mt-2 line-clamp-2">{text.replace(/\n/g, ' ')}</p>}
-                          </button>
-                        );
-                      })}
-                      {feedbackSessions.length === 0 && <p className="text-slate-400 text-sm py-2">해당 기간에 피드백이 없습니다.</p>}
+                  <p className="text-[11px] text-slate-500">
+                    {wbFeedbackScope === 'center'
+                      ? '작성 시점 기준 -7일 ~ -1일 센터 수업 세션이 표시됩니다. 첨부가 없으면 직접 메모를 입력할 수 있습니다.'
+                      : '작성 시점 기준 -7일 ~ -1일 세션 중 피드백이 있는 것만 표시됩니다.'}
+                  </p>
+                  <div className="flex gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWbFeedbackScope('private');
+                        setWbForm((p) => ({ ...p, feedback_session_id: '', feedback_note: '' }));
+                      }}
+                      className={`flex-1 min-h-[40px] px-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                        wbFeedbackScope === 'private' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      과외 피드백
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWbFeedbackScope('center');
+                        setWbForm((p) => ({ ...p, feedback_session_id: '', feedback_note: '' }));
+                      }}
+                      className={`flex-1 min-h-[40px] px-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                        wbFeedbackScope === 'center' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      센터 피드백
+                    </button>
+                  </div>
+                  <WeeklyBestSessionPicker
+                    key={wbFeedbackScope}
+                    items={feedbackSessions}
+                    selectedId={wbForm.feedback_session_id}
+                    onSelect={(id) => {
+                      const session = feedbackSessions.find((s) => s.id === id) ?? null;
+                      const centerEmpty = isCenterFeedbackEmpty(session);
+                      setWbForm((p) => ({
+                        ...p,
+                        feedback_session_id: id,
+                        feedback_note: centerEmpty ? p.feedback_note : '',
+                      }));
+                    }}
+                    loading={wbStepLoading}
+                    emptyMessage={wbFeedbackScope === 'center' ? '해당 기간에 센터 수업이 없습니다.' : '해당 기간에 피드백이 없습니다.'}
+                    coaches={coaches}
+                    coachFilter={wbCoachFilter}
+                    onCoachFilterChange={setWbCoachFilter}
+                    anchorDate={wizardOpenDate}
+                    onAnchorDateChange={setWizardOpenDate}
+                    dateRangeLabel={wbDateRangeLabel}
+                    getSearchText={(s) => `${s.title} ${(s.users as { name?: string })?.name ?? ''} ${getFeedbackSessionPreview(s)}`}
+                    getSummary={(s) => getFeedbackSessionPreview(s)}
+                    renderPreview={(item) => (item ? getFeedbackPreviewFull(item) : null)}
+                    renderBadge={(item) => {
+                      if (wbFeedbackScope !== 'center') return null;
+                      const centerEmpty = isCenterFeedbackEmpty(item);
+                      return (
+                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
+                          centerEmpty
+                            ? 'text-amber-700 bg-amber-50 border-amber-100'
+                            : 'text-indigo-700 bg-indigo-50 border-indigo-100'
+                        }`}>
+                          {centerEmpty ? '미작성' : '첨부'}
+                        </span>
+                      );
+                    }}
+                  />
+                  {showCenterFeedbackNoteInput && (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-bold text-amber-700">선택한 센터 수업에 첨부된 피드백이 없습니다. 직접 메모를 입력할 수 있습니다.</p>
+                      <textarea
+                        placeholder="센터 피드백 메모 (선택)"
+                        value={wbForm.feedback_note}
+                        onChange={(e) => setWbForm((p) => ({ ...p, feedback_note: e.target.value }))}
+                        className="w-full min-h-[100px] px-4 py-3 bg-amber-50/60 rounded-2xl border border-amber-100 outline-none text-sm text-slate-700 placeholder-slate-400 resize-none"
+                      />
                     </div>
                   )}
                   <div className="flex gap-2">

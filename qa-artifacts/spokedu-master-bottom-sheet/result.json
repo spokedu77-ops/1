@@ -1,0 +1,44 @@
+{
+  "preview": {
+    "width": 1160,
+    "height": 624.046875,
+    "maxWidthOk": true,
+    "scrollLocked": true,
+    "closeFocused": true,
+    "escapeClosed": true,
+    "focusRestored": true
+  },
+  "document": {
+    "width": 1360,
+    "height": 772.03125,
+    "maxWidthOk": true,
+    "scrollLocked": true,
+    "closeFocused": true,
+    "escapeClosed": true,
+    "focusRestored": true
+  },
+  "default": {
+    "width": 366,
+    "height": 326,
+    "maxWidthOk": true,
+    "scrollLocked": true,
+    "closeFocused": true,
+    "escapeClosed": true,
+    "focusRestored": true
+  },
+  "sharedBehavior": {
+    "escape": true,
+    "focusRestore": true,
+    "scrollLock": true,
+    "focusOnOpen": true
+  },
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 ()"
+  ],
+  "httpErrors": [
+    {
+      "status": 404,
+      "url": "https://img.youtube.com/vi/yrfoL2OC5K4/maxresdefault.jpg"
+    }
+  ]
+}

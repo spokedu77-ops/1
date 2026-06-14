@@ -27,6 +27,7 @@ import {
   parseTaggedValues,
 } from '../lib/lessonDisplay';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
+import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { resolveProgramHero } from '../lib/program-media';
 import {
   parseMasterSpaces,
@@ -126,7 +127,7 @@ function getHeroImage(program: Program) {
 }
 
 function getParentCopy(program: Program) {
-  return program.lessonDetail?.parentNote?.trim() ?? '';
+  return buildLessonDisplayModel(program).parentNote;
 }
 
 function getSearchText(program: Program) {
@@ -310,6 +311,7 @@ function ProgramModal({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const locked = program.isPro && !isPro;
   const parentCopy = getParentCopy(program);
 
@@ -323,6 +325,15 @@ function ProgramModal({
     <BottomSheet open title="빠른 미리보기" onClose={onClose} size="document">
       <LessonPreviewContent
         program={program}
+        onPlaybackStarted={() => {
+          recordRecentProgramActivity({
+            programId: program.id,
+            programTitle: program.title,
+            action: 'video_started',
+            occurredAt: new Date().toISOString(),
+            resumeHref: `/spokedu-master/library/${program.id}?section=video`,
+          });
+        }}
         badges={
           <>
             {locked ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">PRO 전용</span> : null}
