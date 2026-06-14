@@ -17,8 +17,12 @@ import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
   parseVariationMethod,
-  serializeVariationMethod,
 } from '@/app/spokedu-master/lib/lessonContentContract';
+import {
+  buildAdminProgramSavePayload,
+  resolveAdminBriefingNotes,
+  resolveAdminVariationMethod,
+} from '@/app/spokedu-master/lib/adminProgramEditorContract';
 import { useMasterStore } from '@/app/spokedu-master/store';
 import { toast } from 'sonner';
 import {
@@ -67,6 +71,8 @@ type MetaRow = {
   sm_hero_image_url: string | null;
   sm_setup_image_url: string | null;
   sm_gallery_image_urls: string[] | null;
+  sm_briefing_notes: string | null;
+  sm_variation_method: string | null;
 };
 
 type OverlayRow = {
@@ -77,7 +83,6 @@ type OverlayRow = {
   checklist: string | null;
   activity_method: string | null;
   activity_tip: string | null;
-  function_types: string[] | null;
   main_theme: string | null;
   group_size: string | null;
   is_published: boolean | null;
@@ -218,33 +223,8 @@ function updateTaggedOptions(tags: string, prefix: string, nextOptions: string[]
   return listToCsvValue([...otherTags, ...nextOptions.map((option) => taggedValue(prefix, option))]);
 }
 
-function imageUrlList(value: string) {
-  return value
-    .split(/[\n,]/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function listToCsv(value: string[] | null | undefined) {
   return (value ?? []).filter(Boolean).join(', ');
-}
-
-function sectionText(label: string, value: string) {
-  const lines = splitLines(value);
-  return lines.length ? [`[${label}]`, ...lines].join('\n') : '';
-}
-
-function extractSection(source: string | null | undefined, label: string) {
-  const lines = (source ?? '').split('\n');
-  const start = lines.findIndex((line) => line.trim() === `[${label}]`);
-  if (start < 0) return '';
-  const collected: string[] = [];
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i].trim();
-    if (/^\[[^\]]+\]$/.test(line)) break;
-    if (line) collected.push(line);
-  }
-  return collected.join('\n');
 }
 
 type QualityReport = {
@@ -402,7 +382,8 @@ function getItemQuality(item: ProgramItem): QualityReport {
     duration: Boolean(item.effective.duration),
     equipment: item.effective.equipment.length > 0,
     steps: item.effective.steps.length > 0,
-    variations: parseVariationMethod(overlay?.activity_tip).length > 0,
+    variations: Boolean(meta?.sm_variation_method?.trim())
+      || parseVariationMethod(overlay?.activity_tip).length > 0,
     parentNote: Boolean(item.effective.parentNote),
     spomove: item.effective.relatedSpomoveIds.length > 0,
     homeExposure: item.effective.publicationStatus === 'featured' || Boolean(meta?.sm_is_hot),
@@ -461,7 +442,7 @@ function toForm(item: ProgramItem): EditForm {
 
   return {
     title: overlay?.title || item.curriculum.title,
-    coachScript: meta?.sm_coach_script || activityTip || '',
+    coachScript: meta?.sm_coach_script || '',
     description: meta?.sm_development_focus || '',
     objective: meta?.sm_objective || '',
     target: serializeMasterTags(parseMasterTargets(meta?.sm_grade || '')),
@@ -475,9 +456,9 @@ function toForm(item: ProgramItem): EditForm {
     setupImageUrl: meta?.sm_setup_image_url || '',
     galleryImageUrls: (meta?.sm_gallery_image_urls ?? []).join('\n'),
     equipment: overlay?.equipment || joinLines(item.curriculum.equipment),
-    briefingNotes: extractSection(checklist, '사전 교육'),
+    briefingNotes: resolveAdminBriefingNotes(meta?.sm_briefing_notes, checklist),
     steps: overlay?.activity_method || joinLines(item.curriculum.steps),
-    variations: parseVariationMethod(activityTip).join('\n'),
+    variations: resolveAdminVariationMethod(meta?.sm_variation_method, activityTip),
     parentNote: meta?.sm_parent_note || '',
     relatedSpomoveIds: listToCsv(meta?.sm_related_spomove_ids),
     isNew: Boolean(meta?.sm_is_new),
@@ -1025,48 +1006,39 @@ export default function AdminSmProgramsPage() {
     if (!selected || !form) return;
     setSaving(true);
     try {
-      const checklist = sectionText('사전 교육', form.briefingNotes);
-      const activityTip = serializeVariationMethod(form.variations);
-
       const res = await fetch(`/api/admin/spokedu-master/programs?id=${selected.curriculum.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          meta: {
-            sm_tags: csvToList(form.tags),
-            sm_theme: normalizeLessonTheme(form.theme) || null,
-            sm_grade: serializeMasterTags(parseMasterTargets(form.target)) || null,
-            sm_space: serializeMasterTags(parseMasterSpaces(form.space)) || null,
-            sm_duration: normalizeMasterDuration(form.duration),
-            sm_is_pro: form.dashboardVisible,
-            sm_is_new: form.isNew,
-            sm_objective: form.objective.trim() || null,
-            sm_development_focus: normalizeLessonTheme(form.theme) || null,
-            sm_coach_script: form.coachScript.trim() || null,
-            sm_parent_note: form.parentNote.trim() || null,
-            sm_related_spomove_ids: csvToList(form.relatedSpomoveIds),
-            sm_thumbnail_url: form.thumbnailUrl.trim() || null,
-            sm_hero_image_url: form.heroImageUrl.trim() || null,
-            sm_setup_image_url: form.setupImageUrl.trim() || null,
-            sm_gallery_image_urls: imageUrlList(form.galleryImageUrls),
-          },
-          overlay: {
-            title: form.title.trim() || selected.curriculum.title,
-            video_url: form.videoUrl.trim() || null,
-            equipment: form.equipment.trim() || null,
-            checklist: checklist || null,
-            activity_method: form.steps.trim() || null,
-            activity_tip: activityTip || null,
-            function_types: csvToList(form.tags),
-            main_theme: normalizeLessonTheme(form.theme) || null,
-            group_size: serializeMasterTags(parseMasterTargets(form.target)) || null,
-            is_published: form.publicationStatus !== 'hidden',
-          },
+        body: JSON.stringify(buildAdminProgramSavePayload({
+          title: form.title,
+          fallbackTitle: selected.curriculum.title,
+          videoUrl: form.videoUrl,
+          equipment: form.equipment,
+          activityMethod: form.steps,
           publicationStatus: form.publicationStatus,
-        }),
+          theme: normalizeLessonTheme(form.theme),
+          target: serializeMasterTags(parseMasterTargets(form.target)),
+          tags: csvToList(form.tags),
+          space: serializeMasterTags(parseMasterSpaces(form.space)),
+          duration: normalizeMasterDuration(form.duration),
+          setupImageUrl: form.setupImageUrl,
+          coachScript: form.coachScript,
+          briefingNotes: form.briefingNotes,
+          variationMethod: form.variations,
+        })),
       });
-      const json = await res.json() as ProgramsResponse & { error?: string };
-      if (!res.ok) throw new Error(json.error ?? '저장에 실패했습니다.');
+      const json = await res.json() as ProgramsResponse & {
+        ok?: boolean;
+        partialSave?: boolean;
+        failedStage?: string;
+        error?: string;
+      };
+      if (!res.ok || json.ok !== true) {
+        const message = json.partialSave
+          ? `일부 항목 저장 실패${json.failedStage ? ` (${json.failedStage})` : ''}. 다시 저장해 주세요.`
+          : json.error ?? '저장에 실패했습니다.';
+        throw new Error(message);
+      }
       setItems(json.data ?? []);
       const next = (json.data ?? []).find((item) => item.curriculum.id === selected.curriculum.id);
       if (next) {

@@ -15,6 +15,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import { BlockTextPreview } from './_components/blocks/BlockTextPreview';
 import { LazyNoteEditor } from './_components/blocks/LazyNoteEditor';
 import type { NoteEditorEnterContext } from './_components/NoteEditor';
 import { NoteRichEditorStyles } from './_components/NoteRichEditorStyles';
@@ -1033,7 +1034,8 @@ function BlockContent({
       onEditorBackspace === false ? undefined : (onEditorBackspace ?? onEmptyBackspace);
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
     const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
-    editorStayMountedRef.current = true;
+    const shouldMountEditor = isFocused || (autoFocusSignal ?? 0) > 0;
+    if (shouldMountEditor) editorStayMountedRef.current = true;
     const editorSharedProps = {
       content: block.content,
       field,
@@ -1106,7 +1108,18 @@ function BlockContent({
           onFocusBlock?.();
         }}
       >
-        <LazyNoteEditor {...editorSharedProps} />
+        {shouldMountEditor ? (
+          <LazyNoteEditor {...editorSharedProps} />
+        ) : (
+          <BlockTextPreview
+            content={block.content}
+            field={field}
+            text={text}
+            className={textClassName}
+            placeholder={placeholder}
+            onActivate={() => onFocusBlock?.()}
+          />
+        )}
       </div>
     );
   };
@@ -3868,10 +3881,10 @@ export default function AdminNotePageContent() {
 
   const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content } : b)));
-    setLoadingState('saving');
     const timers = saveTimersRef.current;
     if (timers[block.id]) clearTimeout(timers[block.id]);
     timers[block.id] = window.setTimeout(async () => {
+      setLoadingState('saving');
       try {
         const latest = blocksRef.current.find((b) => b.id === block.id);
         const contentToSave = latest?.content ?? content;
@@ -4241,12 +4254,6 @@ export default function AdminNotePageContent() {
       triggerSave();
     } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
   }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor, handleInsertBlockInParent, registerCreatedBlockUndo, handleCreateSubPage]);
-
-  const handleBlockListMouseMove = useCallback((e: React.MouseEvent) => {
-    const row = (e.target as HTMLElement).closest('[data-note-block-row]');
-    const id = row?.getAttribute('data-block-id') ?? null;
-    setHoveredBlockId((prev) => (prev === id ? prev : id));
-  }, []);
 
   const handleBlockListMouseLeave = useCallback(() => {
     setHoveredBlockId(null);
@@ -5790,7 +5797,6 @@ export default function AdminNotePageContent() {
                         <div
                           data-note-block-list
                           className="relative overflow-visible"
-                          onMouseMove={handleBlockListMouseMove}
                         >
                           {rootBlocks.map((block) => (
                             <Fragment key={block.id}>

@@ -541,20 +541,16 @@ function PickerTab({ students, usingSample }: { students: StudentProfile[]; usin
   );
 }
 
-function scoreOf(student: StudentProfile) {
-  return student.skills.reduce((sum, skill) => sum + skill.value, 0);
-}
-
 function TeamsTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
   const [teams, setTeams] = useState<{ a: StudentProfile[]; b: StudentProfile[] } | null>(null);
   const [nameA, setNameA] = useState('A팀');
   const [nameB, setNameB] = useState('B팀');
 
   const balance = useCallback(() => {
-    const sorted = [...students].sort((a, b) => scoreOf(b) - scoreOf(a));
+    const shuffled = shuffleItems(students);
     const a: StudentProfile[] = [];
     const b: StudentProfile[] = [];
-    sorted.forEach((student, index) => (index % 2 === 0 ? a : b).push(student));
+    shuffled.forEach((student, index) => (index % 2 === 0 ? a : b).push(student));
     setTeams({ a, b });
   }, [students]);
 
@@ -563,11 +559,6 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
     const mid = Math.ceil(shuffled.length / 2);
     setTeams({ a: shuffled.slice(0, mid), b: shuffled.slice(mid) });
   }, [students]);
-
-  const aScore = teams ? teams.a.reduce((sum, student) => sum + scoreOf(student), 0) : 0;
-  const bScore = teams ? teams.b.reduce((sum, student) => sum + scoreOf(student), 0) : 0;
-  const total = aScore + bScore;
-  const aPct = total === 0 ? 50 : Math.round((aScore / total) * 100);
 
   return (
     <div className="flex h-full flex-col items-center gap-5 overflow-y-auto px-6 py-8">
@@ -606,11 +597,8 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
             );
           })}
           <div className="flex items-center gap-3 rounded-[14px] px-4 py-3 sm:col-span-2" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <span className="shrink-0 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>팀 균형</span>
-            <div className="h-2.5 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
-              <div className="h-full bg-red-500 transition-all" style={{ width: `${aPct}%` }} />
-            </div>
-            <span className="shrink-0 text-[11px] font-bold" style={{ color: 'var(--spm-t2)' }}>{aScore} : {bScore}</span>
+            <span className="shrink-0 text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>인원 균등 배분</span>
+            <span className="flex-1 text-right text-[11px] font-bold" style={{ color: 'var(--spm-t2)' }}>{teams.a.length}명 : {teams.b.length}명</span>
           </div>
         </div>
       ) : (

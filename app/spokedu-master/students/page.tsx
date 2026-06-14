@@ -1,26 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { Award, BookOpen, Check, ChevronRight, ClipboardList, FileText, Link2, Plus, Shuffle, Trash2, TrendingUp, TriangleAlert, Users } from 'lucide-react';
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, ShieldAlert, Shuffle, Trash2, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { createParentShareToken } from '../lib/subscription';
+import { getStudentRecordFacts } from '../lib/studentRecordFacts';
 import { useMasterStore } from '../store';
-
-function SkillBar({ label, value, delta }: { label: string; value: number; delta: string }) {
-  const stalled = delta === '정체' || delta.startsWith('-');
-  return (
-    <div>
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-[13px] font-bold" style={{ color: 'var(--spm-t)' }}>{label}</span>
-        <span className="text-[11px] font-black" style={{ color: stalled ? 'var(--spm-amb)' : 'var(--spm-grn)' }}>{delta}</span>
-      </div>
-      <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}>
-        <div className="h-full rounded-full" style={{ width: `${value}%`, background: stalled ? 'var(--spm-amb)' : 'linear-gradient(90deg,#6366f1,#10b981)' }} />
-      </div>
-    </div>
-  );
-}
 
 export default function StudentsPage() {
   const students = useMasterStore((state) => state.students);
@@ -28,8 +13,6 @@ export default function StudentsPage() {
   const addStudent = useMasterStore((state) => state.addStudent);
   const removeStudent = useMasterStore((state) => state.removeStudent);
   const [selectedId, setSelectedId] = useState<string | null>(students[0]?.id ?? null);
-  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
-  const [parentShareTokens, setParentShareTokens] = useState<Record<string, string>>({});
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
@@ -51,24 +34,16 @@ export default function StudentsPage() {
     setNewMeta('');
     setAddOpen(false);
   };
-  const selectedRecordCount = selected ? records.filter((record) => record.students.some((student) => student.studentId === selected.id)).length : 0;
+  const selectedFacts = selected ? getStudentRecordFacts(records, selected.id) : null;
+  const selectedRecords = selected
+    ? records
+      .flatMap((record) => {
+        const student = record.students.find((item) => item.studentId === selected.id);
+        return student ? [{ record, student }] : [];
+      })
+      .sort((a, b) => new Date(b.record.date).getTime() - new Date(a.record.date).getTime())
+    : [];
   const recordedStudentCount = students.filter((student) => records.some((record) => record.students.some((item) => item.studentId === student.id))).length;
-  const copyParentLink = async (studentId: string, token: string) => {
-    const url = `${window.location.origin}/spokedu-master/parent/${studentId}?token=${token}`;
-    await navigator.clipboard.writeText(url).catch(() => undefined);
-    setCopiedLinkId(studentId);
-    window.setTimeout(() => setCopiedLinkId(null), 2000);
-  };
-
-  useLayoutEffect(() => {
-    if (!selected) return;
-    setParentShareTokens((prev) => {
-      if (prev[selected.id]) return prev;
-      return { ...prev, [selected.id]: createParentShareToken(selected.id) };
-    });
-  }, [selected]);
-
-  const selectedParentToken = selected ? parentShareTokens[selected.id] ?? '' : '';
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -128,13 +103,12 @@ export default function StudentsPage() {
           {students.map((student) => (
             <div key={student.id} className="flex items-center gap-2 rounded-[15px]" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
               <button type="button" onClick={() => setSelectedId(student.id)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left">
-                <span className="relative grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
                   {student.name.slice(0, 1)}
-                  {student.risk ? <span className="absolute right-0 top-0 h-3 w-3 rounded-full" style={{ background: 'var(--spm-red)', border: '2px solid var(--spm-s2)' }} /> : null}
                 </span>
                 <span className="min-w-0 flex-1">
                   <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
-                  <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.group} / {student.level}</span>
+                  <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[student.group, student.meta].filter(Boolean).join(' / ')}</span>
                 </span>
                 <ChevronRight size={16} color="var(--spm-t3)" />
               </button>
@@ -152,24 +126,19 @@ export default function StudentsPage() {
                 <div>
                   <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{selected.group}</p>
                   <h2 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
-                  <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.level}</p>
-                  <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-grn)' }}>누적 기록 {selectedRecordCount}건</p>
+                  {selected.meta ? <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.meta}</p> : null}
+                  <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-grn)' }}>연결된 수업 기록 {selectedFacts?.recordCount ?? 0}건</p>
                 </div>
                 <span className="grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
-                  <TrendingUp size={20} color="var(--spm-grn)" />
+                  <ClipboardList size={20} color="var(--spm-grn)" />
                 </span>
               </div>
-              {selected.risk ? (
-                <div className="mt-5 flex gap-2 rounded-[13px] p-3" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
-                  <TriangleAlert size={16} className="mt-0.5 shrink-0" />
-                  <p className="text-[12px] font-bold leading-5">{selected.risk}</p>
-                </div>
-              ) : null}
-              <div className="mt-5 grid grid-cols-3 gap-2">
+              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
                 {[
-                  ['수업', `${selected.classes}회`],
-                  ['출석률', `${selected.attendance}%`],
-                  ['연속', `${selected.streak}주`],
+                  ['수업 기록', `${selectedFacts?.recordCount ?? 0}건`],
+                  ['출석 체크', `${selectedFacts?.presentCount ?? 0}건`],
+                  ['결석 체크', `${selectedFacts?.absentCount ?? 0}건`],
+                  ['집중 관찰', `${selectedFacts?.focusedCount ?? 0}건`],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
                     <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
@@ -181,30 +150,37 @@ export default function StudentsPage() {
 
             <div className="space-y-5 border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
               <div>
-                <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>동작 성장</h3>
-                {selected.skills.length > 0 ? (
-                  <div className="space-y-4">{selected.skills.map((skill) => <SkillBar key={skill.label} label={skill.label} value={skill.value} delta={skill.delta} />)}</div>
+                <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>기록된 기능 태그</h3>
+                {selectedFacts?.skillTags.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedFacts.skillTags.map((skill) => (
+                      <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>{skill}</span>
+                    ))}
+                  </div>
                 ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 누적된 동작 기록이 없습니다.</p>
+                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 기록된 기능 태그가 없습니다.</p>
                 )}
               </div>
               <div>
                 <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                  <Award size={17} color="var(--spm-amb)" />
-                  배지
+                  <CalendarDays size={17} color="var(--spm-acc)" />
+                  최근 수업 기록
                 </h3>
-                {selected.badges.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">{selected.badges.map((badge) => <span key={badge} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.13)', color: 'var(--spm-amb)' }}>{badge}</span>)}</div>
+                {selectedRecords.length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedRecords.slice(0, 8).map(({ record, student }) => (
+                      <div key={record.id} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                        <p className="font-black" style={{ color: 'var(--spm-t)' }}>{record.programTitle}</p>
+                        <p className="mt-1">
+                          {new Date(record.date).toLocaleDateString('ko-KR')} · {student.attendance === 'present' ? '출석' : student.attendance === 'absent' ? '결석' : '미확인'}
+                          {student.focused ? ' · 집중 관찰' : ''}
+                        </p>
+                        {student.memo ? <p className="mt-2">교사 메모: {student.memo}</p> : null}
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>수업 기록이 쌓이면 배지가 표시됩니다.</p>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 이력</h3>
-                {selected.history.length > 0 ? (
-                  <div className="space-y-2">{selected.history.map((item) => <p key={item} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{item}</p>)}</div>
-                ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 수업 이력이 없습니다.</p>
+                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 수업 기록이 없습니다.</p>
                 )}
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -222,10 +198,13 @@ export default function StudentsPage() {
                 </Link>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => void copyParentLink(selected.id, selectedParentToken)} className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: copiedLinkId === selected.id ? 'rgba(16,185,129,0.13)' : 'var(--spm-s3)', color: copiedLinkId === selected.id ? 'var(--spm-grn)' : 'var(--spm-t)' }}>
-                  {copiedLinkId === selected.id ? <Check size={14} /> : <Link2 size={14} />}
-                  {copiedLinkId === selected.id ? '복사됨' : '보호자 링크 복사'}
-                </button>
+                <div className="flex min-h-10 items-center gap-2 rounded-[11px] px-3 py-2 text-[11px] font-bold" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--spm-t2)' }}>
+                  <ShieldAlert size={14} className="shrink-0" color="var(--spm-acc)" />
+                  <span>
+                    <strong className="block" style={{ color: 'var(--spm-t)' }}>학부모 공유 기능 준비 중</strong>
+                    <span className="mt-0.5 block">학생 정보 보호를 위해 안전한 공유 방식으로 개편하고 있습니다.</span>
+                  </span>
+                </div>
                 <Link href="/spokedu-master/library" className="flex h-10 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <BookOpen size={14} />
                   다음 수업안

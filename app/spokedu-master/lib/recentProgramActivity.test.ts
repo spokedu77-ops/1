@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { ClassRecord } from '../types';
 import {
   buildProgramResumeHref,
+  flushPendingRecentProgramActivities,
   getRecentActivityOwner,
   getRecentActivityOwnerId,
   migrateRecentActivitiesToOwner,
@@ -138,6 +139,17 @@ describe('recent program activity', () => {
     expect(selectUserRecentProgramActivities(migrated, 'id:user-a')).toHaveLength(0);
     expect(selectUserRecentProgramActivities(migrated, 'anonymous')).toHaveLength(1);
     expect(selectUserRecentProgramActivities(migrated, 'email:b@example.com')).toHaveLength(1);
+  });
+
+  it('flushes one pending activity once the owner is resolved', () => {
+    const owner = getRecentActivityOwner({ id: 'user-a', email: 'a@example.com' } as never);
+    const flushed = flushPendingRecentProgramActivities([], [input], owner!);
+    expect(selectUserRecentProgramActivities(flushed, 'id:user-a')).toEqual([
+      expect.objectContaining({
+        programId: input.programId,
+        action: 'video_started',
+      }),
+    ]);
   });
 
   it('drops missing programs and refreshes titles from the current public program list', () => {

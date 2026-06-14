@@ -379,7 +379,11 @@ export function NoteEditor({
     const pending = pendingChangeRef.current;
     if (!pending) return;
     pendingChangeRef.current = null;
-    callbacksRef.current.onChange(pending);
+    const currentEditor = editorRef.current;
+    const html = currentEditor && !(currentEditor as { isDestroyed?: boolean }).isDestroyed
+      ? currentEditor.getHTML()
+      : pending.html;
+    callbacksRef.current.onChange({ text: pending.text, html });
   }, []);
 
   callbacksRef.current.flushPendingChange = flushPendingChange;
@@ -392,21 +396,26 @@ export function NoteEditor({
     }, 220);
   }, [flushPendingChange]);
 
+  const toolbarNotifyRafRef = useRef<number | null>(null);
   const notifyFormatToolbar = useCallback((currentEditor: Editor) => {
-    if (shouldSuppressCrossFormatToolbar()) {
-      callbacksRef.current.onHideFormatToolbar?.();
-      return;
-    }
-    const position = resolveToolbarPosition(currentEditor);
-    if (!position) {
-      callbacksRef.current.onHideFormatToolbar?.();
-      return;
-    }
-    callbacksRef.current.onShowFormatToolbar?.(
-      (mark) => applyEditorMark(currentEditor, mark),
-      (style) => applyEditorTextStyle(currentEditor, style),
-      position,
-    );
+    if (toolbarNotifyRafRef.current !== null) return;
+    toolbarNotifyRafRef.current = window.requestAnimationFrame(() => {
+      toolbarNotifyRafRef.current = null;
+      if (shouldSuppressCrossFormatToolbar()) {
+        callbacksRef.current.onHideFormatToolbar?.();
+        return;
+      }
+      const position = resolveToolbarPosition(currentEditor);
+      if (!position) {
+        callbacksRef.current.onHideFormatToolbar?.();
+        return;
+      }
+      callbacksRef.current.onShowFormatToolbar?.(
+        (mark) => applyEditorMark(currentEditor, mark),
+        (style) => applyEditorTextStyle(currentEditor, style),
+        position,
+      );
+    });
   }, []);
 
   const extensions = useMemo(
@@ -642,7 +651,7 @@ export function NoteEditor({
       const nextText = currentEditor.getText();
       const slashMatch = nextText.match(/^\/([^\n]*)$/);
       callbacksRef.current.onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');
-      scheduleChange({ text: nextText, html: currentEditor.getHTML() });
+      scheduleChange({ text: nextText, html: '' });
     },
     onCreate: ({ editor: currentEditor }) => {
       requestAnimationFrame(() => {

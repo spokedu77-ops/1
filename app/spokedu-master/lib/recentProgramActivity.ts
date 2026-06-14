@@ -54,6 +54,17 @@ export function migrateRecentActivitiesToOwner(
   return deduplicateOwnerActivities(migrated, owner.ownerId);
 }
 
+export function flushPendingRecentProgramActivities(
+  activities: RecentProgramActivity[],
+  pending: RecentProgramActivityInput[],
+  owner: RecentActivityOwner,
+) {
+  return pending.reduce(
+    (items, activity) => upsertRecentProgramActivity(items, activity, owner.ownerId),
+    migrateRecentActivitiesToOwner(activities, owner),
+  );
+}
+
 function deduplicateOwnerActivities(
   activities: RecentProgramActivity[],
   ownerId: string,

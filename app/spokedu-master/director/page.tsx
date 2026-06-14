@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { AlertTriangle, BarChart3, BookOpen, CreditCard, FileText, MessageCircle, MonitorPlay, UsersRound, type LucideIcon } from 'lucide-react';
+import { BarChart3, BookOpen, CreditCard, FileText, MessageCircle, MonitorPlay, UserCheck, UserX, UsersRound, type LucideIcon } from 'lucide-react';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
+import { getClassRecordFacts } from '../lib/studentRecordFacts';
 import { useMasterStore, useProfile } from '../store';
 
 function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: string; desc: string; icon: LucideIcon; tone: string }) {
@@ -20,12 +21,9 @@ function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: s
 
 export default function DirectorPage() {
   const profile = useProfile();
-  const students = useMasterStore((state) => state.students);
   const records = useMasterStore((state) => state.classRecords);
   const lessons = useMasterStore((state) => state.lessons);
-  const riskStudents = students.filter((student) => student.risk);
-  const recordRate = lessons.length > 0 ? Math.min(100, Math.round((records.length / lessons.length) * 100)) : records.length > 0 ? 100 : 0;
-  const attendance = Math.round(students.reduce((sum, student) => sum + student.attendance, 0) / Math.max(students.length, 1));
+  const recordFacts = getClassRecordFacts(records);
   const myName = profile?.name ?? '나';
   const centerName = profile?.centerName ?? profile?.school ?? '센터';
 
@@ -52,24 +50,22 @@ export default function DirectorPage() {
       </header>
 
       <section className="grid gap-3 px-[22px] sm:grid-cols-2 sm:px-8 lg:grid-cols-4 lg:px-10">
-        <Kpi label="scope" value="기관" desc="센터·기관 운영자용 이용권" icon={UsersRound} tone="#818cf8" />
-        <Kpi label="students" value={`${students.length}명`} desc="수업 기록에 연결된 학생" icon={BarChart3} tone="#10b981" />
-        <Kpi label="attendance" value={`${attendance}%`} desc="최근 수업 평균 출석률" icon={CreditCard} tone="#f59e0b" />
-        <Kpi label="record loop" value={`${recordRate}%`} desc={recordRate < 70 ? '기록 루프 보완 필요' : '수업 후 정리 안정'} icon={AlertTriangle} tone={recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)'} />
+        <Kpi label="records" value={`${recordFacts.recordCount}건`} desc="전체 수업 기록 수" icon={BarChart3} tone="#818cf8" />
+        <Kpi label="present" value={`${recordFacts.presentCount}건`} desc="출석으로 체크된 기록" icon={UserCheck} tone="#10b981" />
+        <Kpi label="absent" value={`${recordFacts.absentCount}건`} desc="결석으로 체크된 기록" icon={UserX} tone="#f59e0b" />
+        <Kpi label="students" value={`${recordFacts.recordedStudentCount}명`} desc="기록이 연결된 학생" icon={UsersRound} tone="#6366f1" />
       </section>
 
       <div className="mt-7 grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[1fr_380px] lg:px-10">
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>수업 후 정리율</h2>
+          <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>수업 기록 현황</h2>
           <div className="mt-5 space-y-3">
             <div className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{myName}</span>
-                <span className="text-[12px] font-black" style={{ color: recordRate < 70 ? 'var(--spm-red)' : 'var(--spm-grn)' }}>{recordRate}%</span>
+                <span className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>{recordFacts.recordCount}건</span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full" style={{ background: 'var(--spm-s4)' }}>
-                <div className="h-full rounded-full" style={{ width: `${recordRate}%`, background: recordRate < 70 ? 'var(--spm-red)' : 'linear-gradient(90deg,#6366f1,#10b981)' }} />
-              </div>
+              <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>출석 {recordFacts.presentCount}건 · 결석 {recordFacts.absentCount}건</p>
             </div>
             <div className="rounded-[14px] p-4" style={{ background: 'var(--spm-s3)' }}>
               <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>추가 강사 계정은 기관 도입 상담으로 안내합니다.</p>
@@ -78,14 +74,11 @@ export default function DirectorPage() {
         </section>
 
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>케어 필요 학생</h2>
+          <h2 className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>기록 연결 학생</h2>
           <div className="mt-5 space-y-2">
-            {riskStudents.length > 0 ? riskStudents.map((student) => (
-              <div key={student.id} className="rounded-[13px] p-3" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.18)' }}>
-                <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{student.name}</p>
-                <p className="mt-1 text-[11px] font-bold" style={{ color: 'var(--spm-red)' }}>{student.risk}</p>
-              </div>
-            )) : <p className="rounded-[13px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>현재 위험 신호가 없습니다.</p>}
+            <p className="rounded-[13px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
+              실제 수업 기록에 연결된 학생 {recordFacts.recordedStudentCount}명
+            </p>
           </div>
           <Link href="/spokedu-master/students" className="mt-4 flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 이력 확인</Link>
         </section>
@@ -121,7 +114,7 @@ export default function DirectorPage() {
             {[
               ['이용권', '30일'],
               ['계정', '현재 사용자'],
-              ['기록', `${records.length || students.length}건`],
+              ['기록', `${records.length}건`],
             ].map(([label, value]) => (
               <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
                 <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>

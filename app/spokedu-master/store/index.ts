@@ -6,6 +6,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { hasMasterAccess } from '../lib/subscription';
 import {
+  flushPendingRecentProgramActivities,
   getRecentActivityOwner,
   getRecentActivityOwnerId,
   migrateRecentActivitiesToOwner,
@@ -13,7 +14,7 @@ import {
   type RecentProgramActivityInput,
   upsertRecentProgramActivity,
 } from '../lib/recentProgramActivity';
-import type { CartItem, ClassRecord, ClassStudentRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
+import type { CartItem, ClassRecord, Drill, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 
 type ActiveSession = {
@@ -158,33 +159,6 @@ function migrateMasterStore(persisted: unknown): Partial<MasterState> {
   };
 }
 
-function applyStudentRecord(student: StudentProfile, record: ClassStudentRecord, classRecord: ClassRecord): StudentProfile {
-  const attended = record.attendance === 'present';
-  const missed = record.attendance === 'absent';
-  const nextClasses = attended ? student.classes + 1 : student.classes;
-  const nextAttendance = missed ? Math.max(0, student.attendance - 2) : attended ? Math.min(100, student.attendance + 1) : student.attendance;
-  const today = new Date(classRecord.date).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' });
-  const skillSet = new Set(record.skills);
-  const nextSkills = student.skills.map((skill) => (skillSet.has(skill.label) ? { ...skill, value: Math.min(100, skill.value + 3), delta: '+3%' } : skill));
-  const addedSkills = record.skills.filter((skill) => !student.skills.some((item) => item.label === skill)).map<StudentProfile['skills'][number]>((label) => ({ label, value: 44, delta: '+3%' }));
-  const memoSuffix = record.memo ? ` / ${record.memo}` : '';
-  const historyLine = missed
-    ? `${today} ${classRecord.programTitle} 결석${memoSuffix}`
-    : `${today} ${classRecord.programTitle} ${record.skills.length}개 기록${record.focused ? ' / 집중 관찰' : ''}${memoSuffix}`;
-  const badgeEarned = nextClasses >= 20 && !student.badges.includes('수업 기록 누적');
-
-  return {
-    ...student,
-    classes: nextClasses,
-    attendance: nextAttendance,
-    streak: attended ? student.streak + 1 : missed ? 0 : student.streak,
-    risk: missed ? '최근 결석 기록 확인 필요' : record.focused ? '다음 수업 집중 관찰 필요' : student.risk,
-    skills: [...nextSkills, ...addedSkills],
-    badges: badgeEarned ? ['수업 기록 누적', ...student.badges] : student.badges,
-    history: [historyLine, ...student.history].slice(0, 8),
-  };
-}
-
 function errorFromStatus(status: number): Exclude<ContentLoadError, null> {
   if (status === 401) return 'unauthorized';
   if (status === 403) return 'forbidden';
@@ -261,13 +235,12 @@ export const useMasterStore = create<MasterState>()(
           if (!state.recentActivityOwnerResolved) return { profile: nextProfile };
           const owner = getRecentActivityOwner(nextProfile);
           if (!owner) return { profile: nextProfile };
-          const migrated = migrateRecentActivitiesToOwner(state.recentProgramActivities, owner);
           return {
             profile: nextProfile,
-            recentProgramActivities: state.pendingRecentProgramActivities.reduce(
-              (activities, activity) =>
-                upsertRecentProgramActivity(activities, activity, owner.ownerId),
-              migrated,
+            recentProgramActivities: flushPendingRecentProgramActivities(
+              state.recentProgramActivities,
+              state.pendingRecentProgramActivities,
+              owner,
             ),
             pendingRecentProgramActivities: [],
           };
@@ -341,13 +314,12 @@ export const useMasterStore = create<MasterState>()(
                 recentActivityOwnerResolved: false,
               };
             }
-            const migrated = migrateRecentActivitiesToOwner(state.recentProgramActivities, owner);
             return {
               profile: nextProfile,
-              recentProgramActivities: state.pendingRecentProgramActivities.reduce(
-                (activities, activity) =>
-                  upsertRecentProgramActivity(activities, activity, owner.ownerId),
-                migrated,
+              recentProgramActivities: flushPendingRecentProgramActivities(
+                state.recentProgramActivities,
+                state.pendingRecentProgramActivities,
+                owner,
               ),
               pendingRecentProgramActivities: [],
               recentActivityOwnerResolved: true,
@@ -398,7 +370,7 @@ export const useMasterStore = create<MasterState>()(
       deleteLessonById: (id) => set((state) => ({ lessons: state.lessons.filter((lesson) => lesson.id !== id) })),
       students: defaultStudents,
       addStudent: (name, group, meta, id) => set((state) => ({
-        students: [...state.students, { id: id ?? Date.now().toString(), name, group, meta, level: 'Lv.1 Start', attendance: 100, classes: 0, streak: 0, risk: null, skills: [], badges: [], history: [] }],
+        students: [...state.students, { id: id ?? Date.now().toString(), name, group, meta, level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [], badges: [], history: [] }],
       })),
       removeStudent: (id) => set((state) => ({ students: state.students.filter((student) => student.id !== id) })),
       classRecords: [],
@@ -410,16 +382,12 @@ export const useMasterStore = create<MasterState>()(
           const ownedRecord = ownerId ? { ...record, ownerId } : record;
           return {
             classRecords: [ownedRecord, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
-            students: state.students.map((student) => {
-              const studentRecord = record.students.find((item) => item.studentId === student.id);
-              return studentRecord ? applyStudentRecord(student, studentRecord, record) : student;
-            }),
             notifications: [
             {
               id: `record-${record.id}`,
               type: 'report' as const,
               title: `${record.classId} 수업 기록 저장`,
-              body: `${record.programTitle} 기록 ${record.skillCount}개가 학생 이력에 반영되었습니다.`,
+              body: `${record.programTitle}의 출석과 관찰 원본 기록이 저장되었습니다.`,
               read: false,
               createdAt: record.date,
             },

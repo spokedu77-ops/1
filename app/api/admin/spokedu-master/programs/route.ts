@@ -5,6 +5,14 @@ import {
   normalizeMasterSpace,
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
+import {
+  buildAdminProgramSaveFailure,
+  normalizeAdminTags,
+  normalizeNullableText,
+  normalizeTextarea,
+  type AdminProgramSaveStage,
+} from '@/app/spokedu-master/lib/adminProgramEditorContract';
+import { replaceExactSection } from '@/app/spokedu-master/lib/lessonContentContract';
 
 type MaterialStatus = 'incomplete' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -41,6 +49,8 @@ type MetaRow = {
   sm_hero_image_url: string | null;
   sm_setup_image_url: string | null;
   sm_gallery_image_urls: string[] | null;
+  sm_briefing_notes: string | null;
+  sm_variation_method: string | null;
 };
 
 type OverlayRow = {
@@ -52,7 +62,6 @@ type OverlayRow = {
   checklist: string | null;
   activity_method: string | null;
   activity_tip: string | null;
-  function_types: string[] | null;
   main_theme: string | null;
   group_size: string | null;
   is_published: boolean | null;
@@ -141,7 +150,7 @@ async function loadPrograms() {
   if (ids.length > 0) {
     const { data: metaRows, error: metaErr } = await supabase
       .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls')
+      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
       .in('curriculum_id', ids);
     if (metaErr) throw metaErr;
     for (const meta of (metaRows ?? []) as MetaRow[]) metaById.set(meta.curriculum_id, meta);
@@ -151,7 +160,7 @@ async function loadPrograms() {
   if (ids.length > 0) {
     const { data: overlayRows, error: overlayErr } = await supabase
       .from('spokedu_pro_programs')
-      .select('id,title,source_center_curriculum_id,video_url,equipment,checklist,activity_method,activity_tip,function_types,main_theme,group_size,is_published,updated_at')
+      .select('id,title,source_center_curriculum_id,video_url,equipment,checklist,activity_method,activity_tip,main_theme,group_size,is_published,updated_at')
       .in('source_center_curriculum_id', ids);
     if (overlayErr) throw overlayErr;
     overlayById = latestOverlay((overlayRows ?? []) as OverlayRow[]);
@@ -235,8 +244,24 @@ export async function PATCH(request: Request) {
   }
 
   let body: {
-    meta?: Partial<MetaRow>;
-    overlay?: Partial<OverlayRow>;
+    meta?: {
+      sm_theme?: unknown;
+      sm_grade?: unknown;
+      sm_tags?: unknown;
+      sm_space?: unknown;
+      sm_duration?: unknown;
+      sm_setup_image_url?: unknown;
+      sm_coach_script?: unknown;
+      sm_briefing_notes?: unknown;
+      sm_variation_method?: unknown;
+    };
+    overlay?: {
+      title?: unknown;
+      video_url?: unknown;
+      equipment?: unknown;
+      activity_method?: unknown;
+      is_published?: unknown;
+    };
   };
   try {
     body = await request.json();
@@ -244,57 +269,130 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'invalid json' }, { status: 400 });
   }
 
+  const state = {
+    ok: false,
+    overlaySaved: false,
+    metaSaved: false,
+    legacyMirrorSaved: false,
+    partialSave: false,
+  };
+  let failedStage: AdminProgramSaveStage = 'overlay';
+
   try {
     const supabase = getServiceSupabase();
-    const metaPatch = body.meta ?? {};
-    const { error: metaErr } = await supabase
-      .from('spokedu_master_program_meta')
-      .upsert({ curriculum_id: curriculumId, ...metaPatch }, { onConflict: 'curriculum_id' });
-    if (metaErr) throw metaErr;
+    const metaInput = body.meta ?? {};
+    const overlayInput = body.overlay ?? {};
+    const metaPatch = {
+      sm_theme: normalizeUnknownText(metaInput.sm_theme),
+      sm_grade: normalizeUnknownText(metaInput.sm_grade),
+      sm_tags: normalizeAdminTags(Array.isArray(metaInput.sm_tags) ? metaInput.sm_tags.filter(isString) : []),
+      sm_space: normalizeUnknownText(metaInput.sm_space),
+      sm_duration: normalizeUnknownDuration(metaInput.sm_duration),
+      sm_setup_image_url: normalizeUnknownText(metaInput.sm_setup_image_url),
+      sm_coach_script: normalizeUnknownTextarea(metaInput.sm_coach_script),
+      sm_briefing_notes: normalizeUnknownTextarea(metaInput.sm_briefing_notes),
+      sm_variation_method: normalizeUnknownTextarea(metaInput.sm_variation_method),
+    };
+    const overlayPayload = {
+      title: normalizeUnknownText(overlayInput.title) ?? `curriculum #${curriculumId}`,
+      source_center_curriculum_id: curriculumId,
+      video_url: normalizeUnknownText(overlayInput.video_url),
+      equipment: normalizeUnknownTextarea(overlayInput.equipment),
+      activity_method: normalizeUnknownTextarea(overlayInput.activity_method),
+      is_published: typeof overlayInput.is_published === 'boolean' ? overlayInput.is_published : true,
+    };
 
-    const overlayPatch = body.overlay ?? {};
     const { data: existing, error: existingErr } = await supabase
       .from('spokedu_pro_programs')
-      .select('id')
+      .select('id,checklist,activity_tip')
       .eq('source_center_curriculum_id', curriculumId)
       .order('updated_at', { ascending: false, nullsFirst: false })
+      .order('id', { ascending: false })
       .limit(1)
       .maybeSingle();
     if (existingErr) throw existingErr;
 
-    const overlayPayload = {
-      title: overlayPatch.title ?? `curriculum #${curriculumId}`,
-      source_center_curriculum_id: curriculumId,
-      video_url: overlayPatch.video_url ?? null,
-      equipment: overlayPatch.equipment ?? null,
-      checklist: overlayPatch.checklist ?? null,
-      activity_method: overlayPatch.activity_method ?? null,
-      activity_tip: overlayPatch.activity_tip ?? null,
-      function_types: overlayPatch.function_types ?? null,
-      is_published: overlayPatch.is_published ?? true,
-    };
-
+    let overlayId: number;
     if (existing?.id) {
       const { error: updateErr } = await supabase
         .from('spokedu_pro_programs')
         .update(overlayPayload)
         .eq('id', existing.id);
       if (updateErr) throw updateErr;
+      overlayId = existing.id;
     } else {
-      const { error: insertErr } = await supabase
+      const { data: inserted, error: insertErr } = await supabase
         .from('spokedu_pro_programs')
-        .insert(overlayPayload);
+        .insert(overlayPayload)
+        .select('id')
+        .single();
       if (insertErr) throw insertErr;
+      overlayId = inserted.id;
     }
+    state.overlaySaved = true;
 
+    failedStage = 'meta';
+    const { error: metaErr } = await supabase
+      .from('spokedu_master_program_meta')
+      .upsert({ curriculum_id: curriculumId, ...metaPatch }, { onConflict: 'curriculum_id' });
+    if (metaErr) throw metaErr;
+    state.metaSaved = true;
+
+    failedStage = 'legacy-mirror';
+    // Temporary 2B compatibility mirror. Remove after the public programs API reads Master meta in 2C.
+    const legacyPatch = {
+      checklist: replaceExactSection(existing?.checklist, '사전 교육', metaPatch.sm_briefing_notes),
+      activity_tip: replaceExactSection(existing?.activity_tip, '변형 방법', metaPatch.sm_variation_method),
+    };
+    const { error: mirrorErr } = await supabase
+      .from('spokedu_pro_programs')
+      .update(legacyPatch)
+      .eq('id', overlayId);
+    if (mirrorErr) throw mirrorErr;
+    state.legacyMirrorSaved = true;
+
+    failedStage = 'reload';
     const data = await loadPrograms();
-    return NextResponse.json({ data, total: data.length });
+    return NextResponse.json({
+      ...state,
+      ok: true,
+      partialSave: false,
+      data,
+      total: data.length,
+    });
   } catch (error) {
-    const message = error instanceof Error
-      ? error.message
-      : typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
-        ? error.message
-        : 'save failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = errorMessage(error);
+    return NextResponse.json(buildAdminProgramSaveFailure({
+      overlaySaved: state.overlaySaved,
+      metaSaved: state.metaSaved,
+      legacyMirrorSaved: state.legacyMirrorSaved,
+      failedStage,
+      error: message,
+    }), { status: 500 });
   }
+}
+
+function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+function normalizeUnknownText(value: unknown) {
+  return normalizeNullableText(isString(value) ? value : null);
+}
+
+function normalizeUnknownTextarea(value: unknown) {
+  return normalizeTextarea(isString(value) ? value : null);
+}
+
+function normalizeUnknownDuration(value: unknown) {
+  const duration = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(duration) && duration > 0 ? duration : null;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error
+    ? error.message
+    : typeof error === 'object' && error !== null && 'message' in error && typeof error.message === 'string'
+      ? error.message
+      : 'save failed';
 }

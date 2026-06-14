@@ -76,26 +76,3 @@ export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao'
     reason: '첫 버전에서는 자동 발송과 자동 리포트보다 라이브러리, SPOMOVE, 수업 설명 문구를 우선 제공합니다.',
   };
 }
-
-export function createParentShareToken(studentId: string, now = Date.now()): string {
-  const expiresAt = now + 7 * 24 * 60 * 60 * 1000;
-  return `spm.${studentId}.${expiresAt}`;
-}
-
-export function validateParentShareToken(token: string | null, studentId: string): LimitStatus {
-  if (!token) {
-    return { allowed: false, label: '토큰 없음', reason: '공유 링크가 없거나 주소가 올바르지 않습니다.' };
-  }
-  const [prefix, tokenStudentId, expiresAtRaw] = token.split('.');
-  const expiresAt = Number(expiresAtRaw);
-  if (prefix !== 'spm' || tokenStudentId !== studentId || !Number.isFinite(expiresAt)) {
-    return { allowed: false, label: '토큰 오류', reason: '학생 정보와 공유 링크가 일치하지 않습니다.' };
-  }
-  if (expiresAt < Date.now()) {
-    return { allowed: false, label: '만료', reason: '이 링크는 7일 유효 기간이 지나 만료되었습니다.' };
-  }
-  return { allowed: true, label: '유효' };
-}
-
-export const createParentPreviewToken = createParentShareToken;
-export const validateParentPreviewToken = validateParentShareToken;

@@ -1,6 +1,3 @@
-import type { ClassRecord, StudentProfile, UserProfile } from '../types';
-import { createParentShareToken } from './subscription';
-
 export type ServiceFailureCode =
   | 'offline'
   | 'permission-denied'
@@ -20,42 +17,6 @@ export type RetryQueueItem = {
   title: string;
   createdAt: string;
   retryable: boolean;
-};
-
-export type KakaoSummaryRequest = {
-  centerId: string | null;
-  senderId: string;
-  classRecord: ClassRecord;
-  students: StudentProfile[];
-};
-
-export type KakaoSummaryResult = {
-  sentCount: number;
-  failedCount: number;
-  parentLinks: Array<{
-    studentId: string;
-    studentName: string;
-    token: string;
-    expiresAt: string;
-  }>;
-};
-
-export type GrowthReportRequest = {
-  profile: UserProfile | null;
-  classId: string;
-  period: string;
-  students: StudentProfile[];
-  records: ClassRecord[];
-};
-
-export type GrowthReportResult = {
-  reportBatchId: string;
-  pdfCount: number;
-  kakaoReadyCount: number;
-  parentLinks: Array<{
-    studentId: string;
-    token: string;
-  }>;
 };
 
 export type CenterValidationResult = {
@@ -99,43 +60,6 @@ export async function validateCenterCode(code: string): Promise<ApiResult<Center
       centerName: normalized.startsWith('SPOMOVE') ? 'SPOMOVE 인증 센터' : '연결된 체육 센터',
       plan: 'team',
       teacherSlots: 3,
-    },
-  };
-}
-
-export async function sendKakaoClassSummary(request: KakaoSummaryRequest): Promise<ApiResult<KakaoSummaryResult>> {
-  await wait(650);
-  const presentStudents = request.students.filter((student) => request.classRecord.students.some((record) => record.studentId === student.id && record.attendance === 'present'));
-  const parentLinks = presentStudents.map((student) => {
-    const token = createParentShareToken(student.id);
-    const expiresAt = new Date(Number(token.split('.')[2])).toISOString();
-    return { studentId: student.id, studentName: student.name, token, expiresAt };
-  });
-
-  return {
-    ok: true,
-    data: {
-      sentCount: parentLinks.length,
-      failedCount: 0,
-      parentLinks,
-    },
-  };
-}
-
-export async function generateGrowthReportBatch(request: GrowthReportRequest): Promise<ApiResult<GrowthReportResult>> {
-  await wait(750);
-  const parentLinks = request.students.map((student) => ({
-    studentId: student.id,
-    token: createParentShareToken(student.id),
-  }));
-
-  return {
-    ok: true,
-    data: {
-      reportBatchId: `report-${Date.now()}`,
-      pdfCount: request.students.length,
-      kakaoReadyCount: request.students.length,
-      parentLinks,
     },
   };
 }
