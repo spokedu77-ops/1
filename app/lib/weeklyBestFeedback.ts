@@ -9,6 +9,11 @@ export type WeeklyBestFeedbackSession = {
   students_text?: string | null;
 };
 
+export function normalizeSessionFileUrls(fileUrl: unknown): string[] {
+  if (!Array.isArray(fileUrl)) return [];
+  return fileUrl.filter((u): u is string => typeof u === 'string' && !!u.trim());
+}
+
 export function formatFeedbackFieldsForDisplay(f: FeedbackFields): string {
   const parts: string[] = [];
   if (f.main_activity) parts.push(`✅ 주요 활동\n${f.main_activity}`);
@@ -31,9 +36,7 @@ export function formatWeeklyBestFeedbackText(
   const studentsText = typeof session.students_text === 'string' ? session.students_text.trim() : '';
   if (studentsText) return studentsText;
 
-  const fileUrls = Array.isArray(session.file_url)
-    ? session.file_url.filter((u): u is string => typeof u === 'string' && !!u.trim())
-    : [];
+  const fileUrls = normalizeSessionFileUrls(session.file_url);
   const ff = session.feedback_fields ?? {};
 
   if (isCenterSessionType(session.session_type) && fileUrls.length > 0) {
@@ -49,12 +52,4 @@ export function formatWeeklyBestFeedbackText(
   }
 
   return null;
-}
-
-export function isCenterFeedbackEmpty(session: WeeklyBestFeedbackSession | null | undefined): boolean {
-  if (!session || !isCenterSessionType(session.session_type)) return false;
-  const fileUrls = Array.isArray(session.file_url)
-    ? session.file_url.filter((u): u is string => typeof u === 'string' && !!u.trim())
-    : [];
-  return fileUrls.length === 0;
 }

@@ -18,7 +18,6 @@ import {
 import {
   formatFeedbackFieldsForDisplay,
   formatWeeklyBestFeedbackText,
-  isCenterFeedbackEmpty,
 } from '@/app/lib/weeklyBestFeedback';
 import { WeeklyBestSessionPicker } from '@/app/admin/notice/WeeklyBestSessionPicker';
 
@@ -297,14 +296,19 @@ function getFeedbackPreviewFull(s: WbFeedbackSession): string {
     ? s.file_url.filter((u): u is string => typeof u === 'string' && !!u.trim())
     : [];
   if (isCenterSessionType(s.session_type)) {
-    if (fileUrls.length === 0) {
-      return '첨부 없음 — 아래 메모 입력란에 직접 작성할 수 있습니다.';
-    }
     const ff = s.feedback_fields ?? {};
-    const names = fileUrls.map((url, i) =>
-      sessionFileDisplayName(url, i, ff.center_document_names ?? null),
-    );
-    return `센터 피드백 첨부 (${fileUrls.length}개)\n\n${names.map((n) => `· ${n}`).join('\n')}`;
+    const lines: string[] = [
+      '센터 피드백은 파일 첨부 형식이라, 주간베스트에는 아래 입력란에 요약을 직접 작성합니다.',
+    ];
+    if (fileUrls.length > 0) {
+      const names = fileUrls.map((url, i) =>
+        sessionFileDisplayName(url, i, ff.center_document_names ?? null),
+      );
+      lines.push('', `참고 — 선생님 첨부 (${fileUrls.length}개)`, ...names.map((n) => `· ${n}`));
+    } else {
+      lines.push('', '참고 — 선생님 첨부 파일 없음');
+    }
+    return lines.join('\n');
   }
   const text = s.students_text ?? (s.feedback_fields ? formatFeedbackFields(s.feedback_fields) : '');
   return text || '— 내용 없음';
@@ -321,7 +325,7 @@ function getFeedbackSessionPreview(s: WbFeedbackSession): string {
         .map((url, i) => sessionFileDisplayName(url, i, ff.center_document_names ?? null))
         .join(', ');
     }
-    return '센터 피드백 미작성';
+    return '첨부 파일 없음';
   }
   return s.students_text ?? (s.feedback_fields ? formatFeedbackFields(s.feedback_fields) : '');
 }
@@ -400,7 +404,14 @@ export default function NoticePage() {
     photo_urls: string[];
     feedback_session_id: string;
     feedback_note: string;
-  }>({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '', feedback_note: '' });
+  }>({
+    title: '',
+    content: '',
+    lesson_plan_session_id: '',
+    photo_urls: [],
+    feedback_session_id: '',
+    feedback_note: '',
+  });
   const [wbFeedbackScope, setWbFeedbackScope] = useState<WbFeedbackScope>('private');
   const [coaches, setCoaches] = useState<{ id: string; name: string }[]>([]);
   const [wbCoachFilter, setWbCoachFilter] = useState('all');
@@ -574,11 +585,7 @@ export default function NoticePage() {
     if (showWeeklyBestWizard && wizardStep === 4) fetchFeedbackCandidates();
   }, [showWeeklyBestWizard, wizardStep, fetchFeedbackCandidates]);
 
-  const selectedFeedbackSession = useMemo(
-    () => feedbackSessions.find((s) => s.id === wbForm.feedback_session_id) ?? null,
-    [feedbackSessions, wbForm.feedback_session_id],
-  );
-  const showCenterFeedbackNoteInput = wbFeedbackScope === 'center' && isCenterFeedbackEmpty(selectedFeedbackSession);
+  const showCenterFeedbackNoteInput = wbFeedbackScope === 'center';
 
   const openNoticeForm = () => {
     setShowWriteChoiceModal(false);
@@ -593,7 +600,14 @@ export default function NoticePage() {
     setWizardOpenDate(new Date());
     setWizardStep(1);
     setWbFeedbackScope('private');
-    setWbForm({ title: '', content: '', lesson_plan_session_id: '', photo_urls: [], feedback_session_id: '', feedback_note: '' });
+    setWbForm({
+      title: '',
+      content: '',
+      lesson_plan_session_id: '',
+      photo_urls: [],
+      feedback_session_id: '',
+      feedback_note: '',
+    });
     setShowWeeklyBestWizard(true);
   };
 
@@ -678,6 +692,16 @@ export default function NoticePage() {
       toast.error('제목을 입력해주세요.');
       return;
     }
+    if (wbFeedbackScope === 'center') {
+      if (!wbForm.feedback_session_id) {
+        toast.error('센터 수업을 선택해주세요.');
+        return;
+      }
+      if (!wbForm.feedback_note.trim()) {
+        toast.error('센터 피드백 내용을 입력해주세요.');
+        return;
+      }
+    }
     setWbSaving(true);
     try {
       const payload = {
@@ -687,7 +711,7 @@ export default function NoticePage() {
         photo_urls: wbForm.photo_urls,
         feedback_session_id: wbForm.feedback_session_id || null,
         feedback_note:
-          showCenterFeedbackNoteInput && wbForm.feedback_note.trim()
+          wbFeedbackScope === 'center' && wbForm.feedback_note.trim()
             ? wbForm.feedback_note.trim()
             : null,
       };
@@ -1295,7 +1319,7 @@ export default function NoticePage() {
                 <>
                   <p className="text-[11px] text-slate-500">
                     {wbFeedbackScope === 'center'
-                      ? '작성 시점 기준 -7일 ~ -1일 센터 수업 세션이 표시됩니다. 첨부가 없으면 직접 메모를 입력할 수 있습니다.'
+                      ? '센터 피드백은 파일 첨부 형식입니다. 연결할 센터 수업을 고른 뒤, 주간베스트용 요약을 직접 작성하세요.'
                       : '작성 시점 기준 -7일 ~ -1일 세션 중 피드백이 있는 것만 표시됩니다.'}
                   </p>
                   <div className="flex gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-200">
@@ -1303,7 +1327,11 @@ export default function NoticePage() {
                       type="button"
                       onClick={() => {
                         setWbFeedbackScope('private');
-                        setWbForm((p) => ({ ...p, feedback_session_id: '', feedback_note: '' }));
+                        setWbForm((p) => ({
+                          ...p,
+                          feedback_session_id: '',
+                          feedback_note: '',
+                        }));
                       }}
                       className={`flex-1 min-h-[40px] px-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                         wbFeedbackScope === 'private' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-700'
@@ -1315,7 +1343,11 @@ export default function NoticePage() {
                       type="button"
                       onClick={() => {
                         setWbFeedbackScope('center');
-                        setWbForm((p) => ({ ...p, feedback_session_id: '', feedback_note: '' }));
+                        setWbForm((p) => ({
+                          ...p,
+                          feedback_session_id: '',
+                          feedback_note: '',
+                        }));
                       }}
                       className={`flex-1 min-h-[40px] px-3 rounded-xl text-sm font-bold transition-all cursor-pointer ${
                         wbFeedbackScope === 'center' ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-700'
@@ -1328,15 +1360,7 @@ export default function NoticePage() {
                     key={wbFeedbackScope}
                     items={feedbackSessions}
                     selectedId={wbForm.feedback_session_id}
-                    onSelect={(id) => {
-                      const session = feedbackSessions.find((s) => s.id === id) ?? null;
-                      const centerEmpty = isCenterFeedbackEmpty(session);
-                      setWbForm((p) => ({
-                        ...p,
-                        feedback_session_id: id,
-                        feedback_note: centerEmpty ? p.feedback_note : '',
-                      }));
-                    }}
+                    onSelect={(id) => setWbForm((p) => ({ ...p, feedback_session_id: id }))}
                     loading={wbStepLoading}
                     emptyMessage={wbFeedbackScope === 'center' ? '해당 기간에 센터 수업이 없습니다.' : '해당 기간에 피드백이 없습니다.'}
                     coaches={coaches}
@@ -1348,28 +1372,15 @@ export default function NoticePage() {
                     getSearchText={(s) => `${s.title} ${(s.users as { name?: string })?.name ?? ''} ${getFeedbackSessionPreview(s)}`}
                     getSummary={(s) => getFeedbackSessionPreview(s)}
                     renderPreview={(item) => (item ? getFeedbackPreviewFull(item) : null)}
-                    renderBadge={(item) => {
-                      if (wbFeedbackScope !== 'center') return null;
-                      const centerEmpty = isCenterFeedbackEmpty(item);
-                      return (
-                        <span className={`shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-lg border ${
-                          centerEmpty
-                            ? 'text-amber-700 bg-amber-50 border-amber-100'
-                            : 'text-indigo-700 bg-indigo-50 border-indigo-100'
-                        }`}>
-                          {centerEmpty ? '미작성' : '첨부'}
-                        </span>
-                      );
-                    }}
                   />
                   {showCenterFeedbackNoteInput && (
                     <div className="space-y-2">
-                      <p className="text-[11px] font-bold text-amber-700">선택한 센터 수업에 첨부된 피드백이 없습니다. 직접 메모를 입력할 수 있습니다.</p>
+                      <p className="text-[11px] font-bold text-amber-700">센터 피드백 요약 (필수)</p>
                       <textarea
-                        placeholder="센터 피드백 메모 (선택)"
+                        placeholder="주간베스트에 게시할 센터 피드백 요약을 입력하세요"
                         value={wbForm.feedback_note}
                         onChange={(e) => setWbForm((p) => ({ ...p, feedback_note: e.target.value }))}
-                        className="w-full min-h-[100px] px-4 py-3 bg-amber-50/60 rounded-2xl border border-amber-100 outline-none text-sm text-slate-700 placeholder-slate-400 resize-none"
+                        className="w-full min-h-[120px] px-4 py-3 bg-amber-50/60 rounded-2xl border border-amber-100 outline-none text-sm text-slate-700 placeholder-slate-400 resize-none"
                       />
                     </div>
                   )}

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS weekly_best (
   lesson_plan_session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
   photo_urls TEXT[] NOT NULL DEFAULT '{}',
   feedback_session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
+  feedback_note TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
