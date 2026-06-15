@@ -424,7 +424,7 @@ function onToggleTitlePointerDown(e: PointerEvent) {
 function onToggleTitlePointerMove(e: PointerEvent) {
   if (!togglePointerDown || !toggleAnchor || e.buttons !== 1) return;
   if (noteBlockMarqueeGuard.active) {
-    onToggleTitlePointerUp();
+    onToggleTitlePointerUp(e);
     return;
   }
 
@@ -450,10 +450,13 @@ function onToggleTitlePointerMove(e: PointerEvent) {
       toggleDragging = false;
       noteTextDragGuard.active = false;
       clearAllCrossSelectState();
-      const from = Math.min(toggleAnchor.pos, hoverToggleTitlePos(inputAt(hoverId), e.clientX));
-      const to = Math.max(toggleAnchor.pos, hoverToggleTitlePos(inputAt(hoverId), e.clientX));
-      focusWithoutScroll(inputAt(hoverId)!);
-      inputAt(hoverId)!.setSelectionRange(from, to);
+      const input = getToggleTitleInput(hoverId);
+      if (!input) return;
+      const caret = hoverToggleTitlePos(input, e.clientX);
+      const from = Math.min(toggleAnchor.pos, caret);
+      const to = Math.max(toggleAnchor.pos, caret);
+      focusWithoutScroll(input);
+      input.setSelectionRange(from, to);
     }
     return;
   }
@@ -465,10 +468,6 @@ function onToggleTitlePointerMove(e: PointerEvent) {
   e.preventDefault();
 
   applyCrossBlockSelection(toggleAnchor, hoverId, e.clientX, e.clientY);
-}
-
-function inputAt(blockId: string) {
-  return getToggleTitleInput(blockId);
 }
 
 function onToggleTitlePointerUp(e: PointerEvent) {
