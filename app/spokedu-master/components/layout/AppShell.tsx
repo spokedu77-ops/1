@@ -94,7 +94,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
-  const loadDrills = useMasterStore((state) => state.loadDrills);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
   const [shellMounted, setShellMounted] = useState(false);
   const [storeHydrated, setStoreHydrated] = useState(false);
@@ -117,9 +116,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       return;
     }
     void loadPrograms();
-    void loadDrills();
     void syncSubscription().finally(() => setSubscriptionSynced(true));
-  }, [isLanding, isPublicDocument, loadPrograms, loadDrills, syncSubscription]);
+  }, [isLanding, isPublicDocument, loadPrograms, syncSubscription]);
 
   useEffect(() => {
     setStoreHydrated(useMasterStore.persist.hasHydrated());

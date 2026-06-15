@@ -8,7 +8,6 @@ import { useEffect, useState } from 'react';
 import { SPOMOVE_AXIS_META } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 
-import { useMasterStore } from '../store';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   officialPresetSessionHref,
@@ -16,6 +15,7 @@ import {
 } from './officialSpomovePresets';
 
 type OfficialLibraryTab = 'all' | 'response' | 'attention' | 'executive';
+type AccessState = 'checking' | 'allowed' | 'unauthorized' | 'forbidden' | 'error';
 
 const TABS: OfficialLibraryTab[] = ['all', 'response', 'attention', 'executive'];
 
@@ -257,17 +257,42 @@ function PresetModal({
 }
 
 export default function SpomoveHubView() {
-  const drillsLoaded = useMasterStore((state) => state.drillsLoaded);
-  const drillsError = useMasterStore((state) => state.drillsError);
   const { list: bgmList } = useSpomoveTrainingBGM();
   const [activeTab, setActiveTab] = useState<OfficialLibraryTab>('all');
   const [selectedPreset, setSelectedPreset] = useState<OfficialSpomovePreset | null>(null);
+  const [accessState, setAccessState] = useState<AccessState>('checking');
 
-  if (drillsLoaded && drillsError) {
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/spokedu-master/access', { cache: 'no-store' })
+      .then((response) => {
+        if (!alive) return;
+        if (response.ok) setAccessState('allowed');
+        else if (response.status === 401) setAccessState('unauthorized');
+        else if (response.status === 403) setAccessState('forbidden');
+        else setAccessState('error');
+      })
+      .catch(() => {
+        if (alive) setAccessState('error');
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (accessState === 'checking') {
+    return (
+      <main className="flex h-full items-center justify-center bg-[#f5f7fb]" aria-busy="true">
+        <div className="h-9 w-9 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+      </main>
+    );
+  }
+
+  if (accessState !== 'allowed') {
     const message =
-      drillsError === 'unauthorized'
+      accessState === 'unauthorized'
         ? '로그인 후 SPOMOVE를 이용할 수 있습니다.'
-        : drillsError === 'forbidden'
+        : accessState === 'forbidden'
           ? '이용 기간이 종료되어 SPOMOVE를 실행할 수 없습니다.'
           : 'SPOMOVE 이용 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (

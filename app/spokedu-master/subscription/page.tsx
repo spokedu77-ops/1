@@ -388,12 +388,12 @@ export default function SubscriptionPage() {
         )}
 
         <Link
-          href="/spokedu-master/spomove/session"
+          href="/spokedu-master/spomove"
           className="fixed bottom-5 right-5 hidden h-12 items-center gap-2 rounded-full px-5 text-[13px] font-black text-white shadow-[0_18px_40px_rgba(99,102,241,0.32)] md:flex"
           style={{ background: 'var(--spm-acc)' }}
         >
           <Zap size={16} />
-          큰 화면 실행
+          SPOMOVE 보기
         </Link>
       </main>
     </div>

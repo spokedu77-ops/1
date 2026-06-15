@@ -8,6 +8,7 @@ export type ListCrossRange = {
   blockId: string;
   from: number;
   to: number;
+  surface?: 'editor' | 'toggle-title';
 };
 
 export const listCrossHighlightKey = new PluginKey<DecorationSet>('listCrossHighlight');
@@ -72,16 +73,27 @@ export function clearListCrossHighlight(editor: Editor) {
 }
 
 let getEditorFromRegistry: (blockId: string) => Editor | null = () => null;
+let getToggleTitleFromRegistry: (blockId: string) => HTMLInputElement | null = () => null;
 
 export function bindListCrossHighlightEditorLookup(
   lookup: (blockId: string) => Editor | null,
+  toggleTitleLookup?: (blockId: string) => HTMLInputElement | null,
 ) {
   getEditorFromRegistry = lookup;
+  if (toggleTitleLookup) getToggleTitleFromRegistry = toggleTitleLookup;
 }
 
 export function extractListCrossText(ranges: ListCrossRange[]): string {
   return ranges
-    .map(({ blockId, from, to }) => {
+    .map(({ blockId, from, to, surface }) => {
+      if (surface === 'toggle-title') {
+        const input = getToggleTitleFromRegistry(blockId);
+        if (!input) return '';
+        const len = input.value.length;
+        const safeFrom = Math.max(0, Math.min(from, len));
+        const safeTo = Math.max(safeFrom, Math.min(to, len));
+        return input.value.slice(safeFrom, safeTo);
+      }
       const editor = getEditorFromRegistry(blockId);
       if (!editor) return '';
       const range = safeDocRange(editor.state.doc, from, to);

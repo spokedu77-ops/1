@@ -7,12 +7,13 @@ import {
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import {
   buildAdminProgramSaveFailure,
+  buildAdminProgramSaveSuccess,
   normalizeAdminTags,
   normalizeNullableText,
   normalizeTextarea,
   type AdminProgramSaveStage,
 } from '@/app/spokedu-master/lib/adminProgramEditorContract';
-import { replaceExactSection } from '@/app/spokedu-master/lib/lessonContentContract';
+import { loadSavedAdminProgram } from './savedProgram';
 
 type MaterialStatus = 'incomplete' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -25,7 +26,6 @@ type CurriculumDbRow = {
   week: number | null;
   display_order: number | null;
   equipment: string[] | null;
-  check_list: string[] | null;
   steps: string[] | null;
 };
 
@@ -59,9 +59,7 @@ type OverlayRow = {
   source_center_curriculum_id: number | null;
   video_url: string | null;
   equipment: string | null;
-  checklist: string | null;
   activity_method: string | null;
-  activity_tip: string | null;
   main_theme: string | null;
   group_size: string | null;
   is_published: boolean | null;
@@ -136,7 +134,7 @@ async function loadPrograms() {
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
-    .select('id,title,url,month,week,display_order,equipment,check_list,steps')
+    .select('id,title,url,month,week,display_order,equipment,steps')
     .eq('is_sub', false)
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('id', { ascending: false });
@@ -160,7 +158,7 @@ async function loadPrograms() {
   if (ids.length > 0) {
     const { data: overlayRows, error: overlayErr } = await supabase
       .from('spokedu_pro_programs')
-      .select('id,title,source_center_curriculum_id,video_url,equipment,checklist,activity_method,activity_tip,main_theme,group_size,is_published,updated_at')
+      .select('id,title,source_center_curriculum_id,video_url,equipment,activity_method,main_theme,group_size,is_published,updated_at')
       .in('source_center_curriculum_id', ids);
     if (overlayErr) throw overlayErr;
     overlayById = latestOverlay((overlayRows ?? []) as OverlayRow[]);
@@ -172,7 +170,6 @@ async function loadPrograms() {
     const title = (overlay?.title ?? row.title ?? '').trim() || `curriculum #${row.id}`;
     const videoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
     const equipment = overlay?.equipment ? splitLines(overlay.equipment) : safeArray(row.equipment);
-    const checklist = overlay?.checklist ? splitLines(overlay.checklist) : safeArray(row.check_list);
     const steps = overlay?.activity_method ? splitLines(overlay.activity_method) : safeArray(row.steps);
     const target = normalizeMasterTarget(meta?.sm_grade ?? overlay?.group_size ?? '');
     const space = normalizeMasterSpace(meta?.sm_space ?? '');
@@ -196,7 +193,6 @@ async function loadPrograms() {
         week: row.week,
         displayOrder: row.display_order,
         equipment: safeArray(row.equipment),
-        checklist: safeArray(row.check_list),
         steps: safeArray(row.steps),
       },
       meta,
@@ -208,7 +204,6 @@ async function loadPrograms() {
         space,
         duration,
         equipment,
-        checklist,
         steps,
         parentNote: (meta?.sm_parent_note ?? '').trim(),
         relatedSpomoveIds: safeArray(meta?.sm_related_spomove_ids),
@@ -273,7 +268,6 @@ export async function PATCH(request: Request) {
     ok: false,
     overlaySaved: false,
     metaSaved: false,
-    legacyMirrorSaved: false,
     partialSave: false,
   };
   let failedStage: AdminProgramSaveStage = 'overlay';
@@ -304,7 +298,7 @@ export async function PATCH(request: Request) {
 
     const { data: existing, error: existingErr } = await supabase
       .from('spokedu_pro_programs')
-      .select('id,checklist,activity_tip')
+      .select('id')
       .eq('source_center_curriculum_id', curriculumId)
       .order('updated_at', { ascending: false, nullsFirst: false })
       .order('id', { ascending: false })
@@ -312,22 +306,17 @@ export async function PATCH(request: Request) {
       .maybeSingle();
     if (existingErr) throw existingErr;
 
-    let overlayId: number;
     if (existing?.id) {
       const { error: updateErr } = await supabase
         .from('spokedu_pro_programs')
         .update(overlayPayload)
         .eq('id', existing.id);
       if (updateErr) throw updateErr;
-      overlayId = existing.id;
     } else {
-      const { data: inserted, error: insertErr } = await supabase
+      const { error: insertErr } = await supabase
         .from('spokedu_pro_programs')
-        .insert(overlayPayload)
-        .select('id')
-        .single();
+        .insert(overlayPayload);
       if (insertErr) throw insertErr;
-      overlayId = inserted.id;
     }
     state.overlaySaved = true;
 
@@ -338,34 +327,34 @@ export async function PATCH(request: Request) {
     if (metaErr) throw metaErr;
     state.metaSaved = true;
 
-    failedStage = 'legacy-mirror';
-    // Temporary 2B compatibility mirror. Remove after the public programs API reads Master meta in 2C.
-    const legacyPatch = {
-      checklist: replaceExactSection(existing?.checklist, '사전 교육', metaPatch.sm_briefing_notes),
-      activity_tip: replaceExactSection(existing?.activity_tip, '변형 방법', metaPatch.sm_variation_method),
-    };
-    const { error: mirrorErr } = await supabase
-      .from('spokedu_pro_programs')
-      .update(legacyPatch)
-      .eq('id', overlayId);
-    if (mirrorErr) throw mirrorErr;
-    state.legacyMirrorSaved = true;
-
     failedStage = 'reload';
-    const data = await loadPrograms();
-    return NextResponse.json({
-      ...state,
-      ok: true,
-      partialSave: false,
-      data,
-      total: data.length,
+    const program = await loadSavedAdminProgram(curriculumId, {
+      readOverlay: async (id) => {
+        const result = await supabase
+          .from('spokedu_pro_programs')
+          .select('id,source_center_curriculum_id,title,video_url,equipment,activity_method,is_published,updated_at')
+          .eq('source_center_curriculum_id', id)
+          .order('updated_at', { ascending: false, nullsFirst: false })
+          .order('id', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        return { data: result.data, error: result.error };
+      },
+      readMeta: async (id) => {
+        const result = await supabase
+          .from('spokedu_master_program_meta')
+          .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
+          .eq('curriculum_id', id)
+          .maybeSingle();
+        return { data: result.data, error: result.error };
+      },
     });
+    return NextResponse.json(buildAdminProgramSaveSuccess(program));
   } catch (error) {
     const message = errorMessage(error);
     return NextResponse.json(buildAdminProgramSaveFailure({
       overlaySaved: state.overlaySaved,
       metaSaved: state.metaSaved,
-      legacyMirrorSaved: state.legacyMirrorSaved,
       failedStage,
       error: message,
     }), { status: 500 });

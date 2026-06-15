@@ -3,6 +3,7 @@
 import {
   Fragment,
   createContext,
+  memo,
   useCallback,
   useContext,
   useEffect,
@@ -22,7 +23,7 @@ import { NoteRichEditorStyles } from './_components/NoteRichEditorStyles';
 import { NoteImageLightboxProvider, useNoteImageLightbox } from './_components/NoteImageLightbox';
 import { useDeferredNoteMeta } from './_hooks/useDeferredNoteMeta';
 import { useNoteBlockUndo, type NoteUndoEntry } from './_hooks/useNoteBlockUndo';
-import { BubbleToolbar } from './_components/BubbleToolbar';
+import { NoteFormatToolbarHost, type NoteFormatToolbarApi } from './_components/NoteFormatToolbarHost';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from './_components/SlashMenu';
 import type { MarkdownBlockTrigger } from './_components/noteBulletInput';
 import {
@@ -41,13 +42,18 @@ import {
   numberedListIndexAmongSiblings,
   bulletListNestLevelAmongContainers,
   sortRootBlocks,
+  flattenVisualBlockIds,
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import { bulletMarkerForLevel, stripMarkdownTriggerForTypeChange } from './_components/noteBulletInput';
-import { pendingEditorClickRef } from './_components/noteEditorRegistry';
-import { clearAllCrossSelectState } from './_components/noteCrossSelect';
-import { noteBlockMarqueeGuard } from './_lib/noteBlockMarqueeGuard';
-import { collapseAllNoteEditorSelections } from './_components/noteEditorRegistry';
+import { getNoteEditor, collapseAllNoteEditorSelections, setPendingEditorClick, scheduleFocusNoteEditorAtClick } from './_components/noteEditorRegistry';
+import { clearAllCrossSelectState, clearAllNoteTextSelections } from './_components/noteCrossSelect';
+import { noteBlockMarqueeGuard, noteTextDragGuard } from './_lib/noteBlockMarqueeGuard';
+import {
+  focusWithoutScroll,
+  preserveEditorScrollPosition,
+  suppressNoteEditorScrollBriefly,
+} from './_lib/noteEditorScrollGuard';
 import {
   findOrphanSubPageDocuments,
   isDocumentDescendantOf,
@@ -68,6 +74,7 @@ import {
   NOTE_MARQUEE_ZONE,
   NOTE_PAGE_SHELL,
   toggleMenuAnchorOffset,
+  toggleNestPaddingPx,
 } from './_lib/constants';
 import { patchNoteBlocks, putNoteBlockOrders } from './_lib/noteBlocksApi';
 import {
@@ -94,17 +101,6 @@ function blockRowBgClass(content: Record<string, unknown> | null | undefined): s
 function readBlockColor(content: Record<string, unknown> | null | undefined): string {
   const color = content?.blockColor;
   return typeof color === 'string' && color.length > 0 ? color : 'default';
-}
-
-const HoveredBlockContext = createContext<string | null>(null);
-const SetHoveredBlockContext = createContext<(id: string | null) => void>(() => {});
-
-function useHoveredBlockId() {
-  return useContext(HoveredBlockContext);
-}
-
-function useSetHoveredBlockId() {
-  return useContext(SetHoveredBlockContext);
 }
 
 type BlockDropTarget = { blockId: string; position: BlockDropPosition } | null;
@@ -180,11 +176,65 @@ function isMarqueeSelectStartBlocked(target: EventTarget | null): boolean {
   );
 }
 
+/** row 들여쓰기·줄 여백 등 텍스트 표면 밖을 눌렀을 때 해당 블록 편집기로 포커스 */
+function focusNoteBlockRowFromChrome(
+  e: React.PointerEvent<HTMLElement>,
+  blockId: string,
+  onFocusBlock?: () => void,
+) {
+  if (e.button !== 0 || !onFocusBlock) return;
+  const el = notePointerTargetElement(e.target);
+  if (!el) return;
+  if (el.closest(
+    '.note-block-gutter, button, input, textarea, a, [data-toggle-title], [data-note-ignore-whitespace]',
+  )) {
+    return;
+  }
+  if (isNoteTextSurfaceTarget(e.target)) return;
+  setPendingEditorClick(blockId, e.clientX, e.clientY);
+  onFocusBlock();
+}
+
 /**
  * 포인터 실제 Y 좌표 기준으로 before/after/inside 결정.
  * 토글: 상 25% → before, 하 25% → after, 중간 → inside
  * 일반: 상 50% → before, 하 50% → after
  */
+/** 토글 제목 줄 높이 — before/inside/after 판정은 이 구간만 사용 */
+const TOGGLE_TITLE_DROP_BAND_PX = 34;
+/** page(하위 문서) 블록: 위·아래 이 비율은 형제 사이 삽입, 가운데만 하위 문서로 이동 */
+const PAGE_DROP_EDGE_RATIO = 0.35;
+
+function resolvePageDropPosition(
+  top: number,
+  height: number,
+  pointerY: number,
+): BlockDropPosition {
+  const rel = pointerY - top;
+  if (rel <= height * PAGE_DROP_EDGE_RATIO) return 'before';
+  if (rel >= height * (1 - PAGE_DROP_EDGE_RATIO)) return 'after';
+  return 'inside';
+}
+
+function findChildBlockDropTargetAtY(
+  parentId: string,
+  pointerY: number,
+  blocks: NoteBlock[],
+): BlockDropTarget | null {
+  const children = getBlocksInParent(blocks, parentId);
+  for (const child of children) {
+    const row = document.querySelector<HTMLElement>(
+      `[data-note-block-row][data-block-id="${escapeCssAttrValue(child.id)}"]`,
+    );
+    if (!row) continue;
+    const rect = row.getBoundingClientRect();
+    if (pointerY < rect.top || pointerY > rect.bottom) continue;
+    const position = pointerY < rect.top + rect.height / 2 ? 'before' : 'after';
+    return { blockId: child.id, position };
+  }
+  return null;
+}
+
 function resolveDropPosition(
   overBlock: NoteBlock,
   over: { rect: { top: number; height: number } },
@@ -193,9 +243,13 @@ function resolveDropPosition(
   const py = pointerY;
   const { top, height } = over.rect;
   if (overBlock.type === 'toggle') {
-    if (py < top + height * 0.25) return 'before';
-    if (py > top + height * 0.75) return 'after';
-    return 'inside';
+    const band = Math.min(TOGGLE_TITLE_DROP_BAND_PX, height);
+    if (py <= top + band * 0.3) return 'before';
+    if (py <= top + band * 0.65) return 'inside';
+    return 'after';
+  }
+  if (overBlock.type === 'page') {
+    return resolvePageDropPosition(top, height, py);
   }
   return py < top + height / 2 ? 'before' : 'after';
 }
@@ -209,13 +263,48 @@ function resolveBlockDropTarget(
   if (overId.startsWith('block-inside:')) {
     const blockId = overId.slice('block-inside:'.length);
     const container = blocks.find((block) => block.id === blockId);
-    return container && (container.type === 'toggle' || container.type === 'page')
-      ? { blockId, position: 'inside' }
-      : null;
+    if (!container || (container.type !== 'toggle' && container.type !== 'page')) return null;
+    if (container.type === 'toggle') {
+      const over = event.over;
+      if (over?.rect) {
+        const band = Math.min(TOGGLE_TITLE_DROP_BAND_PX, over.rect.height);
+        const headerBottom = over.rect.top + band;
+        if (pointerY > headerBottom) {
+          const childTarget = findChildBlockDropTargetAtY(blockId, pointerY, blocks);
+          if (childTarget) return childTarget;
+        }
+      }
+      return { blockId, position: 'inside' };
+    }
+    if (container.type === 'page') {
+      const row = document.querySelector<HTMLElement>(
+        `[data-note-block-row][data-block-id="${escapeCssAttrValue(blockId)}"]`,
+      );
+      const rect = row?.getBoundingClientRect() ?? event.over?.rect;
+      if (rect) {
+        return {
+          blockId,
+          position: resolvePageDropPosition(rect.top, rect.height, pointerY),
+        };
+      }
+      return { blockId, position: 'inside' };
+    }
+    return { blockId, position: 'inside' };
   }
   const over = event.over;
   const overBlock = blocks.find((b) => b.id === overId);
   if (!overBlock || !over?.rect) return null;
+  if (overBlock.type === 'toggle') {
+    const band = Math.min(TOGGLE_TITLE_DROP_BAND_PX, over.rect.height);
+    const headerBottom = over.rect.top + band;
+    if (pointerY > headerBottom) {
+      const childTarget = findChildBlockDropTargetAtY(overBlock.id, pointerY, blocks);
+      if (childTarget) return childTarget;
+    }
+  }
+  if (overBlock.type === 'page') {
+    return { blockId: overId, position: resolvePageDropPosition(over.rect.top, over.rect.height, pointerY) };
+  }
   return { blockId: overId, position: resolveDropPosition(overBlock, over, pointerY) };
 }
 
@@ -232,9 +321,9 @@ const noteBlockCollisionDetection: CollisionDetection = (args) => {
       const aType = aContainer?.data.current?.type;
       const bType = bContainer?.data.current?.type;
       const priority = (type: unknown) =>
-        type === 'block-inside' ? 0
+        type === 'block-inside' ? 3
           : type === 'document' || type === 'document-drop-target' ? 1
-          : 2;
+          : 0;
       const priorityDiff = priority(aType) - priority(bType);
       if (priorityDiff !== 0) return priorityDiff;
       const aRect = aContainer?.rect.current;
@@ -310,7 +399,13 @@ import {
   useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+
+function escapeCssAttrValue(value: string): string {
+  if (typeof globalThis.CSS?.escape === 'function') {
+    return globalThis.CSS.escape(value);
+  }
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
 
 /* ─── types ─────────────────────────────────────────────────────────────── */
 type NoteDocument = {
@@ -352,12 +447,6 @@ type SortKey = 'recent' | 'title';
 type NoteCollaborator = {
   id: string; document_id: string; user_id: string;
   last_active_at: string; last_cursor: any;
-};
-
-type FormatToolbarState = {
-  applyMark: (mark: InlineMark) => void;
-  applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void;
-  position: { top: number; left: number };
 };
 
 const BLOCK_TYPES: { type: NoteBlock['type']; label: string; icon: React.ElementType; desc: string; shortcut?: string }[] = [
@@ -429,17 +518,59 @@ const TEXT_CARRYING_BLOCK_TYPES = new Set<NoteBlock['type']>([
   'text', 'heading', 'heading2', 'heading3', 'bulletList', 'numberedList', 'todo', 'callout', 'code',
 ]);
 
+function readCarriedTextForTypeChange(
+  prevContent: Record<string, unknown> | null | undefined,
+  prevType: NoteBlock['type'],
+): string {
+  const prev = prevContent ?? {};
+  if (prevType === 'toggle') {
+    if (typeof prev.title === 'string' && prev.title.length > 0) return prev.title;
+    if (typeof prev.text === 'string') return prev.text;
+    return '';
+  }
+  return typeof prev.text === 'string' ? prev.text : '';
+}
+
 /** 블록 타입 변환 시 본문(text/html)을 가능한 한 유지한다. */
 function buildContentForTypeChange(
   prevContent: Record<string, unknown> | null | undefined,
   prevType: NoteBlock['type'],
   nextType: NoteBlock['type'],
 ): Record<string, unknown> {
+  const prev = prevContent ?? {};
+
+  if (nextType === 'toggle') {
+    const base = defaultBlockContent('toggle');
+    const canCarry = TEXT_CARRYING_BLOCK_TYPES.has(prevType) || prevType === 'toggle';
+    if (!canCarry) return base;
+    const rawText = readCarriedTextForTypeChange(prevContent, prevType);
+    const title = stripMarkdownTriggerForTypeChange(rawText, 'toggle');
+    return {
+      ...base,
+      title,
+      ...(typeof prev.depth === 'number' ? { depth: prev.depth } : {}),
+      ...(prev.placedInToggle === true ? { placedInToggle: true } : {}),
+      ...(prev.createdInsideToggle === true ? { createdInsideToggle: true } : {}),
+    };
+  }
+
+  if (prevType === 'toggle' && TEXT_CARRYING_BLOCK_TYPES.has(nextType)) {
+    const base = defaultBlockContent(nextType);
+    const rawText = readCarriedTextForTypeChange(prevContent, prevType);
+    const text = stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger);
+    return {
+      ...base,
+      text,
+      ...(typeof prev.depth === 'number' ? { depth: prev.depth } : {}),
+      ...(prev.placedInToggle === true ? { placedInToggle: true } : {}),
+      ...(prev.createdInsideToggle === true ? { createdInsideToggle: true } : {}),
+    };
+  }
+
   const base = defaultBlockContent(nextType);
   if (!TEXT_CARRYING_BLOCK_TYPES.has(prevType) || !TEXT_CARRYING_BLOCK_TYPES.has(nextType)) {
     return base;
   }
-  const prev = prevContent ?? {};
   const rawText = typeof prev.text === 'string' ? prev.text : '';
   const text = TEXT_CARRYING_BLOCK_TYPES.has(nextType)
     ? stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger)
@@ -512,6 +643,24 @@ function DocIconGlyph({
 
 /** 줄 왼쪽 — 거터·마퀴 시작 여백 (hover·선택 히트) */
 const NOTE_BLOCK_HOVER_BRIDGE = 'absolute -left-[120px] top-0 bottom-0 z-[1] w-[120px]';
+
+function noteBlockRowMouseEnter(e: React.MouseEvent<HTMLDivElement>) {
+  const row = e.currentTarget;
+  let ancestor = row.parentElement?.closest('[data-note-block-row]');
+  while (ancestor) {
+    ancestor.removeAttribute('data-row-hovered');
+    ancestor = ancestor.parentElement?.closest('[data-note-block-row]');
+  }
+  row.setAttribute('data-row-hovered', '');
+}
+
+function blockExternalizesChildren(type: NoteBlock['type']): boolean {
+  return type === 'toggle' || type === 'bulletList' || type === 'numberedList';
+}
+
+function noteBlockRowMouseLeave(e: React.MouseEvent<HTMLDivElement>) {
+  e.currentTarget.removeAttribute('data-row-hovered');
+}
 
 const DROP_TARGET_ROW =
   'z-[1] rounded-sm bg-blue-100/90 ring-2 ring-blue-400 shadow-[inset_0_0_0_1px_rgba(59,130,246,0.25)]';
@@ -789,6 +938,7 @@ function BlockInsideDropSurface({
   className = '',
   style,
   onMouseDown,
+  insideInset = 'toggle',
 }: {
   blockId: string;
   disabled: boolean;
@@ -796,6 +946,8 @@ function BlockInsideDropSurface({
   className?: string;
   style?: React.CSSProperties;
   onMouseDown?: React.MouseEventHandler<HTMLDivElement>;
+  /** page: 가운데만 하위 문서로 — 위·아래는 형제 사이 삽입 */
+  insideInset?: 'toggle' | 'page';
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `block-inside:${blockId}`,
@@ -814,7 +966,9 @@ function BlockInsideDropSurface({
       {!disabled && (
         <div
           ref={setNodeRef}
-          className="pointer-events-none absolute inset-x-0 bottom-[15%] top-[15%] z-[1]"
+          className={`pointer-events-none absolute inset-x-0 z-[1] ${
+            insideInset === 'page' ? 'top-[35%] bottom-[35%]' : 'top-[15%] bottom-[15%]'
+          }`}
           aria-hidden
         />
       )}
@@ -827,6 +981,7 @@ function BlockInsideDropSurface({
 function BlockContent({
   block,
   onUpdate,
+  onContentSync,
   onChangeType,
   onEnter,
   onAddBelow,
@@ -858,9 +1013,11 @@ function BlockContent({
   autoFocusTitleSignal = 0,
   numberedListIndex,
   bulletListNestLevel = 0,
+  omitExternalizedChildren = false,
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
+  onContentSync?: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
@@ -897,6 +1054,7 @@ function BlockContent({
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
+  omitExternalizedChildren?: boolean;
 }) {
   const isBlockDragActive = useBlockDragActive();
   const imageLightbox = useNoteImageLightbox();
@@ -925,7 +1083,7 @@ function BlockContent({
   useEffect(() => {
     if (block.type !== 'toggle' || autoFocusTitleSignal <= 0) return;
     requestAnimationFrame(() => {
-      toggleTitleInputRef.current?.focus();
+      focusWithoutScroll(toggleTitleInputRef.current);
       onTrackActiveBlock?.('title');
     });
   }, [block.type, autoFocusTitleSignal, onTrackActiveBlock]);
@@ -1081,7 +1239,11 @@ function BlockContent({
         if (typeof block.content?.[legacyKey] !== 'string' && typeof original === 'string') {
           nextContent[legacyKey] = original;
         }
-        onUpdate(nextContent);
+        if (onContentSync) {
+          onContentSync(nextContent);
+        } else {
+          onUpdate(nextContent);
+        }
       },
     };
 
@@ -1094,12 +1256,14 @@ function BlockContent({
         onMouseDown={(e) => {
           const target = notePointerTargetElement(e.target);
           if (!target) return;
-          if (target.closest('button, input, textarea, a, .ProseMirror')) return;
-          pendingEditorClickRef.current = {
-            blockId: block.id,
-            x: e.clientX,
-            y: e.clientY,
-          };
+          if (target.closest('button, input, textarea, a')) return;
+          clearAllNoteTextSelections();
+          setPendingEditorClick(block.id, e.clientX, e.clientY);
+          if (target.closest('.ProseMirror')) return;
+          const existing = getNoteEditor(block.id);
+          if (existing) {
+            scheduleFocusNoteEditorAtClick(block.id, existing);
+          }
         }}
         onClick={(e) => {
           const target = notePointerTargetElement(e.target);
@@ -1117,6 +1281,7 @@ function BlockContent({
             text={text}
             className={textClassName}
             placeholder={placeholder}
+            onRecordClick={(x, y) => setPendingEditorClick(block.id, x, y)}
             onActivate={() => onFocusBlock?.()}
           />
         )}
@@ -1157,21 +1322,15 @@ function BlockContent({
   };
 
   const renderListChildBlocks = () => {
+    if (omitExternalizedChildren) return null;
     if (!childBlocks?.length || !renderChildBlock) return null;
     return (
-      <div className="overflow-visible pl-[1.625rem]">
-        <SortableContext
-          items={childBlocks.map((child) => child.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="note-block-children space-y-0 overflow-visible">
-            {childBlocks.map((child) => (
-              <Fragment key={child.id}>
-                {renderChildBlock(child, toggleNestDepth + 1)}
-              </Fragment>
-            ))}
-          </div>
-        </SortableContext>
+      <div className="note-block-children space-y-0 overflow-visible">
+        {childBlocks.map((child) => (
+          <Fragment key={child.id}>
+            {renderChildBlock(child, toggleNestDepth + 1)}
+          </Fragment>
+        ))}
       </div>
     );
   };
@@ -1534,6 +1693,7 @@ function BlockContent({
     return (
       <BlockInsideDropSurface
         blockId={block.id}
+        insideInset="page"
         disabled={!isBlockDragActive || !!isDragging || !pageId}
         style={{ marginLeft: `${contentMarginLeft}px` }}
       >
@@ -1632,7 +1792,13 @@ function BlockContent({
       onUpdate({ ...block.content, ...partial });
     const rawShowToggleBody = childBlocks.length === 0 && body.trim().length > 0;
     if (rawShowToggleBody) editorStayMountedRef.current = true;
-    const showToggleBody = rawShowToggleBody || (childBlocks.length === 0 && editorStayMountedRef.current);
+    const showToggleBody = childBlocks.length === 0
+      && (body.trim().length > 0 || editorStayMountedRef.current);
+    const toggleChildIndentPx = toggleNestPaddingPx(toggleNestDepth + 1);
+    const hasInlineToggleChildren = !omitExternalizedChildren && childBlocks.length > 0;
+    const showToggleEmptySlot = !showToggleBody && !!onAddChildBelow && childBlocks.length === 0;
+    const showToggleExtrasWrapper = showToggleContent
+      && (showToggleBody || hasInlineToggleChildren || showToggleEmptySlot);
 
     return (
       <div
@@ -1652,7 +1818,7 @@ function BlockContent({
           onMouseDown={(e) => {
             const target = e.target as HTMLElement;
             if (target.closest('button')) return;
-            if (target.tagName !== 'INPUT') {
+            if (target === e.currentTarget) {
               e.preventDefault();
               toggleTitleInputRef.current?.focus();
               onTrackActiveBlock?.('title');
@@ -1695,8 +1861,11 @@ function BlockContent({
             placeholder="토글 (/ 로 변환)"
           />
         </BlockInsideDropSurface>
-        {showToggleContent && (
-          <div className="overflow-visible pl-[1.625rem]">
+        {showToggleExtrasWrapper && (
+          <div
+            className="overflow-visible"
+            style={toggleChildIndentPx > 0 ? { paddingLeft: toggleChildIndentPx } : undefined}
+          >
             {showToggleBody && (
               <>
                 {renderFormatToolbar()}
@@ -1711,20 +1880,15 @@ function BlockContent({
                 })}
               </>
             )}
-            {childBlocks.length > 0 ? (
-              <SortableContext
-                items={childBlocks.map((child) => child.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="note-block-children space-y-0 overflow-visible">
-                  {childBlocks.map((child) => (
-                    <Fragment key={child.id}>
-                      {renderChildBlock?.(child, toggleNestDepth + 1)}
-                    </Fragment>
-                  ))}
-                </div>
-              </SortableContext>
-            ) : !showToggleBody && onAddChildBelow ? (
+            {hasInlineToggleChildren ? (
+              <div className="note-block-children space-y-0 overflow-visible">
+                {childBlocks.map((child) => (
+                  <Fragment key={child.id}>
+                    {renderChildBlock?.(child, toggleNestDepth + 1)}
+                  </Fragment>
+                ))}
+              </div>
+            ) : showToggleEmptySlot ? (
               <div
                 className="min-h-[30px] cursor-text py-0.5"
                 onMouseDown={(e) => {
@@ -1801,37 +1965,14 @@ function BlockContent({
       className={`flex min-h-[30px] items-start ${inlineRowPadding || rootBlockShell}`}
       style={{ marginLeft: `${contentMarginLeft}px` }}
     >
-      <div
-        data-note-editor-host
-        className="relative min-h-[1.75rem] min-w-0 flex-1 cursor-text select-text"
-        onPointerDown={stopNoteEditorPointerBubble}
-        onMouseDown={(e) => {
-          const target = notePointerTargetElement(e.target);
-          if (!target) return;
-          if (target.closest('.ProseMirror, button, input, textarea, a')) return;
-          pendingEditorClickRef.current = {
-            blockId: block.id,
-            x: e.clientX,
-            y: e.clientY,
-          };
-        }}
-        onClick={(e) => {
-          const target = notePointerTargetElement(e.target);
-          if (!target) return;
-          if (target.closest('.ProseMirror, button, input, textarea, a')) return;
-          onFocusBlock?.();
-        }}
-      >
-        {renderFormatToolbar()}
-        {renderFormattedTextarea({
-          text,
-          placeholder: EMPTY_BLOCK_PLACEHOLDER,
-          textClassName: 'text-[16px] leading-[1.7] text-slate-800',
-          enterCreatesBlock: enterCreatesBlockBelow,
-          onEditorEnter: enterCreatesBlockBelow ? onEnter : undefined,
-        })}
-        {renderSlashMenuPortal()}
-      </div>
+      {renderFormattedTextarea({
+        text,
+        placeholder: EMPTY_BLOCK_PLACEHOLDER,
+        textClassName: 'text-[16px] leading-[1.7] text-slate-800',
+        enterCreatesBlock: enterCreatesBlockBelow,
+        onEditorEnter: enterCreatesBlockBelow ? onEnter : undefined,
+      })}
+      {renderSlashMenuPortal()}
     </div>
   );
 }
@@ -1841,7 +1982,6 @@ function BlockRowGutter({
   blockId,
   blockType,
   nestDepth = 1,
-  gutterPinned = false,
   onAddBelow,
   onGripClick,
   gripBtnRef,
@@ -1852,7 +1992,6 @@ function BlockRowGutter({
   blockId: string;
   blockType: NoteBlock['type'];
   nestDepth?: number;
-  gutterPinned?: boolean;
   onAddBelow: (type: NoteBlock['type']) => void;
   onGripClick: (e: React.MouseEvent<HTMLButtonElement>) => void;
   gripBtnRef: React.RefObject<HTMLButtonElement | null>;
@@ -1860,8 +1999,6 @@ function BlockRowGutter({
   dragListeners: DraggableSyntheticListeners;
   onPickerOpenChange?: (open: boolean) => void;
 }) {
-  const hoveredBlockId = useHoveredBlockId();
-  const visible = hoveredBlockId === blockId || gutterPinned;
   const gutterTop = blockGutterTopPx(blockType);
   const gutterCentered = gutterTop === 'center';
   const [addPickerAnchor, setAddPickerAnchor] = useState<{ top: number; left: number } | null>(null);
@@ -1877,7 +2014,7 @@ function BlockRowGutter({
       <div
         className={`note-block-gutter absolute z-10 flex h-6 items-center gap-0.5 transition-none ${
           gutterCentered ? 'top-1/2 -translate-y-1/2' : ''
-        } ${visible ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'}`}
+        }`}
         style={{
           left: blockHandleLeftPx(nestDepth),
           ...(gutterCentered ? {} : { top: gutterTop }),
@@ -1956,6 +2093,7 @@ const DROP_INSIDE_BLOCK_ROW =
 function SortableBlockRow({
   block,
   onUpdate,
+  onContentSync,
   onDelete,
   onChangeType,
   onEnter,
@@ -1992,6 +2130,7 @@ function SortableBlockRow({
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
+  onContentSync?: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
@@ -2034,19 +2173,18 @@ function SortableBlockRow({
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
     isDragging,
-  } = useSortable({ id: block.id });
+  } = useSortable({
+    id: block.id,
+    data: { type: 'block' },
+    animateLayoutChanges: () => false,
+  });
   const isListSibling = block.type === 'bulletList' || block.type === 'numberedList';
   const blockTypeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
   const [handleMenuAnchor, setHandleMenuAnchor] = useState<{ top: number; left: number } | null>(null);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
   const gripBtnRef = useRef<HTMLButtonElement>(null);
   const gutterPinned = !!handleMenuAnchor || addPickerOpen;
-  const hoveredBlockId = useHoveredBlockId();
-  const setHoveredBlockId = useSetHoveredBlockId();
-  const isRowHovered = hoveredBlockId === block.id || gutterPinned;
   const dropTarget = useBlockDropTarget();
   const dropPos = dropTarget?.blockId === block.id ? dropTarget.position : null;
   const isDragActive = useBlockDragActive();
@@ -2055,62 +2193,64 @@ function SortableBlockRow({
   const suppressGripMenuRef = useSuppressGripMenuRef();
   const isSelected = selectedBlockIds.has(block.id);
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0 : isSelected && isDragActive && selectedBlockIds.size > 1 ? 0.4 : 1,
-    zIndex: isDragging ? 10 : undefined,
+  const sharedBlockContentProps = {
+    block,
+    onUpdate,
+    onContentSync,
+    onDelete,
+    onChangeType,
+    onEnter,
+    onAddBelow,
+    onOpenDocument,
+    resolvePageIcon,
+    onShowFormatToolbar,
+    onHideFormatToolbar,
+    autoFocusSignal,
+    onEmptyBackspace,
+    onMergeWithPrevious,
+    canMergeWithPrevious,
+    onIndentChange,
+    onNavigatePrevious,
+    onNavigateNext,
+    isDragging,
+    focusedToggleId,
+    uploadImage,
+    childBlocks,
+    renderChildBlock,
+    onAddChildBelow,
+    onTrackActiveBlock,
+    isInsideToggle: false as const,
+    isDropTarget,
+    isFocused,
+    mergeFocusCaretOffset,
+    onRequestCaretOffset,
+    toggleNestDepth: 1,
+    onFocusBlock,
+    autoFocusTitleSignal,
+    numberedListIndex,
+    bulletListNestLevel,
+    omitExternalizedChildren: blockExternalizesChildren(block.type),
   };
 
-  const blockContentNode = (
-    <div
-      data-note-editor-host
-      className="min-w-0 flex-1 cursor-text select-text"
-      onPointerDown={stopNoteEditorPointerBubble}
-      onMouseDownCapture={() => {
-        if (block.type === 'toggle') onFocusToggle?.(block.id);
-      }}
-    >
-      <BlockContent
-        block={block}
-        onUpdate={onUpdate}
-        onDelete={onDelete}
-        onChangeType={onChangeType}
-        onEnter={onEnter}
-        onAddBelow={onAddBelow}
-        onOpenDocument={onOpenDocument}
-        resolvePageIcon={resolvePageIcon}
-        onShowFormatToolbar={onShowFormatToolbar}
-        onHideFormatToolbar={onHideFormatToolbar}
-        autoFocusSignal={autoFocusSignal}
-        onEmptyBackspace={onEmptyBackspace}
-        onMergeWithPrevious={onMergeWithPrevious}
-        canMergeWithPrevious={canMergeWithPrevious}
-        onIndentChange={onIndentChange}
-        onNavigatePrevious={onNavigatePrevious}
-        onNavigateNext={onNavigateNext}
-        isDragging={isDragging}
-        focusedToggleId={focusedToggleId}
-        uploadImage={uploadImage}
-        childBlocks={childBlocks}
-        renderChildBlock={renderChildBlock}
-        onAddChildBelow={onAddChildBelow}
-        onTrackActiveBlock={onTrackActiveBlock}
-        isInsideToggle={false}
-        isDropTarget={isDropTarget}
-        isFocused={isFocused}
-        mergeFocusCaretOffset={mergeFocusCaretOffset}
-        onRequestCaretOffset={onRequestCaretOffset}
-        toggleNestDepth={1}
-        onFocusBlock={onFocusBlock}
-        autoFocusTitleSignal={autoFocusTitleSignal}
-        numberedListIndex={numberedListIndex}
-        bulletListNestLevel={bulletListNestLevel}
-      />
-    </div>
-  );
+  const blockContentNode = <BlockContent {...sharedBlockContentProps} />;
+
+  const toggleCollapsed = block.type === 'toggle' && !!block.content?.collapsed;
+  const toggleExpanded = block.type === 'toggle' && !toggleCollapsed && !isDragging;
+  const showExternalChildren =
+    !isDragging
+    && childBlocks
+    && childBlocks.length > 0
+    && renderChildBlock
+    && (toggleExpanded || block.type === 'bulletList' || block.type === 'numberedList');
+
+  const style: React.CSSProperties | undefined = isDragging
+    ? { opacity: 0, zIndex: 10 }
+    : isSelected && isDragActive && selectedBlockIds.size > 1
+      ? { opacity: 0.4 }
+      : undefined;
 
   return (
+    <>
     <div
       ref={setNodeRef}
       data-note-block-row
@@ -2119,17 +2259,19 @@ function SortableBlockRow({
       data-list-sibling={isListSibling ? 'true' : undefined}
       data-nest-depth="1"
       style={style}
+      data-gutter-pinned={gutterPinned ? '' : undefined}
+      onMouseEnter={noteBlockRowMouseEnter}
+      onMouseLeave={noteBlockRowMouseLeave}
+      onPointerDown={(e) => focusNoteBlockRowFromChrome(e, block.id, onFocusBlock)}
       className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
           : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
-          : isRowHovered && !block.content?.blockColor ? 'bg-neutral-50/60' : ''
+          : !block.content?.blockColor ? 'hover:bg-neutral-50/60' : ''
       }`}
-      onMouseEnter={() => setHoveredBlockId(block.id)}
     >
       <div
         className={NOTE_BLOCK_HOVER_BRIDGE}
         aria-hidden
-        onMouseEnter={() => setHoveredBlockId(block.id)}
       />
       {dropPos === 'before' && <DropInsertLine position="top" />}
       {dropPos === 'after' && <DropInsertLine position="bottom" />}
@@ -2137,7 +2279,6 @@ function SortableBlockRow({
         blockId={block.id}
         blockType={block.type}
         nestDepth={1}
-        gutterPinned={gutterPinned}
         onAddBelow={(type) => onAddBelow(type)}
         gripBtnRef={gripBtnRef}
         dragAttributes={attributes}
@@ -2188,6 +2329,14 @@ function SortableBlockRow({
         </div>
       )}
     </div>
+    {showExternalChildren && (
+      childBlocks.map((child) => (
+        <Fragment key={child.id}>
+          {renderChildBlock(child, 2)}
+        </Fragment>
+      ))
+    )}
+    </>
   );
 }
 
@@ -2195,6 +2344,7 @@ function SortableBlockRow({
 function ToggleInlineRow({
   block,
   onUpdate,
+  onContentSync,
   onDelete,
   onChangeType,
   onEnter,
@@ -2232,6 +2382,7 @@ function ToggleInlineRow({
 }: {
   block: NoteBlock;
   onUpdate: (content: any) => void;
+  onContentSync?: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
@@ -2277,10 +2428,12 @@ function ToggleInlineRow({
     attributes,
     listeners,
     setNodeRef,
-    transform,
-    transition,
     isDragging,
-  } = useSortable({ id: block.id });
+  } = useSortable({
+    id: block.id,
+    data: { type: 'block' },
+    animateLayoutChanges: () => false,
+  });
 
   const isDragActive = useBlockDragActive();
   const selectedBlockIds = useSelectedBlockIds();
@@ -2288,27 +2441,79 @@ function ToggleInlineRow({
   const suppressGripMenuRef = useSuppressGripMenuRef();
   const isSelected = selectedBlockIds.has(block.id);
 
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0 : isSelected && isDragActive && selectedBlockIds.size > 1 ? 0.4 : 1,
-    zIndex: isDragging ? 10 + nestDepth : undefined,
-  };
-
   const menuShiftLeft = toggleMenuAnchorOffset(nestDepth);
   const menuZIndex = 10000 + nestDepth;
+  const rowIndentPx = toggleNestPaddingPx(nestDepth);
 
   const [inlineHandleMenuAnchor, setInlineHandleMenuAnchor] = useState<{ top: number; left: number } | null>(null);
   const [addPickerOpen, setAddPickerOpen] = useState(false);
   const inlineGripBtnRef = useRef<HTMLButtonElement>(null);
   const gutterPinned = !!inlineHandleMenuAnchor || addPickerOpen;
-  const hoveredBlockId = useHoveredBlockId();
-  const setHoveredBlockId = useSetHoveredBlockId();
-  const isRowHovered = hoveredBlockId === block.id || gutterPinned;
   const dropTarget = useBlockDropTarget();
   const dropPos = dropTarget?.blockId === block.id ? dropTarget.position : null;
 
+  const style: React.CSSProperties = {
+    ...(isDragging
+      ? { opacity: 0, zIndex: 10 + nestDepth }
+      : isSelected && isDragActive && selectedBlockIds.size > 1
+        ? { opacity: 0.4 }
+        : {}),
+    ...(rowIndentPx > 0 ? { paddingLeft: rowIndentPx } : {}),
+  };
+
+  const toggleCollapsed = block.type === 'toggle' && !!block.content?.collapsed;
+  const toggleExpanded = block.type === 'toggle' && !toggleCollapsed && !isDragging;
+  const showExternalChildren =
+    !isDragging
+    && childBlocks
+    && childBlocks.length > 0
+    && renderChildBlock
+    && (toggleExpanded || block.type === 'bulletList' || block.type === 'numberedList');
+
+  const inlineBlockContentProps = {
+    block,
+    onUpdate,
+    onContentSync,
+    onDelete,
+    onChangeType,
+    onEnter,
+    onAddBelow,
+    onOpenDocument,
+    resolvePageIcon,
+    onShowFormatToolbar,
+    onHideFormatToolbar,
+    autoFocusSignal,
+    onEmptyBackspace,
+    onMergeWithPrevious,
+    canMergeWithPrevious,
+    onIndentChange,
+    onNavigatePrevious,
+    onNavigateNext,
+    isDragging,
+    focusedToggleId,
+    uploadImage,
+    childBlocks,
+    renderChildBlock:
+      block.type === 'toggle' || block.type === 'bulletList' || block.type === 'numberedList'
+        ? renderChildBlock
+        : undefined,
+    onAddChildBelow,
+    onTrackActiveBlock,
+    isInsideToggle: true as const,
+    isDropTarget,
+    isFocused,
+    mergeFocusCaretOffset,
+    onRequestCaretOffset,
+    toggleNestDepth: nestDepth,
+    onFocusBlock,
+    autoFocusTitleSignal,
+    numberedListIndex,
+    bulletListNestLevel,
+    omitExternalizedChildren: blockExternalizesChildren(block.type),
+  };
+
   return (
+    <>
     <div
       ref={setNodeRef}
       data-note-block-row
@@ -2317,17 +2522,19 @@ function ToggleInlineRow({
       data-list-sibling={isListSibling ? 'true' : undefined}
       data-nest-depth={String(nestDepth)}
       style={style}
+      data-gutter-pinned={gutterPinned ? '' : undefined}
+      onMouseEnter={noteBlockRowMouseEnter}
+      onMouseLeave={noteBlockRowMouseLeave}
+      onPointerDown={(e) => focusNoteBlockRowFromChrome(e, block.id, onFocusBlock)}
       className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
           : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
-          : isRowHovered && !block.content?.blockColor ? 'bg-neutral-50/60' : ''
+          : !block.content?.blockColor ? 'hover:bg-neutral-50/60' : ''
       }`}
-      onMouseEnter={() => setHoveredBlockId(block.id)}
     >
       <div
         className={NOTE_BLOCK_HOVER_BRIDGE}
         aria-hidden
-        onMouseEnter={() => setHoveredBlockId(block.id)}
       />
       {dropPos === 'before' && <DropInsertLine position="top" />}
       {dropPos === 'after' && <DropInsertLine position="bottom" />}
@@ -2335,7 +2542,6 @@ function ToggleInlineRow({
         blockId={block.id}
         blockType={block.type}
         nestDepth={nestDepth}
-        gutterPinned={gutterPinned}
         onAddBelow={(type) => onAddBelow(type)}
         gripBtnRef={inlineGripBtnRef}
         dragAttributes={attributes}
@@ -2382,59 +2588,53 @@ function ToggleInlineRow({
           />
         </div>
       )}
-      <div
-        className="min-w-0 cursor-text select-text"
-        onPointerDown={stopNoteEditorPointerBubble}
-        onMouseDownCapture={() => {
-          if (block.type === 'toggle') {
-            onFocusToggle?.(block.id);
-          }
-        }}
-      >
-        <BlockContent
-          block={block}
-          onUpdate={onUpdate}
-          onDelete={onDelete}
-          onChangeType={onChangeType}
-          onEnter={onEnter}
-          onAddBelow={onAddBelow}
-          onOpenDocument={onOpenDocument}
-          resolvePageIcon={resolvePageIcon}
-          onShowFormatToolbar={onShowFormatToolbar}
-          onHideFormatToolbar={onHideFormatToolbar}
-          autoFocusSignal={autoFocusSignal}
-          onEmptyBackspace={onEmptyBackspace}
-          onMergeWithPrevious={onMergeWithPrevious}
-          canMergeWithPrevious={canMergeWithPrevious}
-          onIndentChange={onIndentChange}
-          onNavigatePrevious={onNavigatePrevious}
-          onNavigateNext={onNavigateNext}
-          isDragging={isDragging}
-          focusedToggleId={focusedToggleId}
-          uploadImage={uploadImage}
-          childBlocks={childBlocks}
-          renderChildBlock={
-            block.type === 'toggle' || block.type === 'bulletList' || block.type === 'numberedList'
-              ? renderChildBlock
-              : undefined
-          }
-          onAddChildBelow={onAddChildBelow}
-          onTrackActiveBlock={onTrackActiveBlock}
-          isInsideToggle
-          isDropTarget={isDropTarget}
-          isFocused={isFocused}
-          mergeFocusCaretOffset={mergeFocusCaretOffset}
-          onRequestCaretOffset={onRequestCaretOffset}
-          toggleNestDepth={nestDepth}
-          onFocusBlock={onFocusBlock}
-          autoFocusTitleSignal={autoFocusTitleSignal}
-          numberedListIndex={numberedListIndex}
-          bulletListNestLevel={bulletListNestLevel}
-        />
-      </div>
+      <BlockContent {...inlineBlockContentProps} />
     </div>
+    {showExternalChildren && (
+      childBlocks.map((child) => (
+        <Fragment key={child.id}>
+          {renderChildBlock(child, nestDepth + 1)}
+        </Fragment>
+      ))
+    )}
+    </>
   );
 }
+
+function areSortableBlockRowPropsEqual(
+  prev: React.ComponentProps<typeof SortableBlockRow>,
+  next: React.ComponentProps<typeof SortableBlockRow>,
+): boolean {
+  if (prev.block !== next.block) {
+    if (prev.block.id !== next.block.id) return false;
+    if (prev.block.type !== next.block.type) return false;
+    if (prev.block.order_index !== next.block.order_index) return false;
+    if (prev.block.parent_block_id !== next.block.parent_block_id) return false;
+    if (prev.block.content !== next.block.content) return false;
+  }
+  if (prev.isFocused !== next.isFocused) return false;
+  if (prev.autoFocusSignal !== next.autoFocusSignal) return false;
+  if (prev.autoFocusTitleSignal !== next.autoFocusTitleSignal) return false;
+  if (prev.mergeFocusCaretOffset !== next.mergeFocusCaretOffset) return false;
+  if (prev.isDropTarget !== next.isDropTarget) return false;
+  if (prev.numberedListIndex !== next.numberedListIndex) return false;
+  if (prev.bulletListNestLevel !== next.bulletListNestLevel) return false;
+  if (prev.childBlocks !== next.childBlocks) return false;
+  if (prev.focusedToggleId !== next.focusedToggleId) return false;
+  return true;
+}
+
+function areToggleInlineRowPropsEqual(
+  prev: React.ComponentProps<typeof ToggleInlineRow>,
+  next: React.ComponentProps<typeof ToggleInlineRow>,
+): boolean {
+  if (!areSortableBlockRowPropsEqual(prev, next)) return false;
+  if (prev.nestDepth !== next.nestDepth) return false;
+  return true;
+}
+
+const MemoSortableBlockRow = memo(SortableBlockRow, areSortableBlockRowPropsEqual);
+const MemoToggleInlineRow = memo(ToggleInlineRow, areToggleInlineRowPropsEqual);
 
 /* ─── DragPreview ────────────────────────────────────────────────────────── */
 function DragPreview({ block }: { block: NoteBlock }) {
@@ -2490,14 +2690,16 @@ export default function AdminNotePageContent() {
   const [expandedSidebarDocs, setExpandedSidebarDocs] = useState<Set<string>>(() => new Set());
   const [dropTarget, setDropTarget] = useState<BlockDropTarget>(null);
   const dropTargetRef = useRef<BlockDropTarget>(null);
-  const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
   const [focusedEditorBlockId, setFocusedEditorBlockId] = useState<string | null>(null);
   const [focusedEditorPart, setFocusedEditorPart] = useState<'title' | 'editor' | null>(null);
   const [focusSignal, setFocusSignal] = useState(0);
   const [focusTitleSignal, setFocusTitleSignal] = useState(0);
   /** 상단 '이미지' 블록 추가 시 토글 안에 넣을 대상 (토글 블록 클릭으로 설정) */
   const [focusedToggleId, setFocusedToggleId] = useState<string | null>(null);
-  const [formatToolbar, setFormatToolbar] = useState<FormatToolbarState | null>(null);
+  const formatToolbarApiRef = useRef<NoteFormatToolbarApi>({
+    show: () => {},
+    hide: () => {},
+  });
   const [shareLinkCopied, setShareLinkCopied] = useState(false);
   const [togglingPublic, setTogglingPublic] = useState(false);
   const [docTab, setDocTab] = useState<'active' | 'trash' | 'block-trash'>('active');
@@ -2515,13 +2717,13 @@ export default function AdminNotePageContent() {
     lastDeletedBlockIdRef.current = blockId;
   }, []);
   const [selectedBlockIds, setSelectedBlockIds] = useState<Set<string>>(() => new Set());
-  const [marqueeBox, setMarqueeBox] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [multiDragCount, setMultiDragCount] = useState(0);
   const selectedBlockIdsRef = useRef<Set<string>>(new Set());
   const lastClickedBlockIdRef = useRef<string | null>(null);
   const blockMarqueeRef = useRef<{
     additive: boolean;
     shiftAnchor: boolean;
+    hasModifier: boolean;
     started: boolean;
     startX: number;
     startY: number;
@@ -2529,14 +2731,25 @@ export default function AdminNotePageContent() {
   const blockMarqueeListenersRef = useRef<{
     onMove: (ev: PointerEvent) => void;
     onUp: () => void;
+    onSelectStart: (ev: Event) => void;
+  } | null>(null);
+  const marqueeOverlayRef = useRef<HTMLDivElement>(null);
+  const marqueeRafRef = useRef<number | null>(null);
+  const pendingMarqueeRectRef = useRef<{ left: number; top: number; width: number; height: number } | null>(null);
+  const pendingMarqueeSelectionRef = useRef<{
+    marquee: MarqueeRect;
+    options: { additive: boolean; shiftAnchor: boolean };
   } | null>(null);
   const multiDragBlockIdsRef = useRef<string[] | null>(null);
   const suppressGripMenuRef = useRef(false);
 
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
+  const docTitleSaveSeqRef = useRef<Record<string, number>>({});
+  const pendingFocusDocTitleRef = useRef<string | null>(null);
   const savedTimerRef = useRef<number | undefined>(undefined);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
+  const editorScrollRef = useRef<HTMLDivElement>(null);
   const blocksRef = useRef<NoteBlock[]>([]);
   const focusedEditorBlockIdRef = useRef<string | null>(null);
   const focusedEditorPartRef = useRef<'title' | 'editor' | null>(null);
@@ -2602,6 +2815,16 @@ export default function AdminNotePageContent() {
     }
   }, []);
 
+  const commitBlockToState = useCallback((blockId: string) => {
+    const latest = blocksRef.current.find((b) => b.id === blockId);
+    if (!latest) return;
+    setBlocks((prev) => {
+      const current = prev.find((b) => b.id === blockId);
+      if (!current || current.content === latest.content) return prev;
+      return prev.map((b) => (b.id === blockId ? latest : b));
+    });
+  }, []);
+
   const trackActiveBlock = useCallback((blockId: string | null, part: 'title' | 'editor' = 'editor') => {
     if (!blockId) return;
     focusedEditorBlockIdRef.current = blockId;
@@ -2615,8 +2838,16 @@ export default function AdminNotePageContent() {
     blockId: string | null,
     part: 'title' | 'editor' = 'editor',
     caretOffset?: number,
+    options?: { preventScroll?: boolean },
   ) => {
     if (!blockId) return;
+    if (options?.preventScroll) {
+      suppressNoteEditorScrollBriefly();
+    }
+    const previousBlockId = focusedEditorBlockIdRef.current;
+    if (previousBlockId && previousBlockId !== blockId) {
+      commitBlockToState(previousBlockId);
+    }
     const alreadyFocused =
       focusedEditorBlockIdRef.current === blockId
       && focusedEditorPartRef.current === part;
@@ -2641,7 +2872,7 @@ export default function AdminNotePageContent() {
       }
     }
     syncFocusedToggleFromBlock(blockId);
-  }, [syncFocusedToggleFromBlock]);
+  }, [commitBlockToState, syncFocusedToggleFromBlock]);
 
   const filteredDocuments = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -2712,6 +2943,19 @@ export default function AdminNotePageContent() {
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }, [activeDocument?.title]);
+
+  /* 새 하위 페이지 진입 시 제목 입력에 포커스 (블록 로드 후) */
+  useEffect(() => {
+    if (!selectedId || loadingBlocks) return;
+    if (pendingFocusDocTitleRef.current !== selectedId) return;
+    pendingFocusDocTitleRef.current = null;
+    requestAnimationFrame(() => {
+      const el = titleInputRef.current;
+      if (!el) return;
+      focusWithoutScroll(el);
+      el.select();
+    });
+  }, [selectedId, loadingBlocks]);
 
   /* init from URL */
   useEffect(() => {
@@ -2787,7 +3031,7 @@ export default function AdminNotePageContent() {
 
   const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
   const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);
-  const rootSortableBlockIds = useMemo(() => rootBlocks.map((block) => block.id), [rootBlocks]);
+  const allSortableBlockIds = useMemo(() => flattenVisualBlockIds(blocks), [blocks]);
 
   const loadTrashedBlocks = useCallback(async () => {
     if (!selectedId) {
@@ -3208,10 +3452,13 @@ export default function AdminNotePageContent() {
       }
     }
 
-    if (overBlock?.type === 'page') {
+    const pageInsideTarget = resolvedTarget
+      ? prevBlocks.find((block) => block.id === resolvedTarget.blockId)
+      : overBlock;
+    if (pageInsideTarget?.type === 'page' && resolvedTarget?.position === 'inside') {
       const targetDocId =
-        typeof overBlock.content?.page_document_id === 'string'
-          ? overBlock.content.page_document_id.trim()
+        typeof pageInsideTarget.content?.page_document_id === 'string'
+          ? pageInsideTarget.content.page_document_id.trim()
           : '';
       if (targetDocId && targetDocId !== selectedId) {
         const descendantIds = collectDescendantBlockIds(moving.id, prevBlocks);
@@ -3253,8 +3500,17 @@ export default function AdminNotePageContent() {
     );
     if (!plan) return;
 
-    const targetMap = new Map(plan.targetSiblings.map((block) => [block.id, block]));
     const oldParentId = moving.parent_block_id ?? null;
+    const undoIds = new Set<string>([moving.id]);
+    getBlocksInParent(prevBlocks, oldParentId).forEach((b) => undoIds.add(b.id));
+    if (plan.targetParentId) {
+      getBlocksInParent(prevBlocks, plan.targetParentId).forEach((b) => undoIds.add(b.id));
+    } else {
+      sortRootBlocks(prevBlocks).forEach((b) => undoIds.add(b.id));
+    }
+    noteUndo.pushRestoreBlocksUndo(prevBlocks, [...undoIds]);
+
+    const targetMap = new Map(plan.targetSiblings.map((block) => [block.id, block]));
     const parentChanged = oldParentId !== plan.targetParentId;
     const oldSiblings = parentChanged
       ? getBlocksInParent(prevBlocks, oldParentId)
@@ -3294,7 +3550,7 @@ export default function AdminNotePageContent() {
       setBlocks(prevBlocks);
       setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
     }
-  }, [normalizeDepthByOrder, persistBlockReparent, persistOrderAndDepth, selectedId, triggerSave, handleReparentDocument, documents]);
+  }, [normalizeDepthByOrder, noteUndo, persistBlockReparent, persistOrderAndDepth, selectedId, triggerSave, handleReparentDocument, documents]);
 
   /* handlers */
   const handleGoToDashboard = useCallback(() => {
@@ -3466,18 +3722,12 @@ export default function AdminNotePageContent() {
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
     position: { top: number; left: number },
   ) => {
-    setFormatToolbar({ applyMark, applyTextStyle, position });
+    formatToolbarApiRef.current.show(applyMark, applyTextStyle, position);
   }, []);
 
   const hideFormatToolbar = useCallback(() => {
-    setFormatToolbar(null);
+    formatToolbarApiRef.current.hide();
   }, []);
-
-  useEffect(() => {
-    const onHide = () => hideFormatToolbar();
-    document.addEventListener('note-hide-format-toolbar', onHide);
-    return () => document.removeEventListener('note-hide-format-toolbar', onHide);
-  }, [hideFormatToolbar]);
 
   const handleCopyBlockLink = useCallback((block: NoteBlock) => {
     if (!selectedId) return;
@@ -3609,6 +3859,7 @@ export default function AdminNotePageContent() {
       }
 
       if (navigateToChild) {
+        pendingFocusDocTitleRef.current = newDoc.id;
         setSelectedId(newDoc.id);
         setFocusedToggleId(null);
         setFocusedEditorBlockId(null);
@@ -3695,7 +3946,7 @@ export default function AdminNotePageContent() {
     }
   }, []);
 
-  const persistDocumentTitle = useCallback(async (docId: string, safeTitle: string) => {
+  const persistDocumentTitle = useCallback(async (docId: string, safeTitle: string, saveSeq: number) => {
     try {
       const res = await fetch('/api/admin/note/documents', {
         method: 'PATCH',
@@ -3703,13 +3954,17 @@ export default function AdminNotePageContent() {
         credentials: 'include',
         body: JSON.stringify({ id: docId, title: safeTitle }),
       });
-      if (res.ok) {
-        const json = (await res.json()) as { document?: NoteDocument };
-        if (json.document?.title) {
-          setDocuments((prev) =>
-            prev.map((d) => (d.id === docId ? { ...d, title: json.document!.title } : d)),
-          );
-        }
+      if (!res.ok) return;
+      if (docTitleSaveSeqRef.current[docId] !== saveSeq) return;
+
+      const json = (await res.json()) as { document?: NoteDocument };
+      // 타이핑 중 서버 응답이 로컬 제목을 덮어쓰지 않음 — 오래된 저장 레이스 방지
+      if (json.document?.updated_at) {
+        setDocuments((prev) =>
+          prev.map((d) => (
+            d.id === docId ? { ...d, updated_at: json.document!.updated_at } : d
+          )),
+        );
       }
       const linkedPageBlocks = blocksRef.current.filter(
         (b) => b.type === 'page' && b.content?.page_document_id === docId,
@@ -3738,10 +3993,12 @@ export default function AdminNotePageContent() {
     const runSave = () => {
       const latestRaw = titleInputRef.current?.value ?? title;
       const normalized = latestRaw.trim() || '제목 없음';
+      const saveSeq = (docTitleSaveSeqRef.current[docId] ?? 0) + 1;
+      docTitleSaveSeqRef.current[docId] = saveSeq;
       setDocuments((prev) =>
         prev.map((d) => (d.id === docId ? { ...d, title: normalized } : d)),
       );
-      void persistDocumentTitle(docId, normalized);
+      void persistDocumentTitle(docId, normalized, saveSeq);
     };
     if (options?.immediate) {
       runSave();
@@ -3879,21 +4136,35 @@ export default function AdminNotePageContent() {
     }
   }, [triggerSave]);
 
-  const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
-    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content } : b)));
+  const scheduleBlockContentSave = useCallback((blockId: string, fallbackContent?: unknown) => {
     const timers = saveTimersRef.current;
-    if (timers[block.id]) clearTimeout(timers[block.id]);
-    timers[block.id] = window.setTimeout(async () => {
+    if (timers[blockId]) clearTimeout(timers[blockId]);
+    timers[blockId] = window.setTimeout(async () => {
       setLoadingState('saving');
       try {
-        const latest = blocksRef.current.find((b) => b.id === block.id);
-        const contentToSave = latest?.content ?? content;
-        await patchNoteBlocks([{ id: block.id, content: contentToSave }]);
-        delete timers[block.id];
+        const latest = blocksRef.current.find((b) => b.id === blockId);
+        const contentToSave = latest?.content ?? fallbackContent;
+        await patchNoteBlocks([{ id: blockId, content: contentToSave }]);
+        delete timers[blockId];
         if (Object.keys(timers).filter((k) => !k.startsWith('doc_')).length === 0) triggerSave();
       } catch (e) { devLogger.error('[Note] updateBlock', e); setLoadingState('idle'); }
     }, 600);
   }, [triggerSave]);
+
+  const syncBlockContent = useCallback((blockId: string, content: unknown) => {
+    blocksRef.current = blocksRef.current.map((b) =>
+      b.id === blockId ? { ...b, content } : b,
+    );
+    scheduleBlockContentSave(blockId, content);
+  }, [scheduleBlockContentSave]);
+
+  const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
+    blocksRef.current = blocksRef.current.map((b) =>
+      b.id === block.id ? { ...b, content } : b,
+    );
+    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content } : b)));
+    scheduleBlockContentSave(block.id, content);
+  }, [scheduleBlockContentSave]);
 
   const recordBlockUndo = useCallback((blockIds: string[]) => {
     noteUndo.pushRestoreBlocksUndo(blocksRef.current, blockIds);
@@ -4255,10 +4526,6 @@ export default function AdminNotePageContent() {
     } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
   }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor, handleInsertBlockInParent, registerCreatedBlockUndo, handleCreateSubPage]);
 
-  const handleBlockListMouseLeave = useCallback(() => {
-    setHoveredBlockId(null);
-  }, []);
-
   const handleClickEditorWhitespace = useCallback(() => {
     const roots = sortRootBlocks(blocksRef.current);
     const last = roots[roots.length - 1];
@@ -4278,11 +4545,11 @@ export default function AdminNotePageContent() {
     const target = notePointerTargetElement(e.target);
     if (!target) return;
     if (target.closest(
-      '[data-note-block-row], [data-note-editor-host], button, input, textarea, a, .ProseMirror, [data-toggle-title], [data-note-ignore-whitespace]',
+      '[data-note-block-row], [data-note-editor-host], button, input, textarea, a, .ProseMirror, [data-toggle-title], [data-note-ignore-whitespace], [data-note-overlay-menu]',
     )) {
       return;
     }
-    clearAllCrossSelectState();
+    clearAllNoteTextSelections();
     setSelectedBlockIds(new Set());
     e.preventDefault();
     handleClickEditorWhitespace();
@@ -4291,14 +4558,26 @@ export default function AdminNotePageContent() {
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
     recordBlockUndo([block.id]);
     const nextContent = buildContentForTypeChange(block.content, block.type, type);
-    const alreadyFocused = focusedEditorBlockIdRef.current === block.id;
-    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: nextContent } : b)));
-    if (!alreadyFocused) {
-      focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor');
+    const wasOnThisBlock = focusedEditorBlockIdRef.current === block.id;
+    const nextFocusPart: 'title' | 'editor' =
+      type === 'toggle' ? 'title'
+        : block.type === 'toggle' ? 'editor'
+          : (focusedEditorPartRef.current ?? 'editor');
+
+    preserveEditorScrollPosition(editorScrollRef.current, () => {
+      setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: nextContent } : b)));
+    });
+
+    if (wasOnThisBlock) {
+      focusBlockEditor(block.id, nextFocusPart, undefined, { preventScroll: true });
+    } else {
+      focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor', undefined, { preventScroll: true });
     }
+
     try {
       await patchNoteBlocks([{ id: block.id, type, content: nextContent }]);
       triggerSave();
+      preserveEditorScrollPosition(editorScrollRef.current, () => {});
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
   }, [focusBlockEditor, recordBlockUndo, triggerSave]);
 
@@ -4511,29 +4790,75 @@ export default function AdminNotePageContent() {
     lastClickedBlockIdRef.current = nextIds[nextIds.length - 1] ?? null;
   }, []);
 
+  const paintMarqueeOverlay = useCallback((
+    rect: { left: number; top: number; width: number; height: number } | null,
+  ) => {
+    const el = marqueeOverlayRef.current;
+    if (!el) return;
+    if (!rect || (rect.width < 1 && rect.height < 1)) {
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = 'block';
+    el.style.left = `${rect.left}px`;
+    el.style.top = `${rect.top}px`;
+    el.style.width = `${rect.width}px`;
+    el.style.height = `${rect.height}px`;
+  }, []);
+
+  const flushMarqueeFrame = useCallback(() => {
+    marqueeRafRef.current = null;
+    const rect = pendingMarqueeRectRef.current;
+    const selection = pendingMarqueeSelectionRef.current;
+    paintMarqueeOverlay(rect);
+    if (selection) {
+      applyMarqueeSelection(selection.marquee, selection.options);
+    }
+  }, [applyMarqueeSelection, paintMarqueeOverlay]);
+
+  const scheduleMarqueePaint = useCallback((
+    rect: { left: number; top: number; width: number; height: number },
+    selection: { marquee: MarqueeRect; options: { additive: boolean; shiftAnchor: boolean } },
+  ) => {
+    pendingMarqueeRectRef.current = rect;
+    pendingMarqueeSelectionRef.current = selection;
+    if (marqueeRafRef.current === null) {
+      marqueeRafRef.current = window.requestAnimationFrame(flushMarqueeFrame);
+    }
+  }, [flushMarqueeFrame]);
+
   const handleBlockListPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     if (noteBlockDragActiveRef.current) return;
+    if (noteTextDragGuard.active) return;
     if (isMarqueeSelectStartBlocked(e.target)) return;
 
     const abortBlockMarquee = () => {
       noteBlockMarqueeGuard.active = false;
       document.body.style.userSelect = '';
+      document.body.classList.remove('note-marquee-active');
       document.body.classList.remove('note-list-cross-active');
-      setMarqueeBox(null);
+      pendingMarqueeRectRef.current = null;
+      pendingMarqueeSelectionRef.current = null;
+      if (marqueeRafRef.current !== null) {
+        window.cancelAnimationFrame(marqueeRafRef.current);
+        marqueeRafRef.current = null;
+      }
+      paintMarqueeOverlay(null);
       blockMarqueeRef.current = null;
       const listeners = blockMarqueeListenersRef.current;
       if (listeners) {
         document.removeEventListener('pointermove', listeners.onMove);
         document.removeEventListener('pointerup', listeners.onUp);
         document.removeEventListener('pointercancel', listeners.onUp);
+        document.removeEventListener('selectstart', listeners.onSelectStart);
         blockMarqueeListenersRef.current = null;
       }
     };
 
-    // 텍스트 위: 일반 드래그=글자 선택. Shift/Ctrl+드래그=블록 마퀴
     const hasModifier = e.shiftKey || e.ctrlKey || e.metaKey;
     if (isNoteTextSurfaceTarget(e.target) && !hasModifier) {
+      abortBlockMarquee();
       clearAllCrossSelectState();
       return;
     }
@@ -4545,17 +4870,21 @@ export default function AdminNotePageContent() {
 
     abortBlockMarquee();
 
+    const onSelectStart = (ev: Event) => {
+      ev.preventDefault();
+    };
+
     blockMarqueeRef.current = {
       additive: e.ctrlKey || e.metaKey,
       shiftAnchor: e.shiftKey,
+      hasModifier,
       started: false,
       startX: e.clientX,
       startY: e.clientY,
     };
     noteBlockMarqueeGuard.active = true;
-    // e.preventDefault() 없음 — click 이벤트를 살려야 블록 클릭 포커스가 유지됨
-    // userSelect 즉시 차단으로 텍스트 드래그 이미지만 방지
     document.body.style.userSelect = 'none';
+    document.body.classList.add('note-marquee-active');
 
     const onMove = (ev: PointerEvent) => {
       const state = blockMarqueeRef.current;
@@ -4565,6 +4894,10 @@ export default function AdminNotePageContent() {
       const dy = Math.abs(ev.clientY - state.startY);
       if (!state.started) {
         if (dx < 4 && dy < 4) return;
+        if (noteTextDragGuard.active) {
+          abortBlockMarquee();
+          return;
+        }
         state.started = true;
         suppressGripMenuRef.current = true;
         clearAllCrossSelectState();
@@ -4575,36 +4908,31 @@ export default function AdminNotePageContent() {
       const top = Math.min(state.startY, ev.clientY);
       const width = Math.abs(ev.clientX - state.startX);
       const height = Math.abs(ev.clientY - state.startY);
-      setMarqueeBox({ left, top, width, height });
-
-      applyMarqueeSelection(
-        { left, top, right: left + width, bottom: top + height },
-        { additive: state.additive, shiftAnchor: state.shiftAnchor },
+      scheduleMarqueePaint(
+        { left, top, width, height },
+        {
+          marquee: { left, top, right: left + width, bottom: top + height },
+          options: { additive: state.additive, shiftAnchor: state.shiftAnchor },
+        },
       );
     };
 
     const onUp = () => {
       const state = blockMarqueeRef.current;
-      noteBlockMarqueeGuard.active = false;
-      document.body.style.userSelect = '';
-      setMarqueeBox(null);
-      blockMarqueeRef.current = null;
-      blockMarqueeListenersRef.current = null;
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
-      document.removeEventListener('pointercancel', onUp);
+      abortBlockMarquee();
 
-      // 드래그 없이 클릭만 한 경우 → 멀티 선택 해제 (노션: 다른 블록·여백 클릭)
       if (state && !state.started && !state.additive && !state.shiftAnchor) {
         setSelectedBlockIds(new Set());
+        clearAllNoteTextSelections();
       }
     };
 
-    blockMarqueeListenersRef.current = { onMove, onUp };
+    blockMarqueeListenersRef.current = { onMove, onUp, onSelectStart };
+    document.addEventListener('selectstart', onSelectStart);
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
-  }, [applyMarqueeSelection]);
+  }, [paintMarqueeOverlay, scheduleMarqueePaint]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -4751,9 +5079,12 @@ export default function AdminNotePageContent() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const isUndo = (e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z';
-      if (!isUndo) return;
-      if (!noteUndo.hasUndo()) return;
+      const meta = e.ctrlKey || e.metaKey;
+      if (!meta) return;
+      const key = e.key.toLowerCase();
+      const isUndo = key === 'z' && !e.shiftKey;
+      const isRedo = key === 'z' && e.shiftKey;
+      if (!isUndo && !isRedo) return;
 
       const target = e.target as HTMLElement | null;
       const isEditing = !!target && (
@@ -4764,7 +5095,35 @@ export default function AdminNotePageContent() {
           '[contenteditable="true"], .ProseMirror, .note-rich-editor, [data-toggle-title], [data-note-list-text]',
         )
       );
-      if (isEditing) return;
+
+      if (isEditing) {
+        if (target === titleInputRef.current || target?.closest('[data-note-doc-title]')) {
+          return;
+        }
+        const blockId = focusedEditorBlockIdRef.current;
+        if (blockId) {
+          const editor = getNoteEditor(blockId);
+          if (editor && !(editor as { isDestroyed?: boolean }).isDestroyed) {
+            if (isRedo && editor.can().redo()) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              editor.chain().focus().redo().run();
+              return;
+            }
+            if (isUndo && editor.can().undo()) {
+              e.preventDefault();
+              e.stopImmediatePropagation();
+              editor.chain().focus().undo().run();
+              return;
+            }
+          }
+        }
+        if (!isUndo || !noteUndo.hasUndo()) return;
+      } else if (!noteUndo.hasUndo()) {
+        return;
+      }
+
+      if (!isUndo) return;
 
       e.preventDefault();
       e.stopImmediatePropagation();
@@ -4878,7 +5237,7 @@ export default function AdminNotePageContent() {
       ? bulletListNestLevelAmongContainers(block, blocks)
       : undefined;
     return (
-      <ToggleInlineRow
+      <MemoToggleInlineRow
         key={block.id}
         block={block}
         nestDepth={nestDepth}
@@ -4887,6 +5246,7 @@ export default function AdminNotePageContent() {
         bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
         onUpdate={(content) => handleUpdateBlock(block, content)}
+        onContentSync={(content) => syncBlockContent(block.id, content)}
         onDelete={() => handleDeleteBlock(block)}
         onChangeType={(type) => handleChangeBlockType(block, type)}
         onEnter={() => handleInsertBlockAfter(block, 'text')}
@@ -4938,7 +5298,7 @@ export default function AdminNotePageContent() {
       ? bulletListNestLevelAmongContainers(block, blocks)
       : undefined;
     return (
-      <SortableBlockRow
+      <MemoSortableBlockRow
         key={block.id}
         block={block}
         childBlocks={childBlocks}
@@ -4947,6 +5307,7 @@ export default function AdminNotePageContent() {
         renderChildBlock={renderToggleInlineChild}
         onAddChildBelow={(type) => { void handleInsertBlockInParent(block.id, type ?? 'text'); }}
         onUpdate={(content) => handleUpdateBlock(block, content)}
+        onContentSync={(content) => syncBlockContent(block.id, content)}
         onDelete={() => handleDeleteBlock(block)}
         onChangeType={(type) => handleChangeBlockType(block, type)}
         onEnter={() => handleInsertBlockAfter(block, 'text')}
@@ -5472,12 +5833,8 @@ export default function AdminNotePageContent() {
                 </div>
               </div>
             </div>
-          ) : loadingBlocks ? (
-            <div className="flex flex-1 items-center justify-center gap-2 text-[13px] text-slate-400">
-              <Loader2 className="h-4 w-4 animate-spin" />불러오는 중…
-            </div>
           ) : (
-            <div className="min-w-0 flex-1 overflow-y-auto bg-white">
+            <div ref={editorScrollRef} className="min-w-0 flex-1 overflow-y-auto bg-white">
               {resolveDocCover(activeDocument.properties) && (
                 <div className="group/cover relative h-[30vh] max-h-[280px] min-h-[120px] w-full overflow-hidden bg-neutral-100">
                   <img
@@ -5688,6 +6045,7 @@ export default function AdminNotePageContent() {
                 {/* 문서 큰 제목 */}
                 <textarea
                   ref={titleInputRef}
+                  data-note-doc-title
                   rows={1}
                   className="mb-1 w-full resize-none overflow-hidden bg-transparent text-[40px] font-bold leading-[1.2] tracking-tight text-neutral-900 outline-none placeholder:text-neutral-300"
                   placeholder="제목 없음"
@@ -5767,31 +6125,28 @@ export default function AdminNotePageContent() {
               </div>
 
                 {/* 블록 목록 — 에디터 열 전체 너비에서 마퀴 선택 (사이드바 옆 여백 포함) */}
+                {loadingBlocks ? (
+                  <div className="flex items-center gap-2 py-8 text-[13px] text-slate-400">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    블록 불러오는 중…
+                  </div>
+                ) : (
                 <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
                 <OnBlockSelectContext.Provider value={handleBlockSelect}>
                 <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
-                <SetHoveredBlockContext.Provider value={setHoveredBlockId}>
-                <HoveredBlockContext.Provider value={hoveredBlockId}>
                   <div
                     data-note-marquee-zone
                     className={NOTE_MARQUEE_ZONE}
                     onPointerDownCapture={handleBlockListPointerDown}
-                    onMouseLeave={handleBlockListMouseLeave}
                   >
-                    {marqueeBox && (
-                      <div
-                        className="pointer-events-none fixed z-[60] border border-blue-400 bg-blue-500/20"
-                        style={{
-                          left: marqueeBox.left,
-                          top: marqueeBox.top,
-                          width: marqueeBox.width,
-                          height: marqueeBox.height,
-                        }}
-                      />
-                    )}
+                    <div
+                      ref={marqueeOverlayRef}
+                      className="pointer-events-none fixed z-[60] hidden border border-blue-400 bg-blue-500/20"
+                      aria-hidden
+                    />
                     <div className={`${NOTE_PAGE_SHELL} overflow-visible pb-32`}>
                       <SortableContext
-                        items={rootSortableBlockIds}
+                        items={allSortableBlockIds}
                         strategy={verticalListSortingStrategy}
                       >
                         <div
@@ -5807,11 +6162,10 @@ export default function AdminNotePageContent() {
                       </SortableContext>
                     </div>
                   </div>
-                </HoveredBlockContext.Provider>
-                </SetHoveredBlockContext.Provider>
                 </SuppressGripMenuRefContext.Provider>
                 </OnBlockSelectContext.Provider>
                 </SelectedBlockIdsContext.Provider>
+                )}
             </div>
           )}
           </div>
@@ -5843,14 +6197,7 @@ export default function AdminNotePageContent() {
         </BlockDragActiveContext.Provider>
       </DndContext>
 
-      {formatToolbar && (
-        <div
-          className="fixed z-[90] -translate-x-1/2 -translate-y-full rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl backdrop-blur"
-          style={{ left: formatToolbar.position.left, top: formatToolbar.position.top }}
-        >
-          <BubbleToolbar applyMark={formatToolbar.applyMark} applyTextStyle={formatToolbar.applyTextStyle} />
-        </div>
-      )}
+      <NoteFormatToolbarHost apiRef={formatToolbarApiRef} />
 
       {sidebarIconPicker && (
         <div

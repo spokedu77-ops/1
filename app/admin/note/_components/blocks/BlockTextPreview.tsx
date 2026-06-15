@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import {
   isRichPreviewEmpty,
   resolveRichPreviewHtml,
@@ -13,8 +14,11 @@ type BlockTextPreviewProps = {
   text: string;
   className: string;
   placeholder?: string;
+  onRecordClick?: (x: number, y: number) => void;
   onActivate?: () => void;
 };
+
+const DRAG_THRESHOLD = 5;
 
 /** 포커스 전 가벼운 읽기 전용 블록 표시 (TipTap 미마운트) */
 export function BlockTextPreview({
@@ -23,16 +27,23 @@ export function BlockTextPreview({
   text,
   className,
   placeholder = '',
+  onRecordClick,
   onActivate,
 }: BlockTextPreviewProps) {
   const html = resolveRichPreviewHtml({ content, field, text });
   const empty = isRichPreviewEmpty(html, text);
   const imageLightbox = useNoteImageLightbox();
+  const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  const hasTextSelection = () => {
+    const selection = window.getSelection();
+    return Boolean(selection && !selection.isCollapsed && selection.toString().trim().length > 0);
+  };
 
   return (
     <div
-      className={`note-rich-editor min-h-[1.75rem] w-full cursor-text outline-none ${className}`}
-      onMouseDown={(e) => {
+      className={`note-rich-editor min-h-[1.75rem] w-full cursor-text select-text outline-none ${className}`}
+      onPointerDown={(e) => {
         const target = e.target as HTMLElement;
         if (target.closest('a, button')) return;
 
@@ -47,8 +58,38 @@ export function BlockTextPreview({
           }
         }
 
+        onRecordClick?.(e.clientX, e.clientY);
+
+        if (empty) {
+          e.preventDefault();
+          onActivate?.();
+          return;
+        }
+        pointerStartRef.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerUp={(e) => {
+        const start = pointerStartRef.current;
+        pointerStartRef.current = null;
+        if (!start) return;
+
+        const dx = Math.abs(e.clientX - start.x);
+        const dy = Math.abs(e.clientY - start.y);
+        if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) return;
+        if (hasTextSelection()) return;
+        if (e.detail > 1) return;
         onActivate?.();
-        if (empty) e.preventDefault();
+      }}
+      onDoubleClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('a, button, img')) return;
+        e.preventDefault();
+        const root = e.currentTarget;
+        const body = root.querySelector(':scope > div') ?? root;
+        const range = document.createRange();
+        range.selectNodeContents(body);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
       }}
     >
       {empty ? (

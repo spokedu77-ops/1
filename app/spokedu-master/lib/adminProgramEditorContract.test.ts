@@ -3,41 +3,27 @@ import { describe, expect, it } from 'vitest';
 import {
   buildAdminProgramSaveFailure,
   buildAdminProgramSavePayload,
+  buildAdminProgramSaveSuccess,
+  replaceAdminProgramByCurriculumId,
   resolveAdminBriefingNotes,
   resolveAdminVariationMethod,
 } from './adminProgramEditorContract';
 
 describe('admin program editor contract', () => {
   it('prefers Master meta briefing notes', () => {
-    expect(resolveAdminBriefingNotes(
-      'meta 안내',
-      '[사전 교육]\nlegacy 안내',
-    )).toBe('meta 안내');
+    expect(resolveAdminBriefingNotes('meta 안내')).toBe('meta 안내');
   });
 
-  it('falls back only to the exact briefing section', () => {
-    expect(resolveAdminBriefingNotes(
-      '  ',
-      '[안전 포인트]\n제외\n[사전 교육]\n사용할 안내\n[운영 팁]\n제외',
-    )).toBe('사용할 안내');
+  it('does not fall back to legacy briefing content', () => {
+    expect(resolveAdminBriefingNotes('  ')).toBe('');
   });
 
   it('prefers Master meta variation method', () => {
-    expect(resolveAdminVariationMethod(
-      'meta 변형',
-      '[변형 방법]\nlegacy 변형',
-    )).toBe('meta 변형');
+    expect(resolveAdminVariationMethod('meta 변형')).toBe('meta 변형');
   });
 
-  it('falls back only to the exact variation section', () => {
-    expect(resolveAdminVariationMethod(
-      null,
-      '[응용 방법]\n제외\n[변형 방법]\n사용할 변형\n[난이도 낮추기]\n제외',
-    )).toBe('사용할 변형');
-  });
-
-  it('does not use unlabeled activity_tip as variation method', () => {
-    expect(resolveAdminVariationMethod(null, '라벨 없는 과거 내용')).toBe('');
+  it('does not fall back to legacy variation content', () => {
+    expect(resolveAdminVariationMethod(null)).toBe('');
   });
 
   it('builds only the final Master meta and overlay payload fields', () => {
@@ -89,14 +75,12 @@ describe('admin program editor contract', () => {
     expect(buildAdminProgramSaveFailure({
       overlaySaved: true,
       metaSaved: false,
-      legacyMirrorSaved: false,
       failedStage: 'meta',
       error: 'meta failed',
     })).toEqual({
       ok: false,
       overlaySaved: true,
       metaSaved: false,
-      legacyMirrorSaved: false,
       partialSave: true,
       failedStage: 'meta',
       error: 'meta failed',
@@ -107,9 +91,48 @@ describe('admin program editor contract', () => {
     expect(buildAdminProgramSaveFailure({
       overlaySaved: false,
       metaSaved: false,
-      legacyMirrorSaved: false,
       failedStage: 'overlay',
       error: 'overlay failed',
     }).partialSave).toBe(false);
+  });
+
+  it('marks a single-program reload failure with the reload stage', () => {
+    expect(buildAdminProgramSaveFailure({
+      overlaySaved: true,
+      metaSaved: true,
+      failedStage: 'reload',
+      error: 'single reload failed',
+    })).toMatchObject({
+      ok: false,
+      partialSave: true,
+      failedStage: 'reload',
+    });
+  });
+
+  it('returns one saved program without a programs array', () => {
+    const response = buildAdminProgramSaveSuccess({
+      curriculumId: 52,
+      overlay: { id: 39 },
+      meta: { curriculum_id: 52 },
+    });
+    expect(response.program.curriculumId).toBe(52);
+    expect(response).not.toHaveProperty('data');
+    expect(response).not.toHaveProperty('programs');
+  });
+
+  it('replaces only the matching curriculum row', () => {
+    const original = [
+      { curriculum: { id: 51 }, title: 'A' },
+      { curriculum: { id: 52 }, title: 'B' },
+      { curriculum: { id: 53 }, title: 'C' },
+    ];
+    const replacement = { curriculum: { id: 52 }, title: 'updated' };
+    const result = replaceAdminProgramByCurriculumId(
+      original,
+      52,
+      replacement,
+      (item) => item.curriculum.id,
+    );
+    expect(result).toEqual([original[0], replacement, original[2]]);
   });
 });

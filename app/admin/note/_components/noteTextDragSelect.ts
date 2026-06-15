@@ -1,124 +1,240 @@
 import { Extension } from '@tiptap/core';
-import { Plugin, TextSelection } from '@tiptap/pm/state';
+
+import { Plugin } from '@tiptap/pm/state';
+
 import {
+
   applyCrossBlockSelection,
+
   blockIdFromPoint,
+
   clearAllCrossSelectState,
+
   finalizeCrossSelection,
-  restoreIntraBlockSelection,
+
 } from './noteCrossSelect';
-import { noteBlockMarqueeGuard } from '../_lib/noteBlockMarqueeGuard';
+
+import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
+
+
 
 const DRAG_THRESHOLD = 3;
 
-/** ProseMirror 기본 드래그 선택 + 블록 간 교차 텍스트 선택 */
+
+
+/** 블록 간 교차 텍스트 선택 — 같은 블록 안은 ProseMirror 기본 드래그 사용 */
+
 export const NoteTextDragSelectExtension = Extension.create({
+
   name: 'noteTextDragSelect',
+
   priority: 1000,
+
   addProseMirrorPlugins() {
+
     return [
+
       new Plugin({
+
         props: {
+
           handleDOMEvents: {
+
             pointerdown(view, event) {
+
               if (event.button !== 0) return false;
+
               if (event.shiftKey || event.ctrlKey || event.metaKey) return false;
-              // 마퀴 드래그 중이면 텍스트 선택 차단 (pointerdown 이벤트로 통일하여 guard가 항상 먼저 설정됨)
+
               if (noteBlockMarqueeGuard.active) return false;
 
+
+
               const target = event.target as HTMLElement | null;
+
               if (target?.closest?.('a, button, img')) return false;
 
+
+
               const coords = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
               if (!coords) return false;
 
+
+
               const anchorBlockId = getNoteEditorBlockId(view);
+
               if (!anchorBlockId) return false;
 
-              event.preventDefault();
-              view.focus();
-              clearAllCrossSelectState();
+
 
               const anchorPos = coords.pos;
-              const anchor = { blockId: anchorBlockId, pos: anchorPos };
-              let dragActive = false;
+
+              const anchor = { blockId: anchorBlockId, pos: anchorPos, surface: 'editor' as const };
+
               let crossBlockActive = false;
+
+              let dragActive = false;
+
               const startX = event.clientX;
+
               const startY = event.clientY;
 
-              const applyIntraBlockRange = (headPos: number) => {
-                const from = Math.min(anchorPos, headPos);
-                const to = Math.max(anchorPos, headPos);
-                const { state } = view;
-                if (state.selection.from === from && state.selection.to === to) return;
-                view.dispatch(
-                  state.tr.setSelection(TextSelection.create(state.doc, from, to)),
-                );
+              let captured = false;
+
+
+
+              const releaseCapture = () => {
+
+                if (!captured) return;
+
+                captured = false;
+
+                try {
+
+                  view.dom.releasePointerCapture(event.pointerId);
+
+                } catch {
+
+                  // ignore
+
+                }
+
               };
 
-              applyIntraBlockRange(anchorPos);
+
+
+              const cleanup = () => {
+
+                noteTextDragGuard.active = false;
+
+                document.removeEventListener('pointermove', onMove);
+
+                document.removeEventListener('pointerup', onUp);
+
+                document.removeEventListener('pointercancel', onUp);
+
+                releaseCapture();
+
+              };
+
+
 
               const onMove = (ev: PointerEvent) => {
+
                 if (ev.buttons !== 1) return;
-                // 마퀴가 중간에 시작되면 텍스트 드래그 즉시 취소
+
                 if (noteBlockMarqueeGuard.active) {
-                  document.removeEventListener('pointermove', onMove);
-                  document.removeEventListener('pointerup', onUp);
-                  clearAllCrossSelectState();
+
+                  cleanup();
+
                   return;
+
                 }
+
+
+
                 const dx = Math.abs(ev.clientX - startX);
+
                 const dy = Math.abs(ev.clientY - startY);
+
                 if (!dragActive) {
+
                   if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return;
+
                   dragActive = true;
+
                 }
+
+
 
                 const hoverBlockId = blockIdFromPoint(ev.clientX, ev.clientY);
 
-                if (!hoverBlockId || hoverBlockId === anchorBlockId) {
-                  if (crossBlockActive) {
-                    crossBlockActive = false;
-                    restoreIntraBlockSelection(anchor, ev.clientX, ev.clientY);
-                    return;
+                if (!hoverBlockId || hoverBlockId === anchorBlockId) return;
+
+
+
+                if (!crossBlockActive) {
+
+                  crossBlockActive = true;
+
+                  noteTextDragGuard.active = true;
+
+                  clearAllCrossSelectState();
+
+                  try {
+
+                    view.dom.setPointerCapture(event.pointerId);
+
+                    captured = true;
+
+                  } catch {
+
+                    // ignore
+
                   }
-                  const headCoords = view.posAtCoords({ left: ev.clientX, top: ev.clientY });
-                  if (!headCoords) return;
-                  applyIntraBlockRange(headCoords.pos);
-                  return;
+
                 }
 
-                // 세로 드래그로 다른 블록 — 교차 텍스트 선택
-                if (dx >= dy) return;
 
-                crossBlockActive = true;
+
                 applyCrossBlockSelection(anchor, hoverBlockId, ev.clientX, ev.clientY);
+
               };
+
+
 
               const onUp = (ev: PointerEvent) => {
-                document.removeEventListener('pointermove', onMove);
-                document.removeEventListener('pointerup', onUp);
+
                 if (crossBlockActive && dragActive) {
+
                   finalizeCrossSelection(anchor, ev.clientX, ev.clientY);
+
                 }
+
+                cleanup();
+
               };
 
+
+
               document.addEventListener('pointermove', onMove);
+
               document.addEventListener('pointerup', onUp);
 
-              return true;
+              document.addEventListener('pointercancel', onUp);
+
+
+
+              return false;
+
             },
+
           },
+
         },
+
       }),
+
     ];
+
   },
+
 });
 
+
+
 function getNoteEditorBlockId(view: { dom: HTMLElement; state: unknown }): string | null {
+
   const editorDom = view.dom;
+
   const row = editorDom.closest('[data-note-block-row]');
+
   const fromRow = row?.getAttribute('data-block-id');
+
   if (fromRow) return fromRow;
+
   return null;
+
 }
+

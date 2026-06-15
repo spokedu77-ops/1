@@ -1,0 +1,136 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+import type { Program } from '../types';
+import {
+  getOfficialSpomovePresets,
+  getPrimaryOfficialSpomovePreset,
+  getSpomoveSessionHref,
+} from '../lib/program-meta';
+import {
+  findOfficialSpomovePreset,
+  OFFICIAL_SPOMOVE_LIBRARY,
+  type OfficialSpomoveEngineMode,
+} from './officialSpomovePresets';
+
+function read(relativePath: string) {
+  return fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8');
+}
+
+function programWithRelatedIds(ids: string[]): Program {
+  return {
+    id: 'program-1',
+    lessonDetail: {
+      relatedSpomoveIds: ids,
+    },
+  } as Program;
+}
+
+describe('official SPOMOVE runtime contract', () => {
+  it('keeps exactly nine runnable official preset IDs', () => {
+    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(9);
+    expect(new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id)).size).toBe(9);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.isReady)).toBe(true);
+  });
+
+  it('rejects a non-official preset ID', () => {
+    expect(findOfficialSpomovePreset('legacy-drill')).toBeNull();
+  });
+
+  it('filters, deduplicates, and preserves official related preset order', () => {
+    const first = OFFICIAL_SPOMOVE_LIBRARY[0]!;
+    const second = OFFICIAL_SPOMOVE_LIBRARY[1]!;
+    const program = programWithRelatedIds([
+      'legacy-drill',
+      second.id,
+      second.id,
+      first.id,
+      'gonogo',
+    ]);
+
+    expect(getOfficialSpomovePresets(program).map((preset) => preset.id)).toEqual([
+      second.id,
+      first.id,
+    ]);
+    expect(getPrimaryOfficialSpomovePreset(program)?.id).toBe(second.id);
+  });
+
+  it('builds session URLs with an official preset query, not a drill query', () => {
+    const preset = OFFICIAL_SPOMOVE_LIBRARY[0]!;
+    const href = getSpomoveSessionHref(programWithRelatedIds([preset.id]), preset, 'class');
+
+    expect(href).toContain(`preset=${preset.id}`);
+    expect(href).toContain('mode=class');
+    expect(href).toContain('program=program-1');
+    expect(href).not.toContain('drill=');
+  });
+
+  it('limits the MASTER EngineRouter type and branches to six official modes', () => {
+    const supported: OfficialSpomoveEngineMode[] = [
+      'basic',
+      'reactTrain',
+      'simon',
+      'flanker',
+      'stroop',
+      'spatial',
+    ];
+    const actual = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.engine.mode));
+    expect(actual).toEqual(new Set(supported));
+
+    const source = read('app/spokedu-master/spomove/session/EngineRouter.tsx');
+    expect(source).not.toMatch(/mode === '(memory|flow|flash|pattern|diagonal|gonogo|taskswitch)'/);
+    expect(source).toContain('variant="flow"');
+  });
+
+  it('does not consume legacy or remote preset sources in the session', () => {
+    const source = read('app/spokedu-master/spomove/session/page.tsx');
+
+    expect(source).not.toMatch(/SESSION_CUES|OFFICIAL_SPOMOVE_PRESETS|USER_SPOMOVE_PRESETS_KEY/);
+    expect(source).not.toMatch(/spomove-presets|engineMode|requestedLevel|requestedDuration|requestedSpeed/);
+    expect(source).not.toMatch(/\bdrills\b|loadDrills|drills\[0\]/);
+    expect(source).toContain('지원하지 않는 SPOMOVE 활동입니다.');
+    expect(source).toContain("fetch('/api/spokedu-master/access'");
+  });
+
+  it('keeps ClassMode and Plan independent from drill metadata', () => {
+    const classMode = read('app/spokedu-master/components/ui/ClassModeView.tsx');
+    const plan = read('app/spokedu-master/plan/PlanView.tsx');
+
+    expect(classMode).not.toMatch(/\bdrills\b|\?drill=/);
+    expect(plan).not.toMatch(/\bdrills\b|\?drill=/);
+    expect(classMode).toContain('getPrimaryOfficialSpomovePreset');
+    expect(plan).toContain('getPrimaryOfficialSpomovePreset');
+  });
+
+  it('does not translate legacy drill IDs in the public programs API', () => {
+    const source = read('app/api/spokedu-master/programs/route.ts');
+
+    expect(source).toContain('findOfficialSpomovePreset');
+    expect(source).not.toMatch(/'SR-05':|'RS-05':|'IC-05':|'gonogo'|'taskswitch'/);
+  });
+
+  it('removes the MASTER preset save connection from admin Training', () => {
+    const source = read('app/admin/spomove/training/page.tsx');
+
+    expect(source).not.toMatch(/saveMasterLaunchPreset|spomove-presets|USER_SPOMOVE_PRESETS_KEY/);
+    expect(source).not.toContain('구독 SPOMOVE 프리셋으로 저장');
+  });
+
+  it('does not link to a preset-less session from subscription', () => {
+    const source = read('app/spokedu-master/subscription/page.tsx');
+
+    expect(source).not.toContain('href="/spokedu-master/spomove/session"');
+    expect(source).toContain('href="/spokedu-master/spomove"');
+  });
+
+  it('removes the unused MASTER drills and remote preset runtime', () => {
+    const store = read('app/spokedu-master/store/index.ts');
+    const data = read('app/spokedu-master/lib/data.ts');
+
+    expect(store).not.toMatch(/\bdrillsLoaded\b|\bdrillsError\b|\bloadDrills\b/);
+    expect(data).not.toMatch(/export const SESSION_CUES|export const DRILLS/);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/spokedu-master/drills/route.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/api/spokedu-master/spomove-presets/route.ts'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/spokedu-master/lib/spomovePresets.ts'))).toBe(false);
+  });
+});

@@ -93,9 +93,14 @@ export const NOTE_GUTTER_SELECT_HIT_PX = 96;
 /** 토글 자식 한 단계 들여쓰기 (pl-[1.625rem]) */
 export const TOGGLE_INDENT_PX = 26;
 
-export function blockHandleLeftPx(nestDepth: number): number {
-  if (nestDepth <= 1) return -NOTE_GUTTER_PX;
-  return -NOTE_GUTTER_PX - (nestDepth - 1) * TOGGLE_INDENT_PX;
+/** 토글·목록 중첩 — 블록 row 왼쪽 패딩 (거터는 row 기준 고정) */
+export function toggleNestPaddingPx(nestDepth: number): number {
+  return Math.max(0, nestDepth - 1) * TOGGLE_INDENT_PX;
+}
+
+/** +·⋮⋮ — 항상 row 왼쪽 고정 (콘텐츠 들여쓰기와 분리) */
+export function blockHandleLeftPx(_nestDepth?: number): number {
+  return -NOTE_GUTTER_PX;
 }
 
 export function toggleMenuAnchorOffset(nestDepth: number): number {

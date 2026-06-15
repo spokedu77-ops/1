@@ -8,12 +8,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import { TRAINING_ENGINE_GUIDE_VIDEOS } from '@/app/lib/spomove/trainingEngineGuideVideos';
 import { youtubeWatchOrShareToEmbedSrc } from '@/app/lib/spomove/youtubeEmbed';
-import { USER_SPOMOVE_PRESETS_KEY, isSupportedMasterEngineMode } from '@/app/spokedu-master/lib/spomovePresets';
-import type { SpomoveLaunchPreset } from '@/app/spokedu-master/types';
 
 import {
   MODES,
-  resolveTrainingEngine,
   SPOMOVE_AXIS_META,
   SPOMOVE_AXIS_ORDER,
   SPOMOVE_BOTTOM_CATALOG_SLOT_IDS,
@@ -607,53 +604,6 @@ function SettingsScreen({
   const isReactTrain = modeId === 'reactTrain';
   const isSpatial = modeId === 'spatial';
   const isFlowOrChallenge = modeId === 'flow';
-
-  const saveMasterLaunchPreset = async () => {
-    const name = window.prompt('구독 서비스에 표시할 프리셋 이름', `${modeLabelKoEn(modeId)} ${levelLabel(modeId, levelId)}`);
-    if (!name) return;
-    const engine = resolveTrainingEngine(modeId, levelId);
-    if (!isSupportedMasterEngineMode(engine.engineMode)) {
-      window.alert('아직 SPOKEDU MASTER 실행 화면에 이식되지 않은 엔진입니다. 먼저 이 엔진을 구독 서비스 세션에 연결해야 합니다.');
-      return;
-    }
-    const durationSec = isFlowOrChallenge ? launch.flowDuration : launch.timeMode === 'time' ? launch.duration : Math.max(30, Math.round(launch.targetReps * launch.speed));
-    const preset: SpomoveLaunchPreset = {
-      id: `admin-${Date.now()}`,
-      title: name.trim().slice(0, 48),
-      subtitle: `${levelLabelKoEn(modeId, levelId)} · ${durationSec}초 · ${launch.speed.toFixed(1)}초 간격`,
-      intent: isFlowOrChallenge ? 'finish' : modeId === 'reactTrain' ? 'warmup' : 'focus',
-      drillId: modeId,
-      engineMode: engine.engineMode,
-      engineLevel: engine.engineLevel,
-      durationSec,
-      speedSec: launch.speed,
-      mode: 'projector',
-      tags: [levelLabel(modeId, levelId), `${durationSec}초`, launch.kidsSafeMode ? '키즈 세이프' : '기본'],
-      target: '관리자 설정',
-      space: '현장 선택',
-      useCase: '관리자가 Training에서 저장한 실행 세팅',
-    };
-
-    try {
-      const res = await fetch('/api/spokedu-master/spomove-presets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(preset),
-      });
-      if (res.ok) {
-        window.alert('SPOKEDU MASTER 공식 SPOMOVE 프리셋으로 저장했습니다.');
-        return;
-      }
-
-      const raw = window.localStorage.getItem(USER_SPOMOVE_PRESETS_KEY);
-      const list = raw ? JSON.parse(raw) : [];
-      const next = [preset, ...(Array.isArray(list) ? list : [])].slice(0, 12);
-      window.localStorage.setItem(USER_SPOMOVE_PRESETS_KEY, JSON.stringify(next));
-      window.alert('DB 저장은 실패했지만, 이 브라우저의 SPOKEDU MASTER SPOMOVE 홈에 임시 저장했습니다.');
-    } catch {
-      window.alert('프리셋 저장에 실패했습니다.');
-    }
-  };
 
   return (
     <div style={{ background: T.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -1313,26 +1263,6 @@ function SettingsScreen({
             }}
           >
             훈련 시작 ▶
-          </button>
-          <button
-            type="button"
-            onClick={saveMasterLaunchPreset}
-            style={{
-              width: '100%',
-              marginTop: 10,
-              padding: '13px 20px',
-              borderRadius: 14,
-              border: `1px solid ${T.border}`,
-              background: T.card,
-              color: T.text,
-              fontFamily: 'inherit',
-              fontSize: 13,
-              fontWeight: 900,
-              cursor: 'pointer',
-              letterSpacing: '0.04em',
-            }}
-          >
-            구독 SPOMOVE 프리셋으로 저장
           </button>
         </div>
       </div>

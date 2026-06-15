@@ -18,7 +18,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-import { cleanList, cleanText, DRILL_FALLBACK, hasBrokenText, PROGRAM_FALLBACK } from '../../lib/clean';
+import { cleanList, cleanText, hasBrokenText, PROGRAM_FALLBACK } from '../../lib/clean';
+import { getPrimaryOfficialSpomovePreset, getSpomoveSessionHref } from '../../lib/program-meta';
 import { useMasterStore } from '../../store';
 import type { Program } from '../../types';
 
@@ -32,12 +33,6 @@ function cleanProgramText(program: Program, key: 'title' | 'category' | 'grade' 
   const value = program[key];
   if (!value || hasBrokenText(value)) return (PROGRAM_FALLBACK[program.id]?.[key] as string | undefined) ?? fallback;
   return value;
-}
-
-function cleanDrillName(id: string | undefined, name: string | undefined) {
-  if (!id && !name) return 'SPOMOVE 실행';
-  if (!name || hasBrokenText(name)) return (id ? DRILL_FALLBACK[id] : undefined) ?? 'SPOMOVE 실행';
-  return name;
 }
 
 function getSpomoveUseLabel(text: string) {
@@ -87,7 +82,6 @@ function StepTimerRing({ remaining, total }: { remaining: number; total: number 
 export default function ClassModeView({ programId }: { programId: string }) {
   const router = useRouter();
   const programs = useMasterStore((state) => state.programs);
-  const drills = useMasterStore((state) => state.drills);
   const program = programs.find((item) => item.id === programId);
 
   const timerMs = useMasterStore((state) => state.classTimerMs);
@@ -157,8 +151,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
       '기본 라운드 후 학생 반응에 맞춰 난이도를 조절합니다.',
     ]);
     const coachScript = cleanText(program.lessonDetail?.coachScript, '');
-    const spomoveId = program.lessonDetail?.relatedSpomoveIds?.[0];
-    const spomoveDrill = drills.find((drill) => drill.id === spomoveId);
+    const spomovePreset = getPrimaryOfficialSpomovePreset(program);
     const cards = [
       ...steps.map((text, index) => ({ type: 'step' as const, label: `${index + 1}단계`, text })),
       ...(coachScript ? [{ type: 'coach' as const, label: '코치 멘트', text: coachScript }] : []),
@@ -173,11 +166,11 @@ export default function ClassModeView({ programId }: { programId: string }) {
       duration: program.duration,
       space: cleanProgramText(program, 'space', '실내 또는 체육 공간'),
       cards: cards.length > 0 ? cards : [{ type: 'step' as const, label: '1단계', text: '수업을 시작합니다.' }],
-      spomoveId,
-      spomoveName: cleanDrillName(spomoveDrill?.id, spomoveDrill?.name),
+      spomovePreset,
+      spomoveName: spomovePreset?.title ?? '연계 SPOMOVE 없음',
       spomoveUse: getSpomoveUseLabel(`${title} ${category} ${focus} ${program.tags.join(' ')}`),
     };
-  }, [drills, program]);
+  }, [program]);
 
   const startStepTimer = (seconds: number) => {
     setStepTotal(seconds);
@@ -226,7 +219,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
         </div>
 
         <Link
-          href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
+          href={lesson.spomovePreset ? getSpomoveSessionHref(program, lesson.spomovePreset, 'class') : '/spokedu-master/spomove'}
           className="grid h-11 w-11 place-items-center rounded-full border border-indigo-300/25 bg-indigo-400/14"
           aria-label="SPOMOVE 실행"
         >
@@ -254,7 +247,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
               <FileText className="h-4 w-4" />
               설명 문구 만들기
             </Link>
-            <Link href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=projector&program=${program.id}` : '/spokedu-master/spomove'} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
+            <Link href={lesson.spomovePreset ? getSpomoveSessionHref(program, lesson.spomovePreset) : '/spokedu-master/spomove'} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
               <MonitorPlay className="h-4 w-4" />
               SPOMOVE 다시 실행
             </Link>
@@ -276,7 +269,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
               {lesson.space}
             </span>
             <Link
-              href={lesson.spomoveId ? `/spokedu-master/spomove/session?drill=${lesson.spomoveId}&mode=class&program=${program.id}` : '/spokedu-master/spomove'}
+              href={lesson.spomovePreset ? getSpomoveSessionHref(program, lesson.spomovePreset, 'class') : '/spokedu-master/spomove'}
               className="inline-flex min-h-10 items-center gap-2 rounded-full border border-indigo-300/25 bg-indigo-400/12 px-3 py-2"
             >
               <MonitorPlay className="h-4 w-4 text-indigo-200" />

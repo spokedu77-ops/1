@@ -1,22 +1,45 @@
 import type { Editor } from '@tiptap/react';
 import { TextSelection } from '@tiptap/pm/state';
-import { getNoteEditor } from './noteEditorRegistry';
+import { getNoteEditor, collapseAllNoteEditorSelections } from './noteEditorRegistry';
 import {
   applyListCrossHighlight,
+  bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
   extractListCrossText,
   type ListCrossRange,
 } from './noteListCrossHighlight';
+import {
+  applyToggleTitleCrossHighlight,
+  clearAllToggleTitleCrossHighlights,
+  clearToggleTitleCrossHighlight,
+  getToggleTitleInput,
+  hoverToggleTitlePos,
+  isRowCrossTextSelectable,
+  preferredCrossSurface,
+  rowHasToggleTitle,
+  type CrossTextSurface,
+} from './noteToggleTitleCrossSelect';
+import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
 
 export type CrossSelectRange = ListCrossRange;
 
 type Anchor = {
   blockId: string;
   pos: number;
+  surface: CrossTextSurface;
 };
 
 let activeCrossRanges: CrossSelectRange[] = [];
 let copyBound = false;
+let toggleDragBound = false;
+
+const TOGGLE_DRAG_THRESHOLD = 3;
+
+let toggleAnchor: Anchor | null = null;
+let togglePointerDown = false;
+let toggleDragging = false;
+let toggleStartX = 0;
+let toggleStartY = 0;
 
 export function getActiveCrossRanges(): CrossSelectRange[] {
   return activeCrossRanges;
@@ -36,17 +59,18 @@ export function blockIdFromPoint(x: number, y: number): string | null {
     const row = (el as HTMLElement).closest?.('[data-note-block-row]');
     if (!row) continue;
     const id = row.getAttribute('data-block-id');
-    if (id && getNoteEditor(id)) return id;
+    if (!id) continue;
+    if (isRowCrossTextSelectable(id, !!getNoteEditor(id))) return id;
   }
   return null;
 }
 
-/** 화면에 보이는 텍스트 에디터 블록 id — 위→아래 문서 순 */
+/** 화면에 보이는 텍스트/토글 제목 블록 id — 위→아래 문서 순 */
 export function getOrderedSelectableBlockIds(): string[] {
   const rows = [...document.querySelectorAll<HTMLElement>('[data-note-block-row]')]
     .filter((row) => {
       const id = row.getAttribute('data-block-id');
-      return !!id && !!getNoteEditor(id);
+      return !!id && isRowCrossTextSelectable(id, !!getNoteEditor(id));
     })
     .sort((a, b) => {
       const ra = a.getBoundingClientRect();
@@ -72,6 +96,26 @@ export function hoverPos(editor: Editor, x: number, y: number): number {
   return coords?.pos ?? editor.state.doc.content.size - 1;
 }
 
+function hoverBlockPos(blockId: string, clientX: number, clientY: number): number {
+  const surface = preferredCrossSurface(blockId, !!getNoteEditor(blockId));
+  if (surface === 'toggle-title') {
+    const input = getToggleTitleInput(blockId);
+    return input ? hoverToggleTitlePos(input, clientX) : 0;
+  }
+  const editor = getNoteEditor(blockId);
+  if (!editor) return 0;
+  return hoverPos(editor, clientX, clientY);
+}
+
+function blockTextEnd(blockId: string, surface: CrossTextSurface): number {
+  if (surface === 'toggle-title') {
+    return getToggleTitleInput(blockId)?.value.length ?? 0;
+  }
+  const editor = getNoteEditor(blockId);
+  if (!editor) return 0;
+  return editor.state.doc.content.size - 1;
+}
+
 export function resolveCrossRanges(
   blockIds: string[],
   anchorState: Anchor,
@@ -88,10 +132,10 @@ export function resolveCrossRanges(
 
   for (let i = lo; i <= hi; i += 1) {
     const blockId = blockIds[i];
-    const editor = getNoteEditor(blockId);
-    if (!editor) continue;
-    const docEnd = editor.state.doc.content.size - 1;
-    let from = 1;
+    const surface = preferredCrossSurface(blockId, !!getNoteEditor(blockId));
+    if (!surface) continue;
+    const docEnd = blockTextEnd(blockId, surface);
+    let from = surface === 'editor' ? 1 : 0;
     let to = docEnd;
 
     if (lo === hi) {
@@ -107,10 +151,10 @@ export function resolveCrossRanges(
       }
     } else if (i === anchorIdx && i === hi) {
       if (anchorIdx < hoverIdx) {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = hoverCaretPos;
       } else {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = anchorState.pos;
       }
     } else if (i === hoverIdx && i === lo) {
@@ -123,15 +167,15 @@ export function resolveCrossRanges(
       }
     } else if (i === hoverIdx && i === hi) {
       if (hoverIdx < anchorIdx) {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = anchorState.pos;
       } else {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = hoverCaretPos;
       }
     }
 
-    ranges.push({ blockId, from, to });
+    ranges.push({ blockId, from, to, surface });
   }
 
   return ranges;
@@ -149,6 +193,7 @@ export function clearCrossHighlightsForBlocks(blockIds: string[]) {
   blockIds.forEach((id) => {
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
+    if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
   });
 }
 
@@ -156,16 +201,34 @@ export function clearAllCrossSelectState() {
   const touched = new Set<string>();
   activeCrossRanges.forEach(({ blockId }) => touched.add(blockId));
   clearCrossHighlightsForBlocks([...touched]);
+  clearAllToggleTitleCrossHighlights();
   activeCrossRanges = [];
+}
+
+/** 블록 간 교차 선택 + ProseMirror/브라우저 텍스트 드래그 선택 모두 해제 */
+export function clearAllNoteTextSelections() {
+  clearAllCrossSelectState();
+  collapseAllNoteEditorSelections();
+  document.querySelectorAll<HTMLInputElement>('[data-toggle-title]').forEach((input) => {
+    input.setSelectionRange(0, 0);
+  });
+  if (typeof window !== 'undefined') {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) sel.removeAllRanges();
+  }
 }
 
 function applyCrossDecorations(ranges: CrossSelectRange[]) {
   const touched = new Set<string>();
-  ranges.forEach(({ blockId, from, to }) => {
-    const editor = getNoteEditor(blockId);
-    if (!editor) return;
+  ranges.forEach(({ blockId, from, to, surface }) => {
     touched.add(blockId);
-    applyListCrossHighlight(editor, from, to);
+    if (surface === 'toggle-title') {
+      const input = getToggleTitleInput(blockId);
+      if (input) applyToggleTitleCrossHighlight(input, from, to);
+      return;
+    }
+    const editor = getNoteEditor(blockId);
+    if (editor) applyListCrossHighlight(editor, from, to);
   });
 
   const order = getOrderedSelectableBlockIds();
@@ -173,6 +236,7 @@ function applyCrossDecorations(ranges: CrossSelectRange[]) {
     if (touched.has(id)) return;
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
+    if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
   });
 }
 
@@ -181,7 +245,17 @@ function suppressNativeSelections(blockIds: string[], activeBlockId?: string) {
     if (id === activeBlockId) return;
     const editor = getNoteEditor(id);
     if (editor) collapseEditorSelection(editor, 1);
+    const input = getToggleTitleInput(id);
+    if (input) input.setSelectionRange(0, 0);
   });
+}
+
+function focusWithoutScroll(el: HTMLElement) {
+  try {
+    el.focus({ preventScroll: true });
+  } catch {
+    el.focus();
+  }
 }
 
 export function applyCrossBlockSelection(
@@ -194,14 +268,11 @@ export function applyCrossBlockSelection(
   const span = blocksBetween(order, anchor.blockId, hoverId);
   if (span.length <= 1) return [];
 
-  const hoverEditor = getNoteEditor(hoverId);
-  if (!hoverEditor) return [];
-
   const ranges = resolveCrossRanges(
     span,
     anchor,
     hoverId,
-    hoverPos(hoverEditor, clientX, clientY),
+    hoverBlockPos(hoverId, clientX, clientY),
   );
 
   if (ranges.length <= 1) return [];
@@ -211,14 +282,26 @@ export function applyCrossBlockSelection(
   applyCrossDecorations(ranges);
 
   const focusRange = ranges.find((r) => r.blockId === hoverId) ?? ranges[ranges.length - 1];
-  const focusEditor = getNoteEditor(focusRange.blockId);
-  if (focusEditor) {
-    focusEditor.commands.focus();
-    const { from, to } = focusRange;
-    if (to > from) {
-      focusEditor.chain().setTextSelection({ from, to }).run();
-    } else {
-      collapseEditorSelection(focusEditor, focusRange.to);
+  if (focusRange.surface === 'toggle-title') {
+    const input = getToggleTitleInput(focusRange.blockId);
+    if (input) {
+      focusWithoutScroll(input);
+      const len = input.value.length;
+      const from = Math.max(0, Math.min(focusRange.from, len));
+      const to = Math.max(from, Math.min(focusRange.to, len));
+      if (to > from) input.setSelectionRange(from, to);
+      else input.setSelectionRange(to, to);
+    }
+  } else {
+    const focusEditor = getNoteEditor(focusRange.blockId);
+    if (focusEditor) {
+      focusEditor.commands.focus();
+      const { from, to } = focusRange;
+      if (to > from) {
+        focusEditor.chain().setTextSelection({ from, to }).run();
+      } else {
+        collapseEditorSelection(focusEditor, focusRange.to);
+      }
     }
   }
 
@@ -233,6 +316,16 @@ export function restoreIntraBlockSelection(
 ): void {
   if (activeCrossRanges.length > 0) {
     clearAllCrossSelectState();
+  }
+  if (anchor.surface === 'toggle-title') {
+    const input = getToggleTitleInput(anchor.blockId);
+    if (!input) return;
+    const caretPos = hoverToggleTitlePos(input, clientX);
+    const from = Math.min(anchor.pos, caretPos);
+    const to = Math.max(anchor.pos, caretPos);
+    focusWithoutScroll(input);
+    input.setSelectionRange(from, to);
+    return;
   }
   const editor = getNoteEditor(anchor.blockId);
   if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return;
@@ -252,8 +345,7 @@ export function finalizeCrossSelection(
   const hoverId = blockIdFromPoint(clientX, clientY) ?? anchor.blockId;
   const order = getOrderedSelectableBlockIds();
   const span = blocksBetween(order, anchor.blockId, hoverId);
-  const endEditor = getNoteEditor(hoverId);
-  if (!endEditor || span.length <= 1) {
+  if (span.length <= 1) {
     clearAllCrossSelectState();
     return [];
   }
@@ -262,7 +354,7 @@ export function finalizeCrossSelection(
     span,
     anchor,
     hoverId,
-    hoverPos(endEditor, clientX, clientY),
+    hoverBlockPos(hoverId, clientX, clientY),
   );
 
   if (ranges.length <= 1) {
@@ -273,10 +365,20 @@ export function finalizeCrossSelection(
   activeCrossRanges = ranges;
   applyCrossDecorations(ranges);
   const focusRange = ranges.find((r) => r.blockId === hoverId) ?? ranges[ranges.length - 1];
-  const focusEditor = getNoteEditor(focusRange.blockId);
-  if (focusEditor) {
-    focusEditor.commands.focus();
-    collapseEditorSelection(focusEditor, focusRange.to);
+  if (focusRange.surface === 'toggle-title') {
+    const input = getToggleTitleInput(focusRange.blockId);
+    if (input) {
+      focusWithoutScroll(input);
+      const len = input.value.length;
+      const caret = Math.max(0, Math.min(focusRange.to, len));
+      input.setSelectionRange(caret, caret);
+    }
+  } else {
+    const focusEditor = getNoteEditor(focusRange.blockId);
+    if (focusEditor) {
+      focusEditor.commands.focus();
+      collapseEditorSelection(focusEditor, focusRange.to);
+    }
   }
 
   document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
@@ -291,12 +393,124 @@ function onCopy(e: ClipboardEvent) {
   e.clipboardData?.setData('text/plain', text);
 }
 
+function onToggleTitlePointerDown(e: PointerEvent) {
+  if (e.button !== 0) return;
+  if (e.shiftKey || e.ctrlKey || e.metaKey) return;
+  if (noteBlockMarqueeGuard.active) return;
+
+  const target = e.target as HTMLElement | null;
+  if (!target?.closest?.('[data-toggle-title]')) return;
+
+  const row = target.closest('[data-note-block-row]');
+  const blockId = row?.getAttribute('data-block-id');
+  const input = blockId ? getToggleTitleInput(blockId) : null;
+  if (!blockId || !input) return;
+
+  if (activeCrossRanges.length > 0) {
+    clearAllCrossSelectState();
+  }
+
+  toggleAnchor = {
+    blockId,
+    pos: hoverToggleTitlePos(input, e.clientX),
+    surface: 'toggle-title',
+  };
+  togglePointerDown = true;
+  toggleDragging = false;
+  toggleStartX = e.clientX;
+  toggleStartY = e.clientY;
+}
+
+function onToggleTitlePointerMove(e: PointerEvent) {
+  if (!togglePointerDown || !toggleAnchor || e.buttons !== 1) return;
+  if (noteBlockMarqueeGuard.active) {
+    onToggleTitlePointerUp();
+    return;
+  }
+
+  const dx = Math.abs(e.clientX - toggleStartX);
+  const dy = Math.abs(e.clientY - toggleStartY);
+  if (dx < TOGGLE_DRAG_THRESHOLD && dy < TOGGLE_DRAG_THRESHOLD) return;
+
+  const hoverId = blockIdFromPoint(e.clientX, e.clientY);
+  if (!hoverId) return;
+
+  const order = getOrderedSelectableBlockIds();
+  const span = blocksBetween(order, toggleAnchor.blockId, hoverId);
+  if (span.length <= 1) {
+    if (toggleDragging) {
+      clearAllCrossSelectState();
+      toggleDragging = false;
+    }
+    return;
+  }
+
+  if (hoverId === toggleAnchor.blockId) {
+    if (toggleDragging) {
+      toggleDragging = false;
+      noteTextDragGuard.active = false;
+      clearAllCrossSelectState();
+      const from = Math.min(toggleAnchor.pos, hoverToggleTitlePos(inputAt(hoverId), e.clientX));
+      const to = Math.max(toggleAnchor.pos, hoverToggleTitlePos(inputAt(hoverId), e.clientX));
+      focusWithoutScroll(inputAt(hoverId)!);
+      inputAt(hoverId)!.setSelectionRange(from, to);
+    }
+    return;
+  }
+
+  if (dx >= dy) return;
+
+  toggleDragging = true;
+  noteTextDragGuard.active = true;
+  e.preventDefault();
+
+  applyCrossBlockSelection(toggleAnchor, hoverId, e.clientX, e.clientY);
+}
+
+function inputAt(blockId: string) {
+  return getToggleTitleInput(blockId);
+}
+
+function onToggleTitlePointerUp(e: PointerEvent) {
+  if (!togglePointerDown) return;
+  const currentAnchor = toggleAnchor;
+  const wasDragging = toggleDragging;
+
+  togglePointerDown = false;
+  toggleDragging = false;
+  toggleAnchor = null;
+  noteTextDragGuard.active = false;
+
+  if (!currentAnchor) return;
+
+  if (wasDragging) {
+    finalizeCrossSelection(currentAnchor, e.clientX, e.clientY);
+  }
+}
+
 export function bindNoteCrossSelectCopy() {
-  if (copyBound) return () => {};
-  copyBound = true;
-  document.addEventListener('copy', onCopy, true);
+  bindListCrossHighlightEditorLookup(getNoteEditor, getToggleTitleInput);
+
+  if (!copyBound) {
+    copyBound = true;
+    document.addEventListener('copy', onCopy, true);
+  }
+
+  if (!toggleDragBound) {
+    toggleDragBound = true;
+    document.addEventListener('pointerdown', onToggleTitlePointerDown, true);
+    document.addEventListener('pointermove', onToggleTitlePointerMove, true);
+    document.addEventListener('pointerup', onToggleTitlePointerUp, true);
+    document.addEventListener('pointercancel', onToggleTitlePointerUp, true);
+  }
+
   return () => {
     copyBound = false;
+    toggleDragBound = false;
     document.removeEventListener('copy', onCopy, true);
+    document.removeEventListener('pointerdown', onToggleTitlePointerDown, true);
+    document.removeEventListener('pointermove', onToggleTitlePointerMove, true);
+    document.removeEventListener('pointerup', onToggleTitlePointerUp, true);
+    document.removeEventListener('pointercancel', onToggleTitlePointerUp, true);
   };
 }

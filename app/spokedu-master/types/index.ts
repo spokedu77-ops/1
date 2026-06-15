@@ -22,48 +22,6 @@ export interface UserProfile {
   periodEnd?: string | null;
 }
 
-export interface Cue {
-  symbol: string;
-  label: string;
-  bgColor: string;
-}
-
-export interface Drill {
-  id: string;
-  name: string;
-  category: string;
-  description?: string;
-  icon?: string;
-  enName?: string;
-  tag?: string;
-  levels?: Array<{ id: number; name: string; enName: string; desc: string }>;
-  cues: Cue[];
-  isPro: boolean;
-  bgColor: string;
-  engine?: { mode: string; level: number };
-}
-
-export type SpomovePresetIntent = 'warmup' | 'focus' | 'space' | 'finish';
-
-export interface SpomoveLaunchPreset {
-  id: string;
-  title: string;
-  subtitle: string;
-  intent: SpomovePresetIntent;
-  drillId: string;
-  engineMode: string;
-  engineLevel: number;
-  durationSec: number;
-  speedSec: number;
-  mode: 'projector' | 'mobile' | 'class';
-  tags: string[];
-  target: string;
-  space: string;
-  useCase: string;
-  isVisible?: boolean;
-  displayOrder?: number;
-}
-
 /** Supabase에서 로드된 프로그램 커스터마이징 메타 */
 export interface SmProgramMeta {
   curriculumId: number;
@@ -77,18 +35,6 @@ export interface SmProgramMeta {
   isHot: boolean;
   displayOrder: number;
   colors: [string, string, string, string] | null;
-}
-
-/** Supabase에서 로드된 드릴 커스터마이징 메타 */
-export interface SmDrillMeta {
-  drillId: string;
-  displayName: string | null;
-  tags: string[];
-  isPro: boolean;
-  isVisible: boolean;
-  displayOrder: number;
-  engineMode: string | null;
-  engineLevel: number | null;
 }
 
 export interface SessionConfig {

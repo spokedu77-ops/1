@@ -16,12 +16,11 @@ import { getPublicUrl, uploadToStorage } from '@/app/lib/admin/assets/storageCli
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
-  parseVariationMethod,
-} from '@/app/spokedu-master/lib/lessonContentContract';
-import {
   buildAdminProgramSavePayload,
+  replaceAdminProgramByCurriculumId,
   resolveAdminBriefingNotes,
   resolveAdminVariationMethod,
+  type SavedAdminProgram,
 } from '@/app/spokedu-master/lib/adminProgramEditorContract';
 import { useMasterStore } from '@/app/spokedu-master/store';
 import { toast } from 'sonner';
@@ -47,7 +46,6 @@ type CurriculumRow = {
   week: number | null;
   displayOrder: number | null;
   equipment: string[];
-  checklist: string[];
   steps: string[];
 };
 
@@ -80,9 +78,7 @@ type OverlayRow = {
   title: string | null;
   video_url: string | null;
   equipment: string | null;
-  checklist: string | null;
   activity_method: string | null;
-  activity_tip: string | null;
   main_theme: string | null;
   group_size: string | null;
   is_published: boolean | null;
@@ -100,7 +96,6 @@ type ProgramItem = {
     space: string;
     duration: string;
     equipment: string[];
-    checklist: string[];
     steps: string[];
     parentNote: string;
     relatedSpomoveIds: string[];
@@ -117,27 +112,20 @@ type ProgramsResponse = {
 type EditForm = {
   title: string;
   coachScript: string;
-  description: string;
-  objective: string;
   target: string;
   space: string;
   duration: string;
   theme: string;
   tags: string;
   videoUrl: string;
-  thumbnailUrl: string;
-  heroImageUrl: string;
   setupImageUrl: string;
-  galleryImageUrls: string;
   equipment: string;
   briefingNotes: string;
   steps: string;
   variations: string;
   parentNote: string;
   relatedSpomoveIds: string;
-  isNew: boolean;
   publicationStatus: PublicationStatus;
-  dashboardVisible: boolean;
 };
 
 const STATUS_LABEL: Record<MaterialStatus, string> = {
@@ -372,7 +360,6 @@ function qualitySummary(report: QualityReport) {
 
 function getItemQuality(item: ProgramItem): QualityReport {
   const meta = item.meta;
-  const overlay = item.overlay;
   const checks = {
     video: Boolean(item.effective.videoUrl),
     setupImage: Boolean(meta?.sm_setup_image_url),
@@ -382,8 +369,7 @@ function getItemQuality(item: ProgramItem): QualityReport {
     duration: Boolean(item.effective.duration),
     equipment: item.effective.equipment.length > 0,
     steps: item.effective.steps.length > 0,
-    variations: Boolean(meta?.sm_variation_method?.trim())
-      || parseVariationMethod(overlay?.activity_tip).length > 0,
+    variations: Boolean(meta?.sm_variation_method?.trim()),
     parentNote: Boolean(item.effective.parentNote),
     spomove: item.effective.relatedSpomoveIds.length > 0,
     homeExposure: item.effective.publicationStatus === 'featured' || Boolean(meta?.sm_is_hot),
@@ -437,33 +423,52 @@ function sortForFilter(items: ProgramItem[], filter: FilterKey) {
 function toForm(item: ProgramItem): EditForm {
   const meta = item.meta;
   const overlay = item.overlay;
-  const checklist = overlay?.checklist ?? joinLines(item.curriculum.checklist);
-  const activityTip = overlay?.activity_tip ?? '';
-
   return {
     title: overlay?.title || item.curriculum.title,
     coachScript: meta?.sm_coach_script || '',
-    description: meta?.sm_development_focus || '',
-    objective: meta?.sm_objective || '',
     target: serializeMasterTags(parseMasterTargets(meta?.sm_grade || '')),
     space: serializeMasterTags(parseMasterSpaces(meta?.sm_space || '')),
     duration: normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '',
     theme: normalizeLessonTheme(meta?.sm_theme || overlay?.main_theme || ''),
     tags: listToCsv(meta?.sm_tags),
     videoUrl: overlay?.video_url || '',
-    thumbnailUrl: meta?.sm_thumbnail_url || '',
-    heroImageUrl: meta?.sm_hero_image_url || '',
     setupImageUrl: meta?.sm_setup_image_url || '',
-    galleryImageUrls: (meta?.sm_gallery_image_urls ?? []).join('\n'),
     equipment: overlay?.equipment || joinLines(item.curriculum.equipment),
-    briefingNotes: resolveAdminBriefingNotes(meta?.sm_briefing_notes, checklist),
+    briefingNotes: resolveAdminBriefingNotes(meta?.sm_briefing_notes),
     steps: overlay?.activity_method || joinLines(item.curriculum.steps),
-    variations: resolveAdminVariationMethod(meta?.sm_variation_method, activityTip),
+    variations: resolveAdminVariationMethod(meta?.sm_variation_method),
     parentNote: meta?.sm_parent_note || '',
     relatedSpomoveIds: listToCsv(meta?.sm_related_spomove_ids),
-    isNew: Boolean(meta?.sm_is_new),
     publicationStatus: item.effective.publicationStatus,
-    dashboardVisible: meta?.sm_is_pro ?? true,
+  };
+}
+
+function mergeSavedProgram(
+  current: ProgramItem,
+  saved: SavedAdminProgram<Partial<OverlayRow>, MetaRow>,
+): ProgramItem {
+  const overlay = { ...current.overlay, ...saved.overlay } as OverlayRow;
+  const meta = saved.meta;
+  const target = serializeMasterTags(parseMasterTargets(meta.sm_grade || ''));
+  const space = serializeMasterTags(parseMasterSpaces(meta.sm_space || ''));
+  const duration = normalizeMasterDuration(meta.sm_duration);
+
+  return {
+    ...current,
+    meta,
+    overlay,
+    effective: {
+      ...current.effective,
+      title: overlay.title?.trim() || current.curriculum.title,
+      videoUrl: overlay.video_url?.trim() || current.curriculum.url,
+      target,
+      space,
+      duration: duration ? String(duration) : '',
+      equipment: overlay.equipment ? splitLines(overlay.equipment) : current.curriculum.equipment,
+      steps: overlay.activity_method ? splitLines(overlay.activity_method) : current.curriculum.steps,
+      parentNote: meta.sm_parent_note?.trim() || '',
+      relatedSpomoveIds: meta.sm_related_spomove_ids ?? [],
+    },
   };
 }
 
@@ -1027,11 +1032,12 @@ export default function AdminSmProgramsPage() {
           variationMethod: form.variations,
         })),
       });
-      const json = await res.json() as ProgramsResponse & {
+      const json = await res.json() as {
         ok?: boolean;
         partialSave?: boolean;
         failedStage?: string;
         error?: string;
+        program?: SavedAdminProgram<Partial<OverlayRow>, MetaRow>;
       };
       if (!res.ok || json.ok !== true) {
         const message = json.partialSave
@@ -1039,13 +1045,16 @@ export default function AdminSmProgramsPage() {
           : json.error ?? '저장에 실패했습니다.';
         throw new Error(message);
       }
-      setItems(json.data ?? []);
-      const next = (json.data ?? []).find((item) => item.curriculum.id === selected.curriculum.id);
-      if (next) {
-        setSelectedId(next.curriculum.id);
-        setForm(toForm(next));
-      }
-      await useMasterStore.getState().reloadPrograms();
+      if (!json.program) throw new Error('저장된 프로그램 응답이 없습니다.');
+      const next = mergeSavedProgram(selected, json.program);
+      setItems((current) => replaceAdminProgramByCurriculumId(
+        current,
+        selected.curriculum.id,
+        next,
+        (item) => item.curriculum.id,
+      ));
+      setSelectedId(next.curriculum.id);
+      setForm(toForm(next));
       toast.success('MASTER 편집 값이 저장되었습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '저장에 실패했습니다.');

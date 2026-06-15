@@ -6,6 +6,7 @@ import { addDays, addWeeks, format, isSameDay, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { getPrimaryOfficialSpomovePreset, getSpomoveSessionHref } from '../lib/program-meta';
 import { useMasterStore } from '../store';
 import type { Program } from '../types';
 
@@ -37,7 +38,7 @@ function getProgramForLesson(title: string, programs: Program[]) {
 
 function LessonItem({ lesson, programs, onToggle, onDelete }: { lesson: ReturnType<typeof useMasterStore.getState>['lessons'][number]; programs: Program[]; onToggle: () => void; onDelete: () => void }) {
   const program = getProgramForLesson(lesson.title, programs);
-  const spomoveId = program?.lessonDetail?.relatedSpomoveIds?.[0];
+  const spomovePreset = program ? getPrimaryOfficialSpomovePreset(program) : null;
   return (
     <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
       <div className="flex items-center gap-3">
@@ -49,7 +50,7 @@ function LessonItem({ lesson, programs, onToggle, onDelete }: { lesson: ReturnTy
       <div className="mt-3 grid grid-cols-4 gap-2">
         <Link href={`/spokedu-master/library/${program?.id ?? ''}`} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><BookOpen size={12} />수업안</Link>
         <Link href={`/spokedu-master/class-mode/${program?.id ?? ''}`} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><Play size={11} fill="#fff" />시작</Link>
-        <Link href={spomoveId ? `/spokedu-master/spomove/session?drill=${spomoveId}&mode=projector&program=${program?.id ?? ''}` : '/spokedu-master/spomove'} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><MonitorPlay size={13} />화면</Link>
+        <Link href={program && spomovePreset ? getSpomoveSessionHref(program, spomovePreset) : '/spokedu-master/spomove'} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><MonitorPlay size={13} />화면</Link>
         <Link href={`/spokedu-master/report?program=${program?.id ?? ''}`} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><ClipboardList size={13} />설명</Link>
       </div>
     </div>

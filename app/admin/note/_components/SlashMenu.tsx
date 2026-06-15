@@ -127,7 +127,7 @@ export function SlashMenuFixed<T extends string>({
 }) {
   if (!show || !anchor) return null;
   return (
-    <div className="fixed z-[9999]" style={{ top: anchor.top, left: anchor.left }}>
+    <div className="fixed z-[9999]" data-note-overlay-menu style={{ top: anchor.top, left: anchor.left }}>
       <SlashMenu
         commands={commands}
         query={query}
@@ -462,6 +462,7 @@ export function BlockHandleMenu<T extends string>({
   return (
     <div
       ref={ref}
+      data-note-overlay-menu
       className="relative w-[248px] overflow-visible rounded-lg border border-neutral-200 bg-white py-1 shadow-xl shadow-neutral-900/10"
       onMouseEnter={cancelHoverPanelClose}
       onMouseLeave={scheduleHoverPanelClose}

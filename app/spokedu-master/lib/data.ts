@@ -1,25 +1,4 @@
-import type { Cue, Drill, Program } from '../types';
-
-export const SESSION_CUES: Cue[] = [
-  { symbol: 'L', label: '왼쪽', bgColor: '#1a0a3a' },
-  { symbol: 'R', label: '오른쪽', bgColor: '#0a1a3a' },
-  { symbol: 'F', label: '앞으로', bgColor: '#022c1a' },
-  { symbol: 'B', label: '뒤로', bgColor: '#1c0a00' },
-  { symbol: 'S', label: '멈춤', bgColor: '#1a0a1a' },
-  { symbol: 'J', label: '점프', bgColor: '#0a1628' },
-];
-
-export const DRILLS: Drill[] = [
-  { id: 'reactTrain', name: '시지각 반응 : Visual Reaction', category: '시지각 반응', description: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각·반응 훈련입니다.', icon: '◆', enName: 'Visual Reaction', tag: '시지각 · 반응 훈련', levels: [{ id: 1, name: '1번', enName: 'FLOW', desc: '색 타일이 레인을 따라 흘러내립니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#E11D48', engine: { mode: 'reactTrain', level: 1 } },
-  { id: 'basic', name: '반응 인지 : Reactive Cognition', category: '반응 인지', description: '화면 신호를 보는 순간, 판단하고 즉시 움직입니다.', icon: '⚡', enName: 'Reactive Cognition', tag: '순발력 · 지각 훈련', levels: [{ id: 1, name: '1번', enName: 'Quad Color', desc: '사분할 색 신호에 반응합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#3B82F6', engine: { mode: 'basic', level: 1 } },
-  { id: 'simon', name: '사이먼 효과 : Simon Effect', category: '사이먼 효과', description: '원·삼각형·사각형이 화면 어디에나 하나씩 나타납니다. 안을 채운 색에 맞는 색 위치로 이동합니다.', icon: '◈', enName: 'Simon Effect', tag: '공간 위치 · 색 반응', levels: [{ id: 1, name: '1번', enName: 'Pole Shape', desc: '공간 위치와 색을 분리해 반응합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#EC4899', engine: { mode: 'simon', level: 1 } },
-  { id: 'flanker', name: '플랭커 : Flanker', category: '플랭커', description: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로 이동합니다.', icon: '◎', enName: 'Flanker', tag: '방해 자극 · 목표 색 선택', levels: [{ id: 1, name: '1번', enName: 'Uniform Flankers', desc: '가운데 목표 색에만 반응합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#6366F1', engine: { mode: 'flanker', level: 1 } },
-  { id: 'gonogo', name: 'Go / No-Go : Go / No-Go', category: 'Go / No-Go', description: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 억제합니다.', icon: '🛑', enName: 'Go / No-Go', tag: '반응 억제', levels: [{ id: 1, name: '1번', enName: 'Go / No-Go', desc: 'Go 신호와 멈춤 신호를 구분합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#F97316', engine: { mode: 'gonogo', level: 1 } },
-  { id: 'taskswitch', name: 'Task Switching : Task Switching', category: 'Task Switching', description: 'cue에 따라 색, 위치, 반대로 규칙을 바꿔 반응합니다.', icon: '🔀', enName: 'Task Switching', tag: '규칙 전환', levels: [{ id: 1, name: '1번', enName: 'Text Cues', desc: '규칙 cue에 따라 반응 기준을 바꿉니다.' }], cues: SESSION_CUES, isPro: true, bgColor: '#EA580C', engine: { mode: 'taskswitch', level: 1 } },
-  { id: 'spatial', name: '순차 기억 : Sequential Memory', category: '순차 기억', description: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.', icon: '🎨', enName: 'Sequential Memory', tag: '작업기억 · 순서 재생', levels: [{ id: 1, name: '1번', enName: '3항 기억', desc: '색 순서를 기억합니다.' }], cues: SESSION_CUES, isPro: true, bgColor: '#22C55E', engine: { mode: 'spatial', level: 1 } },
-  { id: 'stroop', name: '스트룹 과제 : Stroop Task', category: '스트룹 과제', description: '화살표·글자 과제에서 규칙에 따라 방향·색·의미를 말합니다.', icon: '🧠', enName: 'Stroop Task', tag: '억제 제어 · 인지 유연성', levels: [{ id: 1, name: '1번', enName: 'Arrow Stroop', desc: '방향과 규칙 간섭을 처리합니다.' }], cues: SESSION_CUES, isPro: true, bgColor: '#A855F7', engine: { mode: 'stroop', level: 1 } },
-  { id: 'flow', name: '플로우 : Flow Mode', category: '플로우', description: '우주 러닝 FLOW를 SPOMOVE에서 바로 실행합니다.', icon: '🌌', enName: 'Flow Mode', tag: '몰입 러닝 · 반응 전환', levels: [{ id: 1, name: '1번', enName: 'Flow Program', desc: 'FLOW 전체 시퀀스를 진행합니다.' }], cues: SESSION_CUES, isPro: false, bgColor: '#06B6D4', engine: { mode: 'flow', level: 1 } },
-];
+import type { Program } from '../types';
 
 export const PROGRAMS: Program[] = [
   {

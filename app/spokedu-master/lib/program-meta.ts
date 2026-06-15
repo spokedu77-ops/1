@@ -1,4 +1,9 @@
 import type { Program } from '../types';
+import {
+  findOfficialSpomovePreset,
+  officialPresetSessionHref,
+  type OfficialSpomovePreset,
+} from '../spomove/officialSpomovePresets';
 
 const PLACEHOLDER_PATTERN = /확인 필요|활동 공간 확인|미정|undefined|null|NaN/i;
 
@@ -8,16 +13,35 @@ export function isPlaceholderMeta(value: string | undefined | null): boolean {
 }
 
 export function hasExplicitSpomoveLink(program: Program): boolean {
-  const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return related.length > 0;
+  return getOfficialSpomovePresets(program).length > 0;
 }
 
-export function getPrimarySpomoveDrillId(program: Program, availableDrillIds: string[]): string | null {
+export function getOfficialSpomovePresets(program: Program): OfficialSpomovePreset[] {
   const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  const matched = related.find((id) => availableDrillIds.includes(id));
-  return matched ?? related[0] ?? null;
+  const seen = new Set<string>();
+  const presets: OfficialSpomovePreset[] = [];
+
+  for (const id of related) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const preset = findOfficialSpomovePreset(id);
+    if (preset) presets.push(preset);
+  }
+
+  return presets;
 }
 
-export function getSpomoveSessionHref(program: Program, drillId: string): string {
-  return `/spokedu-master/spomove/session?drill=${drillId}&mode=projector&program=${program.id}`;
+export function getPrimaryOfficialSpomovePreset(program: Program): OfficialSpomovePreset | null {
+  return getOfficialSpomovePresets(program)[0] ?? null;
+}
+
+export function getSpomoveSessionHref(
+  program: Program,
+  preset: OfficialSpomovePreset,
+  mode: 'projector' | 'class' = 'projector',
+): string {
+  const url = new URL(officialPresetSessionHref(preset), 'https://spokedu.local');
+  url.searchParams.set('mode', mode);
+  url.searchParams.set('program', program.id);
+  return `${url.pathname}?${url.searchParams.toString()}`;
 }

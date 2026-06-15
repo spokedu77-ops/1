@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   extractExactSectionText,
+  parseTextareaLines,
   parseVariationMethod,
-  replaceExactSection,
   serializeVariationMethod,
 } from './lessonContentContract';
 
@@ -45,34 +45,8 @@ describe('lesson content contract', () => {
     expect(extractExactSectionText(source, '운영 팁')).toBe('');
   });
 
-  it('replaces one exact section and preserves the others', () => {
-    const source = [
-      '라벨 없는 앞 문장',
-      '[사전 교육]',
-      '기존 안내',
-      '[안전 포인트]',
-      '보존할 안전 문구',
-    ].join('\n');
-    expect(replaceExactSection(source, '사전 교육', '새 안내 1\n새 안내 2')).toBe([
-      '라벨 없는 앞 문장',
-      '[사전 교육]',
-      '새 안내 1',
-      '새 안내 2',
-      '[안전 포인트]',
-      '보존할 안전 문구',
-    ].join('\n'));
-  });
-
-  it('removes only the requested exact section for empty input', () => {
-    const source = [
-      '[변형 방법]',
-      '기존 변형',
-      '[응용 방법]',
-      '보존할 응용',
-    ].join('\n');
-    expect(replaceExactSection(source, '변형 방법', '')).toBe([
-      '[응용 방법]',
-      '보존할 응용',
-    ].join('\n'));
+  it('parses Master meta textarea content into display lines', () => {
+    expect(parseTextareaLines(' 첫 줄 \n\n 둘째 줄 ')).toEqual(['첫 줄', '둘째 줄']);
+    expect(parseTextareaLines(null)).toEqual([]);
   });
 });

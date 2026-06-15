@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { buildMissingMasterMetaRows } from './metaRowContract';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
@@ -207,6 +208,31 @@ async function applySync(changes: SyncChange[], overlayById: Map<number, Overlay
       });
     if (error) throw error;
   }
+
+  const insertedCurriculumIds = changes
+    .filter((change) => change.action === 'insert')
+    .map((change) => change.curriculumId);
+  if (insertedCurriculumIds.length === 0) return;
+
+  const { data: existingMetaRows, error: metaReadError } = await supabase
+    .from('spokedu_master_program_meta')
+    .select('curriculum_id')
+    .in('curriculum_id', insertedCurriculumIds);
+  if (metaReadError) throw metaReadError;
+
+  const metaRows = buildMissingMasterMetaRows(
+    changes,
+    (existingMetaRows ?? []).map((row) => row.curriculum_id as number),
+  );
+  if (metaRows.length === 0) return;
+
+  const { error: metaInsertError } = await supabase
+    .from('spokedu_master_program_meta')
+    .upsert(metaRows, {
+      onConflict: 'curriculum_id',
+      ignoreDuplicates: true,
+    });
+  if (metaInsertError) throw metaInsertError;
 }
 
 export async function GET() {

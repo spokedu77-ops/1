@@ -27,6 +27,14 @@ export function NoteRichEditorStyles() {
         background: rgb(147 197 253 / 0.65);
         border-radius: 0.125rem;
       }
+      input[data-toggle-title].note-toggle-title-cross-active {
+        background-color: rgb(191 219 254 / 0.65);
+        border-radius: 0.125rem;
+      }
+      input[data-toggle-title].note-toggle-title-cross-active.note-toggle-title-cross-full {
+        background-color: rgb(191 219 254 / 0.65);
+        border-radius: 0.125rem;
+      }
       .note-rich-editor p.is-editor-empty:first-child::before {
         color: rgb(148 163 184);
         content: attr(data-placeholder);
@@ -78,6 +86,21 @@ export function NoteRichEditorStyles() {
         border-radius: 0.75rem;
         object-fit: contain;
         cursor: zoom-in;
+      }
+      [data-note-block-row] > .note-block-gutter {
+        opacity: 0;
+        pointer-events: none;
+      }
+      [data-note-block-row][data-row-hovered] > .note-block-gutter,
+      [data-note-block-row][data-gutter-pinned] > .note-block-gutter {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      body.note-marquee-active .note-rich-editor,
+      body.note-marquee-active .note-rich-editor .ProseMirror {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        cursor: default;
       }
     `}</style>
   );

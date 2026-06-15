@@ -24,6 +24,19 @@ export function sortRootBlocks<T extends NoteBlockLike>(blocks: T[]) {
     .sort((a, b) => a.order_index - b.order_index);
 }
 
+/** 에디터 DOM 순서(부모 직후 자식 DFS)로 블록 id 나열 — dnd SortableContext용 */
+export function flattenVisualBlockIds<T extends NoteBlockLike>(blocks: T[]): string[] {
+  const result: string[] = [];
+  const walk = (parentId: string | null) => {
+    for (const block of getBlocksInParent(blocks, parentId)) {
+      result.push(block.id);
+      walk(block.id);
+    }
+  };
+  walk(null);
+  return result;
+}
+
 /** 토글 안에서 인라인(테두리 없음)으로 둘 타입 */
 export const TOGGLE_INLINE_CHILD_TYPES = new Set(['text', 'todo', 'toggle', 'page']);
 

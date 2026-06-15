@@ -25,8 +25,9 @@ import {
 import { NoteRichEditorStyles } from './NoteRichEditorStyles';
 import { useNoteImageLightbox } from './NoteImageLightbox';
 import {
-  focusNoteEditorAtClick,
+  pendingEditorClickRef,
   registerNoteEditor,
+  scheduleFocusNoteEditorAtClick,
   unregisterNoteEditor,
 } from './noteEditorRegistry';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
@@ -36,6 +37,7 @@ import {
 } from './noteCrossSelect';
 import { bindListCrossHighlightEditorLookup } from './noteListCrossHighlight';
 import { getNoteEditor } from './noteEditorRegistry';
+import { noteSuppressEditorScrollRef } from '../_lib/noteEditorScrollGuard';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 
 const UnderlineWithShortcut = Underline.extend({
@@ -449,6 +451,7 @@ export function NoteEditor({
     extensions,
     content: sourceHtml,
     editorProps: {
+      handleScrollToSelection: () => noteSuppressEditorScrollRef.current,
       attributes: {
         class: `note-rich-editor min-h-[1.75rem] w-full select-text outline-none ${className}`,
       },
@@ -558,6 +561,21 @@ export function NoteEditor({
           currentOnSlashChange?.(false, '');
           return false;
         }
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+          const ed = editorRef.current;
+          if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+            if (event.shiftKey && ed.can().redo()) {
+              event.preventDefault();
+              ed.chain().focus().redo().run();
+              return true;
+            }
+            if (!event.shiftKey && ed.can().undo()) {
+              event.preventDefault();
+              ed.chain().focus().undo().run();
+              return true;
+            }
+          }
+        }
         if (event.key === 'Backspace') {
           const { selection } = view.state;
           if (selection.empty && selection.from <= 1) {
@@ -654,8 +672,11 @@ export function NoteEditor({
       scheduleChange({ text: nextText, html: '' });
     },
     onCreate: ({ editor: currentEditor }) => {
+      if (editorBlockId && pendingEditorClickRef.current?.blockId === editorBlockId) {
+        scheduleFocusNoteEditorAtClick(editorBlockId, currentEditor);
+        return;
+      }
       requestAnimationFrame(() => {
-        if (editorBlockId && focusNoteEditorAtClick(editorBlockId, currentEditor)) return;
         if (typeof focusCaretOffset === 'number' && focusCaretOffset >= 0) {
           const pos = Math.min(focusCaretOffset + 1, currentEditor.state.doc.content.size);
           currentEditor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
@@ -796,8 +817,13 @@ export function NoteEditor({
     if (!editor || autoFocusSignal <= 0) return;
     if (autoFocusSignal === lastAutoFocusSignalRef.current) return;
     lastAutoFocusSignalRef.current = autoFocusSignal;
+
+    if (editorBlockId && pendingEditorClickRef.current?.blockId === editorBlockId) {
+      scheduleFocusNoteEditorAtClick(editorBlockId, editor);
+      return;
+    }
+
     requestAnimationFrame(() => {
-      if (editorBlockId && focusNoteEditorAtClick(editorBlockId, editor)) return;
       if (typeof focusCaretOffset === 'number' && focusCaretOffset >= 0) {
         const pos = Math.min(focusCaretOffset + 1, editor.state.doc.content.size);
         editor.chain().focus().setTextSelection({ from: pos, to: pos }).run();

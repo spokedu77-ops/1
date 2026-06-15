@@ -5,16 +5,13 @@ import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess
 import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
 import {
-  applyTrustedReferenceVideo,
-  resolveTrustedReferenceVideoUrl,
-} from '@/app/spokedu-master/lib/verified-program-video';
-import {
   normalizeMasterDuration,
   normalizeMasterSpace,
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
-import { parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
+import { parseTextareaLines } from '@/app/spokedu-master/lib/lessonContentContract';
+import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#312e81', '#3730a3', '#4338ca', '#4f46e5'],
@@ -78,94 +75,9 @@ function normalizeImageUrls(value: string[] | null | undefined): string[] {
 }
 
 function normalizeSpomoveIds(ids: string[]): string[] {
-  const legacyMap: Record<string, string[]> = {
-    'SR-05': ['reactTrain'],
-    'SR-06': ['basic'],
-    'RS-05': ['basic', 'taskswitch'],
-    'IC-05': ['gonogo'],
-    'RC-05': ['flow'],
-    'SM-05': ['spatial'],
-    'SM-06': ['stroop'],
-  };
-  return [...new Set(ids.flatMap((id) => legacyMap[id] ?? [id]))].slice(0, 3);
+  return [...new Set(ids)].filter((id) => Boolean(findOfficialSpomovePreset(id))).slice(0, 3);
 }
 
-
-function applyPremiumContentOverlay(program: Program): Program {
-  return program;
-
-  const key = [program.title, program.category, program.description, ...program.tags].join(' ').toLowerCase();
-  if (!/(펀스틱|funstick|펜싱|fencing)/i.test(key)) return program;
-
-  const rules = [
-    '두 명이 안전거리를 두고 마주 선 뒤, 펀스틱은 전방 목표물 쪽으로만 향하게 합니다.',
-    '한 손에는 펀스틱, 다른 손에는 라바콘과 공을 든 상태로 균형을 유지합니다.',
-    '상대의 공을 정확히 찌르면 1점, 자신의 공을 떨어뜨리거나 안전선을 넘으면 공격권을 넘깁니다.',
-    '1라운드는 30초로 짧게 운영하고, 라운드 사이에 공격 거리와 방어 자세를 바로 피드백합니다.',
-  ];
-  const current = program.lessonDetail;
-
-  return {
-    ...program,
-    title: '펀스틱 펜싱 Funstick Fencing',
-    category: '경쟁형',
-    grade: '초등 3학년 이상',
-    duration: program.duration || 20,
-    space: '실내 체육관 · 넓은 활동 공간',
-    description:
-      '부드러운 펀스틱으로 상대의 목표물을 겨냥하며 거리 판단, 타이밍, 균형 유지, 공격·방어 전환을 익히는 경쟁형 놀이체육 프로그램입니다.',
-    steps: rules,
-    equipment: ['펀스틱 2개', '라바콘 2개', '공 2개', '접시콘 12~15개'],
-    tags: [...new Set(['경쟁형', '민첩성', '순발력', '거리 판단', '타이밍', 'SPOMOVE 연계', ...program.tags])],
-    colors: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
-    isHot: true,
-    thumbnailUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
-    lessonDetail: {
-      recommendedAge: '초등 3학년 이상',
-      recommendedPlayers: '2명씩 페어 · 6~20명 순환 운영',
-      objective: '거리 판단, 반응 타이밍, 균형 유지, 공격·방어 전환을 안전한 경쟁 놀이로 경험합니다.',
-      developmentFocus: '민첩성 / 협응력 / 집중력 / 스포츠맨십',
-      coachScript:
-        current?.coachScript ||
-        '오늘은 세게 찌르는 수업이 아니라, 거리와 타이밍을 읽는 수업입니다. 상대 공을 보되 몸이 앞으로 쏠리지 않게 균형을 먼저 잡아주세요.',
-      parentNote:
-        current?.parentNote ||
-        '오늘은 펀스틱 펜싱 활동으로 거리 판단과 반응 타이밍을 연습했습니다. 아이들이 규칙을 지키며 경쟁하고, 공격과 방어를 번갈아 경험했습니다.',
-      fieldTips: [
-        '처음 1라운드는 득점보다 안전거리와 자세를 확인하는 데 씁니다.',
-        '공격이 과격해지면 "천천히 정확하게" 라운드로 전환합니다.',
-        '대기 학생에게 관찰 역할을 주면 수업 밀도가 떨어지지 않습니다.',
-        ...(current?.fieldTips ?? []),
-      ],
-      variations: [
-        '초급: 정지 상태에서 목표물 찌르기만 진행합니다.',
-        '중급: 발을 한 번만 이동할 수 있게 제한합니다.',
-        '고급: SPOMOVE 신호에 맞춰 공격권 또는 이동 방향을 바꿉니다.',
-      ],
-      safetyNotes: [
-        '얼굴과 목 방향으로 펀스틱을 들지 않도록 시작 전에 금지선을 명확히 안내합니다.',
-        '접시콘으로 경기 구역을 넓게 표시하고, 대기 학생은 구역 밖에서 기다립니다.',
-        '펀스틱은 휘두르지 않고 목표물을 향해 "밀어 찌르기"로만 사용합니다.',
-      ],
-      relatedSpomoveIds:
-        normalizeSpomoveIds(current?.relatedSpomoveIds ?? []),
-      videoUrl: normalizeVideoUrl(current?.videoUrl),
-      heroImageUrl: current?.heroImageUrl,
-      setupImageUrl: current?.setupImageUrl,
-      galleryImageUrls: current?.galleryImageUrls ?? [],
-      briefingNotes: [
-        '구독자가 모달을 열자마자 활동 가치, 준비물, 안전 기준, 실행 순서를 한 번에 판단할 수 있어야 합니다.',
-        '현장 사진은 신뢰를 만들고, 배치도는 수업 직전 준비 시간을 줄이는 역할을 합니다.',
-      ],
-      rules,
-      setupNotes: [
-        '접시콘으로 직사각형 경기장을 만들고, 중앙에 두 명이 마주 보는 시작선을 둡니다.',
-        '각 학생은 라바콘 위 공을 들고, 상대는 펀스틱으로 공만 겨냥합니다.',
-        '대기자는 측면 안전 구역에서 다음 라운드를 준비합니다.',
-      ],
-    },
-  };
-}
 
 function hasBrokenText(value: string | null | undefined) {
   if (!value) return false;
@@ -183,94 +95,8 @@ function cleanList(items: string[] | null | undefined, fallback: string[]) {
   return cleaned.length > 0 ? cleaned : fallback;
 }
 
-function extractLabeledSection(lines: string[], label: string) {
-  const start = lines.findIndex((line) => line.trim() === `[${label}]`);
-  if (start < 0) return [];
-  const values: string[] = [];
-  for (let i = start + 1; i < lines.length; i += 1) {
-    const line = lines[i].trim();
-    if (/^\[[^\]]+\]$/.test(line)) break;
-    if (line) values.push(line);
-  }
-  return values;
-}
-
-
-function cleanFunstickProgram(program: Program): Program {
-  return program;
-
-  return {
-    ...program,
-    title: cleanText(program.title, '펀스틱 활동'),
-    category: cleanText(program.category, '민첩·반응'),
-    grade: cleanText(program.grade, '대상 확인 필요'),
-    duration: program.duration || 20,
-    space: '실내 체육관 · 넓은 활동 공간',
-    description:
-      '부드러운 펀스틱으로 상대의 목표물을 겨냥하며 거리 판단, 타이밍, 균형 조절, 공격·방어 전환을 경험하는 대체 펜싱 프로그램입니다.',
-    steps: [
-      '두 명이 안전거리를 두고 마주 섭니다. 펀스틱은 얼굴 방향이 아니라 목표물 방향으로만 사용합니다.',
-      '한 명은 펀스틱을 들고, 다른 한 명은 라바콘과 공을 들고 균형을 유지합니다.',
-      '상대의 공을 정확히 찌르면 1점입니다. 자신의 공을 떨어뜨리거나 안전선을 넘으면 공격권을 넘깁니다.',
-      '1라운드는 30초로 짧게 운영하고, 라운드 사이에 거리와 자세를 바로 피드백합니다.',
-    ],
-    equipment: ['펀스틱 2개', '라바콘 2개', '공 2개', '접시콘 12~15개'],
-    tags: ['펜싱', '민첩성', '거리 판단', '타이밍', '균형 조절', 'SPOMOVE 연계'],
-    colors: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
-    isHot: true,
-    thumbnailUrl: '/images/spokedu-master/programs/funstick-fencing/hero.jpeg',
-    lessonDetail: {
-      recommendedAge: '초등 3학년 이상',
-      recommendedPlayers: '2명 페어 · 6~20명 순환 운영',
-      objective: '거리 판단, 반응 타이밍, 균형 유지, 공격·방어 전환을 안전한 펜싱 형태로 경험합니다.',
-      developmentFocus: '민첩성 / 반응 조절 / 집중력 / 스포츠맨십',
-      coachScript:
-        '오늘은 세게 찌르는 수업이 아닙니다. 거리를 보고, 타이밍을 읽고, 몸이 앞으로 쏠리지 않게 균형을 잡는 수업입니다.',
-      parentNote:
-        '오늘은 펀스틱 펜싱 활동으로 거리 판단과 반응 전환을 연습했습니다. 아이들이 규칙을 지키며 공격과 방어를 번갈아 경험했습니다.',
-      fieldTips: [
-        '처음 1라운드는 점수보다 안전거리와 자세 확인에 집중합니다.',
-        '공격이 과격해지면 “천천히, 정확하게” 라운드로 전환합니다.',
-        '대기 학생에게 관찰 역할을 주면 수업 집중도가 유지됩니다.',
-      ],
-      variations: [
-        '초급: 정지 상태에서 목표물 찌르기만 진행합니다.',
-        '중급: 발을 한 번만 이동할 수 있게 제한합니다.',
-        '고급: SPOMOVE 신호에 맞춰 공격권이나 이동 방향을 바꿉니다.',
-      ],
-      safetyNotes: [
-        '얼굴과 목 방향으로 펀스틱이 향하지 않도록 시작 전에 금지선을 명확히 안내합니다.',
-        '접시콘으로 경기 구역을 넓게 표시하고 대기 학생은 구역 밖에서 기다립니다.',
-        '펀스틱은 휘두르지 않고 목표물을 향한 가벼운 찌르기로만 사용합니다.',
-      ],
-      relatedSpomoveIds: normalizeSpomoveIds(program.lessonDetail?.relatedSpomoveIds ?? []),
-      videoUrl: normalizeVideoUrl(program.lessonDetail?.videoUrl),
-      heroImageUrl: program.lessonDetail?.heroImageUrl,
-      setupImageUrl: program.lessonDetail?.setupImageUrl,
-      galleryImageUrls: program.lessonDetail?.galleryImageUrls ?? [],
-      briefingNotes: [
-        '현장 사진은 신뢰를 만들고, 배치도는 수업 직전 준비 시간을 줄입니다.',
-        '구독자는 활동 가치, 준비물, 안전 기준, 실행 순서를 한 번에 판단할 수 있어야 합니다.',
-      ],
-      rules: [
-        '목표물은 공으로 제한하고 얼굴·목·몸통은 공격 대상에서 제외합니다.',
-        '안전선 밖으로 나가거나 공을 떨어뜨리면 공격권을 넘깁니다.',
-        '라운드가 끝나면 서로 인사하고 다음 페어로 교대합니다.',
-      ],
-      setupNotes: [
-        '접시콘으로 직사각형 경기장을 만들고 중앙에 두 명이 마주 보는 시작선을 둡니다.',
-        '각 학생은 라바콘과 공을 들고, 상대는 펀스틱으로 공만 겨냥합니다.',
-        '대기자는 측면 안전 구역에서 다음 라운드를 준비합니다.',
-      ],
-    },
-  };
-}
-
-function normalizeProgramForMaster(program: Program, index: number): Program {
-  const identity = `${program.id} ${program.title} ${program.thumbnailUrl ?? ''}`.toLowerCase();
-  if (/funstick|fencing|펀스틱|펜싱/.test(identity)) return cleanFunstickProgram(program);
-
-  const title = cleanText(program.title, `수업 패키지 ${index + 1}`);
+function normalizeProgramForMaster(program: Program): Program {
+  const title = cleanText(program.title, '');
   const relatedSpomoveIds = normalizeSpomoveIds(program.lessonDetail?.relatedSpomoveIds ?? []);
   const youtubeThumb = buildThumbnailUrl(program.lessonDetail?.videoUrl);
   const thumbnailUrl = pickBestHeroUrl(program.thumbnailUrl, youtubeThumb);
@@ -318,7 +144,7 @@ export async function GET() {
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
-    .select('id,title,url,check_list,equipment,steps,expert_tip,display_order')
+    .select('id,display_order')
     .eq('is_sub', false)
     .order('display_order', { ascending: true, nullsFirst: false })
     .order('id', { ascending: false });
@@ -350,13 +176,15 @@ export async function GET() {
     sm_hero_image_url: string | null;
     sm_setup_image_url: string | null;
     sm_gallery_image_urls: string[] | null;
+    sm_briefing_notes: string | null;
+    sm_variation_method: string | null;
   };
 
   const metaByCurriculumId = new Map<number, MetaRow>();
   if (curriculumIds.length > 0) {
     const { data: metaRows } = await supabase
       .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls')
+      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
       .in('curriculum_id', curriculumIds);
     for (const meta of (metaRows ?? []) as MetaRow[]) {
       metaByCurriculumId.set(meta.curriculum_id, meta);
@@ -367,15 +195,9 @@ export async function GET() {
     title: string | null;
     source_center_curriculum_id: number | null;
     video_url: string | null;
-    activity_tip: string | null;
     activity_method: string | null;
     equipment: string | null;
-    checklist: string | null;
     updated_at: string | null;
-    function_type: string | null;
-    function_types: string[] | null;
-    main_theme: string | null;
-    group_size: string | null;
     is_published: boolean | null;
   };
 
@@ -383,7 +205,7 @@ export async function GET() {
   if (curriculumIds.length > 0) {
     const { data: overlayRows } = await supabase
       .from('spokedu_pro_programs')
-      .select('title,source_center_curriculum_id,video_url,activity_tip,activity_method,equipment,checklist,updated_at,function_type,function_types,main_theme,group_size,is_published')
+      .select('title,source_center_curriculum_id,video_url,activity_method,equipment,updated_at,is_published')
       .in('source_center_curriculum_id', curriculumIds);
     for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
       const curriculumId = overlay.source_center_curriculum_id;
@@ -401,12 +223,6 @@ export async function GET() {
 
   type CurrRow = {
     id: number;
-    title: string | null;
-    url: string | null;
-    check_list: string[] | null;
-    equipment: string[] | null;
-    steps: string[] | null;
-    expert_tip: string | null;
     display_order: number | null;
   };
 
@@ -415,23 +231,19 @@ export async function GET() {
     .map((row, index) => {
     const meta = metaByCurriculumId.get(row.id);
     const overlay = overlayByCurriculumId.get(row.id);
-    const title = (overlay?.title ?? row.title ?? '').trim() || `커리큘럼 #${row.id}`;
-    const rawCategory = (meta?.sm_theme ?? overlay?.main_theme ?? '').trim();
-    const categoryName = normalizeLessonTheme(rawCategory) || '일반';
-    const programForTrust = { id: String(row.id), title };
-    const rawVideoUrl = normalizeVideoUrl(overlay?.video_url) ?? normalizeVideoUrl(row.url);
-    const videoUrl = resolveTrustedReferenceVideoUrl(rawVideoUrl, programForTrust);
+    const title = (overlay?.title ?? '').trim();
+    const rawCategory = (meta?.sm_theme ?? '').trim();
+    const categoryName = normalizeLessonTheme(rawCategory);
+    const rawVideoUrl = normalizeVideoUrl(overlay?.video_url);
+    const videoUrl = rawVideoUrl;
     const equipment = overlay?.equipment
       ? String(overlay.equipment).split('\n').map((item) => item.trim()).filter(Boolean)
-      : (row.equipment ?? []).filter(Boolean);
+      : [];
     const steps = overlay?.activity_method
       ? String(overlay.activity_method).split('\n').map((item) => item.trim()).filter(Boolean)
-      : (row.steps ?? []).filter(Boolean);
-    const variations = parseVariationMethod(overlay?.activity_tip);
-    const checklistLines = overlay?.checklist
-      ? String(overlay.checklist).split('\n').map((item) => item.trim()).filter(Boolean)
-      : (row.check_list ?? []).filter(Boolean);
-    const briefingNotes = extractLabeledSection(checklistLines, '사전 교육');
+      : [];
+    const variations = parseTextareaLines(meta?.sm_variation_method);
+    const briefingNotes = parseTextareaLines(meta?.sm_briefing_notes);
 
     const smColors = meta?.sm_colors;
     const colors: [string, string, string, string] =
@@ -452,7 +264,7 @@ export async function GET() {
 
     const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '');
     const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '');
-    const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 10;
+    const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 0;
 
     const program: Program = {
       id: String(row.id),
@@ -474,7 +286,7 @@ export async function GET() {
       thumbnailUrl,
       lessonDetail: {
         recommendedAge: displayGrade,
-        recommendedPlayers: overlay?.group_size ?? '',
+        recommendedPlayers: '',
         objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
         coachScript: meta?.sm_coach_script ?? '',
@@ -493,10 +305,7 @@ export async function GET() {
       },
     };
 
-    return normalizeProgramForMaster(
-      applyTrustedReferenceVideo(applyPremiumContentOverlay(program)),
-      index,
-    );
+    return normalizeProgramForMaster(program);
     });
 
   return NextResponse.json({ data: programs, total: programs.length });

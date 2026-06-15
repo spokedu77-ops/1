@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { resolveReferenceVideoForSeed } from '@/app/spokedu-master/lib/reference-videos';
+import { buildMissingMasterMetaRows } from '../sync-center/metaRowContract';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
@@ -115,6 +116,32 @@ export async function POST(request: Request) {
             .from('spokedu_pro_programs')
             .insert({ title: item.title, video_url: item.url, source_center_curriculum_id: item.id, is_published: true, center_curriculum_is_sub: false });
           if (error) throw error;
+        }
+      }
+
+      const insertedChanges = candidates
+        .filter((item) => !overlayById.has(item.id))
+        .map((item) => ({ curriculumId: item.id, action: 'insert' as const }));
+      if (insertedChanges.length > 0) {
+        const insertedCurriculumIds = insertedChanges.map((item) => item.curriculumId);
+        const { data: existingMetaRows, error: metaReadError } = await supabase
+          .from('spokedu_master_program_meta')
+          .select('curriculum_id')
+          .in('curriculum_id', insertedCurriculumIds);
+        if (metaReadError) throw metaReadError;
+
+        const metaRows = buildMissingMasterMetaRows(
+          insertedChanges,
+          (existingMetaRows ?? []).map((row) => row.curriculum_id as number),
+        );
+        if (metaRows.length > 0) {
+          const { error: metaInsertError } = await supabase
+            .from('spokedu_master_program_meta')
+            .upsert(metaRows, {
+              onConflict: 'curriculum_id',
+              ignoreDuplicates: true,
+            });
+          if (metaInsertError) throw metaInsertError;
         }
       }
     }

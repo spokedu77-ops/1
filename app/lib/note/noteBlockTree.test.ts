@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { numberedListIndexAmongSiblings, planBlockDropAt, planBlockTabIndent } from './noteBlockTree';
+import { flattenVisualBlockIds, numberedListIndexAmongSiblings, planBlockDropAt, planBlockTabIndent } from './noteBlockTree';
 
 type Block = {
   id: string;
@@ -113,5 +113,25 @@ describe('numberedListIndexAmongSiblings', () => {
 
     expect(numberedListIndexAmongSiblings(siblings[0], siblings)).toBe(1);
     expect(numberedListIndexAmongSiblings(siblings[2], siblings)).toBe(2);
+  });
+});
+
+describe('flattenVisualBlockIds', () => {
+  it('returns DFS order matching editor DOM (parent then descendants)', () => {
+    const blocks = [
+      block('root', 0),
+      block('toggle', 1, null, 'toggle'),
+      block('child1', 0, 'toggle'),
+      block('child2', 1, 'toggle'),
+      block('nested', 0, 'child1'),
+    ];
+
+    expect(flattenVisualBlockIds(blocks)).toEqual([
+      'root',
+      'toggle',
+      'child1',
+      'nested',
+      'child2',
+    ]);
   });
 });

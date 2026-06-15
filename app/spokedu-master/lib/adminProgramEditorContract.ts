@@ -1,8 +1,3 @@
-import {
-  extractExactSectionText,
-  parseVariationMethod,
-} from './lessonContentContract';
-
 export type AdminProgramSaveInput = {
   title: string;
   fallbackTitle: string;
@@ -21,7 +16,13 @@ export type AdminProgramSaveInput = {
   variationMethod: string;
 };
 
-export type AdminProgramSaveStage = 'overlay' | 'meta' | 'legacy-mirror' | 'reload';
+export type AdminProgramSaveStage = 'overlay' | 'meta' | 'reload';
+
+export type SavedAdminProgram<Overlay, Meta> = {
+  curriculumId: number;
+  overlay: Overlay;
+  meta: Meta;
+};
 
 export function normalizeNullableText(value: string | null | undefined) {
   const text = (value ?? '').trim();
@@ -41,20 +42,12 @@ export function normalizeAdminTags(tags: string[]) {
   return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
 }
 
-export function resolveAdminBriefingNotes(
-  metaValue: string | null | undefined,
-  legacyChecklist: string | null | undefined,
-) {
-  return normalizeNullableText(metaValue)
-    ?? extractExactSectionText(legacyChecklist, '사전 교육');
+export function resolveAdminBriefingNotes(metaValue: string | null | undefined) {
+  return normalizeNullableText(metaValue) ?? '';
 }
 
-export function resolveAdminVariationMethod(
-  metaValue: string | null | undefined,
-  legacyActivityTip: string | null | undefined,
-) {
-  return normalizeNullableText(metaValue)
-    ?? parseVariationMethod(legacyActivityTip).join('\n');
+export function resolveAdminVariationMethod(metaValue: string | null | undefined) {
+  return normalizeNullableText(metaValue) ?? '';
 }
 
 export function buildAdminProgramSavePayload(input: AdminProgramSaveInput) {
@@ -85,7 +78,6 @@ export function buildAdminProgramSavePayload(input: AdminProgramSaveInput) {
 export function buildAdminProgramSaveFailure(input: {
   overlaySaved: boolean;
   metaSaved: boolean;
-  legacyMirrorSaved: boolean;
   failedStage: AdminProgramSaveStage;
   error: string;
 }) {
@@ -93,9 +85,31 @@ export function buildAdminProgramSaveFailure(input: {
     ok: false as const,
     overlaySaved: input.overlaySaved,
     metaSaved: input.metaSaved,
-    legacyMirrorSaved: input.legacyMirrorSaved,
-    partialSave: input.overlaySaved || input.metaSaved || input.legacyMirrorSaved,
+    partialSave: input.overlaySaved || input.metaSaved,
     failedStage: input.failedStage,
     error: input.error,
   };
+}
+
+export function buildAdminProgramSaveSuccess<Overlay, Meta>(
+  program: SavedAdminProgram<Overlay, Meta>,
+) {
+  return {
+    ok: true as const,
+    overlaySaved: true,
+    metaSaved: true,
+    partialSave: false,
+    program,
+  };
+}
+
+export function replaceAdminProgramByCurriculumId<T>(
+  items: T[],
+  curriculumId: number,
+  replacement: T,
+  getCurriculumId: (item: T) => number,
+) {
+  return items.map((item) =>
+    getCurriculumId(item) === curriculumId ? replacement : item
+  );
 }
