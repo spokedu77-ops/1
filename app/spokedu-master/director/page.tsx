@@ -3,7 +3,9 @@
 import Link from 'next/link';
 import { BarChart3, BookOpen, CreditCard, FileText, MessageCircle, MonitorPlay, UserCheck, UserX, UsersRound, type LucideIcon } from 'lucide-react';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
+import { toClassRecord } from '../lib/operationalDataAdapter';
 import { getClassRecordFacts } from '../lib/studentRecordFacts';
+import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../store';
 
 function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: string; desc: string; icon: LucideIcon; tone: string }) {
@@ -21,7 +23,8 @@ function Kpi({ label, value, desc, icon: Icon, tone }: { label: string; value: s
 
 export default function DirectorPage() {
   const profile = useProfile();
-  const records = useMasterStore((state) => state.classRecords);
+  const { classRecords: serverClassRecords } = useOperationalData();
+  const records = serverClassRecords.map(toClassRecord);
   const lessons = useMasterStore((state) => state.lessons);
   const recordFacts = getClassRecordFacts(records);
   const myName = profile?.name ?? '나';

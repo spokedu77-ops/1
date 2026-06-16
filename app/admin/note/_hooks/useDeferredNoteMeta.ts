@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import type { NoteCollaborator, NoteDocument } from '../_lib/types';
 
-function scheduleIdle(task: () => void, fallbackMs = 1200): () => void {
+export function scheduleIdle(task: () => void, fallbackMs = 1200): () => void {
   if (typeof window.requestIdleCallback === 'function') {
     const id = window.requestIdleCallback(() => task(), { timeout: fallbackMs });
     return () => window.cancelIdleCallback(id);

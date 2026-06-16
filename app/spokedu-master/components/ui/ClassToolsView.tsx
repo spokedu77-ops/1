@@ -4,6 +4,8 @@ import { BookOpen, CheckCircle2, LayoutList, ListOrdered, MonitorPlay, Pause, Pl
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { toStudentProfile } from '../../lib/operationalDataAdapter';
+import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useMasterStore } from '../../store';
 import type { StudentProfile } from '../../types';
 
@@ -32,13 +34,6 @@ const TOOL_HELP: Record<TabId, string> = {
   teams: '참여 수준을 고려해 팀을 빠르게 나눕니다.',
   order: '게임, 발표, 로테이션 순서를 한 번에 정합니다.',
 };
-
-const SAMPLE_STUDENTS: StudentProfile[] = [
-  { id: 'sample-1', name: '민준', group: 'A그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '균형', value: 72, delta: '+4' }], badges: [], history: [] },
-  { id: 'sample-2', name: '서연', group: 'A그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '반응', value: 81, delta: '+6' }], badges: [], history: [] },
-  { id: 'sample-3', name: '지호', group: 'B그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '협동', value: 68, delta: '+2' }], badges: [], history: [] },
-  { id: 'sample-4', name: '하윤', group: 'B그룹', meta: '', level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [{ label: '민첩', value: 76, delta: '+5' }], badges: [], history: [] },
-];
 
 function shuffleItems<T>(items: T[]) {
   const copied = [...items];
@@ -473,6 +468,24 @@ function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   );
 }
 
+function EmptyStudentsForTools() {
+  return (
+    <div className="mx-auto flex max-w-[520px] flex-col items-center gap-3 rounded-[16px] px-5 py-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <UserPlus size={28} color="var(--spm-t3)" />
+      <div>
+        <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>등록된 학생이 없습니다.</p>
+        <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+          학생 관리에서 학생을 먼저 등록해 주세요.
+        </p>
+      </div>
+      <Link href="/spokedu-master/students" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+        <UserPlus size={14} />
+        학생 관리로 이동
+      </Link>
+    </div>
+  );
+}
+
 function PickerTab({ students, usingSample }: { students: StudentProfile[]; usingSample: boolean }) {
   const [picked, setPicked] = useState<StudentProfile | null>(null);
   const [spinning, setSpinning] = useState(false);
@@ -481,6 +494,7 @@ function PickerTab({ students, usingSample }: { students: StudentProfile[]; usin
   const [prevId, setPrevId] = useState<string | null>(null);
 
   const handlePick = useCallback(() => {
+    if (!students.length) return;
     let pool = students;
     if (excludePrev && prevId) {
       const filtered = students.filter((student) => student.id !== prevId);
@@ -513,6 +527,7 @@ function PickerTab({ students, usingSample }: { students: StudentProfile[]; usin
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 overflow-y-auto px-6 py-8">
       <StudentModeNote usingSample={usingSample} />
+      {!students.length ? <EmptyStudentsForTools /> : null}
       <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>명단 {students.length}명 중 1명 선택</p>
       <label className="flex cursor-pointer items-center gap-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
         <input type="checkbox" checked={excludePrev} onChange={(event) => setExcludePrev(event.target.checked)} className="rounded" />
@@ -534,7 +549,7 @@ function PickerTab({ students, usingSample }: { students: StudentProfile[]; usin
           </div>
         )}
       </div>
-      <ActionButton onClick={handlePick} disabled={spinning} accent="rgba(239,68,68,0.85)">
+      <ActionButton onClick={handlePick} disabled={spinning || !students.length} accent="rgba(239,68,68,0.85)">
         <Shuffle size={18} />{spinning ? '선택 중...' : '선택하기'}
       </ActionButton>
     </div>
@@ -547,6 +562,7 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
   const [nameB, setNameB] = useState('B팀');
 
   const balance = useCallback(() => {
+    if (!students.length) return;
     const shuffled = shuffleItems(students);
     const a: StudentProfile[] = [];
     const b: StudentProfile[] = [];
@@ -555,6 +571,7 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
   }, [students]);
 
   const random = useCallback(() => {
+    if (!students.length) return;
     const shuffled = shuffleItems(students);
     const mid = Math.ceil(shuffled.length / 2);
     setTeams({ a: shuffled.slice(0, mid), b: shuffled.slice(mid) });
@@ -563,12 +580,13 @@ function TeamsTab({ students, usingSample }: { students: StudentProfile[]; using
   return (
     <div className="flex h-full flex-col items-center gap-5 overflow-y-auto px-6 py-8">
       <StudentModeNote usingSample={usingSample} />
+      {!students.length ? <EmptyStudentsForTools /> : null}
       <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>명단 {students.length}명 팀 배분</p>
       <div className="flex flex-wrap justify-center gap-3">
-        <ActionButton onClick={balance} accent="#2563eb">
+        <ActionButton onClick={balance} disabled={!students.length} accent="#2563eb">
           <Users size={16} />균형 배분
         </ActionButton>
-        <button type="button" onClick={random} className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+        <button type="button" onClick={random} disabled={!students.length} className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
           <Shuffle size={16} />무작위
         </button>
       </div>
@@ -624,6 +642,7 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
   return (
     <div className="flex h-full flex-col overflow-y-auto px-6 py-8">
       <StudentModeNote usingSample={usingSample} />
+      {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="mb-5 flex items-center justify-between">
         <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>발표·게임 순서 · {students.length}명</p>
         <button type="button" onClick={reshuffle} className="rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.14)', color: 'var(--spm-amb)', border: '1px solid rgba(245,158,11,0.28)' }}>
@@ -645,9 +664,9 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
 
 export default function ClassToolsView() {
   const [tab, setTab] = useState<TabId>('stopwatch');
-  const storeStudents = useMasterStore((state) => state.students);
-  const students = useMemo(() => (storeStudents.length ? storeStudents : SAMPLE_STUDENTS), [storeStudents]);
-  const usingSample = storeStudents.length === 0;
+  const operationalData = useOperationalData();
+  const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
+  const usingSample = false;
   const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
 
   return (

@@ -36,6 +36,8 @@ import {
 import {
   findOfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
+import { toClassRecord } from '../lib/operationalDataAdapter';
+import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPro, useMasterStore } from '../store';
 import type { Program } from '../types';
 
@@ -404,7 +406,9 @@ function FilterRow({
 }
 
 export default function LibraryView() {
-  const { programs, programsLoaded, programsError, classRecords, favorites, toggleFavorite } = useMasterStore();
+  const { programs, programsLoaded, programsError, favorites, toggleFavorite } = useMasterStore();
+  const { classRecords: serverClassRecords } = useOperationalData();
+  const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const isPro = useIsPro();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<ActiveFilter>(null);

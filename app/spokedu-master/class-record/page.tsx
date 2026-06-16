@@ -7,7 +7,9 @@ import { Suspense, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { classRecordToCreateInput, toClassRecord, toStudentProfile } from '../lib/operationalDataAdapter';
 import { canCreateClassRecord, getUpgradeHref, getUpgradeLabel } from '../lib/subscription';
+import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
 
@@ -122,7 +124,8 @@ function RecordCard({ record }: { record: ClassRecord }) {
 }
 
 function RecordListView() {
-  const records = useMasterStore((state) => state.classRecords);
+  const operationalData = useOperationalData();
+  const records = operationalData.classRecords.map(toClassRecord);
   const [classFilter, setClassFilter] = useState('전체');
   const [periodFilter, setPeriodFilter] = useState<'week' | 'month' | 'all'>('week');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -228,8 +231,8 @@ function RecordEntryView() {
   const searchParams = useSearchParams();
   const profile = useMasterStore((state) => state.profile);
   const lessons = useMasterStore((state) => state.lessons);
-  const students = useMasterStore((state) => state.students);
-  const saveClassRecord = useMasterStore((state) => state.saveClassRecord);
+  const operationalData = useOperationalData();
+  const students = operationalData.students.map(toStudentProfile);
   const programs = useMasterStore((state) => state.programs);
   const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
   const requestedProgramId = searchParams.get('program');
@@ -248,6 +251,7 @@ function RecordEntryView() {
   const [studentMemos, setStudentMemos] = useState<Record<string, string>>({});
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
   const [savedOnly, setSavedOnly] = useState(false);
+  const [recordSaving, setRecordSaving] = useState(false);
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const packageFocus = program?.lessonDetail?.developmentFocus ?? program?.tags.slice(0, 3).join(', ') ?? '';
@@ -320,11 +324,15 @@ function RecordEntryView() {
   });
 
   const persistRecord = (kakaoSent: boolean) => {
-    if (!canSaveRecord) return null;
+    if (!canSaveRecord || recordSaving) return null;
     const record = buildRecord(kakaoSent);
-    saveClassRecord(record);
-    setSavedRecordId(record.id);
-    setSavedOnly(!kakaoSent);
+    setRecordSaving(true);
+    void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
+      setSavedRecordId(saved.id);
+      setSavedOnly(!kakaoSent);
+    }).finally(() => {
+      setRecordSaving(false);
+    });
     return record;
   };
 
@@ -418,7 +426,7 @@ function RecordEntryView() {
           </div>
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr_1fr]">
-          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />학생 기록 저장</button>
+          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || recordSaving} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : '학생 기록 저장'}</button>
           <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들기</Link>
           <button type="button" disabled className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
             <ShieldAlert size={16} />

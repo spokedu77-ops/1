@@ -79,6 +79,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const includeArchived = searchParams.get('includeArchived') === 'true';
+    const skipReconcile = searchParams.get('skipReconcile') === 'true';
     const limit = parsePositiveInt(searchParams.get('limit'), 200, 500);
     const offset = parseOffset(searchParams.get('offset'));
     const parentId = searchParams.get('parentId');
@@ -163,10 +164,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const reconciled = await reconcileDocumentParents(
-      supabase,
-      (data ?? []) as NoteDocument[],
-    );
+    const baseDocuments = (data ?? []) as NoteDocument[];
+    const reconciled = skipReconcile
+      ? baseDocuments
+      : await reconcileDocumentParents(supabase, baseDocuments);
     const documents = await enrichDocumentsWithPageBlockTitles(supabase, reconciled);
 
     return NextResponse.json({ documents });

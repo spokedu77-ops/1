@@ -43,6 +43,8 @@ import {
 } from '../spomove/officialSpomovePresets';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
+import { toClassRecord } from '../lib/operationalDataAdapter';
+import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../store';
 import type { ClassRecord, Program, UserProfile } from '../types';
 
@@ -604,12 +606,13 @@ export default function DashboardView() {
     programs,
     programsLoaded,
     programsError,
-    classRecords,
     recentProgramActivities,
     recentActivityOwnerResolved,
     recordRecentProgramActivity,
     reloadPrograms,
   } = useMasterStore();
+  const { classRecords: serverClassRecords } = useOperationalData();
+  const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const profile = useProfile();
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)

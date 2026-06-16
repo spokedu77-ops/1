@@ -4,19 +4,43 @@ import Link from 'next/link';
 import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, ShieldAlert, Shuffle, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import {
+  canRunLegacyOperationalImport,
+  checkLegacyOperationalImportComplete,
+  importLegacyOperationalData,
+  type OperationalImportProgress,
+  type OperationalImportResult,
+} from '../lib/importLegacyOperationalData';
+import {
+  buildLegacyOperationalBackupFileName,
+  buildLegacyOperationalBackupJson,
+  readLegacyOperationalPreview,
+  type LegacyOperationalImportPreview,
+} from '../lib/legacyOperationalImport';
+import { toClassRecord, toStudentProfile } from '../lib/operationalDataAdapter';
 import { getStudentRecordFacts } from '../lib/studentRecordFacts';
+import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 
 export default function StudentsPage() {
-  const students = useMasterStore((state) => state.students);
-  const records = useMasterStore((state) => state.classRecords);
-  const addStudent = useMasterStore((state) => state.addStudent);
-  const removeStudent = useMasterStore((state) => state.removeStudent);
+  const profile = useMasterStore((state) => state.profile);
+  const operationalData = useOperationalData();
+  const students = operationalData.students.map(toStudentProfile);
+  const records = operationalData.classRecords.map(toClassRecord);
   const [selectedId, setSelectedId] = useState<string | null>(students[0]?.id ?? null);
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newGroup, setNewGroup] = useState('');
   const [newMeta, setNewMeta] = useState('');
+  const [studentSaving, setStudentSaving] = useState(false);
+  const [legacyPreviewAvailable, setLegacyPreviewAvailable] = useState(false);
+  const [legacyPreview, setLegacyPreview] = useState<LegacyOperationalImportPreview | null>(null);
+  const [legacyOwnerConfirmed, setLegacyOwnerConfirmed] = useState(false);
+  const [legacyBackupConfirmed, setLegacyBackupConfirmed] = useState(false);
+  const [legacyImporting, setLegacyImporting] = useState(false);
+  const [legacyImportProgress, setLegacyImportProgress] = useState<OperationalImportProgress | null>(null);
+  const [legacyImportResult, setLegacyImportResult] = useState<OperationalImportResult | null>(null);
+  const [legacyImportComplete, setLegacyImportComplete] = useState(false);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
 
   useEffect(() => {
@@ -24,15 +48,36 @@ export default function StudentsPage() {
     setSelectedId(students[0]?.id ?? null);
   }, [selectedId, students]);
 
+  useEffect(() => {
+    try {
+      const preview = readLegacyOperationalPreview(window.localStorage);
+      setLegacyPreviewAvailable(preview.students.total > 0 || preview.records.total > 0);
+    } catch {
+      setLegacyPreviewAvailable(false);
+    }
+  }, []);
+
   const handleAdd = () => {
-    if (!newName.trim()) return;
-    const newId = Date.now().toString();
-    addStudent(newName.trim(), newGroup.trim() || '미분류', newMeta.trim(), newId);
-    setSelectedId(newId);
-    setNewName('');
-    setNewGroup('');
-    setNewMeta('');
-    setAddOpen(false);
+    if (!newName.trim() || studentSaving) return;
+    const legacyId = crypto.randomUUID();
+    setStudentSaving(true);
+    void operationalData
+      .createStudent({
+        legacyId,
+        name: newName.trim(),
+        group: newGroup.trim() || '미분류',
+        meta: newMeta,
+      })
+      .then((student) => {
+        setSelectedId(student.id);
+        setNewName('');
+        setNewGroup('');
+        setNewMeta('');
+        setAddOpen(false);
+      })
+      .finally(() => {
+        setStudentSaving(false);
+      });
   };
   const selectedFacts = selected ? getStudentRecordFacts(records, selected.id) : null;
   const selectedRecords = selected
@@ -44,6 +89,63 @@ export default function StudentsPage() {
       .sort((a, b) => new Date(b.record.date).getTime() - new Date(a.record.date).getTime())
     : [];
   const recordedStudentCount = students.filter((student) => records.some((record) => record.students.some((item) => item.studentId === student.id))).length;
+  const handlePreviewLegacyImport = async () => {
+    const preview = readLegacyOperationalPreview(window.localStorage);
+    setLegacyPreview(preview);
+    setLegacyBackupConfirmed(false);
+    setLegacyImportResult(null);
+    setLegacyImportProgress(null);
+    try {
+      setLegacyImportComplete(await checkLegacyOperationalImportComplete(preview));
+    } catch {
+      setLegacyImportComplete(false);
+    }
+  };
+  const handleDownloadLegacyBackup = () => {
+    if (!legacyPreview?.rawBackup) return;
+    const blob = new Blob([buildLegacyOperationalBackupJson(legacyPreview)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = buildLegacyOperationalBackupFileName();
+    link.click();
+    URL.revokeObjectURL(url);
+    setLegacyBackupConfirmed(true);
+  };
+  const canImportLegacy = legacyPreview
+    ? canRunLegacyOperationalImport({
+        preview: legacyPreview,
+        ownerConfirmed: legacyOwnerConfirmed,
+        backupConfirmed: legacyBackupConfirmed,
+      }) && !legacyImporting
+    : false;
+  const handleImportLegacy = async () => {
+    if (!legacyPreview || !canImportLegacy) return;
+    const confirmed = window.confirm(
+      `학생 ${legacyPreview.students.valid}명과 수업 기록 ${legacyPreview.records.valid}건을 현재 로그인 계정으로 가져옵니다.\n원본 브라우저 데이터는 삭제되지 않습니다.`,
+    );
+    if (!confirmed) return;
+
+    setLegacyImporting(true);
+    setLegacyImportResult(null);
+    try {
+      const result = await importLegacyOperationalData(
+        {
+          preview: legacyPreview,
+          ownerConfirmed: legacyOwnerConfirmed,
+          backupConfirmed: legacyBackupConfirmed,
+        },
+        { onProgress: setLegacyImportProgress },
+      );
+      setLegacyImportResult(result);
+      setLegacyImportComplete(result.status === 'success');
+      if (result.status === 'success' || result.status === 'partial') {
+        await operationalData.reload();
+      }
+    } finally {
+      setLegacyImporting(false);
+    }
+  };
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
@@ -75,6 +177,162 @@ export default function StudentsPage() {
           </div>
         ))}
       </section>
+
+      {operationalData.status === 'loading' ? (
+        <section className="mx-[22px] mb-5 rounded-[14px] p-4 text-[13px] font-bold sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+          서버 학생·수업 기록을 불러오는 중입니다.
+        </section>
+      ) : null}
+
+      {operationalData.status === 'error' ? (
+        <section className="mx-[22px] mb-5 rounded-[14px] p-4 text-[13px] font-bold sm:mx-8 lg:mx-10" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)', color: 'var(--spm-red)' }}>
+          <p>서버 운영 데이터를 불러오지 못했습니다. 브라우저 저장 데이터는 운영 목록에 자동으로 섞지 않습니다.</p>
+          <button type="button" onClick={() => void operationalData.reload()} className="mt-3 h-9 rounded-[10px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
+            다시 시도
+          </button>
+        </section>
+      ) : null}
+
+      {profile && legacyPreviewAvailable ? (
+        <section className="mx-[22px] mb-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>local data preview</p>
+              <h2 className="mt-1 text-[20px] font-black" style={{ color: 'var(--spm-t)' }}>이 기기의 기존 데이터 가져오기</h2>
+              <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+                현재 브라우저에만 저장된 학생과 수업 기록을 확인합니다. 아직 서버에는 저장하지 않습니다.
+              </p>
+            </div>
+            <button type="button" onClick={handlePreviewLegacyImport} className="h-10 shrink-0 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+              가져오기 내용 확인
+            </button>
+          </div>
+
+          {legacyPreview ? (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-2 sm:grid-cols-4">
+                {[
+                  ['학생 전체', `${legacyPreview.students.total}명`],
+                  ['학생 가능', `${legacyPreview.students.valid}명`],
+                  ['학생 중복', `${legacyPreview.students.duplicate}명`],
+                  ['학생 오류', `${legacyPreview.students.invalid}명`],
+                  ['기록 전체', `${legacyPreview.records.total}건`],
+                  ['기록 가능', `${legacyPreview.records.valid}건`],
+                  ['기록 중복', `${legacyPreview.records.duplicate}건`],
+                  ['기록 오류', `${legacyPreview.records.invalid}건`],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
+                    <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+                    <p className="mt-1 text-[17px] font-black" style={{ color: 'var(--spm-t)' }}>{value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-3">
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  고아 학생 기록: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.records.orphanStudentEntries}건</strong>
+                </div>
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  제외 child: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.records.excludedChildEntries}건</strong>
+                </div>
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  제외 레거시 필드: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.excludedLegacyFields.length ? legacyPreview.excludedLegacyFields.join(', ') : '없음'}</strong>
+                </div>
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  문자열 meta 보존: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.students.stringMetaPreserved}명</strong>
+                </div>
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  object meta 보존: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.students.objectMetaPreserved}명</strong>
+                </div>
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  invalid meta 보정: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.students.invalidMetaCoerced}명</strong>
+                </div>
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  recordType 보정: <strong style={{ color: 'var(--spm-t)' }}>{legacyPreview.records.recordTypeDefaulted}건</strong>
+                </div>
+              </div>
+
+              <details className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                <summary className="cursor-pointer text-[12px] font-black" style={{ color: 'var(--spm-t)' }}>오류·경고 세부 보기</summary>
+                <div className="mt-3 space-y-2 text-[12px] font-semibold">
+                  {[...legacyPreview.students.issues, ...legacyPreview.records.issues].length ? (
+                    [...legacyPreview.students.issues, ...legacyPreview.records.issues].map((issue, index) => (
+                      <p key={`${issue.scope}-${issue.legacyId ?? 'none'}-${index}`}>
+                        [{issue.scope}] {issue.legacyId ? `${issue.legacyId}: ` : ''}{issue.reason}
+                      </p>
+                    ))
+                  ) : (
+                    <p>표시할 오류나 경고가 없습니다.</p>
+                  )}
+                </div>
+              </details>
+
+              <label className="flex items-start gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--spm-t2)' }}>
+                <input type="checkbox" checked={legacyOwnerConfirmed} onChange={(event) => setLegacyOwnerConfirmed(event.target.checked)} className="mt-1" />
+                <span>이 기기에 저장된 학생·수업 기록이 현재 로그인한 계정의 데이터임을 확인합니다.</span>
+              </label>
+
+              {legacyImportComplete ? (
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
+                  이 기기의 가져오기 가능한 데이터는 서버에 저장되어 있습니다.
+                </div>
+              ) : null}
+
+              {legacyImportProgress ? (
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  진행 단계: <strong style={{ color: 'var(--spm-t)' }}>{legacyImportProgress.stage}</strong>
+                  {' · '}
+                  {legacyImportProgress.current}/{legacyImportProgress.total}
+                  {' · 기존 '}
+                  {legacyImportProgress.existing}
+                  {' · 실패 '}
+                  {legacyImportProgress.failed}
+                </div>
+              ) : null}
+
+              {legacyImportResult ? (
+                <div className="space-y-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                  <p style={{ color: 'var(--spm-t)' }}>
+                    {legacyImportResult.status === 'success'
+                      ? '서버 가져오기가 완료되었습니다. 브라우저 원본 데이터는 아직 유지되고 있습니다.'
+                      : legacyImportResult.status === 'partial'
+                        ? '일부 데이터만 서버로 가져왔습니다. 실패 항목은 다시 시도할 수 있습니다.'
+                        : '서버 가져오기를 완료하지 못했습니다.'}
+                  </p>
+                  <p>학생 생성 {legacyImportResult.students.created}명 · 기존 {legacyImportResult.students.existing}명 · 실패 {legacyImportResult.students.failed}명</p>
+                  <p>기록 생성 {legacyImportResult.records.created}건 · 기존 {legacyImportResult.records.existing}건 · 보류 {legacyImportResult.records.blocked}건 · 실패 {legacyImportResult.records.failed}건</p>
+                  <p>현재 화면은 아직 브라우저 데이터를 사용합니다. 다음 단계에서 서버 우선 방식으로 전환됩니다.</p>
+                  {[...legacyImportResult.students.failures, ...legacyImportResult.records.failures].length ? (
+                    <details>
+                      <summary className="cursor-pointer" style={{ color: 'var(--spm-t)' }}>실패 항목 보기</summary>
+                      <div className="mt-2 space-y-1">
+                        {[...legacyImportResult.students.failures, ...legacyImportResult.records.failures].map((failure, index) => (
+                          <p key={`${failure.legacyId}-${index}`}>{failure.legacyId}: {failure.reason}</p>
+                        ))}
+                      </div>
+                    </details>
+                  ) : null}
+                </div>
+              ) : null}
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button type="button" onClick={handleDownloadLegacyBackup} className="h-10 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                  이 기기의 원본 데이터 백업
+                </button>
+                <button
+                  type="button"
+                  disabled={!canImportLegacy}
+                  onClick={handleImportLegacy}
+                  className="h-10 rounded-[11px] px-4 text-[12px] font-black text-white disabled:opacity-60"
+                  style={{ background: canImportLegacy ? 'var(--spm-acc)' : 'var(--spm-s3)', color: canImportLegacy ? '#fff' : 'var(--spm-t3)' }}
+                >
+                  {legacyImporting ? '서버로 가져오는 중...' : legacyImportResult?.status === 'partial' ? '실패 항목 다시 시도' : '확인한 데이터를 서버로 가져오기'}
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       {students.length === 0 ? (
         <section className="mx-[22px] rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -112,7 +370,7 @@ export default function StudentsPage() {
                 </span>
                 <ChevronRight size={16} color="var(--spm-t3)" />
               </button>
-              <button type="button" onClick={() => { removeStudent(student.id); if (selectedId === student.id) setSelectedId(null); }} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
+              <button type="button" onClick={() => { void operationalData.deleteStudent(student.id).then(() => { if (selectedId === student.id) setSelectedId(null); }); }} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
                 <Trash2 size={14} color="var(--spm-red)" />
               </button>
             </div>
@@ -229,8 +487,8 @@ export default function StudentsPage() {
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>나이 / 수강 기간</span>
             <input type="text" value={newMeta} onChange={(event) => setNewMeta(event.target.value)} placeholder="예: 8세 / 3개월차" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
           </label>
-          <button type="button" onClick={handleAdd} disabled={!newName.trim()} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
-            추가
+          <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+            {studentSaving ? '추가 중...' : '추가'}
           </button>
         </div>
       </BottomSheet>

@@ -9,6 +9,7 @@ import { StatusBar } from './StatusBar';
 import { TrialCountdownBanner } from '../ui/TrialGateWall';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
+import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
@@ -184,7 +185,9 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
             {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
-            <ErrorBoundary>{children}</ErrorBoundary>
+            <ErrorBoundary>
+              <OperationalDataProvider>{children}</OperationalDataProvider>
+            </ErrorBoundary>
           </main>
           {hideChrome ? null : <FloatingTimerPill />}
           {hideChrome ? null : <TabBar basePath={basePath} />}

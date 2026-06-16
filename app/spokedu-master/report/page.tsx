@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { toClassRecord } from '../lib/operationalDataAdapter';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
+import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import type { ClassRecord, Program } from '../types';
 
@@ -254,7 +256,8 @@ function ReportContent() {
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
   const programsError = useMasterStore((state) => state.programsError);
-  const classRecords = useMasterStore((state) => state.classRecords);
+  const operationalData = useOperationalData();
+  const classRecords = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programPool = useMemo(() => programs, [programs]);
   const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
   const hasProgramQuery = Boolean(searchParams.get('programId') ?? searchParams.get('program'));

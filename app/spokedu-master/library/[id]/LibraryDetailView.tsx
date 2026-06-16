@@ -38,6 +38,8 @@ import {
   findOfficialSpomovePreset,
   officialPresetSessionHref,
 } from '../../spomove/officialSpomovePresets';
+import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
+import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useMasterStore } from '../../store';
 import type { ClassRecord } from '../../types';
 
@@ -55,8 +57,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const programs = useMasterStore((state) => state.programs);
   const favorites = useMasterStore((state) => state.favorites);
   const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
-  const classRecords = useMasterStore((state) => state.classRecords);
-  const saveQuickClassRecord = useMasterStore((state) => state.saveQuickClassRecord);
+  const operationalData = useOperationalData();
+  const classRecords = operationalData.classRecords.map(toClassRecord);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const searchParams = useSearchParams();
   const openedProgramRef = useRef<string | null>(null);
@@ -68,6 +70,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const [quickMemo, setQuickMemo] = useState('');
   const [quickParentNote, setQuickParentNote] = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
+  const [quickSaving, setQuickSaving] = useState(false);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
@@ -137,13 +140,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickMemo('');
     setQuickParentNote(model.parentNote);
     setQuickSaved(false);
+    setQuickSaving(false);
     setQuickModalOpen(true);
   };
 
   const canSaveQuickRecord = Boolean(quickDate.trim());
 
   const handleQuickSave = () => {
-    if (!canSaveQuickRecord) return;
+    if (!canSaveQuickRecord || quickSaving) return;
     const record: ClassRecord = {
       id: Date.now().toString(),
       lessonTitle: title,
@@ -161,8 +165,8 @@ export default function LibraryDetailView({ id }: { id: string }) {
       parentNoteSnapshot: quickParentNote.trim() || undefined,
       recordType: 'quick',
     };
-    saveQuickClassRecord(record);
-    setQuickSaved(true);
+    setQuickSaving(true);
+    void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then(() => setQuickSaved(true)).finally(() => setQuickSaving(false));
   };
   const videoUrl = model.videoUrl ?? undefined;
   const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: shouldAutoplayVideo });
@@ -449,7 +453,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               <button
                 type="button"
                 onClick={handleQuickSave}
-                disabled={!canSaveQuickRecord}
+                disabled={!canSaveQuickRecord || quickSaving}
                 className="inline-flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-50"
               >
                 사용 기록 저장

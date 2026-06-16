@@ -102,6 +102,10 @@ export function NoteRichEditorStyles() {
         -webkit-user-select: none !important;
         cursor: default;
       }
+      [data-note-block-row].note-block-row-cv {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 2.5rem;
+      }
     `}</style>
   );
 }
