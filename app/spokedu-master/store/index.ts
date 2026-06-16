@@ -8,13 +8,13 @@ import { hasMasterAccess } from '../lib/subscription';
 import {
   flushPendingRecentProgramActivities,
   getRecentActivityOwner,
-  getRecentActivityOwnerId,
   migrateRecentActivitiesToOwner,
   type RecentProgramActivity,
   type RecentProgramActivityInput,
   upsertRecentProgramActivity,
 } from '../lib/recentProgramActivity';
-import type { CartItem, ClassRecord, Lesson, Notification, Program, Session, StudentProfile, UserProfile } from '../types';
+import { createLegacyOperationalArchiveFromPersistedStore } from '../lib/legacyOperationalArchive';
+import type { CartItem, Lesson, Notification, Program, Session, UserProfile } from '../types';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 
 type ActiveSession = {
@@ -61,12 +61,6 @@ interface MasterState {
   addLesson: (lesson: Lesson) => void;
   toggleLessonDone: (id: number) => void;
   deleteLessonById: (id: number) => void;
-  students: StudentProfile[];
-  addStudent: (name: string, group: string, meta: string, id?: string) => void;
-  removeStudent: (id: string) => void;
-  classRecords: ClassRecord[];
-  saveClassRecord: (record: ClassRecord) => void;
-  saveQuickClassRecord: (record: ClassRecord) => void;
   recentProgramActivities: RecentProgramActivity[];
   pendingRecentProgramActivities: RecentProgramActivityInput[];
   recentActivityOwnerResolved: boolean;
@@ -116,8 +110,6 @@ const defaultOperational: OperationalStatus = {
 
 const defaultLessons: Lesson[] = [];
 
-const defaultStudents: StudentProfile[] = [];
-
 const defaultNotifications: Notification[] = [];
 
 const brokenTextPattern = /[\u4E00-\u9FFF\uF900-\uFAFF\uFFFD]/;
@@ -129,16 +121,23 @@ function hasBrokenText(value: unknown): boolean {
   return false;
 }
 
-function migrateMasterStore(persisted: unknown): Partial<MasterState> {
-  const state = persisted && typeof persisted === 'object' ? (persisted as Partial<MasterState>) : {};
-  const profile = state.profile && !hasBrokenText(state.profile) ? state.profile : defaultProfile;
+type PersistedMasterState = Partial<MasterState> & {
+  classRecords?: unknown;
+  students?: unknown;
+};
 
-  return {
-    ...state,
+function migrateMasterStore(persisted: unknown, persistedVersion?: number): Partial<MasterState> & Record<string, unknown> {
+  const state = persisted && typeof persisted === 'object' ? (persisted as PersistedMasterState) : {};
+  const archiveResult = createLegacyOperationalArchiveFromPersistedStore(
+    state,
+    typeof persistedVersion === 'number' ? persistedVersion : null,
+  );
+  const { classRecords: legacyClassRecords, students: legacyStudents, ...stateWithoutLegacyOperational } = state;
+  const profile = state.profile && !hasBrokenText(state.profile) ? state.profile : defaultProfile;
+  const migrated = {
+    ...stateWithoutLegacyOperational,
     profile,
     lessons: hasBrokenText(state.lessons) ? defaultLessons : state.lessons ?? defaultLessons,
-    students: hasBrokenText(state.students) ? defaultStudents : state.students ?? defaultStudents,
-    classRecords: hasBrokenText(state.classRecords) ? [] : state.classRecords ?? [],
     recentProgramActivities: hasBrokenText(state.recentProgramActivities)
       ? []
       : (state.recentProgramActivities ?? []).map((activity) => ({
@@ -153,6 +152,16 @@ function migrateMasterStore(persisted: unknown): Partial<MasterState> {
     notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
     cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
   };
+
+  if (!archiveResult.ok) {
+    return {
+      ...migrated,
+      classRecords: legacyClassRecords,
+      students: legacyStudents,
+    };
+  }
+
+  return migrated;
 }
 
 function errorFromStatus(status: number): Exclude<ContentLoadError, null> {
@@ -337,58 +346,6 @@ export const useMasterStore = create<MasterState>()(
       addLesson: (lesson) => set((state) => ({ lessons: [...state.lessons, lesson] })),
       toggleLessonDone: (id) => set((state) => ({ lessons: state.lessons.map((lesson) => (lesson.id === id ? { ...lesson, done: !lesson.done } : lesson)) })),
       deleteLessonById: (id) => set((state) => ({ lessons: state.lessons.filter((lesson) => lesson.id !== id) })),
-      students: defaultStudents,
-      addStudent: (name, group, meta, id) => set((state) => ({
-        students: [...state.students, { id: id ?? Date.now().toString(), name, group, meta, level: '', attendance: 0, classes: 0, streak: 0, risk: null, skills: [], badges: [], history: [] }],
-      })),
-      removeStudent: (id) => set((state) => ({ students: state.students.filter((student) => student.id !== id) })),
-      classRecords: [],
-      saveClassRecord: (record) =>
-        set((state) => {
-          const ownerId = state.recentActivityOwnerResolved
-            ? getRecentActivityOwnerId(state.profile)
-            : null;
-          const ownedRecord = ownerId ? { ...record, ownerId } : record;
-          return {
-            classRecords: [ownedRecord, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
-            notifications: [
-            {
-              id: `record-${record.id}`,
-              type: 'report' as const,
-              title: `${record.classId} 수업 기록 저장`,
-              body: `${record.programTitle}의 출석과 관찰 원본 기록이 저장되었습니다.`,
-              read: false,
-              createdAt: record.date,
-            },
-            ...state.notifications,
-            ].slice(0, 50),
-            operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
-          };
-        }),
-      saveQuickClassRecord: (record) =>
-        // TODO: quick records and detailed records currently share the same cap of 100.
-        // Consider separate retention limits if quick usage logs grow quickly.
-        set((state) => {
-          const ownerId = state.recentActivityOwnerResolved
-            ? getRecentActivityOwnerId(state.profile)
-            : null;
-          const ownedRecord = ownerId ? { ...record, ownerId } : record;
-          return {
-            classRecords: [ownedRecord, ...state.classRecords.filter((item) => item.id !== record.id)].slice(0, 100),
-            notifications: [
-            {
-              id: `quick-${record.id}`,
-              type: 'report' as const,
-              title: `수업 사용 기록 저장`,
-              body: `${record.programTitle} 사용 기록이 저장되었습니다.`,
-              read: false,
-              createdAt: record.date,
-            },
-            ...state.notifications,
-            ].slice(0, 50),
-            operational: { ...state.operational, lastSyncAt: new Date().toISOString() },
-          };
-        }),
       recentProgramActivities: [],
       pendingRecentProgramActivities: [],
       recentActivityOwnerResolved: false,
@@ -451,15 +408,13 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 11,
+      version: 12,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
         operational: state.operational,
         sessions: state.sessions,
         lessons: state.lessons,
-        students: state.students,
-        classRecords: state.classRecords,
         recentProgramActivities: state.recentProgramActivities,
         favorites: state.favorites,
         cart: state.cart,

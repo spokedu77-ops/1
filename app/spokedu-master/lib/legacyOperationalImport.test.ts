@@ -4,6 +4,7 @@ import {
   parseLegacyOperationalStore,
   readLegacyOperationalPreview,
 } from './legacyOperationalImport';
+import { LEGACY_OPERATIONAL_ARCHIVE_KEY, LEGACY_OPERATIONAL_SOURCE_KEY } from './legacyOperationalArchive';
 
 function store(state: Record<string, unknown>, version = 11) {
   return JSON.stringify({ state, version });
@@ -72,7 +73,7 @@ describe('legacy operational import preview', () => {
 
     expect(preview.students.total).toBe(0);
     expect(preview.records.total).toBe(0);
-    expect(storage.getItem).toHaveBeenCalledTimes(1);
+    expect(storage.getItem).toHaveBeenCalled();
     expect((storage as unknown as { setItem: ReturnType<typeof vi.fn> }).setItem).not.toHaveBeenCalled();
     expect((storage as unknown as { removeItem: ReturnType<typeof vi.fn> }).removeItem).not.toHaveBeenCalled();
   });
@@ -273,5 +274,76 @@ describe('legacy operational import preview', () => {
     const backup = JSON.parse(buildLegacyOperationalBackupJson(preview)) as { raw: string };
 
     expect(backup.raw).toBe(raw);
+  });
+
+  it('uses a verified archive before the active persist fallback', () => {
+    const archive = {
+      archiveVersion: 1,
+      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY,
+      sourceStoreVersion: 11,
+      capturedAt: '2026-06-17T00:00:00.000Z',
+      students: [student],
+      classRecords: [record],
+    };
+    const storage = {
+      getItem: vi.fn((key: string) => {
+        if (key === LEGACY_OPERATIONAL_ARCHIVE_KEY) return JSON.stringify(archive);
+        if (key === LEGACY_OPERATIONAL_SOURCE_KEY) return store({ students: [], classRecords: [] });
+        return null;
+      }),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+    } as unknown as Storage;
+
+    const preview = readLegacyOperationalPreview(storage);
+
+    expect(preview.source).toBe('legacy-archive');
+    expect(preview.archiveReady).toBe(true);
+    expect(preview.students.valid).toBe(1);
+    expect(preview.records.valid).toBe(1);
+    expect((storage as unknown as { setItem: ReturnType<typeof vi.fn> }).setItem).not.toHaveBeenCalled();
+  });
+
+  it('falls back to active persist when no archive exists yet', () => {
+    const values = new Map<string, string>();
+    values.set(LEGACY_OPERATIONAL_SOURCE_KEY, store({ students: [student], classRecords: [record] }));
+    const storage = {
+      getItem: vi.fn((key: string) => {
+        return values.get(key) ?? null;
+      }),
+      setItem: vi.fn((key: string, value: string) => {
+        values.set(key, value);
+      }),
+      removeItem: vi.fn(),
+    } as unknown as Storage;
+
+    const preview = readLegacyOperationalPreview(storage);
+
+    expect(preview.source).toBe('legacy-archive');
+    expect(preview.archiveReady).toBe(true);
+    expect((storage as unknown as { setItem: ReturnType<typeof vi.fn> }).setItem).toHaveBeenCalledWith(
+      LEGACY_OPERATIONAL_ARCHIVE_KEY,
+      expect.any(String),
+    );
+  });
+
+  it('uses archive content for backup JSON when available', () => {
+    const archive = {
+      archiveVersion: 1 as const,
+      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY,
+      sourceStoreVersion: 11,
+      capturedAt: '2026-06-17T00:00:00.000Z',
+      students: [student],
+      classRecords: [record],
+    };
+    const preview = parseLegacyOperationalStore(
+      store({ students: archive.students, classRecords: archive.classRecords }),
+      'legacy-archive',
+      archive,
+    );
+    const backup = JSON.parse(buildLegacyOperationalBackupJson(preview)) as { archive: unknown; raw?: string };
+
+    expect(backup.archive).toEqual(archive);
+    expect(backup.raw).toBeUndefined();
   });
 });

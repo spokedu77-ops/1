@@ -202,6 +202,15 @@ export default function StudentsPage() {
               <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
                 현재 브라우저에만 저장된 학생과 수업 기록을 확인합니다. 아직 서버에는 저장하지 않습니다.
               </p>
+              {legacyPreview ? (
+                <p className="mt-2 text-[12px] font-bold" style={{ color: legacyPreview.archiveReady ? 'var(--spm-grn)' : 'var(--spm-red)' }}>
+                  {legacyPreview.archiveReady
+                    ? '원본 보존 상태: 별도 안전 보관 완료'
+                    : legacyPreview.archiveError
+                      ? '기존 데이터를 안전하게 보관하지 못했습니다. 브라우저 데이터를 삭제하거나 초기화하지 마세요.'
+                      : '원본 보존 상태: 별도 보관할 기존 데이터가 없습니다.'}
+                </p>
+              ) : null}
             </div>
             <button type="button" onClick={handlePreviewLegacyImport} className="h-10 shrink-0 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
               가져오기 내용 확인
@@ -301,7 +310,7 @@ export default function StudentsPage() {
                   </p>
                   <p>학생 생성 {legacyImportResult.students.created}명 · 기존 {legacyImportResult.students.existing}명 · 실패 {legacyImportResult.students.failed}명</p>
                   <p>기록 생성 {legacyImportResult.records.created}건 · 기존 {legacyImportResult.records.existing}건 · 보류 {legacyImportResult.records.blocked}건 · 실패 {legacyImportResult.records.failed}건</p>
-                  <p>현재 화면은 아직 브라우저 데이터를 사용합니다. 다음 단계에서 서버 우선 방식으로 전환됩니다.</p>
+                  <p>현재 운영 화면은 서버 데이터를 사용합니다. 브라우저 원본은 가져오기·백업 안전망으로만 유지됩니다.</p>
                   {[...legacyImportResult.students.failures, ...legacyImportResult.records.failures].length ? (
                     <details>
                       <summary className="cursor-pointer" style={{ color: 'var(--spm-t)' }}>실패 항목 보기</summary>
@@ -329,6 +338,11 @@ export default function StudentsPage() {
                   {legacyImporting ? '서버로 가져오는 중...' : legacyImportResult?.status === 'partial' ? '실패 항목 다시 시도' : '확인한 데이터를 서버로 가져오기'}
                 </button>
               </div>
+              {legacyPreview.archiveError ? (
+                <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
+                  archive 검증 실패로 서버 가져오기를 비활성화했습니다. 원본 백업을 먼저 보관해 주세요.
+                </p>
+              ) : null}
             </div>
           ) : null}
         </section>

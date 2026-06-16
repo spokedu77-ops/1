@@ -207,11 +207,12 @@ describe('SPOKEDU MASTER operational data contract', () => {
     expect(migration).not.toContain('spokedu_pro_students');
   });
 
-  it('keeps the local Zustand students and classRecords store contract untouched', () => {
+  it('keeps active Zustand operational state separated from server APIs and legacy archive', () => {
     const store = read('app/spokedu-master/store/index.ts');
 
-    expect(store).toContain('students: state.students');
-    expect(store).toContain('classRecords: state.classRecords');
+    expect(store).not.toContain('students: state.students');
+    expect(store).not.toContain('classRecords: state.classRecords');
+    expect(store).toContain('createLegacyOperationalArchiveFromPersistedStore');
     expect(store).toContain("name: 'spokedu-master-store'");
     expect(store).not.toContain('/api/spokedu-master/students');
     expect(store).not.toContain('/api/spokedu-master/class-records');

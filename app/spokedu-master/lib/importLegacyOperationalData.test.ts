@@ -8,6 +8,17 @@ import type { LegacyOperationalImportPreview } from './legacyOperationalImport';
 
 function preview(overrides: Partial<LegacyOperationalImportPreview> = {}): LegacyOperationalImportPreview {
   return {
+    archive: {
+      archiveVersion: 1,
+      sourceKey: 'spokedu-master-store',
+      sourceStoreVersion: 11,
+      capturedAt: '2026-06-17T00:00:00.000Z',
+      students: [],
+      classRecords: [],
+    },
+    archiveError: null,
+    archiveReady: true,
+    source: 'legacy-archive',
     sourceVersion: 11,
     rawBackupAvailable: true,
     rawBackup: '{"state":{"students":[],"classRecords":[]}}',
@@ -147,6 +158,16 @@ describe('legacy operational import execution', () => {
 
   it('keeps import disabled before backup confirmation', () => {
     expect(canRunLegacyOperationalImport({ preview: preview(), ownerConfirmed: true, backupConfirmed: false })).toBe(false);
+  });
+
+  it('keeps import disabled when the legacy archive is not verified', () => {
+    expect(
+      canRunLegacyOperationalImport({
+        preview: preview({ archive: null, archiveError: 'archive failed', archiveReady: false, source: 'active-persist-fallback' }),
+        ownerConfirmed: true,
+        backupConfirmed: true,
+      }),
+    ).toBe(false);
   });
 
   it('imports students before records', async () => {

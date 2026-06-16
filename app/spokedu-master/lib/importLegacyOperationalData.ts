@@ -152,7 +152,7 @@ function hasImportableCandidates(preview: LegacyOperationalImportPreview) {
 }
 
 export function canRunLegacyOperationalImport(input: ImportLegacyOperationalDataInput) {
-  return input.ownerConfirmed && input.backupConfirmed && hasImportableCandidates(input.preview);
+  return input.preview.archiveReady && input.ownerConfirmed && input.backupConfirmed && hasImportableCandidates(input.preview);
 }
 
 export async function checkLegacyOperationalImportComplete(
@@ -289,7 +289,7 @@ export async function importLegacyOperationalData(
   if (!canRunLegacyOperationalImport(input)) {
     result.students.failures.push({
       legacyId: 'precondition',
-      reason: '소유 확인, 원본 백업, 가져오기 후보가 모두 필요합니다.',
+      reason: '안전 보관, 소유 확인, 원본 백업, 가져오기 후보가 모두 필요합니다.',
     });
     return result;
   }

@@ -1,4 +1,13 @@
-export const LEGACY_OPERATIONAL_STORE_KEY = 'spokedu-master-store';
+import {
+  ensureLegacyOperationalArchive,
+  LEGACY_OPERATIONAL_ARCHIVE_KEY,
+  LEGACY_OPERATIONAL_SOURCE_KEY,
+  type LegacyOperationalArchive,
+} from './legacyOperationalArchive';
+
+export const LEGACY_OPERATIONAL_STORE_KEY = LEGACY_OPERATIONAL_SOURCE_KEY;
+
+export type LegacyOperationalPreviewSource = 'active-persist-fallback' | 'legacy-archive' | 'none';
 
 export type LegacyImportIssue = {
   scope: 'student' | 'record' | 'recordStudent';
@@ -39,7 +48,11 @@ export type LegacyClassRecordImportDto = {
 };
 
 export type LegacyOperationalImportPreview = {
+  archive: LegacyOperationalArchive | null;
+  archiveError: string | null;
+  archiveReady: boolean;
   sourceVersion: number | null;
+  source: LegacyOperationalPreviewSource;
   rawBackupAvailable: boolean;
   rawBackup: string | null;
   parsedStore: unknown;
@@ -132,9 +145,18 @@ function normalizeSkills(value: unknown): string[] {
   );
 }
 
-function createEmptyPreview(rawBackup: string | null = null, parsedStore: unknown = null): LegacyOperationalImportPreview {
+function createEmptyPreview(
+  rawBackup: string | null = null,
+  parsedStore: unknown = null,
+  source: LegacyOperationalPreviewSource = 'none',
+  archive: LegacyOperationalArchive | null = null,
+): LegacyOperationalImportPreview {
   return {
+    archive,
+    archiveError: null,
+    archiveReady: source === 'legacy-archive',
     sourceVersion: null,
+    source,
     rawBackupAvailable: Boolean(rawBackup),
     rawBackup,
     parsedStore,
@@ -401,21 +423,25 @@ function normalizeRecord(
   };
 }
 
-export function parseLegacyOperationalStore(raw: string | null): LegacyOperationalImportPreview {
-  if (raw == null) return createEmptyPreview();
+export function parseLegacyOperationalStore(
+  raw: string | null,
+  source: LegacyOperationalPreviewSource = raw == null ? 'none' : 'active-persist-fallback',
+  archive: LegacyOperationalArchive | null = null,
+): LegacyOperationalImportPreview {
+  if (raw == null) return createEmptyPreview(null, null, source, archive);
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    const preview = createEmptyPreview(raw, null);
+    const preview = createEmptyPreview(raw, null, source, archive);
     preview.students.issues.push({ scope: 'student', reason: 'spokedu-master-store JSON을 파싱할 수 없습니다.' });
     preview.records.issues.push({ scope: 'record', reason: 'spokedu-master-store JSON을 파싱할 수 없습니다.' });
     return preview;
   }
 
   if (!isPlainObject(parsed) || !isPlainObject(parsed.state)) {
-    const preview = createEmptyPreview(raw, parsed);
+    const preview = createEmptyPreview(raw, parsed, source, archive);
     preview.students.issues.push({ scope: 'student', reason: 'Zustand persist state 구조가 아닙니다.' });
     preview.records.issues.push({ scope: 'record', reason: 'Zustand persist state 구조가 아닙니다.' });
     return preview;
@@ -424,7 +450,7 @@ export function parseLegacyOperationalStore(raw: string | null): LegacyOperation
   const sourceVersion = typeof parsed.version === 'number' ? parsed.version : null;
   const rawStudents = parsed.state.students;
   const rawRecords = parsed.state.classRecords;
-  const preview = createEmptyPreview(raw, parsed);
+  const preview = createEmptyPreview(raw, parsed, source, archive);
   preview.sourceVersion = sourceVersion;
 
   if (!Array.isArray(rawStudents)) {
@@ -481,7 +507,25 @@ export function parseLegacyOperationalStore(raw: string | null): LegacyOperation
 }
 
 export function readLegacyOperationalPreview(storage: Storage): LegacyOperationalImportPreview {
-  return parseLegacyOperationalStore(storage.getItem(LEGACY_OPERATIONAL_STORE_KEY));
+  const archiveResult = ensureLegacyOperationalArchive(storage);
+  if (archiveResult.ok && archiveResult.archive) {
+    const raw = JSON.stringify({
+      state: {
+        students: archiveResult.archive.students,
+        classRecords: archiveResult.archive.classRecords,
+      },
+      version: archiveResult.archive.sourceStoreVersion,
+    });
+    return parseLegacyOperationalStore(raw, 'legacy-archive', archiveResult.archive);
+  }
+
+  const activeRaw = storage.getItem(LEGACY_OPERATIONAL_STORE_KEY);
+  const preview = parseLegacyOperationalStore(activeRaw, activeRaw == null ? 'none' : 'active-persist-fallback');
+  if (!archiveResult.ok) {
+    preview.archiveError = archiveResult.reason;
+    preview.archiveReady = false;
+  }
+  return preview;
 }
 
 export function buildLegacyOperationalBackupFileName(now = new Date()): string {
@@ -494,12 +538,26 @@ export function buildLegacyOperationalBackupFileName(now = new Date()): string {
 }
 
 export function buildLegacyOperationalBackupJson(preview: LegacyOperationalImportPreview): string {
+  if (preview.archive) {
+    return JSON.stringify(
+      {
+        archive: preview.archive,
+        exportedAt: new Date().toISOString(),
+        key: LEGACY_OPERATIONAL_ARCHIVE_KEY,
+        preview,
+      },
+      null,
+      2,
+    );
+  }
+
   return JSON.stringify(
     {
-      key: LEGACY_OPERATIONAL_STORE_KEY,
       exportedAt: new Date().toISOString(),
-      raw: preview.rawBackup,
+      key: LEGACY_OPERATIONAL_STORE_KEY,
       parsed: preview.parsedStore,
+      preview,
+      raw: preview.rawBackup,
     },
     null,
     2,

@@ -1,104 +1,21 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
-import { useMasterStore } from '../store';
-import type { ClassRecord, StudentProfile } from '../types';
+import { describe, expect, it } from 'vitest';
 
 const root = process.cwd();
 const readSource = (relativePath: string) =>
   fs.readFileSync(path.join(root, relativePath), 'utf8');
 
-const legacyStudent: StudentProfile = {
-  id: 'student-1',
-  name: '학생 1',
-  group: 'A',
-  meta: '8세',
-  level: 'Lv.9 Legacy',
-  attendance: 87,
-  classes: 19,
-  streak: 4,
-  risk: 'legacy risk',
-  skills: [{ label: '균형', value: 44, delta: '+3%' }],
-  badges: ['legacy badge'],
-  history: ['legacy history'],
-};
-
-const rawRecord: ClassRecord = {
-  id: 'record-1',
-  lessonTitle: '균형 수업',
-  classId: 'A',
-  programId: 'program-1',
-  programTitle: '균형 수업',
-  date: '2026-06-15T09:00:00.000Z',
-  present: 1,
-  absent: 0,
-  focusCount: 1,
-  skillCount: 1,
-  kakaoSent: false,
-  students: [
-    {
-      studentId: legacyStudent.id,
-      studentName: legacyStudent.name,
-      attendance: 'present',
-      focused: true,
-      skills: ['협동'],
-      memo: '실제 관찰 메모',
-    },
-  ],
-};
-
-const originalState = useMasterStore.getState();
-
-afterEach(() => {
-  useMasterStore.setState(originalState, true);
-});
-
 describe('student P0 guards', () => {
-  it('stores raw class records without changing legacy derived student fields', () => {
-    useMasterStore.setState({
-      ...originalState,
-      profile: null,
-      recentActivityOwnerResolved: false,
-      students: [legacyStudent],
-      classRecords: [],
-      notifications: [],
-      operational: {
-        online: true,
-        lastSyncAt: null,
-        retryQueue: [],
-      },
-    });
+  it('keeps legacy operational student and record actions out of the active Store', () => {
+    const source = readSource('app/spokedu-master/store/index.ts');
 
-    useMasterStore.getState().saveClassRecord(rawRecord);
-
-    expect(useMasterStore.getState().students).toEqual([legacyStudent]);
-    expect(useMasterStore.getState().classRecords[0]).toMatchObject({
-      id: rawRecord.id,
-      programId: rawRecord.programId,
-      date: rawRecord.date,
-      students: rawRecord.students,
-    });
-  });
-
-  it('creates new students without fabricated level or attendance values', () => {
-    useMasterStore.setState({
-      ...originalState,
-      students: [],
-    });
-
-    useMasterStore.getState().addStudent('학생 2', 'B', '9세', 'student-2');
-
-    expect(useMasterStore.getState().students[0]).toMatchObject({
-      id: 'student-2',
-      level: '',
-      attendance: 0,
-      classes: 0,
-      streak: 0,
-      risk: null,
-      skills: [],
-      badges: [],
-      history: [],
-    });
+    expect(source).not.toContain('addStudent:');
+    expect(source).not.toContain('removeStudent:');
+    expect(source).not.toContain('saveClassRecord:');
+    expect(source).not.toContain('saveQuickClassRecord:');
+    expect(source).not.toContain('students: state.students');
+    expect(source).not.toContain('classRecords: state.classRecords');
   });
 
   it('does not expose student data from the blocked parent route', () => {

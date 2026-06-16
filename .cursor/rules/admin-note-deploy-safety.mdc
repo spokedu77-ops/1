@@ -1,0 +1,42 @@
+---
+description: admin/note 수정 후 Vercel 배포 전 빌드 검증 및 흔한 import/타입 함정
+globs: app/admin/note/**/*
+alwaysApply: false
+---
+
+# admin/note 배포 안전
+
+## 배포·빌드 요청 시 (no-verify-shell 예외)
+
+사용자가 **배포, Vercel, build 오류, npm run build** 를 언급했거나, `app/admin/note/_page/*` 훅·Provider를 **방금 수정한 뒤** 배포 준비를 말하면:
+
+1. **`npm run build`를 실행**해 TypeScript·Turbopack 오류를 전부 확인한다.
+2. 실패 시 수정 후 **다시 build**해 exit 0까지 맞춘다.
+3. 완료 보고 전에 **수정한 파일 ReadLints**도 확인한다.
+
+로컬 HMR만으로는 `tsc` 단계 오류(import 누락, 주석에 묻힌 `if`, 훅 deps 타입 불일치)가 안 잡힐 수 있다.
+
+## 모듈 import 경계 (혼동 금지)
+
+| 심볼 | 올바른 모듈 |
+|------|-------------|
+| `clearAllNoteTextSelections`, `clearAllCrossSelectState` | `_components/noteCrossSelect.ts` |
+| `getNoteEditor`, `collapseAllNoteEditorSelections`, `setPendingEditorClick`, `scheduleFocusNoteEditorAtClick` | `_components/noteEditorRegistry.ts` |
+
+`noteEditorRegistry`에서 cross-select 계열을 re-export하지 않는다. 잘못된 import는 **빌드 시** 터진다.
+
+## 훅 분리 후 체크리스트
+
+- 주석(`//`)과 `if`/`const`를 **같은 줄에 두지 않는다** (주석이 코드를 삼켜 파싱 오류).
+- `useNoteBlockRenderers` deps 타입이 실제 핸들러와 맞는지 확인 (`'in'|'out'`, `resolvePageIcon` null/undefined, `uploadNoteImage` → `Promise<string>`).
+- 문서 액션 훅에 블록 전용 코드(`showFormatToolbar`, `uploadNoteImage` 등) **중복·dead code** 넣지 않는다.
+- `NoteEditableField`: `onEnter`는 required — `onEditorEnter ?? (() => {})` 패턴 유지.
+
+## 구조 참고
+
+```
+_page/NotePageProvider.tsx  → 훅 조합만
+_page/useNote*Data.ts       → 데이터·포커스
+_page/useNote*Actions.ts    → 문서/블록/DnD/선택 액션
+_page/useNoteBlockRenderers.tsx → renderDocumentTree / renderSortableBlock
+```
