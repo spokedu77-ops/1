@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { startTransition, useCallback } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
@@ -137,8 +137,8 @@ export function useNoteDocumentActions(options: {
     setSidebarIconPicker(null);
   }, [documents, handleUpdateDocProperties]);
 
-  const openSidebarIconPicker = useCallback((doc: NoteDocument, e: React.MouseEvent<HTMLButtonElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
+  const openSidebarIconPicker = useCallback((doc: NoteDocument, e: React.MouseEvent<Element>) => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setSidebarIconPicker({ docId: doc.id, top: rect.bottom + 4, left: rect.left });
     setSidebarIconDraft(resolveDocIcon(doc.properties) ?? '');
   }, []);
@@ -233,40 +233,6 @@ export function useNoteDocumentActions(options: {
     router.replace(`/admin/note?id=${encodeURIComponent(documentId)}`);
   }, [router, closeAll]);
 
-  const showFormatToolbar = useCallback((
-    applyMark: (mark: InlineMark) => void,
-    applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
-    position: { top: number; left: number },
-  ) => {
-    formatToolbarApiRef.current.show(applyMark, applyTextStyle, position);
-  }, []);
-
-  const hideFormatToolbar = useCallback(() => {
-    formatToolbarApiRef.current.hide();
-  }, []);
-
-  const handleCopyBlockLink = useCallback((block: NoteBlock) => {
-    if (!selectedId) return;
-    const url = `${window.location.origin}/admin/note?id=${encodeURIComponent(selectedId)}#block-${block.id}`;
-    void navigator.clipboard.writeText(url);
-  }, [selectedId]);
-
-  const uploadNoteImage = useCallback(async (file: File) => {
-    if (!selectedId) throw new Error('臾몄꽌瑜?癒쇱? ?좏깮?댁빞 ?⑸땲??');
-    const formData = new FormData();
-    formData.set('documentId', selectedId);
-    formData.set('file', file);
-    const res = await fetch('/api/admin/note/upload', {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
-    const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
-    if (!res.ok || !body.url) {
-      throw new Error(body.error ?? '?대?吏 ?낅줈???ㅽ뙣');
-    }
-    return body.url;
-  }, [selectedId]);
 
   /** ?몄뀡 諛⑹떇: 臾몄꽌(parent_id) + 遺紐?蹂몃Ц page 釉붾줉????긽 ?④퍡 ?앹꽦 */
   const handleCreateSubPage = useCallback(async (

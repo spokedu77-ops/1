@@ -17,11 +17,11 @@ import { LazyNoteEditor } from './blocks/LazyNoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
 import type { MarkdownBlockTrigger } from './noteBulletInput';
 import {
-  clearAllNoteTextSelections,
   getNoteEditor,
   scheduleFocusNoteEditorAtClick,
   setPendingEditorClick,
 } from './noteEditorRegistry';
+import { clearAllNoteTextSelections } from './noteCrossSelect';
 
 type NoteEditableFieldProps = {
   blockId: string;
@@ -165,7 +165,7 @@ export function NoteEditableField({
           editorBlockId={blockId}
           placeholder={placeholder}
           className={textClassName}
-          onEnter={onEditorEnter}
+          onEnter={onEditorEnter ?? (() => {})}
           enterCreatesBlock={enterCreatesBlock}
           enterSplitOnMidBlock={enterSplitOnMidBlock}
           autoFocusSignal={autoFocusSignal}

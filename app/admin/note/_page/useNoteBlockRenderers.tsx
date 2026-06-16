@@ -29,7 +29,7 @@ export type NoteBlockRendererDeps = {
   handleToggleFavorite: (e: React.MouseEvent, doc: NoteDocument) => void;
   handleDeleteDocument: (e: React.MouseEvent, doc: NoteDocument) => void;
   handleCreateDocument: (parentId?: string | null) => void | Promise<void>;
-  openSidebarIconPicker: (doc: NoteDocument, e: React.MouseEvent) => void;
+  openSidebarIconPicker: (doc: NoteDocument, e: React.MouseEvent<Element>) => void;
   focusedEditorBlockId: string | null;
   focusedEditorPart: 'title' | 'editor' | null;
   focusSignal: number;
@@ -39,7 +39,7 @@ export type NoteBlockRendererDeps = {
   mergeFocusCaretOffset: number | undefined;
   requestCaretOffset: (offset: number) => void;
   dropTarget: BlockDropTarget;
-  resolvePageIcon: (documentId: string) => string;
+  resolvePageIcon: (documentId: string) => string | null | undefined;
   handleUpdateBlock: (block: NoteBlock, content: NoteBlock['content']) => void;
   syncBlockContent: (blockId: string, content: NoteBlock['content']) => void;
   handleDeleteBlock: (block: NoteBlock, fromEmptyBackspace?: boolean) => void;
@@ -57,10 +57,10 @@ export type NoteBlockRendererDeps = {
   handleDuplicateBlock: (block: NoteBlock) => void | Promise<void>;
   handleCopyBlockLink: (block: NoteBlock) => void;
   recordBlockUndo: (blockIds: string[]) => void;
-  handleIndentBlock: (block: NoteBlock, direction: 'indent' | 'outdent') => void;
+  handleIndentBlock: (block: NoteBlock, direction: 'in' | 'out') => void;
   handleNavigateBlock: (block: NoteBlock, direction: 'previous' | 'next') => void;
   trackActiveBlock: (blockId: string | null, part?: 'title' | 'editor') => void;
-  uploadNoteImage: (file: File) => Promise<string | null>;
+  uploadNoteImage: (file: File) => Promise<string>;
   focusBlockEditor: (
     blockId: string | null,
     part?: 'title' | 'editor',
@@ -146,7 +146,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onTrackActiveBlock={(part) => deps.trackActiveBlock(block.id, part)}
         uploadImage={deps.uploadNoteImage}
         isDropTarget={deps.dropTarget?.blockId === block.id && deps.dropTarget?.position === 'inside'}
-        resolvePageIcon={deps.resolvePageIcon}
+        resolvePageIcon={(documentId) => deps.resolvePageIcon(documentId) ?? null}
         isFocused={deps.focusedEditorBlockId === block.id}
         mergeFocusCaretOffset={deps.focusedEditorBlockId === block.id ? deps.mergeFocusCaretOffset : undefined}
         onRequestCaretOffset={deps.requestCaretOffset}
@@ -207,7 +207,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onTrackActiveBlock={(part) => deps.trackActiveBlock(block.id, part)}
         uploadImage={deps.uploadNoteImage}
         isDropTarget={deps.dropTarget?.blockId === block.id && deps.dropTarget?.position === 'inside'}
-        resolvePageIcon={deps.resolvePageIcon}
+        resolvePageIcon={(documentId) => deps.resolvePageIcon(documentId) ?? null}
         isFocused={deps.focusedEditorBlockId === block.id}
         mergeFocusCaretOffset={deps.focusedEditorBlockId === block.id ? deps.mergeFocusCaretOffset : undefined}
         onRequestCaretOffset={deps.requestCaretOffset}

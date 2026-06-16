@@ -18,6 +18,7 @@ import {
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import { getNoteEditor } from '../_components/noteEditorRegistry';
+import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { defaultBlockContent } from '../_lib/constants';

@@ -91,9 +91,6 @@ export function useNoteDragDrop(options: {
     [activeDragDocId, documents],
   );
 
-  }, []);
-
-  /* ?? DnD handlers ?? */
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const activeId = String(event.active.id);
     if (activeId.startsWith('doc-drag:')) {
@@ -348,7 +345,8 @@ export function useNoteDragDrop(options: {
     const activeId = String(active.id);
     const overId = String(over.id);
 
-    // ?ъ씠?쒕컮 臾몄꽌 ?쒕옒洹???遺紐?蹂寃?    if (activeId.startsWith('doc-drag:')) {
+    // 사이드바 문서 드래그 → 부모 변경
+    if (activeId.startsWith('doc-drag:')) {
       const movingDocId = activeId.slice('doc-drag:'.length);
       if (overId === 'doc-root' || overId === 'doc-root-bottom' || overId === 'doc-workspace-root') {
         await handleReparentDocument(movingDocId, null);
