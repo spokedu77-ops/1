@@ -1,11 +1,15 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteFormatToolbarApi } from '../_components/NoteFormatToolbarHost';
-import type { useNoteBlockUndo, NoteUndoEntry } from '../_hooks/useNoteBlockUndo';
+import {
+  buildNoteHistoryInverse,
+  type NoteHistoryEntry,
+  type useNoteBlockUndo,
+} from '../_hooks/useNoteBlockUndo';
 import {
   filterSiblingBlocks,
   buildReparentContentPatch,
@@ -117,19 +121,31 @@ export function useNoteBlockActions(options: {
     persistBlockReparent,
   } = options;
 
-  const scheduleBlockContentSave = useCallback((blockId: string, fallbackContent?: unknown) => {
-    const timers = saveTimersRef.current;
-    if (timers[blockId]) clearTimeout(timers[blockId]);
-    timers[blockId] = window.setTimeout(async () => {
-      try {
-        const latest = blocksRef.current.find((b) => b.id === blockId);
-        const contentToSave = latest?.content ?? fallbackContent;
-        await patchNoteBlocks([{ id: blockId, content: contentToSave }]);
-        delete timers[blockId];
-        if (Object.keys(timers).filter((k) => !k.startsWith('doc_')).length === 0) triggerSave();
-      } catch (e) { devLogger.error('[Note] updateBlock', e); }
-    }, 600);
+  const pendingContentPatchesRef = useRef<Map<string, unknown>>(new Map());
+  const CONTENT_BATCH_TIMER_KEY = '__content_batch__';
+
+  const flushContentPatches = useCallback(async () => {
+    const pending = pendingContentPatchesRef.current;
+    if (pending.size === 0) return;
+    const updates = [...pending.entries()].map(([id, content]) => ({ id, content }));
+    pending.clear();
+    try {
+      await patchNoteBlocks(updates);
+      triggerSave();
+    } catch (e) {
+      devLogger.error('[Note] batch updateBlock', e);
+    }
   }, [triggerSave]);
+
+  const scheduleBlockContentSave = useCallback((blockId: string, content: unknown) => {
+    pendingContentPatchesRef.current.set(blockId, content);
+    const timers = saveTimersRef.current;
+    if (timers[CONTENT_BATCH_TIMER_KEY]) clearTimeout(timers[CONTENT_BATCH_TIMER_KEY]);
+    timers[CONTENT_BATCH_TIMER_KEY] = window.setTimeout(() => {
+      delete timers[CONTENT_BATCH_TIMER_KEY];
+      void flushContentPatches();
+    }, 600);
+  }, [flushContentPatches]);
 
   const syncBlockContent = useCallback((blockId: string, content: unknown) => {
     const record = (content ?? {}) as Record<string, unknown>;
@@ -145,6 +161,7 @@ export function useNoteBlockActions(options: {
       b.id === block.id ? { ...b, content } : b,
     );
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content } : b)));
+    useNoteBlockStore.getState().patchContent(block.id, content as Record<string, unknown>);
     scheduleBlockContentSave(block.id, content);
   }, [scheduleBlockContentSave]);
 
@@ -152,8 +169,8 @@ export function useNoteBlockActions(options: {
     noteUndo.pushRestoreBlocksUndo(blocksRef.current, blockIds);
   }, [noteUndo]);
 
-  const registerCreatedBlockUndo = useCallback((blockId: string) => {
-    noteUndo.pushUndoCreate(blockId);
+  const registerCreatedBlockUndo = useCallback((block: NoteBlock) => {
+    noteUndo.pushDeleteBlockUndo(block);
   }, [noteUndo]);
 
   const applyBlockReparentPlan = useCallback((moving: NoteBlock, plan: BlockDropPlan<NoteBlock>) => {
@@ -208,10 +225,10 @@ export function useNoteBlockActions(options: {
       return;
     }
 
-    // 湲癒몃━쨌踰덊샇 紐⑸줉? 遺紐??먯떇 援ъ“濡쒕쭔 ?ㅼ뿬?곌린
+    // 글머리·번호 목록은 부모 자식 구조로만 들여쓰기
     if (block.type === 'bulletList' || block.type === 'numberedList') return;
 
-    // 猷⑦듃 釉붾줉留?content.depth ?쒓컖 ?ㅼ뿬?곌린 (?좉? ?녿뒗 寃쎌슦 ?대갚)
+    // 루트 블록만 content.depth 시각 들여쓰기 (탭이 없는 경우 대비)
     if (block.parent_block_id) return;
 
     const content = (block.content ?? {}) as Record<string, unknown>;
@@ -285,12 +302,12 @@ export function useNoteBlockActions(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '釉붾줉 異붽? ?ㅽ뙣');
+        throw new Error(j?.error || '블록 추가 실패');
       }
       const json = (await res.json()) as { block: NoteBlock };
       let orderPayload: { id: string; order_index: number }[] = [];
       setBlocks((prev) => {
-        // split 吏곹썑 onChange濡?媛깆떊??蹂몃Ц???좎? ??blocksRef ?ㅻ깄?룹쑝濡???뼱?곗? ?딆쓬
+        // split 직후 onChange로 갱신된 본문을 유지 — blocksRef 스냅샷으로 덮어쓰지 않음
         const latestSiblings = prev
           .filter((b) => (b.parent_block_id ?? null) === parentId)
           .sort((a, b) => a.order_index - b.order_index);
@@ -308,7 +325,7 @@ export function useNoteBlockActions(options: {
       if (options?.focus !== false) {
         focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
       }
-      if (options?.registerUndo !== false) registerCreatedBlockUndo(json.block.id);
+      if (options?.registerUndo !== false) registerCreatedBlockUndo(json.block);
       void fetch('/api/admin/note/blocks', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -318,7 +335,7 @@ export function useNoteBlockActions(options: {
       return json.block;
     } catch (e) {
       devLogger.error('[Note] insertBlockAmongSiblings', e);
-      setError(e instanceof Error ? e.message : '釉붾줉 異붽? ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 추가 실패');
       setLoadingState('idle');
       return null;
     }
@@ -353,7 +370,7 @@ export function useNoteBlockActions(options: {
     const created = await duplicateBlockRecursive(block, parentId, insertIndex);
     if (created) {
       focusBlockEditor(created.id);
-      registerCreatedBlockUndo(created.id);
+      registerCreatedBlockUndo(created);
     }
   }, [selectedId, duplicateBlockRecursive, focusBlockEditor, registerCreatedBlockUndo]);
 
@@ -498,13 +515,13 @@ export function useNoteBlockActions(options: {
           parent_block_id: null,
         }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '釉붾줉 異붽? ?ㅽ뙣'); }
+      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
       const json = (await res.json()) as { block: NoteBlock };
       setBlocks((prev) => [json.block, ...prev]);
       focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
-      registerCreatedBlockUndo(json.block.id);
+      registerCreatedBlockUndo(json.block);
       triggerSave();
-    } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '異붽? ?ㅽ뙣'); }
+    } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
   }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor, handleInsertBlockInParent, registerCreatedBlockUndo, handleCreateSubPage]);
 
   const handleClickEditorWhitespace = useCallback(() => {
@@ -590,17 +607,17 @@ export function useNoteBlockActions(options: {
     });
     if (!res.ok) {
       const j = await res.json().catch(() => null);
-      throw new Error(j?.error || '??젣 ?ㅽ뙣');
+      throw new Error(j?.error || '삭제 실패');
     }
   }, []);
 
   const finalizeBlockDelete = useCallback(async (options?: {
     skipDeleteUndo?: boolean;
-    lastDeletedId?: string | null;
+    deletedBlock?: NoteBlock | null;
   }) => {
-    if (!options?.skipDeleteUndo && options?.lastDeletedId) {
-      noteUndo.pushUndoDelete(options.lastDeletedId);
-      setPendingDeleteUndo(options.lastDeletedId);
+    if (!options?.skipDeleteUndo && options?.deletedBlock) {
+      noteUndo.pushCreateBlockUndo(options.deletedBlock);
+      setPendingDeleteUndo(options.deletedBlock.id);
     }
     if (docTab === 'block-trash') {
       setMobileTab('list');
@@ -652,11 +669,11 @@ export function useNoteBlockActions(options: {
       await softDeleteBlockIds([block.id]);
       await finalizeBlockDelete({
         skipDeleteUndo,
-        lastDeletedId: block.id,
+        deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
       });
     } catch (e) {
       devLogger.error('[Note] deleteBlock', e);
-      setError(e instanceof Error ? e.message : '釉붾줉 ??젣 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 삭제 실패');
       setBlocks(prevBlocks);
     }
   }, [finalizeBlockDelete, focusBlockEditor, persistDeletePromotionPatches, softDeleteBlockIds]);
@@ -686,11 +703,13 @@ export function useNoteBlockActions(options: {
       await softDeleteBlockIds(plan.deletedIds);
       await finalizeBlockDelete({
         skipDeleteUndo: options?.skipDeleteUndo,
-        lastDeletedId: plan.deletedIds[plan.deletedIds.length - 1] ?? null,
+        deletedBlock: prevBlocks.find((b) => b.id === plan.deletedIds[plan.deletedIds.length - 1])
+          ?? targets[targets.length - 1]
+          ?? null,
       });
     } catch (e) {
       devLogger.error('[Note] deleteBlocks', e);
-      setError(e instanceof Error ? e.message : '釉붾줉 ??젣 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 삭제 실패');
       setBlocks(prevBlocks);
     }
   }, [finalizeBlockDelete, handleDeleteBlock, persistDeletePromotionPatches, softDeleteBlockIds]);
@@ -714,7 +733,7 @@ export function useNoteBlockActions(options: {
   }, [selectedId]);
 
   const uploadNoteImage = useCallback(async (file: File) => {
-    if (!selectedId) throw new Error('臾몄꽌瑜?癒쇱? ?좏깮?댁빞 ?⑸땲??');
+    if (!selectedId) throw new Error('문서를 먼저 선택해야 합니다.');
     const formData = new FormData();
     formData.set('documentId', selectedId);
     formData.set('file', file);
@@ -725,7 +744,7 @@ export function useNoteBlockActions(options: {
     });
     const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
     if (!res.ok || !body.url) {
-      throw new Error(body.error ?? '?대?吏 ?낅줈???ㅽ뙣');
+      throw new Error(body.error ?? '이미지 업로드 실패');
     }
     return body.url;
   }, [selectedId]);
@@ -754,7 +773,7 @@ export function useNoteBlockActions(options: {
       triggerSave();
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
-      setError(e instanceof Error ? e.message : '釉붾줉 蹂묓빀 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 병합 실패');
       setBlocks(prevBlocks);
     } finally {
       window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
@@ -772,7 +791,7 @@ export function useNoteBlockActions(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '釉붾줉 蹂듦뎄 ?ㅽ뙣');
+        throw new Error(j?.error || '블록 복구 실패');
       }
       const json = (await res.json()) as { block: NoteBlock };
       const restoredBlock = json.block;
@@ -786,13 +805,13 @@ export function useNoteBlockActions(options: {
       triggerSave();
     } catch (e) {
       devLogger.error('[Note] restoreBlockFromTrash', e);
-      setError(e instanceof Error ? e.message : '釉붾줉 蹂듦뎄 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 복구 실패');
     } finally {
       setRestoringBlockId(null);
     }
   }, [focusBlockEditor, setPendingDeleteUndo, triggerSave]);
 
-  const applyNoteUndoEntry = useCallback(async (entry: NoteUndoEntry | null) => {
+  const applyNoteHistoryEntry = useCallback(async (entry: NoteHistoryEntry | null) => {
     if (!entry) return;
     if (entry.kind === 'restore-blocks') {
       setBlocks((prev) => {
@@ -809,6 +828,9 @@ export function useNoteBlockActions(options: {
           };
         });
       });
+      for (const snapshot of entry.snapshots) {
+        useNoteBlockStore.getState().patchContent(snapshot.id, snapshot.content ?? {});
+      }
       try {
         await patchNoteBlocks(entry.snapshots.map((snapshot) => ({
           id: snapshot.id,
@@ -819,24 +841,40 @@ export function useNoteBlockActions(options: {
         })));
         triggerSave();
       } catch (e) {
-        devLogger.error('[Note] undo restore-blocks', e);
-        setError(e instanceof Error ? e.message : '?ㅽ뻾 痍⑥냼 ?ㅽ뙣');
+        devLogger.error('[Note] history restore-blocks', e);
+        setError(e instanceof Error ? e.message : '실행 취소 실패');
       }
       return;
     }
-    if (entry.kind === 'undo-create') {
-      const block = blocksRef.current.find((item) => item.id === entry.blockId);
-      if (block) await handleDeleteBlock(block, false, true);
+    if (entry.kind === 'delete-block') {
+      const live = blocksRef.current.find((b) => b.id === entry.snapshot.id);
+      if (live) await handleDeleteBlock(live, false, true);
       return;
     }
-    if (entry.kind === 'undo-delete') {
+    if (entry.kind === 'create-block') {
       setPendingDeleteUndo(null);
-      await handleRestoreBlockFromTrash({ id: entry.blockId } as NoteBlock);
+      await handleRestoreBlockFromTrash(entry.snapshot);
     }
   }, [handleDeleteBlock, handleRestoreBlockFromTrash, setPendingDeleteUndo, triggerSave]);
 
+  const runNoteUndo = useCallback(async () => {
+    const entry = noteUndo.popUndo();
+    if (!entry) return;
+    const inverse = buildNoteHistoryInverse(entry, blocksRef.current);
+    await applyNoteHistoryEntry(entry);
+    if (inverse) noteUndo.pushRedo(inverse);
+  }, [applyNoteHistoryEntry, noteUndo]);
+
+  const runNoteRedo = useCallback(async () => {
+    const entry = noteUndo.popRedo();
+    if (!entry) return;
+    const inverse = buildNoteHistoryInverse(entry, blocksRef.current);
+    await applyNoteHistoryEntry(entry);
+    if (inverse) noteUndo.pushUndoNoClear(inverse);
+  }, [applyNoteHistoryEntry, noteUndo]);
+
   const handlePurgeBlockFromTrash = useCallback(async (block: NoteBlock) => {
-    if (!confirm('??釉붾줉???곴뎄??젣?좉퉴?? ???묒뾽? ?섎룎由????놁뒿?덈떎.')) return;
+    if (!confirm('이 블록을 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
     try {
       setPurgingBlockId(block.id);
       const res = await fetch(`/api/admin/note/blocks/trash/purge?id=${encodeURIComponent(block.id)}`, {
@@ -845,14 +883,14 @@ export function useNoteBlockActions(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '釉붾줉 ?곴뎄??젣 ?ㅽ뙣');
+        throw new Error(j?.error || '블록 영구 삭제 실패');
       }
       if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
       setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
       triggerSave();
     } catch (e) {
       devLogger.error('[Note] purgeBlockFromTrash', e);
-      setError(e instanceof Error ? e.message : '釉붾줉 ?곴뎄??젣 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 영구 삭제 실패');
     } finally {
       setPurgingBlockId(null);
     }
@@ -899,21 +937,28 @@ export function useNoteBlockActions(options: {
             }
           }
         }
-        if (!isUndo || !noteUndo.hasUndo()) return;
-      } else if (!noteUndo.hasUndo()) {
+        if (isUndo) {
+          if (!noteUndo.hasUndo()) return;
+        } else if (!noteUndo.hasRedo()) {
+          return;
+        }
+      } else if (isUndo) {
+        if (!noteUndo.hasUndo()) return;
+      } else if (!noteUndo.hasRedo()) {
         return;
       }
 
-      if (!isUndo) return;
-
       e.preventDefault();
       e.stopImmediatePropagation();
-      const entry = noteUndo.popUndo();
-      void applyNoteUndoEntry(entry);
+      if (isUndo) {
+        void runNoteUndo();
+      } else {
+        void runNoteRedo();
+      }
     };
     window.addEventListener('keydown', onKey, true);
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [applyNoteUndoEntry, noteUndo]);
+  }, [runNoteRedo, runNoteUndo, noteUndo]);
 
   return {
     scheduleBlockContentSave,
@@ -936,7 +981,8 @@ export function useNoteBlockActions(options: {
     handleMergeWithPreviousBlock,
     handleRestoreBlockFromTrash,
     handlePurgeBlockFromTrash,
-    applyNoteUndoEntry,
+    runNoteRedo,
+    runNoteUndo,
     showFormatToolbar,
     hideFormatToolbar,
     handleCopyBlockLink,

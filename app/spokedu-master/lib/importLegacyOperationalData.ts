@@ -50,6 +50,11 @@ type ImportOptions = {
   onProgress?: (progress: OperationalImportProgress) => void;
 };
 
+export type LegacyOperationalImportCompletionVerification = {
+  ok: boolean;
+  reason: string | null;
+};
+
 type StudentDto = {
   id: string;
   legacyId: string | null;
@@ -159,7 +164,17 @@ export async function checkLegacyOperationalImportComplete(
   preview: LegacyOperationalImportPreview,
   options: Pick<ImportOptions, 'fetcher'> = {},
 ): Promise<boolean> {
-  if (!hasImportableCandidates(preview)) return false;
+  const verification = await verifyLegacyOperationalImportComplete(preview, options);
+  return verification.ok;
+}
+
+export async function verifyLegacyOperationalImportComplete(
+  preview: LegacyOperationalImportPreview,
+  options: Pick<ImportOptions, 'fetcher'> = {},
+): Promise<LegacyOperationalImportCompletionVerification> {
+  if (!hasImportableCandidates(preview)) {
+    return { ok: false, reason: '서버 이전을 검증할 후보가 없습니다.' };
+  }
   const fetcher = options.fetcher ?? fetch;
   const serverState = await loadServerState(fetcher);
   const serverStudentByLegacyId = mapByLegacyId(serverState.students);
@@ -168,17 +183,29 @@ export async function checkLegacyOperationalImportComplete(
 
   for (const student of preview.students.candidates) {
     const serverStudent = serverStudentByLegacyId.get(student.legacyId);
-    if (!serverStudent) return false;
+    if (!serverStudent) {
+      return { ok: false, reason: `서버에서 학생 legacy ID를 찾지 못했습니다: ${student.legacyId}` };
+    }
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(serverStudent.id)) {
+      return { ok: false, reason: `학생 서버 ID가 UUID 형식이 아닙니다: ${student.legacyId}` };
+    }
+    if (!serverStudent.name) {
+      return { ok: false, reason: `서버 학생 이름이 비어 있습니다: ${student.legacyId}` };
+    }
     serverStudentIdByLegacyId.set(student.legacyId, serverStudent.id);
   }
 
   for (const record of preview.records.candidates) {
     const serverRecord = serverRecordByLegacyId.get(record.legacyId);
-    if (!serverRecord) return false;
-    if (!verifyRecord(record, serverRecord, serverStudentIdByLegacyId)) return false;
+    if (!serverRecord) {
+      return { ok: false, reason: `서버에서 수업 기록 legacy ID를 찾지 못했습니다: ${record.legacyId}` };
+    }
+    if (!verifyRecord(record, serverRecord, serverStudentIdByLegacyId)) {
+      return { ok: false, reason: `서버 수업 기록의 학생 연결 또는 snapshot이 preview와 다릅니다: ${record.legacyId}` };
+    }
   }
 
-  return true;
+  return { ok: true, reason: null };
 }
 
 function buildStudentPayload(student: LegacyStudentImportDto) {

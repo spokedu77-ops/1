@@ -299,7 +299,7 @@ export function useNoteBlockSelection(options: {
     return () => document.removeEventListener('mousedown', onDown);
   }, []);
 
-  // 硫??釉붾줉 ?좏깮: Ctrl+A / Escape / Delete
+  // 멀티 블록 선택: Ctrl+A / Escape / Delete
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.ctrlKey || e.metaKey;

@@ -5,6 +5,7 @@ import {
   LEGACY_OPERATIONAL_ARCHIVE_KEY,
   LEGACY_OPERATIONAL_SOURCE_KEY,
   readLegacyOperationalArchive,
+  removeLegacyOperationalArchive,
 } from './legacyOperationalArchive';
 
 class MemoryStorage implements Storage {
@@ -139,5 +140,40 @@ describe('legacy operational archive', () => {
     expect(setItem).toHaveBeenCalled();
     expect(result.ok).toBe(false);
     expect(result.reason).toContain('동일성');
+  });
+
+  it('removes only the verified archive key', () => {
+    const storage = new MemoryStorage();
+    const archive = {
+      archiveVersion: 1,
+      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY,
+      sourceStoreVersion: 12,
+      capturedAt: '2026-06-17T00:00:00.000Z',
+      students: [legacyStudent],
+      classRecords: [legacyRecord],
+    };
+    storage.setItem(LEGACY_OPERATIONAL_ARCHIVE_KEY, JSON.stringify(archive));
+    storage.setItem(
+      LEGACY_OPERATIONAL_SOURCE_KEY,
+      JSON.stringify({ state: { other: true }, version: 12 }),
+    );
+
+    const result = removeLegacyOperationalArchive(storage);
+
+    expect(result.ok).toBe(true);
+    expect(storage.getItem(LEGACY_OPERATIONAL_ARCHIVE_KEY)).toBeNull();
+    expect(storage.getItem(LEGACY_OPERATIONAL_SOURCE_KEY)).toContain('"other":true');
+  });
+
+  it('does not remove anything when no valid archive exists', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(LEGACY_OPERATIONAL_ARCHIVE_KEY, '{broken');
+    storage.setItem(LEGACY_OPERATIONAL_SOURCE_KEY, 'kept');
+
+    const result = removeLegacyOperationalArchive(storage);
+
+    expect(result.ok).toBe(false);
+    expect(storage.getItem(LEGACY_OPERATIONAL_ARCHIVE_KEY)).toBe('{broken');
+    expect(storage.getItem(LEGACY_OPERATIONAL_SOURCE_KEY)).toBe('kept');
   });
 });

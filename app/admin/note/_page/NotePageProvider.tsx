@@ -354,6 +354,10 @@ export function NotePageProvider({ children }: { children: React.ReactNode }) {
     focusBlockEditor,
   });
 
+  useEffect(() => {
+    noteUndo.clearHistory();
+  }, [selectedId, noteUndo]);
+
   useEffect(() => () => {
     document.body.style.userSelect = '';
     document.body.classList.remove('note-list-cross-active');

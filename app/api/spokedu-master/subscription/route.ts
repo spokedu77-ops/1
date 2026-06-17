@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
+import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
 import {
   isSpokeduMasterPaidPlanActive,
   isSpokeduMasterPaidPlanExpired,
@@ -13,6 +13,9 @@ type SubscriptionRow = {
   period_end: string | null;
 };
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const supabase = await createServerSupabaseClient();
   const {
@@ -20,13 +23,13 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ plan: 'free', status: 'none', isAdmin: false });
+    return privateNoStoreJson({ plan: 'free', status: 'none', isAdmin: false });
   }
 
   const isAdmin = await isPlatformAdminUser(user, supabase);
 
   if (isAdmin) {
-    return NextResponse.json({
+    return privateNoStoreJson({
       plan: 'team',
       status: 'active',
       isAdmin: true,
@@ -49,7 +52,7 @@ export async function GET() {
     data.status === 'expired' &&
     (data.plan === 'pro' || data.plan === 'team')
   ) {
-    return NextResponse.json({
+    return privateNoStoreJson({
       plan: data.plan,
       status: 'expired',
       periodEnd: data.period_end,
@@ -61,11 +64,11 @@ export async function GET() {
   }
 
   if (!data || data.status !== 'active') {
-    return NextResponse.json({ plan: 'free', status: data?.status ?? 'none', isAdmin: false, userId: user.id, email: user.email ?? null, trialEndsAt });
+    return privateNoStoreJson({ plan: 'free', status: data?.status ?? 'none', isAdmin: false, userId: user.id, email: user.email ?? null, trialEndsAt });
   }
 
   if (!isSpokeduMasterPaidPlanActive(data as SpokeduMasterSubscriptionRow | null)) {
-    return NextResponse.json({
+    return privateNoStoreJson({
       plan: data.plan,
       status: 'expired',
       periodEnd: data.period_end,
@@ -76,7 +79,7 @@ export async function GET() {
     });
   }
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     plan: data.plan,
     status: data.status,
     periodEnd: data.period_end,

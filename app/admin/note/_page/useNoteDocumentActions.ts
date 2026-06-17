@@ -152,9 +152,9 @@ export function useNoteDocumentActions(options: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ title: '?쒕ぉ ?놁쓬' }),
+        body: JSON.stringify({ title: '제목 없음' }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '?앹꽦 ?ㅽ뙣'); }
+      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '생성 실패'); }
       const json = (await res.json()) as { document: NoteDocument };
       const newDoc = { ...json.document, properties };
       if (properties) {
@@ -173,7 +173,7 @@ export function useNoteDocumentActions(options: {
       router.replace(`/admin/note?id=${encodeURIComponent(newDoc.id)}`);
     } catch (e) {
       devLogger.error('[Note] createDocInGroup', e);
-      setError(e instanceof Error ? e.message : '?앹꽦 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '생성 실패');
     } finally { setLoadingState('idle'); }
   }, [closeAll, router]);
 
@@ -234,7 +234,7 @@ export function useNoteDocumentActions(options: {
   }, [router, closeAll]);
 
 
-  /** ?몄뀡 諛⑹떇: 臾몄꽌(parent_id) + 遺紐?蹂몃Ц page 釉붾줉????긽 ?④퍡 ?앹꽦 */
+  /** 세션 방식: 문서(parent_id) + 부모 본문 page 블록을 항상 함께 생성 */
   const handleCreateSubPage = useCallback(async (
     parentDocumentId: string,
     options?: {
@@ -250,7 +250,7 @@ export function useNoteDocumentActions(options: {
       insertIndex: explicitInsertIndex,
       parentBlockId = null,
       navigateToChild = false,
-      title = '?쒕ぉ ?놁쓬',
+      title = '제목 없음',
     } = options ?? {};
 
     try {
@@ -265,7 +265,7 @@ export function useNoteDocumentActions(options: {
       });
       if (!createDocRes.ok) {
         const j = await createDocRes.json().catch(() => null);
-        throw new Error(j?.error || '?섏쐞 ?섏씠吏 ?앹꽦 ?ㅽ뙣');
+        throw new Error(j?.error || '하위 페이지 생성 실패');
       }
       const created = (await createDocRes.json()) as { document: NoteDocument };
       const newDoc = created.document;
@@ -281,7 +281,7 @@ export function useNoteDocumentActions(options: {
           `/api/admin/note/blocks?documentId=${encodeURIComponent(parentDocumentId)}`,
           { credentials: 'include' },
         );
-        if (!blocksRes.ok) throw new Error('遺紐?臾몄꽌 釉붾줉 議고쉶 ?ㅽ뙣');
+        if (!blocksRes.ok) throw new Error('부모 문서 블록 조회 실패');
         const blocksJson = (await blocksRes.json()) as { blocks?: NoteBlock[] };
         siblingBlocks = (blocksJson.blocks ?? [])
           .filter((b) => (b.parent_block_id ?? null) === parentBlockId)
@@ -311,7 +311,7 @@ export function useNoteDocumentActions(options: {
       });
       if (!blockRes.ok) {
         const j = await blockRes.json().catch(() => null);
-        throw new Error(j?.error || '?섏쐞 ?섏씠吏 釉붾줉 異붽? ?ㅽ뙣');
+        throw new Error(j?.error || '하위 페이지 블록 추가 실패');
       }
       const blockJson = (await blockRes.json()) as { block: NoteBlock };
       const newBlock = blockJson.block;
@@ -327,7 +327,7 @@ export function useNoteDocumentActions(options: {
           const others = prev.filter((b) => !siblingIds.has(b.id));
           return [...others, ...nextSiblings];
         });
-        noteUndo.pushUndoCreate(newBlock.id);
+        noteUndo.pushDeleteBlockUndo(newBlock);
         void fetch('/api/admin/note/blocks', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -351,7 +351,7 @@ export function useNoteDocumentActions(options: {
       }
     } catch (e) {
       devLogger.error('[Note] createSubPage', e);
-      setError(e instanceof Error ? e.message : '?섏쐞 ?섏씠吏 ?앹꽦 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '하위 페이지 생성 실패');
     } finally {
       setLoadingState('idle');
     }
@@ -373,9 +373,9 @@ export function useNoteDocumentActions(options: {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ title: '?쒕ぉ ?놁쓬', parent_id: null }),
+        body: JSON.stringify({ title: '제목 없음', parent_id: null }),
       });
-      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '臾몄꽌 ?앹꽦 ?ㅽ뙣'); }
+      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '문서 생성 실패'); }
       const json = (await res.json()) as { document: NoteDocument };
       const newDoc = json.document;
       setDocuments((prev) => [newDoc, ...prev]);
@@ -385,7 +385,7 @@ export function useNoteDocumentActions(options: {
       setMobileTab('editor');
       closeAll();
       router.replace(`/admin/note?id=${encodeURIComponent(newDoc.id)}`);
-    } catch (e) { devLogger.error('[Note] createDoc', e); setError(e instanceof Error ? e.message : '?앹꽦 ?ㅽ뙣'); }
+    } catch (e) { devLogger.error('[Note] createDoc', e); setError(e instanceof Error ? e.message : '생성 실패'); }
     finally { setLoadingState('idle'); }
   };
 
@@ -402,7 +402,7 @@ export function useNoteDocumentActions(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '怨듦컻 ?ㅼ젙 蹂寃??ㅽ뙣');
+        throw new Error(j?.error || '공개 설정 변경 실패');
       }
       const json = (await res.json()) as { document: NoteDocument };
       setDocuments((prev) => prev.map((d) => (d.id === doc.id ? json.document : d)));
@@ -410,7 +410,7 @@ export function useNoteDocumentActions(options: {
     } catch (e) {
       devLogger.error('[Note] togglePublic', e);
       setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_public: doc.is_public } : d)));
-      setError(e instanceof Error ? e.message : '怨듦컻 ?ㅼ젙 蹂寃??ㅽ뙣');
+      setError(e instanceof Error ? e.message : '공개 설정 변경 실패');
     } finally {
       setTogglingPublic(false);
     }
@@ -424,7 +424,7 @@ export function useNoteDocumentActions(options: {
       setShareLinkCopied(true);
       window.setTimeout(() => setShareLinkCopied(false), 2000);
     } catch {
-      setError('留곹겕 蹂듭궗???ㅽ뙣?덉뒿?덈떎.');
+      setError('링크 복사에 실패했습니다.');
     }
   }, []);
 
@@ -440,7 +440,7 @@ export function useNoteDocumentActions(options: {
       if (docTitleSaveSeqRef.current[docId] !== saveSeq) return;
 
       const json = (await res.json()) as { document?: NoteDocument };
-      // ??댄븨 以??쒕쾭 ?묐떟??濡쒖뺄 ?쒕ぉ????뼱?곗? ?딆쓬 ???ㅻ옒??????덉씠??諛⑹?
+      // 타이핑 중 서버 응답이 로컬 제목을 덮어쓰지 않음 — 오래된 응답 레이스 방지
       if (json.document?.updated_at) {
         setDocuments((prev) =>
           prev.map((d) => (
@@ -467,7 +467,7 @@ export function useNoteDocumentActions(options: {
   }, [triggerSave]);
 
   const handleRenameDocument = useCallback((docId: string, title: string, options?: { immediate?: boolean }) => {
-    // ?낅젰 以묒뿉??trim ?섏? ?딆쓬 ???꾩뼱?곌린媛 利됱떆 ?щ씪吏??踰꾧렇 諛⑹?
+    // 입력 중엔 trim 하지 않음 — 이어쓰기가 즉시 사라지는 버그 방지
     startTransition(() => {
       setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, title } : d)));
     });
@@ -476,7 +476,7 @@ export function useNoteDocumentActions(options: {
     if (timers[timerKey]) clearTimeout(timers[timerKey]);
     const runSave = () => {
       const latestRaw = titleInputRef.current?.value ?? title;
-      const normalized = latestRaw.trim() || '?쒕ぉ ?놁쓬';
+      const normalized = latestRaw.trim() || '제목 없음';
       const saveSeq = (docTitleSaveSeqRef.current[docId] ?? 0) + 1;
       docTitleSaveSeqRef.current[docId] = saveSeq;
       startTransition(() => {
@@ -517,7 +517,7 @@ export function useNoteDocumentActions(options: {
 
   const handleDeleteDocument = async (e: React.MouseEvent, doc: NoteDocument) => {
     e.stopPropagation();
-    if (!window.confirm(`"${doc.title}" 臾몄꽌瑜??댁??듭쑝濡??대룞?좉퉴??\n遺紐??섏씠吏??留곹겕???④퍡 ?쒓굅?⑸땲??`)) return;
+    if (!window.confirm(`"${doc.title}" 문서를 휴지통으로 이동할까요?\n부모 페이지의 링크도 함께 제거됩니다.`)) return;
     const prevDocs = documents;
     const prevBlocks = blocksRef.current;
     setDocuments((p) => p.filter((d) => d.id !== doc.id));
@@ -545,12 +545,12 @@ export function useNoteDocumentActions(options: {
         }
       }
       const res = await fetch(`/api/admin/note/documents?id=${encodeURIComponent(doc.id)}`, { method: 'DELETE', credentials: 'include' });
-      if (!res.ok) throw new Error('??젣 ?ㅽ뙣');
+      if (!res.ok) throw new Error('삭제 실패');
     } catch (err) {
       devLogger.error('[Note] deleteDoc', err);
       setDocuments(prevDocs);
       setBlocks(prevBlocks);
-      setError('臾몄꽌 ??젣 ?ㅽ뙣');
+      setError('문서 삭제 실패');
     }
   };
 
@@ -565,14 +565,14 @@ export function useNoteDocumentActions(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '蹂듦뎄 ?ㅽ뙣');
+        throw new Error(j?.error || '복구 실패');
       }
-      // ?댁???紐⑸줉?먯꽌 ?쒓굅
+      // 휴지통 목록에서 제거
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
       triggerSave();
     } catch (e) {
       devLogger.error('[Note] restoreDoc', e);
-      setError(e instanceof Error ? e.message : '蹂듦뎄 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '복구 실패');
     } finally {
       setLoadingState('idle');
     }
@@ -583,10 +583,10 @@ export function useNoteDocumentActions(options: {
     const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
     const eligible = deletedAt ? (Date.now() - deletedAt >= sevenDaysMs) : false;
     if (!eligible) {
-      setError('??젣 ??7?쇱씠 吏??臾몄꽌留??곴뎄??젣?????덉뒿?덈떎.');
+      setError('삭제 후 7일이 지난 문서만 영구 삭제할 수 있습니다.');
       return;
     }
-    if (!window.confirm(`"${doc.title}" 臾몄꽌瑜??곴뎄??젣?좉퉴?? (蹂듦뎄 遺덇?)`)) return;
+    if (!window.confirm(`"${doc.title}" 문서를 영구 삭제할까요? (복구 불가)`)) return;
     try {
       setLoadingState('saving');
       const res = await fetch(`/api/admin/note/trash/purge?id=${encodeURIComponent(doc.id)}`, {
@@ -595,13 +595,13 @@ export function useNoteDocumentActions(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '?곴뎄??젣 ?ㅽ뙣');
+        throw new Error(j?.error || '영구 삭제 실패');
       }
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
       triggerSave();
     } catch (e) {
       devLogger.error('[Note] purgeDoc', e);
-      setError(e instanceof Error ? e.message : '?곴뎄??젣 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '영구 삭제 실패');
     } finally {
       setLoadingState('idle');
     }

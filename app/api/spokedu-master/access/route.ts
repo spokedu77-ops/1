@@ -1,5 +1,8 @@
-import { NextResponse } from 'next/server';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function accessErrorCode(status: number) {
   if (status === 401) return 'UNAUTHORIZED';
@@ -11,10 +14,10 @@ export async function GET() {
   const access = await requireSpokeduMasterAccess();
 
   if (access.ok) {
-    return NextResponse.json({ ok: true, allowed: true });
+    return privateNoStoreJson({ ok: true, allowed: true });
   }
 
-  return NextResponse.json(
+  return privateNoStoreJson(
     {
       ok: false,
       allowed: false,

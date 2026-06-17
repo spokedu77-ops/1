@@ -161,11 +161,25 @@ function BlockContent({
   const pageBtnRef = useRef<HTMLButtonElement>(null);
   const activeEditor = useNoteBlockStore((state) => state.activeEditor);
 
+  const STORE_ONLY_CONTENT_KEYS = new Set([
+    'text', 'body', 'html', 'bodyHtml', 'legacyText', 'legacyBody',
+  ]);
+
   const syncContentPatch = useCallback((partial: Record<string, unknown>) => {
-    const nextContent = { ...(block.content ?? {}), ...partial };
+    const base = (useNoteBlockStore.getState().getBlock(block.id)?.content
+      ?? block.content
+      ?? {}) as Record<string, unknown>;
+    const nextContent = { ...base, ...partial };
+    const needsReactUpdate = Object.keys(partial).some(
+      (key) => !STORE_ONLY_CONTENT_KEYS.has(key),
+    );
+    if (needsReactUpdate) {
+      onUpdate(nextContent);
+      return;
+    }
     if (onContentSync) onContentSync(nextContent);
     else onUpdate(nextContent);
-  }, [block.content, onContentSync, onUpdate]);
+  }, [block.id, block.content, onContentSync, onUpdate]);
 
   useEffect(() => {
     if (block.type !== 'page' || !isFocused) return;
@@ -692,9 +706,11 @@ function BlockContent({
             placeholder="YouTube 또는 Vimeo URL을 붙여넣으세요"
             value={url}
             onChange={(e) => {
-              const next = buildVideoBlockContentFromUrl(e.target.value);
-              if (onContentSync) onContentSync(next);
-              else onUpdate(next);
+              const base = (useNoteBlockStore.getState().getBlock(block.id)?.content
+                ?? block.content
+                ?? {}) as Record<string, unknown>;
+              const next = { ...base, ...buildVideoBlockContentFromUrl(e.target.value) };
+              onUpdate(next);
             }}
           />
         </div>
@@ -1292,7 +1308,7 @@ function SortableBlockRow({
       onMouseEnter={noteBlockRowMouseEnter}
       onMouseLeave={noteBlockRowMouseLeave}
       onPointerDown={(e) => focusNoteBlockRowFromChrome(e, block.id, onFocusBlock)}
-      className={`note-block-row-cv relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
+      className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
           : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
           : !block.content?.blockColor ? 'hover:bg-neutral-50/60' : ''
@@ -1330,7 +1346,9 @@ function SortableBlockRow({
         }}
       />
 
-      {blockContentNode}
+      <div className="note-block-row-cv min-w-0">
+        {blockContentNode}
+      </div>
 
       {handleMenuAnchor && (
         <div
@@ -1555,7 +1573,7 @@ function ToggleInlineRow({
       onMouseEnter={noteBlockRowMouseEnter}
       onMouseLeave={noteBlockRowMouseLeave}
       onPointerDown={(e) => focusNoteBlockRowFromChrome(e, block.id, onFocusBlock)}
-      className={`note-block-row-cv relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
+      className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
           : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
           : !block.content?.blockColor ? 'hover:bg-neutral-50/60' : ''
@@ -1617,7 +1635,9 @@ function ToggleInlineRow({
           />
         </div>
       )}
-      <BlockContent {...inlineBlockContentProps} />
+      <div className="note-block-row-cv min-w-0">
+        <BlockContent {...inlineBlockContentProps} />
+      </div>
     </div>
     {showExternalChildren && (
       childBlocks.map((child) => (

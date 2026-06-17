@@ -5,7 +5,7 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
-  // 기존 코드베이스와의 호환을 위해 런타임에 영향 없는 정적 규칙만 완화
+  // Legacy compatibility relaxations for the existing codebase.
   {
     rules: {
       "react-hooks/set-state-in-effect": "off",
@@ -16,22 +16,14 @@ const eslintConfig = defineConfig([
       "react/no-unescaped-entities": "off",
     },
   },
-  // 생성 산출물(workbox)은 lint 대상에서 제외
-  {
-    files: ["public/workbox-*.js"],
-    rules: {
-      "@typescript-eslint/ban-ts-comment": "off",
-      "@typescript-eslint/ban-types": "off",
-    },
-  },
-  // Node 실행 스크립트는 CommonJS(require) 허용
+  // Node scripts may use CommonJS require.
   {
     files: ["scripts/**/*.js"],
     rules: {
       "@typescript-eslint/no-require-imports": "off",
     },
   },
-  // 레거시 정적 JS(전역 함수·미사용 export): 앱 번들과 분리, unused 경고만 소음
+  // Legacy static JS bundles are separate from the app bundle; suppress unused warnings.
   {
     files: [
       "public/info/js/**/*.js",
@@ -43,7 +35,7 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-unused-vars": "off",
     },
   },
-  // Admin / 런타임 / 랜딩·교사: 동적 URL·캔버스·에디터 등 <Image /> 부적합 구간 — 성능 규칙 소음 완화
+  // Admin/teacher areas still contain remote images and canvas-driven UI.
   {
     files: [
       "app/admin/**/*.{tsx,ts}",
@@ -57,7 +49,6 @@ const eslintConfig = defineConfig([
       "@next/next/no-img-element": "off",
     },
   },
-  // lucide-react 내부 경로(dist/icons 등)는 .d.ts가 없어 Vercel/strict 빌드에서 실패할 수 있음 — 배럴 import만 사용
   {
     files: ["**/*.{ts,tsx}"],
     ignores: ["app/teacher/**"],
@@ -69,14 +60,13 @@ const eslintConfig = defineConfig([
             {
               group: ["lucide-react/dist/**", "lucide-react/icons/**"],
               message:
-                "lucide 내부 경로는 타입 선언이 없을 수 있습니다. `import { IconName } from 'lucide-react'` 만 사용하세요.",
+                "Use public lucide exports only: `import { IconName } from 'lucide-react'`.",
             },
           ],
         },
       ],
     },
   },
-  // Teacher/Admin: 쿠키 세션을 쓰려면 getSupabaseBrowserClient만 사용. createClient 사용 시 로그인/데이터 미표시 오류.
   {
     files: ["app/teacher/**/*.ts", "app/teacher/**/*.tsx"],
     rules: {
@@ -87,29 +77,26 @@ const eslintConfig = defineConfig([
             {
               name: "@supabase/supabase-js",
               importNames: ["createClient"],
-              message: "Teacher 페이지는 getSupabaseBrowserClient() 사용. createClient()는 쿠키 세션을 읽지 않아 오류 발생.",
+              message:
+                "Teacher pages must use getSupabaseBrowserClient() so cookie sessions are preserved.",
             },
           ],
           patterns: [
             {
               group: ["lucide-react/dist/**", "lucide-react/icons/**"],
               message:
-                "lucide 내부 경로는 타입 선언이 없을 수 있습니다. `import { IconName } from 'lucide-react'` 만 사용하세요.",
+                "Use public lucide exports only: `import { IconName } from 'lucide-react'`.",
             },
           ],
         },
       ],
     },
   },
-  // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
-    "public/workbox-*.js",
-    // 참고용·통합 스니펫(린트 대상에서 제외해 경고만 감소, 런타임 미사용)
     "docs/**",
   ]),
 ]);

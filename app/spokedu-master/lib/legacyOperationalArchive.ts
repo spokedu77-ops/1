@@ -26,6 +26,18 @@ export type LegacyOperationalArchiveResult =
       sourceHasOperationalData: boolean;
     };
 
+export type LegacyOperationalArchiveRemovalResult =
+  | {
+      ok: true;
+      removed: true;
+      reason?: undefined;
+    }
+  | {
+      ok: false;
+      removed: false;
+      reason: string;
+    };
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
@@ -259,4 +271,39 @@ export function ensureLegacyOperationalArchive(storage: Storage | null = getBrow
       sourceHasOperationalData: true,
     };
   }
+}
+
+export function removeLegacyOperationalArchive(
+  storage: Storage | null = getBrowserStorage(),
+): LegacyOperationalArchiveRemovalResult {
+  if (!storage) {
+    return {
+      ok: false,
+      removed: false,
+      reason: '브라우저 저장소를 사용할 수 없습니다.',
+    };
+  }
+
+  const existing = readLegacyOperationalArchive(storage);
+  if (!existing) {
+    return {
+      ok: false,
+      removed: false,
+      reason: '삭제할 유효한 이전 데이터 archive가 없습니다.',
+    };
+  }
+
+  storage.removeItem(LEGACY_OPERATIONAL_ARCHIVE_KEY);
+  if (storage.getItem(LEGACY_OPERATIONAL_ARCHIVE_KEY) !== null) {
+    return {
+      ok: false,
+      removed: false,
+      reason: 'archive 삭제 후 검증에 실패했습니다.',
+    };
+  }
+
+  return {
+    ok: true,
+    removed: true,
+  };
 }

@@ -53,6 +53,8 @@ describe('operational data adapter', () => {
           studentName: serverStudent.name,
           attendance: 'present',
           focused: true,
+          createdAt: '2026-06-17T00:00:00.000Z',
+          updatedAt: '2026-06-17T00:00:00.000Z',
           skills: ['협응력'],
           memo: '좋음',
         },

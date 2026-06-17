@@ -8,9 +8,14 @@ import {
   canRunLegacyOperationalImport,
   checkLegacyOperationalImportComplete,
   importLegacyOperationalData,
+  verifyLegacyOperationalImportComplete,
   type OperationalImportProgress,
   type OperationalImportResult,
 } from '../lib/importLegacyOperationalData';
+import {
+  LEGACY_OPERATIONAL_ARCHIVE_KEY,
+  removeLegacyOperationalArchive,
+} from '../lib/legacyOperationalArchive';
 import {
   buildLegacyOperationalBackupFileName,
   buildLegacyOperationalBackupJson,
@@ -41,6 +46,10 @@ export default function StudentsPage() {
   const [legacyImportProgress, setLegacyImportProgress] = useState<OperationalImportProgress | null>(null);
   const [legacyImportResult, setLegacyImportResult] = useState<OperationalImportResult | null>(null);
   const [legacyImportComplete, setLegacyImportComplete] = useState(false);
+  const [legacyDeleteConfirmed, setLegacyDeleteConfirmed] = useState(false);
+  const [legacyDeleting, setLegacyDeleting] = useState(false);
+  const [legacyDeleteMessage, setLegacyDeleteMessage] = useState<string | null>(null);
+  const [legacyDeleteError, setLegacyDeleteError] = useState<string | null>(null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
 
   useEffect(() => {
@@ -93,6 +102,9 @@ export default function StudentsPage() {
     const preview = readLegacyOperationalPreview(window.localStorage);
     setLegacyPreview(preview);
     setLegacyBackupConfirmed(false);
+    setLegacyDeleteConfirmed(false);
+    setLegacyDeleteError(null);
+    setLegacyDeleteMessage(null);
     setLegacyImportResult(null);
     setLegacyImportProgress(null);
     try {
@@ -119,6 +131,25 @@ export default function StudentsPage() {
         backupConfirmed: legacyBackupConfirmed,
       }) && !legacyImporting
     : false;
+  const hasLegacyDeletionWarning = legacyPreview
+    ? legacyPreview.students.invalid > 0
+      || legacyPreview.students.duplicate > 0
+      || legacyPreview.records.invalid > 0
+      || legacyPreview.records.duplicate > 0
+      || legacyPreview.records.excludedChildEntries > 0
+      || legacyPreview.records.orphanStudentEntries > 0
+      || legacyPreview.records.recordTypeDefaulted > 0
+      || legacyPreview.students.invalidMetaCoerced > 0
+    : false;
+  const canDeleteLegacyArchive = Boolean(
+    legacyPreview?.archiveReady
+      && legacyOwnerConfirmed
+      && legacyBackupConfirmed
+      && legacyImportComplete
+      && legacyDeleteConfirmed
+      && !legacyImporting
+      && !legacyDeleting,
+  );
   const handleImportLegacy = async () => {
     if (!legacyPreview || !canImportLegacy) return;
     const confirmed = window.confirm(
@@ -144,6 +175,52 @@ export default function StudentsPage() {
       }
     } finally {
       setLegacyImporting(false);
+    }
+  };
+  const handleDeleteLegacyArchive = async () => {
+    if (!legacyPreview || !canDeleteLegacyArchive) return;
+    setLegacyDeleting(true);
+    setLegacyDeleteError(null);
+    setLegacyDeleteMessage(null);
+    try {
+      const latestPreview = readLegacyOperationalPreview(window.localStorage);
+      setLegacyPreview(latestPreview);
+      if (!latestPreview.archiveReady) {
+        throw new Error('유효한 이전 데이터 archive가 없습니다.');
+      }
+      if (!legacyOwnerConfirmed || !legacyBackupConfirmed || !legacyDeleteConfirmed) {
+        throw new Error('삭제 확인 조건이 완료되지 않았습니다.');
+      }
+
+      const verification = await verifyLegacyOperationalImportComplete(latestPreview);
+      if (!verification.ok) {
+        setLegacyImportComplete(false);
+        throw new Error(verification.reason ?? '서버 이전 검증에 실패했습니다.');
+      }
+
+      const confirmed = window.confirm(
+        '이 기기에 별도로 보관된 이전 학생·수업 기록 원본을 삭제합니다.\n\n서버에 저장된 데이터는 삭제되지 않습니다.\n다운로드한 백업 파일은 유지됩니다.\n이 작업은 이 브라우저에서 되돌릴 수 없습니다.\n\n이전 데이터 삭제',
+      );
+      if (!confirmed) return;
+
+      const result = removeLegacyOperationalArchive(window.localStorage);
+      if (!result.ok) {
+        throw new Error(result.reason);
+      }
+      if (window.localStorage.getItem(LEGACY_OPERATIONAL_ARCHIVE_KEY) !== null) {
+        throw new Error('archive key가 삭제되지 않았습니다.');
+      }
+
+      setLegacyPreview(null);
+      setLegacyPreviewAvailable(true);
+      setLegacyImportComplete(false);
+      setLegacyBackupConfirmed(false);
+      setLegacyDeleteConfirmed(false);
+      setLegacyDeleteMessage('이 기기의 이전 데이터 원본을 삭제했습니다. 서버에 저장된 학생·수업 기록은 유지됩니다.');
+    } catch (error) {
+      setLegacyDeleteError(error instanceof Error ? error.message : '이전 데이터 원본을 삭제하지 못했습니다.');
+    } finally {
+      setLegacyDeleting(false);
     }
   };
 
@@ -281,6 +358,25 @@ export default function StudentsPage() {
                 <span>이 기기에 저장된 학생·수업 기록이 현재 로그인한 계정의 데이터임을 확인합니다.</span>
               </label>
 
+              {hasLegacyDeletionWarning ? (
+                <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-t2)' }}>
+                  <p style={{ color: 'var(--spm-t)' }}>일부 원본 항목은 서버 이전 대상에서 제외되었거나 정규화되었습니다.</p>
+                  <p className="mt-1">삭제 후에는 내려받은 백업 파일에서만 확인할 수 있습니다.</p>
+                </div>
+              ) : null}
+
+              {legacyPreview.archiveReady ? (
+                <label className="flex items-start gap-2 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.08)', color: 'var(--spm-t2)' }}>
+                  <input
+                    type="checkbox"
+                    checked={legacyDeleteConfirmed}
+                    onChange={(event) => setLegacyDeleteConfirmed(event.target.checked)}
+                    className="mt-1"
+                  />
+                  <span>서버에 저장된 학생·수업 기록을 확인했으며, 제외되거나 정규화된 원본은 내려받은 백업 파일에만 남는다는 점을 확인했습니다.</span>
+                </label>
+              ) : null}
+
               {legacyImportComplete ? (
                 <div className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
                   이 기기의 가져오기 가능한 데이터는 서버에 저장되어 있습니다.
@@ -337,13 +433,44 @@ export default function StudentsPage() {
                 >
                   {legacyImporting ? '서버로 가져오는 중...' : legacyImportResult?.status === 'partial' ? '실패 항목 다시 시도' : '확인한 데이터를 서버로 가져오기'}
                 </button>
+                {legacyPreview.archiveReady ? (
+                  <button
+                    type="button"
+                    disabled={!canDeleteLegacyArchive}
+                    onClick={handleDeleteLegacyArchive}
+                    className="h-10 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-60"
+                    style={{ background: canDeleteLegacyArchive ? 'rgba(239,68,68,0.14)' : 'var(--spm-s3)', color: canDeleteLegacyArchive ? 'var(--spm-red)' : 'var(--spm-t3)' }}
+                  >
+                    {legacyDeleting ? '삭제 확인 중...' : '이 기기의 이전 데이터 삭제'}
+                  </button>
+                ) : null}
               </div>
+              {legacyDeleteMessage ? (
+                <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
+                  {legacyDeleteMessage}
+                </p>
+              ) : null}
+              {legacyDeleteError ? (
+                <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--spm-red)' }}>
+                  이전 데이터 원본을 삭제하지 못했습니다. 브라우저 데이터를 직접 초기화하지 말고 다시 시도해 주세요. ({legacyDeleteError})
+                </p>
+              ) : null}
               {legacyPreview.archiveError ? (
                 <p className="text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
                   archive 검증 실패로 서버 가져오기를 비활성화했습니다. 원본 백업을 먼저 보관해 주세요.
                 </p>
               ) : null}
             </div>
+          ) : null}
+          {!legacyPreview && legacyDeleteMessage ? (
+            <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
+              {legacyDeleteMessage}
+            </p>
+          ) : null}
+          {!legacyPreview && legacyDeleteError ? (
+            <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--spm-red)' }}>
+              이전 데이터 원본을 삭제하지 못했습니다. 브라우저 데이터를 직접 초기화하지 말고 다시 시도해 주세요. ({legacyDeleteError})
+            </p>
           ) : null}
         </section>
       ) : null}

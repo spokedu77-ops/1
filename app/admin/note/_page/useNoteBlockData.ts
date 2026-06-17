@@ -37,7 +37,7 @@ export function useNoteBlockData(options: {
         setLoadingBlocks(true);
         setError(null);
         const res = await fetch(
-          `/api/admin/note/blocks/load?documentId=${encodeURIComponent(selectedId)}`,
+          `/api/admin/note/blocks/load?documentId=${encodeURIComponent(selectedId)}&skipReconcile=true`,
           { credentials: 'include' },
         );
         if (!res.ok) {

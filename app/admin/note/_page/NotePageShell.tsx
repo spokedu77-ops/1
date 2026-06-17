@@ -15,7 +15,9 @@ import { NoteSidebarPanel } from '../_components/layout/NoteSidebarPanel';
 import { NoteEditorPanel } from '../_components/layout/NoteEditorPanel';
 import { NoteDragOverlayLayer } from '../_components/layout/NoteDragOverlayLayer';
 import { NoteSidebarIconPicker } from '../_components/layout/NoteSidebarIconPicker';
+import { NoteSingletonEditorHost } from '../_components/NoteSingletonEditorHost';
 import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
 
 const BoardView = dynamic(
   () => import('../_components/BoardView').then((mod) => mod.BoardView),
@@ -45,6 +47,10 @@ export function NotePageShell() {
     handleReorderBoardGroup,
     formatToolbarApiRef,
   } = useNotePage();
+
+  useEffect(() => {
+    void import('../_components/NoteEditor');
+  }, []);
 
   return (
     <NoteImageLightboxProvider>
@@ -102,6 +108,7 @@ export function NotePageShell() {
           </BlockDragActiveContext.Provider>
         </DndContext>
         <NoteFormatToolbarHost apiRef={formatToolbarApiRef} />
+        <NoteSingletonEditorHost />
         <NoteSidebarIconPicker />
       </div>
     </NoteImageLightboxProvider>

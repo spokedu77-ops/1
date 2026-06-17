@@ -32,6 +32,7 @@ import { EditorDocDropZone } from '../sidebar/NoteDocChrome';
 import { NoteVirtualRootBlocks } from '../NoteVirtualRootBlocks';
 import { useNotePage } from '../../_page/NotePageContext';
 import { NoteWorkspaceHome } from './NoteWorkspaceHome';
+import { NotePageFindBar } from './NotePageFindBar';
 
 export function NoteEditorPanel() {
   const {
@@ -125,6 +126,7 @@ export function NoteEditorPanel() {
         <NoteWorkspaceHome />
       ) : (
         <div ref={editorScrollRef} className="min-w-0 flex-1 overflow-y-auto bg-white">
+          <NotePageFindBar />
           {resolveDocCover(activeDocument.properties) && (
             <div className="group/cover relative h-[30vh] max-h-[280px] min-h-[120px] w-full overflow-hidden bg-neutral-100">
               <img

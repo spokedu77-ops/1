@@ -20,7 +20,6 @@ const PUNCH_WALL_HP   = 5;    // 펀치 벽 총 타격 횟수
 const WALL_W          = 110;  // 더 넓게
 const WALL_H          = 230;  // 더 높게
 const WALL_TRIGGER_DIST = 100;
-const ROCK_TRIGGER_DIST = 130; // 플레이어 130 units 앞에서 미니점프 발동
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
@@ -58,13 +57,6 @@ interface UfoEntity {
   enginePods: THREE.Mesh[];
 }
 
-interface RockEntity {
-  mesh: THREE.Group;
-  triggered: boolean;
-  glowMesh: THREE.Mesh;
-  bridgeRef: FlowBridge;
-}
-
 interface ShardEntity {
   mesh: THREE.Mesh;
   vel: THREE.Vector3;
@@ -82,7 +74,6 @@ export interface ObstacleCallbacks {
   onUfoDuckStart?: () => void;
   onUfoPassed?: () => void;
   onUfoWarn?: () => void;
-  onRockApproach?: () => void;
   onCameraShake?: (intensity: number, ms: number) => void;
   onFlash?: () => void;
   getShardScale?: () => number;
@@ -97,7 +88,6 @@ export class ObstacleManager {
 
   private boxes: BoxEntity[] = [];
   private ufos: UfoEntity[] = [];
-  private rocks: RockEntity[] = [];
   private shards: ShardEntity[] = [];
   private wallBreakRef: BoxEntity | null = null;
 
@@ -348,60 +338,6 @@ export class ObstacleManager {
   }
 
   // ── 돌뿌리 ──────────────────────────────────────────────────────────────────
-
-  attachRock(bridge: FlowBridge, localZ: number): void {
-    const g = new THREE.Group();
-
-    const rockMat = new THREE.MeshPhongMaterial({
-      color: 0x6b6b6b,      // 진짜 바위색 — 회색
-      emissive: 0x1a1a1a,
-      emissiveIntensity: 0.15,
-      shininess: 5,
-    });
-
-    // 메인 바위 — 브릿지 폭의 70% 점유, 높이 충분
-    const mainRock = new THREE.Mesh(new THREE.SphereGeometry(32, 9, 7), rockMat);
-    mainRock.scale.set(1.6, 1.3, 1.3);
-    mainRock.position.y = 32; // 브릿지 표면 위로 확실히 솟아오름
-    g.add(mainRock);
-
-    // 좌우 보조 바위 — 브릿지 전체 폭 막음
-    const sideMat = new THREE.MeshPhongMaterial({
-      color: 0x5a5a5a, emissive: 0x111111, emissiveIntensity: 0.1, shininess: 4,
-    });
-    for (const [ox, oy, sc] of [[-32, 18, 0.85], [30, 16, 0.75]] as const) {
-      const side = new THREE.Mesh(new THREE.SphereGeometry(24, 7, 5), sideMat);
-      side.scale.set(1.2, sc, 1.1);
-      side.position.set(ox, oy, 0);
-      g.add(side);
-    }
-
-    // 경고 줄무늬 — 바닥에 노랑/검정 해저드 패턴 (항상 보임)
-    for (let s = 0; s < 6; s++) {
-      const stripe = new THREE.Mesh(
-        new THREE.BoxGeometry(14, 2, 28),
-        new THREE.MeshBasicMaterial({ color: s % 2 === 0 ? 0xfbbf24 : 0x111111 }),
-      );
-      stripe.position.set(-35 + s * 14, 1, 0);
-      g.add(stripe);
-    }
-
-    // 지면 경고 원 — 다가올수록 밝아짐 (보호막 아닌 바닥 glow)
-    const glowMesh = new THREE.Mesh(
-      new THREE.CircleGeometry(52, 24),
-      new THREE.MeshBasicMaterial({
-        color: 0xff3300, transparent: true, opacity: 0,
-        blending: THREE.AdditiveBlending, depthWrite: false,
-      }),
-    );
-    glowMesh.rotation.x = -Math.PI / 2;
-    glowMesh.position.y = 2;
-    g.add(glowMesh);
-
-    g.position.set(0, STANDARD_BOX_Y, localZ);
-    bridge.mesh.add(g);
-    this.rocks.push({ mesh: g, triggered: false, glowMesh, bridgeRef: bridge });
-  }
 
   // ── UFO ─────────────────────────────────────────────────────────────────────
 
@@ -711,29 +647,6 @@ export class ObstacleManager {
       return true;
     });
 
-    // 돌뿌리
-    for (let i = this.rocks.length - 1; i >= 0; i--) {
-      const rock = this.rocks[i];
-      const wz   = rock.mesh.getWorldPosition(this._tmpVec).z;
-      const dist = playerWorldZ - wz;
-
-      // 접근 글로우 — 500 units 앞부터 서서히 (UFO 수준 경고)
-      const glowMat = rock.glowMesh.material as THREE.MeshBasicMaterial;
-      glowMat.opacity = (dist > 0 && dist < 500) ? (1 - dist / 500) * 0.70 : 0;
-
-      // 트리거
-      if (!rock.triggered && dist > 0 && dist < ROCK_TRIGGER_DIST) {
-        rock.triggered = true;
-        this.cb.onRockApproach?.();
-      }
-
-      // 통과 후 제거
-      if (wz > playerWorldZ + 400) {
-        rock.mesh.parent?.remove(rock.mesh);
-        this.rocks.splice(i, 1);
-      }
-    }
-
     // 파편·코인
     for (let i = this.shards.length - 1; i >= 0; i--) {
       const s = this.shards[i];
@@ -755,11 +668,9 @@ export class ObstacleManager {
   clearAll(): void {
     for (const b of this.boxes) b.mesh.parent?.remove(b.mesh);
     for (const u of this.ufos) u.mesh.parent?.remove(u.mesh);
-    for (const r of this.rocks) r.mesh.parent?.remove(r.mesh);
     for (const s of this.shards) this.scene.remove(s.mesh);
     this.boxes = [];
     this.ufos = [];
-    this.rocks = [];
     this.shards = [];
     this.wallBreakRef = null;
   }

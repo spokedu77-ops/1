@@ -102,7 +102,14 @@ export function NoteRichEditorStyles() {
         -webkit-user-select: none !important;
         cursor: default;
       }
-      [data-note-block-row].note-block-row-cv {
+      [data-note-block-row].note-find-flash {
+        animation: note-find-flash 1.2s ease-out;
+      }
+      @keyframes note-find-flash {
+        0%, 100% { background-color: transparent; }
+        15% { background-color: rgba(250, 204, 21, 0.35); }
+      }
+      .note-block-row-cv {
         content-visibility: auto;
         contain-intrinsic-size: auto 2.5rem;
       }

@@ -84,7 +84,7 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
         <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
           <p className="flex items-center gap-1 text-[12px] font-black" style={{ color: swReady ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>
             <CheckCircle2 size={14} />
-            {swReady ? '오프라인 캐시 준비됨' : '서비스워커 확인 중'}
+            {swReady ? '앱 설치 및 정적 리소스 준비됨' : '서비스워커 확인 중'}
           </p>
         </div>
         <button

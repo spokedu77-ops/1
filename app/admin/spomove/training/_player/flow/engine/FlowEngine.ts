@@ -42,8 +42,7 @@ const SPEED_MULTS: number[] = [0.8, 1.0, 1.0, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25
 
 // 점프 파라미터 (원본 동일)
 const JUMP_HEIGHT      = 98;
-const MINI_JUMP_HEIGHT = 72;   // 돌뿌리 미니점프 — 높고 빠르게
-const MINI_JUMP_DUR    = 0.24;
+const MINI_JUMP_HEIGHT = 72;   // 점프 높이 기준값
 // 점프 지속 시간 by 스테이지 (원본 LV1=0.72, LV2=0.70, LV3+=0.64 근사)
 const JUMP_DURATIONS: number[] = [0.72, 0.70, 0.64, 0.62, 0.62, 0.62, 0.62, 0.62, 0.62];
 
@@ -300,7 +299,6 @@ export class FlowEngine {
         this.duckPitchX    = 0.70;
         this.duckHold      = true;
       },
-      onRockApproach:     () => { this.triggerMiniJump(); },
       onUfoPassed:        () => {
         this.duckHold         = false;
         this.duckBounceOffset = 90;
@@ -544,7 +542,7 @@ export class FlowEngine {
       const hasPunch = am.has('punch') || am.has('reach');
       const hasDuck  = am.has('duck');
 
-      // ── 장애물: 보너스는 33% 각 타입, 일반은 50% 하나 ───────────────────
+      // ── 장애물: 보너스는 33% 각 타입, 일반은 80% 하나 ───────────────────
       if (this.isBonus) {
         const r = Math.random();
         if (r < 0.33 && hasDuck && !this.obstacles.hasActiveUfo()) {
@@ -552,7 +550,7 @@ export class FlowEngine {
         } else if (r < 0.66 && hasPunch && !this.obstacles.hasActiveBox()) {
           this.obstacles.attachBox(bridgeObj, am);
         }
-      } else if (Math.random() < 0.50) {
+      } else if (Math.random() < 0.80) {
         if (hasPunch && hasDuck) {
           // 두 모듈 모두 활성: 50/50으로 하나 선택
           if (Math.random() < 0.5) {
@@ -567,13 +565,6 @@ export class FlowEngine {
         }
       }
 
-      // ── 돌뿌리: 50% 독립 확률, 브릿지 중앙 근처 배치 ───────────────────
-      const hasReachWall = bridgeObj.hasBox && am.has('reach');
-      if (!hasReachWall && am.has('rock') && Math.random() < 0.50) {
-        // localZ: 브릿지 중앙(-200 ~ -600) — 너무 끝은 아닌 중간 구간
-        const localZ = Math.round((-200 - Math.random() * 400) / 200) * 200;
-        this.obstacles.attachRock(bridgeObj, localZ);
-      }
     }
   }
 
@@ -978,24 +969,6 @@ export class FlowEngine {
       this.showInstruction('점프!', '#ffffff', 700, 1);
       this.jumpInstrCooldown = 3.0;
     }
-  }
-
-  private triggerMiniJump(): void {
-    if (this.isJumping) return;
-    this.isJumping     = true;
-    this.jumpProgress  = 0;
-    this.jumpStartTime = this.gameTime;
-    this.jumpHeight    = MINI_JUMP_HEIGHT;
-    this.jumpDuration  = MINI_JUMP_DUR;
-    // 도약 순간 — 강한 위로 충격 + 화면 흔들림
-    this.microJolt        += 1.2;
-    this.flashPulseValue   = Math.min(1, this.flashPulseValue + 0.4);
-    this.hitShakeRemaining = 180;
-    this.hitShakeIntensity = 1.0;
-    this.hitShakeDuration  = 180;
-    // FOV 확장 — 뛰어오르는 순간 더 와이드하게 느껴짐
-    this.targetFov = Math.min(FOV_MAX, this.currentFov + 14);
-    this.audio.sfxJump();
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨

@@ -1,17 +1,20 @@
-import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
   const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   const { id } = await context.params;
   if (!id) {
-    return NextResponse.json({ error: 'student id is required' }, { status: 400 });
+    return privateNoStoreJson({ error: 'student id is required' }, { status: 400 });
   }
 
   const supabase = getServiceSupabase();
@@ -24,10 +27,10 @@ export async function DELETE(
     .maybeSingle();
 
   if (existingError) {
-    return NextResponse.json({ error: existingError.message }, { status: 500 });
+    return privateNoStoreJson({ error: existingError.message }, { status: 500 });
   }
   if (!existing) {
-    return NextResponse.json({ error: 'student not found' }, { status: 404 });
+    return privateNoStoreJson({ error: 'student not found' }, { status: 404 });
   }
 
   const { error } = await supabase
@@ -37,8 +40,8 @@ export async function DELETE(
     .eq('id', id);
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true });
+  return privateNoStoreJson({ ok: true });
 }

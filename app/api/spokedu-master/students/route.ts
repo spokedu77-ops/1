@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import {
   normalizeStudentInput,
@@ -10,9 +10,12 @@ import {
 
 const STUDENT_SELECT = 'id,owner_id,legacy_id,name,group_name,meta,created_at,updated_at,deleted_at';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
@@ -24,23 +27,23 @@ export async function GET() {
     .order('name', { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     data: ((data ?? []) as MasterStudentRow[]).map(toStudentDto),
   });
 }
 
 export async function POST(request: Request) {
   const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   let input;
   try {
     input = normalizeStudentInput(await request.json());
   } catch (error) {
-    return NextResponse.json(
+    return privateNoStoreJson(
       { error: error instanceof Error ? error.message : 'Invalid student payload' },
       { status: 400 },
     );
@@ -58,11 +61,11 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingError) {
-      return NextResponse.json({ error: existingError.message }, { status: 500 });
+      return privateNoStoreJson({ error: existingError.message }, { status: 500 });
     }
 
     if (existing) {
-      return NextResponse.json({
+      return privateNoStoreJson({
         data: toStudentDto(existing as MasterStudentRow),
         duplicate: true,
       });
@@ -76,10 +79,10 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json(
+  return privateNoStoreJson(
     { data: toStudentDto(data as MasterStudentRow), duplicate: false },
     { status: 201 },
   );

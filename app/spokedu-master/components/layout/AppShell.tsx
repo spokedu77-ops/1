@@ -13,6 +13,18 @@ import { OperationalDataProvider } from '../../operational/OperationalDataProvid
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
+const LEGACY_SW_CACHE_NAMES = ['spokedu-master-v3', 'start-url', 'dev'];
+
+function isLegacyRootServiceWorker(registration: ServiceWorkerRegistration) {
+  return [registration.active, registration.waiting, registration.installing].some((worker) => {
+    if (!worker?.scriptURL) return false;
+    try {
+      return new URL(worker.scriptURL).pathname === '/sw.js';
+    } catch {
+      return false;
+    }
+  });
+}
 
 function FloatingTimerPill() {
   const running = useMasterStore((state) => state.classTimerRunning);
@@ -152,6 +164,12 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
+    const cleanupLegacyCaches = () => {
+      if (!('caches' in window)) return;
+      void Promise.all(LEGACY_SW_CACHE_NAMES.map((cacheName) => window.caches.delete(cacheName))).catch(() => undefined);
+    };
+    cleanupLegacyCaches();
+
     if (process.env.NODE_ENV !== 'production') {
       navigator.serviceWorker
         .getRegistrations()
@@ -163,7 +181,19 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         .catch(() => undefined);
       return;
     }
-    navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) =>
+        Promise.all(
+          registrations
+            .filter(isLegacyRootServiceWorker)
+            .map((registration) => registration.unregister()),
+        ),
+      )
+      .catch(() => undefined)
+      .finally(() => {
+        void navigator.serviceWorker.register('/spokedu-master-sw.js', { scope: '/spokedu-master/' }).catch(() => undefined);
+      });
   }, []);
 
   useEffect(() => {

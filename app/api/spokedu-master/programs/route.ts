@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
@@ -20,6 +20,9 @@ const FALLBACK_COLORS: [string, string, string, string][] = [
   ['#1e1b4b', '#2d2a6e', '#3730a3', '#6366f1'],
   ['#1c1917', '#292524', '#44403c', '#78716c'],
 ];
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 const CATEGORY_COLORS: Record<string, [string, string, string, string]> = {
   경쟁형: ['#111827', '#1d4ed8', '#f97316', '#facc15'],
@@ -139,7 +142,7 @@ function normalizeProgramForMaster(program: Program): Program {
 
 export async function GET() {
   const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
@@ -150,7 +153,7 @@ export async function GET() {
     .order('id', { ascending: false });
 
   if (currErr || !curriculumRows) {
-    return NextResponse.json({ error: currErr?.message ?? 'DB error' }, { status: 500 });
+    return privateNoStoreJson({ error: currErr?.message ?? 'DB error' }, { status: 500 });
   }
 
   const curriculumIds = (curriculumRows as { id: number }[]).map((row) => row.id);
@@ -308,7 +311,7 @@ export async function GET() {
     return normalizeProgramForMaster(program);
     });
 
-  return NextResponse.json({ data: programs, total: programs.length });
+  return privateNoStoreJson({ data: programs, total: programs.length });
 }
 
 export async function PATCH(request: Request) {
@@ -316,18 +319,18 @@ export async function PATCH(request: Request) {
   const idRaw = searchParams.get('id');
   const curriculumId = idRaw ? Number(idRaw) : NaN;
   if (!Number.isFinite(curriculumId) || curriculumId <= 0) {
-    return NextResponse.json({ error: 'invalid id' }, { status: 400 });
+    return privateNoStoreJson({ error: 'invalid id' }, { status: 400 });
   }
 
   const serverSupabase = await createServerSupabaseClient();
   const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  if (!user) return privateNoStoreJson({ error: 'Unauthorized' }, { status: 401 });
 
   let body: Record<string, unknown>;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    return privateNoStoreJson({ error: 'Invalid JSON' }, { status: 400 });
   }
 
   const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids', 'sm_thumbnail_url', 'sm_hero_image_url', 'sm_setup_image_url', 'sm_gallery_image_urls'];
@@ -343,6 +346,6 @@ export async function PATCH(request: Request) {
     .select()
     .maybeSingle();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
+  if (error) return privateNoStoreJson({ error: error.message }, { status: 500 });
+  return privateNoStoreJson({ data });
 }

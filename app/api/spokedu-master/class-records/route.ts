@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import {
   classRecordInsertPayload,
@@ -42,9 +42,12 @@ const RECORD_SELECT = `
 
 const STUDENT_ID_SELECT = 'id';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
@@ -56,10 +59,10 @@ export async function GET() {
     .order('created_at', { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({
+  return privateNoStoreJson({
     data: ((data ?? []) as MasterClassRecordRow[]).map(toClassRecordDto),
   });
 }
@@ -85,13 +88,13 @@ async function resolveOwnedStudentIds(
 
 export async function POST(request: Request) {
   const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return access.response;
+  if (!access.ok) return withPrivateNoStore(access.response);
 
   let input;
   try {
     input = normalizeClassRecordInput(await request.json());
   } catch (error) {
-    return NextResponse.json(
+    return privateNoStoreJson(
       { error: error instanceof Error ? error.message : 'Invalid class record payload' },
       { status: 400 },
     );
@@ -109,11 +112,11 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingError) {
-      return NextResponse.json({ error: existingError.message }, { status: 500 });
+      return privateNoStoreJson({ error: existingError.message }, { status: 500 });
     }
 
     if (existing) {
-      return NextResponse.json({
+      return privateNoStoreJson({
         data: toClassRecordDto(existing as MasterClassRecordRow),
         duplicate: true,
       });
@@ -128,7 +131,7 @@ export async function POST(request: Request) {
       input.students.map((student) => student.studentId).filter((id): id is string => Boolean(id)),
     );
   } catch (error) {
-    return NextResponse.json(
+    return privateNoStoreJson(
       { error: error instanceof Error ? error.message : 'Student lookup failed' },
       { status: 500 },
     );
@@ -138,7 +141,7 @@ export async function POST(request: Request) {
     (student) => student.studentId && !ownedStudentIds.has(student.studentId),
   );
   if (invalidStudent) {
-    return NextResponse.json({ error: 'studentId is not available for this owner' }, { status: 400 });
+    return privateNoStoreJson({ error: 'studentId is not available for this owner' }, { status: 400 });
   }
 
   const { data: inserted, error: insertError } = await supabase
@@ -148,7 +151,7 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError || !inserted) {
-    return NextResponse.json({ error: insertError?.message ?? 'Record insert failed' }, { status: 500 });
+    return privateNoStoreJson({ error: insertError?.message ?? 'Record insert failed' }, { status: 500 });
   }
 
   const recordId = (inserted as { id: string }).id;
@@ -168,7 +171,7 @@ export async function POST(request: Request) {
         .eq('owner_id', access.userId)
         .eq('id', recordId);
 
-      return NextResponse.json(
+      return privateNoStoreJson(
         { error: childError.message, partialSave: false, rolledBack: true },
         { status: 500 },
       );
@@ -183,10 +186,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error || !data) {
-    return NextResponse.json({ error: error?.message ?? 'Record reload failed' }, { status: 500 });
+    return privateNoStoreJson({ error: error?.message ?? 'Record reload failed' }, { status: 500 });
   }
 
-  return NextResponse.json(
+  return privateNoStoreJson(
     { data: toClassRecordDto(data as MasterClassRecordRow), duplicate: false },
     { status: 201 },
   );

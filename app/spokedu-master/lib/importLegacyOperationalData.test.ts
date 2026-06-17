@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   canRunLegacyOperationalImport,
   importLegacyOperationalData,
+  verifyLegacyOperationalImportComplete,
   type OperationalImportProgress,
 } from './importLegacyOperationalData';
 import type { LegacyOperationalImportPreview } from './legacyOperationalImport';
@@ -120,7 +121,7 @@ function createFetchMock(options: {
 
     if (url === '/api/spokedu-master/students' && method === 'POST') {
       if (options.failStudent) return json({ error: 'student failed' }, 500);
-      return json({ data: { id: 'server-student-1', legacyId: body.legacyId, name: body.name }, duplicate: false }, 201);
+      return json({ data: { id: serverStudentId, legacyId: body.legacyId, name: body.name }, duplicate: false }, 201);
     }
 
     if (url === '/api/spokedu-master/class-records' && method === 'POST') {
@@ -134,13 +135,14 @@ function createFetchMock(options: {
   return { calls, fetcher };
 }
 
-const serverStudent = { id: 'server-student-1', legacyId: 'student-1', name: '학생 1' };
+const serverStudentId = '11111111-1111-4111-8111-111111111111';
+const serverStudent = { id: serverStudentId, legacyId: 'student-1', name: '학생 1' };
 const serverRecord = {
   id: 'server-record-1',
   legacyId: 'record-1',
   students: [
     {
-      studentId: 'server-student-1',
+      studentId: serverStudentId,
       studentLegacyId: 'student-1',
       studentName: '학생 1',
       attendance: 'present',
@@ -198,7 +200,7 @@ describe('legacy operational import execution', () => {
 
     const recordPost = calls.find((call) => call.method === 'POST' && call.url.endsWith('/class-records'));
     expect(recordPost?.body).toMatchObject({
-      students: [{ studentId: 'server-student-1', studentLegacyId: 'student-1' }],
+      students: [{ studentId: serverStudentId, studentLegacyId: 'student-1' }],
     });
   });
 
@@ -273,6 +275,40 @@ describe('legacy operational import execution', () => {
     const result = await importLegacyOperationalData({ preview: preview(), ownerConfirmed: true, backupConfirmed: true }, { fetcher });
 
     expect(result.verified).toBe(true);
+  });
+
+  it('verifies server completion before archive deletion', async () => {
+    const { fetcher } = createFetchMock({ existingStudents: [serverStudent], existingRecords: [serverRecord] });
+
+    await expect(verifyLegacyOperationalImportComplete(preview(), { fetcher })).resolves.toEqual({
+      ok: true,
+      reason: null,
+    });
+  });
+
+  it('blocks archive deletion verification when a student legacy ID is missing', async () => {
+    const { fetcher } = createFetchMock({ existingStudents: [], existingRecords: [serverRecord] });
+    const result = await verifyLegacyOperationalImportComplete(preview(), { fetcher });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('student-1');
+  });
+
+  it('blocks archive deletion verification when a record legacy ID is missing', async () => {
+    const { fetcher } = createFetchMock({ existingStudents: [serverStudent], existingRecords: [] });
+    const result = await verifyLegacyOperationalImportComplete(preview(), { fetcher });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('record-1');
+  });
+
+  it('blocks archive deletion verification when child data differs', async () => {
+    const badRecord = { ...serverRecord, students: [{ ...serverRecord.students[0], skills: ['다른 값'] }] };
+    const { fetcher } = createFetchMock({ existingStudents: [serverStudent], existingRecords: [badRecord] });
+    const result = await verifyLegacyOperationalImportComplete(preview(), { fetcher });
+
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain('record-1');
   });
 
   it('verifies child connection, snapshot, attendance, focus, skills, and memo', async () => {

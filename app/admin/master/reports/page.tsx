@@ -8,6 +8,7 @@ import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import html2canvas from 'html2canvas';
 import { CreditCard, Users, Calculator, Download, History, Info, TrendingUp, FileText, X } from 'lucide-react';
+import { ADMIN_NAMES } from '@/app/lib/constants/admin';
 
 type TeacherRow = { id: string; name: string };
 type ExtraTeacher = { id: string; price?: number };
@@ -26,6 +27,40 @@ function getExtraTeachersFromSession(s: { students_text?: string; memo?: string 
   }
   return [];
 }
+
+/** 운영진(ADMIN_NAMES) — 정산 명단·수업료 합계에서 제외 */
+function buildSettlementExcludedIdSet(users: { id: string; name?: string | null }[]): Set<string> {
+  const names = new Set<string>(ADMIN_NAMES);
+  return new Set(
+    users.filter((u) => u.name && names.has(u.name)).map((u) => String(u.id))
+  );
+}
+
+function isSettlementExcluded(teacherId: string, excludedIds: Set<string>): boolean {
+  return excludedIds.has(String(teacherId));
+}
+
+/** 세션 1건의 지급 대상 수업료(운영진 주강사·보조 fee 제외) */
+function sessionPayableFees(s: SessionRow, excludedIds: Set<string>): number {
+  const mainExcluded = isSettlementExcluded(s.created_by, excludedIds);
+  const rawPrice = mainExcluded ? 0 : (Number(s.price) || 0);
+  const extras = getExtraTeachersFromSession(s);
+  const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => {
+    if (isSettlementExcluded(ex.id, excludedIds)) return eSum;
+    return eSum + (Number(ex?.price) || 0);
+  }, 0);
+  return rawPrice + extrasSum;
+}
+
+function teacherSessionFee(s: SessionRow, teacherId: string, excludedIds: Set<string>): number {
+  if (isSettlementExcluded(teacherId, excludedIds)) return 0;
+  const isMain = String(s.created_by) === String(teacherId);
+  if (isMain) return Number(s.price) || 0;
+  const extras = getExtraTeachersFromSession(s);
+  const ex = extras.find((e) => String(e.id) === String(teacherId));
+  return Number(ex?.price) || 0;
+}
+
 type SettlementRow = { id: string; teacher_id: string; amount?: number; reason?: string };
 
 function parseKrwInputToNumber(raw: string): number {
@@ -163,12 +198,18 @@ export default function UltimateSettlementPage() {
       const startDate = `${year}-${String(month).padStart(2, '0')}-${String(startDay).padStart(2, '0')}`;
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(endDay).padStart(2, '0')}`;
 
-      const { data: teachers, error: teachersError } = await supabase
-        .from('users')
-        .select('id, name')
-        .eq('role', 'teacher')
-        .eq('is_active', true);
+      const [{ data: teachers, error: teachersError }, { data: opsUsers, error: opsUsersError }] = await Promise.all([
+        supabase
+          .from('users')
+          .select('id, name')
+          .eq('role', 'teacher')
+          .eq('is_active', true),
+        supabase.from('users').select('id, name').in('name', [...ADMIN_NAMES]),
+      ]);
       assertSupabaseOk(teachersError);
+      assertSupabaseOk(opsUsersError);
+      const excludedIds = buildSettlementExcludedIdSet(opsUsers || []);
+      const teachersFiltered = (teachers || []).filter((t: TeacherRow) => !isSettlementExcluded(t.id, excludedIds));
 
       // 정산 대상: finished + verified (검수 승인 포함). 강사 앱·진단 SQL과 동일 기준.
       const { data: sessions, error: sessionsError } = await supabase
@@ -187,17 +228,18 @@ export default function UltimateSettlementPage() {
 
       // 수업료 총합(지급액): 세션의 price는 주강사 지급액, EXTRA_TEACHERS 각 price는 보조 지급액 → 세션별 주+보조 합산
       const sessionsList = sessions || [];
-      const rawSessionFees = sessionsList.reduce((sum: number, s: SessionRow) => {
-        const rawPrice = Number(s.price) || 0;
-        const extras = getExtraTeachersFromSession(s);
-        const extrasSum = extras.reduce((eSum: number, ex: ExtraTeacher) => eSum + (Number(ex?.price) || 0), 0);
-        return sum + rawPrice + extrasSum;
+      const rawSessionFees = sessionsList.reduce(
+        (sum: number, s: SessionRow) => sum + sessionPayableFees(s, excludedIds),
+        0
+      );
+      const rawAdjTotal = (dbAdjs || []).reduce((acc: number, cur: SettlementRow) => {
+        if (isSettlementExcluded(cur.teacher_id, excludedIds)) return acc;
+        return acc + (Number(cur?.amount) ?? 0);
       }, 0);
-      const rawAdjTotal = (dbAdjs || []).reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur?.amount) ?? 0), 0);
       setSessionFeesTotal(rawSessionFees);
       setTotalAdjAmount(rawAdjTotal);
 
-      const calculatedData = (teachers || []).map((teacher: TeacherRow) => {
+      const calculatedData = teachersFiltered.map((teacher: TeacherRow) => {
         const teacherSessions = (sessions || []).filter((s: SessionRow) => {
           const isMain = String(s.created_by) === String(teacher.id);
           const extras = getExtraTeachersFromSession(s);
@@ -205,16 +247,10 @@ export default function UltimateSettlementPage() {
           return isMain || isExtra;
         });
 
-        const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
-          const rawPrice = Number(cur.price) || 0;
-          const extras = getExtraTeachersFromSession(cur);
-          const isMain = String(cur.created_by) === String(teacher.id);
-          if (isMain) {
-            return acc + rawPrice;
-          }
-          const ex = extras.find((e) => String(e.id) === String(teacher.id));
-          return acc + (Number(ex?.price) || 0);
-        }, 0);
+        const sessionsTotal = teacherSessions.reduce(
+          (acc: number, cur: SessionRow) => acc + teacherSessionFee(cur, teacher.id, excludedIds),
+          0
+        );
         
         const teacherAdjs = (dbAdjs?.filter((a: SettlementRow) => a.teacher_id === teacher.id) || []) as SettlementRow[];
         const adjTotal = teacherAdjs.reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur.amount) ?? 0), 0);
@@ -261,11 +297,16 @@ export default function UltimateSettlementPage() {
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-      const { data: teachers, error: teachersError } = await supabase
-        .from('users')
-        .select('id, name, is_active')
-        .eq('role', 'teacher');
+      const [{ data: teachers, error: teachersError }, { data: opsUsers, error: opsUsersError }] = await Promise.all([
+        supabase.from('users').select('id, name, is_active').eq('role', 'teacher'),
+        supabase.from('users').select('id, name').in('name', [...ADMIN_NAMES]),
+      ]);
       assertSupabaseOk(teachersError);
+      assertSupabaseOk(opsUsersError);
+      const excludedIds = buildSettlementExcludedIdSet(opsUsers || []);
+      const teachersFiltered = (teachers || []).filter(
+        (t: TeacherRow & { is_active?: boolean }) => !isSettlementExcluded(t.id, excludedIds)
+      );
 
       const { data: sessions, error: sessionsError } = await supabase
         .from('sessions')
@@ -283,23 +324,17 @@ export default function UltimateSettlementPage() {
       assertSupabaseOk(dbAdjsError);
 
       const sessionsList = sessions || [];
-      const calculated = (teachers || []).map((teacher: TeacherRow & { is_active?: boolean }) => {
+      const calculated = teachersFiltered.map((teacher: TeacherRow & { is_active?: boolean }) => {
         const teacherSessions = sessionsList.filter((s: SessionRow) => {
           const isMain = String(s.created_by) === String(teacher.id);
           const extras = getExtraTeachersFromSession(s);
           const isExtra = extras.some((ex) => String(ex.id) === String(teacher.id));
           return isMain || isExtra;
         });
-        const sessionsTotal = teacherSessions.reduce((acc: number, cur: SessionRow) => {
-          const rawPrice = Number(cur.price) || 0;
-          const extras = getExtraTeachersFromSession(cur);
-          const isMain = String(cur.created_by) === String(teacher.id);
-          if (isMain) {
-            return acc + rawPrice;
-          }
-          const ex = extras.find((e) => String(e.id) === String(teacher.id));
-          return acc + (Number(ex?.price) || 0);
-        }, 0);
+        const sessionsTotal = teacherSessions.reduce(
+          (acc: number, cur: SessionRow) => acc + teacherSessionFee(cur, teacher.id, excludedIds),
+          0
+        );
         const teacherAdjs = (dbAdjs?.filter((a: SettlementRow) => a.teacher_id === teacher.id) || []) as SettlementRow[];
         const adjTotal = teacherAdjs.reduce((acc: number, cur: { amount?: number }) => acc + (Number(cur.amount) ?? 0), 0);
         const grossTotal = sessionsTotal + adjTotal;
@@ -589,15 +624,7 @@ export default function UltimateSettlementPage() {
                 <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
                   <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest px-2 mb-2"><History size={10} className="inline mr-1"/> Activity Details</p>
                   {teacher.details.map((s: SessionRow) => {
-                    const rawPrice = Number(s.price) || 0;
-                    const extras = getExtraTeachersFromSession(s);
-                    const isMain = String(s.created_by) === String(teacher.id);
-                    let fee = 0;
-                    if (isMain) {
-                      fee = rawPrice;
-                    } else {
-                      fee = Number(extras.find((ex) => String(ex.id) === String(teacher.id))?.price) || 0;
-                    }
+                    const fee = teacherSessionFee(s, teacher.id, new Set());
                     return (
                       <div key={s.id} className="flex justify-between items-center p-4 bg-slate-50/50 rounded-2xl text-[11px] font-black group-hover:bg-white transition-colors">
                         <span className="text-slate-300 italic">{(s.start_at || '').slice(8, 10)}일</span>

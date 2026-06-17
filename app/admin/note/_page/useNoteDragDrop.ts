@@ -209,7 +209,7 @@ export function useNoteDragDrop(options: {
       });
       if (!res.ok) {
         const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '臾몄꽌 ?대룞 ?ㅽ뙣');
+        throw new Error(j?.error || '문서 이동 실패');
       }
 
       if (newParentId === null) {
@@ -287,7 +287,7 @@ export function useNoteDragDrop(options: {
     } catch (e) {
       devLogger.error('[Note] reparentDocument', e);
       setDocuments(prevDocuments);
-      setError(e instanceof Error ? e.message : '臾몄꽌 ?대룞 ?ㅽ뙣');
+      setError(e instanceof Error ? e.message : '문서 이동 실패');
     }
   }, [documents, selectedId, triggerSave]);
 
@@ -357,7 +357,7 @@ export function useNoteDragDrop(options: {
         if (movingDocId === targetDocumentId) return;
         const docMap = new Map(documents.map((d) => [d.id, d]));
         if (isDocumentDescendantOf(targetDocumentId, movingDocId, docMap)) {
-          setError('?섏쐞 ?섏씠吏 ?덉쑝濡쒕뒗 ?대룞?????놁뒿?덈떎.');
+          setError('하위 페이지 안으로는 이동할 수 없습니다.');
           return;
         }
         await handleReparentDocument(movingDocId, targetDocumentId);
@@ -368,7 +368,7 @@ export function useNoteDragDrop(options: {
         if (movingDocId === targetDocumentId) return;
         const docMap = new Map(documents.map((d) => [d.id, d]));
         if (isDocumentDescendantOf(targetDocumentId, movingDocId, docMap)) {
-          setError('?섏쐞 ?섏씠吏 ?덉쑝濡쒕뒗 ?대룞?????놁뒿?덈떎.');
+          setError('하위 페이지 안으로는 이동할 수 없습니다.');
           return;
         }
         await handleReparentDocument(movingDocId, targetDocumentId);
@@ -376,7 +376,7 @@ export function useNoteDragDrop(options: {
       return;
     }
 
-    // Drop target is a document (sidebar DocItem) ??釉붾줉 ?대룞
+    // Drop target is a document (sidebar DocItem) — 블록 이동
     if (overId.startsWith('doc:')) {
       const targetDocumentId = overId.slice('doc:'.length);
       const movingBlock = blocksRef.current.find((b) => b.id === activeId);
@@ -402,7 +402,7 @@ export function useNoteDragDrop(options: {
         } catch (e) {
           devLogger.error('[Note] moveBlockToCurrentDoc', e);
           setBlocks(prevBlocks);
-          setError(e instanceof Error ? e.message : '釉붾줉 ?쒖꽌 ????ㅽ뙣');
+          setError(e instanceof Error ? e.message : '블록 순서 저장 실패');
         }
         return;
       }
@@ -424,14 +424,14 @@ export function useNoteDragDrop(options: {
           });
           if (!res.ok) {
             const j = await res.json().catch(() => null);
-            throw new Error(j?.error || '釉붾줉 ?대룞 ?ㅽ뙣');
+            throw new Error(j?.error || '블록 이동 실패');
           }
         }
         setBlocks((prev) => prev.filter((block) => !idsToMove.includes(block.id)));
         triggerSave();
       } catch (e) {
         devLogger.error('[Note] moveBlockToDoc', e);
-        setError(e instanceof Error ? e.message : '釉붾줉 ?대룞 ?ㅽ뙣');
+        setError(e instanceof Error ? e.message : '블록 이동 실패');
       }
       return;
     }
@@ -464,7 +464,7 @@ export function useNoteDragDrop(options: {
           } catch (e) {
             devLogger.error('[Note] moveBlockGroup', e);
             setBlocks(prevBlocks);
-            setError(e instanceof Error ? e.message : '釉붾줉 臾띠쓬 ?대룞 ????ㅽ뙣');
+            setError(e instanceof Error ? e.message : '블록 묶음 이동 저장 실패');
           }
           return;
         }
@@ -496,14 +496,14 @@ export function useNoteDragDrop(options: {
             });
             if (!res.ok) {
               const j = await res.json().catch(() => null);
-              throw new Error(j?.error || '釉붾줉 ?대룞 ?ㅽ뙣');
+              throw new Error(j?.error || '블록 이동 실패');
             }
           }
           setBlocks((prev) => prev.filter((block) => !idsToMove.includes(block.id)));
           triggerSave();
         } catch (e) {
           devLogger.error('[Note] moveBlockToSubPage', e);
-          setError(e instanceof Error ? e.message : '?섏쐞 ?섏씠吏濡?釉붾줉 ?대룞 ?ㅽ뙣');
+          setError(e instanceof Error ? e.message : '하위 페이지로 블록 이동 실패');
         }
         return;
       }
@@ -567,7 +567,7 @@ export function useNoteDragDrop(options: {
     } catch (e) {
       devLogger.error('[Note] reparentBlock', e);
       setBlocks(prevBlocks);
-      setError(e instanceof Error ? e.message : '釉붾줉 ?대룞 ????ㅽ뙣');
+      setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
     }
   }, [normalizeDepthByOrder, noteUndo, persistBlockReparent, persistOrderAndDepth, selectedId, triggerSave, handleReparentDocument, documents]);
 

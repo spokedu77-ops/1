@@ -12,6 +12,23 @@
 
 # testing
 /coverage
+playwright-report/
+test-results/
+blob-report/
+.vitest/
+.turbo/
+.cache/
+
+# SPOKEDU QA artifacts
+qa-artifacts/
+.qa-screenshots/
+.qa-spokedu/
+
+# Temporary local artifacts
+.tmp/
+
+# Generated PDF page renders
+scripts/pdf-pages/page-*.png
 
 # next.js
 /.next/

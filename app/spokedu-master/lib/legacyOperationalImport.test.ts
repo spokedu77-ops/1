@@ -279,7 +279,7 @@ describe('legacy operational import preview', () => {
   it('uses a verified archive before the active persist fallback', () => {
     const archive = {
       archiveVersion: 1,
-      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY,
+      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY as typeof LEGACY_OPERATIONAL_SOURCE_KEY,
       sourceStoreVersion: 11,
       capturedAt: '2026-06-17T00:00:00.000Z',
       students: [student],
@@ -330,7 +330,7 @@ describe('legacy operational import preview', () => {
   it('uses archive content for backup JSON when available', () => {
     const archive = {
       archiveVersion: 1 as const,
-      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY,
+      sourceKey: LEGACY_OPERATIONAL_SOURCE_KEY as typeof LEGACY_OPERATIONAL_SOURCE_KEY,
       sourceStoreVersion: 11,
       capturedAt: '2026-06-17T00:00:00.000Z',
       students: [student],

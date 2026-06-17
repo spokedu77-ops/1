@@ -38,6 +38,7 @@ async function readJson<T>(response: Response): Promise<T> {
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, {
+    cache: init?.method ? undefined : 'no-store',
     ...init,
     headers: {
       'content-type': 'application/json',
