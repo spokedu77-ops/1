@@ -2,6 +2,13 @@ import type { Editor } from '@tiptap/react';
 import { TextSelection } from '@tiptap/pm/state';
 import { getNoteEditor } from './noteEditorRegistry';
 import {
+  applyBlockPreviewCrossHighlight,
+  clearBlockPreviewCrossHighlight,
+  getBlockPreviewTextRoot,
+  hoverBlockPreviewTextPos,
+  listPreviewPlainText,
+} from './noteBlockPreviewCrossSelect';
+import {
   applyListCrossHighlight,
   bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
@@ -15,6 +22,7 @@ const BODY_CROSS_CLASS = 'note-list-cross-active';
 type Anchor = {
   blockId: string;
   pos: number;
+  surface: 'editor' | 'list-preview' | 'preview';
 };
 
 let anchor: Anchor | null = null;
@@ -61,29 +69,59 @@ function listTextTargetElement(target: EventTarget | null): HTMLElement | null {
 }
 
 function isListTextTarget(target: EventTarget | null): boolean {
-  return !!listTextTargetElement(target)?.closest('[data-note-list-text] .ProseMirror');
-}
-
-function listRow(blockId: string): HTMLElement | null {
-  return document.querySelector(`[data-note-block-row][data-block-id="${blockId}"]`);
+  const el = listTextTargetElement(target);
+  if (!el) return false;
+  return !!el.closest('[data-note-list-text] .ProseMirror, [data-note-list-text] [data-note-preview-text]');
 }
 
 function getListSiblingIds(blockId: string): string[] {
-  const row = listRow(blockId);
-  if (!row) return [blockId];
-  const parentId = row.getAttribute('data-parent-block-id');
-  const selector = parentId
-    ? `[data-note-block-row][data-parent-block-id="${parentId}"][data-list-sibling="true"]`
-    : `[data-note-block-row][data-parent-block-id=""][data-list-sibling="true"], [data-note-block-row]:not([data-parent-block-id])[data-list-sibling="true"]`;
-  const rows = [...document.querySelectorAll<HTMLElement>(selector)]
+  const allRows = [...document.querySelectorAll<HTMLElement>('[data-note-block-row]')]
     .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
-  const ids = rows.map((r) => r.getAttribute('data-block-id')).filter((id): id is string => !!id);
-  return ids.length > 0 ? ids : [blockId];
+  const runs: string[][] = [];
+  let current: string[] = [];
+  for (const row of allRows) {
+    const id = row.getAttribute('data-block-id');
+    if (!id) continue;
+    if (row.getAttribute('data-list-sibling') === 'true') {
+      current.push(id);
+      continue;
+    }
+    if (current.length > 0) {
+      runs.push(current);
+      current = [];
+    }
+  }
+  if (current.length > 0) runs.push(current);
+  for (const run of runs) {
+    if (run.includes(blockId)) return run;
+  }
+  return [blockId];
 }
 
 function hoverPos(editor: Editor, x: number, y: number): number {
   const coords = editor.view.posAtCoords({ left: x, top: y });
   return coords?.pos ?? editor.state.doc.content.size - 1;
+}
+
+function listCaretPos(blockId: string, clientX: number, clientY: number): number {
+  const editor = getNoteEditor(blockId);
+  if (editor) return hoverPos(editor, clientX, clientY);
+  if (getBlockPreviewTextRoot(blockId)) {
+    return hoverBlockPreviewTextPos(blockId, clientX, clientY);
+  }
+  return 0;
+}
+
+function listTextEnd(blockId: string): number {
+  const editor = getNoteEditor(blockId);
+  if (editor) return editor.state.doc.content.size - 1;
+  return listPreviewPlainText(blockId).length;
+}
+
+function listCrossSurface(blockId: string): ListCrossRange['surface'] {
+  if (getNoteEditor(blockId)) return 'editor';
+  if (getBlockPreviewTextRoot(blockId)) return 'preview';
+  return 'editor';
 }
 
 function resolveCrossRanges(
@@ -102,10 +140,9 @@ function resolveCrossRanges(
 
   for (let i = lo; i <= hi; i += 1) {
     const blockId = siblings[i];
-    const editor = getNoteEditor(blockId);
-    if (!editor) continue;
-    const docEnd = editor.state.doc.content.size - 1;
-    let from = 1;
+    const surface = listCrossSurface(blockId);
+    const docEnd = listTextEnd(blockId);
+    let from = surface === 'editor' ? 1 : 0;
     let to = docEnd;
 
     if (lo === hi) {
@@ -121,10 +158,10 @@ function resolveCrossRanges(
       }
     } else if (i === anchorIdx && i === hi) {
       if (anchorIdx < hoverIdx) {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = hoverCaretPos;
       } else {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = anchorState.pos;
       }
     } else if (i === hoverIdx && i === lo) {
@@ -137,15 +174,15 @@ function resolveCrossRanges(
       }
     } else if (i === hoverIdx && i === hi) {
       if (hoverIdx < anchorIdx) {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = anchorState.pos;
       } else {
-        from = 1;
+        from = surface === 'editor' ? 1 : 0;
         to = hoverCaretPos;
       }
     }
 
-    ranges.push({ blockId, from, to });
+    ranges.push({ blockId, from, to, surface });
   }
 
   return ranges;
@@ -155,6 +192,7 @@ function clearAllCrossHighlights(siblings: string[]) {
   siblings.forEach((id) => {
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
+    clearBlockPreviewCrossHighlight(id);
   });
 }
 
@@ -176,7 +214,12 @@ function suppressNativeSelections(siblings: string[], activeBlockId?: string) {
 
 function applyCrossDecorations(ranges: ListCrossRange[]) {
   const touched = new Set<string>();
-  ranges.forEach(({ blockId, from, to }) => {
+  ranges.forEach(({ blockId, from, to, surface }) => {
+    if (surface === 'list-preview' || surface === 'preview') {
+      touched.add(blockId);
+      applyBlockPreviewCrossHighlight(blockId, from, to);
+      return;
+    }
     const editor = getNoteEditor(blockId);
     if (!editor) return;
     touched.add(blockId);
@@ -188,6 +231,7 @@ function applyCrossDecorations(ranges: ListCrossRange[]) {
     if (touched.has(id)) return;
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
+    clearBlockPreviewCrossHighlight(id);
   });
 }
 
@@ -213,8 +257,10 @@ function onPointerDown(e: PointerEvent) {
 
   const blockId = blockIdFromPoint(e.clientX, e.clientY);
   if (!blockId) return;
+
   const editor = getNoteEditor(blockId);
-  if (!editor) return;
+  const previewRoot = getBlockPreviewTextRoot(blockId);
+  if (!editor && !previewRoot) return;
 
   const siblings = getListSiblingIds(blockId);
   if (activeCrossRanges.length > 0) {
@@ -222,8 +268,16 @@ function onPointerDown(e: PointerEvent) {
     clearCrossSelectState();
   }
 
-  const coords = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
-  anchor = { blockId, pos: coords?.pos ?? 1 };
+  if (editor) {
+    const coords = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
+    anchor = { blockId, pos: coords?.pos ?? 1, surface: 'editor' };
+  } else {
+    anchor = {
+      blockId,
+      pos: hoverBlockPreviewTextPos(blockId, e.clientX, e.clientY),
+      surface: 'preview',
+    };
+  }
   pointerDown = true;
   dragging = false;
   startX = e.clientX;
@@ -268,14 +322,13 @@ function onPointerMove(e: PointerEvent) {
 
   dragging = true;
 
-  const hoverEditor = getNoteEditor(hoverId);
-  if (!hoverEditor) return;
+  const hoverCaret = listCaretPos(hoverId, e.clientX, e.clientY);
 
   const ranges = resolveCrossRanges(
     siblings,
     anchor,
     hoverId,
-    hoverPos(hoverEditor, e.clientX, e.clientY),
+    hoverCaret,
   );
 
   if (ranges.length > 1) {
@@ -306,18 +359,12 @@ function onPointerUp(e: PointerEvent) {
 
   const hoverId = blockIdFromPoint(e.clientX, e.clientY) ?? currentAnchor.blockId;
   const siblings = getListSiblingIds(currentAnchor.blockId);
-  const endEditor = getNoteEditor(hoverId);
-  if (!endEditor) {
-    listCrossDragActive = false;
-    syncBodyCrossClass();
-    return;
-  }
 
   const ranges = resolveCrossRanges(
     siblings,
     currentAnchor,
     hoverId,
-    hoverPos(endEditor, e.clientX, e.clientY),
+    listCaretPos(hoverId, e.clientX, e.clientY),
   );
 
   listCrossDragActive = false;

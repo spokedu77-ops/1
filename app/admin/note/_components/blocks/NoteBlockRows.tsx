@@ -31,7 +31,7 @@ import { NoteEditableField } from '../NoteEditableField';
 import type { NoteEditorEnterContext } from '../NoteEditor';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
-import { bulletMarkerForLevel } from '../noteBulletInput';
+import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '../noteBulletInput';
 import { useNoteBlockStore } from '../../_store/noteBlockStore';
 import { VideoEmbedFrame } from '../VideoEmbedFrame';
 import {
@@ -335,11 +335,28 @@ function BlockContent({
 
   const handleListItemBackspaceAtStart = (): boolean => {
     if (block.type !== 'bulletList' && block.type !== 'numberedList') return false;
-    const itemText = typeof block.content?.text === 'string' ? block.content.text : '';
-    if (itemText.length === 0) return false;
+    const itemText = stripListItemMarkerPrefix(
+      typeof block.content?.text === 'string' ? block.content.text : '',
+    );
+    if (itemText.length === 0) {
+      if (block.parent_block_id) {
+        onIndentChange?.('out');
+      } else {
+        onChangeType('text');
+      }
+      return true;
+    }
     onRequestCaretOffset?.(0);
     onChangeType('text');
     return true;
+  };
+
+  const handleListItemEmptyBackspace = () => {
+    if (block.parent_block_id) {
+      onIndentChange?.('out');
+      return;
+    }
+    onChangeType('text');
   };
 
   const handleListItemEnter = (listType: 'bulletList' | 'numberedList', ctx?: NoteEditorEnterContext) => {
@@ -477,7 +494,8 @@ function BlockContent({
   }
 
   if (block.type === 'bulletList') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const rawText = typeof block.content?.text === 'string' ? block.content.text : '';
+    const text = stripListItemMarkerPrefix(rawText);
     const bulletGlyph = bulletMarkerForLevel(listNestLevel).trim();
     return (
       <div style={{ marginLeft: `${contentMarginLeft}px` }}>
@@ -498,6 +516,7 @@ function BlockContent({
               textClassName: 'text-[16px] leading-7 text-slate-800',
               enterCreatesBlock: enterCreatesBlockBelow,
               enterSplitOnMidBlock: enterCreatesBlockBelow,
+              onEditorBackspace: handleListItemEmptyBackspace,
               onEditorEnter: enterCreatesBlockBelow
                 ? (ctx) => handleListItemEnter('bulletList', ctx)
                 : onEnter,
@@ -511,7 +530,8 @@ function BlockContent({
   }
 
   if (block.type === 'numberedList') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const rawText = typeof block.content?.text === 'string' ? block.content.text : '';
+    const text = stripListItemMarkerPrefix(rawText);
     const displayNum = numberedListIndex
       ?? (typeof block.content?.number === 'number' ? block.content.number : 1);
     return (
@@ -528,6 +548,7 @@ function BlockContent({
               textClassName: 'text-[16px] leading-7 text-slate-800',
               enterCreatesBlock: enterCreatesBlockBelow,
               enterSplitOnMidBlock: enterCreatesBlockBelow,
+              onEditorBackspace: handleListItemEmptyBackspace,
               onEditorEnter: enterCreatesBlockBelow
                 ? (ctx) => handleListItemEnter('numberedList', ctx)
                 : onEnter,

@@ -4,6 +4,11 @@ export type NoteBlockLike = {
   order_index: number;
 };
 
+type BlockWithMeta = NoteBlockLike & {
+  type: string;
+  content?: Record<string, unknown> | null;
+};
+
 export function buildChildrenByParentBlock<T extends NoteBlockLike>(blocks: T[]) {
   const map = new Map<string, T[]>();
   for (const block of blocks) {
@@ -26,15 +31,59 @@ export function sortRootBlocks<T extends NoteBlockLike>(blocks: T[]) {
 
 /** 에디터 DOM 순서(부모 직후 자식 DFS)로 블록 id 나열 — dnd SortableContext용 */
 export function flattenVisualBlockIds<T extends NoteBlockLike>(blocks: T[]): string[] {
+  return flattenVisualBlockIdsWithOptions(blocks as unknown as BlockWithMeta[]);
+}
+
+/** 접힌 토글 자식 생략 등 옵션을 적용한 시각적 블록 순서 */
+export function flattenVisualBlockIdsWithOptions<T extends BlockWithMeta>(
+  blocks: T[],
+  options?: { skipChildrenOfCollapsedToggles?: boolean },
+): string[] {
   const result: string[] = [];
   const walk = (parentId: string | null) => {
     for (const block of getBlocksInParent(blocks, parentId)) {
       result.push(block.id);
-      walk(block.id);
+      const skipChildren =
+        options?.skipChildrenOfCollapsedToggles
+        && block.type === 'toggle'
+        && !!block.content?.collapsed;
+      if (!skipChildren) walk(block.id);
     }
   };
   walk(null);
   return result;
+}
+
+/** 위/아래 화살표 이동 대상 — 중첩 목록·토글 자식 포함 시각적 이전/다음 블록 */
+export function resolveVisualNavigateTarget<T extends BlockWithMeta>(
+  blocks: T[],
+  blockId: string,
+  direction: 'previous' | 'next',
+): T | null {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const visualIds = flattenVisualBlockIdsWithOptions(blocks, {
+    skipChildrenOfCollapsedToggles: true,
+  });
+  const idx = visualIds.indexOf(blockId);
+  if (idx < 0) return null;
+  const targetId = direction === 'previous' ? visualIds[idx - 1] : visualIds[idx + 1];
+  if (!targetId) return null;
+  return byId.get(targetId) ?? null;
+}
+
+/** Shift+클릭 등 — 시각적(DFS) 순서로 from~to 사이 블록 id */
+export function getBlockRangeIdsInVisualOrder<T extends NoteBlockLike>(
+  blocks: T[],
+  fromId: string,
+  toId: string,
+): string[] {
+  const visualIds = flattenVisualBlockIds(blocks);
+  const fromIdx = visualIds.indexOf(fromId);
+  const toIdx = visualIds.indexOf(toId);
+  if (fromIdx < 0 || toIdx < 0) return toId ? [toId] : fromId ? [fromId] : [];
+  const lo = Math.min(fromIdx, toIdx);
+  const hi = Math.max(fromIdx, toIdx);
+  return visualIds.slice(lo, hi + 1);
 }
 
 /** 토글 안에서 인라인(테두리 없음)으로 둘 타입 */
@@ -50,11 +99,6 @@ export const LIST_CONTAINER_TYPES = new Set(['bulletList', 'numberedList']);
 export const MERGEABLE_BLOCK_TYPES = new Set([
   'text', 'heading', 'heading2', 'heading3', 'todo', 'callout', 'bulletList', 'numberedList',
 ]);
-
-type BlockWithMeta = NoteBlockLike & {
-  type: string;
-  content?: Record<string, unknown> | null;
-};
 
 export function shouldStayToggleInlineChild(
   block: BlockWithMeta,

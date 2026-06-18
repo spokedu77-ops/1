@@ -29,6 +29,7 @@ import {
   planOrphanSubPageBlockInserts,
 } from '@/app/lib/note/orphanSubPageBlocks';
 import { putNoteBlockOrders } from '../_lib/noteBlocksApi';
+import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { resolveBlockDropTarget } from '../_lib/noteDropResolver';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
@@ -483,6 +484,11 @@ export function useNoteDragDrop(options: {
         const descendantIds = collectDescendantBlockIds(moving.id, prevBlocks);
         const idsToMove = [moving.id, ...Array.from(descendantIds)];
         try {
+          await commitNoteDocumentBeforeLeave();
+          noteUndo.pushRestoreBlocksUndo(
+            mergeBlocksWithStoreContent(prevBlocks),
+            idsToMove,
+          );
           for (const blockId of idsToMove) {
             const res = await fetch('/api/admin/note/blocks', {
               method: 'PATCH',

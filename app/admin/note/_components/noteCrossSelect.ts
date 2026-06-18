@@ -19,6 +19,12 @@ import {
   rowHasToggleTitle,
   type CrossTextSurface,
 } from './noteToggleTitleCrossSelect';
+import {
+  applyBlockPreviewCrossHighlight,
+  blockPreviewPlainText,
+  clearBlockPreviewCrossHighlight,
+  hoverBlockPreviewTextPos,
+} from './noteBlockPreviewCrossSelect';
 import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
 
 export type CrossSelectRange = ListCrossRange;
@@ -102,6 +108,9 @@ function hoverBlockPos(blockId: string, clientX: number, clientY: number): numbe
     const input = getToggleTitleInput(blockId);
     return input ? hoverToggleTitlePos(input, clientX) : 0;
   }
+  if (surface === 'preview') {
+    return hoverBlockPreviewTextPos(blockId, clientX, clientY);
+  }
   const editor = getNoteEditor(blockId);
   if (!editor) return 0;
   return hoverPos(editor, clientX, clientY);
@@ -110,6 +119,9 @@ function hoverBlockPos(blockId: string, clientX: number, clientY: number): numbe
 function blockTextEnd(blockId: string, surface: CrossTextSurface): number {
   if (surface === 'toggle-title') {
     return getToggleTitleInput(blockId)?.value.length ?? 0;
+  }
+  if (surface === 'preview') {
+    return blockPreviewPlainText(blockId).length;
   }
   const editor = getNoteEditor(blockId);
   if (!editor) return 0;
@@ -194,6 +206,7 @@ export function clearCrossHighlightsForBlocks(blockIds: string[]) {
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
     if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
+    clearBlockPreviewCrossHighlight(id);
   });
 }
 
@@ -227,6 +240,10 @@ function applyCrossDecorations(ranges: CrossSelectRange[]) {
       if (input) applyToggleTitleCrossHighlight(input, from, to);
       return;
     }
+    if (surface === 'preview' || surface === 'list-preview') {
+      applyBlockPreviewCrossHighlight(blockId, from, to);
+      return;
+    }
     const editor = getNoteEditor(blockId);
     if (editor) applyListCrossHighlight(editor, from, to);
   });
@@ -237,6 +254,7 @@ function applyCrossDecorations(ranges: CrossSelectRange[]) {
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
     if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
+    clearBlockPreviewCrossHighlight(id);
   });
 }
 

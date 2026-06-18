@@ -7,6 +7,7 @@ import {
 } from '@dnd-kit/core';
 import {
   getBlocksInParent,
+  getBlockRangeIdsInVisualOrder,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlock } from './types';
@@ -156,7 +157,9 @@ export function getSiblingBlockRangeIds(
   const from = blocks.find((b) => b.id === fromId);
   const to = blocks.find((b) => b.id === toId);
   if (!from || !to) return toId ? [toId] : fromId ? [fromId] : [];
-  if (from.parent_block_id !== to.parent_block_id) return [toId];
+  if (from.parent_block_id !== to.parent_block_id) {
+    return getBlockRangeIdsInVisualOrder(blocks, fromId, toId);
+  }
   const siblings = getBlocksInParent(blocks, from.parent_block_id ?? null);
   const ids = siblings.map((b) => b.id);
   const startIdx = ids.indexOf(fromId);

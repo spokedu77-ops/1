@@ -1,5 +1,5 @@
 import type { MarkdownBlockTrigger } from '../_components/noteBulletInput';
-import { stripMarkdownTriggerForTypeChange } from '../_components/noteBulletInput';
+import { stripListItemMarkerPrefix, stripMarkdownTriggerForTypeChange } from '../_components/noteBulletInput';
 import { defaultBlockContent } from './constants';
 import type { NoteBlock } from './types';
 
@@ -61,9 +61,12 @@ export function buildContentForTypeChange(
     return base;
   }
   const rawText = typeof prev.text === 'string' ? prev.text : '';
-  const text = TEXT_CARRYING_BLOCK_TYPES.has(nextType)
+  let text = TEXT_CARRYING_BLOCK_TYPES.has(nextType)
     ? stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger)
     : rawText;
+  if (nextType === 'bulletList' || nextType === 'numberedList') {
+    text = stripListItemMarkerPrefix(text);
+  }
   const didStripTrigger = text !== rawText;
   const html = typeof prev.html === 'string' ? prev.html : undefined;
   const bodyHtml = typeof prev.bodyHtml === 'string' ? prev.bodyHtml : undefined;

@@ -4,7 +4,9 @@ import { startTransition, useCallback } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { BOARD_DEFAULT_GROUP } from '../_components/BoardView';
+import { defaultBlockContent } from '../_lib/constants';
 import { resolveDocIcon } from '../_lib/noteDocumentUi';
+import { commitAndResetNoteDocumentBeforeSwitch } from '../_lib/noteBlockStateMerge';
 import type { LoadingState, NoteBlock, NoteDocument } from '../_lib/types';
 import type { useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
 
@@ -75,7 +77,9 @@ export function useNoteDocumentActions(options: {
     router.push('/admin');
   }, [router, setDesktopOpen, setMobileOpen]);
 
-  const handleSelectDocument = (doc: NoteDocument) => {
+  const handleSelectDocument = useCallback(async (doc: NoteDocument) => {
+    if (doc.id === selectedId) return;
+    await commitAndResetNoteDocumentBeforeSwitch();
     setSelectedId(doc.id);
     setFocusedToggleId(null);
     setFocusedEditorBlockId(null);
@@ -84,15 +88,16 @@ export function useNoteDocumentActions(options: {
     setMobileTab('editor');
     closeAll();
     router.replace(`/admin/note?id=${encodeURIComponent(doc.id)}`);
-  };
+  }, [selectedId, closeAll, router]);
 
-  const handleNavigateToWorkspace = useCallback(() => {
+  const handleNavigateToWorkspace = useCallback(async () => {
+    await commitAndResetNoteDocumentBeforeSwitch();
     setSelectedId(null);
     setBlocks([]);
     setMobileTab('editor');
     closeAll();
     router.replace('/admin/note');
-  }, [closeAll, router]);
+  }, [closeAll, router, setBlocks]);
 
   const handleUpdateDocProperties = useCallback(async (
     docId: string,
@@ -222,7 +227,9 @@ export function useNoteDocumentActions(options: {
     }
   }, [documents, handleUpdateDocProperties]);
 
-  const handleOpenDocumentById = useCallback((documentId: string) => {
+  const handleOpenDocumentById = useCallback(async (documentId: string) => {
+    if (documentId === selectedId) return;
+    await commitAndResetNoteDocumentBeforeSwitch();
     setSelectedId(documentId);
     setFocusedToggleId(null);
     setFocusedEditorBlockId(null);
@@ -231,7 +238,7 @@ export function useNoteDocumentActions(options: {
     setMobileTab('editor');
     closeAll();
     router.replace(`/admin/note?id=${encodeURIComponent(documentId)}`);
-  }, [router, closeAll]);
+  }, [selectedId, router, closeAll]);
 
 
   /** 세션 방식: 문서(parent_id) + 부모 본문 page 블록을 항상 함께 생성 */
@@ -316,6 +323,23 @@ export function useNoteDocumentActions(options: {
       const blockJson = (await blockRes.json()) as { block: NoteBlock };
       const newBlock = blockJson.block;
 
+      const childBlockRes = await fetch('/api/admin/note/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: newDoc.id,
+          type: 'text',
+          content: defaultBlockContent('text'),
+          order_index: 0,
+          parent_block_id: null,
+        }),
+      });
+      if (!childBlockRes.ok) {
+        const j = await childBlockRes.json().catch(() => null);
+        throw new Error(j?.error || '하위 페이지 본문 블록 생성 실패');
+      }
+
       if (parentDocumentId === selectedId) {
         const nextSiblings = [
           ...siblingBlocks.slice(0, insertIndex),
@@ -341,6 +365,7 @@ export function useNoteDocumentActions(options: {
       }
 
       if (navigateToChild) {
+        await commitAndResetNoteDocumentBeforeSwitch();
         pendingFocusDocTitleRef.current = newDoc.id;
         setSelectedId(newDoc.id);
         setFocusedToggleId(null);
@@ -467,10 +492,6 @@ export function useNoteDocumentActions(options: {
   }, [triggerSave]);
 
   const handleRenameDocument = useCallback((docId: string, title: string, options?: { immediate?: boolean }) => {
-    // 입력 중엔 trim 하지 않음 — 이어쓰기가 즉시 사라지는 버그 방지
-    startTransition(() => {
-      setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, title } : d)));
-    });
     const timers = saveTimersRef.current;
     const timerKey = `doc_${docId}`;
     if (timers[timerKey]) clearTimeout(timers[timerKey]);

@@ -42,6 +42,7 @@ export function BlockTextPreview({
 
   return (
     <div
+      data-note-preview-text
       className={`note-rich-editor min-h-[1.75rem] w-full cursor-text select-text outline-none ${className}`}
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;

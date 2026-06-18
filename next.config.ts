@@ -3,7 +3,13 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     // lucide 배럴 + Turbopack HMR 시 "module factory is not available" 완화 및 트리쉐이킹
-    optimizePackageImports: ["lucide-react"],
+    optimizePackageImports: [
+      'lucide-react',
+      '@tiptap/react',
+      '@tiptap/starter-kit',
+      '@tiptap/core',
+      '@tiptap/pm',
+    ],
   },
   typescript: { ignoreBuildErrors: false },
   images: {

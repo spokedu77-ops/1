@@ -21,6 +21,18 @@ export function getNoteEditor(blockId: string): Editor | null {
   return editor;
 }
 
+/** 싱글톤 에디터 — 포커스 블록 id가 어긋나도 활성 TipTap 인스턴스 조회 */
+export function getActiveNoteEditor(focusedBlockId?: string | null): Editor | null {
+  if (focusedBlockId) {
+    const focused = getNoteEditor(focusedBlockId);
+    if (focused) return focused;
+  }
+  for (const editor of editors.values()) {
+    if (!(editor as { isDestroyed?: boolean }).isDestroyed) return editor;
+  }
+  return null;
+}
+
 export function setPendingEditorClick(blockId: string, x: number, y: number): void {
   pendingEditorClickRef.current = { blockId, x, y };
 }

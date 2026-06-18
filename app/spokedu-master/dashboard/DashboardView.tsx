@@ -355,9 +355,9 @@ function WeeklyProgramCard({
         {hasVideo ? (
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 grid h-11 w-11 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-indigo-600 text-white shadow-[0_10px_28px_rgba(49,46,129,0.3)] ring-4 ring-white/70 lg:h-9 lg:w-9"
+            className="pointer-events-none absolute left-1/2 top-1/2 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-indigo-600 text-white shadow-[0_6px_16px_rgba(49,46,129,0.22)] ring-2 ring-white/70"
           >
-            <Play className="h-[18px] w-[18px] fill-current lg:h-4 lg:w-4" />
+            <Play className="h-4 w-4 fill-current" />
           </span>
         ) : null}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3.5">
@@ -369,12 +369,9 @@ function WeeklyProgramCard({
       </div>
       <div data-card-footer className="flex h-16 items-center px-2.5 py-2 lg:h-[54px]">
         <div data-card-actions className="flex w-full items-center gap-1.5">
-          <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 basis-[60%] items-center justify-center rounded-[10px] bg-indigo-600 px-2.5 text-[12px] font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 lg:h-9">
+          <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-indigo-600 px-3 text-[13px] font-black text-white transition-colors hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 lg:h-9">
             수업 자료
           </Link>
-          <button type="button" onClick={() => onPreview(program)} className="inline-flex h-11 basis-[40%] items-center justify-center rounded-[10px] border border-slate-200 px-2.5 text-[12px] font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 lg:h-9">
-            미리보기
-          </button>
         </div>
       </div>
     </article>
@@ -385,7 +382,7 @@ function ContinueSection({ items }: { items: ContinueItem[] }) {
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] sm:p-5">
       <SectionHeader title="계속 사용하기" description="최근 작업을 바로 이어서 열 수 있습니다." />
-      <div className="grid gap-2 lg:grid-cols-3">
+      <div className="grid gap-2 md:grid-cols-2">
         {items.map((item) => (
           <Link data-continue-item={item.id} key={item.id} href={item.href} className="flex min-h-[82px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 py-2 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-white text-indigo-600 shadow-sm">
@@ -409,7 +406,7 @@ function ContinueSection({ items }: { items: ContinueItem[] }) {
 
 function SpomoveCard({ preset }: { preset: OfficialSpomovePreset }) {
   return (
-    <article data-spomove-preset={preset.id} className="flex aspect-[6/5] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-700 bg-[radial-gradient(circle_at_82%_12%,rgba(99,102,241,0.48),transparent_34%),linear-gradient(145deg,#111827,#0f172a_62%,#020617)] p-4 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
+    <article data-spomove-preset={preset.id} className="flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-700 bg-[radial-gradient(circle_at_82%_12%,rgba(99,102,241,0.48),transparent_34%),linear-gradient(145deg,#111827,#0f172a_62%,#020617)] p-4 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
       <div className="flex items-start justify-between gap-3">
         <div className="grid grid-cols-2 gap-1.5" aria-hidden="true">
           <span className="h-3 w-3 rounded-[4px] bg-rose-400" />
@@ -422,11 +419,6 @@ function SpomoveCard({ preset }: { preset: OfficialSpomovePreset }) {
       <div>
         <h3 className="line-clamp-2 text-[17px] font-black leading-5">{preset.title}</h3>
         <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-300">{preset.salesCopy || preset.recommendedUse}</p>
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {preset.settingChips.slice(0, 2).map((chip) => (
-            <span key={chip} className="rounded-md bg-white/10 px-2 py-1 text-[11px] font-bold text-white/80 ring-1 ring-white/10">{chip}</span>
-          ))}
-        </div>
         <Link href={officialPresetSessionHref(preset)} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[13px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
           <MonitorPlay size={15} />
           큰 화면 실행
@@ -553,52 +545,33 @@ function buildContinueItems(
     : null;
   const recentReport = [...savedReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
 
-  return [
-    recentProgram
-      ? {
-          id: `lesson-${recentProgram.programId}`,
-          type: '수업',
-          title: recentProgram.programTitle,
-          status: recentProgram.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
-          action: '수업 열기',
-          time: formatRelativeDate(recentProgram.occurredAt),
-          href: recentProgram.resumeHref,
-        }
-      : {
-          id: 'lesson-empty',
-          type: '수업',
-          title: '최근 수업',
-          status: '아직 사용한 수업이 없습니다.',
-          action: '수업안 보기',
-          href: '/spokedu-master/library',
-        },
-    {
-      id: 'spomove-official',
-      type: 'SPOMOVE',
-      title: '공식 활동 9개',
-      status: '화면 활동을 선택해 바로 실행하세요.',
-      action: 'SPOMOVE 보기',
-      href: '/spokedu-master/spomove',
-    },
-    recentReport
-      ? {
-          id: `report-${recentReport.id}`,
-          type: '안내문',
-          title: recentReport.programTitle,
-          status: '이 기기에 저장된 안내문',
-          action: '안내문 열기',
-          time: formatRelativeDate(recentReport.createdAt),
-          href: `/spokedu-master/report?program=${recentReport.programId}`,
-        }
-      : {
-          id: 'report-empty',
-          type: '안내문',
-          title: '최근 저장 안내문',
-          status: '저장한 안내문이 없습니다.',
-          action: '안내문 만들기',
-          href: '/spokedu-master/report',
-        },
-  ] satisfies ContinueItem[];
+  const items: ContinueItem[] = [];
+
+  if (recentProgram) {
+    items.push({
+      id: `lesson-${recentProgram.programId}`,
+      type: '수업',
+      title: recentProgram.programTitle,
+      status: recentProgram.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
+      action: '수업 열기',
+      time: formatRelativeDate(recentProgram.occurredAt),
+      href: recentProgram.resumeHref,
+    });
+  }
+
+  if (recentReport) {
+    items.push({
+      id: `report-${recentReport.id}`,
+      type: '안내문',
+      title: recentReport.programTitle,
+      status: '이 기기에 저장된 안내문',
+      action: '안내문 열기',
+      time: formatRelativeDate(recentReport.createdAt),
+      href: `/spokedu-master/report?program=${recentReport.programId}`,
+    });
+  }
+
+  return items;
 }
 
 export default function DashboardView() {
@@ -668,6 +641,10 @@ export default function DashboardView() {
     [programs, weeklyIds],
   );
   const availableContextTabs = contextProgramCounts.filter((tab) => tab.count > 0);
+  const contextTabsToDisplay = profile?.isAdmin
+    ? CONTEXT_PROGRAM_TABS
+    : availableContextTabs;
+  const showContextTypeControl = contextTabsToDisplay.length > 1;
 
   useEffect(() => {
     if (availableContextTabs.length === 1 && contextTab !== availableContextTabs[0].key) {
@@ -744,7 +721,7 @@ export default function DashboardView() {
           <p className="mt-1 text-[13px] font-semibold text-slate-500 sm:text-sm">수업 프로그램과 SPOMOVE를 확인하고, 최근 작업을 바로 이어갈 수 있습니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><BookOpen size={15} />수업안 찾기</Link>
+          <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[13px] font-black text-indigo-700"><BookOpen size={15} />수업안 찾기</Link>
           <Link href="/spokedu-master/spomove" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><MonitorPlay size={15} />SPOMOVE</Link>
           <Link href="/spokedu-master/report" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><FileText size={15} />안내문</Link>
         </div>
@@ -780,7 +757,7 @@ export default function DashboardView() {
         ) : null}
       </section>
 
-      <ContinueSection items={continueItems} />
+      {continueItems.length > 0 ? <ContinueSection items={continueItems} /> : null}
 
       <section data-dashboard-section="spomove">
         <SectionHeader
@@ -807,28 +784,29 @@ export default function DashboardView() {
           href="/spokedu-master/library"
           action="라이브러리 보기"
         />
-        <div className="mb-4 flex gap-2" role="tablist" aria-label="현장 맞춤 프로그램 유형">
-          {(availableContextTabs.length > 0 ? availableContextTabs : CONTEXT_PROGRAM_TABS).map((tab) => {
-            const active = contextTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setContextTab(tab.key)}
-                className="inline-flex min-h-11 items-center rounded-full px-4 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
-                style={{
-                  background: active ? '#4f46e5' : '#ffffff',
-                  color: active ? '#ffffff' : '#475569',
-                  border: active ? '1px solid #4f46e5' : '1px solid #e2e8f0',
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        {showContextTypeControl ? (
+          <div className="mb-4 flex gap-2" role="group" aria-label="현장 맞춤 프로그램 유형">
+            {contextTabsToDisplay.map((tab) => {
+              const active = contextTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setContextTab(tab.key)}
+                  className="inline-flex min-h-11 items-center rounded-full px-4 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+                  style={{
+                    background: active ? '#4f46e5' : '#ffffff',
+                    color: active ? '#ffffff' : '#475569',
+                    border: active ? '1px solid #4f46e5' : '1px solid #e2e8f0',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
         {contextPrograms.length > 0 ? (
           <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
             {contextPrograms.map((program) => (

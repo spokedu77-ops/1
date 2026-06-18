@@ -3,12 +3,19 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import {
+  applyBlockPreviewCrossHighlight,
+  clearBlockPreviewCrossHighlight,
+  extractBlockPreviewSlice,
+  getBlockPreviewTextRoot,
+  hoverBlockPreviewTextPos,
+} from './noteBlockPreviewCrossSelect';
 
 export type ListCrossRange = {
   blockId: string;
   from: number;
   to: number;
-  surface?: 'editor' | 'toggle-title';
+  surface?: 'editor' | 'toggle-title' | 'preview' | 'list-preview';
 };
 
 export const listCrossHighlightKey = new PluginKey<DecorationSet>('listCrossHighlight');
@@ -93,6 +100,9 @@ export function extractListCrossText(ranges: ListCrossRange[]): string {
         const safeFrom = Math.max(0, Math.min(from, len));
         const safeTo = Math.max(safeFrom, Math.min(to, len));
         return input.value.slice(safeFrom, safeTo);
+      }
+      if (surface === 'list-preview' || surface === 'preview') {
+        return extractBlockPreviewSlice(blockId, from, to);
       }
       const editor = getEditorFromRegistry(blockId);
       if (!editor) return '';

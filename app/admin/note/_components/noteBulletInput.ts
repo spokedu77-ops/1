@@ -1,5 +1,6 @@
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
+import type { NoteBlock } from '../_lib/types';
 
 export const TEXT_INDENT_UNIT = '\u00A0\u00A0\u00A0\u00A0';
 
@@ -55,6 +56,36 @@ export function bulletMarkerForLevel(level: number): string {
   return BULLET_MARKERS[idx];
 }
 
+/** 목록 블록 content.text에 섞인 마커(-, •, 1. 등) 제거 — UI 글리프와 중복 방지 */
+export function stripListItemMarkerPrefix(text: string): string {
+  const parsed = parseTextBlockLine(text);
+  if (parsed.hasBullet) return parsed.body;
+  let body = parsed.body;
+  if (body === '-' || body === '*') return '';
+  body = body.replace(/^[-*]\s*/, '');
+  body = body.replace(/^\d+\.\s*/, '');
+  for (const marker of BULLET_MARKERS) {
+    if (body.startsWith(marker)) {
+      body = body.slice(marker.length);
+      break;
+    }
+  }
+  return body;
+}
+
+/** 목록 블록 저장·동기화 시 content.text/html에서 마커 문자 정리 */
+export function normalizeListBlockContentRecord(
+  content: Record<string, unknown>,
+): Record<string, unknown> {
+  if (typeof content.text !== 'string') return content;
+  const text = stripListItemMarkerPrefix(content.text);
+  if (text === content.text) return content;
+  const next: Record<string, unknown> = { ...content, text };
+  delete next.html;
+  delete next.bodyHtml;
+  return next;
+}
+
 export function buildLinePrefix(level: number, withBullet: boolean): string {
   const indent = TEXT_INDENT_UNIT.repeat(Math.max(0, level));
   return withBullet ? indent + bulletMarkerForLevel(level) : indent;
@@ -80,6 +111,16 @@ export type MarkdownBlockTrigger =
   | 'heading' | 'heading2' | 'heading3'
   | 'todo' | 'toggle' | 'divider' | 'callout' | 'code'
   | 'bulletList' | 'numberedList';
+
+/** 서버·bootstrap 로드 직후 목록 블록 content 정리 (부모·하위 문서 공통) */
+export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {
+  return blocks.map((block) => {
+    if (block.type !== 'bulletList' && block.type !== 'numberedList') return block;
+    const content = normalizeListBlockContentRecord((block.content ?? {}) as Record<string, unknown>);
+    if (content === block.content) return block;
+    return { ...block, content };
+  });
+}
 
 /** 줄 맨 앞 마크다운 트리거 + Space → 블록 타입 변환 */
 export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockTrigger | null {

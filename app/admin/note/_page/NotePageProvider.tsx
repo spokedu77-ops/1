@@ -14,7 +14,7 @@ import { useNoteDragDrop } from './useNoteDragDrop';
 import { useNoteDocumentActions } from './useNoteDocumentActions';
 import { useNoteBlockActions } from './useNoteBlockActions';
 import { useNoteBlockSelection } from './useNoteBlockSelection';
-import type { LoadingState } from '../_lib/types';
+import type { LoadingState, NoteBlock } from '../_lib/types';
 
 export function NotePageProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -52,6 +52,17 @@ export function NotePageProvider({ children }: { children: React.ReactNode }) {
     lastDeletedBlockIdRef.current = blockId;
   }, []);
   const lastDeletedBlockIdRef = useRef<string | null>(null);
+  const [bootstrapBlocks, setBootstrapBlocks] = useState<{
+    documentId: string;
+    blocks: NoteBlock[];
+  } | null>(null);
+
+  const handleBootstrapBlocks = useCallback(
+    (payload: { documentId: string; blocks: NoteBlock[] } | null) => {
+      setBootstrapBlocks(payload);
+    },
+    [],
+  );
 
   const docData = useNoteDocumentData({
     closeAll,
@@ -59,12 +70,20 @@ export function NotePageProvider({ children }: { children: React.ReactNode }) {
     docTab,
     viewMode,
     setError,
+    onBootstrapBlocks: handleBootstrapBlocks,
   });
+
+  useEffect(() => {
+    setBootstrapBlocks((prev) => (
+      prev && prev.documentId !== docData.selectedId ? null : prev
+    ));
+  }, [docData.selectedId]);
   const blockData = useNoteBlockData({
     selectedId: docData.selectedId,
     docTab,
     setError,
     setPendingDeleteUndo,
+    bootstrapBlocks,
   });
   const editorFocus = useNoteEditorFocus({
     blocksRef: blockData.blocksRef,

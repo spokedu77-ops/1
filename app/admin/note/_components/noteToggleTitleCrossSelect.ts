@@ -1,6 +1,7 @@
 import type { ListCrossRange } from './noteListCrossHighlight';
+import { getBlockPreviewTextRoot } from './noteBlockPreviewCrossSelect';
 
-export type CrossTextSurface = 'editor' | 'toggle-title';
+export type CrossTextSurface = 'editor' | 'toggle-title' | 'preview';
 
 export type CrossTextRange = ListCrossRange & {
   surface?: CrossTextSurface;
@@ -24,7 +25,7 @@ export function rowHasToggleTitle(blockId: string): boolean {
 }
 
 export function isRowCrossTextSelectable(blockId: string, hasEditor: boolean): boolean {
-  return hasEditor || rowHasToggleTitle(blockId);
+  return hasEditor || rowHasToggleTitle(blockId) || !!getBlockPreviewTextRoot(blockId);
 }
 
 export function hoverToggleTitlePos(input: HTMLInputElement, clientX: number): number {
@@ -87,5 +88,6 @@ export function extractToggleTitleSlice(input: HTMLInputElement, from: number, t
 export function preferredCrossSurface(blockId: string, hasEditor: boolean): CrossTextSurface | null {
   if (rowHasToggleTitle(blockId)) return 'toggle-title';
   if (hasEditor) return 'editor';
+  if (getBlockPreviewTextRoot(blockId)) return 'preview';
   return null;
 }

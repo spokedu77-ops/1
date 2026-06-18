@@ -15,9 +15,12 @@ import { NoteSidebarPanel } from '../_components/layout/NoteSidebarPanel';
 import { NoteEditorPanel } from '../_components/layout/NoteEditorPanel';
 import { NoteDragOverlayLayer } from '../_components/layout/NoteDragOverlayLayer';
 import { NoteSidebarIconPicker } from '../_components/layout/NoteSidebarIconPicker';
-import { NoteSingletonEditorHost } from '../_components/NoteSingletonEditorHost';
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
+
+const NoteSingletonEditorHost = dynamic(
+  () => import('../_components/NoteSingletonEditorHost').then((mod) => mod.NoteSingletonEditorHost),
+  { ssr: false },
+);
 
 const BoardView = dynamic(
   () => import('../_components/BoardView').then((mod) => mod.BoardView),
@@ -47,10 +50,6 @@ export function NotePageShell() {
     handleReorderBoardGroup,
     formatToolbarApiRef,
   } = useNotePage();
-
-  useEffect(() => {
-    void import('../_components/NoteEditor');
-  }, []);
 
   return (
     <NoteImageLightboxProvider>

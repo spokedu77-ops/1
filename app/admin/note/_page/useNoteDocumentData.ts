@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { useDeferredNoteMeta, scheduleIdle } from '../_hooks/useDeferredNoteMeta';
+import { useDeferredNoteMeta } from '../_hooks/useDeferredNoteMeta';
 import { buildDocumentBreadcrumb, resolveDocIcon } from '../_lib/noteDocumentUi';
-import type { NoteCollaborator, NoteDocument, SortKey } from '../_lib/types';
+import type { NoteCollaborator, NoteDocument, NoteBlock, SortKey } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
 export function useNoteDocumentData(options: {
@@ -14,8 +14,9 @@ export function useNoteDocumentData(options: {
   docTab: DocTab;
   viewMode: 'list' | 'board';
   setError: (error: string | null) => void;
+  onBootstrapBlocks?: (payload: { documentId: string; blocks: NoteBlock[] } | null) => void;
 }) {
-  const { closeAll, setMobileTab, docTab, viewMode, setError } = options;
+  const { closeAll, setMobileTab, docTab, viewMode, setError, onBootstrapBlocks } = options;
   const searchParams = useSearchParams();
 
   const [documents, setDocuments] = useState<NoteDocument[]>([]);
@@ -127,18 +128,45 @@ export function useNoteDocumentData(options: {
       try {
         setLoadingDocuments(true);
         setError(null);
-        const listUrl = docTab === 'trash'
-          ? '/api/admin/note/trash'
-          : '/api/admin/note/documents?skipReconcile=true';
-        const res = await fetch(listUrl, { credentials: 'include' });
-        if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.'); }
-        const json = (await res.json()) as { documents: NoteDocument[] };
+        onBootstrapBlocks?.(null);
+        if (docTab === 'trash') {
+          const res = await fetch('/api/admin/note/trash', { credentials: 'include' });
+          if (!res.ok) {
+            const j = await res.json().catch(() => null);
+            throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.');
+          }
+          const json = (await res.json()) as { documents: NoteDocument[] };
+          if (!alive) return;
+          setDocuments(json.documents ?? []);
+          return;
+        }
+
+        const urlDocId = searchParams.get('id');
+        const bootstrapUrl = urlDocId
+          ? `/api/admin/note/bootstrap?documentId=${encodeURIComponent(urlDocId)}`
+          : '/api/admin/note/bootstrap';
+        const res = await fetch(bootstrapUrl, { credentials: 'include' });
+        if (!res.ok) {
+          const j = await res.json().catch(() => null);
+          throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.');
+        }
+        const json = (await res.json()) as {
+          documents: NoteDocument[];
+          blocks?: NoteBlock[];
+          documentId?: string;
+        };
         if (!alive) return;
         setDocuments(json.documents ?? []);
-        const urlDocId = searchParams.get('id');
         if (urlDocId && json.documents?.some((d) => d.id === urlDocId)) {
           setSelectedId(urlDocId);
           setMobileTab('editor');
+        }
+        if (
+          urlDocId
+          && json.documentId === urlDocId
+          && Array.isArray(json.blocks)
+        ) {
+          onBootstrapBlocks?.({ documentId: urlDocId, blocks: json.blocks });
         }
       } catch (e) {
         devLogger.error('[Note] loadDocs', e);
@@ -149,24 +177,8 @@ export function useNoteDocumentData(options: {
     };
     void load();
 
-    const cancelReconcile = docTab === 'trash'
-      ? () => {}
-      : scheduleIdle(() => {
-          void (async () => {
-            try {
-              const res = await fetch('/api/admin/note/documents', { credentials: 'include' });
-              if (!res.ok || !alive) return;
-              const json = (await res.json()) as { documents?: NoteDocument[] };
-              if (alive && json.documents) setDocuments(json.documents);
-            } catch (e) {
-              devLogger.error('[Note] reconcileDocs', e);
-            }
-          })();
-        }, 2000);
-
     return () => {
       alive = false;
-      cancelReconcile();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docTab]);
@@ -175,7 +187,7 @@ export function useNoteDocumentData(options: {
 
   const reloadDocuments = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/note/documents?skipReconcile=true', { credentials: 'include' });
+      const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
       if (!res.ok) return;
       const json = (await res.json()) as { documents?: NoteDocument[] };
       setDocuments(json.documents ?? []);

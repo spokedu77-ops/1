@@ -39,6 +39,8 @@ export function NoteEditorPanel() {
     viewMode,
     mobileTab,
     activeDocument,
+    selectedId,
+    loadingDocuments,
     setMobileTab,
     handleNavigateToWorkspace,
     documentBreadcrumb,
@@ -89,7 +91,7 @@ export function NoteEditorPanel() {
       viewMode === 'board' ? 'hidden' : mobileTab === 'editor' ? 'flex' : 'hidden'
     } md:flex`}
     >
-      {activeDocument && (
+      {selectedId && (
         <div className="flex shrink-0 items-center gap-2 border-b border-neutral-100 bg-white px-3 py-2.5 md:hidden">
           <button
             type="button"
@@ -122,11 +124,18 @@ export function NoteEditorPanel() {
         </div>
       )}
 
-      {!activeDocument ? (
+      {!selectedId ? (
         <NoteWorkspaceHome />
       ) : (
         <div ref={editorScrollRef} className="min-w-0 flex-1 overflow-y-auto bg-white">
           <NotePageFindBar />
+          {!activeDocument && loadingDocuments ? (
+            <div className={`${NOTE_PAGE_SHELL} flex items-center gap-2 py-10 text-[13px] text-neutral-400`}>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              문서 불러오는 중…
+            </div>
+          ) : activeDocument ? (
+          <>
           {resolveDocCover(activeDocument.properties) && (
             <div className="group/cover relative h-[30vh] max-h-[280px] min-h-[120px] w-full overflow-hidden bg-neutral-100">
               <img
@@ -334,16 +343,17 @@ export function NoteEditorPanel() {
             </div>
             <textarea
               ref={titleInputRef}
+              key={activeDocument.id}
               data-note-doc-title
               rows={1}
               className="mb-1 w-full resize-none overflow-hidden bg-transparent text-[40px] font-bold leading-[1.2] tracking-tight text-neutral-900 outline-none placeholder:text-neutral-300"
               placeholder="제목 없음"
-              onMouseDown={() => setSelectedBlockIds(new Set())}
-              value={
+              defaultValue={
                 activeDocument.title === '제목 없음' || activeDocument.title === 'Untitled'
                   ? ''
                   : activeDocument.title
               }
+              onMouseDown={() => setSelectedBlockIds(new Set())}
               onChange={(e) => handleRenameDocument(activeDocument.id, e.target.value)}
               onBlur={(e) => handleRenameDocument(activeDocument.id, e.target.value, { immediate: true })}
             />
@@ -413,6 +423,12 @@ export function NoteEditorPanel() {
               </div>
             )}
           </div>
+          </>
+          ) : (
+            <div className={`${NOTE_PAGE_SHELL} py-10 text-[13px] text-neutral-500`}>
+              문서를 찾을 수 없습니다. 사이드바에서 다시 선택해 주세요.
+            </div>
+          )}
 
           {loadingBlocks ? (
             <div className="flex items-center gap-2 py-8 text-[13px] text-slate-400">

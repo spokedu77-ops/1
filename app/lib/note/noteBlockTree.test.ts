@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flattenVisualBlockIds, numberedListIndexAmongSiblings, planBlockDropAt, planBlockTabIndent } from './noteBlockTree';
+import { flattenVisualBlockIds, getBlockRangeIdsInVisualOrder, numberedListIndexAmongSiblings, planBlockDropAt, planBlockTabIndent, resolveVisualNavigateTarget } from './noteBlockTree';
 
 type Block = {
   id: string;
@@ -133,5 +133,35 @@ describe('flattenVisualBlockIds', () => {
       'nested',
       'child2',
     ]);
+  });
+});
+
+describe('resolveVisualNavigateTarget', () => {
+  it('navigates across nested list items (Tab-indent reparent), not only same parent siblings', () => {
+    const blocks = [
+      block('a', 0, null, 'bulletList'),
+      block('b', 0, 'a', 'bulletList'),
+      block('c', 0, 'b', 'bulletList'),
+      block('after', 1, null, 'text'),
+    ];
+
+    expect(resolveVisualNavigateTarget(blocks, 'c', 'previous')?.id).toBe('b');
+    expect(resolveVisualNavigateTarget(blocks, 'b', 'previous')?.id).toBe('a');
+    expect(resolveVisualNavigateTarget(blocks, 'a', 'next')?.id).toBe('b');
+    expect(resolveVisualNavigateTarget(blocks, 'c', 'next')?.id).toBe('after');
+  });
+});
+
+describe('getBlockRangeIdsInVisualOrder', () => {
+  it('returns DFS slice for nested list shift-click range', () => {
+    const blocks = [
+      block('a', 0, null, 'bulletList'),
+      block('b', 0, 'a', 'bulletList'),
+      block('c', 0, 'b', 'bulletList'),
+      block('after', 1, null, 'text'),
+    ];
+
+    expect(getBlockRangeIdsInVisualOrder(blocks, 'a', 'c')).toEqual(['a', 'b', 'c']);
+    expect(getBlockRangeIdsInVisualOrder(blocks, 'c', 'a')).toEqual(['a', 'b', 'c']);
   });
 });
