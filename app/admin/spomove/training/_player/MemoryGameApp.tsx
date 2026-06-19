@@ -93,6 +93,8 @@ type Settings = {
   flowDuration: number;
   /** 플로우 배경 이미지 URL */
   flowBgImageUrl: string;
+  /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
+  reactTrainConcurrent: 1 | 2 | 3;
 };
 
 const defaultSettings: Settings = {
@@ -118,6 +120,7 @@ const defaultSettings: Settings = {
   flowColorTheme: 'default',
   flowDuration: 25,
   flowBgImageUrl: '',
+  reactTrainConcurrent: 1,
 };
 
 export type MemoryGameAutoLaunch = {
@@ -145,6 +148,8 @@ export type MemoryGameAutoLaunch = {
   flowDuration?: number;
   /** Flow 2.0: 배경 이미지 URL */
   flowBgImageUrl?: string;
+  /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
+  reactTrainConcurrent?: 1 | 2 | 3;
 };
 
 /** Training 포털 복귀 시 설정 화면에 되돌릴 실행 세션 정보 */
@@ -171,6 +176,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       flowFeatures: [...s.flowFeatures],
       flowColorTheme: s.flowColorTheme,
       flowDuration: s.flowDuration,
+      reactTrainConcurrent: s.reactTrainConcurrent,
     },
   };
 }
@@ -237,9 +243,13 @@ export default function MemoryGameApp({
   const dupFlashClearRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevBgRef = useRef<string | null>(null);
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
+  const sessionStartMsRef = useRef<number>(0);
   const [result, setResult] = useState<{
+    /** 제시된 자극 수 (flow는 완료 스테이지 수, memory는 라운드 수) */
     count: number;
     cfg: Settings;
+    /** 실제 훈련 경과 시간(ms) */
+    elapsedMs: number;
     dupStats?: DupStats | null;
     nbackScore?: { hits: number; misses: number; falseAlarms: number; accuracy: number; level: number };
     battleResult?: unknown;
@@ -436,7 +446,8 @@ export default function MemoryGameApp({
     setIsTraining(false);
     const cfg = { ...settings };
     const count = countRef.current;
-    setResult({ count, cfg, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
+    const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
+    setResult({ count, cfg, elapsedMs, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
     setScreen('result');
     if (cfg.audioMode === 'beep') setTimeout(() => playBeep('chord', 300), 200);
     else if (cfg.audioMode !== 'off') setTimeout(() => tts('트레이닝 완료! 수고했어요!', true), 300);
@@ -477,14 +488,15 @@ export default function MemoryGameApp({
   });
 
   const rafStatsRef = useRef<number | null>(null);
+  const lastStatsUpdateRef = useRef<number>(0);
   useEffect(() => {
     if (!isTraining) return;
-    const tick = () =>
-      setStats(
-        getProgress()
-      );
-    const loop = () => {
-      tick();
+    const loop = (now: number) => {
+      // 250ms 주기로만 React 상태 갱신 (60fps 불필요 렌더링 방지)
+      if (now - lastStatsUpdateRef.current >= 250) {
+        lastStatsUpdateRef.current = now;
+        setStats(getProgress());
+      }
       rafStatsRef.current = requestAnimationFrame(loop);
     };
     rafStatsRef.current = requestAnimationFrame(loop);
@@ -540,6 +552,7 @@ export default function MemoryGameApp({
       // 인터벌 세트는 4로 고정
       if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
       setSettings(cfg);
+      sessionStartMsRef.current = performance.now();
       countRef.current = 0;
       setSignal(null);
       if (dupFlashClearRef.current != null) {
@@ -639,7 +652,7 @@ export default function MemoryGameApp({
             if (cfg.audioMode === 'beep') playBeep('mid');
             else if (cfg.audioMode !== 'off') tts(voices[c - 1] ?? String(c), true);
           }
-        }, 900);
+        }, 1000);
       }
     },
     [disableBgm, settings, spomoveBgmList, spomoveBgmLoading]
@@ -734,14 +747,16 @@ export default function MemoryGameApp({
     if (document.fullscreenElement) document.exitFullscreen();
     const cfg = { ...settings, mode: 'flow', level: 1 };
     const completedStages = 5;
-    setResult({ count: completedStages, cfg });
+    const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
+    setResult({ count: completedStages, cfg, elapsedMs });
     setScreen('result');
   }, [settings]);
 
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       if (document.fullscreenElement) document.exitFullscreen();
-      setResult({ count: stats.stims, cfg: { ...settings } });
+      const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
+      setResult({ count: stats.stims, cfg: { ...settings }, elapsedMs });
       setScreen('result');
     },
     [settings]
@@ -1341,7 +1356,8 @@ export default function MemoryGameApp({
   // ── MEMORY / TRAINING / RESULT ──
   const handleMemoryComplete = () => {
     if (document.fullscreenElement) document.exitFullscreen();
-    setResult({ count: MEMORY_ROUNDS, cfg: { ...settings } });
+    const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
+    setResult({ count: MEMORY_ROUNDS, cfg: { ...settings }, elapsedMs });
     setScreen('result');
   };
 
@@ -1371,18 +1387,14 @@ export default function MemoryGameApp({
     const safeReactSpeedSec = settings.kidsSafeMode
       ? Math.min(6, settings.speed * 1.25)
       : settings.speed;
-    if (countdown !== null) {
-      return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 400 }}>
-          <style>{CSS}</style>
-          <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
-        </div>
-      );
-    }
     return (
       <div ref={visualReactionContainerRef} style={{ position: 'fixed', inset: 0, zIndex: 320 }}>
         <style>{CSS}</style>
-        {settings.level === 10 ? (
+        {countdown !== null ? (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+          </div>
+        ) : settings.level === 9 ? (
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1390,7 +1402,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : settings.level === 9 ? (
+        ) : settings.level === 8 ? (
           <RushReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1398,7 +1410,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : settings.level === 8 ? (
+        ) : settings.level === 7 ? (
           <SweepReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1406,7 +1418,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : settings.level === 7 ? (
+        ) : settings.level === 6 ? (
           <BlackoutReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1414,7 +1426,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : settings.level === 6 ? (
+        ) : settings.level === 5 ? (
           <PulseReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1422,7 +1434,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : settings.level === 5 ? (
+        ) : settings.level === 4 ? (
           <DeepReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1430,7 +1442,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : settings.level === 4 ? (
+        ) : settings.level === 3 ? (
           <DiagonalReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -1440,9 +1452,10 @@ export default function MemoryGameApp({
           />
         ) : (
           <VisualReactionTraining
-            variant={settings.level === 1 ? 'flow' : settings.level === 2 ? 'flash' : 'pattern'}
+            variant={settings.level === 1 ? 'flow' : 'flash'}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
+            concurrent={settings.level === 1 ? settings.reactTrainConcurrent : undefined}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1461,7 +1474,8 @@ export default function MemoryGameApp({
       flowCompleteGuardRef.current = true;
       if (document.fullscreenElement) document.exitFullscreen();
       const cfg = { ...settings, mode: 'flow', level: 1 };
-      setResult({ count: stats.stagesCompleted, cfg });
+      const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
+      setResult({ count: stats.stagesCompleted, cfg, elapsedMs });
       setScreen('result');
     };
 
@@ -1608,26 +1622,28 @@ export default function MemoryGameApp({
   }
 
   if (screen === 'result' && result) {
-    const { count, cfg, dupStats } = result;
+    const { count, cfg, dupStats, elapsedMs } = result;
     const mo = MODES[cfg.mode];
     const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow';
-    const totalSec = isMem
-      ? MEMORY_ROUNDS * 5
-      : cfg.timeMode === 'time'
+    // 실제 경과 시간 우선, 없으면 설정 기반 추정
+    const elapsedSec = elapsedMs > 0
+      ? elapsedMs / 1000
+      : isMem
+        ? 0
+        : cfg.timeMode === 'time'
           ? (cfg.duration ?? 0)
           : (cfg.targetReps ?? 0) * (cfg.speed ?? 1);
-    const spm = !isMem && totalSec > 0 ? Math.round((count / totalSec) * 60) : null;
+    // 자극 제시 밀도: 실제로 제시된 자극을 시간으로 나눈 값 (반응 입력 없는 모드는 SPM이 아닌 "제시 밀도")
+    const spm = !isMem && elapsedSec > 0 ? Math.round((count / elapsedSec) * 60) : null;
     const mainVal = spm != null ? `${spm}` : `${count}`;
-    const mainLabel = spm != null ? '처리 속도 지표 (SPM)' : '총 처리 신호 수';
+    const mainLabel = spm != null ? '자극 제시 밀도 (SPM)' : '총 제시 자극 수';
+    // 세션 진행률: reps 모드에서만 의미 있음
     const completionRate = cfg.timeMode === 'reps' && (cfg.targetReps ?? 0) > 0
-      ? Math.round((count / (cfg.targetReps ?? 1)) * 100)
-      : null;
-    const consistency = spm != null
-      ? Math.max(0, Math.min(100, Math.round(100 - (Math.abs((cfg.speed > 0 ? 60 / cfg.speed : 0) - spm) * 1.4))))
+      ? Math.min(100, Math.round((count / (cfg.targetReps ?? 1)) * 100))
       : null;
     const mainHint = spm != null
-      ? '현재 세션에서 1분 기준으로 처리 가능한 반응량을 보여주는 지표입니다.'
-      : '이번 세션에서 실제 처리한 신호 총량입니다.';
+      ? '이번 세션에서 1분 기준으로 제시된 자극 밀도입니다. 실제 반응 정확도와는 무관합니다.'
+      : '이번 세션에서 제시된 자극(신호)의 총 개수입니다.';
     const mainColor = mo?.accent ?? '#F97316';
     const student = students.find((s) => s.id === selectedStudentId);
     const goToList = () => {
@@ -1743,20 +1759,22 @@ export default function MemoryGameApp({
             <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.5, maxWidth: '20rem', marginLeft: 'auto', marginRight: 'auto' }}>{mainHint}</div>
             <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem', textAlign: 'left' }}>
               <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>총 수행 시간</div>
-                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{Math.max(0, Math.round(totalSec))}초</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>실제 진행 시간</div>
+                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{elapsedSec > 0 ? `${Math.round(elapsedSec)}초` : '-'}</div>
               </div>
               <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>평균 반응 밀도</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>자극 제시 밀도</div>
                 <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{spm != null ? `${spm} SPM` : '-'}</div>
               </div>
+              {completionRate != null ? (
+                <div style={statBox}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>세션 진행률</div>
+                  <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{completionRate}%</div>
+                </div>
+              ) : null}
               <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>목표 달성률</div>
-                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{completionRate != null ? `${completionRate}%` : '시간모드'}</div>
-              </div>
-              <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>수행 안정도</div>
-                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{consistency != null ? `${consistency}점` : '-'}</div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>총 제시 자극 수</div>
+                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{count}회</div>
               </div>
             </div>
             {cfg.mode === 'basic' && dupStats ? (

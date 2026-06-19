@@ -57,6 +57,8 @@ export function useIntervalTimer({
   const phaseRef = useRef<'work' | 'rest'>('work');
   const setRef = useRef(0);
   const lastSignalRef = useRef(-1);
+  /** setIntervalLeft를 초 단위로만 갱신 (매 프레임 React 재렌더 방지) */
+  const lastLeftRef = useRef(-1);
   const [intervalPhase, setIntervalPhase] = useState<'work' | 'rest'>('work');
   const [intervalSet, setIntervalSet] = useState(1);
   const [intervalLeft, setIntervalLeft] = useState(workSec);
@@ -85,6 +87,7 @@ export function useIntervalTimer({
     phaseRef.current = 'work';
     setRef.current = 0;
     lastSignalRef.current = -1;
+    lastLeftRef.current = workSec;
     setIntervalPhase('work');
     setIntervalSet(1);
     setIntervalLeft(workSec);
@@ -101,7 +104,8 @@ export function useIntervalTimer({
       const phaseDur = currentPhase === 'work' ? workSec : restSec;
       const left = Math.max(0, Math.ceil(phaseDur - timeInPhase));
 
-      if (currentSet > sets) {
+      // 마지막 세트 work 완료 직후 rest 진입 없이 종료
+      if (currentSet > sets || (currentSet === sets && currentPhase === 'rest')) {
         ttsClear();
         const dup = engineMode === 'basic' ? genRef.current?.getStats() ?? null : null;
         onFinish(dup);
@@ -118,7 +122,11 @@ export function useIntervalTimer({
         setRef.current = currentSet;
         setIntervalSet(currentSet);
       }
-      setIntervalLeft(left);
+      // 초 단위가 바뀔 때만 React 상태 갱신
+      if (left !== lastLeftRef.current) {
+        lastLeftRef.current = left;
+        setIntervalLeft(left);
+      }
 
       if (currentPhase === 'work') {
         const sigIdx = Math.floor(timeInPhase / speed);

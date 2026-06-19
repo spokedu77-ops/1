@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeListBlockContentRecord,
   normalizeLoadedNoteBlocks,
+  stripListItemMarkerFromHtml,
   stripListItemMarkerPrefix,
 } from './noteBulletInput';
 import type { NoteBlock } from '../_lib/types';
@@ -34,8 +35,19 @@ describe('stripListItemMarkerPrefix', () => {
   });
 });
 
+describe('stripListItemMarkerFromHtml', () => {
+  it('removes bullet glyph from first paragraph in html', () => {
+    expect(stripListItemMarkerFromHtml('<p>• hello</p>')).toBe('<p>hello</p>');
+    expect(stripListItemMarkerFromHtml('<p>- item</p>')).toBe('<p>item</p>');
+  });
+
+  it('removes numbered prefix from first paragraph in html', () => {
+    expect(stripListItemMarkerFromHtml('<p>1. item</p>')).toBe('<p>item</p>');
+  });
+});
+
 describe('normalizeListBlockContentRecord', () => {
-  it('strips marker text and drops stale html fields', () => {
+  it('strips marker text and drops stale marker-only html', () => {
     const next = normalizeListBlockContentRecord({
       text: '-',
       html: '<p>-</p>',
@@ -46,13 +58,31 @@ describe('normalizeListBlockContentRecord', () => {
     expect(next.bodyHtml).toBeUndefined();
   });
 
-  it('drops html when text is already clean but html still has markers', () => {
+  it('drops html when text is empty but html still has lone markers', () => {
     const next = normalizeListBlockContentRecord({
       text: '',
       html: '<p>*</p>',
     });
     expect(next.text).toBe('');
     expect(next.html).toBeUndefined();
+  });
+
+  it('keeps formatted html when text is clean', () => {
+    const next = normalizeListBlockContentRecord({
+      text: 'hello',
+      html: '<p><u>hello</u></p>',
+    });
+    expect(next.text).toBe('hello');
+    expect(next.html).toBe('<p><u>hello</u></p>');
+  });
+
+  it('keeps formatted html when only marker prefix is stripped from text', () => {
+    const next = normalizeListBlockContentRecord({
+      text: '- hello',
+      html: '<p><u>hello</u></p>',
+    });
+    expect(next.text).toBe('hello');
+    expect(next.html).toBe('<p><u>hello</u></p>');
   });
 
   it('leaves clean content unchanged', () => {

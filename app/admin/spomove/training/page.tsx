@@ -136,7 +136,6 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Rhythm Program': '리듬 프로그램',
   FLOW: '플로우',
   FLASH: '플래시',
-  PATTERN: '패턴',
   Diagonal: '대각선 반응',
   'Deep Reaction': '심해 반응',
   Pulse: '펄스 반응',
@@ -185,6 +184,8 @@ type LaunchSettings = {
   flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
   flowDuration: number;
   flowBgImageUrl: string;
+  /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
+  reactTrainConcurrent: 1 | 2 | 3;
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -203,6 +204,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowColorTheme: 'default',
   flowDuration: 25,
   flowBgImageUrl: '',
+  reactTrainConcurrent: 1,
 };
 
 function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
@@ -222,6 +224,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowColorTheme: auto.flowColorTheme ?? fallback.flowColorTheme,
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
     flowBgImageUrl: fallback.flowBgImageUrl,
+    reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
   };
 }
 
@@ -288,6 +291,7 @@ function TrainingPortal({
     flowColorTheme: launch.flowColorTheme,
     flowDuration: launch.flowDuration,
     flowBgImageUrl: launch.flowBgImageUrl || undefined,
+    reactTrainConcurrent: launch.reactTrainConcurrent,
   };
 
   return createPortal(
@@ -725,6 +729,49 @@ function SettingsScreen({
               })}
             </div>
           </section>
+
+          {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
+          {isReactTrain && levelId === 1 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>동시 자극 수</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  한 번에 떨어지는 신호 개수입니다. 2개는 패턴 방식, 3개는 고강도입니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([1, 2, 3] as const).map((n) => {
+                  const active = launch.reactTrainConcurrent === n;
+                  const sub = n === 1 ? '기본' : n === 2 ? '패턴' : '트리플';
+                  return (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, reactTrainConcurrent: n }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {n}개
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           {/* 속도 (DIVE MODE는 내부 타이밍으로 동작하므로 숨김) */}
           {!isFlowOrChallenge ? (

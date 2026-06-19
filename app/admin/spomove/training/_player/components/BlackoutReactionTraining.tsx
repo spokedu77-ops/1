@@ -286,11 +286,12 @@ export function BlackoutReactionTraining({ durationSec, speedLevel, speedSec, on
     if (hudStimsRef.current) hudStimsRef.current.textContent = '0';
     if (hudMaxRef.current) hudMaxRef.current.textContent = '0';
 
+    const endsAtMs = performance.now() + durationSec * 1000;
     g.timer = setInterval(() => {
-      g.timeLeft -= 1;
-      setHudTime();
-      if (g.timeLeft <= 0) endGame();
-    }, 1000);
+      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+      if (g.timeLeft !== newLeft) { g.timeLeft = newLeft; setHudTime(); }
+      if (g.timeLeft <= 0) { if (g.timer) clearInterval(g.timer); g.timer = null; endGame(); }
+    }, 250);
 
     pushRoundTimer(setTimeout(nextRound, 500));
 

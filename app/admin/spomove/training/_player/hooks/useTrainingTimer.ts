@@ -51,6 +51,8 @@ export function useTrainingTimer({
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const idxRef = useRef(-1);
+  /** reps 모드: 실제 제시된 자극 수 (count-based 종료 판단에 사용) */
+  const presentedCountRef = useRef(0);
   const genRef = useRef<
     | ReturnType<typeof createBasicSignalGenerator>
     | ReturnType<typeof createModeColorDupGenerator>
@@ -76,6 +78,10 @@ export function useTrainingTimer({
     }
     startRef.current = performance.now();
     idxRef.current = -1;
+    presentedCountRef.current = 0;
+
+    // time 모드: elapsed 기준 종료. reps 모드: presentedCount 기준 종료.
+    // accel 가속 곡선의 레퍼런스 totalMs는 reps 모드에서도 추정값으로 유지.
     const totalMs = timeMode === 'time' ? duration * 1000 : targetReps * speed * 1000;
 
     const getSpeedMs = (elapsed: number) => {
@@ -98,6 +104,7 @@ export function useTrainingTimer({
           ? genRef.current?.next() ?? null
           : generateSignal(engineMode, engineLevel, colors, fruitSlides ? { fruitSlides } : undefined);
       if (sig) {
+        presentedCountRef.current++;
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
@@ -111,7 +118,8 @@ export function useTrainingTimer({
     if (!accel) {
       const tick = (now: number) => {
         const elapsed = now - startRef.current;
-        if (elapsed >= totalMs) {
+        // time 모드: 경과시간 기준 종료
+        if (timeMode === 'time' && elapsed >= totalMs) {
           finish();
           return;
         }
@@ -119,6 +127,11 @@ export function useTrainingTimer({
         if (i > idxRef.current) {
           idxRef.current = i;
           emitSignal(elapsed);
+          // reps 모드: 자극 제시 횟수 달성 시 종료
+          if (timeMode === 'reps' && presentedCountRef.current >= targetReps) {
+            finish();
+            return;
+          }
         }
         rafRef.current = requestAnimationFrame(tick);
       };
@@ -127,11 +140,17 @@ export function useTrainingTimer({
       nextSignalTimeRef.t = 0;
       const tick = (now: number) => {
         const elapsed = now - startRef.current;
-        if (elapsed >= totalMs) {
+        if (timeMode === 'time' && elapsed >= totalMs) {
           finish();
           return;
         }
-        if (elapsed >= nextSignalTimeRef.t) emitSignal(elapsed);
+        if (elapsed >= nextSignalTimeRef.t) {
+          emitSignal(elapsed);
+          if (timeMode === 'reps' && presentedCountRef.current >= targetReps) {
+            finish();
+            return;
+          }
+        }
         rafRef.current = requestAnimationFrame(tick);
       };
       rafRef.current = requestAnimationFrame(tick);
@@ -148,6 +167,15 @@ export function useTrainingTimer({
     const e = performance.now() - startRef.current;
     const speedMs = speed * 1000;
     const totalMs = timeMode === 'time' ? duration * 1000 : targetReps * speedMs;
+    if (timeMode === 'reps') {
+      const presented = presentedCountRef.current;
+      const remaining = Math.max(0, targetReps - presented);
+      return {
+        timeLeft: Math.max(0, Math.ceil(remaining * speed)),
+        repsLeft: remaining,
+        progress: Math.min(presented / Math.max(1, targetReps), 1),
+      };
+    }
     return {
       timeLeft: Math.max(0, Math.ceil((totalMs - e) / 1000)),
       repsLeft: Math.max(0, targetReps - Math.floor(e / speedMs)),

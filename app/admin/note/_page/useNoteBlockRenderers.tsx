@@ -51,9 +51,12 @@ export type NoteBlockRendererDeps = {
   showFormatToolbar: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => void;
   hideFormatToolbar: () => void;
+  handleMultilinePaste: (block: NoteBlock, lines: string[]) => void | Promise<void>;
   handleMergeWithPreviousBlock: (block: NoteBlock) => void | Promise<void>;
   handleDuplicateBlock: (block: NoteBlock) => void | Promise<void>;
   handleCopyBlockLink: (block: NoteBlock) => void;
@@ -132,6 +135,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}
+        onMultilinePaste={(lines) => { void deps.handleMultilinePaste(block, lines); }}
         autoFocusSignal={
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart !== 'title' ? deps.focusSignal : 0
         }
@@ -193,6 +197,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}
+        onMultilinePaste={(lines) => { void deps.handleMultilinePaste(block, lines); }}
         autoFocusSignal={
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart !== 'title' ? deps.focusSignal : 0
         }

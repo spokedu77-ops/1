@@ -72,12 +72,20 @@ export function NoteRichEditorStyles() {
         text-decoration: underline;
         text-underline-offset: 2px;
       }
+      .note-rich-editor u {
+        text-decoration: underline;
+        text-underline-offset: 2px;
+      }
       .note-rich-editor code {
         border-radius: 0.375rem;
         background: rgb(241 245 249);
         padding: 0.1rem 0.25rem;
         color: rgb(15 23 42);
         font-size: 0.92em;
+      }
+      .note-rich-editor mark {
+        border-radius: 0.125rem;
+        padding: 0.05rem 0.1rem;
       }
       .note-rich-editor img {
         margin: 0.75rem 0;
@@ -105,13 +113,20 @@ export function NoteRichEditorStyles() {
       [data-note-block-row].note-find-flash {
         animation: note-find-flash 1.2s ease-out;
       }
+      [data-note-list-text] {
+        min-width: 0;
+        overflow: visible;
+      }
+      [data-note-list-text] .note-rich-editor,
+      [data-note-list-text] .note-rich-editor-slot,
+      [data-note-list-text] .ProseMirror {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+      }
       @keyframes note-find-flash {
         0%, 100% { background-color: transparent; }
         15% { background-color: rgba(250, 204, 21, 0.35); }
-      }
-      .note-block-row-cv {
-        content-visibility: auto;
-        contain-intrinsic-size: auto 2.5rem;
       }
     `}</style>
   );

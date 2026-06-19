@@ -1,20 +1,25 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   isRichPreviewEmpty,
   resolveRichPreviewHtml,
   type RichPreviewField,
 } from '@/app/lib/note/richTextPreview';
+import { stripListItemMarkerFromHtml } from '../noteBulletInput';
+import { clearBlockPreviewCrossHighlight } from '../noteBlockPreviewCrossSelect';
+import { setPendingSelectAllBlock } from '../noteEditorRegistry';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { parseAdminNoteDocumentIdFromHref } from '../../_lib/notePaste';
 
 type BlockTextPreviewProps = {
+  blockId: string;
   content: Record<string, unknown> | null | undefined;
   field?: RichPreviewField;
   text: string;
   className: string;
   placeholder?: string;
+  stripListMarkers?: boolean;
   onRecordClick?: (x: number, y: number) => void;
   onActivate?: () => void;
   onOpenDocumentById?: (documentId: string) => void;
@@ -24,19 +29,30 @@ const DRAG_THRESHOLD = 5;
 
 /** 포커스 전 가벼운 읽기 전용 블록 표시 (TipTap 미마운트) */
 export function BlockTextPreview({
+  blockId,
   content,
   field = 'text',
   text,
   className,
   placeholder = '',
+  stripListMarkers = false,
   onRecordClick,
   onActivate,
   onOpenDocumentById,
 }: BlockTextPreviewProps) {
-  const html = resolveRichPreviewHtml({ content, field, text });
+  const [renderKey, setRenderKey] = useState(0);
+  let html = resolveRichPreviewHtml({ content, field, text });
+  if (stripListMarkers) {
+    html = stripListItemMarkerFromHtml(html);
+  }
   const empty = isRichPreviewEmpty(html, text);
   const imageLightbox = useNoteImageLightbox();
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    clearBlockPreviewCrossHighlight(blockId);
+    setRenderKey((key) => key + 1);
+  }, [blockId, html]);
 
   const hasTextSelection = () => {
     const selection = window.getSelection();
@@ -46,7 +62,7 @@ export function BlockTextPreview({
   return (
     <div
       data-note-preview-text
-      className={`note-rich-editor min-h-[1.75rem] w-full cursor-text select-text outline-none ${className}`}
+      className={`note-rich-editor relative min-h-[1.75rem] w-full min-w-0 cursor-text select-text outline-none ${className}`}
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;
         const anchor = target.closest('a');
@@ -100,19 +116,15 @@ export function BlockTextPreview({
         const target = e.target as HTMLElement;
         if (target.closest('a, button, img')) return;
         e.preventDefault();
-        const root = e.currentTarget;
-        const body = root.querySelector(':scope > div') ?? root;
-        const range = document.createRange();
-        range.selectNodeContents(body);
-        const selection = window.getSelection();
-        selection?.removeAllRanges();
-        selection?.addRange(range);
+        e.stopPropagation();
+        setPendingSelectAllBlock(blockId);
+        onActivate?.();
       }}
     >
       {empty ? (
         <p className="is-editor-empty" data-placeholder={placeholder} />
       ) : (
-        <div dangerouslySetInnerHTML={{ __html: html }} />
+        <div key={renderKey} className="min-w-0 w-full" dangerouslySetInnerHTML={{ __html: html }} />
       )}
     </div>
   );

@@ -12,6 +12,8 @@ function escapeHtml(text: string): string {
     .replace(/>/g, '&gt;');
 }
 
+const PREVIEW_CROSS_OVERLAY = '[data-note-preview-cross-overlay]';
+
 /** TipTap 미마운트 상태의 블록 미리보기 (목록·텍스트 공통) */
 export function getBlockPreviewTextRoot(blockId: string): HTMLElement | null {
   return document.querySelector<HTMLElement>(
@@ -23,7 +25,12 @@ export function getBlockPreviewTextRoot(blockId: string): HTMLElement | null {
 export const getListPreviewTextRoot = getBlockPreviewTextRoot;
 
 export function blockPreviewPlainText(blockId: string): string {
-  return getBlockPreviewTextRoot(blockId)?.textContent ?? '';
+  const root = getBlockPreviewTextRoot(blockId);
+  if (!root) return '';
+  const overlay = root.querySelector(PREVIEW_CROSS_OVERLAY);
+  if (overlay) overlay.remove();
+  const text = root.textContent ?? '';
+  return text;
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */
@@ -66,6 +73,24 @@ export function hoverBlockPreviewTextPos(blockId: string, clientX: number, clien
 /** @deprecated noteListPreviewCrossSelect 호환 */
 export const hoverListPreviewTextPos = hoverBlockPreviewTextPos;
 
+function ensurePreviewCrossOverlay(root: HTMLElement): HTMLElement {
+  let overlay = root.querySelector<HTMLElement>(PREVIEW_CROSS_OVERLAY);
+  if (overlay) return overlay;
+  overlay = document.createElement('div');
+  overlay.dataset.notePreviewCrossOverlay = 'true';
+  overlay.className = [
+    'pointer-events-none absolute inset-0 z-[2]',
+    'overflow-hidden whitespace-pre-wrap break-words',
+    'text-[16px] leading-7 text-transparent',
+  ].join(' ');
+  if (getComputedStyle(root).position === 'static') {
+    root.style.position = 'relative';
+  }
+  root.appendChild(overlay);
+  return overlay;
+}
+
+/** React가 관리하는 html 레이어는 건드리지 않고 오버레이로만 선택 표시 */
 export function applyBlockPreviewCrossHighlight(blockId: string, from: number, to: number) {
   const root = getBlockPreviewTextRoot(blockId);
   if (!root) return;
@@ -75,7 +100,8 @@ export function applyBlockPreviewCrossHighlight(blockId: string, from: number, t
   const before = escapeHtml(text.slice(0, safeFrom));
   const mid = escapeHtml(text.slice(safeFrom, safeTo));
   const after = escapeHtml(text.slice(safeTo));
-  root.innerHTML = `${before}<mark class="note-list-cross-selected">${mid}</mark>${after}`;
+  const overlay = ensurePreviewCrossOverlay(root);
+  overlay.innerHTML = `${before}<mark class="note-list-cross-selected">${mid}</mark>${after}`;
   root.dataset.blockCrossActive = 'true';
 }
 
@@ -84,10 +110,11 @@ export const applyListPreviewCrossHighlight = applyBlockPreviewCrossHighlight;
 
 export function clearBlockPreviewCrossHighlight(blockId: string) {
   const root = getBlockPreviewTextRoot(blockId);
-  if (!root || root.dataset.blockCrossActive !== 'true') return;
-  delete root.dataset.blockCrossActive;
-  const text = root.textContent ?? '';
-  root.textContent = text;
+  if (!root) return;
+  root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+  if (root.dataset.blockCrossActive === 'true') {
+    delete root.dataset.blockCrossActive;
+  }
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */

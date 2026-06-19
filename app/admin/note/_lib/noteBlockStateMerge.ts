@@ -1,6 +1,6 @@
 import { getActiveEditorBridgeSnapshot } from './noteActiveEditorBridge';
 import { getNoteEditor } from '../_components/noteEditorRegistry';
-import { useNoteBlockStore } from '../_store/noteBlockStore';
+import { useNoteBlockStore, type NoteActiveEditorField } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 import {
   normalizeLoadedNoteBlocks,
@@ -23,11 +23,15 @@ export function mergeBlocksWithStoreContent(blocks: NoteBlock[]): NoteBlock[] {
   });
 }
 
-/** 문서 전환·블록 비우기 직전 — 싱글톤 TipTap의 미반영 입력을 스토어/저장 경로로 밀어 넣는다 */
-export function commitActiveNoteEditorToStore(): void {
+/** 싱글톤 TipTap 내용을 스토어에 반영 — blockId·field가 bridge와 일치할 때만 */
+export function commitNoteEditorBlock(
+  blockId: string,
+  field?: NoteActiveEditorField,
+): void {
   const config = getActiveEditorBridgeSnapshot();
-  if (!config) return;
-  const editor = getNoteEditor(config.blockId);
+  if (!config || config.blockId !== blockId) return;
+  if (field && config.field !== field) return;
+  const editor = getNoteEditor(blockId);
   if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return;
   try {
     const props = config.getProps();
@@ -38,6 +42,12 @@ export function commitActiveNoteEditorToStore(): void {
   } catch {
     // editor teardown race — 무시
   }
+}
+
+export function commitActiveNoteEditorToStore(): void {
+  const config = getActiveEditorBridgeSnapshot();
+  if (!config) return;
+  commitNoteEditorBlock(config.blockId, config.field);
 }
 
 /** ↑ 이동 시 커서를 둘 문자 위치 — 스토어 최신 content 기준 */
@@ -75,7 +85,9 @@ export function mergeReconciledBlocks(
       if (activeDocumentId && fromStore.document_id !== activeDocumentId) return block;
       const serverText = typeof block.content?.text === 'string' ? block.content.text : '';
       const storeText = typeof fromStore.content?.text === 'string' ? fromStore.content.text : '';
-      if (storeText !== serverText) {
+      const serverHtml = typeof block.content?.html === 'string' ? block.content.html : '';
+      const storeHtml = typeof fromStore.content?.html === 'string' ? fromStore.content.html : '';
+      if (storeText !== serverText || storeHtml !== serverHtml) {
         return { ...block, content: fromStore.content };
       }
       if (fromCurrent && fromStore.content !== fromCurrent.content) {

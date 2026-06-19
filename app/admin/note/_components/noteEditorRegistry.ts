@@ -7,6 +7,31 @@ export const pendingEditorClickRef = {
   current: null as { blockId: string; x: number; y: number } | null,
 };
 
+export const pendingSelectAllBlockIdRef = {
+  current: null as string | null,
+};
+
+export function setPendingSelectAllBlock(blockId: string): void {
+  pendingSelectAllBlockIdRef.current = blockId;
+}
+
+export function consumePendingSelectAllBlock(blockId: string | undefined): boolean {
+  if (!blockId || pendingSelectAllBlockIdRef.current !== blockId) return false;
+  pendingSelectAllBlockIdRef.current = null;
+  return true;
+}
+
+export function selectAllNoteEditorText(editor: Editor): void {
+  if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
+  const from = 1;
+  const to = Math.max(from, editor.state.doc.content.size - 1);
+  if (to <= from) {
+    editor.commands.focus();
+    return;
+  }
+  editor.chain().focus().setTextSelection({ from, to }).run();
+}
+
 export function registerNoteEditor(blockId: string, editor: Editor) {
   editors.set(blockId, editor);
 }

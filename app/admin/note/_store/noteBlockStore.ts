@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
+import { commitNoteEditorBlock } from '../_lib/noteBlockStateMerge';
 import type { NoteBlock } from '../_lib/types';
 
 export type NoteActiveEditorField = 'text' | 'body';
@@ -75,7 +76,17 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
       if (prev.type === 'bulletList' || prev.type === 'numberedList') {
         nextContent = normalizeListBlockContentRecord(content);
       }
-      if (prev.content === nextContent) return state;
+      const prevContent = prev.content as Record<string, unknown> | null | undefined;
+      const nextRecord = nextContent as Record<string, unknown>;
+      if (
+        prevContent
+        && prevContent.text === nextRecord.text
+        && prevContent.html === nextRecord.html
+        && prevContent.body === nextRecord.body
+        && prevContent.bodyHtml === nextRecord.bodyHtml
+      ) {
+        return state;
+      }
       return {
         byId: {
           ...state.byId,
@@ -98,6 +109,11 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
     });
   },
   setActiveEditor: (active) => {
+    const prev = get().activeEditor;
+    const sameTarget = prev?.blockId === active?.blockId && prev?.field === active?.field;
+    if (!sameTarget && prev) {
+      commitNoteEditorBlock(prev.blockId, prev.field);
+    }
     set((state) => {
       if (
         state.activeEditor?.blockId === active?.blockId

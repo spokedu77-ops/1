@@ -6,9 +6,13 @@ export function splitClipboardLines(raw: string): string[] {
   return normalizeClipboardPlainText(raw).split('\n');
 }
 
-/** 여러 줄 plain 붙여넣기 — TipTap 기본 HTML paste 대신 처리 */
+/** 여러 줄 plain 붙여넣기 */
 export function shouldHandlePlainMultilinePaste(plain: string): boolean {
   return splitClipboardLines(plain).length > 1;
+}
+
+export function multilinePasteLineCount(plain: string): number {
+  return splitClipboardLines(plain).length;
 }
 
 function escapeHtml(text: string): string {

@@ -14,6 +14,7 @@ import {
 } from '../_lib/notePointerTarget';
 import {
   clearActiveEditorBridge,
+  getActiveEditorBridgeSnapshot,
   setActiveEditorBridge,
 } from '../_lib/noteActiveEditorBridge';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
@@ -21,7 +22,13 @@ import { parseAdminNoteDocumentIdFromHref } from '../_lib/notePaste';
 import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
 import type { MarkdownBlockTrigger } from './noteBulletInput';
-import { normalizeListBlockContentRecord } from './noteBulletInput';
+import {
+  normalizeListBlockContentRecord,
+  stripListItemMarkerFromHtml,
+  stripListItemMarkerPrefix,
+} from './noteBulletInput';
+import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
+import { canSplitMultilinePasteToBlocks } from '../_lib/noteMultilinePaste';
 import {
   getNoteEditor,
   scheduleFocusNoteEditorAtClick,
@@ -59,12 +66,15 @@ type NoteEditableFieldProps = {
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => void;
   onHideFormatToolbar?: () => void;
   onSlashChange?: (show: boolean, query: string) => void;
   uploadImage?: (file: File) => Promise<string>;
   onOpenDocumentById?: (documentId: string) => void;
+  onMultilinePaste?: (lines: string[]) => void;
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -103,6 +113,7 @@ export function NoteEditableField({
   onSlashChange,
   uploadImage,
   onOpenDocumentById,
+  onMultilinePaste,
   slashHostRef: externalSlashHostRef,
 }: NoteEditableFieldProps) {
   const internalSlashHostRef = useRef<HTMLDivElement>(null);
@@ -114,14 +125,17 @@ export function NoteEditableField({
   const setActiveEditor = useNoteBlockStore((state) => state.setActiveEditor);
 
   const content = storeContent ?? fallbackContent;
-  const resolvedContent = (blockType === 'bulletList' || blockType === 'numberedList')
-    ? normalizeListBlockContentRecord((content ?? {}) as Record<string, unknown>)
-    : content;
-  const shouldMountEditor = isActiveEditor || autoFocusSignal > 0;
+  const resolvedContent = content;
+  const shouldMountEditor = isActiveEditor;
   const [editorSurfaceReady, setEditorSurfaceReady] = useState(false);
-  const previewText = typeof resolvedContent?.[field] === 'string'
+  const rawPreviewText = typeof resolvedContent?.[field] === 'string'
     ? String(resolvedContent[field])
     : text;
+  const isListBlock = blockType === 'bulletList' || blockType === 'numberedList';
+  const previewText = isListBlock
+    ? stripListItemMarkerPrefix(rawPreviewText)
+    : rawPreviewText;
+  const resolvedEditorText = rawPreviewText;
   const showPreviewOverlay = shouldMountEditor && !editorSurfaceReady;
   const showPreviewOnly = !shouldMountEditor;
   const resolvedEditorBackspace =
@@ -129,19 +143,25 @@ export function NoteEditableField({
 
   const activateEditor = () => {
     setActiveEditor({ blockId, field });
+    onTrackActiveBlock?.('editor');
     onFocusBlock?.();
   };
 
   const handleChange = ({ text: nextText, html: nextHtml }: { text: string; html: string }) => {
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
     const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
+    const baseContent = (
+      useNoteBlockStore.getState().getBlock(blockId)?.content
+      ?? fallbackContent
+      ?? {}
+    ) as Record<string, unknown>;
     let nextContent: Record<string, unknown> = {
-      ...(resolvedContent ?? {}),
+      ...baseContent,
       [field]: nextText,
       [htmlKey]: nextHtml,
     };
-    const original = resolvedContent?.[field];
-    if (typeof resolvedContent?.[legacyKey] !== 'string' && typeof original === 'string') {
+    const original = baseContent[field];
+    if (typeof baseContent[legacyKey] !== 'string' && typeof original === 'string') {
       nextContent[legacyKey] = original;
     }
     if (blockType === 'bulletList' || blockType === 'numberedList') {
@@ -151,10 +171,22 @@ export function NoteEditableField({
     else onUpdate(nextContent);
   };
 
+  const handleChangeRef = useRef(handleChange);
+  handleChangeRef.current = handleChange;
+  const wasEditorMountedRef = useRef(shouldMountEditor);
+
+  let editorContent = resolvedContent;
+  if (isListBlock && resolvedContent && typeof resolvedContent.html === 'string') {
+    const cleanedHtml = stripListItemMarkerFromHtml(resolvedContent.html);
+    if (cleanedHtml !== resolvedContent.html) {
+      editorContent = { ...resolvedContent, html: cleanedHtml };
+    }
+  }
+
   const editorProps: ComponentProps<typeof NoteEditor> = {
-    content: resolvedContent,
+    content: editorContent,
     field,
-    text,
+    text: resolvedEditorText,
     resetKey: `${blockId}:${blockType}:${field}`,
     placeholder,
     className: textClassName,
@@ -191,8 +223,24 @@ export function NoteEditableField({
     onHideFormatToolbar,
     uploadImage,
     onOpenDocumentById,
+    onMultilinePaste,
+    canSplitMultilinePaste: field === 'text' && canSplitMultilinePasteToBlocks(blockType),
     onChange: handleChange,
   };
+
+  useLayoutEffect(() => {
+    const wasMounted = wasEditorMountedRef.current;
+    wasEditorMountedRef.current = shouldMountEditor;
+    if (!wasMounted || shouldMountEditor) return;
+    const bridge = getActiveEditorBridgeSnapshot();
+    if (bridge && (bridge.blockId !== blockId || bridge.field !== field)) return;
+    const editor = getNoteEditor(blockId);
+    if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return;
+    handleChangeRef.current({
+      text: editor.getText(),
+      html: editor.getHTML(),
+    });
+  }, [shouldMountEditor, blockId, field]);
 
   useLayoutEffect(() => {
     editorPropsRef.current = editorProps;
@@ -239,11 +287,13 @@ export function NoteEditableField({
 
   const previewNode = (
     <BlockTextPreview
+      blockId={blockId}
       content={resolvedContent}
       field={field}
       text={previewText}
       className={textClassName}
       placeholder={placeholder}
+      stripListMarkers={isListBlock}
       onRecordClick={(x, y) => setPendingEditorClick(blockId, x, y)}
       onActivate={activateEditor}
       onOpenDocumentById={onOpenDocumentById}
@@ -260,6 +310,9 @@ export function NoteEditableField({
         const target = notePointerTargetElement(e.target);
         if (!target) return;
         if (target.closest('button, input, textarea, a')) return;
+        if (!isActiveEditor) {
+          commitActiveNoteEditorToStore();
+        }
         clearAllNoteTextSelections();
         setPendingEditorClick(blockId, e.clientX, e.clientY);
         if (target.closest('.ProseMirror')) return;
@@ -272,7 +325,6 @@ export function NoteEditableField({
         const target = notePointerTargetElement(e.target);
         if (!target) return;
         if (target.closest('button, input, textarea, a, .ProseMirror')) return;
-        setActiveEditor({ blockId, field });
         activateEditor();
       }}
     >
@@ -280,10 +332,10 @@ export function NoteEditableField({
         <div className="relative">
           <div
             ref={slotRef}
-            className={`note-rich-editor-slot ${textClassName}`}
+            className={`note-rich-editor-slot min-w-0 w-full ${textClassName}`}
           />
           {showPreviewOverlay ? (
-            <div className="pointer-events-none absolute inset-0 z-[1]">
+            <div className="pointer-events-none absolute inset-0 z-[1] overflow-visible">
               {previewNode}
             </div>
           ) : null}

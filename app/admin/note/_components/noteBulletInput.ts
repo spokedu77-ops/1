@@ -73,29 +73,54 @@ export function stripListItemMarkerPrefix(text: string): string {
   return body;
 }
 
-/** 목록 블록 저장·동기화 시 content.text/html에서 마커 문자 정리 */
+/** TipTap html 첫 문단 앞 글머리 마커 제거 — 별도 UI 글리프와 중복·밀림 방지 */
+export function stripListItemMarkerFromHtml(html: string): string {
+  if (!html.trim()) return html;
+  return html.replace(
+    /^(<p[^>]*>)(\s*(?:&nbsp;|&#160;|\u00a0)*)((?:[-*•◦▪▫]\s*|\d+\.\s*))/i,
+    '$1$2',
+  );
+}
+
+/** 로드 직후 등 — html에 마커(-, *)만 남은 stale 데이터인지 */
+function listHtmlLooksLikeStaleMarker(html: string): boolean {
+  const stripped = html.replace(/<[^>]+>/g, '').trim();
+  if (!stripped) return true;
+  if (stripped === '-' || stripped === '*') return true;
+  if (/^[-*•◦▪▫]\s*$/.test(stripped)) return true;
+  return false;
+}
+
+function dropStaleListHtmlFields(content: Record<string, unknown>): Record<string, unknown> {
+  let next: Record<string, unknown> | null = null;
+  if (typeof content.html === 'string' && listHtmlLooksLikeStaleMarker(content.html)) {
+    next = { ...(next ?? content) };
+    delete next.html;
+  }
+  if (typeof content.bodyHtml === 'string' && listHtmlLooksLikeStaleMarker(content.bodyHtml)) {
+    next = { ...(next ?? content) };
+    delete next.bodyHtml;
+  }
+  return next ?? content;
+}
+
+/** 목록 블록 저장·동기화 시 content.text에서 마커 문자만 정리 (서식 html은 유지) */
 export function normalizeListBlockContentRecord(
   content: Record<string, unknown>,
 ): Record<string, unknown> {
-  const hadHtml = typeof content.html === 'string' && content.html.length > 0;
-  const hadBodyHtml = typeof content.bodyHtml === 'string' && content.bodyHtml.length > 0;
-
   if (typeof content.text !== 'string') {
-    if (!hadHtml && !hadBodyHtml) return content;
-    const next: Record<string, unknown> = { ...content };
-    delete next.html;
-    delete next.bodyHtml;
-    return next;
+    return dropStaleListHtmlFields(content);
   }
 
   const text = stripListItemMarkerPrefix(content.text);
-  const textChanged = text !== content.text;
-  if (!textChanged && !hadHtml && !hadBodyHtml) return content;
-
-  const next: Record<string, unknown> = { ...content, text };
-  delete next.html;
-  delete next.bodyHtml;
-  return next;
+  let next: Record<string, unknown> = text === content.text ? content : { ...content, text };
+  if (typeof next.html === 'string' && next.html.trim()) {
+    const cleanedHtml = stripListItemMarkerFromHtml(next.html);
+    if (cleanedHtml !== next.html) {
+      next = { ...next, html: cleanedHtml };
+    }
+  }
+  return dropStaleListHtmlFields(next);
 }
 
 export function buildLinePrefix(level: number, withBullet: boolean): string {

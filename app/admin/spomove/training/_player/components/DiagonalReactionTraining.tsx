@@ -52,10 +52,14 @@ type GameState = {
   laneCount: [number, number, number, number];
   spawnInt: number;
   lastSpawn: number;
-  elapsed: number;
+  /** 마지막으로 applyAccel이 발생한 초(s) — 중복 실행 방지 */
+  lastAccelSec: number;
+  /** RAF 기준 세션 시작 타임스탬프 (ms) */
+  startAtMs: number;
+  /** 세션 종료 타임스탬프 (ms) — setInterval 대신 RAF 루프에서 체크 */
+  endsAtMs: number;
   baseSpeedMult: number;
   raf: number | null;
-  timer: ReturnType<typeof setInterval> | null;
   padPulse: number[];
 };
 
@@ -115,12 +119,13 @@ class MeteorSpark {
     this.dec = 0.045 + Math.random() * 0.03;
     this.r = 1.2 + Math.random() * 2.2;
   }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.life -= this.dec;
-    this.vx *= 0.92;
-    this.vy *= 0.92;
+  update(deltaSec: number) {
+    const t = deltaSec * 60;
+    this.x += this.vx * t;
+    this.y += this.vy * t;
+    this.life -= this.dec * t;
+    this.vx *= Math.pow(0.92, t);
+    this.vy *= Math.pow(0.92, t);
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
@@ -158,11 +163,12 @@ class Particle {
     this.r = Math.random() * 5 + 2;
     this.grav = 0.18;
   }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.vy += this.grav;
-    this.life -= this.dec;
+  update(deltaSec: number) {
+    const t = deltaSec * 60;
+    this.x += this.vx * t;
+    this.y += this.vy * t;
+    this.vy += this.grav * t;
+    this.life -= this.dec * t;
   }
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
@@ -186,7 +192,8 @@ class Tile {
   ty: number;
   vx: number;
   vy: number;
-  speed: number;
+  /** 초당 픽셀 속도 (delta time 적용) */
+  speedPps: number;
   size: number;
   fired: boolean;
   dead: boolean;
@@ -208,7 +215,7 @@ class Tile {
     const dist = Math.sqrt(dx * dx + dy * dy) || 1;
     this.vx = dx / dist;
     this.vy = dy / dist;
-    this.speed = (dist / g.speedSec / 60) * (g.baseSpeedMult || 1);
+    this.speedPps = (dist / g.speedSec) * (g.baseSpeedMult || 1);
     this.size = Math.min(L.W, L.H) * 0.055;
     this.fired = false;
     this.dead = false;
@@ -217,11 +224,12 @@ class Tile {
     this.sparkTimer = 0;
   }
 
-  update(L: LayoutState, g: GameState, onStim: (ci: number, x: number, y: number) => void) {
+  update(L: LayoutState, g: GameState, deltaSec: number, onStim: (ci: number, x: number, y: number) => void) {
     this.trail.push({ x: this.x, y: this.y });
     if (this.trail.length > this.trailMax) this.trail.shift();
-    this.x += this.vx * this.speed;
-    this.y += this.vy * this.speed;
+    const stepPx = this.speedPps * deltaSec;
+    this.x += this.vx * stepPx;
+    this.y += this.vy * stepPx;
     this.sparkTimer++;
     if (this.sparkTimer % 3 === 0 && g.particles.length < 180) {
       g.particles.push(new MeteorSpark(this.x, this.y, this.color.main));
@@ -229,7 +237,7 @@ class Tile {
     const dx = this.tx - this.x;
     const dy = this.ty - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    if (!this.fired && dist < this.speed + this.size * 1.2) {
+    if (!this.fired && dist < stepPx + this.size * 1.2) {
       this.fired = true;
       this.dead = true;
       onStim(this.ci, this.tx, this.ty);
@@ -362,10 +370,6 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
     const g = gRef.current;
     if (!g) return;
     g.running = false;
-    if (g.timer) {
-      clearInterval(g.timer);
-      g.timer = null;
-    }
     if (g.raf != null) {
       cancelAnimationFrame(g.raf);
       g.raf = null;
@@ -381,10 +385,6 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
     const g = gRef.current;
     if (!g?.running) return;
     g.running = false;
-    if (g.timer) {
-      clearInterval(g.timer);
-      g.timer = null;
-    }
     if (g.raf != null) {
       cancelAnimationFrame(g.raf);
       g.raf = null;
@@ -410,10 +410,11 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       laneCount: [0, 0, 0, 0],
       spawnInt: speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 }),
       lastSpawn: 0,
-      elapsed: 0,
+      lastAccelSec: 0,
+      startAtMs: 0,
+      endsAtMs: 0,
       baseSpeedMult: 1,
       raf: null,
-      timer: null,
       padPulse: [0, 0, 0, 0],
     };
     gRef.current = g;
@@ -630,15 +631,16 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       g.lastSpawn = now;
     };
 
-    const updateShockwaves = (ctx: CanvasRenderingContext2D) => {
+    const updateShockwaves = (ctx: CanvasRenderingContext2D, deltaSec: number) => {
+      const t = deltaSec * 60;
       for (let i = g.shockwaves.length - 1; i >= 0; i--) {
         const s = g.shockwaves[i]!;
         if (s.delay > 0) {
-          s.delay--;
+          s.delay -= t;
           continue;
         }
-        s.r += s.maxR * 0.08;
-        s.life -= 0.055;
+        s.r += s.maxR * 0.08 * t;
+        s.life -= 0.055 * t;
         if (s.life <= 0) {
           g.shockwaves.splice(i, 1);
           continue;
@@ -672,8 +674,30 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       ctx.fillRect(0, 0, L.W, fadeH + 30);
     };
 
+    let lastFrameMs = 0;
     const loop = (now: number) => {
       if (!gRef.current?.running) return;
+      const deltaSec = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
+      lastFrameMs = now;
+
+      // endsAt 기반 타이머 (setInterval 대신 RAF 루프에서 직접 계산)
+      const remainingSec = Math.max(0, (g.endsAtMs - now) / 1000);
+      const newTimeLeft = Math.ceil(remainingSec);
+      if (g.timeLeft !== newTimeLeft) {
+        g.timeLeft = newTimeLeft;
+        updateHudTime();
+      }
+      // 45s·60s·75s... 마다 가속 (초 단위로 한 번만)
+      const elapsedSec = Math.floor((now - g.startAtMs) / 1000);
+      if (elapsedSec >= 45 && elapsedSec !== g.lastAccelSec && elapsedSec % 15 === 0) {
+        g.lastAccelSec = elapsedSec;
+        applyAccel();
+      }
+      if (remainingSec <= 0) {
+        endGame();
+        return;
+      }
+
       const ctx2 = cv.getContext('2d');
       if (!ctx2) return;
       const L = LRef.current;
@@ -686,14 +710,14 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
         const t = g.tiles[i]!;
         const Ln = LRef.current;
         if (!Ln) break;
-        t.update(Ln, g, onStim);
+        t.update(Ln, g, deltaSec, onStim);
         t.draw(ctx2);
         if (t.dead) g.tiles.splice(i, 1);
       }
-      updateShockwaves(ctx2);
+      updateShockwaves(ctx2, deltaSec);
       for (let i = g.particles.length - 1; i >= 0; i--) {
         const p = g.particles[i]!;
-        p.update();
+        p.update(deltaSec);
         p.draw(ctx2);
         if (p.life <= 0) g.particles.splice(i, 1);
       }
@@ -716,21 +740,14 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
         calcLayout();
         g.spawnInt = speedSecToMs(normalizedSpeedSec, { minMs: 500, maxMs: 6000 });
       }
-      g.lastSpawn = performance.now();
+      const nowMs = performance.now();
+      g.startAtMs = nowMs;
+      g.endsAtMs = nowMs + durationSec * 1000;
+      g.lastAccelSec = 0;
+      g.lastSpawn = nowMs;
       updateHudTime();
       if (hudStimsRef.current) hudStimsRef.current.textContent = '0';
       if (hudMaxRef.current) hudMaxRef.current.textContent = '0';
-      g.timer = setInterval(() => {
-        g.timeLeft--;
-        g.elapsed++;
-        updateHudTime();
-        if (g.elapsed >= 45 && g.elapsed % 15 === 0) applyAccel();
-        if (g.timeLeft <= 0) {
-          if (g.timer) clearInterval(g.timer);
-          g.timer = null;
-          endGame();
-        }
-      }, 1000);
       g.raf = requestAnimationFrame(loop);
     }, 60);
 
@@ -740,7 +757,6 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       clearTimeout(startId);
       window.removeEventListener('resize', onWinResize);
       g.running = false;
-      if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
   }, [durationSec, endGame, lv, onExit, normalizedSpeedSec]);

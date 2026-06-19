@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { contentChangeNeedsReactBlocks } from '../_lib/noteContentPatch';
+import { commitNoteEditorBlock } from '../_lib/noteBlockStateMerge';
 import { focusWithoutScroll, suppressNoteEditorScrollBriefly } from '../_lib/noteEditorScrollGuard';
 import type { NoteBlock } from '../_lib/types';
 
@@ -100,8 +101,14 @@ export function useNoteEditorFocus(options: {
       suppressNoteEditorScrollBriefly();
     }
     const previousBlockId = focusedEditorBlockIdRef.current;
+    const prevActive = useNoteBlockStore.getState().activeEditor;
     if (previousBlockId && previousBlockId !== blockId) {
+      if (prevActive) {
+        commitNoteEditorBlock(prevActive.blockId, prevActive.field);
+      }
       commitBlockToState(previousBlockId);
+    } else if (prevActive && (prevActive.blockId !== blockId || part === 'title')) {
+      commitNoteEditorBlock(prevActive.blockId, prevActive.field);
     }
     if (part === 'title') {
       useNoteBlockStore.getState().setActiveEditor(null);

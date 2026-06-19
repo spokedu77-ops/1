@@ -80,6 +80,7 @@ function BlockContent({
   resolvePageIcon,
   onShowFormatToolbar,
   onHideFormatToolbar,
+  onMultilinePaste,
   autoFocusSignal,
   onEmptyBackspace,
   onMergeWithPrevious,
@@ -118,9 +119,12 @@ function BlockContent({
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => void;
   onHideFormatToolbar?: () => void;
+  onMultilinePaste?: (lines: string[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
@@ -325,6 +329,7 @@ function BlockContent({
       }}
       uploadImage={uploadImage}
       onOpenDocumentById={onOpenDocument}
+      onMultilinePaste={onMultilinePaste}
       slashHostRef={slashHostRef}
     />
   );
@@ -1166,6 +1171,7 @@ function SortableBlockRow({
   resolvePageIcon,
   onShowFormatToolbar,
   onHideFormatToolbar,
+  onMultilinePaste,
   autoFocusSignal,
   onEmptyBackspace,
   onMergeWithPrevious,
@@ -1204,9 +1210,12 @@ function SortableBlockRow({
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => void;
   onHideFormatToolbar?: () => void;
+  onMultilinePaste?: (lines: string[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
@@ -1269,6 +1278,7 @@ function SortableBlockRow({
     resolvePageIcon,
     onShowFormatToolbar,
     onHideFormatToolbar,
+    onMultilinePaste,
     autoFocusSignal,
     onEmptyBackspace,
     onMergeWithPrevious,
@@ -1419,6 +1429,7 @@ function ToggleInlineRow({
   resolvePageIcon,
   onShowFormatToolbar,
   onHideFormatToolbar,
+  onMultilinePaste,
   autoFocusSignal,
   onEmptyBackspace,
   onMergeWithPrevious,
@@ -1458,9 +1469,12 @@ function ToggleInlineRow({
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => void;
   onHideFormatToolbar?: () => void;
+  onMultilinePaste?: (lines: string[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
@@ -1548,6 +1562,7 @@ function ToggleInlineRow({
     resolvePageIcon,
     onShowFormatToolbar,
     onHideFormatToolbar,
+    onMultilinePaste,
     autoFocusSignal,
     onEmptyBackspace,
     onMergeWithPrevious,

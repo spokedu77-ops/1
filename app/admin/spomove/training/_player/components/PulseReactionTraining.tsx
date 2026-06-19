@@ -374,11 +374,12 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
     if (hudStimsRef.current) hudStimsRef.current.textContent = '0';
     if (hudMaxRef.current) hudMaxRef.current.textContent = '0';
     g.lastPulseAt = performance.now() - g.pulsePeriod;
+    const endsAtMs = performance.now() + durationSec * 1000;
     g.timer = setInterval(() => {
-      g.timeLeft -= 1;
-      updateHud();
-      if (g.timeLeft <= 0) endGame();
-    }, 1000);
+      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+      if (g.timeLeft !== newLeft) { g.timeLeft = newLeft; updateHud(); }
+      if (g.timeLeft <= 0) { if (g.timer) clearInterval(g.timer); g.timer = null; endGame(); }
+    }, 250);
     g.raf = requestAnimationFrame(loop);
 
     window.addEventListener('resize', resize);

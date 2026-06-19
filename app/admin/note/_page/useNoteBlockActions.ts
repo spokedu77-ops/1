@@ -33,6 +33,11 @@ import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { defaultBlockContent } from '../_lib/constants';
 import { patchNoteBlocks } from '../_lib/noteBlocksApi';
 import { buildContentForTypeChange } from '../_lib/noteBlockTypeChange';
+import {
+  canSplitMultilinePasteToBlocks,
+  contentForMultilinePasteLine,
+  insertTypeForMultilinePasteFollowUp,
+} from '../_lib/noteMultilinePaste';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -55,6 +60,7 @@ export function useNoteBlockActions(options: {
   focusedEditorBlockId: string | null;
   focusedEditorBlockIdRef: React.MutableRefObject<string | null>;
   focusedEditorPartRef: React.MutableRefObject<'title' | 'editor' | null>;
+  selectedBlockIdsRef: React.MutableRefObject<Set<string>>;
   editorScrollRef: React.RefObject<HTMLDivElement | null>;
   titleInputRef: React.RefObject<HTMLTextAreaElement | null>;
   formatToolbarApiRef: React.MutableRefObject<NoteFormatToolbarApi>;
@@ -110,6 +116,7 @@ export function useNoteBlockActions(options: {
     focusedEditorBlockId,
     focusedEditorBlockIdRef,
     focusedEditorPartRef,
+    selectedBlockIdsRef,
     editorScrollRef,
     titleInputRef,
     formatToolbarApiRef,
@@ -166,11 +173,16 @@ export function useNoteBlockActions(options: {
 
   const syncBlockContent = useCallback((blockId: string, content: unknown) => {
     const block = blocksRef.current.find((b) => b.id === blockId);
+    if (!block) return;
     let record = (content ?? {}) as Record<string, unknown>;
-    if (block && (block.type === 'bulletList' || block.type === 'numberedList')) {
+    if (block.type === 'bulletList' || block.type === 'numberedList') {
       record = normalizeListBlockContentRecord(record);
     }
-    useNoteBlockStore.getState().patchContent(blockId, record);
+    const store = useNoteBlockStore.getState();
+    if (!store.getBlock(blockId)) {
+      store.upsertBlock(block);
+    }
+    store.patchContent(blockId, record);
     blocksRef.current = blocksRef.current.map((b) =>
       b.id === blockId ? { ...b, content: record } : b,
     );
@@ -786,14 +798,54 @@ export function useNoteBlockActions(options: {
   const showFormatToolbar = useCallback((
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => {
-    formatToolbarApiRef.current.show(applyMark, applyTextStyle, position);
+    formatToolbarApiRef.current.show(applyMark, applyTextStyle, applyTextColor, applyHighlight, position);
   }, []);
 
   const hideFormatToolbar = useCallback(() => {
     formatToolbarApiRef.current.hide();
   }, []);
+
+  const handleMultilinePaste = useCallback(async (block: NoteBlock, lines: string[]) => {
+    if (!selectedId || lines.length <= 1 || !canSplitMultilinePasteToBlocks(block.type)) return;
+
+    const sourceContent = (block.content ?? {}) as Record<string, unknown>;
+    const firstContent = contentForMultilinePasteLine(block.type, lines[0] ?? '', sourceContent);
+    syncBlockContent(block.id, firstContent);
+
+    const parentId = block.parent_block_id ?? null;
+    const siblings = getBlocksInParent(blocksRef.current, parentId)
+      .sort((a, b) => a.order_index - b.order_index);
+    let insertIndex = siblings.findIndex((item) => item.id === block.id) + 1;
+    const followType = insertTypeForMultilinePasteFollowUp(block.type);
+    const touchedIds = [block.id];
+    let lastFocusId = block.id;
+
+    for (const line of lines.slice(1)) {
+      const content = contentForMultilinePasteLine(followType, line, sourceContent);
+      const created = await insertBlockAmongSiblings(parentId, followType, insertIndex, {
+        content,
+        focus: false,
+        registerUndo: false,
+      });
+      if (!created) break;
+      touchedIds.push(created.id);
+      lastFocusId = created.id;
+      insertIndex += 1;
+    }
+
+    recordBlockUndo(touchedIds);
+    focusBlockEditor(lastFocusId, 'editor');
+  }, [
+    selectedId,
+    syncBlockContent,
+    insertBlockAmongSiblings,
+    recordBlockUndo,
+    focusBlockEditor,
+  ]);
 
   const handleCopyBlockLink = useCallback((block: NoteBlock) => {
     if (!selectedId) return;
@@ -1041,6 +1093,50 @@ export function useNoteBlockActions(options: {
     return () => window.removeEventListener('keydown', onKey, true);
   }, [runNoteRedo, runNoteUndo, noteUndo]);
 
+  useEffect(() => {
+    const resolveShortcutBlock = (): NoteBlock | null => {
+      const selected = selectedBlockIdsRef.current;
+      const blockId = selected.size === 1
+        ? [...selected][0]
+        : (selected.size === 0 ? focusedEditorBlockIdRef.current : null);
+      if (!blockId) return null;
+      return blocksRef.current.find((b) => b.id === blockId) ?? null;
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      if (docTab !== 'active' || !selectedId) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-note-doc-title]')) return;
+
+      const meta = e.ctrlKey || e.metaKey;
+      if (meta && !e.shiftKey && e.key.toLowerCase() === 'd') {
+        const block = resolveShortcutBlock();
+        if (!block) return;
+        e.preventDefault();
+        void handleDuplicateBlock(block);
+        return;
+      }
+
+      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'l') {
+        const block = resolveShortcutBlock();
+        if (!block) return;
+        e.preventDefault();
+        handleCopyBlockLink(block);
+      }
+    };
+
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [
+    docTab,
+    selectedId,
+    blocksRef,
+    focusedEditorBlockIdRef,
+    selectedBlockIdsRef,
+    handleDuplicateBlock,
+    handleCopyBlockLink,
+  ]);
+
   return {
     scheduleBlockContentSave,
     syncBlockContent,
@@ -1051,6 +1147,7 @@ export function useNoteBlockActions(options: {
     handleNavigateBlock,
     insertBlockAmongSiblings,
     handleDuplicateBlock,
+    handleMultilinePaste,
     handleInsertBlockAfter,
     handleInsertBlockInParent,
     handleAddBlock,

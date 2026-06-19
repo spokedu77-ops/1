@@ -184,9 +184,12 @@ export interface NotePageContextValue {
   showFormatToolbar: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
   ) => void;
   hideFormatToolbar: () => void;
+  handleMultilinePaste: (block: NoteBlock, lines: string[]) => Promise<void>;
   handleCopyBlockLink: (block: NoteBlock) => void;
   uploadNoteImage: (file: File) => Promise<string>;
   handleUpdateBlock: (block: NoteBlock, content: unknown) => void;

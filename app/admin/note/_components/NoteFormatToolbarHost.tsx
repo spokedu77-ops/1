@@ -2,18 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 'react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import type { FormatToolbarState } from '../_lib/types';
 import { BubbleToolbar } from './BubbleToolbar';
-
-export type FormatToolbarState = {
-  applyMark: (mark: InlineMark) => void;
-  applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void;
-  position: { top: number; left: number };
-};
 
 export type NoteFormatToolbarApi = {
   show: (
     applyMark: FormatToolbarState['applyMark'],
     applyTextStyle: FormatToolbarState['applyTextStyle'],
+    applyTextColor: FormatToolbarState['applyTextColor'],
+    applyHighlight: FormatToolbarState['applyHighlight'],
     position: FormatToolbarState['position'],
   ) => void;
   hide: () => void;
@@ -26,6 +23,8 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
   const show = useCallback((
     applyMark: FormatToolbarState['applyMark'],
     applyTextStyle: FormatToolbarState['applyTextStyle'],
+    applyTextColor: FormatToolbarState['applyTextColor'],
+    applyHighlight: FormatToolbarState['applyHighlight'],
     position: FormatToolbarState['position'],
   ) => {
     const prev = lastPositionRef.current;
@@ -35,13 +34,15 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
       && prev.left === position.left
     ) {
       setToolbar((current) => {
-        if (!current) return { applyMark, applyTextStyle, position };
+        if (!current) {
+          return { applyMark, applyTextStyle, applyTextColor, applyHighlight, position };
+        }
         return current;
       });
       return;
     }
     lastPositionRef.current = position;
-    setToolbar({ applyMark, applyTextStyle, position });
+    setToolbar({ applyMark, applyTextStyle, applyTextColor, applyHighlight, position });
   }, []);
 
   const hide = useCallback(() => {
@@ -70,7 +71,12 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
       className="pointer-events-auto fixed z-[10050] -translate-x-1/2 -translate-y-full rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl backdrop-blur"
       style={{ left: toolbar.position.left, top: toolbar.position.top }}
     >
-      <BubbleToolbar applyMark={toolbar.applyMark} applyTextStyle={toolbar.applyTextStyle} />
+      <BubbleToolbar
+        applyMark={toolbar.applyMark}
+        applyTextStyle={toolbar.applyTextStyle}
+        applyTextColor={toolbar.applyTextColor}
+        applyHighlight={toolbar.applyHighlight}
+      />
     </div>
   );
 }

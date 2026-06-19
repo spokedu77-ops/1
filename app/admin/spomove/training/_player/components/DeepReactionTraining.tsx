@@ -167,7 +167,7 @@ class Jellyfish {
     const dx = this.tx - this.x, dy = this.ty - this.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
     this.vx = dx / dist; this.vy = dy / dist;
-    this.speed = (dist / speedSec / 60) * baseSpeedMult;
+    this.speed = (dist / speedSec) * baseSpeedMult;
     this.bw = Math.min(L.W, L.H) * 0.055;
     this.bh = this.bw * 0.6;
     this.phase = Math.random() * Math.PI * 2;
@@ -180,17 +180,19 @@ class Jellyfish {
     this.angle = Math.atan2(dy, dx);
   }
 
-  update(G: GameRef) {
-    this.phase += this.phaseSpd;
-    this.tentacles.forEach(t => { t.phase += 0.06; });
-    this.x += this.vx * this.speed;
-    this.y += this.vy * this.speed;
+  update(G: GameRef, deltaSec: number) {
+    const t60 = deltaSec * 60;
+    this.phase += this.phaseSpd * t60;
+    this.tentacles.forEach(t => { t.phase += 0.06 * t60; });
+    const stepPx = this.speed * deltaSec;
+    this.x += this.vx * stepPx;
+    this.y += this.vy * stepPx;
     this.bubbleTimer++;
     if (this.bubbleTimer % 4 === 0 && G.particles.length < 250) {
       G.particles.push(new JellyBubble(this.x, this.y, this.color.main));
     }
     const dx = this.tx - this.x, dy = this.ty - this.y;
-    if (!this.fired && Math.sqrt(dx * dx + dy * dy) < this.speed + this.bw * 1.4) {
+    if (!this.fired && Math.sqrt(dx * dx + dy * dy) < stepPx + this.bw * 1.4) {
       this.fired = true; this.dead = true;
     }
   }
@@ -306,6 +308,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
 
   const G = useRef<GameRef | null>(null);
   const L = useRef<LayoutState>({ W: 0, H: 0, cx: 0, cy: 0, pad: 0, inset: 0, corners: [] });
+  const lastFrameMsRef = useRef(0);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   const onExitRef = useRef(onExit);
@@ -513,9 +516,12 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
   const loop = useCallback((now: number) => {
     const g = G.current; const cv = canvasRef.current;
     if (!g || !g.running || !cv) return;
+    const deltaSec = lastFrameMsRef.current > 0 ? Math.min((now - lastFrameMsRef.current) / 1000, 0.05) : 1 / 60;
+    lastFrameMsRef.current = now;
+    const t60 = deltaSec * 60;
     const ctx = cv.getContext('2d'); if (!ctx) return;
     ctx.clearRect(0, 0, L.current.W, L.current.H);
-    g.waveOffset += 0.4;
+    g.waveOffset += 0.4 * t60;
 
     drawDeepBg(ctx, g.waveOffset);
 
@@ -540,7 +546,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     // update jellies
     for (let i = g.jellies.length - 1; i >= 0; i--) {
       const j = g.jellies[i];
-      j.update(g); j.draw(ctx);
+      j.update(g, deltaSec); j.draw(ctx);
       if (j.dead) {
         onStim(j.ci, j.tx, j.ty);
         g.jellies.splice(i, 1);
@@ -550,8 +556,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     // ripples
     for (let i = g.ripples.length - 1; i >= 0; i--) {
       const rp = g.ripples[i];
-      if (rp.delay > 0) { rp.delay--; continue; }
-      rp.r += rp.maxR * 0.07; rp.life -= 0.055;
+      if (rp.delay > 0) { rp.delay -= t60; continue; }
+      rp.r += rp.maxR * 0.07 * t60; rp.life -= 0.055 * t60;
       if (rp.life <= 0) { g.ripples.splice(i, 1); continue; }
       ctx.save(); ctx.globalAlpha = rp.life * 0.75;
       ctx.strokeStyle = rp.color; ctx.shadowColor = rp.color; ctx.shadowBlur = 18 * rp.life;
@@ -602,13 +608,19 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     G.current = g;
 
     updateHudTime();
+    const endsAtMs = performance.now() + durationSec * 1000;
+    const sessionStartMs = performance.now();
     g.timer = setInterval(() => {
       const gg = G.current; if (!gg || !gg.running) return;
-      gg.timeLeft--; gg.elapsed++;
-      updateHudTime();
-      if (gg.elapsed >= 45 && gg.elapsed % 15 === 0) applyAccel();
-      if (gg.timeLeft <= 0) endGame();
-    }, 1000);
+      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+      if (gg.timeLeft !== newLeft) { gg.timeLeft = newLeft; updateHudTime(); }
+      const elapsedSec = Math.floor((performance.now() - sessionStartMs) / 1000);
+      if (gg.elapsed !== elapsedSec) {
+        gg.elapsed = elapsedSec;
+        if (elapsedSec >= 45 && elapsedSec % 15 === 0) applyAccel();
+      }
+      if (gg.timeLeft <= 0) { if (gg.timer) clearInterval(gg.timer); gg.timer = null; endGame(); }
+    }, 250);
 
     g.raf = requestAnimationFrame(loop);
 

@@ -7,7 +7,17 @@ import type { PublicNoteBlock, PublicNoteDocument } from '@/app/lib/server/publi
 import { buildChildrenByParentBlock, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { hasToggleBodyContent, resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { resolveVideoEmbedContent, videoProviderLabel } from '@/app/lib/note/videoEmbed';
+import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '@/app/admin/note/_components/noteBulletInput';
 import { VideoEmbedFrame } from '@/app/admin/note/_components/VideoEmbedFrame';
+
+function listItemContent(content: Record<string, unknown> | null | undefined) {
+  if (!content) return content;
+  const rawText = typeof content.text === 'string' ? content.text : '';
+  if (!rawText) return content;
+  const text = stripListItemMarkerPrefix(rawText);
+  if (text === rawText) return content;
+  return { ...content, text };
+}
 
 function blockDepth(content: Record<string, unknown> | null | undefined) {
   return Math.max(0, Math.min(6, Number(content?.depth ?? 0)));
@@ -84,6 +94,67 @@ function PublicBlock({
     );
   }
 
+  if (block.type === 'heading2') {
+    return (
+      <div className="py-2.5" style={indentStyle}>
+        <RichText content={block.content} className="text-xl font-bold leading-tight text-slate-900" />
+      </div>
+    );
+  }
+
+  if (block.type === 'heading3') {
+    return (
+      <div className="py-2" style={indentStyle}>
+        <RichText content={block.content} className="text-lg font-semibold leading-snug text-slate-900" />
+      </div>
+    );
+  }
+
+  if (block.type === 'bulletList') {
+    const level = depth;
+    const bullet = bulletMarkerForLevel(level).trim();
+    return (
+      <div style={indentStyle}>
+        <div className="flex items-start gap-2 py-0.5">
+          <span className="mt-1 min-w-[1.25rem] shrink-0 text-center text-[15px] leading-7 text-slate-800" aria-hidden>
+            {bullet}
+          </span>
+          <RichText
+            content={listItemContent(block.content)}
+            className="min-w-0 flex-1 text-[15px] leading-7 text-slate-800"
+          />
+        </div>
+        {childBlocks.length > 0 ? (
+          <div className="space-y-0">
+            {childBlocks.map((child) => renderChildBlock?.(child))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (block.type === 'numberedList') {
+    const displayNum = typeof block.content?.number === 'number' ? block.content.number : 1;
+    return (
+      <div style={indentStyle}>
+        <div className="flex items-start gap-2 py-0.5">
+          <span className="mt-1 min-w-[1.25rem] shrink-0 text-right text-[15px] leading-7 text-slate-500" aria-hidden>
+            {displayNum}.
+          </span>
+          <RichText
+            content={listItemContent(block.content)}
+            className="min-w-0 flex-1 text-[15px] leading-7 text-slate-800"
+          />
+        </div>
+        {childBlocks.length > 0 ? (
+          <div className="space-y-0">
+            {childBlocks.map((child) => renderChildBlock?.(child))}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
+
   if (block.type === 'todo') {
     const checked = !!block.content?.checked;
     return (
@@ -130,11 +201,15 @@ function PublicBlock({
   if (block.type === 'image') {
     const url = typeof block.content?.url === 'string' ? block.content.url.trim() : '';
     if (!url) return null;
+    const caption = typeof block.content?.caption === 'string' ? block.content.caption.trim() : '';
     return (
       <div className="py-2" style={indentStyle}>
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-          <img src={url} alt="" className="max-h-96 w-full object-contain" />
+          <img src={url} alt={caption || ''} className="max-h-96 w-full object-contain" />
         </div>
+        {caption ? (
+          <p className="mt-1.5 text-center text-[12px] text-slate-500">{caption}</p>
+        ) : null}
       </div>
     );
   }
@@ -325,11 +400,19 @@ export function PublicNoteView({
           text-decoration: underline;
           text-underline-offset: 2px;
         }
+        .public-note-rich u {
+          text-decoration: underline;
+          text-underline-offset: 2px;
+        }
         .public-note-rich code {
           border-radius: 0.375rem;
           background: rgb(241 245 249);
           padding: 0.1rem 0.25rem;
           font-size: 0.92em;
+        }
+        .public-note-rich mark {
+          border-radius: 0.125rem;
+          padding: 0.05rem 0.1rem;
         }
         .public-note-rich h1,
         .public-note-rich h2,

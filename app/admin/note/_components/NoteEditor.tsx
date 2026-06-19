@@ -25,10 +25,13 @@ import {
 import { NoteRichEditorStyles } from './NoteRichEditorStyles';
 import { useNoteImageLightbox } from './NoteImageLightbox';
 import {
+  consumePendingSelectAllBlock,
   pendingEditorClickRef,
   registerNoteEditor,
   scheduleFocusNoteEditorAtClick,
+  selectAllNoteEditorText,
   unregisterNoteEditor,
+  getNoteEditor,
 } from './noteEditorRegistry';
 import {
   plainMultilineToInsertHtml,
@@ -39,12 +42,12 @@ import {
   notePageLinkInsertHtml,
 } from '../_lib/notePaste';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
+import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
 import {
   bindNoteCrossSelectCopy,
   shouldSuppressCrossFormatToolbar,
 } from './noteCrossSelect';
 import { bindListCrossHighlightEditorLookup } from './noteListCrossHighlight';
-import { getNoteEditor } from './noteEditorRegistry';
 import { noteSuppressEditorScrollRef } from '../_lib/noteEditorScrollGuard';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 
@@ -174,6 +177,18 @@ function richTextSourceHtml({
   return legacyTextToEditorHtml(text);
 }
 
+function applyEditorHighlight(editor: Editor, color: string | null) {
+  const chain = editor.chain().focus();
+  if (!color) chain.unsetMark('highlight').run();
+  else chain.setMark('highlight', { color }).run();
+}
+
+function applyEditorTextColor(editor: Editor, color: string | null) {
+  const chain = editor.chain().focus();
+  if (!color) chain.unsetMark('textColor').run();
+  else chain.setMark('textColor', { color }).run();
+}
+
 function applyEditorMark(editor: Editor, mark: InlineMark) {
   const chain = editor.chain().focus();
   if (mark === 'bold') chain.toggleBold().run();
@@ -283,6 +298,8 @@ export function NoteEditor({
   onNavigateNext,
   onEditorFocus,
   onOpenDocumentById,
+  onMultilinePaste,
+  canSplitMultilinePaste = false,
   tabBehavior = 'block-indent',
   resetKey,
   editorBlockId,
@@ -299,6 +316,8 @@ export function NoteEditor({
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: TextStyle) => void,
+    applyTextColor: (color: string | null) => void,
+    applyHighlight: (color: string | null) => void,
     position: ToolbarPosition,
   ) => void;
   onHideFormatToolbar?: () => void;
@@ -319,6 +338,8 @@ export function NoteEditor({
   onNavigateNext?: () => void;
   onEditorFocus?: () => void;
   onOpenDocumentById?: (documentId: string) => void;
+  onMultilinePaste?: (lines: string[]) => void;
+  canSplitMultilinePaste?: boolean;
   tabBehavior?: 'block-indent' | 'insert-text-indent';
   resetKey?: string;
   editorBlockId?: string;
@@ -330,6 +351,10 @@ export function NoteEditor({
   const isEditingRef = useRef(false);
   const lastAutoFocusSignalRef = useRef(0);
   const editorRef = useRef<Editor | null>(null);
+  const blurCommitRef = useRef<{
+    blockId?: string;
+    onChange: (change: NoteEditorChange) => void;
+  } | null>(null);
   const imageLightbox = useNoteImageLightbox();
   const imageLightboxRef = useRef(imageLightbox);
   imageLightboxRef.current = imageLightbox;
@@ -351,6 +376,8 @@ export function NoteEditor({
     onNavigateNext,
     onEditorFocus,
     onOpenDocumentById,
+    onMultilinePaste,
+    canSplitMultilinePaste,
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
@@ -374,6 +401,8 @@ export function NoteEditor({
     onNavigateNext,
     onEditorFocus,
     onOpenDocumentById,
+    onMultilinePaste,
+    canSplitMultilinePaste,
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
@@ -387,27 +416,36 @@ export function NoteEditor({
 
   const flushPendingChange = useCallback(() => {
     if (changeTimerRef.current !== null) {
-      window.clearTimeout(changeTimerRef.current);
+      window.cancelAnimationFrame(changeTimerRef.current);
       changeTimerRef.current = null;
+    }
+    const currentEditor = editorRef.current;
+    if (currentEditor && !(currentEditor as { isDestroyed?: boolean }).isDestroyed) {
+      pendingChangeRef.current = null;
+      callbacksRef.current.onChange({
+        text: currentEditor.getText(),
+        html: currentEditor.getHTML(),
+      });
+      return;
     }
     const pending = pendingChangeRef.current;
     if (!pending) return;
     pendingChangeRef.current = null;
-    const currentEditor = editorRef.current;
-    const html = currentEditor && !(currentEditor as { isDestroyed?: boolean }).isDestroyed
-      ? currentEditor.getHTML()
-      : pending.html;
-    callbacksRef.current.onChange({ text: pending.text, html });
+    callbacksRef.current.onChange({ text: pending.text, html: pending.html });
   }, []);
 
   callbacksRef.current.flushPendingChange = flushPendingChange;
 
   const scheduleChange = useCallback((change: NoteEditorChange) => {
     pendingChangeRef.current = change;
-    if (changeTimerRef.current !== null) window.clearTimeout(changeTimerRef.current);
-    changeTimerRef.current = window.setTimeout(() => {
+    if (changeTimerRef.current !== null) {
+      window.cancelAnimationFrame(changeTimerRef.current);
+      changeTimerRef.current = null;
+    }
+    changeTimerRef.current = window.requestAnimationFrame(() => {
+      changeTimerRef.current = null;
       flushPendingChange();
-    }, 220);
+    });
   }, [flushPendingChange]);
 
   const toolbarNotifyRafRef = useRef<number | null>(null);
@@ -425,12 +463,36 @@ export function NoteEditor({
         return;
       }
       callbacksRef.current.onShowFormatToolbar?.(
-        (mark) => applyEditorMark(currentEditor, mark),
-        (style) => applyEditorTextStyle(currentEditor, style),
+        (mark) => {
+          applyEditorMark(currentEditor, mark);
+          flushPendingChange();
+        },
+        (style) => {
+          applyEditorTextStyle(currentEditor, style);
+          flushPendingChange();
+        },
+        (color) => {
+          applyEditorTextColor(currentEditor, color);
+          flushPendingChange();
+        },
+        (color) => {
+          applyEditorHighlight(currentEditor, color);
+          flushPendingChange();
+        },
         position,
       );
     });
-  }, []);
+  }, [flushPendingChange]);
+
+  const tryPendingSelectAll = useCallback((currentEditor: Editor) => {
+    if (!editorBlockId || !consumePendingSelectAllBlock(editorBlockId)) return;
+    requestAnimationFrame(() => {
+      const ed = editorRef.current;
+      if (!ed || ed !== currentEditor || (ed as { isDestroyed?: boolean }).isDestroyed) return;
+      selectAllNoteEditorText(ed);
+      notifyFormatToolbar(ed);
+    });
+  }, [editorBlockId, notifyFormatToolbar]);
 
   const extensions = useMemo(
     () => [
@@ -452,6 +514,8 @@ export function NoteEditor({
       Image.configure({ inline: false, allowBase64: false }),
       CharacterCount,
       Placeholder.configure({ placeholder }),
+      NoteTextColor,
+      NoteHighlight,
       NoteListCrossHighlightExtension,
       NoteTextDragSelectExtension,
     ],
@@ -495,19 +559,15 @@ export function NoteEditor({
       handleDOMEvents: {
         dblclick: (view, event) => {
           event.preventDefault();
-          const doc = view.state.doc;
-          const from = 1;
-          const to = Math.max(from, doc.content.size - 1);
-          if (to > from) {
-            view.dispatch(
-              view.state.tr.setSelection(TextSelection.create(doc, from, to)),
-            );
+          const ed = editorRef.current;
+          if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
+            selectAllNoteEditorText(ed);
+            requestAnimationFrame(() => {
+              const current = editorRef.current;
+              if (!current || (current as { isDestroyed?: boolean }).isDestroyed) return;
+              notifyFormatToolbar(current);
+            });
           }
-          requestAnimationFrame(() => {
-            const ed = editorRef.current;
-            if (!ed || (ed as { isDestroyed?: boolean }).isDestroyed) return;
-            notifyFormatToolbar(ed);
-          });
           return true;
         },
         keydown: (view, event) => {
@@ -600,6 +660,30 @@ export function NoteEditor({
             }
           }
         }
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+          const ed = editorRef.current;
+          if (!ed || (ed as { isDestroyed?: boolean }).isDestroyed) return false;
+          event.preventDefault();
+          flush();
+          const previousUrl = String(ed.getAttributes('link').href ?? '');
+          const url = window.prompt('링크 URL', previousUrl || 'https://');
+          if (url === null) return true;
+          const trimmed = url.trim();
+          if (!trimmed) {
+            ed.chain().focus().extendMarkRange('link').unsetLink().run();
+            return true;
+          }
+          const { empty, from } = ed.state.selection;
+          if (empty) {
+            ed.chain().focus().insertContent(trimmed).setTextSelection({
+              from,
+              to: from + trimmed.length,
+            }).setLink({ href: trimmed }).run();
+          } else {
+            ed.chain().focus().extendMarkRange('link').setLink({ href: trimmed }).run();
+          }
+          return true;
+        }
         if (event.key === 'Backspace') {
           const { selection } = view.state;
           if (selection.empty && selection.from <= 1) {
@@ -686,8 +770,19 @@ export function NoteEditor({
           return true;
         }
         if (plain && shouldHandlePlainMultilinePaste(plain)) {
+          const lines = splitClipboardLines(plain);
+          const { onMultilinePaste, canSplitMultilinePaste: splitEnabled } = callbacksRef.current;
+          if (splitEnabled && onMultilinePaste && lines.length > 1) {
+            event.preventDefault();
+            flush();
+            const firstLine = lines[0] ?? '';
+            editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(firstLine)).run();
+            scheduleChange({ text: firstLine, html: '' });
+            onMultilinePaste(lines);
+            return true;
+          }
           event.preventDefault();
-          const html = plainMultilineToInsertHtml(splitClipboardLines(plain));
+          const html = plainMultilineToInsertHtml(lines);
           editorRef.current?.chain().focus().insertContent(html).run();
           return true;
         }
@@ -711,6 +806,7 @@ export function NoteEditor({
       scheduleChange({ text: nextText, html: '' });
     },
     onCreate: ({ editor: currentEditor }) => {
+      tryPendingSelectAll(currentEditor);
       if (editorBlockId && pendingEditorClickRef.current?.blockId === editorBlockId) {
         scheduleFocusNoteEditorAtClick(editorBlockId, currentEditor);
         return;
@@ -724,6 +820,12 @@ export function NoteEditor({
     },
     onFocus: ({ editor: currentEditor }) => {
       isEditingRef.current = true;
+      if (editorBlockId) {
+        blurCommitRef.current = {
+          blockId: editorBlockId,
+          onChange: callbacksRef.current.onChange,
+        };
+      }
       callbacksRef.current.onEditorFocus?.();
       if (!currentEditor.state.selection.empty) {
         notifyFormatToolbar(currentEditor);
@@ -738,7 +840,20 @@ export function NoteEditor({
     },
     onBlur: () => {
       isEditingRef.current = false;
-      flushPendingChange();
+      const target = blurCommitRef.current;
+      blurCommitRef.current = null;
+      const currentEditor = editorRef.current;
+      if (
+        target?.blockId
+        && currentEditor
+        && !(currentEditor as { isDestroyed?: boolean }).isDestroyed
+        && getNoteEditor(target.blockId) === currentEditor
+      ) {
+        target.onChange({
+          text: currentEditor.getText(),
+          html: currentEditor.getHTML(),
+        });
+      }
       callbacksRef.current.onHideFormatToolbar?.();
       callbacksRef.current.onSlashChange?.(false, '');
     },
@@ -765,7 +880,7 @@ export function NoteEditor({
         if (splitResult) {
           split = splitResult;
           if (changeTimerRef.current !== null) {
-            window.clearTimeout(changeTimerRef.current);
+            window.cancelAnimationFrame(changeTimerRef.current);
             changeTimerRef.current = null;
           }
           pendingChangeRef.current = null;
@@ -811,12 +926,12 @@ export function NoteEditor({
     } catch {
       return;
     }
-    if (resetKeyChanged && isEditingRef.current && editor.getText() === text) {
+    if (!resetKeyChanged && isEditingRef.current && editor.getText() === text) {
       return;
     }
     if (resetKeyChanged || currentHtml !== sourceHtml) {
       if (changeTimerRef.current !== null) {
-        window.clearTimeout(changeTimerRef.current);
+        window.cancelAnimationFrame(changeTimerRef.current);
         changeTimerRef.current = null;
       }
       pendingChangeRef.current = null;
@@ -877,10 +992,11 @@ export function NoteEditor({
   useEffect(() => {
     if (!editor || !editorBlockId) return;
     registerNoteEditor(editorBlockId, editor);
+    tryPendingSelectAll(editor);
     return () => {
       unregisterNoteEditor(editorBlockId);
     };
-  }, [editor, editorBlockId]);
+  }, [editor, editorBlockId, tryPendingSelectAll]);
 
   return (
     <>

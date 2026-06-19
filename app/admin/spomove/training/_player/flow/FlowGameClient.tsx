@@ -104,6 +104,8 @@ export default function FlowGameClient({
     engineRef.current = engine;
     engine.init(flashRef.current).then(() => {
       onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
+      // async init 완료 후 실제 뷰포트 크기로 재조정 (iOS Safari 초기화 타이밍 보정)
+      engine.resize(window.innerWidth, window.innerHeight);
       engine.start();
     });
 
@@ -120,7 +122,12 @@ export default function FlowGameClient({
   useEffect(() => {
     const onResize = () => engineRef.current?.resize(window.innerWidth, window.innerHeight);
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    // iOS Safari: 주소창 표시/숨김 시 visualViewport resize 이벤트로 캔버스 크기 갱신
+    window.visualViewport?.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
+    };
   }, []);
 
   const handleExit = useCallback(() => {

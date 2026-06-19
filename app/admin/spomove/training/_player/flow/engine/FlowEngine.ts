@@ -260,13 +260,18 @@ export class FlowEngine {
     this.scene.background = new THREE.Color(theme.bg);
     this.scene.fog = new THREE.Fog(theme.fog, theme.fogNear, theme.fogFar);
 
-    this.camera = new THREE.PerspectiveCamera(60, this.canvas.clientWidth / this.canvas.clientHeight, 0.1, 12000);
+    // iOS Safari에서 position:fixed 컨테이너 내부 canvas의 clientWidth/Height가
+    // useEffect 실행 시점에 0으로 반환될 수 있으므로 window 크기로 폴백한다.
+    const initW = this.canvas.clientWidth  || window.innerWidth;
+    const initH = this.canvas.clientHeight || window.innerHeight;
+
+    this.camera = new THREE.PerspectiveCamera(60, initW / initH, 0.1, 12000);
     this.camera.position.set(0, CAMERA_BASE_HEIGHT + GROUND_Y, CAMERA_BASE_Z);
     this.camera.lookAt(0, GROUND_Y + 45, -1500);
     this.camYBase = CAMERA_BASE_HEIGHT + GROUND_Y;
 
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
-    this.renderer.setSize(this.canvas.clientWidth, this.canvas.clientHeight);
+    this.renderer.setSize(initW, initH);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, this.aq.getPixelRatioMax()));
 
     const amb = new THREE.AmbientLight(0xffffff, theme.ambientInt);

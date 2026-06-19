@@ -1,8 +1,19 @@
 'use client';
 
 import { useState } from 'react';
-import { Bold, ChevronDown, Code2, Italic, Strikethrough, Type, Underline as UnderlineIcon } from 'lucide-react';
+import {
+  Bold,
+  ChevronDown,
+  Code2,
+  Highlighter,
+  Italic,
+  Palette,
+  Strikethrough,
+  Type,
+  Underline as UnderlineIcon,
+} from 'lucide-react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import { NOTE_HIGHLIGHT_COLOR_OPTIONS, NOTE_TEXT_COLOR_OPTIONS } from '../_lib/noteEditorColors';
 import { formatShortcutLabel, INLINE_MARK_SHORTCUTS, TEXT_STYLE_SHORTCUTS } from './noteFormatShortcuts';
 
 type TextStyle = 'paragraph' | 'heading1' | 'heading2' | 'heading3';
@@ -22,14 +33,59 @@ const TEXT_STYLES: { style: TextStyle; label: string; hint: string; shortcut: st
   { style: 'heading3', label: '제목 3', hint: '작은 제목', shortcut: TEXT_STYLE_SHORTCUTS.heading3 },
 ];
 
+function ColorSwatchMenu({
+  title,
+  options,
+  onSelect,
+  onClose,
+}: {
+  title: string;
+  options: ReadonlyArray<{ id: string; value: string | null; swatch: string }>;
+  onSelect: (color: string | null) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="absolute left-0 top-full z-10 mt-1 w-44 rounded-xl border border-slate-200 bg-white p-2 shadow-xl">
+      <p className="mb-1.5 px-1 text-[11px] font-medium text-slate-400">{title}</p>
+      <div className="grid grid-cols-5 gap-1">
+        {options.map((opt) => (
+          <button
+            key={opt.id}
+            type="button"
+            title={opt.id}
+            className={`h-6 w-6 rounded-md ${opt.swatch}`}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              onSelect(opt.value);
+              onClose();
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function BubbleToolbar({
   applyMark,
   applyTextStyle = () => undefined,
+  applyTextColor = () => undefined,
+  applyHighlight = () => undefined,
 }: {
   applyMark: (mark: InlineMark) => void;
   applyTextStyle?: (style: TextStyle) => void;
+  applyTextColor?: (color: string | null) => void;
+  applyHighlight?: (color: string | null) => void;
 }) {
   const [showTextStyleMenu, setShowTextStyleMenu] = useState(false);
+  const [showTextColorMenu, setShowTextColorMenu] = useState(false);
+  const [showHighlightMenu, setShowHighlightMenu] = useState(false);
+
+  const closeMenus = () => {
+    setShowTextStyleMenu(false);
+    setShowTextColorMenu(false);
+    setShowHighlightMenu(false);
+  };
 
   return (
     <div className="flex items-center gap-1">
@@ -39,7 +95,10 @@ export function BubbleToolbar({
           title={`텍스트 스타일 (${formatShortcutLabel('Mod+Alt+1')} 등)`}
           className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => setShowTextStyleMenu((v) => !v)}
+          onClick={() => {
+            closeMenus();
+            setShowTextStyleMenu((v) => !v);
+          }}
         >
           <Type className="h-4 w-4" />
           <ChevronDown className={`h-3.5 w-3.5 transition-transform ${showTextStyleMenu ? 'rotate-180' : ''}`} />
@@ -66,6 +125,50 @@ export function BubbleToolbar({
             ))}
           </div>
         )}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          title="글자 색"
+          className="rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            closeMenus();
+            setShowTextColorMenu((v) => !v);
+          }}
+        >
+          <Palette className="h-4 w-4" />
+        </button>
+        {showTextColorMenu ? (
+          <ColorSwatchMenu
+            title="글자 색"
+            options={NOTE_TEXT_COLOR_OPTIONS}
+            onSelect={applyTextColor}
+            onClose={() => setShowTextColorMenu(false)}
+          />
+        ) : null}
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          title="형광펜"
+          className="rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            closeMenus();
+            setShowHighlightMenu((v) => !v);
+          }}
+        >
+          <Highlighter className="h-4 w-4" />
+        </button>
+        {showHighlightMenu ? (
+          <ColorSwatchMenu
+            title="배경 강조"
+            options={NOTE_HIGHLIGHT_COLOR_OPTIONS}
+            onSelect={applyHighlight}
+            onClose={() => setShowHighlightMenu(false)}
+          />
+        ) : null}
       </div>
       <div className="h-5 w-px bg-slate-200" />
       {INLINE_MARKS.map(({ mark, icon: Icon, label, shortcut }) => (

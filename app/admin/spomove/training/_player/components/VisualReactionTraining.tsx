@@ -112,19 +112,19 @@ class FlowTile {
     this.dead = false;
   }
 
-  update(g: GameState, cv: HTMLCanvasElement, nowMs: number, onLaneStim: (lane: number) => void) {
+  update(g: GameState, cv: HTMLCanvasElement, nowMs: number, deltaSec: number, onLaneStim: (lane: number) => void) {
     if (this.fired) return;
-    this.y += this.speed;
+    this.y += this.speed * deltaSec;
     if (this.y + this.h < g.hitY) return;
     this.y = g.hitY - this.h;
     const ready =
-      g.mode === 'pattern'
+      this.isPattern
         ? true
         : nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
     if (!ready) return;
     this.fired = true;
     this.dead = true;
-    if (g.mode !== 'pattern') {
+    if (!this.isPattern) {
       g.lastStimWallMs = nowMs;
       g.stimConsumedThisFrame = true;
     }
@@ -187,11 +187,12 @@ class FlashBubble {
     g: GameState,
     cv: HTMLCanvasElement,
     nowMs: number,
+    deltaSec: number,
     onBubbleStim: (lane: number, x: number, y: number) => void
   ) {
     this.t++;
     if (!this.fired) {
-      this.y += this.speed;
+      this.y += this.speed * deltaSec;
       this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
       if (this.y + this.r >= g.hitY) {
         this.y = g.hitY - this.r;
@@ -294,6 +295,15 @@ function randomPair(): [number, number] {
   return [lanes[i] ?? 0, lanes[j] ?? 1] as [number, number];
 }
 
+function randomTriple(): [number, number, number] {
+  const a = [0, 1, 2, 3];
+  for (let i = 3; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j]!, a[i]!];
+  }
+  return [a[0]!, a[1]!, a[2]!];
+}
+
 const css = `
 .vrt{--red:#FF1744;--yellow:#FFD600;--green:#00E676;--blue:#2979FF;--bg:#07070F;--hud-h:72px;--pad-h:76px}
 .vrt, .vrt *{box-sizing:border-box}
@@ -343,11 +353,13 @@ type Props = {
   durationSec: number;
   /** 시지각 전용: 블록/버블이 히트 라인까지 도달하는 목표 시간(초) */
   speedSec: number;
+  /** flow 전용: 동시 낙하 신호 수 (1=기본, 2=패턴, 3=트리플). 기본값 1 */
+  concurrent?: 1 | 2 | 3;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function VisualReactionTraining({ variant, durationSec, speedSec, onExit, onComplete }: Props) {
+export function VisualReactionTraining({ variant, durationSec, speedSec, concurrent = 1, onExit, onComplete }: Props) {
   const playAreaRef = useRef<HTMLDivElement>(null);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const gRef = useRef<GameState | null>(null);
@@ -613,16 +625,27 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
     const spawnObjs = (now: number) => {
       if (now - g.lastSpawn < g.spawnInt) return;
       if (g.mode === 'flow') {
-        const activeFlow = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired && !(o as FlowTile).dead).length;
-        const maxFlowOnScreen = 3 + Math.ceil(lv / 2);
-        if (activeFlow >= maxFlowOnScreen) return;
-        const activeLanes = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired).map((o) => (o as FlowTile).lane);
-        const lastLane = activeLanes.length ? activeLanes[activeLanes.length - 1] : -1;
-        let lane: number;
-        do {
-          lane = Math.floor(Math.random() * 4);
-        } while (lane === lastLane && Math.random() > 0.3);
-        g.objs.push(new FlowTile(g, cv, lane));
+        if (concurrent <= 1) {
+          const activeFlow = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired && !(o as FlowTile).dead).length;
+          const maxFlowOnScreen = 3 + Math.ceil(lv / 2);
+          if (activeFlow >= maxFlowOnScreen) return;
+          const activeLanes = g.objs.filter((o) => o instanceof FlowTile && !(o as FlowTile).fired).map((o) => (o as FlowTile).lane);
+          const lastLane = activeLanes.length ? activeLanes[activeLanes.length - 1] : -1;
+          let lane: number;
+          do {
+            lane = Math.floor(Math.random() * 4);
+          } while (lane === lastLane && Math.random() > 0.3);
+          g.objs.push(new FlowTile(g, cv, lane));
+        } else if (concurrent === 2) {
+          const pair = randomPair();
+          g.objs.push(new FlowTile(g, cv, pair[0], true));
+          g.objs.push(new FlowTile(g, cv, pair[1], true));
+        } else {
+          const triple = randomTriple();
+          g.objs.push(new FlowTile(g, cv, triple[0], true));
+          g.objs.push(new FlowTile(g, cv, triple[1], true));
+          g.objs.push(new FlowTile(g, cv, triple[2], true));
+        }
       } else if (g.mode === 'flash') {
         // FLASH(2번): 버블이 서로 겹치지 않게 동시 낙하를 1개로 제한.
         const activeFlash = g.objs.filter((o) => o instanceof FlashBubble && !o.dead).length;
@@ -637,14 +660,14 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
       g.lastSpawn = now;
     };
 
-    const updateObjs = (ctx: CanvasRenderingContext2D, nowMs: number) => {
+    const updateObjs = (ctx: CanvasRenderingContext2D, nowMs: number, deltaSec: number) => {
       for (let i = g.objs.length - 1; i >= 0; i--) {
         const o = g.objs[i];
         if (o instanceof FlowTile) {
-          o.update(g, cv, nowMs, onStim);
+          o.update(g, cv, nowMs, deltaSec, onStim);
           o.draw(ctx, g, cv);
         } else if (o instanceof FlashBubble) {
-          o.update(g, cv, nowMs, onStimBubble);
+          o.update(g, cv, nowMs, deltaSec, onStimBubble);
           o.draw(ctx, g, cv);
         }
         if (o.dead || o.y > cv.height + 100) g.objs.splice(i, 1);
@@ -660,8 +683,11 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
       }
     };
 
+    let lastFrameMs = 0;
     const loop = (now: number) => {
       if (!gRef.current?.running) return;
+      const deltaSec = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
+      lastFrameMs = now;
       const ctx2 = cv.getContext('2d');
       if (!ctx2) return;
       const gg = gRef.current;
@@ -669,7 +695,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
       ctx2.clearRect(0, 0, cv.width, cv.height);
       drawGrid(ctx2);
       spawnObjs(now);
-      updateObjs(ctx2, now);
+      updateObjs(ctx2, now, deltaSec);
       drawHitLine(ctx2);
       updateParticles(ctx2);
       drawTopFade(ctx2);
@@ -679,8 +705,12 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
     const computeSpawnInt = () => {
       /* 초등 친화: 최소 간격 상향 + 단계별 간격 완화(동시 스폰 체감 완화) */
       const base = Math.max(560, 1780 - (lv - 1) * 130);
-      /* FLOW: 같은 속도면 스폰 간격 ∝ 블록 사이 세로 거리 — 요청에 따라 FLOW만 2배 간격 */
-      if (variant === 'flow') return Math.round(base * 2.2);
+      /* FLOW: concurrent 수에 따라 스폰 간격 조정 */
+      if (variant === 'flow') {
+        if (concurrent <= 1) return Math.round(base * 2.2);
+        if (concurrent === 2) return Math.round(base * 2.3);
+        return Math.round(base * 2.8); // 3개 동시: 여유 있게
+      }
       /* FLASH: 동시 1개는 유지하되, 앞 버블이 터질 즈음 다음 버블이 보이도록 중간값으로 조정 */
       if (variant === 'flash') return Math.round(base * 1.45);
       /* PATTERN(3번): 페어 출현 간격을 FLOW·FLASH 대비 2배 */
@@ -702,7 +732,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
       calcLayout();
       const travelPx = Math.max(60, g.hitY + 4);
       const pps = travelPx / fallTimeSec;
-      g.baseSpd = pps / 60;
+      g.baseSpd = pps;
       g.spawnInt = computeSpawnInt();
       g.minStimGapMs = computeMinStimGapMs();
     };
@@ -714,21 +744,22 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
         calcLayout();
         const travelPx = Math.max(60, g.hitY + 4);
         const pps = travelPx / fallTimeSec;
-        g.baseSpd = pps / 60;
+        g.baseSpd = pps;
         g.spawnInt = computeSpawnInt();
         g.minStimGapMs = computeMinStimGapMs();
       }
       // 시작 직후 첫 자극이 바로 나오도록 스폰 타이머를 한 주기 당겨둔다.
       g.lastSpawn = performance.now() - g.spawnInt;
+      const endsAtMs = performance.now() + durationSec * 1000;
       g.timer = setInterval(() => {
-        g.timeLeft--;
-        updateHud();
+        const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+        if (g.timeLeft !== newLeft) { g.timeLeft = newLeft; updateHud(); }
         if (g.timeLeft <= 0) {
           if (g.timer) clearInterval(g.timer);
           g.timer = null;
           endGame();
         }
-      }, 1000);
+      }, 250);
       g.raf = requestAnimationFrame(loop);
     }, 60);
 
@@ -741,7 +772,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
     };
-  }, [durationSec, endGame, fallTimeSec, lv, onStim, onStimBubble, variant]);
+  }, [concurrent, durationSec, endGame, fallTimeSec, lv, onStim, onStimBubble, variant]);
 
   const uid = useId();
   return (
@@ -767,7 +798,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, onExit,
         </div>
         <div className="vrt-hc vrt-cen">
           <div id="vrt-badge" className="vrt-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
-            {variant.toUpperCase()} · {spName}
+            {variant === 'flow' && concurrent > 1 ? `FLOW ×${concurrent}` : variant.toUpperCase()} · {spName}
           </div>
         </div>
         <div className="vrt-hc" style={{ borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.05)' }}>
