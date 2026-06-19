@@ -23,6 +23,7 @@ import {
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
+import { contentChangeNeedsReactBlocks } from '../_lib/noteContentPatch';
 import { getNoteEditor, getActiveNoteEditor } from '../_components/noteEditorRegistry';
 import { registerNoteContentFlush, resolveBlockTextCaretOffset, commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent, applyRestoreBlockSnapshots } from '../_lib/noteBlockStateMerge';
 import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
@@ -182,14 +183,19 @@ export function useNoteBlockActions(options: {
     if (block.type === 'bulletList' || block.type === 'numberedList') {
       nextContent = normalizeListBlockContentRecord((content ?? {}) as Record<string, unknown>);
     }
+    const nextRecord = nextContent as Record<string, unknown>;
+    if (!contentChangeNeedsReactBlocks(block.content as Record<string, unknown>, nextRecord)) {
+      syncBlockContent(block.id, nextRecord);
+      return;
+    }
     blocksRef.current = blocksRef.current.map((b) =>
       b.id === block.id ? { ...b, content: nextContent } : b,
     );
     setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: nextContent } : b)));
-    useNoteBlockStore.getState().patchContent(block.id, nextContent as Record<string, unknown>);
+    useNoteBlockStore.getState().patchContent(block.id, nextRecord);
     scheduleBlockContentSave(block.id, nextContent);
     bumpNoteReconcileIdle(selectedId);
-  }, [scheduleBlockContentSave, selectedId]);
+  }, [scheduleBlockContentSave, selectedId, syncBlockContent]);
 
   const recordBlockUndo = useCallback((blockIds: string[]) => {
     noteUndo.pushRestoreBlocksUndo(mergeBlocksWithStoreContent(blocksRef.current), blockIds);
@@ -610,7 +616,15 @@ export function useNoteBlockActions(options: {
 
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
     recordBlockUndo([block.id]);
-    const nextContent = buildContentForTypeChange(block.content, block.type, type);
+    let nextContent = buildContentForTypeChange(block.content, block.type, type);
+    if (type === 'bulletList' || type === 'numberedList') {
+      nextContent = normalizeListBlockContentRecord(nextContent);
+    }
+    pendingContentPatchesRef.current.delete(block.id);
+    useNoteBlockStore.getState().patchContent(block.id, nextContent);
+    blocksRef.current = blocksRef.current.map((b) =>
+      b.id === block.id ? { ...b, type, content: nextContent } : b,
+    );
     const wasOnThisBlock = focusedEditorBlockIdRef.current === block.id;
     const nextFocusPart: 'title' | 'editor' =
       type === 'toggle' ? 'title'

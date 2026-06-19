@@ -12,6 +12,8 @@
     "lint:rules": "eslint . --format json -o eslint-report.json && node scripts/eslint-rule-count.mjs eslint-report.json",
     "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
+    "test:admin-note": "vitest run app/admin/note app/lib/note/noteBlockTree.test.ts",
+    "qa:admin-note": "node scripts/admin-note-smoke-qa.mjs",
     "verify:spokedu-plan-copy": "node scripts/verify-spokedu-plan-copy.mjs",
     "qa:spokedu-master": "node scripts/seed-spokedu-master-placeholder-heroes.mjs && node scripts/spokedu-master-home-content-audit.mjs && node scripts/spokedu-master-home-visual-audit.mjs && node scripts/spokedu-master-copy-scan.mjs",
     "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs"
@@ -73,6 +75,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.0",
+    "playwright": "^1.61.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.2"

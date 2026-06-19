@@ -33,6 +33,7 @@ import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
 import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '../noteBulletInput';
 import { useNoteBlockStore } from '../../_store/noteBlockStore';
+import { STORE_ONLY_CONTENT_KEYS } from '../../_lib/noteContentPatch';
 import { VideoEmbedFrame } from '../VideoEmbedFrame';
 import {
   BlockInsideDropSurface,
@@ -160,10 +161,6 @@ function BlockContent({
   const imgFileInputRef = useRef<HTMLInputElement>(null);
   const pageBtnRef = useRef<HTMLButtonElement>(null);
   const activeEditor = useNoteBlockStore((state) => state.activeEditor);
-
-  const STORE_ONLY_CONTENT_KEYS = new Set([
-    'text', 'body', 'html', 'bodyHtml', 'legacyText', 'legacyBody',
-  ]);
 
   const syncContentPatch = useCallback((partial: Record<string, unknown>) => {
     const base = (useNoteBlockStore.getState().getBlock(block.id)?.content

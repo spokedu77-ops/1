@@ -2,25 +2,17 @@
 
 import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
+import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
+import type { ExplanationAudience } from '../types/explanation';
 import type { ClassRecord, Program } from '../types';
 
-type Audience = 'parent' | 'center' | 'school';
-type SavedExplanation = {
-  id: string;
-  programId: string;
-  programTitle: string;
-  audience: Audience;
-  text: string;
-  createdAt: string;
-};
-
-const STORAGE_KEY = 'spokedu-master-explanations-v1';
+type Audience = ExplanationAudience;
 
 const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: typeof MessageCircle }> = [
   { id: 'parent', label: '학부모용', description: '아이들이 경험한 움직임을 쉽게 안내합니다.', Icon: UsersRound },
@@ -50,16 +42,6 @@ function clean(value: string | undefined | null, fallback = '') {
 
 function toggle(items: string[], item: string) {
   return items.includes(item) ? items.filter((value) => value !== item) : [...items, item];
-}
-
-function loadSaved(): SavedExplanation[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const parsed = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '[]') as SavedExplanation[];
-    return Array.isArray(parsed) ? parsed.slice(0, 10) : [];
-  } catch {
-    return [];
-  }
 }
 
 function getActivityFlow(program: Program) {
@@ -257,10 +239,12 @@ function ReportContent() {
   const programs = useMasterStore((state) => state.programs);
   const programsError = useMasterStore((state) => state.programsError);
   const operationalData = useOperationalData();
+  const explanationData = useExplanationData();
   const classRecords = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programPool = useMemo(() => programs, [programs]);
   const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
   const hasProgramQuery = Boolean(searchParams.get('programId') ?? searchParams.get('program'));
+  const savedExplanationId = searchParams.get('saved');
   const recordId = searchParams.get('record');
   const selectedRecord = useMemo(
     () => (recordId ? classRecords.find((r) => r.id === recordId) ?? null : null),
@@ -276,9 +260,9 @@ function ReportContent() {
   const [search, setSearch] = useState('');
   const [generated, setGenerated] = useState('');
   const [copied, setCopied] = useState(false);
-  const [saved, setSaved] = useState<SavedExplanation[]>([]);
-
-  useEffect(() => setSaved(loadSaved()), []);
+  const [saveStatus, setSaveStatus] = useState<'error' | 'idle' | 'saving' | 'success'>('idle');
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const savedQueryAppliedRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (selectedRecord && !recordNoteApplied) {
@@ -291,6 +275,16 @@ function ReportContent() {
   useEffect(() => {
     if (!programId && programPool[0]?.id) setProgramId(programPool[0].id);
   }, [programId, programPool]);
+
+  useEffect(() => {
+    if (!savedExplanationId || savedQueryAppliedRef.current === savedExplanationId) return;
+    const savedExplanation = explanationData.explanations.find((item) => item.id === savedExplanationId);
+    if (!savedExplanation) return;
+    savedQueryAppliedRef.current = savedExplanationId;
+    setProgramId(savedExplanation.programId);
+    setAudience(savedExplanation.audience);
+    setGenerated(savedExplanation.text);
+  }, [explanationData.explanations, savedExplanationId]);
 
   const program = programPool.find((item) => item.id === programId) ?? programPool[0];
   const filteredPrograms = search.trim()
@@ -308,19 +302,22 @@ function ReportContent() {
     window.setTimeout(() => setCopied(false), 1300);
   };
 
-  const saveOutput = () => {
+  const saveOutput = async () => {
     if (!program || !output.trim()) return;
-    const next: SavedExplanation = {
-      id: `${Date.now()}`,
-      programId: program.id,
-      programTitle: program.title,
-      audience,
-      text: output,
-      createdAt: new Date().toISOString(),
-    };
-    const list = [next, ...saved].slice(0, 10);
-    setSaved(list);
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    setSaveStatus('saving');
+    setSaveError(null);
+    try {
+      await explanationData.saveExplanation({
+        programId: program.id,
+        programTitle: program.title,
+        audience,
+        text: output,
+      });
+      setSaveStatus('success');
+    } catch (caught) {
+      setSaveStatus('error');
+      setSaveError(caught instanceof Error ? caught.message : 'Failed to save explanation');
+    }
   };
 
   return (
@@ -412,7 +409,15 @@ function ReportContent() {
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>최근 만든 설명</h2>
             <div className="mt-3 space-y-2">
-              {saved.length ? saved.slice(0, 5).map((item) => (
+              {explanationData.status === 'loading' ? (
+                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+                  Loading saved explanations.
+                </p>
+              ) : explanationData.status === 'error' ? (
+                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+                  Failed to load saved explanations.
+                </p>
+              ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
                 <button key={item.id} type="button" onClick={() => setGenerated(item.text)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                   <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
                   <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{AUDIENCES.find((aud) => aud.id === item.audience)?.label} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
@@ -503,12 +508,15 @@ function ReportContent() {
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
                   {copied ? '복사 완료' : '현재 문구 복사'}
                 </button>
-                <button type="button" onClick={saveOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                <button type="button" onClick={() => void saveOutput()} disabled={saveStatus === 'saving'} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   <Save size={14} />
-                  만든 문구 보관
+                  {saveStatus === 'saving' ? '\uC800\uC7A5 \uC911' : saveStatus === 'success' ? '\uBCF4\uAD00 \uC644\uB8CC' : '\uB9CC\uB4E0 \uBB38\uAD6C \uBCF4\uAD00'}
                 </button>
               </div>
             </div>
+            {saveStatus === 'error' && saveError ? (
+              <p className="mt-2 text-[12px] font-bold text-red-600">{saveError}</p>
+            ) : null}
             <p className="mt-3 whitespace-pre-line rounded-[14px] p-3.5 text-[14px] font-semibold leading-7 sm:mt-4 sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
               {program ? output : '수업을 선택하면 설명 문구를 만들 수 있습니다.'}
             </p>

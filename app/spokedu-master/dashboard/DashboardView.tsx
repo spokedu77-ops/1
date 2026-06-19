@@ -44,16 +44,11 @@ import {
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { toClassRecord } from '../lib/operationalDataAdapter';
+import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../store';
+import type { MasterExplanationDto } from '../types/explanation';
 import type { ClassRecord, Program, UserProfile } from '../types';
-
-type SavedExplanation = {
-  id: string;
-  programId: string;
-  programTitle: string;
-  createdAt: string;
-};
 
 type ContinueItem = {
   id: string;
@@ -64,8 +59,6 @@ type ContinueItem = {
   time?: string;
   href: string;
 };
-
-const REPORT_STORAGE_KEY = 'spokedu-master-explanations-v1';
 
 function isPlaceholderText(value?: string | null) {
   const text = (value ?? '').trim();
@@ -451,45 +444,60 @@ function ActivityPanel({
 
   const activities: Array<{
     label: string;
-    value: number | null | undefined;
+    value: number | null;
     href: string;
     Icon: typeof FileText;
   }> = [
     { label: '저장 안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
     { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
     { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
-    { label: '수업 도구', value: undefined, href: '/spokedu-master/class-tools', Icon: Wrench },
   ];
 
   return (
-    <section className="rounded-[20px] border border-slate-200 bg-white p-4 sm:p-5">
+    <section data-dashboard-section="activity" aria-labelledby="activity-heading" className="rounded-[20px] border border-slate-200 bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[18px] font-black text-slate-950">내 활동·기록</h2>
+          <h2 id="activity-heading" className="text-[18px] font-black text-slate-950">내 활동·기록</h2>
           <p className="mt-1 text-[13px] font-semibold text-slate-500">안내문과 수업 운영 기록을 한곳에서 이어가세요.</p>
         </div>
         <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-indigo-50 px-3 text-[12px] font-black text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
           {status}
         </Link>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {activities.map(({ label, value, href, Icon }) => (
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-3">
+        {activities.map(({ label, value, href, Icon }, index) => (
           <Link
             key={label}
             href={href}
-            className="flex min-h-[70px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+            className={`flex min-h-[70px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 ${
+              index === 2 ? 'col-span-2 lg:col-span-1' : ''
+            }`}
             title={label === '학생 메모' ? '저장된 수업 기록 내 학생 메모 수' : undefined}
           >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-white text-emerald-700 shadow-sm"><Icon size={17} /></span>
             <span>
               <span className="block text-[12px] font-bold text-slate-500">{label}</span>
               <span className="mt-0.5 block text-[15px] font-black text-slate-900">
-                {value === null ? '확인 중' : value === undefined ? '바로가기' : `${value}개`}
+                {value === null ? '확인 중' : `${value}개`}
               </span>
             </span>
           </Link>
         ))}
       </div>
+      <Link
+        href="/spokedu-master/class-tools"
+        className="mt-3 flex min-h-11 items-center justify-between rounded-[14px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+      >
+        <span className="inline-flex items-center gap-2">
+          <Wrench size={16} className="text-indigo-600" />
+          수업 도구
+        </span>
+
+        <span className="inline-flex items-center gap-1 text-[12px] text-indigo-600">
+          바로가기
+          <ArrowRight size={14} />
+        </span>
+      </Link>
     </section>
   );
 }
@@ -531,7 +539,7 @@ function buildContinueItems(
   classRecords: ClassRecord[],
   recentProgramActivities: RecentProgramActivity[],
   recentActivityOwnerId: string | null,
-  savedReports: SavedExplanation[],
+  savedReports: MasterExplanationDto[],
   programs: Program[],
 ) {
   const programsById = new Map(programs.map((program) => [program.id, program]));
@@ -564,10 +572,10 @@ function buildContinueItems(
       id: `report-${recentReport.id}`,
       type: '안내문',
       title: recentReport.programTitle,
-      status: '이 기기에 저장된 안내문',
+      status: '\uC800\uC7A5\uB41C \uC548\uB0B4\uBB38',
       action: '안내문 열기',
       time: formatRelativeDate(recentReport.createdAt),
-      href: `/spokedu-master/report?program=${recentReport.programId}`,
+      href: `/spokedu-master/report?program=${recentReport.programId}&saved=${recentReport.id}`,
     });
   }
 
@@ -585,6 +593,7 @@ export default function DashboardView() {
     reloadPrograms,
   } = useMasterStore();
   const { classRecords: serverClassRecords } = useOperationalData();
+  const explanationData = useExplanationData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const profile = useProfile();
   const recentActivityOwnerId = recentActivityOwnerResolved
@@ -593,20 +602,10 @@ export default function DashboardView() {
   const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
-  const [savedReports, setSavedReports] = useState<SavedExplanation[]>([]);
-  const [reportsLoaded, setReportsLoaded] = useState(false);
   const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
 
   useEffect(() => {
     setMounted(true);
-    try {
-      const parsed = JSON.parse(window.localStorage.getItem(REPORT_STORAGE_KEY) ?? '[]') as SavedExplanation[];
-      setSavedReports(Array.isArray(parsed) ? parsed : []);
-    } catch {
-      setSavedReports([]);
-    } finally {
-      setReportsLoaded(true);
-    }
   }, []);
 
   const weeklySelection = useMemo(
@@ -662,10 +661,10 @@ export default function DashboardView() {
         classRecords,
         recentProgramActivities,
         recentActivityOwnerId,
-        savedReports,
+        explanationData.explanations,
         programs,
       ),
-    [classRecords, programs, recentActivityOwnerId, recentProgramActivities, savedReports],
+    [classRecords, explanationData.explanations, programs, recentActivityOwnerId, recentProgramActivities],
   );
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
@@ -759,6 +758,13 @@ export default function DashboardView() {
 
       {continueItems.length > 0 ? <ContinueSection items={continueItems} /> : null}
 
+      <ActivityPanel
+        reportCount={explanationData.status === 'loading' ? null : explanationData.total}
+        recordCount={classRecords.length}
+        studentMemoCount={studentMemoCount}
+        profile={profile}
+      />
+
       <section data-dashboard-section="spomove">
         <SectionHeader
           eyebrow="Official screen activities"
@@ -827,13 +833,6 @@ export default function DashboardView() {
         ) : null}
       </section>
       ) : null}
-
-      <ActivityPanel
-        reportCount={reportsLoaded ? savedReports.length : null}
-        recordCount={classRecords.length}
-        studentMemoCount={studentMemoCount}
-        profile={profile}
-      />
 
       {selectedProgram ? (
         <HomeProgramPreview

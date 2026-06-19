@@ -1,23 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
+import { mergeBlocksWithStoreContent } from '../../_lib/noteBlockStateMerge';
 import { searchNoteBlocks } from '../../_lib/noteBlockSearch';
+import { useNoteBlockStore } from '../../_store/noteBlockStore';
 import { useNotePage } from '../../_page/NotePageContext';
+import type { NoteBlock } from '../../_lib/types';
 
-export function NotePageFindBar() {
-  const { blocks, focusBlockEditor, activeDocument } = useNotePage();
-  const [open, setOpen] = useState(false);
+function NotePageFindBarPanel({
+  blocks,
+  focusBlockEditor,
+  onClose,
+}: {
+  blocks: NoteBlock[];
+  focusBlockEditor: ReturnType<typeof useNotePage>['focusBlockEditor'];
+  onClose: () => void;
+}) {
+  const storeById = useNoteBlockStore((state) => state.byId);
   const [query, setQuery] = useState('');
   const [hitIndex, setHitIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const hits = useMemo(
-    () => searchNoteBlocks(blocks, query),
-    [blocks, query],
+    () => searchNoteBlocks(mergeBlocksWithStoreContent(blocks), query),
+    [blocks, storeById, query],
   );
-
-  const currentHit = hits[hitIndex] ?? null;
 
   const goToHit = useCallback((index: number) => {
     if (hits.length === 0) return;
@@ -32,20 +40,26 @@ export function NotePageFindBar() {
   }, [focusBlockEditor, hits]);
 
   useEffect(() => {
+    window.setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
+
+  useEffect(() => {
+    setHitIndex(0);
+  }, [query]);
+
+  useEffect(() => {
+    document.body.classList.add('note-find-active');
+    return () => {
+      document.body.classList.remove('note-find-active');
+    };
+  }, []);
+
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const meta = e.ctrlKey || e.metaKey;
-      if (meta && e.key.toLowerCase() === 'f') {
-        e.preventDefault();
-        setOpen(true);
-        window.setTimeout(() => inputRef.current?.focus(), 0);
-        return;
-      }
-      if (!open) return;
       if (e.key === 'Escape') {
         e.preventDefault();
-        setOpen(false);
-        setQuery('');
-        setHitIndex(0);
+        onClose();
+        return;
       }
       if (e.key === 'Enter' && hits.length > 0) {
         e.preventDefault();
@@ -54,21 +68,7 @@ export function NotePageFindBar() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [goToHit, hitIndex, hits.length, open]);
-
-  useEffect(() => {
-    setHitIndex(0);
-  }, [query]);
-
-  useEffect(() => {
-    if (!open) return;
-    document.body.classList.add('note-find-active');
-    return () => {
-      document.body.classList.remove('note-find-active');
-    };
-  }, [open]);
-
-  if (!activeDocument || !open) return null;
+  }, [goToHit, hitIndex, hits.length, onClose]);
 
   return (
     <div className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 px-4 py-2 shadow-sm backdrop-blur-sm">
@@ -107,15 +107,45 @@ export function NotePageFindBar() {
           type="button"
           className="rounded p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
           aria-label="닫기"
-          onClick={() => {
-            setOpen(false);
-            setQuery('');
-            setHitIndex(0);
-          }}
+          onClick={onClose}
         >
           <X className="h-4 w-4" />
         </button>
       </div>
     </div>
+  );
+}
+
+export function NotePageFindBar() {
+  const { blocks, focusBlockEditor, activeDocument } = useNotePage();
+  const [open, setOpen] = useState(false);
+  const [panelKey, setPanelKey] = useState(0);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setPanelKey((k) => k + 1);
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const meta = e.ctrlKey || e.metaKey;
+      if (meta && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        setOpen(true);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  if (!activeDocument || !open) return null;
+
+  return (
+    <NotePageFindBarPanel
+      key={panelKey}
+      blocks={blocks}
+      focusBlockEditor={focusBlockEditor}
+      onClose={close}
+    />
   );
 }

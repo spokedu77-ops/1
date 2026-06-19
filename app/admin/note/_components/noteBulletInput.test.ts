@@ -46,6 +46,15 @@ describe('normalizeListBlockContentRecord', () => {
     expect(next.bodyHtml).toBeUndefined();
   });
 
+  it('drops html when text is already clean but html still has markers', () => {
+    const next = normalizeListBlockContentRecord({
+      text: '',
+      html: '<p>*</p>',
+    });
+    expect(next.text).toBe('');
+    expect(next.html).toBeUndefined();
+  });
+
   it('leaves clean content unchanged', () => {
     const input = { text: 'hello', number: 1 };
     expect(normalizeListBlockContentRecord(input)).toBe(input);

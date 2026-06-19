@@ -9,6 +9,7 @@ import { StatusBar } from './StatusBar';
 import { TrialCountdownBanner } from '../ui/TrialGateWall';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
 import { isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
+import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
@@ -216,7 +217,9 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
             {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
             <ErrorBoundary>
-              <OperationalDataProvider>{children}</OperationalDataProvider>
+              <OperationalDataProvider>
+                <ExplanationDataProvider>{children}</ExplanationDataProvider>
+              </OperationalDataProvider>
             </ErrorBoundary>
           </main>
           {hideChrome ? null : <FloatingTimerPill />}

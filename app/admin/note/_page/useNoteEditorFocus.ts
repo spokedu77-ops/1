@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
+import { contentChangeNeedsReactBlocks } from '../_lib/noteContentPatch';
 import { focusWithoutScroll, suppressNoteEditorScrollBriefly } from '../_lib/noteEditorScrollGuard';
 import type { NoteBlock } from '../_lib/types';
 
@@ -59,12 +60,22 @@ export function useNoteEditorFocus(options: {
 
   const commitBlockToState = useCallback((blockId: string) => {
     const fromStore = useNoteBlockStore.getState().getBlock(blockId);
-    const latest = fromStore ?? blocksRef.current.find((b) => b.id === blockId);
+    const current = blocksRef.current.find((b) => b.id === blockId);
+    const latest = fromStore ?? current;
     if (!latest) return;
     blocksRef.current = blocksRef.current.map((b) => (b.id === blockId ? latest : b));
+    if (
+      current
+      && !contentChangeNeedsReactBlocks(
+        current.content as Record<string, unknown>,
+        (latest.content ?? {}) as Record<string, unknown>,
+      )
+    ) {
+      return;
+    }
     setBlocks((prev) => {
-      const current = prev.find((b) => b.id === blockId);
-      if (!current || current.content === latest.content) return prev;
+      const reactBlock = prev.find((b) => b.id === blockId);
+      if (!reactBlock || reactBlock.content === latest.content) return prev;
       return prev.map((b) => (b.id === blockId ? latest : b));
     });
   }, [blocksRef, setBlocks]);

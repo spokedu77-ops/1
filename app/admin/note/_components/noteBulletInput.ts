@@ -77,9 +77,21 @@ export function stripListItemMarkerPrefix(text: string): string {
 export function normalizeListBlockContentRecord(
   content: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (typeof content.text !== 'string') return content;
+  const hadHtml = typeof content.html === 'string' && content.html.length > 0;
+  const hadBodyHtml = typeof content.bodyHtml === 'string' && content.bodyHtml.length > 0;
+
+  if (typeof content.text !== 'string') {
+    if (!hadHtml && !hadBodyHtml) return content;
+    const next: Record<string, unknown> = { ...content };
+    delete next.html;
+    delete next.bodyHtml;
+    return next;
+  }
+
   const text = stripListItemMarkerPrefix(content.text);
-  if (text === content.text) return content;
+  const textChanged = text !== content.text;
+  if (!textChanged && !hadHtml && !hadBodyHtml) return content;
+
   const next: Record<string, unknown> = { ...content, text };
   delete next.html;
   delete next.bodyHtml;

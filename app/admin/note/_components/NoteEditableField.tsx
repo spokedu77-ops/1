@@ -20,6 +20,7 @@ import { BlockTextPreview } from './blocks/BlockTextPreview';
 import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
 import type { MarkdownBlockTrigger } from './noteBulletInput';
+import { normalizeListBlockContentRecord } from './noteBulletInput';
 import {
   getNoteEditor,
   scheduleFocusNoteEditorAtClick,
@@ -110,6 +111,9 @@ export function NoteEditableField({
   const setActiveEditor = useNoteBlockStore((state) => state.setActiveEditor);
 
   const content = storeContent ?? fallbackContent;
+  const resolvedContent = (blockType === 'bulletList' || blockType === 'numberedList')
+    ? normalizeListBlockContentRecord((content ?? {}) as Record<string, unknown>)
+    : content;
   const shouldMountEditor = isActiveEditor || autoFocusSignal > 0;
   const resolvedEditorBackspace =
     onEditorBackspace === false ? undefined : onEditorBackspace;
@@ -122,21 +126,24 @@ export function NoteEditableField({
   const handleChange = ({ text: nextText, html: nextHtml }: { text: string; html: string }) => {
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
     const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
-    const nextContent: Record<string, unknown> = {
-      ...(content ?? {}),
+    let nextContent: Record<string, unknown> = {
+      ...(resolvedContent ?? {}),
       [field]: nextText,
       [htmlKey]: nextHtml,
     };
-    const original = content?.[field];
-    if (typeof content?.[legacyKey] !== 'string' && typeof original === 'string') {
+    const original = resolvedContent?.[field];
+    if (typeof resolvedContent?.[legacyKey] !== 'string' && typeof original === 'string') {
       nextContent[legacyKey] = original;
+    }
+    if (blockType === 'bulletList' || blockType === 'numberedList') {
+      nextContent = normalizeListBlockContentRecord(nextContent);
     }
     if (onContentSync) onContentSync(nextContent);
     else onUpdate(nextContent);
   };
 
   const editorProps: ComponentProps<typeof NoteEditor> = {
-    content,
+    content: resolvedContent,
     field,
     text,
     resetKey: `${blockId}:${blockType}:${field}`,
@@ -158,9 +165,7 @@ export function NoteEditableField({
         || blockType === 'heading3'
         || blockType === 'todo'
         || blockType === 'callout'
-        || blockType === 'code'
-        || blockType === 'bulletList'
-        || blockType === 'numberedList')
+        || blockType === 'code')
         ? onChangeType
         : undefined,
     focusCaretOffset: editorMergeFocusCaretOffset ?? mergeFocusCaretOffset,
@@ -232,7 +237,7 @@ export function NoteEditableField({
         />
       ) : (
         <BlockTextPreview
-          content={content}
+          content={resolvedContent}
           field={field}
           text={text}
           className={textClassName}

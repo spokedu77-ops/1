@@ -10,6 +10,7 @@ import {
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   commitAndResetNoteDocumentBeforeSwitch,
+  commitNoteDocumentBeforeLeave,
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
   resetNoteDocumentEditorState,
@@ -67,6 +68,8 @@ export function useNoteBlockData(options: {
   ) => {
     if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
     try {
+      await commitNoteDocumentBeforeLeave();
+      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
       const res = await fetch(
         `/api/admin/note/blocks/load?documentId=${encodeURIComponent(documentId)}`,
         { credentials: 'include' },

@@ -9,6 +9,7 @@ import {
   mergeReconciledBlocks,
 } from './noteBlockStateMerge';
 import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
+import { buildContentForTypeChange } from './noteBlockTypeChange';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 import {
@@ -205,6 +206,20 @@ describe('sub-document navigation (parent ↔ child)', () => {
     const merged = mergeBlocksWithStoreContent(childBlocks);
     expect(merged[0].content?.text).toBe('child body');
     expect(merged.find((b) => b.id === 'p1')).toBeUndefined();
+  });
+});
+
+describe('buildContentForTypeChange markdown to list', () => {
+  it('strips - and * when converting text to bulletList', () => {
+    const fromDash = buildContentForTypeChange({ text: '-' }, 'text', 'bulletList');
+    expect(fromDash.text).toBe('');
+    const fromStar = buildContentForTypeChange({ text: '*' }, 'text', 'bulletList');
+    expect(fromStar.text).toBe('');
+  });
+
+  it('strips 1. when converting text to numberedList', () => {
+    const next = buildContentForTypeChange({ text: '1.' }, 'text', 'numberedList');
+    expect(next.text).toBe('');
   });
 });
 

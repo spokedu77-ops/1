@@ -46,10 +46,21 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
           continue;
         }
         const prev = state.byId[incoming.id];
-        if (prev?.content != null && (!docId || prev.document_id === docId)) {
+        const sameType = prev?.type === incoming.type;
+        if (
+          sameType
+          && prev?.content != null
+          && (!docId || prev.document_id === docId)
+        ) {
           byId[incoming.id] = { ...incoming, content: prev.content };
         } else {
-          byId[incoming.id] = incoming;
+          const content = (incoming.type === 'bulletList' || incoming.type === 'numberedList')
+            && incoming.content
+            ? normalizeListBlockContentRecord(incoming.content as Record<string, unknown>)
+            : incoming.content;
+          byId[incoming.id] = content !== incoming.content
+            ? { ...incoming, content }
+            : incoming;
         }
       }
       return { byId };

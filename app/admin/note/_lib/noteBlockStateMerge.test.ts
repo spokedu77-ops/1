@@ -67,4 +67,23 @@ describe('mergeReconciledBlocks', () => {
     const merged = mergeReconciledBlocks(current, reconciled);
     expect(merged[0].content?.text).toBe('typing');
   });
+
+  it('strips list markers from server-only reconcile rows', () => {
+    const current: NoteBlock[] = [{
+      id: 'list-a',
+      document_id: 'doc',
+      type: 'bulletList',
+      content: { text: '- item' },
+      order_index: 0,
+      parent_block_id: null,
+      created_at: '',
+      updated_at: '',
+    }];
+    const reconciled: NoteBlock[] = [{
+      ...current[0],
+      content: { text: '- from server' },
+    }];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.text).toBe('from server');
+  });
 });

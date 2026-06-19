@@ -2,7 +2,10 @@ import { getActiveEditorBridgeSnapshot } from './noteActiveEditorBridge';
 import { getNoteEditor } from '../_components/noteEditorRegistry';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
-import { stripListItemMarkerPrefix } from '../_components/noteBulletInput';
+import {
+  normalizeLoadedNoteBlocks,
+  stripListItemMarkerPrefix,
+} from '../_components/noteBulletInput';
 
 /**
  * React blocks 갱신 전 스토어에만 반영된 최신 content를 병합한다.
@@ -58,7 +61,7 @@ export function mergeReconciledBlocks(
   const activeDocumentId = store.activeDocumentId;
   const currentById = new Map(currentBlocks.map((block) => [block.id, block]));
 
-  return reconciledBlocks.map((block) => {
+  const merged = reconciledBlocks.map((block) => {
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
     const fromStore = store.byId[block.id];
     const fromCurrent = currentById.get(block.id);
@@ -82,6 +85,8 @@ export function mergeReconciledBlocks(
 
     return block;
   });
+
+  return normalizeLoadedNoteBlocks(merged);
 }
 
 /** restore-blocks undo/redo 적용 */

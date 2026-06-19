@@ -118,10 +118,21 @@ function listTextEnd(blockId: string): number {
   return listPreviewPlainText(blockId).length;
 }
 
+/** 비활성 목록 블록은 preview DOM — editor fallback 시 from=1 오프셋 버그 */
+export function resolveListCrossSurface(
+  hasEditor: boolean,
+  hasPreviewRoot: boolean,
+): ListCrossRange['surface'] {
+  if (hasEditor) return 'editor';
+  if (hasPreviewRoot) return 'preview';
+  return 'preview';
+}
+
 function listCrossSurface(blockId: string): ListCrossRange['surface'] {
-  if (getNoteEditor(blockId)) return 'editor';
-  if (getBlockPreviewTextRoot(blockId)) return 'preview';
-  return 'editor';
+  return resolveListCrossSurface(
+    !!getNoteEditor(blockId),
+    !!getBlockPreviewTextRoot(blockId),
+  );
 }
 
 function resolveCrossRanges(
@@ -239,6 +250,16 @@ function clearCrossSelectState() {
   activeCrossRanges = [];
   listCrossDragActive = false;
   syncBodyCrossClass();
+}
+
+/** 싱글톤 에디터 블록 전환 시 목록 크로스 선택·하이라이트 해제 */
+export function clearActiveListCrossSelectState() {
+  if (activeCrossRanges.length > 0) {
+    const siblings = getListSiblingIds(activeCrossRanges[0].blockId);
+    clearAllCrossHighlights(siblings);
+  }
+  clearCrossSelectState();
+  activeCrossRanges = [];
 }
 
 function onPointerDown(e: PointerEvent) {
