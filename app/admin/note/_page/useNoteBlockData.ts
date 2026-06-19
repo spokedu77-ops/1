@@ -20,6 +20,7 @@ import {
   registerNoteReconcileIdleHandler,
   scheduleNoteReconcileIdle,
 } from '../_lib/noteReconcileIdle';
+import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
 import type { NoteBlock } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
@@ -173,6 +174,13 @@ export function useNoteBlockData(options: {
       const loadGen = blockLoadGenRef.current + 1;
       blockLoadGenRef.current = loadGen;
       try {
+        const prefetched = await consumePrefetchedNoteBlocks(documentId);
+        if (!cancelled && blockLoadGenRef.current === loadGen && prefetched) {
+          applyLoadedBlocks(prefetched);
+          scheduleIdleReconcile(selectedId, loadGen);
+          return;
+        }
+
         setLoadingBlocks(true);
         setError(null);
         const res = await fetch(

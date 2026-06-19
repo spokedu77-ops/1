@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, type ComponentProps } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   useIsNoteActiveEditor,
@@ -17,6 +17,7 @@ import {
   setActiveEditorBridge,
 } from '../_lib/noteActiveEditorBridge';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
+import { parseAdminNoteDocumentIdFromHref } from '../_lib/notePaste';
 import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
 import type { MarkdownBlockTrigger } from './noteBulletInput';
@@ -63,6 +64,7 @@ type NoteEditableFieldProps = {
   onHideFormatToolbar?: () => void;
   onSlashChange?: (show: boolean, query: string) => void;
   uploadImage?: (file: File) => Promise<string>;
+  onOpenDocumentById?: (documentId: string) => void;
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -100,6 +102,7 @@ export function NoteEditableField({
   onHideFormatToolbar,
   onSlashChange,
   uploadImage,
+  onOpenDocumentById,
   slashHostRef: externalSlashHostRef,
 }: NoteEditableFieldProps) {
   const internalSlashHostRef = useRef<HTMLDivElement>(null);
@@ -115,6 +118,12 @@ export function NoteEditableField({
     ? normalizeListBlockContentRecord((content ?? {}) as Record<string, unknown>)
     : content;
   const shouldMountEditor = isActiveEditor || autoFocusSignal > 0;
+  const [editorSurfaceReady, setEditorSurfaceReady] = useState(false);
+  const previewText = typeof resolvedContent?.[field] === 'string'
+    ? String(resolvedContent[field])
+    : text;
+  const showPreviewOverlay = shouldMountEditor && !editorSurfaceReady;
+  const showPreviewOnly = !shouldMountEditor;
   const resolvedEditorBackspace =
     onEditorBackspace === false ? undefined : onEditorBackspace;
 
@@ -181,6 +190,7 @@ export function NoteEditableField({
     onShowFormatToolbar,
     onHideFormatToolbar,
     uploadImage,
+    onOpenDocumentById,
     onChange: handleChange,
   };
 
@@ -203,6 +213,42 @@ export function NoteEditableField({
       clearActiveEditorBridge(blockId, field);
     };
   }, [blockId, field, shouldMountEditor]);
+
+  useEffect(() => {
+    if (!shouldMountEditor) {
+      setEditorSurfaceReady(false);
+      return;
+    }
+    let cancelled = false;
+    const waitForEditor = (framesLeft: number) => {
+      if (cancelled) return;
+      const editor = getNoteEditor(blockId);
+      if (editor?.view?.dom?.isConnected) {
+        setEditorSurfaceReady(true);
+        return;
+      }
+      if (framesLeft <= 0) return;
+      requestAnimationFrame(() => waitForEditor(framesLeft - 1));
+    };
+    setEditorSurfaceReady(false);
+    requestAnimationFrame(() => waitForEditor(24));
+    return () => {
+      cancelled = true;
+    };
+  }, [shouldMountEditor, blockId, autoFocusSignal]);
+
+  const previewNode = (
+    <BlockTextPreview
+      content={resolvedContent}
+      field={field}
+      text={previewText}
+      className={textClassName}
+      placeholder={placeholder}
+      onRecordClick={(x, y) => setPendingEditorClick(blockId, x, y)}
+      onActivate={activateEditor}
+      onOpenDocumentById={onOpenDocumentById}
+    />
+  );
 
   return (
     <div
@@ -231,21 +277,20 @@ export function NoteEditableField({
       }}
     >
       {shouldMountEditor ? (
-        <div
-          ref={slotRef}
-          className={`note-rich-editor-slot ${textClassName}`}
-        />
-      ) : (
-        <BlockTextPreview
-          content={resolvedContent}
-          field={field}
-          text={text}
-          className={textClassName}
-          placeholder={placeholder}
-          onRecordClick={(x, y) => setPendingEditorClick(blockId, x, y)}
-          onActivate={activateEditor}
-        />
-      )}
+        <div className="relative">
+          <div
+            ref={slotRef}
+            className={`note-rich-editor-slot ${textClassName}`}
+          />
+          {showPreviewOverlay ? (
+            <div className="pointer-events-none absolute inset-0 z-[1]">
+              {previewNode}
+            </div>
+          ) : null}
+        </div>
+      ) : showPreviewOnly ? (
+        previewNode
+      ) : null}
     </div>
   );
 }

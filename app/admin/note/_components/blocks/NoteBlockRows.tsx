@@ -324,6 +324,7 @@ function BlockContent({
         setSlashQuery(nextQuery);
       }}
       uploadImage={uploadImage}
+      onOpenDocumentById={onOpenDocument}
       slashHostRef={slashHostRef}
     />
   );

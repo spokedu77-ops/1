@@ -30,6 +30,14 @@ import {
   scheduleFocusNoteEditorAtClick,
   unregisterNoteEditor,
 } from './noteEditorRegistry';
+import {
+  plainMultilineToInsertHtml,
+  shouldHandlePlainMultilinePaste,
+  splitClipboardLines,
+  tryParsePastedNotePageLink,
+  parseAdminNoteDocumentIdFromHref,
+  notePageLinkInsertHtml,
+} from '../_lib/notePaste';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import {
   bindNoteCrossSelectCopy,
@@ -274,6 +282,7 @@ export function NoteEditor({
   onNavigatePrevious,
   onNavigateNext,
   onEditorFocus,
+  onOpenDocumentById,
   tabBehavior = 'block-indent',
   resetKey,
   editorBlockId,
@@ -309,6 +318,7 @@ export function NoteEditor({
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
   onEditorFocus?: () => void;
+  onOpenDocumentById?: (documentId: string) => void;
   tabBehavior?: 'block-indent' | 'insert-text-indent';
   resetKey?: string;
   editorBlockId?: string;
@@ -340,6 +350,7 @@ export function NoteEditor({
     onNavigatePrevious,
     onNavigateNext,
     onEditorFocus,
+    onOpenDocumentById,
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
@@ -362,6 +373,7 @@ export function NoteEditor({
     onNavigatePrevious,
     onNavigateNext,
     onEditorFocus,
+    onOpenDocumentById,
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
@@ -457,6 +469,18 @@ export function NoteEditor({
       },
       handleClick: (_view, _pos, event) => {
         const target = event.target as HTMLElement;
+        const anchor = target.closest('a');
+        if (anchor) {
+          const href = anchor.getAttribute('href');
+          if (href) {
+            const docId = parseAdminNoteDocumentIdFromHref(href);
+            if (docId && callbacksRef.current.onOpenDocumentById) {
+              event.preventDefault();
+              callbacksRef.current.onOpenDocumentById(docId);
+              return true;
+            }
+          }
+        }
         if (target.tagName !== 'IMG') return false;
         const src =
           (target as HTMLImageElement).currentSrc || target.getAttribute('src');
@@ -644,15 +668,30 @@ export function NoteEditor({
         }
         return false;
       },
-      handlePaste: (_view, event) => {
+      handlePaste: (view, event) => {
         const file = firstImageFile(event.clipboardData?.files);
         const currentUploadImage = callbacksRef.current.uploadImage;
-        if (!file || !currentUploadImage) return false;
-        event.preventDefault();
-        void currentUploadImage(file).then((url) => {
-          editorRef.current?.chain().focus().setImage({ src: url }).run();
-        });
-        return true;
+        if (file && currentUploadImage) {
+          event.preventDefault();
+          void currentUploadImage(file).then((url) => {
+            editorRef.current?.chain().focus().setImage({ src: url }).run();
+          });
+          return true;
+        }
+        const plain = event.clipboardData?.getData('text/plain') ?? '';
+        const pageLink = plain ? tryParsePastedNotePageLink(plain) : null;
+        if (pageLink) {
+          event.preventDefault();
+          editorRef.current?.chain().focus().insertContent(notePageLinkInsertHtml(pageLink)).run();
+          return true;
+        }
+        if (plain && shouldHandlePlainMultilinePaste(plain)) {
+          event.preventDefault();
+          const html = plainMultilineToInsertHtml(splitClipboardLines(plain));
+          editorRef.current?.chain().focus().insertContent(html).run();
+          return true;
+        }
+        return false;
       },
       handleDrop: (_view, event) => {
         const file = firstImageFile(event.dataTransfer?.files);

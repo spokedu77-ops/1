@@ -3,13 +3,13 @@
 import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
-import type { ExplanationAudience } from '../types/explanation';
+import type { ExplanationAudience, MasterExplanationDto } from '../types/explanation';
 import type { ClassRecord, Program } from '../types';
 
 type Audience = ExplanationAudience;
@@ -235,6 +235,7 @@ function SingleChoice({ options, value, onChange }: { options: string[]; value: 
 }
 
 function ReportContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
   const programsError = useMasterStore((state) => state.programsError);
@@ -295,6 +296,43 @@ function ReportContent() {
   const output = generated || draft;
   const activityPreview = program ? getActivityFlow(program).slice(0, 2) : [];
 
+  const clearSavedContext = (currentProgramId: string) => {
+    if (!savedExplanationId) return;
+    router.replace(`/spokedu-master/report?program=${currentProgramId}`);
+  };
+
+  const markDraftDirty = (currentProgramId = programId) => {
+    setGenerated('');
+    setSaveStatus('idle');
+    setSaveError(null);
+    clearSavedContext(currentProgramId);
+  };
+
+  const handleProgramSelect = (nextProgramId: string) => {
+    setProgramId(nextProgramId);
+    markDraftDirty(nextProgramId);
+
+    if (selectedRecord && selectedRecord.programId !== nextProgramId) {
+      setNote('');
+      setRecordNoteApplied(false);
+      router.replace(`/spokedu-master/report?program=${nextProgramId}`);
+    }
+  };
+
+  const handleSavedExplanationSelect = (item: MasterExplanationDto) => {
+    setProgramId(item.programId);
+    setAudience(item.audience);
+    setGenerated(item.text);
+    savedQueryAppliedRef.current = item.id;
+
+    if (selectedRecord) {
+      setNote('');
+      setRecordNoteApplied(false);
+    }
+
+    router.replace(`/spokedu-master/report?program=${item.programId}&saved=${item.id}`);
+  };
+
   const copyOutput = async () => {
     if (!output.trim()) return;
     await navigator.clipboard.writeText(output);
@@ -307,12 +345,21 @@ function ReportContent() {
     setSaveStatus('saving');
     setSaveError(null);
     try {
-      await explanationData.saveExplanation({
+      const saved = await explanationData.saveExplanation({
         programId: program.id,
         programTitle: program.title,
         audience,
         text: output,
       });
+      setProgramId(saved.programId);
+      setAudience(saved.audience);
+      setGenerated(saved.text);
+      savedQueryAppliedRef.current = saved.id;
+      if (selectedRecord) {
+        setNote('');
+        setRecordNoteApplied(false);
+      }
+      router.replace(`/spokedu-master/report?program=${saved.programId}&saved=${saved.id}`);
       setSaveStatus('success');
     } catch (caught) {
       setSaveStatus('error');
@@ -385,10 +432,7 @@ function ReportContent() {
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => {
-                      setProgramId(item.id);
-                      setGenerated('');
-                    }}
+                    onClick={() => handleProgramSelect(item.id)}
                     className="w-full rounded-[12px] px-3 py-2.5 text-left"
                     style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
                   >
@@ -418,7 +462,7 @@ function ReportContent() {
                   Failed to load saved explanations.
                 </p>
               ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
-                <button key={item.id} type="button" onClick={() => setGenerated(item.text)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+                <button key={item.id} type="button" onClick={() => handleSavedExplanationSelect(item)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                   <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
                   <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{AUDIENCES.find((aud) => aud.id === item.audience)?.label} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
                 </button>
@@ -453,7 +497,7 @@ function ReportContent() {
                   {AUDIENCES.map(({ id, label, description, Icon }) => {
                     const active = audience === id;
                     return (
-                      <button key={id} type="button" onClick={() => { setAudience(id); setGenerated(''); }} className="rounded-[14px] p-2.5 text-left sm:p-3" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: active ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                      <button key={id} type="button" onClick={() => { setAudience(id); markDraftDirty(); }} className="rounded-[14px] p-2.5 text-left sm:p-3" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: active ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
                         <Icon size={16} color={active ? 'var(--spm-acc)' : 'var(--spm-t3)'} />
                         <strong className="mt-2 block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
                         <span className="mt-1 hidden text-[11px] font-semibold leading-4 sm:block" style={{ color: 'var(--spm-t3)' }}>{description}</span>
@@ -466,24 +510,24 @@ function ReportContent() {
               <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
                 <div>
                   <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>오늘 수업 분위기</p>
-                  <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); setGenerated(''); }} />
+                  <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); markDraftDirty(); }} />
                 </div>
                 <div>
                   <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>아이들 반응</p>
-                  <SingleChoice options={REACTIONS} value={reaction} onChange={(next) => { setReaction(next); setGenerated(''); }} />
+                  <SingleChoice options={REACTIONS} value={reaction} onChange={(next) => { setReaction(next); markDraftDirty(); }} />
                 </div>
               </div>
 
               <div>
                 <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>강조한 움직임</p>
-                <ChipGroup options={FOCUS_SKILLS} selected={focusSkills} onChange={(next) => { setFocusSkills(next); setGenerated(''); }} />
+                <ChipGroup options={FOCUS_SKILLS} selected={focusSkills} onChange={(next) => { setFocusSkills(next); markDraftDirty(); }} />
               </div>
 
               <label className="block">
                 <span className="mb-2 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>특이사항</span>
                 <textarea
                   value={note}
-                  onChange={(event) => { setNote(event.target.value); setGenerated(''); }}
+                  onChange={(event) => { setNote(event.target.value); markDraftDirty(); }}
                   rows={3}
                   placeholder="예: 처음에는 조심스러웠지만 두 번째 라운드부터 규칙을 이해하고 적극적으로 참여했습니다."
                   className="w-full resize-y rounded-[13px] border px-3 py-3 text-[13px] font-semibold leading-6 outline-none"

@@ -15,6 +15,7 @@ import { DocItem } from '../_components/sidebar/NoteDocChrome';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import type { ReactNode } from 'react';
+import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 
 export type NoteBlockRendererDeps = {
   blocks: NoteBlock[];
@@ -84,6 +85,11 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
           isChildDoc={depth > 0}
           onToggleExpand={() => deps.toggleSidebarDocExpanded(doc.id)}
           onSelect={() => deps.handleSelectDocument(doc)}
+          onPrefetchHover={
+            doc.id !== deps.selectedId
+              ? () => prefetchNoteDocumentBlocks(doc.id)
+              : undefined
+          }
           onPin={(e) => deps.handleTogglePin(e, doc)}
           onFavorite={(e) => deps.handleToggleFavorite(e, doc)}
           onDelete={(e) => deps.handleDeleteDocument(e, doc)}

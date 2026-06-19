@@ -71,6 +71,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const [quickParentNote, setQuickParentNote] = useState('');
   const [quickSaved, setQuickSaved] = useState(false);
   const [quickSaving, setQuickSaving] = useState(false);
+  const [quickSavedRecordId, setQuickSavedRecordId] = useState<string | null>(null);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
@@ -140,6 +141,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickMemo('');
     setQuickParentNote(model.parentNote);
     setQuickSaved(false);
+    setQuickSavedRecordId(null);
     setQuickSaving(false);
     setQuickModalOpen(true);
   };
@@ -166,7 +168,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
       recordType: 'quick',
     };
     setQuickSaving(true);
-    void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then(() => setQuickSaved(true)).finally(() => setQuickSaving(false));
+    void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
+      setQuickSavedRecordId(saved.id);
+      setQuickSaved(true);
+    }).finally(() => setQuickSaving(false));
   };
   const videoUrl = model.videoUrl ?? undefined;
   const videoEmbedUrl = getVideoEmbedUrl(videoUrl, { autoplay: shouldAutoplayVideo });
@@ -437,7 +442,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link href="/spokedu-master/class-record" onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">수업 기록 보기</Link>
-                <Link href={`/spokedu-master/report?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">안내문 만들기</Link>
+                <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">안내문 만들기</Link>
                 <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">학생 기록 작성</Link>
               </div>
             </div>

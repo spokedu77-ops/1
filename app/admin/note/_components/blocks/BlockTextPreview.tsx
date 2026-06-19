@@ -7,6 +7,7 @@ import {
   type RichPreviewField,
 } from '@/app/lib/note/richTextPreview';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
+import { parseAdminNoteDocumentIdFromHref } from '../../_lib/notePaste';
 
 type BlockTextPreviewProps = {
   content: Record<string, unknown> | null | undefined;
@@ -16,6 +17,7 @@ type BlockTextPreviewProps = {
   placeholder?: string;
   onRecordClick?: (x: number, y: number) => void;
   onActivate?: () => void;
+  onOpenDocumentById?: (documentId: string) => void;
 };
 
 const DRAG_THRESHOLD = 5;
@@ -29,6 +31,7 @@ export function BlockTextPreview({
   placeholder = '',
   onRecordClick,
   onActivate,
+  onOpenDocumentById,
 }: BlockTextPreviewProps) {
   const html = resolveRichPreviewHtml({ content, field, text });
   const empty = isRichPreviewEmpty(html, text);
@@ -46,7 +49,20 @@ export function BlockTextPreview({
       className={`note-rich-editor min-h-[1.75rem] w-full cursor-text select-text outline-none ${className}`}
       onPointerDown={(e) => {
         const target = e.target as HTMLElement;
-        if (target.closest('a, button')) return;
+        const anchor = target.closest('a');
+        if (anchor) {
+          const href = anchor.getAttribute('href');
+          if (href) {
+            const docId = parseAdminNoteDocumentIdFromHref(href);
+            if (docId && onOpenDocumentById) {
+              e.preventDefault();
+              onOpenDocumentById(docId);
+              return;
+            }
+          }
+          return;
+        }
+        if (target.closest('button')) return;
 
         const imgEl =
           target.tagName === 'IMG' ? target : target.closest('img');

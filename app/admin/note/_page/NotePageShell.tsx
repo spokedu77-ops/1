@@ -3,7 +3,6 @@
 import { DndContext } from '@dnd-kit/core';
 import { NoteImageLightboxProvider } from '../_components/NoteImageLightbox';
 import { NoteRichEditorStyles } from '../_components/NoteRichEditorStyles';
-import { NoteFormatToolbarHost } from '../_components/NoteFormatToolbarHost';
 import {
   BlockDragActiveContext,
   BlockDropTargetContext,
@@ -13,12 +12,25 @@ import { useNotePage } from './NotePageContext';
 import { NoteMobileHeader } from '../_components/layout/NoteMobileHeader';
 import { NoteSidebarPanel } from '../_components/layout/NoteSidebarPanel';
 import { NoteEditorPanel } from '../_components/layout/NoteEditorPanel';
-import { NoteDragOverlayLayer } from '../_components/layout/NoteDragOverlayLayer';
-import { NoteSidebarIconPicker } from '../_components/layout/NoteSidebarIconPicker';
 import dynamic from 'next/dynamic';
 
 const NoteSingletonEditorHost = dynamic(
   () => import('../_components/NoteSingletonEditorHost').then((mod) => mod.NoteSingletonEditorHost),
+  { ssr: false },
+);
+
+const NoteFormatToolbarHost = dynamic(
+  () => import('../_components/NoteFormatToolbarHost').then((mod) => mod.NoteFormatToolbarHost),
+  { ssr: false },
+);
+
+const NoteDragOverlayLayer = dynamic(
+  () => import('../_components/layout/NoteDragOverlayLayer').then((mod) => mod.NoteDragOverlayLayer),
+  { ssr: false },
+);
+
+const NoteSidebarIconPicker = dynamic(
+  () => import('../_components/layout/NoteSidebarIconPicker').then((mod) => mod.NoteSidebarIconPicker),
   { ssr: false },
 );
 
@@ -49,6 +61,7 @@ export function NotePageShell() {
     handleDeleteBoardGroup,
     handleReorderBoardGroup,
     formatToolbarApiRef,
+    sidebarIconPicker,
   } = useNotePage();
 
   return (
@@ -108,7 +121,7 @@ export function NotePageShell() {
         </DndContext>
         <NoteFormatToolbarHost apiRef={formatToolbarApiRef} />
         <NoteSingletonEditorHost />
-        <NoteSidebarIconPicker />
+        {sidebarIconPicker ? <NoteSidebarIconPicker /> : null}
       </div>
     </NoteImageLightboxProvider>
   );

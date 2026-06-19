@@ -30,6 +30,7 @@ import {
 } from '../noteContexts';
 import { EditorDocDropZone } from '../sidebar/NoteDocChrome';
 import { NoteVirtualRootBlocks } from '../NoteVirtualRootBlocks';
+import { prefetchNoteDocumentBlocks } from '../../_lib/noteDocumentBlocksPrefetch';
 import { useNotePage } from '../../_page/NotePageContext';
 import { NoteWorkspaceHome } from './NoteWorkspaceHome';
 import { NotePageFindBar } from './NotePageFindBar';
@@ -109,7 +110,12 @@ export function NoteEditorPanel() {
                 <span key={crumb.id} className="flex items-center gap-1">
                   <ChevronRight className="h-3 w-3 text-neutral-300" />
                   {idx < documentBreadcrumb.length - 1 ? (
-                    <button type="button" onClick={() => handleSelectDocument(crumb)} className="text-neutral-500 hover:text-neutral-800">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDocument(crumb)}
+                      onMouseEnter={() => prefetchNoteDocumentBlocks(crumb.id)}
+                      className="text-neutral-500 hover:text-neutral-800"
+                    >
                       {crumb.title}
                     </button>
                   ) : (
@@ -273,6 +279,7 @@ export function NoteEditorPanel() {
                     <button
                       type="button"
                       onClick={() => handleSelectDocument(crumb)}
+                      onMouseEnter={() => prefetchNoteDocumentBlocks(crumb.id)}
                       className="max-w-[160px] truncate rounded px-1 py-0.5 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
                       title={crumb.title}
                     >
@@ -361,6 +368,7 @@ export function NoteEditorPanel() {
               <button
                 type="button"
                 onClick={() => handleSelectDocument(parentDocument)}
+                onMouseEnter={() => prefetchNoteDocumentBlocks(parentDocument.id)}
                 className="mb-4 inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 text-left text-[14px] text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-800"
               >
                 <DocIconGlyph
@@ -409,6 +417,7 @@ export function NoteEditorPanel() {
                         type="button"
                         className="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-neutral-50"
                         onClick={() => handleSelectDocument(doc)}
+                        onMouseEnter={() => prefetchNoteDocumentBlocks(doc.id)}
                       >
                         <DocIconGlyph
                           icon={resolveDocIcon(doc.properties)}

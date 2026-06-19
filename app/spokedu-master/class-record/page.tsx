@@ -269,6 +269,9 @@ function RecordEntryView() {
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
+  const reportHref = savedRecordId
+    ? `/spokedu-master/report?record=${savedRecordId}&program=${program.id}`
+    : `/spokedu-master/report?program=${program.id}`;
 
   useEffect(() => {
     setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
@@ -414,7 +417,7 @@ function RecordEntryView() {
             <p className="text-[12px] font-bold">출석과 관찰 원본 기록이 저장되었습니다.</p>
             <div className="mt-2 flex flex-wrap gap-3">
               <Link href="/spokedu-master/class-record" className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>기록 목록 보기</Link>
-              <Link href={`/spokedu-master/report?program=${program.id}`} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>안내문 만들기</Link>
+              <Link href={reportHref} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>안내문 만들기</Link>
             </div>
           </div>
         ) : null}
@@ -427,7 +430,7 @@ function RecordEntryView() {
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr_1fr]">
           <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || recordSaving} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : '학생 기록 저장'}</button>
-          <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들기</Link>
+          <Link href={reportHref} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들기</Link>
           <button type="button" disabled className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
             <ShieldAlert size={16} />
             학부모 공유 준비 중
