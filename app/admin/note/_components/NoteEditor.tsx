@@ -774,7 +774,7 @@ export function NoteEditor({
           const { onMultilinePaste, canSplitMultilinePaste: splitEnabled } = callbacksRef.current;
           if (splitEnabled && onMultilinePaste && lines.length > 1) {
             event.preventDefault();
-            flush();
+            callbacksRef.current.flushPendingChange();
             const firstLine = lines[0] ?? '';
             editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(firstLine)).run();
             scheduleChange({ text: firstLine, html: '' });
