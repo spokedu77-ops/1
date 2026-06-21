@@ -44,6 +44,7 @@ import { useMasterStore } from '../../store';
 import type { ClassRecord } from '../../types';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
+const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 function BookOpenFallback() {
   return (
@@ -72,6 +73,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const [quickSaved, setQuickSaved] = useState(false);
   const [quickSaving, setQuickSaving] = useState(false);
   const [quickSavedRecordId, setQuickSavedRecordId] = useState<string | null>(null);
+  const [quickSaveError, setQuickSaveError] = useState<string | null>(null);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
@@ -143,6 +145,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickSaved(false);
     setQuickSavedRecordId(null);
     setQuickSaving(false);
+    setQuickSaveError(null);
     setQuickModalOpen(true);
   };
 
@@ -168,9 +171,16 @@ export default function LibraryDetailView({ id }: { id: string }) {
       recordType: 'quick',
     };
     setQuickSaving(true);
+    setQuickSaveError(null);
+    setQuickSaved(false);
+    setQuickSavedRecordId(null);
     void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
       setQuickSavedRecordId(saved.id);
       setQuickSaved(true);
+    }).catch(() => {
+      setQuickSaveError(RECORD_SAVE_ERROR_MESSAGE);
+      setQuickSaved(false);
+      setQuickSavedRecordId(null);
     }).finally(() => setQuickSaving(false));
   };
   const videoUrl = model.videoUrl ?? undefined;
@@ -192,7 +202,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[#f6f7f9] pb-24 text-slate-950 lg:pb-14">
+    <main className="min-h-dvh bg-[#f6f7f9] pb-32 text-slate-950 lg:pb-14">
       <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href="/spokedu-master/library" className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
@@ -440,30 +450,35 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 <Check className="h-4 w-4" />
                 사용 기록이 저장되었습니다.
               </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <Link href="/spokedu-master/class-record" onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">수업 기록 보기</Link>
-                <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">안내문 만들기</Link>
-                <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex h-9 items-center rounded-lg border border-emerald-200 bg-white px-3 text-xs font-black text-emerald-700">학생 기록 작성</Link>
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <Link href="/spokedu-master/class-record" onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">수업 기록 보기</Link>
+                <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">안내문 만들기</Link>
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">학생 기록 작성</Link>
               </div>
             </div>
           ) : (
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setQuickModalOpen(false)}
-                className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                onClick={handleQuickSave}
-                disabled={!canSaveQuickRecord || quickSaving}
-                className="inline-flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-50"
-              >
-                사용 기록 저장
-              </button>
-            </div>
+            <>
+              {quickSaveError ? (
+                <p className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-600">{quickSaveError}</p>
+              ) : null}
+              <div className="flex gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setQuickModalOpen(false)}
+                  className="inline-flex h-12 flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-600"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuickSave}
+                  disabled={!canSaveQuickRecord || quickSaving}
+                  className="inline-flex h-12 flex-[2] items-center justify-center gap-2 rounded-xl bg-emerald-600 text-sm font-black text-white disabled:opacity-50"
+                >
+                  사용 기록 저장
+                </button>
+              </div>
+            </>
           )}
         </div>
       </BottomSheet>

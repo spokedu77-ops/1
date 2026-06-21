@@ -141,7 +141,7 @@ export function useIntervalTimer({
             if (audioMode === 'beep') {
               playBeep(getBeepForSignal(sig) ?? 'mid');
             } else {
-              const voice = getSignalVoice(sig, engineMode, engineLevel, audioMode);
+              const voice = getSignalVoice();
               if (voice) tts(voice, true);
             }
           }

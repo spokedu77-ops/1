@@ -68,45 +68,73 @@ export default function FlowGameClient({
   const [cueColor,      setCueColor]     = useState('#ffffff');
   const [stats,         setStats]        = useState<FlowStats | null>(null);
   const [totalProgress, setTotalProgress] = useState(0);
+  const [initError,     setInitError]    = useState<string | null>(null);
+  const mountedRef = useRef(true);
 
   // ── 엔진 초기화 ────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
+  useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || stages.length === 0) return;
+    setInitError(null);
 
-    const engine = new FlowEngine(
-      canvas,
-      {
-        onPhaseChange:  (p) => setPhase(p),
-        onCountdown:    (n) => setCountdown(n),
-        onStageChange:  (idx) => {
-          setStageIdx(idx);
-          setTimerSec(stages[idx]?.durationSec ?? 25);
+    let engine: FlowEngine;
+    try {
+      engine = new FlowEngine(
+        canvas,
+        {
+          onPhaseChange:  (p) => { if (mountedRef.current) setPhase(p); },
+          onCountdown:    (n) => { if (mountedRef.current) setCountdown(n); },
+          onStageChange:  (idx) => {
+            if (!mountedRef.current) return;
+            setStageIdx(idx);
+            setTimerSec(stages[idx]?.durationSec ?? 25);
+          },
+          onTimerUpdate:  (rem, prog) => {
+            if (!mountedRef.current) return;
+            setTimerSec(rem);
+            setTotalProgress(prog);
+          },
+          onInstruction:  (text, color, ms) => {
+            if (!mountedRef.current) return;
+            if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
+            setCueText(text);
+            setCueColor(color);
+            cueTimerRef.current = setTimeout(() => { if (mountedRef.current) setCueText(null); }, ms);
+          },
+          onComplete:     (s) => { setStats(s); onComplete(s); },
+          onCameraShake:  () => {},
+          onFlash:        () => {},
         },
-        onTimerUpdate:  (rem, prog) => {
-          setTimerSec(rem);
-          setTotalProgress(prog);
-        },
-        onInstruction:  (text, color, ms) => {
-          if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
-          setCueText(text);
-          setCueColor(color);
-          cueTimerRef.current = setTimeout(() => setCueText(null), ms);
-        },
-        onComplete:     (s) => { setStats(s); onComplete(s); },
-        onCameraShake:  () => {},
-        onFlash:        () => {},
-      },
-      { stages, colorTheme, motionScale, bgmPath, bgImageUrl },
-    );
+        { stages, colorTheme, motionScale, bgmPath, bgImageUrl },
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (mountedRef.current) setInitError(`Flow 엔진 생성 실패: ${msg}`);
+      return;
+    }
 
     engineRef.current = engine;
     engine.init(flashRef.current).then(() => {
+      if (!mountedRef.current) { engine.dispose(); return; }
       onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
       // async init 완료 후 실제 뷰포트 크기로 재조정 (iOS Safari 초기화 타이밍 보정)
       engine.resize(window.innerWidth, window.innerHeight);
       engine.start();
+    }).catch((err: unknown) => {
+      if (!mountedRef.current) { engine.dispose(); return; }
+      const msg = err instanceof Error ? err.message : String(err);
+      const isWebGl = msg.toLowerCase().includes('webgl') || msg.toLowerCase().includes('context');
+      setInitError(isWebGl
+        ? 'WebGL을 지원하지 않는 환경입니다. 다른 브라우저에서 시도하세요.'
+        : `Flow 초기화 실패: ${msg}`);
+      engine.dispose();
+      engineRef.current = null;
     });
 
     return () => {
@@ -138,6 +166,34 @@ export default function FlowGameClient({
   // ── 현재 스테이지 ───────────────────────────────────────────────────────────
 
   const currentStage = stages[stageIdx];
+
+  // ── 오류 UI ─────────────────────────────────────────────────────────────────
+
+  if (initError) {
+    return (
+      <div style={{ ...S.root, alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1.5rem', padding: '2rem' }}>
+        <div style={{ color: '#EF4444', fontSize: '1rem', fontWeight: 700, textAlign: 'center', maxWidth: 360 }}>
+          {initError}
+        </div>
+        <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={() => { setInitError(null); }}
+            style={{ padding: '0.65rem 1.4rem', borderRadius: '0.6rem', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            다시 시도
+          </button>
+          <button
+            type="button"
+            onClick={onExit}
+            style={{ padding: '0.65rem 1.4rem', borderRadius: '0.6rem', border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            목록으로
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // ── Render ──────────────────────────────────────────────────────────────────
 

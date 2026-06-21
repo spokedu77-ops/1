@@ -15,6 +15,7 @@ import {
 import {
   clearActiveEditorBridge,
   getActiveEditorBridgeSnapshot,
+  notifyActiveEditorBridgePropsChanged,
   setActiveEditorBridge,
 } from '../_lib/noteActiveEditorBridge';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
@@ -244,6 +245,9 @@ export function NoteEditableField({
 
   useLayoutEffect(() => {
     editorPropsRef.current = editorProps;
+    if (shouldMountEditor) {
+      notifyActiveEditorBridgePropsChanged();
+    }
   });
 
   useLayoutEffect(() => {

@@ -198,12 +198,6 @@ function fruitPoolExcluding(excludeImageUrl: string | null, slides: FruitSlide[]
   return filtered.length > 0 ? filtered : slides;
 }
 
-/** 1단계: 가로 3패널 동일 과일 */
-function buildVariantTier1(excludeImageUrl: string | null, slides: FruitSlide[]): VariantPanelContent[] {
-  const s = r(fruitPoolExcluding(excludeImageUrl, slides));
-  return [{ cells: [s] }, { cells: [s] }, { cells: [s] }];
-}
-
 /**
  * 2단계: 가로 3패널만(추가 열·패널 안 스택 없음).
  * 매 신호마다 1·2·3 중 **몇 개 패널에 과일을 둘지** 정하고, 그만큼 칸을 골라 **패널당 과일 1장**만 둠(전부 같은 과일).

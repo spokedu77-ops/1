@@ -70,11 +70,6 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
 }
 
 /** 훅 호환용. 신호마다 읽어 주는 음성은 쓰지 않음. */
-export function getSignalVoice(
-  _sig: Record<string, unknown> | null,
-  _mode: string,
-  _level: number,
-  _audioMode: string
-): string | null {
+export function getSignalVoice(): string | null {
   return null;
 }

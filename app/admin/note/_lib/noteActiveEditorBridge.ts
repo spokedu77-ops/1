@@ -47,6 +47,12 @@ export function setActiveEditorBridge(config: NoteEditorBridgeConfig | null) {
   emit();
 }
 
+/** 스토어 content 갱신 시 싱글톤 호스트가 getProps()를 다시 읽도록 */
+export function notifyActiveEditorBridgePropsChanged() {
+  if (!activeConfig) return;
+  emit();
+}
+
 /** bridge 해제 — 등록 id와 일치하는 에디터만 커밋 (폴백 없음) */
 export function clearActiveEditorBridge(blockId: string, field: NoteActiveEditorField) {
   if (activeConfig?.blockId === blockId && activeConfig?.field === field) {

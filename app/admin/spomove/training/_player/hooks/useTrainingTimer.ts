@@ -108,7 +108,7 @@ export function useTrainingTimer({
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
-          const v = getSignalVoice(sig, engineMode, engineLevel, audioMode);
+          const v = getSignalVoice();
           if (v) tts(v, true);
         }
       }

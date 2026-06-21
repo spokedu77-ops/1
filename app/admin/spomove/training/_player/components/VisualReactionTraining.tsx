@@ -2,6 +2,8 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { setupCanvas } from '../lib/canvasUtils';
+
 /** 하단 패드(#vrt-pads)는 DOM 분리 — 플레이 캔버스 높이에는 포함되지 않음. 히트 라인은 캔버스 하단에서만 약간 올린다. */
 function playBottomHitY(cvHeight: number): number {
   return cvHeight - Math.max(cvHeight * 0.035, 16);
@@ -32,6 +34,8 @@ type GameState = {
   spd: number;
   lw: number;
   hitY: number;
+  W: number;
+  H: number;
   objs: (FlowTile | FlashBubble)[];
   particles: Particle[];
   stims: number;
@@ -105,7 +109,7 @@ class FlowTile {
     this.color = RT_COLORS[lane];
     this.w = g.lw * 0.7;
     this.x = lane * g.lw + (g.lw - this.w) / 2;
-    this.h = Math.max(cv.height * 0.1, 50);
+    this.h = Math.max(g.H * 0.1, 50);
     this.y = -this.h - 4;
     this.speed = g.baseSpd;
     this.fired = false;
@@ -131,7 +135,7 @@ class FlowTile {
     onLaneStim(this.lane);
   }
 
-  draw(ctx: CanvasRenderingContext2D, g: GameState, _cv: HTMLCanvasElement) {
+  draw(ctx: CanvasRenderingContext2D, g: GameState) {
     if (this.dead) return;
     const top = this.y;
     const bot = Math.min(this.y + this.h, g.hitY);
@@ -169,12 +173,12 @@ class FlashBubble {
   wobble: number;
   t: number;
 
-  constructor(g: GameState, cv: HTMLCanvasElement) {
+  constructor(g: GameState) {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
-    const r0 = Math.max(cv.width * 0.07, 30);
+    const r0 = Math.max(g.W * 0.07, 30);
     this.r = r0 + Math.random() * r0 * 0.5;
-    this.x = this.r + Math.random() * (cv.width - this.r * 2);
+    this.x = this.r + Math.random() * (g.W - this.r * 2);
     this.y = -this.r * 2;
     this.speed = g.baseSpd * (0.75 + Math.random() * 0.5);
     this.fired = false;
@@ -208,9 +212,9 @@ class FlashBubble {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D, _g: GameState, cv: HTMLCanvasElement) {
+  draw(ctx: CanvasRenderingContext2D, g: GameState) {
     if (this.dead) return;
-    if (this.y - this.r > cv.height) return;
+    if (this.y - this.r > g.H) return;
     ctx.save();
     ctx.shadowColor = this.color.main;
     ctx.shadowBlur = 30;
@@ -524,6 +528,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       spd: lv,
       lw: 0,
       hitY: 0,
+      W: 0,
+      H: 0,
       objs: [],
       particles: [],
       stims: 0,
@@ -541,19 +547,22 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     };
     gRef.current = g;
 
+    let dpr = 1;
     const resizeCv = (play: HTMLDivElement) => {
       if (!cv) return;
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
-      cv.width = w;
-      cv.height = h;
+      const result = setupCanvas(cv, w, h);
+      dpr = result.dpr;
+      g.W = result.cssW;
+      g.H = result.cssH;
     };
 
     const calcLayout = () => {
       if (!cv) return;
-      g.lw = cv.width / 4;
-      g.hitY = playBottomHitY(cv.height);
+      g.lw = g.W > 0 ? g.W / 4 : cv.width / 4;
+      g.hitY = playBottomHitY(g.H > 0 ? g.H : cv.height);
     };
 
     const updateHud = () => {
@@ -574,7 +583,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       for (let i = 1; i < 4; i++) {
         ctx.beginPath();
         ctx.moveTo(i * g.lw, 0);
-        ctx.lineTo(i * g.lw, cv.height);
+        ctx.lineTo(i * g.lw, g.H);
         ctx.stroke();
       }
       ctx.setLineDash([]);
@@ -588,13 +597,13 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 18;
       ctx.fillStyle = 'rgba(255,255,255,.85)';
-      ctx.fillRect(0, y - 1, cv.width, 2);
+      ctx.fillRect(0, y - 1, g.W, 2);
       ctx.shadowBlur = 0;
       const grd = ctx.createLinearGradient(0, y, 0, y + 48);
       grd.addColorStop(0, 'rgba(255,255,255,.07)');
       grd.addColorStop(1, 'transparent');
       ctx.fillStyle = grd;
-      ctx.fillRect(0, y, cv.width, 48);
+      ctx.fillRect(0, y, g.W, 48);
       RT_COLORS.forEach((c, i) => {
         const cx = i * g.lw + g.lw / 2;
         ctx.save();
@@ -619,7 +628,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       grd.addColorStop(0.65, 'rgba(7,7,15,.55)');
       grd.addColorStop(1, 'transparent');
       ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, cv.width, 80);
+      ctx.fillRect(0, 0, g.W, 80);
     };
 
     const spawnObjs = (now: number) => {
@@ -650,7 +659,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         // FLASH(2번): 버블이 서로 겹치지 않게 동시 낙하를 1개로 제한.
         const activeFlash = g.objs.filter((o) => o instanceof FlashBubble && !o.dead).length;
         if (activeFlash < 1) {
-          g.objs.push(new FlashBubble(g, cv));
+          g.objs.push(new FlashBubble(g));
         }
       } else {
         const pair = randomPair();
@@ -665,12 +674,12 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         const o = g.objs[i];
         if (o instanceof FlowTile) {
           o.update(g, cv, nowMs, deltaSec, onStim);
-          o.draw(ctx, g, cv);
+          o.draw(ctx, g);
         } else if (o instanceof FlashBubble) {
           o.update(g, cv, nowMs, deltaSec, onStimBubble);
-          o.draw(ctx, g, cv);
+          o.draw(ctx, g);
         }
-        if (o.dead || o.y > cv.height + 100) g.objs.splice(i, 1);
+        if (o.dead || o.y > g.H + 100) g.objs.splice(i, 1);
       }
     };
 
@@ -692,7 +701,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       if (!ctx2) return;
       const gg = gRef.current;
       gg.stimConsumedThisFrame = false;
-      ctx2.clearRect(0, 0, cv.width, cv.height);
+      ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx2.clearRect(0, 0, g.W, g.H);
       drawGrid(ctx2);
       spawnObjs(now);
       updateObjs(ctx2, now, deltaSec);

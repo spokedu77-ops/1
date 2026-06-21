@@ -15,6 +15,27 @@ import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 const LEGACY_SW_CACHE_NAMES = ['spokedu-master-v3', 'start-url', 'dev'];
+type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
+
+function isProtectedMasterRoute(pathname: string, basePath: string) {
+  if (basePath.startsWith('/admin')) return false;
+
+  return (
+    pathname === basePath ||
+    pathname === `${basePath}/dashboard` ||
+    pathname === `${basePath}/library` ||
+    pathname.startsWith(`${basePath}/library/`) ||
+    pathname === `${basePath}/class-record` ||
+    pathname === `${basePath}/students` ||
+    pathname === `${basePath}/report`
+  );
+}
+
+function currentLoginRedirectHref() {
+  if (typeof window === 'undefined') return '/login';
+  const next = `${window.location.pathname}${window.location.search}`;
+  return `/login?next=${encodeURIComponent(next)}`;
+}
 
 function isLegacyRootServiceWorker(registration: ServiceWorkerRegistration) {
   return [registration.active, registration.waiting, registration.installing].some((worker) => {
@@ -101,6 +122,87 @@ function OperationsBanner() {
   );
 }
 
+function MasterAccessCheckingState({ error = false, onRetry }: { error?: boolean; onRetry?: () => void }) {
+  return (
+    <div className="grid min-h-full place-items-center px-6 py-12">
+      <div className="w-full max-w-[420px] rounded-[24px] border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <p className="text-[13px] font-black text-slate-900">
+          {error ? '이용 권한을 확인하지 못했습니다.' : '로그인 상태를 확인하는 중입니다.'}
+        </p>
+        <p className="mt-2 text-[12px] font-semibold leading-5 text-slate-500">
+          {error ? '잠시 후 다시 시도해 주세요.' : 'SPOKEDU MASTER 접근 권한을 확인하고 있습니다.'}
+        </p>
+        {error ? (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-4 text-[13px] font-black text-white"
+          >
+            다시 시도
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="h-full overflow-y-auto px-5 py-10 sm:px-8">
+      <div className="mx-auto flex min-h-full w-full max-w-[520px] items-center">
+        <section className="w-full rounded-[28px] border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-indigo-600">
+            SPOKEDU MASTER
+          </p>
+          <h1 className="mt-3 text-[28px] font-black leading-tight text-slate-950 sm:text-[34px]">
+            SPOKEDU MASTER 이용 권한이 필요합니다.
+          </h1>
+          <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
+            수업 자료, 학생 기록, 저장 안내문을 사용하려면 이용권 상태를 확인하거나 30일 이용권을 결제해 주세요.
+          </p>
+
+          <div className="mt-6 grid gap-2">
+            <Link
+              href="/spokedu-master/profile?plans=1"
+              className="flex min-h-12 items-center justify-center rounded-[14px] bg-indigo-600 px-4 text-[14px] font-black text-white shadow-lg shadow-indigo-100"
+            >
+              이용권 안내 보기
+            </Link>
+            <Link
+              href="/spokedu-master/payment?plan=pro"
+              className="flex min-h-12 items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 text-[14px] font-black text-slate-800"
+            >
+              Pro 30일 이용권 보기
+            </Link>
+            <Link
+              href="/spokedu-master/payment?plan=team"
+              className="flex min-h-12 items-center justify-center rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 text-[14px] font-black text-emerald-700"
+            >
+              Center 30일 이용권 보기
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={onRetry}
+              className="flex min-h-11 items-center justify-center rounded-[12px] bg-slate-100 px-3 text-[13px] font-black text-slate-700"
+            >
+              권한 다시 확인
+            </button>
+            <Link
+              href="/spokedu-master/landing"
+              className="flex min-h-11 items-center justify-center rounded-[12px] px-3 text-[13px] font-black text-slate-500"
+            >
+              소개 페이지로 이동
+            </Link>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export function AppShell({ children, basePath = '/spokedu-master' }: { children: ReactNode; basePath?: string }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -112,6 +214,11 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const [shellMounted, setShellMounted] = useState(false);
   const [storeHydrated, setStoreHydrated] = useState(false);
   const [subscriptionSynced, setSubscriptionSynced] = useState(false);
+  const [accessGuard, setAccessGuard] = useState<{ pathname: string; status: MasterAccessGuardStatus }>({
+    pathname: '',
+    status: 'checking',
+  });
+  const [accessRetryKey, setAccessRetryKey] = useState(0);
 
   const isAdmin = basePath.startsWith('/admin');
   const isSession = pathname.startsWith(`${basePath}/spomove/session`) || pathname.startsWith(`${basePath}/class-mode`);
@@ -122,6 +229,17 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
   const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor;
+  const isProtectedRoute = isProtectedMasterRoute(pathname, basePath);
+  const isAccessGuardPending =
+    isProtectedRoute &&
+    (accessGuard.pathname !== pathname ||
+      accessGuard.status === 'checking' ||
+      accessGuard.status === 'redirecting');
+  const isAccessGuardError =
+    isProtectedRoute && accessGuard.pathname === pathname && accessGuard.status === 'error';
+  const isAccessGuardDenied =
+    isProtectedRoute && accessGuard.pathname === pathname && accessGuard.status === 'denied';
+  const isAccessGuardBlocking = isAccessGuardPending || isAccessGuardDenied || isAccessGuardError;
 
   useEffect(() => {
     setShellMounted(true);
@@ -129,9 +247,14 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       setSubscriptionSynced(true);
       return;
     }
-    void loadPrograms();
     void syncSubscription().finally(() => setSubscriptionSynced(true));
-  }, [isLanding, isPublicDocument, loadPrograms, syncSubscription]);
+  }, [isLanding, isPublicDocument, syncSubscription]);
+
+  useEffect(() => {
+    if (isLanding || isPublicDocument) return;
+    if (isProtectedRoute && accessGuard.status !== 'allowed') return;
+    void loadPrograms();
+  }, [accessGuard.status, isLanding, isProtectedRoute, isPublicDocument, loadPrograms]);
 
   useEffect(() => {
     setStoreHydrated(useMasterStore.persist.hasHydrated());
@@ -142,6 +265,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   useEffect(() => {
     const refreshProgramsOnFocus = () => {
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
+      if (isProtectedRoute && accessGuard.status !== 'allowed') return;
       void reloadPrograms();
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
@@ -150,7 +274,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [isLanding, isPublicDocument, reloadPrograms]);
+  }, [accessGuard.status, isLanding, isProtectedRoute, isPublicDocument, reloadPrograms]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -199,10 +323,56 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (isAdmin || isLanding || isPublicDocument || !storeHydrated || !subscriptionSynced) return;
+    if (isProtectedRoute && accessGuard.status !== 'allowed') return;
     if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
-  }, [basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isPublicDocument, isSession, profile, router, storeHydrated, subscriptionSynced]);
+  }, [accessGuard.status, basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, profile, router, storeHydrated, subscriptionSynced]);
+
+  useEffect(() => {
+    if (!isProtectedRoute) {
+      setAccessGuard({ pathname, status: 'allowed' });
+      return;
+    }
+
+    let cancelled = false;
+    setAccessGuard({ pathname, status: 'checking' });
+
+    fetch('/api/spokedu-master/access', {
+      cache: 'no-store',
+      credentials: 'include',
+    })
+      .then((response) => {
+        if (cancelled) return;
+
+        if (response.ok) {
+          setAccessGuard({ pathname, status: 'allowed' });
+          return;
+        }
+
+        if (response.status === 401) {
+          setAccessGuard({ pathname, status: 'redirecting' });
+          router.replace(currentLoginRedirectHref());
+          return;
+        }
+
+        if (response.status === 403) {
+          setAccessGuard({ pathname, status: 'denied' });
+          return;
+        }
+
+        setAccessGuard({ pathname, status: 'error' });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAccessGuard({ pathname, status: 'error' });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [accessRetryKey, isProtectedRoute, pathname, router]);
 
   if (isSession) {
     return <div className="min-h-dvh bg-black" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>{children}</div>;
@@ -214,13 +384,21 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : <StatusBar />}
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
-            {shellMounted && !hideChrome && !isAdmin ? <OperationsBanner /> : null}
-            {shellMounted && !hideChrome && !isAdmin ? <TrialCountdownBanner /> : null}
-            <ErrorBoundary>
-              <OperationalDataProvider>
-                <ExplanationDataProvider>{children}</ExplanationDataProvider>
-              </OperationalDataProvider>
-            </ErrorBoundary>
+            {shellMounted && !hideChrome && !isAdmin && !isAccessGuardBlocking ? <OperationsBanner /> : null}
+            {shellMounted && !hideChrome && !isAdmin && !isAccessGuardBlocking ? <TrialCountdownBanner /> : null}
+            {isAccessGuardPending ? (
+              <MasterAccessCheckingState />
+            ) : isAccessGuardDenied ? (
+              <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
+            ) : isAccessGuardError ? (
+              <MasterAccessCheckingState error onRetry={() => setAccessRetryKey((key) => key + 1)} />
+            ) : (
+              <ErrorBoundary>
+                <OperationalDataProvider>
+                  <ExplanationDataProvider>{children}</ExplanationDataProvider>
+                </OperationalDataProvider>
+              </ErrorBoundary>
+            )}
           </main>
           {hideChrome ? null : <FloatingTimerPill />}
           {hideChrome ? null : <TabBar basePath={basePath} />}

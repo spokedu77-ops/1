@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
 
 const HUD_H = 64;
@@ -420,8 +421,8 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
     gRef.current = g;
 
     const calcLayout = () => {
-      const W = cv.width;
-      const H = cv.height;
+      const W = cvCssW > 0 ? cvCssW : cv.width;
+      const H = cvCssH > 0 ? cvCssH : cv.height;
       const cx = W / 2;
       const cy = H / 2;
       const padSize = Math.min(W, H) * 0.18;
@@ -450,12 +451,17 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       };
     };
 
+    let dpr = 1;
+    let cvCssW = 0;
+    let cvCssH = 0;
     const resizeCv = (play: HTMLDivElement) => {
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
-      cv.width = w;
-      cv.height = h;
+      const result = setupCanvas(cv, w, h);
+      dpr = result.dpr;
+      cvCssW = result.cssW;
+      cvCssH = result.cssH;
     };
 
     const onStim = (ci: number, x: number, y: number) => {
@@ -702,6 +708,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       if (!ctx2) return;
       const L = LRef.current;
       if (!L) return;
+      ctx2.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx2.clearRect(0, 0, L.W, L.H);
       drawBg(ctx2);
       drawCenterPads(ctx2);

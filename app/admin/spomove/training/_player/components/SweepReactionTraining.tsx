@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { setupCanvas } from '../lib/canvasUtils';
 import { speedSecToMs } from '../lib/reactTrainTiming';
 
 const C = [
@@ -40,6 +41,8 @@ type SweepState = {
   playTop: number;
   playBottom: number;
   playH: number;
+  W: number;
+  H: number;
   colorLastFired: [number, number, number, number];
   colColors: number[];
   particles: SweepParticle[];
@@ -97,7 +100,7 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
-export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, speedSec, onExit, onComplete }: Props) {
+export function SweepReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -159,6 +162,8 @@ export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       playTop: 72,
       playBottom: 0,
       playH: 0,
+      W: 0,
+      H: 0,
       colorLastFired: [-1, -1, -1, -1],
       colColors: [],
       particles: [],
@@ -178,12 +183,15 @@ export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       }
     };
 
+    let dpr = 1;
     const resize = () => {
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
-      cv.width = w;
-      cv.height = h;
+      const result = setupCanvas(cv, w, h);
+      dpr = result.dpr;
+      g.W = result.cssW;
+      g.H = result.cssH;
       const padH = Math.max(72, Math.min(90, h * 0.1));
       g.playTop = 72;
       g.playBottom = h - padH;
@@ -305,14 +313,15 @@ export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       onStim(ci, col);
     };
 
-    const updateParticles = () => {
+    const updateParticles = (dt: number) => {
+      const t = dt * 60;
       for (let i = g.particles.length - 1; i >= 0; i--) {
         const p = g.particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.14;
-        p.vx *= 0.97;
-        p.life -= p.dec;
+        p.x += p.vx * t;
+        p.y += p.vy * t;
+        p.vy += 0.14 * t;
+        p.vx *= Math.pow(0.97, t);
+        p.life -= p.dec * t;
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.life);
         ctx.fillStyle = p.color;
@@ -331,15 +340,19 @@ export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       grd.addColorStop(0, '#06060C');
       grd.addColorStop(1, 'transparent');
       ctx.fillStyle = grd;
-      ctx.fillRect(0, 0, cv.width, 110);
+      ctx.fillRect(0, 0, g.W, 110);
     };
 
+    let lastFrameMs = 0;
     const loop = (now: number) => {
       if (!g.running) return;
-      ctx.clearRect(0, 0, cv.width, cv.height);
+      const dt = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
+      lastFrameMs = now;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, g.W, g.H);
       const elapsed = now - g.lineStart;
       const progress = elapsed / g.lineDur;
-      g.lineX = progress * cv.width;
+      g.lineX = progress * g.W;
       if (g.lineX >= cv.width) {
         g.lineStart = now;
         g.lineX = 0;
@@ -350,7 +363,7 @@ export function SweepReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       drawField();
       checkLineHits();
       drawTimeline();
-      updateParticles();
+      updateParticles(dt);
       drawTopFade();
       g.raf = requestAnimationFrame(loop);
     };

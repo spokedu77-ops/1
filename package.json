@@ -13,6 +13,8 @@
     "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
     "test:admin-note": "vitest run app/admin/note app/lib/note/noteBlockTree.test.ts",
+    "test:spomove": "vitest run app/admin/spomove/training/_player/spomove.test.ts",
+    "lint:spomove": "eslint app/admin/spomove app/api/spokedu-master --max-warnings 0",
     "qa:admin-note": "node scripts/admin-note-smoke-qa.mjs",
     "verify:spokedu-plan-copy": "node scripts/verify-spokedu-plan-copy.mjs",
     "qa:spokedu-master": "node scripts/seed-spokedu-master-placeholder-heroes.mjs && node scripts/spokedu-master-home-content-audit.mjs && node scripts/spokedu-master-home-visual-audit.mjs && node scripts/spokedu-master-copy-scan.mjs",

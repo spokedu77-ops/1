@@ -12,7 +12,6 @@ import Typography from '@tiptap/extension-typography';
 import Image from '@tiptap/extension-image';
 import CharacterCount from '@tiptap/extension-character-count';
 import type { EditorView } from '@tiptap/pm/view';
-import { TextSelection } from '@tiptap/pm/state';
 import { parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   adjustBulletIndent,
@@ -352,7 +351,7 @@ export function NoteEditor({
   const lastAutoFocusSignalRef = useRef(0);
   const editorRef = useRef<Editor | null>(null);
   const blurCommitRef = useRef<{
-    blockId?: string;
+    blockId: string;
     onChange: (change: NoteEditorChange) => void;
   } | null>(null);
   const imageLightbox = useNoteImageLightbox();
@@ -442,10 +441,7 @@ export function NoteEditor({
       window.cancelAnimationFrame(changeTimerRef.current);
       changeTimerRef.current = null;
     }
-    changeTimerRef.current = window.requestAnimationFrame(() => {
-      changeTimerRef.current = null;
-      flushPendingChange();
-    });
+    flushPendingChange();
   }, [flushPendingChange]);
 
   const toolbarNotifyRafRef = useRef<number | null>(null);
@@ -557,6 +553,10 @@ export function NoteEditor({
         return true;
       },
       handleDOMEvents: {
+        compositionend: (_view: EditorView, _event: CompositionEvent) => {
+          callbacksRef.current.flushPendingChange();
+          return false;
+        },
         dblclick: (view, event) => {
           event.preventDefault();
           const ed = editorRef.current;
@@ -840,6 +840,7 @@ export function NoteEditor({
     },
     onBlur: () => {
       isEditingRef.current = false;
+      callbacksRef.current.flushPendingChange();
       const target = blurCommitRef.current;
       blurCommitRef.current = null;
       const currentEditor = editorRef.current;
@@ -915,45 +916,61 @@ export function NoteEditor({
   }, []);
 
   useEffect(() => {
+    const commitOnTabLeave = () => {
+      if (document.visibilityState !== 'hidden') return;
+      callbacksRef.current.flushPendingChange();
+      const target = blurCommitRef.current;
+      const currentEditor = editorRef.current;
+      if (
+        !target?.blockId
+        || !currentEditor
+        || (currentEditor as { isDestroyed?: boolean }).isDestroyed
+        || getNoteEditor(target.blockId) !== currentEditor
+      ) {
+        return;
+      }
+      target.onChange({
+        text: currentEditor.getText(),
+        html: currentEditor.getHTML(),
+      });
+    };
+    document.addEventListener('visibilitychange', commitOnTabLeave);
+    window.addEventListener('pagehide', commitOnTabLeave);
+    return () => {
+      document.removeEventListener('visibilitychange', commitOnTabLeave);
+      window.removeEventListener('pagehide', commitOnTabLeave);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!editor) return;
     if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
     const resetKeyChanged = lastResetKeyRef.current !== resetKey;
-    if (resetKeyChanged) lastResetKeyRef.current = resetKey;
-    if (!resetKeyChanged && (isEditingRef.current || pendingChangeRef.current)) return;
-    let currentHtml = '';
-    try {
-      currentHtml = editor.getHTML();
-    } catch {
-      return;
+    if (!resetKeyChanged) return;
+    lastResetKeyRef.current = resetKey;
+    if (changeTimerRef.current !== null) {
+      window.cancelAnimationFrame(changeTimerRef.current);
+      changeTimerRef.current = null;
     }
-    if (!resetKeyChanged && isEditingRef.current && editor.getText() === text) {
-      return;
-    }
-    if (resetKeyChanged || currentHtml !== sourceHtml) {
-      if (changeTimerRef.current !== null) {
-        window.cancelAnimationFrame(changeTimerRef.current);
-        changeTimerRef.current = null;
-      }
-      pendingChangeRef.current = null;
-      const { from, to, empty } = editor.state.selection;
-      editor
-        .chain()
-        .command(({ tr }) => { tr.setMeta('addToHistory', false); return true; })
-        .setContent(sourceHtml, { emitUpdate: false })
-        .run();
-      if (isEditingRef.current) {
-        if (!empty && from < to) {
-          const docSize = editor.state.doc.content.size;
-          const safeFrom = Math.min(from, docSize - 1);
-          const safeTo = Math.min(to, docSize - 1);
-          editor.commands.setTextSelection({ from: safeFrom, to: Math.max(safeFrom, safeTo) });
-        } else {
-          const pos = Math.min(from, editor.state.doc.content.size - 1);
-          editor.commands.setTextSelection({ from: pos, to: pos });
-        }
+    pendingChangeRef.current = null;
+    const { from, to, empty } = editor.state.selection;
+    editor
+      .chain()
+      .command(({ tr }) => { tr.setMeta('addToHistory', false); return true; })
+      .setContent(sourceHtml, { emitUpdate: false })
+      .run();
+    if (isEditingRef.current) {
+      if (!empty && from < to) {
+        const docSize = editor.state.doc.content.size;
+        const safeFrom = Math.min(from, docSize - 1);
+        const safeTo = Math.min(to, docSize - 1);
+        editor.commands.setTextSelection({ from: safeFrom, to: Math.max(safeFrom, safeTo) });
+      } else {
+        const pos = Math.min(from, editor.state.doc.content.size - 1);
+        editor.commands.setTextSelection({ from: pos, to: pos });
       }
     }
-  }, [editor, resetKey, sourceHtml, text]);
+  }, [editor, resetKey, sourceHtml]);
 
   useEffect(() => {
     lastAutoFocusSignalRef.current = 0;

@@ -32,7 +32,7 @@ export function SpomoveCatalogHero() {
   const [showStudentManage, setShowStudentManage] = useState(false);
   const [bannerLightboxOpen, setBannerLightboxOpen] = useState(false);
   const [bannerMounted, setBannerMounted] = useState(false);
-  const [theme, setTheme] = useState(() =>
+  const [theme] = useState(() =>
     typeof window !== 'undefined' ? localStorage.getItem('spokedu_theme') || 'light' : 'light',
   );
 

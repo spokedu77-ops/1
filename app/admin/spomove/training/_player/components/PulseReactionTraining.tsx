@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { setupCanvas } from '../lib/canvasUtils';
 import { speedSecToMs } from '../lib/reactTrainTiming';
 
 const COLORS = [
@@ -20,6 +21,8 @@ type PulseGameState = {
   maxR: number;
   centerX: number;
   centerY: number;
+  W: number;
+  H: number;
   rings: PulseRing[];
   particles: PulseParticle[];
   stims: number;
@@ -78,12 +81,13 @@ class PulseParticle {
     this.radius = 1.5 + Math.random() * 4.5;
   }
 
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.vx *= 0.97;
-    this.vy = this.vy * 0.97 + 0.12;
-    this.life -= this.dec;
+  update(dt: number) {
+    const t = dt * 60;
+    this.x += this.vx * t;
+    this.y += this.vy * t;
+    this.vx *= Math.pow(0.97, t);
+    this.vy = this.vy * Math.pow(0.97, t) + 0.12 * t;
+    this.life -= this.dec * t;
   }
 }
 
@@ -128,7 +132,7 @@ type Props = {
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, speedSec, onExit, onComplete }: Props) {
+export function PulseReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -181,6 +185,8 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       maxR: 0,
       centerX: 0,
       centerY: 0,
+      W: 0,
+      H: 0,
       rings: [],
       particles: [],
       stims: 0,
@@ -193,23 +199,23 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
     gRef.current = g;
 
     const cornerPos = (lane: number) => {
-      const w = cv.width;
-      const h = cv.height;
       if (lane === 0) return { x: 0, y: 0 };
-      if (lane === 1) return { x: w, y: 0 };
-      if (lane === 2) return { x: 0, y: h };
-      return { x: w, y: h };
+      if (lane === 1) return { x: g.W, y: 0 };
+      if (lane === 2) return { x: 0, y: g.H };
+      return { x: g.W, y: g.H };
     };
 
     const resize = () => {
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
-      cv.width = w;
-      cv.height = h;
-      g.centerX = w / 2;
-      g.centerY = h / 2;
-      g.maxR = Math.sqrt((w / 2) * (w / 2) + (h / 2) * (h / 2));
+      const result = setupCanvas(cv, w, h);
+      dpr = result.dpr;
+      g.W = result.cssW;
+      g.H = result.cssH;
+      g.centerX = g.W / 2;
+      g.centerY = g.H / 2;
+      g.maxR = Math.sqrt(g.centerX * g.centerX + g.centerY * g.centerY);
     };
 
     const updateHud = () => {
@@ -271,7 +277,7 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       vig.addColorStop(0, 'transparent');
       vig.addColorStop(1, 'rgba(0,0,0,0.55)');
       ctx.fillStyle = vig;
-      ctx.fillRect(0, 0, cv.width, cv.height);
+      ctx.fillRect(0, 0, g.W, g.H);
     };
 
     const drawCore = () => {
@@ -279,7 +285,7 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       const phase = ((now - g.lastPulseAt) % g.pulsePeriod + g.pulsePeriod) % g.pulsePeriod;
       const p = phase / g.pulsePeriod;
       const pulse = p < 0.16 ? p / 0.16 : Math.max(0, 1 - (p - 0.16) / 0.34);
-      const r = Math.max(6, Math.min(cv.width, cv.height) * 0.025) * (1 + pulse * 0.35);
+      const r = Math.max(6, Math.min(g.W, g.H) * 0.025) * (1 + pulse * 0.35);
 
       const glow = ctx.createRadialGradient(g.centerX, g.centerY, 0, g.centerX, g.centerY, r * 5);
       glow.addColorStop(0, `rgba(255,255,255,${0.06 + pulse * 0.08})`);
@@ -321,7 +327,7 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
           const radius = ring.progress * g.maxR;
           const alpha =
             ring.progress < 0.1 ? ring.progress / 0.1 : ring.progress > 0.8 ? (1 - ring.progress) / 0.2 : 1;
-          const width = Math.max(4, Math.min(cv.width, cv.height) * 0.022) * (1 - ring.progress * 0.4);
+          const width = Math.max(4, Math.min(g.W, g.H) * 0.022) * (1 - ring.progress * 0.4);
           const color = COLORS[ring.lane]?.main ?? '#fff';
           ctx.save();
           ctx.globalAlpha = Math.max(0, alpha);
@@ -341,10 +347,10 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       }
     };
 
-    const updateParticles = () => {
+    const updateParticles = (dt: number) => {
       for (let i = g.particles.length - 1; i >= 0; i--) {
         const p = g.particles[i];
-        p.update();
+        p.update(dt);
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.life);
         ctx.fillStyle = p.color;
@@ -358,13 +364,18 @@ export function PulseReactionTraining({ durationSec, speedLevel: _speedLevel, sp
       }
     };
 
+    let lastFrameMs = 0;
+    let dpr = 1;
     const loop = (now: number) => {
       if (!g.running) return;
-      ctx.clearRect(0, 0, cv.width, cv.height);
+      const dt = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
+      lastFrameMs = now;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, g.W, g.H);
       drawBg();
       spawnRings(now);
       updateRings(now);
-      updateParticles();
+      updateParticles(dt);
       drawCore();
       g.raf = requestAnimationFrame(loop);
     };

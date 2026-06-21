@@ -2,7 +2,6 @@ import type {
   ExistingAttendanceStatus,
   ExistingRecordType,
   MasterClassRecordDto,
-  MasterClassRecordStudentDto,
   MasterStudentDto,
   MasterStudentMeta,
 } from '@/app/spokedu-master/types/operational';

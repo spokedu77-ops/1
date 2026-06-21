@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec } from '../lib/reactTrainTiming';
 
 const C = [
@@ -104,7 +105,7 @@ function project(g: RushState, z: number, laneOffset: number) {
   return { x, y };
 }
 
-export function RushReactionTraining({ durationSec, speedLevel: _speedLevel, speedSec, onExit, onComplete }: Props) {
+export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
   const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
@@ -178,15 +179,16 @@ export function RushReactionTraining({ durationSec, speedLevel: _speedLevel, spe
     };
     gRef.current = g;
 
+    let dpr = 1;
     const resize = () => {
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
-      cv.width = w;
-      cv.height = h;
+      const result = setupCanvas(cv, w, h);
+      dpr = result.dpr;
+      g.W = result.cssW;
+      g.H = result.cssH;
       const padH = Math.max(70, Math.min(88, h * 0.1));
-      g.W = w;
-      g.H = h;
       g.playTop = 72;
       g.playBot = h - padH;
       g.vpX = w / 2;
@@ -330,14 +332,15 @@ export function RushReactionTraining({ durationSec, speedLevel: _speedLevel, spe
       ctx.restore();
     };
 
-    const updateParticles = () => {
+    const updateParticles = (dt: number) => {
+      const t = dt * 60;
       for (let i = g.particles.length - 1; i >= 0; i--) {
         const p = g.particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.vy += 0.18;
-        p.vx *= 0.97;
-        p.life -= p.dec;
+        p.x += p.vx * t;
+        p.y += p.vy * t;
+        p.vy += 0.18 * t;
+        p.vx *= Math.pow(0.97, t);
+        p.life -= p.dec * t;
         ctx.save();
         ctx.globalAlpha = Math.max(0, p.life);
         ctx.fillStyle = p.color;
@@ -361,8 +364,9 @@ export function RushReactionTraining({ durationSec, speedLevel: _speedLevel, spe
 
     const loop = (now: number) => {
       if (!g.running) return;
-      const dt = (now - g.lastTime) / 1000;
+      const dt = Math.min((now - g.lastTime) / 1000, 0.05);
       g.lastTime = now;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, g.W, g.H);
 
       drawBackground();
@@ -392,7 +396,7 @@ export function RushReactionTraining({ durationSec, speedLevel: _speedLevel, spe
       }
 
       drawHitLine();
-      updateParticles();
+      updateParticles(dt);
       drawTopFade();
       g.raf = requestAnimationFrame(loop);
     };

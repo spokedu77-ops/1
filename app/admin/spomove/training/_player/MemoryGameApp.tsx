@@ -32,10 +32,10 @@ import FlowGameClient from './flow/FlowGameClient';
 import { buildStages } from './flow/engine/modules/stageBuilder';
 import { SELECTABLE_MODULE_KEYS } from './flow/engine/modules/flowModules';
 import type { FlowStats } from './flow/engine/FlowEngine';
-import type { DupStats } from './lib/signals';
+import type { DupStats, FruitSlide } from './lib/signals';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
-import { useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
+import { useSpomoveVariantSlidesForTraining, getMinSlidesRequired } from './hooks/useSpomoveVariantFruitSlidesForTraining';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
   SPOMOVE_COLOR_THEME_ORDER,
@@ -43,6 +43,7 @@ import {
   parseStoredVariantTheme,
   type SpomoveColorThemeId,
 } from './lib/spomoveVariantThemeConfig';
+import { loadFlowPresets, saveFlowPresets, type FlowPreset, type FlowColorTheme } from './lib/flowPresets';
 function modeLevelRangeLabel(modeId: string, levelCount: number): string {
   if (modeId === 'flow') return '1번';
   return levelCount <= 1 ? '1번' : `1~${levelCount}번`;
@@ -264,18 +265,13 @@ export default function MemoryGameApp({
   const flowEngineApiRef = useRef<{ loadBgmLate: (path: string) => Promise<void> } | null>(null);
 
   // ── Flow 즐겨찾기 ────────────────────────────────────────────────────────
-  const FLOW_PRESETS_KEY = 'spomove_flow_presets';
-  interface FlowPreset { id: string; name: string; features: string[]; colorTheme: string; duration: number; }
-  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem(FLOW_PRESETS_KEY) || '[]') as FlowPreset[]; } catch { return []; }
-  });
+  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => loadFlowPresets());
   const saveFlowPreset = () => {
     const name = prompt('즐겨찾기 이름을 입력하세요', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
-    const next = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], colorTheme: settings.flowColorTheme, duration: settings.flowDuration }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...settings.flowFeatures], colorTheme: settings.flowColorTheme as FlowColorTheme, duration: settings.flowDuration }];
     setFlowPresets(next);
-    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+    saveFlowPresets(next);
   };
   const loadFlowPreset = (p: FlowPreset) => {
     setSettings((s) => ({ ...s, flowFeatures: new Set(p.features as FlowFeatureKey[]), flowColorTheme: p.colorTheme as Settings['flowColorTheme'], flowDuration: p.duration }));
@@ -283,7 +279,7 @@ export default function MemoryGameApp({
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     setFlowPresets(next);
-    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+    saveFlowPresets(next);
   };
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   /** startSession 진입 후에만 onExit 허용 — 초기 home·카운트다운 대기 home에서 오동작 방지 */
@@ -310,9 +306,22 @@ export default function MemoryGameApp({
     };
   }, []);
 
-  const { slides: variantFruitSlides } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
+  const { slides: variantFruitSlides, status: assetStatus, reload: reloadAssets } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
   const variantFruitUrls = useMemo(() => variantFruitUrlsForPreload(variantFruitSlides), [variantFruitSlides]);
   const variantSignalSlides = settings.variantColorTheme === 'color' ? undefined : variantFruitSlides;
+
+  /**
+   * 훈련 세션 중 asset 스냅샷. 시작 시점의 슬라이드를 고정해
+   * visibilitychange refetch 등으로 중간에 배열이 바뀌어도 훈련을 재시작하지 않는다.
+   * sessionSlidesRef는 startSession에서 동기적으로 설정되고 stop/onFinish에서 초기화된다.
+   */
+  const sessionSlidesRef = useRef<FruitSlide[] | undefined>(undefined);
+  // 최신 variantSignalSlides를 startSession 클로저에서 캡처하기 위한 ref (deps 추가 없이)
+  const variantSignalSlidesRef = useRef(variantSignalSlides);
+  variantSignalSlidesRef.current = variantSignalSlides;
+
+  // 훈련 중이면 세션 시작 시 스냅샷 사용, 아니면 실시간 슬라이드 사용
+  const effectiveSlides = isTraining ? (sessionSlidesRef.current ?? variantSignalSlides) : variantSignalSlides;
 
   /** SPOMOVE 진입 직후 과일 이미지 선로딩(설정·난이도 선택 전에도 캐시 채움) */
   useEffect(() => {
@@ -443,6 +452,7 @@ export default function MemoryGameApp({
 
   const onFinish = useCallback((dupStats?: DupStats | null) => {
     if (document.fullscreenElement) document.exitFullscreen();
+    sessionSlidesRef.current = undefined;
     setIsTraining(false);
     const cfg = { ...settings };
     const count = countRef.current;
@@ -465,7 +475,7 @@ export default function MemoryGameApp({
     level: settings.level,
     audioMode: settings.audioMode,
     colors: COLORS,
-    fruitSlides: variantSignalSlides,
+    fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
     onSignal,
     onFinish,
@@ -481,7 +491,7 @@ export default function MemoryGameApp({
     level: settings.level,
     audioMode: settings.audioMode,
     colors: COLORS,
-    fruitSlides: variantSignalSlides,
+    fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
     onSignal,
     onFinish,
@@ -520,29 +530,8 @@ export default function MemoryGameApp({
     bgmPlayerRef.current?.fadeOut(220);
   }, [screen]);
 
-  useEffect(() => {
-    if (screen !== 'training') return;
-    const id = requestAnimationFrame(() => {
-      trainingContainerRef.current?.requestFullscreen?.().catch(() => {});
-    });
-    return () => cancelAnimationFrame(id);
-  }, [screen]);
-
-  useEffect(() => {
-    if (screen !== 'memory') return;
-    const id = requestAnimationFrame(() => {
-      document.documentElement.requestFullscreen?.().catch(() => {});
-    });
-    return () => cancelAnimationFrame(id);
-  }, [screen]);
-
-  useEffect(() => {
-    if (screen !== 'visualReaction') return;
-    const id = requestAnimationFrame(() => {
-      visualReactionContainerRef.current?.requestFullscreen?.().catch(() => {});
-    });
-    return () => cancelAnimationFrame(id);
-  }, [screen]);
+  // NOTE: fullscreen은 사용자 제스처(버튼 클릭) 핸들러에서 직접 요청한다.
+  // useEffect 기반 delayed fullscreen 요청은 제거됨.
 
   const startSession = useCallback(
     (cfg: Settings = settings) => {
@@ -552,7 +541,7 @@ export default function MemoryGameApp({
       // 인터벌 세트는 4로 고정
       if (cfg.intervalSets !== 4) cfg = { ...cfg, intervalSets: 4 };
       setSettings(cfg);
-      sessionStartMsRef.current = performance.now();
+      sessionStartMsRef.current = 0; // 실제 훈련 시작 시점에 설정됨 (카운트다운 완료 후)
       countRef.current = 0;
       setSignal(null);
       if (dupFlashClearRef.current != null) {
@@ -565,6 +554,8 @@ export default function MemoryGameApp({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      // 훈련 시작 시 현재 슬라이드를 스냅샷 — 세션 중 refetch/visibilitychange로 배열이 바뀌어도 유지
+      sessionSlidesRef.current = variantSignalSlidesRef.current;
 
       const playBgm = (path: string) => {
         try {
@@ -612,6 +603,8 @@ export default function MemoryGameApp({
         flowBgmPathRef.current = spomoveBgmList.length > 0
           ? spomoveBgmList[Math.floor(Math.random() * spomoveBgmList.length)]!
           : undefined;
+        // Flow는 내부 카운트다운이 있으므로 화면 전환 시점을 훈련 시작으로 간주
+        sessionStartMsRef.current = performance.now();
         setScreen('flow');
         setCountdown(null);
       } else {
@@ -623,6 +616,8 @@ export default function MemoryGameApp({
 
         if (warmupSec <= 0) {
           setCountdown(null);
+          // 카운트다운 없음: 훈련 즉시 시작
+          sessionStartMsRef.current = performance.now();
           if (nextScreen === 'training') {
             setIsTraining(true);
             if (cfg.audioMode === 'beep') playBeep('high');
@@ -641,6 +636,8 @@ export default function MemoryGameApp({
             if (timerRef.current) clearInterval(timerRef.current);
             timerRef.current = null;
             setCountdown(null);
+            // 카운트다운 완료: 실제 훈련 시작 시점 기록
+            sessionStartMsRef.current = performance.now();
             if (nextScreen === 'training') {
               setIsTraining(true);
               if (cfg.audioMode === 'beep') playBeep('high');
@@ -719,6 +716,7 @@ export default function MemoryGameApp({
       timerRef.current = null;
     }
     if (document.fullscreenElement) document.exitFullscreen();
+    sessionSlidesRef.current = undefined;
     setIsTraining(false);
     if (dupFlashClearRef.current != null) {
       clearTimeout(dupFlashClearRef.current);
@@ -1344,9 +1342,45 @@ export default function MemoryGameApp({
                 </div>
               </>
             )}
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button type="button" style={{ ...S.btn, ...S.bPrimary, flex: 3, fontSize: '1.05rem', padding: '1.1rem' }} onClick={() => startSession()}>트레이닝 시작 →</button>
-            </div>
+            {(() => {
+              const needsImageAssets = basicVariantLevel && settings.variantColorTheme !== 'color' && getMinSlidesRequired(settings.variantColorTheme) > 0;
+              const assetBlocking = needsImageAssets && (assetStatus === 'loading' || assetStatus === 'error');
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {needsImageAssets && assetStatus === 'loading' && (
+                    <div style={{ fontSize: '0.82rem', color: '#64748B', textAlign: 'center' }}>이미지 로딩 중...</div>
+                  )}
+                  {needsImageAssets && assetStatus === 'error' && (
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#EF4444', flex: 1 }}>이미지를 불러오지 못했습니다</span>
+                      <button type="button" onClick={() => void reloadAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #EF4444', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit' }}>재시도</button>
+                    </div>
+                  )}
+                  {needsImageAssets && assetStatus === 'insufficient' && (
+                    <div style={{ fontSize: '0.82rem', color: '#F59E0B', textAlign: 'center' }}>이미지가 없습니다 — 색상 신호로 대체됩니다</div>
+                  )}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      disabled={assetBlocking}
+                      style={{ ...S.btn, ...S.bPrimary, flex: 3, fontSize: '1.05rem', padding: '1.1rem', opacity: assetBlocking ? 0.5 : 1, cursor: assetBlocking ? 'not-allowed' : 'pointer' }}
+                      onClick={() => {
+                        if (assetBlocking) return;
+                        // 사용자 제스처 컨텍스트에서 직접 fullscreen 요청 (useEffect 지연 제거)
+                        if (document.fullscreenEnabled) {
+                          document.documentElement.requestFullscreen().catch((err: Error) => {
+                            console.warn('[SPOMOVE] fullscreen request failed:', err.message);
+                          });
+                        }
+                        startSession();
+                      }}
+                    >
+                      {assetStatus === 'loading' && needsImageAssets ? '로딩 중...' : '트레이닝 시작 →'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -1714,7 +1748,14 @@ export default function MemoryGameApp({
               fontSize: '0.88rem',
               borderRadius: '0.75rem',
             }}
-            onClick={() => startSession(cfg)}
+            onClick={() => {
+              if (document.fullscreenEnabled) {
+                document.documentElement.requestFullscreen().catch((err: Error) => {
+                  console.warn('[SPOMOVE] fullscreen request failed:', err.message);
+                });
+              }
+              startSession(cfg);
+            }}
           >
             다시 ▶
           </button>

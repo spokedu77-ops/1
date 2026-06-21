@@ -1,0 +1,743 @@
+import nextEnv from '@next/env';
+
+const { loadEnvConfig } = nextEnv;
+loadEnvConfig(process.cwd());
+
+const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
+const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPOKEDU_MASTER_QA_EMAIL || '';
+const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
+
+const OWNER_ID = '11111111-1111-4111-8111-111111111111';
+const STUDENT_ALICE_ID = '22222222-2222-4222-8222-222222222222';
+const STUDENT_BOB_ID = '33333333-3333-4333-8333-333333333333';
+
+const now = new Date('2026-06-20T09:00:00.000Z');
+
+function iso(offsetMinutes = 0) {
+  return new Date(now.getTime() + offsetMinutes * 60_000).toISOString();
+}
+
+const programs = [
+  {
+    id: '52',
+    title: 'QA Jump Adventure',
+    category: 'QA Movement',
+    grade: '초등',
+    duration: 20,
+    space: '실내',
+    description: 'QA smoke lesson for movement and balance.',
+    steps: ['Warm up safely', 'Jump through markers', 'Cool down'],
+    equipment: ['cones', 'markers'],
+    tags: ['협응력', '반응', '균형', 'SPOMOVE'],
+    colors: ['#312e81', '#4338ca', '#6366f1', '#a5b4fc'],
+    isPro: false,
+    isNew: true,
+    isHot: true,
+    thumbnailUrl: '/spokedu-master-icon.svg',
+    curriculumId: 52,
+    lessonDetail: {
+      recommendedAge: '초등',
+      recommendedPlayers: '6-20명',
+      objective: 'Students practice balance and coordination.',
+      developmentFocus: '협응력 / 균형 / 반응',
+      coachScript: 'Move safely and follow the signal.',
+      parentNote: 'QA parent note for quick record smoke.',
+      fieldTips: ['Keep spacing safe.'],
+      variations: ['Slow tempo first.'],
+      safetyNotes: ['No pushing.'],
+      relatedSpomoveIds: [],
+      briefingNotes: ['Explain the signal.'],
+      rules: ['Follow the start signal.', 'Return to base.'],
+      setupNotes: ['Place cones in a line.'],
+      heroImageUrl: '/spokedu-master-icon.svg',
+      setupImageUrl: '/spokedu-master-icon.svg',
+      galleryImageUrls: [],
+    },
+  },
+  {
+    id: '53',
+    title: 'QA Balance Program',
+    category: 'QA Balance',
+    grade: '유아',
+    duration: 15,
+    space: '교실',
+    description: 'QA second lesson.',
+    steps: ['Stand', 'Balance', 'Finish'],
+    equipment: ['line tape'],
+    tags: ['균형', '집중'],
+    colors: ['#064e3b', '#047857', '#10b981', '#86efac'],
+    isPro: false,
+    isNew: false,
+    isHot: false,
+    thumbnailUrl: '/spokedu-master-icon.svg',
+    curriculumId: 53,
+    lessonDetail: {
+      recommendedAge: '유아',
+      recommendedPlayers: '4-12명',
+      objective: 'Students practice steady balance.',
+      developmentFocus: '균형 / 집중',
+      coachScript: 'Balance with calm breathing.',
+      parentNote: 'QA balance parent note.',
+      fieldTips: [],
+      variations: [],
+      safetyNotes: [],
+      relatedSpomoveIds: [],
+      briefingNotes: [],
+      rules: ['Stay on the line.'],
+      setupNotes: [],
+      heroImageUrl: '/spokedu-master-icon.svg',
+      setupImageUrl: '/spokedu-master-icon.svg',
+      galleryImageUrls: [],
+    },
+  },
+];
+
+const students = [
+  {
+    id: STUDENT_ALICE_ID,
+    legacyId: 'legacy-alice',
+    name: 'QA Alice Longname Student',
+    group: 'QA Class',
+    meta: 'QA memo meta',
+    createdAt: iso(-300),
+    updatedAt: iso(-300),
+  },
+  {
+    id: STUDENT_BOB_ID,
+    legacyId: 'legacy-bob',
+    name: 'QA Bob Student',
+    group: 'QA Class',
+    meta: {},
+    createdAt: iso(-300),
+    updatedAt: iso(-300),
+  },
+];
+
+function recordDto(overrides) {
+  const dto = {
+    id: 'record-existing-1',
+    legacyId: null,
+    date: iso(-120),
+    lessonTitle: 'QA Jump Adventure',
+    classId: 'QA Class',
+    programId: 52,
+    programTitle: 'QA Jump Adventure',
+    recordType: 'detailed',
+    memo: null,
+    parentNoteSnapshot: null,
+    present: 1,
+    absent: 0,
+    focusCount: 1,
+    skillCount: 1,
+    students: [
+      {
+        id: 'record-existing-1-student-1',
+        studentId: STUDENT_ALICE_ID,
+        studentLegacyId: 'legacy-alice',
+        studentName: 'QA Alice Longname Student',
+        attendance: 'present',
+        focused: true,
+        skills: ['협응력'],
+        memo: 'Detailed Alice memo for next class preparation.',
+        createdAt: iso(-120),
+        updatedAt: iso(-120),
+      },
+      {
+        id: 'record-existing-1-student-2',
+        studentId: STUDENT_BOB_ID,
+        studentLegacyId: 'legacy-bob',
+        studentName: 'QA Bob Student',
+        attendance: 'present',
+        focused: false,
+        skills: [],
+        memo: 'Bob private memo should not appear for Alice.',
+        createdAt: iso(-120),
+        updatedAt: iso(-120),
+      },
+    ],
+    createdAt: iso(-120),
+    updatedAt: iso(-120),
+  };
+  return { ...dto, ...overrides };
+}
+
+function aggregateRecord(input, id) {
+  const rows = input.students ?? [];
+  return {
+    id,
+    legacyId: input.legacyId ?? null,
+    date: input.date,
+    lessonTitle: input.lessonTitle,
+    classId: input.classId,
+    programId: input.programId,
+    programTitle: input.programTitle,
+    recordType: input.recordType,
+    memo: input.memo,
+    parentNoteSnapshot: input.parentNoteSnapshot,
+    present: rows.filter((student) => student.attendance === 'present').length,
+    absent: rows.filter((student) => student.attendance === 'absent').length,
+    focusCount: rows.filter((student) => student.focused).length,
+    skillCount: rows.reduce((sum, student) => sum + (student.skills?.length ?? 0), 0),
+    students: rows.map((student, index) => ({
+      id: `${id}-student-${index + 1}`,
+      studentId: student.studentId,
+      studentLegacyId: student.studentLegacyId,
+      studentName: student.studentName,
+      attendance: student.attendance,
+      focused: student.focused,
+      skills: student.skills ?? [],
+      memo: student.memo,
+      createdAt: iso(index + 1),
+      updatedAt: iso(index + 1),
+    })),
+    createdAt: iso(10),
+    updatedAt: iso(10),
+  };
+}
+
+function bootstrapStore() {
+  return JSON.stringify({
+    state: {
+      profile: {
+        id: OWNER_ID,
+        name: 'QA Teacher',
+        email: QA_ID,
+        school: 'QA School',
+        avatarColor: '#312e81',
+        plan: 'pro',
+        role: 'teacher',
+        centerId: null,
+        centerName: null,
+        ageGroups: [],
+        programTypes: [],
+        onboardingDone: true,
+        trialEndsAt: null,
+        createdAt: iso(-1000),
+        subscriptionStatus: 'active',
+        previousPaidPlan: null,
+        periodEnd: iso(10_000),
+      },
+      lessons: [],
+      operational: { online: true, lastSyncAt: null, retryQueue: [] },
+      sessions: [],
+      recentProgramActivities: [],
+      favorites: [],
+      cart: [],
+      notifications: [],
+    },
+    version: 12,
+  });
+}
+
+async function loadPlaywright() {
+  try {
+    const mod = await import('playwright');
+    return mod.chromium;
+  } catch {
+    console.warn('SKIP: playwright is not installed.');
+    process.exit(0);
+  }
+}
+
+async function login(context) {
+  const page = await context.newPage();
+  await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/landing')}`, { waitUntil: 'domcontentloaded' });
+  await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+  await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+  await page.locator('button[type="submit"]').click();
+  await page.waitForURL(/\/spokedu-master\//, { timeout: 90_000, waitUntil: 'domcontentloaded' });
+  await page.close();
+}
+
+async function installAppState(context) {
+  await context.addInitScript((storeValue) => {
+    window.localStorage.setItem('spokedu-master-store', storeValue);
+  }, bootstrapStore());
+}
+
+async function installAccessDeniedMocks(page) {
+  let accessCalls = 0;
+  let operationalCalls = 0;
+
+  await page.route('**/api/spokedu-master/access', async (route) => {
+    accessCalls += 1;
+    await route.fulfill({
+      status: 403,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'Forbidden' }),
+    });
+  });
+  await page.route('**/api/spokedu-master/students', async (route) => {
+    operationalCalls += 1;
+    await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'should not load' }) });
+  });
+  await page.route('**/api/spokedu-master/class-records', async (route) => {
+    operationalCalls += 1;
+    await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'should not load' }) });
+  });
+  await page.route('**/api/spokedu-master/explanations', async (route) => {
+    operationalCalls += 1;
+    await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'should not load' }) });
+  });
+  await page.route('**/api/spokedu-master/subscription', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ plan: 'free', status: 'expired', isAdmin: false, userId: OWNER_ID, periodEnd: null, trialEndsAt: null }),
+    });
+  });
+
+  return {
+    get accessCalls() {
+      return accessCalls;
+    },
+    get operationalCalls() {
+      return operationalCalls;
+    },
+  };
+}
+
+async function installOperationalMocks(page, options = {}) {
+  let classRecords = [recordDto({})];
+  let explanations = [
+    {
+      id: 'exp-existing-1',
+    programId: '53',
+      programTitle: 'QA Balance Program',
+      audience: 'school',
+      text: 'Saved explanation text for QA Balance Program.',
+      createdAt: iso(-30),
+    },
+  ];
+  let failNextRecordPost = Boolean(options.failNextRecordPost);
+  let recordPostCount = 0;
+  let explanationPostCount = 0;
+
+  await page.route('**/api/spokedu-master/access', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, userId: OWNER_ID }),
+      headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+    });
+  });
+  await page.route('**/api/spokedu-master/subscription', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        plan: 'pro',
+        status: 'active',
+        isAdmin: false,
+        userId: OWNER_ID,
+        email: QA_ID,
+        periodEnd: iso(10_000),
+        trialEndsAt: iso(10_000),
+      }),
+    });
+  });
+  await page.route('**/api/spokedu-master/programs', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: programs }),
+      headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+    });
+  });
+  await page.route('**/api/spokedu-master/students', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: students }) });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.route('**/api/spokedu-master/class-records', async (route) => {
+    const request = route.request();
+    if (request.method() === 'GET') {
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: classRecords }) });
+      return;
+    }
+    if (request.method() === 'POST') {
+      recordPostCount += 1;
+      if (failNextRecordPost) {
+        failNextRecordPost = false;
+        await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'record save failed' }) });
+        return;
+      }
+      const input = await request.postDataJSON();
+      const id = input.recordType === 'quick' ? `quick-record-${recordPostCount}` : `detailed-record-${recordPostCount}`;
+      const saved = aggregateRecord(input, id);
+      classRecords = [saved, ...classRecords.filter((record) => record.id !== saved.id)];
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: saved }) });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.route('**/api/spokedu-master/explanations', async (route) => {
+    const request = route.request();
+    if (request.method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: explanations.slice(0, 10), total: explanations.length }),
+        headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+      });
+      return;
+    }
+    if (request.method() === 'POST') {
+      explanationPostCount += 1;
+      const input = await request.postDataJSON();
+      const saved = {
+        id: `exp-new-${explanationPostCount}`,
+        programId: input.programId,
+        programTitle: input.programTitle,
+        audience: input.audience,
+        text: input.text,
+        createdAt: iso(explanationPostCount),
+      };
+      explanations = [saved, ...explanations];
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: saved }) });
+      return;
+    }
+    await route.fallback();
+  });
+
+  return {
+    get classRecords() {
+      return classRecords;
+    },
+    get explanations() {
+      return explanations;
+    },
+    get recordPostCount() {
+      return recordPostCount;
+    },
+  };
+}
+
+function assert(condition, message) {
+  if (!condition) throw new Error(message);
+}
+
+async function assertNoConsoleErrors(page, label) {
+  const errors = [];
+  page.on('console', (msg) => {
+    if (msg.type() !== 'error') return;
+    const text = msg.text();
+    if (/favicon|Failed to load resource/i.test(text)) return;
+    errors.push(text);
+  });
+  return () => assert(errors.length === 0, `${label} console errors: ${errors.slice(0, 3).join(' | ')}`);
+}
+
+async function waitAppReady(page) {
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(700);
+}
+
+async function clickFirstVisible(locator, description) {
+  const count = await locator.count();
+  for (let index = 0; index < count; index += 1) {
+    const item = locator.nth(index);
+    if (await item.isVisible().catch(() => false)) {
+      await item.click();
+      return;
+    }
+  }
+  throw new Error(`Could not find visible ${description}`);
+}
+
+async function checkNoHorizontalOverflow(page, label) {
+  const metrics = await page.evaluate(() => ({
+    body: document.body.scrollWidth,
+    doc: document.documentElement.scrollWidth,
+    width: window.innerWidth,
+  }));
+  assert(
+    Math.max(metrics.body, metrics.doc) <= metrics.width + 2,
+    `${label} horizontal overflow: body=${metrics.body}, doc=${metrics.doc}, viewport=${metrics.width}`,
+  );
+}
+
+async function waitForText(page, text, description) {
+  try {
+    await page.getByText(text).first().waitFor({ state: 'visible', timeout: 10_000 });
+  } catch {
+    const body = await page.locator('body').innerText().catch(() => '');
+    throw new Error(`${description} not visible. Body: ${body.slice(0, 700).replace(/\s+/g, ' ')}`);
+  }
+}
+
+async function runUnauthRedirectSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await context.newPage();
+  await page.goto(`${BASE}/spokedu-master/students`, { waitUntil: 'domcontentloaded' });
+  await page.waitForURL(/\/login\?next=/, { timeout: 20_000 });
+  const url = new URL(page.url());
+  assert(url.pathname === '/login', 'unauthenticated students route did not land on /login');
+  assert(url.searchParams.get('next')?.startsWith('/spokedu-master/students'), 'login next did not preserve protected path');
+  await page.waitForTimeout(500);
+  assert(new URL(page.url()).pathname === '/login', 'login page entered a redirect loop');
+  await context.close();
+}
+
+async function runAccessDeniedSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, '403 access');
+  const mocks = await installAccessDeniedMocks(page);
+  await page.goto(`${BASE}/spokedu-master/students`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  const bodyText = await page.locator('body').innerText();
+  assert(bodyText.includes('SPOKEDU MASTER'), '403 screen did not render SPOKEDU MASTER copy');
+  assert(await page.locator('a[href="/spokedu-master/profile?plans=1"]').count() === 1, 'plans CTA missing');
+  assert(await page.locator('a[href="/spokedu-master/payment?plan=pro"]').count() === 1, 'Pro CTA missing');
+  assert(await page.locator('a[href="/spokedu-master/payment?plan=team"]').count() === 1, 'Center CTA missing');
+  assert(await page.locator('a[href="/spokedu-master/landing"]').count() === 1, 'landing CTA missing');
+  assert(mocks.operationalCalls === 0, '403 state rendered operational providers or children');
+  const before = mocks.accessCalls;
+  await clickFirstVisible(page.locator('button'), 'access retry button');
+  await page.waitForTimeout(500);
+  assert(mocks.accessCalls > before, 'retry did not re-call access endpoint');
+  assert(mocks.operationalCalls === 0, 'retry triggered operational data requests');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runQuickRecordToReportSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'quick record');
+  await installOperationalMocks(page);
+  await page.goto(`${BASE}/spokedu-master/library/52`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  await checkNoHorizontalOverflow(page, 'library detail before quick modal');
+  await clickFirstVisible(page.locator('main .sticky button.bg-emerald-600'), 'quick record button');
+  await page.locator('[role="dialog"] input[type="date"]').fill('2026-06-20');
+  const textareas = page.locator('[role="dialog"] textarea');
+  await textareas.nth(0).fill('QA quick memo for report context.');
+  await textareas.nth(1).fill('QA parent note snapshot.');
+  await page.locator('[role="dialog"] button.bg-emerald-600').last().click();
+  const reportLink = page.locator('[role="dialog"] a[href*="/spokedu-master/report?record="]').first();
+  await reportLink.waitFor({ state: 'visible', timeout: 10_000 });
+  const href = await reportLink.getAttribute('href');
+  assert(href?.includes('record=quick-record-1'), 'quick record report link missing saved record id');
+  assert(href?.includes('program=52'), 'quick record report link missing program id');
+  await reportLink.click();
+  await waitAppReady(page);
+  assert(new URL(page.url()).searchParams.get('record') === 'quick-record-1', 'quick report URL lost record query');
+  assert((await page.locator('body').innerText()).includes('QA quick memo for report context.'), 'report did not include quick record memo');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runDetailedRecordSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'detailed record');
+  await installOperationalMocks(page);
+  await page.goto(`${BASE}/spokedu-master/class-record?program=52`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  await checkNoHorizontalOverflow(page, 'class-record initial');
+  await waitForText(page, 'QA Alice Longname Student', 'class-record Alice row');
+  await page.evaluate(() => {
+    const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
+      node.textContent?.includes('QA Alice Longname Student'),
+    );
+    const card = nameNode?.closest('div.rounded-\\[15px\\]');
+    const attendanceButton = card?.querySelectorAll('button')[1];
+    if (!(attendanceButton instanceof HTMLButtonElement)) throw new Error('Alice attendance button not found');
+    attendanceButton.click();
+  });
+  await page.getByText('QA Alice Longname Student').first().click();
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor({ state: 'visible', timeout: 5000 });
+  await dialog.locator('button').nth(1).click();
+  await dialog.locator('textarea').fill('Detailed Alice memo from browser smoke.');
+  await page.keyboard.press('Escape');
+  await page.locator('button.h-12.w-full').first().click();
+  const reportHref = await page.locator('a[href*="/spokedu-master/report?record="]').first().getAttribute('href');
+  assert(reportHref?.includes('record=detailed-record-1'), 'detailed save report link missing record id');
+  assert(reportHref?.includes('program=52'), 'detailed save report link missing program id');
+  await page.goto(`${BASE}${reportHref}`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  assert((await page.locator('body').innerText()).includes('Detailed Alice memo from browser smoke.'), 'report did not include detailed student memo');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runDetailedRecordFailureSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'detailed record failure');
+  const mocks = await installOperationalMocks(page, { failNextRecordPost: true });
+  await page.goto(`${BASE}/spokedu-master/class-record?program=52`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  await waitForText(page, 'QA Alice Longname Student', 'class-record Alice row');
+  await page.evaluate(() => {
+    const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
+      node.textContent?.includes('QA Alice Longname Student'),
+    );
+    const card = nameNode?.closest('div.rounded-\\[15px\\]');
+    const attendanceButton = card?.querySelectorAll('button')[1];
+    if (!(attendanceButton instanceof HTMLButtonElement)) throw new Error('Alice attendance button not found');
+    attendanceButton.click();
+  });
+  await page.getByText('QA Alice Longname Student').first().click();
+  await page.locator('[role="dialog"] textarea').fill('Memo retained after failure.');
+  await page.keyboard.press('Escape');
+  await page.locator('button.h-12.w-full').first().click();
+  await page.waitForTimeout(700);
+  assert(await page.locator('a[href*="record=detailed-record"]').count() === 0, 'failure state showed detailed success link');
+  await page.locator('button.h-12.w-full').first().click();
+  await page.locator('a[href*="record=detailed-record-2"]').first().waitFor({ state: 'visible', timeout: 10_000 });
+  assert(mocks.recordPostCount === 2, 'retry did not submit a second record POST');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runReportSaveRestoreSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'report save restore');
+  await installOperationalMocks(page);
+  await page.goto(`${BASE}/spokedu-master/report?record=record-existing-1&program=52`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  assert((await page.locator('body').innerText()).includes('Detailed Alice memo for next class preparation.'), 'record-based report did not apply student memo');
+  await clickFirstVisible(page.locator('button').filter({ hasText: /보관|저장/ }), 'save explanation button');
+  await page.waitForURL(/saved=exp-new-1/, { timeout: 10_000 });
+  const savedUrl = new URL(page.url());
+  assert(savedUrl.searchParams.get('program') === '52', 'saved URL missing program');
+  assert(!savedUrl.searchParams.has('record'), 'saved URL still contains record context');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  assert(new URL(page.url()).searchParams.get('saved') === 'exp-new-1', 'reload lost saved query');
+  const savedText = (await page.locator('body').innerText());
+  assert(savedText.includes('Detailed Alice memo for next class preparation.'), 'saved restore did not keep saved text');
+  await page.evaluate(() => {
+    const sections = [...document.querySelectorAll('aside section')];
+    const programSection = sections[0];
+    const button = [...(programSection?.querySelectorAll('button') ?? [])].find((node) =>
+      node.textContent?.includes('QA Balance Program'),
+    );
+    if (!(button instanceof HTMLButtonElement)) throw new Error('QA Balance Program select button not found');
+    button.click();
+  });
+  await page.waitForTimeout(500);
+  const programOnlyUrl = new URL(page.url());
+  assert(programOnlyUrl.searchParams.get('program') === '53', 'program select did not switch program');
+  assert(!programOnlyUrl.searchParams.has('saved'), 'program select kept saved query');
+  assert(!programOnlyUrl.searchParams.has('record'), 'program select kept record query');
+  await page.goto(`${BASE}/spokedu-master/report?program=52&saved=exp-new-1`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  await page.locator('textarea').fill('Edited draft after saved restore.');
+  await page.waitForTimeout(500);
+  assert(!new URL(page.url()).searchParams.has('saved'), 'editing note did not clear saved query');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runStudentPreparationSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'students prep');
+  await installOperationalMocks(page);
+  await page.goto(`${BASE}/spokedu-master/students`, { waitUntil: 'domcontentloaded' });
+  await waitAppReady(page);
+  await checkNoHorizontalOverflow(page, 'students list');
+  await page.getByText('QA Alice Longname Student').first().click();
+  await waitAppReady(page);
+  const bodyText = await page.locator('body').innerText();
+  assert(bodyText.includes('Detailed Alice memo for next class preparation.'), 'Alice detail missing recent memo');
+  assert(bodyText.includes('협응력'), 'Alice detail missing skill tag');
+  assert(!bodyText.includes('Bob private memo should not appear for Alice.'), 'Alice detail leaked Bob memo');
+  const libraryHref = await page.locator('a[href="/spokedu-master/library/52"]').first().getAttribute('href');
+  const prepHref = await page.locator('a[href="/spokedu-master/class-record?program=52"]').first().getAttribute('href');
+  assert(libraryHref === '/spokedu-master/library/52', 'student prep library href mismatch');
+  assert(prepHref === '/spokedu-master/class-record?program=52', 'student prep class-record href mismatch');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runMobileSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  await installOperationalMocks(page);
+  for (const [route, label] of [
+    ['/spokedu-master/library/52', 'library detail 390px'],
+    ['/spokedu-master/class-record?program=52', 'class-record 390px'],
+    ['/spokedu-master/students', 'students 390px'],
+  ]) {
+    await page.goto(`${BASE}${route}`, { waitUntil: 'domcontentloaded' });
+    await waitAppReady(page);
+    await checkNoHorizontalOverflow(page, label);
+  }
+  await context.close();
+}
+
+async function main() {
+  if (!QA_ID || !QA_PASSWORD) {
+    console.log('SKIP: SPOKEDU_MASTER_QA_ID and SPOKEDU_MASTER_QA_PASSWORD/SPM_QA_PASSWORD are required.');
+    process.exit(0);
+  }
+
+  const chromium = await loadPlaywright();
+  const browser = await chromium.launch({ headless: true });
+  const results = [];
+  const flows = [
+    ['unauth redirect', () => runUnauthRedirectSmoke(browser)],
+    ['403 access state', () => runAccessDeniedSmoke(browser)],
+    ['quick record to report', () => runQuickRecordToReportSmoke(browser)],
+    ['detailed record to report', () => runDetailedRecordSmoke(browser)],
+    ['detailed record failure retry', () => runDetailedRecordFailureSmoke(browser)],
+    ['report save restore', () => runReportSaveRestoreSmoke(browser)],
+    ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
+    ['mobile 390px', () => runMobileSmoke(browser)],
+  ];
+
+  try {
+    for (const [name, run] of flows) {
+      const startedAt = Date.now();
+      try {
+        await run();
+        const ms = Date.now() - startedAt;
+        results.push({ name, ok: true, ms });
+        console.log(JSON.stringify({ ok: true, flow: name, ms }));
+      } catch (error) {
+        const ms = Date.now() - startedAt;
+        const message = error instanceof Error ? error.message : String(error);
+        results.push({ name, ok: false, ms, message });
+        console.error(JSON.stringify({ ok: false, flow: name, ms, message }));
+      }
+    }
+  } finally {
+    await browser.close();
+  }
+
+  const failed = results.filter((result) => !result.ok);
+  if (failed.length > 0) {
+    console.error(`\n${failed.length} SPOKEDU MASTER commercial smoke flow(s) failed.`);
+    process.exit(1);
+  }
+
+  console.log('\nSPOKEDU MASTER commercial smoke QA passed.');
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

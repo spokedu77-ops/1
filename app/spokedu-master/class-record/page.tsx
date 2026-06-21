@@ -15,6 +15,8 @@ import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
 
 type TypeFilter = 'all' | 'quick' | 'detailed';
 
+const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+
 const DEFAULT_SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
 
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
@@ -58,6 +60,25 @@ function EmptyRecordState() {
   );
 }
 
+function RecordLoadingState() {
+  return (
+    <div className="rounded-[18px] p-5 text-[13px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+      수업 기록을 불러오는 중입니다.
+    </div>
+  );
+}
+
+function RecordErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="rounded-[18px] p-5 text-[13px] font-bold" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)', color: 'var(--spm-red)' }}>
+      <p>수업 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+      <button type="button" onClick={onRetry} className="mt-3 h-11 rounded-[10px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
+        다시 시도
+      </button>
+    </div>
+  );
+}
+
 function RecordCard({ record }: { record: ClassRecord }) {
   const isQuick = record.recordType === 'quick';
 
@@ -92,9 +113,9 @@ function RecordCard({ record }: { record: ClassRecord }) {
 
       {isQuick ? (
         <div className="mt-3 space-y-1.5">
-          {record.memo ? <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{record.memo}</p> : null}
+          {record.memo ? <p className="break-words text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{record.memo}</p> : null}
           {record.parentNoteSnapshot ? (
-            <p className="rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{record.parentNoteSnapshot}</p>
+            <p className="break-words rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>{record.parentNoteSnapshot}</p>
           ) : null}
         </div>
       ) : (
@@ -107,14 +128,14 @@ function RecordCard({ record }: { record: ClassRecord }) {
       )}
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <Link href={`/spokedu-master/library/${record.programId}`} className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+        <Link href={`/spokedu-master/library/${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
           <BookOpen size={13} /> 원본 수업 보기
         </Link>
-        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
           <FileText size={13} /> 안내문 만들기
         </Link>
         {!isQuick ? (
-          <Link href={`/spokedu-master/class-record?program=${record.programId}`} className="flex h-10 items-center gap-1.5 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+          <Link href={`/spokedu-master/class-record?program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
             <ClipboardList size={13} /> 학생 기록 작성
           </Link>
         ) : null}
@@ -126,6 +147,9 @@ function RecordCard({ record }: { record: ClassRecord }) {
 function RecordListView() {
   const operationalData = useOperationalData();
   const records = operationalData.classRecords.map(toClassRecord);
+  const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
+  const operationalError = operationalData.status === 'error';
+  const operationalReady = operationalData.status === 'ready';
   const [classFilter, setClassFilter] = useState('전체');
   const [periodFilter, setPeriodFilter] = useState<'week' | 'month' | 'all'>('week');
   const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
@@ -166,31 +190,47 @@ function RecordListView() {
         </div>
       </header>
 
-      <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
-        {classes.length > 1 ? (
-          <div className="mb-2 flex flex-wrap gap-2">
-            {classes.map((cls) => (
-              <button key={cls} type="button" onClick={() => setClassFilter(cls)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === cls ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === cls ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{cls}</button>
-            ))}
-          </div>
-        ) : null}
-        <div className="flex flex-wrap gap-2">
-          {([['all', '전체 유형'], ['quick', '사용 기록'], ['detailed', '학생 기록']] as const).map(([value, label]) => (
-            <button key={value} type="button" onClick={() => setTypeFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: typeFilter === value ? 'rgba(99,102,241,0.15)' : 'var(--spm-s2)', color: typeFilter === value ? 'var(--spm-acc)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
-          ))}
-        </div>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {([['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']] as const).map(([value, label]) => (
-            <button key={value} type="button" onClick={() => setPeriodFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
-          ))}
-        </div>
-      </section>
+      {operationalLoading ? (
+        <section className="px-[22px] sm:px-8 lg:px-10">
+          <RecordLoadingState />
+        </section>
+      ) : null}
 
-      <section className="grid gap-3 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
-        {filteredRecords.length
-          ? filteredRecords.map((record) => <RecordCard key={record.id} record={record} />)
-          : <div className="md:col-span-2 xl:col-span-3"><EmptyRecordState /></div>}
-      </section>
+      {operationalError ? (
+        <section className="px-[22px] sm:px-8 lg:px-10">
+          <RecordErrorState onRetry={() => void operationalData.reload()} />
+        </section>
+      ) : null}
+
+      {operationalReady ? (
+        <>
+          <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
+            {classes.length > 1 ? (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {classes.map((cls) => (
+                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === cls ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === cls ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{cls}</button>
+                ))}
+              </div>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              {([['all', '전체 유형'], ['quick', '사용 기록'], ['detailed', '학생 기록']] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => setTypeFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: typeFilter === value ? 'rgba(99,102,241,0.15)' : 'var(--spm-s2)', color: typeFilter === value ? 'var(--spm-acc)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
+              ))}
+            </div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {([['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']] as const).map(([value, label]) => (
+                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
+              ))}
+            </div>
+          </section>
+
+          <section className="grid gap-3 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
+            {filteredRecords.length
+              ? filteredRecords.map((record) => <RecordCard key={record.id} record={record} />)
+              : <div className="md:col-span-2 xl:col-span-3"><EmptyRecordState /></div>}
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -206,9 +246,9 @@ function StudentRow({ student, attendance, focused, onAttendance, onFocus, onOpe
         </span>
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
-            <strong className="text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
+            <strong className="truncate text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
           </span>
-          <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.meta}</span>
+          <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{student.meta}</span>
         </span>
         <ChevronRight size={16} color="var(--spm-t3)" />
       </button>
@@ -232,7 +272,7 @@ function RecordEntryView() {
   const profile = useMasterStore((state) => state.profile);
   const lessons = useMasterStore((state) => state.lessons);
   const operationalData = useOperationalData();
-  const students = operationalData.students.map(toStudentProfile);
+  const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
   const programs = useMasterStore((state) => state.programs);
   const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
   const requestedProgramId = searchParams.get('program');
@@ -252,6 +292,7 @@ function RecordEntryView() {
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
   const [savedOnly, setSavedOnly] = useState(false);
   const [recordSaving, setRecordSaving] = useState(false);
+  const [recordSaveError, setRecordSaveError] = useState<string | null>(null);
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const packageFocus = program?.lessonDetail?.developmentFocus ?? program?.tags.slice(0, 3).join(', ') ?? '';
@@ -269,9 +310,11 @@ function RecordEntryView() {
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
   const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
-  const reportHref = savedRecordId
-    ? `/spokedu-master/report?record=${savedRecordId}&program=${program.id}`
-    : `/spokedu-master/report?program=${program.id}`;
+  const reportHref = program
+    ? savedRecordId
+      ? `/spokedu-master/report?record=${savedRecordId}&program=${program.id}`
+      : `/spokedu-master/report?program=${program.id}`
+    : '/spokedu-master/report';
 
   useEffect(() => {
     setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
@@ -330,9 +373,16 @@ function RecordEntryView() {
     if (!canSaveRecord || recordSaving) return null;
     const record = buildRecord(kakaoSent);
     setRecordSaving(true);
+    setRecordSaveError(null);
+    setSavedOnly(false);
+    setSavedRecordId(null);
     void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
       setSavedRecordId(saved.id);
       setSavedOnly(!kakaoSent);
+    }).catch(() => {
+      setRecordSaveError(RECORD_SAVE_ERROR_MESSAGE);
+      setSavedOnly(false);
+      setSavedRecordId(null);
     }).finally(() => {
       setRecordSaving(false);
     });
@@ -390,7 +440,7 @@ function RecordEntryView() {
             <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>등록된 학생이 없습니다.</p>
             <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생 명단이 있어야 출석, 관찰, 기능 태그를 원본 기록으로 남길 수 있습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/spokedu-master/students" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가하기</Link>
+              <Link href="/spokedu-master/students" className="inline-flex h-11 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가하기</Link>
             </div>
           </div>
         )}
@@ -415,11 +465,14 @@ function RecordEntryView() {
         {savedOnly ? (
           <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
             <p className="text-[12px] font-bold">출석과 관찰 원본 기록이 저장되었습니다.</p>
-            <div className="mt-2 flex flex-wrap gap-3">
-              <Link href="/spokedu-master/class-record" className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>기록 목록 보기</Link>
-              <Link href={reportHref} className="text-[11px] font-black" style={{ color: 'var(--spm-grn)' }}>안내문 만들기</Link>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Link href="/spokedu-master/class-record" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>기록 목록 보기</Link>
+              <Link href={reportHref} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>안내문 만들기</Link>
             </div>
           </div>
+        ) : null}
+        {recordSaveError ? (
+          <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{recordSaveError}</p>
         ) : null}
         <div className="mt-4 flex items-start gap-2 rounded-[12px] p-3" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--spm-t2)' }}>
           <ShieldAlert size={16} className="mt-0.5 shrink-0" color="var(--spm-acc)" />

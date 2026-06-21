@@ -566,7 +566,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
       for (let a = 0; a <= Math.PI * 2; a += 0.12) {
         const wobble = rp.r + Math.sin(a * 6 + g.waveOffset * 0.05) * rp.r * 0.025;
         const px = rp.x + Math.cos(a) * wobble, py = rp.y + Math.sin(a) * wobble;
-        a < 0.01 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+        if (a < 0.01) ctx.moveTo(px, py); else ctx.lineTo(px, py);
       }
       ctx.closePath(); ctx.stroke(); ctx.restore();
     }

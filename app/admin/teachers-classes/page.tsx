@@ -70,7 +70,7 @@ interface Coach {
   name: string;
 }
 
-/** QC(피드백·수업안)에서 제외: 운영 admin 계정 — 이름이 `김구민 T` 형태여도 동일인으로 본다 */
+/** 센터 QC·수업안에서 제외: 운영 admin 계정 — 과외 피드백 검수의 개인 수업은 포함 */
 function isQcExcludedAdminCoach(coach: { name?: string | null }): boolean {
   const n = String(coach.name ?? '')
     .replace(/\s*T\s*$/i, '')
@@ -142,7 +142,7 @@ export default function MasterQCPage() {
         {/* 내용 */}
         {activeTab === 'feedback' ? (
           <FeedbackReviewTab
-            coaches={qcCoaches}
+            coaches={coaches}
             excludedAdminCoachIds={excludedAdminCoachIds}
             supabase={supabase}
           />
@@ -523,11 +523,9 @@ function FeedbackReviewTab({
       if (error) throw error;
       if (data) {
         let rows = data as unknown as Session[];
-        const filtered =
-          excludedAdminCoachIds.length === 0
-            ? rows
-            : rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by));
-        rows = filtered;
+        if (feedbackScope === 'center' && excludedAdminCoachIds.length > 0) {
+          rows = rows.filter((s) => !excludedAdminCoachIds.includes(s.created_by));
+        }
 
         // 검수완료 카드의 링크 복사: iPad/iOS는 클릭 직후 await fetch가 끼면 clipboard가 막히는 경우가 많아,
         // short_code를 목록 단계에서 미리 발급·캐시해 두고 복사 버튼에서는 네트워크 없이 동기 복사만 수행
@@ -597,6 +595,24 @@ function FeedbackReviewTab({
     setSelectedSessions(new Set());
   }, [feedbackScope]);
 
+  const coachFilterOptions = useMemo(
+    () =>
+      feedbackScope === 'center'
+        ? coaches.filter((c) => !excludedAdminCoachIds.includes(c.id))
+        : coaches,
+    [coaches, feedbackScope, excludedAdminCoachIds],
+  );
+
+  useEffect(() => {
+    if (
+      feedbackScope === 'center' &&
+      selectedCoachId !== 'all' &&
+      excludedAdminCoachIds.includes(selectedCoachId)
+    ) {
+      setSelectedCoachId('all');
+    }
+  }, [feedbackScope, selectedCoachId, excludedAdminCoachIds]);
+
   const centerWeekRangeText = useMemo(() => {
     const { start, end } = getKstWeekRangeFromYmd(selectedDate);
     return formatKstWeekRangeLabel(start, end);
@@ -618,7 +634,8 @@ function FeedbackReviewTab({
       if (searchTerm) {
         const searchLower = searchTerm.toLowerCase();
         const titleMatch = s.title?.toLowerCase().includes(searchLower);
-        const coachMatch = coaches.find(c => c.id === s.created_by)?.name.toLowerCase().includes(searchLower);
+        const coachName = s.users?.name ?? coaches.find((c) => c.id === s.created_by)?.name ?? '';
+        const coachMatch = coachName.toLowerCase().includes(searchLower);
         if (!titleMatch && !coachMatch) return false;
       }
       return true;
@@ -887,7 +904,11 @@ function FeedbackReviewTab({
           </div>
           <select value={selectedCoachId} onChange={(e) => setSelectedCoachId(e.target.value)} className="flex-1 min-w-0 bg-slate-50 px-4 py-2 rounded-xl text-sm font-bold outline-none cursor-pointer">
             <option value="all">전체 강사</option>
-            {coaches.map(c => <option key={c.id} value={c.id}>{c.name} 선생님</option>)}
+            {coachFilterOptions.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} 선생님
+              </option>
+            ))}
           </select>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-[11px] text-slate-600 leading-relaxed space-y-2">
