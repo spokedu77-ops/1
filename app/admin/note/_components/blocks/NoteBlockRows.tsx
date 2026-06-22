@@ -418,6 +418,7 @@ function BlockContent({
           contentMarginLeft={contentMarginLeft}
           inlineRowPadding={inlineRowPadding}
           rootBlockShell={rootBlockShell}
+          isInsideToggle={isInsideToggle}
           enterCreatesBlockBelow={enterCreatesBlockBelow}
           childBlocks={childBlocks}
           renderChildBlock={renderChildBlock}

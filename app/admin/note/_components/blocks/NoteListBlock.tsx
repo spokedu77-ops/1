@@ -29,6 +29,7 @@ export function NoteListBlock({
   contentMarginLeft,
   inlineRowPadding,
   rootBlockShell,
+  isInsideToggle,
   enterCreatesBlockBelow,
   childBlocks = [],
   renderChildBlock,
@@ -83,10 +84,11 @@ export function NoteListBlock({
   );
 
   const showChildren = !omitExternalizedChildren && childBlocks.length > 0 && renderChildBlock;
+  const rowShell = isInsideToggle ? inlineRowPadding : (inlineRowPadding || rootBlockShell);
 
   return (
     <div style={{ marginLeft: `${contentMarginLeft}px` }}>
-      <div className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}>
+      <div className={`flex items-start gap-2 ${rowShell}`}>
         {listMarker}
         <div className="relative min-w-0 flex-1" data-note-list-text>
           <NoteBlockFormattedField

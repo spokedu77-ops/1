@@ -16,6 +16,7 @@ type NoteTodoBlockProps = {
   onUpdate: (content: Record<string, unknown>) => void;
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onChangeType: (type: NoteBlock['type']) => void;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 } & Pick<
@@ -23,7 +24,6 @@ type NoteTodoBlockProps = {
   | 'autoFocusSignal'
   | 'mergeFocusCaretOffset'
   | 'onContentSync'
-  | 'onChangeType'
   | 'onShowFormatToolbar'
   | 'onHideFormatToolbar'
   | 'onIndentChange'
@@ -48,6 +48,7 @@ export function NoteTodoBlock({
   onUpdate,
   onEnter,
   onAddBelow,
+  onChangeType,
   onSlashChange,
   slashHostRef,
   ...fieldProps
@@ -60,7 +61,7 @@ export function NoteTodoBlock({
     followType: 'todo',
     text,
     onAddBelow,
-    onChangeType: fieldProps.onChangeType,
+    onChangeType,
     onIndentChange: fieldProps.onIndentChange,
   });
 
@@ -90,6 +91,7 @@ export function NoteTodoBlock({
           onUpdate={onUpdate}
           onSlashChange={onSlashChange}
           slashHostRef={slashHostRef}
+          onChangeType={onChangeType}
           {...fieldProps}
         />
       </div>
