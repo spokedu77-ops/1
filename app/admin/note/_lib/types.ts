@@ -52,5 +52,6 @@ export type FormatToolbarState = {
   applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void;
   applyTextColor: (color: string | null) => void;
   applyHighlight: (color: string | null) => void;
+  insertTable?: () => void;
   position: { top: number; left: number };
 };

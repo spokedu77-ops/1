@@ -24,50 +24,86 @@ export function getBlockPreviewTextRoot(blockId: string): HTMLElement | null {
 /** @deprecated noteListPreviewCrossSelect 호환 */
 export const getListPreviewTextRoot = getBlockPreviewTextRoot;
 
+function previewContentElement(root: HTMLElement): HTMLElement | null {
+  const direct = root.querySelector<HTMLElement>(':scope > div, :scope > p');
+  return direct;
+}
+
+/** 문단 단위 줄바꿈을 유지한 plain text — 좌표·하이라이트와 동일 기준 */
+export function extractPreviewPlainText(root: HTMLElement): string {
+  const contentEl = previewContentElement(root);
+  if (!contentEl) return '';
+  if (contentEl.classList.contains('is-editor-empty')) return '';
+
+  const blocks = contentEl.querySelectorAll('p, h1, h2, h3, h4, li');
+  if (blocks.length > 0) {
+    return [...blocks]
+      .map((el) => el.textContent ?? '')
+      .join('\n');
+  }
+  return contentEl.textContent ?? '';
+}
+
 export function blockPreviewPlainText(blockId: string): string {
   const root = getBlockPreviewTextRoot(blockId);
   if (!root) return '';
-  const overlay = root.querySelector(PREVIEW_CROSS_OVERLAY);
-  if (overlay) overlay.remove();
-  const text = root.textContent ?? '';
-  return text;
+  root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+  return extractPreviewPlainText(root);
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */
 export const listPreviewPlainText = blockPreviewPlainText;
 
-export function hoverBlockPreviewTextPos(blockId: string, clientX: number, clientY: number): number {
-  const root = getBlockPreviewTextRoot(blockId);
-  if (!root) return 0;
-  const text = blockPreviewPlainText(blockId);
-  if (!text.length) return 0;
+function previewCaretOffsetInRoot(root: HTMLElement, clientX: number, clientY: number): number {
+  const contentEl = previewContentElement(root);
+  if (!contentEl) return 0;
 
   const doc = document as Document & {
     caretRangeFromPoint?: (x: number, y: number) => Range | null;
     caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
   };
 
+  let range: Range | null = null;
   if (typeof doc.caretRangeFromPoint === 'function') {
-    const range = doc.caretRangeFromPoint(clientX, clientY);
-    if (range && root.contains(range.startContainer)) {
-      const pre = document.createRange();
-      pre.selectNodeContents(root);
-      pre.setEnd(range.startContainer, range.startOffset);
-      return pre.toString().length;
-    }
-  }
-
-  if (typeof doc.caretPositionFromPoint === 'function') {
+    range = doc.caretRangeFromPoint(clientX, clientY);
+  } else if (typeof doc.caretPositionFromPoint === 'function') {
     const pos = doc.caretPositionFromPoint(clientX, clientY);
-    if (pos && root.contains(pos.offsetNode)) {
-      const pre = document.createRange();
-      pre.selectNodeContents(root);
-      pre.setEnd(pos.offsetNode, pos.offset);
-      return pre.toString().length;
+    if (pos) {
+      range = document.createRange();
+      range.setStart(pos.offsetNode, pos.offset);
+      range.collapse(true);
     }
   }
+  if (!range || !contentEl.contains(range.startContainer)) return 0;
 
-  return text.length;
+  const blocks = contentEl.querySelectorAll('p, h1, h2, h3, h4, li');
+  if (blocks.length > 0) {
+    let offset = 0;
+    for (let i = 0; i < blocks.length; i += 1) {
+      const block = blocks[i] as HTMLElement;
+      if (block.contains(range.startContainer)) {
+        const pre = document.createRange();
+        pre.selectNodeContents(block);
+        pre.setEnd(range.startContainer, range.startOffset);
+        return offset + pre.toString().length;
+      }
+      offset += (block.textContent?.length ?? 0) + 1;
+    }
+    return offset;
+  }
+
+  const pre = document.createRange();
+  pre.selectNodeContents(contentEl);
+  pre.setEnd(range.startContainer, range.startOffset);
+  return pre.toString().length;
+}
+
+export function hoverBlockPreviewTextPos(blockId: string, clientX: number, clientY: number): number {
+  const root = getBlockPreviewTextRoot(blockId);
+  if (!root) return 0;
+  const text = blockPreviewPlainText(blockId);
+  if (!text.length) return 0;
+  return Math.min(previewCaretOffsetInRoot(root, clientX, clientY), text.length);
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */
@@ -90,7 +126,7 @@ function ensurePreviewCrossOverlay(root: HTMLElement): HTMLElement {
   return overlay;
 }
 
-/** React가 관리하는 html 레이어는 건드리지 않고 오버레이로만 선택 표시 */
+/** React html 레이어는 숨기고 오버레이만 표시 — 이중 렌더·색 흐림 방지 */
 export function applyBlockPreviewCrossHighlight(blockId: string, from: number, to: number) {
   const root = getBlockPreviewTextRoot(blockId);
   if (!root) return;
@@ -102,7 +138,6 @@ export function applyBlockPreviewCrossHighlight(blockId: string, from: number, t
   const after = escapeHtml(text.slice(safeTo));
   const overlay = ensurePreviewCrossOverlay(root);
   overlay.innerHTML = `${before}<mark class="note-list-cross-selected">${mid}</mark>${after}`;
-  root.dataset.blockCrossActive = 'true';
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */
@@ -112,9 +147,6 @@ export function clearBlockPreviewCrossHighlight(blockId: string) {
   const root = getBlockPreviewTextRoot(blockId);
   if (!root) return;
   root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
-  if (root.dataset.blockCrossActive === 'true') {
-    delete root.dataset.blockCrossActive;
-  }
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */

@@ -18,7 +18,9 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(list\\(d.get\\('scripts',{}\\).keys\\(\\)\\)\\)\")",
       "Bash(cat vitest.config.ts)",
       "Bash(cat vitest.config.js)",
-      "Bash(ls *.config.*)"
+      "Bash(ls *.config.*)",
+      "Bash(npx vitest *)",
+      "Bash(del \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\admin\\\\spomove\\\\training\\\\_player\\\\training\\\\types.ts\" \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\admin\\\\spomove\\\\training\\\\_player\\\\training\\\\config.ts\")"
     ]
   }
 }

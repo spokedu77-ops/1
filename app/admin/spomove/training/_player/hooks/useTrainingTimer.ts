@@ -13,6 +13,7 @@ import {
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
 import { resolveTrainingEngine } from '../constants';
+import { registerPresentedSignal, type RepsState } from '../lib/repsLogic';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 
@@ -51,8 +52,8 @@ export function useTrainingTimer({
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const idxRef = useRef(-1);
-  /** reps 모드: 실제 제시된 자극 수 (count-based 종료 판단에 사용) */
-  const presentedCountRef = useRef(0);
+  /** reps 모드: registerPresentedSignal 상태 (count-based 종료 판단에 사용) */
+  const repsStateRef = useRef<RepsState>({ presented: 0 });
   const genRef = useRef<
     | ReturnType<typeof createBasicSignalGenerator>
     | ReturnType<typeof createModeColorDupGenerator>
@@ -78,7 +79,7 @@ export function useTrainingTimer({
     }
     startRef.current = performance.now();
     idxRef.current = -1;
-    presentedCountRef.current = 0;
+    repsStateRef.current = { presented: 0 };
 
     // time 모드: elapsed 기준 종료. reps 모드: presentedCount 기준 종료.
     // accel 가속 곡선의 레퍼런스 totalMs는 reps 모드에서도 추정값으로 유지.
@@ -104,7 +105,6 @@ export function useTrainingTimer({
           ? genRef.current?.next() ?? null
           : generateSignal(engineMode, engineLevel, colors, fruitSlides ? { fruitSlides } : undefined);
       if (sig) {
-        presentedCountRef.current++;
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
         else {
@@ -112,6 +112,12 @@ export function useTrainingTimer({
           if (v) tts(v, true);
         }
       }
+      const { next: nextReps } = registerPresentedSignal({
+        state: repsStateRef.current,
+        hasValidSignal: sig !== null,
+        targetReps,
+      });
+      repsStateRef.current = nextReps;
       nextSignalTimeRef.t = elapsed + getSpeedMs(elapsed);
     };
 
@@ -127,8 +133,8 @@ export function useTrainingTimer({
         if (i > idxRef.current) {
           idxRef.current = i;
           emitSignal(elapsed);
-          // reps 모드: 자극 제시 횟수 달성 시 종료
-          if (timeMode === 'reps' && presentedCountRef.current >= targetReps) {
+          // reps 모드: registerPresentedSignal이 카운팅한 횟수로 종료 판정
+          if (timeMode === 'reps' && repsStateRef.current.presented >= targetReps) {
             finish();
             return;
           }
@@ -146,7 +152,7 @@ export function useTrainingTimer({
         }
         if (elapsed >= nextSignalTimeRef.t) {
           emitSignal(elapsed);
-          if (timeMode === 'reps' && presentedCountRef.current >= targetReps) {
+          if (timeMode === 'reps' && repsStateRef.current.presented >= targetReps) {
             finish();
             return;
           }
@@ -168,7 +174,7 @@ export function useTrainingTimer({
     const speedMs = speed * 1000;
     const totalMs = timeMode === 'time' ? duration * 1000 : targetReps * speedMs;
     if (timeMode === 'reps') {
-      const presented = presentedCountRef.current;
+      const presented = repsStateRef.current.presented;
       const remaining = Math.max(0, targetReps - presented);
       return {
         timeLeft: Math.max(0, Math.ceil(remaining * speed)),

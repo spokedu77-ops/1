@@ -6,6 +6,8 @@ import type { NoteBlock } from '../_lib/types';
 const DEFAULT_ROW_HEIGHT = 44;
 const OVERSCAN = 16;
 const VIRTUALIZE_THRESHOLD = 48;
+/** 토글·다중 줄 블록은 높이가 달라 고정 px 가상화 시 겹침·교차 선택 오류 발생 */
+const ENABLE_FIXED_ROW_VIRTUALIZATION = false;
 
 type NoteVirtualRootBlocksProps = {
   rootBlocks: NoteBlock[];
@@ -33,7 +35,11 @@ export function NoteVirtualRootBlocks({
   }));
 
   useEffect(() => {
-    if (forceRenderAll || rootBlocks.length <= VIRTUALIZE_THRESHOLD) {
+    if (
+      forceRenderAll
+      || !ENABLE_FIXED_ROW_VIRTUALIZATION
+      || rootBlocks.length <= VIRTUALIZE_THRESHOLD
+    ) {
       setRange({ start: 0, end: rootBlocks.length });
       return;
     }
@@ -62,7 +68,11 @@ export function NoteVirtualRootBlocks({
     };
   }, [rootBlocks.length, scrollRootRef, estimatedRowHeight, forceRenderAll]);
 
-  if (forceRenderAll || rootBlocks.length <= VIRTUALIZE_THRESHOLD) {
+  if (
+    forceRenderAll
+    || !ENABLE_FIXED_ROW_VIRTUALIZATION
+    || rootBlocks.length <= VIRTUALIZE_THRESHOLD
+  ) {
     return (
       <>
         {rootBlocks.map((block) => (

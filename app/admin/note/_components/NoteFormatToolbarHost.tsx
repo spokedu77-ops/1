@@ -12,6 +12,7 @@ export type NoteFormatToolbarApi = {
     applyTextColor: FormatToolbarState['applyTextColor'],
     applyHighlight: FormatToolbarState['applyHighlight'],
     position: FormatToolbarState['position'],
+    insertTable?: FormatToolbarState['insertTable'],
   ) => void;
   hide: () => void;
 };
@@ -26,6 +27,7 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
     applyTextColor: FormatToolbarState['applyTextColor'],
     applyHighlight: FormatToolbarState['applyHighlight'],
     position: FormatToolbarState['position'],
+    insertTable?: FormatToolbarState['insertTable'],
   ) => {
     const prev = lastPositionRef.current;
     if (
@@ -35,14 +37,14 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
     ) {
       setToolbar((current) => {
         if (!current) {
-          return { applyMark, applyTextStyle, applyTextColor, applyHighlight, position };
+          return { applyMark, applyTextStyle, applyTextColor, applyHighlight, insertTable, position };
         }
         return current;
       });
       return;
     }
     lastPositionRef.current = position;
-    setToolbar({ applyMark, applyTextStyle, applyTextColor, applyHighlight, position });
+    setToolbar({ applyMark, applyTextStyle, applyTextColor, applyHighlight, insertTable, position });
   }, []);
 
   const hide = useCallback(() => {
@@ -76,6 +78,7 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
         applyTextStyle={toolbar.applyTextStyle}
         applyTextColor={toolbar.applyTextColor}
         applyHighlight={toolbar.applyHighlight}
+        insertTable={toolbar.insertTable}
       />
     </div>
   );

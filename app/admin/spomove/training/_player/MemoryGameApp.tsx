@@ -35,7 +35,8 @@ import type { FlowStats } from './flow/engine/FlowEngine';
 import type { DupStats, FruitSlide } from './lib/signals';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
-import { useSpomoveVariantSlidesForTraining, getMinSlidesRequired } from './hooks/useSpomoveVariantFruitSlidesForTraining';
+import { useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
+import { evaluateAssetReadiness } from './lib/assetRequirement';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
   SPOMOVE_COLOR_THEME_ORDER,
@@ -323,13 +324,37 @@ export default function MemoryGameApp({
   // 훈련 중이면 세션 시작 시 스냅샷 사용, 아니면 실시간 슬라이드 사용
   const effectiveSlides = isTraining ? (sessionSlidesRef.current ?? variantSignalSlides) : variantSignalSlides;
 
+  /** 현재 mode·level·theme·로딩상태·슬라이드 조합의 이미지 readiness 판정 */
+  const readiness = useMemo(
+    () => evaluateAssetReadiness({
+      mode: settings.mode,
+      level: settings.level,
+      theme: settings.variantColorTheme,
+      loadStatus: assetStatus,
+      slides: variantSignalSlides ?? [],
+    }),
+    [settings.mode, settings.level, settings.variantColorTheme, assetStatus, variantSignalSlides]
+  );
+
+  // autoLaunch: readiness가 처음 'ready'가 되면 usableAssets를 deep copy하여 스냅샷 한 번 확정.
+  // - startSession 시점에 이미지 미도착이면 sessionSlidesRef=undefined → effectiveSlides가 live를 사용
+  // - Supabase fetch 완료(readiness=ready) 후 여기서 스냅샷 잠금 → 이후 refetch 무시
+  // - color 테마(minimumCount=0)는 스냅샷 불필요: undefined 유지
+  useEffect(() => {
+    if (!isTraining) return;
+    if (sessionSlidesRef.current !== undefined) return;
+    if (readiness.requirement.minimumCount === 0) return;
+    if (readiness.status !== 'ready') return;
+    sessionSlidesRef.current = readiness.usableAssets.map(s => ({ ...s }));
+  }, [isTraining, readiness]);
+
   /** SPOMOVE 진입 직후 과일 이미지 선로딩(설정·난이도 선택 전에도 캐시 채움) */
   useEffect(() => {
     if (typeof window === 'undefined') return;
     void preloadVariantFruitImages(variantFruitUrls);
   }, [variantFruitUrls]);
 
-  /** 변형 색지각(basic 2·3·4·5번): 설정·워밍업·훈련 중 이미지 프리로드 */
+  /** 변형 색지각(basic 3·4·5·6번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
     () => settings.mode === 'basic' && (settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
     [settings.mode, settings.level]
@@ -530,8 +555,32 @@ export default function MemoryGameApp({
     bgmPlayerRef.current?.fadeOut(220);
   }, [screen]);
 
-  // NOTE: fullscreen은 사용자 제스처(버튼 클릭) 핸들러에서 직접 요청한다.
-  // useEffect 기반 delayed fullscreen 요청은 제거됨.
+  useEffect(() => {
+    if (embed) return;
+    if (screen !== 'training') return;
+    const id = requestAnimationFrame(() => {
+      trainingContainerRef.current?.requestFullscreen?.().catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [embed, screen]);
+
+  useEffect(() => {
+    if (embed) return;
+    if (screen !== 'memory') return;
+    const id = requestAnimationFrame(() => {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [embed, screen]);
+
+  useEffect(() => {
+    if (embed) return;
+    if (screen !== 'visualReaction') return;
+    const id = requestAnimationFrame(() => {
+      visualReactionContainerRef.current?.requestFullscreen?.().catch(() => {});
+    });
+    return () => cancelAnimationFrame(id);
+  }, [embed, screen]);
 
   const startSession = useCallback(
     (cfg: Settings = settings) => {
@@ -555,7 +604,10 @@ export default function MemoryGameApp({
         timerRef.current = null;
       }
       // 훈련 시작 시 현재 슬라이드를 스냅샷 — 세션 중 refetch/visibilitychange로 배열이 바뀌어도 유지
-      sessionSlidesRef.current = variantSignalSlidesRef.current;
+      // 슬라이드가 로딩 완료된 경우에만 deep copy 스냅샷 — 빈 배열은 undefined로 처리해
+      // effectiveSlides의 ?? 폴백이 라이브 데이터로 흐르도록 한다 (autoLaunch 즉시 시작 대응)
+      const snap = variantSignalSlidesRef.current;
+      sessionSlidesRef.current = snap && snap.length > 0 ? snap.map(s => ({ ...s })) : undefined;
 
       const playBgm = (path: string) => {
         try {
@@ -996,7 +1048,7 @@ export default function MemoryGameApp({
                   </button>
                 ))}
               </div>
-              {settings.mode === 'basic' && [2, 3, 4, 5].includes(settings.level) && (
+              {basicVariantLevel && (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
@@ -1343,21 +1395,29 @@ export default function MemoryGameApp({
               </>
             )}
             {(() => {
-              const needsImageAssets = basicVariantLevel && settings.variantColorTheme !== 'color' && getMinSlidesRequired(settings.variantColorTheme) > 0;
-              const assetBlocking = needsImageAssets && (assetStatus === 'loading' || assetStatus === 'error');
+              const needsImageAssets = readiness.requirement.minimumCount > 0;
+              const assetBlocking = needsImageAssets && readiness.status !== 'ready';
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                  {needsImageAssets && assetStatus === 'loading' && (
-                    <div style={{ fontSize: '0.82rem', color: '#64748B', textAlign: 'center' }}>이미지 로딩 중...</div>
+                  {needsImageAssets && readiness.status === 'loading' && (
+                    <div style={{ fontSize: '0.82rem', color: '#64748B', textAlign: 'center' }}>
+                      이미지 로딩 중... (필요: {readiness.requirement.minimumCount}장)
+                    </div>
                   )}
-                  {needsImageAssets && assetStatus === 'error' && (
+                  {needsImageAssets && readiness.status === 'error' && (
                     <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.82rem', color: '#EF4444', flex: 1 }}>이미지를 불러오지 못했습니다</span>
                       <button type="button" onClick={() => void reloadAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #EF4444', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit' }}>재시도</button>
                     </div>
                   )}
-                  {needsImageAssets && assetStatus === 'insufficient' && (
-                    <div style={{ fontSize: '0.82rem', color: '#F59E0B', textAlign: 'center' }}>이미지가 없습니다 — 색상 신호로 대체됩니다</div>
+                  {needsImageAssets && readiness.status === 'insufficient' && (
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.82rem', color: '#F59E0B', flex: 1 }}>
+                        이 단계에는 서로 다른 이미지 {readiness.requirement.minimumCount}개가 필요합니다.
+                        현재 사용 가능한 이미지는 {readiness.usableAssets.length}개입니다.
+                      </span>
+                      <button type="button" onClick={() => void reloadAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #F59E0B', background: 'transparent', color: '#F59E0B', cursor: 'pointer', fontFamily: 'inherit' }}>새로고침</button>
+                    </div>
                   )}
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button
@@ -1375,7 +1435,7 @@ export default function MemoryGameApp({
                         startSession();
                       }}
                     >
-                      {assetStatus === 'loading' && needsImageAssets ? '로딩 중...' : '트레이닝 시작 →'}
+                      {readiness.status === 'loading' && needsImageAssets ? '로딩 중...' : '트레이닝 시작 →'}
                     </button>
                   </div>
                 </div>
@@ -1588,7 +1648,7 @@ export default function MemoryGameApp({
               '📋 흰 실선=색 규칙 · 흰 점선=위치 규칙 · 흰 이중선=반대로(자극은 색 또는 화살표)'}
           </div>
         )}
-        {settings.mode === 'basic' && [2, 3, 4, 5].includes(settings.level) && (
+        {basicVariantLevel && (
           <div
             style={{
               position: 'absolute',

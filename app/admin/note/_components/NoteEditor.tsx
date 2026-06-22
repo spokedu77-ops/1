@@ -43,12 +43,11 @@ import {
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
 import {
-  bindNoteCrossSelectCopy,
   shouldSuppressCrossFormatToolbar,
 } from './noteCrossSelect';
-import { bindListCrossHighlightEditorLookup } from './noteListCrossHighlight';
 import { noteSuppressEditorScrollRef } from '../_lib/noteEditorScrollGuard';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
+import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -296,6 +295,7 @@ export function NoteEditor({
   onNavigatePrevious,
   onNavigateNext,
   onEditorFocus,
+  onEditorSurfaceReady,
   onOpenDocumentById,
   onMultilinePaste,
   canSplitMultilinePaste = false,
@@ -318,6 +318,7 @@ export function NoteEditor({
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: ToolbarPosition,
+    insertTable?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   uploadImage?: (file: File) => Promise<string>;
@@ -336,6 +337,7 @@ export function NoteEditor({
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
   onEditorFocus?: () => void;
+  onEditorSurfaceReady?: () => void;
   onOpenDocumentById?: (documentId: string) => void;
   onMultilinePaste?: (lines: string[]) => void;
   canSplitMultilinePaste?: boolean;
@@ -350,10 +352,6 @@ export function NoteEditor({
   const isEditingRef = useRef(false);
   const lastAutoFocusSignalRef = useRef(0);
   const editorRef = useRef<Editor | null>(null);
-  const blurCommitRef = useRef<{
-    blockId: string;
-    onChange: (change: NoteEditorChange) => void;
-  } | null>(null);
   const imageLightbox = useNoteImageLightbox();
   const imageLightboxRef = useRef(imageLightbox);
   imageLightboxRef.current = imageLightbox;
@@ -374,6 +372,7 @@ export function NoteEditor({
     onNavigatePrevious,
     onNavigateNext,
     onEditorFocus,
+    onEditorSurfaceReady,
     onOpenDocumentById,
     onMultilinePaste,
     canSplitMultilinePaste,
@@ -399,6 +398,7 @@ export function NoteEditor({
     onNavigatePrevious,
     onNavigateNext,
     onEditorFocus,
+    onEditorSurfaceReady,
     onOpenDocumentById,
     onMultilinePaste,
     canSplitMultilinePaste,
@@ -659,6 +659,7 @@ export function NoteEditor({
               return true;
             }
           }
+          return false;
         }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
           const ed = editorRef.current;
@@ -820,12 +821,6 @@ export function NoteEditor({
     },
     onFocus: ({ editor: currentEditor }) => {
       isEditingRef.current = true;
-      if (editorBlockId) {
-        blurCommitRef.current = {
-          blockId: editorBlockId,
-          onChange: callbacksRef.current.onChange,
-        };
-      }
       callbacksRef.current.onEditorFocus?.();
       if (!currentEditor.state.selection.empty) {
         notifyFormatToolbar(currentEditor);
@@ -841,20 +836,7 @@ export function NoteEditor({
     onBlur: () => {
       isEditingRef.current = false;
       callbacksRef.current.flushPendingChange();
-      const target = blurCommitRef.current;
-      blurCommitRef.current = null;
-      const currentEditor = editorRef.current;
-      if (
-        target?.blockId
-        && currentEditor
-        && !(currentEditor as { isDestroyed?: boolean }).isDestroyed
-        && getNoteEditor(target.blockId) === currentEditor
-      ) {
-        target.onChange({
-          text: currentEditor.getText(),
-          html: currentEditor.getHTML(),
-        });
-      }
+      commitActiveNoteEditorToStore();
       callbacksRef.current.onHideFormatToolbar?.();
       callbacksRef.current.onSlashChange?.(false, '');
     },
@@ -911,28 +893,10 @@ export function NoteEditor({
   }, [flushPendingChange]);
 
   useEffect(() => {
-    bindListCrossHighlightEditorLookup(getNoteEditor);
-    return bindNoteCrossSelectCopy();
-  }, []);
-
-  useEffect(() => {
     const commitOnTabLeave = () => {
       if (document.visibilityState !== 'hidden') return;
       callbacksRef.current.flushPendingChange();
-      const target = blurCommitRef.current;
-      const currentEditor = editorRef.current;
-      if (
-        !target?.blockId
-        || !currentEditor
-        || (currentEditor as { isDestroyed?: boolean }).isDestroyed
-        || getNoteEditor(target.blockId) !== currentEditor
-      ) {
-        return;
-      }
-      target.onChange({
-        text: currentEditor.getText(),
-        html: currentEditor.getHTML(),
-      });
+      commitActiveNoteEditorToStore();
     };
     document.addEventListener('visibilitychange', commitOnTabLeave);
     window.addEventListener('pagehide', commitOnTabLeave);
@@ -1010,6 +974,9 @@ export function NoteEditor({
     if (!editor || !editorBlockId) return;
     registerNoteEditor(editorBlockId, editor);
     tryPendingSelectAll(editor);
+    if (editor.view?.dom?.isConnected) {
+      callbacksRef.current.onEditorSurfaceReady?.();
+    }
     return () => {
       unregisterNoteEditor(editorBlockId);
     };

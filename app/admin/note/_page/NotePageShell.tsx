@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { NoteImageLightboxProvider } from '../_components/NoteImageLightbox';
 import { NoteRichEditorStyles } from '../_components/NoteRichEditorStyles';
@@ -8,6 +9,8 @@ import {
   BlockDropTargetContext,
 } from '../_components/noteContexts';
 import { noteBlockCollisionDetection } from '../_lib/noteDropResolver';
+import { bindNoteCrossSelectCopy } from '../_components/noteCrossSelect';
+import { bindNoteListCrossTextSelect } from '../_components/noteListCrossSelect';
 import { useNotePage } from './NotePageContext';
 import { NoteMobileHeader } from '../_components/layout/NoteMobileHeader';
 import { NoteSidebarPanel } from '../_components/layout/NoteSidebarPanel';
@@ -63,6 +66,15 @@ export function NotePageShell() {
     formatToolbarApiRef,
     sidebarIconPicker,
   } = useNotePage();
+
+  useEffect(() => {
+    const unbindCross = bindNoteCrossSelectCopy();
+    const unbindList = bindNoteListCrossTextSelect();
+    return () => {
+      unbindCross();
+      unbindList();
+    };
+  }, []);
 
   return (
     <NoteImageLightboxProvider>

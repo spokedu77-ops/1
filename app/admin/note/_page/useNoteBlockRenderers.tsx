@@ -54,6 +54,7 @@ export type NoteBlockRendererDeps = {
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
+    insertTable?: () => void,
   ) => void;
   hideFormatToolbar: () => void;
   handleMultilinePaste: (block: NoteBlock, lines: string[]) => void | Promise<void>;

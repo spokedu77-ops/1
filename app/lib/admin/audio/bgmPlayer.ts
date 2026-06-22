@@ -8,12 +8,25 @@ import { devLogger } from '@/app/lib/logging/devLogger';
  * - loop, preload 설정
  */
 
+/** BGM 재생 상태 */
+export type BgmStatus =
+  | 'idle'      // 초기화 전
+  | 'loading'   // play() 호출 중
+  | 'ready'     // init 완료, 미재생
+  | 'playing'   // 재생 중
+  | 'blocked'   // autoplay 정책으로 차단됨 (NotAllowedError)
+  | 'error'     // 기타 오디오 오류
+  | 'disabled'; // disableBgm=true 등 외부에서 비활성화
+
 export class BgmPlayer {
   private audio: HTMLAudioElement | null = null;
   private fadeInterval: number | null = null;
   private isInitialized = false;
   private targetVolume: number = 0.65;
   private eventHandlers: { event: string; handler: EventListener }[] = [];
+  private _status: BgmStatus = 'idle';
+
+  get status(): BgmStatus { return this._status; }
 
   /**
    * BGM 초기화 (재생하지 않음)
@@ -36,6 +49,7 @@ export class BgmPlayer {
     this.audio.volume = volume;
     this.targetVolume = volume;
     this.isInitialized = true;
+    this._status = 'ready';
     try {
       // 일부 브라우저에서 src 변경 후 명시적 load가 안정적
       this.audio.load();
@@ -63,12 +77,16 @@ export class BgmPlayer {
       return;
     }
 
+    this._status = 'loading';
     try {
       await this.audio.play();
+      this._status = 'playing';
     } catch (error: unknown) {
-      // autoplay blocked 또는 기타 에러
-      devLogger.warn('[BgmPlayer] Play failed (autoplay blocked or error):', error);
-      // throw하지 않고 조용히 무시
+      const isBlocked =
+        error instanceof DOMException &&
+        (error.name === 'NotAllowedError' || error.name === 'AbortError');
+      this._status = isBlocked ? 'blocked' : 'error';
+      devLogger.warn('[BgmPlayer] Play failed:', isBlocked ? 'blocked (autoplay policy)' : 'error', error);
     }
   }
 
@@ -123,6 +141,7 @@ export class BgmPlayer {
       this.audio = null;
       this.isInitialized = false;
     }
+    this._status = 'idle';
   }
 
   /**

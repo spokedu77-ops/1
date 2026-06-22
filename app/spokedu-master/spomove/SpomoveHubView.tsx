@@ -1,12 +1,10 @@
 'use client';
 
-import { Lock, MonitorPlay, X } from 'lucide-react';
+import { Lock, MonitorPlay } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 import { SPOMOVE_AXIS_META } from '@/app/lib/spomove/spomoveAxisMeta';
-import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
@@ -38,35 +36,6 @@ const AXIS_TEXT: Record<OfficialSpomovePreset['axis'], string> = {
   executive: 'text-violet-600',
 };
 
-type ModalFact = { label: string; value: string };
-
-function getModalFacts(preset: OfficialSpomovePreset): ModalFact[] {
-  const { mode } = preset.engine;
-  if (mode === 'reactTrain') {
-    return [
-      { label: '신호 간격', value: '3초' },
-      { label: '실행 시간', value: '약 75초' },
-      { label: '진행 방식', value: 'FLOW' },
-      { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
-    ];
-  }
-  if (mode === 'spatial') {
-    return [
-      { label: '기억 단위', value: '3색 순서' },
-      { label: '라운드', value: '10라운드' },
-      { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
-    ];
-  }
-  return [
-    { label: '신호 간격', value: '3초' },
-    { label: '반복 횟수', value: '20회' },
-    { label: 'BGM', value: '자동 재생' },
-    { label: '효과음', value: '자동' },
-  ];
-}
-
 function tabCount(tab: OfficialLibraryTab) {
   if (tab === 'all') return OFFICIAL_SPOMOVE_LIBRARY.length;
   return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.axis === tab).length;
@@ -74,10 +43,10 @@ function tabCount(tab: OfficialLibraryTab) {
 
 function PresetCard({
   preset,
-  onConfigure,
+  href,
 }: {
   preset: OfficialSpomovePreset;
-  onConfigure: (preset: OfficialSpomovePreset) => void;
+  href: string;
 }) {
   return (
     <article className="flex flex-col rounded-[22px] border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
@@ -126,140 +95,19 @@ function PresetCard({
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => onConfigure(preset)}
+      <Link
+        href={href}
         className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-slate-950 text-[13px] font-black text-white transition-colors hover:bg-indigo-600"
       >
         <MonitorPlay className="h-[15px] w-[15px]" />
-        공식 세팅 확인
-      </button>
+        큰 화면으로 실행
+      </Link>
     </article>
   );
 }
 
-function PresetModal({
-  preset,
-  bgmList,
-  onClose,
-}: {
-  preset: OfficialSpomovePreset;
-  bgmList: string[];
-  onClose: () => void;
-}) {
-  const router = useRouter();
-  const modalFacts = getModalFacts(preset);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
-
-  const launch = () => {
-    if (!preset.isReady) return;
-    router.push(officialPresetSessionHref(preset, bgmList[0]));
-  };
-
-  return (
-    <div
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 px-4 py-6 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="spomove-preset-title"
-    >
-      <button type="button" className="fixed inset-0 cursor-default" onClick={onClose} aria-label="닫기" />
-      <section className="relative mx-auto w-full max-w-2xl overflow-hidden rounded-[28px] bg-white shadow-2xl">
-        <header className="px-6 pb-4 pt-6 sm:px-8">
-          <div className="flex items-start gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap gap-1.5">
-                <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black ${AXIS_BADGE[preset.axis]}`}>
-                  {preset.axisTitle}
-                </span>
-                <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                  {preset.programTitle}
-                </span>
-              </div>
-              <h2 id="spomove-preset-title" className="mt-3 text-[22px] font-black leading-tight text-slate-950">
-                {preset.title}
-              </h2>
-              {preset.en ? (
-                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                  {preset.en}
-                </p>
-              ) : null}
-              {preset.salesCopy ? (
-                <p className={`mt-2 text-[12px] font-bold leading-snug ${AXIS_TEXT[preset.axis]}`}>
-                  {preset.salesCopy}
-                </p>
-              ) : null}
-              <p className="mt-2 text-[13px] font-medium leading-[1.65] text-slate-600">
-                {preset.description}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200"
-              aria-label="닫기"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        </header>
-
-        <div className="space-y-3.5 border-t border-slate-100 px-6 py-5 sm:px-8">
-          <section>
-            <h3 className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-              공식 실행 조건
-            </h3>
-            <div
-              className={`mt-2.5 grid grid-cols-2 gap-2 ${
-                modalFacts.length >= 5 ? 'sm:grid-cols-5' : 'sm:grid-cols-4'
-              }`}
-            >
-              {modalFacts.map(({ label, value }) => (
-                <div key={label} className="rounded-xl bg-slate-50 p-3">
-                  <p className="text-[10px] font-black text-slate-400">{label}</p>
-                  <p className="mt-1 text-[13px] font-black text-slate-900">{value}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-xl bg-slate-50 px-4 py-3.5">
-            <h3 className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
-              추천 사용 장면
-            </h3>
-            <p className="mt-1.5 text-[13px] font-medium leading-[1.65] text-slate-800">
-              {preset.recommendedUse}
-            </p>
-          </section>
-        </div>
-
-        <footer className="border-t border-slate-100 px-6 pb-6 pt-4 sm:px-8">
-          <button
-            type="button"
-            onClick={launch}
-            disabled={!preset.isReady}
-            className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-[18px] bg-indigo-600 text-[14px] font-black text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <MonitorPlay className="h-5 w-5" />
-            큰 화면으로 실행
-          </button>
-        </footer>
-      </section>
-    </div>
-  );
-}
-
 export default function SpomoveHubView() {
-  const { list: bgmList } = useSpomoveTrainingBGM();
   const [activeTab, setActiveTab] = useState<OfficialLibraryTab>('all');
-  const [selectedPreset, setSelectedPreset] = useState<OfficialSpomovePreset | null>(null);
   const [accessState, setAccessState] = useState<AccessState>('checking');
 
   useEffect(() => {
@@ -367,18 +215,14 @@ export default function SpomoveHubView() {
 
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredPresets.map((preset) => (
-            <PresetCard key={preset.id} preset={preset} onConfigure={setSelectedPreset} />
+            <PresetCard
+              key={preset.id}
+              preset={preset}
+              href={officialPresetSessionHref(preset)}
+            />
           ))}
         </div>
       </div>
-
-      {selectedPreset ? (
-        <PresetModal
-          preset={selectedPreset}
-          bgmList={bgmList}
-          onClose={() => setSelectedPreset(null)}
-        />
-      ) : null}
     </main>
   );
 }

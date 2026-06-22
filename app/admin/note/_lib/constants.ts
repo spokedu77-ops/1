@@ -9,9 +9,11 @@ import {
   ListOrdered,
   MessageSquareQuote,
   Minus,
+  Table2,
   Type,
   Video,
 } from 'lucide-react';
+import { defaultTableBlockContent } from './noteTableBlock';
 import type { NoteBlock } from './types';
 
 export const BLOCK_TYPES: {
@@ -31,6 +33,7 @@ export const BLOCK_TYPES: {
   { type: 'toggle', label: '토글 목록', icon: ChevronDown, desc: '접고 펼치는 섹션', shortcut: '>' },
   { type: 'callout', label: '콜아웃', icon: MessageSquareQuote, desc: '강조 메시지', shortcut: '!!' },
   { type: 'code', label: '코드', icon: Type, desc: '고정폭 코드 블록', shortcut: '```' },
+  { type: 'table', label: '표', icon: Table2, desc: '행·열 표 블록' },
   { type: 'divider', label: '구분선', icon: Minus, desc: '가로 구분선', shortcut: '---' },
   { type: 'image', label: '이미지', icon: ImageIcon, desc: '이미지 업로드 또는 URL' },
   { type: 'video', label: '영상', icon: Video, desc: 'YouTube · Vimeo 임베드' },
@@ -70,6 +73,7 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
     };
   }
   if (type === 'code') return { text: '', language: 'plain', depth: 0 };
+  if (type === 'table') return defaultTableBlockContent();
   if (type === 'image') return { url: '' };
   if (type === 'video') return { url: '' };
   if (type === 'text') {
@@ -128,6 +132,7 @@ export function blockGutterTopPx(type: NoteBlock['type']): number | 'center' {
     case 'video':
     case 'callout':
     case 'code':
+    case 'table':
       return 'center';
     default:
       return 3;

@@ -29,6 +29,22 @@ export function sortRootBlocks<T extends NoteBlockLike>(blocks: T[]) {
     .sort((a, b) => a.order_index - b.order_index);
 }
 
+/** 동일 id가 배열에 두 번 들어가면 React key 경고·UI 중복 — 첫 등장 순서 유지, 최신 객체 우선 */
+export function dedupeNoteBlocksById<T extends NoteBlockLike>(blocks: T[]): T[] {
+  const latestById = new Map<string, T>();
+  for (const block of blocks) {
+    latestById.set(block.id, block);
+  }
+  const seen = new Set<string>();
+  const result: T[] = [];
+  for (const block of blocks) {
+    if (seen.has(block.id)) continue;
+    seen.add(block.id);
+    result.push(latestById.get(block.id) ?? block);
+  }
+  return result;
+}
+
 /** 에디터 DOM 순서(부모 직후 자식 DFS)로 블록 id 나열 — dnd SortableContext용 */
 export function flattenVisualBlockIds<T extends NoteBlockLike>(blocks: T[]): string[] {
   return flattenVisualBlockIdsWithOptions(blocks as unknown as BlockWithMeta[]);

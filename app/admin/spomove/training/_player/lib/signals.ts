@@ -277,7 +277,7 @@ function buildVariantTier4(excludePanelImageUrls: (string | null)[] | null, slid
   return byColor.map((s) => ({ cells: [s] }));
 }
 
-function uniqueSlidesByImageUrl(slides: FruitSlide[]): FruitSlide[] {
+export function uniqueSlidesByImageUrl(slides: FruitSlide[]): FruitSlide[] {
   const seen = new Set<string>();
   const out: FruitSlide[] = [];
   for (const slide of slides) {
@@ -289,7 +289,7 @@ function uniqueSlidesByImageUrl(slides: FruitSlide[]): FruitSlide[] {
   return out;
 }
 
-function hasDistinctSlideColors(slides: FruitSlide[], count: number): boolean {
+export function hasDistinctSlideColors(slides: FruitSlide[], count: number): boolean {
   return new Set(slides.map((s) => s.color.id)).size >= count;
 }
 

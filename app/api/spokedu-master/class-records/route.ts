@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   classRecordInsertPayload,
   classRecordStudentInsertPayload,
@@ -59,6 +60,10 @@ export async function GET() {
     .order('created_at', { ascending: false });
 
   if (error) {
+    await reportError(error, {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'GET', stage: 'select', status: 500 },
+    });
     return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
@@ -112,6 +117,10 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingError) {
+      await reportError(existingError, {
+        context: 'spokedu_master.operational.class_records',
+        tags: { method: 'POST', stage: 'dedupe_lookup', status: 500 },
+      });
       return privateNoStoreJson({ error: existingError.message }, { status: 500 });
     }
 
@@ -131,6 +140,10 @@ export async function POST(request: Request) {
       input.students.map((student) => student.studentId).filter((id): id is string => Boolean(id)),
     );
   } catch (error) {
+    await reportError(error, {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'POST', stage: 'student_lookup', status: 500 },
+    });
     return privateNoStoreJson(
       { error: error instanceof Error ? error.message : 'Student lookup failed' },
       { status: 500 },
@@ -151,6 +164,10 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError || !inserted) {
+    await reportError(insertError ?? new Error('Record insert returned no row'), {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'POST', stage: 'record_insert', status: 500 },
+    });
     return privateNoStoreJson({ error: insertError?.message ?? 'Record insert failed' }, { status: 500 });
   }
 
@@ -165,6 +182,10 @@ export async function POST(request: Request) {
       .insert(childRows);
 
     if (childError) {
+      await reportError(childError, {
+        context: 'spokedu_master.operational.class_records',
+        tags: { method: 'POST', stage: 'child_insert', status: 500 },
+      });
       await supabase
         .from('spokedu_master_class_records')
         .delete()
@@ -186,6 +207,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error || !data) {
+    await reportError(error ?? new Error('Record reload returned no row'), {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'POST', stage: 'reload', status: 500 },
+    });
     return privateNoStoreJson({ error: error?.message ?? 'Record reload failed' }, { status: 500 });
   }
 

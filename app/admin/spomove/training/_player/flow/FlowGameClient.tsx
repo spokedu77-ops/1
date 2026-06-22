@@ -69,6 +69,8 @@ export default function FlowGameClient({
   const [stats,         setStats]        = useState<FlowStats | null>(null);
   const [totalProgress, setTotalProgress] = useState(0);
   const [initError,     setInitError]    = useState<string | null>(null);
+  /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
+  const [initKey,       setInitKey]      = useState(0);
   const mountedRef = useRef(true);
 
   // ── 엔진 초기화 ────────────────────────────────────────────────────────────
@@ -82,6 +84,16 @@ export default function FlowGameClient({
     const canvas = canvasRef.current;
     if (!canvas || stages.length === 0) return;
     setInitError(null);
+
+    const classifyError = (msg: string): string => {
+      const m = msg.toLowerCase();
+      if (m.includes('context lost') || m.includes('webglcontextlost')) return 'WebGL 컨텍스트가 손실되었습니다. 다시 시도해 주세요.';
+      if (m.includes('webgl') || m.includes('context')) return 'WebGL을 지원하지 않는 환경입니다. 다른 브라우저에서 시도하세요.';
+      if (m.includes('image') || m.includes('texture')) return 'Flow 이미지를 불러오지 못했습니다.';
+      if (m.includes('audio') || m.includes('bgm')) return 'Flow 오디오를 불러오지 못했습니다.';
+      if (m.includes('module') || m.includes('import') || m.includes('chunk')) return 'Flow 모듈 로딩 실패. 네트워크를 확인해 주세요.';
+      return `Flow 초기화 실패: ${msg}`;
+    };
 
     let engine: FlowEngine;
     try {
@@ -120,6 +132,17 @@ export default function FlowGameClient({
     }
 
     engineRef.current = engine;
+
+    // webglcontextlost: 브라우저가 GPU 컨텍스트를 회수할 때 (탭 전환, 리소스 부족 등)
+    const handleContextLost = (e: Event) => {
+      e.preventDefault(); // 컨텍스트 복구 시도를 허용 (필수)
+      if (!mountedRef.current) return;
+      setInitError('WebGL 컨텍스트가 손실되었습니다. 다시 시도해 주세요.');
+      engine.dispose();
+      engineRef.current = null;
+    };
+    canvas.addEventListener('webglcontextlost', handleContextLost);
+
     engine.init(flashRef.current).then(() => {
       if (!mountedRef.current) { engine.dispose(); return; }
       onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
@@ -129,21 +152,19 @@ export default function FlowGameClient({
     }).catch((err: unknown) => {
       if (!mountedRef.current) { engine.dispose(); return; }
       const msg = err instanceof Error ? err.message : String(err);
-      const isWebGl = msg.toLowerCase().includes('webgl') || msg.toLowerCase().includes('context');
-      setInitError(isWebGl
-        ? 'WebGL을 지원하지 않는 환경입니다. 다른 브라우저에서 시도하세요.'
-        : `Flow 초기화 실패: ${msg}`);
+      setInitError(classifyError(msg));
       engine.dispose();
       engineRef.current = null;
     });
 
     return () => {
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
       engine.dispose();
       if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, colorTheme, motionScale, bgmPath, bgImageUrl]);
+  }, [stages.length, colorTheme, motionScale, bgmPath, bgImageUrl, initKey]);
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -178,7 +199,7 @@ export default function FlowGameClient({
         <div style={{ display: 'flex', gap: '0.75rem' }}>
           <button
             type="button"
-            onClick={() => { setInitError(null); }}
+            onClick={() => { setInitError(null); setInitKey(k => k + 1); }}
             style={{ padding: '0.65rem 1.4rem', borderRadius: '0.6rem', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '0.9rem', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}
           >
             다시 시도

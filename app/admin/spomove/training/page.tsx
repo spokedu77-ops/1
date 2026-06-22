@@ -28,6 +28,7 @@ import {
   parseStoredVariantTheme,
   type SpomoveColorThemeId,
 } from './_player/lib/spomoveVariantThemeConfig';
+import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './_player/lib/flowPresets';
 
 /* ─── MemoryGameApp (Training 전용): SSR 비활성, 클라이언트 전용 ─── */
 const MemoryGameApp = dynamic(
@@ -560,24 +561,25 @@ function SettingsScreen({
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   // ── Flow 즐겨찾기 ──────────────────────────────────────────────────────────
-  const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
-  interface FlowPreset { id: string; name: string; features: FlowFeatureKey[]; colorTheme: LaunchSettings['flowColorTheme']; duration: number; }
-  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try { return JSON.parse(localStorage.getItem(FLOW_PRESETS_KEY) ?? '[]') as FlowPreset[]; } catch { return []; }
-  });
+  const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => loadFlowPresets());
+  const [flowPresetError, setFlowPresetError] = useState<string | null>(null);
+
   const saveFlowPreset = () => {
     const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
     const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], colorTheme: launch.flowColorTheme, duration: launch.flowDuration }];
+    const result = saveFlowPresets(next);
+    if (!result.success) { setFlowPresetError(result.error); return; }
     setFlowPresets(next);
-    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+    setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features], flowColorTheme: p.colorTheme, flowDuration: p.duration }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], flowColorTheme: p.colorTheme, flowDuration: p.duration }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
+    const result = saveFlowPresets(next);
+    if (!result.success) { setFlowPresetError(result.error); return; }
     setFlowPresets(next);
-    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(next));
+    setFlowPresetError(null);
   };
 
   useEffect(() => {
@@ -997,6 +999,9 @@ function SettingsScreen({
                   + 현재 설정 저장
                 </button>
               </div>
+              {flowPresetError && (
+                <p style={{ margin: '0 0 6px', fontSize: 11, color: '#F87171' }}>저장 실패: {flowPresetError}</p>
+              )}
               {flowPresets.length === 0 ? (
                 <p style={{ margin: 0, fontSize: 11, color: T.textDim }}>저장된 즐겨찾기가 없습니다. 설정 후 저장하세요.</p>
               ) : (

@@ -13,6 +13,7 @@ import {
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
 import { resolveTrainingEngine } from '../constants';
+import { getNextIntervalState } from '../lib/intervalTimer';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 
@@ -105,7 +106,11 @@ export function useIntervalTimer({
       const left = Math.max(0, Math.ceil(phaseDur - timeInPhase));
 
       // 마지막 세트 work 완료 직후 rest 진입 없이 종료
-      if (currentSet > sets || (currentSet === sets && currentPhase === 'rest')) {
+      // getNextIntervalState: work 완료 + 마지막 세트 → completed=true
+      const isLastRestPhase =
+        currentPhase === 'rest' &&
+        getNextIntervalState({ currentSet, totalSets: sets, phase: 'work' }).completed;
+      if (currentSet > sets || isLastRestPhase) {
         ttsClear();
         const dup = engineMode === 'basic' ? genRef.current?.getStats() ?? null : null;
         onFinish(dup);

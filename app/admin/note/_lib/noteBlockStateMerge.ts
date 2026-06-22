@@ -6,6 +6,7 @@ import {
   normalizeLoadedNoteBlocks,
   stripListItemMarkerPrefix,
 } from '../_components/noteBulletInput';
+import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 
 /**
  * React blocks 갱신 전 스토어에만 반영된 최신 content를 병합한다.
@@ -98,7 +99,7 @@ export function mergeReconciledBlocks(
     return block;
   });
 
-  return normalizeLoadedNoteBlocks(merged);
+  return dedupeNoteBlocksById(normalizeLoadedNoteBlocks(merged));
 }
 
 /** restore-blocks undo/redo 적용 */

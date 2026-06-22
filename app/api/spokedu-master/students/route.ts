@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   normalizeStudentInput,
   studentInsertPayload,
@@ -27,6 +28,10 @@ export async function GET() {
     .order('name', { ascending: true });
 
   if (error) {
+    await reportError(error, {
+      context: 'spokedu_master.operational.students',
+      tags: { method: 'GET', stage: 'select', status: 500 },
+    });
     return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
@@ -61,6 +66,10 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (existingError) {
+      await reportError(existingError, {
+        context: 'spokedu_master.operational.students',
+        tags: { method: 'POST', stage: 'dedupe_lookup', status: 500 },
+      });
       return privateNoStoreJson({ error: existingError.message }, { status: 500 });
     }
 
@@ -79,6 +88,10 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    await reportError(error, {
+      context: 'spokedu_master.operational.students',
+      tags: { method: 'POST', stage: 'insert', status: 500 },
+    });
     return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 

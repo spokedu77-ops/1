@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 
 const TRIAL_DAYS = 14;
 const TRIAL_MS = TRIAL_DAYS * 24 * 60 * 60 * 1000;
@@ -85,6 +86,13 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
 
     if (error) {
       devLogger.error('[requireSpokeduMasterAccess] subscription lookup failed', error);
+      await reportError(error, {
+        context: 'spokedu_master.access',
+        tags: {
+          stage: 'subscription_lookup',
+          status: 500,
+        },
+      });
       return {
         ok: false,
         response: NextResponse.json({ error: 'Subscription lookup failed' }, { status: 500 }),
@@ -118,6 +126,13 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
     };
   } catch (err) {
     devLogger.error('[requireSpokeduMasterAccess]', err);
+    await reportError(err, {
+      context: 'spokedu_master.access',
+      tags: {
+        stage: 'unexpected',
+        status: 500,
+      },
+    });
     return {
       ok: false,
       response: NextResponse.json({ error: 'Server error' }, { status: 500 }),

@@ -212,7 +212,11 @@ function collapseEditorSelection(editor: Editor, pos?: number) {
   const { state, view } = editor;
   const docSize = state.doc.content.size;
   const safe = Math.max(1, Math.min(pos ?? state.selection.from, docSize - 1));
-  view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, safe)));
+  view.dispatch(
+    state.tr
+      .setSelection(TextSelection.create(state.doc, safe))
+      .setMeta('addToHistory', false),
+  );
 }
 
 function suppressNativeSelections(siblings: string[], activeBlockId?: string) {
@@ -338,8 +342,8 @@ function onPointerMove(e: PointerEvent) {
     return;
   }
 
-  // 가로 드래그(단어 선택)는 브라우저·TipTap 기본 선택에 맡김
-  if (dx >= dy) return;
+  // 가로 드래그(단어 선택)는 같은 블록 안에서만 — 블록 간은 세로 드래그 허용
+  if (hoverId === anchor.blockId && dx >= dy) return;
 
   dragging = true;
 

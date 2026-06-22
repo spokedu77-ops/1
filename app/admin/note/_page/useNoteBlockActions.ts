@@ -23,7 +23,7 @@ import {
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
-import { contentChangeNeedsReactBlocks } from '../_lib/noteContentPatch';
+import { contentChangeNeedsReactBlocks, contentChangedForUndo } from '../_lib/noteContentPatch';
 import { getNoteEditor, getActiveNoteEditor } from '../_components/noteEditorRegistry';
 import { registerNoteContentFlush, resolveBlockTextCaretOffset, commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent, applyRestoreBlockSnapshots } from '../_lib/noteBlockStateMerge';
 import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
@@ -134,6 +134,8 @@ export function useNoteBlockActions(options: {
   } = options;
 
   const pendingContentPatchesRef = useRef<Map<string, unknown>>(new Map());
+  const ensuringMinimumBlockRef = useRef(false);
+  const contentUndoSessionRef = useRef<string | null>(null);
   const CONTENT_BATCH_TIMER_KEY = '__content_batch__';
 
   const flushContentPatches = useCallback(async () => {
@@ -171,12 +173,27 @@ export function useNoteBlockActions(options: {
     return () => registerNoteContentFlush(null);
   }, [flushContentPatches]);
 
+  const recordBlockUndo = useCallback((blockIds: string[]) => {
+    noteUndo.pushRestoreBlocksUndo(mergeBlocksWithStoreContent(blocksRef.current), blockIds);
+    contentUndoSessionRef.current = blockIds[0] ?? null;
+  }, [noteUndo]);
+
+  const recordContentUndoBeforeChange = useCallback((blockId: string) => {
+    if (contentUndoSessionRef.current === blockId) return;
+    noteUndo.pushRestoreBlocksUndo(mergeBlocksWithStoreContent(blocksRef.current), [blockId]);
+    contentUndoSessionRef.current = blockId;
+  }, [noteUndo]);
+
   const syncBlockContent = useCallback((blockId: string, content: unknown) => {
     const block = blocksRef.current.find((b) => b.id === blockId);
     if (!block) return;
     let record = (content ?? {}) as Record<string, unknown>;
     if (block.type === 'bulletList' || block.type === 'numberedList') {
       record = normalizeListBlockContentRecord(record);
+    }
+    const prevRecord = (block.content ?? {}) as Record<string, unknown>;
+    if (contentChangedForUndo(prevRecord, record)) {
+      recordContentUndoBeforeChange(blockId);
     }
     const store = useNoteBlockStore.getState();
     if (!store.getBlock(blockId)) {
@@ -188,7 +205,7 @@ export function useNoteBlockActions(options: {
     );
     scheduleBlockContentSave(blockId, record);
     bumpNoteReconcileIdle(selectedId);
-  }, [scheduleBlockContentSave, selectedId]);
+  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
 
   const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
     let nextContent = content;
@@ -200,6 +217,9 @@ export function useNoteBlockActions(options: {
       syncBlockContent(block.id, nextRecord);
       return;
     }
+    if (contentChangedForUndo(block.content as Record<string, unknown>, nextRecord)) {
+      recordContentUndoBeforeChange(block.id);
+    }
     blocksRef.current = blocksRef.current.map((b) =>
       b.id === block.id ? { ...b, content: nextContent } : b,
     );
@@ -207,11 +227,7 @@ export function useNoteBlockActions(options: {
     useNoteBlockStore.getState().patchContent(block.id, nextRecord);
     scheduleBlockContentSave(block.id, nextContent);
     bumpNoteReconcileIdle(selectedId);
-  }, [scheduleBlockContentSave, selectedId, syncBlockContent]);
-
-  const recordBlockUndo = useCallback((blockIds: string[]) => {
-    noteUndo.pushRestoreBlocksUndo(mergeBlocksWithStoreContent(blocksRef.current), blockIds);
-  }, [noteUndo]);
+  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId, syncBlockContent]);
 
   const registerCreatedBlockUndo = useCallback((block: NoteBlock) => {
     noteUndo.pushDeleteBlockUndo(block);
@@ -380,9 +396,12 @@ export function useNoteBlockActions(options: {
       const json = (await res.json()) as { block: NoteBlock };
       let orderPayload: { id: string; order_index: number }[] = [];
       setBlocks((prev) => {
-        // split 직후 onChange로 갱신된 본문을 유지 — blocksRef 스냅샷으로 덮어쓰지 않음
+        if (prev.some((block) => block.id === json.block.id)) {
+          return prev;
+        }
         const latestSiblings = prev
           .filter((b) => (b.parent_block_id ?? null) === parentId)
+          .filter((b) => b.id !== json.block.id)
           .sort((a, b) => a.order_index - b.order_index);
         const latestIndex = Math.max(0, Math.min(insertIndex, latestSiblings.length));
         const nextSiblings = [
@@ -548,6 +567,28 @@ export function useNoteBlockActions(options: {
     handleCreateSubPage,
   ]);
 
+  const ensureMinimumRootTextBlock = useCallback(async () => {
+    if (!selectedId || ensuringMinimumBlockRef.current) return;
+    const roots = sortRootBlocks(
+      blocksRef.current.filter(
+        (b) => b.document_id === selectedId && (b.parent_block_id ?? null) === null,
+      ),
+    );
+    if (roots.length > 0) return;
+    ensuringMinimumBlockRef.current = true;
+    try {
+      const latestRoots = sortRootBlocks(
+        blocksRef.current.filter(
+          (b) => b.document_id === selectedId && (b.parent_block_id ?? null) === null,
+        ),
+      );
+      if (latestRoots.length > 0) return;
+      await insertBlockAmongSiblings(null, 'text', 0, { focus: true });
+    } finally {
+      ensuringMinimumBlockRef.current = false;
+    }
+  }, [selectedId, insertBlockAmongSiblings, blocksRef]);
+
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
     try {
@@ -590,7 +631,10 @@ export function useNoteBlockActions(options: {
       });
       if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
       const json = (await res.json()) as { block: NoteBlock };
-      setBlocks((prev) => [json.block, ...prev]);
+      setBlocks((prev) => {
+        if (prev.some((block) => block.id === json.block.id)) return prev;
+        return [json.block, ...prev];
+      });
       focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
       registerCreatedBlockUndo(json.block);
       triggerSave();
@@ -718,14 +762,7 @@ export function useNoteBlockActions(options: {
       ? new Map(promotionPlan.patches.map((patch) => [patch.id, patch]))
       : null;
 
-    if (focusPrevious) {
-      const siblings = filterSiblingBlocks(prevBlocks, block);
-      const sibIdx = siblings.findIndex((b) => b.id === block.id);
-      const nextFocus = siblings[sibIdx - 1]?.id ?? siblings[sibIdx + 1]?.id ?? null;
-      if (nextFocus) focusBlockEditor(nextFocus);
-    }
-
-    setBlocks((prev) => {
+    const computeNextBlocks = (prev: NoteBlock[]) => {
       const plan = planPromoteChildrenOnDelete(prev, block.id);
       if (!plan) return prev.filter((b) => b.id !== block.id);
       const patches = new Map(plan.patches.map((patch) => [patch.id, patch]));
@@ -741,7 +778,19 @@ export function useNoteBlockActions(options: {
             ...(patch.content ? { content: patch.content } : {}),
           };
         });
-    });
+    };
+
+    const nextBlocks = computeNextBlocks(prevBlocks);
+
+    if (focusPrevious) {
+      const siblings = filterSiblingBlocks(prevBlocks, block);
+      const sibIdx = siblings.findIndex((b) => b.id === block.id);
+      const nextFocus = siblings[sibIdx - 1]?.id ?? siblings[sibIdx + 1]?.id ?? null;
+      if (nextFocus) focusBlockEditor(nextFocus);
+    }
+
+    setBlocks(nextBlocks);
+    blocksRef.current = nextBlocks;
 
     try {
       if (patchMap && patchMap.size > 0) {
@@ -752,12 +801,20 @@ export function useNoteBlockActions(options: {
         skipDeleteUndo,
         deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
       });
+      const rootsAfterDelete = sortRootBlocks(
+        nextBlocks.filter(
+          (b) => b.document_id === block.document_id && (b.parent_block_id ?? null) === null,
+        ),
+      );
+      if (rootsAfterDelete.length === 0) {
+        await ensureMinimumRootTextBlock();
+      }
     } catch (e) {
       devLogger.error('[Note] deleteBlock', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
       setBlocks(prevBlocks);
     }
-  }, [finalizeBlockDelete, focusBlockEditor, persistDeletePromotionPatches, softDeleteBlockIds]);
+  }, [ensureMinimumRootTextBlock, finalizeBlockDelete, focusBlockEditor, persistDeletePromotionPatches, softDeleteBlockIds]);
 
   const handleDeleteBlocks = useCallback(async (
     blocksToDelete: NoteBlock[],
@@ -778,6 +835,7 @@ export function useNoteBlockActions(options: {
     if (!plan || plan.deletedIds.length === 0) return;
 
     setBlocks(plan.nextBlocks);
+    blocksRef.current = plan.nextBlocks;
 
     try {
       await persistDeletePromotionPatches(plan.patches);
@@ -788,12 +846,20 @@ export function useNoteBlockActions(options: {
           ?? targets[targets.length - 1]
           ?? null,
       });
+      const rootsAfterDelete = sortRootBlocks(
+        plan.nextBlocks.filter(
+          (b) => selectedId && b.document_id === selectedId && (b.parent_block_id ?? null) === null,
+        ),
+      );
+      if (rootsAfterDelete.length === 0) {
+        await ensureMinimumRootTextBlock();
+      }
     } catch (e) {
       devLogger.error('[Note] deleteBlocks', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
       setBlocks(prevBlocks);
     }
-  }, [finalizeBlockDelete, handleDeleteBlock, persistDeletePromotionPatches, softDeleteBlockIds]);
+  }, [ensureMinimumRootTextBlock, finalizeBlockDelete, handleDeleteBlock, persistDeletePromotionPatches, softDeleteBlockIds]);
 
   const showFormatToolbar = useCallback((
     applyMark: (mark: InlineMark) => void,
@@ -801,8 +867,9 @@ export function useNoteBlockActions(options: {
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
+    insertTable?: () => void,
   ) => {
-    formatToolbarApiRef.current.show(applyMark, applyTextStyle, applyTextColor, applyHighlight, position);
+    formatToolbarApiRef.current.show(applyMark, applyTextStyle, applyTextColor, applyHighlight, position, insertTable);
   }, []);
 
   const hideFormatToolbar = useCallback(() => {
@@ -875,6 +942,8 @@ export function useNoteBlockActions(options: {
     const plan = planMergeWithPreviousBlock(prevBlocks, block.id);
     if (!plan) return;
 
+    recordBlockUndo([plan.previousId, plan.deleteId]);
+
     setBlocks((prev) => {
       const livePlan = planMergeWithPreviousBlock(prev, block.id);
       if (!livePlan) return prev;
@@ -899,7 +968,7 @@ export function useNoteBlockActions(options: {
     } finally {
       window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
     }
-  }, [focusBlockEditor, triggerSave]);
+  }, [focusBlockEditor, recordBlockUndo, triggerSave]);
 
   const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock) => {
     try {
@@ -935,13 +1004,17 @@ export function useNoteBlockActions(options: {
   const applyNoteHistoryEntry = useCallback(async (entry: NoteHistoryEntry | null) => {
     if (!entry) return;
     if (entry.kind === 'restore-blocks') {
-      setBlocks(() => {
-        const next = applyRestoreBlockSnapshots(blocksRef.current, entry.snapshots);
-        blocksRef.current = next;
-        return next;
-      });
-      for (const snapshot of entry.snapshots) {
-        useNoteBlockStore.getState().patchContent(snapshot.id, snapshot.content ?? {});
+      const next = applyRestoreBlockSnapshots(blocksRef.current, entry.snapshots);
+      blocksRef.current = next;
+      useNoteBlockStore.getState().syncBlocksStructure(next);
+      setBlocks(next);
+      const active = useNoteBlockStore.getState().activeEditor;
+      if (active && entry.snapshots.some((snapshot) => snapshot.id === active.blockId)) {
+        const restore = active;
+        useNoteBlockStore.getState().setActiveEditor(null);
+        requestAnimationFrame(() => {
+          useNoteBlockStore.getState().setActiveEditor(restore);
+        });
       }
       try {
         await patchNoteBlocks(entry.snapshots.map((snapshot) => ({
@@ -973,6 +1046,7 @@ export function useNoteBlockActions(options: {
     await commitNoteDocumentBeforeLeave();
     const entry = noteUndo.popUndo();
     if (!entry) return;
+    contentUndoSessionRef.current = null;
     const inverse = buildNoteHistoryInverse(entry, mergeBlocksWithStoreContent(blocksRef.current));
     await applyNoteHistoryEntry(entry);
     if (inverse) noteUndo.pushRedo(inverse);
@@ -982,6 +1056,7 @@ export function useNoteBlockActions(options: {
     await commitNoteDocumentBeforeLeave();
     const entry = noteUndo.popRedo();
     if (!entry) return;
+    contentUndoSessionRef.current = null;
     const inverse = buildNoteHistoryInverse(entry, mergeBlocksWithStoreContent(blocksRef.current));
     await applyNoteHistoryEntry(entry);
     if (inverse) noteUndo.pushUndoNoClear(inverse);
@@ -1020,73 +1095,43 @@ export function useNoteBlockActions(options: {
       if (!isUndo && !isRedo) return;
 
       const target = e.target as HTMLElement | null;
-      const isEditing = !!target && (
-        target.tagName === 'INPUT' ||
-        target.tagName === 'TEXTAREA' ||
-        target.isContentEditable ||
-        !!target.closest(
-          '[contenteditable="true"], .ProseMirror, .note-rich-editor, [data-toggle-title], [data-note-list-text]',
-        )
-      );
+      const inProseMirror = !!target?.closest('.ProseMirror');
+      const inToggleTitle = !!target?.closest('[data-toggle-title]');
+      const inDocTitle = target === titleInputRef.current || !!target?.closest('[data-note-doc-title]');
 
-      if (isEditing) {
-        if (target === titleInputRef.current || target?.closest('[data-note-doc-title]')) {
-          return;
-        }
-        const inRichEditor = !!target?.closest(
-          '.ProseMirror, .note-rich-editor, [data-note-list-text]',
-        );
-        if (inRichEditor) {
-          const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
-          if (editor) {
-            e.preventDefault();
-            e.stopImmediatePropagation();
-            if (isRedo) {
-              if (editor.can().redo()) editor.chain().focus().redo().run();
-            } else if (editor.can().undo()) {
-              editor.chain().focus().undo().run();
-            }
-            return;
-          }
-        }
-        if (target?.closest('[data-toggle-title]')) {
-          return;
-        }
-        const blockId = focusedEditorBlockIdRef.current;
-        if (blockId) {
-          const editor = getNoteEditor(blockId);
-          if (editor && !(editor as { isDestroyed?: boolean }).isDestroyed) {
-            if (isRedo && editor.can().redo()) {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              editor.chain().focus().redo().run();
-              return;
-            }
-            if (isUndo && editor.can().undo()) {
-              e.preventDefault();
-              e.stopImmediatePropagation();
-              editor.chain().focus().undo().run();
-              return;
-            }
-          }
-        }
-        if (isUndo) {
-          if (!noteUndo.hasUndo()) return;
-        } else if (!noteUndo.hasRedo()) {
-          return;
-        }
-      } else if (isUndo) {
-        if (!noteUndo.hasUndo()) return;
-      } else if (!noteUndo.hasRedo()) {
+      if (inDocTitle) return;
+
+      if (isUndo && noteUndo.hasUndo()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearAllNoteTextSelections();
+        void runNoteUndo();
+        return;
+      }
+      if (isRedo && noteUndo.hasRedo()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearAllNoteTextSelections();
+        void runNoteRedo();
         return;
       }
 
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      if (isUndo) {
-        void runNoteUndo();
-      } else {
-        void runNoteRedo();
+      if (inToggleTitle) return;
+
+      if (inProseMirror) {
+        const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
+        if (!editor) return;
+        if (isRedo && editor.can().redo()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          clearAllNoteTextSelections();
+          editor.chain().focus().redo().run();
+        } else if (isUndo && editor.can().undo()) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          clearAllNoteTextSelections();
+          editor.chain().focus().undo().run();
+        }
       }
     };
     window.addEventListener('keydown', onKey, true);

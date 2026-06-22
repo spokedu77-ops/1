@@ -70,11 +70,20 @@ export function loadFlowPresets(): FlowPreset[] {
   return [];
 }
 
-export function saveFlowPresets(presets: FlowPreset[]): void {
+export type SavePresetResult = { success: true } | { success: false; error: string };
+
+export function saveFlowPresets(presets: FlowPreset[]): SavePresetResult {
+  if (typeof window === 'undefined') return { success: true };
   try {
-    if (typeof window !== 'undefined')
-      localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(presets));
-  } catch {
-    /* ignore */
+    localStorage.setItem(FLOW_PRESETS_KEY, JSON.stringify(presets));
+    return { success: true };
+  } catch (e) {
+    let error = String(e);
+    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+      error = '저장 공간이 부족합니다 (QuotaExceededError)';
+    } else if (e instanceof Error) {
+      error = e.message;
+    }
+    return { success: false, error };
   }
 }

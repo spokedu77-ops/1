@@ -2,10 +2,11 @@
 
 import { create } from 'zustand';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
-import { commitNoteEditorBlock } from '../_lib/noteBlockStateMerge';
+import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
+import type { NoteTableCellField } from '../_lib/noteTableBlock';
 import type { NoteBlock } from '../_lib/types';
 
-export type NoteActiveEditorField = 'text' | 'body';
+export type NoteActiveEditorField = 'text' | 'body' | NoteTableCellField;
 
 export type NoteActiveEditor = {
   blockId: string;
@@ -112,7 +113,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
     const prev = get().activeEditor;
     const sameTarget = prev?.blockId === active?.blockId && prev?.field === active?.field;
     if (!sameTarget && prev) {
-      commitNoteEditorBlock(prev.blockId, prev.field);
+      commitActiveNoteEditorToStore();
     }
     set((state) => {
       if (

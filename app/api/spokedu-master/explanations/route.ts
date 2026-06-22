@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   explanationInsertPayload,
   normalizeExplanationInput,
@@ -36,6 +37,10 @@ export async function GET() {
     .limit(10);
 
   if (error) {
+    await reportError(error, {
+      context: 'spokedu_master.operational.explanations',
+      tags: { method: 'GET', stage: 'select', status: 500 },
+    });
     return privateNoStoreJson({ error: error.message }, { status: 500 });
   }
 
@@ -67,6 +72,10 @@ export async function POST(request: Request) {
     .single();
 
   if (insertError || !inserted) {
+    await reportError(insertError ?? new Error('Explanation insert returned no row'), {
+      context: 'spokedu_master.operational.explanations',
+      tags: { method: 'POST', stage: 'insert', status: 500 },
+    });
     return privateNoStoreJson(
       { error: insertError?.message ?? 'Explanation insert failed' },
       { status: 500 },
@@ -82,6 +91,10 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error || !data) {
+    await reportError(error ?? new Error('Explanation reload returned no row'), {
+      context: 'spokedu_master.operational.explanations',
+      tags: { method: 'POST', stage: 'reload', status: 500 },
+    });
     return privateNoStoreJson(
       { error: error?.message ?? 'Explanation reload failed' },
       { status: 500 },

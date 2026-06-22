@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   isSpokeduMasterPaidPlanActive,
   type SpokeduMasterSubscriptionRow,
@@ -52,6 +53,14 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (subscriptionError) {
+    await reportError(subscriptionError, {
+      context: 'spokedu_master.payment.checkout',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'subscription_lookup',
+        status: 500,
+      },
+    });
     return NextResponse.json({ error: '이용권 상태를 확인하지 못했습니다.' }, { status: 500 });
   }
 
@@ -61,6 +70,32 @@ export async function POST(request: Request) {
 
   const orderId = `spm-${planKey}-${Date.now()}`;
   const customerName = user.email?.split('@')[0] ?? '선생님';
+
+  const { error: orderError } = await service
+    .from('spokedu_master_payment_orders')
+    .upsert(
+      {
+        order_id: orderId,
+        user_id: user.id,
+        plan: planKey,
+        amount: plan.amount,
+        status: 'pending',
+      },
+      { onConflict: 'order_id' },
+    );
+
+  if (orderError) {
+    await reportError(orderError, {
+      context: 'spokedu_master.payment.checkout',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'order_create',
+        plan: planKey,
+        status: 500,
+      },
+    });
+    return NextResponse.json({ error: '결제 주문 정보를 준비하지 못했습니다.' }, { status: 500 });
+  }
 
   return NextResponse.json({
     orderId,

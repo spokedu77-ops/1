@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   SPOKEDU_MASTER_PLAN_CONFIG,
   parseSpokeduMasterOrderId,
@@ -72,6 +73,15 @@ export async function POST(request: Request) {
 
   const tossSecretKey = process.env.TOSS_SECRET_KEY;
   if (!tossSecretKey) {
+    await reportError(new Error('TOSS_SECRET_KEY_NOT_CONFIGURED'), {
+      context: 'spokedu_master.payment.confirm',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'configuration',
+        plan,
+        status: 503,
+      },
+    });
     return NextResponse.json({ error: '결제 설정 오류' }, { status: 503 });
   }
 
@@ -90,7 +100,18 @@ export async function POST(request: Request) {
         amount: body.amount,
       }),
     });
-  } catch {
+  } catch (error) {
+    await reportError(error, {
+      context: 'spokedu_master.payment.confirm',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'toss_confirm_request',
+        plan,
+        status: 502,
+        paymentHash: hashForMonitoring(body.paymentKey),
+        orderHash: hashForMonitoring(body.orderId),
+      },
+    });
     const confirmedAfterNetworkFailure = await findExistingConfirmation();
     if (confirmedAfterNetworkFailure) {
       return idempotentResponse(confirmedAfterNetworkFailure.periodEnd);
@@ -99,6 +120,17 @@ export async function POST(request: Request) {
   }
 
   if (!tossRes.ok) {
+    await reportError(new Error('Toss confirm rejected'), {
+      context: 'spokedu_master.payment.confirm',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'toss_confirm_response',
+        plan,
+        status: tossRes.status,
+        paymentHash: hashForMonitoring(body.paymentKey),
+        orderHash: hashForMonitoring(body.orderId),
+      },
+    });
     const confirmedAfterTossFailure = await findExistingConfirmation();
     if (confirmedAfterTossFailure) {
       return idempotentResponse(confirmedAfterTossFailure.periodEnd);
@@ -133,11 +165,44 @@ export async function POST(request: Request) {
   );
 
   if (subscriptionError) {
+    await reportError(subscriptionError, {
+      context: 'spokedu_master.payment.confirm',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'subscription_upsert',
+        plan,
+        status: 500,
+        paymentHash: hashForMonitoring(payment.paymentKey),
+        orderHash: hashForMonitoring(payment.orderId),
+      },
+    });
     const confirmedAfterUpsertFailure = await findExistingConfirmation();
     if (confirmedAfterUpsertFailure) {
       return idempotentResponse(confirmedAfterUpsertFailure.periodEnd);
     }
     return NextResponse.json({ error: '이용권 활성화에 실패했습니다. 고객센터로 문의해 주세요.' }, { status: 500 });
+  }
+
+  const { error: orderUpdateError } = await service
+    .from('spokedu_master_payment_orders')
+    .update({
+      status: 'active',
+      payment_key: payment.paymentKey,
+    })
+    .eq('order_id', payment.orderId);
+
+  if (orderUpdateError) {
+    await reportError(orderUpdateError, {
+      context: 'spokedu_master.payment.confirm',
+      tags: {
+        provider: 'tosspayments',
+        stage: 'order_update',
+        plan,
+        status: 500,
+        paymentHash: hashForMonitoring(payment.paymentKey),
+        orderHash: hashForMonitoring(payment.orderId),
+      },
+    });
   }
 
   return NextResponse.json({

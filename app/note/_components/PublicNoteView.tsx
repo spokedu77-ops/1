@@ -8,6 +8,7 @@ import { buildChildrenByParentBlock, sortRootBlocks } from '@/app/lib/note/noteB
 import { hasToggleBodyContent, resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { resolveVideoEmbedContent, videoProviderLabel } from '@/app/lib/note/videoEmbed';
 import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '@/app/admin/note/_components/noteBulletInput';
+import { normalizeTableContent } from '@/app/admin/note/_lib/noteTableBlock';
 import { VideoEmbedFrame } from '@/app/admin/note/_components/VideoEmbedFrame';
 
 function listItemContent(content: Record<string, unknown> | null | undefined) {
@@ -82,6 +83,35 @@ function PublicBlock({
     return (
       <div className="py-3" style={indentStyle}>
         <div className="border-t border-slate-200" />
+      </div>
+    );
+  }
+
+  if (block.type === 'table') {
+    const table = normalizeTableContent(block.content);
+    return (
+      <div className={`overflow-x-auto py-2 ${rootBlockShell}`} style={indentStyle}>
+        <table className="w-full border-collapse text-left text-[14px]">
+          <tbody>
+            {table.rows.map((row, rowIndex) => {
+              const isHeader = table.hasHeaderRow !== false && rowIndex === 0;
+              return (
+                <tr key={`row-${rowIndex}`}>
+                  {row.map((cell, colIndex) => (
+                    <td
+                      key={`cell-${rowIndex}-${colIndex}`}
+                      className={`min-w-[120px] border border-slate-200 px-2 py-1.5 align-top ${
+                        isHeader ? 'bg-slate-50 font-medium text-slate-700' : 'text-slate-800'
+                      }`}
+                    >
+                      <RichText content={cell} className="leading-6" />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     );
   }

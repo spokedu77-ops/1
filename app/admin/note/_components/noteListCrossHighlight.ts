@@ -67,7 +67,9 @@ export function applyListCrossHighlight(editor: Editor, from: number, to: number
   const view = editor.view;
   if (!view || (editor as { isDestroyed?: boolean }).isDestroyed) return;
   view.dispatch(
-    editor.state.tr.setMeta(listCrossHighlightKey, { from, to }),
+    editor.state.tr
+      .setMeta(listCrossHighlightKey, { from, to })
+      .setMeta('addToHistory', false),
   );
 }
 
@@ -75,7 +77,9 @@ export function clearListCrossHighlight(editor: Editor) {
   const view = editor.view;
   if (!view || (editor as { isDestroyed?: boolean }).isDestroyed) return;
   view.dispatch(
-    editor.state.tr.setMeta(listCrossHighlightKey, 'clear'),
+    editor.state.tr
+      .setMeta(listCrossHighlightKey, 'clear')
+      .setMeta('addToHistory', false),
   );
 }
 

@@ -31,6 +31,7 @@ import {
 import { EditorDocDropZone } from '../sidebar/NoteDocChrome';
 import { NoteVirtualRootBlocks } from '../NoteVirtualRootBlocks';
 import { prefetchNoteDocumentBlocks } from '../../_lib/noteDocumentBlocksPrefetch';
+import { useNoteTextDragActive } from '../../_hooks/useNoteTextDragActive';
 import { useNotePage } from '../../_page/NotePageContext';
 import { NoteWorkspaceHome } from './NoteWorkspaceHome';
 import { NotePageFindBar } from './NotePageFindBar';
@@ -74,6 +75,7 @@ export function NoteEditorPanel() {
     handleRenameDocument,
     setSelectedBlockIds,
     loadingBlocks,
+    blocksSyncing,
     selectedBlockIds,
     handleBlockSelect,
     suppressGripMenuRef,
@@ -86,6 +88,7 @@ export function NoteEditorPanel() {
     renderSortableBlock,
     activeDragDocId,
   } = useNotePage();
+  const textDragActive = useNoteTextDragActive();
 
   return (
     <div className={`min-w-0 flex-1 flex-col overflow-hidden bg-white ${
@@ -439,7 +442,7 @@ export function NoteEditorPanel() {
             </div>
           )}
 
-          {loadingBlocks ? (
+          {loadingBlocks && rootBlocks.length === 0 ? (
             <div className="flex items-center gap-2 py-8 text-[13px] text-slate-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               블록 불러오는 중…
@@ -448,6 +451,12 @@ export function NoteEditorPanel() {
             <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
               <OnBlockSelectContext.Provider value={handleBlockSelect}>
                 <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
+                  {blocksSyncing ? (
+                    <div className={`${NOTE_PAGE_SHELL} flex items-center gap-1.5 py-1 text-[11px] text-slate-400`}>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      최신 내용 반영 중…
+                    </div>
+                  ) : null}
                   <div
                     data-note-marquee-zone
                     className={NOTE_MARQUEE_ZONE}
@@ -468,6 +477,7 @@ export function NoteEditorPanel() {
                               Boolean(activeBlockId)
                               || selectedBlockIds.size > 0
                               || blockMarqueeActive
+                              || textDragActive
                             }
                             renderBlock={renderSortableBlock}
                           />

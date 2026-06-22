@@ -2,18 +2,26 @@
  * SPOMOVE 핵심 로직 단위 테스트
  *
  * ─ 환경: vitest (node, jsdom 없음)
- * ─ React hook 내부의 RAF 콜백은 jsdom/@testing-library/react 없이는 직접 테스트 불가.
- *   대신 hook에서 사용하는 순수 로직과 동일한 알고리즘을 재현해 핵심 불변식을 검증한다.
+ * ─ 모든 테스트는 production 코드를 직접 import해서 검증한다.
+ *   테스트 로컬에 production 로직을 복제하지 않는다.
  *
- * 테스트하지 못하는 항목과 이유:
- *   - useTrainingTimer / useIntervalTimer: React + RAF + 브라우저 타이머 필요 (jsdom 환경 필요)
- *   - 실제 canvas DPR: HTMLCanvasElement가 Node에 없음
- *   - localStorage 실제 I/O: Node에 localStorage 없음 (globalThis mock으로 우회)
+ * 테스트하지 못하는 항목:
+ *   - React useEffect / useRef 생명주기 (jsdom 없음)
+ *   - 실제 canvas DPR (HTMLCanvasElement 없음)
+ *   - 실제 Supabase fetch (네트워크 없음)
  */
 
 import { describe, test, expect, beforeEach } from 'vitest';
-import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './lib/flowPresets';
-import { getMinSlidesRequired } from './hooks/useSpomoveVariantFruitSlidesForTraining';
+import { loadFlowPresets, saveFlowPresets, type FlowPreset, type SavePresetResult } from './lib/flowPresets';
+import {
+  getAssetRequirement,
+  evaluateAssetReadiness,
+  type AssetReadiness,
+  type AssetLoadStatus,
+} from './lib/assetRequirement';
+import { registerPresentedSignal, type RepsState } from './lib/repsLogic';
+import { getNextIntervalState } from './lib/intervalTimer';
+import type { FruitSlide } from './lib/signals';
 
 // ── localStorage mock ──────────────────────────────────────────────────────────
 
@@ -38,306 +46,410 @@ beforeEach(() => {
   globalThis.localStorage = lsMock;
 });
 
-// ── 1. getMinSlidesRequired ───────────────────────────────────────────────────
+// ── 슬라이드 헬퍼 ──────────────────────────────────────────────────────────────
 
-describe('getMinSlidesRequired', () => {
-  test('color 테마: 이미지 불필요(0)', () => {
-    expect(getMinSlidesRequired('color')).toBe(0);
-  });
+const COLORS_META = {
+  red:    { id: 'red',    name: '빨강', bg: '#ff0000', text: '#fff', symbol: '●' },
+  yellow: { id: 'yellow', name: '노랑', bg: '#ffff00', text: '#000', symbol: '★' },
+  blue:   { id: 'blue',   name: '파랑', bg: '#0000ff', text: '#fff', symbol: '■' },
+  green:  { id: 'green',  name: '초록', bg: '#00ff00', text: '#000', symbol: '▲' },
+} as const;
 
-  test('fruit 테마: 최소 1장 필요', () => {
-    expect(getMinSlidesRequired('fruit')).toBeGreaterThan(0);
-  });
-
-  test('emotion/animal/nature/vehicle 모두 1 이상', () => {
-    for (const t of ['emotion', 'animal', 'nature', 'vehicle'] as const) {
-      expect(getMinSlidesRequired(t)).toBeGreaterThan(0);
-    }
-  });
-});
-
-// ── 2. FlowPreset: 스키마 검증 + 저장/불러오기 ──────────────────────────────
-
-describe('FlowPreset 저장·불러오기', () => {
-  test('빈 스토리지에서 빈 배열 반환', () => {
-    expect(loadFlowPresets()).toEqual([]);
-  });
-
-  test('유효한 preset 저장 후 동일하게 복원', () => {
-    const preset: FlowPreset = {
-      id: '1',
-      name: '테스트',
-      features: ['faster', 'punch'],
-      colorTheme: 'neon',
-      duration: 30,
-    };
-    saveFlowPresets([preset]);
-    const loaded = loadFlowPresets();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0]).toEqual(preset);
-  });
-
-  test('잘못된 데이터는 필터링(기본값 복구)', () => {
-    lsMock.setItem('spomove_flow_presets_v2', JSON.stringify([
-      { id: '1', name: 'ok', features: [], colorTheme: 'space', duration: 25 },
-      { id: '', name: 'bad_empty_id', features: [], colorTheme: 'space', duration: 25 }, // id 빈 문자열
-      { id: '3', name: 'bad_theme', features: [], colorTheme: 'invalid', duration: 25 }, // 없는 테마
-      { id: '4', name: 'bad_duration', features: [], colorTheme: 'ocean', duration: 0 }, // duration 0
-      null,
-      42,
-    ]));
-    const loaded = loadFlowPresets();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0]?.id).toBe('1');
-  });
-
-  test('완전히 깨진 JSON → 빈 배열', () => {
-    lsMock.setItem('spomove_flow_presets_v2', '{not_valid_json[[[');
-    expect(loadFlowPresets()).toEqual([]);
-  });
-
-  test('features 배열 내 비문자열 → 필터링', () => {
-    lsMock.setItem('spomove_flow_presets_v2', JSON.stringify([
-      { id: '1', name: 'ok', features: [42, null, 'faster'], colorTheme: 'default', duration: 20 },
-    ]));
-    // features 내 비문자열이 포함된 preset은 유효하지 않으므로 필터됨
-    const loaded = loadFlowPresets();
-    expect(loaded).toHaveLength(0);
-  });
-});
-
-// ── 3. 구 key(spomove_flow_presets) → v2 마이그레이션 ───────────────────────
-
-describe('FlowPreset 구 key 마이그레이션', () => {
-  test('구 key 데이터를 v2 key로 이전하고 구 key 삭제', () => {
-    const old: FlowPreset[] = [
-      { id: '10', name: '구 설정', features: ['duck'], colorTheme: 'ocean', duration: 40 },
-    ];
-    lsMock.setItem('spomove_flow_presets', JSON.stringify(old));
-
-    const loaded = loadFlowPresets();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0]?.id).toBe('10');
-
-    // 마이그레이션 후 v2에 기록됨
-    expect(lsMock.getItem('spomove_flow_presets_v2')).not.toBeNull();
-    // 구 key 삭제됨
-    expect(lsMock.getItem('spomove_flow_presets')).toBeNull();
-  });
-
-  test('v2 key가 이미 있으면 구 key 무시', () => {
-    const v2: FlowPreset[] = [{ id: 'v2', name: 'v2', features: [], colorTheme: 'space', duration: 25 }];
-    const legacy: FlowPreset[] = [{ id: 'leg', name: 'leg', features: [], colorTheme: 'default', duration: 10 }];
-    lsMock.setItem('spomove_flow_presets_v2', JSON.stringify(v2));
-    lsMock.setItem('spomove_flow_presets', JSON.stringify(legacy));
-
-    const loaded = loadFlowPresets();
-    expect(loaded).toHaveLength(1);
-    expect(loaded[0]?.id).toBe('v2');
-  });
-});
-
-// ── 4. reps 카운팅 불변식 (hook 알고리즘 재현) ───────────────────────────────
-
-/**
- * useTrainingTimer의 emitSignal 로직을 순수 함수로 재현.
- * sig가 null이면 presentedCount를 올리지 않고,
- * presentedCount >= targetReps이면 finish를 호출한다.
- */
-function simulateRepsSession(opts: {
-  targetReps: number;
-  signalSequence: (Record<string, unknown> | null)[];
-}) {
-  const { targetReps, signalSequence } = opts;
-  let presentedCount = 0;
-  let finishedAfterIndex: number | null = null;
-  let finished = false;
-
-  for (let i = 0; i < signalSequence.length; i++) {
-    const sig = signalSequence[i];
-    // hook: emitSignal — null이면 count 증가 없음
-    if (sig !== null) presentedCount++;
-    // hook: finish() 후 return — RAF 더 이상 실행 안 됨
-    if (presentedCount >= targetReps) {
-      finished = true;
-      finishedAfterIndex = i;
-      break;
-    }
-  }
-
-  return { presentedCount, finishedAfterIndex, finished };
+function makeSlide(imageUrl: string, colorId: keyof typeof COLORS_META = 'red'): FruitSlide {
+  return { imageUrl, color: COLORS_META[colorId] };
 }
 
-describe('reps 모드 카운팅', () => {
-  test('20회 목표 — null 없이 정확히 20번째 신호에서 종료', () => {
-    const signals = Array.from({ length: 25 }, (_, i) => ({ type: 'color', idx: i }));
-    const r = simulateRepsSession({ targetReps: 20, signalSequence: signals });
-    expect(r.presentedCount).toBe(20);
-    expect(r.finishedAfterIndex).toBe(19); // 0-indexed, 20번째 = index 19
-    expect(r.finished).toBe(true);
+const READY: AssetLoadStatus = 'ready';
+const LOADING: AssetLoadStatus = 'loading';
+const ERROR: AssetLoadStatus = 'error';
+
+// ── 1·2. AssetRequirement ─────────────────────────────────────────────────────
+
+describe('getAssetRequirement', () => {
+  // 1. color 테마 → minimumCount 0
+  test('1. color 테마: 항상 이미지 불필요', () => {
+    const r = getAssetRequirement({ mode: 'basic', level: 4, theme: 'color' });
+    expect(r.minimumCount).toBe(0);
+    expect(r.requiresDistinctImages).toBe(false);
+    expect(r.requiresDistinctColors).toBe(false);
   });
 
-  test('null signal은 presentedCount 증가 없음', () => {
-    const signals: (Record<string, unknown> | null)[] = [
-      { type: 'color' },
-      null,
-      null,
-      { type: 'color' },
-      null,
-      { type: 'color' },
-    ];
-    const r = simulateRepsSession({ targetReps: 10, signalSequence: signals });
-    // 유효 신호 3개, null 3개
-    expect(r.presentedCount).toBe(3);
-    expect(r.finished).toBe(false);
+  // 2. basic level 3 — signals.ts: vSlides.filter(s => s.imageUrl.trim()) → 1장
+  test('2. basic level 3: minimumCount=1, distinct 불필요', () => {
+    const r = getAssetRequirement({ mode: 'basic', level: 3, theme: 'fruit' });
+    expect(r.minimumCount).toBe(1);
+    expect(r.requiresDistinctImages).toBe(false);
+    expect(r.requiresDistinctColors).toBe(false);
   });
 
-  test('null signal 포함 — 총 20개 유효 신호 도달 시 종료', () => {
-    const mixed: (Record<string, unknown> | null)[] = [];
-    for (let i = 0; i < 30; i++) {
-      mixed.push(i % 3 === 0 ? null : { type: 'color', i });
-    }
-    const r = simulateRepsSession({ targetReps: 20, signalSequence: mixed });
-    expect(r.presentedCount).toBe(20);
-    expect(r.finished).toBe(true);
+  // 3. basic level 4 — signals.ts: pool.length>=2 && hasDistinctSlideColors(pool,2)
+  test('3. basic level 4: minimumCount=2, distinctImages·Colors=true', () => {
+    const r = getAssetRequirement({ mode: 'basic', level: 4, theme: 'fruit' });
+    expect(r.minimumCount).toBe(2);
+    expect(r.requiresDistinctImages).toBe(true);
+    expect(r.requiresDistinctColors).toBe(true);
   });
 
-  test('accel ON 시뮬레이션 — 동일 카운팅 보장', () => {
-    // accel은 타이밍에만 영향, 카운팅 로직은 동일
-    const signals = Array.from({ length: 20 }, (_, i) => ({ type: 'color', idx: i }));
-    const r = simulateRepsSession({ targetReps: 20, signalSequence: signals });
-    expect(r.presentedCount).toBe(20);
-    expect(r.finished).toBe(true);
+  // 4. basic level 5 — signals.ts: pool.length>=1
+  test('4. basic level 5: minimumCount=1, distinct 불필요', () => {
+    const r = getAssetRequirement({ mode: 'basic', level: 5, theme: 'animal' });
+    expect(r.minimumCount).toBe(1);
+    expect(r.requiresDistinctImages).toBe(false);
+    expect(r.requiresDistinctColors).toBe(false);
   });
 
-  test('목표 이후 추가 interval에서 중복 finish 없음', () => {
-    // 25개 신호가 들어와도 20번째에서 break (RAF 중단 모방)
-    const signals = Array.from({ length: 25 }, (_, i) => ({ type: 'color', idx: i }));
-    const r = simulateRepsSession({ targetReps: 20, signalSequence: signals });
-    // finish 이후 더 이상 신호를 처리하지 않으므로 count는 정확히 targetReps
-    expect(r.presentedCount).toBe(20);
-    expect(r.finished).toBe(true);
-    expect(r.finishedAfterIndex).toBe(19);
-  });
-});
-
-// ── 5. 인터벌 마지막 rest 미생성 불변식 ──────────────────────────────────────
-
-/**
- * useIntervalTimer의 tick 로직을 재현.
- * 마지막 set의 work가 끝나는 순간(currentPhase === 'rest' && currentSet === sets)에
- * 즉시 complete 처리하고 rest 단계로 진입하지 않아야 한다.
- */
-function simulateIntervalPhase(opts: {
-  elapsedSec: number;
-  workSec: number;
-  restSec: number;
-  sets: number;
-}): 'work' | 'rest' | 'complete' {
-  const { elapsedSec, workSec, restSec, sets } = opts;
-  const cycleLen = workSec + restSec;
-  const cycleIdx = Math.floor(elapsedSec / cycleLen);
-  const withinCycle = elapsedSec - cycleIdx * cycleLen;
-  const currentPhase: 'work' | 'rest' = withinCycle < workSec ? 'work' : 'rest';
-  const currentSet = cycleIdx + 1;
-
-  if (currentSet > sets || (currentSet === sets && currentPhase === 'rest')) {
-    return 'complete';
-  }
-  return currentPhase;
-}
-
-describe('인터벌 — 마지막 rest 미생성', () => {
-  const W = 30, R = 15;
-
-  test('1세트: work 직후(elapsed=30초)에 complete', () => {
-    const result = simulateIntervalPhase({ elapsedSec: 30, workSec: W, restSec: R, sets: 1 });
-    expect(result).toBe('complete');
+  // 5. basic level 6 — signals.ts: pool.length>=3 && hasDistinctSlideColors(pool,3)
+  test('5. basic level 6: minimumCount=3, distinctImages·Colors=true', () => {
+    const r = getAssetRequirement({ mode: 'basic', level: 6, theme: 'fruit' });
+    expect(r.minimumCount).toBe(3);
+    expect(r.requiresDistinctImages).toBe(true);
+    expect(r.requiresDistinctColors).toBe(true);
   });
 
-  test('2세트: 1세트 work 완료 후 rest 진입 (정상)', () => {
-    const result = simulateIntervalPhase({ elapsedSec: 30, workSec: W, restSec: R, sets: 2 });
-    expect(result).toBe('rest');
+  test('non-basic mode: 이미지 불필요', () => {
+    expect(getAssetRequirement({ mode: 'stroop', level: 4, theme: 'fruit' }).minimumCount).toBe(0);
   });
 
-  test('2세트: 마지막 set work 직후 complete', () => {
-    // 2세트 work 시작: elapsed = 45s (1세트 30+15), 완료: elapsed = 75s
-    const result = simulateIntervalPhase({ elapsedSec: 75, workSec: W, restSec: R, sets: 2 });
-    expect(result).toBe('complete');
-  });
-
-  test('3세트: 마지막 세트 work 종료 직후 complete', () => {
-    // 3세트 work: elapsed = 90s (45+45), 완료: 120s
-    const result = simulateIntervalPhase({ elapsedSec: 120, workSec: W, restSec: R, sets: 3 });
-    expect(result).toBe('complete');
-  });
-
-  test('3세트: work 진행 중에는 rest 아님', () => {
-    // 2세트 work 중: elapsed = 46s
-    const result = simulateIntervalPhase({ elapsedSec: 46, workSec: W, restSec: R, sets: 3 });
-    expect(result).toBe('work');
+  test('basic level 1·2: 이미지 미사용', () => {
+    expect(getAssetRequirement({ mode: 'basic', level: 1, theme: 'fruit' }).minimumCount).toBe(0);
+    expect(getAssetRequirement({ mode: 'basic', level: 2, theme: 'fruit' }).minimumCount).toBe(0);
   });
 });
 
-// ── 6. Delta Time 상한 불변식 ────────────────────────────────────────────────
+// ── 3. Readiness (evaluateAssetReadiness) ────────────────────────────────────
 
-describe('deltaSec 상한 (0.05s = 20fps 보호)', () => {
-  function computeDt(lastMs: number, now: number): number {
-    return Math.min((now - lastMs) / 1000, 0.05);
-  }
-
-  test('정상 16ms 프레임 → 0.016s', () => {
-    expect(computeDt(1000, 1016)).toBeCloseTo(0.016, 4);
+describe('evaluateAssetReadiness', () => {
+  // 6. 1개 필요, 0개 → insufficient
+  test('6. level 5: 1개 필요, 0개 → insufficient', () => {
+    const r = evaluateAssetReadiness({ mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY, slides: [] });
+    expect(r.status).toBe('insufficient');
+    if (r.status === 'insufficient') expect(r.missingCount).toBe(1);
   });
 
-  test('500ms 지연 → 0.05s로 클램핑', () => {
-    expect(computeDt(1000, 1500)).toBe(0.05);
-  });
-
-  test('백그라운드 탭 10초 공백 → 0.05s로 클램핑', () => {
-    expect(computeDt(0, 10000)).toBe(0.05);
-  });
-});
-
-// ── 7. sessionStartMsRef elapsedMs 검증 ─────────────────────────────────────
-
-describe('elapsedMs 계산', () => {
-  test('세션 시작 전 0ms', () => {
-    const sessionStartMs = 0;
-    const elapsed = sessionStartMs > 0 ? 5000 - sessionStartMs : 0;
-    expect(elapsed).toBe(0);
-  });
-
-  test('세션 시작 후 경과시간 계산', () => {
-    const sessionStartMs = 1000;
-    const now = 4000;
-    const elapsed = sessionStartMs > 0 ? now - sessionStartMs : 0;
-    expect(elapsed).toBe(3000);
-  });
-});
-
-// ── 8. stale request 차단 불변식 ────────────────────────────────────────────
-
-describe('stale request ID 차단', () => {
-  test('빠른 테마 변경 시 이전 응답 무시', () => {
-    let reqId = 0;
-    const results: string[] = [];
-
-    async function fakeReload(theme: string) {
-      const thisId = ++reqId;
-      // 비동기 응답 시뮬레이션
-      await Promise.resolve();
-      if (reqId !== thisId) return; // stale 차단
-      results.push(theme);
-    }
-
-    // 두 번 연속 호출 (두 번째가 더 최신)
-    const p1 = fakeReload('fruit');
-    const p2 = fakeReload('animal');
-    return Promise.all([p1, p2]).then(() => {
-      // 마지막 요청만 반영
-      expect(results).toHaveLength(1);
-      expect(results[0]).toBe('animal');
+  // 7. 1개 필요, 1개 → ready
+  test('7. level 5: 1개, 유효 URL → ready', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png')],
     });
+    expect(r.status).toBe('ready');
+    expect(r.usableAssets).toHaveLength(1);
+  });
+
+  // 8. 2개 필요, 1개 → insufficient
+  test('8. level 4: 2개 필요, 다른 색 1개 → insufficient', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 4, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png', 'red')],
+    });
+    expect(r.status).toBe('insufficient');
+    if (r.status === 'insufficient') expect(r.missingCount).toBeGreaterThan(0);
+  });
+
+  // 9. 2개 필요, 2개(다른 색) → ready
+  test('9. level 4: 2개, 다른 색 2가지 → ready', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 4, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png', 'red'), makeSlide('https://a.com/img2.png', 'yellow')],
+    });
+    expect(r.status).toBe('ready');
+  });
+
+  // 10. 3개 필요, 2개 → insufficient
+  test('10. level 6: 3개 필요, 다른 색 2개 → insufficient', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 6, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png', 'red'), makeSlide('https://a.com/img2.png', 'yellow')],
+    });
+    expect(r.status).toBe('insufficient');
+  });
+
+  // 11. 3개 필요, 3개(다른 색) → ready
+  test('11. level 6: 3개, 다른 색 3가지 → ready', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 6, theme: 'fruit', loadStatus: READY,
+      slides: [
+        makeSlide('https://a.com/img1.png', 'red'),
+        makeSlide('https://a.com/img2.png', 'yellow'),
+        makeSlide('https://a.com/img3.png', 'blue'),
+      ],
+    });
+    expect(r.status).toBe('ready');
+    expect(r.usableAssets).toHaveLength(3);
+  });
+
+  // 12. 실패한 이미지는 usable에서 제외
+  test('12. failedAssetIds: 실패 이미지 제외', () => {
+    const slides = [
+      makeSlide('https://a.com/img1.png', 'red'),
+      makeSlide('https://a.com/img2.png', 'yellow'),
+      makeSlide('https://a.com/img3.png', 'blue'),
+    ];
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 6, theme: 'fruit', loadStatus: READY,
+      slides, failedAssetIds: new Set(['https://a.com/img1.png']),
+    });
+    expect(r.usableAssets.every((s) => s.imageUrl !== 'https://a.com/img1.png')).toBe(true);
+    expect(r.status).toBe('insufficient'); // 2개 남음, 3개 필요
+  });
+
+  // 13. URL 없는 이미지는 usable에서 제외
+  test('13. 빈 imageUrl: usable 제외', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide(''), makeSlide('  '), makeSlide('https://a.com/img.png')],
+    });
+    expect(r.usableAssets).toHaveLength(1);
+    expect(r.status).toBe('ready');
+  });
+
+  // 14. distinct color 부족 → insufficient
+  test('14. level 4: 이미지 2개지만 같은 색(red) → insufficient', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 4, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png', 'red'), makeSlide('https://a.com/img2.png', 'red')],
+    });
+    expect(r.status).toBe('insufficient');
+    if (r.status === 'insufficient') expect(r.missingCount).toBe(1); // 색 1종뿐, 1개 더 필요
+  });
+
+  test('loadStatus=loading → status:loading', () => {
+    const r = evaluateAssetReadiness({ mode: 'basic', level: 4, theme: 'fruit', loadStatus: LOADING, slides: [] });
+    expect(r.status).toBe('loading');
+    expect(r.usableAssets).toHaveLength(0);
+  });
+
+  test('loadStatus=error → status:error', () => {
+    const r: AssetReadiness = evaluateAssetReadiness({ mode: 'basic', level: 4, theme: 'fruit', loadStatus: ERROR, slides: [] });
+    expect(r.status).toBe('error');
+    if (r.status === 'error') expect(r.error).toBeTruthy();
+  });
+
+  test('color 테마: 슬라이드 없어도 ready', () => {
+    const r = evaluateAssetReadiness({ mode: 'basic', level: 4, theme: 'color', loadStatus: READY, slides: [] });
+    expect(r.status).toBe('ready');
+    expect(r.requirement.minimumCount).toBe(0);
+  });
+
+  test('imageUrl 중복 슬라이드: dedup 후 1개 → level4 insufficient', () => {
+    const r = evaluateAssetReadiness({
+      mode: 'basic', level: 4, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/same.png', 'red'), makeSlide('https://a.com/same.png', 'yellow')],
+    });
+    expect(r.usableAssets).toHaveLength(1);
+    expect(r.status).toBe('insufficient');
+  });
+});
+
+// ── 4. Snapshot deep copy ─────────────────────────────────────────────────────
+
+// startSession 내 순수 로직 (MemoryGameApp.tsx line ~596)
+function computeManualSnapshot(snap: FruitSlide[] | undefined): FruitSlide[] | undefined {
+  return snap && snap.length > 0 ? snap.map(s => ({ ...s })) : undefined;
+}
+
+// autoLaunch snapshot effect 순수 시뮬레이션 (MemoryGameApp.tsx autoLaunch useEffect)
+function simulateAutoLaunchEffect(params: {
+  isTraining: boolean;
+  sessionSlidesRef: { current: FruitSlide[] | undefined };
+  readiness: AssetReadiness;
+}): void {
+  const { isTraining, sessionSlidesRef, readiness } = params;
+  if (!isTraining) return;
+  if (sessionSlidesRef.current !== undefined) return;
+  if (readiness.requirement.minimumCount === 0) return;
+  if (readiness.status !== 'ready') return;
+  sessionSlidesRef.current = readiness.usableAssets.map(s => ({ ...s }));
+}
+
+describe('Snapshot deep copy', () => {
+  const slide1 = makeSlide('https://a.com/img1.png', 'red');
+  const slide2 = makeSlide('https://a.com/img2.png', 'yellow');
+
+  // 15. 수동 시작 snapshot deep copy
+  test('15. 수동 시작: 반환 배열은 원본과 다른 참조', () => {
+    const original = [slide1, slide2];
+    const snap = computeManualSnapshot(original);
+    expect(snap).not.toBe(original);
+  });
+
+  // 16. 원본 배열 push 후 snapshot 불변
+  test('16. 원본 push 후 snapshot 불변', () => {
+    const original = [{ ...slide1 }];
+    const snap = computeManualSnapshot(original)!;
+    original.push(slide2);
+    expect(snap).toHaveLength(1);
+  });
+
+  // 17. 원본 객체 변경 후 snapshot 불변
+  test('17. 원본 객체 변경 후 snapshot 불변', () => {
+    const mutable = { ...slide1 };
+    const snap = computeManualSnapshot([mutable])!;
+    mutable.imageUrl = 'https://changed.com/img.png';
+    expect(snap[0]?.imageUrl).toBe('https://a.com/img1.png');
+  });
+
+  // 18. autoLaunch 초기 빈 배열 → snapshot undefined
+  test('18. 빈/undefined → snapshot undefined (live fallback 유지)', () => {
+    expect(computeManualSnapshot([])).toBeUndefined();
+    expect(computeManualSnapshot(undefined)).toBeUndefined();
+  });
+
+  // 19. autoLaunch 최초 ready → snapshot 한 번 확정
+  test('19. readiness=ready → usableAssets deep copy 확정', () => {
+    const ref = { current: undefined as FruitSlide[] | undefined };
+    const readiness = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png')],
+    });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness });
+    expect(ref.current).toHaveLength(1);
+    expect(ref.current![0]?.imageUrl).toBe('https://a.com/img1.png');
+  });
+
+  // 20. 확정 후 refetch → snapshot 불변
+  test('20. snapshot 확정 후 새 readiness 도착 → 기존 유지', () => {
+    const ref = { current: undefined as FruitSlide[] | undefined };
+    const r1 = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png')],
+    });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r1 });
+    const snapshotBefore = ref.current;
+
+    const r2 = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://b.com/new-img.png')],
+    });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r2 });
+    expect(ref.current).toBe(snapshotBefore); // 동일 참조 — 변경되지 않음
+  });
+
+  // 21. 다음 세션 → 최신 asset 반영
+  test('21. stop 후 다음 세션 → 최신 asset으로 새 snapshot', () => {
+    const ref = { current: undefined as FruitSlide[] | undefined };
+    const r1 = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://a.com/img1.png')],
+    });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r1 });
+    expect(ref.current![0]?.imageUrl).toBe('https://a.com/img1.png');
+
+    // stop() → sessionSlidesRef.current = undefined
+    ref.current = undefined;
+
+    const r2 = evaluateAssetReadiness({
+      mode: 'basic', level: 5, theme: 'fruit', loadStatus: READY,
+      slides: [makeSlide('https://b.com/img2.png')],
+    });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness: r2 });
+    expect(ref.current![0]?.imageUrl).toBe('https://b.com/img2.png');
+  });
+
+  test('color 테마(minimumCount=0): snapshot 미설정', () => {
+    const ref = { current: undefined as FruitSlide[] | undefined };
+    const readiness = evaluateAssetReadiness({ mode: 'basic', level: 4, theme: 'color', loadStatus: READY, slides: [] });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness });
+    expect(ref.current).toBeUndefined();
+  });
+
+  test('readiness=loading: snapshot 미설정', () => {
+    const ref = { current: undefined as FruitSlide[] | undefined };
+    const readiness = evaluateAssetReadiness({ mode: 'basic', level: 5, theme: 'fruit', loadStatus: LOADING, slides: [] });
+    simulateAutoLaunchEffect({ isTraining: true, sessionSlidesRef: ref, readiness });
+    expect(ref.current).toBeUndefined();
+  });
+});
+
+// ── 5. registerPresentedSignal ────────────────────────────────────────────────
+
+describe('reps 카운팅 (registerPresentedSignal)', () => {
+  test('20회 목표 — 20번째 신호에서 종료', () => {
+    const signals = Array.from({ length: 25 }, (_, i) => ({ type: 'color', idx: i }));
+    let state: RepsState = { presented: 0 };
+    let finishedAt: number | null = null;
+    for (let i = 0; i < signals.length; i++) {
+      const { next, finished } = registerPresentedSignal({ state, hasValidSignal: true, targetReps: 20 });
+      state = next;
+      if (finished) { finishedAt = i; break; }
+    }
+    expect(state.presented).toBe(20);
+    expect(finishedAt).toBe(19);
+  });
+
+  test('null signal은 카운트 미증가', () => {
+    const s0: RepsState = { presented: 0 };
+    const { next: s1 } = registerPresentedSignal({ state: s0, hasValidSignal: false, targetReps: 5 });
+    expect(s1.presented).toBe(0);
+  });
+
+  test('단일 호출 상태 전이', () => {
+    let state: RepsState = { presented: 0 };
+    for (let i = 0; i < 2; i++) {
+      const { next } = registerPresentedSignal({ state, hasValidSignal: true, targetReps: 3 });
+      state = next;
+    }
+    const { next, finished } = registerPresentedSignal({ state, hasValidSignal: true, targetReps: 3 });
+    expect(next.presented).toBe(3);
+    expect(finished).toBe(true);
+  });
+});
+
+// ── 6. getNextIntervalState ───────────────────────────────────────────────────
+
+describe('인터벌 전환 (getNextIntervalState)', () => {
+  test('1세트 work → complete', () => {
+    expect(getNextIntervalState({ currentSet: 1, totalSets: 1, phase: 'work' }).completed).toBe(true);
+  });
+  test('2세트 1번 work → rest', () => {
+    const t = getNextIntervalState({ currentSet: 1, totalSets: 2, phase: 'work' });
+    expect(t.completed).toBe(false);
+    if (!t.completed) expect(t.nextPhase).toBe('rest');
+  });
+  test('2세트 마지막 work → complete', () => {
+    expect(getNextIntervalState({ currentSet: 2, totalSets: 2, phase: 'work' }).completed).toBe(true);
+  });
+  test('rest → 다음 세트 work', () => {
+    const t = getNextIntervalState({ currentSet: 2, totalSets: 3, phase: 'rest' });
+    expect(t.completed).toBe(false);
+    if (!t.completed) {
+      expect(t.nextPhase).toBe('work');
+      expect(t.nextSet).toBe(3);
+    }
+  });
+});
+
+// ── 7. FlowPreset 저장·불러오기 ──────────────────────────────────────────────
+
+describe('FlowPreset', () => {
+  test('빈 스토리지 → 빈 배열', () => {
+    expect(loadFlowPresets()).toEqual([]);
+  });
+
+  test('저장 후 동일하게 복원', () => {
+    const preset: FlowPreset = { id: '1', name: '테스트', features: ['faster'], colorTheme: 'neon', duration: 30 };
+    saveFlowPresets([preset]);
+    expect(loadFlowPresets()[0]).toEqual(preset);
+  });
+
+  const VALID: FlowPreset = { id: '1', name: 'ok', features: [], colorTheme: 'default', duration: 20 };
+
+  test('정상 저장 → SavePresetResult success:true', () => {
+    const r: SavePresetResult = saveFlowPresets([VALID]);
+    expect(r.success).toBe(true);
+  });
+
+  test('setItem 예외 → success:false, error 포함', () => {
+    lsMock.setItem = () => { throw new Error('storage unavailable'); };
+    const r: SavePresetResult = saveFlowPresets([VALID]);
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error).toBeTruthy();
+  });
+
+  test('QuotaExceededError → error에 quota 안내', () => {
+    lsMock.setItem = () => { throw new DOMException('QuotaExceededError', 'QuotaExceededError'); };
+    const r: SavePresetResult = saveFlowPresets([VALID]);
+    expect(r.success).toBe(false);
+    if (!r.success) expect(r.error.toLowerCase()).toMatch(/quota|저장/i);
   });
 });

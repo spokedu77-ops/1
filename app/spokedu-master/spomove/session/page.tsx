@@ -160,7 +160,8 @@ function SpomoveSessionContent() {
   const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
   const selectedBgmPath = useMemo(() => {
     if (requestedBgmPath) return bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
-    if (officialPreset && bgmList.length > 0) return bgmList[0]!;
+    if (officialPreset && bgmList.length > 0)
+      return bgmList[Math.floor(Math.random() * bgmList.length)]!;
     return '';
   }, [bgmList, officialPreset, requestedBgmPath]);
 

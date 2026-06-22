@@ -336,8 +336,13 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
   const resizeCv = useCallback(() => {
     const cv = canvasRef.current;
     if (!cv) return;
-    cv.width = cv.offsetWidth || window.innerWidth;
-    cv.height = cv.offsetHeight || window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = cv.offsetWidth || window.innerWidth;
+    const h = cv.offsetHeight || window.innerHeight;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext('2d');
+    if (ctx && dpr !== 1) ctx.scale(dpr, dpr);
   }, []);
 
   /* ─── draw helpers ─── */

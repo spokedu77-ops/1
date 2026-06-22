@@ -107,6 +107,10 @@ export function collapseAllNoteEditorSelections() {
     const { state, view } = editor;
     const pos = Math.min(state.selection.from, state.doc.content.size - 1);
     const safe = Math.max(1, pos);
-    view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, safe)));
+    view.dispatch(
+      state.tr
+        .setSelection(TextSelection.create(state.doc, safe))
+        .setMeta('addToHistory', false),
+    );
   });
 }

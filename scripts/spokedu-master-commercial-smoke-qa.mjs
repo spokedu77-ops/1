@@ -4,8 +4,9 @@ const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
-const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPOKEDU_MASTER_QA_EMAIL || '';
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
+const REQUIRED_ENV = ['SPOKEDU_MASTER_QA_ID', 'SPOKEDU_MASTER_QA_PASSWORD'];
+const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || '';
+const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || '';
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const STUDENT_ALICE_ID = '22222222-2222-4222-8222-222222222222';
@@ -234,8 +235,27 @@ async function loadPlaywright() {
     const mod = await import('playwright');
     return mod.chromium;
   } catch {
-    console.warn('SKIP: playwright is not installed.');
-    process.exit(0);
+    throw new Error('Chromium smoke QA cannot start because playwright is not installed.');
+  }
+}
+
+function assertRequiredEnv() {
+  const missing = REQUIRED_ENV.filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    console.error(`Missing required environment variable(s): ${missing.join(', ')}`);
+    process.exit(1);
+  }
+}
+
+async function assertDevServerReachable() {
+  try {
+    const response = await fetch(`${BASE}/login`, { redirect: 'manual' });
+    if (response.status >= 500) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Dev server is not reachable at ${BASE}: ${reason}`);
   }
 }
 
@@ -690,10 +710,8 @@ async function runMobileSmoke(browser) {
 }
 
 async function main() {
-  if (!QA_ID || !QA_PASSWORD) {
-    console.log('SKIP: SPOKEDU_MASTER_QA_ID and SPOKEDU_MASTER_QA_PASSWORD/SPM_QA_PASSWORD are required.');
-    process.exit(0);
-  }
+  assertRequiredEnv();
+  await assertDevServerReachable();
 
   const chromium = await loadPlaywright();
   const browser = await chromium.launch({ headless: true });

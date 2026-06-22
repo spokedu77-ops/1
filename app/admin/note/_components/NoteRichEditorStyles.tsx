@@ -26,6 +26,7 @@ export function NoteRichEditorStyles() {
       .note-list-cross-selected {
         background: rgb(147 197 253 / 0.65);
         border-radius: 0.125rem;
+        color: inherit;
       }
       input[data-toggle-title].note-toggle-title-cross-active {
         background-color: rgb(191 219 254 / 0.65);
@@ -94,6 +95,33 @@ export function NoteRichEditorStyles() {
         border-radius: 0.75rem;
         object-fit: contain;
         cursor: zoom-in;
+      }
+      .note-rich-editor table,
+      .note-rich-editor .note-editor-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.5rem 0;
+        table-layout: fixed;
+      }
+      .note-rich-editor th,
+      .note-rich-editor td {
+        border: 1px solid rgb(226 232 240);
+        padding: 0.375rem 0.5rem;
+        vertical-align: top;
+        min-width: 4rem;
+      }
+      .note-rich-editor th {
+        background: rgb(248 250 252);
+        font-weight: 600;
+        text-align: left;
+      }
+      .note-rich-editor .selectedCell {
+        background: rgb(239 246 255);
+      }
+      .note-rich-editor .column-resize-handle {
+        background-color: rgb(59 130 246);
+        width: 4px;
+        pointer-events: none;
       }
       [data-note-block-row] > .note-block-gutter {
         opacity: 0;

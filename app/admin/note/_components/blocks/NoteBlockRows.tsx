@@ -28,6 +28,7 @@ import {
   videoProviderLabel,
 } from '@/app/lib/note/videoEmbed';
 import { NoteEditableField } from '../NoteEditableField';
+import { NoteTableBlock } from './NoteTableBlock';
 import type { NoteEditorEnterContext } from '../NoteEditor';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
@@ -122,6 +123,7 @@ function BlockContent({
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
+    insertTable?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   onMultilinePaste?: (lines: string[]) => void;
@@ -349,6 +351,10 @@ function BlockContent({
       }
       return true;
     }
+    if (block.parent_block_id) {
+      onIndentChange?.('out');
+      return true;
+    }
     onRequestCaretOffset?.(0);
     onChangeType('text');
     return true;
@@ -396,6 +402,26 @@ function BlockContent({
       </div>
     );
   };
+
+  if (block.type === 'table') {
+    return (
+      <NoteTableBlock
+        block={block}
+        contentMarginLeft={contentMarginLeft}
+        rootBlockShell={rootBlockShell}
+        autoFocusSignal={autoFocusSignal}
+        mergeFocusCaretOffset={mergeFocusCaretOffset}
+        onUpdate={onUpdate}
+        onContentSync={onContentSync}
+        onTrackActiveBlock={onTrackActiveBlock}
+        onFocusBlock={onFocusBlock}
+        onShowFormatToolbar={onShowFormatToolbar}
+        onHideFormatToolbar={onHideFormatToolbar}
+        uploadImage={uploadImage}
+        onOpenDocument={onOpenDocument}
+      />
+    );
+  }
 
   if (block.type === 'divider') {
     return (
@@ -1213,6 +1239,7 @@ function SortableBlockRow({
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
+    insertTable?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   onMultilinePaste?: (lines: string[]) => void;
@@ -1472,6 +1499,7 @@ function ToggleInlineRow({
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
+    insertTable?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   onMultilinePaste?: (lines: string[]) => void;
@@ -1725,6 +1753,7 @@ export function DragPreview({ block }: { block: NoteBlock }) {
     block.type === 'divider' ? '── 구분선 ──'
     : block.type === 'image' ? '🖼 이미지'
     : block.type === 'video' ? '▶ 영상'
+    : block.type === 'table' ? '📊 표'
     : block.type === 'toggle'
       ? ((block.content?.title as string) || '(토글)')
     : (block.content?.text as string) || '';

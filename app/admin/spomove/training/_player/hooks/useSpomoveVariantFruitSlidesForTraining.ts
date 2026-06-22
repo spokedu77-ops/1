@@ -15,10 +15,14 @@ import {
   SPOMOVE_THEMED_SLOT_COUNT,
   type SpomoveColorThemeId,
 } from '../lib/spomoveVariantThemeConfig';
+import { type AssetLoadStatus } from '../lib/assetRequirement';
 
-export type AssetLoadStatus = 'idle' | 'loading' | 'ready' | 'insufficient' | 'error';
+export type { AssetLoadStatus };
 
-/** 테마별 훈련 시작에 필요한 최소 슬라이드 수. color 테마는 이미지 불필요. */
+/**
+ * @deprecated evaluateAssetReadiness({ mode, level, theme, ... }) 를 사용할 것.
+ * 테마만으로 최소 슬라이드 수를 판단하는 이 함수는 level 별 distinct image/color 조건을 반영하지 않는다.
+ */
 export function getMinSlidesRequired(theme: SpomoveColorThemeId): number {
   return theme === 'color' ? 0 : 1;
 }
@@ -69,7 +73,7 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
         );
         const built = fruitSlidesForTrainingFromPaths(raw?.paths, cacheBust);
         setSlides(built);
-        setStatus(built.length >= getMinSlidesRequired('fruit') ? 'ready' : 'insufficient');
+        setStatus('ready');
         return;
       }
 
@@ -93,7 +97,7 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
       });
       const built = buildVariantSlidesFromThemedUrls(urls);
       setSlides(built.length > 0 ? built : []);
-      setStatus(built.length >= getMinSlidesRequired(variantColorTheme) ? 'ready' : 'insufficient');
+      setStatus('ready');
     } catch {
       if (reqIdRef.current !== thisId) return;
       setSlides([]);

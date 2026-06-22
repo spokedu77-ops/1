@@ -23,9 +23,10 @@ import {
   applyBlockPreviewCrossHighlight,
   blockPreviewPlainText,
   clearBlockPreviewCrossHighlight,
+  getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
 } from './noteBlockPreviewCrossSelect';
-import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
+import { noteBlockMarqueeGuard, setNoteTextDragGuardActive } from '../_lib/noteBlockMarqueeGuard';
 
 export type CrossSelectRange = ListCrossRange;
 
@@ -46,6 +47,14 @@ let togglePointerDown = false;
 let toggleDragging = false;
 let toggleStartX = 0;
 let toggleStartY = 0;
+
+let previewAnchor: Anchor | null = null;
+let previewPointerDown = false;
+let previewDragging = false;
+let previewCrossActive = false;
+let previewStartX = 0;
+let previewStartY = 0;
+let previewDragBound = false;
 
 export function getActiveCrossRanges(): CrossSelectRange[] {
   return activeCrossRanges;
@@ -198,7 +207,11 @@ function collapseEditorSelection(editor: Editor, pos?: number) {
   const { state, view } = editor;
   const docSize = state.doc.content.size;
   const safe = Math.max(1, Math.min(pos ?? state.selection.from, docSize - 1));
-  view.dispatch(state.tr.setSelection(TextSelection.create(state.doc, safe)));
+  view.dispatch(
+    state.tr
+      .setSelection(TextSelection.create(state.doc, safe))
+      .setMeta('addToHistory', false),
+  );
 }
 
 export function clearCrossHighlightsForBlocks(blockIds: string[]) {
@@ -351,7 +364,13 @@ export function restoreIntraBlockSelection(
   const from = Math.min(anchor.pos, caretPos);
   const to = Math.max(anchor.pos, caretPos);
   if (to > from) {
-    editor.chain().focus().setTextSelection({ from, to }).run();
+    const { state, view } = editor;
+    view.dispatch(
+      state.tr
+        .setSelection(TextSelection.create(state.doc, from, to))
+        .setMeta('addToHistory', false),
+    );
+    editor.commands.focus();
   }
 }
 
@@ -463,10 +482,11 @@ function onToggleTitlePointerMove(e: PointerEvent) {
     return;
   }
 
+  // 같은 블록 안 세로·가로 드래그 모두 처리 (비활성 블록은 preview·list 핸들러)
   if (hoverId === toggleAnchor.blockId) {
     if (toggleDragging) {
       toggleDragging = false;
-      noteTextDragGuard.active = false;
+      setNoteTextDragGuardActive(false);
       clearAllCrossSelectState();
       const input = getToggleTitleInput(hoverId);
       if (!input) return;
@@ -479,10 +499,8 @@ function onToggleTitlePointerMove(e: PointerEvent) {
     return;
   }
 
-  if (dx >= dy) return;
-
   toggleDragging = true;
-  noteTextDragGuard.active = true;
+  setNoteTextDragGuardActive(true);
   e.preventDefault();
 
   applyCrossBlockSelection(toggleAnchor, hoverId, e.clientX, e.clientY);
@@ -496,12 +514,133 @@ function onToggleTitlePointerUp(e: PointerEvent) {
   togglePointerDown = false;
   toggleDragging = false;
   toggleAnchor = null;
-  noteTextDragGuard.active = false;
+  setNoteTextDragGuardActive(false);
 
   if (!currentAnchor) return;
 
   if (wasDragging) {
     finalizeCrossSelection(currentAnchor, e.clientX, e.clientY);
+  }
+}
+
+function previewTextTargetElement(target: EventTarget | null): HTMLElement | null {
+  if (!target) return null;
+  if (target instanceof HTMLElement) return target;
+  if (target instanceof Node) return target.parentElement;
+  return null;
+}
+
+function isInactivePreviewTextTarget(target: EventTarget | null): boolean {
+  const el = previewTextTargetElement(target);
+  if (!el?.closest('[data-note-preview-text]')) return false;
+  const row = el.closest('[data-note-block-row]');
+  const blockId = row?.getAttribute('data-block-id');
+  if (!blockId) return false;
+  return !getNoteEditor(blockId);
+}
+
+function onPreviewTextPointerDown(e: PointerEvent) {
+  if (e.button !== 0) return;
+  if (e.shiftKey || e.ctrlKey || e.metaKey) return;
+  if (noteBlockMarqueeGuard.active) return;
+  if (!isInactivePreviewTextTarget(e.target)) return;
+  if (previewTextTargetElement(e.target)?.closest('a, button, img')) return;
+
+  const blockId = blockIdFromPoint(e.clientX, e.clientY);
+  if (!blockId || !getBlockPreviewTextRoot(blockId)) return;
+
+  if (activeCrossRanges.length > 0) {
+    clearAllCrossSelectState();
+  }
+
+  previewAnchor = {
+    blockId,
+    pos: hoverBlockPreviewTextPos(blockId, e.clientX, e.clientY),
+    surface: 'preview',
+  };
+  previewPointerDown = true;
+  previewDragging = false;
+  previewCrossActive = false;
+  previewStartX = e.clientX;
+  previewStartY = e.clientY;
+}
+
+function onPreviewTextPointerMove(e: PointerEvent) {
+  if (!previewPointerDown || !previewAnchor || e.buttons !== 1) return;
+  if (noteBlockMarqueeGuard.active) {
+    onPreviewTextPointerUp(e);
+    return;
+  }
+
+  const dx = Math.abs(e.clientX - previewStartX);
+  const dy = Math.abs(e.clientY - previewStartY);
+  if (dx < TOGGLE_DRAG_THRESHOLD && dy < TOGGLE_DRAG_THRESHOLD) return;
+
+  previewDragging = true;
+  e.preventDefault();
+
+  const hoverId = blockIdFromPoint(e.clientX, e.clientY);
+  if (!hoverId) return;
+
+  if (hoverId === previewAnchor.blockId) {
+    if (previewCrossActive) {
+      previewCrossActive = false;
+      setNoteTextDragGuardActive(false);
+      clearAllCrossSelectState();
+    }
+    const caret = hoverBlockPreviewTextPos(hoverId, e.clientX, e.clientY);
+    const from = Math.min(previewAnchor.pos, caret);
+    const to = Math.max(previewAnchor.pos, caret);
+    if (to > from) {
+      activeCrossRanges = [{ blockId: hoverId, from, to, surface: 'preview' }];
+      applyBlockPreviewCrossHighlight(hoverId, from, to);
+    }
+    return;
+  }
+
+  previewCrossActive = true;
+  setNoteTextDragGuardActive(true);
+  applyCrossBlockSelection(previewAnchor, hoverId, e.clientX, e.clientY);
+}
+
+function onPreviewTextPointerUp(e: PointerEvent) {
+  if (!previewPointerDown) return;
+
+  const currentAnchor = previewAnchor;
+  const wasDragging = previewDragging;
+  const wasCross = previewCrossActive;
+
+  previewPointerDown = false;
+  previewDragging = false;
+  previewAnchor = null;
+  previewCrossActive = false;
+  setNoteTextDragGuardActive(false);
+
+  if (!currentAnchor) return;
+
+  if (wasCross && wasDragging) {
+    e.preventDefault();
+    finalizeCrossSelection(currentAnchor, e.clientX, e.clientY);
+    return;
+  }
+
+  if (!wasDragging) return;
+
+  const hoverId = blockIdFromPoint(e.clientX, e.clientY) ?? currentAnchor.blockId;
+  if (hoverId !== currentAnchor.blockId) {
+    clearAllCrossSelectState();
+    return;
+  }
+
+  const caret = hoverBlockPreviewTextPos(hoverId, e.clientX, e.clientY);
+  const from = Math.min(currentAnchor.pos, caret);
+  const to = Math.max(currentAnchor.pos, caret);
+  if (to > from) {
+    e.preventDefault();
+    activeCrossRanges = [{ blockId: hoverId, from, to, surface: 'preview' }];
+    applyBlockPreviewCrossHighlight(hoverId, from, to);
+  } else {
+    clearAllCrossSelectState();
   }
 }
 
@@ -521,13 +660,30 @@ export function bindNoteCrossSelectCopy() {
     document.addEventListener('pointercancel', onToggleTitlePointerUp, true);
   }
 
+  if (!previewDragBound) {
+    previewDragBound = true;
+    document.addEventListener('pointerdown', onPreviewTextPointerDown, true);
+    document.addEventListener('pointermove', onPreviewTextPointerMove, true);
+    document.addEventListener('pointerup', onPreviewTextPointerUp, true);
+    document.addEventListener('pointercancel', onPreviewTextPointerUp, true);
+  }
+
   return () => {
     copyBound = false;
     toggleDragBound = false;
+    previewDragBound = false;
     document.removeEventListener('copy', onCopy, true);
     document.removeEventListener('pointerdown', onToggleTitlePointerDown, true);
     document.removeEventListener('pointermove', onToggleTitlePointerMove, true);
     document.removeEventListener('pointerup', onToggleTitlePointerUp, true);
     document.removeEventListener('pointercancel', onToggleTitlePointerUp, true);
+    document.removeEventListener('pointerdown', onPreviewTextPointerDown, true);
+    document.removeEventListener('pointermove', onPreviewTextPointerMove, true);
+    document.removeEventListener('pointerup', onPreviewTextPointerUp, true);
+    document.removeEventListener('pointercancel', onPreviewTextPointerUp, true);
+    previewPointerDown = false;
+    previewDragging = false;
+    previewAnchor = null;
+    previewCrossActive = false;
   };
 }

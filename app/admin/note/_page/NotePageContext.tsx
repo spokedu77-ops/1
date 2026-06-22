@@ -74,6 +74,7 @@ export interface NotePageContextValue {
   setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
   blocksRef: RefObject<NoteBlock[]>;
   loadingBlocks: boolean;
+  blocksSyncing: boolean;
   trashedBlocks: NoteBlock[];
   loadingTrashedBlocks: boolean;
   loadTrashedBlocks: () => Promise<void>;
@@ -187,6 +188,7 @@ export interface NotePageContextValue {
     applyTextColor: (color: string | null) => void,
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
+    insertTable?: () => void,
   ) => void;
   hideFormatToolbar: () => void;
   handleMultilinePaste: (block: NoteBlock, lines: string[]) => Promise<void>;
