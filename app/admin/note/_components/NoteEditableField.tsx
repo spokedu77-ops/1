@@ -351,7 +351,7 @@ export function NoteEditableField({
           <div
             ref={slotRef}
             className={`note-rich-editor-slot min-w-0 w-full ${textClassName} ${
-              hidePreview ? '' : 'invisible'
+              hidePreview ? '' : 'opacity-0'
             }`}
             aria-hidden={!hidePreview}
           />

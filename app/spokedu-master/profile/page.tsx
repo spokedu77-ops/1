@@ -15,16 +15,33 @@ import {
   Mail,
   MonitorPlay,
   Pencil,
+  ShieldAlert,
   ShoppingBag,
   Sparkles,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
-import { Suspense, useEffect, useRef, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { getTrialDaysLeft } from '../lib/subscription';
+import { useOperationalData } from '../operational/OperationalDataProvider';
+import {
+  MASTER_DATA_DELETE_CONFIRMATION,
+  canSubmitMasterDataDeletion,
+  type MasterDataDeletionStatus,
+} from './masterDataDeletion';
+import {
+  formatSubscriptionEndDate,
+  getSubscriptionPlanLabel,
+  getSubscriptionPrimaryHref,
+  getSubscriptionPrimaryLabel,
+  getSubscriptionStatusLabel,
+  normalizeSubscriptionSummary,
+  type SubscriptionSummaryData,
+} from './subscriptionSummary';
 import { useMasterStore, useProfile } from '../store';
 import type { PlanType } from '../types';
 
@@ -227,6 +244,89 @@ function PlanCard({ plan, current, onSelect }: { plan: PlanInfo; current: boolea
   );
 }
 
+function CurrentSubscriptionCard({
+  summary,
+  status,
+  onRetry,
+}: {
+  summary: SubscriptionSummaryData | null;
+  status: 'loading' | 'ready' | 'error';
+  onRetry: () => void;
+}) {
+  const planLabel = getSubscriptionPlanLabel(summary);
+  const statusLabel = getSubscriptionStatusLabel(summary);
+  const endDate = formatSubscriptionEndDate(summary?.periodEnd ?? summary?.trialEndsAt ?? null);
+  const primaryHref = getSubscriptionPrimaryHref(summary);
+  const primaryLabel = getSubscriptionPrimaryLabel(summary);
+
+  return (
+    <section className="rounded-[22px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>
+            Subscription
+          </p>
+          <h2 className="mt-1 text-[20px] font-black" style={{ color: 'var(--spm-t)' }}>
+            현재 이용권
+          </h2>
+        </div>
+        {status === 'loading' ? (
+          <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+            확인 중
+          </span>
+        ) : status === 'error' ? (
+          <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
+            확인 실패
+          </span>
+        ) : (
+          <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: statusLabel === '이용 중' || statusLabel === '체험 중' ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)', color: statusLabel === '이용 중' || statusLabel === '체험 중' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
+            {statusLabel}
+          </span>
+        )}
+      </div>
+
+      {status === 'error' ? (
+        <div className="mt-4 rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
+          <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+            이용권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
+          </p>
+          <button type="button" onClick={onRetry} className="mt-3 min-h-11 rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-acc)', color: '#fff' }}>
+            다시 시도
+          </button>
+        </div>
+      ) : (
+        <>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Plan</p>
+              <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>{status === 'loading' ? '확인 중' : planLabel}</p>
+            </div>
+            <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Status</p>
+              <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>{status === 'loading' ? '확인 중' : statusLabel}</p>
+            </div>
+            <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
+              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Until</p>
+              <p className="mt-1 text-[14px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>{status === 'loading' ? '확인 중' : endDate}</p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <Link href="/spokedu-master/profile?plans=1" className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+              이용권 확인·변경
+            </Link>
+            <Link href={primaryHref} className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+              {primaryLabel}
+            </Link>
+            <Link href="/spokedu-master/payment?plan=team" className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+              Center 결제
+            </Link>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
 function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const profile = useProfile();
   const router = useRouter();
@@ -326,12 +426,19 @@ function SpokeduMasterProfileContent() {
   const resetProfile = useMasterStore((state) => state.resetProfile);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const operationalData = useOperationalData();
+  const explanationData = useExplanationData();
   const hasAutoOpenedPlans = useRef(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [planOpen, setPlanOpen] = useState(false);
   const [name, setName] = useState(profile?.name ?? '선생님');
   const [school, setSchool] = useState(profile?.school ?? '');
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteStatus, setDeleteStatus] = useState<MasterDataDeletionStatus>('idle');
+  const [deleteError, setDeleteError] = useState('');
+  const [subscriptionSummary, setSubscriptionSummary] = useState<SubscriptionSummaryData | null>(null);
+  const [subscriptionSummaryStatus, setSubscriptionSummaryStatus] = useState<'loading' | 'ready' | 'error'>('loading');
 
   const currentPlan = profile?.plan ?? 'free';
   const daysLeft = getTrialDaysLeft(profile);
@@ -343,7 +450,22 @@ function SpokeduMasterProfileContent() {
   const statusText = planStatusText(currentPlan, daysLeft, profile?.isAdmin, profile?.subscriptionStatus);
   const initial = (profile?.name ?? '선생님').slice(0, 1);
 
+  const canDeleteMasterData = canSubmitMasterDataDeletion(deleteConfirmation, deleteStatus);
   const shouldOpenPlans = searchParams.get('plans') === '1' || searchParams.get('plan') === '1';
+
+  const loadSubscriptionSummary = useCallback(async () => {
+    setSubscriptionSummaryStatus('loading');
+    try {
+      const response = await fetch('/api/spokedu-master/subscription', { cache: 'no-store' });
+      if (!response.ok) throw new Error('subscription summary failed');
+      const json = await response.json();
+      setSubscriptionSummary(normalizeSubscriptionSummary(json));
+      setSubscriptionSummaryStatus('ready');
+    } catch {
+      setSubscriptionSummary(null);
+      setSubscriptionSummaryStatus('error');
+    }
+  }, []);
 
   useEffect(() => {
     if (shouldOpenPlans && !hasAutoOpenedPlans.current) {
@@ -351,6 +473,10 @@ function SpokeduMasterProfileContent() {
       setPlanOpen(true);
     }
   }, [shouldOpenPlans]);
+
+  useEffect(() => {
+    void loadSubscriptionSummary();
+  }, [loadSubscriptionSummary]);
 
   const handlePlanClose = () => {
     setPlanOpen(false);
@@ -368,6 +494,37 @@ function SpokeduMasterProfileContent() {
     await supabase.auth.signOut();
     resetProfile();
     router.replace('/spokedu-master/landing');
+  };
+
+  const handleDeleteMasterData = async () => {
+    if (!canDeleteMasterData) return;
+
+    setDeleteStatus('submitting');
+    setDeleteError('');
+
+    try {
+      const response = await fetch('/api/spokedu-master/operational-data', {
+        body: JSON.stringify({ confirmation: MASTER_DATA_DELETE_CONFIRMATION }),
+        cache: 'no-store',
+        headers: { 'content-type': 'application/json' },
+        method: 'DELETE',
+      });
+      const json = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(json.error ?? 'MASTER data deletion failed');
+      }
+
+      await Promise.all([
+        operationalData.reload(),
+        explanationData.reload(),
+      ]);
+      setDeleteConfirmation('');
+      setDeleteStatus('success');
+    } catch {
+      setDeleteStatus('error');
+      setDeleteError('MASTER 데이터를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    }
   };
 
   return (
@@ -430,6 +587,12 @@ function SpokeduMasterProfileContent() {
             ) : null}
           </section>
 
+          <CurrentSubscriptionCard
+            summary={subscriptionSummary}
+            status={subscriptionSummaryStatus}
+            onRetry={() => void loadSubscriptionSummary()}
+          />
+
           <section>
             <div className="mb-3 flex items-end justify-between gap-3">
               <div>
@@ -491,6 +654,56 @@ function SpokeduMasterProfileContent() {
       <PlanSheet open={planOpen} onClose={handlePlanClose} />
 
       <div className="mx-auto max-w-[1180px] px-5 pt-7 sm:px-8">
+        <section className="mb-5 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <div className="flex items-start gap-3">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(239,68,68,0.12)' }}>
+              <ShieldAlert size={18} color="var(--spm-red)" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Privacy</p>
+              <h2 className="mt-1 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>MASTER 데이터 삭제</h2>
+              <div className="mt-2 space-y-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+                <p>학생·수업 기록·저장 안내문이 삭제됩니다.</p>
+                <p>삭제 후 복구할 수 없습니다.</p>
+                <p>결제·구독 기록과 계정은 삭제되지 않습니다.</p>
+              </div>
+              <label className="mt-4 block">
+                <span className="mb-2 block text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>
+                  아래 문구를 정확히 입력해 주세요: {MASTER_DATA_DELETE_CONFIRMATION}
+                </span>
+                <input
+                  value={deleteConfirmation}
+                  onChange={(event) => {
+                    setDeleteConfirmation(event.target.value);
+                    if (deleteStatus === 'success') setDeleteStatus('idle');
+                    if (deleteError) setDeleteError('');
+                  }}
+                  className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+                  style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => void handleDeleteMasterData()}
+                disabled={!canDeleteMasterData}
+                className="mt-3 h-11 w-full rounded-[12px] text-[13px] font-black disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.35)', color: 'var(--spm-red)' }}
+              >
+                {deleteStatus === 'submitting' ? '삭제 중...' : 'MASTER 데이터 삭제'}
+              </button>
+              {deleteStatus === 'success' ? (
+                <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-grn)' }}>
+                  MASTER 운영 데이터를 삭제했습니다.
+                </p>
+              ) : null}
+              {deleteError ? (
+                <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-red)' }}>
+                  {deleteError}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        </section>
         <button
           type="button"
           onClick={() => void handleLogout()}

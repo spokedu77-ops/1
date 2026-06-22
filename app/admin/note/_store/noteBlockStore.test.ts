@@ -38,4 +38,28 @@ describe('syncBlocksStructure list type change', () => {
     expect(stored?.content?.text).toBe('');
     expect(stored?.content?.html).toBeUndefined();
   });
+
+  it('keeps incoming title while preserving store text', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('t', 'toggle', { title: '', body: 'old' }),
+    ]);
+    useNoteBlockStore.getState().patchContent('t', { title: '', body: 'typed' });
+
+    useNoteBlockStore.getState().syncBlocksStructure([
+      block('t', 'toggle', { title: '제목', body: 'old' }),
+    ]);
+
+    const stored = useNoteBlockStore.getState().getBlock('t');
+    expect(stored?.content?.title).toBe('제목');
+    expect(stored?.content?.body).toBe('typed');
+  });
+
+  it('persists title-only patchContent updates', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('t', 'toggle', { title: '', body: 'body' }),
+    ]);
+    useNoteBlockStore.getState().patchContent('t', { title: '새 제목', body: 'body' });
+
+    expect(useNoteBlockStore.getState().getBlock('t')?.content?.title).toBe('새 제목');
+  });
 });

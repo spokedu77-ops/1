@@ -12,7 +12,6 @@ import {
 import type { DraggableAttributes, DraggableSyntheticListeners } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import {
-  Check,
   GripVertical,
   Image as ImageIcon,
   Loader2,
@@ -21,25 +20,27 @@ import {
   Video,
 } from 'lucide-react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
-import { resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
+import { NoteTableBlock } from './NoteTableBlock';
+import { NoteTodoBlock } from './NoteTodoBlock';
+import { NoteToggleBlock } from './NoteToggleBlock';
+import { NoteHeadingBlock, isHeadingBlockType } from './NoteHeadingBlock';
+import { NoteListBlock } from './NoteListBlock';
+import { NoteBlockFormattedField } from './NoteBlockFormattedField';
+import { useSyncContentPatch } from './useSyncContentPatch';
+import type { NoteEditorEnterContext } from '../NoteEditor';
+import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
+import { useNoteImageLightbox } from '../NoteImageLightbox';
+import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
+import { useNoteBlockStore } from '../../_store/noteBlockStore';
+import { VideoEmbedFrame } from '../VideoEmbedFrame';
+import {
+  BlockInsideDropSurface,
+} from '../sidebar/NoteDocChrome';
 import {
   buildVideoBlockContentFromUrl,
   resolveVideoEmbedContent,
   videoProviderLabel,
 } from '@/app/lib/note/videoEmbed';
-import { NoteEditableField } from '../NoteEditableField';
-import { NoteTableBlock } from './NoteTableBlock';
-import type { NoteEditorEnterContext } from '../NoteEditor';
-import { useNoteImageLightbox } from '../NoteImageLightbox';
-import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
-import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '../noteBulletInput';
-import { useNoteBlockStore } from '../../_store/noteBlockStore';
-import { STORE_ONLY_CONTENT_KEYS } from '../../_lib/noteContentPatch';
-import { VideoEmbedFrame } from '../VideoEmbedFrame';
-import {
-  BlockInsideDropSurface,
-  ToggleDisclosureButton,
-} from '../sidebar/NoteDocChrome';
 import {
   useBlockDragActive,
   useBlockDropTarget,
@@ -54,12 +55,10 @@ import {
   toggleMenuAnchorOffset,
   toggleNestPaddingPx,
 } from '../../_lib/constants';
-import { focusWithoutScroll } from '../../_lib/noteEditorScrollGuard';
 import {
   blockExternalizesChildren,
   blockRowBgClass,
   DROP_INSIDE_BLOCK_ROW,
-  DROP_TARGET_ROW,
   EMPTY_BLOCK_PLACEHOLDER,
   focusNoteBlockRowFromChrome,
   NOTE_BLOCK_HOVER_BRIDGE,
@@ -159,43 +158,18 @@ function BlockContent({
   const [slashQuery, setSlashQuery] = useState('');
   const slashHostRef = useRef<HTMLDivElement>(null);
   const [slashAnchor, setSlashAnchor] = useState<{ top: number; left: number } | null>(null);
-  const toggleTitleInputRef = useRef<HTMLInputElement>(null);
-  const [toggleTitleSlashAnchor, setToggleTitleSlashAnchor] = useState<{ top: number; left: number } | null>(null);
   const [imgDragOver, setImgDragOver] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const imgFileInputRef = useRef<HTMLInputElement>(null);
   const pageBtnRef = useRef<HTMLButtonElement>(null);
-  const activeEditor = useNoteBlockStore((state) => state.activeEditor);
 
-  const syncContentPatch = useCallback((partial: Record<string, unknown>) => {
-    const base = (useNoteBlockStore.getState().getBlock(block.id)?.content
-      ?? block.content
-      ?? {}) as Record<string, unknown>;
-    const nextContent = { ...base, ...partial };
-    const needsReactUpdate = Object.keys(partial).some(
-      (key) => !STORE_ONLY_CONTENT_KEYS.has(key),
-    );
-    if (needsReactUpdate) {
-      onUpdate(nextContent);
-      return;
-    }
-    if (onContentSync) onContentSync(nextContent);
-    else onUpdate(nextContent);
-  }, [block.id, block.content, onContentSync, onUpdate]);
+  const syncContentPatch = useSyncContentPatch(block, onUpdate, onContentSync);
 
   useEffect(() => {
     if (block.type !== 'page' || !isFocused) return;
     pageBtnRef.current?.focus();
   }, [block.type, isFocused, autoFocusSignal]);
-
-  useEffect(() => {
-    if (block.type !== 'toggle' || autoFocusTitleSignal <= 0) return;
-    requestAnimationFrame(() => {
-      focusWithoutScroll(toggleTitleInputRef.current);
-      onTrackActiveBlock?.('title');
-    });
-  }, [block.type, autoFocusTitleSignal, onTrackActiveBlock]);
 
   const updateSlashAnchor = useCallback(() => {
     if (!slashHostRef.current) return;
@@ -216,23 +190,6 @@ function BlockContent({
       window.removeEventListener('resize', updateSlashAnchor);
     };
   }, [showSlash, slashQuery, updateSlashAnchor]);
-
-  const toggleTitleText = block.type === 'toggle'
-    ? (typeof block.content?.title === 'string'
-      ? block.content.title
-      : (typeof block.content?.text === 'string' ? block.content.text : ''))
-    : '';
-  const toggleTitleSlashActive = block.type === 'toggle' && toggleTitleText.startsWith('/');
-  const toggleTitleSlashQuery = toggleTitleSlashActive ? toggleTitleText.slice(1) : '';
-
-  useEffect(() => {
-    if (!toggleTitleSlashActive || !toggleTitleInputRef.current) {
-      setToggleTitleSlashAnchor(null);
-      return;
-    }
-    const rect = toggleTitleInputRef.current.getBoundingClientRect();
-    setToggleTitleSlashAnchor({ top: rect.bottom + 4, left: rect.left });
-  }, [toggleTitleSlashActive, toggleTitleSlashQuery]);
 
   const renderSlashMenuPortal = () => (
     <SlashMenuFixed
@@ -296,32 +253,25 @@ function BlockContent({
     onEditorCanMergeWithPrevious?: () => boolean;
     editorMergeFocusCaretOffset?: number;
   }) => (
-    <NoteEditableField
-      blockId={block.id}
-      blockType={block.type}
-      field={field}
-      fallbackContent={block.content}
+    <NoteBlockFormattedField
+      block={block}
       text={text}
       placeholder={placeholder}
       textClassName={textClassName}
-      autoFocusSignal={autoFocusSignal ?? 0}
+      field={field}
+      tabBehavior={tabBehavior}
       enterCreatesBlock={enterCreatesBlock}
       enterSplitOnMidBlock={enterSplitOnMidBlock}
-      tabBehavior={tabBehavior}
-      onEditorEnter={onEditorEnter}
-      onEditorBackspace={onEditorBackspace === false ? false : (onEditorBackspace ?? onEmptyBackspace)}
-      onEditorBackspaceAtBlockStart={onEditorBackspaceAtBlockStart ?? handleListItemBackspaceAtStart}
-      onEditorMergeWithPrevious={onEditorMergeWithPrevious ?? onMergeWithPrevious}
-      onEditorCanMergeWithPrevious={onEditorCanMergeWithPrevious ?? canMergeWithPrevious}
-      editorMergeFocusCaretOffset={editorMergeFocusCaretOffset}
+      autoFocusSignal={autoFocusSignal ?? 0}
       mergeFocusCaretOffset={mergeFocusCaretOffset}
-      onIndentChange={onIndentChange}
-      onNavigatePrevious={onNavigatePrevious}
-      onNavigateNext={onNavigateNext}
-      onTrackActiveBlock={onTrackActiveBlock}
-      onFocusBlock={onFocusBlock}
-      onContentSync={onContentSync}
+      onEditorEnter={onEditorEnter}
+      onEditorBackspace={onEditorBackspace}
+      onEditorBackspaceAtBlockStart={onEditorBackspaceAtBlockStart}
+      onEditorMergeWithPrevious={onEditorMergeWithPrevious}
+      onEditorCanMergeWithPrevious={onEditorCanMergeWithPrevious}
+      editorMergeFocusCaretOffset={editorMergeFocusCaretOffset}
       onUpdate={onUpdate}
+      onContentSync={onContentSync}
       onChangeType={onChangeType}
       onShowFormatToolbar={onShowFormatToolbar}
       onHideFormatToolbar={onHideFormatToolbar}
@@ -329,79 +279,20 @@ function BlockContent({
         setShowSlash(nextShow);
         setSlashQuery(nextQuery);
       }}
+      onIndentChange={onIndentChange}
+      onNavigatePrevious={onNavigatePrevious}
+      onNavigateNext={onNavigateNext}
+      onTrackActiveBlock={onTrackActiveBlock}
+      onFocusBlock={onFocusBlock}
+      onEmptyBackspace={onEmptyBackspace}
+      onMergeWithPrevious={onMergeWithPrevious}
+      canMergeWithPrevious={canMergeWithPrevious}
       uploadImage={uploadImage}
-      onOpenDocumentById={onOpenDocument}
+      onOpenDocument={onOpenDocument}
       onMultilinePaste={onMultilinePaste}
       slashHostRef={slashHostRef}
     />
   );
-
-  const listNestLevel = bulletListNestLevel;
-
-  const handleListItemBackspaceAtStart = (): boolean => {
-    if (block.type !== 'bulletList' && block.type !== 'numberedList') return false;
-    const itemText = stripListItemMarkerPrefix(
-      typeof block.content?.text === 'string' ? block.content.text : '',
-    );
-    if (itemText.length === 0) {
-      if (block.parent_block_id) {
-        onIndentChange?.('out');
-      } else {
-        onChangeType('text');
-      }
-      return true;
-    }
-    if (block.parent_block_id) {
-      onIndentChange?.('out');
-      return true;
-    }
-    onRequestCaretOffset?.(0);
-    onChangeType('text');
-    return true;
-  };
-
-  const handleListItemEmptyBackspace = () => {
-    if (block.parent_block_id) {
-      onIndentChange?.('out');
-      return;
-    }
-    onChangeType('text');
-  };
-
-  const handleListItemEnter = (listType: 'bulletList' | 'numberedList', ctx?: NoteEditorEnterContext) => {
-    if (ctx?.split) {
-      onAddBelow(listType, {
-        text: ctx.split.afterText,
-        html: ctx.split.afterHtml,
-        depth: 0,
-      });
-      return;
-    }
-    const isEmpty = ctx?.isEmpty ?? text.trim().length === 0;
-    if (!isEmpty) {
-      onAddBelow(listType);
-      return;
-    }
-    if (block.parent_block_id) {
-      onIndentChange?.('out');
-      return;
-    }
-    onChangeType('text');
-  };
-
-  const renderListChildBlocks = () => {
-    if (omitExternalizedChildren) return null;
-    if (!childBlocks?.length || !renderChildBlock) return null;
-    return (
-      <div className="note-block-children space-y-0 overflow-visible">
-        {childBlocks.map((child) => (
-          <Fragment key={child.id}>
-            {renderChildBlock(child, toggleNestDepth + 1)}
-          </Fragment>
-        ))}
-      </div>
-    );
-  };
 
   if (block.type === 'table') {
     return (
@@ -435,158 +326,132 @@ function BlockContent({
   }
 
   if (block.type === 'todo') {
-    const checked = !!block.content?.checked;
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div
-        className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}
-        style={{ marginLeft: `${contentMarginLeft}px` }}
-      >
-        <button type="button"
-          className={`mt-[3px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border transition-colors ${
-            checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-neutral-300 bg-white hover:border-blue-400'
-          }`}
-          onClick={() => onUpdate({ ...block.content, checked: !checked })}
-        >
-          {checked && <Check className="h-3 w-3" />}
-        </button>
-        <div className="relative min-w-0 flex-1">
-          {renderFormatToolbar()}
-          {renderFormattedTextarea({
-            text,
-            placeholder: EMPTY_BLOCK_PLACEHOLDER,
-            textClassName: `text-[16px] leading-7 ${checked ? 'text-slate-400 line-through' : 'text-slate-800'}`,
-            enterCreatesBlock: enterCreatesBlockBelow,
-            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('todo') : onEnter,
-          })}
-        </div>
+      <>
+        <NoteTodoBlock
+          block={block}
+          contentMarginLeft={contentMarginLeft}
+          inlineRowPadding={inlineRowPadding}
+          rootBlockShell={rootBlockShell}
+          enterCreatesBlockBelow={enterCreatesBlockBelow}
+          onUpdate={onUpdate}
+          onEnter={onEnter}
+          onAddBelow={onAddBelow}
+          autoFocusSignal={autoFocusSignal}
+          mergeFocusCaretOffset={mergeFocusCaretOffset}
+          onContentSync={onContentSync}
+          onChangeType={onChangeType}
+          onShowFormatToolbar={onShowFormatToolbar}
+          onHideFormatToolbar={onHideFormatToolbar}
+          onIndentChange={onIndentChange}
+          onNavigatePrevious={onNavigatePrevious}
+          onNavigateNext={onNavigateNext}
+          onTrackActiveBlock={onTrackActiveBlock}
+          onFocusBlock={onFocusBlock}
+          onEmptyBackspace={onEmptyBackspace}
+          onMergeWithPrevious={onMergeWithPrevious}
+          canMergeWithPrevious={canMergeWithPrevious}
+          uploadImage={uploadImage}
+          onOpenDocument={onOpenDocument}
+          onMultilinePaste={onMultilinePaste}
+          onSlashChange={(nextShow, nextQuery) => {
+            setShowSlash(nextShow);
+            setSlashQuery(nextQuery);
+          }}
+          slashHostRef={slashHostRef}
+        />
         {renderSlashMenuPortal()}
-      </div>
+      </>
     );
   }
 
-  if (block.type === 'heading') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  if (isHeadingBlockType(block.type)) {
     return (
-      <div className={`flex items-start ${isInsideToggle ? 'py-2' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className="relative min-w-0 flex-1">
-          {renderFormatToolbar()}
-          {renderFormattedTextarea({
-            text,
-            placeholder: '제목 1',
-            textClassName: 'text-[30px] font-bold leading-tight text-slate-900',
-            enterCreatesBlock: enterCreatesBlockBelow,
-            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('text') : onEnter,
-          })}
-          {renderSlashMenuPortal()}
-        </div>
-      </div>
-    );
-  }
-
-  if (block.type === 'heading2') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
-    return (
-      <div className={`flex items-start ${isInsideToggle ? 'py-1' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className="relative min-w-0 flex-1">
-          {renderFormatToolbar()}
-          {renderFormattedTextarea({
-            text,
-            placeholder: '제목 2',
-            textClassName: 'text-[24px] font-bold leading-tight text-slate-900',
-            enterCreatesBlock: enterCreatesBlockBelow,
-            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('text') : onEnter,
-          })}
-          {renderSlashMenuPortal()}
-        </div>
-      </div>
-    );
-  }
-
-  if (block.type === 'heading3') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
-    return (
-      <div className={`flex items-start ${isInsideToggle ? 'py-1' : rootBlockShell}`} style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className="relative min-w-0 flex-1">
-          {renderFormatToolbar()}
-          {renderFormattedTextarea({
-            text,
-            placeholder: '제목 3',
-            textClassName: 'text-[20px] font-semibold leading-tight text-slate-900',
-            enterCreatesBlock: enterCreatesBlockBelow,
-            onEditorEnter: enterCreatesBlockBelow ? () => onAddBelow('text') : onEnter,
-          })}
-          {renderSlashMenuPortal()}
-        </div>
-      </div>
-    );
-  }
-
-  if (block.type === 'bulletList') {
-    const rawText = typeof block.content?.text === 'string' ? block.content.text : '';
-    const text = stripListItemMarkerPrefix(rawText);
-    const bulletGlyph = bulletMarkerForLevel(listNestLevel).trim();
-    return (
-      <div style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}>
-          <span
-            className={`mt-[2px] min-w-[1.25rem] shrink-0 text-center text-[16px] leading-7 select-none ${
-              listNestLevel === 0 ? 'text-neutral-900' : 'text-slate-600'
-            }`}
-            aria-hidden
-          >
-            {bulletGlyph}
-          </span>
-          <div className="relative min-w-0 flex-1" data-note-list-text>
-            {renderFormatToolbar()}
-            {renderFormattedTextarea({
-              text,
-              placeholder: '글머리 목록',
-              textClassName: 'text-[16px] leading-7 text-slate-800',
-              enterCreatesBlock: enterCreatesBlockBelow,
-              enterSplitOnMidBlock: enterCreatesBlockBelow,
-              onEditorBackspace: handleListItemEmptyBackspace,
-              onEditorEnter: enterCreatesBlockBelow
-                ? (ctx) => handleListItemEnter('bulletList', ctx)
-                : onEnter,
-            })}
-          </div>
-        </div>
-        {renderListChildBlocks()}
+      <>
+        <NoteHeadingBlock
+          block={block}
+          variant={block.type}
+          contentMarginLeft={contentMarginLeft}
+          inlineRowPadding={inlineRowPadding}
+          rootBlockShell={rootBlockShell}
+          isInsideToggle={isInsideToggle}
+          enterCreatesBlockBelow={enterCreatesBlockBelow}
+          onUpdate={onUpdate}
+          onEnter={onEnter}
+          onAddBelow={onAddBelow}
+          autoFocusSignal={autoFocusSignal}
+          mergeFocusCaretOffset={mergeFocusCaretOffset}
+          onContentSync={onContentSync}
+          onChangeType={onChangeType}
+          onShowFormatToolbar={onShowFormatToolbar}
+          onHideFormatToolbar={onHideFormatToolbar}
+          onIndentChange={onIndentChange}
+          onNavigatePrevious={onNavigatePrevious}
+          onNavigateNext={onNavigateNext}
+          onTrackActiveBlock={onTrackActiveBlock}
+          onFocusBlock={onFocusBlock}
+          onEmptyBackspace={onEmptyBackspace}
+          onMergeWithPrevious={onMergeWithPrevious}
+          canMergeWithPrevious={canMergeWithPrevious}
+          uploadImage={uploadImage}
+          onOpenDocument={onOpenDocument}
+          onMultilinePaste={onMultilinePaste}
+          onSlashChange={(nextShow, nextQuery) => {
+            setShowSlash(nextShow);
+            setSlashQuery(nextQuery);
+          }}
+          slashHostRef={slashHostRef}
+        />
         {renderSlashMenuPortal()}
-      </div>
+      </>
     );
   }
 
-  if (block.type === 'numberedList') {
-    const rawText = typeof block.content?.text === 'string' ? block.content.text : '';
-    const text = stripListItemMarkerPrefix(rawText);
-    const displayNum = numberedListIndex
-      ?? (typeof block.content?.number === 'number' ? block.content.number : 1);
+  if (block.type === 'bulletList' || block.type === 'numberedList') {
     return (
-      <div style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className={`flex items-start gap-2 ${inlineRowPadding || rootBlockShell}`}>
-          <span className="mt-[2px] min-w-[1.25rem] shrink-0 text-right text-[16px] leading-7 text-slate-500 select-none" aria-hidden>
-            {displayNum}.
-          </span>
-          <div className="relative min-w-0 flex-1" data-note-list-text>
-            {renderFormatToolbar()}
-            {renderFormattedTextarea({
-              text,
-              placeholder: '번호 목록',
-              textClassName: 'text-[16px] leading-7 text-slate-800',
-              enterCreatesBlock: enterCreatesBlockBelow,
-              enterSplitOnMidBlock: enterCreatesBlockBelow,
-              onEditorBackspace: handleListItemEmptyBackspace,
-              onEditorEnter: enterCreatesBlockBelow
-                ? (ctx) => handleListItemEnter('numberedList', ctx)
-                : onEnter,
-            })}
-          </div>
-        </div>
-        {renderListChildBlocks()}
+      <>
+        <NoteListBlock
+          block={block}
+          listType={block.type}
+          listNestLevel={bulletListNestLevel}
+          numberedListIndex={numberedListIndex}
+          contentMarginLeft={contentMarginLeft}
+          inlineRowPadding={inlineRowPadding}
+          rootBlockShell={rootBlockShell}
+          enterCreatesBlockBelow={enterCreatesBlockBelow}
+          childBlocks={childBlocks}
+          renderChildBlock={renderChildBlock}
+          toggleNestDepth={toggleNestDepth}
+          omitExternalizedChildren={omitExternalizedChildren}
+          onUpdate={onUpdate}
+          onEnter={onEnter}
+          onAddBelow={onAddBelow}
+          onChangeType={onChangeType}
+          onRequestCaretOffset={onRequestCaretOffset}
+          autoFocusSignal={autoFocusSignal}
+          mergeFocusCaretOffset={mergeFocusCaretOffset}
+          onContentSync={onContentSync}
+          onShowFormatToolbar={onShowFormatToolbar}
+          onHideFormatToolbar={onHideFormatToolbar}
+          onIndentChange={onIndentChange}
+          onNavigatePrevious={onNavigatePrevious}
+          onNavigateNext={onNavigateNext}
+          onTrackActiveBlock={onTrackActiveBlock}
+          onFocusBlock={onFocusBlock}
+          onEmptyBackspace={onEmptyBackspace}
+          onMergeWithPrevious={onMergeWithPrevious}
+          canMergeWithPrevious={canMergeWithPrevious}
+          uploadImage={uploadImage}
+          onOpenDocument={onOpenDocument}
+          onMultilinePaste={onMultilinePaste}
+          onSlashChange={(nextShow, nextQuery) => {
+            setShowSlash(nextShow);
+            setSlashQuery(nextQuery);
+          }}
+          slashHostRef={slashHostRef}
+        />
         {renderSlashMenuPortal()}
-      </div>
+      </>
     );
   }
 
@@ -875,189 +740,53 @@ function BlockContent({
   }
 
   if (block.type === 'toggle') {
-    const title = typeof block.content?.title === 'string'
-      ? block.content.title
-      : (typeof block.content?.text === 'string' ? block.content.text : '');
-    const { text: body } = resolveToggleBodyForDisplay(block.content);
-    const collapsed = !!block.content?.collapsed;
-    const showToggleContent = !collapsed && !isDragging;
-    const rawIm = block.content?.images;
-    const toggleImages = Array.isArray(rawIm)
-      ? rawIm.map((u) => (typeof u === 'string' ? u : ''))
-      : [];
-    const isThisToggleFocused = focusedToggleId === block.id;
-    const patchToggle = syncContentPatch;
-    const showToggleBody = childBlocks.length === 0
-      && (
-        body.trim().length > 0
-        || (activeEditor?.blockId === block.id && activeEditor.field === 'body')
-      );
-    const toggleChildIndentPx = toggleNestPaddingPx(toggleNestDepth + 1);
-    const hasInlineToggleChildren = !omitExternalizedChildren && childBlocks.length > 0;
-    const showToggleEmptySlot = !showToggleBody && !!onAddChildBelow && childBlocks.length === 0;
-    const showToggleExtrasWrapper = showToggleContent
-      && (showToggleBody || hasInlineToggleChildren || showToggleEmptySlot);
-
     return (
-      <div
-        className={`relative overflow-visible py-0.5 ${
-          isDropTarget
-            ? DROP_TARGET_ROW
-            : !isInsideToggle && isThisToggleFocused
-              ? 'rounded-sm bg-neutral-50/60'
-              : ''
-        }`}
-        style={isInsideToggle ? undefined : { marginLeft: `${contentMarginLeft}px` }}
-      >
-        <BlockInsideDropSurface
-          blockId={block.id}
-          disabled={!isBlockDragActive || !!isDragging}
-          className="flex min-h-[30px] w-full cursor-text items-center gap-1"
-          onMouseDown={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.closest('button')) return;
-            if (target === e.currentTarget) {
-              e.preventDefault();
-              toggleTitleInputRef.current?.focus();
-              onTrackActiveBlock?.('title');
-            }
-          }}
-        >
-          <ToggleDisclosureButton
-            collapsed={collapsed}
-            onClick={(e) => {
-              e.stopPropagation();
-              patchToggle({ collapsed: !collapsed });
-            }}
-          />
-          <input
-            ref={toggleTitleInputRef}
-            data-toggle-title
-            value={title}
-            onChange={(e) => patchToggle({ title: e.target.value })}
-            onFocus={() => onTrackActiveBlock?.('title')}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (collapsed) {
-                  onAddBelow('toggle');
-                } else {
-                  onAddChildBelow?.('text');
-                }
-                return;
-              }
-              if (e.key === 'Tab' && onIndentChange) {
-                e.preventDefault();
-                onIndentChange(e.shiftKey ? 'out' : 'in');
-              }
-              if (e.key === 'Escape' && toggleTitleSlashActive) {
-                e.preventDefault();
-                patchToggle({ title: '' });
-              }
-            }}
-            className="min-w-0 flex-1 bg-transparent text-[16px] font-normal leading-7 text-neutral-800 outline-none placeholder:text-neutral-400"
-            placeholder="토글 (/ 로 변환)"
-          />
-        </BlockInsideDropSurface>
-        {showToggleExtrasWrapper && (
-          <div
-            className="overflow-visible"
-            style={toggleChildIndentPx > 0 ? { paddingLeft: toggleChildIndentPx } : undefined}
-          >
-            {showToggleBody && (
-              <>
-                {renderFormatToolbar()}
-                {renderFormattedTextarea({
-                  text: body,
-                  placeholder: '',
-                  textClassName: 'text-[16px] leading-[1.7] text-slate-800',
-                  field: 'body',
-                  tabBehavior: 'insert-text-indent',
-                  enterCreatesBlock: false,
-                  onEditorBackspace: false,
-                })}
-              </>
-            )}
-            {hasInlineToggleChildren ? (
-              <div className="note-block-children space-y-0 overflow-visible">
-                {childBlocks.map((child) => (
-                  <Fragment key={child.id}>
-                    {renderChildBlock?.(child, toggleNestDepth + 1)}
-                  </Fragment>
-                ))}
-              </div>
-            ) : showToggleEmptySlot ? (
-              <div
-                className="min-h-[30px] cursor-text py-0.5"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  onAddChildBelow('text');
-                }}
-              >
-                <span className="text-[16px] leading-[1.7] text-neutral-400">
-                  {EMPTY_BLOCK_PLACEHOLDER}
-                </span>
-              </div>
-            ) : null}
-            {renderSlashMenuPortal()}
-            {toggleImages.length > 0 && (
-              <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
-                <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">토글 안 이미지</p>
-                {toggleImages.map((url, idx) => (
-                  <div key={idx} className="rounded-lg border border-slate-100 bg-slate-50/80 p-2">
-                    <div className="mb-1 flex items-center gap-2">
-                      <ImageIcon className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      <input
-                        className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-2 py-1 text-[13px] text-slate-700 outline-none focus:border-blue-400"
-                        placeholder="이미지 URL"
-                        value={url}
-                        onChange={(e) => {
-                          const next = [...toggleImages];
-                          next[idx] = e.target.value;
-                          patchToggle({ images: next });
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="shrink-0 rounded p-1 text-slate-400 hover:text-rose-500"
-                        title="이미지 제거"
-                        onClick={() => patchToggle({ images: toggleImages.filter((_, j) => j !== idx) })}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                    {url.trim() ? (
-                      <div className="overflow-hidden rounded-md bg-white">
-                        { }
-                        <img
-                          src={url.trim()}
-                          alt=""
-                          className="max-h-56 w-full cursor-zoom-in object-contain"
-                          onClick={() => imageLightbox?.open(url.trim())}
-                        />
-                      </div>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-        <SlashMenuFixed
-          show={toggleTitleSlashActive}
-          anchor={toggleTitleSlashAnchor}
-          commands={BLOCK_TYPES}
-          query={toggleTitleSlashQuery}
-          title="토글 제목"
-          onSelect={(type) => { onChangeType(type); }}
-          onClose={() => { patchToggle({ title: '' }); }}
-        />
-      </div>
+      <NoteToggleBlock
+        block={block}
+        contentMarginLeft={contentMarginLeft}
+        isInsideToggle={isInsideToggle}
+        isDropTarget={isDropTarget}
+        isDragging={isDragging}
+        focusedToggleId={focusedToggleId}
+        childBlocks={childBlocks}
+        renderChildBlock={renderChildBlock}
+        toggleNestDepth={toggleNestDepth}
+        omitExternalizedChildren={omitExternalizedChildren}
+        autoFocusTitleSignal={autoFocusTitleSignal}
+        onUpdate={onUpdate}
+        onContentSync={onContentSync}
+        onChangeType={onChangeType}
+        onAddBelow={onAddBelow}
+        onAddChildBelow={onAddChildBelow}
+        onIndentChange={onIndentChange}
+        onTrackActiveBlock={onTrackActiveBlock}
+        renderSlashMenuPortal={renderSlashMenuPortal}
+        autoFocusSignal={autoFocusSignal}
+        mergeFocusCaretOffset={mergeFocusCaretOffset}
+        onShowFormatToolbar={onShowFormatToolbar}
+        onHideFormatToolbar={onHideFormatToolbar}
+        onFocusBlock={onFocusBlock}
+        uploadImage={uploadImage}
+        onOpenDocument={onOpenDocument}
+        onSlashChange={(nextShow, nextQuery) => {
+          setShowSlash(nextShow);
+          setSlashQuery(nextQuery);
+        }}
+        slashHostRef={slashHostRef}
+      />
     );
   }
 
   // text (default)
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  const handleTextEnter = createInlineBlockEnterHandler({
+    block,
+    followType: 'text',
+    text,
+    onAddBelow,
+    onChangeType,
+    onIndentChange,
+  });
   return (
     <div
       className={`flex min-h-[30px] items-start ${inlineRowPadding || rootBlockShell}`}
@@ -1068,7 +797,8 @@ function BlockContent({
         placeholder: EMPTY_BLOCK_PLACEHOLDER,
         textClassName: 'text-[16px] leading-[1.7] text-slate-800',
         enterCreatesBlock: enterCreatesBlockBelow,
-        onEditorEnter: enterCreatesBlockBelow ? onEnter : undefined,
+        enterSplitOnMidBlock: enterCreatesBlockBelow,
+        onEditorEnter: enterCreatesBlockBelow ? handleTextEnter : undefined,
       })}
       {renderSlashMenuPortal()}
     </div>
@@ -1415,6 +1145,7 @@ function SortableBlockRow({
             blockTypeLabel={blockTypeLabel}
             blockType={block.type}
             commands={BLOCK_TYPES}
+            blockContent={block.content}
             currentBlockColor={readBlockColor(block.content)}
             onDuplicate={() => onDuplicate?.()}
             onDelete={onDelete}
@@ -1681,6 +1412,7 @@ function ToggleInlineRow({
             blockTypeLabel={blockTypeLabel}
             blockType={block.type}
             commands={BLOCK_TYPES}
+            blockContent={block.content}
             currentBlockColor={readBlockColor(block.content)}
             onDuplicate={() => onDuplicate?.()}
             onDelete={onDelete}

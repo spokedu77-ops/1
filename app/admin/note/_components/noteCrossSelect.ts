@@ -5,7 +5,10 @@ import {
   applyListCrossHighlight,
   bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
+  extractActiveCrossSelectClipboardText,
   extractListCrossText,
+  syncCrossClipboardSnapshot,
+  syncCrossTextActiveBodyClass,
   type ListCrossRange,
 } from './noteListCrossHighlight';
 import {
@@ -22,11 +25,13 @@ import {
 import {
   applyBlockPreviewCrossHighlight,
   blockPreviewPlainText,
+  clearAllDocumentPreviewCrossHighlights,
   clearBlockPreviewCrossHighlight,
   getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
 } from './noteBlockPreviewCrossSelect';
 import { noteBlockMarqueeGuard, setNoteTextDragGuardActive } from '../_lib/noteBlockMarqueeGuard';
+import { clearActiveListCrossSelectState } from './noteListCrossSelect';
 
 export type CrossSelectRange = ListCrossRange;
 
@@ -56,6 +61,12 @@ let previewStartX = 0;
 let previewStartY = 0;
 let previewDragBound = false;
 
+function commitCrossRanges(ranges: CrossSelectRange[]) {
+  activeCrossRanges = ranges;
+  if (ranges.length > 1) syncCrossClipboardSnapshot(ranges);
+  syncCrossTextActiveBodyClass();
+}
+
 export function getActiveCrossRanges(): CrossSelectRange[] {
   return activeCrossRanges;
 }
@@ -77,7 +88,28 @@ export function blockIdFromPoint(x: number, y: number): string | null {
     if (!id) continue;
     if (isRowCrossTextSelectable(id, !!getNoteEditor(id))) return id;
   }
-  return null;
+
+  const order = getOrderedSelectableBlockIds();
+  if (order.length === 0) return null;
+
+  let bestId: string | null = null;
+  let bestDistance = Number.POSITIVE_INFINITY;
+  for (const id of order) {
+    const row = document.querySelector<HTMLElement>(
+      `[data-note-block-row][data-block-id="${typeof globalThis.CSS?.escape === 'function' ? globalThis.CSS.escape(id) : id}"]`,
+    );
+    if (!row) continue;
+    const rect = row.getBoundingClientRect();
+    if (y < rect.top - 8 || y > rect.bottom + 8) continue;
+    const rowCenterY = (rect.top + rect.bottom) / 2;
+    const distance = Math.abs(y - rowCenterY);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestId = id;
+    }
+  }
+
+  return bestId;
 }
 
 /** 화면에 보이는 텍스트/토글 제목 블록 id — 위→아래 문서 순 */
@@ -108,7 +140,7 @@ function blocksBetween(order: string[], anchorId: string, hoverId: string): stri
 
 export function hoverPos(editor: Editor, x: number, y: number): number {
   const coords = editor.view.posAtCoords({ left: x, top: y });
-  return coords?.pos ?? editor.state.doc.content.size - 1;
+  return coords?.pos ?? editor.state.doc.content.size;
 }
 
 function hoverBlockPos(blockId: string, clientX: number, clientY: number): number {
@@ -134,7 +166,7 @@ function blockTextEnd(blockId: string, surface: CrossTextSurface): number {
   }
   const editor = getNoteEditor(blockId);
   if (!editor) return 0;
-  return editor.state.doc.content.size - 1;
+  return editor.state.doc.content.size;
 }
 
 export function resolveCrossRanges(
@@ -228,12 +260,15 @@ export function clearAllCrossSelectState() {
   activeCrossRanges.forEach(({ blockId }) => touched.add(blockId));
   clearCrossHighlightsForBlocks([...touched]);
   clearAllToggleTitleCrossHighlights();
+  clearAllDocumentPreviewCrossHighlights();
   activeCrossRanges = [];
+  syncCrossTextActiveBodyClass();
 }
 
 /** 블록 간 교차 선택 + ProseMirror/브라우저 텍스트 드래그 선택 모두 해제 */
 export function clearAllNoteTextSelections() {
   clearAllCrossSelectState();
+  clearActiveListCrossSelectState();
   collapseAllNoteEditorSelections();
   document.querySelectorAll<HTMLInputElement>('[data-toggle-title]').forEach((input) => {
     input.setSelectionRange(0, 0);
@@ -269,6 +304,10 @@ function applyCrossDecorations(ranges: CrossSelectRange[]) {
     if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
     clearBlockPreviewCrossHighlight(id);
   });
+
+  if (typeof window !== 'undefined') {
+    window.getSelection()?.removeAllRanges();
+  }
 }
 
 function suppressNativeSelections(blockIds: string[], activeBlockId?: string) {
@@ -309,6 +348,8 @@ export function applyCrossBlockSelection(
   if (ranges.length <= 1) return [];
 
   activeCrossRanges = ranges;
+  if (ranges.length > 1) syncCrossClipboardSnapshot(ranges);
+  syncCrossTextActiveBodyClass();
   suppressNativeSelections(span, hoverId);
   applyCrossDecorations(ranges);
 
@@ -399,7 +440,7 @@ export function finalizeCrossSelection(
     return [];
   }
 
-  activeCrossRanges = ranges;
+  commitCrossRanges(ranges);
   applyCrossDecorations(ranges);
   const focusRange = ranges.find((r) => r.blockId === hoverId) ?? ranges[ranges.length - 1];
   if (focusRange.surface === 'toggle-title') {
@@ -423,10 +464,10 @@ export function finalizeCrossSelection(
 }
 
 function onCopy(e: ClipboardEvent) {
-  if (activeCrossRanges.length <= 1) return;
-  const text = extractListCrossText(activeCrossRanges);
+  const text = extractActiveCrossSelectClipboardText();
   if (!text) return;
   e.preventDefault();
+  e.stopImmediatePropagation();
   e.clipboardData?.setData('text/plain', text);
 }
 
@@ -446,6 +487,7 @@ function onToggleTitlePointerDown(e: PointerEvent) {
   if (activeCrossRanges.length > 0) {
     clearAllCrossSelectState();
   }
+  clearActiveListCrossSelectState();
 
   toggleAnchor = {
     blockId,
@@ -593,6 +635,7 @@ function onPreviewTextPointerMove(e: PointerEvent) {
     const to = Math.max(previewAnchor.pos, caret);
     if (to > from) {
       activeCrossRanges = [{ blockId: hoverId, from, to, surface: 'preview' }];
+      syncCrossTextActiveBodyClass();
       applyBlockPreviewCrossHighlight(hoverId, from, to);
     }
     return;
@@ -638,6 +681,7 @@ function onPreviewTextPointerUp(e: PointerEvent) {
   if (to > from) {
     e.preventDefault();
     activeCrossRanges = [{ blockId: hoverId, from, to, surface: 'preview' }];
+    syncCrossTextActiveBodyClass();
     applyBlockPreviewCrossHighlight(hoverId, from, to);
   } else {
     clearAllCrossSelectState();

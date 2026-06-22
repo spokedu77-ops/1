@@ -138,6 +138,14 @@ export function NoteRichEditorStyles() {
         -webkit-user-select: none !important;
         cursor: default;
       }
+      body.note-text-drag-active [data-note-preview-text],
+      body.note-text-drag-active .note-rich-editor .ProseMirror {
+        user-select: none !important;
+        -webkit-user-select: none !important;
+      }
+      [data-note-preview-cross-overlay] mark.note-list-cross-selected {
+        color: rgb(38 38 38);
+      }
       [data-note-block-row].note-find-flash {
         animation: note-find-flash 1.2s ease-out;
       }

@@ -167,7 +167,7 @@ function pickDefaultTimeMode(modeId: string): 'time' | 'reps' {
   return modeId === 'reactTrain' ? 'time' : 'reps';
 }
 
-type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'rock';
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
 
 type LaunchSettings = {
   speed: number;
@@ -942,7 +942,6 @@ function SettingsScreen({
                     { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',      desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
                     { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',      desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
                     { key: 'reach'    as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기',         desc: '브릿지를 막는 벽이 등장합니다. 5번 두드려 부수세요.' },
-                    { key: 'rock'     as FlowFeatureKey, icon: '🪨', label: '돌뿌리 점프 (ROCK)',     desc: '다리 위 돌뿌리가 등장합니다. 제때 뛰어서 넘으세요.' },
                   ]
                 ).map(({ key, icon, label, desc }) => {
                   const active = launch.flowFeatures.includes(key);

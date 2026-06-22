@@ -4,10 +4,16 @@ import {
   applyRestoreBlockSnapshots,
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
+  unionReconciledWithLocalBlocks,
+  wouldReconcileRegressActiveText,
 } from './noteBlockStateMerge';
 import type { NoteBlock } from './types';
 
-const block = (id: string, text: string): NoteBlock => ({
+const block = (
+  id: string,
+  text: string,
+  opts: Partial<NoteBlock> = {},
+): NoteBlock => ({
   id,
   document_id: 'doc',
   type: 'text',
@@ -16,6 +22,7 @@ const block = (id: string, text: string): NoteBlock => ({
   parent_block_id: null,
   created_at: '',
   updated_at: '',
+  ...opts,
 });
 
 describe('mergeBlocksWithStoreContent', () => {
@@ -38,6 +45,26 @@ describe('mergeBlocksWithStoreContent', () => {
     const react = [block('b', 'from react')];
     const merged = mergeBlocksWithStoreContent(react);
     expect(merged[0].content?.text).toBe('from react');
+  });
+
+  it('keeps React title while applying store text', () => {
+    const react: NoteBlock[] = [{
+      id: 't',
+      document_id: 'doc',
+      type: 'toggle',
+      content: { title: '제목', body: 'stale' },
+      order_index: 0,
+      parent_block_id: null,
+      created_at: '',
+      updated_at: '',
+    }];
+    useNoteBlockStore.getState().setActiveDocumentId('doc');
+    useNoteBlockStore.getState().hydrate(react);
+    useNoteBlockStore.getState().patchContent('t', { title: '', body: 'typed' });
+
+    const merged = mergeBlocksWithStoreContent(react);
+    expect(merged[0].content?.title).toBe('제목');
+    expect(merged[0].content?.body).toBe('typed');
   });
 });
 
@@ -85,5 +112,37 @@ describe('mergeReconciledBlocks', () => {
     }];
     const merged = mergeReconciledBlocks(current, reconciled);
     expect(merged[0].content?.text).toBe('from server');
+  });
+});
+
+describe('unionReconciledWithLocalBlocks', () => {
+  beforeEach(() => {
+    useNoteBlockStore.getState().setActiveDocumentId('child-doc');
+    useNoteBlockStore.getState().hydrate([]);
+  });
+
+  it('keeps local-only blocks not yet on server', () => {
+    const current = [
+      block('local-new', 'draft', { document_id: 'child-doc', type: 'todo' }),
+    ];
+    const merged = unionReconciledWithLocalBlocks(current, [], 'child-doc');
+    expect(merged.some((b) => b.id === 'local-new')).toBe(true);
+  });
+});
+
+describe('wouldReconcileRegressActiveText', () => {
+  beforeEach(() => {
+    useNoteBlockStore.getState().setActiveDocumentId('child-doc');
+    useNoteBlockStore.getState().hydrate([]);
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'a', field: 'text' });
+  });
+
+  it('detects when reconcile would shorten active block text', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'hello world', { document_id: 'child-doc', type: 'todo' }),
+    ]);
+    useNoteBlockStore.getState().patchContent('a', { text: 'hello world!' });
+    const merged = [block('a', 'hello', { document_id: 'child-doc', type: 'todo' })];
+    expect(wouldReconcileRegressActiveText(merged)).toBe(true);
   });
 });

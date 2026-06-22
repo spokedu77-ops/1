@@ -1,3 +1,5 @@
+import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import { mergeBlockContentPreferLongerText } from './noteContentPatch';
 import type { NoteBlock } from './types';
 
 type VisitCacheEntry = {
@@ -31,11 +33,44 @@ function cloneBlocks(blocks: NoteBlock[]): NoteBlock[] {
   }));
 }
 
+function mergeRememberedDocumentBlocks(
+  existing: NoteBlock[],
+  incoming: NoteBlock[],
+  documentId: string,
+): NoteBlock[] {
+  const incomingForDoc = incoming.filter((block) => block.document_id === documentId);
+  const existingById = new Map(
+    existing.filter((block) => block.document_id === documentId).map((block) => [block.id, block]),
+  );
+  const merged = incomingForDoc.map((block) => {
+    const prev = existingById.get(block.id);
+    if (!prev) return block;
+    return {
+      ...block,
+      content: mergeBlockContentPreferLongerText(
+        block.content as Record<string, unknown> | null | undefined,
+        prev.content as Record<string, unknown> | null | undefined,
+      ),
+    };
+  });
+  const incomingIds = new Set(incomingForDoc.map((block) => block.id));
+  for (const block of existing) {
+    if (block.document_id === documentId && !incomingIds.has(block.id)) {
+      merged.push(block);
+    }
+  }
+  return dedupeNoteBlocksById(merged);
+}
+
 /** 문서 전환 시 즉시 표시용 — 마지막으로 본 블록 스냅샷 */
 export function rememberNoteDocumentBlocks(documentId: string, blocks: NoteBlock[]): void {
   if (!documentId) return;
-  const snapshot = blocks.filter((block) => block.document_id === documentId);
-  if (snapshot.length === 0) return;
+  const incoming = blocks.filter((block) => block.document_id === documentId);
+  if (incoming.length === 0) return;
+  const existing = visitCache.get(documentId)?.blocks ?? null;
+  const snapshot = existing
+    ? mergeRememberedDocumentBlocks(existing, incoming, documentId)
+    : incoming;
   pruneVisitCache();
   visitCache.set(documentId, {
     blocks: cloneBlocks(snapshot),

@@ -1,4 +1,5 @@
 import type { NoteBlock } from './types';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
 
 type PrefetchEntry = {
@@ -44,7 +45,10 @@ export function prefetchNoteDocumentBlocks(documentId: string): void {
     promise: fetchBlocks(documentId).then((blocks) => {
       entry.blocks = blocks;
       entry.fetchedAt = Date.now();
-      if (blocks?.length) rememberNoteDocumentBlocks(documentId, blocks);
+      const activeDocId = useNoteBlockStore.getState().activeDocumentId;
+      if (blocks?.length && activeDocId !== documentId) {
+        rememberNoteDocumentBlocks(documentId, blocks);
+      }
       return blocks;
     }),
     blocks: null,
@@ -61,7 +65,12 @@ export async function consumePrefetchedNoteBlocks(
   if (!entry) return null;
   cache.delete(documentId);
   const blocks = entry.blocks ? entry.blocks : await entry.promise;
-  if (blocks?.length) rememberNoteDocumentBlocks(documentId, blocks);
+  if (blocks?.length) {
+    const activeDocId = useNoteBlockStore.getState().activeDocumentId;
+    if (activeDocId !== documentId) {
+      rememberNoteDocumentBlocks(documentId, blocks);
+    }
+  }
   return blocks;
 }
 

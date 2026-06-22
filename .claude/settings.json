@@ -20,7 +20,13 @@
       "Bash(cat vitest.config.js)",
       "Bash(ls *.config.*)",
       "Bash(npx vitest *)",
-      "Bash(del \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\admin\\\\spomove\\\\training\\\\_player\\\\training\\\\types.ts\" \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\admin\\\\spomove\\\\training\\\\_player\\\\training\\\\config.ts\")"
+      "Bash(del \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\admin\\\\spomove\\\\training\\\\_player\\\\training\\\\types.ts\" \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\admin\\\\spomove\\\\training\\\\_player\\\\training\\\\config.ts\")",
+      "Bash(git -C \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\.claude\\\\worktrees\\\\agent-a03bd8bcfb92d5652\" diff --stat HEAD)",
+      "Bash(git -C \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\.claude\\\\worktrees\\\\agent-a03bd8bcfb92d5652\" status --short)",
+      "Bash(git -C \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\.claude\\\\worktrees\\\\agent-a03bd8bcfb92d5652\" log --oneline -5)",
+      "PowerShell($wt = \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\.claude\\\\worktrees\\\\agent-a03bd8bcfb92d5652\"; \\(Get-Content \"$wt\\\\app\\\\spokedu-master\\\\spomove\\\\officialSpomovePresets.ts\" | Measure-Object -Line\\).Lines)",
+      "PowerShell(\\(Get-Content \"c:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\app\\\\spokedu-master\\\\spomove\\\\officialSpomovePresets.ts\" | Measure-Object -Line\\).Lines)",
+      "Bash(git -C \"c:/Users/joker/Documents/GitHub/1\" status --short app/spokedu-master)"
     ]
   }
 }

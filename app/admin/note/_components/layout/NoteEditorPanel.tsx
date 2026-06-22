@@ -75,7 +75,6 @@ export function NoteEditorPanel() {
     handleRenameDocument,
     setSelectedBlockIds,
     loadingBlocks,
-    blocksSyncing,
     selectedBlockIds,
     handleBlockSelect,
     suppressGripMenuRef,
@@ -451,16 +450,10 @@ export function NoteEditorPanel() {
             <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
               <OnBlockSelectContext.Provider value={handleBlockSelect}>
                 <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
-                  {blocksSyncing ? (
-                    <div className={`${NOTE_PAGE_SHELL} flex items-center gap-1.5 py-1 text-[11px] text-slate-400`}>
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      최신 내용 반영 중…
-                    </div>
-                  ) : null}
                   <div
                     data-note-marquee-zone
                     className={NOTE_MARQUEE_ZONE}
-                    onPointerDownCapture={handleBlockListPointerDown}
+                    onPointerDown={handleBlockListPointerDown}
                   >
                     <div
                       ref={marqueeOverlayRef}

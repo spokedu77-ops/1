@@ -9,7 +9,7 @@ import {
   mergeReconciledBlocks,
 } from './noteBlockStateMerge';
 import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
-import { buildContentForTypeChange } from './noteBlockTypeChange';
+import { buildContentForTypeChange, getBlockedTypeChangeReason, filterTurnIntoCommands } from './noteBlockTypeChange';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 import {
@@ -206,6 +206,32 @@ describe('sub-document navigation (parent ↔ child)', () => {
     const merged = mergeBlocksWithStoreContent(childBlocks);
     expect(merged[0].content?.text).toBe('child body');
     expect(merged.find((b) => b.id === 'p1')).toBeUndefined();
+  });
+});
+
+describe('getBlockedTypeChangeReason', () => {
+  it('blocks page → toggle when linked sub-document exists', () => {
+    const reason = getBlockedTypeChangeReason('page', 'toggle', {
+      page_document_id: 'doc-123',
+      title: '스케줄',
+    });
+    expect(reason).toMatch(/하위 문서/);
+  });
+
+  it('blocks any type → page via turn into', () => {
+    expect(getBlockedTypeChangeReason('text', 'page', { text: 'hi' })).toMatch(/하위 문서/);
+  });
+
+  it('allows text → toggle', () => {
+    expect(getBlockedTypeChangeReason('text', 'toggle', { text: 'hi' })).toBeNull();
+  });
+
+  it('filters page from turn-into commands', () => {
+    const filtered = filterTurnIntoCommands('page', [
+      { type: 'text', label: '텍스트' },
+      { type: 'toggle', label: '토글' },
+    ], { page_document_id: 'x', title: 'A' });
+    expect(filtered).toHaveLength(0);
   });
 });
 

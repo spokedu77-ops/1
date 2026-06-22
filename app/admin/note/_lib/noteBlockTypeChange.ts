@@ -7,6 +7,58 @@ const TEXT_CARRYING_BLOCK_TYPES = new Set<NoteBlock['type']>([
   'text', 'heading', 'heading2', 'heading3', 'bulletList', 'numberedList', 'todo', 'callout', 'code',
 ]);
 
+/** 전환 시 고유 데이터(하위 문서 연결·미디어·표 등)가 사라지는 블록 */
+const NON_CONVERTIBLE_FROM_TYPES = new Set<NoteBlock['type']>([
+  'page', 'image', 'video', 'table', 'divider',
+]);
+
+const NON_CONVERTIBLE_FROM_LABELS: Partial<Record<NoteBlock['type'], string>> = {
+  page: '하위 문서(페이지)',
+  image: '이미지',
+  video: '영상',
+  table: '표',
+  divider: '구분선',
+};
+
+/** 블록 형식 전환이 데이터 손실을 일으키면 사용자에게 보여줄 이유. 허용이면 null */
+export function getBlockedTypeChangeReason(
+  prevType: NoteBlock['type'],
+  nextType: NoteBlock['type'],
+  prevContent?: Record<string, unknown> | null,
+): string | null {
+  if (prevType === nextType) return null;
+
+  if (nextType === 'page') {
+    return '하위 문서 블록은「전환」으로 만들 수 없습니다. + 메뉴에서 페이지를 추가하세요.';
+  }
+
+  if (NON_CONVERTIBLE_FROM_TYPES.has(prevType)) {
+    const label = NON_CONVERTIBLE_FROM_LABELS[prevType] ?? prevType;
+    if (prevType === 'page') {
+      const pageId = typeof prevContent?.page_document_id === 'string'
+        ? prevContent.page_document_id.trim()
+        : '';
+      const title = typeof prevContent?.title === 'string' ? prevContent.title.trim() : '';
+      if (pageId || title) {
+        return `${label} 블록은 다른 형식으로 바꿀 수 없습니다. 연결된 문서·제목이 사라집니다.`;
+      }
+    }
+    return `${label} 블록은 다른 형식으로 전환할 수 없습니다.`;
+  }
+
+  return null;
+}
+
+export function filterTurnIntoCommands<T extends { type: NoteBlock['type'] }>(
+  blockType: NoteBlock['type'],
+  commands: T[],
+  prevContent?: Record<string, unknown> | null,
+): T[] {
+  return commands.filter(
+    (command) => !getBlockedTypeChangeReason(blockType, command.type, prevContent),
+  );
+}
+
 function readCarriedTextForTypeChange(
   prevContent: Record<string, unknown> | null | undefined,
   prevType: NoteBlock['type'],

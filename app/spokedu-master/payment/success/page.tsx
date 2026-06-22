@@ -103,11 +103,11 @@ function SuccessContent() {
 
         <div className="grid gap-3 sm:grid-cols-2">
           <Link
-            href="/spokedu-master/library"
+            href="/spokedu-master/dashboard"
             className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
-            오늘 수업 고르기
+            SPOKEDU MASTER 시작하기
           </Link>
           <Link
             href="/spokedu-master/subscription"

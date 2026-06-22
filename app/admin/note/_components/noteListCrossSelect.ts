@@ -3,16 +3,18 @@ import { TextSelection } from '@tiptap/pm/state';
 import { getNoteEditor } from './noteEditorRegistry';
 import {
   applyBlockPreviewCrossHighlight,
+  blockPreviewPlainText,
+  clearAllDocumentPreviewCrossHighlights,
   clearBlockPreviewCrossHighlight,
   getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
-  listPreviewPlainText,
 } from './noteBlockPreviewCrossSelect';
 import {
   applyListCrossHighlight,
   bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
-  extractListCrossText,
+  syncCrossClipboardSnapshot,
+  syncCrossTextActiveBodyClass,
   type ListCrossRange,
 } from './noteListCrossHighlight';
 
@@ -100,7 +102,7 @@ function getListSiblingIds(blockId: string): string[] {
 
 function hoverPos(editor: Editor, x: number, y: number): number {
   const coords = editor.view.posAtCoords({ left: x, top: y });
-  return coords?.pos ?? editor.state.doc.content.size - 1;
+  return coords?.pos ?? editor.state.doc.content.size;
 }
 
 function listCaretPos(blockId: string, clientX: number, clientY: number): number {
@@ -114,8 +116,8 @@ function listCaretPos(blockId: string, clientX: number, clientY: number): number
 
 function listTextEnd(blockId: string): number {
   const editor = getNoteEditor(blockId);
-  if (editor) return editor.state.doc.content.size - 1;
-  return listPreviewPlainText(blockId).length;
+  if (editor) return editor.state.doc.content.size;
+  return blockPreviewPlainText(blockId).length;
 }
 
 /** 비활성 목록 블록은 preview DOM — editor fallback 시 from=1 오프셋 버그 */
@@ -250,10 +252,17 @@ function applyCrossDecorations(ranges: ListCrossRange[]) {
   });
 }
 
+function commitListCrossRanges(ranges: ListCrossRange[]) {
+  activeCrossRanges = ranges;
+  if (ranges.length > 1) syncCrossClipboardSnapshot(ranges);
+  syncCrossTextActiveBodyClass();
+}
+
 function clearCrossSelectState() {
   activeCrossRanges = [];
   listCrossDragActive = false;
   syncBodyCrossClass();
+  syncCrossTextActiveBodyClass();
 }
 
 /** 싱글톤 에디터 블록 전환 시 목록 크로스 선택·하이라이트 해제 */
@@ -263,6 +272,7 @@ export function clearActiveListCrossSelectState() {
     clearAllCrossHighlights(siblings);
   }
   clearCrossSelectState();
+  clearAllDocumentPreviewCrossHighlights();
   activeCrossRanges = [];
 }
 
@@ -359,6 +369,7 @@ function onPointerMove(e: PointerEvent) {
   if (ranges.length > 1) {
     e.preventDefault();
     listCrossDragActive = true;
+    commitListCrossRanges(ranges);
     syncBodyCrossClass();
     suppressNativeSelections(siblings, hoverId);
     applyCrossDecorations(ranges);
@@ -404,7 +415,7 @@ function onPointerUp(e: PointerEvent) {
 
   const focusRange = ranges.find((range) => range.blockId === hoverId) ?? ranges[ranges.length - 1];
 
-  activeCrossRanges = ranges;
+  commitListCrossRanges(ranges);
   syncBodyCrossClass();
   suppressNativeSelections(siblings, focusRange.blockId);
   applyCrossDecorations(ranges);
@@ -417,14 +428,6 @@ function onPointerUp(e: PointerEvent) {
   document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
 }
 
-function onCopy(e: ClipboardEvent) {
-  if (activeCrossRanges.length <= 1) return;
-  const text = extractListCrossText(activeCrossRanges);
-  if (!text) return;
-  e.preventDefault();
-  e.clipboardData?.setData('text/plain', text);
-}
-
 export function bindNoteListCrossTextSelect() {
   if (bound) return () => {};
   bound = true;
@@ -433,14 +436,12 @@ export function bindNoteListCrossTextSelect() {
   document.addEventListener('pointermove', onPointerMove, true);
   document.addEventListener('pointerup', onPointerUp, true);
   document.addEventListener('pointercancel', onPointerUp, true);
-  document.addEventListener('copy', onCopy, true);
   return () => {
     bound = false;
     document.removeEventListener('pointerdown', onPointerDown, true);
     document.removeEventListener('pointermove', onPointerMove, true);
     document.removeEventListener('pointerup', onPointerUp, true);
     document.removeEventListener('pointercancel', onPointerUp, true);
-    document.removeEventListener('copy', onCopy, true);
     pointerDown = false;
     dragging = false;
     anchor = null;

@@ -9,8 +9,10 @@ import {
   BlockDropTargetContext,
 } from '../_components/noteContexts';
 import { noteBlockCollisionDetection } from '../_lib/noteDropResolver';
-import { bindNoteCrossSelectCopy } from '../_components/noteCrossSelect';
-import { bindNoteListCrossTextSelect } from '../_components/noteListCrossSelect';
+import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
+import { bindNoteCrossSelectCopy, getActiveCrossRanges } from '../_components/noteCrossSelect';
+import { bindNoteListCrossTextSelect, getActiveListCrossRanges } from '../_components/noteListCrossSelect';
+import { bindCrossSelectClipboardSources } from '../_components/noteListCrossHighlight';
 import { useNotePage } from './NotePageContext';
 import { NoteMobileHeader } from '../_components/layout/NoteMobileHeader';
 import { NoteSidebarPanel } from '../_components/layout/NoteSidebarPanel';
@@ -68,11 +70,14 @@ export function NotePageShell() {
   } = useNotePage();
 
   useEffect(() => {
+    if (!NOTE_EDITOR_STABILITY.crossBlockTextSelect) return;
+    bindCrossSelectClipboardSources(getActiveCrossRanges, getActiveListCrossRanges);
     const unbindCross = bindNoteCrossSelectCopy();
     const unbindList = bindNoteListCrossTextSelect();
     return () => {
       unbindCross();
       unbindList();
+      bindCrossSelectClipboardSources(() => [], () => []);
     };
   }, []);
 

@@ -25,6 +25,8 @@ Do not write actual secret values in this checklist.
 - [ ] Create one student in production.
 - [ ] Save one class record in production.
 - [ ] Generate, save, and revisit an explanation from the saved class record.
+- [ ] Verify the profile page deletes only MASTER operational data after typing `MASTER 데이터 삭제`.
+- [ ] Confirm subscriptions, payment orders, webhook events, and the auth account remain after MASTER operational data deletion.
 - [ ] Confirm a real paid account receives `/api/spokedu-master/access` 200.
 - [ ] Confirm a logged-in account without access sees the 403 access screen.
 - [ ] Confirm paid checkout grants SPOKEDU MASTER access.
@@ -48,6 +50,8 @@ Do not write actual secret values in this checklist.
 - [ ] Data from one user is visible to another user.
 - [ ] Production DB write for students, class records, or explanations fails.
 - [ ] Saved class record to explanation linking fails.
+- [ ] A user cannot delete their own MASTER operational data on request.
+- [ ] MASTER data deletion removes subscription, payment, webhook, or account records.
 - [ ] A paid account receives access 403 after payment.
 - [ ] There is no confirmed production error monitoring path.
 - [ ] Production monitoring events contain sensitive user, auth, or payment payload data.

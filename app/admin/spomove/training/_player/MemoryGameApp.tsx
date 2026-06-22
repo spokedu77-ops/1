@@ -65,7 +65,7 @@ type Screen =
   | 'flow'
   | 'result';
 
-type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'rock';
+type FlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
 
 type Settings = {
   mode: string;
@@ -1162,7 +1162,6 @@ export default function MemoryGameApp({
                         { key: 'punch',    icon: '👊', label: '박스 펀치 (PUNCH)',     desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
                         { key: 'duck',     icon: '🛸', label: 'UFO 숙이기 (DUCK)',     desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
                         { key: 'reach',    icon: '🧱', label: '펀치 벽 두드리기',        desc: '브릿지를 막는 벽이 등장합니다. 5번 연속 두드려 부수세요.' },
-                        { key: 'rock',     icon: '🪨', label: '돌뿌리 점프 (ROCK)',    desc: '다리 위 돌뿌리가 등장합니다. 제때 뛰어서 넘으세요.' },
                       ] as { key: FlowFeatureKey; icon: string; label: string; desc: string }[]
                     ).map(({ key, icon, label, desc }) => {
                       const active = settings.flowFeatures.has(key);

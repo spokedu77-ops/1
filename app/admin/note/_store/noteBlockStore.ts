@@ -2,7 +2,12 @@
 
 import { create } from 'zustand';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
+import { clearAllDocumentPreviewCrossHighlights } from '../_components/noteBlockPreviewCrossSelect';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
+import {
+  contentChangedForUndo,
+  mergeBlockContentWithStore,
+} from '../_lib/noteContentPatch';
 import type { NoteTableCellField } from '../_lib/noteTableBlock';
 import type { NoteBlock } from '../_lib/types';
 
@@ -49,12 +54,29 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
         }
         const prev = state.byId[incoming.id];
         const sameType = prev?.type === incoming.type;
+        const isActiveBlock = state.activeEditor?.blockId === incoming.id;
         if (
           sameType
           && prev?.content != null
           && (!docId || prev.document_id === docId)
         ) {
-          byId[incoming.id] = { ...incoming, content: prev.content };
+          if (isActiveBlock) {
+            byId[incoming.id] = {
+              ...incoming,
+              content: mergeBlockContentWithStore(
+                incoming.content as Record<string, unknown> | null | undefined,
+                prev.content as Record<string, unknown>,
+              ) ?? prev.content,
+            };
+            continue;
+          }
+          const mergedContent = mergeBlockContentWithStore(
+            incoming.content as Record<string, unknown> | null | undefined,
+            prev.content as Record<string, unknown>,
+          );
+          byId[incoming.id] = mergedContent !== incoming.content
+            ? { ...incoming, content: mergedContent }
+            : incoming;
         } else {
           const content = (incoming.type === 'bulletList' || incoming.type === 'numberedList')
             && incoming.content
@@ -79,13 +101,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
       }
       const prevContent = prev.content as Record<string, unknown> | null | undefined;
       const nextRecord = nextContent as Record<string, unknown>;
-      if (
-        prevContent
-        && prevContent.text === nextRecord.text
-        && prevContent.html === nextRecord.html
-        && prevContent.body === nextRecord.body
-        && prevContent.bodyHtml === nextRecord.bodyHtml
-      ) {
+      if (prevContent && !contentChangedForUndo(prevContent, nextRecord)) {
         return state;
       }
       return {
@@ -114,6 +130,9 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
     const sameTarget = prev?.blockId === active?.blockId && prev?.field === active?.field;
     if (!sameTarget && prev) {
       commitActiveNoteEditorToStore();
+    }
+    if (!sameTarget) {
+      clearAllDocumentPreviewCrossHighlights();
     }
     set((state) => {
       if (

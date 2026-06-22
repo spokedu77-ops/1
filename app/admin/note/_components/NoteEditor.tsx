@@ -47,6 +47,7 @@ import {
 } from './noteCrossSelect';
 import { noteSuppressEditorScrollRef } from '../_lib/noteEditorScrollGuard';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
+import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 
 const UnderlineWithShortcut = Underline.extend({
@@ -512,8 +513,9 @@ export function NoteEditor({
       Placeholder.configure({ placeholder }),
       NoteTextColor,
       NoteHighlight,
-      NoteListCrossHighlightExtension,
-      NoteTextDragSelectExtension,
+      ...(NOTE_EDITOR_STABILITY.crossBlockEditorExtensions
+        ? [NoteListCrossHighlightExtension, NoteTextDragSelectExtension]
+        : []),
     ],
     [placeholder],
   );

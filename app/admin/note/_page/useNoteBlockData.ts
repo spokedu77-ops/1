@@ -12,9 +12,11 @@ import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   commitAndResetNoteDocumentBeforeSwitch,
   commitNoteDocumentBeforeLeave,
+  isActiveNoteEditorFocused,
   mergeBlocksWithStoreContent,
-  mergeReconciledBlocks,
   resetNoteDocumentEditorState,
+  unionReconciledWithLocalBlocks,
+  wouldReconcileRegressActiveText,
 } from '../_lib/noteBlockStateMerge';
 import {
   cancelNoteReconcileIdle,
@@ -82,30 +84,6 @@ export function useNoteBlockData(options: {
     });
   }, []);
 
-  const runReconcileFetch = useCallback(async (
-    documentId: string,
-    loadGen: number,
-  ) => {
-    if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-    try {
-      await commitNoteDocumentBeforeLeave();
-      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-      const res = await fetch(
-        `/api/admin/note/blocks/load?documentId=${encodeURIComponent(documentId)}`,
-        { credentials: 'include' },
-      );
-      if (!res.ok) return;
-      const json = (await res.json()) as { blocks: NoteBlock[] };
-      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-      const merged = mergeReconciledBlocks(blocksRef.current, json.blocks ?? []);
-      if (!noteBlocksStructureChanged(blocksRef.current, merged)) return;
-      setBlocks(merged);
-      rememberNoteDocumentBlocks(documentId, merged);
-    } catch (e) {
-      devLogger.error('[Note] idle reconcile', e);
-    }
-  }, [selectedId, setBlocks]);
-
   const scheduleIdleReconcile = useCallback((
     documentId: string,
     loadGen: number,
@@ -114,6 +92,48 @@ export function useNoteBlockData(options: {
     reconcileLoadGenRef.current = loadGen;
     scheduleNoteReconcileIdle(documentId);
   }, []);
+
+  const runReconcileFetch = useCallback(async (
+    documentId: string,
+    loadGen: number,
+  ) => {
+    if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
+    if (isActiveNoteEditorFocused()) {
+      scheduleIdleReconcile(documentId, loadGen);
+      return;
+    }
+    try {
+      await commitNoteDocumentBeforeLeave();
+      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
+      if (isActiveNoteEditorFocused()) {
+        scheduleIdleReconcile(documentId, loadGen);
+        return;
+      }
+      const res = await fetch(
+        `/api/admin/note/blocks/load?documentId=${encodeURIComponent(documentId)}`,
+        { credentials: 'include' },
+      );
+      if (!res.ok) return;
+      const json = (await res.json()) as { blocks: NoteBlock[] };
+      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
+      const merged = unionReconciledWithLocalBlocks(
+        blocksRef.current,
+        json.blocks ?? [],
+        documentId,
+      );
+      if (wouldReconcileRegressActiveText(merged)) {
+        scheduleIdleReconcile(documentId, loadGen);
+        return;
+      }
+      if (!noteBlocksStructureChanged(blocksRef.current, merged)) return;
+      setBlocks(merged);
+      rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
+        merged.filter((block) => block.document_id === documentId),
+      ));
+    } catch (e) {
+      devLogger.error('[Note] idle reconcile', e);
+    }
+  }, [scheduleIdleReconcile, selectedId, setBlocks]);
 
   useEffect(() => {
     registerNoteReconcileIdleHandler((documentId) => {
@@ -142,10 +162,16 @@ export function useNoteBlockData(options: {
     options?: { mergeWithCurrent?: boolean },
   ) => {
     const normalized = dedupeNoteBlocksById(normalizeLoadedNoteBlocks(loaded));
-    rememberNoteDocumentBlocks(documentId, normalized);
 
     if (options?.mergeWithCurrent && blocksRef.current.length > 0) {
-      const merged = mergeReconciledBlocks(blocksRef.current, normalized);
+      const merged = unionReconciledWithLocalBlocks(
+        blocksRef.current,
+        normalized,
+        documentId,
+      );
+      if (wouldReconcileRegressActiveText(merged)) {
+        return;
+      }
       if (!noteBlocksStructureChanged(blocksRef.current, merged)) {
         return;
       }
@@ -153,9 +179,13 @@ export function useNoteBlockData(options: {
       const store = useNoteBlockStore.getState();
       store.setActiveDocumentId(documentId);
       store.syncBlocksStructure(merged);
+      rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
+        merged.filter((block) => block.document_id === documentId),
+      ));
       return;
     }
 
+    rememberNoteDocumentBlocks(documentId, normalized);
     replaceBlocks(normalized, documentId);
   }, [replaceBlocks, setBlocks]);
 
@@ -286,12 +316,11 @@ export function useNoteBlockData(options: {
   }, [selectedId, setPendingDeleteUndo]);
 
   useEffect(() => {
-    blocksRef.current = blocks;
-    if (blocks.length > 0 && selectedId) {
-      useNoteBlockStore.getState().syncBlocksStructure(blocks);
-      const docBlocks = mergeBlocksWithStoreContent(
-        blocks.filter((block) => block.document_id === selectedId),
-      );
+    const synced = mergeBlocksWithStoreContent(blocks);
+    blocksRef.current = synced;
+    if (synced.length > 0 && selectedId) {
+      useNoteBlockStore.getState().syncBlocksStructure(synced);
+      const docBlocks = synced.filter((block) => block.document_id === selectedId);
       if (docBlocks.length > 0) {
         rememberNoteDocumentBlocks(selectedId, docBlocks);
       }

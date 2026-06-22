@@ -2,7 +2,7 @@
  * Flow 2.0 — 모듈 정의 SSOT
  */
 
-export type FlowModuleKey = 'jump' | 'faster' | 'punch' | 'duck' | 'reach' | 'rock';
+export type FlowModuleKey = 'jump' | 'faster' | 'punch' | 'duck' | 'reach';
 
 export interface FlowModule {
   key: FlowModuleKey;
@@ -90,22 +90,8 @@ export const FLOW_MODULES: Record<FlowModuleKey, FlowModule> = {
     isBase: false,
     hasObstacle: true,
   },
-  rock: {
-    key: 'rock',
-    label: '돌뿌리 점프',
-    tag: 'ROCK',
-    icon: '🪨',
-    color: '#86efac',
-    colorBg: 'rgba(134,239,172,0.12)',
-    colorBorder: 'rgba(134,239,172,0.7)',
-    cueWord: '뛰어!',
-    shortInstruction: '다리 위 돌뿌리가 오면 뛰어서 넘으세요',
-    description: '브릿지 위에 돌뿌리 등장 — 제때 점프해서 넘기',
-    isBase: false,
-    hasObstacle: true,
-  },
 };
 
 export const SELECTABLE_MODULE_KEYS: FlowModuleKey[] = [
-  'faster', 'punch', 'duck', 'reach', 'rock',
+  'faster', 'punch', 'duck', 'reach',
 ];

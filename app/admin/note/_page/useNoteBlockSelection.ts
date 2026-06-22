@@ -208,7 +208,6 @@ export function useNoteBlockSelection(options: {
     const hasModifier = e.shiftKey || e.ctrlKey || e.metaKey;
     if (isNoteTextSurfaceTarget(e.target) && !hasModifier) {
       abortBlockMarquee();
-      clearAllCrossSelectState();
       return;
     }
 

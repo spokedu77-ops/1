@@ -7,6 +7,7 @@ import {
   stripListItemMarkerPrefix,
 } from '../_components/noteBulletInput';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import { mergeBlockContentWithStore } from './noteContentPatch';
 
 /**
  * React blocks 갱신 전 스토어에만 반영된 최신 content를 병합한다.
@@ -19,8 +20,12 @@ export function mergeBlocksWithStoreContent(blocks: NoteBlock[]): NoteBlock[] {
     const fromStore = byId[block.id];
     if (!fromStore?.content) return block;
     if (activeDocumentId && fromStore.document_id !== activeDocumentId) return block;
-    if (fromStore.content === block.content) return block;
-    return { ...block, content: fromStore.content };
+    const merged = mergeBlockContentWithStore(
+      block.content as Record<string, unknown> | null | undefined,
+      fromStore.content as Record<string, unknown>,
+    );
+    if (!merged || merged === block.content) return block;
+    return { ...block, content: merged };
   });
 }
 
@@ -79,7 +84,13 @@ export function mergeReconciledBlocks(
 
     if (block.id === activeId && fromStore?.content) {
       if (activeDocumentId && fromStore.document_id !== activeDocumentId) return block;
-      return { ...block, content: fromStore.content };
+      return {
+        ...block,
+        content: mergeBlockContentWithStore(
+          block.content as Record<string, unknown> | null | undefined,
+          fromStore.content as Record<string, unknown>,
+        ),
+      };
     }
 
     if (fromStore?.content) {
@@ -89,10 +100,22 @@ export function mergeReconciledBlocks(
       const serverHtml = typeof block.content?.html === 'string' ? block.content.html : '';
       const storeHtml = typeof fromStore.content?.html === 'string' ? fromStore.content.html : '';
       if (storeText !== serverText || storeHtml !== serverHtml) {
-        return { ...block, content: fromStore.content };
+        return {
+          ...block,
+          content: mergeBlockContentWithStore(
+            block.content as Record<string, unknown> | null | undefined,
+            fromStore.content as Record<string, unknown>,
+          ),
+        };
       }
       if (fromCurrent && fromStore.content !== fromCurrent.content) {
-        return { ...block, content: fromStore.content };
+        return {
+          ...block,
+          content: mergeBlockContentWithStore(
+            fromCurrent.content as Record<string, unknown> | null | undefined,
+            fromStore.content as Record<string, unknown>,
+          ),
+        };
       }
     }
 
@@ -100,6 +123,44 @@ export function mergeReconciledBlocks(
   });
 
   return dedupeNoteBlocksById(normalizeLoadedNoteBlocks(merged));
+}
+
+/** 서버 reconcile에 아직 없는 로컬 블록(생성 직후 등)을 유지 */
+export function unionReconciledWithLocalBlocks(
+  currentBlocks: NoteBlock[],
+  reconciledBlocks: NoteBlock[],
+  documentId: string,
+): NoteBlock[] {
+  const merged = mergeReconciledBlocks(currentBlocks, reconciledBlocks);
+  const mergedIds = new Set(merged.map((block) => block.id));
+  const localOnly = currentBlocks.filter(
+    (block) => block.document_id === documentId && !mergedIds.has(block.id),
+  );
+  if (localOnly.length === 0) return merged;
+  return dedupeNoteBlocksById([...merged, ...localOnly]);
+}
+
+/** idle reconcile이 편집 중인 본문을 짧은 서버 스냅샷으로 되돌리려 할 때 */
+export function wouldReconcileRegressActiveText(
+  mergedBlocks: NoteBlock[],
+): boolean {
+  const store = useNoteBlockStore.getState();
+  const activeId = store.activeEditor?.blockId;
+  if (!activeId) return false;
+  const storeBlock = store.byId[activeId];
+  if (!storeBlock?.content) return false;
+  const mergedBlock = mergedBlocks.find((block) => block.id === activeId);
+  if (!mergedBlock) return false;
+  const storeText = typeof storeBlock.content.text === 'string' ? storeBlock.content.text : '';
+  const mergedText = typeof mergedBlock.content?.text === 'string' ? mergedBlock.content.text : '';
+  return storeText.length > mergedText.length;
+}
+
+export function isActiveNoteEditorFocused(): boolean {
+  const activeId = useNoteBlockStore.getState().activeEditor?.blockId;
+  if (!activeId) return false;
+  const editor = getNoteEditor(activeId);
+  return Boolean(editor?.isFocused);
 }
 
 /** restore-blocks undo/redo 적용 */

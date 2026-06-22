@@ -81,21 +81,31 @@ function previewCaretOffsetInRoot(root: HTMLElement, clientX: number, clientY: n
     let offset = 0;
     for (let i = 0; i < blocks.length; i += 1) {
       const block = blocks[i] as HTMLElement;
+      const blockText = block.textContent ?? '';
+      const rect = block.getBoundingClientRect();
+      const onThisLine = clientY >= rect.top - 2 && clientY <= rect.bottom + 2;
       if (block.contains(range.startContainer)) {
+        if (onThisLine && clientX >= rect.right - 6) {
+          return offset + blockText.length;
+        }
         const pre = document.createRange();
         pre.selectNodeContents(block);
         pre.setEnd(range.startContainer, range.startOffset);
-        return offset + pre.toString().length;
+        const within = Math.min(pre.toString().length, blockText.length);
+        return offset + within;
       }
-      offset += (block.textContent?.length ?? 0) + 1;
+      offset += blockText.length + 1;
     }
     return offset;
   }
 
+  const fullText = contentEl.textContent ?? '';
+  const rect = contentEl.getBoundingClientRect();
+  if (clientX >= rect.right - 6) return fullText.length;
   const pre = document.createRange();
   pre.selectNodeContents(contentEl);
   pre.setEnd(range.startContainer, range.startOffset);
-  return pre.toString().length;
+  return Math.min(pre.toString().length, fullText.length);
 }
 
 export function hoverBlockPreviewTextPos(blockId: string, clientX: number, clientY: number): number {
@@ -117,7 +127,7 @@ function ensurePreviewCrossOverlay(root: HTMLElement): HTMLElement {
   overlay.className = [
     'pointer-events-none absolute inset-0 z-[2]',
     'overflow-hidden whitespace-pre-wrap break-words',
-    'text-[16px] leading-7 text-transparent',
+    'text-[16px] leading-7 text-neutral-800',
   ].join(' ');
   if (getComputedStyle(root).position === 'static') {
     root.style.position = 'relative';
@@ -138,6 +148,10 @@ export function applyBlockPreviewCrossHighlight(blockId: string, from: number, t
   const after = escapeHtml(text.slice(safeTo));
   const overlay = ensurePreviewCrossOverlay(root);
   overlay.innerHTML = `${before}<mark class="note-list-cross-selected">${mid}</mark>${after}`;
+  root.classList.add('note-preview-cross-active');
+  if (typeof window !== 'undefined') {
+    window.getSelection()?.removeAllRanges();
+  }
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */
@@ -146,7 +160,17 @@ export const applyListPreviewCrossHighlight = applyBlockPreviewCrossHighlight;
 export function clearBlockPreviewCrossHighlight(blockId: string) {
   const root = getBlockPreviewTextRoot(blockId);
   if (!root) return;
+  root.classList.remove('note-preview-cross-active');
   root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+}
+
+/** document 전체 — 토글·목록 등에 남은 미리보기 교차선택 UI 일괄 해제 */
+export function clearAllDocumentPreviewCrossHighlights() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll<HTMLElement>('[data-note-preview-text]').forEach((root) => {
+    root.classList.remove('note-preview-cross-active');
+    root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+  });
 }
 
 /** @deprecated noteListPreviewCrossSelect 호환 */

@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
+  ClipboardList,
   FileText,
   MonitorPlay,
   Play,
@@ -59,6 +60,24 @@ type ContinueItem = {
   time?: string;
   href: string;
 };
+
+const FIRST_START_STEPS = [
+  {
+    title: '수업 자료 고르기',
+    href: '/spokedu-master/library',
+    Icon: BookOpen,
+  },
+  {
+    title: '학생 등록하기',
+    href: '/spokedu-master/students',
+    Icon: UsersRound,
+  },
+  {
+    title: '첫 수업 기록하기',
+    href: '/spokedu-master/class-record',
+    Icon: ClipboardList,
+  },
+] as const;
 
 function isPlaceholderText(value?: string | null) {
   const text = (value ?? '').trim();
@@ -397,6 +416,42 @@ function ContinueSection({ items }: { items: ContinueItem[] }) {
   );
 }
 
+function FirstStartGuide() {
+  return (
+    <section
+      data-dashboard-section="first-start"
+      aria-labelledby="first-start-heading"
+      className="rounded-[20px] border border-indigo-100 bg-indigo-50/60 p-4 shadow-[0_8px_24px_rgba(79,70,229,0.06)] sm:p-5"
+    >
+      <div>
+        <p className="text-[11px] font-black uppercase tracking-[0.15em] text-indigo-600">Start</p>
+        <h2 id="first-start-heading" className="mt-1 text-[20px] font-black tracking-[-0.03em] text-slate-950">
+          SPOKEDU MASTER 시작하기
+        </h2>
+        <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-600">
+          수업 자료를 고르고 학생을 등록한 뒤 첫 수업 기록을 남겨 보세요.
+        </p>
+      </div>
+      <div className="mt-4 grid gap-2 md:grid-cols-3">
+        {FIRST_START_STEPS.map(({ title, href, Icon }, index) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex min-h-11 items-center gap-3 rounded-[14px] border border-indigo-100 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-indigo-200 hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+          >
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-indigo-600 text-[12px] text-white">
+              {index + 1}
+            </span>
+            <Icon size={16} className="shrink-0 text-indigo-600" aria-hidden="true" />
+            <span className="min-w-0 flex-1 break-keep">{title}</span>
+            <ArrowRight size={14} className="shrink-0 text-indigo-500" aria-hidden="true" />
+          </Link>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function SpomoveCard({ preset }: { preset: OfficialSpomovePreset }) {
   return (
     <article data-spomove-preset={preset.id} className="flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-700 bg-[radial-gradient(circle_at_82%_12%,rgba(99,102,241,0.48),transparent_34%),linear-gradient(145deg,#111827,#0f172a_62%,#020617)] p-4 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
@@ -592,9 +647,17 @@ export default function DashboardView() {
     recordRecentProgramActivity,
     reloadPrograms,
   } = useMasterStore();
-  const { classRecords: serverClassRecords } = useOperationalData();
+  const {
+    students: serverStudents,
+    classRecords: serverClassRecords,
+    status: operationalStatus,
+  } = useOperationalData();
   const explanationData = useExplanationData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
+  const isFirstUser =
+    operationalStatus === 'ready' &&
+    serverStudents.length === 0 &&
+    serverClassRecords.length === 0;
   const profile = useProfile();
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
@@ -725,6 +788,8 @@ export default function DashboardView() {
           <Link href="/spokedu-master/report" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><FileText size={15} />안내문</Link>
         </div>
       </header>
+
+      {isFirstUser ? <FirstStartGuide /> : null}
 
       <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
         <div className="mb-4 flex items-end justify-between gap-4">

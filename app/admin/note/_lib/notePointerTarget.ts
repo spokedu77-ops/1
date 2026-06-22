@@ -10,7 +10,7 @@ export function isNoteTextSurfaceTarget(target: EventTarget | null): boolean {
   const el = notePointerTargetElement(target);
   if (!el) return false;
   return !!el.closest(
-    '.ProseMirror, .note-rich-editor, [data-note-editor-host], [contenteditable="true"], input, textarea, [data-toggle-title]',
+    '.ProseMirror, .note-rich-editor, [data-note-editor-host], [data-note-preview-text], [contenteditable="true"], input, textarea, [data-toggle-title]',
   );
 }
 

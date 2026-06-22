@@ -63,6 +63,11 @@ export function useNoteBlockUndo() {
   const hasUndo = useCallback(() => undoStackRef.current.length > 0, []);
   const hasRedo = useCallback(() => redoStackRef.current.length > 0, []);
 
+  const peekUndo = useCallback((): NoteHistoryEntry | null => {
+    const stack = undoStackRef.current;
+    return stack.length > 0 ? stack[stack.length - 1] : null;
+  }, []);
+
   const popUndo = useCallback((): NoteHistoryEntry | null => {
     return undoStackRef.current.pop() ?? null;
   }, []);
@@ -93,6 +98,7 @@ export function useNoteBlockUndo() {
     pushUndoNoClear,
     hasUndo,
     hasRedo,
+    peekUndo,
     popUndo,
     popRedo,
     pushRedo,

@@ -11,6 +11,7 @@ import {
   Paintbrush,
   Trash2,
 } from 'lucide-react';
+import { filterTurnIntoCommands } from '../_lib/noteBlockTypeChange';
 
 export type SlashCommand<T extends string = string> = {
   type: T;
@@ -390,6 +391,7 @@ export function BlockHandleMenu<T extends string>({
   blockTypeLabel,
   blockType,
   commands,
+  blockContent,
   currentBlockColor = 'default',
   onDuplicate,
   onDelete,
@@ -401,6 +403,7 @@ export function BlockHandleMenu<T extends string>({
   blockTypeLabel: string;
   blockType: T;
   commands: SlashCommand<T>[];
+  blockContent?: Record<string, unknown> | null;
   currentBlockColor?: string;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -413,6 +416,10 @@ export function BlockHandleMenu<T extends string>({
   const hoverCloseTimerRef = useRef<number | null>(null);
   const [hoverPanel, setHoverPanel] = useState<HandleMenuPanel | null>(null);
   const isListBlock = blockType === 'bulletList' || blockType === 'numberedList';
+  const turnIntoCommands = useMemo(
+    () => filterTurnIntoCommands(blockType, commands, blockContent),
+    [blockType, commands, blockContent],
+  );
 
   const scheduleHoverPanelClose = useCallback(() => {
     if (hoverCloseTimerRef.current) window.clearTimeout(hoverCloseTimerRef.current);
@@ -472,20 +479,22 @@ export function BlockHandleMenu<T extends string>({
         <p className="truncate text-[12px] font-medium text-neutral-500">{blockTypeLabel}</p>
       </div>
       <div className="py-0.5">
-        <HandleMenuHoverItem
-          panelId="turnInto"
-          activePanel={hoverPanel}
-          onActivate={() => setHoverPanel('turnInto')}
-          onScheduleClose={scheduleHoverPanelClose}
-          onCancelClose={cancelHoverPanelClose}
-          icon={ArrowRightLeft}
-          label="전환"
-        >
-          <HandleMenuFlyoutList
-            commands={commands}
-            onSelect={(type) => { onTurnInto(type); onClose(); }}
-          />
-        </HandleMenuHoverItem>
+        {turnIntoCommands.length > 0 ? (
+          <HandleMenuHoverItem
+            panelId="turnInto"
+            activePanel={hoverPanel}
+            onActivate={() => setHoverPanel('turnInto')}
+            onScheduleClose={scheduleHoverPanelClose}
+            onCancelClose={cancelHoverPanelClose}
+            icon={ArrowRightLeft}
+            label="전환"
+          >
+            <HandleMenuFlyoutList
+              commands={turnIntoCommands}
+              onSelect={(type) => { onTurnInto(type); onClose(); }}
+            />
+          </HandleMenuHoverItem>
+        ) : null}
         <HandleMenuHoverItem
           panelId="color"
           activePanel={hoverPanel}

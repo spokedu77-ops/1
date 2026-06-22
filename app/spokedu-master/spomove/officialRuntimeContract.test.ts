@@ -27,10 +27,10 @@ function programWithRelatedIds(ids: string[]): Program {
 }
 
 describe('official SPOMOVE runtime contract', () => {
-  it('keeps exactly nine runnable official preset IDs', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(9);
-    expect(new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id)).size).toBe(9);
-    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.isReady)).toBe(true);
+  it('keeps exactly sixty runnable official preset IDs', () => {
+    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(60);
+    expect(new Set(OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.id)).size).toBe(60);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.isReady)).toBe(true);
   });
 
   it('rejects a non-official preset ID', () => {
@@ -65,20 +65,15 @@ describe('official SPOMOVE runtime contract', () => {
     expect(href).not.toContain('drill=');
   });
 
-  it('limits the MASTER EngineRouter type and branches to six official modes', () => {
+  it('limits the MASTER EngineRouter type and branches to seven official modes', () => {
     const supported: OfficialSpomoveEngineMode[] = [
-      'basic',
-      'reactTrain',
-      'simon',
-      'flanker',
-      'stroop',
-      'spatial',
+      'basic', 'reactTrain', 'simon', 'flanker', 'stroop', 'spatial', 'flow',
     ];
     const actual = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.engine.mode));
     expect(actual).toEqual(new Set(supported));
 
     const source = read('app/spokedu-master/spomove/session/EngineRouter.tsx');
-    expect(source).not.toMatch(/mode === '(memory|flow|flash|pattern|diagonal|gonogo|taskswitch)'/);
+    expect(source).not.toMatch(/mode === '(memory|flash|pattern|diagonal|gonogo|taskswitch)'/);
     expect(source).toContain('variant="flow"');
   });
 

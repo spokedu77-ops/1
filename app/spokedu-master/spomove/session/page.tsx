@@ -72,18 +72,12 @@ function OfficialEngineBriefing({
   startDisabled: boolean;
   onStart: () => void;
 }) {
-  const { mode } = preset.engine;
-  const countFact =
-    mode === 'reactTrain'
-      ? { icon: Users, label: '실행 시간', value: '약 75초' }
-      : mode === 'spatial'
-        ? { icon: Users, label: '라운드', value: '10라운드' }
-        : { icon: Users, label: '반복 횟수', value: `${preset.rounds}회` };
+  const [ef1, ef2, ef3] = preset.executionFacts ?? [];
   const facts = [
     { icon: Gauge, label: '프로그램', value: `${preset.axisTitle} · ${preset.programTitle}` },
-    { icon: Volume2, label: '신호 간격', value: `${preset.cueSeconds}초` },
-    countFact,
-    { icon: Music2, label: 'BGM', value: 'BGM 자동 재생' },
+    { icon: Volume2, label: ef1?.label ?? '신호 간격', value: ef1?.value ?? `${preset.cueSeconds}초` },
+    { icon: Users, label: ef2?.label ?? '반복', value: ef2?.value ?? `${preset.rounds}회` },
+    { icon: Music2, label: ef3?.label ?? 'BGM', value: ef3?.value ?? 'BGM 자동 재생' },
   ];
 
   return (
@@ -215,7 +209,8 @@ function SpomoveSessionContent() {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
     }
     if (soundEnabled) getAudioCtx();
-    if (selectedBgmPath) {
+    // flow 모드: MemoryGameApp 내부 BGM이 처리하므로 session-level BgmPlayer 생략
+    if (selectedBgmPath && officialPreset.engine.mode !== 'flow') {
       const player = new BgmPlayer();
       player.init(getPublicUrl(selectedBgmPath), 0.35);
       bgmPlayerRef.current = player;
@@ -277,6 +272,10 @@ function SpomoveSessionContent() {
         speedSec={officialPreset.cueSeconds}
         rounds={officialPreset.rounds}
         soundEnabled={soundEnabled}
+        variantColorTheme={officialPreset.engine.variantColorTheme}
+        reactTrainConcurrent={officialPreset.engine.reactTrainConcurrent}
+        flowFeatures={officialPreset.engine.flowFeatures}
+        flowDuration={officialPreset.engine.flowDuration}
         onExit={() => {
           stopBgm();
           router.push('/spokedu-master/spomove');

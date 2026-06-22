@@ -1,5 +1,6 @@
 import type { Editor } from '@tiptap/react';
 import { TextSelection } from '@tiptap/pm/state';
+import { hoverBlockPreviewTextPos } from './noteBlockPreviewCrossSelect';
 
 const editors = new Map<string, Editor>();
 
@@ -71,12 +72,20 @@ export function focusNoteEditorAtClick(blockId: string, editor: Editor): boolean
   try {
     coords = editor.view.posAtCoords({ left: pending.x, top: pending.y });
   } catch {
-    return false;
+    coords = null;
   }
-  if (!coords) return false;
+
+  const docSize = editor.state.doc.content.size;
+  let pos: number;
+  if (coords) {
+    pos = coords.pos;
+  } else {
+    const previewOffset = hoverBlockPreviewTextPos(blockId, pending.x, pending.y);
+    pos = Math.max(1, Math.min(previewOffset + 1, docSize));
+  }
 
   pendingEditorClickRef.current = null;
-  editor.chain().focus().setTextSelection(coords.pos).run();
+  editor.chain().focus().setTextSelection(pos).run();
   return true;
 }
 

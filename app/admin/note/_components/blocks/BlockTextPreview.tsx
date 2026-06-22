@@ -8,6 +8,7 @@ import {
 } from '@/app/lib/note/richTextPreview';
 import { stripListItemMarkerFromHtml } from '../noteBulletInput';
 import { clearBlockPreviewCrossHighlight } from '../noteBlockPreviewCrossSelect';
+import { clearAllNoteTextSelections } from '../noteCrossSelect';
 import { setPendingSelectAllBlock } from '../noteEditorRegistry';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { parseAdminNoteDocumentIdFromHref } from '../../_lib/notePaste';
@@ -110,6 +111,7 @@ export function BlockTextPreview({
         if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) return;
         if (hasTextSelection()) return;
         if (e.detail > 1) return;
+        clearAllNoteTextSelections();
         onActivate?.();
       }}
       onDoubleClick={(e) => {

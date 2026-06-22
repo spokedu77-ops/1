@@ -1,38 +1,35 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteFormatToolbarApi } from '../_components/NoteFormatToolbarHost';
+import { type useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
+import { useNoteBlockContentSave } from '../_hooks/useNoteBlockContentSave';
+import { useNoteBlockUndoRecording } from '../_hooks/useNoteBlockUndoRecording';
+import { useNoteBlockHistory } from '../_hooks/useNoteBlockHistory';
+import { useNoteBlockKeyboard } from '../_hooks/useNoteBlockKeyboard';
+import { useNoteBlockInsert } from '../_hooks/useNoteBlockInsert';
+import { useNoteBlockDelete } from '../_hooks/useNoteBlockDelete';
 import {
-  buildNoteHistoryInverse,
-  type NoteHistoryEntry,
-  type useNoteBlockUndo,
-} from '../_hooks/useNoteBlockUndo';
-import {
-  filterSiblingBlocks,
   buildReparentContentPatch,
   getBlocksInParent,
   planBlockTabIndent,
-  planMergeWithPreviousBlock,
-  planBatchDeleteBlocks,
-  planPromoteChildrenOnDelete,
   resolveVisualNavigateTarget,
   sortRootBlocks,
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
-import { contentChangeNeedsReactBlocks, contentChangedForUndo } from '../_lib/noteContentPatch';
-import { getNoteEditor, getActiveNoteEditor } from '../_components/noteEditorRegistry';
-import { registerNoteContentFlush, resolveBlockTextCaretOffset, commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent, applyRestoreBlockSnapshots } from '../_lib/noteBlockStateMerge';
+import { applyBlockContentChange } from '../_lib/noteBlockContentPipeline';
+import { resolveBlockTextCaretOffset } from '../_lib/noteBlockStateMerge';
 import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
-import { defaultBlockContent } from '../_lib/constants';
+import { buildContentForTypeChange, getBlockedTypeChangeReason } from '../_lib/noteBlockTypeChange';
+import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 import { patchNoteBlocks } from '../_lib/noteBlocksApi';
-import { buildContentForTypeChange } from '../_lib/noteBlockTypeChange';
 import {
   canSplitMultilinePasteToBlocks,
   contentForMultilinePasteLine,
@@ -133,105 +130,112 @@ export function useNoteBlockActions(options: {
     persistBlockReparent,
   } = options;
 
-  const pendingContentPatchesRef = useRef<Map<string, unknown>>(new Map());
-  const ensuringMinimumBlockRef = useRef(false);
-  const contentUndoSessionRef = useRef<string | null>(null);
-  const CONTENT_BATCH_TIMER_KEY = '__content_batch__';
+  const { scheduleBlockContentSave, clearPendingContentPatch } = useNoteBlockContentSave({
+    blocksRef,
+    saveTimersRef,
+    triggerSave,
+  });
 
-  const flushContentPatches = useCallback(async () => {
-    const pending = pendingContentPatchesRef.current;
-    if (pending.size === 0) return;
-    const updates = [...pending.entries()].map(([id, content]) => {
-      const block = blocksRef.current.find((b) => b.id === id);
-      let record = (content ?? {}) as Record<string, unknown>;
-      if (block && (block.type === 'bulletList' || block.type === 'numberedList')) {
-        record = normalizeListBlockContentRecord(record);
-      }
-      return { id, content: record };
-    });
-    pending.clear();
-    try {
-      await patchNoteBlocks(updates);
-      triggerSave();
-    } catch (e) {
-      devLogger.error('[Note] batch updateBlock', e);
-    }
-  }, [triggerSave]);
+  const {
+    recordBlockUndo,
+    recordContentUndoBeforeChange,
+    registerCreatedBlockUndo,
+    clearContentUndoSession,
+  } = useNoteBlockUndoRecording({ blocksRef, noteUndo });
 
-  const scheduleBlockContentSave = useCallback((blockId: string, content: unknown) => {
-    pendingContentPatchesRef.current.set(blockId, content);
-    const timers = saveTimersRef.current;
-    if (timers[CONTENT_BATCH_TIMER_KEY]) clearTimeout(timers[CONTENT_BATCH_TIMER_KEY]);
-    timers[CONTENT_BATCH_TIMER_KEY] = window.setTimeout(() => {
-      delete timers[CONTENT_BATCH_TIMER_KEY];
-      void flushContentPatches();
-    }, 600);
-  }, [flushContentPatches]);
-
-  useEffect(() => {
-    registerNoteContentFlush(flushContentPatches);
-    return () => registerNoteContentFlush(null);
-  }, [flushContentPatches]);
-
-  const recordBlockUndo = useCallback((blockIds: string[]) => {
-    noteUndo.pushRestoreBlocksUndo(mergeBlocksWithStoreContent(blocksRef.current), blockIds);
-    contentUndoSessionRef.current = blockIds[0] ?? null;
-  }, [noteUndo]);
-
-  const recordContentUndoBeforeChange = useCallback((blockId: string) => {
-    if (contentUndoSessionRef.current === blockId) return;
-    noteUndo.pushRestoreBlocksUndo(mergeBlocksWithStoreContent(blocksRef.current), [blockId]);
-    contentUndoSessionRef.current = blockId;
-  }, [noteUndo]);
+  const { bindHistoryHandlers, runNoteUndo, runNoteRedo } = useNoteBlockHistory({
+    blocksRef,
+    setBlocks,
+    noteUndo,
+    triggerSave,
+    setError,
+    setPendingDeleteUndo,
+    clearContentUndoSession,
+  });
 
   const syncBlockContent = useCallback((blockId: string, content: unknown) => {
     const block = blocksRef.current.find((b) => b.id === blockId);
     if (!block) return;
-    let record = (content ?? {}) as Record<string, unknown>;
-    if (block.type === 'bulletList' || block.type === 'numberedList') {
-      record = normalizeListBlockContentRecord(record);
-    }
-    const prevRecord = (block.content ?? {}) as Record<string, unknown>;
-    if (contentChangedForUndo(prevRecord, record)) {
-      recordContentUndoBeforeChange(blockId);
-    }
-    const store = useNoteBlockStore.getState();
-    if (!store.getBlock(blockId)) {
-      store.upsertBlock(block);
-    }
-    store.patchContent(blockId, record);
-    blocksRef.current = blocksRef.current.map((b) =>
-      b.id === blockId ? { ...b, content: record } : b,
-    );
-    scheduleBlockContentSave(blockId, record);
-    bumpNoteReconcileIdle(selectedId);
-  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
+    applyBlockContentChange({
+      block,
+      content,
+      blocksRef,
+      setBlocks,
+      recordContentUndoBeforeChange,
+      scheduleBlockContentSave,
+      onAfterChange: () => bumpNoteReconcileIdle(selectedId),
+    });
+  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId, setBlocks]);
 
   const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
-    let nextContent = content;
-    if (block.type === 'bulletList' || block.type === 'numberedList') {
-      nextContent = normalizeListBlockContentRecord((content ?? {}) as Record<string, unknown>);
-    }
-    const nextRecord = nextContent as Record<string, unknown>;
-    if (!contentChangeNeedsReactBlocks(block.content as Record<string, unknown>, nextRecord)) {
-      syncBlockContent(block.id, nextRecord);
-      return;
-    }
-    if (contentChangedForUndo(block.content as Record<string, unknown>, nextRecord)) {
-      recordContentUndoBeforeChange(block.id);
-    }
-    blocksRef.current = blocksRef.current.map((b) =>
-      b.id === block.id ? { ...b, content: nextContent } : b,
-    );
-    setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, content: nextContent } : b)));
-    useNoteBlockStore.getState().patchContent(block.id, nextRecord);
-    scheduleBlockContentSave(block.id, nextContent);
-    bumpNoteReconcileIdle(selectedId);
-  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId, syncBlockContent]);
+    applyBlockContentChange({
+      block,
+      content,
+      blocksRef,
+      setBlocks,
+      recordContentUndoBeforeChange,
+      scheduleBlockContentSave,
+      onAfterChange: () => bumpNoteReconcileIdle(selectedId),
+    });
+  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId, setBlocks]);
 
-  const registerCreatedBlockUndo = useCallback((block: NoteBlock) => {
-    noteUndo.pushDeleteBlockUndo(block);
-  }, [noteUndo]);
+  const {
+    insertBlockAmongSiblings,
+    handleDuplicateBlock,
+    handleInsertBlockAfter,
+    handleInsertBlockInParent,
+    handleAddBlock,
+    ensureMinimumRootTextBlock,
+  } = useNoteBlockInsert({
+    blocks,
+    blocksRef,
+    setBlocks,
+    selectedId,
+    focusedToggleId,
+    focusedEditorBlockId,
+    focusedEditorBlockIdRef,
+    setLoadingState,
+    setError,
+    triggerSave,
+    registerCreatedBlockUndo,
+    handleUpdateBlock,
+    focusBlockEditor,
+    handleCreateSubPage,
+  });
+
+  const {
+    handleDeleteBlock,
+    handleDeleteBlocks,
+    handleMergeWithPreviousBlock,
+    handleRestoreBlockFromTrash,
+    handlePurgeBlockFromTrash,
+  } = useNoteBlockDelete({
+    blocksRef,
+    setBlocks,
+    setTrashedBlocks,
+    selectedId,
+    docTab,
+    setError,
+    setMobileTab,
+    setRestoringBlockId,
+    setPurgingBlockId,
+    setMergeFocusCaretOffset,
+    lastDeletedBlockIdRef,
+    setPendingDeleteUndo,
+    triggerSave,
+    noteUndo,
+    loadTrashedBlocks,
+    focusBlockEditor,
+    recordBlockUndo,
+    ensureMinimumRootTextBlock,
+  });
+
+  useEffect(() => {
+    bindHistoryHandlers({
+      handleDeleteBlock,
+      handleRestoreBlockFromTrash,
+    });
+  }, [bindHistoryHandlers, handleDeleteBlock, handleRestoreBlockFromTrash]);
 
   const applyBlockReparentPlan = useCallback((moving: NoteBlock, plan: BlockDropPlan<NoteBlock>) => {
     const prevBlocks = blocksRef.current;
@@ -357,290 +361,6 @@ export function useNoteBlockActions(options: {
     focusBlockEditor(target.id, 'editor', 0);
   }, [blocksRef, focusBlockEditor]);
 
-  const insertBlockAmongSiblings = useCallback(async (
-    parentId: string | null,
-    type: NoteBlock['type'],
-    insertIndex: number,
-    options?: { content?: Record<string, unknown>; focus?: boolean; registerUndo?: boolean },
-  ): Promise<NoteBlock | null> => {
-    if (!selectedId) return null;
-    try {
-      setLoadingState('saving');
-      const siblings = blocksRef.current
-        .filter((b) => (b.parent_block_id ?? null) === parentId)
-        .sort((a, b) => a.order_index - b.order_index);
-      const clampedIndex = Math.max(0, Math.min(insertIndex, siblings.length));
-      const parentBlock = parentId ? blocksRef.current.find((b) => b.id === parentId) : null;
-      const insideToggle = parentBlock?.type === 'toggle';
-      const baseContent = options?.content ?? defaultBlockContent(type, { insideToggle });
-      const baseContentMap = baseContent as Record<string, unknown>;
-      const blockContent = (insideToggle && baseContent && !baseContentMap.placedInToggle)
-        ? { ...baseContent, placedInToggle: true }
-        : baseContent;
-      const res = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: selectedId,
-          type,
-          content: blockContent,
-          order_index: clampedIndex,
-          parent_block_id: parentId,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 추가 실패');
-      }
-      const json = (await res.json()) as { block: NoteBlock };
-      let orderPayload: { id: string; order_index: number }[] = [];
-      setBlocks((prev) => {
-        if (prev.some((block) => block.id === json.block.id)) {
-          return prev;
-        }
-        const latestSiblings = prev
-          .filter((b) => (b.parent_block_id ?? null) === parentId)
-          .filter((b) => b.id !== json.block.id)
-          .sort((a, b) => a.order_index - b.order_index);
-        const latestIndex = Math.max(0, Math.min(insertIndex, latestSiblings.length));
-        const nextSiblings = [
-          ...latestSiblings.slice(0, latestIndex),
-          json.block,
-          ...latestSiblings.slice(latestIndex),
-        ].map((block, index) => ({ ...block, order_index: index }));
-        orderPayload = nextSiblings.map((block) => ({ id: block.id, order_index: block.order_index }));
-        const siblingIds = new Set(nextSiblings.map((block) => block.id));
-        const others = prev.filter((block) => !siblingIds.has(block.id));
-        return [...others, ...nextSiblings];
-      });
-      if (options?.focus !== false) {
-        focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
-      }
-      if (options?.registerUndo !== false) registerCreatedBlockUndo(json.block);
-      void fetch('/api/admin/note/blocks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ orders: orderPayload }),
-      }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
-      return json.block;
-    } catch (e) {
-      devLogger.error('[Note] insertBlockAmongSiblings', e);
-      setError(e instanceof Error ? e.message : '블록 추가 실패');
-      setLoadingState('idle');
-      return null;
-    }
-  }, [selectedId, triggerSave, focusBlockEditor, registerCreatedBlockUndo]);
-
-  const duplicateBlockRecursive = useCallback(async (
-    source: NoteBlock,
-    parentId: string | null,
-    insertIndex: number,
-  ): Promise<NoteBlock | null> => {
-    const clonedContent = JSON.parse(JSON.stringify(source.content ?? defaultBlockContent(source.type))) as Record<string, unknown>;
-    const created = await insertBlockAmongSiblings(parentId, source.type, insertIndex, {
-      content: clonedContent,
-      focus: false,
-      registerUndo: false,
-    });
-    if (!created) return null;
-
-    const children = getBlocksInParent(blocksRef.current, source.id);
-    for (let i = 0; i < children.length; i++) {
-      await duplicateBlockRecursive(children[i], created.id, i);
-    }
-    return created;
-  }, [insertBlockAmongSiblings]);
-
-  const handleDuplicateBlock = useCallback(async (block: NoteBlock) => {
-    if (!selectedId || block.type === 'page') return;
-    const parentId = block.parent_block_id ?? null;
-    const siblings = getBlocksInParent(blocksRef.current, parentId);
-    const idx = siblings.findIndex((b) => b.id === block.id);
-    const insertIndex = idx >= 0 ? idx + 1 : siblings.length;
-    const created = await duplicateBlockRecursive(block, parentId, insertIndex);
-    if (created) {
-      focusBlockEditor(created.id);
-      registerCreatedBlockUndo(created);
-    }
-  }, [selectedId, duplicateBlockRecursive, focusBlockEditor, registerCreatedBlockUndo]);
-
-  const handleInsertBlockAfter = useCallback(async (
-    afterBlock: NoteBlock,
-    type: NoteBlock['type'] = 'text',
-    content?: Record<string, unknown>,
-  ) => {
-    if (type === 'page') {
-      if (!selectedId) return;
-      await handleCreateSubPage(selectedId, {
-        insertAfterBlockId: afterBlock.id,
-        parentBlockId: afterBlock.parent_block_id ?? null,
-        navigateToChild: false,
-      });
-      return;
-    }
-    const parentId = afterBlock.parent_block_id ?? null;
-    const siblings = blocksRef.current
-      .filter((b) => (b.parent_block_id ?? null) === parentId)
-      .sort((a, b) => a.order_index - b.order_index);
-    const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
-    const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
-    await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
-  }, [insertBlockAmongSiblings, handleCreateSubPage, selectedId]);
-
-  const handleInsertBlockInParent = useCallback(async (parentBlockId: string, type: NoteBlock['type'] = 'text') => {
-    if (!selectedId) return;
-    if (type === 'page') {
-      const siblings = blocksRef.current
-        .filter((b) => b.parent_block_id === parentBlockId)
-        .sort((a, b) => a.order_index - b.order_index);
-      const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
-      const focusedChild = focusedId
-        ? siblings.find((b) => b.id === focusedId) ?? null
-        : null;
-      if (focusedChild) {
-        await handleCreateSubPage(selectedId, {
-          insertAfterBlockId: focusedChild.id,
-          parentBlockId,
-          navigateToChild: false,
-        });
-        return;
-      }
-      if (focusedId === parentBlockId) {
-        await handleCreateSubPage(selectedId, {
-          parentBlockId,
-          insertIndex: 0,
-          navigateToChild: false,
-        });
-        return;
-      }
-      const lastSibling = siblings[siblings.length - 1];
-      if (lastSibling) {
-        await handleCreateSubPage(selectedId, {
-          insertAfterBlockId: lastSibling.id,
-          parentBlockId,
-          navigateToChild: false,
-        });
-      } else {
-        await handleCreateSubPage(selectedId, { parentBlockId, navigateToChild: false });
-      }
-      return;
-    }
-    const parent = blocksRef.current.find((b) => b.id === parentBlockId);
-    if (parent?.type === 'toggle') {
-      const content = (parent.content ?? {}) as Record<string, unknown>;
-      if (content.collapsed) {
-        handleUpdateBlock(parent, { ...content, collapsed: false });
-      }
-    }
-    const siblings = blocksRef.current
-      .filter((b) => b.parent_block_id === parentBlockId)
-      .sort((a, b) => a.order_index - b.order_index);
-    const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
-
-    const focusedChild = focusedId
-      ? siblings.find((b) => b.id === focusedId) ?? null
-      : null;
-    if (focusedChild) {
-      await handleInsertBlockAfter(focusedChild, type);
-      return;
-    }
-
-    if (focusedId === parentBlockId) {
-      await insertBlockAmongSiblings(parentBlockId, type, 0);
-      return;
-    }
-
-    if (siblings.length > 0) {
-      await handleInsertBlockAfter(siblings[siblings.length - 1], type);
-      return;
-    }
-
-    await insertBlockAmongSiblings(parentBlockId, type, 0);
-  }, [
-    selectedId,
-    focusedEditorBlockId,
-    handleInsertBlockAfter,
-    handleUpdateBlock,
-    insertBlockAmongSiblings,
-    handleCreateSubPage,
-  ]);
-
-  const ensureMinimumRootTextBlock = useCallback(async () => {
-    if (!selectedId || ensuringMinimumBlockRef.current) return;
-    const roots = sortRootBlocks(
-      blocksRef.current.filter(
-        (b) => b.document_id === selectedId && (b.parent_block_id ?? null) === null,
-      ),
-    );
-    if (roots.length > 0) return;
-    ensuringMinimumBlockRef.current = true;
-    try {
-      const latestRoots = sortRootBlocks(
-        blocksRef.current.filter(
-          (b) => b.document_id === selectedId && (b.parent_block_id ?? null) === null,
-        ),
-      );
-      if (latestRoots.length > 0) return;
-      await insertBlockAmongSiblings(null, 'text', 0, { focus: true });
-    } finally {
-      ensuringMinimumBlockRef.current = false;
-    }
-  }, [selectedId, insertBlockAmongSiblings, blocksRef]);
-
-  const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
-    if (!selectedId) return;
-    try {
-      if (type === 'image' && focusedToggleId) {
-        const target = blocks.find((b) => b.id === focusedToggleId);
-        if (target?.type === 'toggle') {
-          const c = (target.content ?? {}) as Record<string, unknown>;
-          const rawIm = c.images;
-          const imgs = Array.isArray(rawIm) ? rawIm.map((u) => (typeof u === 'string' ? u : '')) : [];
-          handleUpdateBlock(target, { ...c, collapsed: false, images: [...imgs, ''] });
-          return;
-        }
-      }
-      if (type === 'page') {
-        await handleCreateSubPage(selectedId, {
-          parentBlockId: focusedToggleId ?? null,
-          navigateToChild: false,
-        });
-        return;
-      }
-
-      setLoadingState('saving');
-      const parentBlockId = focusedToggleId ?? null;
-      if (parentBlockId) {
-        await handleInsertBlockInParent(parentBlockId, type);
-        return;
-      }
-
-      const defaultContent = defaultBlockContent(type);
-      const res = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: selectedId,
-          type,
-          content: defaultContent,
-          parent_block_id: null,
-        }),
-      });
-      if (!res.ok) { const j = await res.json().catch(() => null); throw new Error(j?.error || '블록 추가 실패'); }
-      const json = (await res.json()) as { block: NoteBlock };
-      setBlocks((prev) => {
-        if (prev.some((block) => block.id === json.block.id)) return prev;
-        return [json.block, ...prev];
-      });
-      focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
-      registerCreatedBlockUndo(json.block);
-      triggerSave();
-    } catch (e) { devLogger.error('[Note] addBlock', e); setError(e instanceof Error ? e.message : '추가 실패'); }
-  }, [selectedId, triggerSave, focusedToggleId, blocks, handleUpdateBlock, focusBlockEditor, handleInsertBlockInParent, registerCreatedBlockUndo, handleCreateSubPage]);
-
   const handleClickEditorWhitespace = useCallback(() => {
     const roots = sortRootBlocks(blocksRef.current);
     const last = roots[roots.length - 1];
@@ -671,12 +391,19 @@ export function useNoteBlockActions(options: {
   }, [handleClickEditorWhitespace]);
 
   const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
+    const blockedReason = getBlockedTypeChangeReason(block.type, type, block.content);
+    if (blockedReason) {
+      setError(blockedReason);
+      return;
+    }
+
+    commitActiveNoteEditorToStore();
     recordBlockUndo([block.id]);
     let nextContent = buildContentForTypeChange(block.content, block.type, type);
     if (type === 'bulletList' || type === 'numberedList') {
       nextContent = normalizeListBlockContentRecord(nextContent);
     }
-    pendingContentPatchesRef.current.delete(block.id);
+    clearPendingContentPatch(block.id);
     useNoteBlockStore.getState().patchContent(block.id, nextContent);
     blocksRef.current = blocksRef.current.map((b) =>
       b.id === block.id ? { ...b, type, content: nextContent } : b,
@@ -702,164 +429,7 @@ export function useNoteBlockActions(options: {
       triggerSave();
       preserveEditorScrollPosition(editorScrollRef.current, () => {});
     } catch (e) { devLogger.error('[Note] changeBlockType', e); }
-  }, [focusBlockEditor, recordBlockUndo, triggerSave]);
-
-  const persistDeletePromotionPatches = useCallback(async (
-    patches: Array<{
-      id: string;
-      parent_block_id: string | null;
-      order_index: number;
-      content?: Record<string, unknown>;
-    }>,
-  ) => {
-    await patchNoteBlocks(
-      patches.map((patch) => ({
-        id: patch.id,
-        parent_block_id: patch.parent_block_id,
-        order_index: patch.order_index,
-        ...(patch.content ? { content: patch.content } : {}),
-      })),
-    );
-  }, []);
-
-  const softDeleteBlockIds = useCallback(async (ids: string[]) => {
-    if (ids.length === 0) return;
-    const res = await fetch('/api/admin/note/blocks', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ ids }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => null);
-      throw new Error(j?.error || '삭제 실패');
-    }
-  }, []);
-
-  const finalizeBlockDelete = useCallback(async (options?: {
-    skipDeleteUndo?: boolean;
-    deletedBlock?: NoteBlock | null;
-  }) => {
-    if (!options?.skipDeleteUndo && options?.deletedBlock) {
-      noteUndo.pushCreateBlockUndo(options.deletedBlock);
-      setPendingDeleteUndo(options.deletedBlock.id);
-    }
-    if (docTab === 'block-trash') {
-      setMobileTab('list');
-      await loadTrashedBlocks();
-    }
-    triggerSave();
-  }, [docTab, loadTrashedBlocks, noteUndo, setPendingDeleteUndo, triggerSave]);
-
-  const handleDeleteBlock = useCallback(async (block: NoteBlock, focusPrevious = false, skipDeleteUndo = false) => {
-    const prevBlocks = blocksRef.current;
-    const ordered = [...prevBlocks].sort((a, b) => a.order_index - b.order_index);
-    const idx = ordered.findIndex((b) => b.id === block.id);
-    if (idx < 0) return;
-
-    const promotionPlan = planPromoteChildrenOnDelete(prevBlocks, block.id);
-    const patchMap = promotionPlan
-      ? new Map(promotionPlan.patches.map((patch) => [patch.id, patch]))
-      : null;
-
-    const computeNextBlocks = (prev: NoteBlock[]) => {
-      const plan = planPromoteChildrenOnDelete(prev, block.id);
-      if (!plan) return prev.filter((b) => b.id !== block.id);
-      const patches = new Map(plan.patches.map((patch) => [patch.id, patch]));
-      return prev
-        .filter((b) => b.id !== block.id)
-        .map((b) => {
-          const patch = patches.get(b.id);
-          if (!patch) return b;
-          return {
-            ...b,
-            parent_block_id: patch.parent_block_id,
-            order_index: patch.order_index,
-            ...(patch.content ? { content: patch.content } : {}),
-          };
-        });
-    };
-
-    const nextBlocks = computeNextBlocks(prevBlocks);
-
-    if (focusPrevious) {
-      const siblings = filterSiblingBlocks(prevBlocks, block);
-      const sibIdx = siblings.findIndex((b) => b.id === block.id);
-      const nextFocus = siblings[sibIdx - 1]?.id ?? siblings[sibIdx + 1]?.id ?? null;
-      if (nextFocus) focusBlockEditor(nextFocus);
-    }
-
-    setBlocks(nextBlocks);
-    blocksRef.current = nextBlocks;
-
-    try {
-      if (patchMap && patchMap.size > 0) {
-        await persistDeletePromotionPatches([...patchMap.values()]);
-      }
-      await softDeleteBlockIds([block.id]);
-      await finalizeBlockDelete({
-        skipDeleteUndo,
-        deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
-      });
-      const rootsAfterDelete = sortRootBlocks(
-        nextBlocks.filter(
-          (b) => b.document_id === block.document_id && (b.parent_block_id ?? null) === null,
-        ),
-      );
-      if (rootsAfterDelete.length === 0) {
-        await ensureMinimumRootTextBlock();
-      }
-    } catch (e) {
-      devLogger.error('[Note] deleteBlock', e);
-      setError(e instanceof Error ? e.message : '블록 삭제 실패');
-      setBlocks(prevBlocks);
-    }
-  }, [ensureMinimumRootTextBlock, finalizeBlockDelete, focusBlockEditor, persistDeletePromotionPatches, softDeleteBlockIds]);
-
-  const handleDeleteBlocks = useCallback(async (
-    blocksToDelete: NoteBlock[],
-    options?: { skipDeleteUndo?: boolean; focusPrevious?: boolean },
-  ) => {
-    const targets = blocksToDelete.filter((block) =>
-      blocksRef.current.some((item) => item.id === block.id),
-    );
-    if (targets.length === 0) return;
-
-    if (targets.length === 1) {
-      await handleDeleteBlock(targets[0], options?.focusPrevious ?? false, options?.skipDeleteUndo ?? false);
-      return;
-    }
-
-    const prevBlocks = blocksRef.current;
-    const plan = planBatchDeleteBlocks(prevBlocks, targets.map((block) => block.id));
-    if (!plan || plan.deletedIds.length === 0) return;
-
-    setBlocks(plan.nextBlocks);
-    blocksRef.current = plan.nextBlocks;
-
-    try {
-      await persistDeletePromotionPatches(plan.patches);
-      await softDeleteBlockIds(plan.deletedIds);
-      await finalizeBlockDelete({
-        skipDeleteUndo: options?.skipDeleteUndo,
-        deletedBlock: prevBlocks.find((b) => b.id === plan.deletedIds[plan.deletedIds.length - 1])
-          ?? targets[targets.length - 1]
-          ?? null,
-      });
-      const rootsAfterDelete = sortRootBlocks(
-        plan.nextBlocks.filter(
-          (b) => selectedId && b.document_id === selectedId && (b.parent_block_id ?? null) === null,
-        ),
-      );
-      if (rootsAfterDelete.length === 0) {
-        await ensureMinimumRootTextBlock();
-      }
-    } catch (e) {
-      devLogger.error('[Note] deleteBlocks', e);
-      setError(e instanceof Error ? e.message : '블록 삭제 실패');
-      setBlocks(prevBlocks);
-    }
-  }, [ensureMinimumRootTextBlock, finalizeBlockDelete, handleDeleteBlock, persistDeletePromotionPatches, softDeleteBlockIds]);
+  }, [focusBlockEditor, recordBlockUndo, setError, triggerSave]);
 
   const showFormatToolbar = useCallback((
     applyMark: (mark: InlineMark) => void,
@@ -937,250 +507,19 @@ export function useNoteBlockActions(options: {
     return body.url;
   }, [selectedId]);
 
-  const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {
-    const prevBlocks = blocksRef.current;
-    const plan = planMergeWithPreviousBlock(prevBlocks, block.id);
-    if (!plan) return;
-
-    recordBlockUndo([plan.previousId, plan.deleteId]);
-
-    setBlocks((prev) => {
-      const livePlan = planMergeWithPreviousBlock(prev, block.id);
-      if (!livePlan) return prev;
-      return prev
-        .filter((b) => b.id !== livePlan.deleteId)
-        .map((b) => (b.id === livePlan.previousId ? { ...b, content: livePlan.mergedContent } : b));
-    });
-
-    focusBlockEditor(plan.previousId, 'editor', plan.caretOffset);
-
-    try {
-      await patchNoteBlocks([{ id: plan.previousId, content: plan.mergedContent }]);
-      await fetch(`/api/admin/note/blocks?id=${encodeURIComponent(plan.deleteId)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      triggerSave();
-    } catch (e) {
-      devLogger.error('[Note] mergeWithPrevious', e);
-      setError(e instanceof Error ? e.message : '블록 병합 실패');
-      setBlocks(prevBlocks);
-    } finally {
-      window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
-    }
-  }, [focusBlockEditor, recordBlockUndo, triggerSave]);
-
-  const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock) => {
-    try {
-      setRestoringBlockId(block.id);
-      const res = await fetch('/api/admin/note/blocks/trash/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: block.id }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 복구 실패');
-      }
-      const json = (await res.json()) as { block: NoteBlock };
-      const restoredBlock = json.block;
-      setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
-      if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
-      setBlocks((prev) => {
-        if (prev.some((b) => b.id === restoredBlock.id)) return prev;
-        return [...prev, restoredBlock].sort((a, b) => a.order_index - b.order_index);
-      });
-      focusBlockEditor(restoredBlock.id);
-      triggerSave();
-    } catch (e) {
-      devLogger.error('[Note] restoreBlockFromTrash', e);
-      setError(e instanceof Error ? e.message : '블록 복구 실패');
-    } finally {
-      setRestoringBlockId(null);
-    }
-  }, [focusBlockEditor, setPendingDeleteUndo, triggerSave]);
-
-  const applyNoteHistoryEntry = useCallback(async (entry: NoteHistoryEntry | null) => {
-    if (!entry) return;
-    if (entry.kind === 'restore-blocks') {
-      const next = applyRestoreBlockSnapshots(blocksRef.current, entry.snapshots);
-      blocksRef.current = next;
-      useNoteBlockStore.getState().syncBlocksStructure(next);
-      setBlocks(next);
-      const active = useNoteBlockStore.getState().activeEditor;
-      if (active && entry.snapshots.some((snapshot) => snapshot.id === active.blockId)) {
-        const restore = active;
-        useNoteBlockStore.getState().setActiveEditor(null);
-        requestAnimationFrame(() => {
-          useNoteBlockStore.getState().setActiveEditor(restore);
-        });
-      }
-      try {
-        await patchNoteBlocks(entry.snapshots.map((snapshot) => ({
-          id: snapshot.id,
-          type: snapshot.type,
-          content: snapshot.content,
-          parent_block_id: snapshot.parent_block_id,
-          order_index: snapshot.order_index,
-        })));
-        triggerSave();
-      } catch (e) {
-        devLogger.error('[Note] history restore-blocks', e);
-        setError(e instanceof Error ? e.message : '실행 취소 실패');
-      }
-      return;
-    }
-    if (entry.kind === 'delete-block') {
-      const live = blocksRef.current.find((b) => b.id === entry.snapshot.id);
-      if (live) await handleDeleteBlock(live, false, true);
-      return;
-    }
-    if (entry.kind === 'create-block') {
-      setPendingDeleteUndo(null);
-      await handleRestoreBlockFromTrash(entry.snapshot);
-    }
-  }, [handleDeleteBlock, handleRestoreBlockFromTrash, setPendingDeleteUndo, triggerSave]);
-
-  const runNoteUndo = useCallback(async () => {
-    await commitNoteDocumentBeforeLeave();
-    const entry = noteUndo.popUndo();
-    if (!entry) return;
-    contentUndoSessionRef.current = null;
-    const inverse = buildNoteHistoryInverse(entry, mergeBlocksWithStoreContent(blocksRef.current));
-    await applyNoteHistoryEntry(entry);
-    if (inverse) noteUndo.pushRedo(inverse);
-  }, [applyNoteHistoryEntry, noteUndo]);
-
-  const runNoteRedo = useCallback(async () => {
-    await commitNoteDocumentBeforeLeave();
-    const entry = noteUndo.popRedo();
-    if (!entry) return;
-    contentUndoSessionRef.current = null;
-    const inverse = buildNoteHistoryInverse(entry, mergeBlocksWithStoreContent(blocksRef.current));
-    await applyNoteHistoryEntry(entry);
-    if (inverse) noteUndo.pushUndoNoClear(inverse);
-  }, [applyNoteHistoryEntry, noteUndo]);
-
-  const handlePurgeBlockFromTrash = useCallback(async (block: NoteBlock) => {
-    if (!confirm('이 블록을 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
-    try {
-      setPurgingBlockId(block.id);
-      const res = await fetch(`/api/admin/note/blocks/trash/purge?id=${encodeURIComponent(block.id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 영구 삭제 실패');
-      }
-      if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
-      setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
-      triggerSave();
-    } catch (e) {
-      devLogger.error('[Note] purgeBlockFromTrash', e);
-      setError(e instanceof Error ? e.message : '블록 영구 삭제 실패');
-    } finally {
-      setPurgingBlockId(null);
-    }
-  }, [setPendingDeleteUndo, triggerSave]);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const meta = e.ctrlKey || e.metaKey;
-      if (!meta) return;
-      const key = e.key.toLowerCase();
-      const isUndo = key === 'z' && !e.shiftKey;
-      const isRedo = key === 'z' && e.shiftKey;
-      if (!isUndo && !isRedo) return;
-
-      const target = e.target as HTMLElement | null;
-      const inProseMirror = !!target?.closest('.ProseMirror');
-      const inToggleTitle = !!target?.closest('[data-toggle-title]');
-      const inDocTitle = target === titleInputRef.current || !!target?.closest('[data-note-doc-title]');
-
-      if (inDocTitle) return;
-
-      if (isUndo && noteUndo.hasUndo()) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        clearAllNoteTextSelections();
-        void runNoteUndo();
-        return;
-      }
-      if (isRedo && noteUndo.hasRedo()) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        clearAllNoteTextSelections();
-        void runNoteRedo();
-        return;
-      }
-
-      if (inToggleTitle) return;
-
-      if (inProseMirror) {
-        const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
-        if (!editor) return;
-        if (isRedo && editor.can().redo()) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          clearAllNoteTextSelections();
-          editor.chain().focus().redo().run();
-        } else if (isUndo && editor.can().undo()) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          clearAllNoteTextSelections();
-          editor.chain().focus().undo().run();
-        }
-      }
-    };
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [runNoteRedo, runNoteUndo, noteUndo]);
-
-  useEffect(() => {
-    const resolveShortcutBlock = (): NoteBlock | null => {
-      const selected = selectedBlockIdsRef.current;
-      const blockId = selected.size === 1
-        ? [...selected][0]
-        : (selected.size === 0 ? focusedEditorBlockIdRef.current : null);
-      if (!blockId) return null;
-      return blocksRef.current.find((b) => b.id === blockId) ?? null;
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      if (docTab !== 'active' || !selectedId) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.closest('[data-note-doc-title]')) return;
-
-      const meta = e.ctrlKey || e.metaKey;
-      if (meta && !e.shiftKey && e.key.toLowerCase() === 'd') {
-        const block = resolveShortcutBlock();
-        if (!block) return;
-        e.preventDefault();
-        void handleDuplicateBlock(block);
-        return;
-      }
-
-      if (e.altKey && e.shiftKey && e.key.toLowerCase() === 'l') {
-        const block = resolveShortcutBlock();
-        if (!block) return;
-        e.preventDefault();
-        handleCopyBlockLink(block);
-      }
-    };
-
-    window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [
+  useNoteBlockKeyboard({
     docTab,
     selectedId,
     blocksRef,
     focusedEditorBlockIdRef,
     selectedBlockIdsRef,
+    titleInputRef,
+    noteUndo,
+    runNoteUndo,
+    runNoteRedo,
     handleDuplicateBlock,
     handleCopyBlockLink,
-  ]);
+  });
 
   return {
     scheduleBlockContentSave,

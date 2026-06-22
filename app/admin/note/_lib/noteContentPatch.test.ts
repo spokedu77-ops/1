@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { contentChangeNeedsReactBlocks } from './noteContentPatch';
+import { contentChangeNeedsReactBlocks, mergeBlockContentWithStore } from './noteContentPatch';
+
+describe('mergeBlockContentWithStore', () => {
+  it('keeps title from React while applying store text', () => {
+    expect(mergeBlockContentWithStore(
+      { title: '제목', text: 'old' },
+      { title: '', text: 'typed' },
+    )).toEqual({ title: '제목', text: 'typed' });
+  });
+});
 
 describe('contentChangeNeedsReactBlocks', () => {
   it('returns false when only text/html fields change', () => {

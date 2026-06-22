@@ -7,6 +7,14 @@ const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const REQUIRED_ENV = ['SPOKEDU_MASTER_QA_ID', 'SPOKEDU_MASTER_QA_PASSWORD'];
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || '';
 const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || '';
+const MASTER_DELETE_CONFIRMATION = 'MASTER \uB370\uC774\uD130 \uC0AD\uC81C';
+const MASTER_DELETE_SUCCESS = 'MASTER \uC6B4\uC601 \uB370\uC774\uD130\uB97C \uC0AD\uC81C\uD588\uC2B5\uB2C8\uB2E4.';
+
+const DEV_SERVER_TIMEOUT_MS = 10_000;
+const BROWSER_LAUNCH_TIMEOUT_MS = 30_000;
+const LOGIN_TIMEOUT_MS = 45_000;
+const FLOW_TIMEOUT_MS = 75_000;
+const TOTAL_TIMEOUT_MS = 12 * 60_000;
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const STUDENT_ALICE_ID = '22222222-2222-4222-8222-222222222222';
@@ -18,18 +26,43 @@ function iso(offsetMinutes = 0) {
   return new Date(now.getTime() + offsetMinutes * 60_000).toISOString();
 }
 
+function logStep(message) {
+  console.log(message);
+}
+
+function safeErrorMessage(error) {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+async function withTimeout(label, timeoutMs, task) {
+  let timeoutId;
+  try {
+    return await Promise.race([
+      task(),
+      new Promise((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
+
 const programs = [
   {
     id: '52',
     title: 'QA Jump Adventure',
     category: 'QA Movement',
-    grade: '초등',
+    grade: 'elementary',
     duration: 20,
-    space: '실내',
+    space: 'indoor',
     description: 'QA smoke lesson for movement and balance.',
     steps: ['Warm up safely', 'Jump through markers', 'Cool down'],
     equipment: ['cones', 'markers'],
-    tags: ['협응력', '반응', '균형', 'SPOMOVE'],
+    tags: ['coordination', 'reaction', 'balance', 'SPOMOVE'],
     colors: ['#312e81', '#4338ca', '#6366f1', '#a5b4fc'],
     isPro: false,
     isNew: true,
@@ -37,10 +70,10 @@ const programs = [
     thumbnailUrl: '/spokedu-master-icon.svg',
     curriculumId: 52,
     lessonDetail: {
-      recommendedAge: '초등',
-      recommendedPlayers: '6-20명',
+      recommendedAge: 'elementary',
+      recommendedPlayers: '6-20 students',
       objective: 'Students practice balance and coordination.',
-      developmentFocus: '협응력 / 균형 / 반응',
+      developmentFocus: 'coordination / balance / reaction',
       coachScript: 'Move safely and follow the signal.',
       parentNote: 'QA parent note for quick record smoke.',
       fieldTips: ['Keep spacing safe.'],
@@ -59,13 +92,13 @@ const programs = [
     id: '53',
     title: 'QA Balance Program',
     category: 'QA Balance',
-    grade: '유아',
+    grade: 'preschool',
     duration: 15,
-    space: '교실',
+    space: 'classroom',
     description: 'QA second lesson.',
     steps: ['Stand', 'Balance', 'Finish'],
     equipment: ['line tape'],
-    tags: ['균형', '집중'],
+    tags: ['balance', 'focus'],
     colors: ['#064e3b', '#047857', '#10b981', '#86efac'],
     isPro: false,
     isNew: false,
@@ -73,10 +106,10 @@ const programs = [
     thumbnailUrl: '/spokedu-master-icon.svg',
     curriculumId: 53,
     lessonDetail: {
-      recommendedAge: '유아',
-      recommendedPlayers: '4-12명',
+      recommendedAge: 'preschool',
+      recommendedPlayers: '4-12 students',
       objective: 'Students practice steady balance.',
-      developmentFocus: '균형 / 집중',
+      developmentFocus: 'balance / focus',
       coachScript: 'Balance with calm breathing.',
       parentNote: 'QA balance parent note.',
       fieldTips: [],
@@ -138,7 +171,7 @@ function recordDto(overrides) {
         studentName: 'QA Alice Longname Student',
         attendance: 'present',
         focused: true,
-        skills: ['협응력'],
+        skills: ['coordination'],
         memo: 'Detailed Alice memo for next class preparation.',
         createdAt: iso(-120),
         updatedAt: iso(-120),
@@ -248,25 +281,33 @@ function assertRequiredEnv() {
 }
 
 async function assertDevServerReachable() {
-  try {
+  return withTimeout('dev server check', DEV_SERVER_TIMEOUT_MS, async () => {
     const response = await fetch(`${BASE}/login`, { redirect: 'manual' });
     if (response.status >= 500) {
       throw new Error(`HTTP ${response.status}`);
     }
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`Dev server is not reachable at ${BASE}: ${reason}`);
-  }
+  }).catch((error) => {
+    throw new Error(`Dev server is not reachable at ${BASE}: ${safeErrorMessage(error)}`);
+  });
 }
 
 async function login(context) {
-  const page = await context.newPage();
-  await page.goto(`${BASE}/login?next=${encodeURIComponent('/spokedu-master/landing')}`, { waitUntil: 'domcontentloaded' });
-  await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
-  await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
-  await page.locator('button[type="submit"]').click();
-  await page.waitForURL(/\/spokedu-master\//, { timeout: 90_000, waitUntil: 'domcontentloaded' });
-  await page.close();
+  logStep('[auth] creating QA session');
+  await withTimeout('QA login', LOGIN_TIMEOUT_MS, async () => {
+    const page = await context.newPage();
+    try {
+      page.setDefaultTimeout(15_000);
+      page.setDefaultNavigationTimeout(30_000);
+      await gotoPage(page, `/login?next=${encodeURIComponent('/spokedu-master/landing')}`);
+      await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+      await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+      await page.locator('button[type="submit"]').click();
+      await page.waitForURL(/\/spokedu-master\//, { timeout: LOGIN_TIMEOUT_MS });
+    } finally {
+      await page.close().catch(() => undefined);
+    }
+  });
+  logStep('[auth] QA session ready');
 }
 
 async function installAppState(context) {
@@ -451,8 +492,13 @@ async function assertNoConsoleErrors(page, label) {
 }
 
 async function waitAppReady(page) {
-  await page.waitForLoadState('domcontentloaded');
   await page.waitForTimeout(700);
+}
+
+async function gotoPage(page, route) {
+  const url = route.startsWith('http') ? route : `${BASE}${route}`;
+  await page.goto(url, { waitUntil: 'commit', timeout: 30_000 });
+  await waitAppReady(page);
 }
 
 async function clickFirstVisible(locator, description) {
@@ -491,7 +537,7 @@ async function waitForText(page, text, description) {
 async function runUnauthRedirectSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
-  await page.goto(`${BASE}/spokedu-master/students`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/students');
   await page.waitForURL(/\/login\?next=/, { timeout: 20_000 });
   const url = new URL(page.url());
   assert(url.pathname === '/login', 'unauthenticated students route did not land on /login');
@@ -508,7 +554,7 @@ async function runAccessDeniedSmoke(browser) {
   const page = await context.newPage();
   const finishConsoleCheck = await assertNoConsoleErrors(page, '403 access');
   const mocks = await installAccessDeniedMocks(page);
-  await page.goto(`${BASE}/spokedu-master/students`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/students');
   await waitAppReady(page);
   const bodyText = await page.locator('body').innerText();
   assert(bodyText.includes('SPOKEDU MASTER'), '403 screen did not render SPOKEDU MASTER copy');
@@ -533,7 +579,7 @@ async function runQuickRecordToReportSmoke(browser) {
   const page = await context.newPage();
   const finishConsoleCheck = await assertNoConsoleErrors(page, 'quick record');
   await installOperationalMocks(page);
-  await page.goto(`${BASE}/spokedu-master/library/52`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/library/52');
   await waitAppReady(page);
   await checkNoHorizontalOverflow(page, 'library detail before quick modal');
   await clickFirstVisible(page.locator('main .sticky button.bg-emerald-600'), 'quick record button');
@@ -562,7 +608,7 @@ async function runDetailedRecordSmoke(browser) {
   const page = await context.newPage();
   const finishConsoleCheck = await assertNoConsoleErrors(page, 'detailed record');
   await installOperationalMocks(page);
-  await page.goto(`${BASE}/spokedu-master/class-record?program=52`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/class-record?program=52');
   await waitAppReady(page);
   await checkNoHorizontalOverflow(page, 'class-record initial');
   await waitForText(page, 'QA Alice Longname Student', 'class-record Alice row');
@@ -585,7 +631,7 @@ async function runDetailedRecordSmoke(browser) {
   const reportHref = await page.locator('a[href*="/spokedu-master/report?record="]').first().getAttribute('href');
   assert(reportHref?.includes('record=detailed-record-1'), 'detailed save report link missing record id');
   assert(reportHref?.includes('program=52'), 'detailed save report link missing program id');
-  await page.goto(`${BASE}${reportHref}`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, reportHref);
   await waitAppReady(page);
   assert((await page.locator('body').innerText()).includes('Detailed Alice memo from browser smoke.'), 'report did not include detailed student memo');
   finishConsoleCheck();
@@ -599,7 +645,7 @@ async function runDetailedRecordFailureSmoke(browser) {
   const page = await context.newPage();
   const finishConsoleCheck = await assertNoConsoleErrors(page, 'detailed record failure');
   const mocks = await installOperationalMocks(page, { failNextRecordPost: true });
-  await page.goto(`${BASE}/spokedu-master/class-record?program=52`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/class-record?program=52');
   await waitAppReady(page);
   await waitForText(page, 'QA Alice Longname Student', 'class-record Alice row');
   await page.evaluate(() => {
@@ -631,15 +677,15 @@ async function runReportSaveRestoreSmoke(browser) {
   const page = await context.newPage();
   const finishConsoleCheck = await assertNoConsoleErrors(page, 'report save restore');
   await installOperationalMocks(page);
-  await page.goto(`${BASE}/spokedu-master/report?record=record-existing-1&program=52`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/report?record=record-existing-1&program=52');
   await waitAppReady(page);
   assert((await page.locator('body').innerText()).includes('Detailed Alice memo for next class preparation.'), 'record-based report did not apply student memo');
-  await clickFirstVisible(page.locator('button').filter({ hasText: /보관|저장/ }), 'save explanation button');
+  await clickFirstVisible(page.locator('button').filter({ hasText: /저장|보관/ }), 'save explanation button');
   await page.waitForURL(/saved=exp-new-1/, { timeout: 10_000 });
   const savedUrl = new URL(page.url());
   assert(savedUrl.searchParams.get('program') === '52', 'saved URL missing program');
   assert(!savedUrl.searchParams.has('record'), 'saved URL still contains record context');
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.reload({ waitUntil: 'commit', timeout: 30_000 });
   await waitAppReady(page);
   assert(new URL(page.url()).searchParams.get('saved') === 'exp-new-1', 'reload lost saved query');
   const savedText = (await page.locator('body').innerText());
@@ -658,7 +704,7 @@ async function runReportSaveRestoreSmoke(browser) {
   assert(programOnlyUrl.searchParams.get('program') === '53', 'program select did not switch program');
   assert(!programOnlyUrl.searchParams.has('saved'), 'program select kept saved query');
   assert(!programOnlyUrl.searchParams.has('record'), 'program select kept record query');
-  await page.goto(`${BASE}/spokedu-master/report?program=52&saved=exp-new-1`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/report?program=52&saved=exp-new-1');
   await waitAppReady(page);
   await page.locator('textarea').fill('Edited draft after saved restore.');
   await page.waitForTimeout(500);
@@ -674,14 +720,14 @@ async function runStudentPreparationSmoke(browser) {
   const page = await context.newPage();
   const finishConsoleCheck = await assertNoConsoleErrors(page, 'students prep');
   await installOperationalMocks(page);
-  await page.goto(`${BASE}/spokedu-master/students`, { waitUntil: 'domcontentloaded' });
+  await gotoPage(page, '/spokedu-master/students');
   await waitAppReady(page);
   await checkNoHorizontalOverflow(page, 'students list');
   await page.getByText('QA Alice Longname Student').first().click();
   await waitAppReady(page);
   const bodyText = await page.locator('body').innerText();
   assert(bodyText.includes('Detailed Alice memo for next class preparation.'), 'Alice detail missing recent memo');
-  assert(bodyText.includes('협응력'), 'Alice detail missing skill tag');
+  assert(bodyText.includes('coordination'), 'Alice detail missing skill tag');
   assert(!bodyText.includes('Bob private memo should not appear for Alice.'), 'Alice detail leaked Bob memo');
   const libraryHref = await page.locator('a[href="/spokedu-master/library/52"]').first().getAttribute('href');
   const prepHref = await page.locator('a[href="/spokedu-master/class-record?program=52"]').first().getAttribute('href');
@@ -702,57 +748,192 @@ async function runMobileSmoke(browser) {
     ['/spokedu-master/class-record?program=52', 'class-record 390px'],
     ['/spokedu-master/students', 'students 390px'],
   ]) {
-    await page.goto(`${BASE}${route}`, { waitUntil: 'domcontentloaded' });
+    await gotoPage(page, route);
     await waitAppReady(page);
     await checkNoHorizontalOverflow(page, label);
   }
   await context.close();
 }
 
-async function main() {
-  assertRequiredEnv();
-  await assertDevServerReachable();
+async function runMasterDataDeletionSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  let deleteCalls = 0;
+  let studentsGetCalls = 0;
+  let recordsGetCalls = 0;
+  let explanationsGetCalls = 0;
+  let smokeStudents = students;
+  let smokeRecords = [recordDto({})];
+  const deleteRequests = [];
 
-  const chromium = await loadPlaywright();
-  const browser = await chromium.launch({ headless: true });
-  const results = [];
-  const flows = [
-    ['unauth redirect', () => runUnauthRedirectSmoke(browser)],
-    ['403 access state', () => runAccessDeniedSmoke(browser)],
-    ['quick record to report', () => runQuickRecordToReportSmoke(browser)],
-    ['detailed record to report', () => runDetailedRecordSmoke(browser)],
-    ['detailed record failure retry', () => runDetailedRecordFailureSmoke(browser)],
-    ['report save restore', () => runReportSaveRestoreSmoke(browser)],
-    ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
-    ['mobile 390px', () => runMobileSmoke(browser)],
-  ];
-
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
   try {
-    for (const [name, run] of flows) {
-      const startedAt = Date.now();
-      try {
-        await run();
-        const ms = Date.now() - startedAt;
-        results.push({ name, ok: true, ms });
-        console.log(JSON.stringify({ ok: true, flow: name, ms }));
-      } catch (error) {
-        const ms = Date.now() - startedAt;
-        const message = error instanceof Error ? error.message : String(error);
-        results.push({ name, ok: false, ms, message });
-        console.error(JSON.stringify({ ok: false, flow: name, ms, message }));
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(30_000);
+    page.on('request', (request) => {
+      if (request.method() === 'DELETE') {
+        deleteRequests.push(new URL(request.url()).pathname);
       }
-    }
+    });
+    await page.route('**/api/spokedu-master/access', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, userId: OWNER_ID }),
+        headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+      });
+    });
+    await page.route('**/api/spokedu-master/subscription', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          plan: 'pro',
+          status: 'active',
+          isAdmin: false,
+          userId: OWNER_ID,
+          email: QA_ID,
+          periodEnd: iso(10_000),
+          trialEndsAt: iso(10_000),
+        }),
+      });
+    });
+    await page.route('**/api/spokedu-master/programs', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ data: programs }),
+        headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+      });
+    });
+    await page.route('**/api/spokedu-master/students', async (route) => {
+      if (route.request().method() === 'GET') {
+        studentsGetCalls += 1;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: smokeStudents }) });
+        return;
+      }
+      await route.fallback();
+    });
+    await page.route('**/api/spokedu-master/class-records', async (route) => {
+      if (route.request().method() === 'GET') {
+        recordsGetCalls += 1;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: smokeRecords }) });
+        return;
+      }
+      await route.fallback();
+    });
+    await page.route('**/api/spokedu-master/explanations', async (route) => {
+      if (route.request().method() === 'GET') {
+        explanationsGetCalls += 1;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], total: 0 }) });
+        return;
+      }
+      await route.fallback();
+    });
+    await page.route('**/api/spokedu-master/operational-data', async (route) => {
+      assert(route.request().method() === 'DELETE', 'operational-data route was called with a non-DELETE method');
+      deleteCalls += 1;
+      const body = await route.request().postDataJSON();
+      assert(body.confirmation === MASTER_DELETE_CONFIRMATION, 'delete confirmation body mismatch');
+      smokeStudents = [];
+      smokeRecords = [];
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    });
+
+    await gotoPage(page, '/spokedu-master/dashboard');
+    await waitAppReady(page);
+    assert(await page.locator('[data-dashboard-section="first-start"]').count() === 0, 'existing user saw first-start onboarding guide');
+
+    await gotoPage(page, '/spokedu-master/profile');
+    await waitAppReady(page);
+    const section = page.locator('section').filter({ hasText: MASTER_DELETE_CONFIRMATION }).first();
+    await section.waitFor({ state: 'visible', timeout: 10_000 });
+    const button = section.getByRole('button', { name: MASTER_DELETE_CONFIRMATION });
+    assert(await button.isDisabled(), 'delete button was enabled before confirmation input');
+    await section.locator('input').fill(MASTER_DELETE_CONFIRMATION);
+    assert(!(await button.isDisabled()), 'delete button did not enable after exact confirmation input');
+    await button.click();
+    await waitForText(page, MASTER_DELETE_SUCCESS, 'MASTER data deletion success message');
+    assert(deleteCalls === 1, `expected one operational-data DELETE call, got ${deleteCalls}`);
+    assert(studentsGetCalls >= 2, 'operational provider did not reload students after deletion');
+    assert(recordsGetCalls >= 2, 'operational provider did not reload class records after deletion');
+    assert(explanationsGetCalls >= 2, 'explanation provider did not reload explanations after deletion');
+    assert(deleteRequests.every((pathname) => pathname === '/api/spokedu-master/operational-data'), 'unexpected DELETE request fired during data deletion smoke');
+    await gotoPage(page, '/spokedu-master/dashboard');
+    await waitAppReady(page);
+    const firstStart = page.locator('[data-dashboard-section="first-start"]');
+    await firstStart.waitFor({ state: 'visible', timeout: 10_000 });
+    assert(await firstStart.locator('a[href="/spokedu-master/library"]').count() === 1, 'first-start library CTA missing');
+    assert(await firstStart.locator('a[href="/spokedu-master/students"]').count() === 1, 'first-start students CTA missing');
+    assert(await firstStart.locator('a[href="/spokedu-master/class-record"]').count() === 1, 'first-start class-record CTA missing');
   } finally {
-    await browser.close();
+    await context.close().catch(() => undefined);
   }
+}
 
-  const failed = results.filter((result) => !result.ok);
-  if (failed.length > 0) {
-    console.error(`\n${failed.length} SPOKEDU MASTER commercial smoke flow(s) failed.`);
-    process.exit(1);
-  }
+async function main() {
+  const suiteStartedAt = Date.now();
+  let browser;
 
-  console.log('\nSPOKEDU MASTER commercial smoke QA passed.');
+  await withTimeout('commercial smoke suite', TOTAL_TIMEOUT_MS, async () => {
+    logStep('[setup] checking required environment');
+    assertRequiredEnv();
+    logStep('[setup] checking dev server');
+    await assertDevServerReachable();
+    logStep('[setup] dev server reachable');
+
+    logStep('[setup] loading playwright');
+    const chromium = await loadPlaywright();
+    logStep('[setup] launching chromium');
+    browser = await withTimeout('chromium launch', BROWSER_LAUNCH_TIMEOUT_MS, () => chromium.launch({ headless: true }));
+    logStep('[setup] chromium launched');
+
+    const results = [];
+    const flows = [
+      ['unauth redirect', () => runUnauthRedirectSmoke(browser)],
+      ['403 access state', () => runAccessDeniedSmoke(browser)],
+      ['quick record to report', () => runQuickRecordToReportSmoke(browser)],
+      ['detailed record to report', () => runDetailedRecordSmoke(browser)],
+      ['detailed record failure retry', () => runDetailedRecordFailureSmoke(browser)],
+      ['report save restore', () => runReportSaveRestoreSmoke(browser)],
+      ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
+      ['mobile 390px', () => runMobileSmoke(browser)],
+      ['master data deletion', () => runMasterDataDeletionSmoke(browser)],
+    ];
+
+    try {
+      for (const [index, [name, run]] of flows.entries()) {
+        const label = `[${index + 1}/${flows.length}] ${name}`;
+        logStep(label);
+        const startedAt = Date.now();
+        try {
+          await withTimeout(name, FLOW_TIMEOUT_MS, run);
+          const ms = Date.now() - startedAt;
+          results.push({ name, ok: true, ms });
+          console.log(JSON.stringify({ ok: true, flow: name, ms }));
+        } catch (error) {
+          const ms = Date.now() - startedAt;
+          const message = safeErrorMessage(error);
+          results.push({ name, ok: false, ms, message });
+          console.error(JSON.stringify({ ok: false, flow: name, ms, message }));
+        }
+      }
+    } finally {
+      await browser.close().catch(() => undefined);
+    }
+
+    const failed = results.filter((result) => !result.ok);
+    if (failed.length > 0) {
+      console.error(`\n${failed.length} SPOKEDU MASTER commercial smoke flow(s) failed.`);
+      process.exit(1);
+    }
+
+    const totalMs = Date.now() - suiteStartedAt;
+    logStep(`[done] commercial smoke passed in ${totalMs}ms`);
+  }).finally(async () => {
+    if (browser) await browser.close().catch(() => undefined);
+  });
 }
 
 main().catch((error) => {

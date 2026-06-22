@@ -10,9 +10,11 @@ import {
   OFFICIAL_SPOMOVE_LIBRARY,
   officialPresetSessionHref,
   type OfficialSpomovePreset,
+  type OfficialSpomoveProgramGroup,
 } from './officialSpomovePresets';
 
 type OfficialLibraryTab = 'all' | 'response' | 'attention' | 'executive';
+type ProgramGroupTab = 'all' | OfficialSpomoveProgramGroup;
 type AccessState = 'checking' | 'allowed' | 'unauthorized' | 'forbidden' | 'error';
 
 const TABS: OfficialLibraryTab[] = ['all', 'response', 'attention', 'executive'];
@@ -22,6 +24,30 @@ const TAB_LABELS: Record<OfficialLibraryTab, string> = {
   response: SPOMOVE_AXIS_META.response.title,
   attention: SPOMOVE_AXIS_META.attention.title,
   executive: SPOMOVE_AXIS_META.executive.title,
+};
+
+const PROGRAM_GROUP_TABS: ProgramGroupTab[] = [
+  'all',
+  'reaction-cognition',
+  'visual-reaction',
+  'simon',
+  'flanker',
+  'stroop',
+  'sequential-memory',
+  'dive',
+  'bonus',
+];
+
+const PROGRAM_GROUP_LABELS: Record<ProgramGroupTab, string> = {
+  all: '전체',
+  'reaction-cognition': '반응 인지',
+  'visual-reaction': '시지각 반응',
+  simon: '사이먼 효과',
+  flanker: '플랭커',
+  stroop: '스트룹 과제',
+  'sequential-memory': '순차 기억',
+  dive: '다이브',
+  bonus: '보너스',
 };
 
 const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
@@ -39,6 +65,11 @@ const AXIS_TEXT: Record<OfficialSpomovePreset['axis'], string> = {
 function tabCount(tab: OfficialLibraryTab) {
   if (tab === 'all') return OFFICIAL_SPOMOVE_LIBRARY.length;
   return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.axis === tab).length;
+}
+
+function programGroupCount(tab: ProgramGroupTab) {
+  if (tab === 'all') return OFFICIAL_SPOMOVE_LIBRARY.length;
+  return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.programGroup === tab).length;
 }
 
 function PresetCard({
@@ -108,6 +139,7 @@ function PresetCard({
 
 export default function SpomoveHubView() {
   const [activeTab, setActiveTab] = useState<OfficialLibraryTab>('all');
+  const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
   const [accessState, setAccessState] = useState<AccessState>('checking');
 
   useEffect(() => {
@@ -160,10 +192,11 @@ export default function SpomoveHubView() {
     );
   }
 
-  const filteredPresets =
-    activeTab === 'all'
-      ? OFFICIAL_SPOMOVE_LIBRARY
-      : OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.axis === activeTab);
+  const filteredPresets = OFFICIAL_SPOMOVE_LIBRARY.filter((p) => {
+    const axisMatch = activeTab === 'all' || p.axis === activeTab;
+    const groupMatch = activeProgramGroup === 'all' || p.programGroup === activeProgramGroup;
+    return axisMatch && groupMatch;
+  });
 
   return (
     <main className="h-full overflow-y-auto bg-[#f5f7fb]">
@@ -204,6 +237,34 @@ export default function SpomoveHubView() {
                 <span
                   className={`inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-black ${
                     active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {PROGRAM_GROUP_TABS.map((tab) => {
+            const active = activeProgramGroup === tab;
+            const count = programGroupCount(tab);
+            return (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveProgramGroup(tab)}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all ${
+                  active
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'border border-slate-200 bg-white text-slate-500 hover:border-indigo-200 hover:text-indigo-700'
+                }`}
+              >
+                {PROGRAM_GROUP_LABELS[tab]}
+                <span
+                  className={`inline-flex h-[16px] min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-black ${
+                    active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-400'
                   }`}
                 >
                   {count}

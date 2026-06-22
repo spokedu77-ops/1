@@ -48,10 +48,10 @@ This audit records only what is visible in repository code and docs. It does not
 
 ## Privacy Deletion and Account Closure
 
-- Current implementation: operational rows reference `auth.users(id)` with `ON DELETE CASCADE`, so deleting the auth user would remove owner-scoped operational data. A user-facing account deletion request flow for SPOKEDU MASTER was not found.
-- Evidence: `supabase/migrations/20260616120000_spokedu_master_operational_data.sql`, `supabase/migrations/20260619120000_spokedu_master_explanations.sql`, `app/info/gym/privacy/page.tsx`.
+- Current implementation: users can delete their own SPOKEDU MASTER operational data from the profile page after typing the exact confirmation phrase `MASTER 데이터 삭제`. `DELETE /api/spokedu-master/operational-data` uses `requireSpokeduMasterAccess().userId`, applies `owner_id = access.userId` to each operational delete, and deletes class-record child rows, class records, students, and saved explanations. It does not delete `auth.users`, subscriptions, payment orders, or payment webhook events. There is still no full account deletion flow. Payment and settlement record retention policy remains an operational/legal policy item.
+- Evidence: `app/api/spokedu-master/operational-data/route.ts`, `app/spokedu-master/profile/page.tsx`, `supabase/migrations/20260616120000_spokedu_master_operational_data.sql`, `supabase/migrations/20260619120000_spokedu_master_explanations.sql`.
 - Risk grade: P1.
-- Required before paid launch: Define the account deletion and personal data deletion process, including who can execute it and how backups are handled.
+- Required before paid launch: Update the privacy policy to describe MASTER operational data deletion, document backup retention behavior after deletion, define full account closure support, and confirm payment/settlement record retention requirements.
 
 ## Institution Shared Accounts
 
