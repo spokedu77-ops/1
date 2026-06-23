@@ -330,6 +330,24 @@ export function generateSignal(
       return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
     }
     if (level === 2) {
+      const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
+      const validSlides = vSlides.filter((s) => (s.imageUrl ?? '').trim() !== '');
+      if (validSlides.length > 0) {
+        const themed = r(validSlides);
+        return {
+          type: 'think_quad',
+          bg: '#0F172A',
+          content: {
+            colorId: themed.color.id,
+            fillHex: themed.color.bg,
+            symbol: themed.color.symbol,
+            name: themed.color.name,
+            textColor: themed.color.text,
+            imageUrl: themed.imageUrl,
+          },
+          voice: null,
+        };
+      }
       const c = r(activeColors);
       /** Think Studio StageA와 동일 2×2(PAD_GRID: 위 빨·노 / 아래 초·파), 해당 칸만 강조 */
       return {
@@ -341,6 +359,7 @@ export function generateSignal(
           symbol: c.symbol,
           name: c.name,
           textColor: c.text,
+          imageUrl: null,
         },
         voice: null,
       };
@@ -1034,7 +1053,7 @@ function wouldExceedColorBalance(
 export function createBasicSignalGenerator(
   level: number,
   colors: ColorItem[],
-  fruitSlides: FruitSlide[] | undefined = undefined,
+  fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
   basicNumberOverlay?: 'none' | '2' | '3'
 ) {
   let prev1: string | null = null;
@@ -1056,8 +1075,9 @@ export function createBasicSignalGenerator(
 
   const genOpts = (): GenerateSignalOptions => {
     const o: GenerateSignalOptions = {};
-    // fruitSlides가 undefined면 opts에 포함하지 않음 → generateSignal에서 usesImageTheme=false → 색상 폴백 사용
-    if (fruitSlides !== undefined) o.fruitSlides = fruitSlides;
+    // getter이면 호출해서 최신 슬라이드를 읽음 — 렌더 주기와 독립적으로 타이머가 갱신됨
+    const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
+    if (slides !== undefined) o.fruitSlides = slides;
     if (basicNumberOverlay && basicNumberOverlay !== 'none') o.basicNumberOverlay = basicNumberOverlay;
     if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;

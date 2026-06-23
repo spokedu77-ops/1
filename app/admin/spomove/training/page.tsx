@@ -29,6 +29,7 @@ import {
   type SpomoveColorThemeId,
 } from './_player/lib/spomoveVariantThemeConfig';
 import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './_player/lib/flowPresets';
+import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
 
 /* ─── MemoryGameApp (Training 전용): SSR 비활성, 클라이언트 전용 ─── */
 const MemoryGameApp = dynamic(
@@ -559,6 +560,7 @@ function SettingsScreen({
   const [launch, setLaunch] = useState<LaunchSettings>(initial);
   const [guideOpen, setGuideOpen] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [showVariantAppendix, setShowVariantAppendix] = useState(false);
 
   // ── Flow 즐겨찾기 ──────────────────────────────────────────────────────────
   const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => loadFlowPresets());
@@ -729,7 +731,33 @@ function SettingsScreen({
                   </button>
                 );
               })}
+              {modeId === 'basic' && (
+                <button
+                  type="button"
+                  onClick={() => setShowVariantAppendix((v) => !v)}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border: `1.5px solid ${showVariantAppendix ? accent : T.border}`,
+                    background: showVariantAppendix ? `${accent}16` : T.card,
+                    fontFamily: 'inherit',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 900, color: showVariantAppendix ? accent : T.text }}>
+                    (부록) 변형 색지각 이미지 소개
+                  </span>
+                </button>
+              )}
             </div>
+            {modeId === 'basic' && showVariantAppendix && (
+              <VariantAppendixFullscreen onClose={() => setShowVariantAppendix(false)} />
+            )}
           </section>
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}

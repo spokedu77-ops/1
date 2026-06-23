@@ -11,10 +11,12 @@ import {
 import {
   clearAllCrossSelectState,
   hasActiveMultiCrossSelect,
+  reapplyActiveCrossSelectDecorations,
 } from './noteCrossSelect';
 import {
   clearActiveListCrossSelectState,
   hasActiveMultiListCrossSelect,
+  reapplyActiveListCrossDecorations,
 } from './noteListCrossSelect';
 import { clearAllDocumentPreviewCrossHighlights } from './noteBlockPreviewCrossSelect';
 
@@ -28,9 +30,15 @@ export function NoteSingletonEditorHost() {
 
   useEffect(() => {
     if (!config?.blockId) return;
+    if (hasActiveMultiCrossSelect()) {
+      reapplyActiveCrossSelectDecorations();
+      return;
+    }
+    if (hasActiveMultiListCrossSelect()) {
+      reapplyActiveListCrossDecorations();
+      return;
+    }
     clearAllDocumentPreviewCrossHighlights();
-    // 다중 블록 텍스트 선택 직후 포커스 블록 전환 시 선택·클립보드 범위 유지
-    if (hasActiveMultiCrossSelect() || hasActiveMultiListCrossSelect()) return;
     clearAllCrossSelectState();
     clearActiveListCrossSelectState();
   }, [config?.blockId]);

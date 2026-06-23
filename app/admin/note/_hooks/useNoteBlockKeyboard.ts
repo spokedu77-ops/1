@@ -79,14 +79,6 @@ export function useNoteBlockKeyboard(options: {
         return;
       }
 
-      if (isUndo && preferBlockUndo && noteUndo.hasUndo()) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-        clearAllNoteTextSelections();
-        void runNoteUndo();
-        return;
-      }
-
       if (inProseMirror) {
         const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
         if (editor) {
@@ -105,6 +97,14 @@ export function useNoteBlockKeyboard(options: {
             return;
           }
         }
+      }
+
+      if (isUndo && preferBlockUndo && noteUndo.hasUndo()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearAllNoteTextSelections();
+        void runNoteUndo();
+        return;
       }
 
       if (isUndo && noteUndo.hasUndo()) {

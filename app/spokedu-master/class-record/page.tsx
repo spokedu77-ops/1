@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { isSameDay } from 'date-fns';
 import { AlertTriangle, BookOpen, Check, ChevronRight, ClipboardList, FileText, History, MessageCircle, ShieldAlert, Star, UserCheck, UserPlus, UserX } from 'lucide-react';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -133,6 +133,14 @@ function RecordCard({ record }: { record: ClassRecord }) {
         </Link>
         <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
           <FileText size={13} /> 안내문 만들기
+        </Link>
+        {!isQuick ? (
+          <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+            <ClipboardList size={13} /> 기록 수정
+          </Link>
+        ) : null}
+        <Link href={`/spokedu-master/class-record?from=${record.id}&program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+          <ClipboardList size={13} /> 같은 구성으로 기록 준비
         </Link>
         {!isQuick ? (
           <Link href={`/spokedu-master/class-record?program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
@@ -273,13 +281,20 @@ function RecordEntryView() {
   const lessons = useMasterStore((state) => state.lessons);
   const operationalData = useOperationalData();
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
+  const records = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programs = useMasterStore((state) => state.programs);
   const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
   const requestedProgramId = searchParams.get('program');
-  const program = programs.find((item) => item.id === requestedProgramId) ?? programs[0];
-  const activeClassId = todayLesson?.classId ?? students[0]?.group ?? '수업';
+  const requestedRecordId = searchParams.get('record');
+  const sourceRecordId = searchParams.get('from');
+  const editingRecord = requestedRecordId ? records.find((record) => record.id === requestedRecordId) ?? null : null;
+  const sourceRecord = !requestedRecordId && sourceRecordId
+    ? records.find((record) => record.id === sourceRecordId) ?? null
+    : null;
+  const program = programs.find((item) => item.id === (requestedProgramId ?? editingRecord?.programId ?? sourceRecord?.programId)) ?? programs[0];
+  const defaultClassId = todayLesson?.classId ?? students[0]?.group ?? '수업';
   const activePeriod = todayLesson?.period ?? 3;
-  const activeLessonTitle = requestedProgramId ? program?.title : todayLesson?.title ?? program?.title ?? '수업 기록';
+  const activeLessonTitle = editingRecord?.lessonTitle || (requestedProgramId ? program?.title : todayLesson?.title ?? program?.title ?? '수업 기록');
   const skills = useMemo(() => {
     const fromTags = (program?.tags ?? []).filter((t) => t !== 'SPOMOVE').slice(0, 6);
     return fromTags.length >= 2 ? fromTags : DEFAULT_SKILLS;
@@ -289,10 +304,14 @@ function RecordEntryView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [checkedSkills, setCheckedSkills] = useState<Record<string, string[]>>({});
   const [studentMemos, setStudentMemos] = useState<Record<string, string>>({});
+  const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [classId, setClassId] = useState(defaultClassId);
+  const [classMemo, setClassMemo] = useState('');
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
   const [savedOnly, setSavedOnly] = useState(false);
   const [recordSaving, setRecordSaving] = useState(false);
   const [recordSaveError, setRecordSaveError] = useState<string | null>(null);
+  const restoredRecordIdRef = useRef<string | null>(null);
 
   const selectedStudent = students.find((student) => student.id === selectedId);
   const packageFocus = program?.lessonDetail?.developmentFocus ?? program?.tags.slice(0, 3).join(', ') ?? '';
@@ -309,7 +328,10 @@ function RecordEntryView() {
   const upgradeLabel = getUpgradeLabel(profile);
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
-  const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance;
+  const canSaveRecord = recordStatus.allowed && hasStudents && hasAttendance && Boolean(recordDate.trim());
+  const editingRecordMissing = Boolean(requestedRecordId && operationalData.status === 'ready' && !editingRecord);
+  const sourceRecordMissing = Boolean(sourceRecordId && operationalData.status === 'ready' && !sourceRecord && !editingRecord);
+  const isEditingRecord = Boolean(editingRecord);
   const reportHref = program
     ? savedRecordId
       ? `/spokedu-master/report?record=${savedRecordId}&program=${program.id}`
@@ -319,6 +341,48 @@ function RecordEntryView() {
   useEffect(() => {
     setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
   }, [students]);
+
+  useEffect(() => {
+    if (!editingRecord || restoredRecordIdRef.current === editingRecord.id) return;
+    restoredRecordIdRef.current = editingRecord.id;
+    setRecordDate(new Date(editingRecord.date).toISOString().slice(0, 10));
+    setClassId(editingRecord.classId || defaultClassId);
+    setClassMemo(editingRecord.memo ?? '');
+    setSavedRecordId(editingRecord.id);
+    setSavedOnly(false);
+    setRecordSaveError(null);
+    setAttendance(Object.fromEntries(students.map((student) => {
+      const recordStudent = editingRecord.students.find((item) => item.studentId === student.id);
+      return [student.id, recordStudent?.attendance ?? 'pending'];
+    })) as Record<string, AttendanceStatus>);
+    setFocused(Object.fromEntries(students.map((student) => {
+      const recordStudent = editingRecord.students.find((item) => item.studentId === student.id);
+      return [student.id, recordStudent?.focused ?? false];
+    })));
+    setCheckedSkills(Object.fromEntries(students.map((student) => {
+      const recordStudent = editingRecord.students.find((item) => item.studentId === student.id);
+      return [student.id, recordStudent?.skills ?? []];
+    })));
+    setStudentMemos(Object.fromEntries(students.map((student) => {
+      const recordStudent = editingRecord.students.find((item) => item.studentId === student.id);
+      return [student.id, recordStudent?.memo ?? ''];
+    })));
+  }, [defaultClassId, editingRecord, students]);
+
+  useEffect(() => {
+    if (!sourceRecord || restoredRecordIdRef.current === `from:${sourceRecord.id}`) return;
+    restoredRecordIdRef.current = `from:${sourceRecord.id}`;
+    setRecordDate(new Date().toISOString().slice(0, 10));
+    setClassId(sourceRecord.classId || defaultClassId);
+    setClassMemo('');
+    setSavedRecordId(null);
+    setSavedOnly(false);
+    setRecordSaveError(null);
+    setAttendance(Object.fromEntries(students.map((student) => [student.id, 'pending'])) as Record<string, AttendanceStatus>);
+    setFocused({});
+    setCheckedSkills({});
+    setStudentMemos({});
+  }, [defaultClassId, sourceRecord, students]);
 
   if (!program) {
     return (
@@ -348,12 +412,12 @@ function RecordEntryView() {
   };
 
   const buildRecord = (kakaoSent: boolean): ClassRecord => ({
-    id: savedRecordId ?? Date.now().toString(),
+    id: editingRecord?.id ?? savedRecordId ?? Date.now().toString(),
     lessonTitle: activeLessonTitle,
-    classId: activeClassId,
+    classId: classId.trim() || defaultClassId,
     programId: program.id,
     programTitle: program.title,
-    date: new Date().toISOString(),
+    date: new Date(recordDate).toISOString(),
     present,
     absent,
     focusCount,
@@ -367,6 +431,7 @@ function RecordEntryView() {
       skills: checkedSkills[student.id] ?? [],
       memo: studentMemos[student.id]?.trim() || undefined,
     })),
+    memo: classMemo.trim() || undefined,
   });
 
   const persistRecord = (kakaoSent: boolean) => {
@@ -375,14 +440,18 @@ function RecordEntryView() {
     setRecordSaving(true);
     setRecordSaveError(null);
     setSavedOnly(false);
-    setSavedRecordId(null);
-    void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
+    if (!editingRecord) setSavedRecordId(null);
+    const input = classRecordToCreateInput(record, operationalData.students);
+    const request = editingRecord
+      ? operationalData.updateClassRecord(editingRecord.id, input)
+      : operationalData.saveClassRecord(input);
+    void request.then((saved) => {
       setSavedRecordId(saved.id);
       setSavedOnly(!kakaoSent);
     }).catch(() => {
       setRecordSaveError(RECORD_SAVE_ERROR_MESSAGE);
       setSavedOnly(false);
-      setSavedRecordId(null);
+      if (!editingRecord) setSavedRecordId(null);
     }).finally(() => {
       setRecordSaving(false);
     });
@@ -415,8 +484,8 @@ function RecordEntryView() {
       <section className="mx-[22px] mb-5 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.25), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{activeClassId} / {activePeriod}교시</p>
-            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{activeLessonTitle}</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{classId || defaultClassId} / {activePeriod}교시</p>
+            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{isEditingRecord ? '수업 기록 수정' : activeLessonTitle}</h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{[packageMeta, packageFocus].filter(Boolean).join(' · ')}</p>
           </div>
           <Link href={`/spokedu-master/library/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="수업 자료 보기">
@@ -426,6 +495,30 @@ function RecordEntryView() {
         <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }}>
           <div className="h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
         </div>
+      </section>
+
+      {editingRecordMissing || sourceRecordMissing ? (
+        <section className="mx-[22px] mb-5 rounded-[16px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)' }}>
+          <p className="text-[14px] font-black" style={{ color: 'var(--spm-red)' }}>{editingRecordMissing ? '수정할 수업 기록을 찾지 못했습니다.' : '다시 사용할 수업 기록을 찾지 못했습니다.'}</p>
+          <Link href="/spokedu-master/class-record" className="mt-3 inline-flex h-11 items-center rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
+            기록 목록으로 이동
+          </Link>
+        </section>
+      ) : null}
+
+      <section className="mx-[22px] mb-5 grid gap-3 rounded-[18px] p-4 sm:mx-8 md:grid-cols-3 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+        <label className="block">
+          <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>수업일</span>
+          <input type="date" value={recordDate} onChange={(event) => setRecordDate(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>반·기관명</span>
+          <input type="text" value={classId} onChange={(event) => setClassId(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>전체 수업 메모</span>
+          <input type="text" value={classMemo} onChange={(event) => setClassMemo(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+        </label>
       </section>
 
       <section className="mb-5 grid grid-cols-3 gap-2 px-[22px] sm:px-8 lg:px-10">
@@ -482,7 +575,7 @@ function RecordEntryView() {
           </div>
         </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr_1fr]">
-          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || recordSaving} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : '학생 기록 저장'}</button>
+          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : isEditingRecord ? '수정 내용 저장' : '학생 기록 저장'}</button>
           <Link href={reportHref} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들기</Link>
           <button type="button" disabled className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
             <ShieldAlert size={16} />
@@ -523,7 +616,7 @@ function RecordEntryView() {
 
 function ClassRecordContent() {
   const searchParams = useSearchParams();
-  return searchParams.get('program') ? <RecordEntryView /> : <RecordListView />;
+  return searchParams.get('program') || searchParams.get('record') || searchParams.get('from') ? <RecordEntryView /> : <RecordListView />;
 }
 
 export default function ClassRecordPage() {

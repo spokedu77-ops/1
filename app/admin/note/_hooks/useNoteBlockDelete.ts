@@ -93,13 +93,24 @@ export function useNoteBlockDelete(options: {
     }
   }, []);
 
-  const finalizeBlockDelete = useCallback(async (deleteOptions?: {
-    skipDeleteUndo?: boolean;
-    deletedBlock?: NoteBlock | null;
-  }) => {
-    if (!deleteOptions?.skipDeleteUndo && deleteOptions?.deletedBlock) {
-      noteUndo.pushCreateBlockUndo(deleteOptions.deletedBlock);
-      setPendingDeleteUndo(deleteOptions.deletedBlock.id);
+  const finalizeBlockDelete = useCallback(async (
+    prevBlocks: NoteBlock[],
+    deleteOptions?: {
+      skipDeleteUndo?: boolean;
+      deletedBlock?: NoteBlock | null;
+      deletedIds?: string[];
+    },
+  ) => {
+    if (!deleteOptions?.skipDeleteUndo) {
+      if (deleteOptions?.deletedIds && deleteOptions.deletedIds.length > 1) {
+        noteUndo.pushRestoreBlocksUndo(
+          mergeBlocksWithStoreContent(prevBlocks),
+          deleteOptions.deletedIds,
+        );
+      } else if (deleteOptions?.deletedBlock) {
+        noteUndo.pushCreateBlockUndo(deleteOptions.deletedBlock);
+        setPendingDeleteUndo(deleteOptions.deletedBlock.id);
+      }
     }
     if (docTab === 'block-trash') {
       setMobileTab('list');
@@ -154,7 +165,7 @@ export function useNoteBlockDelete(options: {
         await persistDeletePromotionPatches([...patchMap.values()]);
       }
       await softDeleteBlockIds([block.id]);
-      await finalizeBlockDelete({
+      await finalizeBlockDelete(prevBlocks, {
         skipDeleteUndo,
         deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
       });
@@ -169,6 +180,7 @@ export function useNoteBlockDelete(options: {
     } catch (e) {
       devLogger.error('[Note] deleteBlock', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
+      blocksRef.current = prevBlocks;
       setBlocks(prevBlocks);
     }
   }, [
@@ -210,8 +222,9 @@ export function useNoteBlockDelete(options: {
     try {
       await persistDeletePromotionPatches(plan.patches);
       await softDeleteBlockIds(plan.deletedIds);
-      await finalizeBlockDelete({
+      await finalizeBlockDelete(prevBlocks, {
         skipDeleteUndo: deleteOptions?.skipDeleteUndo,
+        deletedIds: plan.deletedIds,
         deletedBlock: prevBlocks.find((b) => b.id === plan.deletedIds[plan.deletedIds.length - 1])
           ?? targets[targets.length - 1]
           ?? null,
@@ -227,6 +240,7 @@ export function useNoteBlockDelete(options: {
     } catch (e) {
       devLogger.error('[Note] deleteBlocks', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
+      blocksRef.current = prevBlocks;
       setBlocks(prevBlocks);
     }
   }, [

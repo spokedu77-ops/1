@@ -3,6 +3,7 @@
 import React from 'react';
 import { CSS, S } from '../styles';
 import { GUIDE_BLOCKS, TRAINING_GUIDE_PAGE_INTRO, TRAINING_PREP_CARD } from '../trainingGuideContent';
+import { VariantImageAppendix } from './VariantImageAppendix';
 
 export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
   return (
@@ -300,6 +301,8 @@ export function TrainingGuideScreen({ onBack }: { onBack: () => void }) {
                   <span style={{ color: '#94A3B8' }}> · </span>
                   {block.tip}
                 </div>
+
+                {block.id === 'basic' && <VariantImageAppendix />}
               </div>
             </section>
           ))}

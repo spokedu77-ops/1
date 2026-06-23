@@ -332,7 +332,7 @@ async function installAccessDeniedMocks(page) {
     operationalCalls += 1;
     await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'should not load' }) });
   });
-  await page.route('**/api/spokedu-master/class-records', async (route) => {
+  await page.route('**/api/spokedu-master/class-records**', async (route) => {
     operationalCalls += 1;
     await route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'should not load' }) });
   });
@@ -359,6 +359,7 @@ async function installAccessDeniedMocks(page) {
 }
 
 async function installOperationalMocks(page, options = {}) {
+  let smokeStudents = [...students];
   let classRecords = [recordDto({})];
   let explanations = [
     {
@@ -372,7 +373,14 @@ async function installOperationalMocks(page, options = {}) {
   ];
   let failNextRecordPost = Boolean(options.failNextRecordPost);
   let recordPostCount = 0;
+  let lastRecordPostBody = null;
+  let recordPatchCount = 0;
+  let lastRecordPatchBody = null;
+  let lastRecordPatchId = null;
   let explanationPostCount = 0;
+  let studentPostCount = 0;
+  let studentsGetCalls = 0;
+  let lastStudentPostBody = null;
 
   await page.route('**/api/spokedu-master/access', async (route) => {
     await route.fulfill({
@@ -406,13 +414,32 @@ async function installOperationalMocks(page, options = {}) {
     });
   });
   await page.route('**/api/spokedu-master/students', async (route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: students }) });
+    const request = route.request();
+    if (request.method() === 'GET') {
+      studentsGetCalls += 1;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: smokeStudents }) });
+      return;
+    }
+    if (request.method() === 'POST') {
+      studentPostCount += 1;
+      const input = await request.postDataJSON();
+      lastStudentPostBody = input;
+      const saved = {
+        id: `student-created-${studentPostCount}`,
+        legacyId: input.legacyId ?? null,
+        name: input.name,
+        group: input.group ?? null,
+        meta: input.meta ?? {},
+        createdAt: iso(studentPostCount),
+        updatedAt: iso(studentPostCount),
+      };
+      smokeStudents = [saved, ...smokeStudents.filter((student) => student.id !== saved.id)];
+      await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: saved, duplicate: false }) });
       return;
     }
     await route.fallback();
   });
-  await page.route('**/api/spokedu-master/class-records', async (route) => {
+  await page.route('**/api/spokedu-master/class-records**', async (route) => {
     const request = route.request();
     if (request.method() === 'GET') {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: classRecords }) });
@@ -426,10 +453,28 @@ async function installOperationalMocks(page, options = {}) {
         return;
       }
       const input = await request.postDataJSON();
+      lastRecordPostBody = input;
       const id = input.recordType === 'quick' ? `quick-record-${recordPostCount}` : `detailed-record-${recordPostCount}`;
       const saved = aggregateRecord(input, id);
       classRecords = [saved, ...classRecords.filter((record) => record.id !== saved.id)];
       await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify({ data: saved }) });
+      return;
+    }
+    if (request.method() === 'PATCH') {
+      recordPatchCount += 1;
+      const url = new URL(request.url());
+      const id = url.searchParams.get('id');
+      const input = await request.postDataJSON();
+      lastRecordPatchBody = input;
+      lastRecordPatchId = id;
+      const existing = classRecords.find((record) => record.id === id);
+      if (!existing) {
+        await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'Record not found' }) });
+        return;
+      }
+      const saved = aggregateRecord(input, id);
+      classRecords = [saved, ...classRecords.filter((record) => record.id !== id)];
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: saved }) });
       return;
     }
     await route.fallback();
@@ -470,8 +515,32 @@ async function installOperationalMocks(page, options = {}) {
     get explanations() {
       return explanations;
     },
+    get students() {
+      return smokeStudents;
+    },
+    get studentsGetCalls() {
+      return studentsGetCalls;
+    },
+    get studentPostCount() {
+      return studentPostCount;
+    },
+    get lastStudentPostBody() {
+      return lastStudentPostBody;
+    },
     get recordPostCount() {
       return recordPostCount;
+    },
+    get lastRecordPostBody() {
+      return lastRecordPostBody;
+    },
+    get recordPatchCount() {
+      return recordPatchCount;
+    },
+    get lastRecordPatchBody() {
+      return lastRecordPatchBody;
+    },
+    get lastRecordPatchId() {
+      return lastRecordPatchId;
     },
   };
 }
@@ -534,6 +603,11 @@ async function waitForText(page, text, description) {
   }
 }
 
+async function expectValue(locator, expected, description) {
+  const value = await locator.inputValue({ timeout: 10_000 });
+  assert(value === expected, `${description} mismatch: expected "${expected}", got "${value}"`);
+}
+
 async function runUnauthRedirectSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
@@ -568,6 +642,219 @@ async function runAccessDeniedSmoke(browser) {
   await page.waitForTimeout(500);
   assert(mocks.accessCalls > before, 'retry did not re-call access endpoint');
   assert(mocks.operationalCalls === 0, 'retry triggered operational data requests');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function installPaymentActivationOperationalMocks(page) {
+  await page.route('**/api/spokedu-master/subscription', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        plan: 'pro',
+        status: 'active',
+        isAdmin: false,
+        userId: OWNER_ID,
+        email: QA_ID,
+        periodEnd: iso(10_000),
+        trialEndsAt: iso(10_000),
+      }),
+    });
+  });
+  await page.route('**/api/spokedu-master/programs', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ data: programs }),
+      headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+    });
+  });
+  await page.route('**/api/spokedu-master/students', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: students }) });
+  });
+  await page.route('**/api/spokedu-master/class-records**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [recordDto({})] }) });
+  });
+  await page.route('**/api/spokedu-master/explanations**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ data: [], total: 0 }) });
+  });
+}
+
+async function runPaymentActivationSmoke(browser) {
+  const planContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const planPage = await planContext.newPage();
+  const finishPlanConsoleCheck = await assertNoConsoleErrors(planPage, 'payment plan selection');
+  await gotoPage(planPage, '/spokedu-master/payment?plan=pro');
+  await waitForText(planPage, 'SPOKEDU MASTER Pro', 'Pro plan selection');
+  await waitForText(planPage, 'Center', 'Center plan selection');
+  finishPlanConsoleCheck();
+  await planContext.close();
+
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'payment activation');
+  let confirmCalls = 0;
+  let accessCalls = 0;
+
+  await installPaymentActivationOperationalMocks(page);
+  await page.route('**/api/spokedu-master/payment/confirm', async (route) => {
+    confirmCalls += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, alreadyConfirmed: false, plan: 'pro', periodEnd: iso(10_000) }),
+    });
+  });
+  await page.route('**/api/spokedu-master/access', async (route) => {
+    accessCalls += 1;
+    if (accessCalls === 1) {
+      await route.fulfill({
+        status: 403,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: false, allowed: false, code: 'subscription_required' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, allowed: true }),
+      headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+    });
+  });
+
+  await gotoPage(page, '/spokedu-master/payment/success?paymentKey=pay_qa_success&orderId=spm-pro-qa-success&amount=39900');
+  await waitForText(page, '이용권 반영을 확인하고 있습니다', 'access activation pending state');
+  assert(await page.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).count() === 0, 'start CTA was visible before access activation');
+  await page.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).waitFor({ state: 'visible', timeout: 12_000 });
+  assert(confirmCalls === 1, `payment confirm was called ${confirmCalls} times`);
+  assert(accessCalls >= 2, 'access activation was not rechecked after initial pending state');
+  await page.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).click();
+  await page.waitForURL(/\/spokedu-master\/dashboard/, { timeout: 10_000 });
+  await gotoPage(page, '/spokedu-master/library');
+  await waitForText(page, 'QA Jump Adventure', 'library accessible after payment activation');
+  await gotoPage(page, '/spokedu-master/students');
+  await waitForText(page, 'QA Alice Longname Student', 'students accessible after payment activation');
+  finishConsoleCheck();
+  await context.close();
+
+  const retryContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(retryContext);
+  await login(retryContext);
+  const retryPage = await retryContext.newPage();
+  const finishRetryConsoleCheck = await assertNoConsoleErrors(retryPage, 'payment access retry');
+  let retryConfirmCalls = 0;
+  let retryAccessCalls = 0;
+
+  await installPaymentActivationOperationalMocks(retryPage);
+  await retryPage.route('**/api/spokedu-master/payment/confirm', async (route) => {
+    retryConfirmCalls += 1;
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, alreadyConfirmed: false, plan: 'pro', periodEnd: iso(10_000) }),
+    });
+  });
+  await retryPage.route('**/api/spokedu-master/access', async (route) => {
+    retryAccessCalls += 1;
+    if (retryAccessCalls === 1) {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'temporary access check failure' }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true, allowed: true }),
+      headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
+    });
+  });
+
+  await gotoPage(retryPage, '/spokedu-master/payment/success?paymentKey=pay_qa_retry&orderId=spm-pro-qa-retry&amount=39900');
+  await waitForText(retryPage, '이용권 반영을 다시 확인해야 합니다', 'access retry state');
+  await retryPage.getByRole('button', { name: '이용권 다시 확인' }).click();
+  await retryPage.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).waitFor({ state: 'visible', timeout: 12_000 });
+  assert(retryConfirmCalls === 1, `retry path called confirm ${retryConfirmCalls} times`);
+  assert(retryAccessCalls >= 2, 'retry path did not recheck access');
+  finishRetryConsoleCheck();
+  await retryContext.close();
+
+  const failureContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(failureContext);
+  await login(failureContext);
+  const failurePage = await failureContext.newPage();
+  const finishFailureConsoleCheck = await assertNoConsoleErrors(failurePage, 'payment confirm failure');
+  let failureConfirmCalls = 0;
+  let failureAccessCalls = 0;
+
+  await failurePage.route('**/api/spokedu-master/payment/confirm', async (route) => {
+    failureConfirmCalls += 1;
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'raw provider detail should not be shown' }),
+    });
+  });
+  await failurePage.route('**/api/spokedu-master/access', async (route) => {
+    failureAccessCalls += 1;
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'should not check access after confirm failure' }),
+    });
+  });
+
+  await gotoPage(failurePage, '/spokedu-master/payment/success?paymentKey=pay_qa_failed&orderId=spm-pro-qa-failed&amount=39900');
+  await waitForText(failurePage, '결제 확인에 실패했습니다', 'payment confirm failure state');
+  assert(failureConfirmCalls === 1, `failed payment confirm was called ${failureConfirmCalls} times`);
+  assert(failureAccessCalls === 0, 'access was checked after confirm failure');
+  assert(await failurePage.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).count() === 0, 'start CTA was visible after confirm failure');
+  assert(await failurePage.locator('a[href="/spokedu-master/payment?plan=pro"]').count() === 1, 'payment retry link missing after confirm failure');
+  finishFailureConsoleCheck();
+  await failureContext.close();
+}
+
+async function runStudentCreationSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'student creation');
+  const mocks = await installOperationalMocks(page);
+  const newStudentName = 'QA New Student Name';
+
+  await gotoPage(page, '/spokedu-master/students');
+  await waitAppReady(page);
+  await clickFirstVisible(page.getByRole('button', { name: '학생 추가' }), 'student add button');
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor({ state: 'visible', timeout: 10_000 });
+  await dialog.locator('input').nth(0).fill(newStudentName);
+  await dialog.locator('input').nth(1).fill('QA 신규반');
+  await dialog.locator('input').nth(2).fill('QA 3개월차');
+  await dialog.getByRole('button', { name: '추가', exact: true }).click();
+  await waitForText(page, newStudentName, 'created student name');
+  assert(mocks.studentPostCount === 1, `expected one student POST, got ${mocks.studentPostCount}`);
+  assert(mocks.lastStudentPostBody?.name === newStudentName, 'student create request body did not preserve input name');
+  assert(!('ownerId' in mocks.lastStudentPostBody), 'student create request included ownerId');
+  assert(mocks.students[0]?.name === newStudentName, 'student create response DTO did not preserve name');
+
+  await page.reload({ waitUntil: 'commit', timeout: 30_000 });
+  await waitAppReady(page);
+  await waitForText(page, newStudentName, 'created student name after provider reload');
+  assert(mocks.studentsGetCalls >= 2, 'student provider was not reloaded after refresh');
+  await page.getByText(newStudentName).first().click();
+  await waitAppReady(page);
+  assert((await page.locator('body').innerText()).includes(newStudentName), 'student detail did not show created name');
+
+  await gotoPage(page, '/spokedu-master/class-record?program=52');
+  await waitAppReady(page);
+  await waitForText(page, newStudentName, 'created student in class-record roster');
   finishConsoleCheck();
   await context.close();
 }
@@ -737,6 +1024,128 @@ async function runStudentPreparationSmoke(browser) {
   await context.close();
 }
 
+async function runRecordCorrectionSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'record correction');
+  const mocks = await installOperationalMocks(page);
+  const correctedMemo = 'Corrected Alice memo for regenerated report.';
+
+  await gotoPage(page, '/spokedu-master/class-record');
+  const editLink = page.locator('a[href="/spokedu-master/class-record?record=record-existing-1&program=52"]').first();
+  await editLink.waitFor({ state: 'visible', timeout: 10_000 });
+  await editLink.click();
+  await waitAppReady(page);
+
+  const dateInput = page.locator('input[type="date"]').first();
+  await expectValue(dateInput, '2026-06-20', 'record edit date restore');
+  await page.getByText('QA Alice Longname Student').first().click();
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor({ state: 'visible', timeout: 5000 });
+  await expectValue(dialog.locator('textarea'), 'Detailed Alice memo for next class preparation.', 'record edit student memo restore');
+  await dialog.locator('textarea').fill(correctedMemo);
+  await page.keyboard.press('Escape');
+
+  await dateInput.fill('2026-06-21');
+  await page.locator('input[type="text"]').nth(1).fill('Corrected full class memo.');
+  await page.evaluate(() => {
+    const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
+      node.textContent?.includes('QA Alice Longname Student'),
+    );
+    const card = nameNode?.closest('div.rounded-\\[15px\\]');
+    const absentButton = card?.querySelectorAll('button')[2];
+    if (!(absentButton instanceof HTMLButtonElement)) throw new Error('Alice absent button not found');
+    absentButton.click();
+  });
+  await page.getByRole('button', { name: '수정 내용 저장' }).click();
+  await page.waitForTimeout(700);
+  assert(mocks.recordPatchCount === 1, `expected one record PATCH, got ${mocks.recordPatchCount}`);
+  assert(mocks.recordPostCount === 0, 'record correction unexpectedly created a new record');
+  assert(mocks.lastRecordPatchId === 'record-existing-1', 'record correction used the wrong record id');
+  assert(mocks.lastRecordPatchBody?.memo === 'Corrected full class memo.', 'record correction PATCH lost full memo');
+  const patchedStudent = mocks.lastRecordPatchBody?.students?.find((student) => student.studentId === STUDENT_ALICE_ID);
+  assert(patchedStudent?.memo === correctedMemo, 'record correction PATCH lost student memo');
+  assert(patchedStudent?.attendance === 'absent', 'record correction PATCH lost attendance change');
+  assert(mocks.classRecords[0]?.id === 'record-existing-1', 'record correction changed record id');
+
+  await gotoPage(page, '/spokedu-master/class-record');
+  await waitAppReady(page);
+  await waitForText(page, '6월 21일', 'corrected record date in list');
+
+  await gotoPage(page, '/spokedu-master/students');
+  await waitAppReady(page);
+  await page.getByText('QA Alice Longname Student').first().click();
+  await waitForText(page, correctedMemo, 'corrected student memo in student detail');
+  assert(!(await page.locator('body').innerText()).includes('Bob private memo should not appear for Alice.'), 'record correction leaked Bob memo into Alice detail');
+
+  await gotoPage(page, '/spokedu-master/report?record=record-existing-1&program=52');
+  await waitAppReady(page);
+  await waitForText(page, correctedMemo, 'corrected memo in regenerated report draft');
+  finishConsoleCheck();
+  await context.close();
+}
+
+async function runLibraryDiscoveryReuseSmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'library discovery reuse');
+  const mocks = await installOperationalMocks(page);
+
+  await gotoPage(page, '/spokedu-master/library?q=line%20tape');
+  await waitAppReady(page);
+  const filteredUrl = new URL(page.url());
+  assert(filteredUrl.searchParams.get('q') === 'line tape', 'library search query was not preserved in URL');
+  await waitForText(page, 'QA Balance Program', 'library filtered program result');
+  await page.locator('a[href="/spokedu-master/library/53"]').first().click();
+  await waitAppReady(page);
+  assert(page.url().includes('/spokedu-master/library/53'), 'library result did not open program detail');
+  await waitForText(page, 'QA Balance Program', 'program detail title');
+
+  await gotoPage(page, '/spokedu-master/library?q=jump');
+  await waitAppReady(page);
+  await page.locator('a[href="/spokedu-master/class-record?from=record-existing-1&program=52"]').first().click();
+  await waitAppReady(page);
+  const fromUrl = new URL(page.url());
+  assert(fromUrl.searchParams.get('from') === 'record-existing-1', 'previous roster start did not keep source record id in URL');
+  assert(fromUrl.searchParams.get('program') === '52', 'previous roster start did not keep program id');
+  await expectValue(page.locator('input[type="text"]').first(), 'QA Class', 'previous class name restore');
+  const dateValue = await page.locator('input[type="date"]').first().inputValue();
+  assert(dateValue !== '2026-06-20', 'previous record date was copied into a new record');
+  await page.getByText('QA Alice Longname Student').first().click();
+  const dialog = page.locator('[role="dialog"]');
+  await dialog.waitFor({ state: 'visible', timeout: 5000 });
+  await expectValue(dialog.locator('textarea'), '', 'new record student memo reset');
+  await dialog.locator('textarea').fill('Fresh memo after roster reuse.');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => {
+    const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
+      node.textContent?.includes('QA Alice Longname Student'),
+    );
+    const card = nameNode?.closest('div.rounded-\\[15px\\]');
+    const presentButton = card?.querySelectorAll('button')[1];
+    if (!(presentButton instanceof HTMLButtonElement)) throw new Error('Alice present button not found');
+    presentButton.click();
+  });
+  await page.getByRole('button', { name: '학생 기록 저장' }).click();
+  await page.waitForTimeout(700);
+  assert(mocks.recordPostCount === 1, `expected one new record POST, got ${mocks.recordPostCount}`);
+  assert(mocks.recordPatchCount === 0, 'roster reuse unexpectedly patched the source record');
+  assert(mocks.classRecords[0]?.id !== 'record-existing-1', 'roster reuse returned the previous record id');
+  assert(mocks.lastRecordPostBody?.classId === 'QA Class', 'roster reuse did not preserve class name');
+  assert(!mocks.lastRecordPostBody?.memo, 'roster reuse copied previous full class memo');
+  const postedAlice = mocks.lastRecordPostBody?.students?.find((student) => student.studentId === STUDENT_ALICE_ID);
+  assert(postedAlice?.attendance === 'present', 'new record did not save fresh attendance');
+  assert(postedAlice?.memo === 'Fresh memo after roster reuse.', 'new record did not save fresh student memo');
+  const sourceRecord = mocks.classRecords.find((record) => record.id === 'record-existing-1');
+  assert(sourceRecord?.students?.[0]?.memo === 'Detailed Alice memo for next class preparation.', 'source record was mutated by roster reuse');
+  finishConsoleCheck();
+  await context.close();
+}
+
 async function runMobileSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await installAppState(context);
@@ -893,11 +1302,15 @@ async function main() {
     const flows = [
       ['unauth redirect', () => runUnauthRedirectSmoke(browser)],
       ['403 access state', () => runAccessDeniedSmoke(browser)],
+      ['payment activation first use', () => runPaymentActivationSmoke(browser)],
+      ['student creation roster contract', () => runStudentCreationSmoke(browser)],
       ['quick record to report', () => runQuickRecordToReportSmoke(browser)],
       ['detailed record to report', () => runDetailedRecordSmoke(browser)],
       ['detailed record failure retry', () => runDetailedRecordFailureSmoke(browser)],
       ['report save restore', () => runReportSaveRestoreSmoke(browser)],
       ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
+      ['record correction to report', () => runRecordCorrectionSmoke(browser)],
+      ['library discovery roster reuse', () => runLibraryDiscoveryReuseSmoke(browser)],
       ['mobile 390px', () => runMobileSmoke(browser)],
       ['master data deletion', () => runMasterDataDeletionSmoke(browser)],
     ];

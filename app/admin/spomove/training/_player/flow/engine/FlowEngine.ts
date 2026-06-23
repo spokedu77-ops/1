@@ -14,6 +14,11 @@ import { ObstacleManager } from './entities/ObstacleManager';
 import type { FlowBridge } from './entities/ObstacleManager';
 import type { FlowStageConfig } from './modules/stageBuilder';
 import type { FlowModuleKey } from './modules/flowModules';
+import {
+  generateObstacleSchedule,
+  countReachInSchedule,
+  type ObstacleSlot,
+} from './modules/flowObstacleSchedule';
 
 // ─── 상수 (원본 coordContract 완전 동일) ────────────────────────────────────
 
@@ -220,6 +225,10 @@ export class FlowEngine {
 
   // ── 특수 모듈 ─────────────────────────────────────────────────────────────
   private currentSpeed     = 0;
+  // 장애물 스케줄
+  private stageSchedule:    ObstacleSlot[] = [];
+  private stageScheduleIdx  = 0;
+  private sessionReachPlaced = 0;
   // 펀치 벽 타격 시퀀스
   private wallBreakActive  = false;
   private wallBreakHits    = 0;
@@ -541,35 +550,19 @@ export class FlowEngine {
     };
     this.bridges.push(bridgeObj);
 
-    const stage = this.stageList[this.stageIdx];
-    if (!isFirst && this.obstacles && stage) {
-      const am       = stage.activeModules;
-      const hasPunch = am.has('punch') || am.has('reach');
-      const hasDuck  = am.has('duck');
+    if (!isFirst && this.obstacles) {
+      const slot: ObstacleSlot = this.stageScheduleIdx < this.stageSchedule.length
+        ? (this.stageSchedule[this.stageScheduleIdx++] ?? null)
+        : null;
+      this.stageScheduleIdx = Math.min(this.stageScheduleIdx, this.stageSchedule.length);
 
-      // ── 장애물: 보너스는 33% 각 타입, 일반은 80% 하나 ───────────────────
-      if (this.isBonus) {
-        const r = Math.random();
-        if (r < 0.33 && hasDuck && !this.obstacles.hasActiveUfo()) {
-          this.obstacles.attachUfo(bridgeObj);
-        } else if (r < 0.66 && hasPunch && !this.obstacles.hasActiveBox()) {
-          this.obstacles.attachBox(bridgeObj, am);
-        }
-      } else if (Math.random() < 0.80) {
-        if (hasPunch && hasDuck) {
-          // 두 모듈 모두 활성: 50/50으로 하나 선택
-          if (Math.random() < 0.5) {
-            if (!this.obstacles.hasActiveBox()) this.obstacles.attachBox(bridgeObj, am);
-          } else {
-            if (!this.obstacles.hasActiveUfo()) this.obstacles.attachUfo(bridgeObj);
-          }
-        } else if (hasPunch && !this.obstacles.hasActiveBox()) {
-          this.obstacles.attachBox(bridgeObj, am);
-        } else if (hasDuck && !this.obstacles.hasActiveUfo()) {
-          this.obstacles.attachUfo(bridgeObj);
-        }
+      if (slot === 'ufo' && !this.obstacles.hasActiveUfo()) {
+        this.obstacles.attachUfo(bridgeObj);
+      } else if (slot === 'reach' && !this.obstacles.hasActiveBox()) {
+        this.obstacles.attachBox(bridgeObj, this.activeModules, true);
+      } else if (slot === 'box' && !this.obstacles.hasActiveBox()) {
+        this.obstacles.attachBox(bridgeObj, this.activeModules, false);
       }
-
     }
   }
 
@@ -609,6 +602,19 @@ export class FlowEngine {
     for (const b of this.bridges) { b.hasBox = false; b.instructionFired = false; b.preJumpFired = false; }
     this.bridgeLaneIdx = 0; // 스테이지마다 빨강부터 다시 시작
     this.activeBridge = null;
+
+    // 장애물 스케줄 생성
+    const speedMult = SPEED_MULTS[Math.min(idx, SPEED_MULTS.length - 1)]!;
+    this.stageSchedule = generateObstacleSchedule({
+      activeModules: stage.activeModules,
+      durationSec: stage.durationSec,
+      speedMult,
+      sessionReachPlaced: this.sessionReachPlaced,
+      isBonus: stage.isBonus,
+    });
+    this.sessionReachPlaced += countReachInSchedule(this.stageSchedule);
+    this.stageScheduleIdx = 0;
+
     // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
     // 스테이지 0은 카운트다운 후 already-playing. 1+부터 3초 인트로

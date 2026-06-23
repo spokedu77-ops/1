@@ -276,17 +276,16 @@ export async function PATCH(request: Request) {
     const supabase = getServiceSupabase();
     const metaInput = body.meta ?? {};
     const overlayInput = body.overlay ?? {};
-    const metaPatch = {
-      sm_theme: normalizeUnknownText(metaInput.sm_theme),
-      sm_grade: normalizeUnknownText(metaInput.sm_grade),
-      sm_tags: normalizeAdminTags(Array.isArray(metaInput.sm_tags) ? metaInput.sm_tags.filter(isString) : []),
-      sm_space: normalizeUnknownText(metaInput.sm_space),
-      sm_duration: normalizeUnknownDuration(metaInput.sm_duration),
-      sm_setup_image_url: normalizeUnknownText(metaInput.sm_setup_image_url),
-      sm_coach_script: normalizeUnknownTextarea(metaInput.sm_coach_script),
-      sm_briefing_notes: normalizeUnknownTextarea(metaInput.sm_briefing_notes),
-      sm_variation_method: normalizeUnknownTextarea(metaInput.sm_variation_method),
-    };
+    const metaPatch: Record<string, unknown> = {};
+    if ('sm_theme' in metaInput) metaPatch.sm_theme = normalizeUnknownText(metaInput.sm_theme);
+    if ('sm_grade' in metaInput) metaPatch.sm_grade = normalizeUnknownText(metaInput.sm_grade);
+    if ('sm_tags' in metaInput) metaPatch.sm_tags = normalizeAdminTags(Array.isArray(metaInput.sm_tags) ? metaInput.sm_tags.filter(isString) : []);
+    if ('sm_space' in metaInput) metaPatch.sm_space = normalizeUnknownText(metaInput.sm_space);
+    if ('sm_duration' in metaInput) metaPatch.sm_duration = normalizeUnknownDuration(metaInput.sm_duration);
+    if ('sm_setup_image_url' in metaInput) metaPatch.sm_setup_image_url = normalizeUnknownText(metaInput.sm_setup_image_url);
+    if ('sm_coach_script' in metaInput) metaPatch.sm_coach_script = normalizeUnknownTextarea(metaInput.sm_coach_script);
+    if ('sm_briefing_notes' in metaInput) metaPatch.sm_briefing_notes = normalizeUnknownTextarea(metaInput.sm_briefing_notes);
+    if ('sm_variation_method' in metaInput) metaPatch.sm_variation_method = normalizeUnknownTextarea(metaInput.sm_variation_method);
     const overlayPayload = {
       title: normalizeUnknownText(overlayInput.title) ?? `curriculum #${curriculumId}`,
       source_center_curriculum_id: curriculumId,

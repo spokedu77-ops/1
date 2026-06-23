@@ -16,6 +16,13 @@ import {
   findOfficialSpomovePreset,
   type OfficialSpomovePreset,
 } from '../officialSpomovePresets';
+import {
+  SPOMOVE_KEY_ACTION_LABELS,
+  SPOMOVE_RESPONSE_TYPE_LABELS,
+  SPOMOVE_TARGET_GROUP_LABELS,
+  SPOMOVE_THINKING_LEVEL_LABELS,
+  getOfficialSpomovePresetGuide,
+} from '../officialSpomovePresetGuides';
 
 type SessionState = 'idle' | 'running' | 'done';
 type LaunchMode = 'projector' | 'mobile' | 'class';
@@ -72,6 +79,7 @@ function OfficialEngineBriefing({
   startDisabled: boolean;
   onStart: () => void;
 }) {
+  const guide = getOfficialSpomovePresetGuide(preset);
   const [ef1, ef2, ef3] = preset.executionFacts ?? [];
   const facts = [
     { icon: Gauge, label: '프로그램', value: `${preset.axisTitle} · ${preset.programTitle}` },
@@ -97,6 +105,37 @@ function OfficialEngineBriefing({
               <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
             </div>
           ))}
+        </div>
+
+        <div className="grid gap-3 border-t border-white/10 px-5 pb-5 sm:grid-cols-4 sm:px-7 sm:pb-7">
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:col-span-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">추천 대상</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {guide.targetGroups.map((target) => (
+                <span key={target} className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-black text-white/78">
+                  {SPOMOVE_TARGET_GROUP_LABELS[target]}
+                </span>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">생각 난이도</p>
+            <p className="mt-2 text-sm font-black text-white">{SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">반응 유형</p>
+            <p className="mt-2 text-sm font-black text-white">{SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]}</p>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:col-span-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">주요 동작</p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {guide.keyActions.map((action) => (
+                <span key={action} className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-black text-white/78">
+                  {SPOMOVE_KEY_ACTION_LABELS[action]}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-4 border-t border-white/10 p-5 sm:grid-cols-[1fr_auto] sm:items-center sm:p-7">

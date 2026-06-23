@@ -77,3 +77,25 @@ export function contentChangeNeedsReactBlocks(
   }
   return false;
 }
+
+/**
+ * onUpdate 메타 패치(checked·url 등) 시 React prop의 stale text/html이 스토어 본문을 덮지 않게 한다.
+ * 편집기 동기화(incoming이 더 긴 본문)는 incoming을 유지한다.
+ */
+export function mergeContentPatchWithActiveStore(
+  incoming: Record<string, unknown>,
+  store: Record<string, unknown> | null | undefined,
+): Record<string, unknown> {
+  if (!store) return incoming;
+  const merged = { ...store, ...incoming };
+  for (const key of STORE_ONLY_CONTENT_KEYS) {
+    const inVal = incoming[key];
+    const storeVal = store[key];
+    if (typeof inVal === 'string' && typeof storeVal === 'string') {
+      merged[key] = inVal.length >= storeVal.length ? inVal : storeVal;
+    } else if (storeVal !== undefined && (inVal === undefined || inVal === '')) {
+      merged[key] = storeVal;
+    }
+  }
+  return merged;
+}

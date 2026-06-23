@@ -1,15 +1,18 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { MessageSquareQuote, Package } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import type { Program } from '../../types';
 import { LessonPreviewMedia } from './LessonPreviewMedia';
 import { LessonTitle } from './LessonPanels';
 
-function getPreviewScript(script: string) {
-  return script.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 4).join('\n');
+function quoteScript(script: string) {
+  const trimmed = script.trim();
+  if (!trimmed) return '';
+  if (/^["“”'‘’「『]/.test(trimmed) && /["“”'‘’」』]$/.test(trimmed)) return trimmed;
+  return `"${trimmed}"`;
 }
 
 export function LessonPreviewContent({
@@ -26,25 +29,14 @@ export function LessonPreviewContent({
   onPlaybackStarted?: () => void;
 }) {
   const model = buildLessonDisplayModel(program);
+  const previewEquipment = model.equipment.slice(0, 6);
   const previewRules = model.activityMethod.slice(0, 3);
-  const previewVariations = model.variationMethod.slice(0, 2);
-  const mediaRef = useRef<HTMLDivElement | null>(null);
-  const [mediaHeight, setMediaHeight] = useState<number>();
+  const previewScript = model.previewCoachScript;
+  const hasSummaryContent =
+    previewEquipment.length > 0 ||
+    Boolean(previewScript) ||
+    previewRules.length > 0;
   const meta = [model.theme, model.target, model.space].filter(Boolean).slice(0, 3);
-
-  useEffect(() => {
-    const media = mediaRef.current?.querySelector<HTMLElement>('[data-preview-media]');
-    if (!media) return;
-    const observer = new ResizeObserver(([entry]) => {
-      setMediaHeight(entry.contentRect.height);
-    });
-    observer.observe(media);
-    return () => observer.disconnect();
-  }, []);
-
-  const summaryStyle = mediaHeight
-    ? ({ '--preview-media-height': `${mediaHeight}px` } as CSSProperties)
-    : undefined;
 
   return (
     <div className="flex flex-col gap-3">
@@ -65,7 +57,7 @@ export function LessonPreviewContent({
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.62fr)_minmax(320px,0.88fr)] lg:items-start">
-        <div ref={mediaRef} data-preview-column="media" className="min-w-0">
+        <div data-preview-column="media" className="min-w-0">
           <LessonPreviewMedia
             program={program}
             layout="preview"
@@ -74,46 +66,66 @@ export function LessonPreviewContent({
           />
         </div>
 
-        <aside
-          data-preview-column="content"
-          data-preview-summary
-          className="min-w-0 overflow-y-auto rounded-[14px] border border-slate-200 bg-white px-4 py-1 [scrollbar-width:thin] lg:h-[var(--preview-media-height)]"
-          style={summaryStyle}
-          tabIndex={0}
-        >
-          {model.equipment.length > 0 ? (
-            <section className="py-3">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">준비물</h3>
-              <p className="mt-1.5 text-[13px] font-semibold leading-5 text-slate-700">
-                {model.equipment.slice(0, 6).join(' · ')}
-              </p>
-            </section>
-          ) : null}
-          {model.coachScript ? (
-            <section className="border-t border-slate-100 py-3">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-indigo-700">수업 스크립트</h3>
-              <p className="mt-1.5 line-clamp-4 whitespace-pre-line text-[13px] font-semibold leading-5 text-slate-700">
-                {getPreviewScript(model.coachScript)}
-              </p>
-            </section>
-          ) : null}
-          {previewRules.length > 0 ? (
-            <section className="border-t border-slate-100 py-3">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
-              <ol className="mt-1.5 space-y-1.5 text-[13px] font-semibold leading-5 text-slate-700">
-                {previewRules.map((rule, index) => <li key={`${rule}-${index}`}>{index + 1}. {rule}</li>)}
-              </ol>
-            </section>
-          ) : null}
-          {previewVariations.length > 0 ? (
-            <section className="border-t border-slate-100 py-3">
-              <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">변형 방법</h3>
-              <ul className="mt-1.5 space-y-1.5 text-[13px] font-semibold leading-5 text-slate-700">
-                {previewVariations.map((variation) => <li key={variation}>• {variation}</li>)}
-              </ul>
-            </section>
-          ) : null}
-        </aside>
+        {hasSummaryContent ? (
+          <aside
+            data-preview-column="content"
+            data-preview-summary
+            className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 [scrollbar-width:thin] lg:max-h-[min(620px,calc(100vh-260px))] lg:overflow-y-auto"
+            tabIndex={0}
+          >
+            <div className="space-y-5">
+              {previewEquipment.length > 0 ? (
+                <section>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">준비물</h3>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {previewEquipment.map((item) => (
+                      <span
+                        key={item}
+                        className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[9px] border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[12px] font-bold leading-4 text-emerald-900"
+                      >
+                        <Package className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                        <span className="min-w-0 break-words">{item}</span>
+                      </span>
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+
+              {previewScript ? (
+                <section className="rounded-[12px] border border-indigo-100 bg-indigo-50/70 p-3">
+                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-indigo-700">
+                    <MessageSquareQuote className="h-3.5 w-3.5" />
+                    수업 스크립트
+                  </h3>
+                  <p className="mt-2 whitespace-pre-line text-[13.5px] font-semibold leading-[1.6] text-slate-700">
+                    {quoteScript(previewScript)}
+                  </p>
+                </section>
+              ) : null}
+
+              {previewRules.length > 0 ? (
+                <section className="border-t border-slate-100 pt-4">
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
+                  <ol className="mt-3 space-y-3">
+                    {previewRules.map((rule, index) => (
+                      <li key={`${rule}-${index}`} className="relative grid grid-cols-[28px_minmax(0,1fr)] gap-2.5">
+                        {index < previewRules.length - 1 ? (
+                          <span aria-hidden className="absolute left-[13px] top-7 h-[calc(100%+4px)] w-px bg-slate-200" />
+                        ) : null}
+                        <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-[11px] font-black text-indigo-600">
+                          {index + 1}
+                        </span>
+                        <span className="min-w-0 pt-0.5 text-[13px] font-semibold leading-6 text-slate-700">
+                          {rule}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              ) : null}
+            </div>
+          </aside>
+        ) : null}
       </div>
 
       {footer ? (

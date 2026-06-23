@@ -1,11 +1,60 @@
 import type { ListCrossRange } from './noteListCrossHighlight';
 import { getBlockPreviewTextRoot } from './noteBlockPreviewCrossSelect';
+import { getNoteEditor } from './noteEditorRegistry';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
+import { stripListItemMarkerPrefix } from './noteBulletInput';
 
 export type CrossTextSurface = 'editor' | 'toggle-title' | 'preview';
 
 export type CrossTextRange = ListCrossRange & {
   surface?: CrossTextSurface;
 };
+
+const TEXT_CROSS_BLOCK_TYPES = new Set([
+  'text',
+  'heading',
+  'heading2',
+  'heading3',
+  'bulletList',
+  'numberedList',
+  'todo',
+  'callout',
+  'toggle',
+  'code',
+]);
+
+export function blockPlainTextFromStore(blockId: string): string {
+  const block = useNoteBlockStore.getState().getBlock(blockId);
+  if (!block) return '';
+  const content = block.content ?? {};
+  if (block.type === 'toggle') {
+    if (typeof content.title === 'string' && content.title.length > 0) return content.title;
+    return typeof content.text === 'string' ? content.text : '';
+  }
+  let text = typeof content.text === 'string' ? content.text : '';
+  if (block.type === 'bulletList' || block.type === 'numberedList') {
+    text = stripListItemMarkerPrefix(text);
+  }
+  return text;
+}
+
+export function blockHasCrossTextContent(blockId: string): boolean {
+  if (rowHasToggleTitle(blockId)) return true;
+  if (getBlockPreviewTextRoot(blockId)) return true;
+  const block = useNoteBlockStore.getState().getBlock(blockId);
+  if (!block || !TEXT_CROSS_BLOCK_TYPES.has(block.type)) return false;
+  if (block.type === 'toggle') {
+    const content = block.content ?? {};
+    const title = typeof content.title === 'string' ? content.title : '';
+    const body = typeof content.text === 'string' ? content.text : '';
+    return title.length > 0 || body.length > 0;
+  }
+  if (block.type === 'bulletList' || block.type === 'numberedList' || block.type === 'todo') {
+    return true;
+  }
+  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  return text.length > 0;
+}
 
 function escapeAttr(value: string): string {
   if (typeof globalThis.CSS?.escape === 'function') {
@@ -25,7 +74,9 @@ export function rowHasToggleTitle(blockId: string): boolean {
 }
 
 export function isRowCrossTextSelectable(blockId: string, hasEditor: boolean): boolean {
-  return hasEditor || rowHasToggleTitle(blockId) || !!getBlockPreviewTextRoot(blockId);
+  if (hasEditor || rowHasToggleTitle(blockId)) return true;
+  if (getBlockPreviewTextRoot(blockId)) return true;
+  return blockHasCrossTextContent(blockId);
 }
 
 export function hoverToggleTitlePos(input: HTMLInputElement, clientX: number): number {
@@ -87,7 +138,8 @@ export function extractToggleTitleSlice(input: HTMLInputElement, from: number, t
 
 export function preferredCrossSurface(blockId: string, hasEditor: boolean): CrossTextSurface | null {
   if (rowHasToggleTitle(blockId)) return 'toggle-title';
-  if (hasEditor) return 'editor';
+  if (hasEditor && getNoteEditor(blockId)) return 'editor';
   if (getBlockPreviewTextRoot(blockId)) return 'preview';
+  if (blockHasCrossTextContent(blockId)) return 'preview';
   return null;
 }

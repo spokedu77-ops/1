@@ -138,8 +138,16 @@ function ensurePreviewCrossOverlay(root: HTMLElement): HTMLElement {
 
 /** React html 레이어는 숨기고 오버레이만 표시 — 이중 렌더·색 흐림 방지 */
 export function applyBlockPreviewCrossHighlight(blockId: string, from: number, to: number) {
+  if (isPreviewSurfaceHidden(blockId)) {
+    clearBlockPreviewCrossHighlight(blockId);
+    applyBlockRowCrossHighlight(blockId);
+    return;
+  }
   const root = getBlockPreviewTextRoot(blockId);
-  if (!root) return;
+  if (!root) {
+    applyBlockRowCrossHighlight(blockId);
+    return;
+  }
   const text = blockPreviewPlainText(blockId);
   const safeFrom = Math.max(0, Math.min(from, text.length));
   const safeTo = Math.max(safeFrom, Math.min(to, text.length));
@@ -159,9 +167,11 @@ export const applyListPreviewCrossHighlight = applyBlockPreviewCrossHighlight;
 
 export function clearBlockPreviewCrossHighlight(blockId: string) {
   const root = getBlockPreviewTextRoot(blockId);
-  if (!root) return;
-  root.classList.remove('note-preview-cross-active');
-  root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+  if (root) {
+    root.classList.remove('note-preview-cross-active');
+    root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+  }
+  clearBlockRowCrossHighlight(blockId);
 }
 
 /** document 전체 — 토글·목록 등에 남은 미리보기 교차선택 UI 일괄 해제 */
@@ -170,6 +180,40 @@ export function clearAllDocumentPreviewCrossHighlights() {
   document.querySelectorAll<HTMLElement>('[data-note-preview-text]').forEach((root) => {
     root.classList.remove('note-preview-cross-active');
     root.querySelector(PREVIEW_CROSS_OVERLAY)?.remove();
+  });
+  clearAllBlockRowCrossHighlights();
+}
+
+function blockRowElement(blockId: string): HTMLElement | null {
+  return document.querySelector<HTMLElement>(
+    `[data-note-block-row][data-block-id="${escapeAttr(blockId)}"]`,
+  );
+}
+
+function isPreviewSurfaceHidden(blockId: string): boolean {
+  const root = getBlockPreviewTextRoot(blockId);
+  if (!root) return true;
+  const host = root.closest('[data-note-editor-host]');
+  if (!host) return false;
+  const wrapper = root.parentElement;
+  return wrapper?.classList.contains('hidden') ?? false;
+}
+
+/** 미리보기가 hidden(활성 에디터)일 때 행 전체 하이라이트 */
+export function applyBlockRowCrossHighlight(blockId: string) {
+  const row = blockRowElement(blockId);
+  if (!row) return;
+  row.classList.add('note-block-row-cross-full');
+}
+
+export function clearBlockRowCrossHighlight(blockId: string) {
+  blockRowElement(blockId)?.classList.remove('note-block-row-cross-full');
+}
+
+export function clearAllBlockRowCrossHighlights() {
+  if (typeof document === 'undefined') return;
+  document.querySelectorAll<HTMLElement>('[data-note-block-row].note-block-row-cross-full').forEach((row) => {
+    row.classList.remove('note-block-row-cross-full');
   });
 }
 

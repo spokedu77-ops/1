@@ -43,8 +43,12 @@ export function getAssetRequirement(params: {
   if (theme === 'color') return NO_REQUIREMENT;
   // basic 외 모드: 이미지 미사용
   if (mode !== 'basic') return NO_REQUIREMENT;
-  // level 1·2: arrow·think_quad — 이미지 미사용
-  if (level === 1 || level === 2) return NO_REQUIREMENT;
+  // level 1: arrow — 이미지 미사용
+  if (level === 1) return NO_REQUIREMENT;
+  // level 2: think_quad — non-color 테마에서 이미지 1장 사용, 없으면 색 폴백
+  if (level === 2) {
+    return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
+  }
 
   // level 3 (full_color): 1장 선호, 없으면 UI에서 차단
   // signals.ts: r(vSlides.filter(s => s.imageUrl.trim())) — 비어 있으면 색 폴백

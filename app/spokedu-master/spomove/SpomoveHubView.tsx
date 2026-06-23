@@ -1,9 +1,16 @@
 'use client';
 
-import { Lock, MonitorPlay } from 'lucide-react';
+import { Image as ImageIcon, Lock, MonitorPlay } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import {
+  getPublicUrl,
+  withPublicUrlCacheBust,
+} from '@/app/lib/admin/assets/storageClient';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import { SPOMOVE_AXIS_META } from '@/app/lib/spomove/spomoveAxisMeta';
 
 import {
@@ -12,10 +19,25 @@ import {
   type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from './officialSpomovePresets';
+import {
+  SPOMOVE_RESPONSE_TYPE_LABELS,
+  SPOMOVE_TARGET_GROUP_LABELS,
+  SPOMOVE_THINKING_LEVEL_LABELS,
+  getOfficialSpomovePresetGuide,
+} from './officialSpomovePresetGuides';
 
 type OfficialLibraryTab = 'all' | 'response' | 'attention' | 'executive';
-type ProgramGroupTab = 'all' | OfficialSpomoveProgramGroup;
+type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
 type AccessState = 'checking' | 'allowed' | 'unauthorized' | 'forbidden' | 'error';
+type SpomoveThumbnailAssetsJson = {
+  thumbnails?: Record<string, string | null | undefined>;
+};
+type SpomoveThumbnailPackQueryResult = {
+  data: { assets_json?: unknown; updated_at?: string | null } | null;
+  error: { code?: string } | null;
+};
+
+const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
 
 const TABS: OfficialLibraryTab[] = ['all', 'response', 'attention', 'executive'];
 
@@ -35,7 +57,6 @@ const PROGRAM_GROUP_TABS: ProgramGroupTab[] = [
   'stroop',
   'sequential-memory',
   'dive',
-  'bonus',
 ];
 
 const PROGRAM_GROUP_LABELS: Record<ProgramGroupTab, string> = {
@@ -47,19 +68,12 @@ const PROGRAM_GROUP_LABELS: Record<ProgramGroupTab, string> = {
   stroop: '스트룹 과제',
   'sequential-memory': '순차 기억',
   dive: '다이브',
-  bonus: '보너스',
 };
 
 const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
   response: 'bg-orange-50 text-orange-700',
   attention: 'bg-blue-50 text-blue-700',
   executive: 'bg-violet-50 text-violet-700',
-};
-
-const AXIS_TEXT: Record<OfficialSpomovePreset['axis'], string> = {
-  response: 'text-orange-600',
-  attention: 'text-blue-600',
-  executive: 'text-violet-600',
 };
 
 function tabCount(tab: OfficialLibraryTab) {
@@ -69,70 +83,121 @@ function tabCount(tab: OfficialLibraryTab) {
 
 function programGroupCount(tab: ProgramGroupTab) {
   if (tab === 'all') return OFFICIAL_SPOMOVE_LIBRARY.length;
+  if (tab === 'dive') {
+    return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.programGroup === 'dive' || p.programGroup === 'bonus').length;
+  }
   return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.programGroup === tab).length;
+}
+
+function normalizeSpomoveThumbnailMap(raw: unknown) {
+  const source = (raw as SpomoveThumbnailAssetsJson | null)?.thumbnails;
+  if (!source || typeof source !== 'object') return {};
+  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+  const next: Record<string, string> = {};
+  for (const [presetId, path] of Object.entries(source)) {
+    if (!validPresetIds.has(presetId)) continue;
+    if (typeof path === 'string' && path.trim()) next[presetId] = path.trim();
+  }
+  return next;
+}
+
+function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
+  if (!path) return '';
+  try {
+    return withPublicUrlCacheBust(getPublicUrl(path), cacheBust);
+  } catch {
+    return '';
+  }
 }
 
 function PresetCard({
   preset,
   href,
+  thumbnailUrl,
 }: {
   preset: OfficialSpomovePreset;
   href: string;
+  thumbnailUrl: string;
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const guide = getOfficialSpomovePresetGuide(preset);
+  const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
+  const targetLine = guide.targetGroups.map((t) => SPOMOVE_TARGET_GROUP_LABELS[t]).join(' · ');
+  const thinkingLabel = SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel];
+  const responseLabel = SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType];
+
   return (
-    <article className="flex flex-col rounded-[22px] border border-slate-100 bg-white p-5 shadow-sm transition-shadow hover:shadow-md sm:p-6">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
-          {preset.axisTitle}
-        </span>
-        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-          {preset.programTitle}
-        </span>
-      </div>
+    <article className="overflow-hidden rounded-[16px] border border-slate-100 bg-white shadow-sm transition-shadow hover:shadow-md">
+      <div className="flex flex-col sm:flex-row">
+        {/* 썸네일: 모바일 16:9 상단, sm+ 좌측 고정폭·행높이 맞춤 */}
+        <div className="relative aspect-[16/9] shrink-0 overflow-hidden bg-slate-100 sm:aspect-auto sm:w-[34%] sm:self-stretch">
+          {showThumbnail ? (
+            <Image
+              src={thumbnailUrl}
+              alt=""
+              fill
+              unoptimized
+              sizes="(min-width: 1280px) 14vw, (min-width: 640px) 17vw, 100vw"
+              className="object-cover"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-slate-300">
+              <ImageIcon className="h-5 w-5" />
+              <span className="text-[10px] font-black tracking-wide">SPOMOVE</span>
+            </div>
+          )}
+        </div>
 
-      <div className="mt-3.5">
-        <h2 className="text-[17px] font-black leading-snug text-slate-950">{preset.title}</h2>
-        {preset.en ? (
-          <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-            {preset.en}
+        {/* 정보 영역 */}
+        <div className="flex flex-1 flex-col p-4">
+          {/* 프로그램군 배지 */}
+          <div className="flex flex-wrap items-center gap-1">
+            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
+              {preset.axisTitle}
+            </span>
+            <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+              {preset.programTitle}
+            </span>
+          </div>
+
+          {/* 제목 */}
+          <h2 className="mt-1.5 line-clamp-1 text-[16px] font-black leading-snug text-slate-950">
+            {preset.title}
+          </h2>
+
+          {/* 한 줄 설명 */}
+          <p className="mt-1 line-clamp-2 text-[13px] font-medium leading-snug text-slate-600 sm:line-clamp-1">
+            {preset.description}
           </p>
-        ) : null}
-        {preset.salesCopy ? (
-          <p className={`mt-2 text-[12px] font-bold leading-snug ${AXIS_TEXT[preset.axis]}`}>
-            {preset.salesCopy}
+
+          {/* 추천 대상 */}
+          <p className="mt-1.5 truncate text-[12px] font-semibold text-slate-500">
+            {targetLine}
           </p>
-        ) : null}
+
+          {/* 생각 난이도 · 반응 유형 */}
+          <p className="mt-0.5 text-[12px] font-semibold text-slate-500">
+            <span className="font-black text-slate-700">난이도 {thinkingLabel}</span>
+            <span className="mx-1 text-slate-300">·</span>
+            {responseLabel}
+          </p>
+
+          {/* 실행 설정 요약 + 실행 버튼 */}
+          <div className="mt-auto flex flex-col gap-2 pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <p className="line-clamp-2 text-[11px] font-semibold leading-snug text-slate-400 sm:line-clamp-1 sm:flex-1">
+              {preset.settingSummary}
+            </p>
+            <Link
+              href={href}
+              className="inline-flex h-11 w-full shrink-0 items-center justify-center gap-1.5 rounded-[12px] bg-slate-950 text-[13px] font-black text-white transition-colors hover:bg-indigo-600 sm:h-9 sm:w-auto sm:rounded-[10px] sm:px-3.5 sm:text-[12px]"
+            >
+              <MonitorPlay className="h-[14px] w-[14px] sm:h-[13px] sm:w-[13px]" />
+              큰 화면으로 실행
+            </Link>
+          </div>
+        </div>
       </div>
-
-      <p className="mt-2.5 flex-grow text-[13px] font-medium leading-[1.7] text-slate-600">
-        {preset.description}
-      </p>
-
-      <div className="mt-4 flex flex-wrap gap-1.5">
-        {preset.settingChips.map((chip) => (
-          <span
-            key={chip}
-            className="inline-flex items-center rounded-lg border border-slate-100 bg-slate-50 px-2.5 py-1.5 text-[11px] font-bold text-slate-700"
-          >
-            {chip}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5">
-        <p className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">사용 장면</p>
-        <p className="mt-1 text-[12px] font-semibold leading-[1.6] text-slate-700">
-          {preset.recommendedUse}
-        </p>
-      </div>
-
-      <Link
-        href={href}
-        className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[14px] bg-slate-950 text-[13px] font-black text-white transition-colors hover:bg-indigo-600"
-      >
-        <MonitorPlay className="h-[15px] w-[15px]" />
-        큰 화면으로 실행
-      </Link>
     </article>
   );
 }
@@ -141,6 +206,8 @@ export default function SpomoveHubView() {
   const [activeTab, setActiveTab] = useState<OfficialLibraryTab>('all');
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
   const [accessState, setAccessState] = useState<AccessState>('checking');
+  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
+  const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
 
   useEffect(() => {
     let alive = true;
@@ -154,6 +221,36 @@ export default function SpomoveHubView() {
       })
       .catch(() => {
         if (alive) setAccessState('error');
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const supabase = getSupabaseBrowserClient();
+    supabase
+      .from('think_asset_packs')
+      .select('assets_json, updated_at')
+      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+      .maybeSingle()
+      .then((result: SpomoveThumbnailPackQueryResult) => {
+        if (!alive) return;
+        const { data, error } = result;
+        if (error && error.code !== 'PGRST116') {
+          setThumbnailPaths({});
+          setThumbnailCacheBust(undefined);
+          return;
+        }
+        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+        setThumbnailPaths(next);
+        setThumbnailCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setThumbnailPaths({});
+        setThumbnailCacheBust(undefined);
       });
     return () => {
       alive = false;
@@ -194,7 +291,10 @@ export default function SpomoveHubView() {
 
   const filteredPresets = OFFICIAL_SPOMOVE_LIBRARY.filter((p) => {
     const axisMatch = activeTab === 'all' || p.axis === activeTab;
-    const groupMatch = activeProgramGroup === 'all' || p.programGroup === activeProgramGroup;
+    const groupMatch =
+      activeProgramGroup === 'all' ||
+      p.programGroup === activeProgramGroup ||
+      (activeProgramGroup === 'dive' && p.programGroup === 'bonus');
     return axisMatch && groupMatch;
   });
 
@@ -280,6 +380,7 @@ export default function SpomoveHubView() {
               key={preset.id}
               preset={preset}
               href={officialPresetSessionHref(preset)}
+              thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
             />
           ))}
         </div>

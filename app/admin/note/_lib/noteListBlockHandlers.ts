@@ -1,4 +1,5 @@
 import { stripListItemMarkerPrefix } from '../_components/noteBulletInput';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
 import type { NoteBlock } from './types';
 
@@ -13,11 +14,17 @@ export type NoteListBlockHandlerContext = {
 };
 
 export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
+  const listItemText = () => {
+    const fromStore = useNoteBlockStore.getState().getBlock(ctx.block.id)?.content?.text;
+    const raw = typeof fromStore === 'string'
+      ? fromStore
+      : (typeof ctx.block.content?.text === 'string' ? ctx.block.content.text : '');
+    return stripListItemMarkerPrefix(raw);
+  };
+
   const handleListItemBackspaceAtStart = (): boolean => {
     if (ctx.block.type !== 'bulletList' && ctx.block.type !== 'numberedList') return false;
-    const itemText = stripListItemMarkerPrefix(
-      typeof ctx.block.content?.text === 'string' ? ctx.block.content.text : '',
-    );
+    const itemText = listItemText();
     if (itemText.length === 0) {
       if (ctx.block.parent_block_id) {
         ctx.onIndentChange?.('out');
@@ -59,8 +66,8 @@ export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
       });
       return;
     }
-    const rawText = typeof ctx.block.content?.text === 'string' ? ctx.block.content.text : '';
-    const isEmpty = enterCtx?.isEmpty ?? stripListItemMarkerPrefix(rawText).trim().length === 0;
+    const rawText = listItemText();
+    const isEmpty = enterCtx?.isEmpty ?? rawText.trim().length === 0;
     if (!isEmpty) {
       ctx.onAddBelow(listType);
       return;

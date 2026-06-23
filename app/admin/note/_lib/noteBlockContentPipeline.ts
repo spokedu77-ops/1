@@ -4,6 +4,7 @@ import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   contentChangeNeedsReactBlocks,
   contentChangedForUndo,
+  mergeContentPatchWithActiveStore,
 } from './noteContentPatch';
 import type { NoteBlock } from './types';
 
@@ -40,17 +41,23 @@ export function applyBlockContentChange({
   scheduleBlockContentSave,
   onAfterChange,
 }: ApplyBlockContentChangeArgs): void {
-  const nextRecord = normalizeBlockContentRecord(block, content);
-  const prevRecord = (block.content ?? {}) as Record<string, unknown>;
+  const store = useNoteBlockStore.getState();
+  if (!store.getBlock(block.id)) {
+    store.upsertBlock(blocksRef.current.find((item) => item.id === block.id) ?? block);
+  }
+  const storeContent = store.getBlock(block.id)?.content as Record<string, unknown> | undefined;
+  const refContent = blocksRef.current.find((item) => item.id === block.id)?.content as
+    | Record<string, unknown>
+    | undefined;
+  const prevRecord = (storeContent ?? refContent ?? block.content ?? {}) as Record<string, unknown>;
+
+  const incoming = normalizeBlockContentRecord(block, content);
+  const nextRecord = mergeContentPatchWithActiveStore(incoming, prevRecord);
 
   if (contentChangedForUndo(prevRecord, nextRecord)) {
     recordContentUndoBeforeChange(block.id);
   }
 
-  const store = useNoteBlockStore.getState();
-  if (!store.getBlock(block.id)) {
-    store.upsertBlock(block);
-  }
   store.patchContent(block.id, nextRecord);
 
   blocksRef.current = blocksRef.current.map((item) =>

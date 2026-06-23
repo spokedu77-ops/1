@@ -4,7 +4,6 @@ import { getNoteEditor } from './noteEditorRegistry';
 import {
   applyBlockPreviewCrossHighlight,
   blockPreviewPlainText,
-  clearAllDocumentPreviewCrossHighlights,
   clearBlockPreviewCrossHighlight,
   getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
@@ -15,8 +14,10 @@ import {
   clearListCrossHighlight,
   syncCrossClipboardSnapshot,
   syncCrossTextActiveBodyClass,
+  clearCrossClipboardSnapshot,
   type ListCrossRange,
 } from './noteListCrossHighlight';
+import { resolveNoteBlockIdFromPoint } from './noteBlockIdFromPoint';
 
 const DRAG_THRESHOLD = 4;
 const BODY_CROSS_CLASS = 'note-list-cross-active';
@@ -52,15 +53,8 @@ function syncBodyCrossClass() {
   document.body.classList.toggle(BODY_CROSS_CLASS, listCrossDragActive);
 }
 
-function blockIdFromPoint(x: number, y: number): string | null {
-  const elements = document.elementsFromPoint(x, y);
-  for (const el of elements) {
-    const row = (el as HTMLElement).closest?.('[data-note-block-row]');
-    if (!row) continue;
-    const id = row.getAttribute('data-block-id');
-    if (id) return id;
-  }
-  return null;
+function blockIdFromPoint(x: number, y: number, restrictToIds?: readonly string[]): string | null {
+  return resolveNoteBlockIdFromPoint(x, y, restrictToIds ? { restrictToIds } : undefined);
 }
 
 function listTextTargetElement(target: EventTarget | null): HTMLElement | null {
@@ -261,8 +255,17 @@ function commitListCrossRanges(ranges: ListCrossRange[]) {
 function clearCrossSelectState() {
   activeCrossRanges = [];
   listCrossDragActive = false;
+  clearCrossClipboardSnapshot();
   syncBodyCrossClass();
   syncCrossTextActiveBodyClass();
+}
+
+/** 싱글톤 에디터 전환 후에도 형제 목록 교차 선택 하이라이트를 다시 그린다 */
+export function reapplyActiveListCrossDecorations() {
+  if (activeCrossRanges.length === 0) return;
+  const siblings = getListSiblingIds(activeCrossRanges[0].blockId);
+  applyCrossDecorations(activeCrossRanges);
+  suppressNativeSelections(siblings);
 }
 
 /** 싱글톤 에디터 블록 전환 시 목록 크로스 선택·하이라이트 해제 */
@@ -272,8 +275,6 @@ export function clearActiveListCrossSelectState() {
     clearAllCrossHighlights(siblings);
   }
   clearCrossSelectState();
-  clearAllDocumentPreviewCrossHighlights();
-  activeCrossRanges = [];
 }
 
 function onPointerDown(e: PointerEvent) {
@@ -326,10 +327,10 @@ function onPointerMove(e: PointerEvent) {
   const dy = Math.abs(e.clientY - startY);
   if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return;
 
-  const hoverId = blockIdFromPoint(e.clientX, e.clientY);
+  const siblings = getListSiblingIds(anchor.blockId);
+  const hoverId = blockIdFromPoint(e.clientX, e.clientY, siblings);
   if (!hoverId) return;
 
-  const siblings = getListSiblingIds(anchor.blockId);
   if (!siblings.includes(hoverId)) return;
 
   // 같은 블록 안 드래그는 TipTap 기본 텍스트 선택에 맡김
@@ -351,9 +352,6 @@ function onPointerMove(e: PointerEvent) {
     }
     return;
   }
-
-  // 가로 드래그(단어 선택)는 같은 블록 안에서만 — 블록 간은 세로 드래그 허용
-  if (hoverId === anchor.blockId && dx >= dy) return;
 
   dragging = true;
 
@@ -393,8 +391,8 @@ function onPointerUp(e: PointerEvent) {
     return;
   }
 
-  const hoverId = blockIdFromPoint(e.clientX, e.clientY) ?? currentAnchor.blockId;
   const siblings = getListSiblingIds(currentAnchor.blockId);
+  const hoverId = blockIdFromPoint(e.clientX, e.clientY, siblings) ?? currentAnchor.blockId;
 
   const ranges = resolveCrossRanges(
     siblings,

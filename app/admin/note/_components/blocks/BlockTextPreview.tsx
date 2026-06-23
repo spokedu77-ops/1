@@ -7,8 +7,13 @@ import {
   type RichPreviewField,
 } from '@/app/lib/note/richTextPreview';
 import { stripListItemMarkerFromHtml } from '../noteBulletInput';
-import { clearBlockPreviewCrossHighlight } from '../noteBlockPreviewCrossSelect';
-import { clearAllNoteTextSelections } from '../noteCrossSelect';
+import {
+  applyBlockPreviewCrossHighlight,
+  applyBlockRowCrossHighlight,
+  clearBlockPreviewCrossHighlight,
+} from '../noteBlockPreviewCrossSelect';
+import { clearAllNoteTextSelections, getActiveCrossRanges } from '../noteCrossSelect';
+import { getActiveListCrossRanges } from '../noteListCrossSelect';
 import { setPendingSelectAllBlock } from '../noteEditorRegistry';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { parseAdminNoteDocumentIdFromHref } from '../../_lib/notePaste';
@@ -51,7 +56,24 @@ export function BlockTextPreview({
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    clearBlockPreviewCrossHighlight(blockId);
+    const activeRanges = [
+      ...getActiveCrossRanges(),
+      ...getActiveListCrossRanges(),
+    ].filter((range) => range.blockId === blockId);
+
+    if (activeRanges.length > 0) {
+      const range = activeRanges[activeRanges.length - 1];
+      if (range.surface === 'preview' || range.surface === 'list-preview') {
+        if (range.to > range.from) {
+          applyBlockPreviewCrossHighlight(blockId, range.from, range.to);
+        } else {
+          clearBlockPreviewCrossHighlight(blockId);
+          applyBlockRowCrossHighlight(blockId);
+        }
+      }
+    } else {
+      clearBlockPreviewCrossHighlight(blockId);
+    }
     setRenderKey((key) => key + 1);
   }, [blockId, html]);
 

@@ -4,7 +4,7 @@ import { buildMissingMasterMetaRows } from './metaRowContract';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
-const SYNC_FIELDS = ['video_url', 'checklist', 'equipment', 'activity_method', 'activity_tip'] as const;
+const SYNC_FIELDS = ['title', 'video_url', 'equipment', 'activity_method'] as const;
 type SyncField = (typeof SYNC_FIELDS)[number];
 
 type CurriculumRow = {
@@ -12,28 +12,24 @@ type CurriculumRow = {
   title: string | null;
   url: string | null;
   equipment: string[] | null;
-  check_list: string[] | null;
   steps: string[] | null;
-  expert_tip: string | null;
 };
 
 type OverlayRow = {
   id: number;
   source_center_curriculum_id: number | null;
+  title: string | null;
   video_url: string | null;
-  checklist: string | null;
   equipment: string | null;
   activity_method: string | null;
-  activity_tip: string | null;
   updated_at: string | null;
 };
 
 type SyncPayload = {
+  title: string | null;
   video_url: string | null;
-  checklist: string | null;
   equipment: string | null;
   activity_method: string | null;
-  activity_tip: string | null;
 };
 
 type SyncChange = {
@@ -68,21 +64,19 @@ function normalizeText(value: string | null | undefined): string | null {
 
 function payloadFromCurriculum(row: CurriculumRow): SyncPayload {
   return {
+    title: normalizeText(row.title),
     video_url: normalizeVideoUrl(row.url),
-    checklist: joinLines(row.check_list),
     equipment: joinLines(row.equipment),
     activity_method: joinLines(row.steps),
-    activity_tip: normalizeText(row.expert_tip),
   };
 }
 
 function overlaySnapshot(overlay: OverlayRow | undefined): SyncPayload {
   return {
+    title: normalizeText(overlay?.title),
     video_url: normalizeVideoUrl(overlay?.video_url),
-    checklist: normalizeText(overlay?.checklist),
     equipment: normalizeText(overlay?.equipment),
     activity_method: normalizeText(overlay?.activity_method),
-    activity_tip: normalizeText(overlay?.activity_tip),
   };
 }
 
@@ -111,7 +105,7 @@ async function buildSyncPlan() {
   const supabase = getServiceSupabase();
   const { data: curriculumRows, error: currErr } = await supabase
     .from('curriculum')
-    .select('id,title,url,equipment,check_list,steps,expert_tip')
+    .select('id,title,url,equipment,steps')
     .eq('is_sub', false)
     .order('display_order', { ascending: true, nullsFirst: false });
 
@@ -124,7 +118,7 @@ async function buildSyncPlan() {
   if (ids.length > 0) {
     const { data: overlayRows, error: overlayErr } = await supabase
       .from('spokedu_pro_programs')
-      .select('id,source_center_curriculum_id,video_url,checklist,equipment,activity_method,activity_tip,updated_at')
+      .select('id,source_center_curriculum_id,title,video_url,equipment,activity_method,updated_at')
       .in('source_center_curriculum_id', ids);
     if (overlayErr) throw overlayErr;
     overlayById = latestOverlayByCurriculumId((overlayRows ?? []) as OverlayRow[]);
@@ -132,11 +126,10 @@ async function buildSyncPlan() {
 
   const changes: SyncChange[] = [];
   const fieldMismatches: Record<SyncField, number> = {
+    title: 0,
     video_url: 0,
-    checklist: 0,
     equipment: 0,
     activity_method: 0,
-    activity_tip: 0,
   };
 
   for (const row of curricula) {
@@ -180,11 +173,10 @@ async function applySync(changes: SyncChange[], overlayById: Map<number, Overlay
 
   for (const change of changes) {
     const payload = {
+      title: change.after.title ?? change.title,
       video_url: change.after.video_url,
-      checklist: change.after.checklist,
       equipment: change.after.equipment,
       activity_method: change.after.activity_method,
-      activity_tip: change.after.activity_tip,
       source_center_curriculum_id: change.curriculumId,
     };
 
@@ -201,7 +193,6 @@ async function applySync(changes: SyncChange[], overlayById: Map<number, Overlay
     const { error } = await supabase
       .from('spokedu_pro_programs')
       .insert({
-        title: change.title,
         ...payload,
         is_published: true,
         center_curriculum_is_sub: false,

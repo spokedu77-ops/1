@@ -5,6 +5,7 @@ import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess
 import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
 import {
+  getMasterParticipantFormat,
   normalizeMasterDuration,
   normalizeMasterSpace,
   normalizeMasterTarget,
@@ -255,6 +256,7 @@ export async function GET() {
         : categoryToColors(categoryName);
 
     const smTags = meta?.sm_tags ?? [];
+    const participantFormat = getMasterParticipantFormat(smTags);
     const relatedSpomoveIds = normalizeSpomoveIds(meta?.sm_related_spomove_ids ?? []);
     const tags = [...new Set(smTags.map((tag) => tag.trim()).filter(Boolean))];
     const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
@@ -289,7 +291,7 @@ export async function GET() {
       thumbnailUrl,
       lessonDetail: {
         recommendedAge: displayGrade,
-        recommendedPlayers: '',
+        recommendedPlayers: participantFormat,
         objective: meta?.sm_objective ?? '',
         developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
         coachScript: meta?.sm_coach_script ?? '',
@@ -333,7 +335,7 @@ export async function PATCH(request: Request) {
     return privateNoStoreJson({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids', 'sm_thumbnail_url', 'sm_hero_image_url', 'sm_setup_image_url', 'sm_gallery_image_urls'];
+  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids', 'sm_thumbnail_url', 'sm_hero_image_url', 'sm_setup_image_url', 'sm_gallery_image_urls', 'sm_briefing_notes', 'sm_variation_method'];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];

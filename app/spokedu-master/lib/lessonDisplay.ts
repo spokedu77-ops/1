@@ -33,24 +33,31 @@ export function formatTaggedValues(tags: string[] | undefined, prefix: string, f
   return values.length ? values.join(', ') : fallback;
 }
 
-const STRENGTH_BODY_FUNCTIONS = new Set(['근력', '근지구력']);
+const BODY_FUNCTION_DISPLAY_ORDER = ['유연성', '민첩성', '순발력', '협응력', '근력·근지구력', '심폐지구력', '리듬감', '평형성'] as const;
+const STRENGTH_BODY_FUNCTIONS = new Set(['근력', '근지구력', '근력·근지구력']);
 
 export function mergeStrengthBodyFunctions(values: string[]): string[] {
-  const merged: string[] = [];
-  let strengthAdded = false;
+  const normalized = new Set<string>();
+  const unknown: string[] = [];
 
   for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
     if (STRENGTH_BODY_FUNCTIONS.has(value)) {
-      if (!strengthAdded) {
-        merged.push('근력·근지구력');
-        strengthAdded = true;
-      }
+      normalized.add('근력·근지구력');
       continue;
     }
-    merged.push(value);
+    if ((BODY_FUNCTION_DISPLAY_ORDER as readonly string[]).includes(trimmed)) {
+      normalized.add(trimmed);
+      continue;
+    }
+    if (!unknown.includes(trimmed)) unknown.push(trimmed);
   }
 
-  return merged;
+  return [
+    ...BODY_FUNCTION_DISPLAY_ORDER.filter((value) => normalized.has(value)),
+    ...unknown,
+  ];
 }
 
 export function formatBodyFunctions(values: string[]) {

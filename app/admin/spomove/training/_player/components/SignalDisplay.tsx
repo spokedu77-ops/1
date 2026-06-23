@@ -50,6 +50,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     const fillHex = (content?.fillHex as string) ?? '#EF4444';
     const symbol = content?.symbol as string | undefined;
     const textColor = (content?.textColor as string) ?? '#fff';
+    const imageUrl = (content?.imageUrl as string | null | undefined) ?? null;
     return (
       <div
         key={animKey}
@@ -94,7 +95,14 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                     justifyContent: 'center',
                   }}
                 >
-                  {isActive && symbol ? (
+                  {isActive && imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt=""
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10, display: 'block' }}
+                      draggable={false}
+                    />
+                  ) : isActive && symbol ? (
                     <span style={{ fontSize: 'clamp(40px, 11vmin, 100px)', lineHeight: 1, color: textColor, opacity: 0.45, userSelect: 'none' }}>
                       {symbol}
                     </span>

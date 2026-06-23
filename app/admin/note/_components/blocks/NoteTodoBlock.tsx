@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { EMPTY_BLOCK_PLACEHOLDER } from '../../_lib/noteBlockRowUi';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
+import { useSyncContentPatch } from './useSyncContentPatch';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
@@ -56,6 +57,8 @@ export function NoteTodoBlock({
   const checked = !!block.content?.checked;
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
 
+  const patchTodo = useSyncContentPatch(block, onUpdate, fieldProps.onContentSync);
+
   const handleTodoEnter = createInlineBlockEnterHandler({
     block,
     followType: 'todo',
@@ -75,7 +78,7 @@ export function NoteTodoBlock({
         className={`mt-[3px] flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border transition-colors ${
           checked ? 'border-blue-500 bg-blue-500 text-white' : 'border-neutral-300 bg-white hover:border-blue-400'
         }`}
-        onClick={() => onUpdate({ ...block.content, checked: !checked })}
+        onClick={() => patchTodo({ checked: !checked })}
       >
         {checked && <Check className="h-3 w-3" />}
       </button>

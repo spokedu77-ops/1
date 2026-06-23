@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { TrialGateWall } from '../components/ui/TrialGateWall';
 import LibraryView from './LibraryView';
 
@@ -10,7 +11,9 @@ export const metadata: Metadata = {
 export default function SpokeduMasterLibraryPage() {
   return (
     <TrialGateWall feature="library">
-      <LibraryView />
+      <Suspense fallback={null}>
+        <LibraryView />
+      </Suspense>
     </TrialGateWall>
   );
 }

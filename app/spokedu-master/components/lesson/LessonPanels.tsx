@@ -215,9 +215,17 @@ export function LessonChecklistCard({
   );
 }
 
-export function LessonFullSection({ title, children }: { title: string; children: ReactNode }) {
+export function LessonFullSection({
+  title,
+  children,
+  className = '',
+}: {
+  title: string;
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <section className="rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)]">
+    <section className={`rounded-[14px] border border-slate-200 bg-white p-4 shadow-[0_10px_28px_rgba(15,23,42,0.04)] ${className}`}>
       <h3 className="flex items-center gap-2 text-sm font-black text-slate-950">
         <BookOpen className="h-4 w-4 text-indigo-600" />
         {title}

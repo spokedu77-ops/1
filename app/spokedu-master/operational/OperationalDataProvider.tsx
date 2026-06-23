@@ -7,6 +7,7 @@ import type {
   CreateStudentInput,
   MasterClassRecordDto,
   MasterStudentDto,
+  UpdateClassRecordInput,
 } from '../types/operational';
 
 export type OperationalDataStatus = 'error' | 'idle' | 'loading' | 'ready';
@@ -21,6 +22,7 @@ type OperationalDataContextValue = {
   saveClassRecord: (input: CreateClassRecordInput) => Promise<MasterClassRecordDto>;
   status: OperationalDataStatus;
   students: MasterStudentDto[];
+  updateClassRecord: (recordId: string, input: UpdateClassRecordInput) => Promise<MasterClassRecordDto>;
 };
 
 const OperationalDataContext = createContext<OperationalDataContextValue | null>(null);
@@ -124,6 +126,18 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const updateClassRecord = useCallback(async (recordId: string, input: UpdateClassRecordInput) => {
+    const json = await requestJson<{ data: MasterClassRecordDto }>(
+      `/api/spokedu-master/class-records?id=${encodeURIComponent(recordId)}`,
+      {
+        body: JSON.stringify(input),
+        method: 'PATCH',
+      },
+    );
+    setClassRecords((current) => [json.data, ...current.filter((record) => record.id !== json.data.id)]);
+    return json.data;
+  }, []);
+
   const value = useMemo<OperationalDataContextValue>(
     () => ({
       classRecords,
@@ -135,8 +149,9 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       saveClassRecord,
       status,
       students,
+      updateClassRecord,
     }),
-    [classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, status, students],
+    [classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, status, students, updateClassRecord],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

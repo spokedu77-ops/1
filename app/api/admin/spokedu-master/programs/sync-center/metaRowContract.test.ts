@@ -58,4 +58,19 @@ describe('sync-center Master meta row creation', () => {
     expect(syncGet).not.toContain('.upsert(');
     expect(syncGet).not.toContain('.insert(');
   });
+
+  it('syncs only shared center curriculum fields into the subscription overlay', async () => {
+    const syncRoute = await readFile(path.join(
+      process.cwd(),
+      'app/api/admin/spokedu-master/programs/sync-center/route.ts',
+    ), 'utf8');
+
+    expect(syncRoute).toContain("const SYNC_FIELDS = ['title', 'video_url', 'equipment', 'activity_method'] as const");
+    expect(syncRoute).toContain(".select('id,title,url,equipment,steps')");
+    expect(syncRoute).toContain(".select('id,source_center_curriculum_id,title,video_url,equipment,activity_method,updated_at')");
+    expect(syncRoute).not.toContain('checklist');
+    expect(syncRoute).not.toContain('activity_tip');
+    expect(syncRoute).not.toContain('expert_tip');
+    expect(syncRoute).not.toContain('check_list');
+  });
 });

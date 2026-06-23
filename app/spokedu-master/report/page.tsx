@@ -57,9 +57,9 @@ function getAudienceOutputTitle(audience: Audience) {
 }
 
 function buildRecordNote(record: ClassRecord): string {
-  if (record.memo?.trim()) return record.memo.trim();
+  const parts: string[] = [];
+  if (record.memo?.trim()) parts.push(record.memo.trim());
   if (record.recordType !== 'quick') {
-    const parts: string[] = [];
     if (record.present > 0) parts.push(`출석 ${record.present}명`);
     if (record.absent > 0) parts.push(`결석 ${record.absent}명`);
     if (record.focusCount > 0) parts.push(`집중 관찰 ${record.focusCount}명`);
@@ -68,9 +68,8 @@ function buildRecordNote(record: ClassRecord): string {
       .map((s) => `${s.studentName}: ${s.memo}`)
       .join(', ');
     if (studentMemos) parts.push(studentMemos);
-    return parts.join('. ');
   }
-  return '';
+  return parts.join('. ');
 }
 
 function addJosa(word: string, consonantForm: string, vowelForm: string): string {
@@ -280,12 +279,29 @@ function ReportContent() {
   useEffect(() => {
     if (!savedExplanationId || savedQueryAppliedRef.current === savedExplanationId) return;
     const savedExplanation = explanationData.explanations.find((item) => item.id === savedExplanationId);
-    if (!savedExplanation) return;
-    savedQueryAppliedRef.current = savedExplanationId;
-    setProgramId(savedExplanation.programId);
-    setAudience(savedExplanation.audience);
-    setGenerated(savedExplanation.text);
-  }, [explanationData.explanations, savedExplanationId]);
+    if (savedExplanation) {
+      savedQueryAppliedRef.current = savedExplanationId;
+      setProgramId(savedExplanation.programId);
+      setAudience(savedExplanation.audience);
+      setGenerated(savedExplanation.text);
+      return;
+    }
+
+    if (explanationData.status !== 'ready') return;
+
+    let cancelled = false;
+    void explanationData.getExplanation(savedExplanationId).then((item) => {
+      if (cancelled || !item || savedQueryAppliedRef.current === savedExplanationId) return;
+      savedQueryAppliedRef.current = savedExplanationId;
+      setProgramId(item.programId);
+      setAudience(item.audience);
+      setGenerated(item.text);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [explanationData, savedExplanationId]);
 
   const program = programPool.find((item) => item.id === programId) ?? programPool[0];
   const filteredPrograms = search.trim()

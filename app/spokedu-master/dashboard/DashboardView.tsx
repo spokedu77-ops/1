@@ -17,8 +17,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
-import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent';
-import { BottomSheet } from '../components/ui/BottomSheet';
+import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
@@ -502,10 +501,12 @@ function ActivityPanel({
     value: number | null;
     href: string;
     Icon: typeof FileText;
+    action?: string;
   }> = [
     { label: '저장 안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
     { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
     { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
+    { label: '수업 도구', value: null, href: '/spokedu-master/class-tools', Icon: Wrench, action: '바로 열기' },
   ];
 
   return (
@@ -519,74 +520,26 @@ function ActivityPanel({
           {status}
         </Link>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-3">
-        {activities.map(({ label, value, href, Icon }, index) => (
+      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+        {activities.map(({ label, value, href, Icon, action }) => (
           <Link
             key={label}
             href={href}
-            className={`flex min-h-[70px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500 ${
-              index === 2 ? 'col-span-2 lg:col-span-1' : ''
-            }`}
+            className="flex min-h-[74px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 transition-colors hover:border-indigo-100 hover:bg-indigo-50/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
             title={label === '학생 메모' ? '저장된 수업 기록 내 학생 메모 수' : undefined}
           >
             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-white text-emerald-700 shadow-sm"><Icon size={17} /></span>
-            <span>
+            <span className="min-w-0">
               <span className="block text-[12px] font-bold text-slate-500">{label}</span>
-              <span className="mt-0.5 block text-[15px] font-black text-slate-900">
-                {value === null ? '확인 중' : `${value}개`}
+              <span className="mt-0.5 inline-flex items-center gap-1 text-[15px] font-black text-slate-900">
+                {action ?? (value === null ? '확인 중' : `${value}개`)}
+                {action ? <ArrowRight size={14} className="text-indigo-600" /> : null}
               </span>
             </span>
           </Link>
         ))}
       </div>
-      <Link
-        href="/spokedu-master/class-tools"
-        className="mt-3 flex min-h-11 items-center justify-between rounded-[14px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-700 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
-      >
-        <span className="inline-flex items-center gap-2">
-          <Wrench size={16} className="text-indigo-600" />
-          수업 도구
-        </span>
-
-        <span className="inline-flex items-center gap-1 text-[12px] text-indigo-600">
-          바로가기
-          <ArrowRight size={14} />
-        </span>
-      </Link>
     </section>
-  );
-}
-
-function HomeProgramPreview({
-  program,
-  autoplayVideo,
-  onPlaybackStarted,
-  onClose,
-}: {
-  program: Program;
-  autoplayVideo: boolean;
-  onPlaybackStarted: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <BottomSheet open title="수업 미리보기" onClose={onClose} size="preview">
-      <LessonPreviewContent
-        program={program}
-        autoplayVideo={autoplayVideo}
-        onPlaybackStarted={onPlaybackStarted}
-        footer={
-          <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button type="button" onClick={onClose} className="hidden h-10 w-[96px] items-center justify-center rounded-[10px] border border-slate-200 px-4 text-[13px] font-black text-slate-700 sm:inline-flex">
-              닫기
-            </button>
-            <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[160px]">
-              <BookOpen className="h-4 w-4" />
-              수업 자료 보기
-            </Link>
-          </div>
-        }
-      />
-    </BottomSheet>
   );
 }
 
@@ -783,7 +736,7 @@ export default function DashboardView() {
           <p className="mt-1 text-[13px] font-semibold text-slate-500 sm:text-sm">수업 프로그램과 SPOMOVE를 확인하고, 최근 작업을 바로 이어갈 수 있습니다.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[13px] font-black text-indigo-700"><BookOpen size={15} />수업안 찾기</Link>
+          <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[13px] font-black text-indigo-700"><BookOpen size={15} />라이브러리</Link>
           <Link href="/spokedu-master/spomove" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><MonitorPlay size={15} />SPOMOVE</Link>
           <Link href="/spokedu-master/report" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><FileText size={15} />안내문</Link>
         </div>
@@ -900,7 +853,7 @@ export default function DashboardView() {
       ) : null}
 
       {selectedProgram ? (
-        <HomeProgramPreview
+        <ProgramPreviewModal
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
           onPlaybackStarted={() => {

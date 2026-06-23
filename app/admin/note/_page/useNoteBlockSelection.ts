@@ -293,6 +293,7 @@ export function useNoteBlockSelection(options: {
         return;
       }
       setSelectedBlockIds(new Set());
+      clearAllNoteTextSelections();
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
@@ -315,8 +316,11 @@ export function useNoteBlockSelection(options: {
         setSelectedBlockIds(new Set(blocksRef.current.map((b) => b.id)));
         return;
       }
-      if (e.key === 'Escape' && selectedBlockIdsRef.current.size > 0) {
-        setSelectedBlockIds(new Set());
+      if (e.key === 'Escape' && !isEditing) {
+        if (selectedBlockIdsRef.current.size > 0) {
+          setSelectedBlockIds(new Set());
+        }
+        clearAllNoteTextSelections();
         return;
       }
       if (e.key === 'Delete' && selectedBlockIdsRef.current.size > 0 && !isEditing) {
@@ -326,7 +330,7 @@ export function useNoteBlockSelection(options: {
         const blocks = ids
           .map((id) => blocksRef.current.find((b) => b.id === id))
           .filter((block): block is NoteBlock => !!block);
-        void handleDeleteBlocksRef.current?.(blocks, { skipDeleteUndo: true });
+        void handleDeleteBlocksRef.current?.(blocks);
       }
     };
     window.addEventListener('keydown', onKey);

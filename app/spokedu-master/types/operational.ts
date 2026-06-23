@@ -74,3 +74,5 @@ export type CreateClassRecordInput = {
   parentNoteSnapshot: string | null;
   students: CreateClassRecordStudentInput[];
 };
+
+export type UpdateClassRecordInput = CreateClassRecordInput;

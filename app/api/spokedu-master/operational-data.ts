@@ -277,6 +277,19 @@ export function classRecordInsertPayload(input: NormalizedClassRecordInput, owne
   };
 }
 
+export function classRecordUpdatePayload(input: NormalizedClassRecordInput) {
+  return {
+    class_date: input.date,
+    lesson_title: input.lessonTitle,
+    class_id: input.classId,
+    program_id: input.programId,
+    program_title: input.programTitle,
+    record_type: input.recordType,
+    memo: input.memo,
+    parent_note_snapshot: input.parentNoteSnapshot,
+  };
+}
+
 export function classRecordStudentInsertPayload(
   student: NormalizedClassRecordStudentInput,
   ownerId: string,

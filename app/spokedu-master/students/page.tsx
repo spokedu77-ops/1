@@ -66,6 +66,7 @@ export default function StudentsPage() {
   const [newGroup, setNewGroup] = useState('');
   const [newMeta, setNewMeta] = useState('');
   const [studentSaving, setStudentSaving] = useState(false);
+  const [studentSaveError, setStudentSaveError] = useState<string | null>(null);
   const [legacyPreviewAvailable, setLegacyPreviewAvailable] = useState(false);
   const [legacyPreview, setLegacyPreview] = useState<LegacyOperationalImportPreview | null>(null);
   const [legacyOwnerConfirmed, setLegacyOwnerConfirmed] = useState(false);
@@ -98,6 +99,7 @@ export default function StudentsPage() {
     if (!newName.trim() || studentSaving) return;
     const legacyId = crypto.randomUUID();
     setStudentSaving(true);
+    setStudentSaveError(null);
     void operationalData
       .createStudent({
         legacyId,
@@ -111,6 +113,9 @@ export default function StudentsPage() {
         setNewGroup('');
         setNewMeta('');
         setAddOpen(false);
+      })
+      .catch(() => {
+        setStudentSaveError('학생을 등록하지 못했습니다. 잠시 후 다시 시도해 주세요.');
       })
       .finally(() => {
         setStudentSaving(false);
@@ -259,7 +264,7 @@ export default function StudentsPage() {
               수업 기록에서 남긴 출석, 관찰, 동작 체크를 학생별 성장 근거로 정리합니다.
             </p>
           </div>
-          <button type="button" onClick={() => setAddOpen(true)} className="mt-1 flex h-11 shrink-0 items-center gap-2 rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="mt-1 flex h-11 shrink-0 items-center gap-2 rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
             <Plus size={15} />
             학생 추가
           </button>
@@ -509,7 +514,7 @@ export default function StudentsPage() {
             학생을 등록하면 수업 도구의 무작위 선택, 팀 나누기, 진행 순서가 실제 명단으로 작동합니다.
           </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button type="button" onClick={() => setAddOpen(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
               <Plus size={15} />
               학생 추가
             </button>
@@ -767,6 +772,11 @@ export default function StudentsPage() {
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>나이 / 수강 기간</span>
             <input type="text" value={newMeta} onChange={(event) => setNewMeta(event.target.value)} placeholder="예: 8세 / 3개월차" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
           </label>
+          {studentSaveError ? (
+            <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
+              {studentSaveError}
+            </p>
+          ) : null}
           <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
             {studentSaving ? '추가 중...' : '추가'}
           </button>

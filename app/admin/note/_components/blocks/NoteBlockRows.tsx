@@ -467,7 +467,7 @@ function BlockContent({
       setImgUploading(true);
       try {
         const uploaded = await uploadImage(file);
-        onUpdate({ ...block.content, url: uploaded });
+        syncContentPatch({ url: uploaded });
       } finally {
         setImgUploading(false);
       }

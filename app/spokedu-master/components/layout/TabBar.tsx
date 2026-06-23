@@ -7,7 +7,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 
 const PRIMARY_TABS = [
   { key: 'dashboard', label: '홈', Icon: Home },
-  { key: 'library', label: '수업안', Icon: BookOpen },
+  { key: 'library', label: '라이브러리', Icon: BookOpen },
   { key: 'spomove', label: 'SPOMOVE', Icon: Tv },
 ] as const;
 

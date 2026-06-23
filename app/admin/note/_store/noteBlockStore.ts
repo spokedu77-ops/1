@@ -46,10 +46,20 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
   syncBlocksStructure: (blocks) => {
     set((state) => {
       const docId = state.activeDocumentId;
-      const byId: Record<string, NoteBlock> = {};
+      const nextById: Record<string, NoteBlock> = { ...state.byId };
+      const incomingIds = new Set(blocks.map((b) => b.id));
+
+      if (docId) {
+        for (const [id, existing] of Object.entries(nextById)) {
+          if (existing.document_id === docId && !incomingIds.has(id)) {
+            delete nextById[id];
+          }
+        }
+      }
+
       for (const incoming of blocks) {
         if (docId && incoming.document_id !== docId) {
-          byId[incoming.id] = incoming;
+          nextById[incoming.id] = incoming;
           continue;
         }
         const prev = state.byId[incoming.id];
@@ -61,7 +71,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
           && (!docId || prev.document_id === docId)
         ) {
           if (isActiveBlock) {
-            byId[incoming.id] = {
+            nextById[incoming.id] = {
               ...incoming,
               content: mergeBlockContentWithStore(
                 incoming.content as Record<string, unknown> | null | undefined,
@@ -74,7 +84,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
             incoming.content as Record<string, unknown> | null | undefined,
             prev.content as Record<string, unknown>,
           );
-          byId[incoming.id] = mergedContent !== incoming.content
+          nextById[incoming.id] = mergedContent !== incoming.content
             ? { ...incoming, content: mergedContent }
             : incoming;
         } else {
@@ -82,12 +92,12 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
             && incoming.content
             ? normalizeListBlockContentRecord(incoming.content as Record<string, unknown>)
             : incoming.content;
-          byId[incoming.id] = content !== incoming.content
+          nextById[incoming.id] = content !== incoming.content
             ? { ...incoming, content }
             : incoming;
         }
       }
-      return { byId };
+      return { byId: nextById };
     });
   },
   patchContent: (blockId, content) => {

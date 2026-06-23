@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Program } from '../types';
 import {
   buildLessonDisplayModel,
+  getPreviewCoachScript,
   getPublicLessonTags,
   hasCanonicalTag,
   normalizeTagKey,
@@ -71,5 +72,29 @@ describe('lessonDisplayModel', () => {
     const withoutTags = program({ tags: [], space: '교실', grade: '미취학' });
     expect(hasCanonicalTag(withoutTags, '교실체육')).toBe(false);
     expect(hasCanonicalTag(withoutTags, '미취학')).toBe(false);
+  });
+
+  it('merges strength body function variants in display order', () => {
+    const model = buildLessonDisplayModel(program({
+      tags: [
+        '신체 기능:근지구력',
+        '신체 기능:민첩성',
+        '신체 기능:근력',
+        '신체 기능:근력·근지구력',
+        '신체 기능:유연성',
+      ],
+    }));
+
+    expect(model.functions).toEqual(['유연성', '민첩성', '근력·근지구력']);
+  });
+
+  it('extracts the first complete preview coach script', () => {
+    expect(getPreviewCoachScript('첫 문장입니다.\n두 번째 문장입니다.')).toBe('첫 문장입니다.');
+    expect(getPreviewCoachScript('• 불릿 첫 문장입니다.\n• 두 번째입니다.')).toBe('불릿 첫 문장입니다.');
+    expect(getPreviewCoachScript('1. 번호 첫 문장입니다.\n2. 두 번째입니다.')).toBe('번호 첫 문장입니다.');
+    expect(getPreviewCoachScript('"따옴표 문장입니다."\n다음 문장')).toBe('"따옴표 문장입니다."');
+    expect(getPreviewCoachScript('Ready. Next sentence.')).toBe('Ready.');
+    expect(getPreviewCoachScript('구분 없는 문자열')).toBe('구분 없는 문자열');
+    expect(getPreviewCoachScript('   ')).toBe('');
   });
 });

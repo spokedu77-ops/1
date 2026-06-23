@@ -5,6 +5,10 @@ export const MASTER_DURATION_TAGS = [
 
 export const MASTER_SPACE_TAGS = ['체육관', '교실'] as const;
 export const MASTER_TARGET_TAGS = ['미취학', '초등학생 이상'] as const;
+export const MASTER_PARTICIPANT_FORMATS = ['개인전', '2인 1조', '팀전'] as const;
+export const MASTER_PARTICIPANT_TAG_PREFIX = '인원:';
+
+export type MasterParticipantFormat = (typeof MASTER_PARTICIPANT_FORMATS)[number];
 
 function unique<T>(values: T[]): T[] {
   return Array.from(new Set(values));
@@ -77,4 +81,36 @@ export function hasMasterTarget(value: string | null | undefined, target: string
 
 export function serializeMasterTags(values: string[]): string {
   return unique(values.map((item) => item.trim()).filter(Boolean)).join(',');
+}
+
+export function isMasterParticipantFormat(value: string): value is MasterParticipantFormat {
+  return (MASTER_PARTICIPANT_FORMATS as readonly string[]).includes(value);
+}
+
+export function parseMasterParticipantFormats(tags: string[] | string | null | undefined): MasterParticipantFormat[] {
+  const values = Array.isArray(tags) ? tags : splitStoredTags(tags);
+  return unique(
+    values
+      .map((tag) => tag.trim())
+      .filter((tag) => tag.startsWith(MASTER_PARTICIPANT_TAG_PREFIX))
+      .map((tag) => tag.slice(MASTER_PARTICIPANT_TAG_PREFIX.length).trim())
+      .filter(isMasterParticipantFormat),
+  );
+}
+
+export function getMasterParticipantFormat(tags: string[] | string | null | undefined): MasterParticipantFormat | '' {
+  return parseMasterParticipantFormats(tags)[0] ?? '';
+}
+
+export function setMasterParticipantFormatTag(tags: string[] | string | null | undefined, format: string | null | undefined): string[] {
+  const values = Array.isArray(tags) ? tags : splitStoredTags(tags);
+  const next = values
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .filter((tag) => !tag.startsWith(MASTER_PARTICIPANT_TAG_PREFIX));
+  const normalized = (format ?? '').trim();
+  if (isMasterParticipantFormat(normalized)) {
+    next.push(`${MASTER_PARTICIPANT_TAG_PREFIX}${normalized}`);
+  }
+  return unique(next);
 }

@@ -5,8 +5,6 @@ import {
   BookOpen,
   Check,
   ChevronDown,
-  Clipboard,
-  FileText,
   Lock,
   MonitorPlay,
   Play,
@@ -15,10 +13,10 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
-import { LessonPreviewContent } from '../components/lesson/LessonPreviewContent';
-import { BottomSheet } from '../components/ui/BottomSheet';
+import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import {
@@ -27,7 +25,6 @@ import {
   parseTaggedValues,
 } from '../lib/lessonDisplay';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
-import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
   parseMasterSpaces,
@@ -126,10 +123,6 @@ function matchesFilter(program: Program, filter: ActiveFilter) {
 
 function getHeroImage(program: Program) {
   return resolveProgramHero(program);
-}
-
-function getParentCopy(program: Program) {
-  return buildLessonDisplayModel(program).parentNote;
 }
 
 function getSearchText(program: Program) {
@@ -295,77 +288,16 @@ function ProgramCard({
       >
         <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
       </button>
+
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+          수업 자료
+        </Link>
+        <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
+          기록 준비
+        </Link>
+      </div>
     </article>
-  );
-}
-
-function ProgramModal({
-  program,
-  autoplayVideo,
-  isPro,
-  favorite,
-  onFavorite,
-  onClose,
-}: {
-  program: Program;
-  autoplayVideo: boolean;
-  isPro: boolean;
-  favorite: boolean;
-  onFavorite: () => void;
-  onClose: () => void;
-}) {
-  const [copied, setCopied] = useState(false);
-  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
-  const locked = program.isPro && !isPro;
-  const parentCopy = getParentCopy(program);
-
-  const copyParentNote = async () => {
-    await navigator.clipboard.writeText(parentCopy);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1400);
-  };
-
-  return (
-    <BottomSheet open title="빠른 미리보기" onClose={onClose} size="document">
-      <LessonPreviewContent
-        program={program}
-        autoplayVideo={autoplayVideo}
-        onPlaybackStarted={() => {
-          recordRecentProgramActivity({
-            programId: program.id,
-            programTitle: program.title,
-            action: 'video_started',
-            occurredAt: new Date().toISOString(),
-          });
-        }}
-        badges={
-          <>
-            {locked ? <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">PRO 전용</span> : null}
-            {hasSpomoveLink(program) ? <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">SPOMOVE 명시 연결</span> : null}
-          </>
-        }
-        footer={
-          <div className="sticky bottom-0 z-10 grid grid-cols-[1fr_auto] gap-2 rounded-[10px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-3">
-            {parentCopy ? (
-              <button type="button" onClick={copyParentNote} className="inline-flex h-11 min-w-0 items-center justify-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 text-sm font-black text-emerald-700">
-                <Clipboard className="h-4 w-4" />
-                {copied ? '복사 완료' : '문구 복사'}
-              </button>
-            ) : (
-              <span />
-            )}
-            <button type="button" onClick={onFavorite} className={`inline-flex h-11 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-black sm:px-4 ${favorite ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-slate-50 text-slate-700'}`} aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기'}>
-              <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
-              <span className="hidden sm:inline">즐겨찾기</span>
-            </button>
-            <button type="button" onClick={() => window.print()} className="hidden h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-4 text-sm font-black text-slate-700 sm:inline-flex">
-              <FileText className="h-4 w-4" />
-              인쇄
-            </button>
-          </div>
-        }
-      />
-    </BottomSheet>
   );
 }
 
@@ -406,12 +338,20 @@ function FilterRow({
 }
 
 export default function LibraryView() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { programs, programsLoaded, programsError, favorites, toggleFavorite } = useMasterStore();
+  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const isPro = useIsPro();
-  const [query, setQuery] = useState('');
-  const [filter, setFilter] = useState<ActiveFilter>(null);
+  const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [filter, setFilter] = useState<ActiveFilter>(() => {
+    const group = searchParams.get('filterGroup') as FilterGroupKey | null;
+    const value = searchParams.get('filter');
+    const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme', 'material'];
+    return group && value && allowedGroups.includes(group) ? { group, value } : null;
+  });
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -420,6 +360,33 @@ export default function LibraryView() {
     () => new Set(classRecords.map((record) => record.programId)),
     [classRecords],
   );
+  const recentProgramRecords = useMemo(() => {
+    const programsById = new Map(pool.map((program) => [program.id, program]));
+    const seen = new Set<string>();
+    return [...classRecords]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .flatMap((record) => {
+        const program = programsById.get(record.programId);
+        if (!program || seen.has(record.programId)) return [];
+        seen.add(record.programId);
+        return [{ program, record }];
+      })
+      .slice(0, 4);
+  }, [classRecords, pool]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    const trimmedQuery = query.trim();
+    if (trimmedQuery) params.set('q', trimmedQuery);
+    if (filter) {
+      params.set('filterGroup', filter.group);
+      params.set('filter', filter.value);
+    }
+    const next = params.toString();
+    const current = searchParams.toString();
+    if (next === current) return;
+    router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
+  }, [filter, query, router, searchParams]);
 
   const filteredPrograms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -439,7 +406,7 @@ export default function LibraryView() {
       { label: '전체 수업', value: pool.length },
       { label: '영상 포함', value: videoCount },
       { label: 'SPOMOVE', value: spomoveCount },
-      { label: '수업안', value: lessonPlanCount },
+      { label: '라이브러리', value: lessonPlanCount },
     ];
   }, [pool]);
 
@@ -588,6 +555,35 @@ export default function LibraryView() {
           </div>
         </header>
 
+        {recentProgramRecords.length > 0 ? (
+          <section className="rounded-[18px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600">Recent programs</p>
+                <h2 className="mt-1 text-lg font-black text-slate-950">최근 사용한 수업</h2>
+              </div>
+            </div>
+            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+              {recentProgramRecords.map(({ program, record }) => (
+                <article key={program.id} className="rounded-[14px] border border-slate-100 bg-slate-50 p-3">
+                  <p className="text-[11px] font-bold text-slate-400">
+                    {new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {record.classId}
+                  </p>
+                  <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-slate-950">{program.title}</h3>
+                  <div className="mt-3 grid gap-2">
+                    <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+                      전체 수업 자료 보기
+                    </Link>
+                    <Link href={`/spokedu-master/class-record?from=${record.id}&program=${program.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
+                      같은 구성으로 기록 준비
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
         <section>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
@@ -633,12 +629,20 @@ export default function LibraryView() {
       </main>
 
       {selected ? (
-        <ProgramModal
+        <ProgramPreviewModal
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
           isPro={isPro}
           favorite={favorites.includes(selected.program.id)}
           onFavorite={() => toggleFavorite(selected.program.id)}
+          onPlaybackStarted={() => {
+            recordRecentProgramActivity({
+              programId: selected.program.id,
+              programTitle: selected.program.title,
+              action: 'video_started',
+              occurredAt: new Date().toISOString(),
+            });
+          }}
           onClose={() => setSelected(null)}
         />
       ) : null}

@@ -5,6 +5,7 @@ import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
   classRecordInsertPayload,
   classRecordStudentInsertPayload,
+  classRecordUpdatePayload,
   normalizeClassRecordInput,
   toClassRecordDto,
   type MasterClassRecordRow,
@@ -91,6 +92,27 @@ async function resolveOwnedStudentIds(
   return new Set(((data ?? []) as Array<{ id: string }>).map((row) => row.id));
 }
 
+async function validateRecordStudents(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  ownerId: string,
+  input: ReturnType<typeof normalizeClassRecordInput>,
+) {
+  const ownedStudentIds = await resolveOwnedStudentIds(
+    supabase,
+    ownerId,
+    input.students.map((student) => student.studentId).filter((id): id is string => Boolean(id)),
+  );
+
+  const invalidStudent = input.students.find(
+    (student) => student.studentId && !ownedStudentIds.has(student.studentId),
+  );
+  if (invalidStudent) {
+    return { ok: false as const, response: privateNoStoreJson({ error: 'studentId is not available for this owner' }, { status: 400 }) };
+  }
+
+  return { ok: true as const };
+}
+
 export async function POST(request: Request) {
   const access = await requireSpokeduMasterAccess();
   if (!access.ok) return withPrivateNoStore(access.response);
@@ -132,13 +154,9 @@ export async function POST(request: Request) {
     }
   }
 
-  let ownedStudentIds: Set<string>;
   try {
-    ownedStudentIds = await resolveOwnedStudentIds(
-      supabase,
-      access.userId,
-      input.students.map((student) => student.studentId).filter((id): id is string => Boolean(id)),
-    );
+    const validation = await validateRecordStudents(supabase, access.userId, input);
+    if (!validation.ok) return validation.response;
   } catch (error) {
     await reportError(error, {
       context: 'spokedu_master.operational.class_records',
@@ -148,13 +166,6 @@ export async function POST(request: Request) {
       { error: error instanceof Error ? error.message : 'Student lookup failed' },
       { status: 500 },
     );
-  }
-
-  const invalidStudent = input.students.find(
-    (student) => student.studentId && !ownedStudentIds.has(student.studentId),
-  );
-  if (invalidStudent) {
-    return privateNoStoreJson({ error: 'studentId is not available for this owner' }, { status: 400 });
   }
 
   const { data: inserted, error: insertError } = await supabase
@@ -218,4 +229,122 @@ export async function POST(request: Request) {
     { data: toClassRecordDto(data as MasterClassRecordRow), duplicate: false },
     { status: 201 },
   );
+}
+
+export async function PATCH(request: Request) {
+  const access = await requireSpokeduMasterAccess();
+  if (!access.ok) return withPrivateNoStore(access.response);
+
+  const recordId = new URL(request.url).searchParams.get('id')?.trim();
+  if (!recordId) {
+    return privateNoStoreJson({ error: 'record id is required' }, { status: 400 });
+  }
+
+  let input;
+  try {
+    input = normalizeClassRecordInput(await request.json());
+  } catch (error) {
+    return privateNoStoreJson(
+      { error: error instanceof Error ? error.message : 'Invalid class record payload' },
+      { status: 400 },
+    );
+  }
+
+  const supabase = getServiceSupabase();
+  const { data: existing, error: existingError } = await supabase
+    .from('spokedu_master_class_records')
+    .select('id')
+    .eq('owner_id', access.userId)
+    .eq('id', recordId)
+    .is('deleted_at', null)
+    .maybeSingle();
+
+  if (existingError) {
+    await reportError(existingError, {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'PATCH', stage: 'lookup', status: 500 },
+    });
+    return privateNoStoreJson({ error: existingError.message }, { status: 500 });
+  }
+
+  if (!existing) {
+    return privateNoStoreJson({ error: 'Record not found' }, { status: 404 });
+  }
+
+  try {
+    const validation = await validateRecordStudents(supabase, access.userId, input);
+    if (!validation.ok) return validation.response;
+  } catch (error) {
+    await reportError(error, {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'PATCH', stage: 'student_lookup', status: 500 },
+    });
+    return privateNoStoreJson(
+      { error: error instanceof Error ? error.message : 'Student lookup failed' },
+      { status: 500 },
+    );
+  }
+
+  const { error: updateError } = await supabase
+    .from('spokedu_master_class_records')
+    .update(classRecordUpdatePayload(input))
+    .eq('owner_id', access.userId)
+    .eq('id', recordId);
+
+  if (updateError) {
+    await reportError(updateError, {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'PATCH', stage: 'record_update', status: 500 },
+    });
+    return privateNoStoreJson({ error: updateError.message }, { status: 500 });
+  }
+
+  const { error: deleteChildrenError } = await supabase
+    .from('spokedu_master_class_record_students')
+    .delete()
+    .eq('owner_id', access.userId)
+    .eq('record_id', recordId);
+
+  if (deleteChildrenError) {
+    await reportError(deleteChildrenError, {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'PATCH', stage: 'child_delete', status: 500 },
+    });
+    return privateNoStoreJson({ error: deleteChildrenError.message }, { status: 500 });
+  }
+
+  const childRows = input.students.map((student) =>
+    classRecordStudentInsertPayload(student, access.userId, recordId, student.studentId),
+  );
+
+  if (childRows.length > 0) {
+    const { error: childError } = await supabase
+      .from('spokedu_master_class_record_students')
+      .insert(childRows);
+
+    if (childError) {
+      await reportError(childError, {
+        context: 'spokedu_master.operational.class_records',
+        tags: { method: 'PATCH', stage: 'child_insert', status: 500 },
+      });
+      return privateNoStoreJson({ error: childError.message }, { status: 500 });
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('spokedu_master_class_records')
+    .select(RECORD_SELECT)
+    .eq('owner_id', access.userId)
+    .eq('id', recordId)
+    .maybeSingle();
+
+  if (error || !data) {
+    await reportError(error ?? new Error('Record reload returned no row'), {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'PATCH', stage: 'reload', status: 500 },
+    });
+    return privateNoStoreJson({ error: error?.message ?? 'Record reload failed' }, { status: 500 });
+  }
+
+  return privateNoStoreJson({ data: toClassRecordDto(data as MasterClassRecordRow) });
 }

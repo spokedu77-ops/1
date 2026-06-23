@@ -416,4 +416,147 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
       args: expect.any(Array),
     });
   });
+
+  it('updates a current owner class record and replaces child rows without creating a new parent record', async () => {
+    allowAccess('owner-a');
+    const { calls } = createSupabaseMock({
+      existingRecord: classRecordRow({
+        id: 'record-a',
+        owner_id: 'owner-a',
+        memo: 'Updated memo',
+        spokedu_master_class_record_students: [
+          {
+            id: 'record-a-student-1',
+            owner_id: 'owner-a',
+            record_id: 'record-a',
+            student_id: 'student-a',
+            student_legacy_id: 'legacy-a',
+            student_name_snapshot: 'Student A',
+            attendance: 'absent',
+            focused: true,
+            skills: ['balance'],
+            memo: 'Updated student memo',
+            created_at: '2026-06-20T00:00:00.000Z',
+            updated_at: '2026-06-20T00:00:00.000Z',
+          },
+        ],
+      }),
+      ownedStudentIds: ['student-a'],
+    });
+
+    const response = await classRecordsRoute.PATCH(
+      new Request('http://local/api/spokedu-master/class-records?id=record-a', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          legacyId: 'client-legacy-should-not-update',
+          date: '2026-06-21',
+          lessonTitle: 'Updated lesson',
+          classId: 'Updated class',
+          programId: 52,
+          programTitle: 'Program 52',
+          recordType: 'detailed',
+          memo: 'Updated memo',
+          parentNoteSnapshot: null,
+          students: [
+            {
+              studentId: 'student-a',
+              studentLegacyId: 'legacy-a',
+              studentName: 'Student A',
+              attendance: 'absent',
+              focused: true,
+              skills: ['balance'],
+              memo: 'Updated student memo',
+            },
+          ],
+        }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: {
+        id: 'record-a',
+        memo: 'Updated memo',
+        students: [
+          {
+            studentId: 'student-a',
+            attendance: 'absent',
+            focused: true,
+            skills: ['balance'],
+            memo: 'Updated student memo',
+          },
+        ],
+      },
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_class_records',
+      action: 'update',
+      args: [
+        expect.objectContaining({
+          class_date: '2026-06-21',
+          class_id: 'Updated class',
+          memo: 'Updated memo',
+        }),
+      ],
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_class_record_students',
+      action: 'delete',
+      args: [],
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_class_record_students',
+      action: 'insert',
+      args: [
+        [
+          expect.objectContaining({
+            owner_id: 'owner-a',
+            record_id: 'record-a',
+            student_id: 'student-a',
+            attendance: 'absent',
+            memo: 'Updated student memo',
+          }),
+        ],
+      ],
+    });
+    expect(calls).not.toContainEqual({
+      table: 'spokedu_master_class_records',
+      action: 'insert',
+      args: expect.any(Array),
+    });
+  });
+
+  it('does not update another owner class record id', async () => {
+    allowAccess('owner-a');
+    const { calls } = createSupabaseMock({ existingRecord: null });
+
+    const response = await classRecordsRoute.PATCH(
+      classRecordRequest({
+        date: '2026-06-21',
+        recordType: 'detailed',
+        students: [],
+      }),
+    );
+
+    expect(response.status).toBe(400);
+
+    const responseWithId = await classRecordsRoute.PATCH(
+      new Request('http://local/api/spokedu-master/class-records?id=record-b', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          date: '2026-06-21',
+          recordType: 'detailed',
+          students: [],
+        }),
+      }),
+    );
+
+    expect(responseWithId.status).toBe(404);
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_class_records',
+      action: 'eq',
+      args: ['owner_id', 'owner-a'],
+    });
+    expect(calls).not.toContainEqual(expect.objectContaining({ action: 'update' }));
+  });
 });

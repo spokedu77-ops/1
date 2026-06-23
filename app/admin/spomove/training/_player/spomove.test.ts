@@ -21,7 +21,9 @@ import {
 } from './lib/assetRequirement';
 import { registerPresentedSignal, type RepsState } from './lib/repsLogic';
 import { getNextIntervalState } from './lib/intervalTimer';
-import type { FruitSlide } from './lib/signals';
+import { generateSignal, createBasicSignalGenerator, type FruitSlide } from './lib/signals';
+import { generateObstacleSchedule } from './flow/engine/modules/flowObstacleSchedule';
+import type { FlowModuleKey } from './flow/engine/modules/flowModules';
 
 // ── localStorage mock ──────────────────────────────────────────────────────────
 
@@ -110,9 +112,19 @@ describe('getAssetRequirement', () => {
     expect(getAssetRequirement({ mode: 'stroop', level: 4, theme: 'fruit' }).minimumCount).toBe(0);
   });
 
-  test('basic level 1·2: 이미지 미사용', () => {
+  test('basic level 1: 이미지 미사용', () => {
     expect(getAssetRequirement({ mode: 'basic', level: 1, theme: 'fruit' }).minimumCount).toBe(0);
-    expect(getAssetRequirement({ mode: 'basic', level: 2, theme: 'fruit' }).minimumCount).toBe(0);
+  });
+
+  test('basic level 2 non-color: minimumCount=1 (think_quad 이미지 지원)', () => {
+    const r = getAssetRequirement({ mode: 'basic', level: 2, theme: 'fruit' });
+    expect(r.minimumCount).toBe(1);
+    expect(r.requiresDistinctImages).toBe(false);
+    expect(r.requiresDistinctColors).toBe(false);
+  });
+
+  test('basic level 2 color: 이미지 미사용', () => {
+    expect(getAssetRequirement({ mode: 'basic', level: 2, theme: 'color' }).minimumCount).toBe(0);
   });
 });
 
@@ -419,7 +431,158 @@ describe('인터벌 전환 (getNextIntervalState)', () => {
   });
 });
 
-// ── 7. FlowPreset 저장·불러오기 ──────────────────────────────────────────────
+// ── 7. 테마 이미지 런타임 슬라이드 검증 ─────────────────────────────────────
+
+const THEME_COLORS = {
+  red:    { id: 'red',    name: '빨강', bg: '#ff0000', text: '#fff', symbol: '●' },
+  yellow: { id: 'yellow', name: '노랑', bg: '#ffff00', text: '#000', symbol: '★' },
+  blue:   { id: 'blue',   name: '파랑', bg: '#0000ff', text: '#fff', symbol: '■' },
+  green:  { id: 'green',  name: '초록', bg: '#00ff00', text: '#000', symbol: '▲' },
+} as const;
+
+function makeThemeSlide(imageUrl: string, colorId: keyof typeof THEME_COLORS = 'red'): FruitSlide {
+  return { imageUrl, color: THEME_COLORS[colorId] };
+}
+
+const SAMPLE_SLIDES: FruitSlide[] = [
+  makeThemeSlide('https://cdn.example.com/fruit1.png', 'red'),
+  makeThemeSlide('https://cdn.example.com/fruit2.png', 'yellow'),
+  makeThemeSlide('https://cdn.example.com/fruit3.png', 'blue'),
+];
+
+describe('테마 이미지 런타임 슬라이드', () => {
+  const COLORS_ARR = Object.values(THEME_COLORS);
+
+  test('level 2 + 이미지 슬라이드 → think_quad content에 imageUrl 포함', () => {
+    const sig = generateSignal('basic', 2, COLORS_ARR, { fruitSlides: SAMPLE_SLIDES });
+    expect(sig).not.toBeNull();
+    expect(sig?.type).toBe('think_quad');
+    const url = (sig?.content as Record<string, unknown>)?.imageUrl;
+    expect(typeof url).toBe('string');
+    expect((url as string).length).toBeGreaterThan(0);
+  });
+
+  test('level 2 + 빈 슬라이드 → think_quad imageUrl=null (색 폴백)', () => {
+    const sig = generateSignal('basic', 2, COLORS_ARR, { fruitSlides: [] });
+    expect(sig).not.toBeNull();
+    expect(sig?.type).toBe('think_quad');
+    expect((sig?.content as Record<string, unknown>)?.imageUrl).toBeNull();
+  });
+
+  test('level 2 + slides 미전달(color 모드) → think_quad imageUrl=null', () => {
+    const sig = generateSignal('basic', 2, COLORS_ARR, undefined);
+    expect(sig).not.toBeNull();
+    expect(sig?.type).toBe('think_quad');
+    expect((sig?.content as Record<string, unknown>)?.imageUrl).toBeNull();
+  });
+
+  test('level 3 + 이미지 슬라이드 → full_color imageUrl 포함', () => {
+    const sig = generateSignal('basic', 3, COLORS_ARR, { fruitSlides: SAMPLE_SLIDES });
+    expect(sig).not.toBeNull();
+    expect(sig?.type).toBe('full_color');
+    const url = (sig?.content as Record<string, unknown>)?.imageUrl;
+    expect(typeof url).toBe('string');
+    expect((url as string).length).toBeGreaterThan(0);
+  });
+
+  test('createBasicSignalGenerator getter — 슬라이드 로딩 후 반영', () => {
+    let liveSlides: FruitSlide[] | undefined = undefined;
+    const getSlidesRef = () => liveSlides;
+    const gen = createBasicSignalGenerator(2, COLORS_ARR, getSlidesRef);
+
+    // 슬라이드 없을 때: 색 폴백
+    const sig1 = gen.next();
+    expect(sig1).not.toBeNull();
+    expect((sig1?.content as Record<string, unknown>)?.imageUrl).toBeNull();
+
+    // 슬라이드 로드 후: 이미지 반영
+    liveSlides = SAMPLE_SLIDES;
+    const sig2 = gen.next();
+    expect(sig2).not.toBeNull();
+    expect((sig2?.content as Record<string, unknown>)?.imageUrl).toBeTruthy();
+  });
+});
+
+// ── 8. 다이브 장애물 스케줄 ────────────────────────────────────────────────────
+
+function makeModules(...keys: FlowModuleKey[]): Set<FlowModuleKey> {
+  return new Set<FlowModuleKey>(['jump', ...keys]);
+}
+
+describe('generateObstacleSchedule', () => {
+  const BASE_OPTS = {
+    durationSec: 25,
+    speedMult: 1.0,
+    sessionReachPlaced: 0,
+    isBonus: false,
+  };
+
+  test('punch 단일 — box가 2회 이상 등장', () => {
+    const schedule = generateObstacleSchedule({ ...BASE_OPTS, activeModules: makeModules('punch') });
+    expect(schedule.filter(s => s === 'box').length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('duck 단일 — ufo가 2회 이상 등장', () => {
+    const schedule = generateObstacleSchedule({ ...BASE_OPTS, activeModules: makeModules('duck') });
+    expect(schedule.filter(s => s === 'ufo').length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('reach 단일 — reach가 1회 이상 등장 (세션 한도 내)', () => {
+    const schedule = generateObstacleSchedule({ ...BASE_OPTS, activeModules: makeModules('reach') });
+    expect(schedule.filter(s => s === 'reach').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('reach 단일 — 세션 reach 이미 2회 사용 시 reach 0회 (예산 소진)', () => {
+    const schedule = generateObstacleSchedule({
+      ...BASE_OPTS,
+      activeModules: makeModules('reach'),
+      sessionReachPlaced: 2,
+    });
+    expect(schedule.filter(s => s === 'reach').length).toBe(0);
+  });
+
+  test('보너스(punch+duck+reach) — ufo/box/reach 모두 1회 이상', () => {
+    const schedule = generateObstacleSchedule({
+      durationSec: 60,
+      speedMult: 1.25,
+      sessionReachPlaced: 2,  // 세션 한도 초과해도 보너스는 허용
+      isBonus: true,
+      activeModules: makeModules('punch', 'duck', 'reach'),
+    });
+    expect(schedule.filter(s => s === 'ufo').length).toBeGreaterThanOrEqual(1);
+    expect(schedule.filter(s => s === 'box').length).toBeGreaterThanOrEqual(1);
+    expect(schedule.filter(s => s === 'reach').length).toBeGreaterThanOrEqual(1);
+  });
+
+  test('인접 동일 타입 없음', () => {
+    for (let trial = 0; trial < 20; trial++) {
+      const schedule = generateObstacleSchedule({
+        durationSec: 60,
+        speedMult: 1.25,
+        sessionReachPlaced: 0,
+        isBonus: true,
+        activeModules: makeModules('punch', 'duck', 'reach'),
+      });
+      for (let i = 1; i < schedule.length; i++) {
+        const prev = schedule[i - 1];
+        const curr = schedule[i];
+        if (prev !== null && curr !== null) {
+          expect(curr).not.toBe(prev);
+        }
+      }
+    }
+  });
+
+  test('장애물 없는 모듈(jump+faster만) — 빈 배열', () => {
+    const schedule = generateObstacleSchedule({
+      ...BASE_OPTS,
+      activeModules: makeModules('faster'),
+    });
+    expect(schedule.every(s => s === null)).toBe(true);
+  });
+});
+
+// ── 9. FlowPreset 저장·불러오기 ──────────────────────────────────────────────
 
 describe('FlowPreset', () => {
   test('빈 스토리지 → 빈 배열', () => {

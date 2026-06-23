@@ -51,6 +51,9 @@ tsc-out.txt
 eslint-report.json
 .cursor/debug-*.log
 
+# local agent settings (do not commit API keys in allow rules)
+.claude/settings.json
+
 # env files (can opt-in for committing if needed)
 .env*
 

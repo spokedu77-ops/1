@@ -6,9 +6,10 @@ const block = (
   id: string,
   type: NoteBlock['type'],
   content: Record<string, unknown>,
+  documentId = 'doc',
 ): NoteBlock => ({
   id,
-  document_id: 'doc',
+  document_id: documentId,
   type,
   content,
   order_index: 0,
@@ -61,5 +62,36 @@ describe('syncBlocksStructure list type change', () => {
     useNoteBlockStore.getState().patchContent('t', { title: '새 제목', body: 'body' });
 
     expect(useNoteBlockStore.getState().getBlock('t')?.content?.title).toBe('새 제목');
+  });
+
+  it('preserves other documents in byId when syncing active document structure', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a1', 'text', { text: 'doc A' }, 'doc-a'),
+      block('b1', 'text', { text: 'doc B cached' }, 'doc-b'),
+    ]);
+    useNoteBlockStore.getState().setActiveDocumentId('doc-a');
+    useNoteBlockStore.getState().syncBlocksStructure([
+      block('a1', 'text', { text: 'doc A' }, 'doc-a'),
+      block('a2', 'text', { text: 'new row' }, 'doc-a'),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('b1')?.content?.text).toBe('doc B cached');
+    expect(useNoteBlockStore.getState().getBlock('a2')?.content?.text).toBe('new row');
+    expect(useNoteBlockStore.getState().getBlock('a1')?.content?.text).toBe('doc A');
+  });
+
+  it('removes deleted blocks from active document only', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a1', 'text', { text: 'stay' }, 'doc-a'),
+      block('a2', 'text', { text: 'gone' }, 'doc-a'),
+      block('b1', 'text', { text: 'other doc' }, 'doc-b'),
+    ]);
+    useNoteBlockStore.getState().setActiveDocumentId('doc-a');
+    useNoteBlockStore.getState().syncBlocksStructure([
+      block('a1', 'text', { text: 'stay' }, 'doc-a'),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('a2')).toBeUndefined();
+    expect(useNoteBlockStore.getState().getBlock('b1')?.content?.text).toBe('other doc');
   });
 });

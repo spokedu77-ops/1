@@ -249,6 +249,54 @@ describe('SPOKEDU MASTER explanations route', () => {
     await expect(response.json()).resolves.toMatchObject({ total: 42 });
   });
 
+  it('loads a saved explanation by id within the current owner scope', async () => {
+    allowAccess();
+    const { calls } = createSupabaseMock({
+      reloadResult: {
+        data: explanationRow({ id: 'saved-old-1', explanation_text: 'Older saved explanation' }),
+        error: null,
+      },
+    });
+
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations?saved=saved-old-1'));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: [{ id: 'saved-old-1', text: 'Older saved explanation' }],
+      total: 1,
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_explanations',
+      action: 'eq',
+      args: ['owner_id', 'owner-1'],
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_explanations',
+      action: 'eq',
+      args: ['id', 'saved-old-1'],
+    });
+    expect(calls).not.toContainEqual({
+      table: 'spokedu_master_explanations',
+      action: 'limit',
+      args: [10],
+    });
+  });
+
+  it('returns an empty saved explanation result without leaking other owners', async () => {
+    allowAccess();
+    createSupabaseMock({
+      reloadResult: {
+        data: null,
+        error: null,
+      },
+    });
+
+    const response = await GET(new Request('http://local/api/spokedu-master/explanations?saved=missing'));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ data: [], total: 0 });
+  });
+
   it('creates a valid explanation with status 201', async () => {
     allowAccess();
     createSupabaseMock();

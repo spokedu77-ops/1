@@ -24,11 +24,35 @@ const EXPLANATION_ID_SELECT = 'id';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(request?: Request) {
   const access = await requireSpokeduMasterAccess();
   if (!access.ok) return withPrivateNoStore(access.response);
 
   const supabase = getServiceSupabase();
+  const savedId = request ? new URL(request.url).searchParams.get('saved')?.trim() : null;
+
+  if (savedId) {
+    const { data, error } = await supabase
+      .from('spokedu_master_explanations')
+      .select(EXPLANATION_SELECT)
+      .eq('owner_id', access.userId)
+      .eq('id', savedId)
+      .maybeSingle();
+
+    if (error) {
+      await reportError(error, {
+        context: 'spokedu_master.operational.explanations',
+        tags: { method: 'GET', stage: 'saved_select', status: 500 },
+      });
+      return privateNoStoreJson({ error: error.message }, { status: 500 });
+    }
+
+    return privateNoStoreJson({
+      data: data ? [toExplanationDto(data as MasterExplanationRow)] : [],
+      total: data ? 1 : 0,
+    });
+  }
+
   const { data, error, count } = await supabase
     .from('spokedu_master_explanations')
     .select(EXPLANATION_SELECT, { count: 'exact' })

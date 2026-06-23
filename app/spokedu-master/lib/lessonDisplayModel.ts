@@ -1,5 +1,5 @@
 import type { Program } from '../types';
-import { displayMasterDuration } from './programDisplayTags';
+import { mergeStrengthBodyFunctions } from './lessonDisplay';
 import { resolveProgramHero } from './program-media';
 
 const INTERNAL_TAG_PREFIXES = ['움직임:', '신체 기능:', '인원:'];
@@ -37,12 +37,13 @@ export type LessonDisplayModel = {
   theme: string;
   target: string;
   space: string;
-  duration: string;
+  participantFormat: string;
   tags: string[];
   functions: string[];
   movements: string[];
   equipment: string[];
   coachScript: string;
+  previewCoachScript: string;
   briefingNotes: string[];
   activityMethod: string[];
   variationMethod: string[];
@@ -54,26 +55,58 @@ export type LessonDisplayModel = {
   galleryImageUrls: string[];
 };
 
+export function getPreviewCoachScript(script: string) {
+  const normalized = script.trim();
+  if (!normalized) return '';
+
+  const firstLine = normalized
+    .split('\n')
+    .map((line) => line.trim().replace(/^[-*•]\s*/, '').replace(/^\d+[.)]\s*/, ''))
+    .find(Boolean);
+  if (firstLine) return getCompleteSentence(firstLine);
+
+  return getCompleteSentence(normalized);
+}
+
+function getCompleteSentence(text: string) {
+  const trimmed = text.trim();
+  if (!trimmed) return '';
+
+  const closingMarks = new Set(['"', "'", '”', '’', '」', '』', ')']);
+  for (let index = 0; index < trimmed.length; index += 1) {
+    if (!'.!?'.includes(trimmed[index]!)) continue;
+    let end = index + 1;
+    while (end < trimmed.length && closingMarks.has(trimmed[end]!)) {
+      end += 1;
+    }
+    return trimmed.slice(0, end).trim();
+  }
+
+  return trimmed;
+}
+
 export function buildLessonDisplayModel(program: Program): LessonDisplayModel {
   const detail = program.lessonDetail;
+  const coachScript = cleanValue(detail?.coachScript);
   return {
     id: program.id,
     title: cleanValue(program.title),
     theme: cleanValue(program.category),
     target: cleanValue(detail?.recommendedAge || program.grade),
     space: cleanValue(program.space),
-    duration: displayMasterDuration(program.duration),
+    participantFormat: cleanValue(detail?.recommendedPlayers),
     tags: getPublicLessonTags(program.tags),
-    functions: program.tags
+    functions: mergeStrengthBodyFunctions(program.tags
       .filter((tag) => tag.startsWith('신체 기능:'))
       .map((tag) => tag.slice('신체 기능:'.length).trim())
-      .filter(Boolean),
+      .filter(Boolean)),
     movements: program.tags
       .filter((tag) => tag.startsWith('움직임:'))
       .map((tag) => tag.slice('움직임:'.length).trim())
       .filter(Boolean),
     equipment: cleanList(program.equipment),
-    coachScript: cleanValue(detail?.coachScript),
+    coachScript,
+    previewCoachScript: getPreviewCoachScript(coachScript),
     briefingNotes: cleanList(detail?.briefingNotes),
     activityMethod: cleanList(detail?.rules?.length ? detail.rules : program.steps),
     variationMethod: cleanList(detail?.variations),

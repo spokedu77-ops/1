@@ -5,16 +5,29 @@ import Link from 'next/link';
 import {
   CheckCircle2,
   ChevronLeft,
+  Image as ImageIcon,
   Loader2,
   RefreshCw,
   Save,
   Search,
   ShieldAlert,
   Sparkles,
+  Trash2,
 } from 'lucide-react';
-import { getPublicUrl, uploadToStorage } from '@/app/lib/admin/assets/storageClient';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import {
+  deleteFromStorage,
+  getPublicUrl,
+  uploadToStorage,
+  withPublicUrlCacheBust,
+} from '@/app/lib/admin/assets/storageClient';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
+import {
+  OFFICIAL_SPOMOVE_LIBRARY,
+  type OfficialSpomoveProgramGroup,
+} from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import {
   buildAdminProgramSavePayload,
   replaceAdminProgramByCurriculumId,
@@ -25,18 +38,24 @@ import {
 import { useMasterStore } from '@/app/spokedu-master/store';
 import { toast } from 'sonner';
 import {
-  MASTER_DURATION_TAGS,
+  MASTER_PARTICIPANT_FORMATS,
   MASTER_SPACE_TAGS,
   MASTER_TARGET_TAGS,
-  displayMasterDuration,
+  getMasterParticipantFormat,
   normalizeMasterDuration,
   parseMasterSpaces,
   parseMasterTargets,
   serializeMasterTags,
+  setMasterParticipantFormatTag,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'incomplete' | 'ready' | 'home-ready' | 'image-needed' | 'spomove-needed';
+type AdminTabKey = 'programs' | 'spomove-thumbnails';
+
+type SpomoveThumbnailAssetsJson = {
+  thumbnails?: Record<string, string | null | undefined>;
+};
 
 type CurriculumRow = {
   id: number;
@@ -155,6 +174,26 @@ const SPACE_OPTIONS = [...MASTER_SPACE_TAGS];
 const TARGET_OPTIONS = [...MASTER_TARGET_TAGS];
 const THEME_OPTIONS = [...LESSON_THEME_OPTIONS];
 const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
+const ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
+  { key: 'programs', label: '수업 자료' },
+  { key: 'spomove-thumbnails', label: 'SPOMOVE 썸네일' },
+];
+const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
+const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
+const SPOMOVE_GROUP_OPTIONS: Array<{
+  key: OfficialSpomoveProgramGroup;
+  label: string;
+  expectedCount: number;
+}> = [
+  { key: 'visual-reaction', label: '시지각 반응', expectedCount: 11 },
+  { key: 'reaction-cognition', label: '반응 인지', expectedCount: 25 },
+  { key: 'simon', label: '사이먼 효과', expectedCount: 2 },
+  { key: 'flanker', label: '플랭커', expectedCount: 6 },
+  { key: 'stroop', label: '스트룹 과제', expectedCount: 5 },
+  { key: 'sequential-memory', label: '순차 기억', expectedCount: 5 },
+  { key: 'dive', label: '다이브', expectedCount: 5 },
+  { key: 'bonus', label: '보너스', expectedCount: 1 },
+];
 const MOVEMENT_OPTIONS = ['동적', '정적'];
 const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근력·근지구력', '심폐지구력', '리듬감', '평형성'];
 const TAG_PREFIX = {
@@ -229,7 +268,7 @@ type QualityReport = {
     indoorSpace: boolean;
     target: boolean;
     space: boolean;
-    duration: boolean;
+    participant: boolean;
     equipment: boolean;
     steps: boolean;
     variations: boolean;
@@ -241,7 +280,7 @@ type QualityReport = {
 };
 
 function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
-  const coreReady = checks.target && checks.space && checks.duration && checks.equipment && checks.steps;
+  const coreReady = checks.target && checks.space && checks.participant && checks.equipment && checks.steps;
   if (!coreReady) return 'incomplete';
 
   const operationReady = coreReady;
@@ -263,7 +302,7 @@ function buildQualityReport(checks: QualityReport['checks'], displayOrder: numbe
     checks.setupImage,
     checks.target,
     checks.space,
-    checks.duration,
+    checks.participant,
     checks.equipment,
     checks.steps,
     checks.variations,
@@ -274,7 +313,7 @@ function buildQualityReport(checks: QualityReport['checks'], displayOrder: numbe
     (checks.video || checks.setupImage) &&
     checks.target &&
     checks.space &&
-    checks.duration &&
+    checks.participant &&
     checks.equipment &&
     checks.setupImage &&
     checks.steps;
@@ -317,7 +356,7 @@ function qualityReasons(checks: QualityReport['checks']) {
     ['세팅 이미지', checks.setupImage],
     ['대상', checks.target],
     ['공간', checks.space],
-    ['시간', checks.duration],
+    ['인원', checks.participant],
     ['준비물', checks.equipment],
     ['세팅 이미지', checks.setupImage],
     ['진행 순서', checks.steps],
@@ -333,7 +372,7 @@ function missingQualityLabels(checks: QualityReport['checks']) {
   const items: Array<[string, boolean]> = [
     ['대상', checks.target],
     ['공간', checks.space],
-    ['시간', checks.duration],
+    ['인원', checks.participant],
     ['준비물', checks.equipment],
     ['세팅 이미지', checks.setupImage],
     ['활동 방법', checks.steps],
@@ -366,7 +405,7 @@ function getItemQuality(item: ProgramItem): QualityReport {
     indoorSpace: parseMasterSpaces(item.effective.space).includes('교실'),
     target: Boolean(item.effective.target),
     space: Boolean(item.effective.space),
-    duration: Boolean(item.effective.duration),
+    participant: Boolean(getMasterParticipantFormat(meta?.sm_tags ?? [])),
     equipment: item.effective.equipment.length > 0,
     steps: item.effective.steps.length > 0,
     variations: Boolean(meta?.sm_variation_method?.trim()),
@@ -384,7 +423,7 @@ function getFormQuality(form: EditForm): QualityReport {
     indoorSpace: parseMasterSpaces(form.space).includes('교실'),
     target: Boolean(form.target.trim()),
     space: Boolean(form.space.trim()),
-    duration: Boolean(form.duration.trim()),
+    participant: Boolean(getMasterParticipantFormat(csvToList(form.tags))),
     equipment: splitLines(form.equipment).length > 0,
     steps: splitLines(form.steps).length > 0,
     variations: Boolean(form.variations.trim()),
@@ -567,6 +606,299 @@ function SetupImageUpload({
         <p className="text-[11px] font-semibold text-slate-400">이미지를 선택하면 자동 업로드됩니다.</p>
       )}
     </div>
+  );
+}
+
+function normalizeSpomoveThumbnailMap(raw: unknown) {
+  const source = (raw as SpomoveThumbnailAssetsJson | null)?.thumbnails;
+  if (!source || typeof source !== 'object') return {};
+  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+  const next: Record<string, string> = {};
+  for (const [presetId, path] of Object.entries(source)) {
+    if (!validPresetIds.has(presetId)) continue;
+    if (typeof path === 'string' && path.trim()) {
+      next[presetId] = path.trim();
+    }
+  }
+  return next;
+}
+
+function spomoveThumbnailPath(presetId: string, ext: string) {
+  return `spokedu-master/spomove-thumbnails/${presetId}/thumbnail.${ext}`;
+}
+
+function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
+  if (!path) return '';
+  try {
+    return withPublicUrlCacheBust(getPublicUrl(path), cacheBust);
+  } catch {
+    return '';
+  }
+}
+
+function SpomoveThumbnailManager() {
+  const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
+  const pathsRef = useRef(thumbnailPaths);
+  pathsRef.current = thumbnailPaths;
+  const [cacheBust, setCacheBust] = useState<number | undefined>();
+  const [loading, setLoading] = useState(true);
+  const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
+  const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error: loadError } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json, updated_at')
+        .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+        .maybeSingle();
+
+      if (loadError && loadError.code !== 'PGRST116') {
+        throw loadError;
+      }
+
+      const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+      setThumbnailPaths(next);
+      pathsRef.current = next;
+      setCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'SPOMOVE 썸네일을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const persist = useCallback(async (next: Record<string, string>) => {
+    const res = await fetch('/api/admin/think-asset-pack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        id: SPOMOVE_THUMBNAIL_PACK_ID,
+        name: SPOMOVE_THUMBNAIL_PACK_NAME,
+        theme: 'spomove',
+        assets_json: { thumbnails: next } satisfies SpomoveThumbnailAssetsJson,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { error?: string; updated_at?: string };
+    if (!res.ok) throw new Error(body.error ?? 'SPOMOVE 썸네일 저장에 실패했습니다.');
+    setThumbnailPaths(next);
+    pathsRef.current = next;
+    setCacheBust(resolveSpomovePackCacheBust(body.updated_at, Object.values(next)) ?? Date.now());
+  }, []);
+
+  const uploadThumbnail = useCallback(async (presetId: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+    if (file.size > MAX_SETUP_IMAGE_BYTES) {
+      toast.error('이미지는 10MB 이하만 업로드할 수 있습니다.');
+      return;
+    }
+
+    setSavingPresetId(presetId);
+    setError(null);
+    try {
+      const ext = safeImageExtension(file.name, file.type);
+      const path = spomoveThumbnailPath(presetId, ext);
+      await uploadToStorage(path, file, file.type || 'image/jpeg');
+
+      const previousPath = pathsRef.current[presetId];
+      const next = { ...pathsRef.current, [presetId]: path };
+
+      if (previousPath && previousPath !== path) {
+        try {
+          await deleteFromStorage(previousPath);
+        } catch {
+          /* Previous thumbnail cleanup failure should not block the replacement. */
+        }
+      }
+
+      await persist(next);
+      toast.success('SPOMOVE 썸네일을 저장했습니다.');
+    } catch (uploadError) {
+      const message = uploadError instanceof Error ? uploadError.message : 'SPOMOVE 썸네일 저장에 실패했습니다.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingPresetId(null);
+    }
+  }, [persist]);
+
+  const deleteThumbnail = useCallback(async (presetId: string) => {
+    const previousPath = pathsRef.current[presetId];
+    if (!previousPath) return;
+
+    setDeletingPresetId(presetId);
+    setError(null);
+    try {
+      try {
+        await deleteFromStorage(previousPath);
+      } catch {
+        /* Storage cleanup can be retried later; keep DB state consistent for the admin UI. */
+      }
+      const next = { ...pathsRef.current };
+      delete next[presetId];
+      await persist(next);
+      toast.success('SPOMOVE 썸네일을 삭제했습니다.');
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : 'SPOMOVE 썸네일 삭제에 실패했습니다.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setDeletingPresetId(null);
+    }
+  }, [persist]);
+
+  const savedCount = Object.keys(thumbnailPaths).length;
+
+  return (
+    <main className="min-h-[calc(100vh-73px)] bg-slate-50 p-4 sm:p-6">
+      <div className="mx-auto max-w-[1500px] space-y-5">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-indigo-600">
+                SPOMOVE thumbnails
+              </p>
+              <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 프리셋 썸네일</h2>
+              <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+                공식 프리셋 60개의 썸네일만 관리합니다. 프리셋 설정과 실행 엔진은 변경하지 않습니다.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={loading}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[12px] font-black text-slate-700 disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              새로고침
+            </button>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-[10px] font-black text-slate-500">공식 프리셋</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{OFFICIAL_SPOMOVE_LIBRARY.length}개</p>
+            </div>
+            <div className="rounded-lg bg-indigo-50 p-3">
+              <p className="text-[10px] font-black text-indigo-600">저장된 썸네일</p>
+              <p className="mt-1 text-[18px] font-black text-indigo-900">{savedCount}개</p>
+            </div>
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <p className="text-[10px] font-black text-emerald-700">저장 위치</p>
+              <p className="mt-1 text-[12px] font-black text-emerald-900">think_asset_packs</p>
+            </div>
+          </div>
+          {error ? (
+            <p className="mt-3 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[12px] font-bold text-rose-700">
+              {error}
+            </p>
+          ) : null}
+        </section>
+
+        {loading ? (
+          <div className="flex justify-center rounded-xl border border-slate-200 bg-white py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+          </div>
+        ) : (
+          SPOMOVE_GROUP_OPTIONS.map((group) => {
+            const presets = OFFICIAL_SPOMOVE_LIBRARY
+              .filter((preset) => preset.programGroup === group.key)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+
+            return (
+              <section key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-[15px] font-black text-slate-950">{group.label}</h3>
+                    <p className="mt-0.5 text-[11px] font-bold text-slate-500">
+                      {presets.length}개 / 기준 {group.expectedCount}개
+                    </p>
+                  </div>
+                  {presets.length !== group.expectedCount ? (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-black text-amber-700">
+                      기준 개수 확인 필요
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {presets.map((preset) => {
+                    const path = thumbnailPaths[preset.id] ?? '';
+                    const imageUrl = resolveSpomoveThumbnailUrl(path, cacheBust);
+                    const savingThis = savingPresetId === preset.id;
+                    const deletingThis = deletingPresetId === preset.id;
+
+                    return (
+                      <article key={preset.id} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div className="grid h-24 w-32 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                          {imageUrl ? (
+                            <img src={imageUrl} alt={`${preset.title} 썸네일`} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="grid h-full w-full place-items-center bg-slate-100 text-slate-400">
+                              <ImageIcon size={24} />
+                            </div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[13px] font-black text-slate-950">{preset.title}</p>
+                          <p className="mt-1 break-all text-[11px] font-bold text-slate-500">{preset.id}</p>
+                          <p className="mt-1 text-[11px] font-black text-indigo-600">{group.label}</p>
+                          {path ? (
+                            <p className="mt-2 truncate text-[10px] font-semibold text-slate-400">{path}</p>
+                          ) : (
+                            <p className="mt-2 text-[10px] font-semibold text-slate-400">썸네일 없음</p>
+                          )}
+
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-3 text-[12px] font-black text-white has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+                              {savingThis ? (
+                                <Loader2 size={14} className="mr-1.5 animate-spin" />
+                              ) : null}
+                              {path ? '교체' : '업로드'}
+                              <input
+                                type="file"
+                                accept="image/*"
+                                disabled={savingThis || deletingThis}
+                                className="sr-only"
+                                onChange={async (event) => {
+                                  const file = event.target.files?.[0];
+                                  if (file) await uploadThumbnail(preset.id, file);
+                                  event.target.value = '';
+                                }}
+                              />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => void deleteThumbnail(preset.id)}
+                              disabled={!path || savingThis || deletingThis}
+                              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-rose-600 disabled:opacity-40"
+                            >
+                              {deletingThis ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
+                              삭제
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })
+        )}
+      </div>
+    </main>
   );
 }
 
@@ -890,6 +1222,7 @@ export default function AdminSmProgramsPage() {
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [query, setQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<AdminTabKey>('programs');
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
@@ -1077,11 +1410,29 @@ export default function AdminSmProgramsPage() {
             <h1 className="text-[18px] font-black">MASTER 수업 자료 편집기</h1>
             <p className="mt-0.5 text-[12px] font-semibold text-slate-500">curriculum 원본은 보존하고 MASTER 메타와 운영 자료만 편집합니다.</p>
           </div>
+          <div className="ml-auto inline-flex rounded-lg border border-slate-200 bg-slate-50 p-1">
+            {ADMIN_TAB_OPTIONS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className="h-8 rounded-md px-3 text-[12px] font-black transition-colors"
+                style={{
+                  background: activeTab === tab.key ? '#4f46e5' : 'transparent',
+                  color: activeTab === tab.key ? '#ffffff' : '#475569',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          {activeTab === 'programs' ? (
+            <>
           <button
             type="button"
             onClick={() => void syncFromCenter()}
             disabled={syncing || loading}
-            className="ml-auto inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-800 disabled:opacity-50"
+            className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-800 disabled:opacity-50"
           >
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
             {syncing ? '동기화 확인 중' : '커리큘럼 동기화'}
@@ -1104,11 +1455,16 @@ export default function AdminSmProgramsPage() {
             <Save size={14} />
             {saving ? '저장 중' : '저장'}
           </button>
+            </>
+          ) : null}
         </div>
       </header>
 
-      <WeeklyRecommendationManager items={items} onSaved={load} />
+      {activeTab === 'programs' ? <WeeklyRecommendationManager items={items} onSaved={load} /> : null}
 
+      {activeTab === 'spomove-thumbnails' ? (
+        <SpomoveThumbnailManager />
+      ) : (
       <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="space-y-3 border-b border-slate-200 p-4">
@@ -1259,14 +1615,13 @@ export default function AdminSmProgramsPage() {
                     <Field label="공간">
                       <ChoiceChips options={SPACE_OPTIONS} selected={parseMasterSpaces(form.space)} onChange={(next) => updateForm('space', serializeMasterTags(next))} />
                     </Field>
-                    <Field label="시간">
+                    <Field label="인원 구성">
                       <ChoiceChips
-                        options={MASTER_DURATION_TAGS.map((item) => item.label)}
-                        selected={displayMasterDuration(form.duration) ? [displayMasterDuration(form.duration)] : []}
+                        options={[...MASTER_PARTICIPANT_FORMATS]}
+                        selected={getMasterParticipantFormat(csvToList(form.tags)) ? [getMasterParticipantFormat(csvToList(form.tags))] : []}
                         onChange={(next) => {
-                          const selectedDuration = next.at(-1) ?? '';
-                          const option = MASTER_DURATION_TAGS.find((item) => item.label === selectedDuration);
-                          updateForm('duration', option ? String(option.value) : '');
+                          const selectedParticipant = next.at(-1) ?? '';
+                          updateForm('tags', listToCsvValue(setMasterParticipantFormatTag(csvToList(form.tags), selectedParticipant)));
                         }}
                       />
                     </Field>
@@ -1312,6 +1667,7 @@ export default function AdminSmProgramsPage() {
           )}
         </section>
       </main>
+      )}
     </div>
   );
 }

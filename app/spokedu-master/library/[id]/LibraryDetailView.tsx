@@ -189,11 +189,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(videoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
   const setupImage = model.setupImageUrl;
+  const hasPreActivityChecklist = model.equipment.length > 0 || Boolean(model.coachScript) || model.briefingNotes.length > 0;
   const galleryImages = model.galleryImageUrls;
   const relatedSpomovePresets = (detail?.relatedSpomoveIds ?? [])
     .map((spomoveId) => findOfficialSpomovePreset(spomoveId))
     .filter((preset): preset is NonNullable<typeof preset> => Boolean(preset));
-  const primarySpomovePreset = relatedSpomovePresets[0];
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -202,20 +202,15 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[#f6f7f9] pb-32 text-slate-950 lg:pb-14">
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-slate-200 bg-white/90 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
-        <Link href="/spokedu-master/library" className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" aria-label="라이브러리로 돌아가기">
+    <main className="min-h-dvh bg-[#f6f7f9] pb-44 text-slate-950 lg:pb-14">
+      <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+        <Link href="/spokedu-master/library" className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
-          목록
+          라이브러리
         </Link>
-        <button
-          type="button"
-          onClick={() => toggleFavorite(program.id)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600"
-          aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-        >
-          <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-        </button>
+        <p className="min-w-0 truncate text-right text-[14px] font-black text-slate-950 sm:text-center">
+          {title}
+        </p>
       </header>
 
       <div className="mx-auto w-full max-w-[1360px] space-y-4 px-4 py-6 sm:px-6 lg:px-8">
@@ -237,46 +232,49 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 { label: '기능', value: model.functions.join(', ') },
                 { label: '움직임', value: model.movements.join(', ') },
                 { label: '공간', value: model.space },
-                { label: '시간', value: model.duration },
+                { label: '인원', value: model.participantFormat },
               ].filter((cell) => cell.value)}
             />
           </div>
         </section>
 
-        <LessonFullSection title="사전 체크리스트">
-          <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-4">
-            <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-              <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-600">초기 교구 세팅</p>
-              {setupImage ? (
-                <div className="mt-2 overflow-hidden rounded-[10px] border border-slate-200 bg-white">
-                  <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-square lg:aspect-[4/5]">
-                    <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes="(min-width: 1024px) 480px, 100vw" className="object-cover" unoptimized />
+        {setupImage || hasPreActivityChecklist ? (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-stretch">
+            {setupImage ? (
+              <LessonFullSection title="초기 교구 세팅" className="h-full">
+                <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50 p-3">
+                  <div className="overflow-hidden rounded-[10px] border border-slate-200 bg-white">
+                    <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-square lg:aspect-[4/5]">
+                      <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes="(min-width: 1024px) 480px, 100vw" className="object-cover" unoptimized />
+                    </div>
                   </div>
                 </div>
-              ) : (
-                <p className="mt-2 text-[12px] text-slate-400">—</p>
-              )}
-            </div>
+              </LessonFullSection>
+            ) : null}
 
-            <div className="flex flex-col gap-3">
-              {model.equipment.length > 0 ? (
-                <LessonChecklistCard label="준비물" accent="emerald">
-                  <LessonBulletList items={model.equipment} compact />
-                </LessonChecklistCard>
-              ) : null}
-              {model.coachScript ? (
-                <LessonChecklistCard label="수업 스크립트" accent="indigo">
-                  <LessonCoachScript text={model.coachScript} />
-                </LessonChecklistCard>
-              ) : null}
-              {model.briefingNotes.length > 0 ? (
-                <LessonChecklistCard label="사전 교육">
-                  <LessonBulletList items={model.briefingNotes} compact />
-                </LessonChecklistCard>
-              ) : null}
-            </div>
+            {hasPreActivityChecklist ? (
+              <LessonFullSection title="사전 체크리스트" className="h-full">
+                <div className="flex flex-col gap-3">
+                  {model.equipment.length > 0 ? (
+                    <LessonChecklistCard label="준비물" accent="emerald">
+                      <LessonBulletList items={model.equipment} compact />
+                    </LessonChecklistCard>
+                  ) : null}
+                  {model.coachScript ? (
+                    <LessonChecklistCard label="수업 스크립트" accent="indigo">
+                      <LessonCoachScript text={model.coachScript} />
+                    </LessonChecklistCard>
+                  ) : null}
+                  {model.briefingNotes.length > 0 ? (
+                    <LessonChecklistCard label="사전 교육">
+                      <LessonBulletList items={model.briefingNotes} compact />
+                    </LessonChecklistCard>
+                  ) : null}
+                </div>
+              </LessonFullSection>
+            ) : null}
           </div>
-        </LessonFullSection>
+        ) : null}
 
         {hasVideo ? (
           <div id="lesson-video" className="scroll-mt-20">
@@ -376,29 +374,35 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </details>
         ) : null}
 
-        <div className="sticky bottom-0 z-20 flex flex-col gap-2 rounded-[14px] border border-slate-200 bg-white/95 p-2 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:flex-row">
-          {primarySpomovePreset ? (
-            <Link href={officialPresetSessionHref(primarySpomovePreset)} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
-              <MonitorPlay className="h-4 w-4" />
-              SPOMOVE 실행
-            </Link>
-          ) : null}
-          <button type="button" onClick={openQuickModal} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-black text-white">
+        <div
+          className="sticky bottom-[78px] z-40 grid grid-cols-3 gap-1.5 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:bottom-0"
+          style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
+        >
+          <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
             <Check className="h-4 w-4" />
-            오늘 수업으로 기록
+            수업 기록
           </button>
-          <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+          <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
             <FileText className="h-4 w-4" />
-            안내문 만들기
+            안내문
           </Link>
-          <button type="button" onClick={() => toggleFavorite(program.id)} className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
+          <button
+            type="button"
+            onClick={() => toggleFavorite(program.id)}
+            className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-[12px] font-black ${
+              favorite
+                ? 'border-amber-200 bg-amber-50 text-amber-700'
+                : 'border-slate-200 bg-white text-slate-700'
+            }`}
+            aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+          >
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-            {favorite ? '즐겨찾기됨' : '즐겨찾기'}
+            즐겨찾기
           </button>
         </div>
       </div>
 
-      <BottomSheet open={quickModalOpen} title="오늘 수업으로 기록" onClose={() => setQuickModalOpen(false)}>
+      <BottomSheet open={quickModalOpen} title="수업 기록" onClose={() => setQuickModalOpen(false)}>
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-black text-slate-700">날짜 <span className="font-semibold text-red-400">*</span></label>
@@ -452,7 +456,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <Link href="/spokedu-master/class-record" onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">수업 기록 보기</Link>
-                <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">안내문 만들기</Link>
+                <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">안내문</Link>
                 <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">학생 기록 작성</Link>
               </div>
             </div>

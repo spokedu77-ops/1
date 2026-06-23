@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   generateSignal,
   createBasicSignalGenerator,
@@ -49,6 +49,13 @@ export function useTrainingTimer({
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
+  // fruitSlides를 ref로 관리 — effect 재실행 없이 항상 최신 슬라이드를 읽음
+  // useLayoutEffect: RAF 전에 동기적으로 실행되므로 다음 프레임부터 최신 슬라이드 반영
+  const fruitSlidesRef = useRef(fruitSlides);
+  useLayoutEffect(() => {
+    fruitSlidesRef.current = fruitSlides;
+  });
+
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number>(0);
   const idxRef = useRef(-1);
@@ -64,15 +71,21 @@ export function useTrainingTimer({
 
   useEffect(() => {
     if (!active) return;
-    const fruitOpts = fruitSlides ? { fruitSlides } : undefined;
     const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
     if (engineMode === 'basic') {
-      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides, basicNumberOverlay);
+      // fruitSlides가 undefined이면 color 모드(이미지 없음) — getter를 undefined로 전달
+      // defined이면 항상 최신 슬라이드를 읽는 getter 전달 → 타이머 재시작 없이 이미지 반영
+      const getSlidesRef = fruitSlides !== undefined
+        ? () => fruitSlidesRef.current
+        : undefined;
+      genRef.current = createBasicSignalGenerator(level, colors, getSlidesRef, basicNumberOverlay);
     } else if (engineMode === 'simon') {
       genRef.current = createSimonSignalGenerator(engineLevel, colors);
     } else if (engineMode === 'taskswitch') {
+      const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
       genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
     } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
+      const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
       genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
       genRef.current = null;
@@ -103,7 +116,7 @@ export function useTrainingTimer({
       const sig =
         engineMode === 'basic' || engineMode === 'simon' || engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo' || engineMode === 'taskswitch'
           ? genRef.current?.next() ?? null
-          : generateSignal(engineMode, engineLevel, colors, fruitSlides ? { fruitSlides } : undefined);
+          : generateSignal(engineMode, engineLevel, colors, fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined);
       if (sig) {
         onSignal(sig);
         if (audioMode === 'beep') playBeep(getBeepForSignal(sig) ?? 'mid');
@@ -166,7 +179,8 @@ export function useTrainingTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, onSignal, onFinish]);
+  // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

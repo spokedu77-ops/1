@@ -18,6 +18,7 @@ export type ExplanationDataStatus = 'error' | 'idle' | 'loading' | 'ready';
 type ExplanationDataContextValue = {
   error: string | null;
   explanations: MasterExplanationDto[];
+  getExplanation: (id: string) => Promise<MasterExplanationDto | null>;
   reload: () => Promise<void>;
   saveExplanation: (input: CreateExplanationInput) => Promise<MasterExplanationDto>;
   status: ExplanationDataStatus;
@@ -104,16 +105,28 @@ export function ExplanationDataProvider({ children }: { children: ReactNode }) {
     return json.data;
   }, []);
 
+  const getExplanation = useCallback(async (id: string) => {
+    const json = await requestJson<{ data?: MasterExplanationDto[] }>(
+      `/api/spokedu-master/explanations?saved=${encodeURIComponent(id)}`,
+    );
+    const explanation = json.data?.[0] ?? null;
+    if (explanation) {
+      setExplanations((current) => [explanation, ...current.filter((item) => item.id !== explanation.id)].slice(0, 10));
+    }
+    return explanation;
+  }, []);
+
   const value = useMemo<ExplanationDataContextValue>(
     () => ({
       error,
       explanations,
+      getExplanation,
       reload,
       saveExplanation,
       status,
       total,
     }),
-    [error, explanations, reload, saveExplanation, status, total],
+    [error, explanations, getExplanation, reload, saveExplanation, status, total],
   );
 
   return <ExplanationDataContext.Provider value={value}>{children}</ExplanationDataContext.Provider>;

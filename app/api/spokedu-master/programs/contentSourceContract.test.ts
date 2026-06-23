@@ -17,6 +17,17 @@ describe('public program lesson content sources', () => {
     expect(source).not.toContain('row.check_list');
   });
 
+  it('maps participant format from structured people tags instead of legacy duration', async () => {
+    const source = await readFile(path.join(
+      process.cwd(),
+      'app/api/spokedu-master/programs/route.ts',
+    ), 'utf8');
+
+    expect(source).toContain('const participantFormat = getMasterParticipantFormat(smTags)');
+    expect(source).toContain('recommendedPlayers: participantFormat');
+    expect(source).not.toContain('recommendedPlayers: displayDuration');
+  });
+
   it('selects the new meta columns and not the retired public content sources', async () => {
     const source = await readFile(path.join(
       process.cwd(),

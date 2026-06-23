@@ -23,6 +23,18 @@ import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMon
 import CenterEquipmentActivityDetailModal from '@/app/components/curriculum/CenterEquipmentActivityDetailModal';
 import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
+import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
+import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
+import {
+  MASTER_PARTICIPANT_FORMATS,
+  MASTER_SPACE_TAGS,
+  MASTER_TARGET_TAGS,
+  getMasterParticipantFormat,
+  parseMasterSpaces,
+  parseMasterTargets,
+  serializeMasterTags,
+  setMasterParticipantFormatTag,
+} from '@/app/spokedu-master/lib/programDisplayTags';
 import {
   DndContext,
   PointerSensor,
@@ -52,6 +64,34 @@ const MONTHLY_THEMES: { [key: number]: { title: string; desc: string } } = {
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const WEEKS = [1, 2, 3, 4];
+const BODY_FUNCTION_OPTIONS = ['유연성', '민첩성', '순발력', '협응력', '근력·근지구력', '심폐지구력', '리듬감', '평형성'];
+const MOVEMENT_OPTIONS = ['동적', '정적'];
+
+function splitTextareaLines(value: string) {
+  return value
+    .split('\n')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function taggedValue(prefix: string, value: string) {
+  return `${prefix}${value}`;
+}
+
+function selectedTaggedOptions(tags: string[] | undefined, prefix: string) {
+  return (tags ?? [])
+    .filter((tag) => tag.startsWith(prefix))
+    .map((tag) => tag.slice(prefix.length).trim())
+    .filter(Boolean);
+}
+
+function toggleListValue(values: string[], value: string) {
+  return values.includes(value) ? values.filter((item) => item !== value) : [...values, value];
+}
+
+function toggleBodyFunction(values: string[], value: string) {
+  return mergeStrengthBodyFunctions(toggleListValue(values, value));
+}
 
 interface CurriculumItem {
   id: number;
@@ -67,6 +107,14 @@ interface CurriculumItem {
   checkList?: string[];
   equipment?: string[];
   steps?: string[];
+  smTags?: string[];
+  smTheme?: string;
+  smGrade?: string;
+  smSpace?: string;
+  participantFormat?: string;
+  coachScript?: string;
+  briefingNotes?: string;
+  variations?: string;
   [key: string]: unknown;
 }
 
@@ -257,7 +305,19 @@ export default function AdminCurriculumPage() {
   
   const [newPost, setNewPost] = useState({ 
     title: '', url: '', month: currentMonth, week: getCurrentWeekOfMonth(), 
-    expertTip: '', checkListText: '', equipmentText: '', stepsText: '' 
+    expertTip: '',
+    checkListText: '',
+    equipmentText: '',
+    stepsText: '',
+    theme: '',
+    target: '',
+    bodyFunctions: [] as string[],
+    movements: [] as string[],
+    space: '',
+    participantFormat: '',
+    coachScript: '',
+    briefingNotes: '',
+    variations: '',
   });
   const [personalPost, setPersonalPost] = useState({
     category: '신체 기능향상 8회기',
@@ -372,13 +432,59 @@ export default function AdminCurriculumPage() {
     if (error) {
       devLogger.error('Error fetching curriculum:', error);
     } else if (data) {
-      const formattedData = data.map((item: { expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; [key: string]: unknown }) => ({
+      const curriculumIds = data
+        .map((item: { id?: unknown }) => Number(item.id))
+        .filter((id: number) => Number.isFinite(id));
+      const metaById = new Map<number, {
+        sm_tags?: string[] | null;
+        sm_theme?: string | null;
+        sm_grade?: string | null;
+        sm_space?: string | null;
+        sm_coach_script?: string | null;
+        sm_briefing_notes?: string | null;
+        sm_variation_method?: string | null;
+      }>();
+      if (curriculumIds.length > 0) {
+        try {
+          const metaRes = await fetch(`/api/admin/spokedu-master/curriculum-meta?ids=${curriculumIds.join(',')}`);
+          if (metaRes.ok) {
+            const metaJson = await metaRes.json() as { data?: Array<{
+              curriculum_id: number;
+              sm_tags?: string[] | null;
+              sm_theme?: string | null;
+              sm_grade?: string | null;
+              sm_space?: string | null;
+              sm_coach_script?: string | null;
+              sm_briefing_notes?: string | null;
+              sm_variation_method?: string | null;
+            }> };
+            for (const meta of metaJson.data ?? []) {
+              metaById.set(meta.curriculum_id, meta);
+            }
+          }
+        } catch (metaErr) {
+          devLogger.error('Error fetching SPOKEDU MASTER meta:', metaErr);
+        }
+      }
+      const formattedData = data.map((item: { id?: unknown; expert_tip?: unknown; check_list?: unknown; equipment?: unknown; steps?: unknown; [key: string]: unknown }) => {
+        const meta = metaById.get(Number(item.id));
+        const smTags = Array.isArray(meta?.sm_tags) ? meta.sm_tags : [];
+        return {
         ...item,
         expertTip: item.expert_tip,
         checkList: item.check_list,
         equipment: item.equipment,
-        steps: item.steps
-      }));
+        steps: item.steps,
+        smTags,
+        smTheme: meta?.sm_theme ?? '',
+        smGrade: meta?.sm_grade ?? '',
+        smSpace: meta?.sm_space ?? '',
+        participantFormat: getMasterParticipantFormat(smTags),
+        coachScript: meta?.sm_coach_script ?? '',
+        briefingNotes: meta?.sm_briefing_notes ?? '',
+        variations: meta?.sm_variation_method ?? '',
+      };
+      });
       setItems(formattedData);
     }
     setIsLoading(false);
@@ -694,9 +800,8 @@ export default function AdminCurriculumPage() {
     const isInsta = newPost.url.includes('instagram.com');
     const type = isInsta ? 'instagram' : 'youtube';
     
-    const checkList = newPost.checkListText.split('\n').filter((t: string) => t.trim() !== '');
-    const equipment = newPost.equipmentText.split('\n').filter((t: string) => t.trim() !== '');
-    const steps = newPost.stepsText.split('\n').filter((t: string) => t.trim() !== '');
+    const equipment = splitTextareaLines(newPost.equipmentText);
+    const steps = splitTextareaLines(newPost.stepsText);
 
     const isSub = postIsSub;
     const postDataBase = {
@@ -704,8 +809,6 @@ export default function AdminCurriculumPage() {
       url: newPost.url, 
       month: isSub ? 1 : newPost.month,
       week: isSub ? 1 : newPost.week,
-      expert_tip: newPost.expertTip,
-      check_list: checkList, 
       equipment: equipment, 
       steps: steps, 
       type,
@@ -715,6 +818,7 @@ export default function AdminCurriculumPage() {
     };
     
     try {
+      let savedCurriculumId = editingId;
       if (editingId) {
         const { error } = await supabase
           .from('curriculum')
@@ -722,7 +826,6 @@ export default function AdminCurriculumPage() {
           .eq('id', editingId);
 
         if (error) throw error;
-        toast.success('수정되었습니다.');
       } else {
         const sameGroup = isSub
           ? items.filter((i) => i.is_sub === true)
@@ -732,20 +835,81 @@ export default function AdminCurriculumPage() {
           const o = typeof i.display_order === 'number' ? i.display_order : -1;
           if (o >= nextOrder) nextOrder = o + 1;
         }
-        const { error } = await supabase
+        const { data: inserted, error } = await supabase
           .from('curriculum')
-          .insert([{ ...postDataBase, display_order: nextOrder }]);
+          .insert([{ ...postDataBase, display_order: nextOrder }])
+          .select('id')
+          .single();
 
         if (error) throw error;
-        toast.success('등록되었습니다.');
+        savedCurriculumId = (inserted as { id: number }).id;
       }
-      
+
+      if (!savedCurriculumId) throw new Error('저장된 커리큘럼 ID를 확인하지 못했습니다.');
+
+      const metaTags = [
+        ...mergeStrengthBodyFunctions(newPost.bodyFunctions).map((value) => taggedValue('신체 기능:', value)),
+        ...newPost.movements.map((value) => taggedValue('움직임:', value)),
+      ];
+      const nextTags = setMasterParticipantFormatTag(metaTags, newPost.participantFormat);
+      const metaPatch: Record<string, unknown> = {};
+      const normalizedTheme = normalizeLessonTheme(newPost.theme);
+      if (normalizedTheme) metaPatch.sm_theme = normalizedTheme;
+      const serializedTarget = serializeMasterTags(parseMasterTargets(newPost.target));
+      if (serializedTarget) metaPatch.sm_grade = serializedTarget;
+      if (nextTags.length > 0) metaPatch.sm_tags = nextTags;
+      const serializedSpace = serializeMasterTags(parseMasterSpaces(newPost.space));
+      if (serializedSpace) metaPatch.sm_space = serializedSpace;
+      if (newPost.coachScript.trim()) metaPatch.sm_coach_script = newPost.coachScript;
+      if (newPost.briefingNotes.trim()) metaPatch.sm_briefing_notes = newPost.briefingNotes;
+      if (newPost.variations.trim()) metaPatch.sm_variation_method = newPost.variations;
+      const metaOverlayResponse = await fetch(`/api/admin/spokedu-master/programs?id=${savedCurriculumId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          meta: metaPatch,
+          overlay: {
+            title: newPost.title,
+            video_url: newPost.url,
+            equipment: newPost.equipmentText,
+            activity_method: newPost.stepsText,
+            is_published: true,
+          },
+        }),
+      });
+      const metaOverlayResult = await metaOverlayResponse.json().catch(() => null) as { ok?: boolean; failedStage?: string } | null;
+      if (!metaOverlayResponse.ok || metaOverlayResult?.ok !== true) {
+        const stage = metaOverlayResult?.failedStage === 'overlay' ? '구독 기본 콘텐츠' : '구독 메타';
+        toast.error(`기본 내용은 저장되었으나 ${stage} 저장에 실패했습니다. 입력값을 유지한 채 다시 시도해 주세요.`);
+        return;
+      }
+      toast.success(editingId ? '수정되었습니다.' : '등록되었습니다.');
+
       await fetchItems();
-      const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
-      if (hadOverlay) {
-        popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
-      } else {
-        closeInputModal();
+
+      // fetchItems가 meta를 못 읽는 경우(RLS 등)를 대비해 저장한 값을 items에 직접 반영
+      setItems(prev => prev.map(item => {
+        if (item.id !== savedCurriculumId) return item;
+        return {
+          ...item,
+          smTheme: normalizeLessonTheme(newPost.theme) || '',
+          smGrade: serializeMasterTags(parseMasterTargets(newPost.target)),
+          smTags: nextTags,
+          smSpace: serializeMasterTags(parseMasterSpaces(newPost.space)),
+          participantFormat: newPost.participantFormat,
+          coachScript: newPost.coachScript,
+          briefingNotes: newPost.briefingNotes,
+          variations: newPost.variations,
+        };
+      }));
+
+      if (!editingId) {
+        const hadOverlay = !!(window.history.state as Record<string, unknown>)?.[CURRICULUM_ADMIN_HISTORY_KEY];
+        if (hadOverlay) {
+          popOverlayHistoryIfPresent(CURRICULUM_ADMIN_HISTORY_KEY);
+        } else {
+          closeInputModal();
+        }
       }
     } catch (err: unknown) {
       toast.error('저장 중 오류 발생: ' + formatSaveError(err));
@@ -791,7 +955,16 @@ export default function AdminCurriculumPage() {
       expertTip: item.expertTip || '',
       checkListText: item.checkList ? item.checkList.join('\n') : '',
       equipmentText: item.equipment ? item.equipment.join('\n') : '',
-      stepsText: item.steps ? item.steps.join('\n') : ''
+      stepsText: item.steps ? item.steps.join('\n') : '',
+      theme: item.smTheme ?? '',
+      target: item.smGrade ?? '',
+      bodyFunctions: mergeStrengthBodyFunctions(selectedTaggedOptions(item.smTags, '신체 기능:')),
+      movements: selectedTaggedOptions(item.smTags, '움직임:'),
+      space: item.smSpace ?? '',
+      participantFormat: item.participantFormat ?? '',
+      coachScript: item.coachScript ?? '',
+      briefingNotes: item.briefingNotes ?? '',
+      variations: item.variations ?? '',
     });
     setNewPostEquipmentTags(Array.isArray(item.equipment_tag_numbers) ? item.equipment_tag_numbers : []);
     setIsInputModalOpen(true);
@@ -805,7 +978,25 @@ export default function AdminCurriculumPage() {
   const closeInputModal = () => {
     setIsInputModalOpen(false);
     setEditingId(null);
-    setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+    setNewPost({
+      title: '',
+      url: '',
+      month: selectedMonth,
+      week: selectedWeek,
+      expertTip: '',
+      checkListText: '',
+      equipmentText: '',
+      stepsText: '',
+      theme: '',
+      target: '',
+      bodyFunctions: [],
+      movements: [],
+      space: '',
+      participantFormat: '',
+      coachScript: '',
+      briefingNotes: '',
+      variations: '',
+    });
     setNewPostEquipmentTags([]);
     setPostIsSub(false);
   };
@@ -1115,6 +1306,15 @@ export default function AdminCurriculumPage() {
       checkListText: '',
       equipmentText: '',
       stepsText: '',
+      theme: '',
+      target: '',
+      bodyFunctions: [],
+      movements: [],
+      space: '',
+      participantFormat: '',
+      coachScript: '',
+      briefingNotes: '',
+      variations: '',
     });
     setIsPersonalModalOpen(false);
     setPersonalEditingId(null);
@@ -1724,7 +1924,25 @@ export default function AdminCurriculumPage() {
           if (centerViewMode === 'equipment-guide') {
             openEquipmentEdit(null);
           } else {
-            setNewPost({ title: '', url: '', month: selectedMonth, week: selectedWeek, expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
+            setNewPost({
+              title: '',
+              url: '',
+              month: selectedMonth,
+              week: selectedWeek,
+              expertTip: '',
+              checkListText: '',
+              equipmentText: '',
+              stepsText: '',
+              theme: '',
+              target: '',
+              bodyFunctions: [],
+              movements: [],
+              space: '',
+              participantFormat: '',
+              coachScript: '',
+              briefingNotes: '',
+              variations: '',
+            });
             setNewPostEquipmentTags([]);
             setPostIsSub(centerIsSub);
             setIsInputModalOpen(true);
@@ -1955,33 +2173,51 @@ export default function AdminCurriculumPage() {
                       </>
                     ) : null}
                     {!isPersonalItem(selectedItem) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                              <div className="flex items-center gap-2 mb-4 text-green-400 font-black text-sm uppercase">
-                                  <CheckSquare size={16} /> 사전 체크리스트
+                      <div className="space-y-4">
+                        <div className="bg-[#383838] p-5 rounded-2xl border border-slate-600 text-left">
+                          <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
+                            {[
+                              ['테마', selectedItem.smTheme],
+                              ['대상', parseMasterTargets(selectedItem.smGrade).join(', ') || selectedItem.smGrade],
+                              ['기능', mergeStrengthBodyFunctions(selectedTaggedOptions(selectedItem.smTags, '신체 기능:')).join(', ')],
+                              ['움직임', selectedTaggedOptions(selectedItem.smTags, '움직임:').join(', ')],
+                              ['공간', parseMasterSpaces(selectedItem.smSpace).join(', ') || selectedItem.smSpace],
+                              ['인원', selectedItem.participantFormat],
+                            ].map(([label, value]) => (
+                              <div key={label} className="rounded-xl bg-slate-800/70 px-3 py-2">
+                                <p className="text-[10px] font-black text-slate-500">{label}</p>
+                                <p className={`mt-1 text-xs font-black ${value ? 'text-slate-100' : 'text-slate-600'}`}>{value || '—'}</p>
                               </div>
-                              <ul className="space-y-3">
-                                  {selectedItem.checkList && selectedItem.checkList.length > 0 ? selectedItem.checkList.map((check: string, i: number) => (
-                                      <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
-                                          <input type="checkbox" className="mt-1 w-4 h-4 rounded border-slate-500 accent-green-500 bg-transparent" readOnly checked />
-                                          <span className="leading-relaxed">{check}</span>
-                                      </li>
-                                  )) : <li className="text-slate-500 text-sm">등록된 체크리스트가 없습니다.</li>}
-                              </ul>
+                            ))}
                           </div>
-                          <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
-                              <div className="flex items-center gap-2 mb-4 text-orange-400 font-black text-sm uppercase">
-                                  <Box size={16} /> 필요 교구 List
-                              </div>
-                              <ul className="space-y-3">
-                                  {selectedItem.equipment && selectedItem.equipment.length > 0 ? selectedItem.equipment.map((eq: string, i: number) => (
-                                      <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
-                                          <span className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
-                                          <span className="leading-relaxed">{eq}</span>
-                                      </li>
-                                  )) : <li className="text-slate-500 text-sm">등록된 교구가 없습니다.</li>}
-                              </ul>
+                        </div>
+
+                        <div className="bg-[#383838] p-6 rounded-2xl border border-slate-600 text-left">
+                          <div className="flex items-center gap-2 mb-4 text-green-400 font-black text-sm uppercase">
+                            <CheckSquare size={16} /> Pre-Activity Checklist
                           </div>
+                          <div className="space-y-4">
+                            <div className="rounded-2xl border border-slate-600/80 bg-slate-900/40 p-4">
+                              <p className="text-xs font-black text-orange-400">교구</p>
+                              <ul className="mt-2 space-y-2">
+                                {selectedItem.equipment && selectedItem.equipment.length > 0 ? selectedItem.equipment.map((eq: string, i: number) => (
+                                  <li key={i} className="flex gap-3 items-start text-sm font-bold text-slate-200">
+                                    <span className="w-1.5 h-1.5 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
+                                    <span className="leading-relaxed">{eq}</span>
+                                  </li>
+                                )) : <li className="text-slate-500 text-sm">등록된 교구가 없습니다.</li>}
+                              </ul>
+                            </div>
+                            <div className="rounded-2xl border border-slate-600/80 bg-slate-900/40 p-4">
+                              <p className="text-xs font-black text-indigo-400">수업 스크립트</p>
+                              <p className="mt-2 whitespace-pre-wrap text-sm font-bold leading-relaxed text-slate-200">{selectedItem.coachScript || '등록된 수업 스크립트가 없습니다.'}</p>
+                            </div>
+                            <div className="rounded-2xl border border-slate-600/80 bg-slate-900/40 p-4">
+                              <p className="text-xs font-black text-blue-400">사전 교육</p>
+                              <p className="mt-2 whitespace-pre-wrap text-sm font-bold leading-relaxed text-slate-200">{selectedItem.briefingNotes || '등록된 사전 교육이 없습니다.'}</p>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     )}
 
@@ -2005,10 +2241,12 @@ export default function AdminCurriculumPage() {
 
                         <div className="bg-indigo-900/30 p-6 rounded-2xl border border-indigo-500/30 text-left">
                             <div className="flex items-center gap-2 mb-2 text-indigo-400 font-black text-xs uppercase text-left">
-                                <Sparkles size={14} /> Expert Tip
+                                <Sparkles size={14} /> 변형 방법
                             </div>
                             <p className="text-indigo-100 font-bold text-sm leading-relaxed whitespace-pre-wrap text-left">
-                                {selectedItem.expertTip || "등록된 팁이 없습니다."}
+                                {typeof selectedItem.variations === 'string' && selectedItem.variations.trim()
+                                  ? selectedItem.variations
+                                  : "등록된 변형 방법이 없습니다."}
                             </p>
                         </div>
                       </>
@@ -2084,14 +2322,113 @@ export default function AdminCurriculumPage() {
                   <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="유튜브 영상 또는 쇼츠 링크" value={newPost.url} onChange={e => setNewPost({...newPost, url: e.target.value})} />
               </div>
 
-              <div className="space-y-2 text-left">
-                  <label className="text-xs font-black text-slate-400 uppercase text-left">Checklist (엔터로 구분)</label>
-                  <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="예: 2인 1조 구성&#13;&#10;후프 배치" value={newPost.checkListText} onChange={e => setNewPost({...newPost, checkListText: e.target.value})} />
+              <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4 space-y-4 text-left">
+                <p className="text-xs font-black text-slate-500 uppercase text-left">분류</p>
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">테마</label>
+                  <select className="w-full bg-white p-4 rounded-2xl outline-none" value={newPost.theme} onChange={e => setNewPost({...newPost, theme: e.target.value})}>
+                    <option value="">선택 안 함</option>
+                    {LESSON_THEME_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-black text-slate-400 uppercase text-left">대상</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {MASTER_TARGET_TAGS.map((option) => {
+                        const selected = parseMasterTargets(newPost.target).includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setNewPost({...newPost, target: serializeMasterTags(toggleListValue(parseMasterTargets(newPost.target), option))})}
+                            className={`rounded-2xl border px-3 py-3 text-xs font-black ${selected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-500'}`}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-left">
+                    <label className="text-xs font-black text-slate-400 uppercase text-left">공간</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {MASTER_SPACE_TAGS.map((option) => {
+                        const selected = parseMasterSpaces(newPost.space).includes(option);
+                        return (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setNewPost({...newPost, space: serializeMasterTags(toggleListValue(parseMasterSpaces(newPost.space), option))})}
+                            className={`rounded-2xl border px-3 py-3 text-xs font-black ${selected ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-500'}`}
+                          >
+                            {option}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">신체 기능</label>
+                  <div className="flex flex-wrap gap-2">
+                    {BODY_FUNCTION_OPTIONS.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setNewPost({...newPost, bodyFunctions: toggleBodyFunction(newPost.bodyFunctions, option)})}
+                        className={`rounded-full border px-3 py-2 text-xs font-black ${mergeStrengthBodyFunctions(newPost.bodyFunctions).includes(option) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-500'}`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">움직임</label>
+                  <div className="flex flex-wrap gap-2">
+                    {MOVEMENT_OPTIONS.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setNewPost({...newPost, movements: toggleListValue(newPost.movements, option)})}
+                        className={`rounded-full border px-3 py-2 text-xs font-black ${newPost.movements.includes(option) ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-500'}`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">인원 구성</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {MASTER_PARTICIPANT_FORMATS.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setNewPost({...newPost, participantFormat: newPost.participantFormat === option ? '' : option})}
+                        className={`rounded-2xl border px-3 py-3 text-xs font-black ${newPost.participantFormat === option ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-500'}`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2 text-left">
                   <label className="text-xs font-black text-slate-400 uppercase text-left">Equipment (엔터로 구분)</label>
                   <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="예: 후프 2개&#13;&#10;공 1개" value={newPost.equipmentText} onChange={e => setNewPost({...newPost, equipmentText: e.target.value})} />
+              </div>
+
+              <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">수업 스크립트</label>
+                  <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="수업 전 교사가 말할 핵심 안내" value={newPost.coachScript} onChange={e => setNewPost({...newPost, coachScript: e.target.value})} />
+              </div>
+
+              <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">사전 교육</label>
+                  <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="안전 약속&#13;&#10;규칙 설명" value={newPost.briefingNotes} onChange={e => setNewPost({...newPost, briefingNotes: e.target.value})} />
               </div>
 
               {postIsSub && subTagList.length > 0 && (
@@ -2127,8 +2464,8 @@ export default function AdminCurriculumPage() {
               </div>
 
               <div className="space-y-2 text-left">
-                  <label className="text-xs font-black text-slate-400 uppercase text-left">Expert Tip</label>
-                  <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none" placeholder="간단한 팁" value={newPost.expertTip} onChange={e => setNewPost({...newPost, expertTip: e.target.value})} />
+                  <label className="text-xs font-black text-slate-400 uppercase text-left">변형 방법</label>
+                  <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none" placeholder="난이도 조절&#13;&#10;공간이 좁을 때 변형" value={newPost.variations} onChange={e => setNewPost({...newPost, variations: e.target.value})} />
               </div>
             </div>
             

@@ -226,6 +226,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
   const isLanding = pathname.startsWith(`${basePath}/landing`);
+  const isLibraryDetail = pathname.startsWith(`${basePath}/library/`);
   const isPublicDocument = pathname === `${basePath}/terms` || pathname === `${basePath}/privacy`;
   const isProgramsEditor = pathname.startsWith('/admin/spokedu-master/programs');
   const hideChrome = isOnboarding || isParentView || isPayment || isLanding || isPublicDocument || isProgramsEditor;
@@ -382,7 +383,11 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     <div className="min-h-dvh bg-[#eef2f7] text-slate-900">
       <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[#f5f7fb]" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
         <div className="flex min-w-0 flex-1 flex-col">
-          {hideChrome ? null : <StatusBar />}
+          {hideChrome ? null : (
+            <div className={isLibraryDetail ? 'hidden lg:block' : undefined}>
+              <StatusBar />
+            </div>
+          )}
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
             {shellMounted && !hideChrome && !isAdmin && !isAccessGuardBlocking ? <OperationsBanner /> : null}
             {shellMounted && !hideChrome && !isAdmin && !isAccessGuardBlocking ? <TrialCountdownBanner /> : null}

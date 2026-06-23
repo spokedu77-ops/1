@@ -20,7 +20,8 @@ export function useNoteBlockContentSave(options: {
   const flushContentPatches = useCallback(async () => {
     const pending = pendingContentPatchesRef.current;
     if (pending.size === 0) return;
-    const updates = [...pending.entries()].map(([id, content]) => {
+    const snapshot = new Map(pending);
+    const updates = [...snapshot.entries()].map(([id, content]) => {
       const block = blocksRef.current.find((b) => b.id === id);
       let record = (content ?? {}) as Record<string, unknown>;
       if (block && (block.type === 'bulletList' || block.type === 'numberedList')) {
@@ -33,6 +34,9 @@ export function useNoteBlockContentSave(options: {
       await patchNoteBlocks(updates);
       triggerSave();
     } catch (e) {
+      snapshot.forEach((content, id) => {
+        pendingContentPatchesRef.current.set(id, content);
+      });
       devLogger.error('[Note] batch updateBlock', e);
     }
   }, [blocksRef, triggerSave]);

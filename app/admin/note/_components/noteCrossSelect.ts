@@ -5,14 +5,26 @@ import {
   applyListCrossHighlight,
   bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
-  extractActiveCrossSelectClipboardText,
-  extractListCrossText,
   syncCrossClipboardSnapshot,
   syncCrossTextActiveBodyClass,
+  extractActiveCrossSelectClipboardText,
+  clearCrossClipboardSnapshot,
   type ListCrossRange,
 } from './noteListCrossHighlight';
 import {
+  applyBlockPreviewCrossHighlight,
+  applyBlockRowCrossHighlight,
+  blockPreviewPlainText,
+  clearAllDocumentPreviewCrossHighlights,
+  clearBlockPreviewCrossHighlight,
+  clearBlockRowCrossHighlight,
+  getBlockPreviewTextRoot,
+  hoverBlockPreviewTextPos,
+} from './noteBlockPreviewCrossSelect';
+import {
   applyToggleTitleCrossHighlight,
+  blockHasCrossTextContent,
+  blockPlainTextFromStore,
   clearAllToggleTitleCrossHighlights,
   clearToggleTitleCrossHighlight,
   getToggleTitleInput,
@@ -22,16 +34,15 @@ import {
   rowHasToggleTitle,
   type CrossTextSurface,
 } from './noteToggleTitleCrossSelect';
-import {
-  applyBlockPreviewCrossHighlight,
-  blockPreviewPlainText,
-  clearAllDocumentPreviewCrossHighlights,
-  clearBlockPreviewCrossHighlight,
-  getBlockPreviewTextRoot,
-  hoverBlockPreviewTextPos,
-} from './noteBlockPreviewCrossSelect';
 import { noteBlockMarqueeGuard, setNoteTextDragGuardActive } from '../_lib/noteBlockMarqueeGuard';
 import { clearActiveListCrossSelectState } from './noteListCrossSelect';
+import {
+  getOrderedBlockRowIds,
+  getOrderedSelectableBlockIds,
+  resolveNoteBlockIdFromPoint,
+} from './noteBlockIdFromPoint';
+
+export { getOrderedBlockRowIds, getOrderedSelectableBlockIds } from './noteBlockIdFromPoint';
 
 export type CrossSelectRange = ListCrossRange;
 
@@ -80,53 +91,7 @@ export function shouldSuppressCrossFormatToolbar(): boolean {
 }
 
 export function blockIdFromPoint(x: number, y: number): string | null {
-  const elements = document.elementsFromPoint(x, y);
-  for (const el of elements) {
-    const row = (el as HTMLElement).closest?.('[data-note-block-row]');
-    if (!row) continue;
-    const id = row.getAttribute('data-block-id');
-    if (!id) continue;
-    if (isRowCrossTextSelectable(id, !!getNoteEditor(id))) return id;
-  }
-
-  const order = getOrderedSelectableBlockIds();
-  if (order.length === 0) return null;
-
-  let bestId: string | null = null;
-  let bestDistance = Number.POSITIVE_INFINITY;
-  for (const id of order) {
-    const row = document.querySelector<HTMLElement>(
-      `[data-note-block-row][data-block-id="${typeof globalThis.CSS?.escape === 'function' ? globalThis.CSS.escape(id) : id}"]`,
-    );
-    if (!row) continue;
-    const rect = row.getBoundingClientRect();
-    if (y < rect.top - 8 || y > rect.bottom + 8) continue;
-    const rowCenterY = (rect.top + rect.bottom) / 2;
-    const distance = Math.abs(y - rowCenterY);
-    if (distance < bestDistance) {
-      bestDistance = distance;
-      bestId = id;
-    }
-  }
-
-  return bestId;
-}
-
-/** 화면에 보이는 텍스트/토글 제목 블록 id — 위→아래 문서 순 */
-export function getOrderedSelectableBlockIds(): string[] {
-  const rows = [...document.querySelectorAll<HTMLElement>('[data-note-block-row]')]
-    .filter((row) => {
-      const id = row.getAttribute('data-block-id');
-      return !!id && isRowCrossTextSelectable(id, !!getNoteEditor(id));
-    })
-    .sort((a, b) => {
-      const ra = a.getBoundingClientRect();
-      const rb = b.getBoundingClientRect();
-      return ra.top - rb.top || ra.left - rb.left;
-    });
-  return rows
-    .map((row) => row.getAttribute('data-block-id'))
-    .filter((id): id is string => !!id);
+  return resolveNoteBlockIdFromPoint(x, y);
 }
 
 function blocksBetween(order: string[], anchorId: string, hoverId: string): string[] {
@@ -136,6 +101,11 @@ function blocksBetween(order: string[], anchorId: string, hoverId: string): stri
   const lo = Math.min(anchorIdx, hoverIdx);
   const hi = Math.max(anchorIdx, hoverIdx);
   return order.slice(lo, hi + 1);
+}
+
+/** 교차 드래그 span — 시각 순서 전체 행 (중간 블록 누락 방지) */
+function crossDragSpan(anchorId: string, hoverId: string): string[] {
+  return blocksBetween(getOrderedBlockRowIds(), anchorId, hoverId);
 }
 
 export function hoverPos(editor: Editor, x: number, y: number): number {
@@ -159,14 +129,26 @@ function hoverBlockPos(blockId: string, clientX: number, clientY: number): numbe
 
 function blockTextEnd(blockId: string, surface: CrossTextSurface): number {
   if (surface === 'toggle-title') {
-    return getToggleTitleInput(blockId)?.value.length ?? 0;
+    const input = getToggleTitleInput(blockId);
+    if (input && input.value.length > 0) return input.value.length;
+    return blockPlainTextFromStore(blockId).length;
   }
   if (surface === 'preview') {
-    return blockPreviewPlainText(blockId).length;
+    const domLen = blockPreviewPlainText(blockId).length;
+    if (domLen > 0) return domLen;
+    return blockPlainTextFromStore(blockId).length;
   }
   const editor = getNoteEditor(blockId);
-  if (!editor) return 0;
-  return editor.state.doc.content.size;
+  if (editor) return editor.state.doc.content.size;
+  return blockPlainTextFromStore(blockId).length;
+}
+
+function resolveBlockCrossSurface(blockId: string): CrossTextSurface | null {
+  const hasEditor = !!getNoteEditor(blockId);
+  const surface = preferredCrossSurface(blockId, hasEditor);
+  if (surface) return surface;
+  if (blockHasCrossTextContent(blockId)) return 'preview';
+  return null;
 }
 
 export function resolveCrossRanges(
@@ -185,9 +167,13 @@ export function resolveCrossRanges(
 
   for (let i = lo; i <= hi; i += 1) {
     const blockId = blockIds[i];
-    const surface = preferredCrossSurface(blockId, !!getNoteEditor(blockId));
+    const surface = resolveBlockCrossSurface(blockId);
     if (!surface) continue;
     const docEnd = blockTextEnd(blockId, surface);
+    if (docEnd <= 0 && surface !== 'toggle-title') {
+      ranges.push({ blockId, from: 0, to: 0, surface });
+      continue;
+    }
     let from = surface === 'editor' ? 1 : 0;
     let to = docEnd;
 
@@ -262,7 +248,14 @@ export function clearAllCrossSelectState() {
   clearAllToggleTitleCrossHighlights();
   clearAllDocumentPreviewCrossHighlights();
   activeCrossRanges = [];
+  clearCrossClipboardSnapshot();
   syncCrossTextActiveBodyClass();
+}
+
+/** 싱글톤 에디터 전환 후에도 다중 교차 선택 하이라이트를 다시 그린다 */
+export function reapplyActiveCrossSelectDecorations() {
+  if (activeCrossRanges.length === 0) return;
+  applyCrossDecorations(activeCrossRanges);
 }
 
 /** 블록 간 교차 선택 + ProseMirror/브라우저 텍스트 드래그 선택 모두 해제 */
@@ -286,18 +279,26 @@ function applyCrossDecorations(ranges: CrossSelectRange[]) {
     if (surface === 'toggle-title') {
       const input = getToggleTitleInput(blockId);
       if (input) applyToggleTitleCrossHighlight(input, from, to);
+      else applyBlockRowCrossHighlight(blockId);
       return;
     }
     if (surface === 'preview' || surface === 'list-preview') {
+      if (to <= from) {
+        applyBlockRowCrossHighlight(blockId);
+        return;
+      }
       applyBlockPreviewCrossHighlight(blockId, from, to);
       return;
     }
     const editor = getNoteEditor(blockId);
-    if (editor) applyListCrossHighlight(editor, from, to);
+    if (editor) {
+      applyListCrossHighlight(editor, from, to);
+      return;
+    }
+    applyBlockRowCrossHighlight(blockId);
   });
 
-  const order = getOrderedSelectableBlockIds();
-  order.forEach((id) => {
+  getOrderedBlockRowIds().forEach((id) => {
     if (touched.has(id)) return;
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
@@ -334,9 +335,9 @@ export function applyCrossBlockSelection(
   clientX: number,
   clientY: number,
 ): CrossSelectRange[] {
-  const order = getOrderedSelectableBlockIds();
-  const span = blocksBetween(order, anchor.blockId, hoverId);
-  if (span.length <= 1) return [];
+  const span = crossDragSpan(anchor.blockId, hoverId);
+  const selectableSpan = span.filter((id) => isRowCrossTextSelectable(id, !!getNoteEditor(id)));
+  if (selectableSpan.length <= 1) return [];
 
   const ranges = resolveCrossRanges(
     span,
@@ -421,9 +422,9 @@ export function finalizeCrossSelection(
   clientY: number,
 ): CrossSelectRange[] {
   const hoverId = blockIdFromPoint(clientX, clientY) ?? anchor.blockId;
-  const order = getOrderedSelectableBlockIds();
-  const span = blocksBetween(order, anchor.blockId, hoverId);
-  if (span.length <= 1) {
+  const span = crossDragSpan(anchor.blockId, hoverId);
+  const selectableSpan = span.filter((id) => isRowCrossTextSelectable(id, !!getNoteEditor(id)));
+  if (selectableSpan.length <= 1) {
     clearAllCrossSelectState();
     return [];
   }
@@ -514,9 +515,9 @@ function onToggleTitlePointerMove(e: PointerEvent) {
   const hoverId = blockIdFromPoint(e.clientX, e.clientY);
   if (!hoverId) return;
 
-  const order = getOrderedSelectableBlockIds();
-  const span = blocksBetween(order, toggleAnchor.blockId, hoverId);
-  if (span.length <= 1) {
+  const span = crossDragSpan(toggleAnchor.blockId, hoverId);
+  const selectableSpan = span.filter((id) => isRowCrossTextSelectable(id, !!getNoteEditor(id)));
+  if (selectableSpan.length <= 1) {
     if (toggleDragging) {
       clearAllCrossSelectState();
       toggleDragging = false;

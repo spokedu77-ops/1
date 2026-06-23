@@ -1,0 +1,176 @@
+import type { OfficialFlowFeatureKey, OfficialSpomovePreset } from './officialSpomovePresets';
+
+export type SpomoveTargetGroup =
+  | 'preschool'
+  | 'elementaryLower'
+  | 'elementaryUpper'
+  | 'specialSupport';
+
+export type SpomoveThinkingLevel = 'easy' | 'normal' | 'hard';
+
+export type SpomoveResponseType = 'direct' | 'select' | 'memory' | 'rule';
+
+export type SpomoveKeyAction =
+  | 'padMove'
+  | 'directionChange'
+  | 'inPlaceStep'
+  | 'jump'
+  | 'duck'
+  | 'punch'
+  | 'handTouch'
+  | 'sequenceMove'
+  | 'continuousMove';
+
+export type SpomovePresetGuide = {
+  targetGroups: SpomoveTargetGroup[];
+  thinkingLevel: SpomoveThinkingLevel;
+  responseType: SpomoveResponseType;
+  keyActions: SpomoveKeyAction[];
+};
+
+export const SPOMOVE_TARGET_GROUP_LABELS: Record<SpomoveTargetGroup, string> = {
+  preschool: '미취학',
+  elementaryLower: '초등 저학년',
+  elementaryUpper: '초등 고학년',
+  specialSupport: '특수·느린학습자',
+};
+
+export const SPOMOVE_THINKING_LEVEL_LABELS: Record<SpomoveThinkingLevel, string> = {
+  easy: '쉬움',
+  normal: '보통',
+  hard: '어려움',
+};
+
+export const SPOMOVE_RESPONSE_TYPE_LABELS: Record<SpomoveResponseType, string> = {
+  direct: '보고 바로 반응',
+  select: '골라서 반응',
+  memory: '기억해서 반응',
+  rule: '규칙에 맞춰 반응',
+};
+
+export const SPOMOVE_KEY_ACTION_LABELS: Record<SpomoveKeyAction, string> = {
+  padMove: '색 패드 이동',
+  directionChange: '방향 전환',
+  inPlaceStep: '제자리 스텝',
+  jump: '점프',
+  duck: '숙이기',
+  punch: '펀치',
+  handTouch: '손 터치',
+  sequenceMove: '순서대로 이동',
+  continuousMove: '연속 이동',
+};
+
+function uniqueActions(actions: SpomoveKeyAction[]): SpomoveKeyAction[] {
+  return [...new Set(actions)].slice(0, 3);
+}
+
+function targetGroupsForPreset(preset: OfficialSpomovePreset): SpomoveTargetGroup[] {
+  if (preset.engine.mode === 'flow') {
+    return preset.engine.flowDuration === 60
+      ? ['elementaryLower', 'elementaryUpper']
+      : ['preschool', 'elementaryLower', 'elementaryUpper'];
+  }
+
+  if (preset.engine.mode === 'spatial') {
+    return ['elementaryLower', 'elementaryUpper', 'specialSupport'];
+  }
+
+  if (preset.engine.mode === 'stroop' || preset.engine.mode === 'flanker' || preset.engine.mode === 'simon') {
+    return ['elementaryLower', 'elementaryUpper', 'specialSupport'];
+  }
+
+  if (preset.engine.mode === 'reactTrain') {
+    return (preset.engine.reactTrainConcurrent ?? 1) >= 3
+      ? ['elementaryLower', 'elementaryUpper']
+      : ['preschool', 'elementaryLower', 'specialSupport'];
+  }
+
+  if (preset.engine.mode === 'basic' && preset.engine.level >= 4) {
+    return ['elementaryLower', 'elementaryUpper', 'specialSupport'];
+  }
+
+  return ['preschool', 'elementaryLower', 'specialSupport'];
+}
+
+function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingLevel {
+  if (preset.engine.mode === 'flow') {
+    return preset.engine.flowDuration === 60 || (preset.engine.flowFeatures ?? []).length >= 2
+      ? 'hard'
+      : (preset.engine.flowFeatures ?? []).length === 0
+        ? 'easy'
+        : 'normal';
+  }
+
+  if (preset.engine.mode === 'spatial') {
+    return preset.engine.level <= 1 ? 'normal' : 'hard';
+  }
+
+  if (preset.engine.mode === 'stroop') return 'hard';
+  if (preset.engine.mode === 'flanker') return preset.engine.level <= 1 ? 'normal' : 'hard';
+  if (preset.engine.mode === 'simon') return preset.engine.level <= 1 ? 'normal' : 'hard';
+
+  if (preset.engine.mode === 'reactTrain') {
+    if ((preset.engine.reactTrainConcurrent ?? 1) >= 3 || preset.engine.level >= 7) return 'hard';
+    if ((preset.engine.reactTrainConcurrent ?? 1) >= 2 || preset.engine.level >= 4) return 'normal';
+    return 'easy';
+  }
+
+  if (preset.engine.mode === 'basic') {
+    if (preset.engine.level <= 2) return 'easy';
+    if (preset.engine.level <= 4) return 'normal';
+    return 'hard';
+  }
+
+  return 'normal';
+}
+
+function responseTypeForPreset(preset: OfficialSpomovePreset): SpomoveResponseType {
+  if (preset.engine.mode === 'spatial') return 'memory';
+  if (preset.engine.mode === 'simon' || preset.engine.mode === 'flanker' || preset.engine.mode === 'stroop') return 'rule';
+  if (preset.engine.mode === 'basic' && preset.engine.level > 1) return 'select';
+  return 'direct';
+}
+
+function flowFeatureActions(features: OfficialFlowFeatureKey[] | undefined): SpomoveKeyAction[] {
+  const actions: SpomoveKeyAction[] = ['jump'];
+  for (const feature of features ?? []) {
+    if (feature === 'faster') actions.push('continuousMove');
+    if (feature === 'punch') actions.push('punch');
+    if (feature === 'duck') actions.push('duck');
+    if (feature === 'reach') actions.push('handTouch');
+  }
+  return actions;
+}
+
+function keyActionsForPreset(preset: OfficialSpomovePreset): SpomoveKeyAction[] {
+  if (preset.engine.mode === 'flow') {
+    return uniqueActions(flowFeatureActions(preset.engine.flowFeatures));
+  }
+
+  if (preset.engine.mode === 'spatial') {
+    return ['sequenceMove', 'padMove'];
+  }
+
+  if (preset.engine.mode === 'reactTrain') {
+    return uniqueActions(['inPlaceStep', 'handTouch', 'continuousMove']);
+  }
+
+  if (preset.engine.mode === 'simon' || preset.engine.mode === 'flanker' || preset.engine.mode === 'stroop') {
+    return ['directionChange', 'handTouch'];
+  }
+
+  if (preset.engine.mode === 'basic' && preset.engine.level === 1) {
+    return ['directionChange', 'padMove'];
+  }
+
+  return ['padMove', 'directionChange'];
+}
+
+export function getOfficialSpomovePresetGuide(preset: OfficialSpomovePreset): SpomovePresetGuide {
+  return {
+    targetGroups: targetGroupsForPreset(preset),
+    thinkingLevel: thinkingLevelForPreset(preset),
+    responseType: responseTypeForPreset(preset),
+    keyActions: keyActionsForPreset(preset),
+  };
+}

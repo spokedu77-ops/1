@@ -27,6 +27,7 @@ import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
+import { VariantImageGallery } from './components/VariantImageAppendix';
 import { CSS, S } from './styles';
 import FlowGameClient from './flow/FlowGameClient';
 import { buildStages } from './flow/engine/modules/stageBuilder';
@@ -235,6 +236,7 @@ export default function MemoryGameApp({
   const [theme, setTheme] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('spokedu_theme') || 'light' : 'light'));
   const [isOffline, setIsOffline] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [showVariantAppendix, setShowVariantAppendix] = useState(false);
 
   const [isTraining, setIsTraining] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -800,7 +802,8 @@ export default function MemoryGameApp({
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
     setResult({ count: completedStages, cfg, elapsedMs });
     setScreen('result');
-  }, [settings]);
+    onComplete?.();
+  }, [onComplete, settings]);
 
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
@@ -1047,7 +1050,21 @@ export default function MemoryGameApp({
                     </div>
                   </button>
                 ))}
+                {settings.mode === 'basic' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowVariantAppendix((v) => !v)}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${showVariantAppendix ? M.accent : 'var(--border)'}`, background: showVariantAppendix ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
+                  >
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.75rem', color: showVariantAppendix ? '#fff' : 'var(--text)', background: showVariantAppendix ? M.accent : 'var(--subtle-bg)', border: showVariantAppendix ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>부록</div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>변형 색지각 이미지 소개</div>
+                      <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>카테고리별 업로드 이미지 · 이름 확인</div>
+                    </div>
+                  </button>
+                )}
               </div>
+              {settings.mode === 'basic' && showVariantAppendix && <VariantImageGallery />}
               {basicVariantLevel && (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
