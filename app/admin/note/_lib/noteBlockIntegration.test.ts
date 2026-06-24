@@ -108,13 +108,14 @@ describe('Tab indent undo roundtrip', () => {
 describe('reconcile + typing (stale blocksRef)', () => {
   beforeEach(() => {
     useNoteBlockStore.getState().setActiveDocumentId(null);
-    useNoteBlockStore.getState().hydrate([]);
     useNoteBlockStore.getState().setActiveEditor(null);
+    useNoteBlockStore.getState().hydrate([]);
   });
 
   it('keeps store text when blocksRef is stale but user typed in store', () => {
     const loaded = [block('a', 'loaded')];
     useNoteBlockStore.getState().setActiveDocumentId('doc');
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'a', field: 'text' });
     useNoteBlockStore.getState().hydrate(loaded);
     useNoteBlockStore.getState().patchContent('a', { text: 'typing now' });
 
@@ -142,6 +143,7 @@ describe('reconcile + typing (stale blocksRef)', () => {
 describe('sub-document store isolation', () => {
   beforeEach(() => {
     useNoteBlockStore.getState().setActiveDocumentId(null);
+    useNoteBlockStore.getState().setActiveEditor(null);
     useNoteBlockStore.getState().hydrate([]);
   });
 
@@ -168,6 +170,7 @@ describe('sub-document store isolation', () => {
     useNoteBlockStore.getState().setActiveDocumentId('child-doc');
     const current = [block('child-a', 'typing', { document_id: 'child-doc' })];
     useNoteBlockStore.getState().hydrate(current);
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'child-a', field: 'text' });
     useNoteBlockStore.getState().patchContent('child-a', { text: 'typing' });
 
     const reconciled = [block('child-a', 'server', { document_id: 'child-doc' })];

@@ -9,7 +9,7 @@ import {
   planPromoteChildrenOnDelete,
   sortRootBlocks,
 } from '@/app/lib/note/noteBlockTree';
-import { patchNoteBlocks } from '../_lib/noteBlocksApi';
+import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import {
   commitActiveNoteEditorToStore,
   mergeBlocksWithStoreContent,
@@ -23,6 +23,7 @@ type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
 export function useNoteBlockDelete(options: {
   blocksRef: React.MutableRefObject<NoteBlock[]>;
   setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
+  documentEngine: NoteDocumentEngineApi;
   setTrashedBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
   selectedId: string | null;
   docTab: 'active' | 'trash' | 'block-trash';
@@ -43,6 +44,7 @@ export function useNoteBlockDelete(options: {
   const {
     blocksRef,
     setBlocks,
+    documentEngine,
     setTrashedBlocks,
     selectedId,
     docTab,
@@ -60,38 +62,6 @@ export function useNoteBlockDelete(options: {
     recordBlockUndo,
     ensureMinimumRootTextBlock,
   } = options;
-
-  const persistDeletePromotionPatches = useCallback(async (
-    patches: Array<{
-      id: string;
-      parent_block_id: string | null;
-      order_index: number;
-      content?: Record<string, unknown>;
-    }>,
-  ) => {
-    await patchNoteBlocks(
-      patches.map((patch) => ({
-        id: patch.id,
-        parent_block_id: patch.parent_block_id,
-        order_index: patch.order_index,
-        ...(patch.content ? { content: patch.content } : {}),
-      })),
-    );
-  }, []);
-
-  const softDeleteBlockIds = useCallback(async (ids: string[]) => {
-    if (ids.length === 0) return;
-    const res = await fetch('/api/admin/note/blocks', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ ids }),
-    });
-    if (!res.ok) {
-      const j = await res.json().catch(() => null);
-      throw new Error(j?.error || '삭제 실패');
-    }
-  }, []);
 
   const finalizeBlockDelete = useCallback(async (
     prevBlocks: NoteBlock[],
@@ -157,14 +127,20 @@ export function useNoteBlockDelete(options: {
       if (nextFocus) focusBlockEditor(nextFocus);
     }
 
-    setBlocks(nextBlocks);
-    blocksRef.current = nextBlocks;
+    documentEngine.replaceBlocks(nextBlocks);
 
     try {
-      if (patchMap && patchMap.size > 0) {
-        await persistDeletePromotionPatches([...patchMap.values()]);
-      }
-      await softDeleteBlockIds([block.id]);
+      await documentEngine.persistSoftDelete({
+        ids: [block.id],
+        promotionPatches: patchMap && patchMap.size > 0
+          ? [...patchMap.values()].map((patch) => ({
+            id: patch.id,
+            parent_block_id: patch.parent_block_id,
+            order_index: patch.order_index,
+            ...(patch.content ? { content: patch.content } : {}),
+          }))
+          : undefined,
+      });
       await finalizeBlockDelete(prevBlocks, {
         skipDeleteUndo,
         deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
@@ -180,18 +156,15 @@ export function useNoteBlockDelete(options: {
     } catch (e) {
       devLogger.error('[Note] deleteBlock', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
-      blocksRef.current = prevBlocks;
-      setBlocks(prevBlocks);
+      documentEngine.replaceBlocks(prevBlocks);
     }
   }, [
     blocksRef,
+    documentEngine,
     ensureMinimumRootTextBlock,
     finalizeBlockDelete,
     focusBlockEditor,
-    persistDeletePromotionPatches,
-    setBlocks,
     setError,
-    softDeleteBlockIds,
   ]);
 
   const handleDeleteBlocks = useCallback(async (
@@ -216,12 +189,18 @@ export function useNoteBlockDelete(options: {
     const plan = planBatchDeleteBlocks(prevBlocks, targets.map((item) => item.id));
     if (!plan || plan.deletedIds.length === 0) return;
 
-    setBlocks(plan.nextBlocks);
-    blocksRef.current = plan.nextBlocks;
+    documentEngine.replaceBlocks(plan.nextBlocks);
 
     try {
-      await persistDeletePromotionPatches(plan.patches);
-      await softDeleteBlockIds(plan.deletedIds);
+      await documentEngine.persistSoftDelete({
+        ids: plan.deletedIds,
+        promotionPatches: plan.patches.map((patch) => ({
+          id: patch.id,
+          parent_block_id: patch.parent_block_id,
+          order_index: patch.order_index,
+          ...(patch.content ? { content: patch.content } : {}),
+        })),
+      });
       await finalizeBlockDelete(prevBlocks, {
         skipDeleteUndo: deleteOptions?.skipDeleteUndo,
         deletedIds: plan.deletedIds,
@@ -240,19 +219,16 @@ export function useNoteBlockDelete(options: {
     } catch (e) {
       devLogger.error('[Note] deleteBlocks', e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
-      blocksRef.current = prevBlocks;
-      setBlocks(prevBlocks);
+      documentEngine.replaceBlocks(prevBlocks);
     }
   }, [
     blocksRef,
+    documentEngine,
     ensureMinimumRootTextBlock,
     finalizeBlockDelete,
     handleDeleteBlock,
-    persistDeletePromotionPatches,
     selectedId,
-    setBlocks,
     setError,
-    softDeleteBlockIds,
   ]);
 
   const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {
@@ -270,50 +246,36 @@ export function useNoteBlockDelete(options: {
     const nextBlocks = prevBlocks
       .filter((b) => b.id !== plan.deleteId)
       .map((b) => (b.id === plan.previousId ? { ...b, content: plan.mergedContent } : b));
-    blocksRef.current = nextBlocks;
-    setBlocks(nextBlocks);
+    documentEngine.replaceBlocks(nextBlocks);
 
     focusBlockEditor(plan.previousId, 'editor', plan.caretOffset);
 
     try {
-      await patchNoteBlocks([{ id: plan.previousId, content: plan.mergedContent }]);
-      await softDeleteBlockIds([plan.deleteId]);
-      triggerSave();
+      await documentEngine.persistFieldPatches([{ id: plan.previousId, content: plan.mergedContent }]);
+      await documentEngine.persistSoftDelete({ ids: [plan.deleteId] });
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
       setError(e instanceof Error ? e.message : '블록 병합 실패');
-      blocksRef.current = prevBlocks;
-      setBlocks(prevBlocks);
+      documentEngine.replaceBlocks(prevBlocks);
       store.hydrate(prevBlocks);
     } finally {
       window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
     }
   }, [
     blocksRef,
+    documentEngine,
     focusBlockEditor,
     recordBlockUndo,
     setBlocks,
     setError,
     setMergeFocusCaretOffset,
-    softDeleteBlockIds,
-    triggerSave,
   ]);
 
   const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock) => {
     try {
       setRestoringBlockId(block.id);
-      const res = await fetch('/api/admin/note/blocks/trash/restore', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: block.id }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 복구 실패');
-      }
-      const json = (await res.json()) as { block: NoteBlock };
-      const restoredBlock = json.block;
+      await documentEngine.flushPersistQueue();
+      const restoredBlock = await documentEngine.persistRestoreBlock(block.id);
       setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
       if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
       setBlocks((prev) => {
@@ -329,6 +291,7 @@ export function useNoteBlockDelete(options: {
       setRestoringBlockId(null);
     }
   }, [
+    documentEngine,
     focusBlockEditor,
     lastDeletedBlockIdRef,
     setBlocks,
@@ -343,14 +306,8 @@ export function useNoteBlockDelete(options: {
     if (!confirm('이 블록을 영구 삭제할까요? 이 작업은 되돌릴 수 없습니다.')) return;
     try {
       setPurgingBlockId(block.id);
-      const res = await fetch(`/api/admin/note/blocks/trash/purge?id=${encodeURIComponent(block.id)}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 영구 삭제 실패');
-      }
+      await documentEngine.flushPersistQueue();
+      await documentEngine.persistPurgeBlock(block.id);
       if (lastDeletedBlockIdRef.current === block.id) setPendingDeleteUndo(null);
       setTrashedBlocks((prev) => prev.filter((b) => b.id !== block.id));
       triggerSave();
@@ -360,7 +317,15 @@ export function useNoteBlockDelete(options: {
     } finally {
       setPurgingBlockId(null);
     }
-  }, [lastDeletedBlockIdRef, setPendingDeleteUndo, setPurgingBlockId, setTrashedBlocks, triggerSave]);
+  }, [
+    documentEngine,
+    lastDeletedBlockIdRef,
+    setPendingDeleteUndo,
+    setPurgingBlockId,
+    setTrashedBlocks,
+    setError,
+    triggerSave,
+  ]);
 
   return {
     handleDeleteBlock,

@@ -7,6 +7,9 @@ import { BOARD_DEFAULT_GROUP } from '../_components/BoardView';
 import { defaultBlockContent } from '../_lib/constants';
 import { resolveDocIcon } from '../_lib/noteDocumentUi';
 import { commitAndResetNoteDocumentBeforeSwitch } from '../_lib/noteBlockStateMerge';
+import { postNoteBlock } from '../_lib/noteBlocksApi';
+import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
+import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { LoadingState, NoteBlock, NoteDocument } from '../_lib/types';
 import type { useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
 
@@ -40,6 +43,7 @@ export function useNoteDocumentActions(options: {
   docTitleSaveSeqRef: React.MutableRefObject<Record<string, number>>;
   triggerSave: () => void;
   noteUndo: NoteUndo;
+  documentEngine: NoteDocumentEngineApi;
 }) {
   const {
     router,
@@ -69,6 +73,7 @@ export function useNoteDocumentActions(options: {
     docTitleSaveSeqRef,
     triggerSave,
     noteUndo,
+    documentEngine,
   } = options;
 
   const handleGoToDashboard = useCallback(() => {
@@ -105,12 +110,7 @@ export function useNoteDocumentActions(options: {
   ) => {
     setDocuments((prev) => prev.map((d) => (d.id === docId ? { ...d, properties } : d)));
     try {
-      await fetch('/api/admin/note/documents', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: docId, properties }),
-      });
+      await enqueueDocumentPatch({ id: docId, properties });
       triggerSave();
     } catch (e) { devLogger.error('[Note] updateDocProperties', e); }
   }, [triggerSave]);
@@ -163,12 +163,7 @@ export function useNoteDocumentActions(options: {
       const json = (await res.json()) as { document: NoteDocument };
       const newDoc = { ...json.document, properties };
       if (properties) {
-        await fetch('/api/admin/note/documents', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ id: newDoc.id, properties }),
-        });
+        await enqueueDocumentPatch({ id: newDoc.id, properties });
       }
       setDocuments((prev) => [newDoc, ...prev]);
       setSelectedId(newDoc.id);
@@ -304,41 +299,29 @@ export function useNoteDocumentActions(options: {
       }
 
       const pageBlockContent = { page_document_id: newDoc.id, title: newDoc.title };
-      const blockRes = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
+      const newBlock = parentDocumentId === selectedId
+        ? await documentEngine.persistCreateBlock({
           documentId: parentDocumentId,
-          type: 'page',
+          blockType: 'page',
           content: pageBlockContent,
           order_index: insertIndex,
           parent_block_id: parentBlockId,
-        }),
-      });
-      if (!blockRes.ok) {
-        const j = await blockRes.json().catch(() => null);
-        throw new Error(j?.error || '하위 페이지 블록 추가 실패');
-      }
-      const blockJson = (await blockRes.json()) as { block: NoteBlock };
-      const newBlock = blockJson.block;
+        })
+        : await postNoteBlock({
+          documentId: parentDocumentId,
+          blockType: 'page',
+          content: pageBlockContent,
+          order_index: insertIndex,
+          parent_block_id: parentBlockId,
+        });
 
-      const childBlockRes = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: newDoc.id,
-          type: 'text',
-          content: defaultBlockContent('text'),
-          order_index: 0,
-          parent_block_id: null,
-        }),
+      await postNoteBlock({
+        documentId: newDoc.id,
+        blockType: 'text',
+        content: defaultBlockContent('text'),
+        order_index: 0,
+        parent_block_id: null,
       });
-      if (!childBlockRes.ok) {
-        const j = await childBlockRes.json().catch(() => null);
-        throw new Error(j?.error || '하위 페이지 본문 블록 생성 실패');
-      }
 
       if (parentDocumentId === selectedId) {
         const nextSiblings = [
@@ -352,14 +335,9 @@ export function useNoteDocumentActions(options: {
           return [...others, ...nextSiblings];
         });
         noteUndo.pushDeleteBlockUndo(newBlock);
-        void fetch('/api/admin/note/blocks', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            orders: nextSiblings.map((b) => ({ id: b.id, order_index: b.order_index })),
-          }),
-        }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] subPageBlockOrder', e));
+        void documentEngine.persistReorder({
+          orders: nextSiblings.map((b) => ({ id: b.id, order_index: b.order_index })),
+        }).catch((e) => devLogger.error('[Note] subPageBlockOrder', e));
       } else {
         triggerSave();
       }
@@ -380,7 +358,7 @@ export function useNoteDocumentActions(options: {
     } finally {
       setLoadingState('idle');
     }
-  }, [selectedId, triggerSave, closeAll, router, noteUndo]);
+  }, [selectedId, triggerSave, closeAll, router, noteUndo, documentEngine, blocksRef, setBlocks, setDocuments, setError, setLoadingState, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab]);
 
   const handleCreateDocument = async (
     parentId: string | null = null,
@@ -419,18 +397,8 @@ export function useNoteDocumentActions(options: {
     setTogglingPublic(true);
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_public: next } : d)));
     try {
-      const res = await fetch('/api/admin/note/documents', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: doc.id, is_public: next }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '공개 설정 변경 실패');
-      }
-      const json = (await res.json()) as { document: NoteDocument };
-      setDocuments((prev) => prev.map((d) => (d.id === doc.id ? json.document : d)));
+      const document = await enqueueDocumentPatch({ id: doc.id, is_public: next });
+      setDocuments((prev) => prev.map((d) => (d.id === doc.id ? document : d)));
       triggerSave();
     } catch (e) {
       devLogger.error('[Note] togglePublic', e);
@@ -455,21 +423,17 @@ export function useNoteDocumentActions(options: {
 
   const persistDocumentTitle = useCallback(async (docId: string, safeTitle: string, saveSeq: number) => {
     try {
-      const res = await fetch('/api/admin/note/documents', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: docId, title: safeTitle }),
-      });
-      if (!res.ok) return;
+      if (docId === selectedId) {
+        await documentEngine.flushPersistQueue();
+      }
+      const document = await enqueueDocumentPatch({ id: docId, title: safeTitle });
       if (docTitleSaveSeqRef.current[docId] !== saveSeq) return;
 
-      const json = (await res.json()) as { document?: NoteDocument };
       // 타이핑 중 서버 응답이 로컬 제목을 덮어쓰지 않음 — 오래된 응답 레이스 방지
-      if (json.document?.updated_at) {
+      if (document.updated_at) {
         setDocuments((prev) =>
           prev.map((d) => (
-            d.id === docId ? { ...d, updated_at: json.document!.updated_at } : d
+            d.id === docId ? { ...d, updated_at: document.updated_at } : d
           )),
         );
       }
@@ -489,7 +453,7 @@ export function useNoteDocumentActions(options: {
     } catch (e) {
       devLogger.error('[Note] renameDoc', e);
     }
-  }, [triggerSave]);
+  }, [documentEngine, selectedId, triggerSave]);
 
   const handleRenameDocument = useCallback((docId: string, title: string, options?: { immediate?: boolean }) => {
     const timers = saveTimersRef.current;
@@ -518,22 +482,18 @@ export function useNoteDocumentActions(options: {
     e.stopPropagation();
     const next = !doc.is_pinned;
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_pinned: next } : d)));
-    try {
-      await fetch('/api/admin/note/documents', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: doc.id, is_pinned: next }),
-      });
-    } catch (err) { devLogger.error('[Note] togglePin', err); }
+    void enqueueDocumentPatch({ id: doc.id, is_pinned: next }).catch((err) => {
+      devLogger.error('[Note] togglePin', err);
+    });
   };
 
   const handleToggleFavorite = async (e: React.MouseEvent, doc: NoteDocument) => {
     e.stopPropagation();
     const next = !doc.is_favorite;
     setDocuments((prev) => prev.map((d) => (d.id === doc.id ? { ...d, is_favorite: next } : d)));
-    try { await fetch('/api/admin/note/documents', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ id: doc.id, is_favorite: next }) }); }
-    catch (err) { devLogger.error('[Note] toggleFavorite', err); }
+    void enqueueDocumentPatch({ id: doc.id, is_favorite: next }).catch((err) => {
+      devLogger.error('[Note] toggleFavorite', err);
+    });
   };
 
   const handleDeleteDocument = async (e: React.MouseEvent, doc: NoteDocument) => {

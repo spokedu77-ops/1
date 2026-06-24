@@ -17,6 +17,7 @@ interface FlowGameClientProps {
   colorTheme?:    'default' | 'space' | 'neon' | 'ocean';
   motionScale?:   number;
   bgmPath?:       string;
+  bgmList?:       string[];
   bgImageUrl?:    string;
   onComplete:     (stats: FlowStats) => void;
   onExit:         () => void;
@@ -50,6 +51,7 @@ export default function FlowGameClient({
   colorTheme = 'default',
   motionScale = 1,
   bgmPath,
+  bgmList,
   bgImageUrl,
   onComplete,
   onExit,
@@ -58,20 +60,19 @@ export default function FlowGameClient({
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const flashRef     = useRef<HTMLDivElement>(null);
   const engineRef    = useRef<FlowEngine | null>(null);
-  const cueTimerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [phase,         setPhase]        = useState<FlowGamePhase>('idle');
   const [countdown,     setCountdown]    = useState<number | null>(null);
   const [stageIdx,      setStageIdx]     = useState(0);
   const [timerSec,      setTimerSec]     = useState(stages[0]?.durationSec ?? 25);
-  const [cueText,       setCueText]      = useState<string | null>(null);
-  const [cueColor,      setCueColor]     = useState('#ffffff');
   const [stats,         setStats]        = useState<FlowStats | null>(null);
   const [totalProgress, setTotalProgress] = useState(0);
   const [initError,     setInitError]    = useState<string | null>(null);
   /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
   const [initKey,       setInitKey]      = useState(0);
-  const mountedRef = useRef(true);
+  const mountedRef   = useRef(true);
+  /** 현재 엔진 init 시점의 bgmPath 캡처 — 이후 변경 시 loadBgmLate만 호출 (더블스타트 방지) */
+  const engineBgmRef = useRef<string | undefined>(undefined);
 
   // ── 엔진 초기화 ────────────────────────────────────────────────────────────
 
@@ -80,10 +81,19 @@ export default function FlowGameClient({
     return () => { mountedRef.current = false; };
   }, []);
 
+  // bgmPath가 엔진 생성 이후에 변경될 때만 loadBgmLate 호출 (엔진 재생성 없이)
+  useEffect(() => {
+    if (!bgmPath || !engineRef.current) return;
+    if (bgmPath === engineBgmRef.current) return;
+    engineBgmRef.current = bgmPath;
+    void engineRef.current.loadBgmLate(bgmPath);
+  }, [bgmPath]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || stages.length === 0) return;
     setInitError(null);
+    engineBgmRef.current = bgmPath; // 이 엔진 인스턴스의 초기 bgmPath 캡처
 
     const classifyError = (msg: string): string => {
       const m = msg.toLowerCase();
@@ -112,18 +122,12 @@ export default function FlowGameClient({
             setTimerSec(rem);
             setTotalProgress(prog);
           },
-          onInstruction:  (text, color, ms) => {
-            if (!mountedRef.current) return;
-            if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
-            setCueText(text);
-            setCueColor(color);
-            cueTimerRef.current = setTimeout(() => { if (mountedRef.current) setCueText(null); }, ms);
-          },
+          onInstruction:  () => { /* instruction 표시 제거 */ },
           onComplete:     (s) => { setStats(s); onComplete(s); },
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, colorTheme, motionScale, bgmPath, bgImageUrl },
+        { stages, colorTheme, motionScale, bgmPath, bgmList, bgImageUrl },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -160,11 +164,10 @@ export default function FlowGameClient({
     return () => {
       canvas.removeEventListener('webglcontextlost', handleContextLost);
       engine.dispose();
-      if (cueTimerRef.current) clearTimeout(cueTimerRef.current);
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, colorTheme, motionScale, bgmPath, bgImageUrl, initKey]);
+  }, [stages.length, colorTheme, motionScale, bgImageUrl, initKey]); // bgmPath 제외 — 변경 시 위 별도 useEffect가 loadBgmLate 처리
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -263,22 +266,6 @@ export default function FlowGameClient({
             <div style={{ height: '100%', width: `${totalProgress * 100}%`, background: currentStage.color, transition: 'width 0.12s linear' }} />
           </div>
 
-          {/* 큐 텍스트 */}
-          {cueText && (
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-              <span key={cueText + Date.now()} style={{
-                fontSize: 'clamp(3.5rem, 15vw, 7.5rem)',
-                fontWeight: 900,
-                color: cueColor,
-                fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
-                letterSpacing: '0.04em',
-                textShadow: `0 0 50px ${cueColor}cc, 4px 4px 0 #000`,
-                animation: 'cuePop 0.12s ease-out',
-              }}>
-                {cueText}
-              </span>
-            </div>
-          )}
         </>
       )}
 
@@ -325,6 +312,43 @@ export default function FlowGameClient({
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── 속도 전환 안내 (스테이지 후반 시작) ──────────────────────── */}
+      {phase === 'speed-intro' && currentStage && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'rgba(0,0,0,0.55)',
+          animation: 'stageIntroBg 0.3s ease-out',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            background: 'rgba(5,15,25,0.95)',
+            border: '2px solid #22d3ee44',
+            borderRadius: '1.5rem',
+            padding: '1.8rem 2.5rem',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            maxWidth: 320, width: '90%',
+            boxShadow: '0 0 60px #22d3ee33',
+            animation: 'stageIntroCard 0.35s cubic-bezier(0.22,1.4,0.36,1)',
+          }}>
+            <p style={{ fontSize: '0.58rem', color: '#22d3ee', fontWeight: 800, letterSpacing: '0.5em', marginBottom: '0.6rem' }}>
+              ⚡ SPEED UP
+            </p>
+            <h2 style={{
+              fontSize: 'clamp(2rem, 8vw, 3.5rem)', fontWeight: 900, color: '#fff',
+              fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
+              letterSpacing: '0.04em', marginBottom: '0.4rem', textAlign: 'center',
+              textShadow: '0 0 30px #22d3ee, 3px 3px 0 #000',
+            }}>
+              빨라진다!
+            </h2>
+            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
+              속도가 올라갑니다 — 리듬 잃지 마세요!
+            </p>
           </div>
         </div>
       )}

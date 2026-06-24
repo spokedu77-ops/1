@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   applyRestoreBlockSnapshots,
+  LOCAL_ONLY_BLOCK_GRACE_MS,
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
   unionReconciledWithLocalBlocks,
@@ -85,14 +86,31 @@ describe('applyRestoreBlockSnapshots', () => {
 });
 
 describe('mergeReconciledBlocks', () => {
-  it('preserves store text when server reconcile differs', () => {
+  beforeEach(() => {
+    useNoteBlockStore.getState().setActiveDocumentId('doc');
+    useNoteBlockStore.getState().setActiveEditor(null);
+    useNoteBlockStore.getState().hydrate([]);
+  });
+
+  it('preserves store text for active editor when server reconcile differs', () => {
     const current = [block('a', 'old')];
     useNoteBlockStore.getState().setActiveDocumentId('doc');
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'a', field: 'text' });
     useNoteBlockStore.getState().hydrate(current);
     useNoteBlockStore.getState().patchContent('a', { text: 'typing' });
     const reconciled = [block('a', 'server')];
     const merged = mergeReconciledBlocks(current, reconciled);
     expect(merged[0].content?.text).toBe('typing');
+  });
+
+  it('uses server text for non-active blocks even when store differs', () => {
+    const current = [block('a', 'old')];
+    useNoteBlockStore.getState().setActiveDocumentId('doc');
+    useNoteBlockStore.getState().hydrate(current);
+    useNoteBlockStore.getState().patchContent('a', { text: 'stale store' });
+    const reconciled = [block('a', 'from server')];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged[0].content?.text).toBe('from server');
   });
 
   it('strips list markers from server-only reconcile rows', () => {
@@ -121,12 +139,29 @@ describe('unionReconciledWithLocalBlocks', () => {
     useNoteBlockStore.getState().hydrate([]);
   });
 
-  it('keeps local-only blocks not yet on server', () => {
+  it('keeps local-only blocks not yet on server when recently created', () => {
     const current = [
-      block('local-new', 'draft', { document_id: 'child-doc', type: 'todo' }),
+      block('local-new', 'draft', {
+        document_id: 'child-doc',
+        type: 'todo',
+        created_at: new Date().toISOString(),
+      }),
     ];
     const merged = unionReconciledWithLocalBlocks(current, [], 'child-doc');
     expect(merged.some((b) => b.id === 'local-new')).toBe(true);
+  });
+
+  it('drops local-only blocks older than grace window', () => {
+    const staleCreatedAt = new Date(Date.now() - LOCAL_ONLY_BLOCK_GRACE_MS - 1000).toISOString();
+    const current = [
+      block('stale-local', 'ghost', {
+        document_id: 'child-doc',
+        type: 'todo',
+        created_at: staleCreatedAt,
+      }),
+    ];
+    const merged = unionReconciledWithLocalBlocks(current, [], 'child-doc');
+    expect(merged.some((b) => b.id === 'stale-local')).toBe(false);
   });
 });
 

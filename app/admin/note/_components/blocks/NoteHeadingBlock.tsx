@@ -1,5 +1,6 @@
 'use client';
 
+import { createHeadingEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
 import type { NoteBlock } from '../../_lib/types';
@@ -39,6 +40,8 @@ export function NoteHeadingBlock({
   onUpdate,
   onEnter,
   onAddBelow,
+  onChangeType,
+  onIndentChange,
   onSlashChange,
   slashHostRef,
   ...fieldProps
@@ -46,6 +49,14 @@ export function NoteHeadingBlock({
   const config = HEADING_VARIANTS[variant];
   const text = typeof block.content?.text === 'string' ? block.content.text : '';
   const shell = isInsideToggle ? config.rowClassName : rootBlockShell;
+
+  const handleHeadingEnter = createHeadingEnterHandler({
+    block,
+    text,
+    onAddBelow,
+    onChangeType,
+    onIndentChange,
+  });
 
   return (
     <div
@@ -59,8 +70,11 @@ export function NoteHeadingBlock({
           placeholder={config.placeholder}
           textClassName={config.textClassName}
           enterCreatesBlock={enterCreatesBlockBelow}
-          onEditorEnter={enterCreatesBlockBelow ? () => onAddBelow('text') : onEnter}
+          enterSplitOnMidBlock={enterCreatesBlockBelow}
+          onEditorEnter={enterCreatesBlockBelow ? handleHeadingEnter : onEnter}
           onUpdate={onUpdate}
+          onChangeType={onChangeType}
+          onIndentChange={onIndentChange}
           onSlashChange={onSlashChange}
           slashHostRef={slashHostRef}
           {...fieldProps}

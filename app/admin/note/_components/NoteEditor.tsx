@@ -46,6 +46,7 @@ import {
   shouldSuppressCrossFormatToolbar,
 } from './noteCrossSelect';
 import { noteSuppressEditorScrollRef } from '../_lib/noteEditorScrollGuard';
+import { resolveEditorShiftEnterAction } from '../_lib/noteNotionBlockBehavior';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
@@ -854,7 +855,7 @@ export function NoteEditor({
       return;
     }
     storage.handler = (currentEditor, shiftKey) => {
-      if (shiftKey) {
+      if (resolveEditorShiftEnterAction(shiftKey)) {
         return currentEditor.commands.setHardBreak();
       }
       const cbs = callbacksRef.current;

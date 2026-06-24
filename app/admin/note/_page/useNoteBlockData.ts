@@ -16,6 +16,7 @@ import {
   mergeBlocksWithStoreContent,
   resetNoteDocumentEditorState,
   unionReconciledWithLocalBlocks,
+  wouldReconcileRegressLocalStructure,
   wouldReconcileRegressActiveText,
 } from '../_lib/noteBlockStateMerge';
 import {
@@ -29,6 +30,7 @@ import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
 import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
+import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
 import type { NoteBlock } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
@@ -50,8 +52,9 @@ export function useNoteBlockData(options: {
   setError: (error: string | null) => void;
   setPendingDeleteUndo: (blockId: string | null) => void;
   bootstrapBlocks?: { documentId: string; blocks: NoteBlock[] } | null;
+  triggerSaveRef: React.MutableRefObject<() => void>;
 }) {
-  const { selectedId, docTab, setError, setPendingDeleteUndo, bootstrapBlocks } = options;
+  const { selectedId, docTab, setError, setPendingDeleteUndo, bootstrapBlocks, triggerSaveRef } = options;
 
   const [blocks, _setBlocks] = useState<NoteBlock[]>([]);
   const [loadingBlocks, setLoadingBlocks] = useState(false);
@@ -84,6 +87,21 @@ export function useNoteBlockData(options: {
     });
   }, []);
 
+  const handleEngineError = useCallback((error: Error) => {
+    setError(error.message);
+  }, [setError]);
+
+  const documentEngine = useNoteDocumentEngine({
+    documentId: selectedId,
+    blocksRef,
+    setBlocks,
+    triggerSave: () => triggerSaveRef.current(),
+    onError: handleEngineError,
+  });
+
+  const documentEngineRef = useRef(documentEngine);
+  documentEngineRef.current = documentEngine;
+
   const scheduleIdleReconcile = useCallback((
     documentId: string,
     loadGen: number,
@@ -98,14 +116,22 @@ export function useNoteBlockData(options: {
     loadGen: number,
   ) => {
     if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-    if (isActiveNoteEditorFocused()) {
+    if (
+      isActiveNoteEditorFocused()
+      || documentEngineRef.current.hasPendingContent()
+      || documentEngineRef.current.hasPendingPersist()
+    ) {
       scheduleIdleReconcile(documentId, loadGen);
       return;
     }
     try {
       await commitNoteDocumentBeforeLeave();
       if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-      if (isActiveNoteEditorFocused()) {
+      if (
+      isActiveNoteEditorFocused()
+      || documentEngineRef.current.hasPendingContent()
+      || documentEngineRef.current.hasPendingPersist()
+    ) {
         scheduleIdleReconcile(documentId, loadGen);
         return;
       }
@@ -125,15 +151,19 @@ export function useNoteBlockData(options: {
         scheduleIdleReconcile(documentId, loadGen);
         return;
       }
+      if (wouldReconcileRegressLocalStructure(blocksRef.current, merged)) {
+        scheduleIdleReconcile(documentId, loadGen);
+        return;
+      }
       if (!noteBlocksStructureChanged(blocksRef.current, merged)) return;
-      setBlocks(merged);
+      documentEngineRef.current.replaceBlocks(merged);
       rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
         merged.filter((block) => block.document_id === documentId),
       ));
     } catch (e) {
       devLogger.error('[Note] idle reconcile', e);
     }
-  }, [scheduleIdleReconcile, selectedId, setBlocks]);
+  }, [scheduleIdleReconcile, selectedId]);
 
   useEffect(() => {
     registerNoteReconcileIdleHandler((documentId) => {
@@ -148,8 +178,7 @@ export function useNoteBlockData(options: {
 
   const replaceBlocks = useCallback((loaded: NoteBlock[], documentId: string) => {
     const normalized = dedupeNoteBlocksById(normalizeLoadedNoteBlocks(loaded));
-    blocksRef.current = normalized;
-    _setBlocks(normalized);
+    documentEngineRef.current.replaceBlocks(normalized);
     rememberNoteDocumentBlocks(documentId, normalized);
     const store = useNoteBlockStore.getState();
     store.setActiveDocumentId(documentId);
@@ -172,10 +201,13 @@ export function useNoteBlockData(options: {
       if (wouldReconcileRegressActiveText(merged)) {
         return;
       }
+      if (wouldReconcileRegressLocalStructure(blocksRef.current, merged)) {
+        return;
+      }
       if (!noteBlocksStructureChanged(blocksRef.current, merged)) {
         return;
       }
-      setBlocks(merged);
+      documentEngineRef.current.replaceBlocks(merged);
       const store = useNoteBlockStore.getState();
       store.setActiveDocumentId(documentId);
       store.syncBlocksStructure(merged);
@@ -187,7 +219,7 @@ export function useNoteBlockData(options: {
 
     rememberNoteDocumentBlocks(documentId, normalized);
     replaceBlocks(normalized, documentId);
-  }, [replaceBlocks, setBlocks]);
+  }, [replaceBlocks]);
 
   useEffect(() => {
     return () => {
@@ -376,5 +408,6 @@ export function useNoteBlockData(options: {
     childrenByParentBlock,
     rootBlocks,
     allSortableBlockIds,
+    documentEngine,
   };
 }

@@ -22,10 +22,11 @@ export type LoadedNoteBlock = {
   updated_at: string;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  version: number;
 };
 
 const BLOCK_SELECT =
-  'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by';
+  'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
 
 const DOCUMENT_CHILD_SELECT = 'id, title';
 

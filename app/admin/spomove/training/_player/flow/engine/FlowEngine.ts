@@ -103,7 +103,7 @@ const THEMES: Record<string, {
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
-export type FlowGamePhase = 'idle' | 'countdown' | 'stage-intro' | 'playing' | 'complete';
+export type FlowGamePhase = 'idle' | 'countdown' | 'stage-intro' | 'speed-intro' | 'playing' | 'complete';
 
 export interface FlowEngineCallbacks {
   onPhaseChange:  (phase: FlowGamePhase) => void;
@@ -127,7 +127,8 @@ export interface FlowEngineOptions {
   colorTheme?:  string;
   motionScale?: number;
   bgmPath?:     string;
-  bgImageUrl?:  string; // 배경 이미지 URL (일반 JPG/PNG)
+  bgmList?:     string[]; // BGM 목록 — 곡 끝나면 랜덤 다음 곡 재생
+  bgImageUrl?:  string;
 }
 
 interface BridgeObj extends FlowBridge {
@@ -216,12 +217,13 @@ export class FlowEngine {
   private sessionSec = 0;   // 벽시계 누적
 
   // ── 스테이지 ──────────────────────────────────────────────────────────────
-  private phase:        FlowGamePhase = 'idle';
-  private stageList:    FlowStageConfig[] = [];
-  private stageIdx      = 0;
-  private stageTimer    = 0;
-  private activeModules = new Set<FlowModuleKey>();
-  private motionScale   = 1;
+  private phase:           FlowGamePhase = 'idle';
+  private stageList:       FlowStageConfig[] = [];
+  private stageIdx         = 0;
+  private stageTimer       = 0;
+  private speedIntroShown  = false; // 스테이지별 후반 속도 안내 표시 여부
+  private activeModules    = new Set<FlowModuleKey>();
+  private motionScale      = 1;
 
   // ── 특수 모듈 ─────────────────────────────────────────────────────────────
   private currentSpeed     = 0;
@@ -297,16 +299,8 @@ export class FlowEngine {
 
     this.obstacles = new ObstacleManager(this.scene, BRIDGE_LENGTH, {
       onBoxHit:           () => {},
-      onBoxWarn:          (isReach: boolean) => {
-        if (!this.isBonus && !isReach && this.activeModules.has('punch')) {
-          this.showInstruction('펀치!', '#ff4400', 550, 2);
-        }
-      },
-      onUfoWarn:          () => {
-        if (!this.isBonus && this.activeModules.has('duck')) {
-          this.showInstruction('숙여!', '#ffdd00', 550, 2);
-        }
-      },
+      onBoxWarn:          () => { /* instruction 제거 */ },
+      onUfoWarn:          () => { /* instruction 제거 */ },
       onUfoDuckStart:     () => {
         if (!this.activeModules.has('duck')) return;
         this.duckDipOffset = -120;
@@ -320,7 +314,6 @@ export class FlowEngine {
         this.audio.sfxLand();
       },
       onPunchWallEnter:   () => {
-        // 펀치 벽 진입 — FlowEngine이 타격 시퀀스 시작
         if (!this.activeModules.has('reach')) return;
         this.wallBreakActive = true;
         this.wallBreakHits   = 0;
@@ -351,6 +344,22 @@ export class FlowEngine {
       new THREE.TextureLoader().load(this.opts.bgImageUrl, (tex) => {
         if (this.scene) this.scene.background = tex;
       });
+    }
+
+    // BGM 로테이션: 곡 끝나면 랜덤 다음 곡 재생
+    const bgmList = this.opts.bgmList ?? [];
+    if (bgmList.length > 1) {
+      let currentBgm = this.opts.bgmPath ?? null;
+      this.audio.onEnded = async () => {
+        if (this.phase === 'complete') return;
+        const pool = bgmList.filter(p => p !== currentBgm);
+        const next = pool.length > 0
+          ? pool[Math.floor(Math.random() * pool.length)]!
+          : bgmList[Math.floor(Math.random() * bgmList.length)]!;
+        currentBgm = next;
+        await this.audio.loadBgm(next);
+        if (this.getPhase() !== 'complete') this.audio.startMusic();
+      };
     }
   }
 
@@ -556,11 +565,11 @@ export class FlowEngine {
         : null;
       this.stageScheduleIdx = Math.min(this.stageScheduleIdx, this.stageSchedule.length);
 
-      if (slot === 'ufo' && !this.obstacles.hasActiveUfo()) {
+      if (slot === 'ufo') {
         this.obstacles.attachUfo(bridgeObj);
-      } else if (slot === 'reach' && !this.obstacles.hasActiveBox()) {
+      } else if (slot === 'reach') {
         this.obstacles.attachBox(bridgeObj, this.activeModules, true);
-      } else if (slot === 'box' && !this.obstacles.hasActiveBox()) {
+      } else if (slot === 'box') {
         this.obstacles.attachBox(bridgeObj, this.activeModules, false);
       }
     }
@@ -588,13 +597,14 @@ export class FlowEngine {
   // ── 스테이지 ─────────────────────────────────────────────────────────────
 
   private startStage(idx: number): void {
-    this.stageIdx      = idx;
-    const stage        = this.stageList[idx];
+    this.stageIdx         = idx;
+    const stage           = this.stageList[idx];
     if (!stage) { this.endGame(); return; }
 
-    this.activeModules = stage.activeModules;
-    this.isBonus       = stage.isBonus;
-    this.stageTimer    = 0;
+    this.activeModules    = stage.activeModules;
+    this.isBonus          = stage.isBonus;
+    this.stageTimer       = 0;
+    this.speedIntroShown  = false;
     this.jumpHeight    = JUMP_HEIGHT;
     this.jumpDuration  = JUMP_DURATIONS[Math.min(idx, JUMP_DURATIONS.length - 1)]!;
     this.resetSpecialTimers();
@@ -617,10 +627,10 @@ export class FlowEngine {
 
     // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
-    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 3초 인트로
+    // 스테이지 0은 카운트다운 후 already-playing. 1+부터 2초 인트로
     if (idx > 0) {
       this.setPhase('stage-intro');
-      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 3000);
+      this.countdownTimer = setTimeout(() => this.setPhase('playing'), 2000);
     }
   }
 
@@ -716,10 +726,12 @@ export class FlowEngine {
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, this.aq.getPixelRatioMax()));
     }
 
-    if (this.stars) this.stars.rotation.y -= 0.00008 * dt60M;
+    // stage-intro / speed-intro 중에는 배경 정지
+    const isIntroPhase = this.phase === 'stage-intro' || this.phase === 'speed-intro';
+    if (this.stars && !isIntroPhase) this.stars.rotation.y -= 0.00008 * dt60M;
 
-    // 바다 파도 애니메이션
-    if (this.oceanSurface || this.oceanBubbles) {
+    // 바다 파도 애니메이션 (인트로 중에는 멈춤)
+    if ((this.oceanSurface || this.oceanBubbles) && !isIntroPhase) {
       this.oceanTime += dt;
       // 꼭짓점 계산 — tier에 따라 N프레임마다 1회
       if (this.oceanSurface && this.aq.shouldUpdateOcean(this.oceanFrameIdx)) {
@@ -768,10 +780,21 @@ export class FlowEngine {
 
     if (this.stageTimer >= stage.durationSec) { this.endStage(); return; }
 
-    // ── 속도 계산 (원본: currentSpeed * 50 * dt60) ──────────────────────────
+    // ── 후반 속도 안내 — 1단계(stageIdx 0)에서만 표시 ────────────────────
+    if (this.stageIdx === 0 && !this.speedIntroShown && this.stageTimer >= stage.durationSec / 2) {
+      this.speedIntroShown = true;
+      if (this.countdownTimer) clearTimeout(this.countdownTimer);
+      this.setPhase('speed-intro');
+      this.countdownTimer = setTimeout(() => {
+        if (this.phase === 'speed-intro') this.setPhase('playing');
+      }, 2000);
+      return;
+    }
+
+    // ── 속도 계산 ──────────────────────────────────────────────────────────
     const stageMult   = SPEED_MULTS[Math.min(this.stageIdx, SPEED_MULTS.length - 1)]!;
-    // faster 모듈: 해당 스테이지 추가 속도 +15%
-    const fasterMult  = this.activeModules.has('faster') ? 1.15 : 1.0;
+    // 1단계: 전반 1.0x / 후반 1.15x, 나머지 스테이지: 처음부터 1.15x
+    const fasterMult  = (this.stageIdx === 0 && this.stageTimer < stage.durationSec / 2) ? 1.0 : 1.15;
     let speedScalar = this.wallBreakActive ? 0.0 : 1.0;
     this.currentSpeed = BASE_SPEED * stageMult * fasterMult * speedScalar;
     const bridgeMove  = this.currentSpeed * 50 * dt60M;
@@ -922,7 +945,6 @@ export class FlowEngine {
         this.hitShakeRemaining = 130;
         this.hitShakeIntensity = 0.75 + this.wallBreakHits * 0.1;
         this.hitShakeDuration  = 130;
-        if (!this.isBonus) this.showInstruction('두드려!', '#ffaa00', 280, 2);
         if (done) {
           this.wallBreakActive = false;
           this.wallBreakHits   = 0;
@@ -931,7 +953,6 @@ export class FlowEngine {
           this.hitShakeRemaining = 300;
           this.hitShakeIntensity = 1.5;
           this.hitShakeDuration  = 300;
-          if (!this.isBonus) this.showInstruction('부숴!', '#ff6600', 900, 3);
         } else {
           this.wallBreakTimer = WALL_BREAK_INTERVAL;
         }
@@ -976,10 +997,6 @@ export class FlowEngine {
     this.jumpDuration  = JUMP_DURATIONS[Math.min(this.stageIdx, JUMP_DURATIONS.length - 1)]!;
     this.microJolt    += MICROJOLT_AMOUNT;
     this.audio.sfxJump();
-    if (this.jumpInstrCooldown <= 0 && !this.isBonus) {
-      this.showInstruction('점프!', '#ffffff', 700, 1);
-      this.jumpInstrCooldown = 3.0;
-    }
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨

@@ -16,6 +16,20 @@ import type { NoteBlock, NoteDocument } from '../_lib/types';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import type { ReactNode } from 'react';
 import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import { createNotionEmptyBackspaceHandler } from '../_lib/noteNotionBlockBehavior';
+
+function buildNotionBackspaceProps(block: NoteBlock, deps: NoteBlockRendererDeps) {
+  const canMergeWithPrevious = () => !!planMergeWithPreviousBlock(deps.blocksRef.current, block.id);
+  return {
+    canMergeWithPrevious,
+    onEmptyBackspace: createNotionEmptyBackspaceHandler({
+      canMergeWithPrevious,
+      onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
+      onDeleteEmptyBlock: () => deps.handleDeleteBlock(block, true),
+    }),
+    onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
+  };
+}
 
 export type NoteBlockRendererDeps = {
   blocks: NoteBlock[];
@@ -46,7 +60,7 @@ export type NoteBlockRendererDeps = {
   handleDeleteBlock: (block: NoteBlock, fromEmptyBackspace?: boolean) => void;
   handleChangeBlockType: (block: NoteBlock, type: NoteBlock['type']) => void;
   handleInsertBlockAfter: (block: NoteBlock, type?: NoteBlock['type'], content?: NoteBlock['content']) => void;
-  handleInsertBlockInParent: (parentId: string, type?: NoteBlock['type']) => void;
+  handleInsertBlockInParent: (parentId: string, type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   handleOpenDocumentById: (documentId: string) => void;
   showFormatToolbar: (
     applyMark: (mark: InlineMark) => void,
@@ -118,6 +132,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
     const bulletListNestLevel = block.type === 'bulletList'
       ? bulletListNestLevelAmongContainers(block, deps.blocks)
       : undefined;
+    const backspaceProps = buildNotionBackspaceProps(block, deps);
     return (
       <MemoToggleInlineRow
         key={block.id}
@@ -143,9 +158,9 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         autoFocusTitleSignal={
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart === 'title' ? deps.focusTitleSignal : 0
         }
-        onEmptyBackspace={() => deps.handleDeleteBlock(block, true)}
-        onMergeWithPrevious={() => { void deps.handleMergeWithPreviousBlock(block); }}
-        canMergeWithPrevious={() => !!planMergeWithPreviousBlock(deps.blocksRef.current, block.id)}
+        onEmptyBackspace={backspaceProps.onEmptyBackspace}
+        onMergeWithPrevious={backspaceProps.onMergeWithPrevious}
+        canMergeWithPrevious={backspaceProps.canMergeWithPrevious}
         onDuplicate={() => { void deps.handleDuplicateBlock(block); }}
         onCopyBlockLink={() => deps.handleCopyBlockLink(block)}
         onRecordBlockUndo={() => deps.recordBlockUndo([block.id])}
@@ -164,7 +179,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onFocusBlock={() => deps.focusBlockEditor(block.id)}
         onAddChildBelow={
           block.type === 'toggle'
-            ? (type) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text'); }
+            ? (type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }
             : undefined
         }
       />
@@ -180,6 +195,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
     const bulletListNestLevel = block.type === 'bulletList'
       ? bulletListNestLevelAmongContainers(block, deps.blocks)
       : undefined;
+    const backspaceProps = buildNotionBackspaceProps(block, deps);
     return (
       <MemoSortableBlockRow
         key={block.id}
@@ -188,7 +204,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         numberedListIndex={numberedListIndex}
         bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
-        onAddChildBelow={(type) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text'); }}
+        onAddChildBelow={(type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }}
         onUpdate={(content) => deps.handleUpdateBlock(block, content)}
         onContentSync={(content) => deps.syncBlockContent(block.id, content)}
         onDelete={() => deps.handleDeleteBlock(block)}
@@ -205,9 +221,9 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         autoFocusTitleSignal={
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart === 'title' ? deps.focusTitleSignal : 0
         }
-        onEmptyBackspace={() => deps.handleDeleteBlock(block, true)}
-        onMergeWithPrevious={() => { void deps.handleMergeWithPreviousBlock(block); }}
-        canMergeWithPrevious={() => !!planMergeWithPreviousBlock(deps.blocksRef.current, block.id)}
+        onEmptyBackspace={backspaceProps.onEmptyBackspace}
+        onMergeWithPrevious={backspaceProps.onMergeWithPrevious}
+        canMergeWithPrevious={backspaceProps.canMergeWithPrevious}
         onDuplicate={() => { void deps.handleDuplicateBlock(block); }}
         onCopyBlockLink={() => deps.handleCopyBlockLink(block)}
         onRecordBlockUndo={() => deps.recordBlockUndo([block.id])}

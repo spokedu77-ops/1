@@ -966,7 +966,6 @@ function SettingsScreen({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(
                   [
-                    { key: 'faster'   as FlowFeatureKey, icon: '⚡', label: '속도 증가 (FASTER)',     desc: '이전 스테이지보다 이동 속도가 빨라집니다.' },
                     { key: 'punch'    as FlowFeatureKey, icon: '👊', label: '박스 펀치 (PUNCH)',      desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
                     { key: 'duck'     as FlowFeatureKey, icon: '🛸', label: 'UFO 숙이기 (DUCK)',      desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
                     { key: 'reach'    as FlowFeatureKey, icon: '🧱', label: '펀치 벽 두드리기',         desc: '브릿지를 막는 벽이 등장합니다. 5번 두드려 부수세요.' },

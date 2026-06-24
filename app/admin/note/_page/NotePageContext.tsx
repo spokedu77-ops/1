@@ -199,7 +199,11 @@ export interface NotePageContextValue {
   handleIndentBlock: (block: NoteBlock, direction: 'in' | 'out') => void;
   handleNavigateBlock: (block: NoteBlock, direction: 'previous' | 'next') => void;
   handleInsertBlockAfter: (afterBlock: NoteBlock, type?: NoteBlock['type'], content?: Record<string, unknown>) => Promise<void>;
-  handleInsertBlockInParent: (parentBlockId: string, type?: NoteBlock['type']) => Promise<void>;
+  handleInsertBlockInParent: (
+    parentBlockId: string,
+    type?: NoteBlock['type'],
+    content?: Record<string, unknown>,
+  ) => Promise<void>;
   handleAddBlock: (type: NoteBlock['type']) => Promise<void>;
   handleClickEditorWhitespace: () => void;
   handleDocumentBodyMouseDown: (e: React.MouseEvent<HTMLDivElement>) => void;

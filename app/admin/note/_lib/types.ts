@@ -34,6 +34,7 @@ export type NoteBlock = {
   updated_at: string;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  version?: number;
 };
 
 export type LoadingState = 'idle' | 'loading' | 'saving' | 'saved';

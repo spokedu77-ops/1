@@ -631,6 +631,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       ctx.fillRect(0, 0, g.W, 80);
     };
 
+    let lastConcurrentKey: string | null = null;
+
     const spawnObjs = (now: number) => {
       if (now - g.lastSpawn < g.spawnInt) return;
       if (g.mode === 'flow') {
@@ -646,11 +648,23 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
           } while (lane === lastLane && Math.random() > 0.3);
           g.objs.push(new FlowTile(g, cv, lane));
         } else if (concurrent === 2) {
-          const pair = randomPair();
+          let pair = randomPair();
+          let key = [...pair].sort().join(',');
+          for (let retry = 0; retry < 8 && key === lastConcurrentKey; retry++) {
+            pair = randomPair();
+            key = [...pair].sort().join(',');
+          }
+          lastConcurrentKey = key;
           g.objs.push(new FlowTile(g, cv, pair[0], true));
           g.objs.push(new FlowTile(g, cv, pair[1], true));
         } else {
-          const triple = randomTriple();
+          let triple = randomTriple();
+          let key = [...triple].sort().join(',');
+          for (let retry = 0; retry < 8 && key === lastConcurrentKey; retry++) {
+            triple = randomTriple();
+            key = [...triple].sort().join(',');
+          }
+          lastConcurrentKey = key;
           g.objs.push(new FlowTile(g, cv, triple[0], true));
           g.objs.push(new FlowTile(g, cv, triple[1], true));
           g.objs.push(new FlowTile(g, cv, triple[2], true));

@@ -1,6 +1,7 @@
 import { stripListItemMarkerPrefix } from '../_components/noteBulletInput';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
+import { resolveInlineBlockEnterAction } from './noteNotionBlockBehavior';
 import type { NoteBlock } from './types';
 
 export type NoteListBlockHandlerContext = {
@@ -58,25 +59,28 @@ export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
     listType: 'bulletList' | 'numberedList',
     enterCtx?: NoteEditorEnterContext,
   ) => {
-    if (enterCtx?.split) {
-      ctx.onAddBelow(listType, {
-        text: enterCtx.split.afterText,
-        html: enterCtx.split.afterHtml,
-        depth: 0,
-      });
+    const action = resolveInlineBlockEnterAction({
+      followType: listType,
+      text: listItemText(),
+      parentBlockId: ctx.block.parent_block_id ?? null,
+      enterCtx,
+    });
+
+    switch (action.kind) {
+    case 'add-below':
+      ctx.onAddBelow(action.followType, action.content);
       return;
-    }
-    const rawText = listItemText();
-    const isEmpty = enterCtx?.isEmpty ?? rawText.trim().length === 0;
-    if (!isEmpty) {
-      ctx.onAddBelow(listType);
-      return;
-    }
-    if (ctx.block.parent_block_id) {
+    case 'outdent':
       ctx.onIndentChange?.('out');
       return;
+    case 'convert-to-text':
+      ctx.onChangeType('text');
+      return;
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
     }
-    ctx.onChangeType('text');
+    }
   };
 
   return {

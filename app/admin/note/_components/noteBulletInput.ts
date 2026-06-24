@@ -1,5 +1,6 @@
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
+import { ensureNoteBlockVersion } from '../_lib/noteBlockVersion';
 import type { NoteBlock } from '../_lib/types';
 
 export const TEXT_INDENT_UNIT = '\u00A0\u00A0\u00A0\u00A0';
@@ -152,10 +153,13 @@ export type MarkdownBlockTrigger =
 /** 서버·bootstrap 로드 직후 목록 블록 content 정리 (부모·하위 문서 공통) */
 export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {
   return blocks.map((block) => {
-    if (block.type !== 'bulletList' && block.type !== 'numberedList') return block;
-    const content = normalizeListBlockContentRecord((block.content ?? {}) as Record<string, unknown>);
-    if (content === block.content) return block;
-    return { ...block, content };
+    const withVersion = ensureNoteBlockVersion(block);
+    if (withVersion.type !== 'bulletList' && withVersion.type !== 'numberedList') {
+      return withVersion;
+    }
+    const content = normalizeListBlockContentRecord((withVersion.content ?? {}) as Record<string, unknown>);
+    if (content === withVersion.content) return withVersion;
+    return { ...withVersion, content };
   });
 }
 

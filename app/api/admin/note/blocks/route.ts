@@ -13,6 +13,7 @@ type NoteBlock = {
   updated_at: string;
   deleted_at?: string | null;
   deleted_by?: string | null;
+  version: number;
 };
 
 async function insertAuditLog({
@@ -62,12 +63,17 @@ function parseOffset(value: string | null): number {
 
 const BATCH_PATCH_MAX = 200;
 
+const BLOCK_SELECT =
+  'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
+
 type BlockFieldPatch = {
   id: string;
   type?: string;
   content?: unknown;
   order_index?: number;
   parent_block_id?: string | null;
+  document_id?: string;
+  expected_version?: number;
 };
 
 function parseBlockFieldPatch(raw: unknown): BlockFieldPatch | null {
@@ -80,10 +86,16 @@ function parseBlockFieldPatch(raw: unknown): BlockFieldPatch | null {
   if (typeof item.type === 'string') patch.type = item.type;
   if (item.content !== undefined) patch.content = item.content;
   if (typeof item.order_index === 'number') patch.order_index = item.order_index;
+  if (typeof item.document_id === 'string') patch.document_id = item.document_id;
   if (item.parent_block_id === null || typeof item.parent_block_id === 'string') {
     patch.parent_block_id = item.parent_block_id;
   } else if (item.parentBlockId === null || typeof item.parentBlockId === 'string') {
     patch.parent_block_id = item.parentBlockId;
+  }
+  if (typeof item.expected_version === 'number') {
+    patch.expected_version = item.expected_version;
+  } else if (typeof item.expectedVersion === 'number') {
+    patch.expected_version = item.expectedVersion;
   }
 
   if (Object.keys(patch).length <= 1) return null;
@@ -95,10 +107,89 @@ function patchToRowFields(patch: BlockFieldPatch): Record<string, unknown> {
   if (typeof patch.type === 'string') fields.type = patch.type;
   if (patch.content !== undefined) fields.content = patch.content;
   if (typeof patch.order_index === 'number') fields.order_index = patch.order_index;
+  if (typeof patch.document_id === 'string') fields.document_id = patch.document_id;
   if (patch.parent_block_id === null || typeof patch.parent_block_id === 'string') {
     fields.parent_block_id = patch.parent_block_id;
   }
   return fields;
+}
+
+async function fetchBlockById(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  id: string,
+): Promise<NoteBlock | null> {
+  const { data, error } = await supabase
+    .from('note_blocks')
+    .select(BLOCK_SELECT)
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as NoteBlock | null) ?? null;
+}
+
+type ApplyPatchResult =
+  | { ok: true; block: NoteBlock }
+  | { ok: false; conflict: NoteBlock };
+
+async function applyBlockFieldPatch(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  patch: BlockFieldPatch,
+  userId: string,
+  now: string,
+): Promise<ApplyPatchResult> {
+  const fields = patchToRowFields(patch);
+  if (Object.keys(fields).length === 0) {
+    const current = await fetchBlockById(supabase, patch.id);
+    if (!current) throw new Error(`block not found: ${patch.id}`);
+    return { ok: true, block: current };
+  }
+
+  const expectedVersion = typeof patch.expected_version === 'number'
+    ? patch.expected_version
+    : null;
+
+  if (expectedVersion == null) {
+    const current = await fetchBlockById(supabase, patch.id);
+    if (!current) throw new Error(`block not found: ${patch.id}`);
+    const { data, error } = await supabase
+      .from('note_blocks')
+      .update({
+        ...fields,
+        updated_at: now,
+        updated_by: userId,
+        version: (current.version ?? 1) + 1,
+      })
+      .eq('id', patch.id)
+      .is('deleted_at', null)
+      .select(BLOCK_SELECT)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error(`block update failed: ${patch.id}`);
+    return { ok: true, block: data as NoteBlock };
+  }
+
+  const { data, error } = await supabase
+    .from('note_blocks')
+    .update({
+      ...fields,
+      updated_at: now,
+      updated_by: userId,
+      version: expectedVersion + 1,
+    })
+    .eq('id', patch.id)
+    .eq('version', expectedVersion)
+    .is('deleted_at', null)
+    .select(BLOCK_SELECT)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  if (!data) {
+    const conflict = await fetchBlockById(supabase, patch.id);
+    if (!conflict) throw new Error(`block not found: ${patch.id}`);
+    return { ok: false, conflict };
+  }
+
+  return { ok: true, block: data as NoteBlock };
 }
 
 async function applyBlockFieldPatches(
@@ -106,25 +197,19 @@ async function applyBlockFieldPatches(
   patches: BlockFieldPatch[],
   userId: string,
   now: string,
-): Promise<{ error?: string }> {
-  if (patches.length === 0) return {};
+): Promise<{ blocks?: NoteBlock[]; conflicts?: NoteBlock[]; error?: string }> {
+  if (patches.length === 0) return { blocks: [] };
 
-  const results = await Promise.all(
-    patches.map(async (patch) => {
-      const fields = patchToRowFields(patch);
-      if (Object.keys(fields).length === 0) return { error: null as { message: string } | null };
-      const { error } = await supabase
-        .from('note_blocks')
-        .update({ ...fields, updated_at: now, updated_by: userId })
-        .eq('id', patch.id)
-        .is('deleted_at', null);
-      return { error };
-    }),
-  );
+  const updatedBlocks: NoteBlock[] = [];
+  for (const patch of patches) {
+    const result = await applyBlockFieldPatch(supabase, patch, userId, now);
+    if (!result.ok) {
+      return { conflicts: [result.conflict] };
+    }
+    updatedBlocks.push(result.block);
+  }
 
-  const failed = results.find((result) => result.error);
-  if (failed?.error) return { error: failed.error.message };
-  return {};
+  return { blocks: updatedBlocks };
 }
 
 async function auditBatchBlockUpdates(
@@ -173,7 +258,7 @@ export async function GET(request: NextRequest) {
     const supabase = getServiceSupabase();
     const query = supabase
       .from('note_blocks')
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
+      .select(BLOCK_SELECT)
       .eq('document_id', documentId)
       .order('order_index', { ascending: true })
       .range(offset, offset + limit - 1);
@@ -264,7 +349,7 @@ export async function POST(request: NextRequest) {
         created_by: auth.userId,
         updated_by: auth.userId,
       })
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
+      .select(BLOCK_SELECT)
       .single();
 
     if (error) {
@@ -313,6 +398,12 @@ export async function PATCH(request: NextRequest) {
       const supabase = getServiceSupabase();
       const now = new Date().toISOString();
       const result = await applyBlockFieldPatches(supabase, patches, auth.userId, now);
+      if (result.conflicts?.length) {
+        return NextResponse.json(
+          { error: 'version_conflict', conflicts: result.conflicts },
+          { status: 409 },
+        );
+      }
       if (result.error) {
         devLogger.error('[admin/note/blocks] PATCH batch error', result.error);
         return NextResponse.json({ error: result.error }, { status: 500 });
@@ -325,7 +416,7 @@ export async function PATCH(request: NextRequest) {
         patches.length > 1 ? `블록 ${patches.length}개 일괄 수정` : '블록 수정',
       );
 
-      return NextResponse.json({ ok: true, count: patches.length });
+      return NextResponse.json({ ok: true, count: patches.length, blocks: result.blocks ?? [] });
     }
 
     const id = typeof body.id === 'string' ? body.id : null;
@@ -333,35 +424,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'id required' }, { status: 400 });
     }
 
-    const updates: Record<string, unknown> = {};
-    const nextDocumentId = typeof body.document_id === 'string' ? body.document_id : null;
-    if (typeof body.type === 'string') {
-      updates.type = body.type;
-    }
-    if (body.content !== undefined) {
-      updates.content = body.content;
-    }
-    if (typeof body.order_index === 'number') {
-      updates.order_index = body.order_index;
-    }
-    if (body.parent_block_id === null || typeof body.parent_block_id === 'string') {
-      updates.parent_block_id = body.parent_block_id;
-    } else if (body.parentBlockId === null || typeof body.parentBlockId === 'string') {
-      updates.parent_block_id = body.parentBlockId;
+    const singlePatch = parseBlockFieldPatch(body);
+    if (!singlePatch) {
+      return NextResponse.json({ error: 'No updatable fields' }, { status: 400 });
     }
 
     const supabase = getServiceSupabase();
-    const { data: beforeBlock, error: beforeError } = await supabase
-      .from('note_blocks')
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
-      .eq('id', id)
-      .maybeSingle();
-    if (beforeError) {
-      devLogger.error('[admin/note/blocks] PATCH before error', beforeError);
-      return NextResponse.json({ error: beforeError.message }, { status: 500 });
+    const beforeBlock = await fetchBlockById(supabase, id);
+    if (!beforeBlock) {
+      return NextResponse.json({ error: 'block not found' }, { status: 404 });
     }
 
-    // 문서 이동 요청인 경우: 대상 문서 최상단(min-1)으로 들어가게 order_index를 서버에서 계산
+    const nextDocumentId = typeof body.document_id === 'string' ? body.document_id : null;
     if (nextDocumentId) {
       const { data: minRow, error: minError } = await supabase
         .from('note_blocks')
@@ -376,35 +450,22 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ error: minError.message }, { status: 500 });
       }
 
-      updates.document_id = nextDocumentId;
-      if (updates.order_index === undefined) {
-        updates.order_index = typeof minRow?.order_index === 'number' ? minRow.order_index - 1 : 0;
+      singlePatch.document_id = nextDocumentId;
+      if (singlePatch.order_index === undefined) {
+        singlePatch.order_index = typeof minRow?.order_index === 'number' ? minRow.order_index - 1 : 0;
       }
     }
 
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json({ error: 'No updatable fields' }, { status: 400 });
-    }
-
     const now = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('note_blocks')
-      .update({
-        ...updates,
-        updated_at: now,
-        updated_by: auth.userId,
-      })
-      .eq('id', id)
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
-      .single();
-
-    if (error) {
-      devLogger.error('[admin/note/blocks] PATCH error', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    const result = await applyBlockFieldPatch(supabase, singlePatch, auth.userId, now);
+    if (!result.ok) {
+      return NextResponse.json(
+        { error: 'version_conflict', conflicts: [result.conflict] },
+        { status: 409 },
+      );
     }
 
-    const block = data as NoteBlock;
+    const block = result.block;
     await insertAuditLog({
       documentId: block.document_id,
       blockId: block.id,
@@ -508,6 +569,12 @@ export async function PUT(request: NextRequest) {
 
     if (fieldPatches.length > 0) {
       const patchResult = await applyBlockFieldPatches(supabase, fieldPatches, auth.userId, now);
+      if (patchResult.conflicts?.length) {
+        return NextResponse.json(
+          { error: 'version_conflict', conflicts: patchResult.conflicts },
+          { status: 409 },
+        );
+      }
       if (patchResult.error) {
         devLogger.error('[admin/note/blocks] PUT field patch error', patchResult.error);
         return NextResponse.json({ error: patchResult.error }, { status: 500 });
@@ -560,7 +627,7 @@ export async function DELETE(request: NextRequest) {
 
     const { data: beforeBlocks, error: beforeError } = await supabase
       .from('note_blocks')
-      .select('id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by')
+      .select(BLOCK_SELECT)
       .in('id', uniqueIds);
     if (beforeError) {
       devLogger.error('[admin/note/blocks] DELETE before error', beforeError);

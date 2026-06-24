@@ -28,8 +28,11 @@ import {
   isDocumentDescendantOf,
   planOrphanSubPageBlockInserts,
 } from '@/app/lib/note/orphanSubPageBlocks';
-import { putNoteBlockOrders } from '../_lib/noteBlocksApi';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
+import { postNoteBlock } from '../_lib/noteBlocksApi';
+import { buildBlockTransferPatches } from '../_lib/noteBlockTransfer';
+import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
+import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { resolveBlockDropTarget } from '../_lib/noteDropResolver';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
@@ -48,6 +51,7 @@ export function useNoteDragDrop(options: {
   triggerSave: () => void;
   noteUndo: NoteUndo;
   selectedBlockIdsRef: React.MutableRefObject<Set<string>>;
+  documentEngine: NoteDocumentEngineApi;
 }) {
   const {
     blocks,
@@ -60,6 +64,7 @@ export function useNoteDragDrop(options: {
     triggerSave,
     noteUndo,
     selectedBlockIdsRef,
+    documentEngine,
   } = options;
 
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -146,10 +151,15 @@ export function useNoteDragDrop(options: {
     depthPatches: Array<{ id: string; content: Record<string, unknown> }>,
   ) => {
     const orders = orderedBlocks.map((block) => ({ id: block.id, order_index: block.order_index }));
-    const fieldUpdates = depthPatches.map((patch) => ({ id: patch.id, content: patch.content }));
-    await putNoteBlockOrders(orders, fieldUpdates.length > 0 ? fieldUpdates : undefined);
-    triggerSave();
-  }, [triggerSave]);
+    const fieldUpdates = depthPatches.map((patch) => ({
+      id: patch.id,
+      content: patch.content,
+    }));
+    await documentEngine.persistReorder({
+      orders,
+      fieldPatches: fieldUpdates.length > 0 ? fieldUpdates : undefined,
+    });
+  }, [documentEngine]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
@@ -202,16 +212,8 @@ export function useNoteDragDrop(options: {
     );
 
     try {
-      const res = await fetch('/api/admin/note/documents', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ id: movingDocId, parent_id: newParentId }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '문서 이동 실패');
-      }
+      await documentEngine.flushPersistQueue();
+      await enqueueDocumentPatch({ id: movingDocId, parent_id: newParentId });
 
       if (newParentId === null) {
         setBlocks((prev) =>
@@ -265,21 +267,27 @@ export function useNoteDragDrop(options: {
         );
         const insertPlans = planOrphanSubPageBlockInserts(orphans, parentBlocks);
         for (const plan of insertPlans) {
-          const createRes = await fetch('/api/admin/note/blocks', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              documentId: newParentId,
-              type: 'page',
-              content: plan.content,
-              order_index: plan.order_index,
-              parent_block_id: null,
-            }),
-          });
-          if (createRes.ok && newParentId === selectedId) {
-            const created = (await createRes.json()) as { block: NoteBlock };
-            setBlocks((prev) => [...prev, created.block]);
+          try {
+            const createdBlock = newParentId === selectedId
+              ? await documentEngine.persistCreateBlock({
+                documentId: newParentId,
+                blockType: 'page',
+                content: plan.content,
+                order_index: plan.order_index,
+                parent_block_id: null,
+              })
+              : await postNoteBlock({
+                documentId: newParentId,
+                blockType: 'page',
+                content: plan.content,
+                order_index: plan.order_index,
+                parent_block_id: null,
+              });
+            if (newParentId === selectedId) {
+              setBlocks((prev) => [...prev, createdBlock]);
+            }
+          } catch (e) {
+            devLogger.error('[Note] reparentOrphanPageBlock', e);
           }
         }
       }
@@ -290,7 +298,7 @@ export function useNoteDragDrop(options: {
       setDocuments(prevDocuments);
       setError(e instanceof Error ? e.message : '문서 이동 실패');
     }
-  }, [documents, selectedId, triggerSave]);
+  }, [documents, selectedId, triggerSave, documentEngine, blocksRef, setBlocks, setError]);
 
   const persistBlockReparent = useCallback(async (
     moving: NoteBlock,
@@ -320,12 +328,23 @@ export function useNoteDragDrop(options: {
         order_index: plan.targetSiblings.findIndex((block) => block.id === moving.id),
         ...(contentPatch ? { content: contentPatch } : {}),
       },
-      ...extraFieldUpdates.map((patch) => ({ id: patch.id, content: patch.content })),
+      ...extraFieldUpdates.map((patch) => ({
+        id: patch.id,
+        content: patch.content,
+      })),
     ];
 
-    await putNoteBlockOrders(orders, fieldUpdates);
-    triggerSave();
-  }, [triggerSave]);
+    await documentEngine.persistReorder({ orders, fieldPatches: fieldUpdates });
+  }, [blocksRef, documentEngine]);
+
+  const persistBlockTransfer = useCallback(async (
+    rootBlockId: string,
+    blockIds: string[],
+    targetDocumentId: string,
+  ) => {
+    const patches = buildBlockTransferPatches(rootBlockId, blockIds, targetDocumentId);
+    await documentEngine.persistTransferBlocks(patches);
+  }, [documentEngine]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
@@ -412,22 +431,7 @@ export function useNoteDragDrop(options: {
       const descendantIds = collectDescendantBlockIds(movingBlock.id, blocksRef.current);
       const idsToMove = [movingBlock.id, ...Array.from(descendantIds)];
       try {
-        for (const blockId of idsToMove) {
-          const res = await fetch('/api/admin/note/blocks', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              id: blockId,
-              document_id: targetDocumentId,
-              ...(blockId === movingBlock.id ? { parent_block_id: null } : {}),
-            }),
-          });
-          if (!res.ok) {
-            const j = await res.json().catch(() => null);
-            throw new Error(j?.error || '블록 이동 실패');
-          }
-        }
+        await persistBlockTransfer(movingBlock.id, idsToMove, targetDocumentId);
         setBlocks((prev) => prev.filter((block) => !idsToMove.includes(block.id)));
         triggerSave();
       } catch (e) {
@@ -489,22 +493,7 @@ export function useNoteDragDrop(options: {
             mergeBlocksWithStoreContent(prevBlocks),
             idsToMove,
           );
-          for (const blockId of idsToMove) {
-            const res = await fetch('/api/admin/note/blocks', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                id: blockId,
-                document_id: targetDocId,
-                ...(blockId === moving.id ? { parent_block_id: null } : {}),
-              }),
-            });
-            if (!res.ok) {
-              const j = await res.json().catch(() => null);
-              throw new Error(j?.error || '블록 이동 실패');
-            }
-          }
+          await persistBlockTransfer(moving.id, idsToMove, targetDocId);
           setBlocks((prev) => prev.filter((block) => !idsToMove.includes(block.id)));
           triggerSave();
         } catch (e) {
@@ -575,7 +564,7 @@ export function useNoteDragDrop(options: {
       setBlocks(prevBlocks);
       setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
     }
-  }, [normalizeDepthByOrder, noteUndo, persistBlockReparent, persistOrderAndDepth, selectedId, triggerSave, handleReparentDocument, documents]);
+  }, [normalizeDepthByOrder, noteUndo, persistBlockReparent, persistBlockTransfer, persistOrderAndDepth, selectedId, triggerSave, handleReparentDocument, documents, setBlocks, setError]);
 
   return {
     sensors,

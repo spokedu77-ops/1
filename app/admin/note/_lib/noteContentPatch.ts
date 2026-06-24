@@ -24,33 +24,6 @@ export function mergeBlockContentWithStore(
   return merged;
 }
 
-function blockTextLength(content: Record<string, unknown> | null | undefined): number {
-  const text = typeof content?.text === 'string' ? content.text : '';
-  return text.length;
-}
-
-/** reconcile·캐시 병합 시 서버/스토어 중 더 긴 본문을 유지 (타이핑 유실 방지) */
-export function mergeBlockContentPreferLongerText(
-  primary: Record<string, unknown> | null | undefined,
-  secondary: Record<string, unknown> | null | undefined,
-): Record<string, unknown> {
-  const a = (primary ?? {}) as Record<string, unknown>;
-  const b = (secondary ?? {}) as Record<string, unknown>;
-  const merged = { ...a, ...b };
-  const aLen = blockTextLength(a);
-  const bLen = blockTextLength(b);
-  if (bLen > aLen) {
-    merged.text = b.text;
-    if ('html' in b) merged.html = b.html;
-    if ('body' in b) merged.body = b.body;
-    if ('bodyHtml' in b) merged.bodyHtml = b.bodyHtml;
-  } else if (aLen > 0) {
-    merged.text = a.text;
-    if ('html' in a) merged.html = a.html;
-  }
-  return merged;
-}
-
 /** undo 스냅샷이 필요한 content 변경인지 */
 export function contentChangedForUndo(
   prev: Record<string, unknown> | null | undefined,
@@ -92,7 +65,20 @@ export function mergeContentPatchWithActiveStore(
     const inVal = incoming[key];
     const storeVal = store[key];
     if (typeof inVal === 'string' && typeof storeVal === 'string') {
-      merged[key] = inVal.length >= storeVal.length ? inVal : storeVal;
+      if (inVal === '' && storeVal !== '') {
+        const incomingHtml = incoming.html;
+        const editorSignaledEmpty = key === 'text'
+          && 'html' in incoming
+          && (incomingHtml === ''
+            || incomingHtml === '<p></p>'
+            || incomingHtml === '<p><br></p>'
+            || incomingHtml === '<p><br class="ProseMirror-trailingBreak"></p>');
+        merged[key] = editorSignaledEmpty ? inVal : storeVal;
+      } else if (inVal !== storeVal) {
+        merged[key] = inVal;
+      } else {
+        merged[key] = storeVal;
+      }
     } else if (storeVal !== undefined && (inVal === undefined || inVal === '')) {
       merged[key] = storeVal;
     }

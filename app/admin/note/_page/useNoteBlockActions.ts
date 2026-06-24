@@ -6,6 +6,7 @@ import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteFormatToolbarApi } from '../_components/NoteFormatToolbarHost';
 import { type useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
+import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import { useNoteBlockContentSave } from '../_hooks/useNoteBlockContentSave';
 import { useNoteBlockUndoRecording } from '../_hooks/useNoteBlockUndoRecording';
 import { useNoteBlockHistory } from '../_hooks/useNoteBlockHistory';
@@ -22,14 +23,12 @@ import {
 } from '@/app/lib/note/noteBlockTree';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { applyBlockContentChange } from '../_lib/noteBlockContentPipeline';
-import { resolveBlockTextCaretOffset } from '../_lib/noteBlockStateMerge';
+import { commitActiveNoteEditorToStore, resolveBlockTextCaretOffset } from '../_lib/noteBlockStateMerge';
 import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { buildContentForTypeChange, getBlockedTypeChangeReason } from '../_lib/noteBlockTypeChange';
-import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
-import { patchNoteBlocks } from '../_lib/noteBlocksApi';
 import {
   canSplitMultilinePasteToBlocks,
   contentForMultilinePasteLine,
@@ -94,6 +93,7 @@ export function useNoteBlockActions(options: {
     prevBlocks: NoteBlock[],
     extraFieldUpdates?: Array<{ id: string; content: Record<string, unknown> }>,
   ) => Promise<void>;
+  documentEngine: NoteDocumentEngineApi;
 }) {
   const {
     blocks,
@@ -128,12 +128,11 @@ export function useNoteBlockActions(options: {
     handleCreateSubPage,
     normalizeDepthByOrder,
     persistBlockReparent,
+    documentEngine,
   } = options;
 
   const { scheduleBlockContentSave, clearPendingContentPatch } = useNoteBlockContentSave({
-    blocksRef,
-    saveTimersRef,
-    triggerSave,
+    documentEngine,
   });
 
   const {
@@ -145,9 +144,8 @@ export function useNoteBlockActions(options: {
 
   const { bindHistoryHandlers, runNoteUndo, runNoteRedo } = useNoteBlockHistory({
     blocksRef,
-    setBlocks,
+    documentEngine,
     noteUndo,
-    triggerSave,
     setError,
     setPendingDeleteUndo,
     clearContentUndoSession,
@@ -196,7 +194,7 @@ export function useNoteBlockActions(options: {
     focusedEditorBlockIdRef,
     setLoadingState,
     setError,
-    triggerSave,
+    documentEngine,
     registerCreatedBlockUndo,
     handleUpdateBlock,
     focusBlockEditor,
@@ -212,6 +210,7 @@ export function useNoteBlockActions(options: {
   } = useNoteBlockDelete({
     blocksRef,
     setBlocks,
+    documentEngine,
     setTrashedBlocks,
     selectedId,
     docTab,
@@ -405,31 +404,41 @@ export function useNoteBlockActions(options: {
     }
     clearPendingContentPatch(block.id);
     useNoteBlockStore.getState().patchContent(block.id, nextContent);
-    blocksRef.current = blocksRef.current.map((b) =>
-      b.id === block.id ? { ...b, type, content: nextContent } : b,
-    );
+
     const wasOnThisBlock = focusedEditorBlockIdRef.current === block.id;
     const nextFocusPart: 'title' | 'editor' =
       type === 'toggle' ? 'title'
         : block.type === 'toggle' ? 'editor'
           : (focusedEditorPartRef.current ?? 'editor');
 
-    preserveEditorScrollPosition(editorScrollRef.current, () => {
-      setBlocks((prev) => prev.map((b) => (b.id === block.id ? { ...b, type, content: nextContent } : b)));
-    });
-
-    if (wasOnThisBlock) {
-      focusBlockEditor(block.id, nextFocusPart, undefined, { preventScroll: true });
-    } else {
-      focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor', undefined, { preventScroll: true });
-    }
-
     try {
-      await patchNoteBlocks([{ id: block.id, type, content: nextContent }]);
+      await documentEngine.persistFieldPatches([{
+        id: block.id,
+        type,
+        content: nextContent,
+      }]);
       triggerSave();
       preserveEditorScrollPosition(editorScrollRef.current, () => {});
-    } catch (e) { devLogger.error('[Note] changeBlockType', e); }
-  }, [focusBlockEditor, recordBlockUndo, setError, triggerSave]);
+      if (wasOnThisBlock) {
+        focusBlockEditor(block.id, nextFocusPart, undefined, { preventScroll: true });
+      } else {
+        focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor', undefined, { preventScroll: true });
+      }
+    } catch (e) {
+      devLogger.error('[Note] changeBlockType', e);
+      setError(e instanceof Error ? e.message : '블록 타입 변경 저장 실패');
+    }
+  }, [
+    clearPendingContentPatch,
+    documentEngine,
+    editorScrollRef,
+    focusBlockEditor,
+    focusedEditorBlockIdRef,
+    focusedEditorPartRef,
+    recordBlockUndo,
+    setError,
+    triggerSave,
+  ]);
 
   const showFormatToolbar = useCallback((
     applyMark: (mark: InlineMark) => void,

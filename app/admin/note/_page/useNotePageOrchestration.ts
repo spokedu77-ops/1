@@ -59,6 +59,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
   const saveTimersRef = useRef<Record<string, number | undefined>>({});
   const docTitleSaveSeqRef = useRef<Record<string, number>>({});
   const savedTimerRef = useRef<number | undefined>(undefined);
+  const triggerSaveRef = useRef<() => void>(() => {});
   const noteUndo = useNoteBlockUndo();
   const setPendingDeleteUndo = useCallback((blockId: string | null) => {
     lastDeletedBlockIdRef.current = blockId;
@@ -96,6 +97,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     setError,
     setPendingDeleteUndo,
     bootstrapBlocks,
+    triggerSaveRef,
   });
   const editorFocus = useNoteEditorFocus({
     blocksRef: blockData.blocksRef,
@@ -187,6 +189,10 @@ export function useNotePageOrchestration(): NotePageContextValue {
     savedTimerRef.current = window.setTimeout(() => setLoadingState('idle'), 3000);
   }, []);
 
+  useEffect(() => {
+    triggerSaveRef.current = triggerSave;
+  }, [triggerSave]);
+
   const dragDrop = useNoteDragDrop({
     blocks,
     blocksRef,
@@ -198,6 +204,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     triggerSave,
     noteUndo,
     selectedBlockIdsRef,
+    documentEngine: blockData.documentEngine,
   });
 
   const docActions = useNoteDocumentActions({
@@ -228,6 +235,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     docTitleSaveSeqRef,
     triggerSave,
     noteUndo,
+    documentEngine: blockData.documentEngine,
   });
 
   const blockActions = useNoteBlockActions({
@@ -263,6 +271,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     handleCreateSubPage: docActions.handleCreateSubPage,
     normalizeDepthByOrder: dragDrop.normalizeDepthByOrder,
     persistBlockReparent: dragDrop.persistBlockReparent,
+    documentEngine: blockData.documentEngine,
   });
 
   const selection = useNoteBlockSelection({

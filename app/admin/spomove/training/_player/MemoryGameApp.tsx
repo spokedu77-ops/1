@@ -584,6 +584,21 @@ export default function MemoryGameApp({
     return () => cancelAnimationFrame(id);
   }, [embed, screen]);
 
+  useEffect(() => {
+    if (embed) return;
+    if (screen !== 'flow') return;
+    // 전체화면 진입 + 스크롤바 숨김
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const id = requestAnimationFrame(() => {
+      document.documentElement.requestFullscreen?.().catch(() => {});
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [embed, screen]);
+
   const startSession = useCallback(
     (cfg: Settings = settings) => {
       sessionLaunchedRef.current = true;
@@ -1175,7 +1190,6 @@ export default function MemoryGameApp({
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                     {(
                       [
-                        { key: 'faster',   icon: '⚡', label: '속도 증가 (FASTER)',    desc: '이전 스테이지보다 다리 이동 속도가 빨라집니다.' },
                         { key: 'punch',    icon: '👊', label: '박스 펀치 (PUNCH)',     desc: '다리 위에 박스가 등장합니다. 주먹으로 파괴하세요.' },
                         { key: 'duck',     icon: '🛸', label: 'UFO 숙이기 (DUCK)',     desc: '저공 UFO가 나타납니다. 빠르게 몸을 낮춰 피하세요.' },
                         { key: 'reach',    icon: '🧱', label: '펀치 벽 두드리기',        desc: '브릿지를 막는 벽이 등장합니다. 5번 연속 두드려 부수세요.' },
@@ -1595,6 +1609,7 @@ export default function MemoryGameApp({
         colorTheme={settings.flowColorTheme}
         motionScale={settings.kidsSafeMode ? 0.5 : 1}
         bgmPath={flowBgmPathRef.current}
+        bgmList={spomoveBgmList}
         bgImageUrl={settings.flowBgImageUrl || undefined}
         onComplete={handleFlowDone}
         onExit={stop}

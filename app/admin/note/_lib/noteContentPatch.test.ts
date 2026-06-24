@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { contentChangeNeedsReactBlocks, mergeBlockContentWithStore } from './noteContentPatch';
+import {
+  contentChangeNeedsReactBlocks,
+  mergeBlockContentWithStore,
+  mergeContentPatchWithActiveStore,
+} from './noteContentPatch';
 
 describe('mergeBlockContentWithStore', () => {
   it('keeps title from React while applying store text', () => {
@@ -34,5 +38,21 @@ describe('contentChangeNeedsReactBlocks', () => {
       { text: 'todo', checked: false },
       { text: 'todo', checked: true },
     )).toBe(true);
+  });
+});
+
+describe('mergeContentPatchWithActiveStore', () => {
+  it('applies shorter editor text when user deletes lines', () => {
+    expect(mergeContentPatchWithActiveStore(
+      { text: '6.25 schedule only', html: '<p>6.25 schedule only</p>' },
+      { text: '6.25 schedule only\n6.24 delete me', html: '<p>old</p>' },
+    )).toMatchObject({ text: '6.25 schedule only' });
+  });
+
+  it('keeps store text when incoming only patches checked', () => {
+    expect(mergeContentPatchWithActiveStore(
+      { checked: true },
+      { text: 'keep me', checked: false },
+    )).toEqual({ text: 'keep me', checked: true });
   });
 });

@@ -13,7 +13,7 @@ import {
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
-import { patchNoteBlocks } from '../_lib/noteBlocksApi';
+import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -28,18 +28,16 @@ type RestoreBlockHandler = (block: NoteBlock) => Promise<void>;
 
 export function useNoteBlockHistory(options: {
   blocksRef: React.MutableRefObject<NoteBlock[]>;
-  setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
+  documentEngine: NoteDocumentEngineApi;
   noteUndo: NoteUndo;
-  triggerSave: () => void;
   setError: (error: string | null) => void;
   setPendingDeleteUndo: (blockId: string | null) => void;
   clearContentUndoSession: () => void;
 }) {
   const {
     blocksRef,
-    setBlocks,
+    documentEngine,
     noteUndo,
-    triggerSave,
     setError,
     setPendingDeleteUndo,
     clearContentUndoSession,
@@ -62,7 +60,7 @@ export function useNoteBlockHistory(options: {
       const next = applyRestoreBlockSnapshots(blocksRef.current, entry.snapshots);
       blocksRef.current = next;
       useNoteBlockStore.getState().hydrate(next);
-      setBlocks(next);
+      documentEngine.replaceBlocks(next);
       const active = useNoteBlockStore.getState().activeEditor;
       if (active && entry.snapshots.some((snapshot) => snapshot.id === active.blockId)) {
         const restore = active;
@@ -72,14 +70,13 @@ export function useNoteBlockHistory(options: {
         });
       }
       try {
-        await patchNoteBlocks(entry.snapshots.map((snapshot) => ({
+        await documentEngine.persistFieldPatches(entry.snapshots.map((snapshot) => ({
           id: snapshot.id,
           type: snapshot.type,
           content: snapshot.content,
           parent_block_id: snapshot.parent_block_id,
           order_index: snapshot.order_index,
         })));
-        triggerSave();
       } catch (e) {
         devLogger.error('[Note] history restore-blocks', e);
         setError(e instanceof Error ? e.message : '실행 취소 실패');
@@ -99,7 +96,7 @@ export function useNoteBlockHistory(options: {
         await restoreBlockRef.current(entry.snapshot);
       }
     }
-  }, [blocksRef, setBlocks, setError, setPendingDeleteUndo, triggerSave]);
+  }, [blocksRef, documentEngine, setError, setPendingDeleteUndo]);
 
   const runNoteUndo = useCallback(async () => {
     await commitNoteDocumentBeforeLeave();

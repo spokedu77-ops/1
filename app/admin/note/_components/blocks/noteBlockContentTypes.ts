@@ -42,7 +42,9 @@ export type NoteBlockContentCallbacks = {
 export type NoteInlineTextBlockProps =
   & NoteBlockContentLayout
   & NoteBlockContentCallbacks
-  & NoteBlockFieldBindings
+  & Omit<NoteBlockFieldBindings, 'onChangeType'>
   & {
     block: NoteBlock;
+    /** 슬래시·행 UI — 블록 타입 전환 (Enter 빈 줄 → text 포함) */
+    onChangeType: (type: NoteBlock['type']) => void;
   };

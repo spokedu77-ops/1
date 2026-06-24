@@ -1,5 +1,10 @@
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
 import type { NoteBlock } from './types';
+import {
+  resolveHeadingEnterAction,
+  resolveInlineBlockEnterAction,
+  resolveToggleBodyEnterAction,
+} from './noteNotionBlockBehavior';
 
 export function createInlineBlockEnterHandler(options: {
   block: NoteBlock;
@@ -10,32 +15,70 @@ export function createInlineBlockEnterHandler(options: {
   onChangeType?: (type: NoteBlock['type']) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
 }) {
-  const resolveEmpty = options.isEmpty
-    ?? ((rawText: string, enterCtx?: NoteEditorEnterContext) =>
-      enterCtx?.isEmpty ?? rawText.trim().length === 0);
-
   return (enterCtx?: NoteEditorEnterContext) => {
-    if (enterCtx?.split) {
-      options.onAddBelow(options.followType, {
-        text: enterCtx.split.afterText,
-        html: enterCtx.split.afterHtml,
-        depth: 0,
-      });
-      return;
-    }
+    const action = resolveInlineBlockEnterAction({
+      followType: options.followType,
+      text: options.text,
+      parentBlockId: options.block.parent_block_id ?? null,
+      enterCtx,
+      isEmpty: options.isEmpty,
+    });
 
-    const rawText = options.text;
-    const isEmpty = resolveEmpty(rawText, enterCtx);
-    if (!isEmpty) {
-      options.onAddBelow(options.followType);
+    switch (action.kind) {
+    case 'add-below':
+      options.onAddBelow(action.followType, action.content);
       return;
-    }
-
-    if (options.block.parent_block_id) {
+    case 'outdent':
       options.onIndentChange?.('out');
       return;
+    case 'convert-to-text':
+      options.onChangeType?.('text');
+      return;
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
     }
+    }
+  };
+}
 
-    options.onChangeType?.('text');
+export function createHeadingEnterHandler(options: {
+  block: NoteBlock;
+  text: string;
+  onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onChangeType?: (type: NoteBlock['type']) => void;
+  onIndentChange?: (direction: 'in' | 'out') => void;
+}) {
+  return (enterCtx?: NoteEditorEnterContext) => {
+    const action = resolveHeadingEnterAction({
+      text: options.text,
+      parentBlockId: options.block.parent_block_id ?? null,
+      enterCtx,
+    });
+
+    switch (action.kind) {
+    case 'add-below':
+      options.onAddBelow(action.followType, action.content);
+      return;
+    case 'outdent':
+      options.onIndentChange?.('out');
+      return;
+    case 'convert-to-text':
+      options.onChangeType?.('text');
+      return;
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
+    }
+    }
+  };
+}
+
+export function createToggleBodyEnterHandler(options: {
+  onAddChildBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+}) {
+  return (enterCtx?: NoteEditorEnterContext) => {
+    const action = resolveToggleBodyEnterAction(enterCtx);
+    options.onAddChildBelow(action.blockType, action.content);
   };
 }

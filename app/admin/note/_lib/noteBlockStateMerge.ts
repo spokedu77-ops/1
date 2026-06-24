@@ -9,6 +9,9 @@ import {
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { mergeBlockContentWithStore } from './noteContentPatch';
 
+/** 서버 reconcile에 아직 없는 로컬 블록을 유지하는 최대 시간 (생성 직후만) */
+export const LOCAL_ONLY_BLOCK_GRACE_MS = 5000;
+
 /**
  * React blocks 갱신 전 스토어에만 반영된 최신 content를 병합한다.
  * (타이핑은 syncBlockContent → 스토어, 구조 변경은 setBlocks → React)
@@ -69,18 +72,16 @@ export function resolveBlockTextCaretOffset(block: NoteBlock): number {
 
 /** reconcile 로드 결과를 병합 — 편집 중 content는 스토어 우선, 구조·신규 블록은 서버 반영 */
 export function mergeReconciledBlocks(
-  currentBlocks: NoteBlock[],
+  _currentBlocks: NoteBlock[],
   reconciledBlocks: NoteBlock[],
 ): NoteBlock[] {
   const store = useNoteBlockStore.getState();
   const activeId = store.activeEditor?.blockId;
   const activeDocumentId = store.activeDocumentId;
-  const currentById = new Map(currentBlocks.map((block) => [block.id, block]));
 
   const merged = reconciledBlocks.map((block) => {
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
     const fromStore = store.byId[block.id];
-    const fromCurrent = currentById.get(block.id);
 
     if (block.id === activeId && fromStore?.content) {
       if (activeDocumentId && fromStore.document_id !== activeDocumentId) return block;
@@ -91,32 +92,6 @@ export function mergeReconciledBlocks(
           fromStore.content as Record<string, unknown>,
         ),
       };
-    }
-
-    if (fromStore?.content) {
-      if (activeDocumentId && fromStore.document_id !== activeDocumentId) return block;
-      const serverText = typeof block.content?.text === 'string' ? block.content.text : '';
-      const storeText = typeof fromStore.content?.text === 'string' ? fromStore.content.text : '';
-      const serverHtml = typeof block.content?.html === 'string' ? block.content.html : '';
-      const storeHtml = typeof fromStore.content?.html === 'string' ? fromStore.content.html : '';
-      if (storeText !== serverText || storeHtml !== serverHtml) {
-        return {
-          ...block,
-          content: mergeBlockContentWithStore(
-            block.content as Record<string, unknown> | null | undefined,
-            fromStore.content as Record<string, unknown>,
-          ),
-        };
-      }
-      if (fromCurrent && fromStore.content !== fromCurrent.content) {
-        return {
-          ...block,
-          content: mergeBlockContentWithStore(
-            fromCurrent.content as Record<string, unknown> | null | undefined,
-            fromStore.content as Record<string, unknown>,
-          ),
-        };
-      }
     }
 
     return block;
@@ -133,11 +108,31 @@ export function unionReconciledWithLocalBlocks(
 ): NoteBlock[] {
   const merged = mergeReconciledBlocks(currentBlocks, reconciledBlocks);
   const mergedIds = new Set(merged.map((block) => block.id));
-  const localOnly = currentBlocks.filter(
-    (block) => block.document_id === documentId && !mergedIds.has(block.id),
-  );
+  const now = Date.now();
+  const localOnly = currentBlocks.filter((block) => {
+    if (block.document_id !== documentId || mergedIds.has(block.id)) return false;
+    if (!block.created_at) return false;
+    const createdAt = new Date(block.created_at).getTime();
+    if (!Number.isFinite(createdAt)) return false;
+    return now - createdAt <= LOCAL_ONLY_BLOCK_GRACE_MS;
+  });
   if (localOnly.length === 0) return merged;
   return dedupeNoteBlocksById([...merged, ...localOnly]);
+}
+
+/** idle reconcile이 로컬에서 바꾼 type 등 구조를 서버 스냅샷으로 되돌리려 할 때 */
+export function wouldReconcileRegressLocalStructure(
+  localBlocks: NoteBlock[],
+  mergedBlocks: NoteBlock[],
+): boolean {
+  const localById = new Map(localBlocks.map((block) => [block.id, block]));
+  return mergedBlocks.some((block) => {
+    const local = localById.get(block.id);
+    if (!local) return false;
+    return local.type !== block.type
+      || local.parent_block_id !== block.parent_block_id
+      || local.order_index !== block.order_index;
+  });
 }
 
 /** idle reconcile이 편집 중인 본문을 짧은 서버 스냅샷으로 되돌리려 할 때 */

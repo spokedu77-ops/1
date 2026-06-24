@@ -14,6 +14,8 @@ import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { useNoteBlockStore } from '../../_store/noteBlockStore';
 import { BLOCK_TYPES, toggleNestPaddingPx } from '../../_lib/constants';
 import { filterTurnIntoCommands } from '../../_lib/noteBlockTypeChange';
+import { resolveToggleTitleEnterAction } from '../../_lib/noteNotionBlockBehavior';
+import { createToggleBodyEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { focusWithoutScroll } from '../../_lib/noteEditorScrollGuard';
 import {
   DROP_TARGET_ROW,
@@ -42,7 +44,7 @@ type NoteToggleBlockProps = {
   onContentSync?: (content: Record<string, unknown>) => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onAddBelow: (type?: NoteBlock['type']) => void;
-  onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  onAddChildBelow?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   renderSlashMenuPortal: () => ReactNode;
@@ -90,6 +92,10 @@ export function NoteToggleBlock({
   const [toggleTitleSlashAnchor, setToggleTitleSlashAnchor] = useState<{ top: number; left: number } | null>(null);
 
   const patchToggle = useSyncContentPatch(block, onUpdate, onContentSync);
+
+  const handleToggleBodyEnter = createToggleBodyEnterHandler({
+    onAddChildBelow: (type, content) => onAddChildBelow?.(type ?? 'text', content),
+  });
 
   const title = typeof block.content?.title === 'string'
     ? block.content.title
@@ -175,10 +181,11 @@ export function NoteToggleBlock({
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
-              if (collapsed) {
-                onAddBelow('toggle');
+              const action = resolveToggleTitleEnterAction(collapsed);
+              if (action.kind === 'add-sibling') {
+                onAddBelow(action.blockType);
               } else {
-                onAddChildBelow?.('text');
+                onAddChildBelow?.(action.blockType);
               }
               return;
             }
@@ -208,7 +215,9 @@ export function NoteToggleBlock({
               textClassName="text-[16px] leading-[1.7] text-slate-800"
               field="body"
               tabBehavior="insert-text-indent"
-              enterCreatesBlock={false}
+              enterCreatesBlock={!!onAddChildBelow}
+              enterSplitOnMidBlock={!!onAddChildBelow}
+              onEditorEnter={onAddChildBelow ? handleToggleBodyEnter : undefined}
               onEditorBackspace={false}
               onUpdate={onUpdate}
               onContentSync={onContentSync}

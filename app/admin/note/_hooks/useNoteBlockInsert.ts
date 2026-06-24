@@ -4,6 +4,7 @@ import { useCallback, useRef } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
+import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
 export function useNoteBlockInsert(options: {
@@ -16,7 +17,7 @@ export function useNoteBlockInsert(options: {
   focusedEditorBlockIdRef: React.MutableRefObject<string | null>;
   setLoadingState: (state: LoadingState) => void;
   setError: (error: string | null) => void;
-  triggerSave: () => void;
+  documentEngine: NoteDocumentEngineApi;
   registerCreatedBlockUndo: (block: NoteBlock) => void;
   handleUpdateBlock: (block: NoteBlock, content: Record<string, unknown>) => void;
   focusBlockEditor: (
@@ -46,7 +47,7 @@ export function useNoteBlockInsert(options: {
     focusedEditorBlockIdRef,
     setLoadingState,
     setError,
-    triggerSave,
+    documentEngine,
     registerCreatedBlockUndo,
     handleUpdateBlock,
     focusBlockEditor,
@@ -75,36 +76,26 @@ export function useNoteBlockInsert(options: {
       const blockContent = (insideToggle && baseContent && !baseContentMap.placedInToggle)
         ? { ...baseContent, placedInToggle: true }
         : baseContent;
-      const res = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: selectedId,
-          type,
-          content: blockContent,
-          order_index: clampedIndex,
-          parent_block_id: parentId,
-        }),
-      });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 추가 실패');
-      }
-      const json = (await res.json()) as { block: NoteBlock };
       let orderPayload: { id: string; order_index: number }[] = [];
+      const createdBlock = await documentEngine.persistCreateBlock({
+        documentId: selectedId,
+        blockType: type,
+        content: blockContent as Record<string, unknown>,
+        order_index: clampedIndex,
+        parent_block_id: parentId,
+      });
       setBlocks((prev) => {
-        if (prev.some((item) => item.id === json.block.id)) {
+        if (prev.some((item) => item.id === createdBlock.id)) {
           return prev;
         }
         const latestSiblings = prev
           .filter((b) => (b.parent_block_id ?? null) === parentId)
-          .filter((b) => b.id !== json.block.id)
+          .filter((b) => b.id !== createdBlock.id)
           .sort((a, b) => a.order_index - b.order_index);
         const latestIndex = Math.max(0, Math.min(insertIndex, latestSiblings.length));
         const nextSiblings = [
           ...latestSiblings.slice(0, latestIndex),
-          json.block,
+          createdBlock,
           ...latestSiblings.slice(latestIndex),
         ].map((item, index) => ({ ...item, order_index: index }));
         orderPayload = nextSiblings.map((item) => ({ id: item.id, order_index: item.order_index }));
@@ -112,24 +103,23 @@ export function useNoteBlockInsert(options: {
         const others = prev.filter((item) => !siblingIds.has(item.id));
         return [...others, ...nextSiblings];
       });
-      if (insertOptions?.focus !== false) {
-        focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
+      if (orderPayload.length > 0) {
+        void documentEngine.persistReorder({ orders: orderPayload }).catch((e) => {
+          devLogger.error('[Note] normalizeInsertOrder', e);
+        });
       }
-      if (insertOptions?.registerUndo !== false) registerCreatedBlockUndo(json.block);
-      void fetch('/api/admin/note/blocks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ orders: orderPayload }),
-      }).then(() => triggerSave()).catch((e) => devLogger.error('[Note] normalizeInsertOrder', e));
-      return json.block;
+      if (insertOptions?.focus !== false) {
+        focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
+      }
+      if (insertOptions?.registerUndo !== false) registerCreatedBlockUndo(createdBlock);
+      return createdBlock;
     } catch (e) {
       devLogger.error('[Note] insertBlockAmongSiblings', e);
       setError(e instanceof Error ? e.message : '블록 추가 실패');
       setLoadingState('idle');
       return null;
     }
-  }, [blocksRef, focusBlockEditor, registerCreatedBlockUndo, selectedId, setBlocks, setError, setLoadingState, triggerSave]);
+  }, [blocksRef, documentEngine, focusBlockEditor, registerCreatedBlockUndo, selectedId, setBlocks, setError, setLoadingState]);
 
   const duplicateBlockRecursive = useCallback(async (
     source: NoteBlock,
@@ -189,7 +179,11 @@ export function useNoteBlockInsert(options: {
     await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
   }, [blocksRef, handleCreateSubPage, insertBlockAmongSiblings, selectedId]);
 
-  const handleInsertBlockInParent = useCallback(async (parentBlockId: string, type: NoteBlock['type'] = 'text') => {
+  const handleInsertBlockInParent = useCallback(async (
+    parentBlockId: string,
+    type: NoteBlock['type'] = 'text',
+    content?: Record<string, unknown>,
+  ) => {
     if (!selectedId) return;
     if (type === 'page') {
       const siblings = blocksRef.current
@@ -242,18 +236,18 @@ export function useNoteBlockInsert(options: {
       ? siblings.find((b) => b.id === focusedId) ?? null
       : null;
     if (focusedChild) {
-      await handleInsertBlockAfter(focusedChild, type);
+      await handleInsertBlockAfter(focusedChild, type, content);
       return;
     }
     if (focusedId === parentBlockId) {
-      await insertBlockAmongSiblings(parentBlockId, type, 0);
+      await insertBlockAmongSiblings(parentBlockId, type, 0, content ? { content } : undefined);
       return;
     }
     if (siblings.length > 0) {
-      await handleInsertBlockAfter(siblings[siblings.length - 1], type);
+      await handleInsertBlockAfter(siblings[siblings.length - 1], type, content);
       return;
     }
-    await insertBlockAmongSiblings(parentBlockId, type, 0);
+    await insertBlockAmongSiblings(parentBlockId, type, 0, content ? { content } : undefined);
   }, [
     blocksRef,
     focusedEditorBlockId,
@@ -316,29 +310,18 @@ export function useNoteBlockInsert(options: {
       }
 
       const defaultContent = defaultBlockContent(type);
-      const res = await fetch('/api/admin/note/blocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          documentId: selectedId,
-          type,
-          content: defaultContent,
-          parent_block_id: null,
-        }),
+      const createdBlock = await documentEngine.persistCreateBlock({
+        documentId: selectedId,
+        blockType: type,
+        content: defaultContent as Record<string, unknown>,
+        parent_block_id: null,
       });
-      if (!res.ok) {
-        const j = await res.json().catch(() => null);
-        throw new Error(j?.error || '블록 추가 실패');
-      }
-      const json = (await res.json()) as { block: NoteBlock };
       setBlocks((prev) => {
-        if (prev.some((item) => item.id === json.block.id)) return prev;
-        return [json.block, ...prev];
+        if (prev.some((item) => item.id === createdBlock.id)) return prev;
+        return [createdBlock, ...prev];
       });
-      focusBlockEditor(json.block.id, type === 'toggle' ? 'title' : 'editor');
-      registerCreatedBlockUndo(json.block);
-      triggerSave();
+      focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
+      registerCreatedBlockUndo(createdBlock);
     } catch (e) {
       devLogger.error('[Note] addBlock', e);
       setError(e instanceof Error ? e.message : '추가 실패');
@@ -347,6 +330,7 @@ export function useNoteBlockInsert(options: {
     blocks,
     focusBlockEditor,
     focusedToggleId,
+    documentEngine,
     handleCreateSubPage,
     handleInsertBlockInParent,
     handleUpdateBlock,
@@ -355,7 +339,6 @@ export function useNoteBlockInsert(options: {
     setBlocks,
     setError,
     setLoadingState,
-    triggerSave,
   ]);
 
   return {

@@ -25,10 +25,14 @@ import { NoteTodoBlock } from './NoteTodoBlock';
 import { NoteToggleBlock } from './NoteToggleBlock';
 import { NoteHeadingBlock, isHeadingBlockType } from './NoteHeadingBlock';
 import { NoteListBlock } from './NoteListBlock';
+import { NoteCalloutBlock } from './NoteCalloutBlock';
+import { NoteCodeBlock } from './NoteCodeBlock';
+import { NoteChromeBlockShell } from './NoteChromeBlockShell';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import { useSyncContentPatch } from './useSyncContentPatch';
 import type { NoteEditorEnterContext } from '../NoteEditor';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
+import { handleNotionPageBlockKeyDown } from '../../_lib/noteNotionBlockBehavior';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
 import { useNoteBlockStore } from '../../_store/noteBlockStore';
@@ -73,6 +77,7 @@ function BlockContent({
   block,
   onUpdate,
   onContentSync,
+  onDelete,
   onChangeType,
   onEnter,
   onAddBelow,
@@ -138,7 +143,7 @@ function BlockContent({
   uploadImage?: (file: File) => Promise<string>;
   childBlocks?: NoteBlock[];
   renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
-  onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  onAddChildBelow?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   isInsideToggle?: boolean;
   toggleNestDepth?: number;
@@ -220,7 +225,9 @@ function BlockContent({
     || block.type === 'text'
     || block.type === 'todo'
     || block.type === 'bulletList'
-    || block.type === 'numberedList';
+    || block.type === 'numberedList'
+    || block.type === 'callout'
+    || block.type === 'code';
 
   const renderFormatToolbar = () => null;
 
@@ -316,12 +323,16 @@ function BlockContent({
 
   if (block.type === 'divider') {
     return (
-      <div
+      <NoteChromeBlockShell
+        isFocused={isFocused}
+        autoFocusSignal={autoFocusSignal}
         className={`flex items-center ${isInsideToggle ? 'py-2' : `${rootBlockShell} py-3`}`}
         style={{ marginLeft: `${contentMarginLeft}px` }}
+        onAddBelow={onAddBelow}
+        onDelete={onDelete}
       >
         <div className="flex-1 border-t border-slate-200" />
-      </div>
+      </NoteChromeBlockShell>
     );
   }
 
@@ -557,9 +568,13 @@ function BlockContent({
     }
 
     return (
-      <div
+      <NoteChromeBlockShell
+        isFocused={isFocused}
+        autoFocusSignal={autoFocusSignal}
         className="group relative"
         style={{ marginLeft: `${contentMarginLeft}px` }}
+        onAddBelow={onAddBelow}
+        onDelete={onDelete}
       >
         <div
           className="relative overflow-hidden rounded-lg bg-neutral-100"
@@ -606,14 +621,14 @@ function BlockContent({
           placeholder="캡션 추가"
           className="mt-1.5 w-full bg-transparent text-center text-[13px] text-neutral-400 outline-none placeholder:text-neutral-300 focus:text-neutral-600"
         />
-      </div>
+      </NoteChromeBlockShell>
     );
   }
 
   if (block.type === 'video') {
     const url = typeof block.content?.url === 'string' ? block.content.url : '';
     const embed = resolveVideoEmbedContent(block.content);
-    return (
+    const videoBody = (
       <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow hover:shadow-md">
         <div className="mb-2 flex items-center gap-2">
           <Video className="h-4 w-4 shrink-0 text-slate-400" />
@@ -644,6 +659,21 @@ function BlockContent({
         ) : null}
       </div>
     );
+
+    if (embed) {
+      return (
+        <NoteChromeBlockShell
+          isFocused={isFocused}
+          autoFocusSignal={autoFocusSignal}
+          onAddBelow={onAddBelow}
+          onDelete={onDelete}
+        >
+          {videoBody}
+        </NoteChromeBlockShell>
+      );
+    }
+
+    return videoBody;
   }
 
   if (block.type === 'page') {
@@ -676,14 +706,8 @@ function BlockContent({
             openPage();
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (handleNotionPageBlockKeyDown(e, { isFocused, openPage })) {
               e.preventDefault();
-              openPage();
-              return;
-            }
-            if (e.key === ' ' && isFocused) {
-              e.preventDefault();
-              openPage();
             }
           }}
         >
@@ -699,44 +723,81 @@ function BlockContent({
   }
 
   if (block.type === 'callout') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
-    const icon = typeof block.content?.icon === 'string' && block.content.icon.trim() ? block.content.icon : '💡';
     return (
-      <div className="relative rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2" style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className="mb-1 flex items-center gap-2">
-          <input
-            value={icon}
-            onChange={(e) => syncContentPatch({ icon: e.target.value.slice(0, 2) })}
-            className="w-10 rounded border border-amber-200 bg-white px-1 text-center text-sm"
-          />
-          <span className="flex-1 text-xs font-semibold text-amber-700">콜아웃</span>
-        </div>
-        {renderFormatToolbar()}
-        {renderFormattedTextarea({
-          text,
-          placeholder: '강조 메시지를 입력하세요 (/ 로 블록 변환)',
-          textClassName: 'text-[15px] leading-7 text-slate-800',
-        })}
-        {renderSlashMenuPortal()}
-      </div>
+      <NoteCalloutBlock
+        block={block}
+        contentMarginLeft={contentMarginLeft}
+        inlineRowPadding={inlineRowPadding}
+        rootBlockShell={rootBlockShell}
+        isInsideToggle={isInsideToggle}
+        enterCreatesBlockBelow={enterCreatesBlockBelow}
+        onUpdate={onUpdate}
+        onEnter={onEnter}
+        onAddBelow={onAddBelow}
+        onChangeType={onChangeType}
+        onIndentChange={onIndentChange}
+        onSlashChange={(nextShow, nextQuery) => {
+          setShowSlash(nextShow);
+          setSlashQuery(nextQuery);
+        }}
+        slashHostRef={slashHostRef}
+        renderFormatToolbar={renderFormatToolbar}
+        renderSlashMenuPortal={renderSlashMenuPortal}
+        autoFocusSignal={autoFocusSignal}
+        mergeFocusCaretOffset={mergeFocusCaretOffset}
+        onContentSync={onContentSync}
+        onShowFormatToolbar={onShowFormatToolbar}
+        onHideFormatToolbar={onHideFormatToolbar}
+        onNavigatePrevious={onNavigatePrevious}
+        onNavigateNext={onNavigateNext}
+        onTrackActiveBlock={onTrackActiveBlock}
+        onFocusBlock={onFocusBlock}
+        onEmptyBackspace={onEmptyBackspace}
+        onMergeWithPrevious={onMergeWithPrevious}
+        canMergeWithPrevious={canMergeWithPrevious}
+        uploadImage={uploadImage}
+        onOpenDocument={onOpenDocument}
+        onMultilinePaste={onMultilinePaste}
+      />
     );
   }
 
   if (block.type === 'code') {
-    const text = typeof block.content?.text === 'string' ? block.content.text : '';
     return (
-      <div className="relative rounded-xl border border-slate-200 bg-slate-950 px-4 py-3 shadow-sm" style={{ marginLeft: `${contentMarginLeft}px` }}>
-        <div className="mb-2 flex items-center">
-          <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Code</span>
-        </div>
-        {renderFormattedTextarea({
-          text,
-          placeholder: '코드를 입력하세요 (/ 로 블록 변환)',
-          textClassName: 'font-mono text-[13px] leading-6 text-slate-100',
-          tabBehavior: 'block-indent',
-        })}
-        {renderSlashMenuPortal()}
-      </div>
+      <NoteCodeBlock
+        block={block}
+        contentMarginLeft={contentMarginLeft}
+        inlineRowPadding={inlineRowPadding}
+        rootBlockShell={rootBlockShell}
+        isInsideToggle={isInsideToggle}
+        enterCreatesBlockBelow={enterCreatesBlockBelow}
+        onUpdate={onUpdate}
+        onEnter={onEnter}
+        onAddBelow={onAddBelow}
+        onChangeType={onChangeType}
+        onIndentChange={onIndentChange}
+        onSlashChange={(nextShow, nextQuery) => {
+          setShowSlash(nextShow);
+          setSlashQuery(nextQuery);
+        }}
+        slashHostRef={slashHostRef}
+        renderSlashMenuPortal={renderSlashMenuPortal}
+        autoFocusSignal={autoFocusSignal}
+        mergeFocusCaretOffset={mergeFocusCaretOffset}
+        onContentSync={onContentSync}
+        onShowFormatToolbar={onShowFormatToolbar}
+        onHideFormatToolbar={onHideFormatToolbar}
+        onNavigatePrevious={onNavigatePrevious}
+        onNavigateNext={onNavigateNext}
+        onTrackActiveBlock={onTrackActiveBlock}
+        onFocusBlock={onFocusBlock}
+        onEmptyBackspace={onEmptyBackspace}
+        onMergeWithPrevious={onMergeWithPrevious}
+        canMergeWithPrevious={canMergeWithPrevious}
+        uploadImage={uploadImage}
+        onOpenDocument={onOpenDocument}
+        onMultilinePaste={onMultilinePaste}
+      />
     );
   }
 
@@ -987,7 +1048,7 @@ function SortableBlockRow({
   isDropTarget?: boolean;
   childBlocks?: NoteBlock[];
   renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
-  onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  onAddChildBelow?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onDuplicate?: () => void;
   onCopyBlockLink?: () => void;
@@ -1257,7 +1318,7 @@ function ToggleInlineRow({
   onRequestCaretOffset?: (offset: number) => void;
   nestDepth?: number;
   onFocusBlock?: () => void;
-  onAddChildBelow?: (type?: NoteBlock['type']) => void;
+  onAddChildBelow?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
