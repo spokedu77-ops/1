@@ -1,10 +1,12 @@
 'use client';
 
 import { Check } from 'lucide-react';
+import { getMergedBlockContentBase } from '../../_lib/noteBlockContentResolve';
+import { resolveTodoChecked } from '../../_lib/noteTodoContent';
 import { EMPTY_BLOCK_PLACEHOLDER } from '../../_lib/noteBlockRowUi';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
-import { useSyncContentPatch } from './useSyncContentPatch';
+import { useBlockContentPatch } from './useBlockContentPatch';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
@@ -14,7 +16,8 @@ type NoteTodoBlockProps = {
   inlineRowPadding: string;
   rootBlockShell: string;
   enterCreatesBlockBelow: boolean;
-  onUpdate: (content: Record<string, unknown>) => void;
+  /** applyBlockContentChange 단일 진입점 (syncBlockContent) */
+  onContentPatch: (content: Record<string, unknown>) => void;
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onChangeType: (type: NoteBlock['type']) => void;
@@ -24,7 +27,6 @@ type NoteTodoBlockProps = {
   NoteBlockFormattedFieldProps,
   | 'autoFocusSignal'
   | 'mergeFocusCaretOffset'
-  | 'onContentSync'
   | 'onShowFormatToolbar'
   | 'onHideFormatToolbar'
   | 'onIndentChange'
@@ -46,7 +48,7 @@ export function NoteTodoBlock({
   inlineRowPadding,
   rootBlockShell,
   enterCreatesBlockBelow,
-  onUpdate,
+  onContentPatch,
   onEnter,
   onAddBelow,
   onChangeType,
@@ -54,10 +56,11 @@ export function NoteTodoBlock({
   slashHostRef,
   ...fieldProps
 }: NoteTodoBlockProps) {
-  const checked = !!block.content?.checked;
-  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  const resolved = getMergedBlockContentBase(block);
+  const checked = resolveTodoChecked(resolved);
+  const text = typeof resolved.text === 'string' ? resolved.text : '';
 
-  const patchTodo = useSyncContentPatch(block, onUpdate, fieldProps.onContentSync);
+  const patchTodo = useBlockContentPatch(block, onContentPatch);
 
   const handleTodoEnter = createInlineBlockEnterHandler({
     block,
@@ -91,10 +94,10 @@ export function NoteTodoBlock({
           enterCreatesBlock={enterCreatesBlockBelow}
           enterSplitOnMidBlock={enterCreatesBlockBelow}
           onEditorEnter={enterCreatesBlockBelow ? handleTodoEnter : onEnter}
-          onUpdate={onUpdate}
+          onContentPatch={onContentPatch}
+          onChangeType={onChangeType}
           onSlashChange={onSlashChange}
           slashHostRef={slashHostRef}
-          onChangeType={onChangeType}
           {...fieldProps}
         />
       </div>

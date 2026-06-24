@@ -11,7 +11,6 @@ import {
   resolveHeadingEnterAction,
   resolveInlineBlockEnterAction,
   resolvePageBlockEnterAction,
-  resolveToggleBodyEnterAction,
   resolveToggleTitleEnterAction,
   shouldEditorShiftEnterHardBreak,
 } from './noteNotionBlockBehavior';
@@ -80,26 +79,6 @@ describe('resolveToggleTitleEnterAction', () => {
     expect(resolveToggleTitleEnterAction(false)).toEqual({
       kind: 'add-child',
       blockType: 'text',
-    });
-  });
-});
-
-describe('resolveToggleBodyEnterAction', () => {
-  it('Enter in toggle body adds child text block', () => {
-    expect(resolveToggleBodyEnterAction()).toEqual({
-      kind: 'add-child',
-      blockType: 'text',
-    });
-  });
-
-  it('mid-line Enter splits into child block content', () => {
-    expect(resolveToggleBodyEnterAction({
-      isEmpty: false,
-      split: { beforeText: 'a', beforeHtml: '<p>a</p>', afterText: 'b', afterHtml: '<p>b</p>' },
-    })).toEqual({
-      kind: 'add-child',
-      blockType: 'text',
-      content: { text: 'b', html: '<p>b</p>', depth: 0 },
     });
   });
 });

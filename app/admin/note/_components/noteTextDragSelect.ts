@@ -1,15 +1,19 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, TextSelection } from '@tiptap/pm/state';
+import { crossDragSpanFromOrder } from '@/app/admin/note/_lib/noteCrossSelectSpan';
+import { startTextDragSession } from '../_lib/noteTextDragSession';
+import {
+  buildDocumentCrossBlockMeta,
+  hoverDocumentCaretPos,
+} from '../_lib/noteCrossSelectBlockMeta';
 import {
   applyCrossBlockSelection,
   blockIdFromPoint,
   clearAllCrossSelectState,
   finalizeCrossSelection,
-  restoreIntraBlockSelection,
 } from './noteCrossSelect';
-import { noteBlockMarqueeGuard, setNoteTextDragGuardActive } from '../_lib/noteBlockMarqueeGuard';
-
-const DRAG_THRESHOLD = 3;
+import { getOrderedBlockRowIds } from './noteBlockIdFromPoint';
+import { noteBlockMarqueeGuard } from '../_lib/noteBlockMarqueeGuard';
 
 /** 클릭은 TipTap 기본 처리, 드래그 시 블록 내·블록 간 텍스트 선택 */
 export const NoteTextDragSelectExtension = Extension.create({
@@ -40,80 +44,43 @@ export const NoteTextDragSelectExtension = Extension.create({
                 pos: anchorPos,
                 surface: 'editor' as const,
               };
-              let dragActive = false;
-              let crossBlockActive = false;
-              const startX = event.clientX;
-              const startY = event.clientY;
 
-              const applyIntraBlockRange = (headPos: number) => {
-                const from = Math.min(anchorPos, headPos);
-                const to = Math.max(anchorPos, headPos);
-                const { state } = view;
-                if (state.selection.from === from && state.selection.to === to) return;
-                view.dispatch(
-                  state.tr
-                    .setSelection(TextSelection.create(state.doc, from, to))
-                    .setMeta('addToHistory', false),
-                );
-              };
-
-              const cleanup = () => {
-                setNoteTextDragGuardActive(false);
-                document.removeEventListener('pointermove', onMove);
-                document.removeEventListener('pointerup', onUp);
-                document.removeEventListener('pointercancel', onUp);
-              };
-
-              const onMove = (ev: PointerEvent) => {
-                if (ev.buttons !== 1) return;
-                if (noteBlockMarqueeGuard.active) {
-                  cleanup();
-                  clearAllCrossSelectState();
-                  return;
-                }
-
-                const dx = Math.abs(ev.clientX - startX);
-                const dy = Math.abs(ev.clientY - startY);
-                if (!dragActive) {
-                  if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return;
-                  dragActive = true;
-                  clearAllCrossSelectState();
-                }
-
-                const hoverBlockId = blockIdFromPoint(ev.clientX, ev.clientY);
-
-                if (!hoverBlockId || hoverBlockId === anchorBlockId) {
-                  if (crossBlockActive) {
-                    crossBlockActive = false;
-                    setNoteTextDragGuardActive(false);
-                    restoreIntraBlockSelection(anchor, ev.clientX, ev.clientY);
-                    return;
-                  }
-                  ev.preventDefault();
-                  const headCoords = view.posAtCoords({ left: ev.clientX, top: ev.clientY });
+              startTextDragSession({
+                anchor,
+                startX: event.clientX,
+                startY: event.clientY,
+                getSpanBlockIds: (hoverId) => (
+                  crossDragSpanFromOrder(getOrderedBlockRowIds(), anchor.blockId, hoverId)
+                ),
+                resolveHoverBlockId: (x, y) => blockIdFromPoint(x, y),
+                hoverCaretPos: (blockId, x, y) => (
+                  blockId === anchorBlockId
+                    ? (view.posAtCoords({ left: x, top: y })?.pos ?? view.state.doc.content.size)
+                    : hoverDocumentCaretPos(blockId, x, y)
+                ),
+                getBlockMeta: buildDocumentCrossBlockMeta,
+                onDragStart: () => clearAllCrossSelectState(),
+                onIntraBlock: (x, y) => {
+                  const headCoords = view.posAtCoords({ left: x, top: y });
                   if (!headCoords) return;
-                  applyIntraBlockRange(headCoords.pos);
-                  return;
-                }
-
-                ev.preventDefault();
-                if (!crossBlockActive) {
-                  crossBlockActive = true;
-                  setNoteTextDragGuardActive(true);
-                }
-                applyCrossBlockSelection(anchor, hoverBlockId, ev.clientX, ev.clientY);
-              };
-
-              const onUp = (ev: PointerEvent) => {
-                if (crossBlockActive && dragActive) {
-                  finalizeCrossSelection(anchor, ev.clientX, ev.clientY);
-                }
-                cleanup();
-              };
-
-              document.addEventListener('pointermove', onMove);
-              document.addEventListener('pointerup', onUp);
-              document.addEventListener('pointercancel', onUp);
+                  const from = Math.min(anchorPos, headCoords.pos);
+                  const to = Math.max(anchorPos, headCoords.pos);
+                  view.dispatch(
+                    view.state.tr
+                      .setSelection(TextSelection.create(view.state.doc, from, to))
+                      .setMeta('addToHistory', false),
+                  );
+                },
+                onCrossBlock: (_ranges, x, y) => {
+                  const hoverId = blockIdFromPoint(x, y);
+                  if (!hoverId) return;
+                  applyCrossBlockSelection(anchor, hoverId, x, y);
+                },
+                onFinalize: (_ranges, x, y) => {
+                  finalizeCrossSelection(anchor, x, y);
+                },
+                onAbort: () => clearAllCrossSelectState(),
+              });
 
               return false;
             },
@@ -124,10 +91,7 @@ export const NoteTextDragSelectExtension = Extension.create({
   },
 });
 
-function getNoteEditorBlockId(view: { dom: HTMLElement; state: unknown }): string | null {
-  const editorDom = view.dom;
-  const row = editorDom.closest('[data-note-block-row]');
-  const fromRow = row?.getAttribute('data-block-id');
-  if (fromRow) return fromRow;
-  return null;
+function getNoteEditorBlockId(view: { dom: HTMLElement }): string | null {
+  const row = view.dom.closest('[data-note-block-row]');
+  return row?.getAttribute('data-block-id') ?? null;
 }

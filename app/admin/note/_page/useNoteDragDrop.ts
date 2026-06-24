@@ -15,11 +15,14 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   collectDescendantBlockIds,
+  applyBlockDropPlanInMemory,
   buildReparentContentPatch,
+  flattenVisualBlockIds,
   getBlocksInParent,
   planBlockDropAt,
   planMoveRootBlockGroup,
   sortRootBlocks,
+  topLevelSelectedDragIds,
   type BlockDropPlan,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
@@ -28,6 +31,7 @@ import {
   isDocumentDescendantOf,
   planOrphanSubPageBlockInserts,
 } from '@/app/lib/note/orphanSubPageBlocks';
+import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { postNoteBlock } from '../_lib/noteBlocksApi';
 import { buildBlockTransferPatches } from '../_lib/noteBlockTransfer';
@@ -98,6 +102,7 @@ export function useNoteDragDrop(options: {
   );
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    clearAllNoteTextSelections();
     const activeId = String(event.active.id);
     if (activeId.startsWith('doc-drag:')) {
       setActiveDragDocId(activeId.slice('doc-drag:'.length));
@@ -452,26 +457,108 @@ export function useNoteDragDrop(options: {
 
     if (groupDragIds && groupDragIds.length > 1) {
       const target = resolvedTarget ?? (overBlock ? { blockId: resolvedOverBlockId, position: 'before' as BlockDropPosition } : null);
-      if (target && !groupDragIds.includes(target.blockId) && target.position !== 'inside') {
-        const nextRoots = planMoveRootBlockGroup(
-          prevBlocks,
-          groupDragIds,
-          target.blockId,
-          target.position,
-        );
-        if (nextRoots) {
-          const { normalized, depthPatches } = normalizeDepthByOrder(nextRoots);
-          const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
-          const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
-          setBlocks(nextBlocks);
-          try {
-            await persistOrderAndDepth(normalized, depthPatches);
-          } catch (e) {
-            devLogger.error('[Note] moveBlockGroup', e);
-            setBlocks(prevBlocks);
-            setError(e instanceof Error ? e.message : '블록 묶음 이동 저장 실패');
+      if (target && !groupDragIds.includes(target.blockId)) {
+        if (target.position === 'inside') {
+          const container = prevBlocks.find((block) => block.id === target.blockId);
+          if (container?.type === 'page') {
+            const targetDocId =
+              typeof container.content?.page_document_id === 'string'
+                ? container.content.page_document_id.trim()
+                : '';
+            if (targetDocId && targetDocId !== selectedId) {
+              const visualIds = flattenVisualBlockIds(prevBlocks);
+              const ordered = [...groupDragIds].sort(
+                (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
+              );
+              const roots = topLevelSelectedDragIds(ordered, prevBlocks);
+              const idsToMove = new Set<string>();
+              for (const rootId of roots) {
+                idsToMove.add(rootId);
+                collectDescendantBlockIds(rootId, prevBlocks).forEach((id) => idsToMove.add(id));
+              }
+              const allIds = [...idsToMove];
+              try {
+                await commitNoteDocumentBeforeLeave();
+                noteUndo.pushRestoreBlocksUndo(
+                  mergeBlocksWithStoreContent(prevBlocks),
+                  allIds,
+                );
+                const transferPatches = roots.flatMap((rootId) => {
+                  const descendantIds = collectDescendantBlockIds(rootId, prevBlocks);
+                  return buildBlockTransferPatches(
+                    rootId,
+                    [rootId, ...Array.from(descendantIds)],
+                    targetDocId,
+                  );
+                });
+                await documentEngine.persistTransferBlocks(transferPatches);
+                setBlocks((prev) => prev.filter((block) => !idsToMove.has(block.id)));
+                triggerSave();
+              } catch (e) {
+                devLogger.error('[Note] moveBlockGroupToSubPage', e);
+                setBlocks(prevBlocks);
+                setError(e instanceof Error ? e.message : '하위 페이지로 블록 묶음 이동 실패');
+              }
+              return;
+            }
           }
-          return;
+          if (container?.type === 'toggle') {
+            const visualIds = flattenVisualBlockIds(prevBlocks);
+            const ordered = [...groupDragIds].sort(
+              (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
+            );
+            const undoIds = new Set<string>(ordered);
+            for (const id of ordered) {
+              const movingBlock = prevBlocks.find((block) => block.id === id);
+              if (movingBlock?.parent_block_id) {
+                getBlocksInParent(prevBlocks, movingBlock.parent_block_id).forEach((b) => undoIds.add(b.id));
+              }
+            }
+            getBlocksInParent(prevBlocks, container.id).forEach((b) => undoIds.add(b.id));
+            noteUndo.pushRestoreBlocksUndo(prevBlocks, [...undoIds]);
+
+            let nextBlocks = prevBlocks;
+            try {
+              for (const id of ordered) {
+                const movingBlock = nextBlocks.find((block) => block.id === id);
+                if (!movingBlock) continue;
+                const plan = planBlockDropAt(nextBlocks, id, target.blockId, 'inside');
+                if (!plan) continue;
+                const before = nextBlocks;
+                nextBlocks = applyBlockDropPlanInMemory(nextBlocks, id, plan);
+                await persistBlockReparent(movingBlock, plan, before);
+              }
+              setBlocks(nextBlocks);
+              triggerSave();
+            } catch (e) {
+              devLogger.error('[Note] moveBlockGroupIntoToggle', e);
+              setBlocks(prevBlocks);
+              setError(e instanceof Error ? e.message : '토글 안 블록 묶음 이동 저장 실패');
+            }
+            return;
+          }
+        }
+        if (target.position !== 'inside') {
+          const nextRoots = planMoveRootBlockGroup(
+            prevBlocks,
+            groupDragIds,
+            target.blockId,
+            target.position,
+          );
+          if (nextRoots) {
+            const { normalized, depthPatches } = normalizeDepthByOrder(nextRoots);
+            const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
+            const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
+            setBlocks(nextBlocks);
+            try {
+              await persistOrderAndDepth(normalized, depthPatches);
+            } catch (e) {
+              devLogger.error('[Note] moveBlockGroup', e);
+              setBlocks(prevBlocks);
+              setError(e instanceof Error ? e.message : '블록 묶음 이동 저장 실패');
+            }
+            return;
+          }
         }
       }
     }

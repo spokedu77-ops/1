@@ -2,6 +2,7 @@
 
 import { createHeadingEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
+import { useBlockLiveContent } from './useBlockLiveContent';
 import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
 import type { NoteBlock } from '../../_lib/types';
 
@@ -37,7 +38,7 @@ export function NoteHeadingBlock({
   rootBlockShell,
   isInsideToggle,
   enterCreatesBlockBelow,
-  onUpdate,
+  onContentPatch,
   onEnter,
   onAddBelow,
   onChangeType,
@@ -46,8 +47,9 @@ export function NoteHeadingBlock({
   slashHostRef,
   ...fieldProps
 }: NoteHeadingBlockProps) {
+  const liveContent = useBlockLiveContent(block);
   const config = HEADING_VARIANTS[variant];
-  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  const text = typeof liveContent.text === 'string' ? liveContent.text : '';
   const shell = isInsideToggle ? config.rowClassName : rootBlockShell;
 
   const handleHeadingEnter = createHeadingEnterHandler({
@@ -72,7 +74,7 @@ export function NoteHeadingBlock({
           enterCreatesBlock={enterCreatesBlockBelow}
           enterSplitOnMidBlock={enterCreatesBlockBelow}
           onEditorEnter={enterCreatesBlockBelow ? handleHeadingEnter : onEnter}
-          onUpdate={onUpdate}
+          onContentPatch={onContentPatch}
           onChangeType={onChangeType}
           onIndentChange={onIndentChange}
           onSlashChange={onSlashChange}

@@ -69,30 +69,6 @@ export function resolveToggleTitleEnterAction(collapsed: boolean): NotionToggleT
   return { kind: 'add-child', blockType: 'text' };
 }
 
-/** 토글 본문 Enter — 자식 text 블록 추가 */
-export type NotionToggleBodyEnterAction = {
-  kind: 'add-child';
-  blockType: 'text';
-  content?: Record<string, unknown>;
-};
-
-export function resolveToggleBodyEnterAction(
-  enterCtx?: NoteEditorEnterContext,
-): NotionToggleBodyEnterAction {
-  if (enterCtx?.split) {
-    return {
-      kind: 'add-child',
-      blockType: 'text',
-      content: {
-        text: enterCtx.split.afterText,
-        html: enterCtx.split.afterHtml,
-        depth: 0,
-      },
-    };
-  }
-  return { kind: 'add-child', blockType: 'text' };
-}
-
 /** 제목(heading) Enter — 항상 아래 text 블록, 빈 줄이면 text로 전환 */
 export function resolveHeadingEnterAction(options: {
   text: string;

@@ -9,7 +9,7 @@ export function NoteCodeBlock({
   block,
   contentMarginLeft,
   enterCreatesBlockBelow,
-  onUpdate,
+  onContentPatch,
   onEnter,
   onAddBelow,
   onChangeType,
@@ -49,7 +49,7 @@ export function NoteCodeBlock({
         enterCreatesBlock={enterCreatesBlockBelow}
         enterSplitOnMidBlock={enterCreatesBlockBelow}
         onEditorEnter={enterCreatesBlockBelow ? handleCodeEnter : onEnter}
-        onUpdate={onUpdate}
+        onContentPatch={onContentPatch}
         onChangeType={onChangeType}
         onIndentChange={onIndentChange}
         onSlashChange={onSlashChange}

@@ -127,7 +127,6 @@ export interface FlowEngineOptions {
   colorTheme?:  string;
   motionScale?: number;
   bgmPath?:     string;
-  bgmList?:     string[]; // BGM 목록 — 곡 끝나면 랜덤 다음 곡 재생
   bgImageUrl?:  string;
 }
 
@@ -344,22 +343,6 @@ export class FlowEngine {
       new THREE.TextureLoader().load(this.opts.bgImageUrl, (tex) => {
         if (this.scene) this.scene.background = tex;
       });
-    }
-
-    // BGM 로테이션: 곡 끝나면 랜덤 다음 곡 재생
-    const bgmList = this.opts.bgmList ?? [];
-    if (bgmList.length > 1) {
-      let currentBgm = this.opts.bgmPath ?? null;
-      this.audio.onEnded = async () => {
-        if (this.phase === 'complete') return;
-        const pool = bgmList.filter(p => p !== currentBgm);
-        const next = pool.length > 0
-          ? pool[Math.floor(Math.random() * pool.length)]!
-          : bgmList[Math.floor(Math.random() * bgmList.length)]!;
-        currentBgm = next;
-        await this.audio.loadBgm(next);
-        if (this.getPhase() !== 'complete') this.audio.startMusic();
-      };
     }
   }
 

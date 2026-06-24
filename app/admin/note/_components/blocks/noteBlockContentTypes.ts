@@ -6,6 +6,7 @@ export type NoteBlockFieldBindings = Pick<
   NoteBlockFormattedFieldProps,
   | 'autoFocusSignal'
   | 'mergeFocusCaretOffset'
+  | 'onContentPatch'
   | 'onContentSync'
   | 'onChangeType'
   | 'onShowFormatToolbar'
@@ -32,7 +33,7 @@ export type NoteBlockContentLayout = {
 };
 
 export type NoteBlockContentCallbacks = {
-  onUpdate: (content: Record<string, unknown>) => void;
+  onContentPatch: (content: Record<string, unknown>) => void;
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];

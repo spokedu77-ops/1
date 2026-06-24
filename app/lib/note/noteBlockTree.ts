@@ -87,6 +87,23 @@ export function resolveVisualNavigateTarget<T extends BlockWithMeta>(
   return byId.get(targetId) ?? null;
 }
 
+/** 다중 선택 드래그 — 조상도 선택된 자식은 루트로 세지 않음 */
+export function topLevelSelectedDragIds<T extends NoteBlockLike>(
+  selectedIds: string[],
+  blocks: T[],
+): string[] {
+  const selectedSet = new Set(selectedIds);
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  return selectedIds.filter((id) => {
+    let parentId = byId.get(id)?.parent_block_id ?? null;
+    while (parentId) {
+      if (selectedSet.has(parentId)) return false;
+      parentId = byId.get(parentId)?.parent_block_id ?? null;
+    }
+    return true;
+  });
+}
+
 /** Shift+클릭 등 — 시각적(DFS) 순서로 from~to 사이 블록 id */
 export function getBlockRangeIdsInVisualOrder<T extends NoteBlockLike>(
   blocks: T[],
@@ -373,6 +390,41 @@ export function buildReparentContentPatch(
     delete next.createdInsideToggle;
   }
   return next;
+}
+
+/** 드래그 drop 계획을 메모리 블록 배열에 적용 (단일 블록) */
+export function applyBlockDropPlanInMemory<T extends BlockWithMeta>(
+  blocks: T[],
+  movingId: string,
+  plan: BlockDropPlan<T>,
+): T[] {
+  const moving = blocks.find((block) => block.id === movingId);
+  if (!moving) return blocks;
+
+  const targetMap = new Map(plan.targetSiblings.map((item) => [item.id, item]));
+  const oldParentId = moving.parent_block_id ?? null;
+  const parentChanged = oldParentId !== plan.targetParentId;
+  const oldSiblings = parentChanged
+    ? getBlocksInParent(blocks, oldParentId)
+      .filter((item) => item.id !== movingId)
+      .map((item, index) => ({ ...item, order_index: index }))
+    : [];
+  const oldMap = new Map(oldSiblings.map((item) => [item.id, item]));
+  const contentPatch = buildReparentContentPatch(moving.content, moving.type, plan.placedInToggle);
+
+  return blocks.map((item) => {
+    if (item.id === movingId) {
+      return {
+        ...item,
+        parent_block_id: plan.targetParentId,
+        order_index: plan.targetSiblings.findIndex((sibling) => sibling.id === movingId),
+        content: contentPatch ?? item.content,
+      };
+    }
+    if (targetMap.has(item.id)) return targetMap.get(item.id)!;
+    if (oldMap.has(item.id)) return oldMap.get(item.id)!;
+    return item;
+  });
 }
 
 export type PromoteChildrenOnDeletePatch = {

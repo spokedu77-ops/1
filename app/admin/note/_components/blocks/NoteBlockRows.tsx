@@ -29,13 +29,15 @@ import { NoteCalloutBlock } from './NoteCalloutBlock';
 import { NoteCodeBlock } from './NoteCodeBlock';
 import { NoteChromeBlockShell } from './NoteChromeBlockShell';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
-import { useSyncContentPatch } from './useSyncContentPatch';
+import { useBlockContentPatch } from './useBlockContentPatch';
+import { useBlockLiveContent } from './useBlockLiveContent';
+import { useNoteBlockContentSubscription } from './useNoteBlockContentSubscription';
+import { getMergedBlockContentBase } from '../../_lib/noteBlockContentResolve';
 import type { NoteEditorEnterContext } from '../NoteEditor';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { handleNotionPageBlockKeyDown } from '../../_lib/noteNotionBlockBehavior';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { SlashMenuFixed, BlockPickerMenu, BlockHandleMenu } from '../SlashMenu';
-import { useNoteBlockStore } from '../../_store/noteBlockStore';
 import { VideoEmbedFrame } from '../VideoEmbedFrame';
 import {
   BlockInsideDropSurface,
@@ -75,8 +77,7 @@ import type { NoteBlock } from '../../_lib/types';
 
 function BlockContent({
   block,
-  onUpdate,
-  onContentSync,
+  onContentPatch,
   onDelete,
   onChangeType,
   onEnter,
@@ -107,14 +108,14 @@ function BlockContent({
   onRequestCaretOffset,
   toggleNestDepth = 1,
   onFocusBlock,
+  onFocusBlockById,
   autoFocusTitleSignal = 0,
   numberedListIndex,
   bulletListNestLevel = 0,
   omitExternalizedChildren = false,
 }: {
   block: NoteBlock;
-  onUpdate: (content: any) => void;
-  onContentSync?: (content: any) => void;
+  onContentPatch: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
@@ -152,12 +153,14 @@ function BlockContent({
   mergeFocusCaretOffset?: number;
   onRequestCaretOffset?: (offset: number) => void;
   onFocusBlock?: () => void;
+  onFocusBlockById?: (blockId: string, part?: 'title' | 'editor', caretOffset?: number) => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
   omitExternalizedChildren?: boolean;
 }) {
   const isBlockDragActive = useBlockDragActive();
+  const liveContent = useBlockLiveContent(block);
   const imageLightbox = useNoteImageLightbox();
   const [showSlash, setShowSlash] = useState(false);
   const [slashQuery, setSlashQuery] = useState('');
@@ -169,7 +172,7 @@ function BlockContent({
   const imgFileInputRef = useRef<HTMLInputElement>(null);
   const pageBtnRef = useRef<HTMLButtonElement>(null);
 
-  const syncContentPatch = useSyncContentPatch(block, onUpdate, onContentSync);
+  const patchContent = useBlockContentPatch(block, onContentPatch);
 
   useEffect(() => {
     if (block.type !== 'page' || !isFocused) return;
@@ -227,7 +230,8 @@ function BlockContent({
     || block.type === 'bulletList'
     || block.type === 'numberedList'
     || block.type === 'callout'
-    || block.type === 'code';
+    || block.type === 'code'
+    || isHeadingBlockType(block.type);
 
   const renderFormatToolbar = () => null;
 
@@ -277,8 +281,7 @@ function BlockContent({
       onEditorMergeWithPrevious={onEditorMergeWithPrevious}
       onEditorCanMergeWithPrevious={onEditorCanMergeWithPrevious}
       editorMergeFocusCaretOffset={editorMergeFocusCaretOffset}
-      onUpdate={onUpdate}
-      onContentSync={onContentSync}
+      onContentPatch={onContentPatch}
       onChangeType={onChangeType}
       onShowFormatToolbar={onShowFormatToolbar}
       onHideFormatToolbar={onHideFormatToolbar}
@@ -309,8 +312,7 @@ function BlockContent({
         rootBlockShell={rootBlockShell}
         autoFocusSignal={autoFocusSignal}
         mergeFocusCaretOffset={mergeFocusCaretOffset}
-        onUpdate={onUpdate}
-        onContentSync={onContentSync}
+        onContentPatch={onContentPatch}
         onTrackActiveBlock={onTrackActiveBlock}
         onFocusBlock={onFocusBlock}
         onShowFormatToolbar={onShowFormatToolbar}
@@ -345,12 +347,11 @@ function BlockContent({
           inlineRowPadding={inlineRowPadding}
           rootBlockShell={rootBlockShell}
           enterCreatesBlockBelow={enterCreatesBlockBelow}
-          onUpdate={onUpdate}
+          onContentPatch={onContentPatch}
           onEnter={onEnter}
           onAddBelow={onAddBelow}
           autoFocusSignal={autoFocusSignal}
           mergeFocusCaretOffset={mergeFocusCaretOffset}
-          onContentSync={onContentSync}
           onChangeType={onChangeType}
           onShowFormatToolbar={onShowFormatToolbar}
           onHideFormatToolbar={onHideFormatToolbar}
@@ -387,12 +388,11 @@ function BlockContent({
           rootBlockShell={rootBlockShell}
           isInsideToggle={isInsideToggle}
           enterCreatesBlockBelow={enterCreatesBlockBelow}
-          onUpdate={onUpdate}
+          onContentPatch={onContentPatch}
           onEnter={onEnter}
           onAddBelow={onAddBelow}
           autoFocusSignal={autoFocusSignal}
           mergeFocusCaretOffset={mergeFocusCaretOffset}
-          onContentSync={onContentSync}
           onChangeType={onChangeType}
           onShowFormatToolbar={onShowFormatToolbar}
           onHideFormatToolbar={onHideFormatToolbar}
@@ -435,14 +435,13 @@ function BlockContent({
           renderChildBlock={renderChildBlock}
           toggleNestDepth={toggleNestDepth}
           omitExternalizedChildren={omitExternalizedChildren}
-          onUpdate={onUpdate}
+          onContentPatch={onContentPatch}
           onEnter={onEnter}
           onAddBelow={onAddBelow}
           onChangeType={onChangeType}
           onRequestCaretOffset={onRequestCaretOffset}
           autoFocusSignal={autoFocusSignal}
           mergeFocusCaretOffset={mergeFocusCaretOffset}
-          onContentSync={onContentSync}
           onShowFormatToolbar={onShowFormatToolbar}
           onHideFormatToolbar={onHideFormatToolbar}
           onIndentChange={onIndentChange}
@@ -478,7 +477,7 @@ function BlockContent({
       setImgUploading(true);
       try {
         const uploaded = await uploadImage(file);
-        syncContentPatch({ url: uploaded });
+        patchContent({ url: uploaded });
       } finally {
         setImgUploading(false);
       }
@@ -528,7 +527,7 @@ function BlockContent({
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       const val = (e.target as HTMLInputElement).value.trim();
-                      if (val) syncContentPatch({ url: val });
+                      if (val) patchContent({ url: val });
                       setShowUrlInput(false);
                     }
                     if (e.key === 'Escape') setShowUrlInput(false);
@@ -617,7 +616,7 @@ function BlockContent({
         {/* 캡션 */}
         <input
           value={caption}
-          onChange={(e) => syncContentPatch({ caption: e.target.value })}
+          onChange={(e) => patchContent({ caption: e.target.value })}
           placeholder="캡션 추가"
           className="mt-1.5 w-full bg-transparent text-center text-[13px] text-neutral-400 outline-none placeholder:text-neutral-300 focus:text-neutral-600"
         />
@@ -637,11 +636,7 @@ function BlockContent({
             placeholder="YouTube 또는 Vimeo URL을 붙여넣으세요"
             value={url}
             onChange={(e) => {
-              const base = (useNoteBlockStore.getState().getBlock(block.id)?.content
-                ?? block.content
-                ?? {}) as Record<string, unknown>;
-              const next = { ...base, ...buildVideoBlockContentFromUrl(e.target.value) };
-              onUpdate(next);
+              patchContent(buildVideoBlockContentFromUrl(e.target.value));
             }}
           />
         </div>
@@ -731,7 +726,7 @@ function BlockContent({
         rootBlockShell={rootBlockShell}
         isInsideToggle={isInsideToggle}
         enterCreatesBlockBelow={enterCreatesBlockBelow}
-        onUpdate={onUpdate}
+        onContentPatch={onContentPatch}
         onEnter={onEnter}
         onAddBelow={onAddBelow}
         onChangeType={onChangeType}
@@ -745,7 +740,6 @@ function BlockContent({
         renderSlashMenuPortal={renderSlashMenuPortal}
         autoFocusSignal={autoFocusSignal}
         mergeFocusCaretOffset={mergeFocusCaretOffset}
-        onContentSync={onContentSync}
         onShowFormatToolbar={onShowFormatToolbar}
         onHideFormatToolbar={onHideFormatToolbar}
         onNavigatePrevious={onNavigatePrevious}
@@ -771,7 +765,7 @@ function BlockContent({
         rootBlockShell={rootBlockShell}
         isInsideToggle={isInsideToggle}
         enterCreatesBlockBelow={enterCreatesBlockBelow}
-        onUpdate={onUpdate}
+        onContentPatch={onContentPatch}
         onEnter={onEnter}
         onAddBelow={onAddBelow}
         onChangeType={onChangeType}
@@ -784,7 +778,6 @@ function BlockContent({
         renderSlashMenuPortal={renderSlashMenuPortal}
         autoFocusSignal={autoFocusSignal}
         mergeFocusCaretOffset={mergeFocusCaretOffset}
-        onContentSync={onContentSync}
         onShowFormatToolbar={onShowFormatToolbar}
         onHideFormatToolbar={onHideFormatToolbar}
         onNavigatePrevious={onNavigatePrevious}
@@ -815,8 +808,7 @@ function BlockContent({
         toggleNestDepth={toggleNestDepth}
         omitExternalizedChildren={omitExternalizedChildren}
         autoFocusTitleSignal={autoFocusTitleSignal}
-        onUpdate={onUpdate}
-        onContentSync={onContentSync}
+        onContentPatch={onContentPatch}
         onChangeType={onChangeType}
         onAddBelow={onAddBelow}
         onAddChildBelow={onAddChildBelow}
@@ -828,6 +820,9 @@ function BlockContent({
         onShowFormatToolbar={onShowFormatToolbar}
         onHideFormatToolbar={onHideFormatToolbar}
         onFocusBlock={onFocusBlock}
+        onFocusBlockById={onFocusBlockById}
+        onNavigatePrevious={onNavigatePrevious}
+        onNavigateNext={onNavigateNext}
         uploadImage={uploadImage}
         onOpenDocument={onOpenDocument}
         onSlashChange={(nextShow, nextQuery) => {
@@ -840,7 +835,7 @@ function BlockContent({
   }
 
   // text (default)
-  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  const text = typeof liveContent.text === 'string' ? liveContent.text : '';
   const handleTextEnter = createInlineBlockEnterHandler({
     block,
     followType: 'text',
@@ -979,8 +974,7 @@ function DropInsertLine({ position }: { position: 'top' | 'bottom' }) {
 /* ─── SortableBlockRow ───────────────────────────────────────────────────── */
 function SortableBlockRow({
   block,
-  onUpdate,
-  onContentSync,
+  onContentPatch,
   onDelete,
   onChangeType,
   onEnter,
@@ -1012,13 +1006,13 @@ function SortableBlockRow({
   mergeFocusCaretOffset,
   onRequestCaretOffset,
   onFocusBlock,
+  onFocusBlockById,
   autoFocusTitleSignal = 0,
   numberedListIndex,
   bulletListNestLevel = 0,
 }: {
   block: NoteBlock;
-  onUpdate: (content: any) => void;
-  onContentSync?: (content: any) => void;
+  onContentPatch: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
@@ -1057,10 +1051,20 @@ function SortableBlockRow({
   mergeFocusCaretOffset?: number;
   onRequestCaretOffset?: (offset: number) => void;
   onFocusBlock?: () => void;
+  onFocusBlockById?: (blockId: string, part?: 'title' | 'editor', caretOffset?: number) => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
 }) {
+  useNoteBlockContentSubscription(block.id);
+  const applyBlockColor = useCallback((colorId: string) => {
+    onRecordBlockUndo?.();
+    const next = { ...getMergedBlockContentBase(block) };
+    if (colorId === 'default') delete next.blockColor;
+    else next.blockColor = colorId;
+    onContentPatch(next);
+  }, [block, onContentPatch, onRecordBlockUndo]);
+
   const {
     attributes,
     listeners,
@@ -1087,8 +1091,7 @@ function SortableBlockRow({
 
   const sharedBlockContentProps = {
     block,
-    onUpdate,
-    onContentSync,
+    onContentPatch,
     onDelete,
     onChangeType,
     onEnter,
@@ -1119,6 +1122,7 @@ function SortableBlockRow({
     onRequestCaretOffset,
     toggleNestDepth: 1,
     onFocusBlock,
+    onFocusBlockById,
     autoFocusTitleSignal,
     numberedListIndex,
     bulletListNestLevel,
@@ -1213,13 +1217,7 @@ function SortableBlockRow({
             onDelete={onDelete}
             onTurnInto={(type) => onChangeType(type)}
             onCopyBlockLink={onCopyBlockLink}
-            onColorChange={(colorId) => {
-              onRecordBlockUndo?.();
-              const next = { ...(block.content ?? {}) } as Record<string, unknown>;
-              if (colorId === 'default') delete next.blockColor;
-              else next.blockColor = colorId;
-              onUpdate(next);
-            }}
+            onColorChange={applyBlockColor}
             onClose={() => setHandleMenuAnchor(null)}
           />
         </div>
@@ -1239,8 +1237,7 @@ function SortableBlockRow({
 /* ─── ToggleInlineRow (토글 안 — 블록 UI 없이 인라인) ─────────────────────── */
 function ToggleInlineRow({
   block,
-  onUpdate,
-  onContentSync,
+  onContentPatch,
   onDelete,
   onChangeType,
   onEnter,
@@ -1272,14 +1269,14 @@ function ToggleInlineRow({
   onRequestCaretOffset,
   nestDepth = 1,
   onFocusBlock,
+  onFocusBlockById,
   onAddChildBelow,
   autoFocusTitleSignal = 0,
   numberedListIndex,
   bulletListNestLevel = 0,
 }: {
   block: NoteBlock;
-  onUpdate: (content: any) => void;
-  onContentSync?: (content: any) => void;
+  onContentPatch: (content: any) => void;
   onDelete: () => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
@@ -1318,11 +1315,21 @@ function ToggleInlineRow({
   onRequestCaretOffset?: (offset: number) => void;
   nestDepth?: number;
   onFocusBlock?: () => void;
+  onFocusBlockById?: (blockId: string, part?: 'title' | 'editor', caretOffset?: number) => void;
   onAddChildBelow?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
 }) {
+  useNoteBlockContentSubscription(block.id);
+  const applyBlockColor = useCallback((colorId: string) => {
+    onRecordBlockUndo?.();
+    const next = { ...getMergedBlockContentBase(block) };
+    if (colorId === 'default') delete next.blockColor;
+    else next.blockColor = colorId;
+    onContentPatch(next);
+  }, [block, onContentPatch, onRecordBlockUndo]);
+
   const isListSibling = block.type === 'bulletList' || block.type === 'numberedList';
   const blockTypeLabel = BLOCK_TYPES.find((t) => t.type === block.type)?.label ?? block.type;
   const {
@@ -1373,8 +1380,7 @@ function ToggleInlineRow({
 
   const inlineBlockContentProps = {
     block,
-    onUpdate,
-    onContentSync,
+    onContentPatch,
     onDelete,
     onChangeType,
     onEnter,
@@ -1395,10 +1401,7 @@ function ToggleInlineRow({
     focusedToggleId,
     uploadImage,
     childBlocks,
-    renderChildBlock:
-      block.type === 'toggle' || block.type === 'bulletList' || block.type === 'numberedList'
-        ? renderChildBlock
-        : undefined,
+    renderChildBlock,
     onAddChildBelow,
     onTrackActiveBlock,
     isInsideToggle: true as const,
@@ -1408,6 +1411,7 @@ function ToggleInlineRow({
     onRequestCaretOffset,
     toggleNestDepth: nestDepth,
     onFocusBlock,
+    onFocusBlockById,
     autoFocusTitleSignal,
     numberedListIndex,
     bulletListNestLevel,
@@ -1480,13 +1484,7 @@ function ToggleInlineRow({
             onDelete={onDelete}
             onTurnInto={(type) => onChangeType(type)}
             onCopyBlockLink={onCopyBlockLink}
-            onColorChange={(colorId) => {
-              onRecordBlockUndo?.();
-              const next = { ...(block.content ?? {}) } as Record<string, unknown>;
-              if (colorId === 'default') delete next.blockColor;
-              else next.blockColor = colorId;
-              onUpdate(next);
-            }}
+            onColorChange={applyBlockColor}
             onClose={() => setInlineHandleMenuAnchor(null)}
           />
         </div>

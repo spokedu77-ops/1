@@ -1,6 +1,6 @@
 import type { ClassRecord, UserProfile } from '../types';
 
-export type RecentProgramActivityAction = 'video_started' | 'lesson_opened';
+export type RecentProgramActivityAction = 'video_started' | 'lesson_opened' | 'spomove_started';
 
 export type RecentProgramActivity = {
   ownerId: string;
@@ -35,9 +35,21 @@ export function buildProgramResumeHref(
   programId: string,
   action: RecentProgramActivityAction | 'class_record',
 ) {
+  if (action === 'spomove_started') return `/spokedu-master/spomove/session?preset=${programId}`;
   return action === 'video_started'
     ? `/spokedu-master/library/${programId}?section=video&autoplay=1`
     : `/spokedu-master/library/${programId}`;
+}
+
+export function selectRecentSpomoveActivity(
+  activities: RecentProgramActivity[],
+  ownerId: string,
+): RecentProgramActivity | null {
+  return (
+    activities
+      .filter((a) => a.ownerId === ownerId && a.action === 'spomove_started')
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))[0] ?? null
+  );
 }
 
 export function migrateRecentActivitiesToOwner(
@@ -65,6 +77,15 @@ export function flushPendingRecentProgramActivities(
   );
 }
 
+// SPOMOVE와 일반 수업을 분리하는 도메인 접두사 — 같은 programId 충돌 방지
+function activityDomain(action: RecentProgramActivityAction): 's' | 'l' {
+  return action === 'spomove_started' ? 's' : 'l';
+}
+
+function activityDedupeKey(activity: RecentProgramActivity): string {
+  return `${activityDomain(activity.action)}:${activity.programId}`;
+}
+
 function deduplicateOwnerActivities(
   activities: RecentProgramActivity[],
   ownerId: string,
@@ -75,8 +96,9 @@ function deduplicateOwnerActivities(
   const otherActivities = activities.filter((activity) => activity.ownerId !== ownerId);
   const seen = new Set<string>();
   const deduplicated = ownerActivities.filter((activity) => {
-    if (seen.has(activity.programId)) return false;
-    seen.add(activity.programId);
+    const key = activityDedupeKey(activity);
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
   return [...deduplicated.slice(0, 50), ...otherActivities];
@@ -88,34 +110,48 @@ export function upsertRecentProgramActivity(
   ownerId: string,
 ) {
   const next: RecentProgramActivity = { ...input, ownerId };
+  const inputDomain = activityDomain(input.action);
   const withoutCurrentProgram = activities.filter(
     (activity) =>
       activity.ownerId !== ownerId ||
-      activity.programId !== input.programId,
+      activity.programId !== input.programId ||
+      activityDomain(activity.action) !== inputDomain,
   );
   return deduplicateOwnerActivities([next, ...withoutCurrentProgram], ownerId);
 }
 
+// 일반 수업(video_started, lesson_opened)만 반환 — spomove_started 제외
 export function selectUserRecentProgramActivities(
   activities: RecentProgramActivity[],
   ownerId: string,
 ) {
   return activities
-    .filter((activity) => activity.ownerId === ownerId)
+    .filter((activity) => activity.ownerId === ownerId && activity.action !== 'spomove_started')
     .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt));
 }
 
+// 일반 라이브러리 프로그램에만 적용. SPOMOVE 활동은 포함하지 않는다.
 export function reconcileRecentProgramActivities(
   activities: RecentProgramActivity[],
   programs: Array<{ id: string; title: string }>,
 ) {
   const programsById = new Map(programs.map((program) => [program.id, program]));
   return activities
-    .filter((activity) => programsById.has(activity.programId))
+    .filter((activity) => activity.action !== 'spomove_started' && programsById.has(activity.programId))
     .map((activity) => ({
       ...activity,
       programTitle: programsById.get(activity.programId)?.title ?? activity.programTitle,
     }));
+}
+
+// SPOMOVE preset ID 유효성 확인. programs 배열과 별도로 처리한다.
+export function reconcileRecentSpomoveActivities(
+  activities: RecentProgramActivity[],
+  validPresetIds: ReadonlySet<string>,
+): RecentProgramActivity[] {
+  return activities.filter(
+    (a) => a.action === 'spomove_started' && validPresetIds.has(a.programId),
+  );
 }
 
 export type LatestProgramResume = {

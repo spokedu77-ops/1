@@ -12,6 +12,7 @@ import {
 import { NoteEditableField } from '../NoteEditableField';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteEditorEnterContext } from '../NoteEditor';
+import { useBlockContentPatch } from './useBlockContentPatch';
 
 type NoteTableBlockProps = {
   block: NoteBlock;
@@ -19,8 +20,7 @@ type NoteTableBlockProps = {
   rootBlockShell: string;
   autoFocusSignal?: number;
   mergeFocusCaretOffset?: number;
-  onUpdate: (content: Record<string, unknown>) => void;
-  onContentSync?: (content: Record<string, unknown>) => void;
+  onContentPatch: (content: Record<string, unknown>) => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onFocusBlock?: () => void;
   onShowFormatToolbar?: React.ComponentProps<typeof NoteEditableField>['onShowFormatToolbar'];
@@ -35,8 +35,7 @@ export function NoteTableBlock({
   rootBlockShell,
   autoFocusSignal = 0,
   mergeFocusCaretOffset,
-  onUpdate,
-  onContentSync,
+  onContentPatch,
   onTrackActiveBlock,
   onFocusBlock,
   onShowFormatToolbar,
@@ -49,10 +48,7 @@ export function NoteTableBlock({
   const table = useMemo(() => normalizeTableContent(content), [content]);
   const activeEditor = useNoteBlockStore((state) => state.activeEditor);
 
-  const syncTable = useCallback((nextContent: Record<string, unknown>) => {
-    if (onContentSync) onContentSync(nextContent);
-    else onUpdate(nextContent);
-  }, [onContentSync, onUpdate]);
+  const patchTable = useBlockContentPatch(block, onContentPatch);
 
   const focusCell = useCallback((row: number, col: number) => {
     useNoteBlockStore.getState().setActiveEditor({
@@ -76,7 +72,7 @@ export function NoteTableBlock({
       }
       if (nextRow >= rowCount) {
         const nextContent = appendTableRow(content as Record<string, unknown>);
-        syncTable(nextContent);
+        patchTable(nextContent);
         focusCell(rowCount, 0);
         return;
       }
@@ -89,7 +85,7 @@ export function NoteTableBlock({
       }
     }
     focusCell(nextRow, nextCol);
-  }, [content, focusCell, syncTable, table.rows]);
+  }, [content, focusCell, patchTable, table.rows]);
 
   const renderCell = (rowIndex: number, colIndex: number, isHeader: boolean) => {
     const cell = table.rows[rowIndex]?.[colIndex] ?? { text: '', html: '' };
@@ -119,8 +115,7 @@ export function NoteTableBlock({
             tabBehavior="insert-text-indent"
             onTrackActiveBlock={onTrackActiveBlock}
             onFocusBlock={onFocusBlock}
-            onContentSync={onContentSync}
-            onUpdate={onUpdate}
+            onContentPatch={onContentPatch}
             onNavigatePrevious={() => handleNavigateCell(rowIndex, colIndex, 'previous')}
             onNavigateNext={() => handleNavigateCell(rowIndex, colIndex, 'next')}
             onShowFormatToolbar={onShowFormatToolbar}
@@ -159,7 +154,7 @@ export function NoteTableBlock({
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100"
-          onClick={() => syncTable(appendTableRow(content as Record<string, unknown>))}
+          onClick={() => patchTable(appendTableRow(content as Record<string, unknown>))}
         >
           <Plus className="h-3.5 w-3.5" />
           행 추가
@@ -167,7 +162,7 @@ export function NoteTableBlock({
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100"
-          onClick={() => syncTable(appendTableColumn(content as Record<string, unknown>))}
+          onClick={() => patchTable(appendTableColumn(content as Record<string, unknown>))}
         >
           <Plus className="h-3.5 w-3.5" />
           열 추가

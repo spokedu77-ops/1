@@ -1609,7 +1609,6 @@ export default function MemoryGameApp({
         colorTheme={settings.flowColorTheme}
         motionScale={settings.kidsSafeMode ? 0.5 : 1}
         bgmPath={flowBgmPathRef.current}
-        bgmList={spomoveBgmList}
         bgImageUrl={settings.flowBgImageUrl || undefined}
         onComplete={handleFlowDone}
         onExit={stop}

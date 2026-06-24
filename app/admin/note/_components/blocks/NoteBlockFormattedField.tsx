@@ -22,8 +22,9 @@ export type NoteBlockFormattedFieldProps = {
   onEditorMergeWithPrevious?: () => void;
   onEditorCanMergeWithPrevious?: () => boolean;
   editorMergeFocusCaretOffset?: number;
-  onUpdate: (content: Record<string, unknown>) => void;
+  onUpdate?: (content: Record<string, unknown>) => void;
   onContentSync?: (content: Record<string, unknown>) => void;
+  onContentPatch?: (content: Record<string, unknown>) => void;
   onChangeType?: (trigger: import('../noteBulletInput').MarkdownBlockTrigger) => void;
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
@@ -68,6 +69,7 @@ export function NoteBlockFormattedField({
   editorMergeFocusCaretOffset,
   onUpdate,
   onContentSync,
+  onContentPatch,
   onChangeType,
   onShowFormatToolbar,
   onHideFormatToolbar,
@@ -110,8 +112,7 @@ export function NoteBlockFormattedField({
       onNavigateNext={onNavigateNext}
       onTrackActiveBlock={onTrackActiveBlock}
       onFocusBlock={onFocusBlock}
-      onContentSync={onContentSync}
-      onUpdate={onUpdate}
+      onContentPatch={onContentPatch}
       onChangeType={onChangeType}
       onShowFormatToolbar={onShowFormatToolbar}
       onHideFormatToolbar={onHideFormatToolbar}

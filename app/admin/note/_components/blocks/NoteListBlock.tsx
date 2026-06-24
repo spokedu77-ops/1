@@ -1,7 +1,8 @@
 'use client';
 
 import { Fragment, type ReactNode } from 'react';
-import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '../noteBulletInput';
+import { stripListItemMarkerPrefix, bulletMarkerForLevel } from '../noteBulletInput';
+import { useBlockLiveContent } from './useBlockLiveContent';
 import { createNoteListBlockHandlers } from '../../_lib/noteListBlockHandlers';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
@@ -35,7 +36,7 @@ export function NoteListBlock({
   renderChildBlock,
   toggleNestDepth = 1,
   omitExternalizedChildren = false,
-  onUpdate,
+  onContentPatch,
   onEnter,
   onAddBelow,
   onChangeType,
@@ -47,7 +48,8 @@ export function NoteListBlock({
   slashHostRef,
   ...fieldProps
 }: NoteListBlockProps) {
-  const rawText = typeof block.content?.text === 'string' ? block.content.text : '';
+  const liveContent = useBlockLiveContent(block);
+  const rawText = typeof liveContent.text === 'string' ? liveContent.text : '';
   const text = stripListItemMarkerPrefix(rawText);
 
   const {
@@ -103,7 +105,7 @@ export function NoteListBlock({
             onEditorEnter={enterCreatesBlockBelow
               ? (ctx) => handleListItemEnter(listType, ctx)
               : onEnter}
-            onUpdate={onUpdate}
+            onContentPatch={onContentPatch}
             onSlashChange={onSlashChange}
             slashHostRef={slashHostRef}
             onChangeType={onChangeType}

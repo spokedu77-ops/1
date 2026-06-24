@@ -1,5 +1,9 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { planPromoteDocumentBlocksToRoot } from '@/app/lib/note/noteBlockTree';
+import {
+  applyToggleBodyForwardPlansInMemory,
+  planToggleBodyForwardMigrations,
+} from '@/app/lib/note/toggleBody';
 
 export type PublicNoteDocument = {
   id: string;
@@ -62,6 +66,12 @@ export async function getPublicNoteByToken(token: string) {
     }
   }
 
+  const promoted = planPromoteDocumentBlocksToRoot((blocks ?? []) as PublicNoteBlock[]).blocks;
+  const migrated = applyToggleBodyForwardPlansInMemory(
+    promoted,
+    planToggleBodyForwardMigrations(promoted),
+  );
+
   return {
     document: {
       id: document.id,
@@ -69,7 +79,7 @@ export async function getPublicNoteByToken(token: string) {
       updated_at: document.updated_at,
       share_token: document.share_token,
     } satisfies PublicNoteDocument,
-    blocks: planPromoteDocumentBlocksToRoot((blocks ?? []) as PublicNoteBlock[]).blocks,
+    blocks: migrated,
     publicPages,
   };
 }

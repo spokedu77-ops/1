@@ -1,6 +1,7 @@
 import type { MarkdownBlockTrigger } from '../_components/noteBulletInput';
 import { stripListItemMarkerPrefix, stripMarkdownTriggerForTypeChange } from '../_components/noteBulletInput';
 import { defaultBlockContent } from './constants';
+import { normalizeTodoBlockContentRecord } from './noteTodoContent';
 import type { NoteBlock } from './types';
 
 const TEXT_CARRYING_BLOCK_TYPES = new Set<NoteBlock['type']>([
@@ -122,11 +123,15 @@ export function buildContentForTypeChange(
   const didStripTrigger = text !== rawText;
   const html = typeof prev.html === 'string' ? prev.html : undefined;
   const bodyHtml = typeof prev.bodyHtml === 'string' ? prev.bodyHtml : undefined;
-  return {
+  const next = {
     ...base,
     text,
     ...(!didStripTrigger && html !== undefined ? { html } : {}),
     ...(!didStripTrigger && bodyHtml !== undefined ? { bodyHtml } : {}),
     ...(typeof prev.checked === 'boolean' && nextType === 'todo' ? { checked: prev.checked } : {}),
   };
+  if (nextType === 'todo') {
+    return normalizeTodoBlockContentRecord(next);
+  }
+  return next;
 }

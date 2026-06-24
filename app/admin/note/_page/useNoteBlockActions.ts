@@ -94,6 +94,7 @@ export function useNoteBlockActions(options: {
     extraFieldUpdates?: Array<{ id: string; content: Record<string, unknown> }>,
   ) => Promise<void>;
   documentEngine: NoteDocumentEngineApi;
+  onAfterBlocksRemoved?: (removed: NoteBlock[], nextBlocks: NoteBlock[]) => void;
 }) {
   const {
     blocks,
@@ -129,6 +130,7 @@ export function useNoteBlockActions(options: {
     normalizeDepthByOrder,
     persistBlockReparent,
     documentEngine,
+    onAfterBlocksRemoved,
   } = options;
 
   const { scheduleBlockContentSave, clearPendingContentPatch } = useNoteBlockContentSave({
@@ -227,6 +229,7 @@ export function useNoteBlockActions(options: {
     focusBlockEditor,
     recordBlockUndo,
     ensureMinimumRootTextBlock,
+    onAfterBlocksRemoved,
   });
 
   useEffect(() => {
@@ -403,7 +406,20 @@ export function useNoteBlockActions(options: {
       nextContent = normalizeListBlockContentRecord(nextContent);
     }
     clearPendingContentPatch(block.id);
-    useNoteBlockStore.getState().patchContent(block.id, nextContent);
+
+    const latestBlock = blocksRef.current.find((b) => b.id === block.id) ?? block;
+    applyBlockContentChange({
+      block: { ...latestBlock, type },
+      content: nextContent,
+      blocksRef,
+      setBlocks,
+      recordContentUndoBeforeChange: () => {},
+      scheduleBlockContentSave,
+      onAfterChange: () => bumpNoteReconcileIdle(selectedId),
+    });
+    const patchedContent = (
+      useNoteBlockStore.getState().getBlock(block.id)?.content ?? nextContent
+    ) as Record<string, unknown>;
 
     const wasOnThisBlock = focusedEditorBlockIdRef.current === block.id;
     const nextFocusPart: 'title' | 'editor' =
@@ -415,7 +431,7 @@ export function useNoteBlockActions(options: {
       await documentEngine.persistFieldPatches([{
         id: block.id,
         type,
-        content: nextContent,
+        content: patchedContent,
       }]);
       triggerSave();
       preserveEditorScrollPosition(editorScrollRef.current, () => {});
@@ -429,6 +445,7 @@ export function useNoteBlockActions(options: {
       setError(e instanceof Error ? e.message : '블록 타입 변경 저장 실패');
     }
   }, [
+    blocksRef,
     clearPendingContentPatch,
     documentEngine,
     editorScrollRef,
@@ -436,6 +453,9 @@ export function useNoteBlockActions(options: {
     focusedEditorBlockIdRef,
     focusedEditorPartRef,
     recordBlockUndo,
+    scheduleBlockContentSave,
+    selectedId,
+    setBlocks,
     setError,
     triggerSave,
   ]);

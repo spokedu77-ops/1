@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { reconcileDocumentParents } from '@/app/lib/note/documentParentSync';
 import { loadNoteDocumentBlocksRaw } from '@/app/lib/server/loadNoteDocumentBlocksRaw';
 
 const DOCUMENT_SELECT =
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const [documentsResult, blocks] = await Promise.all([
       documentsQuery,
-      documentId ? loadNoteDocumentBlocksRaw(documentId) : Promise.resolve(null),
+      documentId ? loadNoteDocumentBlocksRaw(documentId, auth.userId) : Promise.resolve(null),
     ]);
 
     if (documentsResult.error) {
@@ -40,8 +41,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: documentsResult.error.message }, { status: 500 });
     }
 
+    const baseDocuments = documentsResult.data ?? [];
+    const documents = await reconcileDocumentParents(supabase, baseDocuments);
+
     return NextResponse.json({
-      documents: documentsResult.data ?? [],
+      documents,
       ...(blocks ? { blocks, documentId } : {}),
     });
   } catch (err) {

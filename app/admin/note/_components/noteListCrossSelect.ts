@@ -1,9 +1,28 @@
 import type { Editor } from '@tiptap/react';
 import { TextSelection } from '@tiptap/pm/state';
+import {
+  isMultiBlockCrossSelect,
+  resolveCrossRanges as resolveCrossRangesCore,
+  type CrossSelectAnchor,
+  type CrossSelectRange,
+  type CrossTextSurface,
+} from '../_lib/noteCrossSelectCore';
+import {
+  buildListCrossBlockMeta,
+  hoverListCaretPos,
+} from '../_lib/noteCrossSelectBlockMeta';
+import {
+  commitCrossSelectRanges,
+  clearUnifiedCrossSelectState,
+  getUnifiedCrossSelectRanges,
+  hasActiveMultiCrossSelect,
+  isListCrossDragActive,
+  shouldSuppressCrossFormatToolbar,
+} from '../_lib/noteCrossSelectState';
+import { startTextDragSession } from '../_lib/noteTextDragSession';
 import { getNoteEditor } from './noteEditorRegistry';
 import {
   applyBlockPreviewCrossHighlight,
-  blockPreviewPlainText,
   clearBlockPreviewCrossHighlight,
   getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
@@ -12,45 +31,20 @@ import {
   applyListCrossHighlight,
   bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
-  syncCrossClipboardSnapshot,
-  syncCrossTextActiveBodyClass,
-  clearCrossClipboardSnapshot,
   type ListCrossRange,
 } from './noteListCrossHighlight';
 import { resolveNoteBlockIdFromPoint } from './noteBlockIdFromPoint';
 
-const DRAG_THRESHOLD = 4;
-const BODY_CROSS_CLASS = 'note-list-cross-active';
-
-type Anchor = {
-  blockId: string;
-  pos: number;
-  surface: 'editor' | 'list-preview' | 'preview';
-};
-
-let anchor: Anchor | null = null;
-let pointerDown = false;
-let dragging = false;
-let listCrossDragActive = false;
-let startX = 0;
-let startY = 0;
-let bound = false;
-let activeCrossRanges: ListCrossRange[] = [];
-
 export function getActiveListCrossRanges(): ListCrossRange[] {
-  return activeCrossRanges;
+  return getUnifiedCrossSelectRanges();
 }
 
 export function hasActiveMultiListCrossSelect(): boolean {
-  return activeCrossRanges.length > 1;
+  return hasActiveMultiCrossSelect();
 }
 
 export function shouldSuppressListFormatToolbar(): boolean {
-  return listCrossDragActive || activeCrossRanges.length > 1;
-}
-
-function syncBodyCrossClass() {
-  document.body.classList.toggle(BODY_CROSS_CLASS, listCrossDragActive);
+  return shouldSuppressCrossFormatToolbar();
 }
 
 function blockIdFromPoint(x: number, y: number, restrictToIds?: readonly string[]): string | null {
@@ -94,113 +88,14 @@ function getListSiblingIds(blockId: string): string[] {
   return [blockId];
 }
 
-function hoverPos(editor: Editor, x: number, y: number): number {
-  const coords = editor.view.posAtCoords({ left: x, top: y });
-  return coords?.pos ?? editor.state.doc.content.size;
-}
-
-function listCaretPos(blockId: string, clientX: number, clientY: number): number {
-  const editor = getNoteEditor(blockId);
-  if (editor) return hoverPos(editor, clientX, clientY);
-  if (getBlockPreviewTextRoot(blockId)) {
-    return hoverBlockPreviewTextPos(blockId, clientX, clientY);
-  }
-  return 0;
-}
-
-function listTextEnd(blockId: string): number {
-  const editor = getNoteEditor(blockId);
-  if (editor) return editor.state.doc.content.size;
-  return blockPreviewPlainText(blockId).length;
-}
-
 /** 비활성 목록 블록은 preview DOM — editor fallback 시 from=1 오프셋 버그 */
 export function resolveListCrossSurface(
   hasEditor: boolean,
   hasPreviewRoot: boolean,
-): ListCrossRange['surface'] {
+): CrossTextSurface {
   if (hasEditor) return 'editor';
   if (hasPreviewRoot) return 'preview';
   return 'preview';
-}
-
-function listCrossSurface(blockId: string): ListCrossRange['surface'] {
-  return resolveListCrossSurface(
-    !!getNoteEditor(blockId),
-    !!getBlockPreviewTextRoot(blockId),
-  );
-}
-
-function resolveCrossRanges(
-  siblings: string[],
-  anchorState: Anchor,
-  hoverId: string,
-  hoverCaretPos: number,
-): ListCrossRange[] {
-  const anchorIdx = siblings.indexOf(anchorState.blockId);
-  const hoverIdx = siblings.indexOf(hoverId);
-  if (anchorIdx < 0 || hoverIdx < 0) return [];
-
-  const lo = Math.min(anchorIdx, hoverIdx);
-  const hi = Math.max(anchorIdx, hoverIdx);
-  const ranges: ListCrossRange[] = [];
-
-  for (let i = lo; i <= hi; i += 1) {
-    const blockId = siblings[i];
-    const surface = listCrossSurface(blockId);
-    const docEnd = listTextEnd(blockId);
-    let from = surface === 'editor' ? 1 : 0;
-    let to = docEnd;
-
-    if (lo === hi) {
-      from = Math.min(anchorState.pos, hoverCaretPos);
-      to = Math.max(anchorState.pos, hoverCaretPos);
-    } else if (i === anchorIdx && i === lo) {
-      if (anchorIdx < hoverIdx) {
-        from = anchorState.pos;
-        to = docEnd;
-      } else {
-        from = hoverCaretPos;
-        to = docEnd;
-      }
-    } else if (i === anchorIdx && i === hi) {
-      if (anchorIdx < hoverIdx) {
-        from = surface === 'editor' ? 1 : 0;
-        to = hoverCaretPos;
-      } else {
-        from = surface === 'editor' ? 1 : 0;
-        to = anchorState.pos;
-      }
-    } else if (i === hoverIdx && i === lo) {
-      if (hoverIdx < anchorIdx) {
-        from = hoverCaretPos;
-        to = docEnd;
-      } else {
-        from = anchorState.pos;
-        to = docEnd;
-      }
-    } else if (i === hoverIdx && i === hi) {
-      if (hoverIdx < anchorIdx) {
-        from = surface === 'editor' ? 1 : 0;
-        to = anchorState.pos;
-      } else {
-        from = surface === 'editor' ? 1 : 0;
-        to = hoverCaretPos;
-      }
-    }
-
-    ranges.push({ blockId, from, to, surface });
-  }
-
-  return ranges;
-}
-
-function clearAllCrossHighlights(siblings: string[]) {
-  siblings.forEach((id) => {
-    const editor = getNoteEditor(id);
-    if (editor) clearListCrossHighlight(editor);
-    clearBlockPreviewCrossHighlight(id);
-  });
 }
 
 function collapseEditorSelection(editor: Editor, pos?: number) {
@@ -215,15 +110,7 @@ function collapseEditorSelection(editor: Editor, pos?: number) {
   );
 }
 
-function suppressNativeSelections(siblings: string[], activeBlockId?: string) {
-  siblings.forEach((id) => {
-    if (id === activeBlockId) return;
-    const editor = getNoteEditor(id);
-    if (editor) collapseEditorSelection(editor, 1);
-  });
-}
-
-function applyCrossDecorations(ranges: ListCrossRange[]) {
+function applyCrossDecorations(ranges: CrossSelectRange[]) {
   const touched = new Set<string>();
   ranges.forEach(({ blockId, from, to, surface }) => {
     if (surface === 'list-preview' || surface === 'preview') {
@@ -246,36 +133,108 @@ function applyCrossDecorations(ranges: ListCrossRange[]) {
   });
 }
 
-function commitListCrossRanges(ranges: ListCrossRange[]) {
-  activeCrossRanges = ranges;
-  if (ranges.length > 1) syncCrossClipboardSnapshot(ranges);
-  syncCrossTextActiveBodyClass();
+function suppressNativeSelections(siblings: string[], activeBlockId?: string) {
+  siblings.forEach((id) => {
+    if (id === activeBlockId) return;
+    const editor = getNoteEditor(id);
+    if (editor) collapseEditorSelection(editor, 1);
+  });
+}
+
+function clearAllCrossHighlights(siblings: string[]) {
+  siblings.forEach((id) => {
+    const editor = getNoteEditor(id);
+    if (editor) clearListCrossHighlight(editor);
+    clearBlockPreviewCrossHighlight(id);
+  });
 }
 
 function clearCrossSelectState() {
-  activeCrossRanges = [];
-  listCrossDragActive = false;
-  clearCrossClipboardSnapshot();
-  syncBodyCrossClass();
-  syncCrossTextActiveBodyClass();
+  clearUnifiedCrossSelectState();
 }
 
-/** 싱글톤 에디터 전환 후에도 형제 목록 교차 선택 하이라이트를 다시 그린다 */
 export function reapplyActiveListCrossDecorations() {
-  if (activeCrossRanges.length === 0) return;
-  const siblings = getListSiblingIds(activeCrossRanges[0].blockId);
-  applyCrossDecorations(activeCrossRanges);
+  const ranges = getUnifiedCrossSelectRanges();
+  if (ranges.length === 0) return;
+  const siblings = getListSiblingIds(ranges[0].blockId);
+  applyCrossDecorations(ranges);
   suppressNativeSelections(siblings);
 }
 
-/** 싱글톤 에디터 블록 전환 시 목록 크로스 선택·하이라이트 해제 */
 export function clearActiveListCrossSelectState() {
-  if (activeCrossRanges.length > 0) {
-    const siblings = getListSiblingIds(activeCrossRanges[0].blockId);
+  if (getUnifiedCrossSelectRanges().length > 0) {
+    const siblings = getListSiblingIds(getUnifiedCrossSelectRanges()[0].blockId);
     clearAllCrossHighlights(siblings);
   }
   clearCrossSelectState();
 }
+
+function beginListTextDragSession(anchor: CrossSelectAnchor, startX: number, startY: number) {
+  const siblings = getListSiblingIds(anchor.blockId);
+  startTextDragSession({
+    anchor,
+    startX,
+    startY,
+    getSpanBlockIds: () => siblings,
+    resolveHoverBlockId: (x, y) => blockIdFromPoint(x, y, siblings),
+    hoverCaretPos: (blockId, x, y) => hoverListCaretPos(blockId, x, y),
+    getBlockMeta: buildListCrossBlockMeta,
+    onDragStart: () => clearActiveListCrossSelectState(),
+    onIntraBlock: (x, y) => {
+      if (anchor.surface === 'editor') {
+        const editor = getNoteEditor(anchor.blockId);
+        if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return;
+        const coords = editor.view.posAtCoords({ left: x, top: y });
+        const caretPos = coords?.pos ?? editor.state.doc.content.size;
+        const from = Math.min(anchor.pos, caretPos);
+        const to = Math.max(anchor.pos, caretPos);
+        if (to > from) {
+          editor.chain().focus().setTextSelection({ from, to }).run();
+        }
+        return;
+      }
+      const caret = hoverBlockPreviewTextPos(anchor.blockId, x, y);
+      const from = Math.min(anchor.pos, caret);
+      const to = Math.max(anchor.pos, caret);
+      if (to > from) {
+        const ranges = [{ blockId: anchor.blockId, from, to, surface: anchor.surface }];
+        commitCrossSelectRanges(ranges, { listDrag: false });
+        applyBlockPreviewCrossHighlight(anchor.blockId, from, to);
+      } else {
+        clearActiveListCrossSelectState();
+      }
+    },
+    onCrossBlock: (ranges, x, y) => {
+      if (!isMultiBlockCrossSelect(ranges)) return;
+      commitCrossSelectRanges(ranges, { listDrag: true });
+      suppressNativeSelections(siblings, blockIdFromPoint(x, y, siblings) ?? undefined);
+      applyCrossDecorations(ranges);
+      document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
+    },
+    onFinalize: (ranges, x, y) => {
+      if (!isMultiBlockCrossSelect(ranges)) {
+        clearActiveListCrossSelectState();
+        return;
+      }
+      commitCrossSelectRanges(ranges, { listDrag: false });
+      const hoverId = blockIdFromPoint(x, y, siblings) ?? anchor.blockId;
+      const focusRange = ranges.find((range) => range.blockId === hoverId) ?? ranges[ranges.length - 1];
+      suppressNativeSelections(siblings, focusRange.blockId);
+      applyCrossDecorations(ranges);
+      const focusEditor = getNoteEditor(focusRange.blockId);
+      if (focusEditor) {
+        focusEditor.commands.focus();
+        collapseEditorSelection(focusEditor, focusRange.to);
+      }
+      document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
+    },
+    onAbort: () => {
+      if (isListCrossDragActive()) clearActiveListCrossSelectState();
+    },
+  });
+}
+
+let bound = false;
 
 function onPointerDown(e: PointerEvent) {
   if (e.button !== 0) return;
@@ -283,10 +242,8 @@ function onPointerDown(e: PointerEvent) {
     document.body.style.userSelect = '';
   }
   if (!isListTextTarget(e.target)) {
-    if (activeCrossRanges.length > 0) {
-      const siblings = getListSiblingIds(activeCrossRanges[0].blockId);
-      clearAllCrossHighlights(siblings);
-      clearCrossSelectState();
+    if (getUnifiedCrossSelectRanges().length > 0) {
+      clearActiveListCrossSelectState();
     }
     return;
   }
@@ -298,132 +255,25 @@ function onPointerDown(e: PointerEvent) {
   const previewRoot = getBlockPreviewTextRoot(blockId);
   if (!editor && !previewRoot) return;
 
-  const siblings = getListSiblingIds(blockId);
-  if (activeCrossRanges.length > 0) {
-    clearAllCrossHighlights(siblings);
-    clearCrossSelectState();
-  }
-
   if (editor) {
     const coords = editor.view.posAtCoords({ left: e.clientX, top: e.clientY });
-    anchor = { blockId, pos: coords?.pos ?? 1, surface: 'editor' };
-  } else {
-    anchor = {
+    beginListTextDragSession(
+      { blockId, pos: coords?.pos ?? 1, surface: 'editor' },
+      e.clientX,
+      e.clientY,
+    );
+    return;
+  }
+
+  beginListTextDragSession(
+    {
       blockId,
       pos: hoverBlockPreviewTextPos(blockId, e.clientX, e.clientY),
       surface: 'preview',
-    };
-  }
-  pointerDown = true;
-  dragging = false;
-  startX = e.clientX;
-  startY = e.clientY;
-}
-
-function onPointerMove(e: PointerEvent) {
-  if (!pointerDown || !anchor || e.buttons !== 1) return;
-
-  const dx = Math.abs(e.clientX - startX);
-  const dy = Math.abs(e.clientY - startY);
-  if (dx < DRAG_THRESHOLD && dy < DRAG_THRESHOLD) return;
-
-  const siblings = getListSiblingIds(anchor.blockId);
-  const hoverId = blockIdFromPoint(e.clientX, e.clientY, siblings);
-  if (!hoverId) return;
-
-  if (!siblings.includes(hoverId)) return;
-
-  // 같은 블록 안 드래그는 TipTap 기본 텍스트 선택에 맡김
-  if (hoverId === anchor.blockId) {
-    if (listCrossDragActive) {
-      listCrossDragActive = false;
-      syncBodyCrossClass();
-      clearAllCrossHighlights(siblings);
-      // 잠시 형제 블록으로 이탈했다 돌아온 경우 — anchor 블록 선택 복원
-      const anchorEditor = getNoteEditor(anchor.blockId);
-      if (anchorEditor && !(anchorEditor as { isDestroyed?: boolean }).isDestroyed) {
-        const caretPos = hoverPos(anchorEditor, e.clientX, e.clientY);
-        const from = Math.min(anchor.pos, caretPos);
-        const to = Math.max(anchor.pos, caretPos);
-        if (to > from) {
-          anchorEditor.chain().focus().setTextSelection({ from, to }).run();
-        }
-      }
-    }
-    return;
-  }
-
-  dragging = true;
-
-  const hoverCaret = listCaretPos(hoverId, e.clientX, e.clientY);
-
-  const ranges = resolveCrossRanges(
-    siblings,
-    anchor,
-    hoverId,
-    hoverCaret,
+    },
+    e.clientX,
+    e.clientY,
   );
-
-  if (ranges.length > 1) {
-    e.preventDefault();
-    listCrossDragActive = true;
-    commitListCrossRanges(ranges);
-    syncBodyCrossClass();
-    suppressNativeSelections(siblings, hoverId);
-    applyCrossDecorations(ranges);
-    document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
-  }
-}
-
-function onPointerUp(e: PointerEvent) {
-  if (!pointerDown) return;
-
-  const wasDragging = dragging;
-  const currentAnchor = anchor;
-
-  pointerDown = false;
-  dragging = false;
-  anchor = null;
-
-  if (!wasDragging || !currentAnchor) {
-    listCrossDragActive = false;
-    syncBodyCrossClass();
-    return;
-  }
-
-  const siblings = getListSiblingIds(currentAnchor.blockId);
-  const hoverId = blockIdFromPoint(e.clientX, e.clientY, siblings) ?? currentAnchor.blockId;
-
-  const ranges = resolveCrossRanges(
-    siblings,
-    currentAnchor,
-    hoverId,
-    listCaretPos(hoverId, e.clientX, e.clientY),
-  );
-
-  listCrossDragActive = false;
-
-  if (ranges.length <= 1) {
-    clearCrossSelectState();
-    return;
-  }
-
-  e.preventDefault();
-  e.stopPropagation();
-
-  const focusRange = ranges.find((range) => range.blockId === hoverId) ?? ranges[ranges.length - 1];
-
-  commitListCrossRanges(ranges);
-  syncBodyCrossClass();
-  suppressNativeSelections(siblings, focusRange.blockId);
-  applyCrossDecorations(ranges);
-  const focusEditor = getNoteEditor(focusRange.blockId);
-  if (focusEditor) {
-    focusEditor.commands.focus();
-    collapseEditorSelection(focusEditor, focusRange.to);
-  }
-
-  document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
 }
 
 export function bindNoteListCrossTextSelect() {
@@ -431,23 +281,18 @@ export function bindNoteListCrossTextSelect() {
   bound = true;
   bindListCrossHighlightEditorLookup(getNoteEditor);
   document.addEventListener('pointerdown', onPointerDown, true);
-  document.addEventListener('pointermove', onPointerMove, true);
-  document.addEventListener('pointerup', onPointerUp, true);
-  document.addEventListener('pointercancel', onPointerUp, true);
   return () => {
     bound = false;
     document.removeEventListener('pointerdown', onPointerDown, true);
-    document.removeEventListener('pointermove', onPointerMove, true);
-    document.removeEventListener('pointerup', onPointerUp, true);
-    document.removeEventListener('pointercancel', onPointerUp, true);
-    pointerDown = false;
-    dragging = false;
-    anchor = null;
-    clearCrossSelectState();
-    const siblings = activeCrossRanges[0]
-      ? getListSiblingIds(activeCrossRanges[0].blockId)
-      : [];
-    clearAllCrossHighlights(siblings);
-    activeCrossRanges = [];
+    clearActiveListCrossSelectState();
   };
+}
+
+export function resolveListCrossRanges(
+  siblings: string[],
+  anchor: CrossSelectAnchor,
+  hoverId: string,
+  hoverCaretPos: number,
+): CrossSelectRange[] {
+  return resolveCrossRangesCore(siblings, anchor, hoverId, hoverCaretPos, buildListCrossBlockMeta);
 }

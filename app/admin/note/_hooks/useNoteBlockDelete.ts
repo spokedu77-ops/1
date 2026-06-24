@@ -40,6 +40,7 @@ export function useNoteBlockDelete(options: {
   focusBlockEditor: (blockId: string | null, part?: 'title' | 'editor', caretOffset?: number) => void;
   recordBlockUndo: (blockIds: string[]) => void;
   ensureMinimumRootTextBlock: () => Promise<void>;
+  onAfterBlocksRemoved?: (removed: NoteBlock[], nextBlocks: NoteBlock[]) => void;
 }) {
   const {
     blocksRef,
@@ -61,6 +62,7 @@ export function useNoteBlockDelete(options: {
     focusBlockEditor,
     recordBlockUndo,
     ensureMinimumRootTextBlock,
+    onAfterBlocksRemoved,
   } = options;
 
   const finalizeBlockDelete = useCallback(async (
@@ -145,6 +147,7 @@ export function useNoteBlockDelete(options: {
         skipDeleteUndo,
         deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
       });
+      onAfterBlocksRemoved?.([block], nextBlocks);
       const rootsAfterDelete = sortRootBlocks(
         nextBlocks.filter(
           (b) => b.document_id === block.document_id && (b.parent_block_id ?? null) === null,
@@ -164,6 +167,7 @@ export function useNoteBlockDelete(options: {
     ensureMinimumRootTextBlock,
     finalizeBlockDelete,
     focusBlockEditor,
+    onAfterBlocksRemoved,
     setError,
   ]);
 
@@ -208,6 +212,7 @@ export function useNoteBlockDelete(options: {
           ?? targets[targets.length - 1]
           ?? null,
       });
+      onAfterBlocksRemoved?.(targets, plan.nextBlocks);
       const rootsAfterDelete = sortRootBlocks(
         plan.nextBlocks.filter(
           (b) => selectedId && b.document_id === selectedId && (b.parent_block_id ?? null) === null,
@@ -227,6 +232,7 @@ export function useNoteBlockDelete(options: {
     ensureMinimumRootTextBlock,
     finalizeBlockDelete,
     handleDeleteBlock,
+    onAfterBlocksRemoved,
     selectedId,
     setError,
   ]);

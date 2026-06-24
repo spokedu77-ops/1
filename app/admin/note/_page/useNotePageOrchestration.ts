@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { devLogger } from '@/app/lib/logging/devLogger';
+import { getChildDocumentIdFromPageContent } from '@/app/lib/note/documentParentSync';
 import { useAppSidebar } from '@/app/providers/AppSidebarProvider';
 import { useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
 import type { NoteFormatToolbarApi } from '../_components/NoteFormatToolbarHost';
@@ -16,6 +18,11 @@ import { useNoteBlockActions } from './useNoteBlockActions';
 import { useNoteBlockSelection } from './useNoteBlockSelection';
 import { useNotePageChrome } from './useNotePageChrome';
 import type { LoadingState, NoteBlock } from '../_lib/types';
+import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
+import {
+  applyParentPatchesToDocuments,
+  planParentPatchesForDocumentBlocks,
+} from '../_lib/noteDocumentParentClient';
 
 /** NotePageContext value 조립 — 문서·블록·선택·DnD 훅 wiring */
 export function useNotePageOrchestration(): NotePageContextValue {
@@ -91,6 +98,50 @@ export function useNotePageOrchestration(): NotePageContextValue {
       prev && prev.documentId !== docData.selectedId ? null : prev
     ));
   }, [docData.selectedId]);
+
+  const handleAfterIdleReconcile = useCallback(() => {
+    void docData.reloadDocuments();
+  }, [docData.reloadDocuments]);
+
+  const syncDocumentParentsFromBlocks = useCallback((
+    parentDocumentId: string,
+    blocksSnapshot: NoteBlock[],
+  ) => {
+    const patches = planParentPatchesForDocumentBlocks(
+      docData.documents,
+      parentDocumentId,
+      blocksSnapshot,
+    );
+    if (patches.length === 0) return;
+    docData.setDocuments((prev) => applyParentPatchesToDocuments(prev, patches));
+    for (const patch of patches) {
+      void enqueueDocumentPatch(patch).catch((e) => {
+        devLogger.error('[Note] document parent patch', e);
+      });
+    }
+  }, [docData.documents, docData.setDocuments]);
+
+  const handleAfterBlocksRemoved = useCallback((
+    removed: NoteBlock[],
+    nextBlocks: NoteBlock[],
+  ) => {
+    if (!docData.selectedId) return;
+    for (const block of removed) {
+      if (block.type !== 'page') continue;
+      const childId = getChildDocumentIdFromPageContent(
+        block.content as Record<string, unknown>,
+      );
+      if (!childId) continue;
+      docData.setDocuments((prev) => applyParentPatchesToDocuments(prev, [
+        { id: childId, parent_id: null },
+      ]));
+      void enqueueDocumentPatch({ id: childId, parent_id: null }).catch((e) => {
+        devLogger.error('[Note] detach child document', e);
+      });
+    }
+    syncDocumentParentsFromBlocks(docData.selectedId, nextBlocks);
+  }, [docData.selectedId, docData.setDocuments, syncDocumentParentsFromBlocks]);
+
   const blockData = useNoteBlockData({
     selectedId: docData.selectedId,
     docTab,
@@ -98,6 +149,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     setPendingDeleteUndo,
     bootstrapBlocks,
     triggerSaveRef,
+    onAfterIdleReconcile: handleAfterIdleReconcile,
   });
   const editorFocus = useNoteEditorFocus({
     blocksRef: blockData.blocksRef,
@@ -272,6 +324,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     normalizeDepthByOrder: dragDrop.normalizeDepthByOrder,
     persistBlockReparent: dragDrop.persistBlockReparent,
     documentEngine: blockData.documentEngine,
+    onAfterBlocksRemoved: handleAfterBlocksRemoved,
   });
 
   const selection = useNoteBlockSelection({

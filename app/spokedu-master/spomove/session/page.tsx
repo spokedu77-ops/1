@@ -23,6 +23,7 @@ import {
   SPOMOVE_THINKING_LEVEL_LABELS,
   getOfficialSpomovePresetGuide,
 } from '../officialSpomovePresetGuides';
+import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 
 type SessionState = 'idle' | 'running' | 'done';
 type LaunchMode = 'projector' | 'mobile' | 'class';
@@ -189,6 +190,7 @@ function SpomoveSessionContent() {
   const soundEnabled = searchParams.get('sound') !== 'off';
   const programId = searchParams.get('program') ?? '';
   const programs = useMasterStore((state) => state.programs);
+  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
   const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
   const selectedBgmPath = useMemo(() => {
@@ -257,7 +259,14 @@ function SpomoveSessionContent() {
       player.fadeIn(180);
     }
     setState('running');
-  }, [bgmLoading, launchMode, officialAccess, officialPreset, selectedBgmPath, soundEnabled, stopBgm]);
+    const displayModel = getSpomovePresetDisplayModel(officialPreset);
+    recordRecentProgramActivity({
+      programId: officialPreset.id,
+      programTitle: displayModel.displayTitle,
+      action: 'spomove_started',
+      occurredAt: new Date().toISOString(),
+    });
+  }, [bgmLoading, launchMode, officialAccess, officialPreset, recordRecentProgramActivity, selectedBgmPath, soundEnabled, stopBgm]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

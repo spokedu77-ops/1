@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
     const skipReconcile = searchParams.get('skipReconcile') === 'true';
     const blocks = skipReconcile
-      ? await loadNoteDocumentBlocksRaw(documentId)
+      ? await loadNoteDocumentBlocksRaw(documentId, auth.userId)
       : await loadNoteDocumentBlocks(documentId, auth.userId);
     return NextResponse.json({ blocks });
   } catch (err) {

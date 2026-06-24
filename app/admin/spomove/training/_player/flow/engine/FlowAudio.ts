@@ -23,8 +23,6 @@ export class FlowAudio {
   private bgmSource: AudioBufferSourceNode | null = null;
   private musicTimer: ReturnType<typeof setInterval> | null = null;
   private musicStartTime = 0;
-  /** BGM 트랙이 자연 종료됐을 때 호출 — 랜덤 다음 곡 선택에 사용 */
-  onEnded: (() => void) | null = null;
 
   async init(): Promise<void> {
     if (this.ctx) return;
@@ -86,11 +84,7 @@ export class FlowAudio {
     if (this.bgmBuffer && this.bgmGain) {
       this.bgmSource = this.ctx.createBufferSource();
       this.bgmSource.buffer = this.bgmBuffer;
-      if (this.onEnded) {
-        this.bgmSource.onended = () => { this.onEnded?.(); };
-      } else {
-        this.bgmSource.loop = true;
-      }
+      this.bgmSource.loop = true;
       this.bgmSource.connect(this.bgmGain);
       this.bgmSource.start();
       return;
@@ -116,7 +110,6 @@ export class FlowAudio {
     this.musicStartTime = 0;
     if (this.musicTimer) { clearInterval(this.musicTimer); this.musicTimer = null; }
     if (this.bgmSource) {
-      this.bgmSource.onended = null; // 수동 stop 시 onEnded 콜백 억제
       try { this.bgmSource.stop(); } catch { /* already stopped */ }
       this.bgmSource.disconnect();
       this.bgmSource = null;

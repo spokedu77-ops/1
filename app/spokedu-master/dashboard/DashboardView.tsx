@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {
   ArrowRight,
@@ -31,9 +31,12 @@ import {
 } from '../lib/program-media';
 import { getTrialDaysLeft, isActiveTrial } from '../lib/subscription';
 import {
+  buildProgramResumeHref,
   getRecentActivityOwnerId,
   reconcileRecentProgramActivities,
+  reconcileRecentSpomoveActivities,
   selectLatestProgramResume,
+  selectRecentSpomoveActivity,
   type RecentProgramActivity,
 } from '../lib/recentProgramActivity';
 import {
@@ -47,7 +50,6 @@ import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../store';
-import type { MasterExplanationDto } from '../types/explanation';
 import type { ClassRecord, Program, UserProfile } from '../types';
 
 type ContinueItem = {
@@ -389,28 +391,28 @@ function WeeklyProgramCard({
   );
 }
 
-function ContinueSection({ items }: { items: ContinueItem[] }) {
+function ContinueSection({ item }: { item: ContinueItem }) {
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] sm:p-5">
       <SectionHeader title="계속 사용하기" description="최근 작업을 바로 이어서 열 수 있습니다." />
-      <div className="grid gap-2 md:grid-cols-2">
-        {items.map((item) => (
-          <Link data-continue-item={item.id} key={item.id} href={item.href} className="flex min-h-[82px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 py-2 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-white text-indigo-600 shadow-sm">
-              {item.type === '수업' ? <BookOpen size={18} /> : item.type === 'SPOMOVE' ? <MonitorPlay size={18} /> : <FileText size={18} />}
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-[11px] font-black text-indigo-600">{item.type}</span>
-              <span className="mt-0.5 block truncate text-[13px] font-black text-slate-900">{item.title}</span>
-              <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{item.status}</span>
-            </span>
-            <span className="shrink-0 text-right">
-              {item.time ? <span className="block text-[11px] font-bold text-slate-400">{item.time}</span> : null}
-              <span className="mt-1 block text-[11px] font-black text-indigo-600">{item.action}</span>
-            </span>
-          </Link>
-        ))}
-      </div>
+      <Link
+        data-continue-item={item.id}
+        href={item.href}
+        className="flex min-h-[82px] items-center gap-3 rounded-[14px] border border-slate-100 bg-slate-50 px-3 py-2 transition-colors hover:border-indigo-200 hover:bg-indigo-50/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-white text-indigo-600 shadow-sm">
+          {item.type === 'SPOMOVE' ? <MonitorPlay size={18} /> : <BookOpen size={18} />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[11px] font-black text-indigo-600">{item.type}</span>
+          <span className="mt-0.5 block truncate text-[13px] font-black text-slate-900">{item.title}</span>
+          <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{item.status}</span>
+        </span>
+        <span className="shrink-0 text-right">
+          {item.time ? <span className="block text-[11px] font-bold text-slate-400">{item.time}</span> : null}
+          <span className="mt-1 block text-[11px] font-black text-indigo-600">{item.action}</span>
+        </span>
+      </Link>
     </section>
   );
 }
@@ -468,7 +470,7 @@ function SpomoveCard({ preset }: { preset: OfficialSpomovePreset }) {
         <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-300">{preset.salesCopy || preset.recommendedUse}</p>
         <Link href={officialPresetSessionHref(preset)} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[13px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
           <MonitorPlay size={15} />
-          큰 화면 실행
+          프로그램 보기
         </Link>
       </div>
     </article>
@@ -543,52 +545,59 @@ function ActivityPanel({
   );
 }
 
-function buildContinueItems(
+// 계속 사용하기: 일반 수업과 SPOMOVE 중 가장 최근 하나만 반환.
+// 안내문은 내 활동·기록 섹션 전용이므로 여기에 포함하지 않는다.
+function buildContinueItem(
   classRecords: ClassRecord[],
   recentProgramActivities: RecentProgramActivity[],
   recentActivityOwnerId: string | null,
-  savedReports: MasterExplanationDto[],
   programs: Program[],
-) {
-  const programsById = new Map(programs.map((program) => [program.id, program]));
-  const validActivities = reconcileRecentProgramActivities(recentProgramActivities, programs);
-  const recentProgram = recentActivityOwnerId
+): ContinueItem | null {
+  const programsById = new Map(programs.map((p) => [p.id, p]));
+  const validLessonActivities = reconcileRecentProgramActivities(recentProgramActivities, programs);
+  const recentLesson = recentActivityOwnerId
     ? selectLatestProgramResume(
-        validActivities,
-        classRecords.filter((record) => programsById.has(record.programId)),
+        validLessonActivities,
+        classRecords.filter((r) => programsById.has(r.programId)),
         recentActivityOwnerId,
       )
     : null;
-  const recentReport = [...savedReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.id));
+  const validSpomoveActivities = reconcileRecentSpomoveActivities(recentProgramActivities, validPresetIds);
+  const recentSpomove = recentActivityOwnerId
+    ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId)
+    : null;
+  const useSpomove =
+    recentSpomove !== null &&
+    (recentLesson === null || recentSpomove.occurredAt > recentLesson.occurredAt);
 
-  const items: ContinueItem[] = [];
+  if (useSpomove && recentSpomove) {
+    return {
+      id: `spomove-${recentSpomove.programId}`,
+      type: 'SPOMOVE',
+      title: recentSpomove.programTitle,
+      status: '최근 실행한 반응 프로그램',
+      action: '프로그램 보기',
+      time: formatRelativeDate(recentSpomove.occurredAt),
+      href: buildProgramResumeHref(recentSpomove.programId, 'spomove_started'),
+    };
+  }
 
-  if (recentProgram) {
-    items.push({
-      id: `lesson-${recentProgram.programId}`,
+  if (recentLesson) {
+    return {
+      id: `lesson-${recentLesson.programId}`,
       type: '수업',
-      title: recentProgram.programTitle,
-      status: recentProgram.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
+      title: recentLesson.programTitle,
+      status: recentLesson.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
       action: '수업 열기',
-      time: formatRelativeDate(recentProgram.occurredAt),
-      href: recentProgram.resumeHref,
-    });
+      time: formatRelativeDate(recentLesson.occurredAt),
+      href: recentLesson.resumeHref,
+    };
   }
 
-  if (recentReport) {
-    items.push({
-      id: `report-${recentReport.id}`,
-      type: '안내문',
-      title: recentReport.programTitle,
-      status: '\uC800\uC7A5\uB41C \uC548\uB0B4\uBB38',
-      action: '안내문 열기',
-      time: formatRelativeDate(recentReport.createdAt),
-      href: `/spokedu-master/report?program=${recentReport.programId}&saved=${recentReport.id}`,
-    });
-  }
-
-  return items;
+  return null;
 }
+
 
 export default function DashboardView() {
   const {
@@ -671,16 +680,9 @@ export default function DashboardView() {
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
-  const continueItems = useMemo(
-    () =>
-      buildContinueItems(
-        classRecords,
-        recentProgramActivities,
-        recentActivityOwnerId,
-        explanationData.explanations,
-        programs,
-      ),
-    [classRecords, explanationData.explanations, programs, recentActivityOwnerId, recentProgramActivities],
+  const continueItem = useMemo(
+    () => buildContinueItem(classRecords, recentProgramActivities, recentActivityOwnerId, programs),
+    [classRecords, programs, recentActivityOwnerId, recentProgramActivities],
   );
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
@@ -774,7 +776,7 @@ export default function DashboardView() {
         ) : null}
       </section>
 
-      {continueItems.length > 0 ? <ContinueSection items={continueItems} /> : null}
+      {continueItem ? <ContinueSection item={continueItem} /> : null}
 
       <ActivityPanel
         reportCount={explanationData.status === 'loading' ? null : explanationData.total}

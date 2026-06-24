@@ -5,7 +5,7 @@ import { useMemo, useState } from 'react';
 import { Check, CheckSquare, ChevronDown, FileText, Image as ImageIcon } from 'lucide-react';
 import type { PublicNoteBlock, PublicNoteDocument } from '@/app/lib/server/publicNote';
 import { buildChildrenByParentBlock, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
-import { hasToggleBodyContent, resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
+import { resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { resolveVideoEmbedContent, videoProviderLabel } from '@/app/lib/note/videoEmbed';
 import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '@/app/admin/note/_components/noteBulletInput';
 import { normalizeTableContent } from '@/app/admin/note/_lib/noteTableBlock';
@@ -332,7 +332,6 @@ function PublicToggleBlock({
   const images = Array.isArray(rawImages)
     ? rawImages.map((url) => (typeof url === 'string' ? url.trim() : '')).filter(Boolean)
     : [];
-  const hasLegacyBody = hasToggleBodyContent(block.content);
 
   return (
     <div
@@ -353,9 +352,6 @@ function PublicToggleBlock({
       </button>
       {open && (
         <div className="pl-6">
-          {hasLegacyBody ? (
-            <RichText content={block.content} field="body" className="text-[15px] leading-7 text-slate-800" />
-          ) : null}
           {childBlocks.length > 0 && (
             <div className="space-y-0">
               {childBlocks.map((child) => renderChildBlock?.(child))}

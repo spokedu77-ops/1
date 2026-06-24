@@ -63,8 +63,9 @@ type NoteEditableFieldProps = {
   onNavigateNext?: () => void;
   onTrackActiveBlock?: (part: 'title' | 'editor') => void;
   onFocusBlock?: () => void;
+  onContentPatch?: (content: Record<string, unknown>) => void;
   onContentSync?: (content: Record<string, unknown>) => void;
-  onUpdate: (content: Record<string, unknown>) => void;
+  onUpdate?: (content: Record<string, unknown>) => void;
   onChangeType?: (trigger: MarkdownBlockTrigger) => void;
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
@@ -109,6 +110,7 @@ export function NoteEditableField({
   onNavigateNext,
   onTrackActiveBlock,
   onFocusBlock,
+  onContentPatch,
   onContentSync,
   onUpdate,
   onChangeType,
@@ -152,7 +154,10 @@ export function NoteEditableField({
     onFocusBlock?.();
   };
 
+  const pushContent = onContentPatch ?? onContentSync ?? onUpdate;
+
   const handleChange = ({ text: nextText, html: nextHtml }: { text: string; html: string }) => {
+    if (!pushContent) return;
     const baseContent = (
       useNoteBlockStore.getState().getBlock(blockId)?.content
       ?? fallbackContent
@@ -164,8 +169,7 @@ export function NoteEditableField({
         text: nextText,
         html: nextHtml,
       });
-      if (onContentSync) onContentSync(nextContent);
-      else onUpdate(nextContent);
+      pushContent(nextContent);
       return;
     }
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
@@ -182,8 +186,7 @@ export function NoteEditableField({
     if (blockType === 'bulletList' || blockType === 'numberedList') {
       nextContent = normalizeListBlockContentRecord(nextContent);
     }
-    if (onContentSync) onContentSync(nextContent);
-    else onUpdate(nextContent);
+    pushContent(nextContent);
   };
 
   const handleChangeRef = useRef(handleChange);

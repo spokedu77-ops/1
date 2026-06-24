@@ -53,8 +53,9 @@ export function useNoteBlockData(options: {
   setPendingDeleteUndo: (blockId: string | null) => void;
   bootstrapBlocks?: { documentId: string; blocks: NoteBlock[] } | null;
   triggerSaveRef: React.MutableRefObject<() => void>;
+  onAfterIdleReconcile?: () => void;
 }) {
-  const { selectedId, docTab, setError, setPendingDeleteUndo, bootstrapBlocks, triggerSaveRef } = options;
+  const { selectedId, docTab, setError, setPendingDeleteUndo, bootstrapBlocks, triggerSaveRef, onAfterIdleReconcile } = options;
 
   const [blocks, _setBlocks] = useState<NoteBlock[]>([]);
   const [loadingBlocks, setLoadingBlocks] = useState(false);
@@ -155,15 +156,19 @@ export function useNoteBlockData(options: {
         scheduleIdleReconcile(documentId, loadGen);
         return;
       }
-      if (!noteBlocksStructureChanged(blocksRef.current, merged)) return;
+      if (!noteBlocksStructureChanged(blocksRef.current, merged)) {
+        onAfterIdleReconcile?.();
+        return;
+      }
       documentEngineRef.current.replaceBlocks(merged);
       rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
         merged.filter((block) => block.document_id === documentId),
       ));
+      onAfterIdleReconcile?.();
     } catch (e) {
       devLogger.error('[Note] idle reconcile', e);
     }
-  }, [scheduleIdleReconcile, selectedId]);
+  }, [onAfterIdleReconcile, scheduleIdleReconcile, selectedId]);
 
   useEffect(() => {
     registerNoteReconcileIdleHandler((documentId) => {

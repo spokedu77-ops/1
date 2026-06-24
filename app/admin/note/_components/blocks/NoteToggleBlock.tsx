@@ -8,14 +8,11 @@ import {
   type ReactNode,
 } from 'react';
 import { Image as ImageIcon, Trash2 } from 'lucide-react';
-import { resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { SlashMenuFixed } from '../SlashMenu';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
-import { useNoteBlockStore } from '../../_store/noteBlockStore';
 import { BLOCK_TYPES, toggleNestPaddingPx } from '../../_lib/constants';
 import { filterTurnIntoCommands } from '../../_lib/noteBlockTypeChange';
 import { resolveToggleTitleEnterAction } from '../../_lib/noteNotionBlockBehavior';
-import { createToggleBodyEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { focusWithoutScroll } from '../../_lib/noteEditorScrollGuard';
 import {
   DROP_TARGET_ROW,
@@ -23,8 +20,9 @@ import {
 } from '../../_lib/noteBlockRowUi';
 import { BlockInsideDropSurface, ToggleDisclosureButton } from '../sidebar/NoteDocChrome';
 import { useBlockDragActive } from '../noteContexts';
-import { NoteBlockFormattedField } from './NoteBlockFormattedField';
-import { useSyncContentPatch } from './useSyncContentPatch';
+import { useBlockContentPatch } from './useBlockContentPatch';
+import { useBlockLiveContent } from './useBlockLiveContent';
+import { useNoteBlockContentSubscription } from './useNoteBlockContentSubscription';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
@@ -40,13 +38,15 @@ type NoteToggleBlockProps = {
   toggleNestDepth?: number;
   omitExternalizedChildren?: boolean;
   autoFocusTitleSignal?: number;
-  onUpdate: (content: Record<string, unknown>) => void;
-  onContentSync?: (content: Record<string, unknown>) => void;
+  onContentPatch: (content: Record<string, unknown>) => void;
   onChangeType: (type: NoteBlock['type']) => void;
   onAddBelow: (type?: NoteBlock['type']) => void;
   onAddChildBelow?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onIndentChange?: (direction: 'in' | 'out') => void;
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
+  onFocusBlockById?: (blockId: string, part?: 'title' | 'editor', caretOffset?: number) => void;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
   renderSlashMenuPortal: () => ReactNode;
   onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
@@ -73,34 +73,32 @@ export function NoteToggleBlock({
   toggleNestDepth = 1,
   omitExternalizedChildren = false,
   autoFocusTitleSignal = 0,
-  onUpdate,
-  onContentSync,
+  onContentPatch,
   onChangeType,
   onAddBelow,
   onAddChildBelow,
   onIndentChange,
   onTrackActiveBlock,
+  onFocusBlockById,
+  onNavigatePrevious,
+  onNavigateNext,
   renderSlashMenuPortal,
   onSlashChange,
   slashHostRef,
   ...fieldProps
 }: NoteToggleBlockProps) {
+  useNoteBlockContentSubscription(block.id);
+  const liveContent = useBlockLiveContent(block);
   const isBlockDragActive = useBlockDragActive();
   const imageLightbox = useNoteImageLightbox();
-  const activeEditor = useNoteBlockStore((state) => state.activeEditor);
   const toggleTitleInputRef = useRef<HTMLInputElement>(null);
   const [toggleTitleSlashAnchor, setToggleTitleSlashAnchor] = useState<{ top: number; left: number } | null>(null);
 
-  const patchToggle = useSyncContentPatch(block, onUpdate, onContentSync);
+  const patchToggle = useBlockContentPatch(block, onContentPatch);
 
-  const handleToggleBodyEnter = createToggleBodyEnterHandler({
-    onAddChildBelow: (type, content) => onAddChildBelow?.(type ?? 'text', content),
-  });
-
-  const title = typeof block.content?.title === 'string'
-    ? block.content.title
-    : (typeof block.content?.text === 'string' ? block.content.text : '');
-  const { text: body } = resolveToggleBodyForDisplay(block.content);
+  const title = typeof liveContent.title === 'string'
+    ? liveContent.title
+    : (typeof liveContent.text === 'string' ? liveContent.text : '');
   const collapsed = !!block.content?.collapsed;
   const showToggleContent = !collapsed && !isDragging;
   const rawIm = block.content?.images;
@@ -129,16 +127,11 @@ export function NoteToggleBlock({
     setToggleTitleSlashAnchor({ top: rect.bottom + 4, left: rect.left });
   }, [toggleTitleSlashActive, toggleTitleSlashQuery]);
 
-  const showToggleBody = childBlocks.length === 0
-    && (
-      body.trim().length > 0
-      || (activeEditor?.blockId === block.id && activeEditor.field === 'body')
-    );
   const toggleChildIndentPx = toggleNestPaddingPx(toggleNestDepth + 1);
   const hasInlineToggleChildren = !omitExternalizedChildren && childBlocks.length > 0;
-  const showToggleEmptySlot = !showToggleBody && !!onAddChildBelow && childBlocks.length === 0;
+  const showToggleEmptySlot = showToggleContent && !!onAddChildBelow && childBlocks.length === 0;
   const showToggleExtrasWrapper = showToggleContent
-    && (showToggleBody || hasInlineToggleChildren || showToggleEmptySlot);
+    && (hasInlineToggleChildren || showToggleEmptySlot);
 
   return (
     <div
@@ -179,6 +172,23 @@ export function NoteToggleBlock({
           onChange={(e) => patchToggle({ title: e.target.value })}
           onFocus={() => onTrackActiveBlock?.('title')}
           onKeyDown={(e) => {
+            if (e.key === 'ArrowDown' && !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey) {
+              const firstChild = childBlocks[0];
+              if (!collapsed && firstChild && onFocusBlockById) {
+                e.preventDefault();
+                const part = firstChild.type === 'toggle' ? 'title' : 'editor';
+                onFocusBlockById(firstChild.id, part, 0);
+                return;
+              }
+            }
+            if (e.key === 'ArrowUp' && !e.shiftKey && onNavigatePrevious) {
+              const input = toggleTitleInputRef.current;
+              if (input && input.selectionStart === 0 && input.selectionEnd === 0) {
+                e.preventDefault();
+                onNavigatePrevious();
+                return;
+              }
+            }
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();
               const action = resolveToggleTitleEnterAction(collapsed);
@@ -207,25 +217,6 @@ export function NoteToggleBlock({
           className="overflow-visible"
           style={toggleChildIndentPx > 0 ? { paddingLeft: toggleChildIndentPx } : undefined}
         >
-          {showToggleBody && (
-            <NoteBlockFormattedField
-              block={block}
-              text={body}
-              placeholder=""
-              textClassName="text-[16px] leading-[1.7] text-slate-800"
-              field="body"
-              tabBehavior="insert-text-indent"
-              enterCreatesBlock={!!onAddChildBelow}
-              enterSplitOnMidBlock={!!onAddChildBelow}
-              onEditorEnter={onAddChildBelow ? handleToggleBodyEnter : undefined}
-              onEditorBackspace={false}
-              onUpdate={onUpdate}
-              onContentSync={onContentSync}
-              onSlashChange={onSlashChange}
-              slashHostRef={slashHostRef}
-              {...fieldProps}
-            />
-          )}
           {hasInlineToggleChildren ? (
             <div className="note-block-children space-y-0 overflow-visible">
               {childBlocks.map((child) => (

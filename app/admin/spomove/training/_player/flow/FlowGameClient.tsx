@@ -17,7 +17,6 @@ interface FlowGameClientProps {
   colorTheme?:    'default' | 'space' | 'neon' | 'ocean';
   motionScale?:   number;
   bgmPath?:       string;
-  bgmList?:       string[];
   bgImageUrl?:    string;
   onComplete:     (stats: FlowStats) => void;
   onExit:         () => void;
@@ -51,7 +50,6 @@ export default function FlowGameClient({
   colorTheme = 'default',
   motionScale = 1,
   bgmPath,
-  bgmList,
   bgImageUrl,
   onComplete,
   onExit,
@@ -127,7 +125,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, colorTheme, motionScale, bgmPath, bgmList, bgImageUrl },
+        { stages, colorTheme, motionScale, bgmPath, bgImageUrl },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

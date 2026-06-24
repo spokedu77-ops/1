@@ -2,6 +2,7 @@ type BlockLike = {
   id: string;
   type: string;
   parent_block_id?: string | null;
+  order_index: number;
   content?: Record<string, unknown> | null;
 };
 
@@ -50,18 +51,6 @@ export function clearToggleBodyContent(content: Record<string, unknown>) {
   return next;
 }
 
-export function buildToggleBodyRestoreContent(
-  content: Record<string, unknown>,
-  source: { text: string; html?: string },
-): Record<string, unknown> {
-  return {
-    ...content,
-    body: source.text,
-    bodyHtml: source.html ?? '',
-    bodyRestored: true,
-  };
-}
-
 export function findMigratedToggleBodyChild<T extends BlockLike>(toggleId: string, blocks: T[]): T | undefined {
   return blocks.find(
     (block) =>
@@ -71,62 +60,148 @@ export function findMigratedToggleBodyChild<T extends BlockLike>(toggleId: strin
   );
 }
 
-export type ToggleBodyRestorePlan = {
+/** legacy body → 자식 text 블록 forward migration 계획 */
+export type ToggleBodyForwardPlan = {
   toggleId: string;
-  restoredContent: Record<string, unknown>;
-  removeChildBlockId?: string;
-  purgeTrashedChildBlockId?: string;
+  newToggleContent: Record<string, unknown>;
+  createChild?: {
+    content: Record<string, unknown>;
+    order_index: number;
+  };
+  updateChild?: {
+    id: string;
+    content: Record<string, unknown>;
+  };
 };
 
-/** body가 비었는데 legacy·마이그레이션 자식 블록에 본문이 남아 있으면 복구 계획을 만든다. */
-export function planToggleBodyRestores<T extends BlockLike>(
+function isEmptyTextBlock(block: BlockLike): boolean {
+  if (block.type !== 'text') return false;
+  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  const html = typeof block.content?.html === 'string' ? block.content.html : '';
+  return !text.trim() && !html.trim();
+}
+
+function mergeTextBlockContent(
+  existing: Record<string, unknown> | null | undefined,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const base = (existing ?? {}) as Record<string, unknown>;
+  const nextText = typeof incoming.text === 'string' ? incoming.text : '';
+  const baseText = typeof base.text === 'string' ? base.text : '';
+  const mergedText = baseText.trim() && nextText.trim()
+    ? `${baseText.trim()}\n${nextText.trim()}`
+    : (nextText.trim() || baseText);
+  const nextHtml = typeof incoming.html === 'string' ? incoming.html : '';
+  const baseHtml = typeof base.html === 'string' ? base.html : '';
+  return {
+    ...base,
+    ...incoming,
+    text: mergedText,
+    ...(nextHtml.trim() || baseHtml.trim()
+      ? { html: baseHtml.trim() && nextHtml.trim() ? `${baseHtml}${nextHtml}` : (nextHtml || baseHtml) }
+      : {}),
+    migratedFromToggleBody: true,
+  };
+}
+
+/**
+ * 노션 모델: 토글 본문은 content.body가 아니라 parent_block_id 자식 블록으로만 표현.
+ * legacy body/legacyBody가 있으면 첫 text 자식으로 옮기고 toggle content에서 제거한다.
+ */
+export function planToggleBodyForwardMigrations<T extends BlockLike>(
   blocks: T[],
-  trashedBlocks: T[] = [],
-): ToggleBodyRestorePlan[] {
-  const plans: ToggleBodyRestorePlan[] = [];
-  const activeIds = new Set(blocks.map((block) => block.id));
+): ToggleBodyForwardPlan[] {
+  const plans: ToggleBodyForwardPlan[] = [];
 
   for (const block of blocks) {
     if (block.type !== 'toggle') continue;
     const content = (block.content ?? {}) as Record<string, unknown>;
-    if (hasToggleBodyContent(content)) continue;
+    if (!hasToggleBodyContent(content)) continue;
 
-    const legacy = resolveToggleBodyForDisplay(content);
-    const migratedChild =
-      findMigratedToggleBodyChild(block.id, blocks)
-      ?? findMigratedToggleBodyChild(block.id, trashedBlocks);
+    const childContent = buildToggleBodyTextBlockContent(content);
+    const clearedContent = clearToggleBodyContent(content);
+    const children = blocks
+      .filter((entry) => entry.parent_block_id === block.id)
+      .sort((a, b) => a.order_index - b.order_index);
 
-    let sourceText = legacy.text;
-    let sourceHtml = legacy.html;
-    let removeChildBlockId: string | undefined;
-    let purgeTrashedChildBlockId: string | undefined;
+    const migratedChild = findMigratedToggleBodyChild(block.id, blocks);
+    const firstTextChild = children.find((entry) => entry.type === 'text');
 
     if (migratedChild) {
-      const childText = typeof migratedChild.content?.text === 'string' ? migratedChild.content.text : '';
-      const childHtml = typeof migratedChild.content?.html === 'string' ? migratedChild.content.html : '';
-      if (childText.trim() || childHtml.trim()) {
-        sourceText = childText;
-        sourceHtml = childHtml;
-        if (activeIds.has(migratedChild.id)) {
-          removeChildBlockId = migratedChild.id;
-        } else {
-          purgeTrashedChildBlockId = migratedChild.id;
-        }
-      }
+      plans.push({
+        toggleId: block.id,
+        newToggleContent: clearedContent,
+        updateChild: {
+          id: migratedChild.id,
+          content: mergeTextBlockContent(
+            migratedChild.content as Record<string, unknown>,
+            childContent,
+          ),
+        },
+      });
+      continue;
     }
 
-    if (!sourceText.trim() && !sourceHtml.trim()) continue;
+    if (firstTextChild && isEmptyTextBlock(firstTextChild)) {
+      plans.push({
+        toggleId: block.id,
+        newToggleContent: clearedContent,
+        updateChild: {
+          id: firstTextChild.id,
+          content: { ...childContent, migratedFromToggleBody: true },
+        },
+      });
+      continue;
+    }
 
+    const minOrder = children.length > 0
+      ? Math.min(...children.map((entry) => entry.order_index))
+      : 0;
     plans.push({
       toggleId: block.id,
-      restoredContent: buildToggleBodyRestoreContent(content, {
-        text: sourceText,
-        html: sourceHtml || undefined,
-      }),
-      removeChildBlockId,
-      purgeTrashedChildBlockId,
+      newToggleContent: clearedContent,
+      createChild: {
+        content: childContent,
+        order_index: children.length > 0 ? minOrder - 1 : 0,
+      },
     });
   }
 
   return plans;
+}
+
+/** forward migration 결과를 메모리 블록 배열에 반영 (테스트·클라이언트 미리보기용) */
+export function applyToggleBodyForwardPlansInMemory<T extends BlockLike>(
+  blocks: T[],
+  plans: ToggleBodyForwardPlan[],
+): T[] {
+  if (plans.length === 0) return blocks;
+  let next = [...blocks];
+  for (const plan of plans) {
+    next = next.map((block) => (
+      block.id === plan.toggleId
+        ? { ...block, content: plan.newToggleContent }
+        : block
+    ));
+    if (plan.updateChild) {
+      next = next.map((block) => (
+        block.id === plan.updateChild!.id
+          ? { ...block, content: plan.updateChild!.content }
+          : block
+      ));
+    }
+    if (plan.createChild) {
+      next = [
+        ...next,
+        {
+          id: `toggle-body-${plan.toggleId}`,
+          type: 'text',
+          parent_block_id: plan.toggleId,
+          order_index: plan.createChild.order_index,
+          content: plan.createChild.content,
+        } as unknown as T,
+      ];
+    }
+  }
+  return next;
 }

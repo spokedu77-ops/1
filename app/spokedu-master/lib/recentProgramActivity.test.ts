@@ -8,7 +8,9 @@ import {
   getRecentActivityOwnerId,
   migrateRecentActivitiesToOwner,
   reconcileRecentProgramActivities,
+  reconcileRecentSpomoveActivities,
   selectLatestProgramResume,
+  selectRecentSpomoveActivity,
   selectUserRecentProgramActivities,
   type RecentProgramActivity,
   upsertRecentProgramActivity,
@@ -203,5 +205,87 @@ describe('recent program activity', () => {
     const legacyRecord = record('2026-06-15T10:00:00.000Z');
     delete legacyRecord.ownerId;
     expect(selectLatestProgramResume([], [legacyRecord], 'id:user-a')).toBeNull();
+  });
+});
+
+// ── SPOMOVE 활동 분리 ────────────────────────────────────────────────────────
+
+const OWNER = 'id:user-a';
+
+function makeLesson(programId: string, occurredAt: string) {
+  return { programId, programTitle: `수업 ${programId}`, action: 'lesson_opened' as const, occurredAt };
+}
+
+function makeSpomove(programId: string, occurredAt: string) {
+  return { programId, programTitle: `SPOMOVE ${programId}`, action: 'spomove_started' as const, occurredAt };
+}
+
+describe('SPOMOVE 활동 분리', () => {
+  it('일반 수업만 있을 때 수업 선택 함수는 수업을 반환하고 SPOMOVE 선택 함수는 null 반환', () => {
+    const stored = upsertRecentProgramActivity([], makeLesson('L1', '2026-06-14T10:00:00.000Z'), OWNER);
+    expect(selectUserRecentProgramActivities(stored, OWNER)).toHaveLength(1);
+    expect(selectRecentSpomoveActivity(stored, OWNER)).toBeNull();
+  });
+
+  it('SPOMOVE만 있을 때 SPOMOVE 선택 함수는 반환하고 수업 선택 함수는 빈 배열 반환', () => {
+    const stored = upsertRecentProgramActivity([], makeSpomove('P1', '2026-06-14T10:00:00.000Z'), OWNER);
+    expect(selectUserRecentProgramActivities(stored, OWNER)).toHaveLength(0);
+    const spomove = selectRecentSpomoveActivity(stored, OWNER);
+    expect(spomove).not.toBeNull();
+    expect(spomove?.programId).toBe('P1');
+  });
+
+  it('같은 SPOMOVE를 여러 번 실행하면 최신 하나만 유지됨', () => {
+    const step1 = upsertRecentProgramActivity([], makeSpomove('P1', '2026-06-14T10:00:00.000Z'), OWNER);
+    const step2 = upsertRecentProgramActivity(step1, makeSpomove('P1', '2026-06-14T12:00:00.000Z'), OWNER);
+    const ownerSpomoves = step2.filter((a) => a.action === 'spomove_started' && a.ownerId === OWNER);
+    expect(ownerSpomoves).toHaveLength(1);
+    expect(ownerSpomoves[0].occurredAt).toBe('2026-06-14T12:00:00.000Z');
+  });
+
+  it('같은 ID를 가진 일반 수업과 SPOMOVE는 서로 덮어쓰지 않음 (도메인 분리)', () => {
+    const step1 = upsertRecentProgramActivity([], makeLesson('X1', '2026-06-14T10:00:00.000Z'), OWNER);
+    const step2 = upsertRecentProgramActivity(step1, makeSpomove('X1', '2026-06-14T11:00:00.000Z'), OWNER);
+    expect(selectUserRecentProgramActivities(step2, OWNER)).toHaveLength(1);
+    expect(selectUserRecentProgramActivities(step2, OWNER)[0].programId).toBe('X1');
+    expect(selectRecentSpomoveActivity(step2, OWNER)?.programId).toBe('X1');
+  });
+
+  it('reconcileRecentProgramActivities 결과에 spomove_started가 포함되지 않음', () => {
+    const step1 = upsertRecentProgramActivity([], makeSpomove('P1', '2026-06-14T10:00:00.000Z'), OWNER);
+    const step2 = upsertRecentProgramActivity(step1, makeLesson('L1', '2026-06-14T11:00:00.000Z'), OWNER);
+    const reconciled = reconcileRecentProgramActivities(step2, [{ id: 'L1', title: '수업A' }]);
+    expect(reconciled.some((a) => a.action === 'spomove_started')).toBe(false);
+    // 원본에서는 여전히 SPOMOVE 조회 가능
+    expect(selectRecentSpomoveActivity(step2, OWNER)).not.toBeNull();
+  });
+
+  it('일반 프로그램 목록에 없는 SPOMOVE preset은 reconcileRecentSpomoveActivities로 별도 제외', () => {
+    const step1 = upsertRecentProgramActivity([], makeSpomove('valid-preset', '2026-06-14T10:00:00.000Z'), OWNER);
+    const step2 = upsertRecentProgramActivity(step1, makeSpomove('invalid-preset', '2026-06-14T11:00:00.000Z'), OWNER);
+    const validIds = new Set(['valid-preset']);
+    const result = reconcileRecentSpomoveActivities(step2, validIds);
+    expect(result).toHaveLength(1);
+    expect(result[0].programId).toBe('valid-preset');
+  });
+
+  it('삭제된 일반 수업은 reconcile 이후 최근 활동에서 제외됨', () => {
+    const step1 = upsertRecentProgramActivity([], makeLesson('deleted', '2026-06-14T10:00:00.000Z'), OWNER);
+    const step2 = upsertRecentProgramActivity(step1, makeLesson('active', '2026-06-14T09:00:00.000Z'), OWNER);
+    const reconciled = reconcileRecentProgramActivities(step2, [{ id: 'active', title: '유지 수업' }]);
+    expect(reconciled.some((a) => a.programId === 'deleted')).toBe(false);
+    expect(reconciled.some((a) => a.programId === 'active')).toBe(true);
+  });
+
+  it('잘못된 날짜 형식(빈 문자열)이 있어도 정렬이 오류 없이 처리됨', () => {
+    const step1 = upsertRecentProgramActivity([], makeLesson('L1', '2026-06-14T10:00:00.000Z'), OWNER);
+    const step2 = upsertRecentProgramActivity(step1, { ...makeLesson('L2', ''), occurredAt: '' }, OWNER);
+    expect(() => selectUserRecentProgramActivities(step2, OWNER)).not.toThrow();
+    expect(selectUserRecentProgramActivities(step2, OWNER)).toHaveLength(2);
+  });
+
+  it('spomove href는 session?preset= 경로로 파생됨', () => {
+    expect(buildProgramResumeHref('reaction-cognition-quad-color-01', 'spomove_started'))
+      .toBe('/spokedu-master/spomove/session?preset=reaction-cognition-quad-color-01');
   });
 });

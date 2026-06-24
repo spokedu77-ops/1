@@ -142,8 +142,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         numberedListIndex={numberedListIndex}
         bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
-        onUpdate={(content) => deps.handleUpdateBlock(block, content)}
-        onContentSync={(content) => deps.syncBlockContent(block.id, content)}
+        onContentPatch={(content) => deps.syncBlockContent(block.id, content)}
         onDelete={() => deps.handleDeleteBlock(block)}
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
@@ -177,6 +176,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         mergeFocusCaretOffset={deps.focusedEditorBlockId === block.id ? deps.mergeFocusCaretOffset : undefined}
         onRequestCaretOffset={deps.requestCaretOffset}
         onFocusBlock={() => deps.focusBlockEditor(block.id)}
+        onFocusBlockById={(id: string, part?: 'title' | 'editor', offset?: number) => deps.focusBlockEditor(id, part, offset)}
         onAddChildBelow={
           block.type === 'toggle'
             ? (type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }
@@ -205,8 +205,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
         onAddChildBelow={(type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }}
-        onUpdate={(content) => deps.handleUpdateBlock(block, content)}
-        onContentSync={(content) => deps.syncBlockContent(block.id, content)}
+        onContentPatch={(content) => deps.syncBlockContent(block.id, content)}
         onDelete={() => deps.handleDeleteBlock(block)}
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
@@ -240,6 +239,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         mergeFocusCaretOffset={deps.focusedEditorBlockId === block.id ? deps.mergeFocusCaretOffset : undefined}
         onRequestCaretOffset={deps.requestCaretOffset}
         onFocusBlock={() => deps.focusBlockEditor(block.id)}
+        onFocusBlockById={(id: string, part?: 'title' | 'editor', offset?: number) => deps.focusBlockEditor(id, part, offset)}
       />
     );
   }

@@ -39,6 +39,10 @@ import {
   officialPresetSessionHref,
 } from '../../spomove/officialSpomovePresets';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
+import {
+  getFavoritesOwnerId,
+  isFavoriteByOwner,
+} from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useMasterStore } from '../../store';
 import type { ClassRecord } from '../../types';
@@ -56,8 +60,10 @@ function BookOpenFallback() {
 
 export default function LibraryDetailView({ id }: { id: string }) {
   const programs = useMasterStore((state) => state.programs);
-  const favorites = useMasterStore((state) => state.favorites);
-  const toggleFavorite = useMasterStore((state) => state.toggleFavorite);
+  const profile = useMasterStore((state) => state.profile);
+  const favoriteProgramIdsByOwner = useMasterStore((state) => state.favoriteProgramIdsByOwner);
+  const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
+  const ownerId = getFavoritesOwnerId(profile);
   const operationalData = useOperationalData();
   const classRecords = operationalData.classRecords.map(toClassRecord);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
@@ -130,7 +136,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const model = buildLessonDisplayModel(program);
   const title = model.title;
   const parentCopy = model.parentNote;
-  const favorite = favorites.includes(program.id);
+  const favorite = isFavoriteByOwner(favoriteProgramIdsByOwner, ownerId, program.id);
   const usageCount = usageRecords.length;
   const latestUsageDate = usageRecords.length > 0
     ? new Date([...usageRecords].sort((a, b) => b.date.localeCompare(a.date))[0].date)
@@ -388,7 +394,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </Link>
           <button
             type="button"
-            onClick={() => toggleFavorite(program.id)}
+            onClick={() => toggleFavoriteProgram(ownerId, program.id)}
             className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-[12px] font-black ${
               favorite
                 ? 'border-amber-200 bg-amber-50 text-amber-700'

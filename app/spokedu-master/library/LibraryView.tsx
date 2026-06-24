@@ -20,6 +20,10 @@ import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import {
+  getFavoritesByOwner,
+  getFavoritesOwnerId,
+} from '../lib/favoriteLib';
+import {
   LESSON_TAG_PREFIX,
   getLessonTheme,
   parseTaggedValues,
@@ -340,11 +344,21 @@ function FilterRow({
 export default function LibraryView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { programs, programsLoaded, programsError, favorites, toggleFavorite } = useMasterStore();
+  const { programs, programsLoaded, programsError } = useMasterStore();
+  const profile = useMasterStore((state) => state.profile);
+  const favoriteProgramIdsByOwner = useMasterStore((state) => state.favoriteProgramIdsByOwner);
+  const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const isPro = useIsPro();
+
+  const ownerId = getFavoritesOwnerId(profile);
+  const favoriteIds = useMemo(
+    () => getFavoritesByOwner(favoriteProgramIdsByOwner, ownerId),
+    [favoriteProgramIdsByOwner, ownerId],
+  );
+
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [filter, setFilter] = useState<ActiveFilter>(() => {
     const group = searchParams.get('filterGroup') as FilterGroupKey | null;
@@ -352,10 +366,20 @@ export default function LibraryView() {
     const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme', 'material'];
     return group && value && allowedGroups.includes(group) ? { group, value } : null;
   });
+  const [view, setView] = useState<'all' | 'favorites'>(() =>
+    searchParams.get('view') === 'favorites' ? 'favorites' : 'all',
+  );
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const pool = useMemo(() => buildProgramPool(programs), [programs]);
+
+  const viewPool = useMemo(() => {
+    if (view !== 'favorites') return pool;
+    const favSet = new Set(favoriteIds);
+    return pool.filter((p) => favSet.has(p.id));
+  }, [pool, view, favoriteIds]);
+
   const usedProgramIds = useMemo(
     () => new Set(classRecords.map((record) => record.programId)),
     [classRecords],
@@ -382,19 +406,20 @@ export default function LibraryView() {
       params.set('filterGroup', filter.group);
       params.set('filter', filter.value);
     }
+    if (view === 'favorites') params.set('view', 'favorites');
     const next = params.toString();
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
-  }, [filter, query, router, searchParams]);
+  }, [filter, query, view, router, searchParams]);
 
   const filteredPrograms = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    return pool.filter((program) => {
+    return viewPool.filter((program) => {
       const queryMatched = normalizedQuery.length === 0 || getSearchText(program).includes(normalizedQuery);
       return queryMatched && matchesFilter(program, filter);
     });
-  }, [filter, pool, query]);
+  }, [filter, viewPool, query]);
 
   const packageStats = useMemo(() => {
     const videoCount = pool.filter(programHasPlayableVideo).length;
@@ -422,7 +447,7 @@ export default function LibraryView() {
 
     return definitions.flatMap((definition) => {
       const counts = new Map<string, number>();
-      for (const program of pool) {
+      for (const program of viewPool) {
         for (const value of getStructuredValues(program, definition.key)) {
           counts.set(value, (counts.get(value) ?? 0) + 1);
         }
@@ -432,7 +457,7 @@ export default function LibraryView() {
       );
       return options.length > 0 ? [{ ...definition, options }] : [];
     });
-  }, [pool]);
+  }, [viewPool]);
 
   const basicGroups = useMemo(
     () => filterGroups.filter((g) => (['target', 'space', 'material'] as FilterGroupKey[]).includes(g.key)),
@@ -515,6 +540,35 @@ export default function LibraryView() {
             </div>
           </div>
 
+          {/* 뷰 모드 전환 — 전체 수업 / 즐겨찾기 */}
+          <div className="border-b border-slate-200 px-5 py-3 sm:px-7">
+            <div className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
+              <button
+                type="button"
+                onClick={() => setView('all')}
+                className={`h-8 rounded-md px-3.5 text-[12px] font-black transition ${
+                  view === 'all'
+                    ? 'bg-white text-slate-950 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                전체 수업
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('favorites')}
+                className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3.5 text-[12px] font-black transition ${
+                  view === 'favorites'
+                    ? 'bg-white text-slate-950 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+                즐겨찾기
+              </button>
+            </div>
+          </div>
+
           {/* 필터 영역 */}
           <div className="bg-slate-50/80 px-5 py-4 sm:px-7">
             <div className="flex items-center justify-between gap-4">
@@ -555,7 +609,7 @@ export default function LibraryView() {
           </div>
         </header>
 
-        {recentProgramRecords.length > 0 ? (
+        {view === 'all' && recentProgramRecords.length > 0 ? (
           <section className="rounded-[18px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -588,7 +642,11 @@ export default function LibraryView() {
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
               eyebrow="Programs"
-              title={query || filter ? `검색 결과 ${filteredPrograms.length}개` : `전체 수업 ${filteredPrograms.length}개`}
+              title={
+                view === 'favorites'
+                  ? (query || filter ? `즐겨찾기 결과 ${filteredPrograms.length}개` : `즐겨찾기한 수업 ${filteredPrograms.length}개`)
+                  : (query || filter ? `검색 결과 ${filteredPrograms.length}개` : `전체 수업 ${filteredPrograms.length}개`)
+              }
             />
             {filter ? (
               <button
@@ -603,27 +661,44 @@ export default function LibraryView() {
           <ProgramGrid
             programs={filteredPrograms}
             isPro={isPro}
-            favorites={favorites}
+            favorites={favoriteIds}
             usedProgramIds={usedProgramIds}
-            toggleFavorite={toggleFavorite}
+            toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
             setSelected={setSelected}
           />
           {filteredPrograms.length === 0 ? (
-            <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">
-              <BookOpen className="mx-auto h-10 w-10 text-slate-500" />
-              <h3 className="mt-4 text-lg font-black text-slate-950">조건에 맞는 수업이 없습니다.</h3>
-              <p className="mt-2 text-sm text-slate-400">검색어를 줄이거나 선택한 필터를 해제해 보세요.</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setQuery('');
-                  setFilter(null);
-                }}
-                className="mt-4 inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
-              >
-                검색 초기화
-              </button>
-            </div>
+            view === 'favorites' && favoriteIds.length === 0 ? (
+              <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">
+                <Bookmark className="mx-auto h-10 w-10 text-slate-400" />
+                <h3 className="mt-4 text-lg font-black text-slate-950">즐겨찾기한 수업이 없습니다.</h3>
+                <p className="mt-2 text-sm text-slate-400">수업 카드의 북마크 아이콘을 눌러 즐겨찾기를 추가해 보세요.</p>
+                <button
+                  type="button"
+                  onClick={() => setView('all')}
+                  className="mt-4 inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+                >
+                  전체 수업 보기
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">
+                <BookOpen className="mx-auto h-10 w-10 text-slate-500" />
+                <h3 className="mt-4 text-lg font-black text-slate-950">
+                  {view === 'favorites' ? '조건에 맞는 즐겨찾기가 없습니다.' : '조건에 맞는 수업이 없습니다.'}
+                </h3>
+                <p className="mt-2 text-sm text-slate-400">검색어를 줄이거나 선택한 필터를 해제해 보세요.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setQuery('');
+                    setFilter(null);
+                  }}
+                  className="mt-4 inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+                >
+                  검색 초기화
+                </button>
+              </div>
+            )
           ) : null}
         </section>
       </main>
@@ -633,8 +708,8 @@ export default function LibraryView() {
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
           isPro={isPro}
-          favorite={favorites.includes(selected.program.id)}
-          onFavorite={() => toggleFavorite(selected.program.id)}
+          favorite={favoriteIds.includes(selected.program.id)}
+          onFavorite={() => toggleFavoriteProgram(ownerId, selected.program.id)}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selected.program.id,

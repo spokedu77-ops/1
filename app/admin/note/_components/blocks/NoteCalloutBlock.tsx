@@ -3,14 +3,14 @@
 import type { ReactNode } from 'react';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
-import { useSyncContentPatch } from './useSyncContentPatch';
+import { useBlockContentPatch } from './useBlockContentPatch';
 import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
 
 export function NoteCalloutBlock({
   block,
   contentMarginLeft,
   enterCreatesBlockBelow,
-  onUpdate,
+  onContentPatch,
   onEnter,
   onAddBelow,
   onChangeType,
@@ -29,7 +29,7 @@ export function NoteCalloutBlock({
     ? block.content.icon
     : '💡';
 
-  const syncContentPatch = useSyncContentPatch(block, onUpdate, fieldProps.onContentSync);
+  const patchCallout = useBlockContentPatch(block, onContentPatch);
 
   const handleCalloutEnter = createInlineBlockEnterHandler({
     block,
@@ -48,7 +48,7 @@ export function NoteCalloutBlock({
       <div className="mb-1 flex items-center gap-2">
         <input
           value={icon}
-          onChange={(e) => syncContentPatch({ icon: e.target.value.slice(0, 2) })}
+          onChange={(e) => patchCallout({ icon: e.target.value.slice(0, 2) })}
           className="w-10 rounded border border-amber-200 bg-white px-1 text-center text-sm"
         />
         <span className="flex-1 text-xs font-semibold text-amber-700">콜아웃</span>
@@ -62,7 +62,7 @@ export function NoteCalloutBlock({
         enterCreatesBlock={enterCreatesBlockBelow}
         enterSplitOnMidBlock={enterCreatesBlockBelow}
         onEditorEnter={enterCreatesBlockBelow ? handleCalloutEnter : onEnter}
-        onUpdate={onUpdate}
+        onContentPatch={onContentPatch}
         onChangeType={onChangeType}
         onIndentChange={onIndentChange}
         onSlashChange={onSlashChange}

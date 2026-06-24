@@ -89,4 +89,25 @@ describe('applyBlockContentChange', () => {
     expect(saved?.checked).toBe(true);
     expect(setBlocks).toHaveBeenCalled();
   });
+
+  it('normalizes todo checked on apply', () => {
+    const todo = block('todo', 'todo', { text: '할 일', checked: 1 as unknown as boolean });
+    useNoteBlockStore.getState().hydrate([todo]);
+    const blocksRef = { current: [todo] };
+    const setBlocks = vi.fn();
+
+    applyBlockContentChange({
+      block: todo,
+      content: { text: '할 일', checked: 1 },
+      blocksRef,
+      setBlocks,
+      recordContentUndoBeforeChange: vi.fn(),
+      scheduleBlockContentSave: vi.fn(),
+    });
+
+    expect(useNoteBlockStore.getState().getBlock('todo')?.content).toMatchObject({
+      text: '할 일',
+      checked: false,
+    });
+  });
 });

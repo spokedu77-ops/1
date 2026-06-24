@@ -6,6 +6,10 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { hasMasterAccess } from '../lib/subscription';
 import {
+  migrateLegacyFavorites,
+  toggleFavoriteByOwner,
+} from '../lib/favoriteLib';
+import {
   flushPendingRecentProgramActivities,
   getRecentActivityOwner,
   migrateRecentActivitiesToOwner,
@@ -65,8 +69,8 @@ interface MasterState {
   pendingRecentProgramActivities: RecentProgramActivityInput[];
   recentActivityOwnerResolved: boolean;
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
-  favorites: string[];
-  toggleFavorite: (id: string) => void;
+  favoriteProgramIdsByOwner: Record<string, string[]>;
+  toggleFavoriteProgram: (ownerId: string, programId: string) => void;
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   updateQty: (id: string, delta: number) => void;
@@ -124,6 +128,7 @@ function hasBrokenText(value: unknown): boolean {
 type PersistedMasterState = Partial<MasterState> & {
   classRecords?: unknown;
   students?: unknown;
+  favorites?: string[];
 };
 
 function migrateMasterStore(persisted: unknown, persistedVersion?: number): Partial<MasterState> & Record<string, unknown> {
@@ -132,8 +137,19 @@ function migrateMasterStore(persisted: unknown, persistedVersion?: number): Part
     state,
     typeof persistedVersion === 'number' ? persistedVersion : null,
   );
-  const { classRecords: legacyClassRecords, students: legacyStudents, ...stateWithoutLegacyOperational } = state;
+  const { classRecords: legacyClassRecords, students: legacyStudents, favorites: legacyFavorites, ...stateWithoutLegacyOperational } = state;
   const profile = state.profile && !hasBrokenText(state.profile) ? state.profile : defaultProfile;
+  const migrationOwnerId: string | null = (() => {
+    const id = profile.id.trim();
+    if (id && id !== 'local') return `id:${id}`;
+    const email = profile.email.trim().toLowerCase();
+    return email || null;
+  })();
+  const favoriteProgramIdsByOwner: Record<string, string[]> =
+    stateWithoutLegacyOperational.favoriteProgramIdsByOwner &&
+    typeof stateWithoutLegacyOperational.favoriteProgramIdsByOwner === 'object'
+      ? stateWithoutLegacyOperational.favoriteProgramIdsByOwner
+      : migrateLegacyFavorites(legacyFavorites, migrationOwnerId);
   const migrated = {
     ...stateWithoutLegacyOperational,
     profile,
@@ -151,6 +167,7 @@ function migrateMasterStore(persisted: unknown, persistedVersion?: number): Part
     recentActivityOwnerResolved: false,
     notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
     cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
+    favoriteProgramIdsByOwner,
   };
 
   if (!archiveResult.ok) {
@@ -380,8 +397,11 @@ export const useMasterStore = create<MasterState>()(
             ),
           };
         }),
-      favorites: [],
-      toggleFavorite: (id) => set((state) => ({ favorites: state.favorites.includes(id) ? state.favorites.filter((favorite) => favorite !== id) : [...state.favorites, id] })),
+      favoriteProgramIdsByOwner: {},
+      toggleFavoriteProgram: (ownerId, programId) =>
+        set((state) => ({
+          favoriteProgramIdsByOwner: toggleFavoriteByOwner(state.favoriteProgramIdsByOwner, ownerId, programId),
+        })),
       cart: [],
       addToCart: (item) =>
         set((state) => {
@@ -408,7 +428,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 12,
+      version: 13,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
@@ -416,7 +436,7 @@ export const useMasterStore = create<MasterState>()(
         sessions: state.sessions,
         lessons: state.lessons,
         recentProgramActivities: state.recentProgramActivities,
-        favorites: state.favorites,
+        favoriteProgramIdsByOwner: state.favoriteProgramIdsByOwner,
         cart: state.cart,
         notifications: state.notifications,
       }),
