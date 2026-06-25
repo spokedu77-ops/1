@@ -138,6 +138,7 @@ export function useNoteBlockHistory(options: {
           content: snapshot.content,
           parent_block_id: snapshot.parent_block_id,
           order_index: snapshot.order_index,
+          document_id: snapshot.document_id,
         })));
       } catch (e) {
         devLogger.error('[Note] history restore-blocks', e);

@@ -110,18 +110,22 @@ describe('NoteDocumentOpQueue', () => {
     expect(error.conflicts[0].version).toBe(2);
   });
 
-  it('creates block via POST and normalizes sibling orders', async () => {
-    const blocks = new Map<string, NoteBlock>();
+  it('creates block and normalizes sibling orders in one transaction', async () => {
+    const blocks = new Map<string, NoteBlock>([
+      ['a', { ...baseBlock('a', 'a', 2), order_index: 0 }],
+    ]);
     const created: NoteBlock = {
       ...baseBlock('new-1', '', 1),
       order_index: 1,
     };
-    const fetchMock = vi.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(new Response(
-        JSON.stringify({ block: created }),
-        { status: 200 },
-      ))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({
+        ok: true,
+        blocks: [{ id: 'a', version: 3, updated_at: '2026-06-25T00:00:00Z' }],
+        createdBlocks: [created],
+      }),
+      { status: 200 },
+    ));
 
     const triggerSave = vi.fn();
     const queue = new NoteDocumentOpQueue({
@@ -138,15 +142,14 @@ describe('NoteDocumentOpQueue', () => {
       order_index: 1,
       parent_block_id: null,
       normalizeOrders: [
-        { id: 'new-1', order_index: 0 },
-        { id: 'a', order_index: 1 },
+        { id: 'a', order_index: 0 },
       ],
     });
 
     expect(result.id).toBe('new-1');
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/admin/note/blocks/transaction');
     expect(String((fetchMock.mock.calls[0][1] as RequestInit).method)).toBe('POST');
-    expect(String((fetchMock.mock.calls[1][1] as RequestInit).method)).toBe('PUT');
     expect(triggerSave).toHaveBeenCalledOnce();
   });
 
@@ -173,11 +176,12 @@ describe('NoteDocumentOpQueue', () => {
     });
 
     await queue.enqueue({
-      type: 'transferBlocks',
+      type: 'blockTransaction',
       patches: [
         { id: 'root', document_id: 'doc-2', parent_block_id: null },
         { id: 'child', document_id: 'doc-2' },
       ],
+      deleteIds: [],
     });
 
     expect(fetchMock).toHaveBeenCalledOnce();

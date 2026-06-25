@@ -2,9 +2,11 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   NoteBlockVersionConflictError,
   patchNoteBlocksResolvingConflicts,
+  postNoteBlockTransaction,
+  postNoteBlockCreateTransaction,
   postNoteBlock,
-  purgeNoteBlockFromTrash,
   putNoteBlockOrders,
+  purgeNoteBlockFromTrash,
   restoreNoteBlockFromTrash,
   type PatchedNoteBlock,
 } from './noteBlocksApi';
@@ -187,6 +189,25 @@ export class NoteDocumentOpQueue {
   private async runCreateBlock(
     op: Extract<NotePersistOp, { type: 'createBlock' }>,
   ): Promise<NoteBlock> {
+    if (op.normalizeOrders !== undefined) {
+      const result = await postNoteBlockCreateTransaction(
+        {
+          documentId: op.documentId,
+          blockType: op.blockType,
+          content: op.content,
+          order_index: op.order_index,
+          parent_block_id: op.parent_block_id,
+        },
+        op.normalizeOrders,
+        (id) => this.deps.getBlock(id),
+      );
+      if (result.patchedBlocks.length > 0) {
+        this.deps.onServerPatches?.(result.patchedBlocks);
+      }
+      this.deps.triggerSave();
+      return result.createdBlock;
+    }
+
     const block = await postNoteBlock({
       documentId: op.documentId,
       blockType: op.blockType,
@@ -194,17 +215,6 @@ export class NoteDocumentOpQueue {
       order_index: op.order_index,
       parent_block_id: op.parent_block_id,
     });
-
-    if (op.normalizeOrders && op.normalizeOrders.length > 0) {
-      const patched = await putNoteBlockOrders(
-        op.normalizeOrders,
-        undefined,
-        (id) => this.deps.getBlock(id),
-      );
-      if (patched.length > 0) {
-        this.deps.onServerPatches?.(patched);
-      }
-    }
 
     this.deps.triggerSave();
     return block;
@@ -277,7 +287,13 @@ export class NoteDocumentOpQueue {
       case 'patchFields': {
         if (op.patches.length === 0) return;
         try {
-          await this.patchWithVersionRetry(op.patches);
+          const patched = await postNoteBlockTransaction(
+            op.patches,
+            [],
+            (id) => this.deps.getBlock(id),
+          );
+          if (patched.length > 0) this.deps.onServerPatches?.(patched);
+          this.deps.triggerSave();
         } catch (error) {
           if (error instanceof NoteBlockVersionConflictError) {
             this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
@@ -321,6 +337,16 @@ export class NoteDocumentOpQueue {
           }
           throw error;
         }
+        return;
+      }
+      case 'blockTransaction': {
+        const patched = await postNoteBlockTransaction(
+          op.patches,
+          op.deleteIds,
+          (id) => this.deps.getBlock(id),
+        );
+        if (patched.length > 0) this.deps.onServerPatches?.(patched);
+        this.deps.triggerSave();
         return;
       }
       case 'softDelete': {

@@ -222,6 +222,14 @@ export async function putNoteBlockOrders(
   const hasOrders = orders.length > 0;
   const hasUpdates = !!updates && updates.length > 0;
   if (!hasOrders && !hasUpdates) return [];
+  const patchesById = new Map<string, NoteBlockFieldPatch>();
+  for (const order of orders) {
+    patchesById.set(order.id, { id: order.id, order_index: order.order_index });
+  }
+  for (const update of updates ?? []) {
+    patchesById.set(update.id, { ...patchesById.get(update.id), ...update });
+  }
+  return postNoteBlockTransaction([...patchesById.values()], [], getLiveBlock);
 
   if (hasOrders) {
     const res = await fetch('/api/admin/note/blocks', {
@@ -234,7 +242,7 @@ export async function putNoteBlockOrders(
   }
 
   if (!hasUpdates) return [];
-  return patchNoteBlocksResolvingConflicts(updates, getLiveBlock);
+  return patchNoteBlocksResolvingConflicts(updates ?? [], getLiveBlock);
 }
 
 export async function restoreNoteBlockFromTrash(id: string): Promise<NoteBlock[]> {
@@ -257,6 +265,63 @@ export async function restoreNoteBlockFromTrash(id: string): Promise<NoteBlock[]
     ? json.blocks
     : [block];
   return restored.map(ensureNoteBlockVersion);
+}
+
+export async function postNoteBlockTransaction(
+  updates: NoteBlockFieldPatch[],
+  deleteIds: string[],
+  getLiveBlock?: NoteBlockVersionLookup,
+): Promise<PatchedNoteBlock[]> {
+  const merged = new Map<string, NoteBlockFieldPatch>();
+  for (const update of updates) {
+    merged.set(update.id, { ...merged.get(update.id), ...update });
+  }
+  const versioned = [...merged.values()].map((patch) =>
+    withExpectedVersion(patch, getLiveBlock?.(patch.id)));
+  const res = await fetch('/api/admin/note/blocks/transaction', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ updates: versioned, deleteIds }),
+  });
+  if (!res.ok) await parseApiError(res, '블록 트랜잭션 저장 실패');
+  return parsePatchedBlocks(await res.json().catch(() => ({})));
+}
+
+export async function postNoteBlockCreateTransaction(
+  create: CreateNoteBlockPayload,
+  updates: NoteBlockFieldPatch[],
+  getLiveBlock?: NoteBlockVersionLookup,
+): Promise<{ createdBlock: NoteBlock; patchedBlocks: PatchedNoteBlock[] }> {
+  const versioned = updates.map((patch) =>
+    withExpectedVersion(patch, getLiveBlock?.(patch.id)));
+  const res = await fetch('/api/admin/note/blocks/transaction', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      updates: versioned,
+      deleteIds: [],
+      creates: [{
+        document_id: create.documentId,
+        parent_block_id: create.parent_block_id ?? null,
+        type: create.blockType,
+        order_index: create.order_index ?? 0,
+        content: create.content,
+      }],
+    }),
+  });
+  if (!res.ok) await parseApiError(res, '블록 생성 트랜잭션 실패');
+  const json = await res.json().catch(() => ({})) as {
+    blocks?: PatchedNoteBlock[];
+    createdBlocks?: NoteBlock[];
+  };
+  const createdBlock = json.createdBlocks?.[0];
+  if (!createdBlock?.id) throw new Error('생성된 블록 응답이 없습니다.');
+  return {
+    createdBlock: ensureNoteBlockVersion(createdBlock),
+    patchedBlocks: parsePatchedBlocks(json),
+  };
 }
 
 export async function purgeNoteBlockFromTrash(id: string): Promise<void> {

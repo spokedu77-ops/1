@@ -10,7 +10,6 @@ import type { NoteDocumentOp } from '../_lib/noteDocumentOps';
 import {
   NoteDocumentOpQueue,
   type CreateBlockPersistArgs,
-  type ReorderPersistArgs,
   type SoftDeletePersistArgs,
 } from '../_lib/noteDocumentOpQueue';
 import { setNoteContentSavePending } from '../_lib/notePendingSave';
@@ -28,9 +27,11 @@ export type NoteDocumentEngineApi = {
   flushPersistQueue: () => Promise<void>;
   persistSoftDelete: (args: SoftDeletePersistArgs) => Promise<void>;
   persistFieldPatches: (patches: NoteBlockFieldPatch[]) => Promise<void>;
-  persistReorder: (args: ReorderPersistArgs) => Promise<void>;
   persistCreateBlock: (args: CreateBlockPersistArgs) => Promise<NoteBlock>;
-  persistTransferBlocks: (patches: NoteBlockFieldPatch[]) => Promise<void>;
+  persistBlockTransaction: (
+    patches: NoteBlockFieldPatch[],
+    deleteIds?: string[],
+  ) => Promise<void>;
   persistRestoreBlock: (blockId: string) => Promise<NoteBlock[]>;
   persistPurgeBlock: (blockId: string) => Promise<void>;
   getBlocks: () => NoteBlock[];
@@ -152,17 +153,6 @@ export function useNoteDocumentEngine(options: {
     await queueRef.current?.enqueue({ type: 'patchFields', patches });
   }, [applyLocal]);
 
-  const persistReorder = useCallback(async (args: ReorderPersistArgs) => {
-    if (args.fieldPatches && args.fieldPatches.length > 0) {
-      applyLocal({ type: 'applyPatches', patches: args.fieldPatches });
-    }
-    await queueRef.current?.enqueue({
-      type: 'reorderBlocks',
-      orders: args.orders,
-      fieldPatches: args.fieldPatches,
-    });
-  }, [applyLocal]);
-
   const persistCreateBlock = useCallback(async (args: CreateBlockPersistArgs) => {
     if (!documentId) {
       throw new Error('문서가 선택되지 않았습니다');
@@ -178,10 +168,17 @@ export function useNoteDocumentEngine(options: {
     }) ?? Promise.reject(new Error('문서 엔진이 준비되지 않았습니다'));
   }, [documentId]);
 
-  const persistTransferBlocks = useCallback(async (patches: NoteBlockFieldPatch[]) => {
-    if (patches.length === 0) return;
     // 문서 밖으로 나가는 블록 — 로컬 reducer는 건드리지 않는다(호출 측이 UI에서 제거).
-    await queueRef.current?.enqueue({ type: 'transferBlocks', patches });
+
+  const persistBlockTransaction = useCallback(async (
+    patches: NoteBlockFieldPatch[],
+    deleteIds: string[] = [],
+  ) => {
+    await queueRef.current?.enqueue({
+      type: 'blockTransaction',
+      patches,
+      deleteIds,
+    });
   }, []);
 
   const persistRestoreBlock = useCallback(async (blockId: string) => {
@@ -221,9 +218,8 @@ export function useNoteDocumentEngine(options: {
     flushPersistQueue,
     persistSoftDelete,
     persistFieldPatches,
-    persistReorder,
     persistCreateBlock,
-    persistTransferBlocks,
+    persistBlockTransaction,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
@@ -238,9 +234,8 @@ export function useNoteDocumentEngine(options: {
     flushPersistQueue,
     persistSoftDelete,
     persistFieldPatches,
-    persistReorder,
     persistCreateBlock,
-    persistTransferBlocks,
+    persistBlockTransaction,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,

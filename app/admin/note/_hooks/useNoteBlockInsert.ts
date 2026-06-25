@@ -90,12 +90,17 @@ export function useNoteBlockInsert(options: {
       const blockContent = (insideToggle && baseContent && !baseContentMap.placedInToggle)
         ? { ...baseContent, placedInToggle: true }
         : baseContent;
+      const normalizedExistingOrders = siblings.map((sibling, index) => ({
+        id: sibling.id,
+        order_index: index >= clampedIndex ? index + 1 : index,
+      }));
       const createdBlock = await documentEngine.persistCreateBlock({
         documentId: selectedId,
         blockType: type,
         content: blockContent as Record<string, unknown>,
         order_index: clampedIndex,
         parent_block_id: parentId,
+        normalizeOrders: normalizedExistingOrders,
       });
       const command = buildInsertBlockCommand(
         blocksRef.current,
@@ -105,11 +110,6 @@ export function useNoteBlockInsert(options: {
       );
       const previousBlocks = blocksRef.current;
       setBlocks(command.nextBlocks);
-      if (command.orders.length > 0) {
-        void documentEngine.persistReorder({ orders: command.orders }).catch((e) => {
-          devLogger.error('[Note] normalizeInsertOrder', e);
-        });
-      }
       if (insertOptions?.focus !== false) {
         focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
       }
@@ -325,28 +325,7 @@ export function useNoteBlockInsert(options: {
         return;
       }
 
-      const defaultContent = defaultBlockContent(type);
-      const createdBlock = await documentEngine.persistCreateBlock({
-        documentId: selectedId,
-        blockType: type,
-        content: defaultContent as Record<string, unknown>,
-        parent_block_id: null,
-      });
-      const command = buildInsertBlockCommand(
-        blocksRef.current,
-        createdBlock,
-        null,
-        0,
-      );
-      const previousBlocks = blocksRef.current;
-      setBlocks(command.nextBlocks);
-      if (command.orders.length > 0) {
-        void documentEngine.persistReorder({ orders: command.orders }).catch((e) => {
-          devLogger.error('[Note] normalizeAddBlockOrder', e);
-        });
-      }
-      focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
-      recordBlockCommandUndo(previousBlocks, command);
+      await insertBlockAmongSiblings(null, type, 0);
     } catch (e) {
       devLogger.error('[Note] addBlock', e);
       setError(e instanceof Error ? e.message : '추가 실패');
@@ -355,15 +334,14 @@ export function useNoteBlockInsert(options: {
     blocks,
     focusBlockEditor,
     focusedToggleId,
-    documentEngine,
     handleCreateSubPage,
     handleInsertBlockInParent,
     handleUpdateBlock,
-    recordBlockCommandUndo,
     selectedId,
     setBlocks,
     setError,
     setLoadingState,
+    insertBlockAmongSiblings,
   ]);
 
   return {

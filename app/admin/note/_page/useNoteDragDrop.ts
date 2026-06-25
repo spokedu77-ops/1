@@ -14,30 +14,24 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
-  collectDescendantBlockIds,
   flattenVisualBlockIds,
   getBlocksInParent,
   planBlockDropAt,
-  planMoveRootBlockGroup,
   sortRootBlocks,
   topLevelSelectedDragIds,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
-import {
-  findOrphanSubPageDocuments,
-  isDocumentDescendantOf,
-  planOrphanSubPageBlockInserts,
-} from '@/app/lib/note/orphanSubPageBlocks';
+import { isDocumentDescendantOf } from '@/app/lib/note/orphanSubPageBlocks';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
-import { postNoteBlock } from '../_lib/noteBlocksApi';
-import { buildBlockTransferPatches } from '../_lib/noteBlockTransfer';
+import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
+import { reparentDocumentTree } from '../_lib/noteDocumentTreeApi';
 import {
+  buildMoveBlockGroupCommand,
   buildMoveBlockCommand,
   type NoteBlockCommandResult,
 } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
-import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { resolveBlockDropTarget } from '../_lib/noteDropResolver';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
@@ -129,11 +123,6 @@ export function useNoteDragDrop(options: {
     dropTargetRef.current = null;
   }, []);
 
-  const persistOrders = useCallback(async (orderedBlocks: NoteBlock[]) => {
-    const orders = orderedBlocks.map((block) => ({ id: block.id, order_index: block.order_index }));
-    await documentEngine.persistReorder({ orders });
-  }, [documentEngine]);
-
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) {
@@ -177,93 +166,28 @@ export function useNoteDragDrop(options: {
     const movingDoc = documents.find((d) => d.id === movingDocId);
     if (!movingDoc || movingDoc.parent_id === newParentId) return;
 
-    const oldParentId = movingDoc.parent_id;
     const prevDocuments = documents;
-
     setDocuments((prev) =>
       prev.map((d) => (d.id === movingDocId ? { ...d, parent_id: newParentId } : d)),
     );
 
     try {
       await documentEngine.flushPersistQueue();
-      await enqueueDocumentPatch({ id: movingDocId, parent_id: newParentId });
-
-      if (newParentId === null) {
-        setBlocks((prev) =>
-          prev.filter((b) => !(b.type === 'page' && b.content?.page_document_id === movingDocId)),
+      const result = await reparentDocumentTree({
+        documentId: movingDocId,
+        newParentId,
+      });
+      setDocuments((prev) =>
+        prev.map((document) => document.id === movingDocId ? result.document : document),
+      );
+      setBlocks((prev) => {
+        const withoutOldLink = prev.filter(
+          (block) => !(block.type === 'page' && block.content?.page_document_id === movingDocId),
         );
-      }
-
-      if (oldParentId) {
-        const oldBlocksRes = await fetch(
-          `/api/admin/note/blocks?documentId=${encodeURIComponent(oldParentId)}`,
-          { credentials: 'include' },
-        );
-        if (oldBlocksRes.ok) {
-          const oldJson = (await oldBlocksRes.json()) as { blocks?: NoteBlock[] };
-          const linked = (oldJson.blocks ?? []).filter(
-            (b) => b.type === 'page' && b.content?.page_document_id === movingDocId,
-          );
-          await Promise.all(
-            linked.map((b) =>
-              fetch(`/api/admin/note/blocks?id=${encodeURIComponent(b.id)}`, {
-                method: 'DELETE',
-                credentials: 'include',
-              }),
-            ),
-          );
-          if (selectedId === oldParentId) {
-            setBlocks((prev) =>
-              prev.filter((b) => !(b.type === 'page' && b.content?.page_document_id === movingDocId)),
-            );
-          }
-        }
-      }
-
-      if (newParentId) {
-        let parentBlocks: NoteBlock[] = [];
-        if (newParentId === selectedId) {
-          parentBlocks = blocksRef.current;
-        } else {
-          const newBlocksRes = await fetch(
-            `/api/admin/note/blocks?documentId=${encodeURIComponent(newParentId)}`,
-            { credentials: 'include' },
-          );
-          if (newBlocksRes.ok) {
-            const newJson = (await newBlocksRes.json()) as { blocks?: NoteBlock[] };
-            parentBlocks = newJson.blocks ?? [];
-          }
-        }
-        const orphans = findOrphanSubPageDocuments(
-          [{ id: movingDocId, title: movingDoc.title }],
-          parentBlocks,
-        );
-        const insertPlans = planOrphanSubPageBlockInserts(orphans, parentBlocks);
-        for (const plan of insertPlans) {
-          try {
-            const createdBlock = newParentId === selectedId
-              ? await documentEngine.persistCreateBlock({
-                documentId: newParentId,
-                blockType: 'page',
-                content: plan.content,
-                order_index: plan.order_index,
-                parent_block_id: null,
-              })
-              : await postNoteBlock({
-                documentId: newParentId,
-                blockType: 'page',
-                content: plan.content,
-                order_index: plan.order_index,
-                parent_block_id: null,
-              });
-            if (newParentId === selectedId) {
-              setBlocks((prev) => [...prev, createdBlock]);
-            }
-          } catch (e) {
-            devLogger.error('[Note] reparentOrphanPageBlock', e);
-          }
-        }
-      }
+        return result.pageBlock && newParentId === selectedId
+          ? [...withoutOldLink, result.pageBlock]
+          : withoutOldLink;
+      });
 
       triggerSave();
     } catch (e) {
@@ -277,19 +201,30 @@ export function useNoteDragDrop(options: {
     command: NoteBlockCommandResult,
   ) => {
     if (command.affectedIds.length === 0) return;
-    await documentEngine.persistReorder({
-      orders: command.orders,
-      fieldPatches: command.fieldPatches,
-    });
+    const patchesById = new Map(
+      command.fieldPatches.map((patch) => [patch.id, patch]),
+    );
+    for (const order of command.orders) {
+      patchesById.set(order.id, {
+        ...patchesById.get(order.id),
+        ...order,
+      });
+    }
+    await documentEngine.persistBlockTransaction([...patchesById.values()]);
   }, [documentEngine]);
 
   const persistBlockTransfer = useCallback(async (
-    rootBlockId: string,
-    blockIds: string[],
+    sourceBlocks: NoteBlock[],
+    rootIds: string[],
     targetDocumentId: string,
   ) => {
-    const patches = buildBlockTransferPatches(rootBlockId, blockIds, targetDocumentId);
-    await documentEngine.persistTransferBlocks(patches);
+    const command = buildBlockForestTransferCommand(
+      sourceBlocks,
+      rootIds,
+      targetDocumentId,
+    );
+    await documentEngine.persistBlockTransaction(command.patches);
+    return command;
   }, [documentEngine]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
@@ -352,19 +287,23 @@ export function useNoteDragDrop(options: {
       if (targetDocumentId === selectedId) {
         const prevBlocks = blocksRef.current;
         const rootSiblings = sortRootBlocks(prevBlocks);
-        const idx = rootSiblings.findIndex((block) => block.id === movingBlock.id);
-        if (idx < 0) return;
-        const movedRoots = [
-          rootSiblings[idx],
-          ...rootSiblings.slice(0, idx),
-          ...rootSiblings.slice(idx + 1),
-        ];
-        const normalized = movedRoots.map((block, index) => ({ ...block, order_index: index }));
-        const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
-        const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
-        setBlocks(nextBlocks);
+        const firstOther = rootSiblings.find((block) => block.id !== movingBlock.id);
+        if (!firstOther) return;
+        const command = buildMoveBlockGroupCommand(
+          prevBlocks,
+          [movingBlock.id],
+          firstOther.id,
+          'before',
+        );
+        if (command.affectedIds.length === 0) return;
+        noteUndo.pushBlockTransactionUndo(
+          prevBlocks,
+          command.nextBlocks,
+          command.affectedIds,
+        );
+        setBlocks(command.nextBlocks);
         try {
-          await persistOrders(normalized);
+          await documentEngine.persistBlockTransaction(command.fieldPatches);
         } catch (e) {
           devLogger.error('[Note] moveBlockToCurrentDoc', e);
           setBlocks(prevBlocks);
@@ -374,11 +313,23 @@ export function useNoteDragDrop(options: {
       }
 
       // Move the whole subtree across documents so toggle children are not orphaned.
-      const descendantIds = collectDescendantBlockIds(movingBlock.id, blocksRef.current);
-      const idsToMove = [movingBlock.id, ...Array.from(descendantIds)];
+      const previousBlocks = blocksRef.current;
       try {
-        await persistBlockTransfer(movingBlock.id, idsToMove, targetDocumentId);
-        setBlocks((prev) => prev.filter((block) => !idsToMove.includes(block.id)));
+        const planned = buildBlockForestTransferCommand(
+          previousBlocks,
+          [movingBlock.id],
+          targetDocumentId,
+        );
+        noteUndo.pushRestoreBlocksUndo(
+          mergeBlocksWithStoreContent(previousBlocks),
+          planned.movedIds,
+        );
+        const command = await persistBlockTransfer(
+          previousBlocks,
+          [movingBlock.id],
+          targetDocumentId,
+        );
+        setBlocks(command.nextBlocks);
         triggerSave();
       } catch (e) {
         devLogger.error('[Note] moveBlockToDoc', e);
@@ -412,28 +363,19 @@ export function useNoteDragDrop(options: {
                 (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
               );
               const roots = topLevelSelectedDragIds(ordered, prevBlocks);
-              const idsToMove = new Set<string>();
-              for (const rootId of roots) {
-                idsToMove.add(rootId);
-                collectDescendantBlockIds(rootId, prevBlocks).forEach((id) => idsToMove.add(id));
-              }
-              const allIds = [...idsToMove];
               try {
                 await commitNoteDocumentBeforeLeave();
+                const command = buildBlockForestTransferCommand(
+                  prevBlocks,
+                  roots,
+                  targetDocId,
+                );
                 noteUndo.pushRestoreBlocksUndo(
                   mergeBlocksWithStoreContent(prevBlocks),
-                  allIds,
+                  command.movedIds,
                 );
-                const transferPatches = roots.flatMap((rootId) => {
-                  const descendantIds = collectDescendantBlockIds(rootId, prevBlocks);
-                  return buildBlockTransferPatches(
-                    rootId,
-                    [rootId, ...Array.from(descendantIds)],
-                    targetDocId,
-                  );
-                });
-                await documentEngine.persistTransferBlocks(transferPatches);
-                setBlocks((prev) => prev.filter((block) => !idsToMove.has(block.id)));
+                await documentEngine.persistBlockTransaction(command.patches);
+                setBlocks(command.nextBlocks);
                 triggerSave();
               } catch (e) {
                 devLogger.error('[Note] moveBlockGroupToSubPage', e);
@@ -448,21 +390,21 @@ export function useNoteDragDrop(options: {
             const ordered = [...groupDragIds].sort(
               (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
             );
-            let nextBlocks = prevBlocks;
-            const affectedIds = new Set<string>();
+            const command = buildMoveBlockGroupCommand(
+              prevBlocks,
+              ordered,
+              target.blockId,
+              'inside',
+            );
+            if (command.affectedIds.length === 0) return;
             try {
-              for (const id of ordered) {
-                const movingBlock = nextBlocks.find((block) => block.id === id);
-                if (!movingBlock) continue;
-                const plan = planBlockDropAt(nextBlocks, id, target.blockId, 'inside');
-                if (!plan) continue;
-                const command = buildMoveBlockCommand(nextBlocks, id, plan);
-                nextBlocks = command.nextBlocks;
-                command.affectedIds.forEach((affectedId) => affectedIds.add(affectedId));
-                await persistBlockReparent(command);
-              }
-              noteUndo.pushBlockTransactionUndo(prevBlocks, nextBlocks, [...affectedIds]);
-              setBlocks(nextBlocks);
+              noteUndo.pushBlockTransactionUndo(
+                prevBlocks,
+                command.nextBlocks,
+                command.affectedIds,
+              );
+              setBlocks(command.nextBlocks);
+              await documentEngine.persistBlockTransaction(command.fieldPatches);
               triggerSave();
             } catch (e) {
               devLogger.error('[Note] moveBlockGroupInsideBlock', e);
@@ -473,19 +415,21 @@ export function useNoteDragDrop(options: {
           }
         }
         if (target.position !== 'inside') {
-          const nextRoots = planMoveRootBlockGroup(
+          const command = buildMoveBlockGroupCommand(
             prevBlocks,
             groupDragIds,
             target.blockId,
             target.position,
           );
-          if (nextRoots) {
-            const normalized = nextRoots.map((block, index) => ({ ...block, order_index: index }));
-            const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
-            const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
-            setBlocks(nextBlocks);
+          if (command.affectedIds.length > 0) {
+            noteUndo.pushBlockTransactionUndo(
+              prevBlocks,
+              command.nextBlocks,
+              command.affectedIds,
+            );
+            setBlocks(command.nextBlocks);
             try {
-              await persistOrders(normalized);
+              await documentEngine.persistBlockTransaction(command.fieldPatches);
             } catch (e) {
               devLogger.error('[Note] moveBlockGroup', e);
               setBlocks(prevBlocks);
@@ -506,16 +450,19 @@ export function useNoteDragDrop(options: {
           ? pageInsideTarget.content.page_document_id.trim()
           : '';
       if (targetDocId && targetDocId !== selectedId) {
-        const descendantIds = collectDescendantBlockIds(moving.id, prevBlocks);
-        const idsToMove = [moving.id, ...Array.from(descendantIds)];
         try {
           await commitNoteDocumentBeforeLeave();
+          const command = buildBlockForestTransferCommand(
+            prevBlocks,
+            [moving.id],
+            targetDocId,
+          );
           noteUndo.pushRestoreBlocksUndo(
             mergeBlocksWithStoreContent(prevBlocks),
-            idsToMove,
+            command.movedIds,
           );
-          await persistBlockTransfer(moving.id, idsToMove, targetDocId);
-          setBlocks((prev) => prev.filter((block) => !idsToMove.includes(block.id)));
+          await documentEngine.persistBlockTransaction(command.patches);
+          setBlocks(command.nextBlocks);
           triggerSave();
         } catch (e) {
           devLogger.error('[Note] moveBlockToSubPage', e);
@@ -546,7 +493,7 @@ export function useNoteDragDrop(options: {
       setBlocks(prevBlocks);
       setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
     }
-  }, [noteUndo, persistBlockReparent, persistBlockTransfer, persistOrders, selectedId, triggerSave, handleReparentDocument, documents, setBlocks, setError]);
+  }, [noteUndo, persistBlockReparent, persistBlockTransfer, selectedId, triggerSave, handleReparentDocument, documents, setBlocks, setError]);
 
   return {
     sensors,

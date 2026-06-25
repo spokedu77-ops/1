@@ -4,10 +4,10 @@ import { startTransition, useCallback } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { BOARD_DEFAULT_GROUP } from '../_components/BoardView';
-import { defaultBlockContent } from '../_lib/constants';
 import { resolveDocIcon } from '../_lib/noteDocumentUi';
 import { commitAndResetNoteDocumentBeforeSwitch } from '../_lib/noteBlockStateMerge';
-import { postNoteBlock } from '../_lib/noteBlocksApi';
+import { buildInsertBlockCommand } from '../_lib/noteBlockCommands';
+import { createSubPageTree } from '../_lib/noteDocumentTreeApi';
 import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { LoadingState, NoteBlock, NoteDocument } from '../_lib/types';
@@ -259,20 +259,6 @@ export function useNoteDocumentActions(options: {
       setLoadingState('saving');
       setError(null);
 
-      const createDocRes = await fetch('/api/admin/note/documents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ title, parent_id: parentDocumentId }),
-      });
-      if (!createDocRes.ok) {
-        const j = await createDocRes.json().catch(() => null);
-        throw new Error(j?.error || '하위 페이지 생성 실패');
-      }
-      const created = (await createDocRes.json()) as { document: NoteDocument };
-      const newDoc = created.document;
-      setDocuments((prev) => [newDoc, ...prev]);
-
       let siblingBlocks: NoteBlock[];
       if (parentDocumentId === selectedId) {
         siblingBlocks = blocksRef.current
@@ -298,46 +284,31 @@ export function useNoteDocumentActions(options: {
         insertIndex = afterIdx >= 0 ? afterIdx + 1 : siblingBlocks.length;
       }
 
-      const pageBlockContent = { page_document_id: newDoc.id, title: newDoc.title };
-      const newBlock = parentDocumentId === selectedId
-        ? await documentEngine.persistCreateBlock({
-          documentId: parentDocumentId,
-          blockType: 'page',
-          content: pageBlockContent,
-          order_index: insertIndex,
-          parent_block_id: parentBlockId,
-        })
-        : await postNoteBlock({
-          documentId: parentDocumentId,
-          blockType: 'page',
-          content: pageBlockContent,
-          order_index: insertIndex,
-          parent_block_id: parentBlockId,
-        });
-
-      await postNoteBlock({
-        documentId: newDoc.id,
-        blockType: 'text',
-        content: defaultBlockContent('text'),
-        order_index: 0,
-        parent_block_id: null,
+      const {
+        document: newDoc,
+        pageBlock: newBlock,
+      } = await createSubPageTree({
+        parentDocumentId,
+        parentBlockId,
+        orderIndex: insertIndex,
+        title,
       });
+      setDocuments((prev) => [newDoc, ...prev]);
 
       if (parentDocumentId === selectedId) {
-        const nextSiblings = [
-          ...siblingBlocks.slice(0, insertIndex),
+        const previousBlocks = blocksRef.current;
+        const command = buildInsertBlockCommand(
+          previousBlocks,
           newBlock,
-          ...siblingBlocks.slice(insertIndex),
-        ].map((block, index) => ({ ...block, order_index: index }));
-        const siblingIds = new Set(nextSiblings.map((b) => b.id));
-        setBlocks((prev) => {
-          const others = prev.filter((b) => !siblingIds.has(b.id));
-          return [...others, ...nextSiblings];
-        });
-        noteUndo.pushDeleteBlockUndo(newBlock);
-        void documentEngine.persistReorder({
-          orders: nextSiblings.map((b) => ({ id: b.id, order_index: b.order_index })),
-        }).catch((e) => devLogger.error('[Note] subPageBlockOrder', e));
+          parentBlockId,
+          insertIndex,
+        );
+        setBlocks(command.nextBlocks);
+        noteUndo.pushBlockTransactionUndo(
+          previousBlocks,
+          command.nextBlocks,
+          command.affectedIds,
+        );
       } else {
         triggerSave();
       }

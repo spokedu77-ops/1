@@ -1,7 +1,11 @@
 import {
   applyBlockDropPlanInMemory,
   collectBlockForestIds,
+  planBlockDropAt,
+  planMergeWithPreviousBlock,
+  planMoveRootBlockGroup,
   type BlockDropPlan,
+  type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import type { NoteBlock } from './types';
@@ -86,6 +90,73 @@ export function buildMoveBlockCommand(
   };
 }
 
+function buildStructureCommandResult(
+  previous: NoteBlock[],
+  nextBlocks: NoteBlock[],
+): NoteBlockCommandResult {
+  const affectedIds = collectBlockTransactionIds(previous, nextBlocks);
+  const previousById = new Map(previous.map((block) => [block.id, block]));
+  const nextById = new Map(nextBlocks.map((block) => [block.id, block]));
+  const changedBlocks = affectedIds
+    .map((id) => nextById.get(id))
+    .filter((block): block is NoteBlock => !!block);
+  return {
+    nextBlocks,
+    affectedIds,
+    orders: changedBlocks.map((block) => ({
+      id: block.id,
+      order_index: block.order_index,
+    })),
+    fieldPatches: changedBlocks.map((block) => {
+      const before = previousById.get(block.id);
+      return {
+        id: block.id,
+        parent_block_id: block.parent_block_id ?? null,
+        order_index: block.order_index,
+        ...(!contentsEqual(before?.content, block.content)
+          ? { content: block.content }
+          : {}),
+      };
+    }),
+    createdBlocks: [],
+    removedBlocks: [],
+  };
+}
+
+export function buildMoveBlockGroupCommand(
+  blocks: NoteBlock[],
+  movingIds: string[],
+  targetBlockId: string,
+  position: BlockDropPosition,
+): NoteBlockCommandResult {
+  if (movingIds.length === 0 || movingIds.includes(targetBlockId)) {
+    return emptyCommandResult(blocks);
+  }
+
+  if (position !== 'inside') {
+    const nextRoots = planMoveRootBlockGroup(
+      blocks,
+      movingIds,
+      targetBlockId,
+      position,
+    );
+    if (!nextRoots) return emptyCommandResult(blocks);
+    const rootMap = new Map(nextRoots.map((block) => [block.id, block]));
+    return buildStructureCommandResult(
+      blocks,
+      blocks.map((block) => rootMap.get(block.id) ?? block),
+    );
+  }
+
+  let nextBlocks = blocks;
+  for (const movingId of movingIds) {
+    const plan = planBlockDropAt(nextBlocks, movingId, targetBlockId, 'inside');
+    if (!plan) return emptyCommandResult(blocks);
+    nextBlocks = applyBlockDropPlanInMemory(nextBlocks, movingId, plan);
+  }
+  return buildStructureCommandResult(blocks, nextBlocks);
+}
+
 export function buildDeleteBlockForestCommand(
   blocks: NoteBlock[],
   rootIds: Iterable<string>,
@@ -138,5 +209,32 @@ export function buildInsertBlockCommand(
     fieldPatches: [],
     createdBlocks: [inserted],
     removedBlocks: [],
+  };
+}
+
+export function buildMergeWithPreviousBlockCommand(
+  blocks: NoteBlock[],
+  blockId: string,
+): (NoteBlockCommandResult & { focusBlockId: string; caretOffset: number }) | null {
+  const plan = planMergeWithPreviousBlock(blocks, blockId);
+  if (!plan) return null;
+  const deleteSet = new Set(collectBlockForestIds([plan.deleteId], blocks));
+  const nextBlocks = blocks
+    .filter((block) => !deleteSet.has(block.id))
+    .map((block) => (
+      block.id === plan.previousId
+        ? { ...block, content: plan.mergedContent }
+        : block
+    ));
+  const affectedIds = [plan.previousId, ...deleteSet];
+  return {
+    nextBlocks,
+    affectedIds,
+    orders: [],
+    fieldPatches: [{ id: plan.previousId, content: plan.mergedContent }],
+    createdBlocks: [],
+    removedBlocks: blocks.filter((block) => deleteSet.has(block.id)),
+    focusBlockId: plan.previousId,
+    caretOffset: plan.caretOffset,
   };
 }

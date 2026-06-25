@@ -226,7 +226,6 @@ export function useNoteBlockActions(options: {
     triggerSave,
     loadTrashedBlocks,
     focusBlockEditor,
-    recordBlockUndo,
     recordBlockCommandUndo,
     ensureMinimumRootTextBlock,
     onAfterBlocksRemoved,

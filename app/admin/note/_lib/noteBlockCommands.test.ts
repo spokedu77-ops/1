@@ -3,6 +3,8 @@ import { planBlockDropAt } from '@/app/lib/note/noteBlockTree';
 import {
   buildDeleteBlockForestCommand,
   buildInsertBlockCommand,
+  buildMergeWithPreviousBlockCommand,
+  buildMoveBlockGroupCommand,
   buildMoveBlockCommand,
   collectBlockTransactionIds,
 } from './noteBlockCommands';
@@ -97,5 +99,70 @@ describe('note block commands', () => {
     expect(new Set(collectBlockTransactionIds(before, after))).toEqual(
       new Set(['a', 'created', 'removed']),
     );
+  });
+
+  it('merges text and removes the current subtree as one command', () => {
+    const blocks = [
+      { ...block('a', 0), content: { text: 'hello ' } },
+      { ...block('b', 1), content: { text: 'world' } },
+      block('child', 0, 'b'),
+    ];
+
+    const command = buildMergeWithPreviousBlockCommand(blocks, 'b');
+
+    expect(command?.nextBlocks.map((item) => item.id)).toEqual(['a']);
+    expect(command?.nextBlocks[0].content.text).toBe('hello world');
+    expect(command?.removedBlocks.map((item) => item.id)).toEqual(['b', 'child']);
+    expect(command?.caretOffset).toBe(6);
+    expect(blocks).toHaveLength(3);
+  });
+
+  it('moves a selected group inside one block with one persistence payload', () => {
+    const blocks = [
+      block('container', 0),
+      block('a', 1),
+      block('b', 2),
+      block('other', 3),
+    ];
+
+    const command = buildMoveBlockGroupCommand(
+      blocks,
+      ['a', 'b'],
+      'container',
+      'inside',
+    );
+
+    expect(command.nextBlocks.find((item) => item.id === 'a')).toMatchObject({
+      parent_block_id: 'container',
+      order_index: 0,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'b')).toMatchObject({
+      parent_block_id: 'container',
+      order_index: 1,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'other')?.order_index).toBe(1);
+    expect(new Set(command.fieldPatches.map((patch) => patch.id))).toEqual(
+      new Set(['a', 'b', 'other']),
+    );
+  });
+
+  it('reorders a root group while preserving its visual order', () => {
+    const blocks = [
+      block('a', 0),
+      block('b', 1),
+      block('c', 2),
+      block('d', 3),
+    ];
+
+    const command = buildMoveBlockGroupCommand(
+      blocks,
+      ['b', 'c'],
+      'd',
+      'after',
+    );
+
+    const roots = [...command.nextBlocks].sort((x, y) => x.order_index - y.order_index);
+    expect(roots.map((item) => item.id)).toEqual(['a', 'd', 'b', 'c']);
+    expect(command.fieldPatches).toHaveLength(3);
   });
 });

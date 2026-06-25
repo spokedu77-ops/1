@@ -4,6 +4,8 @@ import {
   parsePatchedBlocks,
   patchNoteBlocks,
   patchNoteBlocksResolvingConflicts,
+  postNoteBlockTransaction,
+  postNoteBlockCreateTransaction,
   postNoteBlock,
 } from './noteBlocksApi';
 
@@ -205,5 +207,94 @@ describe('postNoteBlock', () => {
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(block.id).toBe('b-new');
     expect(block.version).toBe(1);
+  });
+});
+
+describe('postNoteBlockTransaction', () => {
+  it('merges duplicate block patches and sends deletes in one request', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({
+        ok: true,
+        blocks: [{
+          id: 'a',
+          version: 4,
+          updated_at: '2026-06-25T00:00:00Z',
+        }],
+      }),
+      { status: 200 },
+    ));
+
+    await postNoteBlockTransaction(
+      [
+        { id: 'a', order_index: 2 },
+        { id: 'a', parent_block_id: 'parent', content: { text: 'moved' } },
+      ],
+      ['deleted'],
+      () => ({ id: 'a', version: 3 }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/admin/note/blocks/transaction');
+    const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(body).toEqual({
+      updates: [{
+        id: 'a',
+        order_index: 2,
+        parent_block_id: 'parent',
+        content: { text: 'moved' },
+        expected_version: 3,
+      }],
+      deleteIds: ['deleted'],
+    });
+  });
+});
+
+describe('postNoteBlockCreateTransaction', () => {
+  it('sends create and sibling order updates in one request', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({
+        ok: true,
+        blocks: [{ id: 'a', version: 3, updated_at: '2026-06-25T00:00:00Z' }],
+        createdBlocks: [{
+          id: 'new',
+          document_id: 'doc',
+          parent_block_id: null,
+          type: 'text',
+          order_index: 0,
+          content: { text: '' },
+          created_at: '2026-06-25T00:00:00Z',
+          updated_at: '2026-06-25T00:00:00Z',
+          version: 1,
+        }],
+      }),
+      { status: 200 },
+    ));
+
+    const result = await postNoteBlockCreateTransaction(
+      {
+        documentId: 'doc',
+        blockType: 'text',
+        content: { text: '' },
+        order_index: 0,
+        parent_block_id: null,
+      },
+      [{ id: 'a', order_index: 1 }],
+      () => ({ id: 'a', version: 2 }),
+    );
+
+    const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(body.updates[0]).toEqual({
+      id: 'a',
+      order_index: 1,
+      expected_version: 2,
+    });
+    expect(body.creates[0]).toEqual({
+      document_id: 'doc',
+      parent_block_id: null,
+      type: 'text',
+      order_index: 0,
+      content: { text: '' },
+    });
+    expect(result.createdBlock.id).toBe('new');
   });
 });

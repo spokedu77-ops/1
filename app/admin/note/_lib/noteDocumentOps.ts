@@ -27,9 +27,13 @@ export type NotePersistOp =
     parent_block_id: string | null;
     normalizeOrders?: Array<{ id: string; order_index: number }>;
   }
+  | { type: 'transferBlocks'; patches: NoteBlockFieldPatch[] }
+  /** @deprecated Use blockTransaction. */
+  | { type: 'transferBlocks'; patches: NoteBlockFieldPatch[] }
   | {
-    type: 'transferBlocks';
+    type: 'blockTransaction';
     patches: NoteBlockFieldPatch[];
+    deleteIds: string[];
   }
   | { type: 'purgeBlock'; id: string };
 

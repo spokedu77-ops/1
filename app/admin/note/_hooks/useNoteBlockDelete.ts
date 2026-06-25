@@ -4,17 +4,18 @@ import { useCallback } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   filterSiblingBlocks,
-  planMergeWithPreviousBlock,
   sortRootBlocks,
 } from '@/app/lib/note/noteBlockTree';
-import { buildDeleteBlockForestCommand } from '../_lib/noteBlockCommands';
+import {
+  buildDeleteBlockForestCommand,
+  buildMergeWithPreviousBlockCommand,
+} from '../_lib/noteBlockCommands';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import {
   commitActiveNoteEditorToStore,
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
-import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from '../_lib/types';
 
 export function useNoteBlockDelete(options: {
@@ -34,7 +35,6 @@ export function useNoteBlockDelete(options: {
   triggerSave: () => void;
   loadTrashedBlocks: () => Promise<void>;
   focusBlockEditor: (blockId: string | null, part?: 'title' | 'editor', caretOffset?: number) => void;
-  recordBlockUndo: (blockIds: string[]) => void;
   recordBlockCommandUndo: (
     previousBlocks: NoteBlock[],
     command: NoteBlockCommandResult,
@@ -59,7 +59,6 @@ export function useNoteBlockDelete(options: {
     triggerSave,
     loadTrashedBlocks,
     focusBlockEditor,
-    recordBlockUndo,
     recordBlockCommandUndo,
     ensureMinimumRootTextBlock,
     onAfterBlocksRemoved,
@@ -200,25 +199,18 @@ export function useNoteBlockDelete(options: {
   const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {
     commitActiveNoteEditorToStore();
     const prevBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-    const plan = planMergeWithPreviousBlock(prevBlocks, block.id);
-    if (!plan) return;
+    const command = buildMergeWithPreviousBlockCommand(prevBlocks, block.id);
+    if (!command) return;
 
-    recordBlockUndo([plan.previousId, plan.deleteId]);
-
-    const store = useNoteBlockStore.getState();
-    store.patchContent(plan.previousId, plan.mergedContent);
-    store.removeBlock(plan.deleteId);
-
-    const nextBlocks = prevBlocks
-      .filter((b) => b.id !== plan.deleteId)
-      .map((b) => (b.id === plan.previousId ? { ...b, content: plan.mergedContent } : b));
-    documentEngine.replaceBlocks(nextBlocks);
-
-    focusBlockEditor(plan.previousId, 'editor', plan.caretOffset);
+    recordBlockCommandUndo(prevBlocks, command);
+    documentEngine.replaceBlocks(command.nextBlocks);
+    focusBlockEditor(command.focusBlockId, 'editor', command.caretOffset);
 
     try {
-      await documentEngine.persistFieldPatches([{ id: plan.previousId, content: plan.mergedContent }]);
-      await documentEngine.persistSoftDelete({ ids: [plan.deleteId] });
+      await documentEngine.persistBlockTransaction(
+        command.fieldPatches,
+        command.removedBlocks.map((removed) => removed.id),
+      );
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
       setError(e instanceof Error ? e.message : '블록 병합 실패');
@@ -230,9 +222,7 @@ export function useNoteBlockDelete(options: {
     blocksRef,
     documentEngine,
     focusBlockEditor,
-    recordBlockUndo,
     recordBlockCommandUndo,
-    setBlocks,
     setError,
     setMergeFocusCaretOffset,
   ]);
