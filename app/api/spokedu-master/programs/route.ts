@@ -1,5 +1,4 @@
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import type { Program } from '@/app/spokedu-master/types';
@@ -317,16 +316,15 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
+  const admin = await requireAdmin();
+  if (!admin.ok) return withPrivateNoStore(admin.response);
+
   const { searchParams } = new URL(request.url);
   const idRaw = searchParams.get('id');
   const curriculumId = idRaw ? Number(idRaw) : NaN;
   if (!Number.isFinite(curriculumId) || curriculumId <= 0) {
     return privateNoStoreJson({ error: 'invalid id' }, { status: 400 });
   }
-
-  const serverSupabase = await createServerSupabaseClient();
-  const { data: { user } } = await serverSupabase.auth.getUser();
-  if (!user) return privateNoStoreJson({ error: 'Unauthorized' }, { status: 401 });
 
   let body: Record<string, unknown>;
   try {
@@ -339,6 +337,9 @@ export async function PATCH(request: Request) {
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];
+  }
+  if (Object.keys(patch).length === 0) {
+    return privateNoStoreJson({ error: 'empty patch' }, { status: 400 });
   }
 
   const supabase = getServiceSupabase();

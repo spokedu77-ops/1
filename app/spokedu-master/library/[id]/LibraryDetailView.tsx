@@ -39,13 +39,11 @@ import {
   officialPresetSessionHref,
 } from '../../spomove/officialSpomovePresets';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
-import {
-  getFavoritesOwnerId,
-  isFavoriteByOwner,
-} from '../../lib/favoriteLib';
+import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useMasterStore } from '../../store';
 import type { ClassRecord } from '../../types';
+import { getLibraryReturnHref } from '../libraryNavigation';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
 const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
@@ -61,9 +59,12 @@ function BookOpenFallback() {
 export default function LibraryDetailView({ id }: { id: string }) {
   const programs = useMasterStore((state) => state.programs);
   const profile = useMasterStore((state) => state.profile);
-  const favoriteProgramIdsByOwner = useMasterStore((state) => state.favoriteProgramIdsByOwner);
-  const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const ownerId = getFavoritesOwnerId(profile);
+  const storedFavoriteIds = useMasterStore((state) =>
+    ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined,
+  );
+  const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
+  const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const operationalData = useOperationalData();
   const classRecords = operationalData.classRecords.map(toClassRecord);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
@@ -85,6 +86,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
+  const libraryReturnHref = getLibraryReturnHref(searchParams.get('libraryView'));
 
   useEffect(() => {
     if (!program || shouldAutoplayVideo || openedProgramRef.current === program.id) return;
@@ -125,7 +127,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <BookOpenFallback />
         <h1 className="mt-5 text-xl font-black text-slate-950">수업 자료를 찾을 수 없습니다.</h1>
         <p className="mt-2 text-sm text-slate-400">라이브러리에서 다른 수업을 선택해 주세요.</p>
-        <Link href="/spokedu-master/library" className="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-extrabold text-white">
+        <Link href={libraryReturnHref} className="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-extrabold text-white">
           라이브러리로 돌아가기
         </Link>
       </main>
@@ -136,7 +138,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const model = buildLessonDisplayModel(program);
   const title = model.title;
   const parentCopy = model.parentNote;
-  const favorite = isFavoriteByOwner(favoriteProgramIdsByOwner, ownerId, program.id);
+  const favorite = Boolean(storedFavoriteIds) && isFavoriteProgram(ownerId, program.id);
   const usageCount = usageRecords.length;
   const latestUsageDate = usageRecords.length > 0
     ? new Date([...usageRecords].sort((a, b) => b.date.localeCompare(a.date))[0].date)
@@ -210,7 +212,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   return (
     <main className="min-h-dvh bg-[#f6f7f9] pb-44 text-slate-950 lg:pb-14">
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
-        <Link href="/spokedu-master/library" className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
+        <Link href={libraryReturnHref} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
           라이브러리
         </Link>
@@ -398,9 +400,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
             className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-[12px] font-black ${
               favorite
                 ? 'border-amber-200 bg-amber-50 text-amber-700'
-                : 'border-slate-200 bg-white text-slate-700'
-            }`}
-            aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                : ownerId
+                  ? 'border-slate-200 bg-white text-slate-700'
+                  : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+            } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`}
+            aria-pressed={favorite}
+            aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+            disabled={!ownerId}
           >
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
             즐겨찾기

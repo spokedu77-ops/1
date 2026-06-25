@@ -3,7 +3,6 @@
 import { ArrowRight, BookOpen, Check, Clipboard, MonitorPlay, School, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { validateCenterCode, type CenterValidationResult } from '../lib/serviceContracts';
 import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
 
@@ -51,46 +50,24 @@ export default function OnboardingPage() {
 
   const [role, setRole] = useState<UserRole>(profile?.role ?? 'teacher');
   const [centerMode, setCenterMode] = useState<'personal' | 'center'>(profile?.centerId ? 'center' : 'personal');
-  const [centerCode, setCenterCode] = useState('');
-  const [centerResult, setCenterResult] = useState<CenterValidationResult | null>(null);
-  const [centerError, setCenterError] = useState('');
-  const [validating, setValidating] = useState(false);
   const [name, setName] = useState(profile?.name ?? '선생님');
   const [school, setSchool] = useState(profile?.school ?? '');
   const [ageGroups, setAgeGroups] = useState<string[]>(profile?.ageGroups ?? []);
   const [programTypes, setProgramTypes] = useState<string[]>(profile?.programTypes ?? []);
 
-  const centerValid = centerMode === 'personal' || !!centerResult;
   const profileValid = name.trim().length > 0 && name.trim().length <= 20;
   const canNext = useMemo(() => {
     if (step === 0) return !!role;
-    if (step === 1) return centerMode === 'personal' || centerValid;
+    if (step === 1) return true;
     if (step === 2) return profileValid;
     return true;
-  }, [centerMode, centerValid, profileValid, role, step]);
+  }, [profileValid, role, step]);
 
   const toggle = (value: string, list: string[], setter: (next: string[]) => void) => {
     setter(list.includes(value) ? list.filter((item) => item !== value) : [...list, value]);
   };
 
-  const validateCenter = async () => {
-    setValidating(true);
-    setCenterError('');
-    const result = await validateCenterCode(centerCode);
-    setValidating(false);
-    if (result.ok) {
-      setCenterResult(result.data);
-      return;
-    }
-    setCenterResult(null);
-    setCenterError(result.message);
-  };
-
-  const next = async () => {
-    if (step === 1 && centerMode === 'center' && !centerResult) {
-      await validateCenter();
-      return;
-    }
+  const next = () => {
     setStep((value) => Math.min(3, value + 1));
   };
 
@@ -100,13 +77,13 @@ export default function OnboardingPage() {
       name: name.trim() || '선생님',
       school: school.trim(),
       role,
-      centerId: centerMode === 'center' ? centerResult?.centerId ?? centerCode.trim().toUpperCase() : null,
-      centerName: centerMode === 'center' ? centerResult?.centerName ?? '연결된 체육 센터' : null,
+      centerId: null,
+      centerName: null,
       ageGroups,
       programTypes,
       plan: hasActivePlan ? profile?.plan : 'free',
       onboardingDone: true,
-      trialEndsAt: hasActivePlan ? profile?.trialEndsAt ?? null : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+      trialEndsAt: profile?.trialEndsAt ?? null,
     });
   };
 
@@ -152,19 +129,20 @@ export default function OnboardingPage() {
               <div className="space-y-4">
                 <h2 className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>연결 방식</h2>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <ChoiceCard title="개인으로 시작" desc="14일 무료 체험으로 먼저 확인합니다." active={centerMode === 'personal'} icon={UserRound} onClick={() => { setCenterMode('personal'); setCenterResult(null); }} />
-                  <ChoiceCard title="센터 코드 입력" desc="센터 정보를 연결해 운영 목적에 맞게 체험합니다. 유료 권한은 별도 플랜 선택 후 적용됩니다." active={centerMode === 'center'} icon={School} onClick={() => setCenterMode('center')} />
+                  <ChoiceCard title="개인 계정으로 시작" desc="센터 운영 역할을 선택해도 현재는 개인 계정으로 시작합니다." active={centerMode === 'personal'} icon={UserRound} onClick={() => setCenterMode('personal')} />
+                  <ChoiceCard title="센터 운영 역할" desc="센터 계정 연결은 준비 중이며, 개인 계정으로 먼저 시작할 수 있습니다." active={centerMode === 'center'} icon={School} onClick={() => setCenterMode('center')} />
                 </div>
                 {centerMode === 'center' ? (
-                  <label className="block">
-                    <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>센터 코드</span>
-                    <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-                      <input value={centerCode} onChange={(event) => { setCenterCode(event.target.value); setCenterResult(null); }} placeholder="예: SPOMOVE2026" className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-bold uppercase outline-none" style={{ background: 'var(--spm-s2)', borderColor: centerError ? 'var(--spm-red)' : 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-                      <button type="button" onClick={validateCenter} disabled={validating} className="h-12 rounded-[12px] px-4 text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>{validating ? '확인 중' : '코드 확인'}</button>
+                  <div className="rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+                    <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>센터 계정 연결은 준비 중입니다.</p>
+                    <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>
+                      현재는 개인 계정으로 시작한 뒤 Center 이용권 또는 기관 도입 상담을 이용해 주세요.
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button type="button" onClick={finishAndOpenPlans} className="rounded-[10px] px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-acc)', color: '#fff' }}>Center 이용권 보기</button>
+                      <a href="mailto:support@spokedu.com" className="rounded-[10px] px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>기관 도입 문의</a>
                     </div>
-                    {centerResult ? <p className="mt-2 text-[11px] font-bold" style={{ color: 'var(--spm-grn)' }}>{centerResult.centerName} / 강사 {centerResult.teacherSlots}명 플랜</p> : null}
-                    {centerError ? <p className="mt-2 text-[11px] font-bold" style={{ color: 'var(--spm-red)' }}>{centerError}</p> : null}
-                  </label>
+                  </div>
                 ) : null}
               </div>
             ) : null}
@@ -227,7 +205,7 @@ export default function OnboardingPage() {
             {step < 3 ? (
               <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
                 <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
-                <button type="button" onClick={next} disabled={!canNext || validating} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+                <button type="button" onClick={next} disabled={!canNext} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
                   다음
                   <ArrowRight size={16} />
                 </button>

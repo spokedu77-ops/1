@@ -29,13 +29,17 @@ export type SpokeduMasterSubscriptionRow = {
   plan: string | null;
   status: string | null;
   period_end: string | null;
+  trial_started_at: string | null;
+  trial_ends_at: string | null;
 };
 
-export function isSpokeduMasterTrialActive(createdAt: string | undefined): boolean {
-  if (!createdAt) return false;
-  const createdAtMs = Date.parse(createdAt);
-  if (!Number.isFinite(createdAtMs)) return false;
-  return createdAtMs + TRIAL_MS > Date.now();
+export function isSpokeduMasterTrialActive(
+  row: SpokeduMasterSubscriptionRow | null,
+  now = Date.now(),
+): boolean {
+  if (!row?.trial_ends_at) return false;
+  const trialEndMs = Date.parse(row.trial_ends_at);
+  return Number.isFinite(trialEndMs) && trialEndMs > now;
 }
 
 export function isSpokeduMasterPaidPlanActive(
@@ -44,18 +48,59 @@ export function isSpokeduMasterPaidPlanActive(
   if (!row) return false;
   if (row.status !== 'active') return false;
   if (row.plan !== 'pro' && row.plan !== 'team') return false;
-  if (!row.period_end) return true;
+  if (!row.period_end) return false;
   const periodEndMs = Date.parse(row.period_end);
-  return Number.isFinite(periodEndMs) && periodEndMs >= Date.now();
+  return Number.isFinite(periodEndMs) && periodEndMs > Date.now();
 }
 
 export function isSpokeduMasterPaidPlanExpired(row: SpokeduMasterSubscriptionRow | null): boolean {
   if (!row) return false;
   if (row.status !== 'active') return false;
   if (row.plan !== 'pro' && row.plan !== 'team') return false;
-  if (!row.period_end) return false;
+  if (!row.period_end) return true;
   const periodEndMs = Date.parse(row.period_end);
-  return Number.isFinite(periodEndMs) && periodEndMs < Date.now();
+  return !Number.isFinite(periodEndMs) || periodEndMs <= Date.now();
+}
+
+type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
+
+export async function ensureSpokeduMasterEntitlement(
+  serviceSupabase: ServiceSupabase,
+  userId: string,
+): Promise<{ row: SpokeduMasterSubscriptionRow | null; error: unknown | null }> {
+  const selectRow = async () => serviceSupabase
+    .from('spokedu_master_subscriptions')
+    .select('plan,status,period_end,trial_started_at,trial_ends_at')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const existing = await selectRow();
+  if (existing.error) return { row: null, error: existing.error };
+  if (existing.data) {
+    return { row: existing.data as SpokeduMasterSubscriptionRow, error: null };
+  }
+
+  const trialStartedAt = new Date();
+  const trialEndsAt = new Date(trialStartedAt.getTime() + TRIAL_MS);
+  const inserted = await serviceSupabase
+    .from('spokedu_master_subscriptions')
+    .insert({
+      user_id: userId,
+      plan: 'free',
+      status: 'trial',
+      trial_started_at: trialStartedAt.toISOString(),
+      trial_ends_at: trialEndsAt.toISOString(),
+    });
+
+  if (inserted.error && (inserted.error as { code?: string }).code !== '23505') {
+    return { row: null, error: inserted.error };
+  }
+
+  const resolved = await selectRow();
+  return {
+    row: (resolved.data as SpokeduMasterSubscriptionRow | null) ?? null,
+    error: resolved.error ?? null,
+  };
 }
 
 export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> {
@@ -78,11 +123,10 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
     }
 
     const serviceSupabase = getServiceSupabase();
-    const { data, error } = await serviceSupabase
-      .from('spokedu_master_subscriptions')
-      .select('plan,status,period_end')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const { row: subscription, error } = await ensureSpokeduMasterEntitlement(
+      serviceSupabase,
+      user.id,
+    );
 
     if (error) {
       devLogger.error('[requireSpokeduMasterAccess] subscription lookup failed', error);
@@ -99,7 +143,6 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
       };
     }
 
-    const subscription = data as SpokeduMasterSubscriptionRow | null;
     if (isSpokeduMasterPaidPlanActive(subscription)) {
       return {
         ok: true,
@@ -116,7 +159,7 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
       };
     }
 
-    if (isSpokeduMasterTrialActive(user.created_at)) {
+    if (isSpokeduMasterTrialActive(subscription)) {
       return { ok: true, userId: user.id, isAdmin: false, plan: 'trial' };
     }
 

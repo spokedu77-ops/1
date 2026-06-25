@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, BookOpen, CheckCircle2, ClipboardCheck, Minus, MonitorPlay, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { BottomSheet } from '../components/ui/BottomSheet';
+import { ArrowRight, BookOpen, ClipboardCheck, Mail, Minus, MonitorPlay, PackageCheck, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useMasterStore } from '../store';
+import { buildQuoteInquiryMailto } from './quoteInquiry';
 
 const PRODUCTS = [
   { id: 'marker-cone', name: '마커콘 세트', desc: '방향 전환, 릴레이, 공간 구분 수업에 바로 쓰는 기본 교구', price: 8900, tone: '#f59e0b', tags: ['공간 구성', '릴레이'], lesson: '민첩성·반응 수업' },
@@ -39,23 +39,12 @@ export default function SpokeduMasterShopPage() {
   const addToCart = useMasterStore((state) => state.addToCart);
   const updateQty = useMasterStore((state) => state.updateQty);
   const clearCart = useMasterStore((state) => state.clearCart);
-  const [orderOpen, setOrderOpen] = useState(false);
-  const [orderTotal, setOrderTotal] = useState(0);
-  const [orderCount, setOrderCount] = useState(0);
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
+  const quoteInquiryHref = useMemo(() => buildQuoteInquiryMailto(cart), [cart]);
   const usedEquipment = useMemo(() => Array.from(new Set(programs.flatMap((p) => p.equipment))).slice(0, 10), [programs]);
 
   const addBundle = (bundle: (typeof BUNDLES)[number]) => {
     addToCart({ id: bundle.id, name: bundle.name, price: bundle.price, qty: 1 });
-  };
-
-  const createOrderRequest = () => {
-    if (cart.length === 0) return;
-    setOrderTotal(total);
-    setOrderCount(cartCount);
-    clearCart();
-    setOrderOpen(true);
   };
 
   return (
@@ -242,12 +231,12 @@ export default function SpokeduMasterShopPage() {
                       {total.toLocaleString('ko-KR')}원
                     </strong>
                   </div>
-                  <button type="button" onClick={createOrderRequest} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                    <CheckCircle2 size={16} />
-                    주문 요청 만들기
-                  </button>
+                  <a href={quoteInquiryHref} className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                    <Mail size={16} />
+                    견적 문의 메일 열기
+                  </a>
                   <p className="mt-2 text-[11px] leading-5" style={{ color: 'var(--spm-t3)' }}>
-                    실제 결제 전 견적과 배송 가능 여부를 확인하는 요청으로 접수됩니다.
+                    현재 금액은 참고용입니다. 메일 앱에서 품목을 확인한 뒤 견적을 문의할 수 있습니다.
                   </p>
                 </div>
               </div>
@@ -265,27 +254,6 @@ export default function SpokeduMasterShopPage() {
         </aside>
       </div>
 
-      <BottomSheet open={orderOpen} title="주문 요청 완료" onClose={() => setOrderOpen(false)}>
-        <div className="py-4 text-center">
-          <div className="mx-auto grid h-16 w-16 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
-            <CheckCircle2 size={30} color="var(--spm-grn)" />
-          </div>
-          <h2 className="mt-5 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-            교구 주문 요청을 만들었습니다.
-          </h2>
-          <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            총 {orderCount}개 항목, {orderTotal.toLocaleString('ko-KR')}원 기준으로 견적 요청을 준비했습니다.
-          </p>
-          <div className="mt-6 grid grid-cols-2 gap-2">
-            <button type="button" onClick={() => setOrderOpen(false)} className="h-11 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-              닫기
-            </button>
-            <Link href="/spokedu-master/library" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-              수업안으로
-            </Link>
-          </div>
-        </div>
-      </BottomSheet>
     </div>
   );
 }

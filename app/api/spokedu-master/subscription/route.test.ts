@@ -31,13 +31,36 @@ function mockAuthUser(value: typeof user | null) {
   });
 }
 
-function mockSubscriptionRow(row: { plan: string; status: string; period_end: string | null } | null) {
-  const maybeSingle = vi.fn().mockResolvedValue({ data: row });
+function mockSubscriptionRow(row: {
+  plan: string;
+  status: string;
+  period_end: string | null;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
+} | null, lookupError: unknown = null) {
+  let stored = row
+    ? {
+        trial_started_at: null,
+        trial_ends_at: null,
+        ...row,
+      }
+    : null;
+  const maybeSingle = vi.fn(async () => ({ data: stored, error: lookupError }));
   const eq = vi.fn().mockReturnValue({ maybeSingle });
   const select = vi.fn().mockReturnValue({ eq });
-  const from = vi.fn().mockReturnValue({ select });
+  const insert = vi.fn(async (payload: Record<string, unknown>) => {
+    stored = {
+      plan: String(payload.plan),
+      status: String(payload.status),
+      period_end: null,
+      trial_started_at: String(payload.trial_started_at),
+      trial_ends_at: String(payload.trial_ends_at),
+    };
+    return { error: null };
+  });
+  const from = vi.fn().mockReturnValue({ select, insert });
   getServiceSupabase.mockReturnValue({ from });
-  return { from, select, eq, maybeSingle };
+  return { from, select, eq, maybeSingle, insert };
 }
 
 describe('SPOKEDU MASTER subscription endpoint', () => {
@@ -92,7 +115,9 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
     const response = await GET();
 
     expect(query.from).toHaveBeenCalledWith('spokedu_master_subscriptions');
-    expect(query.select).toHaveBeenCalledWith('plan, status, period_end');
+    expect(query.select).toHaveBeenCalledWith(
+      'plan,status,period_end,trial_started_at,trial_ends_at',
+    );
     expect(query.eq).toHaveBeenCalledWith('user_id', user.id);
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
@@ -120,9 +145,9 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
     });
   });
 
-  it('returns free none with trial end when no paid subscription exists', async () => {
+  it('creates and returns a server-owned trial when no subscription exists', async () => {
     mockAuthUser(user);
-    mockSubscriptionRow(null);
+    const query = mockSubscriptionRow(null);
 
     const response = await GET();
 
@@ -130,11 +155,25 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
     const body = await response.json();
     expect(body).toMatchObject({
       plan: 'free',
-      status: 'none',
+      status: 'trial',
       isAdmin: false,
       userId: user.id,
       email: user.email,
     });
+    expect(query.insert).toHaveBeenCalledTimes(1);
+    expect(typeof body.trialStartedAt).toBe('string');
     expect(typeof body.trialEndsAt).toBe('string');
+  });
+
+  it('returns 500 when the subscription lookup fails', async () => {
+    mockAuthUser(user);
+    mockSubscriptionRow(null, { message: 'db unavailable' });
+
+    const response = await GET();
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Subscription lookup failed',
+    });
   });
 });

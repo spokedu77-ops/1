@@ -12,24 +12,11 @@ import { isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
+import { isProtectedMasterRoute } from './masterRouteAccess';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
 const LEGACY_SW_CACHE_NAMES = ['spokedu-master-v3', 'start-url', 'dev'];
 type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
-
-function isProtectedMasterRoute(pathname: string, basePath: string) {
-  if (basePath.startsWith('/admin')) return false;
-
-  return (
-    pathname === basePath ||
-    pathname === `${basePath}/dashboard` ||
-    pathname === `${basePath}/library` ||
-    pathname.startsWith(`${basePath}/library/`) ||
-    pathname === `${basePath}/class-record` ||
-    pathname === `${basePath}/students` ||
-    pathname === `${basePath}/report`
-  );
-}
 
 function currentLoginRedirectHref() {
   if (typeof window === 'undefined') return '/login';
@@ -233,7 +220,8 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const isProtectedRoute = isProtectedMasterRoute(pathname, basePath);
   const isAccessGuardPending =
     isProtectedRoute &&
-    (accessGuard.pathname !== pathname ||
+    (!subscriptionSynced ||
+      accessGuard.pathname !== pathname ||
       accessGuard.status === 'checking' ||
       accessGuard.status === 'redirecting');
   const isAccessGuardError =
@@ -248,7 +236,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       setSubscriptionSynced(true);
       return;
     }
-    void syncSubscription().finally(() => setSubscriptionSynced(true));
+    void syncSubscription().then(setSubscriptionSynced);
   }, [isLanding, isPublicDocument, syncSubscription]);
 
   useEffect(() => {
@@ -376,7 +364,19 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }, [accessRetryKey, isProtectedRoute, pathname, router]);
 
   if (isSession) {
-    return <div className="min-h-dvh bg-black" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>{children}</div>;
+    return (
+      <div className="min-h-dvh bg-black text-white" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
+        {isAccessGuardPending ? (
+          <MasterAccessCheckingState />
+        ) : isAccessGuardDenied ? (
+          <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
+        ) : isAccessGuardError ? (
+          <MasterAccessCheckingState error onRetry={() => setAccessRetryKey((key) => key + 1)} />
+        ) : (
+          children
+        )}
+      </div>
+    );
   }
 
   return (

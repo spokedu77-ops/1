@@ -1,123 +1,121 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  claimPendingLegacyFavorites,
   getFavoritesByOwner,
   getFavoritesOwnerId,
   isFavoriteByOwner,
   migrateLegacyFavorites,
+  normalizeFavoriteProgramIds,
   toggleFavoriteByOwner,
 } from './favoriteLib';
 
-describe('getFavoritesOwnerId', () => {
-  it('null profile은 "local" 반환', () => {
-    expect(getFavoritesOwnerId(null)).toBe('local');
+describe('favorite owner identity', () => {
+  it('uses stable user ID before normalized email', () => {
+    expect(getFavoritesOwnerId({ id: 'user-1', email: 'A@EXAMPLE.COM' } as never))
+      .toBe('id:user-1');
+    expect(getFavoritesOwnerId({ id: 'local', email: 'A@EXAMPLE.COM' } as never))
+      .toBe('email:a@example.com');
   });
 
-  it('일반 id 계정은 id: 접두사 사용', () => {
-    expect(getFavoritesOwnerId({ id: 'user-1', email: '' } as never)).toBe('id:user-1');
-  });
-
-  it('"local" id + 이메일이 있으면 email: 접두사 사용', () => {
-    expect(getFavoritesOwnerId({ id: 'local', email: 'Test@EXAMPLE.COM' } as never))
-      .toBe('email:test@example.com');
-  });
-
-  it('이메일 대소문자 혼합 → 소문자 통일', () => {
-    expect(getFavoritesOwnerId({ id: 'user-2', email: 'A@B.COM' } as never)).toBe('id:user-2');
-    expect(getFavoritesOwnerId({ id: 'local', email: 'A@B.COM' } as never))
-      .toBe('email:a@b.com');
-  });
-
-  it('id도 email도 없으면 "local" 반환', () => {
-    expect(getFavoritesOwnerId({ id: 'local', email: '' } as never)).toBe('local');
+  it('does not create an owner for a logged-out or unidentified profile', () => {
+    expect(getFavoritesOwnerId(null)).toBeNull();
+    expect(getFavoritesOwnerId({ id: 'local', email: '' } as never)).toBeNull();
   });
 });
 
-describe('getFavoritesByOwner', () => {
-  it('없는 owner는 빈 배열 반환', () => {
-    expect(getFavoritesByOwner({}, 'id:user-1')).toEqual([]);
+describe('favorite selectors', () => {
+  const state = {
+    'id:user-a': ['p1', 'p2'],
+    'id:user-b': ['p3'],
+  };
+
+  it('keeps owner A and B separate', () => {
+    expect(getFavoritesByOwner(state, 'id:user-a')).toEqual(['p1', 'p2']);
+    expect(getFavoritesByOwner(state, 'id:user-b')).toEqual(['p3']);
+    expect(isFavoriteByOwner(state, 'id:user-b', 'p1')).toBe(false);
   });
 
-  it('있는 owner는 해당 배열 반환', () => {
-    expect(getFavoritesByOwner({ 'id:user-1': ['p1', 'p2'] }, 'id:user-1')).toEqual(['p1', 'p2']);
-  });
-});
-
-describe('isFavoriteByOwner', () => {
-  const state = { 'id:user-1': ['p1', 'p2'] };
-
-  it('즐겨찾기된 ID는 true', () => {
-    expect(isFavoriteByOwner(state, 'id:user-1', 'p1')).toBe(true);
-  });
-
-  it('즐겨찾기 안 된 ID는 false', () => {
-    expect(isFavoriteByOwner(state, 'id:user-1', 'p3')).toBe(false);
-  });
-
-  it('없는 owner는 false', () => {
-    expect(isFavoriteByOwner(state, 'id:user-2', 'p1')).toBe(false);
+  it('does not expose the last owner while logged out', () => {
+    expect(getFavoritesByOwner(state, null)).toEqual([]);
+    expect(isFavoriteByOwner(state, null, 'p1')).toBe(false);
+    expect(getFavoritesByOwner(state, 'id:user-a')).toEqual(['p1', 'p2']);
   });
 });
 
-describe('toggleFavoriteByOwner', () => {
-  it('없는 ID를 추가하면 배열에 포함됨', () => {
-    const next = toggleFavoriteByOwner({}, 'id:user-1', 'p1');
-    expect(next['id:user-1']).toContain('p1');
+describe('favorite toggle', () => {
+  it('adds and removes a program for one owner only', () => {
+    const initial = { 'id:user-b': ['p-b'] };
+    const added = toggleFavoriteByOwner(initial, 'id:user-a', 'p1');
+    expect(added).toEqual({
+      'id:user-b': ['p-b'],
+      'id:user-a': ['p1'],
+    });
+
+    const removed = toggleFavoriteByOwner(added, 'id:user-a', 'p1');
+    expect(removed).toEqual({ 'id:user-b': ['p-b'] });
   });
 
-  it('이미 있는 ID를 누르면 제거됨', () => {
-    const state = { 'id:user-1': ['p1', 'p2'] };
-    const next = toggleFavoriteByOwner(state, 'id:user-1', 'p1');
-    expect(next['id:user-1']).not.toContain('p1');
-    expect(next['id:user-1']).toContain('p2');
+  it('deduplicates an owner list while preserving order', () => {
+    const state = { 'id:user-a': ['p1', 'p1', 'p2'] };
+    const next = toggleFavoriteByOwner(state, 'id:user-a', 'p3');
+    expect(next['id:user-a']).toEqual(['p1', 'p2', 'p3']);
   });
 
-  it('다른 owner에 영향 없음', () => {
-    const state = { 'id:user-1': ['p1'], 'id:user-2': ['p2'] };
-    const next = toggleFavoriteByOwner(state, 'id:user-1', 'p1');
-    expect(next['id:user-2']).toEqual(['p2']);
-  });
-
-  it('원본 상태를 변경하지 않음 (immutable)', () => {
-    const state = { 'id:user-1': ['p1'] };
-    const original = state['id:user-1'];
-    toggleFavoriteByOwner(state, 'id:user-1', 'p2');
-    expect(state['id:user-1']).toBe(original);
-  });
-
-  it('add → remove → add 반복 toggle 가능', () => {
-    const s0 = {};
-    const s1 = toggleFavoriteByOwner(s0, 'id:user-1', 'p1');
-    const s2 = toggleFavoriteByOwner(s1, 'id:user-1', 'p1');
-    const s3 = toggleFavoriteByOwner(s2, 'id:user-1', 'p1');
-    expect(s1['id:user-1']).toContain('p1');
-    expect(s2['id:user-1']).not.toContain('p1');
-    expect(s3['id:user-1']).toContain('p1');
+  it('does not write without a resolved owner', () => {
+    const state = { 'id:user-a': ['p1'] };
+    expect(toggleFavoriteByOwner(state, null, 'p2')).toBe(state);
   });
 });
 
-describe('migrateLegacyFavorites', () => {
-  it('기존 favorites 배열을 ownerId 아래로 마이그레이션', () => {
-    const result = migrateLegacyFavorites(['p1', 'p2'], 'id:user-1');
-    expect(result['id:user-1']).toEqual(['p1', 'p2']);
+describe('legacy favorite migration helpers', () => {
+  it('deduplicates legacy IDs while preserving first-seen order', () => {
+    expect(migrateLegacyFavorites(['p2', 'p1', 'p2'], 'id:user-a'))
+      .toEqual({ 'id:user-a': ['p2', 'p1'] });
   });
 
-  it('ownerId가 null이면 빈 객체 반환', () => {
+  it('does not assign unidentified legacy data to an arbitrary owner', () => {
     expect(migrateLegacyFavorites(['p1'], null)).toEqual({});
   });
 
-  it('legacy가 빈 배열이면 빈 객체 반환', () => {
-    expect(migrateLegacyFavorites([], 'id:user-1')).toEqual({});
+  it('claims pending data once and keeps other owners isolated', () => {
+    const first = claimPendingLegacyFavorites(
+      { 'id:user-b': ['p-b'] },
+      ['p1', 'p1', 'p2'],
+      { ownerId: 'id:user-a', emailOwnerId: 'email:a@example.com' },
+    );
+    expect(first).toEqual({
+      favoriteProgramIdsByOwner: {
+        'id:user-b': ['p-b'],
+        'id:user-a': ['p1', 'p2'],
+      },
+      pendingLegacyFavoriteProgramIds: [],
+    });
+
+    const second = claimPendingLegacyFavorites(
+      first.favoriteProgramIdsByOwner,
+      first.pendingLegacyFavoriteProgramIds,
+      { ownerId: 'id:user-a', emailOwnerId: 'email:a@example.com' },
+    );
+    expect(second).toEqual(first);
   });
 
-  it('legacy가 undefined면 빈 객체 반환', () => {
-    expect(migrateLegacyFavorites(undefined, 'id:user-1')).toEqual({});
+  it('moves matching email data to stable user ID without duplication', () => {
+    const result = claimPendingLegacyFavorites(
+      {
+        'email:a@example.com': ['p1', 'p2'],
+        'id:user-a': ['p2', 'p3'],
+      },
+      [],
+      { ownerId: 'id:user-a', emailOwnerId: 'email:a@example.com' },
+    );
+    expect(result.favoriteProgramIdsByOwner).toEqual({
+      'id:user-a': ['p2', 'p3', 'p1'],
+    });
   });
 
-  it('원본 배열을 복사하여 독립적으로 저장', () => {
-    const legacy = ['p1'];
-    const result = migrateLegacyFavorites(legacy, 'id:user-1');
-    legacy.push('p2');
-    expect(result['id:user-1']).toEqual(['p1']);
+  it('normalizes only unique non-empty string IDs', () => {
+    expect(normalizeFavoriteProgramIds(['p1', '', 'p1', null, 'p2']))
+      .toEqual(['p1', 'p2']);
   });
 });

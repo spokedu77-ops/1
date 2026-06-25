@@ -6,19 +6,11 @@ import {
   isSpokeduMasterPaidPlanActive,
   type SpokeduMasterSubscriptionRow,
 } from '@/app/lib/server/spokeduMasterAccess';
-
-const PLAN_CONFIG = {
-  pro: {
-    name: 'SPOKEDU MASTER Pro 플랜',
-    amount: 39900,
-  },
-  team: {
-    name: 'SPOKEDU MASTER Center 플랜',
-    amount: 79000,
-  },
-} as const;
-
-type PlanKey = keyof typeof PLAN_CONFIG;
+import {
+  createSpokeduMasterOrderId,
+  SPOKEDU_MASTER_PLAN_CONFIG,
+  type SpokeduMasterPaidPlan,
+} from '@/app/lib/server/spokeduMasterPayment';
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
@@ -34,8 +26,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '요청 형식이 올바르지 않습니다.' }, { status: 400 });
   }
 
-  const planKey = body.plan as PlanKey;
-  const plan = PLAN_CONFIG[planKey];
+  const planKey = body.plan as SpokeduMasterPaidPlan;
+  const plan = SPOKEDU_MASTER_PLAN_CONFIG[planKey];
   if (!plan) {
     return NextResponse.json({ error: '선택할 수 없는 플랜입니다.' }, { status: 400 });
   }
@@ -68,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: '이미 활성 이용권이 있습니다. 이용권 확인 화면에서 상태를 확인해 주세요.' }, { status: 409 });
   }
 
-  const orderId = `spm-${planKey}-${Date.now()}`;
+  const orderId = createSpokeduMasterOrderId(planKey);
   const customerName = user.email?.split('@')[0] ?? '선생님';
 
   const { error: orderError } = await service

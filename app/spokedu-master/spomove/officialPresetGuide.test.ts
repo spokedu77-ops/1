@@ -62,16 +62,20 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(source).toContain("activeProgramGroup === 'dive' && p.programGroup === 'bonus'");
   });
 
-  it('renders thumbnail, placeholder fallback, card guide labels, and briefing guide labels', () => {
+  it('renders thumbnail fallback, card display metadata, and briefing guide labels', () => {
     const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     const session = read('app/spokedu-master/spomove/session/page.tsx');
 
     expect(hub).toContain('SPOMOVE_THUMBNAIL_PACK_ID');
     expect(hub).toContain('thumbnailUrl');
-    expect(hub).toContain('onError={() => setImageFailed(true)}');
-    expect(hub).toContain('추천 대상');
-    expect(hub).toContain('생각 난이도');
-    expect(hub).toContain('실행 전 안내');
+    expect(hub).toContain('onImageError={() => setImageFailed(true)}');
+    expect(hub).toContain('onError={onImageError}');
+    expect(hub).toContain('getSpomovePresetDisplayModel');
+    expect(hub).toContain('displayModel.targetLabel');
+    expect(hub).toContain('displayModel.difficultyLabel');
+    expect(hub).toContain('displayModel.durationLabel');
+    expect(session).toContain('추천 대상');
+    expect(session).toContain('생각 난이도');
     expect(session).toContain('반응 유형');
     expect(session).toContain('주요 동작');
   });

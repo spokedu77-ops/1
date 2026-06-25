@@ -19,10 +19,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
-import {
-  getFavoritesByOwner,
-  getFavoritesOwnerId,
-} from '../lib/favoriteLib';
+import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
   getLessonTheme,
@@ -41,6 +38,15 @@ import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPro, useMasterStore } from '../store';
 import type { Program } from '../types';
+import {
+  countValidFavoritePrograms,
+  filterLibraryPrograms,
+  getFavoritesEmptyState,
+  parseLibraryView,
+  selectLibraryBasePrograms,
+  type LibraryViewMode,
+} from './libraryViewModel';
+import { getLibraryProgramDetailHref } from './libraryNavigation';
 
 const THUMBNAIL_FRAME =
   'relative aspect-[6/5] w-full max-w-[1250px] overflow-hidden rounded-2xl';
@@ -188,6 +194,8 @@ function ProgramCard({
   used,
   onPreview,
   onFavorite,
+  favoriteEnabled,
+  detailHref,
 }: {
   program: Program;
   locked: boolean;
@@ -195,6 +203,8 @@ function ProgramCard({
   used: boolean;
   onPreview: () => void;
   onFavorite: () => void;
+  favoriteEnabled: boolean;
+  detailHref: string;
 }) {
   const heroImage = getHeroImage(program);
   const meta = getCardMetaLine(program);
@@ -282,19 +292,24 @@ function ProgramCard({
 
       <button
         type="button"
-        onClick={onFavorite}
-        className={`absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full shadow-lg backdrop-blur transition ${
+        onClick={(event) => {
+          event.stopPropagation();
+          onFavorite();
+        }}
+        className={`absolute right-3 top-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full shadow-lg backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70 ${
           favorite
             ? 'bg-amber-50 text-amber-600'
             : 'bg-white/90 text-slate-500 hover:bg-white hover:text-slate-900'
         }`}
-        aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+        aria-pressed={favorite}
+        aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+        disabled={!favoriteEnabled}
       >
         <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
       </button>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+        <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
           수업 자료
         </Link>
         <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
@@ -346,18 +361,18 @@ export default function LibraryView() {
   const searchParams = useSearchParams();
   const { programs, programsLoaded, programsError } = useMasterStore();
   const profile = useMasterStore((state) => state.profile);
-  const favoriteProgramIdsByOwner = useMasterStore((state) => state.favoriteProgramIdsByOwner);
+  const ownerId = getFavoritesOwnerId(profile);
+  const storedFavoriteIds = useMasterStore((state) =>
+    ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined,
+  );
+  const getFavoriteProgramIds = useMasterStore((state) => state.getFavoriteProgramIds);
+  const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const isPro = useIsPro();
-
-  const ownerId = getFavoritesOwnerId(profile);
-  const favoriteIds = useMemo(
-    () => getFavoritesByOwner(favoriteProgramIdsByOwner, ownerId),
-    [favoriteProgramIdsByOwner, ownerId],
-  );
+  const favoriteIds = storedFavoriteIds ?? getFavoriteProgramIds(ownerId);
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [filter, setFilter] = useState<ActiveFilter>(() => {
@@ -366,19 +381,20 @@ export default function LibraryView() {
     const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme', 'material'];
     return group && value && allowedGroups.includes(group) ? { group, value } : null;
   });
-  const [view, setView] = useState<'all' | 'favorites'>(() =>
-    searchParams.get('view') === 'favorites' ? 'favorites' : 'all',
-  );
+  const view = parseLibraryView(searchParams.get('view'));
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const pool = useMemo(() => buildProgramPool(programs), [programs]);
 
-  const viewPool = useMemo(() => {
-    if (view !== 'favorites') return pool;
-    const favSet = new Set(favoriteIds);
-    return pool.filter((p) => favSet.has(p.id));
-  }, [pool, view, favoriteIds]);
+  const viewPool = useMemo(
+    () => selectLibraryBasePrograms(pool, favoriteIds, view),
+    [pool, favoriteIds, view],
+  );
+  const validFavoriteCount = useMemo(
+    () => countValidFavoritePrograms(pool, favoriteIds),
+    [pool, favoriteIds],
+  );
 
   const usedProgramIds = useMemo(
     () => new Set(classRecords.map((record) => record.programId)),
@@ -406,20 +422,36 @@ export default function LibraryView() {
       params.set('filterGroup', filter.group);
       params.set('filter', filter.value);
     }
-    if (view === 'favorites') params.set('view', 'favorites');
+    params.set('view', view);
     const next = params.toString();
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
   }, [filter, query, view, router, searchParams]);
 
-  const filteredPrograms = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    return viewPool.filter((program) => {
-      const queryMatched = normalizedQuery.length === 0 || getSearchText(program).includes(normalizedQuery);
-      return queryMatched && matchesFilter(program, filter);
-    });
-  }, [filter, viewPool, query]);
+  const filteredPrograms = useMemo(
+    () =>
+      filterLibraryPrograms(
+        viewPool,
+        query,
+        (program, normalizedQuery) => getSearchText(program).includes(normalizedQuery),
+        (program) => matchesFilter(program, filter),
+      ),
+    [filter, viewPool, query],
+  );
+  const favoritesEmptyState = getFavoritesEmptyState(
+    view,
+    validFavoriteCount,
+    query.trim().length > 0,
+    filter != null,
+    filteredPrograms.length,
+  );
+
+  const changeView = (nextView: LibraryViewMode) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('view', nextView);
+    router.push(`/spokedu-master/library?${params.toString()}`, { scroll: false });
+  };
 
   const packageStats = useMemo(() => {
     const videoCount = pool.filter(programHasPlayableVideo).length;
@@ -499,7 +531,7 @@ export default function LibraryView() {
     <>
       <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
         <header className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
-          {/* 헤더 상단: 타이틀 + 통계 + 검색 */}
+          {/* 헤더 상단: 타이틀 + 통계 */}
           <div className="border-b border-slate-200 p-5 sm:p-7">
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
               <div>
@@ -522,15 +554,48 @@ export default function LibraryView() {
                 ))}
               </div>
             </div>
+          </div>
 
-            <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_auto]">
+          {/* 뷰 모드 전환 — 전체 수업 / 즐겨찾기 */}
+          <div className="border-b border-slate-200 px-5 py-3 sm:px-7">
+            <div
+              className="grid min-h-11 w-full grid-cols-2 items-center rounded-xl border border-slate-200 bg-slate-50 p-1 sm:inline-grid sm:w-auto"
+              aria-label="라이브러리 보기"
+            >
+              <button
+                type="button"
+                onClick={() => changeView('all')}
+                className={`min-h-9 rounded-lg px-3.5 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  view === 'all'
+                    ? 'bg-white text-slate-950 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+                aria-pressed={view === 'all'}
+              >
+                전체 수업 <span className="ml-1 text-[11px] opacity-60">{pool.length}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => changeView('favorites')}
+                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3.5 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                  view === 'favorites'
+                    ? 'bg-white text-slate-950 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+                aria-pressed={view === 'favorites'}
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+                즐겨찾기 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
+              </button>
+            </div>
+            <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
               <label className="relative block">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="수업명, 설명, 교구, 태그 검색"
-                  className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-950 shadow-[0_8px_22px_rgba(15,23,42,0.04)] outline-none placeholder:text-slate-400 focus:border-indigo-300"
+                  className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-950 shadow-[0_8px_22px_rgba(15,23,42,0.04)] outline-none placeholder:text-slate-400 focus:border-indigo-300 focus-visible:ring-2 focus-visible:ring-indigo-500/20"
                 />
               </label>
               <Link href="/spokedu-master/spomove" className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 text-sm font-extrabold text-indigo-700">
@@ -540,42 +605,13 @@ export default function LibraryView() {
             </div>
           </div>
 
-          {/* 뷰 모드 전환 — 전체 수업 / 즐겨찾기 */}
-          <div className="border-b border-slate-200 px-5 py-3 sm:px-7">
-            <div className="inline-flex h-9 items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5">
-              <button
-                type="button"
-                onClick={() => setView('all')}
-                className={`h-8 rounded-md px-3.5 text-[12px] font-black transition ${
-                  view === 'all'
-                    ? 'bg-white text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                전체 수업
-              </button>
-              <button
-                type="button"
-                onClick={() => setView('favorites')}
-                className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3.5 text-[12px] font-black transition ${
-                  view === 'favorites'
-                    ? 'bg-white text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Bookmark className="h-3.5 w-3.5" />
-                즐겨찾기
-              </button>
-            </div>
-          </div>
-
           {/* 필터 영역 */}
           <div className="bg-slate-50/80 px-5 py-4 sm:px-7">
             <div className="flex items-center justify-between gap-4">
               <p className="text-xs font-black text-slate-700">필터</p>
               {filter ? (
                 <button type="button" onClick={() => setFilter(null)} className="text-[12px] font-black text-indigo-600">
-                  전체 보기
+                  필터 초기화
                 </button>
               ) : null}
             </div>
@@ -661,41 +697,47 @@ export default function LibraryView() {
           <ProgramGrid
             programs={filteredPrograms}
             isPro={isPro}
-            favorites={favoriteIds}
+            isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
+            favoriteEnabled={ownerId != null}
+            sourceLibraryView={view}
             usedProgramIds={usedProgramIds}
             toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
             setSelected={setSelected}
           />
           {filteredPrograms.length === 0 ? (
-            view === 'favorites' && favoriteIds.length === 0 ? (
+            favoritesEmptyState === 'no-favorites' ? (
               <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">
                 <Bookmark className="mx-auto h-10 w-10 text-slate-400" />
-                <h3 className="mt-4 text-lg font-black text-slate-950">즐겨찾기한 수업이 없습니다.</h3>
-                <p className="mt-2 text-sm text-slate-400">수업 카드의 북마크 아이콘을 눌러 즐겨찾기를 추가해 보세요.</p>
+                <h3 className="mt-4 text-lg font-black text-slate-950">아직 즐겨찾기한 수업이 없습니다.</h3>
+                <p className="mx-auto mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
+                  자주 사용하는 수업을 저장해 두면 여기에서 빠르게 다시 찾을 수 있습니다.
+                </p>
                 <button
                   type="button"
-                  onClick={() => setView('all')}
-                  className="mt-4 inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+                  onClick={() => changeView('all')}
+                  className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
-                  전체 수업 보기
+                  전체 수업 둘러보기
                 </button>
               </div>
             ) : (
               <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">
                 <BookOpen className="mx-auto h-10 w-10 text-slate-500" />
                 <h3 className="mt-4 text-lg font-black text-slate-950">
-                  {view === 'favorites' ? '조건에 맞는 즐겨찾기가 없습니다.' : '조건에 맞는 수업이 없습니다.'}
+                  {view === 'favorites' ? '조건에 맞는 즐겨찾기 수업이 없습니다.' : '조건에 맞는 수업이 없습니다.'}
                 </h3>
-                <p className="mt-2 text-sm text-slate-400">검색어를 줄이거나 선택한 필터를 해제해 보세요.</p>
+                <p className="mt-2 text-sm font-semibold text-slate-500">
+                  검색어를 줄이거나 선택한 필터를 해제해 보세요.
+                </p>
                 <button
                   type="button"
                   onClick={() => {
                     setQuery('');
                     setFilter(null);
                   }}
-                  className="mt-4 inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+                  className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >
-                  검색 초기화
+                  검색·필터 초기화
                 </button>
               </div>
             )
@@ -708,8 +750,9 @@ export default function LibraryView() {
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
           isPro={isPro}
-          favorite={favoriteIds.includes(selected.program.id)}
-          onFavorite={() => toggleFavoriteProgram(ownerId, selected.program.id)}
+          favorite={isFavoriteProgram(ownerId, selected.program.id)}
+          onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
+          sourceLibraryView={view}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selected.program.id,
@@ -728,14 +771,18 @@ export default function LibraryView() {
 function ProgramGrid({
   programs,
   isPro,
-  favorites,
+  isFavorite,
+  favoriteEnabled,
+  sourceLibraryView,
   usedProgramIds,
   toggleFavorite,
   setSelected,
 }: {
   programs: Program[];
   isPro: boolean;
-  favorites: string[];
+  isFavorite: (programId: string) => boolean;
+  favoriteEnabled: boolean;
+  sourceLibraryView: LibraryViewMode;
   usedProgramIds: Set<string>;
   toggleFavorite: (id: string) => void;
   setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
@@ -747,7 +794,9 @@ function ProgramGrid({
           key={program.id}
           program={program}
           locked={program.isPro && !isPro}
-          favorite={favorites.includes(program.id)}
+          favorite={isFavorite(program.id)}
+          favoriteEnabled={favoriteEnabled}
+          detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
           used={usedProgramIds.has(program.id)}
           onFavorite={() => toggleFavorite(program.id)}
           onPreview={() =>

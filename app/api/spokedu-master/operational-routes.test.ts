@@ -113,10 +113,23 @@ function createSupabaseMock(options: {
   recordsGetData?: ClassRecordRow[];
   existingRecord?: ClassRecordRow | null;
   ownedStudentIds?: string[];
+  rpcError?: { code: string; message: string } | null;
 } = {}) {
   const calls: QueryCall[] = [];
 
   const supabase = {
+    rpc: vi.fn((name: string, args: Record<string, unknown>) => {
+      calls.push({ table: name, action: 'rpc', args: [args] });
+      const missingRecord =
+        Object.prototype.hasOwnProperty.call(options, 'existingRecord') &&
+        options.existingRecord === null;
+      return Promise.resolve({
+        data: missingRecord ? null : String(args.p_record_id),
+        error: options.rpcError ?? (
+          missingRecord ? { code: 'P0002', message: 'class record not found' } : null
+        ),
+      });
+    }),
     from: vi.fn((table: string) => {
       const state = {
         table,
@@ -489,34 +502,23 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
       },
     });
     expect(calls).toContainEqual({
-      table: 'spokedu_master_class_records',
-      action: 'update',
+      table: 'spokedu_master_replace_class_record',
+      action: 'rpc',
       args: [
         expect.objectContaining({
-          class_date: '2026-06-21',
-          class_id: 'Updated class',
-          memo: 'Updated memo',
+          p_owner_id: 'owner-a',
+          p_record_id: 'record-a',
+          p_class_date: '2026-06-21',
+          p_class_id: 'Updated class',
+          p_memo: 'Updated memo',
+          p_students: [
+            expect.objectContaining({
+              student_id: 'student-a',
+              attendance: 'absent',
+              memo: 'Updated student memo',
+            }),
+          ],
         }),
-      ],
-    });
-    expect(calls).toContainEqual({
-      table: 'spokedu_master_class_record_students',
-      action: 'delete',
-      args: [],
-    });
-    expect(calls).toContainEqual({
-      table: 'spokedu_master_class_record_students',
-      action: 'insert',
-      args: [
-        [
-          expect.objectContaining({
-            owner_id: 'owner-a',
-            record_id: 'record-a',
-            student_id: 'student-a',
-            attendance: 'absent',
-            memo: 'Updated student memo',
-          }),
-        ],
       ],
     });
     expect(calls).not.toContainEqual({
@@ -553,9 +555,12 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
 
     expect(responseWithId.status).toBe(404);
     expect(calls).toContainEqual({
-      table: 'spokedu_master_class_records',
-      action: 'eq',
-      args: ['owner_id', 'owner-a'],
+      table: 'spokedu_master_replace_class_record',
+      action: 'rpc',
+      args: [expect.objectContaining({
+        p_owner_id: 'owner-a',
+        p_record_id: 'record-b',
+      })],
     });
     expect(calls).not.toContainEqual(expect.objectContaining({ action: 'update' }));
   });
