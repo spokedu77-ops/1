@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { NOTE_BLOCK_PATCH_BATCH_MAX } from '@/app/lib/note/noteBlockBatch';
 
 type NoteBlock = {
   id: string;
@@ -60,8 +61,6 @@ function parseOffset(value: string | null): number {
   if (!Number.isFinite(parsed) || parsed < 0) return 0;
   return parsed;
 }
-
-const BATCH_PATCH_MAX = 200;
 
 const BLOCK_SELECT =
   'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
@@ -391,8 +390,11 @@ export async function PATCH(request: NextRequest) {
       if (patches.length === 0) {
         return NextResponse.json({ error: 'updates array required' }, { status: 400 });
       }
-      if (patches.length > BATCH_PATCH_MAX) {
-        return NextResponse.json({ error: `updates max ${BATCH_PATCH_MAX}` }, { status: 400 });
+      if (patches.length > NOTE_BLOCK_PATCH_BATCH_MAX) {
+        return NextResponse.json(
+          { error: `updates max ${NOTE_BLOCK_PATCH_BATCH_MAX}` },
+          { status: 400 },
+        );
       }
 
       const supabase = getServiceSupabase();
@@ -507,8 +509,11 @@ export async function PUT(request: NextRequest) {
     if (!hasOrders && fieldPatches.length === 0) {
       return NextResponse.json({ error: 'orders or updates array required' }, { status: 400 });
     }
-    if (fieldPatches.length > BATCH_PATCH_MAX) {
-      return NextResponse.json({ error: `updates max ${BATCH_PATCH_MAX}` }, { status: 400 });
+    if (fieldPatches.length > NOTE_BLOCK_PATCH_BATCH_MAX) {
+      return NextResponse.json(
+        { error: `updates max ${NOTE_BLOCK_PATCH_BATCH_MAX}` },
+        { status: 400 },
+      );
     }
 
     const normalizedOrders = hasOrders

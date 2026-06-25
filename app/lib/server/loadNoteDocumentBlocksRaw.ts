@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import type { LoadedNoteBlock } from './loadNoteDocumentBlocks';
-import { applyToggleBodyForwardMigrations } from './applyToggleBodyForwardMigrations';
+import { applyToggleBodyForwardMigrations } from './applyToggleBodyForwardMigrations';
+import { applyNoteBlockTreeMigrations } from './applyNoteBlockTreeMigrations';
 import { reconcileSubPagesOnDocumentLoad } from './reconcileSubPagesOnDocumentLoad';
 
 const BLOCK_SELECT =
@@ -22,7 +23,8 @@ export async function loadNoteDocumentBlocksRaw(
 
   if (error) throw new Error(error.message);
   let blocks = (data ?? []) as LoadedNoteBlock[];
-  blocks = await applyToggleBodyForwardMigrations(supabase, documentId, blocks, actorId);
+  blocks = await applyToggleBodyForwardMigrations(supabase, documentId, blocks, actorId);
+  blocks = await applyNoteBlockTreeMigrations(supabase, blocks);
   blocks = await reconcileSubPagesOnDocumentLoad(supabase, documentId, blocks);
   return blocks;
 }

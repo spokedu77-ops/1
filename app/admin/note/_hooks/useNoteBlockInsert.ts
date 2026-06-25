@@ -4,6 +4,11 @@ import { useCallback, useRef } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
+import {
+  buildInsertBlockCommand,
+  collectBlockTransactionIds,
+} from '../_lib/noteBlockCommands';
+import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
@@ -18,7 +23,15 @@ export function useNoteBlockInsert(options: {
   setLoadingState: (state: LoadingState) => void;
   setError: (error: string | null) => void;
   documentEngine: NoteDocumentEngineApi;
-  registerCreatedBlockUndo: (block: NoteBlock) => void;
+  recordBlockCommandUndo: (
+    previousBlocks: NoteBlock[],
+    command: NoteBlockCommandResult,
+  ) => void;
+  recordBlockTransactionUndo: (
+    previousBlocks: NoteBlock[],
+    nextBlocks: NoteBlock[],
+    affectedIds: string[],
+  ) => void;
   handleUpdateBlock: (block: NoteBlock, content: Record<string, unknown>) => void;
   focusBlockEditor: (
     blockId: string | null,
@@ -48,7 +61,8 @@ export function useNoteBlockInsert(options: {
     setLoadingState,
     setError,
     documentEngine,
-    registerCreatedBlockUndo,
+    recordBlockCommandUndo,
+    recordBlockTransactionUndo,
     handleUpdateBlock,
     focusBlockEditor,
     handleCreateSubPage,
@@ -76,7 +90,6 @@ export function useNoteBlockInsert(options: {
       const blockContent = (insideToggle && baseContent && !baseContentMap.placedInToggle)
         ? { ...baseContent, placedInToggle: true }
         : baseContent;
-      let orderPayload: { id: string; order_index: number }[] = [];
       const createdBlock = await documentEngine.persistCreateBlock({
         documentId: selectedId,
         blockType: type,
@@ -84,34 +97,25 @@ export function useNoteBlockInsert(options: {
         order_index: clampedIndex,
         parent_block_id: parentId,
       });
-      setBlocks((prev) => {
-        if (prev.some((item) => item.id === createdBlock.id)) {
-          return prev;
-        }
-        const latestSiblings = prev
-          .filter((b) => (b.parent_block_id ?? null) === parentId)
-          .filter((b) => b.id !== createdBlock.id)
-          .sort((a, b) => a.order_index - b.order_index);
-        const latestIndex = Math.max(0, Math.min(insertIndex, latestSiblings.length));
-        const nextSiblings = [
-          ...latestSiblings.slice(0, latestIndex),
-          createdBlock,
-          ...latestSiblings.slice(latestIndex),
-        ].map((item, index) => ({ ...item, order_index: index }));
-        orderPayload = nextSiblings.map((item) => ({ id: item.id, order_index: item.order_index }));
-        const siblingIds = new Set(nextSiblings.map((item) => item.id));
-        const others = prev.filter((item) => !siblingIds.has(item.id));
-        return [...others, ...nextSiblings];
-      });
-      if (orderPayload.length > 0) {
-        void documentEngine.persistReorder({ orders: orderPayload }).catch((e) => {
+      const command = buildInsertBlockCommand(
+        blocksRef.current,
+        createdBlock,
+        parentId,
+        insertIndex,
+      );
+      const previousBlocks = blocksRef.current;
+      setBlocks(command.nextBlocks);
+      if (command.orders.length > 0) {
+        void documentEngine.persistReorder({ orders: command.orders }).catch((e) => {
           devLogger.error('[Note] normalizeInsertOrder', e);
         });
       }
       if (insertOptions?.focus !== false) {
         focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
       }
-      if (insertOptions?.registerUndo !== false) registerCreatedBlockUndo(createdBlock);
+      if (insertOptions?.registerUndo !== false) {
+        recordBlockCommandUndo(previousBlocks, command);
+      }
       return createdBlock;
     } catch (e) {
       devLogger.error('[Note] insertBlockAmongSiblings', e);
@@ -119,7 +123,7 @@ export function useNoteBlockInsert(options: {
       setLoadingState('idle');
       return null;
     }
-  }, [blocksRef, documentEngine, focusBlockEditor, registerCreatedBlockUndo, selectedId, setBlocks, setError, setLoadingState]);
+  }, [blocksRef, documentEngine, focusBlockEditor, recordBlockCommandUndo, selectedId, setBlocks, setError, setLoadingState]);
 
   const duplicateBlockRecursive = useCallback(async (
     source: NoteBlock,
@@ -145,16 +149,28 @@ export function useNoteBlockInsert(options: {
 
   const handleDuplicateBlock = useCallback(async (block: NoteBlock) => {
     if (!selectedId || block.type === 'page') return;
+    const previousBlocks = blocksRef.current;
     const parentId = block.parent_block_id ?? null;
     const siblings = getBlocksInParent(blocksRef.current, parentId);
     const idx = siblings.findIndex((b) => b.id === block.id);
     const insertIndex = idx >= 0 ? idx + 1 : siblings.length;
     const created = await duplicateBlockRecursive(block, parentId, insertIndex);
     if (created) {
+      const nextBlocks = blocksRef.current;
+      recordBlockTransactionUndo(
+        previousBlocks,
+        nextBlocks,
+        collectBlockTransactionIds(previousBlocks, nextBlocks),
+      );
       focusBlockEditor(created.id);
-      registerCreatedBlockUndo(created);
     }
-  }, [blocksRef, duplicateBlockRecursive, focusBlockEditor, registerCreatedBlockUndo, selectedId]);
+  }, [
+    blocksRef,
+    duplicateBlockRecursive,
+    focusBlockEditor,
+    recordBlockTransactionUndo,
+    selectedId,
+  ]);
 
   const handleInsertBlockAfter = useCallback(async (
     afterBlock: NoteBlock,
@@ -316,12 +332,21 @@ export function useNoteBlockInsert(options: {
         content: defaultContent as Record<string, unknown>,
         parent_block_id: null,
       });
-      setBlocks((prev) => {
-        if (prev.some((item) => item.id === createdBlock.id)) return prev;
-        return [createdBlock, ...prev];
-      });
+      const command = buildInsertBlockCommand(
+        blocksRef.current,
+        createdBlock,
+        null,
+        0,
+      );
+      const previousBlocks = blocksRef.current;
+      setBlocks(command.nextBlocks);
+      if (command.orders.length > 0) {
+        void documentEngine.persistReorder({ orders: command.orders }).catch((e) => {
+          devLogger.error('[Note] normalizeAddBlockOrder', e);
+        });
+      }
       focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
-      registerCreatedBlockUndo(createdBlock);
+      recordBlockCommandUndo(previousBlocks, command);
     } catch (e) {
       devLogger.error('[Note] addBlock', e);
       setError(e instanceof Error ? e.message : '추가 실패');
@@ -334,7 +359,7 @@ export function useNoteBlockInsert(options: {
     handleCreateSubPage,
     handleInsertBlockInParent,
     handleUpdateBlock,
-    registerCreatedBlockUndo,
+    recordBlockCommandUndo,
     selectedId,
     setBlocks,
     setError,

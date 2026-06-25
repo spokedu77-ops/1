@@ -90,7 +90,6 @@ export function buildContentForTypeChange(
     return {
       ...base,
       title,
-      ...(typeof prev.depth === 'number' ? { depth: prev.depth } : {}),
       ...(prev.placedInToggle === true ? { placedInToggle: true } : {}),
       ...(prev.createdInsideToggle === true ? { createdInsideToggle: true } : {}),
     };
@@ -103,7 +102,6 @@ export function buildContentForTypeChange(
     return {
       ...base,
       text,
-      ...(typeof prev.depth === 'number' ? { depth: prev.depth } : {}),
       ...(prev.placedInToggle === true ? { placedInToggle: true } : {}),
       ...(prev.createdInsideToggle === true ? { createdInsideToggle: true } : {}),
     };

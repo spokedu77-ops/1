@@ -14,16 +14,24 @@ import { useNoteBlockKeyboard } from '../_hooks/useNoteBlockKeyboard';
 import { useNoteBlockInsert } from '../_hooks/useNoteBlockInsert';
 import { useNoteBlockDelete } from '../_hooks/useNoteBlockDelete';
 import {
-  buildReparentContentPatch,
   getBlocksInParent,
   planBlockTabIndent,
   resolveVisualNavigateTarget,
   sortRootBlocks,
   type BlockDropPlan,
 } from '@/app/lib/note/noteBlockTree';
+import {
+  buildMoveBlockCommand,
+  collectBlockTransactionIds,
+  type NoteBlockCommandResult,
+} from '../_lib/noteBlockCommands';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { applyBlockContentChange } from '../_lib/noteBlockContentPipeline';
-import { commitActiveNoteEditorToStore, resolveBlockTextCaretOffset } from '../_lib/noteBlockStateMerge';
+import {
+  commitActiveNoteEditorToStore,
+  mergeBlocksWithStoreContent,
+  resolveBlockTextCaretOffset,
+} from '../_lib/noteBlockStateMerge';
 import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
@@ -83,16 +91,7 @@ export function useNoteBlockActions(options: {
       title?: string;
     },
   ) => Promise<void>;
-  normalizeDepthByOrder: (orderedBlocks: NoteBlock[]) => {
-    normalized: NoteBlock[];
-    depthPatches: Array<{ id: string; content: Record<string, unknown> }>;
-  };
-  persistBlockReparent: (
-    moving: NoteBlock,
-    plan: BlockDropPlan<NoteBlock>,
-    prevBlocks: NoteBlock[],
-    extraFieldUpdates?: Array<{ id: string; content: Record<string, unknown> }>,
-  ) => Promise<void>;
+  persistBlockReparent: (command: NoteBlockCommandResult) => Promise<void>;
   documentEngine: NoteDocumentEngineApi;
   onAfterBlocksRemoved?: (removed: NoteBlock[], nextBlocks: NoteBlock[]) => void;
 }) {
@@ -127,7 +126,6 @@ export function useNoteBlockActions(options: {
     focusBlockEditor,
     syncFocusedToggleFromBlock,
     handleCreateSubPage,
-    normalizeDepthByOrder,
     persistBlockReparent,
     documentEngine,
     onAfterBlocksRemoved,
@@ -140,7 +138,8 @@ export function useNoteBlockActions(options: {
   const {
     recordBlockUndo,
     recordContentUndoBeforeChange,
-    registerCreatedBlockUndo,
+    recordBlockCommandUndo,
+    recordBlockTransactionUndo,
     clearContentUndoSession,
   } = useNoteBlockUndoRecording({ blocksRef, noteUndo });
 
@@ -197,7 +196,8 @@ export function useNoteBlockActions(options: {
     setLoadingState,
     setError,
     documentEngine,
-    registerCreatedBlockUndo,
+    recordBlockCommandUndo,
+    recordBlockTransactionUndo,
     handleUpdateBlock,
     focusBlockEditor,
     handleCreateSubPage,
@@ -224,10 +224,10 @@ export function useNoteBlockActions(options: {
     lastDeletedBlockIdRef,
     setPendingDeleteUndo,
     triggerSave,
-    noteUndo,
     loadTrashedBlocks,
     focusBlockEditor,
     recordBlockUndo,
+    recordBlockCommandUndo,
     ensureMinimumRootTextBlock,
     onAfterBlocksRemoved,
   });
@@ -241,112 +241,24 @@ export function useNoteBlockActions(options: {
 
   const applyBlockReparentPlan = useCallback((moving: NoteBlock, plan: BlockDropPlan<NoteBlock>) => {
     const prevBlocks = blocksRef.current;
-    const targetMap = new Map(plan.targetSiblings.map((item) => [item.id, item]));
-    const oldParentId = moving.parent_block_id ?? null;
-    const parentChanged = oldParentId !== plan.targetParentId;
-    const oldSiblings = parentChanged
-      ? getBlocksInParent(prevBlocks, oldParentId)
-        .filter((item) => item.id !== moving.id)
-        .map((item, index) => ({ ...item, order_index: index }))
-      : [];
-    const oldMap = new Map(oldSiblings.map((item) => [item.id, item]));
-    const movingLatest = prevBlocks.find((item) => item.id === moving.id) ?? moving;
-    const contentPatch = buildReparentContentPatch(
-      movingLatest.content,
-      movingLatest.type,
-      plan.placedInToggle,
-    );
-
-    setBlocks(() => {
-      const prev = blocksRef.current;
-      const next = prev.map((item) => {
-        if (item.id === moving.id) {
-          const latest = prev.find((b) => b.id === moving.id) ?? item;
-          return {
-            ...latest,
-            parent_block_id: plan.targetParentId,
-            order_index: plan.targetSiblings.findIndex((sibling) => sibling.id === moving.id),
-            content: contentPatch ?? latest.content,
-          };
-        }
-        if (targetMap.has(item.id)) {
-          const planned = targetMap.get(item.id)!;
-          const latest = prev.find((b) => b.id === item.id);
-          return latest ? { ...planned, content: latest.content } : planned;
-        }
-        if (oldMap.has(item.id)) {
-          const planned = oldMap.get(item.id)!;
-          const latest = prev.find((b) => b.id === item.id);
-          return latest ? { ...planned, content: latest.content } : planned;
-        }
-        return item;
-      });
-
-      if (plan.targetParentId === null) {
-        const rootOnly = sortRootBlocks(next);
-        const { normalized, depthPatches } = normalizeDepthByOrder(rootOnly);
-        const depthMap = new Map(normalized.map((item) => [item.id, item]));
-        const withDepth = next.map((item) => depthMap.get(item.id) ?? item);
-        void persistBlockReparent(moving, plan, prevBlocks, depthPatches)
-          .catch((e) => devLogger.error('[Note] depth-sync-after-tab-reparent', e));
-        blocksRef.current = withDepth;
-        return withDepth;
-      }
-
-      void persistBlockReparent(moving, plan, prevBlocks);
-      blocksRef.current = next;
-      return next;
-    });
+    const command = buildMoveBlockCommand(prevBlocks, moving.id, plan);
+    if (command.affectedIds.length === 0) return;
+    recordBlockCommandUndo(prevBlocks, command);
+    setBlocks(command.nextBlocks);
+    void persistBlockReparent(command);
     syncFocusedToggleFromBlock(moving.id);
     bumpNoteReconcileIdle(selectedId);
-  }, [normalizeDepthByOrder, persistBlockReparent, syncFocusedToggleFromBlock, selectedId]);
+  }, [persistBlockReparent, recordBlockCommandUndo, syncFocusedToggleFromBlock, selectedId]);
 
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const prevBlocks = blocksRef.current;
     const tabPlan = planBlockTabIndent(prevBlocks, block.id, direction);
     if (tabPlan) {
-      const oldParentId = block.parent_block_id ?? null;
-      const undoIds = new Set<string>([block.id]);
-      getBlocksInParent(prevBlocks, oldParentId).forEach((item) => undoIds.add(item.id));
-      if (tabPlan.targetParentId) {
-        getBlocksInParent(prevBlocks, tabPlan.targetParentId).forEach((item) => undoIds.add(item.id));
-      } else {
-        sortRootBlocks(prevBlocks).forEach((item) => undoIds.add(item.id));
-      }
-      recordBlockUndo([...undoIds]);
       applyBlockReparentPlan(block, tabPlan);
       return;
     }
 
-    // 글머리·번호 목록은 부모 자식 구조로만 들여쓰기
-    if (block.type === 'bulletList' || block.type === 'numberedList') return;
-
-    // 루트 블록만 content.depth 시각 들여쓰기 (탭이 없는 경우 대비)
-    if (block.parent_block_id) return;
-
-    const content = (block.content ?? {}) as Record<string, unknown>;
-    const currentDepth = Math.max(0, Math.min(6, Number(content.depth ?? 0)));
-    const ordered = sortRootBlocks(prevBlocks);
-    const idx = ordered.findIndex((item) => item.id === block.id);
-    if (idx < 0) return;
-    const prevDepth =
-      idx > 0
-        ? Math.max(0, Math.min(6, Number((ordered[idx - 1]?.content as Record<string, unknown> | undefined)?.depth ?? 0)))
-        : 0;
-    let nextDepth = currentDepth;
-    if (direction === 'in') {
-      if (idx === 0) {
-        nextDepth = Math.min(6, currentDepth + 1);
-      } else {
-        nextDepth = Math.min(6, currentDepth + 1, prevDepth + 1);
-      }
-    } else {
-      const oneStepOut = Math.max(0, currentDepth - 1);
-      nextDepth = idx === 0 ? 0 : Math.min(oneStepOut, prevDepth + 1);
-    }
-    if (nextDepth === currentDepth) return;
-    handleUpdateBlock(block, { ...content, depth: nextDepth });
-  }, [applyBlockReparentPlan, handleUpdateBlock, recordBlockUndo, selectedId]);
+  }, [applyBlockReparentPlan]);
   const handleNavigateBlock = useCallback((block: NoteBlock, direction: 'previous' | 'next') => {
     const snapshot = blocksRef.current;
     const target = resolveVisualNavigateTarget(snapshot, block.id, direction);
@@ -477,6 +389,7 @@ export function useNoteBlockActions(options: {
 
   const handleMultilinePaste = useCallback(async (block: NoteBlock, lines: string[]) => {
     if (!selectedId || lines.length <= 1 || !canSplitMultilinePasteToBlocks(block.type)) return;
+    const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
 
     const sourceContent = (block.content ?? {}) as Record<string, unknown>;
     const firstContent = contentForMultilinePasteLine(block.type, lines[0] ?? '', sourceContent);
@@ -487,7 +400,6 @@ export function useNoteBlockActions(options: {
       .sort((a, b) => a.order_index - b.order_index);
     let insertIndex = siblings.findIndex((item) => item.id === block.id) + 1;
     const followType = insertTypeForMultilinePasteFollowUp(block.type);
-    const touchedIds = [block.id];
     let lastFocusId = block.id;
 
     for (const line of lines.slice(1)) {
@@ -498,18 +410,22 @@ export function useNoteBlockActions(options: {
         registerUndo: false,
       });
       if (!created) break;
-      touchedIds.push(created.id);
       lastFocusId = created.id;
       insertIndex += 1;
     }
 
-    recordBlockUndo(touchedIds);
+    const nextBlocks = mergeBlocksWithStoreContent(blocksRef.current);
+    recordBlockTransactionUndo(
+      previousBlocks,
+      nextBlocks,
+      collectBlockTransactionIds(previousBlocks, nextBlocks),
+    );
     focusBlockEditor(lastFocusId, 'editor');
   }, [
     selectedId,
     syncBlockContent,
     insertBlockAmongSiblings,
-    recordBlockUndo,
+    recordBlockTransactionUndo,
     focusBlockEditor,
   ]);
 

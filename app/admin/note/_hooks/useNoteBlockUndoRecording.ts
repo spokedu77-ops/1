@@ -2,6 +2,7 @@
 
 import { useCallback, useRef } from 'react';
 import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
+import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { useNoteBlockUndo } from './useNoteBlockUndo';
 import type { NoteBlock } from '../_lib/types';
 
@@ -25,8 +26,29 @@ export function useNoteBlockUndoRecording(options: {
     contentUndoSessionRef.current = blockId;
   }, [blocksRef, noteUndo]);
 
-  const registerCreatedBlockUndo = useCallback((block: NoteBlock) => {
-    noteUndo.pushDeleteBlockUndo(block);
+  const recordBlockCommandUndo = useCallback((
+    previousBlocks: NoteBlock[],
+    command: NoteBlockCommandResult,
+  ) => {
+    noteUndo.pushBlockTransactionUndo(
+      mergeBlocksWithStoreContent(previousBlocks),
+      command.nextBlocks,
+      command.affectedIds,
+    );
+    contentUndoSessionRef.current = command.affectedIds[0] ?? null;
+  }, [noteUndo]);
+
+  const recordBlockTransactionUndo = useCallback((
+    previousBlocks: NoteBlock[],
+    nextBlocks: NoteBlock[],
+    affectedIds: string[],
+  ) => {
+    noteUndo.pushBlockTransactionUndo(
+      mergeBlocksWithStoreContent(previousBlocks),
+      nextBlocks,
+      affectedIds,
+    );
+    contentUndoSessionRef.current = affectedIds[0] ?? null;
   }, [noteUndo]);
 
   const clearContentUndoSession = useCallback(() => {
@@ -37,7 +59,8 @@ export function useNoteBlockUndoRecording(options: {
     contentUndoSessionRef,
     recordBlockUndo,
     recordContentUndoBeforeChange,
-    registerCreatedBlockUndo,
+    recordBlockCommandUndo,
+    recordBlockTransactionUndo,
     clearContentUndoSession,
   };
 }

@@ -207,7 +207,7 @@ describe('NoteDocumentOpQueue', () => {
 
     const result = await queue.enqueueRestoreBlock({ id: 'trash-1' });
 
-    expect(result.id).toBe('trash-1');
+    expect(result[0].id).toBe('trash-1');
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(String(fetchMock.mock.calls[0][0])).toContain('/trash/restore');
     expect(triggerSave).toHaveBeenCalledOnce();
@@ -232,5 +232,35 @@ describe('NoteDocumentOpQueue', () => {
     expect(String(fetchMock.mock.calls[0][0])).toContain('/trash/purge');
     expect(String((fetchMock.mock.calls[0][1] as RequestInit).method)).toBe('DELETE');
     expect(triggerSave).toHaveBeenCalledOnce();
+  });
+
+  it('rejects a failed delete while keeping the queue usable', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({ error: 'delete failed' }),
+        { status: 500 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({ ok: true }),
+        { status: 200 },
+      ));
+    const onError = vi.fn();
+    const queue = new NoteDocumentOpQueue({
+      getBlock: () => undefined,
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      onError,
+    });
+
+    await expect(queue.enqueue({
+      type: 'softDelete',
+      ids: ['root', 'child'],
+    })).rejects.toThrow('delete failed');
+    await queue.enqueue({ type: 'purgeBlock', id: 'trash-2' });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(onError).toHaveBeenCalledWith(expect.objectContaining({
+      message: 'delete failed',
+    }));
   });
 });

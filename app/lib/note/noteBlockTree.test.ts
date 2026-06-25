@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { flattenVisualBlockIds, getBlockRangeIdsInVisualOrder, numberedListIndexAmongSiblings, planBlockDropAt, planBlockTabIndent, resolveVisualNavigateTarget } from './noteBlockTree';
+import {
+  collectBlockForestIds,
+  collectBlockSubtreeIds,
+  flattenVisualBlockIds,
+  getBlockRangeIdsInVisualOrder,
+  numberedListIndexAmongSiblings,
+  planBlockDropAt,
+  planBlockTabIndent,
+  planCanonicalizeBlockTree,
+  resolveVisualNavigateTarget,
+} from './noteBlockTree';
 
 type Block = {
   id: string;
@@ -15,6 +25,75 @@ const block = (
   parent_block_id: string | null = null,
   type = 'text',
 ): Block => ({ id, type, parent_block_id, order_index, content: {} });
+
+describe('block subtree deletion', () => {
+  const blocks = [
+    block('root', 0),
+    block('child-a', 0, 'root'),
+    block('grandchild', 0, 'child-a'),
+    block('child-b', 1, 'root'),
+    block('other', 1),
+  ];
+
+  it('collects a block and all descendants without unrelated siblings', () => {
+    expect(collectBlockSubtreeIds('root', blocks)).toEqual([
+      'root',
+      'child-a',
+      'grandchild',
+      'child-b',
+    ]);
+  });
+
+  it('deduplicates overlapping selected subtrees', () => {
+    expect(collectBlockForestIds(['root', 'child-a', 'other'], blocks)).toEqual([
+      'root',
+      'child-a',
+      'grandchild',
+      'child-b',
+      'other',
+    ]);
+  });
+});
+
+describe('canonical block tree migration', () => {
+  it('keeps an existing child under its parent and removes legacy depth', () => {
+    const blocks = [
+      block('toggle', 0, null, 'toggle'),
+      {
+        ...block('body', 0, 'toggle', 'text'),
+        content: { migratedFromToggleBody: true, text: '본문', depth: 1 },
+      },
+    ];
+
+    const result = planCanonicalizeBlockTree(blocks);
+
+    expect(result.blocks.find((item) => item.id === 'body')?.parent_block_id).toBe('toggle');
+    expect(result.blocks.find((item) => item.id === 'body')?.content.depth).toBeUndefined();
+  });
+
+  it('converts root visual depth into parent relationships', () => {
+    const blocks = [
+      { ...block('a', 0), content: { text: 'A', depth: 0 } },
+      { ...block('b', 1), content: { text: 'B', depth: 1 } },
+      { ...block('c', 2), content: { text: 'C', depth: 2 } },
+      { ...block('d', 3), content: { text: 'D', depth: 1 } },
+    ];
+
+    const result = planCanonicalizeBlockTree(blocks);
+
+    expect(result.blocks.map((item) => [
+      item.id,
+      item.parent_block_id,
+      item.order_index,
+      item.content.depth,
+    ])).toEqual([
+      ['a', null, 0, undefined],
+      ['b', 'a', 0, undefined],
+      ['c', 'b', 0, undefined],
+      ['d', 'a', 1, undefined],
+    ]);
+  });
+});
 
 describe('planBlockDropAt', () => {
   it('reorders blocks within the same parent', () => {
@@ -76,6 +155,30 @@ describe('planBlockDropAt', () => {
 });
 
 describe('planBlockTabIndent', () => {
+  it('nests a text block under the previous text sibling', () => {
+    const blocks = [
+      block('a', 0, null, 'text'),
+      block('b', 1, null, 'text'),
+    ];
+
+    const plan = planBlockTabIndent(blocks, 'b', 'in');
+
+    expect(plan?.targetParentId).toBe('a');
+    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['b']);
+  });
+
+  it('moves a block inside a regular text block', () => {
+    const blocks = [
+      block('parent', 0, null, 'text'),
+      block('child', 1, null, 'todo'),
+    ];
+
+    const plan = planBlockDropAt(blocks, 'child', 'parent', 'inside');
+
+    expect(plan?.targetParentId).toBe('parent');
+    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['child']);
+  });
+
   it('nests a bullet list item under the previous bullet sibling', () => {
     const blocks = [
       block('a', 0, null, 'bulletList'),

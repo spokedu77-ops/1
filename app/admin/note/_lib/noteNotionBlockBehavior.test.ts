@@ -28,7 +28,7 @@ describe('resolveInlineBlockEnterAction (todo·text)', () => {
     })).toEqual({
       kind: 'add-below',
       followType: 'todo',
-      content: { text: ' world', html: '<p> world</p>', depth: 0 },
+      content: { text: ' world', html: '<p> world</p>' },
     });
   });
 

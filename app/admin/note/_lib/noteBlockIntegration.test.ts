@@ -12,6 +12,7 @@ import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { buildContentForTypeChange, getBlockedTypeChangeReason, filterTurnIntoCommands } from './noteBlockTypeChange';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
+import { buildMoveBlockCommand } from './noteBlockCommands';
 import {
   getBlocksInParent,
   planBlockTabIndent,
@@ -52,29 +53,6 @@ function collectTabUndoBlockIds(
   return [...undoIds];
 }
 
-function applyTabReparentPlan(
-  prevBlocks: NoteBlock[],
-  movingId: string,
-  plan: NonNullable<ReturnType<typeof planBlockTabIndent>>,
-): NoteBlock[] {
-  const targetMap = new Map(plan.targetSiblings.map((item) => [item.id, item]));
-  const moving = prevBlocks.find((b) => b.id === movingId)!;
-  return prevBlocks.map((item) => {
-    if (item.id === movingId) {
-      return {
-        ...item,
-        parent_block_id: plan.targetParentId,
-        order_index: plan.targetSiblings.findIndex((s) => s.id === movingId),
-      } as NoteBlock;
-    }
-    if (targetMap.has(item.id)) {
-      const planned = targetMap.get(item.id)!;
-      return { ...planned, content: item.content } as NoteBlock;
-    }
-    return item;
-  });
-}
-
 describe('Tab indent undo roundtrip', () => {
   it('Ctrl+Z restores nested bullet back to root after Tab in', () => {
     const prevBlocks = [
@@ -89,7 +67,7 @@ describe('Tab indent undo roundtrip', () => {
       .filter((b) => undoIds.includes(b.id))
       .map((b) => ({ ...b }));
 
-    const afterTab = applyTabReparentPlan(prevBlocks, 'b', tabPlan!);
+    const afterTab = buildMoveBlockCommand(prevBlocks, 'b', tabPlan!).nextBlocks;
     expect(afterTab.find((b) => b.id === 'b')?.parent_block_id).toBe('a');
 
     const entry: NoteHistoryEntry = { kind: 'restore-blocks', snapshots };

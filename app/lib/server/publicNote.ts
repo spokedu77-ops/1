@@ -1,5 +1,5 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { planPromoteDocumentBlocksToRoot } from '@/app/lib/note/noteBlockTree';
+import { planCanonicalizeBlockTree } from '@/app/lib/note/noteBlockTree';
 import {
   applyToggleBodyForwardPlansInMemory,
   planToggleBodyForwardMigrations,
@@ -66,7 +66,7 @@ export async function getPublicNoteByToken(token: string) {
     }
   }
 
-  const promoted = planPromoteDocumentBlocksToRoot((blocks ?? []) as PublicNoteBlock[]).blocks;
+  const promoted = planCanonicalizeBlockTree((blocks ?? []) as PublicNoteBlock[]).blocks;
   const migrated = applyToggleBodyForwardPlansInMemory(
     promoted,
     planToggleBodyForwardMigrations(promoted),

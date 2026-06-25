@@ -1,5 +1,4 @@
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
-import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { normalizeTodoBlockContentRecord } from './noteTodoContent';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
@@ -14,9 +13,6 @@ export function normalizeBlockContentRecord(
   content: unknown,
 ): Record<string, unknown> {
   let record = (content ?? {}) as Record<string, unknown>;
-  if (block.type === 'bulletList' || block.type === 'numberedList') {
-    record = normalizeListBlockContentRecord(record);
-  }
   if (block.type === 'todo') {
     record = normalizeTodoBlockContentRecord(record);
   }

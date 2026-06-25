@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   NoteBlockVersionConflictError,
   parsePatchedBlocks,
+  patchNoteBlocks,
   patchNoteBlocksResolvingConflicts,
   postNoteBlock,
 } from './noteBlocksApi';
@@ -83,6 +84,95 @@ describe('patchNoteBlocksResolvingConflicts', () => {
     const retryBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
     expect(retryBody.expected_version).toBe(4);
     expect(result[0].version).toBe(5);
+  });
+
+  it('retries only the conflicting chunk when updates exceed the server limit', async () => {
+    const updates = Array.from({ length: 201 }, (_, index) => ({
+      id: `block-${index}`,
+      content: { text: `text-${index}` },
+    }));
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: updates.slice(0, 200).map((update) => ({
+            id: update.id,
+            version: 2,
+            updated_at: '2026-02-01T00:00:00Z',
+          })),
+        }),
+        { status: 200 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{
+            id: 'block-200',
+            version: 4,
+            updated_at: '2026-02-01T00:00:00Z',
+          }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: [{
+            id: 'block-200',
+            version: 5,
+            updated_at: '2026-02-02T00:00:00Z',
+          }],
+        }),
+        { status: 200 },
+      ));
+
+    const result = await patchNoteBlocksResolvingConflicts(
+      updates,
+      (id) => ({ id, version: 1 }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const firstBody = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    const secondBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
+    const retryBody = JSON.parse(String((fetchMock.mock.calls[2][1] as RequestInit).body));
+    expect(firstBody.updates).toHaveLength(200);
+    expect(secondBody.id).toBe('block-200');
+    expect(retryBody).toEqual(expect.objectContaining({
+      id: 'block-200',
+      expected_version: 4,
+    }));
+    expect(result).toHaveLength(201);
+  });
+});
+
+describe('patchNoteBlocks', () => {
+  it('splits more than 200 updates into sequential requests', async () => {
+    const updates = Array.from({ length: 401 }, (_, index) => ({
+      id: `block-${index}`,
+      content: { text: `text-${index}` },
+    }));
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      const body = JSON.parse(String((init as RequestInit).body));
+      const requestUpdates = Array.isArray(body.updates) ? body.updates : [body];
+      return new Response(JSON.stringify({
+        ok: true,
+        blocks: requestUpdates.map((update: { id: string }) => ({
+          id: update.id,
+          version: 2,
+          updated_at: '2026-02-01T00:00:00Z',
+        })),
+      }), { status: 200 });
+    });
+
+    const result = await patchNoteBlocks(updates);
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const requestSizes = fetchMock.mock.calls.map((call) => {
+      const body = JSON.parse(String((call[1] as RequestInit).body));
+      return Array.isArray(body.updates) ? body.updates.length : 1;
+    });
+    expect(requestSizes).toEqual([200, 200, 1]);
+    expect(result).toHaveLength(401);
   });
 });
 

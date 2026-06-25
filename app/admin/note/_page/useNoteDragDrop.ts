@@ -15,15 +15,12 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   collectDescendantBlockIds,
-  applyBlockDropPlanInMemory,
-  buildReparentContentPatch,
   flattenVisualBlockIds,
   getBlocksInParent,
   planBlockDropAt,
   planMoveRootBlockGroup,
   sortRootBlocks,
   topLevelSelectedDragIds,
-  type BlockDropPlan,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
 import {
@@ -35,6 +32,10 @@ import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { postNoteBlock } from '../_lib/noteBlocksApi';
 import { buildBlockTransferPatches } from '../_lib/noteBlockTransfer';
+import {
+  buildMoveBlockCommand,
+  type NoteBlockCommandResult,
+} from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
 import type { BlockDropTarget } from '../_components/noteContexts';
@@ -128,42 +129,9 @@ export function useNoteDragDrop(options: {
     dropTargetRef.current = null;
   }, []);
 
-  const normalizeDepthByOrder = useCallback((orderedBlocks: NoteBlock[]) => {
-    let prevDepth = 0;
-    const depthPatches: Array<{ id: string; content: Record<string, unknown> }> = [];
-    const normalized = orderedBlocks.map((block, index) => {
-      const content =
-        block.content && typeof block.content === 'object'
-          ? (block.content as Record<string, unknown>)
-          : null;
-      const rawDepth = Number(content?.depth ?? 0);
-      const safeDepth = Number.isFinite(rawDepth) ? Math.max(0, Math.min(6, Math.round(rawDepth))) : 0;
-      const maxDepth = index === 0 ? 0 : Math.min(6, prevDepth + 1);
-      const nextDepth = Math.min(safeDepth, maxDepth);
-      prevDepth = nextDepth;
-      if (content && safeDepth !== nextDepth) {
-        const nextContent = { ...content, depth: nextDepth };
-        depthPatches.push({ id: block.id, content: nextContent });
-        return { ...block, content: nextContent, order_index: index };
-      }
-      return { ...block, order_index: index };
-    });
-    return { normalized, depthPatches };
-  }, []);
-
-  const persistOrderAndDepth = useCallback(async (
-    orderedBlocks: NoteBlock[],
-    depthPatches: Array<{ id: string; content: Record<string, unknown> }>,
-  ) => {
+  const persistOrders = useCallback(async (orderedBlocks: NoteBlock[]) => {
     const orders = orderedBlocks.map((block) => ({ id: block.id, order_index: block.order_index }));
-    const fieldUpdates = depthPatches.map((patch) => ({
-      id: patch.id,
-      content: patch.content,
-    }));
-    await documentEngine.persistReorder({
-      orders,
-      fieldPatches: fieldUpdates.length > 0 ? fieldUpdates : undefined,
-    });
+    await documentEngine.persistReorder({ orders });
   }, [documentEngine]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
@@ -306,41 +274,14 @@ export function useNoteDragDrop(options: {
   }, [documents, selectedId, triggerSave, documentEngine, blocksRef, setBlocks, setError]);
 
   const persistBlockReparent = useCallback(async (
-    moving: NoteBlock,
-    plan: BlockDropPlan<NoteBlock>,
-    prevBlocks: NoteBlock[],
-    extraFieldUpdates: Array<{ id: string; content: Record<string, unknown> }> = [],
+    command: NoteBlockCommandResult,
   ) => {
-    if (!plan) return;
-    const oldParentId = moving.parent_block_id ?? null;
-    const parentChanged = oldParentId !== plan.targetParentId;
-    const contentPatch = buildReparentContentPatch(moving.content, moving.type, plan.placedInToggle);
-    const oldSiblings = parentChanged
-      ? getBlocksInParent(prevBlocks, oldParentId)
-        .filter((block) => block.id !== moving.id)
-        .map((block, index) => ({ ...block, order_index: index }))
-      : [];
-
-    const orders = [
-      ...plan.targetSiblings.map((block, index) => ({ id: block.id, order_index: index })),
-      ...oldSiblings.map((block) => ({ id: block.id, order_index: block.order_index })),
-    ];
-
-    const fieldUpdates = [
-      {
-        id: moving.id,
-        parent_block_id: plan.targetParentId,
-        order_index: plan.targetSiblings.findIndex((block) => block.id === moving.id),
-        ...(contentPatch ? { content: contentPatch } : {}),
-      },
-      ...extraFieldUpdates.map((patch) => ({
-        id: patch.id,
-        content: patch.content,
-      })),
-    ];
-
-    await documentEngine.persistReorder({ orders, fieldPatches: fieldUpdates });
-  }, [blocksRef, documentEngine]);
+    if (command.affectedIds.length === 0) return;
+    await documentEngine.persistReorder({
+      orders: command.orders,
+      fieldPatches: command.fieldPatches,
+    });
+  }, [documentEngine]);
 
   const persistBlockTransfer = useCallback(async (
     rootBlockId: string,
@@ -418,12 +359,12 @@ export function useNoteDragDrop(options: {
           ...rootSiblings.slice(0, idx),
           ...rootSiblings.slice(idx + 1),
         ];
-        const { normalized, depthPatches } = normalizeDepthByOrder(movedRoots);
+        const normalized = movedRoots.map((block, index) => ({ ...block, order_index: index }));
         const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
         const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
         setBlocks(nextBlocks);
         try {
-          await persistOrderAndDepth(normalized, depthPatches);
+          await persistOrders(normalized);
         } catch (e) {
           devLogger.error('[Note] moveBlockToCurrentDoc', e);
           setBlocks(prevBlocks);
@@ -502,38 +443,31 @@ export function useNoteDragDrop(options: {
               return;
             }
           }
-          if (container?.type === 'toggle') {
+          if (container && container.type !== 'page') {
             const visualIds = flattenVisualBlockIds(prevBlocks);
             const ordered = [...groupDragIds].sort(
               (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
             );
-            const undoIds = new Set<string>(ordered);
-            for (const id of ordered) {
-              const movingBlock = prevBlocks.find((block) => block.id === id);
-              if (movingBlock?.parent_block_id) {
-                getBlocksInParent(prevBlocks, movingBlock.parent_block_id).forEach((b) => undoIds.add(b.id));
-              }
-            }
-            getBlocksInParent(prevBlocks, container.id).forEach((b) => undoIds.add(b.id));
-            noteUndo.pushRestoreBlocksUndo(prevBlocks, [...undoIds]);
-
             let nextBlocks = prevBlocks;
+            const affectedIds = new Set<string>();
             try {
               for (const id of ordered) {
                 const movingBlock = nextBlocks.find((block) => block.id === id);
                 if (!movingBlock) continue;
                 const plan = planBlockDropAt(nextBlocks, id, target.blockId, 'inside');
                 if (!plan) continue;
-                const before = nextBlocks;
-                nextBlocks = applyBlockDropPlanInMemory(nextBlocks, id, plan);
-                await persistBlockReparent(movingBlock, plan, before);
+                const command = buildMoveBlockCommand(nextBlocks, id, plan);
+                nextBlocks = command.nextBlocks;
+                command.affectedIds.forEach((affectedId) => affectedIds.add(affectedId));
+                await persistBlockReparent(command);
               }
+              noteUndo.pushBlockTransactionUndo(prevBlocks, nextBlocks, [...affectedIds]);
               setBlocks(nextBlocks);
               triggerSave();
             } catch (e) {
-              devLogger.error('[Note] moveBlockGroupIntoToggle', e);
+              devLogger.error('[Note] moveBlockGroupInsideBlock', e);
               setBlocks(prevBlocks);
-              setError(e instanceof Error ? e.message : '토글 안 블록 묶음 이동 저장 실패');
+              setError(e instanceof Error ? e.message : '하위 블록 묶음 이동 저장 실패');
             }
             return;
           }
@@ -546,12 +480,12 @@ export function useNoteDragDrop(options: {
             target.position,
           );
           if (nextRoots) {
-            const { normalized, depthPatches } = normalizeDepthByOrder(nextRoots);
+            const normalized = nextRoots.map((block, index) => ({ ...block, order_index: index }));
             const normalizedMap = new Map(normalized.map((block) => [block.id, block]));
             const nextBlocks = prevBlocks.map((block) => normalizedMap.get(block.id) ?? block);
             setBlocks(nextBlocks);
             try {
-              await persistOrderAndDepth(normalized, depthPatches);
+              await persistOrders(normalized);
             } catch (e) {
               devLogger.error('[Note] moveBlockGroup', e);
               setBlocks(prevBlocks);
@@ -601,57 +535,18 @@ export function useNoteDragDrop(options: {
     );
     if (!plan) return;
 
-    const oldParentId = moving.parent_block_id ?? null;
-    const undoIds = new Set<string>([moving.id]);
-    getBlocksInParent(prevBlocks, oldParentId).forEach((b) => undoIds.add(b.id));
-    if (plan.targetParentId) {
-      getBlocksInParent(prevBlocks, plan.targetParentId).forEach((b) => undoIds.add(b.id));
-    } else {
-      sortRootBlocks(prevBlocks).forEach((b) => undoIds.add(b.id));
-    }
-    noteUndo.pushRestoreBlocksUndo(prevBlocks, [...undoIds]);
-
-    const targetMap = new Map(plan.targetSiblings.map((block) => [block.id, block]));
-    const parentChanged = oldParentId !== plan.targetParentId;
-    const oldSiblings = parentChanged
-      ? getBlocksInParent(prevBlocks, oldParentId)
-        .filter((block) => block.id !== moving.id)
-        .map((block, index) => ({ ...block, order_index: index }))
-      : [];
-    const oldMap = new Map(oldSiblings.map((block) => [block.id, block]));
-    const contentPatch = buildReparentContentPatch(moving.content, moving.type, plan.placedInToggle);
-
-    let nextBlocks = prevBlocks.map((block) => {
-      if (block.id === moving.id) {
-        return {
-          ...block,
-          parent_block_id: plan.targetParentId,
-          order_index: plan.targetSiblings.findIndex((item) => item.id === moving.id),
-          content: contentPatch ?? block.content,
-        };
-      }
-      if (targetMap.has(block.id)) return targetMap.get(block.id)!;
-      if (oldMap.has(block.id)) return oldMap.get(block.id)!;
-      return block;
-    });
-
-    let depthPatches: Array<{ id: string; content: Record<string, unknown> }> = [];
-    if (plan.targetParentId === null) {
-      const normalizedResult = normalizeDepthByOrder(sortRootBlocks(nextBlocks));
-      depthPatches = normalizedResult.depthPatches;
-      const depthMap = new Map(normalizedResult.normalized.map((block) => [block.id, block]));
-      nextBlocks = nextBlocks.map((block) => depthMap.get(block.id) ?? block);
-    }
-
-    setBlocks(nextBlocks);
+    const command = buildMoveBlockCommand(prevBlocks, moving.id, plan);
+    if (command.affectedIds.length === 0) return;
+    noteUndo.pushBlockTransactionUndo(prevBlocks, command.nextBlocks, command.affectedIds);
+    setBlocks(command.nextBlocks);
     try {
-      await persistBlockReparent(moving, plan, prevBlocks, depthPatches);
+      await persistBlockReparent(command);
     } catch (e) {
       devLogger.error('[Note] reparentBlock', e);
       setBlocks(prevBlocks);
       setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
     }
-  }, [normalizeDepthByOrder, noteUndo, persistBlockReparent, persistBlockTransfer, persistOrderAndDepth, selectedId, triggerSave, handleReparentDocument, documents, setBlocks, setError]);
+  }, [noteUndo, persistBlockReparent, persistBlockTransfer, persistOrders, selectedId, triggerSave, handleReparentDocument, documents, setBlocks, setError]);
 
   return {
     sensors,
@@ -662,7 +557,6 @@ export function useNoteDragDrop(options: {
     dropTarget,
     multiDragCount,
     noteBlockDragActiveRef,
-    normalizeDepthByOrder,
     persistBlockReparent,
     handleDragStart,
     handleDragOver,

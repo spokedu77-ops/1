@@ -17,7 +17,7 @@ export type NotePersistOp =
     orders: Array<{ id: string; order_index: number }>;
     fieldPatches?: NoteBlockFieldPatch[];
   }
-  | { type: 'softDelete'; ids: string[]; promotionPatches?: NoteBlockFieldPatch[] }
+  | { type: 'softDelete'; ids: string[] }
   | {
     type: 'createBlock';
     documentId: string;

@@ -75,17 +75,17 @@ export function useNoteBlockData(options: {
     cancelNoteReconcileIdle();
   }, []);
 
-  /** 구조 변경 시 React state가 오래된 content를 쓰지 않도록 스토어와 병합 */
+  /** 모든 블록 변경은 canonical store에 먼저 적용하고 React는 그 결과를 투영한다. */
   const setBlocks = useCallback((
     value: NoteBlock[] | ((prev: NoteBlock[]) => NoteBlock[]),
   ) => {
-    _setBlocks((reactPrev) => {
-      const base = mergeBlocksWithStoreContent(blocksRef.current);
-      const raw = typeof value === 'function' ? value(base) : value;
-      const next = dedupeNoteBlocksById(raw);
-      blocksRef.current = next;
-      return next;
+    const store = useNoteBlockStore.getState();
+    const next = store.applyBlocks((current) => {
+      const raw = typeof value === 'function' ? value(current) : value;
+      return dedupeNoteBlocksById(raw);
     });
+    blocksRef.current = next;
+    _setBlocks(next);
   }, []);
 
   const handleEngineError = useCallback((error: Error) => {
@@ -187,7 +187,6 @@ export function useNoteBlockData(options: {
     rememberNoteDocumentBlocks(documentId, normalized);
     const store = useNoteBlockStore.getState();
     store.setActiveDocumentId(documentId);
-    store.hydrate(normalized);
   }, []);
 
   const applyFetchedBlocks = useCallback((
@@ -215,7 +214,6 @@ export function useNoteBlockData(options: {
       documentEngineRef.current.replaceBlocks(merged);
       const store = useNoteBlockStore.getState();
       store.setActiveDocumentId(documentId);
-      store.syncBlocksStructure(merged);
       rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
         merged.filter((block) => block.document_id === documentId),
       ));
@@ -353,11 +351,9 @@ export function useNoteBlockData(options: {
   }, [selectedId, setPendingDeleteUndo]);
 
   useEffect(() => {
-    const synced = mergeBlocksWithStoreContent(blocks);
-    blocksRef.current = synced;
-    if (synced.length > 0 && selectedId) {
-      useNoteBlockStore.getState().syncBlocksStructure(synced);
-      const docBlocks = synced.filter((block) => block.document_id === selectedId);
+    blocksRef.current = blocks;
+    if (blocks.length > 0 && selectedId) {
+      const docBlocks = blocks.filter((block) => block.document_id === selectedId);
       if (docBlocks.length > 0) {
         rememberNoteDocumentBlocks(selectedId, docBlocks);
       }

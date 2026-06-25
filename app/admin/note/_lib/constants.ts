@@ -58,12 +58,11 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
       title: '',
       body: '',
       collapsed: false,
-      depth: 0,
       images: [],
       ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }
-  if (type === 'callout') return { text: '', icon: '💡', depth: 0 };
+  if (type === 'callout') return { text: '', icon: '💡' };
   if (type === 'divider') return {};
   if (type === 'page') {
     return {
@@ -72,18 +71,17 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
       ...(options?.insideToggle ? { placedInToggle: true } : {}),
     };
   }
-  if (type === 'code') return { text: '', language: 'plain', depth: 0 };
+  if (type === 'code') return { text: '', language: 'plain' };
   if (type === 'table') return defaultTableBlockContent();
   if (type === 'image') return { url: '' };
   if (type === 'video') return { url: '' };
   if (type === 'text') {
     return {
       text: '',
-      depth: 0,
       ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }
-  return { text: '', depth: 0 };
+  return { text: '' };
 }
 
 export const NOTE_PAGE_SHELL = 'mx-auto w-full max-w-[720px] px-14 md:px-16';

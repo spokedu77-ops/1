@@ -17,10 +17,10 @@ describe('noteMultilinePaste', () => {
   });
 
   it('builds line content without html', () => {
-    const content = contentForMultilinePasteLine('todo', '할 일', { depth: 1 });
+    const content = contentForMultilinePasteLine('todo', '할 일', {});
     expect(content.text).toBe('할 일');
     expect(content.checked).toBe(false);
-    expect(content.depth).toBe(1);
+    expect(content.depth).toBeUndefined();
     expect(content.html).toBeUndefined();
   });
 });

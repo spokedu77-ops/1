@@ -1,7 +1,6 @@
 'use client';
 
 import { create } from 'zustand';
-import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { clearAllDocumentPreviewCrossHighlights } from '../_components/noteBlockPreviewCrossSelect';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 import {
@@ -20,9 +19,12 @@ export type NoteActiveEditor = {
 
 type NoteBlockStoreState = {
   byId: Record<string, NoteBlock>;
+  order: string[];
   activeDocumentId: string | null;
   activeEditor: NoteActiveEditor | null;
   hydrate: (blocks: NoteBlock[]) => void;
+  replaceBlocks: (blocks: NoteBlock[]) => void;
+  applyBlocks: (updater: (blocks: NoteBlock[]) => NoteBlock[]) => NoteBlock[];
   syncBlocksStructure: (blocks: NoteBlock[]) => void;
   patchContent: (blockId: string, content: Record<string, unknown>) => void;
   upsertBlock: (block: NoteBlock) => void;
@@ -35,12 +37,26 @@ type NoteBlockStoreState = {
 
 export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
   byId: {},
+  order: [],
   activeDocumentId: null,
   activeEditor: null,
   hydrate: (blocks) => {
     const byId: Record<string, NoteBlock> = {};
     for (const block of blocks) byId[block.id] = block;
-    set({ byId });
+    set({ byId, order: blocks.map((block) => block.id) });
+  },
+  replaceBlocks: (blocks) => {
+    const byId: Record<string, NoteBlock> = {};
+    for (const block of blocks) byId[block.id] = block;
+    set({ byId, order: blocks.map((block) => block.id) });
+  },
+  applyBlocks: (updater) => {
+    const current = get().getBlocksArray();
+    const next = updater(current);
+    const byId: Record<string, NoteBlock> = {};
+    for (const block of next) byId[block.id] = block;
+    set({ byId, order: next.map((block) => block.id) });
+    return next;
   },
   /** React blocks 구조 갱신 — 편집 중 content는 스토어(최신) 우선, 삭제된 id는 제거 */
   syncBlocksStructure: (blocks) => {
@@ -88,16 +104,13 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
             ? { ...incoming, content: mergedContent }
             : incoming;
         } else {
-          const content = (incoming.type === 'bulletList' || incoming.type === 'numberedList')
-            && incoming.content
-            ? normalizeListBlockContentRecord(incoming.content as Record<string, unknown>)
-            : incoming.content;
-          nextById[incoming.id] = content !== incoming.content
-            ? { ...incoming, content }
-            : incoming;
+          nextById[incoming.id] = incoming;
         }
       }
-      return { byId: nextById };
+      return {
+        byId: nextById,
+        order: blocks.map((block) => block.id),
+      };
     });
   },
   patchContent: (blockId, content) => {
@@ -105,34 +118,37 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
       const prev = state.byId[blockId];
       if (!prev) return state;
       if (state.activeDocumentId && prev.document_id !== state.activeDocumentId) return state;
-      let nextContent = content;
-      if (prev.type === 'bulletList' || prev.type === 'numberedList') {
-        nextContent = normalizeListBlockContentRecord(content);
-      }
       const prevContent = prev.content as Record<string, unknown> | null | undefined;
-      const nextRecord = nextContent as Record<string, unknown>;
+      const nextRecord = content as Record<string, unknown>;
       if (prevContent && !contentChangedForUndo(prevContent, nextRecord)) {
         return state;
       }
       return {
         byId: {
           ...state.byId,
-          [blockId]: { ...prev, content: nextContent },
+          [blockId]: { ...prev, content },
         },
       };
     });
   },
   upsertBlock: (block) => {
-    set((state) => ({
-      byId: { ...state.byId, [block.id]: block },
-    }));
+    set((state) => {
+      const exists = !!state.byId[block.id];
+      return {
+        byId: { ...state.byId, [block.id]: block },
+        order: exists ? state.order : [...state.order, block.id],
+      };
+    });
   },
   removeBlock: (blockId) => {
     set((state) => {
       if (!state.byId[blockId]) return state;
       const next = { ...state.byId };
       delete next[blockId];
-      return { byId: next };
+      return {
+        byId: next,
+        order: state.order.filter((id) => id !== blockId),
+      };
     });
   },
   setActiveEditor: (active) => {
@@ -160,7 +176,12 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
     ));
   },
   getBlock: (blockId) => get().byId[blockId],
-  getBlocksArray: () => Object.values(get().byId),
+  getBlocksArray: () => {
+    const state = get();
+    return state.order
+      .map((id) => state.byId[id])
+      .filter((block): block is NoteBlock => !!block);
+  },
 }));
 
 export function useNoteBlockContent(blockId: string) {

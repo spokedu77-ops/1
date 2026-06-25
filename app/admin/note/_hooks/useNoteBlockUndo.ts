@@ -2,6 +2,7 @@ import { useCallback, useRef } from 'react';
 import type { NoteBlock } from '../_lib/types';
 
 export type NoteHistoryEntry =
+  | { kind: 'block-transaction'; before: NoteBlock[]; after: NoteBlock[] }
   | { kind: 'restore-blocks'; snapshots: NoteBlock[] }
   | { kind: 'delete-block'; snapshot: NoteBlock }
   | { kind: 'create-block'; snapshot: NoteBlock };
@@ -12,10 +13,33 @@ function cloneBlock(block: NoteBlock): NoteBlock {
   return JSON.parse(JSON.stringify(block)) as NoteBlock;
 }
 
+export function buildBlockTransactionUndoEntry(
+  beforeBlocks: NoteBlock[],
+  afterBlocks: NoteBlock[],
+  ids: string[],
+): NoteHistoryEntry | null {
+  const idSet = new Set(ids);
+  const before = beforeBlocks.filter((block) => idSet.has(block.id)).map(cloneBlock);
+  const after = afterBlocks.filter((block) => idSet.has(block.id)).map(cloneBlock);
+  if (before.length === 0 && after.length === 0) return null;
+  return {
+    kind: 'block-transaction',
+    before: after,
+    after: before,
+  };
+}
+
 export function buildNoteHistoryInverse(
   entry: NoteHistoryEntry,
   blocks: NoteBlock[],
 ): NoteHistoryEntry | null {
+  if (entry.kind === 'block-transaction') {
+    return {
+      kind: 'block-transaction',
+      before: entry.after.map(cloneBlock),
+      after: entry.before.map(cloneBlock),
+    };
+  }
   if (entry.kind === 'delete-block') {
     return { kind: 'create-block', snapshot: cloneBlock(entry.snapshot) };
   }
@@ -52,12 +76,17 @@ export function useNoteBlockUndo() {
     pushUndo({ kind: 'restore-blocks', snapshots });
   }, [pushUndo]);
 
-  const pushDeleteBlockUndo = useCallback((snapshot: NoteBlock) => {
-    pushUndo({ kind: 'delete-block', snapshot: cloneBlock(snapshot) });
+  const pushBlockTransactionUndo = useCallback((
+    beforeBlocks: NoteBlock[],
+    afterBlocks: NoteBlock[],
+    ids: string[],
+  ) => {
+    const entry = buildBlockTransactionUndoEntry(beforeBlocks, afterBlocks, ids);
+    if (entry) pushUndo(entry);
   }, [pushUndo]);
 
-  const pushCreateBlockUndo = useCallback((snapshot: NoteBlock) => {
-    pushUndo({ kind: 'create-block', snapshot: cloneBlock(snapshot) });
+  const pushDeleteBlockUndo = useCallback((snapshot: NoteBlock) => {
+    pushUndo({ kind: 'delete-block', snapshot: cloneBlock(snapshot) });
   }, [pushUndo]);
 
   const hasUndo = useCallback(() => undoStackRef.current.length > 0, []);
@@ -92,9 +121,9 @@ export function useNoteBlockUndo() {
   }, []);
 
   return {
+    pushBlockTransactionUndo,
     pushRestoreBlocksUndo,
     pushDeleteBlockUndo,
-    pushCreateBlockUndo,
     pushUndoNoClear,
     hasUndo,
     hasRedo,
