@@ -15,6 +15,7 @@ import type { BlockDropTarget } from '../_components/noteContexts';
 
 const TOGGLE_TITLE_DROP_BAND_PX = 34;
 const PAGE_DROP_EDGE_RATIO = 0.35;
+const BLOCK_DROP_EDGE_RATIO = 0.25;
 
 function escapeCssAttrValue(value: string): string {
   if (typeof globalThis.CSS?.escape === 'function') {
@@ -68,7 +69,10 @@ function resolveDropPosition(
   if (overBlock.type === 'page') {
     return resolvePageDropPosition(top, height, pointerY);
   }
-  return pointerY < top + height / 2 ? 'before' : 'after';
+  const relativeY = pointerY - top;
+  if (relativeY <= height * BLOCK_DROP_EDGE_RATIO) return 'before';
+  if (relativeY >= height * (1 - BLOCK_DROP_EDGE_RATIO)) return 'after';
+  return 'inside';
 }
 
 export function resolveBlockDropTarget(

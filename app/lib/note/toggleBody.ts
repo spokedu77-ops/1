@@ -30,7 +30,6 @@ export function buildToggleBodyTextBlockContent(content: Record<string, unknown>
   return {
     text,
     ...(html.trim() ? { html } : {}),
-    depth: 0,
     migratedFromToggleBody: true,
   };
 }
@@ -116,6 +115,7 @@ export function planToggleBodyForwardMigrations<T extends BlockLike>(
   for (const block of blocks) {
     if (block.type !== 'toggle') continue;
     const content = (block.content ?? {}) as Record<string, unknown>;
+    if (content.bodyMigrated === true) continue;
     if (!hasToggleBodyContent(content)) continue;
 
     const childContent = buildToggleBodyTextBlockContent(content);

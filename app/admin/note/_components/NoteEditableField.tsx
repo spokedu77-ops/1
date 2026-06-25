@@ -22,7 +22,6 @@ import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
 import type { MarkdownBlockTrigger } from './noteBulletInput';
 import {
-  normalizeListBlockContentRecord,
   stripListItemMarkerFromHtml,
   stripListItemMarkerPrefix,
 } from './noteBulletInput';
@@ -174,7 +173,7 @@ export function NoteEditableField({
     }
     const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
     const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
-    let nextContent: Record<string, unknown> = {
+    const nextContent: Record<string, unknown> = {
       ...baseContent,
       [field]: nextText,
       [htmlKey]: nextHtml,
@@ -182,9 +181,6 @@ export function NoteEditableField({
     const original = baseContent[field];
     if (typeof baseContent[legacyKey] !== 'string' && typeof original === 'string') {
       nextContent[legacyKey] = original;
-    }
-    if (blockType === 'bulletList' || blockType === 'numberedList') {
-      nextContent = normalizeListBlockContentRecord(nextContent);
     }
     pushContent(nextContent);
   };

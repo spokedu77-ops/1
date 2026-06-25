@@ -94,4 +94,31 @@ describe('syncBlocksStructure list type change', () => {
     expect(useNoteBlockStore.getState().getBlock('a2')).toBeUndefined();
     expect(useNoteBlockStore.getState().getBlock('b1')?.content?.text).toBe('other doc');
   });
+
+  it('keeps canonical block order when applying structural commands', () => {
+    useNoteBlockStore.getState().hydrate([
+      { ...block('a', 'text', { text: 'A' }), order_index: 0 },
+      { ...block('b', 'text', { text: 'B' }), order_index: 1 },
+    ]);
+
+    const next = useNoteBlockStore.getState().applyBlocks((blocks) => [
+      { ...blocks[1], order_index: 0 },
+      { ...blocks[0], order_index: 1 },
+    ]);
+
+    expect(next.map((item) => item.id)).toEqual(['b', 'a']);
+    expect(useNoteBlockStore.getState().getBlocksArray().map((item) => item.id)).toEqual(['b', 'a']);
+  });
+
+  it('updates canonical content without changing structural order', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'text', { text: 'A' }),
+      block('b', 'text', { text: 'B' }),
+    ]);
+
+    useNoteBlockStore.getState().patchContent('a', { text: 'typed' });
+
+    expect(useNoteBlockStore.getState().getBlocksArray().map((item) => item.id)).toEqual(['a', 'b']);
+    expect(useNoteBlockStore.getState().getBlocksArray()[0].content.text).toBe('typed');
+  });
 });

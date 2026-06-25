@@ -1,11 +1,12 @@
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import {
   NoteBlockVersionConflictError,
   patchNoteBlocksResolvingConflicts,
+  postNoteBlockTransaction,
+  postNoteBlockCreateTransaction,
   postNoteBlock,
-  purgeNoteBlockFromTrash,
   putNoteBlockOrders,
+  purgeNoteBlockFromTrash,
   restoreNoteBlockFromTrash,
   type PatchedNoteBlock,
 } from './noteBlocksApi';
@@ -98,27 +99,21 @@ export class NoteDocumentOpQueue {
     this.contentFlushPending = false;
 
     const updates = [...snapshot.entries()].map(([id, content]) => {
-      const block = this.deps.getBlock(id);
-      let record = content;
-      if (block && (block.type === 'bulletList' || block.type === 'numberedList')) {
-        record = normalizeListBlockContentRecord(record);
-      }
-      return { id, content: record };
+      return { id, content };
     });
 
     await this.enqueue({ type: 'patchContent', updates });
   }
 
   enqueue(op: NotePersistOp): Promise<void> {
-    this.serial = this.serial
-      .then(() => this.runPersistOp(op))
-      .catch((error: unknown) => {
+    const operation = this.serial.then(() => this.runPersistOp(op));
+    this.serial = operation.catch((error: unknown) => {
         if (error instanceof NoteBlockVersionConflictError) return;
         const err = error instanceof Error ? error : new Error(String(error));
         this.deps.onError?.(err);
         devLogger.error('[Note] document op queue', err);
       });
-    return this.serial;
+    return operation;
   }
 
   /** 블록 생성 — 순차 큐를 거치며 생성된 블록을 반환한다 */
@@ -157,10 +152,10 @@ export class NoteDocumentOpQueue {
     return result;
   }
 
-  enqueueRestoreBlock(op: { id: string }): Promise<NoteBlock> {
-    let resolve!: (block: NoteBlock) => void;
+  enqueueRestoreBlock(op: { id: string }): Promise<NoteBlock[]> {
+    let resolve!: (blocks: NoteBlock[]) => void;
     let reject!: (error: Error) => void;
-    const result = new Promise<NoteBlock>((res, rej) => {
+    const result = new Promise<NoteBlock[]>((res, rej) => {
       resolve = res;
       reject = rej;
     });
@@ -169,9 +164,9 @@ export class NoteDocumentOpQueue {
       .then(async () => {
         this.persistInFlight = true;
         try {
-          const block = await restoreNoteBlockFromTrash(op.id);
+          const blocks = await restoreNoteBlockFromTrash(op.id);
           this.deps.triggerSave();
-          resolve(block);
+          resolve(blocks);
         } catch (error: unknown) {
           const err = error instanceof Error ? error : new Error(String(error));
           reject(err);
@@ -194,6 +189,25 @@ export class NoteDocumentOpQueue {
   private async runCreateBlock(
     op: Extract<NotePersistOp, { type: 'createBlock' }>,
   ): Promise<NoteBlock> {
+    if (op.normalizeOrders !== undefined) {
+      const result = await postNoteBlockCreateTransaction(
+        {
+          documentId: op.documentId,
+          blockType: op.blockType,
+          content: op.content,
+          order_index: op.order_index,
+          parent_block_id: op.parent_block_id,
+        },
+        op.normalizeOrders,
+        (id) => this.deps.getBlock(id),
+      );
+      if (result.patchedBlocks.length > 0) {
+        this.deps.onServerPatches?.(result.patchedBlocks);
+      }
+      this.deps.triggerSave();
+      return result.createdBlock;
+    }
+
     const block = await postNoteBlock({
       documentId: op.documentId,
       blockType: op.blockType,
@@ -201,17 +215,6 @@ export class NoteDocumentOpQueue {
       order_index: op.order_index,
       parent_block_id: op.parent_block_id,
     });
-
-    if (op.normalizeOrders && op.normalizeOrders.length > 0) {
-      const patched = await putNoteBlockOrders(
-        op.normalizeOrders,
-        undefined,
-        (id) => this.deps.getBlock(id),
-      );
-      if (patched.length > 0) {
-        this.deps.onServerPatches?.(patched);
-      }
-    }
 
     this.deps.triggerSave();
     return block;
@@ -284,7 +287,13 @@ export class NoteDocumentOpQueue {
       case 'patchFields': {
         if (op.patches.length === 0) return;
         try {
-          await this.patchWithVersionRetry(op.patches);
+          const patched = await postNoteBlockTransaction(
+            op.patches,
+            [],
+            (id) => this.deps.getBlock(id),
+          );
+          if (patched.length > 0) this.deps.onServerPatches?.(patched);
+          this.deps.triggerSave();
         } catch (error) {
           if (error instanceof NoteBlockVersionConflictError) {
             this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
@@ -330,20 +339,17 @@ export class NoteDocumentOpQueue {
         }
         return;
       }
+      case 'blockTransaction': {
+        const patched = await postNoteBlockTransaction(
+          op.patches,
+          op.deleteIds,
+          (id) => this.deps.getBlock(id),
+        );
+        if (patched.length > 0) this.deps.onServerPatches?.(patched);
+        this.deps.triggerSave();
+        return;
+      }
       case 'softDelete': {
-        const promotionPatches = op.promotionPatches ?? [];
-        if (promotionPatches.length > 0) {
-          try {
-            await this.patchWithVersionRetry(promotionPatches);
-          } catch (error) {
-            if (error instanceof NoteBlockVersionConflictError) {
-              this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
-              this.deps.onError?.(new Error('삭제 전 블록 구조 동기화에 실패했습니다.'));
-              return;
-            }
-            throw error;
-          }
-        }
         if (op.ids.length === 0) return;
         const res = await fetch('/api/admin/note/blocks', {
           method: 'DELETE',
@@ -389,7 +395,6 @@ export class NoteDocumentOpQueue {
 
 export type SoftDeletePersistArgs = {
   ids: string[];
-  promotionPatches?: NoteBlockFieldPatch[];
 };
 
 export type ReorderPersistArgs = {

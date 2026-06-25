@@ -33,6 +33,18 @@ describe('stripListItemMarkerPrefix', () => {
     expect(stripListItemMarkerPrefix('• item')).toBe('item');
     expect(stripListItemMarkerPrefix('◦ nested')).toBe('nested');
   });
+
+  it('preserves dates and decimals that only resemble numbered markers', () => {
+    expect(stripListItemMarkerPrefix('6.25 목요일')).toBe('6.25 목요일');
+    expect(stripListItemMarkerPrefix('3.14')).toBe('3.14');
+    expect(stripListItemMarkerPrefix('2026.06.25 일정')).toBe('2026.06.25 일정');
+    expect(stripListItemMarkerPrefix('1.item')).toBe('1.item');
+  });
+
+  it('removes a numbered marker only when whitespace follows the dot', () => {
+    expect(stripListItemMarkerPrefix('1. item')).toBe('item');
+    expect(stripListItemMarkerPrefix('25. 목요일')).toBe('목요일');
+  });
 });
 
 describe('stripListItemMarkerFromHtml', () => {
@@ -43,6 +55,10 @@ describe('stripListItemMarkerFromHtml', () => {
 
   it('removes numbered prefix from first paragraph in html', () => {
     expect(stripListItemMarkerFromHtml('<p>1. item</p>')).toBe('<p>item</p>');
+  });
+
+  it('preserves date-like text in html', () => {
+    expect(stripListItemMarkerFromHtml('<p>6.25 목요일</p>')).toBe('<p>6.25 목요일</p>');
   });
 });
 
@@ -87,6 +103,11 @@ describe('normalizeListBlockContentRecord', () => {
 
   it('leaves clean content unchanged', () => {
     const input = { text: 'hello', number: 1 };
+    expect(normalizeListBlockContentRecord(input)).toBe(input);
+  });
+
+  it('keeps date text intact during legacy normalization', () => {
+    const input = { text: '6.25 목요일', html: '<p>6.25 목요일</p>' };
     expect(normalizeListBlockContentRecord(input)).toBe(input);
   });
 });

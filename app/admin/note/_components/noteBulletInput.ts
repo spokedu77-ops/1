@@ -63,8 +63,8 @@ export function stripListItemMarkerPrefix(text: string): string {
   if (parsed.hasBullet) return parsed.body;
   let body = parsed.body;
   if (body === '-' || body === '*') return '';
-  body = body.replace(/^[-*]\s*/, '');
-  body = body.replace(/^\d+\.\s*/, '');
+  body = body.replace(/^[-*]\s+/, '');
+  body = body.replace(/^\d+\.\s+/, '');
   for (const marker of BULLET_MARKERS) {
     if (body.startsWith(marker)) {
       body = body.slice(marker.length);
@@ -78,7 +78,7 @@ export function stripListItemMarkerPrefix(text: string): string {
 export function stripListItemMarkerFromHtml(html: string): string {
   if (!html.trim()) return html;
   return html.replace(
-    /^(<p[^>]*>)(\s*(?:&nbsp;|&#160;|\u00a0)*)((?:[-*•◦▪▫]\s*|\d+\.\s*))/i,
+    /^(<p[^>]*>)(\s*(?:&nbsp;|&#160;|\u00a0)*)((?:[-*•◦▪▫]\s+|\d+\.\s+))/i,
     '$1$2',
   );
 }

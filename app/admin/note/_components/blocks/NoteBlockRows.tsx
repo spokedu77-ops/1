@@ -31,7 +31,6 @@ import { NoteChromeBlockShell } from './NoteChromeBlockShell';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import { useBlockContentPatch } from './useBlockContentPatch';
 import { useBlockLiveContent } from './useBlockLiveContent';
-import { useNoteBlockContentSubscription } from './useNoteBlockContentSubscription';
 import { getMergedBlockContentBase } from '../../_lib/noteBlockContentResolve';
 import type { NoteEditorEnterContext } from '../NoteEditor';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
@@ -210,8 +209,7 @@ function BlockContent({
     />
   );
 
-  const blockDepth = Math.max(0, Math.min(6, Number(block.content?.depth ?? 0)));
-  const contentMarginLeft = isInsideToggle ? 0 : blockDepth * 20;
+  const contentMarginLeft = 0;
   const isBorderlessInlineBlock =
     block.type === 'text'
     || block.type === 'todo'
@@ -1056,7 +1054,6 @@ function SortableBlockRow({
   numberedListIndex?: number;
   bulletListNestLevel?: number;
 }) {
-  useNoteBlockContentSubscription(block.id);
   const applyBlockColor = useCallback((colorId: string) => {
     onRecordBlockUndo?.();
     const next = { ...getMergedBlockContentBase(block) };
@@ -1138,7 +1135,7 @@ function SortableBlockRow({
     && childBlocks
     && childBlocks.length > 0
     && renderChildBlock
-    && (toggleExpanded || block.type === 'bulletList' || block.type === 'numberedList');
+    && (block.type !== 'toggle' || toggleExpanded);
 
   const style: React.CSSProperties | undefined = isDragging
     ? { opacity: 0, zIndex: 10 }
@@ -1162,7 +1159,7 @@ function SortableBlockRow({
       onPointerDown={(e) => focusNoteBlockRowFromChrome(e, block.id, onFocusBlock)}
       className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
-          : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
+          : dropPos === 'inside' ? DROP_INSIDE_BLOCK_ROW
           : !block.content?.blockColor ? 'hover:bg-neutral-50/60' : ''
       }`}
     >
@@ -1321,7 +1318,6 @@ function ToggleInlineRow({
   numberedListIndex?: number;
   bulletListNestLevel?: number;
 }) {
-  useNoteBlockContentSubscription(block.id);
   const applyBlockColor = useCallback((colorId: string) => {
     onRecordBlockUndo?.();
     const next = { ...getMergedBlockContentBase(block) };
@@ -1376,7 +1372,7 @@ function ToggleInlineRow({
     && childBlocks
     && childBlocks.length > 0
     && renderChildBlock
-    && (toggleExpanded || block.type === 'bulletList' || block.type === 'numberedList');
+    && (block.type !== 'toggle' || toggleExpanded);
 
   const inlineBlockContentProps = {
     block,
@@ -1434,7 +1430,7 @@ function ToggleInlineRow({
       onPointerDown={(e) => focusNoteBlockRowFromChrome(e, block.id, onFocusBlock)}
       className={`relative overflow-visible py-0.5 transition-colors ${blockRowBgClass(block.content)} ${
         isSelected ? 'bg-blue-50/70 ring-1 ring-inset ring-blue-200'
-          : dropPos === 'inside' && (block.type === 'toggle' || block.type === 'page') ? DROP_INSIDE_BLOCK_ROW
+          : dropPos === 'inside' ? DROP_INSIDE_BLOCK_ROW
           : !block.content?.blockColor ? 'hover:bg-neutral-50/60' : ''
       }`}
     >

@@ -119,12 +119,6 @@ export function getBlockRangeIdsInVisualOrder<T extends NoteBlockLike>(
   return visualIds.slice(lo, hi + 1);
 }
 
-/** 토글 안에서 인라인(테두리 없음)으로 둘 타입 */
-export const TOGGLE_INLINE_CHILD_TYPES = new Set(['text', 'todo', 'toggle', 'page']);
-
-/** Tab으로 토글 안에 넣을 수 있는 타입 (divider·이미지·영상 등 제외) */
-export const TAB_INTO_TOGGLE_BLOCKED_TYPES = new Set(['divider', 'image', 'video']);
-
 /** Tab으로 하위 항목을 받을 수 있는 목록 블록 타입 */
 export const LIST_CONTAINER_TYPES = new Set(['bulletList', 'numberedList']);
 
@@ -133,54 +127,86 @@ export const MERGEABLE_BLOCK_TYPES = new Set([
   'text', 'heading', 'heading2', 'heading3', 'todo', 'callout', 'bulletList', 'numberedList',
 ]);
 
-export function shouldStayToggleInlineChild(
-  block: BlockWithMeta,
-  parent: BlockWithMeta | undefined,
-): boolean {
-  if (!parent) return false;
-  // 글머리·번호 목록 안의 블록은 중첩 목록 아이템 — 루트로 승격하지 않음
-  if (LIST_CONTAINER_TYPES.has(parent.type)) return true;
-  if (parent.type !== 'toggle') return false;
-  if (block.content?.migratedFromToggleBody === true) return false;
-  if (block.content?.placedInToggle === true) return true;
-  if (block.content?.createdInsideToggle === true) {
-    return TOGGLE_INLINE_CHILD_TYPES.has(block.type);
-  }
-  // 기존 데이터: 토글 안 text·todo·토글은 인라인 유지
-  return TOGGLE_INLINE_CHILD_TYPES.has(block.type);
-}
-
-export type PromoteBlockToRootPatch = {
+export type CanonicalTreePatch = {
   id: string;
-  parent_block_id: null;
+  parent_block_id: string | null;
   order_index: number;
+  content?: Record<string, unknown>;
 };
 
-/** 토글·텍스트 블록 안에 잘못 들어간 기존 블록을 문서 루트 블록으로 올린다. */
-export function planPromoteDocumentBlocksToRoot<T extends BlockWithMeta>(
+/**
+ * legacy content.depth를 실제 parent_block_id 트리로 한 번만 변환한다.
+ * 이미 parent_block_id가 있는 블록은 그 관계를 보존하고 depth 필드만 제거한다.
+ */
+export function planCanonicalizeBlockTree<T extends BlockWithMeta>(
   blocks: T[],
-): { blocks: T[]; patches: PromoteBlockToRootPatch[] } {
-  const byId = new Map(blocks.map((block) => [block.id, block]));
-  const rootBlocks = sortRootBlocks(blocks);
-  let nextRootOrder =
-    rootBlocks.length > 0 ? Math.max(...rootBlocks.map((block) => block.order_index)) + 1 : 0;
-  const patches: PromoteBlockToRootPatch[] = [];
+): { blocks: T[]; patches: CanonicalTreePatch[] } {
+  const roots = blocks
+    .filter((block) => !block.parent_block_id)
+    .map((block, sourceIndex) => ({ block, sourceIndex }))
+    .sort((left, right) =>
+      left.block.order_index - right.block.order_index
+      || left.sourceIndex - right.sourceIndex);
+  const lastAtDepth: T[] = [];
+  const nextOrderByParent = new Map<string | null, number>();
 
+  for (const block of blocks) {
+    if (!block.parent_block_id) continue;
+    const current = nextOrderByParent.get(block.parent_block_id) ?? 0;
+    nextOrderByParent.set(
+      block.parent_block_id,
+      Math.max(current, block.order_index + 1),
+    );
+  }
+
+  const planned = new Map<string, { parentId: string | null; order: number }>();
+  for (const { block } of roots) {
+    const rawDepth = Number(block.content?.depth ?? 0);
+    const requestedDepth = Number.isFinite(rawDepth)
+      ? Math.max(0, Math.min(20, Math.round(rawDepth)))
+      : 0;
+    const parent = requestedDepth > 0 ? lastAtDepth[requestedDepth - 1] : undefined;
+    const parentId = parent?.id ?? null;
+    const order = nextOrderByParent.get(parentId) ?? 0;
+    nextOrderByParent.set(parentId, order + 1);
+    planned.set(block.id, { parentId, order });
+
+    const actualDepth = parent ? requestedDepth : 0;
+    lastAtDepth[actualDepth] = block;
+    lastAtDepth.length = actualDepth + 1;
+  }
+
+  const patches: CanonicalTreePatch[] = [];
   const nextBlocks = blocks.map((block) => {
-    const parentId = block.parent_block_id ?? null;
-    if (!parentId) return block;
+    const plan = planned.get(block.id);
+    const parentId = plan?.parentId ?? (block.parent_block_id ?? null);
+    const orderIndex = plan?.order ?? block.order_index;
+    const content = (block.content ?? null) as Record<string, unknown> | null;
+    const hasLegacyDepth = !!content && Object.prototype.hasOwnProperty.call(content, 'depth');
+    const nextContent = hasLegacyDepth ? { ...content } : content;
+    if (nextContent) delete nextContent.depth;
 
-    const parent = byId.get(parentId);
-    if (shouldStayToggleInlineChild(block, parent)) return block;
+    if (
+      parentId === (block.parent_block_id ?? null)
+      && orderIndex === block.order_index
+      && !hasLegacyDepth
+    ) {
+      return block;
+    }
 
-    const patch: PromoteBlockToRootPatch = {
+    const patch: CanonicalTreePatch = {
       id: block.id,
-      parent_block_id: null,
-      order_index: nextRootOrder,
+      parent_block_id: parentId,
+      order_index: orderIndex,
+      ...(hasLegacyDepth && nextContent ? { content: nextContent } : {}),
     };
     patches.push(patch);
-    nextRootOrder += 1;
-    return { ...block, parent_block_id: null, order_index: patch.order_index };
+    return {
+      ...block,
+      parent_block_id: parentId,
+      order_index: orderIndex,
+      ...(hasLegacyDepth ? { content: nextContent } : {}),
+    };
   });
 
   return { blocks: nextBlocks, patches };
@@ -197,6 +223,29 @@ export function collectDescendantBlockIds(blockId: string, blocks: Array<{ id: s
   };
   walk(blockId);
   return ids;
+}
+
+/** 선택한 블록과 모든 자손을 하나의 삭제 단위로 계산한다. */
+export function collectBlockSubtreeIds(
+  blockId: string,
+  blocks: Array<{ id: string; parent_block_id?: string | null }>,
+): string[] {
+  if (!blocks.some((block) => block.id === blockId)) return [];
+  return [blockId, ...collectDescendantBlockIds(blockId, blocks)];
+}
+
+/** 여러 선택에서 중복되는 자손을 제거하고 삭제할 전체 서브트리를 계산한다. */
+export function collectBlockForestIds(
+  blockIds: Iterable<string>,
+  blocks: Array<{ id: string; parent_block_id?: string | null }>,
+): string[] {
+  const result = new Set<string>();
+  for (const blockId of blockIds) {
+    for (const id of collectBlockSubtreeIds(blockId, blocks)) {
+      result.add(id);
+    }
+  }
+  return [...result];
 }
 
 export function filterSiblingBlocks<T extends NoteBlockLike>(blocks: T[], block: T) {
@@ -218,7 +267,7 @@ export type BlockDropPlan<T extends BlockWithMeta = BlockWithMeta> = {
 
 export type BlockDropPosition = 'before' | 'after' | 'inside';
 
-/** 드래그한 블록을 before/after/inside(토글) 위치로 옮길 계획을 계산한다. */
+/** 드래그한 블록을 before/after/inside 위치로 옮길 계획을 계산한다. */
 export function planBlockDropAt<T extends BlockWithMeta>(
   blocks: T[],
   movingId: string,
@@ -246,7 +295,6 @@ export function planBlockDropAt<T extends BlockWithMeta>(
   };
 
   if (position === 'inside') {
-    if (target.type !== 'toggle') return null;
     const children = withoutMoving(target.id);
     return finish(target.id, [...children, moving]);
   }
@@ -279,7 +327,7 @@ export function planBlockDrop<T extends BlockWithMeta>(
   return planBlockDropAt(blocks, movingId, overId, 'before');
 }
 
-/** Tab/Shift+Tab으로 블록을 한 단계 안쪽(이전 형제 토글 안) 또는 바깥(부모 다음)으로 옮길 계획. */
+/** Tab/Shift+Tab으로 블록을 이전 형제의 자식 또는 부모 다음 형제로 옮긴다. */
 export function planBlockTabIndent<T extends BlockWithMeta>(
   blocks: T[],
   blockId: string,
@@ -297,21 +345,15 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
     if (idx <= 0) return null;
 
     const prev = siblings[idx - 1];
-    if (TAB_INTO_TOGGLE_BLOCKED_TYPES.has(moving.type)) return null;
-
     const descendantIds = collectDescendantBlockIds(moving.id, blocks);
     if (descendantIds.has(prev.id)) return null;
-
-    const nestIntoToggle = prev.type === 'toggle';
-    const nestIntoList = LIST_CONTAINER_TYPES.has(prev.type) && moving.type === prev.type;
-    if (!nestIntoToggle && !nestIntoList) return null;
 
     const children = getBlocksInParent(blocks, prev.id).filter((block) => block.id !== moving.id);
     const targetSiblings = [...children, moving].map((block, index) => ({ ...block, order_index: index }));
     return {
       targetParentId: prev.id,
       targetSiblings,
-      placedInToggle: nestIntoToggle,
+      placedInToggle: prev.type === 'toggle',
     };
   }
 
@@ -380,15 +422,13 @@ export function buildReparentContentPatch(
     return {
       ...base,
       placedInToggle: true,
-      ...(TOGGLE_INLINE_CHILD_TYPES.has(blockType) ? { createdInsideToggle: true } : {}),
+      createdInsideToggle: true,
     };
   }
   if (!base.placedInToggle && !base.createdInsideToggle) return undefined;
   const next = { ...base };
   delete next.placedInToggle;
-  if (!TOGGLE_INLINE_CHILD_TYPES.has(blockType)) {
-    delete next.createdInsideToggle;
-  }
+  delete next.createdInsideToggle;
   return next;
 }
 
@@ -425,128 +465,6 @@ export function applyBlockDropPlanInMemory<T extends BlockWithMeta>(
     if (oldMap.has(item.id)) return oldMap.get(item.id)!;
     return item;
   });
-}
-
-export type PromoteChildrenOnDeletePatch = {
-  id: string;
-  parent_block_id: string | null;
-  order_index: number;
-  content?: Record<string, unknown>;
-};
-
-/** 블록 삭제 시 직계 자식을 삭제 위치(부모)로 승격한다. 자손은 유지. */
-export function planPromoteChildrenOnDelete<T extends BlockWithMeta>(
-  blocks: T[],
-  blockId: string,
-): { deletedId: string; patches: PromoteChildrenOnDeletePatch[] } | null {
-  const byId = new Map(blocks.map((block) => [block.id, block]));
-  const deleted = byId.get(blockId);
-  if (!deleted) return null;
-
-  const parentId = deleted.parent_block_id ?? null;
-  const directChildren = getBlocksInParent(blocks, blockId);
-  const siblings = getBlocksInParent(blocks, parentId);
-  const deletedIdx = siblings.findIndex((block) => block.id === blockId);
-  if (deletedIdx < 0) return null;
-
-  const newParent = parentId ? byId.get(parentId) : undefined;
-  const placedInToggle = newParent?.type === 'toggle';
-
-  const promotedChildren = directChildren.map((child) => {
-    const contentPatch = buildReparentContentPatch(child.content, child.type, placedInToggle);
-    return {
-      ...child,
-      parent_block_id: parentId,
-      ...(contentPatch ? { content: contentPatch } : {}),
-    };
-  });
-
-  const siblingsWithoutDeleted = siblings.filter((block) => block.id !== blockId);
-  const reordered = [
-    ...siblingsWithoutDeleted.slice(0, deletedIdx),
-    ...promotedChildren,
-    ...siblingsWithoutDeleted.slice(deletedIdx),
-  ].map((block, index) => ({ ...block, order_index: index }));
-
-  const patches: PromoteChildrenOnDeletePatch[] = reordered.map((block) => ({
-    id: block.id,
-    parent_block_id: block.parent_block_id ?? null,
-    order_index: block.order_index,
-    ...(directChildren.some((child) => child.id === block.id) && block.content
-      ? { content: block.content as Record<string, unknown> }
-      : {}),
-  }));
-
-  return { deletedId: blockId, patches };
-}
-
-export function getBlockAncestorDepth<T extends NoteBlockLike>(block: T, blocks: T[]): number {
-  let depth = 0;
-  let parentId = block.parent_block_id ?? null;
-  while (parentId) {
-    depth += 1;
-    parentId = blocks.find((item) => item.id === parentId)?.parent_block_id ?? null;
-  }
-  return depth;
-}
-
-/** 여러 블록을 한 번에 삭제할 때 로컬 상태·승격 PATCH를 계산한다. */
-export function planBatchDeleteBlocks<T extends BlockWithMeta>(
-  blocks: T[],
-  deleteIds: Iterable<string>,
-): { nextBlocks: T[]; patches: PromoteChildrenOnDeletePatch[]; deletedIds: string[] } | null {
-  const deleteSet = new Set(deleteIds);
-  if (deleteSet.size === 0) return null;
-
-  const patchById = new Map<string, PromoteChildrenOnDeletePatch>();
-  let working = blocks;
-  const deletedIds: string[] = [];
-
-  const targets = working
-    .filter((block) => deleteSet.has(block.id))
-    .sort((a, b) => {
-      const depthDiff = getBlockAncestorDepth(b, working) - getBlockAncestorDepth(a, working);
-      return depthDiff !== 0 ? depthDiff : b.order_index - a.order_index;
-    });
-
-  for (const target of targets) {
-    if (!working.some((block) => block.id === target.id)) continue;
-
-    const plan = planPromoteChildrenOnDelete(working, target.id);
-    deletedIds.push(target.id);
-
-    if (!plan) {
-      working = working.filter((block) => block.id !== target.id);
-      continue;
-    }
-
-    const patchesToApply = plan.patches.filter(
-      (patch) => patch.id !== target.id && !deleteSet.has(patch.id),
-    );
-    for (const patch of patchesToApply) {
-      patchById.set(patch.id, patch);
-    }
-
-    const patchMap = new Map(patchesToApply.map((patch) => [patch.id, patch]));
-    working = working
-      .filter((block) => block.id !== target.id)
-      .map((block) => {
-        const patch = patchMap.get(block.id);
-        if (!patch) return block;
-        return {
-          ...block,
-          parent_block_id: patch.parent_block_id,
-          order_index: patch.order_index,
-          ...(patch.content ? { content: patch.content } : {}),
-        };
-      });
-  }
-
-  return {
-    nextBlocks: working,
-    patches: [...patchById.values()],
-    deletedIds,
-  };
 }
 
 /** 루트 블록 여러 개를 한 덩어리로 before/after 이동 */

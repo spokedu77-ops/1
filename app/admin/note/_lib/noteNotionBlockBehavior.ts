@@ -45,7 +45,6 @@ export function resolveInlineBlockEnterAction(options: {
       content: {
         text: options.enterCtx.split.afterText,
         html: options.enterCtx.split.afterHtml,
-        depth: 0,
       },
     };
   }

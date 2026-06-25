@@ -63,4 +63,17 @@ describe('planToggleBodyForwardMigrations', () => {
     ];
     expect(planToggleBodyForwardMigrations(blocks)).toHaveLength(0);
   });
+
+  it('이미 이전 완료된 legacyBody를 다시 자식 블록으로 만들지 않는다', () => {
+    const blocks = [
+      block('t1', 'toggle', {
+        title: '제목',
+        body: '',
+        legacyBody: '과거 본문',
+        bodyMigrated: true,
+      }),
+    ];
+
+    expect(planToggleBodyForwardMigrations(blocks)).toHaveLength(0);
+  });
 });

@@ -1,6 +1,6 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
-import { planPromoteDocumentBlocksToRoot } from '@/app/lib/note/noteBlockTree';
 import { applyToggleBodyForwardMigrations } from './applyToggleBodyForwardMigrations';
+import { applyNoteBlockTreeMigrations } from './applyNoteBlockTreeMigrations';
 import { reconcileSubPagesOnDocumentLoad } from './reconcileSubPagesOnDocumentLoad';
 
 export type LoadedNoteBlock = {
@@ -43,32 +43,13 @@ export async function loadNoteDocumentBlocks(
 
   let loadedBlocks = (blocksResult.data ?? []) as LoadedNoteBlock[];
 
-  const promotePlans = planPromoteDocumentBlocksToRoot(loadedBlocks);
-
-  if (promotePlans.patches.length > 0) {
-    loadedBlocks = promotePlans.blocks as LoadedNoteBlock[];
-  }
-
   loadedBlocks = await applyToggleBodyForwardMigrations(
     supabase,
     documentId,
     loadedBlocks,
     actorId,
   );
-
-  if (promotePlans.patches.length > 0) {
-    await Promise.all(
-      promotePlans.patches.map((patch) =>
-        supabase
-          .from('note_blocks')
-          .update({
-            parent_block_id: patch.parent_block_id,
-            order_index: patch.order_index,
-          })
-          .eq('id', patch.id),
-      ),
-    );
-  }
+  loadedBlocks = await applyNoteBlockTreeMigrations(supabase, loadedBlocks);
 
   loadedBlocks = await reconcileSubPagesOnDocumentLoad(supabase, documentId, loadedBlocks);
 

@@ -22,7 +22,6 @@ import { BlockInsideDropSurface, ToggleDisclosureButton } from '../sidebar/NoteD
 import { useBlockDragActive } from '../noteContexts';
 import { useBlockContentPatch } from './useBlockContentPatch';
 import { useBlockLiveContent } from './useBlockLiveContent';
-import { useNoteBlockContentSubscription } from './useNoteBlockContentSubscription';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
@@ -87,7 +86,6 @@ export function NoteToggleBlock({
   slashHostRef,
   ...fieldProps
 }: NoteToggleBlockProps) {
-  useNoteBlockContentSubscription(block.id);
   const liveContent = useBlockLiveContent(block);
   const isBlockDragActive = useBlockDragActive();
   const imageLightbox = useNoteImageLightbox();

@@ -30,7 +30,6 @@ export function contentForMultilinePasteLine(
   const base = defaultBlockContent(blockType) as Record<string, unknown>;
   const next: Record<string, unknown> = { ...base, text: line };
   if (blockType === 'todo') next.checked = false;
-  if (typeof sourceContent?.depth === 'number') next.depth = sourceContent.depth;
   if (sourceContent?.placedInToggle === true) next.placedInToggle = true;
   if (sourceContent?.createdInsideToggle === true) next.createdInsideToggle = true;
   return next;

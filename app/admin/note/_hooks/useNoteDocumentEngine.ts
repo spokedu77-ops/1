@@ -5,13 +5,11 @@ import {
   applyNoteDocumentOp,
   applyServerBlockVersions,
   createNoteDocumentEngineState,
-  getEngineBlock,
 } from '../_lib/noteDocumentEngine';
 import type { NoteDocumentOp } from '../_lib/noteDocumentOps';
 import {
   NoteDocumentOpQueue,
   type CreateBlockPersistArgs,
-  type ReorderPersistArgs,
   type SoftDeletePersistArgs,
 } from '../_lib/noteDocumentOpQueue';
 import { setNoteContentSavePending } from '../_lib/notePendingSave';
@@ -29,10 +27,12 @@ export type NoteDocumentEngineApi = {
   flushPersistQueue: () => Promise<void>;
   persistSoftDelete: (args: SoftDeletePersistArgs) => Promise<void>;
   persistFieldPatches: (patches: NoteBlockFieldPatch[]) => Promise<void>;
-  persistReorder: (args: ReorderPersistArgs) => Promise<void>;
   persistCreateBlock: (args: CreateBlockPersistArgs) => Promise<NoteBlock>;
-  persistTransferBlocks: (patches: NoteBlockFieldPatch[]) => Promise<void>;
-  persistRestoreBlock: (blockId: string) => Promise<NoteBlock>;
+  persistBlockTransaction: (
+    patches: NoteBlockFieldPatch[],
+    deleteIds?: string[],
+  ) => Promise<void>;
+  persistRestoreBlock: (blockId: string) => Promise<NoteBlock[]>;
   persistPurgeBlock: (blockId: string) => Promise<void>;
   getBlocks: () => NoteBlock[];
   hasPendingContent: () => boolean;
@@ -47,7 +47,6 @@ export function useNoteDocumentEngine(options: {
   onError?: (error: Error) => void;
 }): NoteDocumentEngineApi {
   const { documentId, blocksRef, setBlocks, triggerSave, onError } = options;
-  const stateRef = useRef(createNoteDocumentEngineState(''));
   const queueRef = useRef<NoteDocumentOpQueue | null>(null);
   const triggerSaveRef = useRef(triggerSave);
   const onErrorRef = useRef(onError);
@@ -61,13 +60,11 @@ export function useNoteDocumentEngine(options: {
 
   const applyLocal = useCallback((op: NoteDocumentOp) => {
     if (!documentId) return;
-    if (stateRef.current.documentId !== documentId) {
-      stateRef.current = createNoteDocumentEngineState(documentId, blocksRef.current);
-    }
+    const store = useNoteBlockStore.getState();
     const activeBlockId = useNoteBlockStore.getState().activeEditor?.blockId ?? null;
-    stateRef.current = applyNoteDocumentOp(stateRef.current, op, { activeBlockId });
-    blocksRef.current = stateRef.current.blocks;
-    setBlocks(stateRef.current.blocks);
+    const current = createNoteDocumentEngineState(documentId, store.getBlocksArray());
+    const next = applyNoteDocumentOp(current, op, { activeBlockId }).blocks;
+    setBlocks(next);
   }, [blocksRef, documentId, setBlocks]);
 
   const applyLocalRef = useRef(applyLocal);
@@ -77,10 +74,7 @@ export function useNoteDocumentEngine(options: {
     if (!documentId || patched.length === 0) return;
     const nextFromRef = applyServerBlockVersions(blocksRef.current, patched);
     blocksRef.current = nextFromRef;
-    stateRef.current = {
-      ...stateRef.current,
-      blocks: applyServerBlockVersions(stateRef.current.blocks, patched),
-    };
+    useNoteBlockStore.getState().replaceBlocks(nextFromRef);
     // version만 갱신 — 본문 타이핑 경로와 같이 React 전체 리렌더 생략
   }, [blocksRef, documentId]);
 
@@ -91,15 +85,12 @@ export function useNoteDocumentEngine(options: {
     queueRef.current?.dispose();
     queueRef.current = null;
     if (!documentId) {
-      stateRef.current = createNoteDocumentEngineState('');
       setNoteContentSavePending(false);
       return;
     }
 
-    stateRef.current = createNoteDocumentEngineState(documentId, blocksRef.current);
     queueRef.current = new NoteDocumentOpQueue({
-      getBlock: (blockId) => getEngineBlock(stateRef.current, blockId)
-        ?? blocksRef.current.find((block) => block.id === blockId),
+      getBlock: (blockId) => useNoteBlockStore.getState().getBlock(blockId),
       getActiveBlockId: () => useNoteBlockStore.getState().activeEditor?.blockId ?? null,
       triggerSave: () => triggerSaveRef.current(),
       onError: (error) => onErrorRef.current?.(error),
@@ -125,18 +116,10 @@ export function useNoteDocumentEngine(options: {
   }, [applyLocal]);
 
   const scheduleContentPatch = useCallback((blockId: string, content: Record<string, unknown>) => {
-    // 본문 타이핑은 applyBlockContentChange가 store·blocksRef만 갱신한다.
-    // 여기서 setBlocks를 호출하면 블록 트리 전체가 매 키입력마다 리렌더되어 극단적으로 느려진다.
-    if (documentId && stateRef.current.documentId === documentId) {
-      stateRef.current = applyNoteDocumentOp(stateRef.current, {
-        type: 'updateContent',
-        blockId,
-        content,
-      });
-    }
+    useNoteBlockStore.getState().patchContent(blockId, content);
     queueRef.current?.scheduleContentPatch(blockId, content);
     syncPendingFlag();
-  }, [documentId, syncPendingFlag]);
+  }, [syncPendingFlag]);
 
   const clearContentPatch = useCallback((blockId: string) => {
     queueRef.current?.clearContentPatch(blockId);
@@ -162,24 +145,12 @@ export function useNoteDocumentEngine(options: {
     await queueRef.current?.enqueue({
       type: 'softDelete',
       ids: args.ids,
-      promotionPatches: args.promotionPatches,
     });
   }, []);
 
   const persistFieldPatches = useCallback(async (patches: NoteBlockFieldPatch[]) => {
     applyLocal({ type: 'applyPatches', patches });
     await queueRef.current?.enqueue({ type: 'patchFields', patches });
-  }, [applyLocal]);
-
-  const persistReorder = useCallback(async (args: ReorderPersistArgs) => {
-    if (args.fieldPatches && args.fieldPatches.length > 0) {
-      applyLocal({ type: 'applyPatches', patches: args.fieldPatches });
-    }
-    await queueRef.current?.enqueue({
-      type: 'reorderBlocks',
-      orders: args.orders,
-      fieldPatches: args.fieldPatches,
-    });
   }, [applyLocal]);
 
   const persistCreateBlock = useCallback(async (args: CreateBlockPersistArgs) => {
@@ -197,10 +168,17 @@ export function useNoteDocumentEngine(options: {
     }) ?? Promise.reject(new Error('문서 엔진이 준비되지 않았습니다'));
   }, [documentId]);
 
-  const persistTransferBlocks = useCallback(async (patches: NoteBlockFieldPatch[]) => {
-    if (patches.length === 0) return;
     // 문서 밖으로 나가는 블록 — 로컬 reducer는 건드리지 않는다(호출 측이 UI에서 제거).
-    await queueRef.current?.enqueue({ type: 'transferBlocks', patches });
+
+  const persistBlockTransaction = useCallback(async (
+    patches: NoteBlockFieldPatch[],
+    deleteIds: string[] = [],
+  ) => {
+    await queueRef.current?.enqueue({
+      type: 'blockTransaction',
+      patches,
+      deleteIds,
+    });
   }, []);
 
   const persistRestoreBlock = useCallback(async (blockId: string) => {
@@ -221,7 +199,10 @@ export function useNoteDocumentEngine(options: {
     triggerSaveRef.current();
   }, []);
 
-  const getBlocks = useCallback(() => stateRef.current.blocks, []);
+  const getBlocks = useCallback(
+    () => useNoteBlockStore.getState().getBlocksArray(),
+    [],
+  );
 
   const hasPendingContent = useCallback(
     () => queueRef.current?.hasPendingContent ?? false,
@@ -237,9 +218,8 @@ export function useNoteDocumentEngine(options: {
     flushPersistQueue,
     persistSoftDelete,
     persistFieldPatches,
-    persistReorder,
     persistCreateBlock,
-    persistTransferBlocks,
+    persistBlockTransaction,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
@@ -254,9 +234,8 @@ export function useNoteDocumentEngine(options: {
     flushPersistQueue,
     persistSoftDelete,
     persistFieldPatches,
-    persistReorder,
     persistCreateBlock,
-    persistTransferBlocks,
+    persistBlockTransaction,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
