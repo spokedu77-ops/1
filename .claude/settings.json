@@ -43,7 +43,20 @@
       "Bash(git -C \"c:/Users/joker/Documents/GitHub/1\" log --oneline --follow -S \"loadBgmLate\" -- app/admin/spomove/training/_player/flow/engine/FlowEngine.ts)",
       "Bash(git -C \"c:/Users/joker/Documents/GitHub/1\" show d4e1521 -- app/admin/spomove/training/_player/flow/engine/FlowEngine.ts)",
       "Bash(rg \"favorites|toggleFavorite|즐겨찾기|favorite\" app/spokedu-master --include=\"*.tsx\" --include=\"*.ts\" -l)",
-      "Bash(rg \"favorites|toggleFavorite|즐겨찾기\" app/spokedu-master/library/[id]/LibraryDetailView.tsx -n -C 3)"
+      "Bash(rg \"favorites|toggleFavorite|즐겨찾기\" app/spokedu-master/library/[id]/LibraryDetailView.tsx -n -C 3)",
+      "Bash(git branch *)",
+      "Bash(git restore *)",
+      "Bash(git tag *)",
+      "Bash(git hash-object *)",
+      "Bash(rg -n \"FlowPhaseSchema\" app --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(mkdir -p docs/dive)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git rm *)",
+      "Bash(rg -n \"FlowBgmPanel|useFlowBGM|useFlowPano\" app --include=\"*.ts\" --include=\"*.tsx\")"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"
     ]
   }
 }

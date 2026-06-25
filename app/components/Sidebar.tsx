@@ -179,7 +179,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
       return pathname.startsWith('/admin/spomove');
     }
     if (href === '/admin/iiwarmup') {
-      return pathname === '/admin/iiwarmup' || pathname.startsWith('/admin/iiwarmup/assets') || pathname.startsWith('/admin/iiwarmup/flow');
+      return pathname === '/admin/iiwarmup' || pathname.startsWith('/admin/iiwarmup/assets');
     }
     if (href.includes('#')) {
       return pathname.startsWith(href.split('#')[0]);
