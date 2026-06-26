@@ -188,6 +188,22 @@ export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockT
   return null;
 }
 
+/** Notion-style markdown shortcut: consume the typed trigger before block type conversion. */
+export function consumeMarkdownBlockTrigger(view: EditorView): MarkdownBlockTrigger | null {
+  const trigger = tryConvertMarkdownBlockTrigger(view);
+  if (!trigger) return null;
+
+  const { $from } = view.state.selection;
+  const blockStart = $from.start($from.depth);
+  const textBefore = view.state.doc.textBetween(blockStart, $from.pos);
+  const parsed = parseTextBlockLine(textBefore);
+  const triggerStart = blockStart + textBefore.length - parsed.body.length;
+  const tr = view.state.tr.delete(triggerStart, $from.pos);
+  tr.setSelection(TextSelection.create(tr.doc, triggerStart));
+  view.dispatch(tr);
+  return trigger;
+}
+
 /** 마크다운 트리거(+ Space)만으로 타입 변환할 때 본문에 남은 트리거 문자 제거 */
 export function stripMarkdownTriggerForTypeChange(
   text: string,

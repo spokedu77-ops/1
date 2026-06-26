@@ -222,11 +222,17 @@ describe('buildContentForTypeChange markdown to list', () => {
     expect(fromDash.text).toBe('');
     const fromStar = buildContentForTypeChange({ text: '*' }, 'text', 'bulletList');
     expect(fromStar.text).toBe('');
+    const fromDashSpace = buildContentForTypeChange({ text: '- ' }, 'text', 'bulletList');
+    expect(fromDashSpace.text).toBe('');
+    const fromStarSpace = buildContentForTypeChange({ text: '* ' }, 'text', 'bulletList');
+    expect(fromStarSpace.text).toBe('');
   });
 
   it('strips 1. when converting text to numberedList', () => {
     const next = buildContentForTypeChange({ text: '1.' }, 'text', 'numberedList');
     expect(next.text).toBe('');
+    const nextWithSpace = buildContentForTypeChange({ text: '1. ' }, 'text', 'numberedList');
+    expect(nextWithSpace.text).toBe('');
   });
 });
 
