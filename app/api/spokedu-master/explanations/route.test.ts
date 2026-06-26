@@ -371,7 +371,9 @@ describe('SPOKEDU MASTER explanations route', () => {
     const response = await GET();
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: 'GET failed' });
+    await expect(response.json()).resolves.toEqual({
+      error: '리포트를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    });
   });
 
   it('returns 500 for POST database errors', async () => {
@@ -388,7 +390,9 @@ describe('SPOKEDU MASTER explanations route', () => {
     }));
 
     expect(response.status).toBe(500);
-    await expect(response.json()).resolves.toEqual({ error: 'INSERT failed' });
+    await expect(response.json()).resolves.toEqual({
+      error: '리포트를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.',
+    });
   });
 
   it.each([

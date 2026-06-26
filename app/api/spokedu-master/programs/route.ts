@@ -1,4 +1,5 @@
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import type { Program } from '@/app/spokedu-master/types';
@@ -47,6 +48,11 @@ function extractYouTubeId(url: string): string | null {
   return match?.[1] ?? null;
 }
 
+const PROGRAM_SOURCE_ERROR = {
+  error: '수업 자료를 불러오지 못했습니다.',
+  code: 'PROGRAM_SOURCE_FAILED',
+};
+
 const INVALID_VIDEO_VALUES = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
 
 function normalizeVideoUrl(value: string | null | undefined): string | undefined {
@@ -70,11 +76,17 @@ function buildThumbnailUrl(videoUrl: string | null | undefined): string | undefi
 
 function normalizeImageUrl(value: string | null | undefined): string | undefined {
   const text = (value ?? '').trim();
-  return text || undefined;
+  if (!text) return undefined;
+  try {
+    const url = new URL(text);
+    return url.protocol === 'http:' || url.protocol === 'https:' ? text : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function normalizeImageUrls(value: string[] | null | undefined): string[] {
-  return (value ?? []).map((item) => item.trim()).filter(Boolean);
+  return (value ?? []).map((item) => normalizeImageUrl(item)).filter((item): item is string => Boolean(item));
 }
 
 function normalizeSpomoveIds(ids: string[]): string[] {
@@ -94,7 +106,7 @@ function cleanText(value: string | null | undefined, fallback: string) {
 }
 
 function cleanList(items: string[] | null | undefined, fallback: string[]) {
-  const cleaned = (items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item));
+  const cleaned = [...new Set((items ?? []).map((item) => item.trim()).filter((item) => item && !hasBrokenText(item)))];
   return cleaned.length > 0 ? cleaned : fallback;
 }
 
@@ -140,6 +152,209 @@ function normalizeProgramForMaster(program: Program): Program {
   };
 }
 
+type MetaRow = {
+  curriculum_id: number;
+  sm_tags: string[] | null;
+  sm_theme: string | null;
+  sm_grade: string | null;
+  sm_space: string | null;
+  sm_duration: number | null;
+  sm_is_pro: boolean;
+  sm_is_new: boolean;
+  sm_is_hot: boolean;
+  sm_display_order: number;
+  sm_colors: string[] | null;
+  sm_objective: string | null;
+  sm_development_focus: string | null;
+  sm_coach_script: string | null;
+  sm_parent_note: string | null;
+  sm_related_spomove_ids: string[] | null;
+  sm_thumbnail_url: string | null;
+  sm_hero_image_url: string | null;
+  sm_setup_image_url: string | null;
+  sm_gallery_image_urls: string[] | null;
+  sm_briefing_notes: string | null;
+  sm_variation_method: string | null;
+};
+
+type OverlayRow = {
+  title: string | null;
+  source_center_curriculum_id: number | null;
+  video_url: string | null;
+  activity_method: string | null;
+  equipment: string | null;
+  updated_at: string | null;
+  is_published: boolean | null;
+};
+
+type CurrRow = {
+  id: number;
+  display_order: number | null;
+};
+
+type ProgramValidationIssue =
+  | 'invalid_curriculum_id'
+  | 'missing_title'
+  | 'broken_title'
+  | 'missing_category'
+  | 'broken_category'
+  | 'missing_grade'
+  | 'missing_space'
+  | 'invalid_duration'
+  | 'missing_steps';
+
+type BuildProgramResult =
+  | { ok: true; program: Program }
+  | { ok: false; curriculumId: number | null; issues: ProgramValidationIssue[] };
+
+function hasValidCurriculumId(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0;
+}
+
+function splitLines(value: string | null | undefined): string[] {
+  return [...new Set(String(value ?? '').split('\n').map((item) => item.trim()).filter((item) => item && !hasBrokenText(item)))];
+}
+
+function getMasterProgramValidationIssues(input: {
+  row: CurrRow;
+  meta: MetaRow | undefined;
+  overlay: OverlayRow | undefined;
+  title: string;
+  rawCategory: string;
+  categoryName: string;
+  grade: string;
+  space: string;
+  duration: number;
+  steps: string[];
+}): ProgramValidationIssue[] {
+  const issues: ProgramValidationIssue[] = [];
+
+  if (!hasValidCurriculumId(input.row.id)) issues.push('invalid_curriculum_id');
+  if (!input.overlay || input.overlay.source_center_curriculum_id !== input.row.id) issues.push('invalid_curriculum_id');
+  if (!input.title) issues.push('missing_title');
+  if (hasBrokenText(input.overlay?.title)) issues.push('broken_title');
+  if (!input.rawCategory || !input.categoryName) issues.push('missing_category');
+  if (hasBrokenText(input.rawCategory)) issues.push('broken_category');
+  if (!input.grade) issues.push('missing_grade');
+  if (!input.space) issues.push('missing_space');
+  if (!Number.isFinite(input.duration) || input.duration <= 0) issues.push('invalid_duration');
+  if (input.steps.length === 0) issues.push('missing_steps');
+  if (!input.meta) issues.push('missing_category');
+
+  return [...new Set(issues)];
+}
+
+function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefined, overlay: OverlayRow | undefined): BuildProgramResult {
+  const title = cleanText(overlay?.title, '');
+  const rawCategory = cleanText(meta?.sm_theme, '');
+  const categoryName = normalizeLessonTheme(rawCategory);
+  const rawVideoUrl = normalizeVideoUrl(overlay?.video_url);
+  const videoUrl = rawVideoUrl;
+  const equipment = splitLines(overlay?.equipment);
+  const steps = splitLines(overlay?.activity_method);
+  const variations = parseTextareaLines(meta?.sm_variation_method);
+  const briefingNotes = parseTextareaLines(meta?.sm_briefing_notes);
+  const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '');
+  const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '');
+  const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 0;
+  const issues = getMasterProgramValidationIssues({
+    row,
+    meta,
+    overlay,
+    title,
+    rawCategory,
+    categoryName,
+    grade: displayGrade,
+    space: displaySpace,
+    duration: displayDuration,
+    steps,
+  });
+
+  if (issues.length > 0) {
+    return { ok: false, curriculumId: hasValidCurriculumId(row.id) ? row.id : null, issues };
+  }
+
+  const smColors = meta?.sm_colors;
+  const colors: [string, string, string, string] =
+    Array.isArray(smColors) && smColors.length === 4
+      ? [smColors[0], smColors[1], smColors[2], smColors[3]]
+      : categoryToColors(categoryName);
+
+  const smTags = meta?.sm_tags ?? [];
+  const participantFormat = getMasterParticipantFormat(smTags);
+  const relatedSpomoveIds = normalizeSpomoveIds(meta?.sm_related_spomove_ids ?? []);
+  const tags = [...new Set(smTags.map((tag) => tag.trim()).filter((tag) => tag && !hasBrokenText(tag)))];
+  const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
+  const fallbackThumbnailUrl = buildThumbnailUrl(videoUrl);
+  const legacyImageFallback =
+    normalizeImageUrl(meta?.sm_thumbnail_url) ?? normalizeImageUrl(meta?.sm_hero_image_url);
+  const thumbnailUrl = setupImageUrl ?? fallbackThumbnailUrl ?? legacyImageFallback;
+  const heroImageUrl = setupImageUrl ?? fallbackThumbnailUrl ?? legacyImageFallback;
+  const galleryImageUrls = normalizeImageUrls(meta?.sm_gallery_image_urls);
+
+  const program: Program = {
+    id: String(row.id),
+    curriculumId: row.id,
+    title,
+    category: categoryName,
+    grade: displayGrade,
+    duration: displayDuration,
+    space: displaySpace,
+    description: '',
+    steps,
+    equipment,
+    tags,
+    colors,
+    isPro: meta?.sm_is_pro ?? false,
+    isNew: meta?.sm_is_new ?? false,
+    isHot: meta?.sm_is_hot ?? false,
+    homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
+    thumbnailUrl,
+    lessonDetail: {
+      recommendedAge: displayGrade,
+      recommendedPlayers: participantFormat,
+      objective: cleanText(meta?.sm_objective, ''),
+      developmentFocus: cleanText(meta?.sm_development_focus, rawCategory),
+      coachScript: cleanText(meta?.sm_coach_script, ''),
+      parentNote: cleanText(meta?.sm_parent_note, ''),
+      fieldTips: [],
+      variations,
+      safetyNotes: [],
+      relatedSpomoveIds,
+      videoUrl,
+      heroImageUrl,
+      setupImageUrl,
+      galleryImageUrls,
+      briefingNotes,
+      rules: steps,
+      setupNotes: [],
+    },
+  };
+
+  return { ok: true, program: normalizeProgramForMaster(program) };
+}
+
+async function reportProgramSourceFailure(error: unknown, source: string) {
+  await reportError(error instanceof Error ? error : new Error(`SPOKEDU MASTER program ${source} query failed`), {
+    context: 'spokedu-master.programs.source',
+    tags: {
+      source,
+    },
+  });
+}
+
+async function reportInvalidMasterPrograms(invalid: Array<{ curriculumId: number | null; issues: ProgramValidationIssue[] }>) {
+  if (invalid.length === 0) return;
+  await reportError(new Error('SPOKEDU MASTER invalid published programs excluded'), {
+    context: 'spokedu-master.programs.validation',
+    tags: {
+      invalidCount: invalid.length,
+      curriculumIds: invalid.map((item) => item.curriculumId).filter((id): id is number => id != null).join(','),
+      issues: [...new Set(invalid.flatMap((item) => item.issues))].join(','),
+    },
+  });
+}
+
 export async function GET() {
   const access = await requireSpokeduMasterAccess();
   if (!access.ok) return withPrivateNoStore(access.response);
@@ -153,66 +368,43 @@ export async function GET() {
     .order('id', { ascending: false });
 
   if (currErr || !curriculumRows) {
-    return privateNoStoreJson({ error: currErr?.message ?? 'DB error' }, { status: 500 });
+    await reportProgramSourceFailure(currErr, 'curriculum');
+    return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
   }
 
-  const curriculumIds = (curriculumRows as { id: number }[]).map((row) => row.id);
-
-  type MetaRow = {
-    curriculum_id: number;
-    sm_tags: string[] | null;
-    sm_theme: string | null;
-    sm_grade: string | null;
-    sm_space: string | null;
-    sm_duration: number | null;
-    sm_is_pro: boolean;
-    sm_is_new: boolean;
-    sm_is_hot: boolean;
-    sm_display_order: number;
-    sm_colors: string[] | null;
-    sm_objective: string | null;
-    sm_development_focus: string | null;
-    sm_coach_script: string | null;
-    sm_parent_note: string | null;
-    sm_related_spomove_ids: string[] | null;
-    sm_thumbnail_url: string | null;
-    sm_hero_image_url: string | null;
-    sm_setup_image_url: string | null;
-    sm_gallery_image_urls: string[] | null;
-    sm_briefing_notes: string | null;
-    sm_variation_method: string | null;
-  };
+  const curriculumIds = (curriculumRows as CurrRow[]).map((row) => row.id);
+  const curriculumIdSet = new Set(curriculumIds);
 
   const metaByCurriculumId = new Map<number, MetaRow>();
   if (curriculumIds.length > 0) {
-    const { data: metaRows } = await supabase
+    const { data: metaRows, error: metaErr } = await supabase
       .from('spokedu_master_program_meta')
       .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
       .in('curriculum_id', curriculumIds);
+    if (metaErr || !metaRows) {
+      await reportProgramSourceFailure(metaErr, 'spokedu_master_program_meta');
+      return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+    }
     for (const meta of (metaRows ?? []) as MetaRow[]) {
       metaByCurriculumId.set(meta.curriculum_id, meta);
     }
   }
 
-  type OverlayRow = {
-    title: string | null;
-    source_center_curriculum_id: number | null;
-    video_url: string | null;
-    activity_method: string | null;
-    equipment: string | null;
-    updated_at: string | null;
-    is_published: boolean | null;
-  };
-
   const overlayByCurriculumId = new Map<number, OverlayRow>();
   if (curriculumIds.length > 0) {
-    const { data: overlayRows } = await supabase
+    const { data: overlayRows, error: overlayErr } = await supabase
       .from('spokedu_pro_programs')
       .select('title,source_center_curriculum_id,video_url,activity_method,equipment,updated_at,is_published')
       .in('source_center_curriculum_id', curriculumIds);
+    if (overlayErr || !overlayRows) {
+      await reportProgramSourceFailure(overlayErr, 'spokedu_pro_programs');
+      return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+    }
     for (const overlay of (overlayRows ?? []) as OverlayRow[]) {
       const curriculumId = overlay.source_center_curriculum_id;
       if (curriculumId == null) continue;
+      if (!curriculumIdSet.has(curriculumId)) continue;
+      if (overlay.is_published !== true) continue;
       const prev = overlayByCurriculumId.get(curriculumId);
       if (!prev) {
         overlayByCurriculumId.set(curriculumId, overlay);
@@ -224,93 +416,25 @@ export async function GET() {
     }
   }
 
-  type CurrRow = {
-    id: number;
-    display_order: number | null;
-  };
+  const programs: Program[] = [];
+  const invalidPrograms: Array<{ curriculumId: number | null; issues: ProgramValidationIssue[] }> = [];
 
-  const programs: Program[] = (curriculumRows as CurrRow[])
-    .filter((row) => overlayByCurriculumId.get(row.id)?.is_published !== false)
-    .map((row, index) => {
-    const meta = metaByCurriculumId.get(row.id);
+  for (const [index, row] of (curriculumRows as CurrRow[]).entries()) {
     const overlay = overlayByCurriculumId.get(row.id);
-    const title = (overlay?.title ?? '').trim();
-    const rawCategory = (meta?.sm_theme ?? '').trim();
-    const categoryName = normalizeLessonTheme(rawCategory);
-    const rawVideoUrl = normalizeVideoUrl(overlay?.video_url);
-    const videoUrl = rawVideoUrl;
-    const equipment = overlay?.equipment
-      ? String(overlay.equipment).split('\n').map((item) => item.trim()).filter(Boolean)
-      : [];
-    const steps = overlay?.activity_method
-      ? String(overlay.activity_method).split('\n').map((item) => item.trim()).filter(Boolean)
-      : [];
-    const variations = parseTextareaLines(meta?.sm_variation_method);
-    const briefingNotes = parseTextareaLines(meta?.sm_briefing_notes);
+    if (!overlay) continue;
+    const result = buildMasterProgram(row, index, metaByCurriculumId.get(row.id), overlay);
+    if (result.ok) {
+      programs.push(result.program);
+    } else {
+      invalidPrograms.push({ curriculumId: result.curriculumId, issues: result.issues });
+    }
+  }
 
-    const smColors = meta?.sm_colors;
-    const colors: [string, string, string, string] =
-      Array.isArray(smColors) && smColors.length === 4
-        ? [smColors[0], smColors[1], smColors[2], smColors[3]]
-        : categoryToColors(categoryName);
+  await reportInvalidMasterPrograms(invalidPrograms);
 
-    const smTags = meta?.sm_tags ?? [];
-    const participantFormat = getMasterParticipantFormat(smTags);
-    const relatedSpomoveIds = normalizeSpomoveIds(meta?.sm_related_spomove_ids ?? []);
-    const tags = [...new Set(smTags.map((tag) => tag.trim()).filter(Boolean))];
-    const setupImageUrl = normalizeImageUrl(meta?.sm_setup_image_url);
-    const fallbackThumbnailUrl = buildThumbnailUrl(videoUrl);
-    const legacyImageFallback =
-      normalizeImageUrl(meta?.sm_thumbnail_url) ?? normalizeImageUrl(meta?.sm_hero_image_url);
-    const thumbnailUrl = setupImageUrl ?? fallbackThumbnailUrl ?? legacyImageFallback;
-    const heroImageUrl = setupImageUrl ?? fallbackThumbnailUrl ?? legacyImageFallback;
-    const galleryImageUrls = normalizeImageUrls(meta?.sm_gallery_image_urls);
-
-    const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '');
-    const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '');
-    const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 0;
-
-    const program: Program = {
-      id: String(row.id),
-      curriculumId: row.id,
-      title,
-      category: categoryName,
-      grade: displayGrade,
-      duration: displayDuration,
-      space: displaySpace,
-      description: '',
-      steps,
-      equipment,
-      tags,
-      colors,
-      isPro: meta?.sm_is_pro ?? false,
-      isNew: meta?.sm_is_new ?? false,
-      isHot: meta?.sm_is_hot ?? false,
-      homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
-      thumbnailUrl,
-      lessonDetail: {
-        recommendedAge: displayGrade,
-        recommendedPlayers: participantFormat,
-        objective: meta?.sm_objective ?? '',
-        developmentFocus: meta?.sm_development_focus ?? meta?.sm_theme ?? '',
-        coachScript: meta?.sm_coach_script ?? '',
-        parentNote: meta?.sm_parent_note ?? '',
-        fieldTips: [],
-        variations,
-        safetyNotes: [],
-        relatedSpomoveIds,
-        videoUrl,
-        heroImageUrl,
-        setupImageUrl,
-        galleryImageUrls,
-        briefingNotes,
-        rules: steps,
-        setupNotes: [],
-      },
-    };
-
-    return normalizeProgramForMaster(program);
-    });
+  if (overlayByCurriculumId.size > 0 && programs.length === 0) {
+    return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
+  }
 
   return privateNoStoreJson({ data: programs, total: programs.length });
 }

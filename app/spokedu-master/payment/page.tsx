@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getSafeMasterErrorMessage, toMasterClientError } from '../lib/clientErrors';
 import { isPaidMasterPlan } from '../lib/subscription';
 import { useMasterStore, useProfile } from '../store';
 
@@ -236,7 +237,7 @@ function PaymentContent() {
       const supabase = getSupabaseBrowserClient();
       const { error: authError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
       if (authError) {
-        setError(authError.message);
+        setError(getSafeMasterErrorMessage('server'));
         return;
       }
       setOtpSent(true);
@@ -284,7 +285,7 @@ function PaymentContent() {
         error?: string;
       };
       if (!res.ok || !json.orderId) {
-        setError(json.error ?? '결제를 준비하는 중 문제가 발생했습니다.');
+        setError(toMasterClientError(res.status, json.error).message);
         return;
       }
 

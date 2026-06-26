@@ -1,7 +1,7 @@
 {
-  "name": "SPOKEDU PRO",
-  "short_name": "SPOKEDU",
-  "description": "체육 강사를 위한 프로그램 라이브러리, SPOMOVE 큰 화면 실행, 수업 설명 도구",
+  "name": "SPOKEDU MASTER",
+  "short_name": "MASTER",
+  "description": "인터넷 연결 상태에서 수업 자료, SPOMOVE 실행 화면, 기록 도구를 빠르게 여는 SPOKEDU MASTER 앱",
   "start_url": "/spokedu-master",
   "scope": "/spokedu-master/",
   "display": "standalone",

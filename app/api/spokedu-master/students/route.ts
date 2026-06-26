@@ -10,6 +10,7 @@ import {
 } from '../operational-data';
 
 const STUDENT_SELECT = 'id,owner_id,legacy_id,name,group_name,meta,created_at,updated_at,deleted_at';
+const STUDENT_SERVER_ERROR = '학생 정보를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -32,7 +33,7 @@ export async function GET() {
       context: 'spokedu_master.operational.students',
       tags: { method: 'GET', stage: 'select', status: 500 },
     });
-    return privateNoStoreJson({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
 
   return privateNoStoreJson({
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
         context: 'spokedu_master.operational.students',
         tags: { method: 'POST', stage: 'dedupe_lookup', status: 500 },
       });
-      return privateNoStoreJson({ error: existingError.message }, { status: 500 });
+      return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
     }
 
     if (existing) {
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
       context: 'spokedu_master.operational.students',
       tags: { method: 'POST', stage: 'insert', status: 500 },
     });
-    return privateNoStoreJson({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
 
   return privateNoStoreJson(

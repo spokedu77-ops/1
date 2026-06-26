@@ -1,6 +1,7 @@
 const STATIC_CACHE = 'spokedu-master-static-v4';
 const STORAGE_CACHE = 'spokedu-master-storage-v1';
-const LEGACY_CACHES = ['spokedu-master-v3', 'start-url', 'dev'];
+const CURRENT_CACHES = new Set([STATIC_CACHE, STORAGE_CACHE]);
+const MASTER_CACHE_PREFIX = 'spokedu-master';
 const PUBLIC_STATIC_PATHS = new Set(['/manifest.json', '/spokedu-master-icon.svg']);
 const DISALLOWED_CONTENT_TYPES = ['text/html', 'application/json', 'text/x-component'];
 
@@ -64,7 +65,13 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    Promise.all(LEGACY_CACHES.map((cacheName) => caches.delete(cacheName)))
+    caches.keys()
+      .then((cacheNames) => Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName.startsWith(MASTER_CACHE_PREFIX))
+          .filter((cacheName) => !CURRENT_CACHES.has(cacheName))
+          .map((cacheName) => caches.delete(cacheName))
+      ))
       .then(() => self.clients.claim())
   );
 });

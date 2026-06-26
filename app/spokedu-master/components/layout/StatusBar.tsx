@@ -71,7 +71,7 @@ export function StatusBar() {
             role="status"
           >
             {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
-            {operational.online ? '온라인' : '오프라인'}
+            {operational.online ? '인터넷 연결됨' : '인터넷 연결 없음'}
           </span>
           <Link
             href="/spokedu-master/profile"

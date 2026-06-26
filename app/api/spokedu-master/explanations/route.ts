@@ -20,6 +20,7 @@ const EXPLANATION_SELECT = `
 `;
 
 const EXPLANATION_ID_SELECT = 'id';
+const EXPLANATION_SERVER_ERROR = '리포트를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -44,7 +45,7 @@ export async function GET(request?: Request) {
         context: 'spokedu_master.operational.explanations',
         tags: { method: 'GET', stage: 'saved_select', status: 500 },
       });
-      return privateNoStoreJson({ error: error.message }, { status: 500 });
+      return privateNoStoreJson({ error: EXPLANATION_SERVER_ERROR }, { status: 500 });
     }
 
     return privateNoStoreJson({
@@ -65,7 +66,7 @@ export async function GET(request?: Request) {
       context: 'spokedu_master.operational.explanations',
       tags: { method: 'GET', stage: 'select', status: 500 },
     });
-    return privateNoStoreJson({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: EXPLANATION_SERVER_ERROR }, { status: 500 });
   }
 
   return privateNoStoreJson({
@@ -101,7 +102,7 @@ export async function POST(request: Request) {
       tags: { method: 'POST', stage: 'insert', status: 500 },
     });
     return privateNoStoreJson(
-      { error: insertError?.message ?? 'Explanation insert failed' },
+      { error: EXPLANATION_SERVER_ERROR },
       { status: 500 },
     );
   }
@@ -120,7 +121,7 @@ export async function POST(request: Request) {
       tags: { method: 'POST', stage: 'reload', status: 500 },
     });
     return privateNoStoreJson(
-      { error: error?.message ?? 'Explanation reload failed' },
+      { error: EXPLANATION_SERVER_ERROR },
       { status: 500 },
     );
   }

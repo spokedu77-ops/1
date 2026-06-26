@@ -15,7 +15,6 @@ import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
 import { isProtectedMasterRoute } from './masterRouteAccess';
 
 const SPOKEDU_MASTER_FONT = '"SUIT", "Pretendard", "Wanted Sans", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif';
-const LEGACY_SW_CACHE_NAMES = ['spokedu-master-v3', 'start-url', 'dev'];
 type MasterAccessGuardStatus = 'checking' | 'allowed' | 'redirecting' | 'denied' | 'error';
 
 function currentLoginRedirectHref() {
@@ -104,7 +103,7 @@ function OperationsBanner() {
 
   return (
     <div className="mx-[22px] mt-3 rounded-[12px] border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800 sm:mx-8 lg:mx-10" role="status">
-      오프라인 상태입니다. 이미 불러온 수업 자료와 SPOMOVE 화면은 계속 확인할 수 있습니다.
+      인터넷 연결 없음. 수업 자료와 기록 기능은 온라인 상태에서 사용해 주세요.
     </div>
   );
 }
@@ -278,11 +277,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-    const cleanupLegacyCaches = () => {
-      if (!('caches' in window)) return;
-      void Promise.all(LEGACY_SW_CACHE_NAMES.map((cacheName) => window.caches.delete(cacheName))).catch(() => undefined);
-    };
-    cleanupLegacyCaches();
 
     if (process.env.NODE_ENV !== 'production') {
       navigator.serviceWorker

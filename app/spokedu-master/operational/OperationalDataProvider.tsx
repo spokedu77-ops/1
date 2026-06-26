@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { toMasterClientError, toNetworkMasterClientError, type MasterClientError } from '../lib/clientErrors';
 import { useProfile } from '../store';
 import type {
   CreateClassRecordInput,
@@ -38,20 +39,40 @@ async function readJson<T>(response: Response): Promise<T> {
   return text ? (JSON.parse(text) as T) : ({} as T);
 }
 
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    cache: init?.method ? undefined : 'no-store',
-    ...init,
-    headers: {
-      'content-type': 'application/json',
-      ...(init?.headers ?? {}),
-    },
-  });
-  const json = await readJson<T & { error?: string }>(response);
-  if (!response.ok) {
-    throw new Error(json.error ?? `HTTP ${response.status}`);
+class MasterClientRequestError extends Error {
+  readonly clientError: MasterClientError;
+
+  constructor(clientError: MasterClientError) {
+    super(clientError.kind);
+    this.name = 'MasterClientRequestError';
+    this.clientError = clientError;
   }
-  return json;
+}
+
+function getProviderErrorMessage(caught: unknown) {
+  if (caught instanceof MasterClientRequestError) return caught.clientError.message;
+  return toNetworkMasterClientError().message;
+}
+
+async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  try {
+    const response = await fetch(url, {
+      cache: init?.method ? undefined : 'no-store',
+      ...init,
+      headers: {
+        'content-type': 'application/json',
+        ...(init?.headers ?? {}),
+      },
+    });
+    const json = await readJson<T & { error?: string }>(response);
+    if (!response.ok) {
+      throw new MasterClientRequestError(toMasterClientError(response.status, json.error));
+    }
+    return json;
+  } catch (caught) {
+    if (caught instanceof MasterClientRequestError) throw caught;
+    throw new MasterClientRequestError(toNetworkMasterClientError());
+  }
 }
 
 export function OperationalDataProvider({ children }: { children: ReactNode }) {
@@ -94,7 +115,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
     } catch (caught) {
       if (activeOwnerRef.current !== ownerId) return;
       clearData();
-      setError(caught instanceof Error ? caught.message : '운영 데이터를 불러오지 못했습니다.');
+      setError(getProviderErrorMessage(caught));
       setStatus('error');
     }
   }, [clearData, ownerId]);

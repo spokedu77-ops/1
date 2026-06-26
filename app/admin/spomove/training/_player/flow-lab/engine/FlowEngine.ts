@@ -8,10 +8,17 @@
  */
 
 import * as THREE from 'three';
+import { FlowCamera, type FlowCameraUpdateInput } from './FlowCamera';
 import { FlowAudio } from './FlowAudio';
 import { AdaptiveQuality } from './AdaptiveQuality';
 import { ObstacleManager } from './entities/ObstacleManager';
 import type { FlowBridge } from './entities/ObstacleManager';
+import {
+  BridgeRenderer,
+  LANE_WIDTH,
+  BRIDGE_LENGTH,
+  PAD_DEPTH,
+} from './renderers/BridgeRenderer';
 import type { FlowStageConfig } from './modules/stageBuilder';
 import type { FlowModuleKey } from './modules/flowModules';
 import {
@@ -22,17 +29,10 @@ import {
 
 // ─── 상수 (원본 coordContract 완전 동일) ────────────────────────────────────
 
-// 레인 색상: 레인 구분용 — 브릿지 상판은 항상 파랑으로 고정
-const LANE_COLORS: [number, number, number] = [0x22c55e, 0xef4444, 0xfbbf24];
-const LANE_WIDTH         = 80;
-const BRIDGE_LENGTH      = 4200;
-const BRIDGE_GAP         = 450;
-const PAD_DEPTH          = 200;
-const PLAYER_Z           = 400;
+// LANE_WIDTH, BRIDGE_LENGTH, PAD_DEPTH, LANE_COLORS → BridgeRenderer에서 import
+const BRIDGE_GAP  = 450;
+const PLAYER_Z    = 400;
 const GROUND_Y           = 30;
-const CAMERA_BASE_HEIGHT = 130;
-const CAMERA_BASE_Z      = 600;
-const CAMERA_LAG_SPEED   = 6.32;
 const PAD_TRIGGER_RATIO  = 0.65;
 
 // 점프 트리거: relZ = PLAYER_Z - bridge.z <= padStartRel - PAD_DEPTH * PAD_TRIGGER_RATIO
@@ -51,32 +51,8 @@ const MINI_JUMP_HEIGHT = 72;   // 점프 높이 기준값
 // 점프 지속 시간 by 스테이지 (원본 LV1=0.72, LV2=0.70, LV3+=0.64 근사)
 const JUMP_DURATIONS: number[] = [0.72, 0.70, 0.64, 0.62, 0.62, 0.62, 0.62, 0.62, 0.62];
 
-// 착지 임팩트 (원본 동일)
-const LANDING_IMPACT_Y  = -2.4;
-const LANDING_IMPACT_Z  = -7.5;
+// 점프 착지 졸트 (FlowCamera에 전달하는 값)
 const MICROJOLT_AMOUNT  = 0.65;
-const JOLT_DECAY        = 8.0;
-const SPRING_K          = 150.0;
-const SPRING_DAMPING    = 0.88;
-
-// 카메라 bob (원본 동일)
-const RUNBOB_ALPHA = 0.4;   // per-60fps-frame alpha
-const RUN_BOB_FREQ = 12;    // rad/gameTime-sec (LV1)
-const RUN_BOB_AMP  = 1.2;   // 카메라 Y 유닛
-const RUNBOB_ALPHA_BASE = 0.15; // camYBase 스무딩
-
-// FOV
-const FOV_MIN = 54;
-const FOV_MAX = 82;
-const FOV_SPEED_MIN = 0.3;
-const FOV_SPEED_MAX = 0.9;
-
-// 고속 흔들림
-const HIGH_SPEED_SHAKE_THRESHOLD = 0.7;
-const HIGH_SPEED_SHAKE_X_AMP = 0.65;
-const HIGH_SPEED_SHAKE_Y_AMP = 0.45;
-const HIGH_SPEED_SHAKE_FREQ_X = 4.6;
-const HIGH_SPEED_SHAKE_FREQ_Y = 5.3;
 
 // 스피드라인
 const SPEEDLINE_COUNT      = 250;
@@ -155,9 +131,11 @@ export class FlowEngine {
   private rafId      = 0;
   private oceanFrameIdx = 0;
 
-  private audio = new FlowAudio();
-  private aq    = new AdaptiveQuality();
-  private obstacles: ObstacleManager | null = null;
+  private audio:          FlowAudio         = new FlowAudio();
+  private aq:             AdaptiveQuality   = new AdaptiveQuality();
+  private obstacles:      ObstacleManager | null = null;
+  private flowCam:        FlowCamera | null = null;
+  private bridgeRenderer: BridgeRenderer | null = null;
 
   private bridges:      BridgeObj[] = [];
   private activeBridge: BridgeObj | null = null;
@@ -167,19 +145,12 @@ export class FlowEngine {
   // 브릿지 레인 순서: 빨강(center=1) → 노랑(right=2) → 초록(left=0)
   private static readonly BRIDGE_LANE_SEQ = [1, 2, 0] as const;
 
-  // ── 카메라 (원본 동일 변수) ────────────────────────────────────────────────
-  private visualX      = 0;
-  private targetX      = 0;
-  private cameraLagX   = 0;
-  private camYBase     = CAMERA_BASE_HEIGHT + GROUND_Y;
-  private camYBob      = 0;
-  private currentFov   = 60;
-  private targetFov    = 60;
-  private cameraTiltZ  = 0;
+  // ── 카메라 입력용 엔진 상태 ───────────────────────────────────────────────
+  private targetX        = 0;
   private isChangingLane = false;
-  private isOnBridge   = false;
-  private isOnPad      = false;
-  private groundY      = GROUND_Y;
+  private isOnBridge     = false;
+  private isOnPad        = false;
+  private groundY        = GROUND_Y;
   private flashOverlay: HTMLElement | null = null;
   private flashPulseValue = 0;
 
@@ -190,26 +161,6 @@ export class FlowEngine {
   private playerJumpY  = 0;
   private jumpHeight   = JUMP_HEIGHT;
   private jumpDuration = JUMP_DURATIONS[0];
-
-  // ── 착지 임팩트 (원본 동일) ────────────────────────────────────────────────
-  private landingImpactY    = 0;
-  private landingImpactZ    = 0;
-  private landingImpactYVel = 0;
-  private landingImpactZVel = 0;
-  private impactYTimer      = 0;
-  private impactZTimer      = 0;
-  private microJolt         = 0;
-  private landingShake      = 0;
-  private landingStabilityTimer = 0;
-  private hitShakeRemaining = 0;
-  private hitShakeIntensity = 0;
-  private hitShakeDuration  = 0;
-
-  // ── duck ──────────────────────────────────────────────────────────────────
-  private duckDipOffset    = 0;
-  private duckBounceOffset = 0;
-  private duckPitchX       = 0;
-  private duckHold         = false; // UFO 통과 전까지 딥 유지
 
   // ── 게임 시간 ─────────────────────────────────────────────────────────────
   private gameTime   = 0;   // motionScale 적용 누적 (bob/점프용)
@@ -275,10 +226,9 @@ export class FlowEngine {
     const initW = this.canvas.clientWidth  || window.innerWidth;
     const initH = this.canvas.clientHeight || window.innerHeight;
 
-    this.camera = new THREE.PerspectiveCamera(60, initW / initH, 0.1, 12000);
-    this.camera.position.set(0, CAMERA_BASE_HEIGHT + GROUND_Y, CAMERA_BASE_Z);
-    this.camera.lookAt(0, GROUND_Y + 45, -1500);
-    this.camYBase = CAMERA_BASE_HEIGHT + GROUND_Y;
+    this.camera         = new THREE.PerspectiveCamera(60, initW / initH, 0.1, 12000);
+    this.flowCam        = new FlowCamera(this.camera, GROUND_Y);
+    this.bridgeRenderer = new BridgeRenderer(this.scene);
 
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setSize(initW, initH);
@@ -302,14 +252,10 @@ export class FlowEngine {
       onUfoWarn:          () => { /* instruction 제거 */ },
       onUfoDuckStart:     () => {
         if (!this.activeModules.has('duck')) return;
-        this.duckDipOffset = -120;
-        this.duckPitchX    = 0.70;
-        this.duckHold      = true;
+        this.flowCam?.onDuckStart();
       },
       onUfoPassed:        () => {
-        this.duckHold         = false;
-        this.duckBounceOffset = 90;
-        this.duckPitchX       = -0.18;
+        this.flowCam?.onDuckEnd();
         this.audio.sfxLand();
       },
       onPunchWallEnter:   () => {
@@ -319,18 +265,14 @@ export class FlowEngine {
         this.wallBreakTimer  = WALL_BREAK_INTERVAL;
       },
       onBoxAutoHit:       (isReach: boolean) => {
-        this.microJolt += 0.65;
+        this.flowCam?.addMicroJolt(MICROJOLT_AMOUNT);
         this.audio.sfxPunch();
         if (isReach && this.activeModules.has('reach')) {
-          this.hitShakeRemaining = 220;
-          this.hitShakeIntensity = 1.2;
-          this.hitShakeDuration  = 220;
+          this.flowCam?.addHitShake(1.2, 220);
         }
       },
       onCameraShake:      (int, ms) => {
-        this.hitShakeRemaining = ms;
-        this.hitShakeIntensity = int;
-        this.hitShakeDuration  = ms;
+        this.flowCam?.addHitShake(int, ms);
       },
       onFlash:            () => { this.flashPulseValue = Math.min(1, this.flashPulseValue + 0.75); },
       getShardScale:      () => this.aq.getShardScale(),
@@ -492,7 +434,7 @@ export class FlowEngine {
   // ── 브릿지 ───────────────────────────────────────────────────────────────
 
   private spawnBridge(isFirst: boolean): void {
-    if (!this.scene) return;
+    if (!this.bridgeRenderer) return;
     let spawnZ: number;
     if (isFirst) {
       spawnZ = PLAYER_Z;
@@ -503,40 +445,16 @@ export class FlowEngine {
       spawnZ = -8000;
     }
 
-    const randLane    = FlowEngine.BRIDGE_LANE_SEQ[this.bridgeLaneIdx % 3]!;
+    const randLane = FlowEngine.BRIDGE_LANE_SEQ[this.bridgeLaneIdx % 3]!;
     this.bridgeLaneIdx++;
-    const bridgeColor = LANE_COLORS[randLane]!;
-    const g           = new THREE.Group();
+    const bridgeX  = (randLane - 1) * LANE_WIDTH;
 
-    const top = new THREE.Mesh(
-      new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH),
-      new THREE.MeshBasicMaterial({ color: bridgeColor }), // 빨강→노랑→초록 순환
-    );
-    top.position.y = 40;
-    g.add(top);
-
-    const pad = new THREE.Mesh(
-      new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH),
-      new THREE.MeshBasicMaterial({ color: 0xffffff }),
-    );
-    pad.position.set(0, 44, -(BRIDGE_LENGTH / 2 + PAD_DEPTH / 2));
-    g.add(pad);
-
-    const sideGeo = new THREE.BoxGeometry(6, 25, BRIDGE_LENGTH + PAD_DEPTH);
-    const sideMat = new THREE.MeshPhongMaterial({ color: 0x222222, emissive: 0x111111 });
-    const leftBeam  = new THREE.Mesh(sideGeo, sideMat);
-    const rightBeam = new THREE.Mesh(sideGeo, sideMat);
-    leftBeam.position.set(-(LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
-    rightBeam.position.set( (LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
-    g.add(leftBeam, rightBeam);
-
-    g.position.set((randLane - 1) * LANE_WIDTH, 0, spawnZ);
-    this.scene.add(g);
+    const visual = this.bridgeRenderer.createBridge({ lane: randLane, x: bridgeX, z: spawnZ });
 
     const bridgeObj: BridgeObj = {
-      mesh: g, lane: randLane, bridgeId: this.bridgeIdCnt++,
-      x: (randLane - 1) * LANE_WIDTH,
-      hasBox: false, padMesh: pad, padDepth: PAD_DEPTH,
+      mesh: visual.mesh, lane: randLane, bridgeId: this.bridgeIdCnt++,
+      x: bridgeX,
+      hasBox: false, padMesh: visual.padMesh, padDepth: visual.padDepth,
       instructionFired: false,
       preJumpFired: false,
     };
@@ -618,26 +536,21 @@ export class FlowEngine {
   }
 
   private resetSpecialTimers(): void {
-    this.wallBreakActive  = false;
-    this.wallBreakHits    = 0;
-    this.wallBreakTimer   = 0;
-    this.duckHold         = false;
-    this.duckDipOffset    = 0;
-    this.duckPitchX       = 0;
-    this.duckBounceOffset = 0;
+    this.wallBreakActive   = false;
+    this.wallBreakHits     = 0;
+    this.wallBreakTimer    = 0;
     this.jumpInstrCooldown = 0;
     this.isJumping    = false;
     this.jumpProgress = 0;
     this.playerJumpY  = 0;
+    this.flowCam?.resetAnimState();
   }
 
   private endStage(): void {
     this.stats.stagesCompleted++;
     this.audio.sfxStageUp();
-    this.flashPulseValue   = 1.0;
-    this.hitShakeRemaining = 250;
-    this.hitShakeIntensity = 0.9;
-    this.hitShakeDuration  = 250;
+    this.flashPulseValue = 1.0;
+    this.flowCam?.addHitShake(0.9, 250);
     const next = this.stageIdx + 1;
     if (next < this.stageList.length) this.startStage(next);
     else this.endGame();
@@ -744,7 +657,13 @@ export class FlowEngine {
     }
 
     if (this.phase !== 'playing') {
-      this.updateCamera(dtM, dt60M, 0, dt);
+      this.flowCam?.update({
+        dtM, dt60M, dtWall: dt, speed: 0,
+        phase: this.phase, gameTime: this.gameTime,
+        isJumping: this.isJumping, jumpProgress: this.jumpProgress, playerJumpY: this.playerJumpY,
+        isOnBridge: this.isOnBridge, isOnPad: this.isOnPad, isChangingLane: this.isChangingLane,
+        targetX: this.targetX, activeBridgeX: this.activeBridge?.x ?? null, groundY: this.groundY,
+      } satisfies FlowCameraUpdateInput);
       return;
     }
 
@@ -787,13 +706,7 @@ export class FlowEngine {
       this.bridges[i].mesh.position.z += bridgeMove;
       if (this.bridges[i].mesh.position.z > BRIDGE_PRUNE_Z) {
         if (this.activeBridge === this.bridges[i]) this.activeBridge = null;
-        const b = this.bridges[i].mesh;
-        b.traverse((obj) => {
-          const m = obj as THREE.Mesh;
-          if (m.geometry) m.geometry.dispose();
-          if (m.material) (Array.isArray(m.material) ? m.material : [m.material]).forEach((mat) => (mat as THREE.Material).dispose());
-        });
-        this.scene!.remove(b);
+        this.bridgeRenderer!.removeBridge(this.bridges[i]);
         this.bridges.splice(i, 1);
       }
     }
@@ -864,58 +777,17 @@ export class FlowEngine {
       this.playerJumpY = Math.max(0, curve * this.jumpHeight);
       if (this.jumpProgress >= 1) {
         const isMini = this.jumpHeight === MINI_JUMP_HEIGHT;
-        this.playerJumpY = 0;
-        this.isJumping   = false;
-        this.jumpProgress = 0;
+        this.playerJumpY    = 0;
+        this.isJumping      = false;
+        this.jumpProgress   = 0;
         this.isChangingLane = false;
-        this.landingStabilityTimer = isMini ? 0.06 : 0.12;
-        this.impactYTimer  = isMini ? 0.04 : 0.05;
-        this.impactZTimer  = isMini ? 0.03 : 0.04;
-        this.landingImpactY = isMini ? LANDING_IMPACT_Y * 1.4 : LANDING_IMPACT_Y;
-        this.landingImpactZ = isMini ? LANDING_IMPACT_Z * 1.4 : LANDING_IMPACT_Z;
-        // 미니점프 착지 — 강한 지면 충격
+        this.flowCam?.onLanding(isMini);
         if (isMini) {
-          this.microJolt          += 1.0;
-          this.flashPulseValue     = Math.min(1, this.flashPulseValue + 0.45);
-          this.hitShakeRemaining   = 220;
-          this.hitShakeIntensity   = 1.2;
-          this.hitShakeDuration    = 220;
+          this.flashPulseValue = Math.min(1, this.flashPulseValue + 0.45);
         }
         this.audio.sfxLand();
       }
     }
-
-    // ── 착지 임팩트 스프링 ────────────────────────────────────────────────
-    if (this.landingStabilityTimer > 0) this.landingStabilityTimer -= dtM;
-
-    if (this.impactYTimer > 0) {
-      this.impactYTimer = Math.max(0, this.impactYTimer - dtM);
-      this.landingImpactYVel += -this.landingImpactY * SPRING_K * dtM;
-      this.landingImpactYVel *= Math.pow(SPRING_DAMPING, dt60M);
-      this.landingImpactY    += this.landingImpactYVel * dtM;
-    } else {
-      this.landingImpactY    = 0;
-      this.landingImpactYVel = 0;
-    }
-
-    if (this.impactZTimer > 0) {
-      this.impactZTimer = Math.max(0, this.impactZTimer - dtM);
-      this.landingImpactZVel += -this.landingImpactZ * SPRING_K * dtM;
-      this.landingImpactZVel *= Math.pow(SPRING_DAMPING, dt60M);
-      this.landingImpactZ    += this.landingImpactZVel * dtM;
-    } else {
-      this.landingImpactZ    = 0;
-      this.landingImpactZVel = 0;
-    }
-
-    this.microJolt *= Math.exp(-JOLT_DECAY * dtM);
-
-    // duck dip 회복 — UFO 통과 전까지 홀드, 통과 후 천천히 회복
-    if (!this.duckHold) {
-      this.duckDipOffset += (0 - this.duckDipOffset) * 0.038 * dt60;
-      this.duckPitchX    += (0 - this.duckPitchX)    * 0.042 * dt60;
-    }
-    this.duckBounceOffset *= Math.pow(0.985, dt60);
 
     // ── 펀치 벽 타격 시퀀스 ───────────────────────────────────────────────
     if (this.wallBreakActive) {
@@ -923,19 +795,15 @@ export class FlowEngine {
       if (this.wallBreakTimer <= 0) {
         this.wallBreakHits++;
         const done = this.obstacles?.hitPunchWall() ?? true;
-        this.microJolt += 0.55;
+        this.flowCam?.addMicroJolt(0.55);
         this.audio.sfxPunch();
-        this.hitShakeRemaining = 130;
-        this.hitShakeIntensity = 0.75 + this.wallBreakHits * 0.1;
-        this.hitShakeDuration  = 130;
+        this.flowCam?.addHitShake(0.75 + this.wallBreakHits * 0.1, 130);
         if (done) {
           this.wallBreakActive = false;
           this.wallBreakHits   = 0;
           this.obstacles?.breakPunchWall();
-          this.flashPulseValue   = 1.0;
-          this.hitShakeRemaining = 300;
-          this.hitShakeIntensity = 1.5;
-          this.hitShakeDuration  = 300;
+          this.flashPulseValue = 1.0;
+          this.flowCam?.addHitShake(1.5, 300);
         } else {
           this.wallBreakTimer = WALL_BREAK_INTERVAL;
         }
@@ -966,7 +834,13 @@ export class FlowEngine {
     this.flashPulseValue *= Math.pow(0.80, dt60);
     if (this.flashOverlay) this.flashOverlay.style.opacity = String(Math.max(0, this.flashPulseValue));
 
-    this.updateCamera(dtM, dt60M, this.currentSpeed, dt);
+    this.flowCam?.update({
+      dtM, dt60M, dtWall: dt, speed: this.currentSpeed,
+      phase: this.phase, gameTime: this.gameTime,
+      isJumping: this.isJumping, jumpProgress: this.jumpProgress, playerJumpY: this.playerJumpY,
+      isOnBridge: this.isOnBridge, isOnPad: this.isOnPad, isChangingLane: this.isChangingLane,
+      targetX: this.targetX, activeBridgeX: this.activeBridge?.x ?? null, groundY: this.groundY,
+    } satisfies FlowCameraUpdateInput);
   }
 
   // ── 자동 점프 ────────────────────────────────────────────────────────────
@@ -978,115 +852,19 @@ export class FlowEngine {
     this.jumpStartTime = this.gameTime;
     this.jumpHeight    = JUMP_HEIGHT;
     this.jumpDuration  = JUMP_DURATIONS[Math.min(this.stageIdx, JUMP_DURATIONS.length - 1)]!;
-    this.microJolt    += MICROJOLT_AMOUNT;
+    this.flowCam?.addMicroJolt(MICROJOLT_AMOUNT);
     this.audio.sfxJump();
   }
 
   // 어드밴스 경고는 ObstacleManager.onBoxWarn 으로 이관됨
   private checkObstacleInstructions(): void { /* no-op */ }
 
-  // ── 카메라 업데이트 (원본 updateCamera 이식) ──────────────────────────────
-
-  private updateCamera(dtM: number, dt60M: number, speed: number, dtWall: number): void {
-    if (!this.camera) return;
-
-    // X 래그 (원본 CAMERA_LAG_SPEED=6.32)
-    if (this.isJumping) {
-      this.visualX += (this.targetX - this.visualX) * (1 - Math.exp(-CAMERA_LAG_SPEED * dtM));
-    } else {
-      this.visualX = this.activeBridge ? this.activeBridge.x : this.visualX;
-    }
-    this.cameraLagX += (this.visualX - this.cameraLagX) * (1 - Math.exp(-CAMERA_LAG_SPEED * dtM));
-
-    // Run bob (원본 동일 수치: amp=1.2, alpha=0.4)
-    let yOffsetRaw = 0;
-    const alphaBob = 1 - Math.pow(1 - RUNBOB_ALPHA, dt60M);
-    if (this.isOnBridge && this.phase === 'playing') {
-      const bobScale = (this.landingStabilityTimer > 0) ? 0 :
-                       (this.isJumping || this.isOnPad) ? 0.4 : 1;
-      yOffsetRaw = Math.sin(this.gameTime * RUN_BOB_FREQ) * RUN_BOB_AMP * bobScale;
-    }
-    this.camYBob += (yOffsetRaw - this.camYBob) * alphaBob;
-
-    // Z offset: 점프 초반 살짝 당김 (원본 동일)
-    let zOffset = 0;
-    if (this.isJumping) {
-      if (this.jumpProgress < 0.1)        zOffset = (this.jumpProgress / 0.1) * -15;
-      else if (this.jumpProgress < 0.2)   zOffset = (1 - (this.jumpProgress - 0.1) / 0.1) * -15;
-    }
-
-    // camYBase smooth (원본 alpha=0.15)
-    const joltY = this.microJolt * 1.8;
-    const joltZ = this.microJolt * -4.2;
-    const targetCamY =
-      CAMERA_BASE_HEIGHT +
-      this.groundY +
-      this.playerJumpY +
-      this.landingImpactY +
-      joltY +
-      this.duckDipOffset +
-      this.duckBounceOffset;
-
-    const alphaBase = 1 - Math.pow(1 - RUNBOB_ALPHA_BASE, dt60M);
-    this.camYBase += (targetCamY - this.camYBase) * alphaBase;
-
-    this.camera.position.x = this.cameraLagX;
-    this.camera.position.y = this.camYBase + this.camYBob;
-    this.camera.position.z = CAMERA_BASE_Z + zOffset + this.landingImpactZ + joltZ;
-
-    // 히트 쉐이크
-    if (this.hitShakeRemaining > 0) {
-      const ratio = this.hitShakeRemaining / Math.max(1, this.hitShakeDuration);
-      const amp   = this.hitShakeIntensity * ratio * 18;
-      this.camera.position.x += (Math.random() - 0.5) * 2 * amp;
-      this.camera.position.y += (Math.random() - 0.5) * 2 * amp;
-      this.hitShakeRemaining -= dtWall * 1000;
-      if (this.hitShakeRemaining <= 0) this.hitShakeRemaining = 0;
-    }
-
-    // 고속 카메라 흔들림 (원본 동일)
-    if (speed > HIGH_SPEED_SHAKE_THRESHOLD) {
-      const range  = Math.max(0.0001, FOV_SPEED_MAX - HIGH_SPEED_SHAKE_THRESHOLD);
-      const ratio  = Math.min(1, (speed - HIGH_SPEED_SHAKE_THRESHOLD) / range);
-      const t      = this.gameTime;
-      this.camera.position.x += Math.sin(t * HIGH_SPEED_SHAKE_FREQ_X) * Math.sin(t * HIGH_SPEED_SHAKE_FREQ_X * 0.37) * HIGH_SPEED_SHAKE_X_AMP * ratio;
-      this.camera.position.y += Math.sin(t * HIGH_SPEED_SHAKE_FREQ_Y) * Math.sin(t * HIGH_SPEED_SHAKE_FREQ_Y * 0.53) * HIGH_SPEED_SHAKE_Y_AMP * ratio;
-    }
-
-    // FOV (원본 동일)
-    const speedRange = Math.max(0.0001, FOV_SPEED_MAX - FOV_SPEED_MIN);
-    const speedRatio = Math.min(1, Math.max(0, (speed - FOV_SPEED_MIN) / speedRange));
-    this.targetFov = FOV_MIN + (FOV_MAX - FOV_MIN) * speedRatio;
-    if (Math.abs(this.currentFov - this.targetFov) > 0.02) {
-      this.currentFov += (this.targetFov - this.currentFov) * 0.06 * dt60M;
-      this.camera.fov = this.currentFov;
-      this.camera.updateProjectionMatrix();
-    }
-
-    // 레인 전환 기울기
-    let targetTilt = 0;
-    if (!this.isOnPad && this.isChangingLane && this.isJumping) {
-      if (this.jumpProgress < 0.15) targetTilt = this.targetX > this.visualX ? -0.05 : 0.05;
-    }
-    if (this.landingShake !== 0) {
-      targetTilt += this.landingShake;
-      this.landingShake *= Math.pow(0.85, dt60M);
-      if (Math.abs(this.landingShake) < 0.001) this.landingShake = 0;
-    }
-    this.cameraTiltZ += (targetTilt - this.cameraTiltZ) * (1 - Math.exp(-10 * dtM));
-    this.camera.rotation.z = this.cameraTiltZ;
-    this.camera.rotation.x = this.duckPitchX;
-
-    this.camera.lookAt(this.cameraLagX, this.groundY + 45, -1500);
-  }
-
   // ── resize ───────────────────────────────────────────────────────────────
 
   resize(w: number, h: number): void {
-    if (!this.renderer || !this.camera) return;
+    if (!this.renderer) return;
     this.renderer.setSize(w, h);
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
+    this.flowCam?.resize(w, h);
   }
 
   // ── 유틸 ─────────────────────────────────────────────────────────────────
@@ -1116,6 +894,10 @@ export class FlowEngine {
   dispose(): void {
     this.stop();
     this.audio.dispose();
+    this.flowCam?.dispose();
+    this.flowCam = null;
+    this.bridgeRenderer?.dispose();
+    this.bridgeRenderer = null;
     if (this.renderer) { this.renderer.dispose(); this.renderer = null; }
     if (this.scene) {
       this.scene.traverse((obj) => {

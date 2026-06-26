@@ -668,9 +668,9 @@ function SpokeduMasterProfileContent() {
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Privacy</p>
               <h2 className="mt-1 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>MASTER 데이터 삭제</h2>
               <div className="mt-2 space-y-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                <p>학생·수업 기록·저장 안내문이 삭제됩니다.</p>
+                <p>학생 정보, 수업 기록, 저장한 안내문과 현재 기기의 MASTER 작업 데이터를 삭제합니다.</p>
                 <p>삭제 후 복구할 수 없습니다.</p>
-                <p>결제·구독 기록과 계정은 삭제되지 않습니다.</p>
+                <p>로그인 계정, 이용권 및 결제 내역은 유지됩니다.</p>
               </div>
               <label className="mt-4 block">
                 <span className="mb-2 block text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>

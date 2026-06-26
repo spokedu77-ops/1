@@ -1,9 +1,12 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+const STUDENT_SERVER_ERROR = '학생 정보를 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export async function DELETE(
   _request: Request,
@@ -27,7 +30,11 @@ export async function DELETE(
     .maybeSingle();
 
   if (existingError) {
-    return privateNoStoreJson({ error: existingError.message }, { status: 500 });
+    await reportError(existingError, {
+      context: 'spokedu_master.operational.students',
+      tags: { method: 'DELETE', stage: 'lookup', status: 500 },
+    });
+    return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
   if (!existing) {
     return privateNoStoreJson({ error: 'student not found' }, { status: 404 });
@@ -40,7 +47,11 @@ export async function DELETE(
     .eq('id', id);
 
   if (error) {
-    return privateNoStoreJson({ error: error.message }, { status: 500 });
+    await reportError(error, {
+      context: 'spokedu_master.operational.students',
+      tags: { method: 'DELETE', stage: 'soft_delete', status: 500 },
+    });
+    return privateNoStoreJson({ error: STUDENT_SERVER_ERROR }, { status: 500 });
   }
 
   return privateNoStoreJson({ ok: true });

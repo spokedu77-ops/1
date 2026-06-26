@@ -23,6 +23,7 @@ import {
   type LegacyOperationalImportPreview,
 } from '../lib/legacyOperationalImport';
 import { toClassRecord, toStudentProfile } from '../lib/operationalDataAdapter';
+import { getSafeMasterErrorMessage } from '../lib/clientErrors';
 import { getStudentRecordFacts } from '../lib/studentRecordFacts';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
@@ -44,6 +45,10 @@ function getStudentRecordEntries(records: ClassRecord[], studentId: string): Stu
 
 function formatStudentRecordDate(date: string): string {
   return new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+}
+
+function getSafeLegacyImportReason(reason: string): string {
+  return getSafeMasterErrorMessage('validation', reason);
 }
 
 function getAttendanceLabel(attendance: StudentRecordEntry['student']['attendance']): string {
@@ -247,7 +252,7 @@ export default function StudentsPage() {
       setLegacyDeleteConfirmed(false);
       setLegacyDeleteMessage('이 기기의 이전 데이터 원본을 삭제했습니다. 서버에 저장된 학생·수업 기록은 유지됩니다.');
     } catch (error) {
-      setLegacyDeleteError(error instanceof Error ? error.message : '이전 데이터 원본을 삭제하지 못했습니다.');
+      setLegacyDeleteError(getSafeMasterErrorMessage('validation', error instanceof Error ? error.message : null));
     } finally {
       setLegacyDeleting(false);
     }
@@ -373,7 +378,7 @@ export default function StudentsPage() {
                   {[...legacyPreview.students.issues, ...legacyPreview.records.issues].length ? (
                     [...legacyPreview.students.issues, ...legacyPreview.records.issues].map((issue, index) => (
                       <p key={`${issue.scope}-${issue.legacyId ?? 'none'}-${index}`}>
-                        [{issue.scope}] {issue.legacyId ? `${issue.legacyId}: ` : ''}{issue.reason}
+                        [{issue.scope}] {issue.legacyId ? `${issue.legacyId}: ` : ''}{getSafeLegacyImportReason(issue.reason)}
                       </p>
                     ))
                   ) : (
@@ -441,7 +446,7 @@ export default function StudentsPage() {
                       <summary className="cursor-pointer" style={{ color: 'var(--spm-t)' }}>실패 항목 보기</summary>
                       <div className="mt-2 space-y-1">
                         {[...legacyImportResult.students.failures, ...legacyImportResult.records.failures].map((failure, index) => (
-                          <p key={`${failure.legacyId}-${index}`}>{failure.legacyId}: {failure.reason}</p>
+                          <p key={`${failure.legacyId}-${index}`}>{failure.legacyId}: {getSafeLegacyImportReason(failure.reason)}</p>
                         ))}
                       </div>
                     </details>

@@ -53,7 +53,12 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git rm *)",
-      "Bash(rg -n \"FlowBgmPanel|useFlowBGM|useFlowPano\" app --include=\"*.ts\" --include=\"*.tsx\")"
+      "Bash(rg -n \"FlowBgmPanel|useFlowBGM|useFlowPano\" app --include=\"*.ts\" --include=\"*.tsx\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); s=d.get\\('scripts',{}\\); t=d.get\\('devDependencies',{}\\); print\\('scripts:', list\\(s.keys\\(\\)\\)\\); print\\('test deps:', [k for k in t if 'jest'in k or 'vitest'in k or 'playwright'in k]\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); const s=p.scripts||{}; const d={...p.devDependencies,...p.dependencies}; console.log\\('scripts:', Object.keys\\(s\\).filter\\(k=>k.includes\\('test'\\)\\)\\); console.log\\('test-related:', Object.keys\\(d\\).filter\\(k=>/jest|vitest|playwright/.test\\(k\\)\\)\\)\")",
+      "Bash(node -e \"const p=require\\('./package.json'\\); console.log\\(JSON.stringify\\(p.scripts,null,2\\)\\)\")",
+      "Bash(grep -rn \"from.*\\\\/flow\\\\/\" app/admin/spomove/training/_player/flow-lab/)",
+      "Bash(grep -rn \"from.*\\\\/flow\\\\/\" app/admin/spomove/training/_player/flow-lab/engine/)"
     ],
     "additionalDirectories": [
       "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"

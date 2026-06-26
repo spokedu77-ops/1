@@ -61,9 +61,9 @@ describe('public program lesson content sources', () => {
     ), 'utf8');
 
     expect(source).toContain(".select('id,display_order')");
-    expect(source).toContain("const title = (overlay?.title ?? '').trim()");
+    expect(source).toContain("const title = cleanText(overlay?.title, '')");
     expect(source).toContain('const videoUrl = rawVideoUrl');
-    expect(source).toContain("const rawCategory = (meta?.sm_theme ?? '').trim()");
+    expect(source).toContain("const rawCategory = cleanText(meta?.sm_theme, '')");
     expect(source).not.toContain('row.title');
     expect(source).not.toContain('row.url');
     expect(source).not.toContain('row.equipment');

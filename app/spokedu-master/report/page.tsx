@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { getSafeMasterErrorMessage } from '../lib/clientErrors';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
@@ -377,9 +378,9 @@ function ReportContent() {
       }
       router.replace(`/spokedu-master/report?program=${saved.programId}&saved=${saved.id}`);
       setSaveStatus('success');
-    } catch (caught) {
+    } catch {
       setSaveStatus('error');
-      setSaveError(caught instanceof Error ? caught.message : 'Failed to save explanation');
+      setSaveError(getSafeMasterErrorMessage('server'));
     }
   };
 

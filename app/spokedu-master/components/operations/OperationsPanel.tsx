@@ -29,7 +29,7 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
         </div>
         <span className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>
           {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
-          {operational.online ? '온라인' : '오프라인'}
+          {operational.online ? '인터넷 연결됨' : '인터넷 연결 없음'}
         </span>
       </div>
 
@@ -39,7 +39,7 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
           <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>확인 필요 항목</p>
         </div>
         <div className="rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
-          <p className="text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{operational.online ? '정상' : '보관'}</p>
+          <p className="text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{operational.online ? '연결됨' : '연결 없음'}</p>
           <p className="mt-1 text-[10px] font-bold" style={{ color: 'var(--spm-t3)' }}>현재 연결 상태</p>
         </div>
       </div>

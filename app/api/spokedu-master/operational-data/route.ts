@@ -7,14 +7,14 @@ import { MASTER_DATA_DELETE_CONFIRMATION } from '@/app/spokedu-master/profile/ma
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+const CONFIRMATION_MISMATCH_MESSAGE = '확인 문구가 일치하지 않습니다.';
 const DELETE_FAILURE_MESSAGE = 'MASTER 데이터를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+const INVALID_DELETE_REQUEST_MESSAGE = '유효하지 않은 삭제 요청입니다.';
 
-const OPERATIONAL_DELETE_TABLES = [
-  'spokedu_master_explanations',
-  'spokedu_master_class_records',
-  'spokedu_master_class_record_students',
-  'spokedu_master_students',
-] as const;
+type RpcError = {
+  code?: string;
+  message?: string;
+};
 
 async function readConfirmation(request: Request): Promise<string | null> {
   try {
@@ -25,29 +25,30 @@ async function readConfirmation(request: Request): Promise<string | null> {
   }
 }
 
-async function deleteOwnerRows(ownerId: string) {
+function isExpectedRpcInputError(error: RpcError | null) {
+  return error?.code === '22023' || error?.code === '22P02';
+}
+
+async function deleteOwnerOperationalData(ownerId: string) {
   const supabase = getServiceSupabase();
+  const { data, error } = await supabase.rpc('spokedu_master_delete_operational_data', {
+    p_owner_id: ownerId,
+  });
 
-  for (const table of OPERATIONAL_DELETE_TABLES) {
-    const { error } = await supabase
-      .from(table)
-      .delete()
-      .eq('owner_id', ownerId);
-
-    if (error) {
-      await reportError(error, {
-        context: 'spokedu_master.privacy_delete',
-        tags: {
-          stage: 'delete_owner_rows',
-          status: 500,
-          table,
-        },
-      });
-      return { ok: false as const, table };
-    }
+  if (error) {
+    const status = isExpectedRpcInputError(error) ? 400 : 500;
+    await reportError(error, {
+      context: 'spokedu_master.privacy_delete',
+      tags: {
+        code: error.code,
+        stage: 'delete_operational_data_rpc',
+        status,
+      },
+    });
+    return { ok: false as const, status };
   }
 
-  return { ok: true as const };
+  return { data, ok: true as const };
 }
 
 export async function DELETE(request: Request) {
@@ -57,18 +58,18 @@ export async function DELETE(request: Request) {
   const confirmation = await readConfirmation(request);
   if (confirmation !== MASTER_DATA_DELETE_CONFIRMATION) {
     return privateNoStoreJson(
-      { error: '확인 문구가 일치하지 않습니다.' },
+      { error: CONFIRMATION_MISMATCH_MESSAGE },
       { status: 400 },
     );
   }
 
-  const result = await deleteOwnerRows(access.userId);
+  const result = await deleteOwnerOperationalData(access.userId);
   if (!result.ok) {
     return privateNoStoreJson(
-      { error: DELETE_FAILURE_MESSAGE },
-      { status: 500 },
+      { error: result.status === 400 ? INVALID_DELETE_REQUEST_MESSAGE : DELETE_FAILURE_MESSAGE },
+      { status: result.status },
     );
   }
 
-  return privateNoStoreJson({ ok: true });
+  return privateNoStoreJson({ ok: true, deleted: result.data ?? null });
 }
