@@ -67,24 +67,28 @@ export function buildMoveBlockCommand(
   const affectedIds = collectBlockTransactionIds(blocks, nextBlocks);
   if (affectedIds.length === 0) return emptyCommandResult(blocks);
 
+  const previousById = new Map(blocks.map((block) => [block.id, block]));
   const nextById = new Map(nextBlocks.map((block) => [block.id, block]));
-  const orders = affectedIds
+  const changedBlocks = affectedIds
     .map((id) => nextById.get(id))
-    .filter((block): block is NoteBlock => !!block)
-    .map((block) => ({ id: block.id, order_index: block.order_index }));
-  const moved = nextById.get(movingId)!;
-  const contentChanged = !contentsEqual(moving.content, moved.content);
+    .filter((block): block is NoteBlock => !!block);
+  const orders = changedBlocks.map((block) => ({ id: block.id, order_index: block.order_index }));
 
   return {
     nextBlocks,
     affectedIds,
     orders,
-    fieldPatches: [{
-      id: movingId,
-      parent_block_id: moved.parent_block_id ?? null,
-      order_index: moved.order_index,
-      ...(contentChanged ? { content: moved.content } : {}),
-    }],
+    fieldPatches: changedBlocks.map((block) => {
+      const before = previousById.get(block.id);
+      return {
+        id: block.id,
+        parent_block_id: block.parent_block_id ?? null,
+        order_index: block.order_index,
+        ...(!contentsEqual(before?.content, block.content)
+          ? { content: block.content }
+          : {}),
+      };
+    }),
     createdBlocks: [],
     removedBlocks: [],
   };

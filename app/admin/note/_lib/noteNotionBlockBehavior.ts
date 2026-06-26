@@ -12,6 +12,10 @@ export type NotionToggleTitleEnterAction =
   | { kind: 'add-sibling'; blockType: 'toggle' }
   | { kind: 'add-child'; blockType: 'text' };
 
+export type NotionToggleTitleBackspaceAction =
+  | { kind: 'convert-to-text' }
+  | { kind: 'default' };
+
 /** 페이지 블록 키보드 결과 */
 export type NotionPageKeyAction =
   | { kind: 'open-page' };
@@ -33,6 +37,7 @@ export function resolveInlineBlockEnterAction(options: {
   parentBlockId: string | null;
   enterCtx?: NoteEditorEnterContext;
   isEmpty?: (rawText: string, enterCtx?: NoteEditorEnterContext) => boolean;
+  emptyRootTextBehavior?: 'add-below' | 'convert-to-text';
 }): NotionInlineEnterAction {
   const resolveEmpty = options.isEmpty
     ?? ((rawText: string, enterCtx?: NoteEditorEnterContext) =>
@@ -58,6 +63,10 @@ export function resolveInlineBlockEnterAction(options: {
     return { kind: 'outdent' };
   }
 
+  if (options.followType === 'text' && options.emptyRootTextBehavior !== 'convert-to-text') {
+    return { kind: 'add-below', followType: 'text' };
+  }
+
   return { kind: 'convert-to-text' };
 }
 
@@ -66,6 +75,19 @@ export function resolveToggleTitleEnterAction(collapsed: boolean): NotionToggleT
     return { kind: 'add-sibling', blockType: 'toggle' };
   }
   return { kind: 'add-child', blockType: 'text' };
+}
+
+export function resolveToggleTitleBackspaceAction(options: {
+  title: string;
+  selectionStart: number | null;
+  selectionEnd: number | null;
+}): NotionToggleTitleBackspaceAction {
+  if (options.selectionStart !== 0 || options.selectionEnd !== 0) {
+    return { kind: 'default' };
+  }
+  return options.title.trim().length === 0
+    ? { kind: 'convert-to-text' }
+    : { kind: 'default' };
 }
 
 /** 제목(heading) Enter — 항상 아래 text 블록, 빈 줄이면 text로 전환 */
@@ -79,6 +101,7 @@ export function resolveHeadingEnterAction(options: {
     text: options.text,
     parentBlockId: options.parentBlockId,
     enterCtx: options.enterCtx,
+    emptyRootTextBehavior: 'convert-to-text',
   });
 }
 
@@ -149,6 +172,27 @@ export function resolveEmptyBackspaceAction(canMergeWithPrevious: boolean): Noti
   return canMergeWithPrevious
     ? { kind: 'merge-with-previous' }
     : { kind: 'delete-block' };
+}
+
+const INLINE_TEXT_DECORATED_BLOCK_TYPES = new Set<NoteBlock['type']>([
+  'heading',
+  'heading2',
+  'heading3',
+  'todo',
+  'callout',
+  'code',
+]);
+
+export type NotionInlineBackspaceAtStartAction =
+  | { kind: 'convert-to-text' }
+  | { kind: 'default' };
+
+export function resolveInlineBackspaceAtStartAction(
+  blockType: NoteBlock['type'],
+): NotionInlineBackspaceAtStartAction {
+  return INLINE_TEXT_DECORATED_BLOCK_TYPES.has(blockType)
+    ? { kind: 'convert-to-text' }
+    : { kind: 'default' };
 }
 
 export function createNotionEmptyBackspaceHandler(options: {

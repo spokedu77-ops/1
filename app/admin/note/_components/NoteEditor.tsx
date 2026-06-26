@@ -15,9 +15,9 @@ import type { EditorView } from '@tiptap/pm/view';
 import { parseInlineMarkupToHtml, type InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   adjustBulletIndent,
+  consumeMarkdownBlockTrigger,
   continueBulletOnEnter,
   indentPlainTextBlock,
-  tryConvertMarkdownBlockTrigger,
   tryConvertMarkdownBulletTrigger,
   type MarkdownBlockTrigger,
 } from './noteBulletInput';
@@ -271,6 +271,29 @@ function resolveToolbarPosition(editor: Editor): ToolbarPosition | null {
 function handleTextIndent(view: EditorView, direction: 'in' | 'out') {
   if (adjustBulletIndent(view, direction)) return true;
   return indentPlainTextBlock(view, direction);
+}
+
+function handleMarkdownShortcut(
+  view: EditorView,
+  event: KeyboardEvent,
+  onMarkdownBlockTrigger: ((trigger: MarkdownBlockTrigger) => void) | undefined,
+  flushPendingChange: () => void,
+) {
+  if (event.key !== ' ') return false;
+  if (onMarkdownBlockTrigger) {
+    const blockTrigger = consumeMarkdownBlockTrigger(view);
+    if (blockTrigger) {
+      event.preventDefault();
+      flushPendingChange();
+      onMarkdownBlockTrigger(blockTrigger);
+      return true;
+    }
+  }
+  if (tryConvertMarkdownBulletTrigger(view)) {
+    event.preventDefault();
+    return true;
+  }
+  return false;
 }
 
 export function NoteEditor({
@@ -574,19 +597,12 @@ export function NoteEditor({
           return true;
         },
         keydown: (view, event) => {
-          if (event.key === ' ') {
-            const blockTrigger = tryConvertMarkdownBlockTrigger(view);
-            if (blockTrigger && callbacksRef.current.onMarkdownBlockTrigger) {
-              event.preventDefault();
-              callbacksRef.current.flushPendingChange();
-              callbacksRef.current.onMarkdownBlockTrigger(blockTrigger);
-              return true;
-            }
-            if (tryConvertMarkdownBulletTrigger(view)) {
-              event.preventDefault();
-              return true;
-            }
-          }
+          if (handleMarkdownShortcut(
+            view,
+            event,
+            callbacksRef.current.onMarkdownBlockTrigger,
+            callbacksRef.current.flushPendingChange,
+          )) return true;
           if (event.key !== 'Tab') return false;
           const { tabBehavior: currentTabBehavior, onIndent: currentOnIndent, flushPendingChange: flush } = callbacksRef.current;
           if (currentTabBehavior === 'insert-text-indent') {
@@ -618,19 +634,7 @@ export function NoteEditor({
           enterCreatesBlock: currentEnterCreatesBlock,
         } = callbacksRef.current;
 
-        if (event.key === ' ') {
-          const blockTrigger = tryConvertMarkdownBlockTrigger(view);
-          if (blockTrigger && currentOnMarkdownBlockTrigger) {
-            event.preventDefault();
-            flush();
-            currentOnMarkdownBlockTrigger(blockTrigger);
-            return true;
-          }
-          if (tryConvertMarkdownBulletTrigger(view)) {
-            event.preventDefault();
-            return true;
-          }
-        }
+        if (handleMarkdownShortcut(view, event, currentOnMarkdownBlockTrigger, flush)) return true;
         if (event.key === 'Tab') {
           if (currentTabBehavior === 'insert-text-indent') {
             event.preventDefault();

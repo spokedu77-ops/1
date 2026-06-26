@@ -5,7 +5,6 @@ import {
   postNoteBlockTransaction,
   postNoteBlockCreateTransaction,
   postNoteBlock,
-  putNoteBlockOrders,
   purgeNoteBlockFromTrash,
   restoreNoteBlockFromTrash,
   type PatchedNoteBlock,
@@ -304,41 +303,6 @@ export class NoteDocumentOpQueue {
         }
         return;
       }
-      case 'reorderBlocks': {
-        try {
-          const patched = await putNoteBlockOrders(
-            op.orders,
-            op.fieldPatches,
-            (id) => this.deps.getBlock(id),
-          );
-          if (patched.length > 0) {
-            this.deps.onServerPatches?.(patched);
-          }
-          this.deps.triggerSave();
-        } catch (error) {
-          if (error instanceof NoteBlockVersionConflictError) {
-            this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
-            this.deps.onError?.(new Error('블록 이동 저장 중 버전 충돌이 발생했습니다.'));
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
-      case 'transferBlocks': {
-        if (op.patches.length === 0) return;
-        try {
-          await this.patchWithVersionRetry(op.patches);
-        } catch (error) {
-          if (error instanceof NoteBlockVersionConflictError) {
-            this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
-            this.deps.onError?.(new Error('블록 문서 이동 저장 중 버전 충돌이 발생했습니다.'));
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
       case 'blockTransaction': {
         const patched = await postNoteBlockTransaction(
           op.patches,
@@ -395,11 +359,6 @@ export class NoteDocumentOpQueue {
 
 export type SoftDeletePersistArgs = {
   ids: string[];
-};
-
-export type ReorderPersistArgs = {
-  orders: Array<{ id: string; order_index: number }>;
-  fieldPatches?: NoteBlockFieldPatch[];
 };
 
 export type CreateBlockPersistArgs = {

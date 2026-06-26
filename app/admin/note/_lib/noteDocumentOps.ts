@@ -12,11 +12,6 @@ export type NoteDocumentOp =
 export type NotePersistOp =
   | { type: 'patchContent'; updates: Array<{ id: string; content: Record<string, unknown> }> }
   | { type: 'patchFields'; patches: NoteBlockFieldPatch[] }
-  | {
-    type: 'reorderBlocks';
-    orders: Array<{ id: string; order_index: number }>;
-    fieldPatches?: NoteBlockFieldPatch[];
-  }
   | { type: 'softDelete'; ids: string[] }
   | {
     type: 'createBlock';
@@ -27,9 +22,6 @@ export type NotePersistOp =
     parent_block_id: string | null;
     normalizeOrders?: Array<{ id: string; order_index: number }>;
   }
-  | { type: 'transferBlocks'; patches: NoteBlockFieldPatch[] }
-  /** @deprecated Use blockTransaction. */
-  | { type: 'transferBlocks'; patches: NoteBlockFieldPatch[] }
   | {
     type: 'blockTransaction';
     patches: NoteBlockFieldPatch[];

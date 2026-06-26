@@ -311,14 +311,14 @@ export function useNoteBlockActions(options: {
     }
 
     commitActiveNoteEditorToStore();
+    const latestBlock = blocksRef.current.find((b) => b.id === block.id) ?? block;
     recordBlockUndo([block.id]);
-    let nextContent = buildContentForTypeChange(block.content, block.type, type);
+    let nextContent = buildContentForTypeChange(latestBlock.content, latestBlock.type, type);
     if (type === 'bulletList' || type === 'numberedList') {
       nextContent = normalizeListBlockContentRecord(nextContent);
     }
     clearPendingContentPatch(block.id);
 
-    const latestBlock = blocksRef.current.find((b) => b.id === block.id) ?? block;
     applyBlockContentChange({
       block: { ...latestBlock, type },
       content: nextContent,

@@ -82,30 +82,21 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
         const sameType = prev?.type === incoming.type;
         const isActiveBlock = state.activeEditor?.blockId === incoming.id;
         if (
-          sameType
+          isActiveBlock
+          && sameType
           && prev?.content != null
           && (!docId || prev.document_id === docId)
         ) {
-          if (isActiveBlock) {
-            nextById[incoming.id] = {
-              ...incoming,
-              content: mergeBlockContentWithStore(
-                incoming.content as Record<string, unknown> | null | undefined,
-                prev.content as Record<string, unknown>,
-              ) ?? prev.content,
-            };
-            continue;
-          }
-          const mergedContent = mergeBlockContentWithStore(
-            incoming.content as Record<string, unknown> | null | undefined,
-            prev.content as Record<string, unknown>,
-          );
-          nextById[incoming.id] = mergedContent !== incoming.content
-            ? { ...incoming, content: mergedContent }
-            : incoming;
-        } else {
-          nextById[incoming.id] = incoming;
+          nextById[incoming.id] = {
+            ...incoming,
+            content: mergeBlockContentWithStore(
+              incoming.content as Record<string, unknown> | null | undefined,
+              prev.content as Record<string, unknown>,
+            ) ?? prev.content,
+          };
+          continue;
         }
+        nextById[incoming.id] = incoming;
       }
       return {
         byId: nextById,

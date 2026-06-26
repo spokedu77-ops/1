@@ -43,4 +43,30 @@ describe('buildBlockForestTransferCommand', () => {
       { id: 'grandchild', document_id: 'target' },
     ]);
   });
+
+  it('keeps child parent links while changing every moved block document id', () => {
+    const blocks = [
+      block('root', null, 0),
+      block('child-a', 'root', 0),
+      block('child-b', 'root', 1),
+      block('grandchild', 'child-b', 0),
+      block('other', null, 1),
+    ];
+
+    const command = buildBlockForestTransferCommand(
+      blocks,
+      ['child-b', 'root'],
+      'target',
+    );
+
+    expect(command.rootIds).toEqual(['root']);
+    expect(command.movedIds).toEqual(['root', 'child-a', 'child-b', 'grandchild']);
+    expect(command.patches).toEqual([
+      { id: 'root', document_id: 'target', parent_block_id: null },
+      { id: 'child-a', document_id: 'target' },
+      { id: 'child-b', document_id: 'target' },
+      { id: 'grandchild', document_id: 'target' },
+    ]);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
+  });
 });

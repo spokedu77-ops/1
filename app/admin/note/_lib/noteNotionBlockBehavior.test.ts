@@ -9,8 +9,10 @@ import {
   resolveEditorShiftEnterAction,
   resolveEmptyBackspaceAction,
   resolveHeadingEnterAction,
+  resolveInlineBackspaceAtStartAction,
   resolveInlineBlockEnterAction,
   resolvePageBlockEnterAction,
+  resolveToggleTitleBackspaceAction,
   resolveToggleTitleEnterAction,
   shouldEditorShiftEnterHardBreak,
 } from './noteNotionBlockBehavior';
@@ -57,13 +59,13 @@ describe('resolveInlineBlockEnterAction (todo·text)', () => {
     })).toEqual({ kind: 'convert-to-text' });
   });
 
-  it('empty root text Enter converts to text (no-op type)', () => {
+  it('empty root text Enter adds another text block below', () => {
     expect(resolveInlineBlockEnterAction({
       followType: 'text',
       text: '',
       parentBlockId: null,
       enterCtx: { isEmpty: true },
-    })).toEqual({ kind: 'convert-to-text' });
+    })).toEqual({ kind: 'add-below', followType: 'text' });
   });
 });
 
@@ -107,6 +109,48 @@ describe('resolveEmptyBackspaceAction', () => {
 
   it('empty first block deletes', () => {
     expect(resolveEmptyBackspaceAction(false)).toEqual({ kind: 'delete-block' });
+  });
+});
+
+describe('resolveToggleTitleBackspaceAction', () => {
+  it('empty toggle title at start converts to text', () => {
+    expect(resolveToggleTitleBackspaceAction({
+      title: '',
+      selectionStart: 0,
+      selectionEnd: 0,
+    })).toEqual({ kind: 'convert-to-text' });
+  });
+
+  it('keeps default behavior when title has text or caret is not at start', () => {
+    expect(resolveToggleTitleBackspaceAction({
+      title: 'Toggle',
+      selectionStart: 0,
+      selectionEnd: 0,
+    })).toEqual({ kind: 'default' });
+    expect(resolveToggleTitleBackspaceAction({
+      title: '',
+      selectionStart: 1,
+      selectionEnd: 1,
+    })).toEqual({ kind: 'default' });
+  });
+});
+
+describe('resolveInlineBackspaceAtStartAction', () => {
+  it('decorated text blocks convert to paragraph before merging/deleting', () => {
+    expect(resolveInlineBackspaceAtStartAction('heading')).toEqual({ kind: 'convert-to-text' });
+    expect(resolveInlineBackspaceAtStartAction('heading2')).toEqual({ kind: 'convert-to-text' });
+    expect(resolveInlineBackspaceAtStartAction('heading3')).toEqual({ kind: 'convert-to-text' });
+    expect(resolveInlineBackspaceAtStartAction('todo')).toEqual({ kind: 'convert-to-text' });
+    expect(resolveInlineBackspaceAtStartAction('callout')).toEqual({ kind: 'convert-to-text' });
+    expect(resolveInlineBackspaceAtStartAction('code')).toEqual({ kind: 'convert-to-text' });
+  });
+
+  it('plain text and structural blocks use their own default behavior', () => {
+    expect(resolveInlineBackspaceAtStartAction('text')).toEqual({ kind: 'default' });
+    expect(resolveInlineBackspaceAtStartAction('bulletList')).toEqual({ kind: 'default' });
+    expect(resolveInlineBackspaceAtStartAction('numberedList')).toEqual({ kind: 'default' });
+    expect(resolveInlineBackspaceAtStartAction('toggle')).toEqual({ kind: 'default' });
+    expect(resolveInlineBackspaceAtStartAction('page')).toEqual({ kind: 'default' });
   });
 });
 

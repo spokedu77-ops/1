@@ -150,6 +150,27 @@ export type MarkdownBlockTrigger =
   | 'todo' | 'toggle' | 'divider' | 'callout' | 'code'
   | 'bulletList' | 'numberedList';
 
+export function resolveMarkdownBlockTriggerFromTextBeforeCursor(
+  textBeforeCursor: string,
+): MarkdownBlockTrigger | null {
+  const parsed = parseTextBlockLine(textBeforeCursor);
+  if (parsed.level > 0) return null;
+
+  const token = parsed.body.trim();
+  // Order matters: ### -> ## -> #.
+  if (token === '###') return 'heading3';
+  if (token === '##') return 'heading2';
+  if (token === '#') return 'heading';
+  if (token === '[]' || token === '[ ]') return 'todo';
+  if (token === '>') return 'toggle';
+  if (token === '---') return 'divider';
+  if (token === '!!') return 'callout';
+  if (token === '```') return 'code';
+  if (token === '-' || token === '*') return 'bulletList';
+  if (/^\d+\.$/.test(token)) return 'numberedList';
+  return null;
+}
+
 /** 서버·bootstrap 로드 직후 목록 블록 content 정리 (부모·하위 문서 공통) */
 export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {
   return blocks.map((block) => {
@@ -170,22 +191,23 @@ export function tryConvertMarkdownBlockTrigger(view: EditorView): MarkdownBlockT
 
   const blockStart = $from.start($from.depth);
   const textBefore = view.state.doc.textBetween(blockStart, $from.pos);
-  const parsed = parseTextBlockLine(textBefore);
-  if (parsed.level > 0) return null;
+  return resolveMarkdownBlockTriggerFromTextBeforeCursor(textBefore);
+}
 
-  const token = parsed.body.trim();
-  // 순서 중요: ### → ## → # 순으로 검사
-  if (token === '###') return 'heading3';
-  if (token === '##') return 'heading2';
-  if (token === '#') return 'heading';
-  if (token === '[]' || token === '[ ]') return 'todo';
-  if (token === '>') return 'toggle';
-  if (token === '---') return 'divider';
-  if (token === '!!') return 'callout';
-  if (token === '```') return 'code';
-  if (token === '-' || token === '*') return 'bulletList';
-  if (/^\d+\.$/.test(token)) return 'numberedList';
-  return null;
+/** Notion-style markdown shortcut: consume the typed trigger before block type conversion. */
+export function consumeMarkdownBlockTrigger(view: EditorView): MarkdownBlockTrigger | null {
+  const trigger = tryConvertMarkdownBlockTrigger(view);
+  if (!trigger) return null;
+
+  const { $from } = view.state.selection;
+  const blockStart = $from.start($from.depth);
+  const textBefore = view.state.doc.textBetween(blockStart, $from.pos);
+  const parsed = parseTextBlockLine(textBefore);
+  const triggerStart = blockStart + textBefore.length - parsed.body.length;
+  const tr = view.state.tr.delete(triggerStart, $from.pos);
+  tr.setSelection(TextSelection.create(tr.doc, triggerStart));
+  view.dispatch(tr);
+  return trigger;
 }
 
 /** 마크다운 트리거(+ Space)만으로 타입 변환할 때 본문에 남은 트리거 문자 제거 */
@@ -217,7 +239,7 @@ export function stripMarkdownTriggerForTypeChange(
       case 'code':
         return token === '```';
       case 'bulletList':
-        return body === '*' || body === '-';
+        return token === '*' || token === '-';
       case 'numberedList':
         return /^\d+\.$/.test(token);
       default:
