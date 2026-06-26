@@ -172,7 +172,7 @@ function UnsupportedPreset() {
         <h1 className="mt-5 text-2xl font-black">지원하지 않는 SPOMOVE 활동입니다.</h1>
         <p className="mt-3 text-sm font-semibold text-white/55">공식 SPOMOVE 목록에서 활동을 다시 선택해 주세요.</p>
         <Link href="/spokedu-master/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-black text-slate-950">
-          SPOMOVE 목록으로
+          프로그램 선택으로
         </Link>
       </section>
     </main>
@@ -327,11 +327,11 @@ function SpomoveSessionContent() {
             {programId ? (
               <Link href={`/spokedu-master/report?program=${programId}`} className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-white text-sm font-black text-black">
                 <ClipboardList size={14} />
-                설명 문구
+                안내문
               </Link>
             ) : null}
             <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
-              목록으로
+              프로그램 선택으로
             </Link>
           </div>
           {programId ? (

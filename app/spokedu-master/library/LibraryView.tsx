@@ -284,7 +284,7 @@ function ProgramCard({
               <span />
             )}
             <span className="inline-flex h-8 shrink-0 items-center justify-center rounded-full bg-white px-3 text-[12px] font-black text-slate-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)]">
-              {hasVideo ? '영상 미리보기' : '수업 미리보기'}
+              수업 미리보기
             </span>
           </div>
         </div>
@@ -310,10 +310,10 @@ function ProgramCard({
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-          수업 자료
+          전체 수업 자료 보기
         </Link>
         <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
-          기록 준비
+          수업 기록 작성
         </Link>
       </div>
     </article>

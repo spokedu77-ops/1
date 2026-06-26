@@ -20,7 +20,7 @@ export default function SpokeduMasterPage() {
           수업 실행 화면으로 이동 중입니다
         </h1>
         <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업안, SPOMOVE, 설명 문구를 이어서 불러오고 있습니다.
+          수업 자료, SPOMOVE, 안내문을 이어서 불러오고 있습니다.
         </p>
         <div className="mx-auto mt-6 h-1.5 w-40 overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
           <div className="h-full w-1/2 animate-pulse rounded-full" style={{ background: 'var(--spm-acc)' }} />

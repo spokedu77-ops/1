@@ -7,7 +7,7 @@ import { useOperationalStatus } from '../../store';
 
 const APP_LINKS = [
   { href: '/spokedu-master/dashboard', label: '홈', Icon: Home },
-  { href: '/spokedu-master/library', label: '수업 라이브러리', Icon: BookOpen },
+  { href: '/spokedu-master/library', label: '라이브러리', Icon: BookOpen },
   { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Tv },
   { href: '/spokedu-master/report', label: '안내문', Icon: MessageSquare },
   { href: '/spokedu-master/class-record', label: '수업 기록', Icon: ClipboardList },
@@ -61,7 +61,7 @@ export function StatusBar() {
           <Link
             href="/spokedu-master/library"
             className="grid h-11 w-11 place-items-center rounded-[12px] border border-slate-200 bg-white text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
-            aria-label="수업 검색"
+            aria-label="라이브러리"
           >
             <Search size={17} />
           </Link>

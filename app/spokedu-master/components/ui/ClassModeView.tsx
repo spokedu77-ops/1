@@ -189,7 +189,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
   if (!program || !lesson) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[#070812] px-6 text-center text-white">
-        <p className="text-lg font-black">수업안을 찾을 수 없습니다.</p>
+        <p className="text-lg font-black">수업 자료를 찾을 수 없습니다.</p>
         <button type="button" onClick={() => router.back()} className="mt-5 rounded-2xl bg-white px-5 py-3 text-sm font-extrabold text-slate-950">
           돌아가기
         </button>
@@ -245,7 +245,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
           <div className="mt-8 flex w-full max-w-[460px] flex-col gap-3">
             <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-slate-950">
               <FileText className="h-4 w-4" />
-              설명 문구 만들기
+              안내문 작성
             </Link>
             <Link href={lesson.spomovePreset ? getSpomoveSessionHref(program, lesson.spomovePreset) : '/spokedu-master/spomove'} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
               <MonitorPlay className="h-4 w-4" />

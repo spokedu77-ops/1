@@ -50,7 +50,7 @@ function EmptyRecordState() {
       <p className="mx-auto mt-2 max-w-[440px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업을 열고 "오늘 수업으로 기록"을 누르면 간단한 사용 기록이 남습니다. 학생별 출석·관찰 기록이 필요할 때는 학생 기록을 추가로 작성할 수 있습니다.</p>
       <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
         <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-          <BookOpen size={15} /> 수업 라이브러리로 이동
+          <BookOpen size={15} /> 라이브러리에서 보기
         </Link>
         <Link href="/spokedu-master/students" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
           <UserPlus size={15} /> 학생 명단 관리
@@ -186,7 +186,7 @@ function RecordListView() {
         <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>진행한 수업 기록을 모아 확인합니다. 수업 사용 기록과 학생 기록을 구분해 관리할 수 있습니다.</p>
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
           {[
-            { label: '수업 라이브러리', href: '/spokedu-master/library', icon: BookOpen },
+            { label: '라이브러리', href: '/spokedu-master/library', icon: BookOpen },
             { label: '학생 명단', href: '/spokedu-master/students', icon: UserPlus },
             { label: '학생 기록 작성', href: '/spokedu-master/library', icon: ClipboardList },
           ].map(({ label, href, icon: Icon }) => (
@@ -388,10 +388,10 @@ function RecordEntryView() {
     return (
       <div className="h-full overflow-y-auto p-[22px] pb-28 lg:pb-[22px]" style={{ background: 'var(--spm-bg)' }}>
         <div className="rounded-[18px] p-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <h1 className="text-[20px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>기록할 수업안이 없습니다</h1>
+          <h1 className="text-[20px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>기록할 수업 자료가 없습니다</h1>
           <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>라이브러리에서 수업을 선택해 주세요.</p>
           <Link href="/spokedu-master/library" className="mt-5 inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-            <BookOpen size={15} /> 수업 라이브러리로 이동
+            <BookOpen size={15} /> 라이브러리에서 보기
           </Link>
         </div>
       </div>
@@ -501,7 +501,7 @@ function RecordEntryView() {
         <section className="mx-[22px] mb-5 rounded-[16px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)' }}>
           <p className="text-[14px] font-black" style={{ color: 'var(--spm-red)' }}>{editingRecordMissing ? '수정할 수업 기록을 찾지 못했습니다.' : '다시 사용할 수업 기록을 찾지 못했습니다.'}</p>
           <Link href="/spokedu-master/class-record" className="mt-3 inline-flex h-11 items-center rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
-            기록 목록으로 이동
+            수업 기록 보기
           </Link>
         </section>
       ) : null}

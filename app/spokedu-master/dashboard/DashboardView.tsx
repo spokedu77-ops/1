@@ -508,7 +508,7 @@ function ActivityPanel({
     { label: '저장 안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
     { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
     { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
-    { label: '수업 도구', value: null, href: '/spokedu-master/class-tools', Icon: Wrench, action: '바로 열기' },
+    { label: '수업 도구', value: null, href: '/spokedu-master/class-tools', Icon: Wrench, action: '수업 도구 열기' },
   ];
 
   return (
@@ -589,7 +589,7 @@ function buildContinueItem(
       type: '수업',
       title: recentLesson.programTitle,
       status: recentLesson.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
-      action: '수업 열기',
+      action: '수업 미리보기',
       time: formatRelativeDate(recentLesson.occurredAt),
       href: recentLesson.resumeHref,
     };

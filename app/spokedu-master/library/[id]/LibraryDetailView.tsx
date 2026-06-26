@@ -214,7 +214,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href={libraryReturnHref} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
-          라이브러리
+          라이브러리로
         </Link>
         <p className="min-w-0 truncate text-right text-[14px] font-black text-slate-950 sm:text-center">
           {title}
@@ -334,7 +334,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         {/* 보호자 문구 — 등록된 값이 있을 때만 표시 (6순위) */}
         {parentCopy ? (
           <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 p-5">
-            <p className="text-xs font-black text-emerald-800">학부모 설명 문구</p>
+            <p className="text-xs font-black text-emerald-800">안내문</p>
             <p className="mt-2 text-sm font-semibold leading-7 text-emerald-900">{parentCopy}</p>
             <button type="button" onClick={copyParentNote} className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 text-sm font-bold text-emerald-700">
               <Clipboard className="h-4 w-4" />
@@ -450,7 +450,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </div>
           <div>
             <label className="block text-xs font-black text-slate-700">
-              학부모 안내 문구 <span className="font-semibold text-slate-400">(수정 가능)</span>
+              안내문 <span className="font-semibold text-slate-400">(수정 가능)</span>
             </label>
             <textarea
               value={quickParentNote}

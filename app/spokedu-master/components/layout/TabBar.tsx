@@ -85,19 +85,19 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
             onClick={() => setRecordsOpen(true)}
             className="flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-[16px] transition-opacity active:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-indigo-500"
             aria-current={recordsActive ? 'page' : undefined}
-            aria-label="기록 메뉴 열기"
+            aria-label="내 활동·기록 메뉴 열기"
           >
             <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: recordsActive ? '#4f46e5' : 'transparent' }}>
               <FileText size={17} strokeWidth={1.9} color={recordsActive ? '#ffffff' : '#64748b'} />
             </span>
             <span className="text-[11px] font-bold leading-none" style={{ color: recordsActive ? '#4338ca' : '#64748b' }}>
-              기록
+              내 활동·기록
             </span>
           </button>
         </div>
       </nav>
 
-      <BottomSheet open={recordsOpen} title="기록" onClose={() => setRecordsOpen(false)}>
+      <BottomSheet open={recordsOpen} title="내 활동·기록" onClose={() => setRecordsOpen(false)}>
         <div className="grid gap-2">
           {recordTabs.map(({ href, label, caption, Icon }) => {
             const active = isActivePath(pathname, href);

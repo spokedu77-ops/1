@@ -54,7 +54,7 @@ function getActivityFlow(program: Program) {
 function getAudienceOutputTitle(audience: Audience) {
   if (audience === 'center') return '기관 제출용 설명';
   if (audience === 'school') return '학교 수업 활동 기록';
-  return '학부모 안내 문구';
+  return '안내문';
 }
 
 function buildRecordNote(record: ClassRecord): string {
@@ -579,7 +579,7 @@ function ReportContent() {
               <p className="mt-2 text-[12px] font-bold text-red-600">{saveError}</p>
             ) : null}
             <p className="mt-3 whitespace-pre-line rounded-[14px] p-3.5 text-[14px] font-semibold leading-7 sm:mt-4 sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
-              {program ? output : '수업을 선택하면 설명 문구를 만들 수 있습니다.'}
+              {program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'}
             </p>
           </section>
         </section>

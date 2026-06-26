@@ -8,18 +8,18 @@ import { useProfile } from '../../store';
 
 const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> = {
   library: [
-    { icon: BookOpen, label: '전체 수업안과 준비 자료' },
+    { icon: BookOpen, label: '전체 수업 자료와 준비 자료' },
     { icon: MonitorPlay, label: 'SPOMOVE 공식 화면 활동' },
     { icon: FileText, label: '학부모·기관 안내문 문구' },
   ],
   spomove: [
     { icon: MonitorPlay, label: 'SPOMOVE 큰 화면 실행' },
     { icon: Sparkles, label: 'TV·빔용 Class Mode' },
-    { icon: BookOpen, label: '라이브러리 수업안 연결' },
+    { icon: BookOpen, label: '라이브러리 수업 자료 연결' },
   ],
   report: [
     { icon: FileText, label: '대상별 수업 안내문' },
-    { icon: BookOpen, label: '수업안 기반 문구 작성' },
+    { icon: BookOpen, label: '수업 자료 기반 안내문 작성' },
     { icon: Sparkles, label: '보호자·기관·학교용 복사' },
   ],
   'class-tools': [
@@ -56,7 +56,7 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             30일 이용권을 다시 결제하고 계속 사용하세요.
           </h2>
           <p className="mt-3 text-[14px] font-medium leading-6 text-slate-500">
-            수업안, SPOMOVE 화면 활동, 안내문과 수업 운영 도구를 계속 이용할 수 있습니다.
+            수업 자료, SPOMOVE 화면 활동, 안내문과 수업 운영 도구를 계속 이용할 수 있습니다.
           </p>
           <ul className="mt-5 space-y-2">
             {features.map(({ icon: Icon, label }) => (
