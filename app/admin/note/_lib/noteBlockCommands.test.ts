@@ -40,11 +40,18 @@ describe('note block commands', () => {
       order_index: 0,
     });
     expect(command.nextBlocks.find((item) => item.id === 'c')?.order_index).toBe(1);
-    expect(command.fieldPatches).toEqual([{
-      id: 'b',
-      parent_block_id: 'a',
-      order_index: 0,
-    }]);
+    expect(command.fieldPatches).toEqual(expect.arrayContaining([
+      {
+        id: 'b',
+        parent_block_id: 'a',
+        order_index: 0,
+      },
+      {
+        id: 'c',
+        parent_block_id: null,
+        order_index: 1,
+      },
+    ]));
     expect(new Set(command.orders.map((item) => item.id))).toEqual(new Set(['b', 'c']));
     expect(blocks[1].parent_block_id).toBeNull();
     expect(blocks[2].order_index).toBe(2);
@@ -164,5 +171,41 @@ describe('note block commands', () => {
     const roots = [...command.nextBlocks].sort((x, y) => x.order_index - y.order_index);
     expect(roots.map((item) => item.id)).toEqual(['a', 'd', 'b', 'c']);
     expect(command.fieldPatches).toHaveLength(3);
+  });
+
+  it('single block move persists sibling order changes in the command payload', () => {
+    const blocks = [
+      block('a', 0),
+      block('b', 1),
+      block('c', 2),
+    ];
+    const plan = planBlockDropAt(blocks, 'b', 'a', 'inside');
+    const command = buildMoveBlockCommand(blocks, 'b', plan!);
+
+    expect(command.fieldPatches).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'b', parent_block_id: 'a', order_index: 0 }),
+      expect.objectContaining({ id: 'c', parent_block_id: null, order_index: 1 }),
+    ]));
+  });
+
+  it('moves a parent block without reparenting its descendants locally', () => {
+    const blocks = [
+      block('a', 0),
+      block('parent', 1),
+      block('child', 0, 'parent'),
+      block('grandchild', 0, 'child'),
+      block('after', 2),
+    ];
+    const plan = planBlockDropAt(blocks, 'parent', 'a', 'inside');
+    const command = buildMoveBlockCommand(blocks, 'parent', plan!);
+
+    expect(command.nextBlocks.find((item) => item.id === 'parent')).toMatchObject({
+      parent_block_id: 'a',
+      order_index: 0,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'child')?.parent_block_id).toBe('parent');
+    expect(command.nextBlocks.find((item) => item.id === 'grandchild')?.parent_block_id).toBe('child');
+    expect(command.fieldPatches.map((patch) => patch.id)).not.toContain('child');
+    expect(command.fieldPatches.map((patch) => patch.id)).not.toContain('grandchild');
   });
 });

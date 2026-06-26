@@ -44,6 +44,7 @@ describe('syncBlocksStructure list type change', () => {
     useNoteBlockStore.getState().hydrate([
       block('t', 'toggle', { title: '', body: 'old' }),
     ]);
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 't', field: 'body' });
     useNoteBlockStore.getState().patchContent('t', { title: '', body: 'typed' });
 
     useNoteBlockStore.getState().syncBlocksStructure([
@@ -53,6 +54,20 @@ describe('syncBlocksStructure list type change', () => {
     const stored = useNoteBlockStore.getState().getBlock('t');
     expect(stored?.content?.title).toBe('제목');
     expect(stored?.content?.body).toBe('typed');
+  });
+
+  it('does not revive stale inactive store content during structure sync', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'text', { text: 'old local' }),
+    ]);
+    useNoteBlockStore.getState().patchContent('a', { text: 'stale inactive store' });
+    useNoteBlockStore.getState().setActiveEditor(null);
+
+    useNoteBlockStore.getState().syncBlocksStructure([
+      block('a', 'text', { text: 'server canonical' }),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('server canonical');
   });
 
   it('persists title-only patchContent updates', () => {

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   normalizeListBlockContentRecord,
   normalizeLoadedNoteBlocks,
+  resolveMarkdownBlockTriggerFromTextBeforeCursor,
   stripListItemMarkerFromHtml,
   stripListItemMarkerPrefix,
+  stripMarkdownTriggerForTypeChange,
 } from './noteBulletInput';
 import type { NoteBlock } from '../_lib/types';
 
@@ -119,5 +121,42 @@ describe('normalizeLoadedNoteBlocks', () => {
     const normalized = normalizeLoadedNoteBlocks([parent, child]);
     expect(normalized[0].content?.text).toBe('');
     expect(normalized[1].content?.text).toBe('item');
+  });
+});
+
+describe('markdown block shortcuts', () => {
+  it('recognizes Notion-style block triggers before Space', () => {
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('-')).toBe('bulletList');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('*')).toBe('bulletList');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('1.')).toBe('numberedList');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('[]')).toBe('todo');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('[ ]')).toBe('todo');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('>')).toBe('toggle');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('#')).toBe('heading');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('##')).toBe('heading2');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('###')).toBe('heading3');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('---')).toBe('divider');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('!!')).toBe('callout');
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('```')).toBe('code');
+  });
+
+  it('does not treat indented text as a root block shortcut', () => {
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('\t-')).toBeNull();
+    expect(resolveMarkdownBlockTriggerFromTextBeforeCursor('    #')).toBeNull();
+  });
+
+  it('strips trigger text when converting to block types', () => {
+    expect(stripMarkdownTriggerForTypeChange('- ', 'bulletList')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('* ', 'bulletList')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('1. ', 'numberedList')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('[] ', 'todo')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('[ ] ', 'todo')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('> ', 'toggle')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('# ', 'heading')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('## ', 'heading2')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('### ', 'heading3')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('--- ', 'divider')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('!! ', 'callout')).toBe('');
+    expect(stripMarkdownTriggerForTypeChange('``` ', 'code')).toBe('');
   });
 });

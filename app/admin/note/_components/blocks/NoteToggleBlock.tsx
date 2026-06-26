@@ -12,7 +12,10 @@ import { SlashMenuFixed } from '../SlashMenu';
 import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { BLOCK_TYPES, toggleNestPaddingPx } from '../../_lib/constants';
 import { filterTurnIntoCommands } from '../../_lib/noteBlockTypeChange';
-import { resolveToggleTitleEnterAction } from '../../_lib/noteNotionBlockBehavior';
+import {
+  resolveToggleTitleBackspaceAction,
+  resolveToggleTitleEnterAction,
+} from '../../_lib/noteNotionBlockBehavior';
 import { focusWithoutScroll } from '../../_lib/noteEditorScrollGuard';
 import {
   DROP_TARGET_ROW,
@@ -196,6 +199,18 @@ export function NoteToggleBlock({
                 onAddChildBelow?.(action.blockType);
               }
               return;
+            }
+            if (e.key === 'Backspace') {
+              const action = resolveToggleTitleBackspaceAction({
+                title,
+                selectionStart: e.currentTarget.selectionStart,
+                selectionEnd: e.currentTarget.selectionEnd,
+              });
+              if (action.kind === 'convert-to-text') {
+                e.preventDefault();
+                onChangeType('text');
+                return;
+              }
             }
             if (e.key === 'Tab' && onIndentChange) {
               e.preventDefault();

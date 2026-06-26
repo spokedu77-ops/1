@@ -3,6 +3,7 @@
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { NoteEditableField } from '../NoteEditableField';
 import type { NoteEditorEnterContext } from '../NoteEditor';
+import { resolveInlineBackspaceAtStartAction } from '../../_lib/noteNotionBlockBehavior';
 import type { NoteBlock } from '../../_lib/types';
 
 export type NoteBlockFormattedFieldProps = {
@@ -25,7 +26,7 @@ export type NoteBlockFormattedFieldProps = {
   onUpdate?: (content: Record<string, unknown>) => void;
   onContentSync?: (content: Record<string, unknown>) => void;
   onContentPatch?: (content: Record<string, unknown>) => void;
-  onChangeType?: (trigger: import('../noteBulletInput').MarkdownBlockTrigger) => void;
+  onChangeType?: (type: NoteBlock['type']) => void;
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
@@ -87,6 +88,21 @@ export function NoteBlockFormattedField({
   onMultilinePaste,
   slashHostRef,
 }: NoteBlockFormattedFieldProps) {
+  const inlineBackspaceAction = resolveInlineBackspaceAtStartAction(block.type);
+  const convertInlineBlockToText = inlineBackspaceAction.kind === 'convert-to-text' && onChangeType
+    ? () => { onChangeType('text'); }
+    : undefined;
+  const handleBackspaceAtBlockStart = onEditorBackspaceAtBlockStart
+    ?? (convertInlineBlockToText
+      ? () => {
+        convertInlineBlockToText();
+        return true;
+      }
+      : undefined);
+  const handleEmptyBackspace = onEditorBackspace === false
+    ? false
+    : (onEditorBackspace ?? convertInlineBlockToText ?? onEmptyBackspace);
+
   return (
     <NoteEditableField
       blockId={block.id}
@@ -101,8 +117,8 @@ export function NoteBlockFormattedField({
       enterSplitOnMidBlock={enterSplitOnMidBlock}
       tabBehavior={tabBehavior}
       onEditorEnter={onEditorEnter}
-      onEditorBackspace={onEditorBackspace === false ? false : (onEditorBackspace ?? onEmptyBackspace)}
-      onEditorBackspaceAtBlockStart={onEditorBackspaceAtBlockStart}
+      onEditorBackspace={handleEmptyBackspace}
+      onEditorBackspaceAtBlockStart={handleBackspaceAtBlockStart}
       onEditorMergeWithPrevious={onEditorMergeWithPrevious ?? onMergeWithPrevious}
       onEditorCanMergeWithPrevious={onEditorCanMergeWithPrevious ?? canMergeWithPrevious}
       editorMergeFocusCaretOffset={editorMergeFocusCaretOffset}

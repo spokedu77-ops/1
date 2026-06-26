@@ -67,4 +67,24 @@ describe('block transaction history', () => {
       expect(deleteUndo.after.map((item) => item.id)).toEqual(['a', 'new']);
     }
   });
+
+  it('keeps document ids in transaction snapshots for cross-document undo', () => {
+    const before = [
+      { ...block('root', 0), document_id: 'source' },
+      { ...block('child', 0, 'root'), document_id: 'source' },
+    ];
+    const after = before.map((item) => ({
+      ...item,
+      document_id: 'target',
+      parent_block_id: item.id === 'root' ? null : item.parent_block_id,
+    }));
+
+    const undo = buildBlockTransactionUndoEntry(before, after, ['root', 'child']);
+
+    expect(undo?.kind).toBe('block-transaction');
+    if (undo?.kind === 'block-transaction') {
+      expect(undo.before.map((item) => item.document_id)).toEqual(['target', 'target']);
+      expect(undo.after.map((item) => item.document_id)).toEqual(['source', 'source']);
+    }
+  });
 });

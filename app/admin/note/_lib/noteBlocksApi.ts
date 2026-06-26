@@ -213,38 +213,6 @@ export async function patchNoteBlocks(
   return patched;
 }
 
-/** 순서 PUT + 필드 PATCH — version 충돌 시 필드만 재시도 */
-export async function putNoteBlockOrders(
-  orders: { id: string; order_index: number }[],
-  updates?: NoteBlockFieldPatch[],
-  getLiveBlock?: NoteBlockVersionLookup,
-): Promise<PatchedNoteBlock[]> {
-  const hasOrders = orders.length > 0;
-  const hasUpdates = !!updates && updates.length > 0;
-  if (!hasOrders && !hasUpdates) return [];
-  const patchesById = new Map<string, NoteBlockFieldPatch>();
-  for (const order of orders) {
-    patchesById.set(order.id, { id: order.id, order_index: order.order_index });
-  }
-  for (const update of updates ?? []) {
-    patchesById.set(update.id, { ...patchesById.get(update.id), ...update });
-  }
-  return postNoteBlockTransaction([...patchesById.values()], [], getLiveBlock);
-
-  if (hasOrders) {
-    const res = await fetch('/api/admin/note/blocks', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ orders }),
-    });
-    if (!res.ok) await parseApiError(res, '블록 순서 저장 실패');
-  }
-
-  if (!hasUpdates) return [];
-  return patchNoteBlocksResolvingConflicts(updates ?? [], getLiveBlock);
-}
-
 export async function restoreNoteBlockFromTrash(id: string): Promise<NoteBlock[]> {
   const res = await fetch('/api/admin/note/blocks/trash/restore', {
     method: 'POST',

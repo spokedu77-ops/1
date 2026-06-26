@@ -107,6 +107,7 @@ export function useNoteBlockHistory(options: {
         if (entry.after.length > 0) {
           await documentEngine.persistFieldPatches(entry.after.map((snapshot) => ({
             id: snapshot.id,
+            document_id: snapshot.document_id,
             type: snapshot.type,
             content: snapshot.content,
             parent_block_id: snapshot.parent_block_id ?? null,
