@@ -5,6 +5,8 @@ import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReport
 import {
   SPOKEDU_MASTER_PLAN_CONFIG,
   parseSpokeduMasterOrderId,
+  validateSpokeduMasterPaymentOrder,
+  type SpokeduMasterPaymentOrder,
 } from '@/app/lib/server/spokeduMasterPayment';
 
 export async function POST(request: Request) {
@@ -36,6 +38,40 @@ export async function POST(request: Request) {
   }
 
   const service = getServiceSupabase();
+  const { data: order, error: orderLookupError } = await service
+    .from('spokedu_master_payment_orders')
+    .select('order_id,user_id,plan,amount,status,payment_key')
+    .eq('order_id', body.orderId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (orderLookupError) {
+    await reportError(orderLookupError, {
+      context: 'spokedu_master.payment.confirm',
+      tags: { provider: 'tosspayments', stage: 'order_lookup', status: 500 },
+    });
+    return NextResponse.json({ error: 'Payment order lookup failed' }, { status: 500 });
+  }
+  if (!order) {
+    return NextResponse.json({ error: 'Payment order not found' }, { status: 404 });
+  }
+  const orderValidation = validateSpokeduMasterPaymentOrder(
+    order as SpokeduMasterPaymentOrder,
+    {
+      userId: user.id,
+      orderId: body.orderId,
+      paymentKey: body.paymentKey,
+      plan,
+      amount: body.amount,
+    },
+  );
+  if (!orderValidation.ok) {
+    return NextResponse.json(
+      { error: orderValidation.error },
+      { status: orderValidation.status },
+    );
+  }
+
   const findExistingConfirmation = async () => {
     const { data, error } = await service
       .from('spokedu_master_subscriptions')
@@ -68,7 +104,17 @@ export async function POST(request: Request) {
 
   const existingConfirmation = await findExistingConfirmation();
   if (existingConfirmation) {
+    if (order.status !== 'active') {
+      await service
+        .from('spokedu_master_payment_orders')
+        .update({ status: 'active', payment_key: body.paymentKey })
+        .eq('order_id', body.orderId)
+        .eq('user_id', user.id);
+    }
     return idempotentResponse(existingConfirmation.periodEnd);
+  }
+  if (order.status === 'active') {
+    return NextResponse.json({ error: 'Confirmed subscription not found' }, { status: 409 });
   }
 
   const tossSecretKey = process.env.TOSS_SECRET_KEY;
@@ -189,7 +235,8 @@ export async function POST(request: Request) {
       status: 'active',
       payment_key: payment.paymentKey,
     })
-    .eq('order_id', payment.orderId);
+    .eq('order_id', payment.orderId)
+    .eq('user_id', user.id);
 
   if (orderUpdateError) {
     await reportError(orderUpdateError, {

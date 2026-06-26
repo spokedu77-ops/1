@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ClipboardList, Gauge, Lock, Maximize, Minimize, Music2, Play, RotateCcw, Users, Volume2, X } from 'lucide-react';
+import { Check, ClipboardList, Gauge, Maximize, Minimize, Music2, Play, RotateCcw, Users, Volume2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -27,7 +27,6 @@ import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 
 type SessionState = 'idle' | 'running' | 'done';
 type LaunchMode = 'projector' | 'mobile' | 'class';
-type OfficialAccessState = 'checking' | 'allowed' | 'denied' | 'error';
 
 function normalizeMode(mode: string | null): LaunchMode {
   if (mode === 'projector' || mode === 'class' || mode === 'mobile') return mode;
@@ -200,31 +199,9 @@ function SpomoveSessionContent() {
     return '';
   }, [bgmList, officialPreset, requestedBgmPath]);
 
-  const [officialAccess, setOfficialAccess] = useState<OfficialAccessState>(
-    officialPreset ? 'checking' : 'denied',
-  );
   const [state, setState] = useState<SessionState>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
-
-  useEffect(() => {
-    if (!officialPreset) return;
-    let alive = true;
-    setOfficialAccess('checking');
-    fetch('/api/spokedu-master/access', { cache: 'no-store' })
-      .then((response) => {
-        if (!alive) return;
-        if (response.ok) setOfficialAccess('allowed');
-        else if (response.status === 401 || response.status === 403) setOfficialAccess('denied');
-        else setOfficialAccess('error');
-      })
-      .catch(() => {
-        if (alive) setOfficialAccess('error');
-      });
-    return () => {
-      alive = false;
-    };
-  }, [officialPreset]);
 
   const stopBgm = useCallback(() => {
     try {
@@ -244,7 +221,7 @@ function SpomoveSessionContent() {
   }, []);
 
   const startOfficialSession = useCallback(() => {
-    if (!officialPreset || officialAccess !== 'allowed' || bgmLoading || !officialPreset.isReady) return;
+    if (!officialPreset || bgmLoading || !officialPreset.isReady) return;
     stopBgm();
     if (launchMode === 'projector' && !document.fullscreenElement) {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -266,7 +243,7 @@ function SpomoveSessionContent() {
       action: 'spomove_started',
       occurredAt: new Date().toISOString(),
     });
-  }, [bgmLoading, launchMode, officialAccess, officialPreset, recordRecentProgramActivity, selectedBgmPath, soundEnabled, stopBgm]);
+  }, [bgmLoading, launchMode, officialPreset, recordRecentProgramActivity, selectedBgmPath, soundEnabled, stopBgm]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -284,33 +261,6 @@ function SpomoveSessionContent() {
   }, [startOfficialSession, state]);
 
   if (!officialPreset) return <UnsupportedPreset />;
-
-  if (officialAccess !== 'allowed') {
-    if (officialAccess === 'checking') {
-      return (
-        <main className="grid h-dvh place-items-center bg-black" aria-busy="true">
-          <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
-        </main>
-      );
-    }
-
-    return (
-      <main className="flex h-dvh items-center justify-center bg-slate-950 px-5 text-white">
-        <section className="w-full max-w-lg rounded-[28px] border border-white/10 bg-white/[0.06] p-8 text-center">
-          <Lock className="mx-auto h-8 w-8 text-indigo-200" />
-          <h1 className="mt-5 text-2xl font-black">SPOMOVE를 실행할 수 없습니다.</h1>
-          <p className="mt-3 text-sm font-semibold text-white/55">
-            {officialAccess === 'denied'
-              ? '로그인 상태와 이용권을 확인해 주세요.'
-              : '이용 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.'}
-          </p>
-          <Link href="/spokedu-master/spomove" className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-6 text-sm font-black text-slate-950">
-            SPOMOVE 목록으로
-          </Link>
-        </section>
-      </main>
-    );
-  }
 
   if (state === 'running') {
     return (

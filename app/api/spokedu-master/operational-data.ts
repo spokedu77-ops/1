@@ -308,3 +308,31 @@ export function classRecordStudentInsertPayload(
     memo: student.memo,
   };
 }
+
+export function classRecordReplaceRpcPayload(
+  input: NormalizedClassRecordInput,
+  ownerId: string,
+  recordId: string,
+) {
+  return {
+    p_owner_id: ownerId,
+    p_record_id: recordId,
+    p_class_date: input.date,
+    p_lesson_title: input.lessonTitle,
+    p_class_id: input.classId,
+    p_program_id: input.programId,
+    p_program_title: input.programTitle,
+    p_record_type: input.recordType,
+    p_memo: input.memo,
+    p_parent_note_snapshot: input.parentNoteSnapshot,
+    p_students: input.students.map((student) => ({
+      student_id: student.studentId,
+      student_legacy_id: student.studentLegacyId,
+      student_name_snapshot: student.studentName,
+      attendance: student.attendance,
+      focused: student.focused,
+      skills: student.skills,
+      memo: student.memo,
+    })),
+  };
+}

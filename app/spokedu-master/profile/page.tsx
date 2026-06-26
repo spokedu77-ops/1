@@ -424,6 +424,7 @@ function SpokeduMasterProfileContent() {
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
   const resetProfile = useMasterStore((state) => state.resetProfile);
+  const clearCurrentOwnerLocalData = useMasterStore((state) => state.clearCurrentOwnerLocalData);
   const router = useRouter();
   const searchParams = useSearchParams();
   const operationalData = useOperationalData();
@@ -491,9 +492,12 @@ function SpokeduMasterProfileContent() {
   const handleLogout = async () => {
     setLoggingOut(true);
     const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    resetProfile();
-    router.replace('/spokedu-master/landing');
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      resetProfile();
+      router.replace('/spokedu-master/landing');
+    }
   };
 
   const handleDeleteMasterData = async () => {
@@ -515,6 +519,7 @@ function SpokeduMasterProfileContent() {
         throw new Error(json.error ?? 'MASTER data deletion failed');
       }
 
+      clearCurrentOwnerLocalData();
       await Promise.all([
         operationalData.reload(),
         explanationData.reload(),

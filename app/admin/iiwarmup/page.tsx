@@ -34,17 +34,6 @@ export default function TeacherAppOverviewPage() {
         </Link>
 
         <Link
-          href="/admin/iiwarmup/flow"
-          className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
-        >
-          <h3 className="text-base font-extrabold">Flow</h3>
-          <p className="mt-2 text-sm text-neutral-400">
-            몰입형 Flow 프로그램으로 바로 진입합니다.
-          </p>
-          <span className="mt-3 inline-block text-sm font-medium text-blue-400">진입 →</span>
-        </Link>
-
-        <Link
           href="/admin/camera"
           className="rounded-xl bg-neutral-900 p-5 ring-1 ring-neutral-800 transition hover:ring-neutral-600 cursor-pointer"
         >

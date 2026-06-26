@@ -7,6 +7,8 @@ import {
   findOfficialSpomovePreset,
 } from '../../spomove/officialSpomovePresets';
 import type { Program } from '../../types';
+import { getLibraryProgramDetailHref } from '../../library/libraryNavigation';
+import type { LibraryViewMode } from '../../library/libraryViewModel';
 import { BottomSheet } from '../ui/BottomSheet';
 import { LessonPreviewContent } from './LessonPreviewContent';
 
@@ -21,6 +23,7 @@ export function ProgramPreviewModal({
   isPro = true,
   favorite,
   onFavorite,
+  sourceLibraryView,
   onPlaybackStarted,
   onClose,
 }: {
@@ -29,6 +32,7 @@ export function ProgramPreviewModal({
   isPro?: boolean;
   favorite?: boolean;
   onFavorite?: () => void;
+  sourceLibraryView?: LibraryViewMode;
   onPlaybackStarted?: () => void;
   onClose: () => void;
 }) {
@@ -57,12 +61,13 @@ export function ProgramPreviewModal({
               <button
                 type="button"
                 onClick={onFavorite}
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-full border ${
+                className={`inline-flex h-11 w-11 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
                   favorite
                     ? 'border-amber-200 bg-amber-50 text-amber-600'
                     : 'border-slate-200 bg-white text-slate-500'
                 }`}
-                aria-label={favorite ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                aria-pressed={Boolean(favorite)}
+                aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
               >
                 <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
               </button>
@@ -79,7 +84,7 @@ export function ProgramPreviewModal({
               닫기
             </button>
             <Link
-              href={`/spokedu-master/library/${program.id}`}
+              href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
             >
               <BookOpen className="h-4 w-4" />

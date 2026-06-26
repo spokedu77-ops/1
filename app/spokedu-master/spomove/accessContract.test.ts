@@ -22,14 +22,16 @@ describe('SPOMOVE access separation contract', () => {
     expect(source).not.toContain('void loadDrills()');
   });
 
-  it('gates official session rendering on the access endpoint', () => {
-    const source = read('app/spokedu-master/spomove/session/page.tsx');
-    const gateIndex = source.indexOf("officialAccess !== 'allowed'");
-    const engineIndex = source.indexOf('<EngineRouter');
+  it('gates official session rendering through the common AppShell access boundary', () => {
+    const session = read('app/spokedu-master/spomove/session/page.tsx');
+    const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
 
-    expect(source).toContain("fetch('/api/spokedu-master/access'");
-    expect(gateIndex).toBeGreaterThan(-1);
-    expect(engineIndex).toBeGreaterThan(gateIndex);
+    expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
+    expect(shell).toContain('isAccessGuardPending');
+    expect(shell).toContain('isAccessGuardDenied');
+    expect(shell).toContain('isAccessGuardError');
+    expect(session).not.toContain("fetch('/api/spokedu-master/access'");
+    expect(session).not.toContain('OfficialAccessState');
   });
 
   it('does not load drills from the official-only session', () => {

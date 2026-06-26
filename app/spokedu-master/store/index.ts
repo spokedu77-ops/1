@@ -6,7 +6,12 @@ import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
 import { hasMasterAccess } from '../lib/subscription';
 import {
+  claimPendingLegacyFavorites,
+  getFavoritesByOwner,
+  isFavoriteByOwner,
   migrateLegacyFavorites,
+  normalizeFavoriteProgramIds,
+  normalizeFavoritesByOwner,
   toggleFavoriteByOwner,
 } from '../lib/favoriteLib';
 import {
@@ -47,10 +52,12 @@ interface MasterState {
   profile: UserProfile | null;
   setProfile: (profile: Partial<UserProfile>) => void;
   resetProfile: () => void;
-  syncSubscription: () => Promise<void>;
+  syncSubscription: () => Promise<boolean>;
+  localWorkspaceOwnerId: string | null;
+  clearLocalWorkspace: () => void;
+  clearCurrentOwnerLocalData: () => void;
   operational: OperationalStatus;
   setOnline: (online: boolean) => void;
-  setLastSyncNow: () => void;
   enqueueRetry: (item: RetryQueueItem) => void;
   removeRetry: (id: string) => void;
   sessions: Session[];
@@ -70,7 +77,10 @@ interface MasterState {
   recentActivityOwnerResolved: boolean;
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
   favoriteProgramIdsByOwner: Record<string, string[]>;
-  toggleFavoriteProgram: (ownerId: string, programId: string) => void;
+  pendingLegacyFavoriteProgramIds: string[];
+  getFavoriteProgramIds: (ownerId: string | null) => string[];
+  isFavoriteProgram: (ownerId: string | null, programId: string) => boolean;
+  toggleFavoriteProgram: (ownerId: string | null, programId: string) => void;
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
   updateQty: (id: string, delta: number) => void;
@@ -99,7 +109,7 @@ const defaultProfile: UserProfile = {
   ageGroups: [],
   programTypes: [],
   onboardingDone: false,
-  trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+  trialEndsAt: null,
   createdAt: new Date().toISOString(),
   subscriptionStatus: 'none',
   previousPaidPlan: null,
@@ -116,6 +126,54 @@ const defaultLessons: Lesson[] = [];
 
 const defaultNotifications: Notification[] = [];
 
+type LocalWorkspaceState = Pick<
+  MasterState,
+  | 'lessons'
+  | 'sessions'
+  | 'activeSession'
+  | 'cart'
+  | 'notifications'
+  | 'classTimerMs'
+  | 'classTimerRunning'
+  | 'classTimerStartedAt'
+  | 'operational'
+>;
+
+export function clearedLocalWorkspace(
+  state: Pick<MasterState, 'operational'>,
+): LocalWorkspaceState {
+  return {
+    lessons: [],
+    sessions: [],
+    activeSession: null,
+    cart: [],
+    notifications: [],
+    classTimerMs: 0,
+    classTimerRunning: false,
+    classTimerStartedAt: null,
+    operational: {
+      ...state.operational,
+      lastSyncAt: null,
+      retryQueue: [],
+    },
+  };
+}
+
+function hasLegacyWorkspace(state: PersistedMasterState): boolean {
+  return Boolean(
+    state.lessons?.length ||
+    state.sessions?.length ||
+    state.activeSession ||
+    state.cart?.length ||
+    state.notifications?.length ||
+    state.classTimerMs ||
+    state.classTimerRunning ||
+    state.classTimerStartedAt ||
+    state.operational?.lastSyncAt ||
+    state.operational?.retryQueue?.length
+  );
+}
+
 const brokenTextPattern = /[\u4E00-\u9FFF\uF900-\uFAFF\uFFFD]/;
 
 function hasBrokenText(value: unknown): boolean {
@@ -131,29 +189,59 @@ type PersistedMasterState = Partial<MasterState> & {
   favorites?: string[];
 };
 
-function migrateMasterStore(persisted: unknown, persistedVersion?: number): Partial<MasterState> & Record<string, unknown> {
+export function migrateMasterStore(persisted: unknown, persistedVersion?: number): Partial<MasterState> & Record<string, unknown> {
   const state = persisted && typeof persisted === 'object' ? (persisted as PersistedMasterState) : {};
   const archiveResult = createLegacyOperationalArchiveFromPersistedStore(
     state,
     typeof persistedVersion === 'number' ? persistedVersion : null,
   );
   const { classRecords: legacyClassRecords, students: legacyStudents, favorites: legacyFavorites, ...stateWithoutLegacyOperational } = state;
-  const profile = state.profile && !hasBrokenText(state.profile) ? state.profile : defaultProfile;
-  const migrationOwnerId: string | null = (() => {
-    const id = profile.id.trim();
-    if (id && id !== 'local') return `id:${id}`;
-    const email = profile.email.trim().toLowerCase();
-    return email || null;
-  })();
-  const favoriteProgramIdsByOwner: Record<string, string[]> =
+  const persistedProfile = state.profile && !hasBrokenText(state.profile) ? state.profile : null;
+  const profile = persistedProfile ?? defaultProfile;
+  const migrationOwnerId = getRecentActivityOwner(persistedProfile)?.ownerId ?? null;
+  const hasOwnerFavorites = Boolean(
     stateWithoutLegacyOperational.favoriteProgramIdsByOwner &&
-    typeof stateWithoutLegacyOperational.favoriteProgramIdsByOwner === 'object'
-      ? stateWithoutLegacyOperational.favoriteProgramIdsByOwner
-      : migrateLegacyFavorites(legacyFavorites, migrationOwnerId);
+    typeof stateWithoutLegacyOperational.favoriteProgramIdsByOwner === 'object',
+  );
+  const favoriteProgramIdsByOwner = hasOwnerFavorites
+    ? normalizeFavoritesByOwner(stateWithoutLegacyOperational.favoriteProgramIdsByOwner)
+    : migrateLegacyFavorites(legacyFavorites, migrationOwnerId);
+  const pendingLegacyFavoriteProgramIds = hasOwnerFavorites
+    ? normalizeFavoriteProgramIds(stateWithoutLegacyOperational.pendingLegacyFavoriteProgramIds)
+    : migrationOwnerId
+      ? []
+      : normalizeFavoriteProgramIds(legacyFavorites);
+  const persistedWorkspaceOwnerId =
+    typeof state.localWorkspaceOwnerId === 'string' &&
+    (state.localWorkspaceOwnerId.startsWith('id:') ||
+      state.localWorkspaceOwnerId.startsWith('email:'))
+      ? state.localWorkspaceOwnerId
+      : null;
+  const localWorkspaceOwnerId = persistedWorkspaceOwnerId ?? migrationOwnerId;
+  const shouldClearLegacyWorkspace =
+    !persistedWorkspaceOwnerId && hasLegacyWorkspace(state) && !migrationOwnerId;
+  const migratedWorkspace = shouldClearLegacyWorkspace
+    ? clearedLocalWorkspace({
+        operational: state.operational ?? defaultOperational,
+      })
+    : {
+        lessons: hasBrokenText(state.lessons) ? defaultLessons : state.lessons ?? defaultLessons,
+        sessions: state.sessions ?? [],
+        activeSession: state.activeSession ?? null,
+        cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
+        notifications: hasBrokenText(state.notifications)
+          ? defaultNotifications
+          : state.notifications ?? defaultNotifications,
+        classTimerMs: state.classTimerMs ?? 0,
+        classTimerRunning: state.classTimerRunning ?? false,
+        classTimerStartedAt: state.classTimerStartedAt ?? null,
+        operational: state.operational ?? defaultOperational,
+      };
   const migrated = {
     ...stateWithoutLegacyOperational,
     profile,
-    lessons: hasBrokenText(state.lessons) ? defaultLessons : state.lessons ?? defaultLessons,
+    ...migratedWorkspace,
+    localWorkspaceOwnerId,
     recentProgramActivities: hasBrokenText(state.recentProgramActivities)
       ? []
       : (state.recentProgramActivities ?? []).map((activity) => ({
@@ -165,9 +253,8 @@ function migrateMasterStore(persisted: unknown, persistedVersion?: number): Part
         })),
     pendingRecentProgramActivities: [],
     recentActivityOwnerResolved: false,
-    notifications: hasBrokenText(state.notifications) ? defaultNotifications : state.notifications ?? defaultNotifications,
-    cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
     favoriteProgramIdsByOwner,
+    pendingLegacyFavoriteProgramIds,
   };
 
   if (!archiveResult.ok) {
@@ -222,6 +309,30 @@ export const useMasterStore = create<MasterState>()(
         set((state) => ({ programs: state.programs, programsLoaded: true, programsError: 'server' }));
       },
       profile: defaultProfile,
+      localWorkspaceOwnerId: null,
+      clearLocalWorkspace: () =>
+        set((state) => ({
+          ...clearedLocalWorkspace(state),
+        })),
+      clearCurrentOwnerLocalData: () =>
+        set((state) => {
+          const owner = getRecentActivityOwner(state.profile);
+          const ownerIds = new Set(
+            [owner?.ownerId, owner?.emailOwnerId].filter(
+              (ownerId): ownerId is string => Boolean(ownerId),
+            ),
+          );
+          const favoriteProgramIdsByOwner = { ...state.favoriteProgramIdsByOwner };
+          for (const ownerId of ownerIds) delete favoriteProgramIdsByOwner[ownerId];
+          return {
+            ...clearedLocalWorkspace(state),
+            favoriteProgramIdsByOwner,
+            recentProgramActivities: state.recentProgramActivities.filter(
+              (activity) => !ownerIds.has(activity.ownerId),
+            ),
+            pendingRecentProgramActivities: [],
+          };
+        }),
       setProfile: (profile) =>
         set((state) => {
           const nextProfile = state.profile
@@ -230,6 +341,11 @@ export const useMasterStore = create<MasterState>()(
           if (!state.recentActivityOwnerResolved) return { profile: nextProfile };
           const owner = getRecentActivityOwner(nextProfile);
           if (!owner) return { profile: nextProfile };
+          const favorites = claimPendingLegacyFavorites(
+            state.favoriteProgramIdsByOwner,
+            state.pendingLegacyFavoriteProgramIds,
+            owner,
+          );
           return {
             profile: nextProfile,
             recentProgramActivities: flushPendingRecentProgramActivities(
@@ -238,22 +354,24 @@ export const useMasterStore = create<MasterState>()(
               owner,
             ),
             pendingRecentProgramActivities: [],
+            ...favorites,
           };
         }),
       resetProfile: () =>
-        set({
+        set((state) => ({
+          ...clearedLocalWorkspace(state),
+          localWorkspaceOwnerId: null,
           profile: {
             ...defaultProfile,
-            trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
             createdAt: new Date().toISOString(),
           },
           pendingRecentProgramActivities: [],
           recentActivityOwnerResolved: false,
-        }),
+        })),
       syncSubscription: async () => {
         try {
           const res = await fetch('/api/spokedu-master/subscription');
-          if (!res.ok) return;
+          if (!res.ok) return false;
           const json = await res.json() as {
             plan?: string;
             status?: string;
@@ -290,12 +408,14 @@ export const useMasterStore = create<MasterState>()(
                   periodEnd: json.periodEnd ?? null,
                   ...(json.userId ? { id: json.userId } : {}),
                   ...(json.email ? { email: json.email } : {}),
-                  trialEndsAt: json.isAdmin || hasExpiredPaidAccess ? null : (json.trialEndsAt ?? state.profile.trialEndsAt),
+                  trialEndsAt: json.isAdmin || hasExpiredPaidAccess ? null : (json.trialEndsAt ?? null),
                 }
               : state.profile;
             const identityResolved = Boolean(json.userId || json.email);
             if (!identityResolved) {
               return {
+                ...clearedLocalWorkspace(state),
+                localWorkspaceOwnerId: null,
                 profile: nextProfile,
                 pendingRecentProgramActivities: [],
                 recentActivityOwnerResolved: false,
@@ -304,12 +424,25 @@ export const useMasterStore = create<MasterState>()(
             const owner = getRecentActivityOwner(nextProfile);
             if (!owner) {
               return {
+                ...clearedLocalWorkspace(state),
+                localWorkspaceOwnerId: null,
                 profile: nextProfile,
                 pendingRecentProgramActivities: [],
                 recentActivityOwnerResolved: false,
               };
             }
+            const favorites = claimPendingLegacyFavorites(
+              state.favoriteProgramIdsByOwner,
+              state.pendingLegacyFavoriteProgramIds,
+              owner,
+            );
+            const workspace =
+              state.localWorkspaceOwnerId === owner.ownerId
+                ? {}
+                : clearedLocalWorkspace(state);
             return {
+              ...workspace,
+              localWorkspaceOwnerId: owner.ownerId,
               profile: nextProfile,
               recentProgramActivities: flushPendingRecentProgramActivities(
                 state.recentProgramActivities,
@@ -318,26 +451,29 @@ export const useMasterStore = create<MasterState>()(
               ),
               pendingRecentProgramActivities: [],
               recentActivityOwnerResolved: true,
+              ...favorites,
             };
           });
+          return true;
         } catch {
           // Keep current plan when offline.
+          return false;
         }
       },
       operational: defaultOperational,
       setOnline: (online) => set((state) => ({ operational: { ...state.operational, online } })),
-      setLastSyncNow: () => set((state) => ({ operational: { ...state.operational, lastSyncAt: new Date().toISOString() } })),
-      enqueueRetry: (item) => set((state) => ({ operational: { ...state.operational, retryQueue: [item, ...state.operational.retryQueue.filter((queued) => queued.id !== item.id)].slice(0, 30) } })),
-      removeRetry: (id) => set((state) => ({ operational: { ...state.operational, retryQueue: state.operational.retryQueue.filter((item) => item.id !== id) } })),
+      enqueueRetry: (item) => set((state) => state.localWorkspaceOwnerId ? ({ operational: { ...state.operational, retryQueue: [item, ...state.operational.retryQueue.filter((queued) => queued.id !== item.id)].slice(0, 30) } }) : {}),
+      removeRetry: (id) => set((state) => state.localWorkspaceOwnerId ? ({ operational: { ...state.operational, retryQueue: state.operational.retryQueue.filter((item) => item.id !== id) } }) : {}),
       sessions: [],
-      addSession: (session) => set((state) => ({ sessions: [session, ...state.sessions].slice(0, 200), operational: { ...state.operational, lastSyncAt: new Date().toISOString() } })),
+      addSession: (session) => set((state) => state.localWorkspaceOwnerId ? ({ sessions: [session, ...state.sessions].slice(0, 200), operational: { ...state.operational, lastSyncAt: new Date().toISOString() } }) : {}),
       activeSession: null,
-      startSession: (drillId, drillName) => set({ activeSession: { drillId, drillName, times: [], cueCount: 0, running: true, paused: false } }),
-      recordTime: (ms) => set((state) => (state.activeSession ? { activeSession: { ...state.activeSession, times: [...state.activeSession.times, ms], cueCount: state.activeSession.cueCount + 1 } } : {})),
-      pauseSession: () => set((state) => ({ activeSession: state.activeSession ? { ...state.activeSession, paused: true } : null })),
-      resumeSession: () => set((state) => ({ activeSession: state.activeSession ? { ...state.activeSession, paused: false } : null })),
+      startSession: (drillId, drillName) => set((state) => state.localWorkspaceOwnerId ? ({ activeSession: { drillId, drillName, times: [], cueCount: 0, running: true, paused: false } }) : {}),
+      recordTime: (ms) => set((state) => (state.localWorkspaceOwnerId && state.activeSession ? { activeSession: { ...state.activeSession, times: [...state.activeSession.times, ms], cueCount: state.activeSession.cueCount + 1 } } : {})),
+      pauseSession: () => set((state) => state.localWorkspaceOwnerId ? ({ activeSession: state.activeSession ? { ...state.activeSession, paused: true } : null }) : {}),
+      resumeSession: () => set((state) => state.localWorkspaceOwnerId ? ({ activeSession: state.activeSession ? { ...state.activeSession, paused: false } : null }) : {}),
       endActiveSession: () => {
-        const { activeSession, addSession } = get();
+        const { activeSession, addSession, localWorkspaceOwnerId } = get();
+        if (!localWorkspaceOwnerId) return null;
         if (!activeSession?.times.length) {
           set({ activeSession: null });
           return null;
@@ -360,9 +496,9 @@ export const useMasterStore = create<MasterState>()(
         return session;
       },
       lessons: defaultLessons,
-      addLesson: (lesson) => set((state) => ({ lessons: [...state.lessons, lesson] })),
-      toggleLessonDone: (id) => set((state) => ({ lessons: state.lessons.map((lesson) => (lesson.id === id ? { ...lesson, done: !lesson.done } : lesson)) })),
-      deleteLessonById: (id) => set((state) => ({ lessons: state.lessons.filter((lesson) => lesson.id !== id) })),
+      addLesson: (lesson) => set((state) => state.localWorkspaceOwnerId ? ({ lessons: [...state.lessons, lesson] }) : {}),
+      toggleLessonDone: (id) => set((state) => state.localWorkspaceOwnerId ? ({ lessons: state.lessons.map((lesson) => (lesson.id === id ? { ...lesson, done: !lesson.done } : lesson)) }) : {}),
+      deleteLessonById: (id) => set((state) => state.localWorkspaceOwnerId ? ({ lessons: state.lessons.filter((lesson) => lesson.id !== id) }) : {}),
       recentProgramActivities: [],
       pendingRecentProgramActivities: [],
       recentActivityOwnerResolved: false,
@@ -398,6 +534,11 @@ export const useMasterStore = create<MasterState>()(
           };
         }),
       favoriteProgramIdsByOwner: {},
+      pendingLegacyFavoriteProgramIds: [],
+      getFavoriteProgramIds: (ownerId) =>
+        getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId),
+      isFavoriteProgram: (ownerId, programId) =>
+        isFavoriteByOwner(get().favoriteProgramIdsByOwner, ownerId, programId),
       toggleFavoriteProgram: (ownerId, programId) =>
         set((state) => ({
           favoriteProgramIdsByOwner: toggleFavoriteByOwner(state.favoriteProgramIdsByOwner, ownerId, programId),
@@ -405,38 +546,41 @@ export const useMasterStore = create<MasterState>()(
       cart: [],
       addToCart: (item) =>
         set((state) => {
+          if (!state.localWorkspaceOwnerId) return {};
           const existing = state.cart.find((cartItem) => cartItem.id === item.id);
           return { cart: existing ? state.cart.map((cartItem) => (cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + item.qty } : cartItem)) : [...state.cart, item] };
         }),
-      updateQty: (id, delta) => set((state) => ({ cart: state.cart.map((cartItem) => (cartItem.id === id ? { ...cartItem, qty: cartItem.qty + delta } : cartItem)).filter((cartItem) => cartItem.qty > 0) })),
-      clearCart: () => set({ cart: [] }),
+      updateQty: (id, delta) => set((state) => state.localWorkspaceOwnerId ? ({ cart: state.cart.map((cartItem) => (cartItem.id === id ? { ...cartItem, qty: cartItem.qty + delta } : cartItem)).filter((cartItem) => cartItem.qty > 0) }) : {}),
+      clearCart: () => set((state) => state.localWorkspaceOwnerId ? ({ cart: [] }) : {}),
       notifications: defaultNotifications,
-      markRead: (id) => set((state) => ({ notifications: state.notifications.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)) })),
-      markAllRead: () => set((state) => ({ notifications: state.notifications.map((notification) => ({ ...notification, read: true })) })),
+      markRead: (id) => set((state) => state.localWorkspaceOwnerId ? ({ notifications: state.notifications.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)) }) : {}),
+      markAllRead: () => set((state) => state.localWorkspaceOwnerId ? ({ notifications: state.notifications.map((notification) => ({ ...notification, read: true })) }) : {}),
       classTimerMs: 0,
       classTimerRunning: false,
       classTimerStartedAt: null,
       classTimerStart: () => set((state) => {
-        if (state.classTimerRunning) return {};
+        if (!state.localWorkspaceOwnerId || state.classTimerRunning) return {};
         return { classTimerRunning: true, classTimerStartedAt: Date.now() };
       }),
       classTimerStop: () => set((state) => {
-        if (!state.classTimerRunning) return {};
+        if (!state.localWorkspaceOwnerId || !state.classTimerRunning) return {};
         return { classTimerRunning: false, classTimerMs: state.classTimerMs + (state.classTimerStartedAt ? Date.now() - state.classTimerStartedAt : 0), classTimerStartedAt: null };
       }),
-      classTimerReset: () => set({ classTimerMs: 0, classTimerRunning: false, classTimerStartedAt: null }),
+      classTimerReset: () => set((state) => state.localWorkspaceOwnerId ? ({ classTimerMs: 0, classTimerRunning: false, classTimerStartedAt: null }) : {}),
     }),
     {
       name: 'spokedu-master-store',
-      version: 13,
+      version: 15,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
+        localWorkspaceOwnerId: state.localWorkspaceOwnerId,
         operational: state.operational,
         sessions: state.sessions,
         lessons: state.lessons,
         recentProgramActivities: state.recentProgramActivities,
         favoriteProgramIdsByOwner: state.favoriteProgramIdsByOwner,
+        pendingLegacyFavoriteProgramIds: state.pendingLegacyFavoriteProgramIds,
         cart: state.cart,
         notifications: state.notifications,
       }),

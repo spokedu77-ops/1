@@ -84,7 +84,10 @@ describe('official SPOMOVE runtime contract', () => {
     expect(source).not.toMatch(/spomove-presets|engineMode|requestedLevel|requestedDuration|requestedSpeed/);
     expect(source).not.toMatch(/\bdrills\b|loadDrills|drills\[0\]/);
     expect(source).toContain('지원하지 않는 SPOMOVE 활동입니다.');
-    expect(source).toContain("fetch('/api/spokedu-master/access'");
+    expect(source).not.toContain("fetch('/api/spokedu-master/access'");
+
+    const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
+    expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
   });
 
   it('keeps ClassMode and Plan independent from drill metadata', () => {
