@@ -25,7 +25,7 @@ import {
 } from '../officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 
-type SessionState = 'idle' | 'running' | 'done';
+type SessionState = 'idle' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile' | 'class';
 
 function normalizeMode(mode: string | null): LaunchMode {
@@ -105,6 +105,36 @@ function OfficialEngineBriefing({
               <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
             </div>
           ))}
+        </div>
+
+        <div className="grid gap-4 border-t border-white/10 px-5 py-5 sm:grid-cols-[1fr_220px] sm:px-7">
+          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">실행 준비</p>
+            <ol className="mt-3 grid gap-2 text-sm font-bold text-white/78 sm:grid-cols-2">
+              {['1. 프로그램', '2. 준비물', '3. 패드 배치', '4. 진행 방식', '5. 실행 설정', '6. 시작'].map((item) => (
+                <li key={item} className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">{item}</li>
+              ))}
+            </ol>
+            <div className="mt-3 flex flex-wrap gap-2 text-[12px] font-black text-white/72">
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">진행 시간: {preset.engine.flowDuration ?? preset.rounds} 기준</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">반복 횟수: {preset.rounds}회</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">자극 속도: {preset.cueSeconds}초</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">음향: 사용 가능</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">전체 화면: 지원</span>
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white p-4 text-slate-950">
+            <p className="text-sm font-black">기본 2×2 패드 배치</p>
+            <div className="mt-3">
+              <div className="grid grid-cols-2 gap-2" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
+                {['빨강', '노랑', '초록', '파랑'].map((label, index) => (
+                  <div key={label} className="flex min-h-14 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6'][index] }}>
+                    {label}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-3 border-t border-white/10 px-5 pb-5 sm:grid-cols-4 sm:px-7 sm:pb-7">
@@ -202,6 +232,9 @@ function SpomoveSessionContent() {
   const [state, setState] = useState<SessionState>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
+  const startLockedRef = useRef(false);
+  const sessionStartedAtRef = useRef<number | null>(null);
+  const [actualDurationSec, setActualDurationSec] = useState(0);
 
   const stopBgm = useCallback(() => {
     try {
@@ -221,7 +254,8 @@ function SpomoveSessionContent() {
   }, []);
 
   const startOfficialSession = useCallback(() => {
-    if (!officialPreset || bgmLoading || !officialPreset.isReady) return;
+    if (!officialPreset || bgmLoading || !officialPreset.isReady || startLockedRef.current) return;
+    startLockedRef.current = true;
     stopBgm();
     if (launchMode === 'projector' && !document.fullscreenElement) {
       void document.documentElement.requestFullscreen?.().catch(() => undefined);
@@ -236,6 +270,7 @@ function SpomoveSessionContent() {
       player.fadeIn(180);
     }
     setState('running');
+    sessionStartedAtRef.current = Date.now();
     const displayModel = getSpomovePresetDisplayModel(officialPreset);
     recordRecentProgramActivity({
       programId: officialPreset.id,
@@ -243,7 +278,17 @@ function SpomoveSessionContent() {
       action: 'spomove_started',
       occurredAt: new Date().toISOString(),
     });
+    window.setTimeout(() => {
+      startLockedRef.current = false;
+    }, 400);
   }, [bgmLoading, launchMode, officialPreset, recordRecentProgramActivity, selectedBgmPath, soundEnabled, stopBgm]);
+
+  const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>) => {
+    stopBgm();
+    const startedAt = sessionStartedAtRef.current;
+    setActualDurationSec(startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : 0);
+    setState(nextState);
+  }, [stopBgm]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -275,12 +320,10 @@ function SpomoveSessionContent() {
         flowFeatures={officialPreset.engine.flowFeatures}
         flowDuration={officialPreset.engine.flowDuration}
         onExit={() => {
-          stopBgm();
-          router.push('/spokedu-master/spomove');
+          finishSession('ended');
         }}
         onComplete={() => {
-          stopBgm();
-          setState('done');
+          finishSession('done');
         }}
       />
     );
@@ -312,31 +355,38 @@ function SpomoveSessionContent() {
         />
       ) : null}
 
-      {state === 'done' ? (
+      {(state === 'done' || state === 'ended') ? (
         <div className="flex h-full flex-col items-center justify-center px-8 text-center">
           <div className="grid h-24 w-24 animate-[spmCuePop_0.28s_cubic-bezier(.34,1.56,.64,1)_both] place-items-center rounded-full bg-white/10">
             <Check size={42} color="#34d399" />
           </div>
-          <h1 className="mt-6 text-[36px] font-black">큰 화면 실행 완료</h1>
+          <p className="mt-6 text-sm font-black text-indigo-200">{state === 'done' ? '완료' : '중도 종료'}</p>
+          <h1 className="mt-2 text-[36px] font-black">{state === 'done' ? 'SPOMOVE 실행 완료' : 'SPOMOVE 실행 종료됨'}</h1>
           <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-indigo-200/70">{program?.title ?? officialPreset.title}</p>
-          <div className={`mt-7 grid w-full max-w-[680px] gap-2 ${programId ? 'grid-cols-2 sm:grid-cols-3' : 'grid-cols-2'}`}>
+          <div className="mt-4 grid w-full max-w-[520px] gap-2 rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left text-sm font-bold text-white/80 sm:grid-cols-2">
+            <p>실제 진행 시간: {actualDurationSec > 0 ? `${actualDurationSec}초` : '기록 없음'}</p>
+            <p>수행 횟수: {officialPreset.rounds}회 기준</p>
+          </div>
+          <div className="mt-7 grid w-full max-w-[680px] gap-2 sm:grid-cols-2">
+            <Link href={`/spokedu-master/class-record?program=${officialPreset.id}`} className="flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black">
+              <ClipboardList size={14} className="mr-1.5" />
+              수업 기록 작성
+            </Link>
             <button type="button" onClick={startOfficialSession} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-bold text-white shadow-[0_16px_44px_rgba(79,70,229,0.26)]">
               <RotateCcw size={16} />
-              다시 시작
+              같은 프로그램 다시 실행
             </button>
-            {programId ? (
-              <Link href={`/spokedu-master/report?program=${programId}`} className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-white text-sm font-black text-black">
-                <ClipboardList size={14} />
-                안내문
-              </Link>
-            ) : null}
             <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
-              프로그램 선택으로
+              다른 프로그램 선택
+            </Link>
+            <Link href="/spokedu-master/activity" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
+              내 활동·기록으로
             </Link>
           </div>
           {programId ? (
-            <Link href={`/spokedu-master/class-record?program=${programId}`} className="mt-4 text-xs font-bold text-white/38 underline-offset-4 hover:text-white/70 hover:underline">
-              수업 기록으로 오늘 활동 남기기
+            <Link href={`/spokedu-master/class-record?program=${programId}`} className="mt-4 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black">
+              <ClipboardList size={14} className="mr-1.5" />
+              수업 기록 작성
             </Link>
           ) : null}
         </div>

@@ -1,17 +1,18 @@
 'use client';
 
-export type AssetHubTabId = 'spomove' | 'bgm';
+export type AssetHubTabId = 'spomove' | 'bgm' | 'dive';
 
 export interface AssetHubTabsProps {
   activeTab: AssetHubTabId;
   onTabChange: (tab: AssetHubTabId) => void;
 }
 
-const TAB_ORDER: AssetHubTabId[] = ['spomove', 'bgm'];
+const TAB_ORDER: AssetHubTabId[] = ['spomove', 'bgm', 'dive'];
 
 const TAB_LABELS: Record<AssetHubTabId, string> = {
   spomove: 'SPOMOVE · 색지각',
   bgm: 'BGM',
+  dive: 'DIVE 환경',
 };
 
 export function AssetHubTabs({ activeTab, onTabChange }: AssetHubTabsProps) {

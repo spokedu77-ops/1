@@ -222,6 +222,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
       </header>
 
       <div className="mx-auto w-full max-w-[1360px] space-y-4 px-4 py-6 sm:px-6 lg:px-8">
+        <section className="rounded-[14px] border border-slate-200 bg-white p-4 text-[12px] font-bold text-slate-600">
+          <p className="text-[13px] font-black text-slate-950">전체 수업 자료 구성</p>
+          <ol className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
+            {['1. 수업 개요', '2. 준비물·공간', '3. 수업 목표', '4. 활동 진행 순서', '5. 규칙과 지도 포인트', '6. 난이도 조절·변형', '7. 안전 유의사항', '8. 실행 행동'].map((item) => (
+              <li key={item} className="break-words rounded-lg bg-slate-50 px-3 py-2">{item}</li>
+            ))}
+          </ol>
+        </section>
         <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-6">
           <LessonTitle
             title={title}
@@ -383,9 +391,17 @@ export default function LibraryDetailView({ id }: { id: string }) {
         ) : null}
 
         <div
-          className="sticky bottom-[78px] z-40 grid grid-cols-3 gap-1.5 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:bottom-0"
+          className="sticky bottom-[78px] z-40 grid grid-cols-2 gap-1.5 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-6 lg:bottom-0"
           style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
         >
+          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
+            <MonitorPlay className="h-4 w-4" />
+            수업 실행
+          </Link>
+          <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
+            <FileText className="h-4 w-4" />
+            수업 기록 작성
+          </Link>
           <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
             <Check className="h-4 w-4" />
             수업 기록
@@ -411,6 +427,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
             즐겨찾기
           </button>
+          <Link href={libraryReturnHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700">
+            <ArrowLeft className="h-4 w-4" />
+            라이브러리로
+          </Link>
         </div>
       </div>
 

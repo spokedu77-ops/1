@@ -36,13 +36,13 @@ export default function DirectorPage() {
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>director dashboard</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 수업 운영</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          {centerName}의 수업안 사용, 기록률, 학생 케어 신호를 한눈에 확인합니다.
+          {centerName}의 수업 자료 사용, 기록률, 학생 케어 신호를 한눈에 확인합니다.
         </p>
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
           {[
-            { label: '수업안 배포', href: '/spokedu-master/library', icon: BookOpen },
+            { label: '라이브러리', href: '/spokedu-master/library', icon: BookOpen },
             { label: 'SPOMOVE 운영', href: '/spokedu-master/spomove', icon: MonitorPlay },
-            { label: '설명 문구', href: '/spokedu-master/report', icon: FileText },
+            { label: '안내문', href: '/spokedu-master/report', icon: FileText },
           ].map(({ label, href, icon: Icon }) => (
             <Link key={label} href={href} className="flex h-12 items-center justify-center gap-2 rounded-[14px] text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
               <Icon size={15} />
@@ -90,7 +90,7 @@ export default function DirectorPage() {
       <section className="mx-[22px] mt-5 grid gap-3 sm:mx-8 md:grid-cols-3 lg:mx-10">
         <Link href="/spokedu-master/report" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(99,102,241,0.14)' }}><FileText size={19} color="var(--spm-acc)" /></span>
-          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>센터 설명 문구</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>수업 가치 문구 정리</span></span>
+          <span><strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>센터 안내문</strong><span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>수업 가치 안내 정리</span></span>
         </Link>
         <Link href="/spokedu-master/class-record" className="flex items-center gap-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <span className="grid h-11 w-11 place-items-center rounded-[12px]" style={{ background: 'rgba(16,185,129,0.14)' }}><MessageCircle size={19} color="var(--spm-grn)" /></span>
@@ -111,7 +111,7 @@ export default function DirectorPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
           <h2 className="mt-2 text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>센터 플랜 사용 중</h2>
           <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            센터 수업 자료와 기관용 설명 문구를 활용할 수 있습니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
+            센터 수업 자료와 기관용 안내문을 활용할 수 있습니다. 현재 수업 계획 {lessons.length}개가 운영 중입니다.
           </p>
           <div className="mt-5 grid grid-cols-3 gap-2">
             {[
@@ -131,7 +131,7 @@ export default function DirectorPage() {
           <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>center plan</p>
           <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>Center 플랜으로 전환하기</h2>
           <p className="mt-2 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-            센터 수업 자료와 기관용 설명 문구를 활용하려면 Center 플랜을 선택하세요. 추가 강사 계정이나 기관 도입은 별도 문의로 안내합니다.
+            센터 수업 자료와 기관용 안내문을 활용하려면 Center 플랜을 선택하세요. 추가 강사 계정이나 기관 도입은 별도 문의로 안내합니다.
           </p>
           <Link
             href="/spokedu-master/payment?plan=team"

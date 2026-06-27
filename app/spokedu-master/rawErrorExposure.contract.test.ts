@@ -39,6 +39,8 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     const students = read('app/api/spokedu-master/students/route.ts');
     const studentDelete = read('app/api/spokedu-master/students/[id]/route.ts');
     const explanations = read('app/api/spokedu-master/explanations/route.ts');
+    const classRecords = read('app/api/spokedu-master/class-records/route.ts');
+    const programs = read('app/api/spokedu-master/programs/route.ts');
 
     expect(students).not.toContain('{ error: error.message }');
     expect(students).not.toContain('{ error: existingError.message }');
@@ -47,6 +49,11 @@ describe('SPOKEDU MASTER raw error exposure cleanup', () => {
     expect(explanations).not.toContain('{ error: error.message }');
     expect(explanations).not.toContain("insertError?.message ?? 'Explanation insert failed'");
     expect(explanations).not.toContain("error?.message ?? 'Explanation reload failed'");
+    expect(classRecords).not.toContain('{ error: error.message }');
+    expect(classRecords).not.toContain('{ error: existingError.message }');
+    expect(classRecords).not.toContain('childError.message');
+    expect(classRecords).not.toContain("insertError?.message ?? 'Record insert failed'");
+    expect(programs).not.toContain('{ error: error.message }');
   });
 
   it('keeps monitoring context free of payment keys and full queries', () => {

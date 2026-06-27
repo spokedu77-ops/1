@@ -4,9 +4,11 @@ const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
-const REQUIRED_ENV = ['SPOKEDU_MASTER_QA_ID', 'SPOKEDU_MASTER_QA_PASSWORD'];
-const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || '';
-const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || '';
+const ENV_PREFLIGHT_ONLY = process.argv.includes('--env-preflight');
+const qaIdSource = process.env.SPOKEDU_MASTER_QA_ID ? 'official' : process.env.SPM_QA_ID ? 'legacy' : 'missing';
+const qaPasswordSource = process.env.SPOKEDU_MASTER_QA_PASSWORD ? 'official' : process.env.SPM_QA_PASSWORD ? 'legacy' : 'missing';
+const QA_ID = process.env.SPOKEDU_MASTER_QA_ID ?? process.env.SPM_QA_ID ?? '';
+const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD ?? process.env.SPM_QA_PASSWORD ?? '';
 const MASTER_DELETE_CONFIRMATION = 'MASTER \uB370\uC774\uD130 \uC0AD\uC81C';
 const MASTER_DELETE_SUCCESS = 'MASTER \uC6B4\uC601 \uB370\uC774\uD130\uB97C \uC0AD\uC81C\uD588\uC2B5\uB2C8\uB2E4.';
 
@@ -273,7 +275,15 @@ async function loadPlaywright() {
 }
 
 function assertRequiredEnv() {
-  const missing = REQUIRED_ENV.filter((name) => !process.env[name]);
+  const idLoaded = QA_ID.trim().length > 0;
+  const passwordLoaded = QA_PASSWORD.trim().length > 0;
+  console.log(`QA ID loaded: ${idLoaded ? 'yes' : 'no'}`);
+  console.log(`QA password loaded: ${passwordLoaded ? 'yes' : 'no'}`);
+  console.log(`Credential source: ${qaIdSource === 'official' && qaPasswordSource === 'official' ? 'official' : qaIdSource === 'legacy' || qaPasswordSource === 'legacy' ? 'legacy' : 'missing'}`);
+  const missing = [
+    ...(!idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
+    ...(!passwordLoaded ? ['SPOKEDU_MASTER_QA_PASSWORD or SPM_QA_PASSWORD'] : []),
+  ];
   if (missing.length > 0) {
     console.error(`Missing required environment variable(s): ${missing.join(', ')}`);
     process.exit(1);
@@ -1288,6 +1298,10 @@ async function main() {
   await withTimeout('commercial smoke suite', TOTAL_TIMEOUT_MS, async () => {
     logStep('[setup] checking required environment');
     assertRequiredEnv();
+    if (ENV_PREFLIGHT_ONLY) {
+      logStep('[setup] env preflight passed');
+      return;
+    }
     logStep('[setup] checking dev server');
     await assertDevServerReachable();
     logStep('[setup] dev server reachable');

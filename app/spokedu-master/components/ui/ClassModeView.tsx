@@ -97,6 +97,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
   const [stepRemaining, setStepRemaining] = useState(0);
   const [stepRunning, setStepRunning] = useState(false);
   const [stepExpired, setStepExpired] = useState(false);
+  const [stepNavLocked, setStepNavLocked] = useState(false);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
@@ -186,6 +187,14 @@ export default function ClassModeView({ programId }: { programId: string }) {
     setStepExpired(false);
   };
 
+  const moveStep = (direction: -1 | 1) => {
+    if (stepNavLocked) return;
+    setStepNavLocked(true);
+    const maxIndex = Math.max(0, (lesson?.cards.length ?? 1) - 1);
+    setStepIndex((index) => Math.max(0, Math.min(maxIndex, index + direction)));
+    window.setTimeout(() => setStepNavLocked(false), 220);
+  };
+
   if (!program || !lesson) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center bg-[#070812] px-6 text-center text-white">
@@ -243,17 +252,13 @@ export default function ClassModeView({ programId }: { programId: string }) {
           </div>
 
           <div className="mt-8 flex w-full max-w-[460px] flex-col gap-3">
-            <Link href={`/spokedu-master/report?program=${program.id}`} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-slate-950">
+            <Link href={`/spokedu-master/class-record?program=${program.id}`} className="flex h-14 items-center justify-center gap-2 rounded-2xl bg-white text-sm font-black text-slate-950">
               <FileText className="h-4 w-4" />
-              안내문 작성
+              수업 기록 작성
             </Link>
-            <Link href={lesson.spomovePreset ? getSpomoveSessionHref(program, lesson.spomovePreset) : '/spokedu-master/spomove'} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-black text-white">
-              <MonitorPlay className="h-4 w-4" />
-              SPOMOVE 다시 실행
+            <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.055] text-sm font-black text-white/65">
+              라이브러리로
             </Link>
-            <button type="button" onClick={() => router.back()} className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.055] text-sm font-black text-white/55">
-              나가기
-            </button>
           </div>
         </section>
       ) : (
@@ -363,6 +368,11 @@ export default function ClassModeView({ programId }: { programId: string }) {
                   <button type="button" onClick={resetStepTimer} className="rounded-full bg-white/[0.07] px-3 py-1 text-xs font-black text-white/45">
                     초기화
                   </button>
+                  {!stepExpired ? (
+                    <button type="button" onClick={() => setStepRunning((running) => !running)} className="rounded-full bg-white/[0.07] px-3 py-1 text-xs font-black text-white/65">
+                      {stepRunning ? '일시정지' : '재개'}
+                    </button>
+                  ) : null}
                 </>
               ) : (
                 <>
@@ -380,8 +390,8 @@ export default function ClassModeView({ programId }: { programId: string }) {
           <footer className="flex shrink-0 items-center justify-between px-6 pt-6" style={{ paddingBottom: 'max(28px, env(safe-area-inset-bottom))' }}>
             <button
               type="button"
-              onClick={() => setStepIndex((index) => Math.max(0, index - 1))}
-              disabled={stepIndex === 0}
+              onClick={() => moveStep(-1)}
+              disabled={stepIndex === 0 || stepNavLocked}
               className="flex h-14 items-center gap-2 rounded-2xl bg-white/[0.07] px-6 text-sm font-black text-white/65 transition disabled:opacity-25"
             >
               <ChevronLeft className="h-5 w-5" />
@@ -394,7 +404,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
                 <CheckCircle2 className="h-5 w-5" />
               </button>
             ) : (
-              <button type="button" onClick={() => setStepIndex((index) => Math.min(lesson.cards.length - 1, index + 1))} className="flex h-14 items-center gap-2 rounded-2xl bg-indigo-500 px-8 text-sm font-black text-white">
+              <button type="button" onClick={() => moveStep(1)} disabled={stepNavLocked} className="flex h-14 items-center gap-2 rounded-2xl bg-indigo-500 px-8 text-sm font-black text-white disabled:opacity-60">
                 다음
                 <ChevronRight className="h-5 w-5" />
               </button>

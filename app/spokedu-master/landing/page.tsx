@@ -6,8 +6,8 @@ const FEATURES = [
     icon: BookOpen,
     color: 'rgba(99,102,241,0.18)',
     ic: 'var(--spm-acc)',
-    title: '프로그램 라이브러리',
-    desc: '유아부터 초등까지, 실내외 환경에 맞는 100여 개 수업안이 즉시 사용 가능한 형태로 정리되어 있습니다. 태그와 검색으로 오늘 쓸 수업을 30초 안에 찾습니다.',
+    title: '라이브러리',
+    desc: '유아부터 초등까지, 실내외 환경에 맞는 100여 개 수업 자료가 즉시 사용 가능한 형태로 정리되어 있습니다. 태그와 검색으로 오늘 쓸 수업을 30초 안에 찾습니다.',
     items: ['연령·환경·준비물 필터', '즐겨찾기와 최근 사용', '수업 준비 키트 연결'],
   },
   {
@@ -36,7 +36,7 @@ const PRICING = [
     price: '39,900',
     period: '30일',
     desc: '전문 강사가 매주 쓰는 수업 준비 환경',
-    includes: ['전체 프로그램 라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 도구 전체', '설명 문구 (학부모·기관·학교용)'],
+    includes: ['라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 도구 전체', '안내문 (학부모·기관·학교용)'],
     accent: 'rgba(99,102,241,0.18)',
     border: 'rgba(99,102,241,0.42)',
     badgeColor: 'var(--spm-acc)',
@@ -49,7 +49,7 @@ const PRICING = [
     price: '79,000',
     period: '30일',
     desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
-    includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 설명 문구', '추가 계정·기관 도입 별도 문의'],
+    includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
     accent: 'rgba(16,185,129,0.12)',
     border: 'rgba(16,185,129,0.38)',
     badgeColor: 'var(--spm-grn)',
@@ -65,7 +65,7 @@ const STATS = [
 ];
 
 const FLOW = [
-  { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업안을 30초 안에 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
+  { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업 자료를 30초 안에 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
   { num: '2', label: 'SPOMOVE 큰 화면 실행', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
   { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
 ] as const;
@@ -80,21 +80,21 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 export const metadata = {
   title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-  description: '수업안과 영상, SPOMOVE 큰 화면 반응 활동, 설명 문구를 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
+  description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
     siteName: 'SPOKEDU MASTER',
     title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-    description: '수업안과 영상, SPOMOVE 큰 화면 반응 활동, 설명 문구를 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
+    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
     locale: 'ko_KR',
     images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
     title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-    description: '수업안과 영상, SPOMOVE 큰 화면 반응 활동, 설명 문구를 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
+    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
@@ -136,7 +136,7 @@ export default function LandingPage() {
               SPOKEDU<br />MASTER
             </h1>
             <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
-              수업안과 영상, SPOMOVE 큰 화면 반응 활동, 학부모 설명 문구를 이용합니다.
+              수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 이용합니다.
             </p>
             <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
               오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.

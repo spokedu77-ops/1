@@ -176,6 +176,21 @@ function getCardMetaLine(program: Program): string {
   return [target, space, core].filter(Boolean).join(' · ');
 }
 
+function getCardDecisionItems(program: Program) {
+  const target = parseMasterTargets(program.grade)[0];
+  const space = parseMasterSpaces(program.space)[0];
+  const bodyFn = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction)[0];
+  const movement = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.movement)[0];
+  const activityType = bodyFn ?? movement ?? getLessonTheme(program);
+  return [
+    target ? `대상 ${TARGET_LABEL[target] ?? target}` : null,
+    program.duration ? `${program.duration}분` : null,
+    space && !isPlaceholderText(space) ? `공간 ${space}` : null,
+    activityType ? `활동 ${MOVEMENT_LABEL[activityType] ?? activityType}` : null,
+    program.equipment.length ? `준비물 ${program.equipment.length}개` : '준비물 없음',
+  ].filter(Boolean);
+}
+
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
@@ -209,6 +224,7 @@ function ProgramCard({
   const heroImage = getHeroImage(program);
   const meta = getCardMetaLine(program);
   const hasVideo = programHasPlayableVideo(program);
+  const decisionItems = getCardDecisionItems(program);
 
   return (
     <article className="group relative">
@@ -308,6 +324,9 @@ function ProgramCard({
         <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
       </button>
 
+      <button type="button" onClick={onPreview} className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+        수업 미리보기
+      </button>
       <div className="mt-2 grid grid-cols-2 gap-2">
         <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
           전체 수업 자료 보기
@@ -315,6 +334,11 @@ function ProgramCard({
         <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
           수업 기록 작성
         </Link>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {decisionItems.map((item) => (
+          <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-black text-slate-600">{item}</span>
+        ))}
       </div>
     </article>
   );

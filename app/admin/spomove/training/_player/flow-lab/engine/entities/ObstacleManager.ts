@@ -64,6 +64,14 @@ interface ShardEntity {
   type: 'shard' | 'coin';
 }
 
+// ─── GLB 템플릿 (enhanced 모드 전용) ─────────────────────────────────────────
+
+export interface ObstacleGlbTemplates {
+  crateTemplate:     THREE.Object3D | null; // dive_obstacle_crate_a.glb
+  spaceshipTemplate: THREE.Object3D | null; // dive_duck_spaceship.glb
+  wallTemplate:      THREE.Object3D | null; // dive_punch_wall.glb
+}
+
 // ─── Callbacks ───────────────────────────────────────────────────────────────
 
 export interface ObstacleCallbacks {
@@ -95,10 +103,25 @@ export class ObstacleManager {
   private goldSpawned = 0;
   private readonly _tmpVec = new THREE.Vector3();
 
-  constructor(scene: THREE.Scene, bridgeLength: number, cb: ObstacleCallbacks = {}) {
+  // GLB 시각 템플릿 (clone(true)로 인스턴스 생성 — geometry/material 공유)
+  private crateTemplate:     THREE.Object3D | null = null;
+  private spaceshipTemplate: THREE.Object3D | null = null;
+  private wallTemplate:      THREE.Object3D | null = null;
+
+  constructor(
+    scene: THREE.Scene,
+    bridgeLength: number,
+    cb: ObstacleCallbacks = {},
+    glbTemplates?: ObstacleGlbTemplates,
+  ) {
     this.scene = scene;
     this.bridgeLength = bridgeLength;
     this.cb = cb;
+    if (glbTemplates) {
+      this.crateTemplate     = glbTemplates.crateTemplate;
+      this.spaceshipTemplate = glbTemplates.spaceshipTemplate;
+      this.wallTemplate      = glbTemplates.wallTemplate;
+    }
   }
 
   resetGold(budget: number): void {
@@ -334,6 +357,25 @@ export class ObstacleManager {
       g.add(glow);
     }
 
+    // ── GLB 시각 치환 (enhanced 모드) ─────────────────────────────────────────
+    // 기존 절차적 geometry는 판정/로직용으로 유지 (invisible)
+    // GLB clone이 visible 시각 자산
+    const template = isReach ? this.wallTemplate : this.crateTemplate;
+    if (template) {
+      const childList = [...g.children];
+      for (const c of childList) c.visible = false; // 기존 메시 숨김
+      const glbClone = template.clone(true);
+      glbClone.frustumCulled = false;
+      glbClone.traverse((obj) => {
+        const m = obj as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.frustumCulled = false;
+      });
+      // 벽(isReach)은 브릿지 표면(Y=40) 위에 배치, 크레이트는 그룹 Y=40에서 Y=0
+      if (isReach) glbClone.position.y = 40;
+      g.add(glbClone);
+    }
+
     return g;
   }
 
@@ -466,6 +508,22 @@ export class ObstacleManager {
       }),
     );
     group.add(glow);
+
+    // ── GLB 우주선 시각 치환 (enhanced 모드) ──────────────────────────────────
+    // 기존 절차적 UFO 메시: visible=false (invisible 판정 용도)
+    // GLB spaceship: 부모 그룹의 hover·bank 애니메이션 그대로 상속
+    if (this.spaceshipTemplate) {
+      const childList = [...group.children];
+      for (const c of childList) c.visible = false;
+      const ship = this.spaceshipTemplate.clone(true);
+      ship.frustumCulled = false;
+      ship.traverse((obj) => {
+        const m = obj as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.frustumCulled = false;
+      });
+      group.add(ship);
+    }
 
     group.position.set(0, UFO_HEIGHT, -(this.bridgeLength * 0.2));
     bridge.mesh.add(group);

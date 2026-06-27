@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CircleUserRound, ClipboardList, Home, MessageSquare, Search, Tv, Wifi, WifiOff } from 'lucide-react';
+import { BookOpen, CircleUserRound, FileText, Home, Search, Tv, Wifi, WifiOff } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useOperationalStatus } from '../../store';
@@ -9,8 +9,8 @@ const APP_LINKS = [
   { href: '/spokedu-master/dashboard', label: '홈', Icon: Home },
   { href: '/spokedu-master/library', label: '라이브러리', Icon: BookOpen },
   { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Tv },
-  { href: '/spokedu-master/report', label: '안내문', Icon: MessageSquare },
-  { href: '/spokedu-master/class-record', label: '수업 기록', Icon: ClipboardList },
+  { href: '/spokedu-master/activity', label: '내 활동·기록', Icon: FileText },
+  { href: '/spokedu-master/profile', label: '프로필', Icon: CircleUserRound },
 ] as const;
 
 function isActivePath(pathname: string, href: string) {

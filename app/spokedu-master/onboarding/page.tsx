@@ -10,7 +10,7 @@ const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등
 const PROGRAM_TYPES = ['놀이체육', 'SPOMOVE', '민첩성', '협동 활동', '체력'];
 const STEP_LABELS = ['환경', '연결', '프로필', '시작'];
 const STARTER_PACK = [
-  { icon: BookOpen, title: '추천 수업안', desc: '오늘 바로 열 수 있는 대표 수업 흐름' },
+  { icon: BookOpen, title: '추천 수업 자료', desc: '오늘 바로 열 수 있는 대표 수업 흐름' },
   { icon: MonitorPlay, title: 'TV·빔 실행', desc: '현장에서 바로 시작하는 SPOMOVE 활동' },
   { icon: Clipboard, title: '수업 기록', desc: '진행한 수업을 다음 준비로 연결' },
 ] as const;
@@ -104,7 +104,7 @@ export default function OnboardingPage() {
           <div className="mb-8">
             <p className="text-[12px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
             <h1 className="mt-3 text-[34px] font-black leading-[1.12] md:text-[48px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>수업 환경에 맞게 체험을 시작하세요</h1>
-            <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>기본 정보를 저장하면 추천 수업안, 참고 영상, SPOMOVE 실행, 수업 기록을 바로 체험할 수 있습니다.</p>
+            <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>기본 정보를 저장하면 추천 수업 자료, 참고 영상, SPOMOVE 실행, 수업 기록을 바로 체험할 수 있습니다.</p>
           </div>
 
           <div className="mb-6 grid grid-cols-4 gap-2">
@@ -167,7 +167,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-                  무료 체험으로 추천 수업안, 참고 영상, SPOMOVE 실행, 수업 기록 흐름을 먼저 확인할 수 있습니다.
+                  무료 체험으로 추천 수업 자료, 참고 영상, SPOMOVE 실행, 수업 기록 흐름을 먼저 확인할 수 있습니다.
                 </p>
                 <div className="grid gap-2 sm:grid-cols-3">
                   {STARTER_PACK.map(({ icon: Icon, title, desc }) => (

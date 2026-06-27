@@ -306,6 +306,11 @@ export default function StudentsPage() {
 
       {profile && legacyPreviewAvailable ? (
         <section className="mx-[22px] mb-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <details>
+            <summary className="cursor-pointer text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>
+              고급 기능: 이 기기의 기존 데이터 가져오기
+            </summary>
+            <div className="mt-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>local data preview</p>
@@ -506,6 +511,8 @@ export default function StudentsPage() {
               이전 데이터 원본을 삭제하지 못했습니다. 브라우저 데이터를 직접 초기화하지 말고 다시 시도해 주세요. ({legacyDeleteError})
             </p>
           ) : null}
+            </div>
+          </details>
         </section>
       ) : null}
 
@@ -514,19 +521,15 @@ export default function StudentsPage() {
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(99,102,241,0.14)', color: 'var(--spm-acc)' }}>
             <Users size={24} />
           </div>
-          <h2 className="mt-4 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다</h2>
+          <h2 className="mt-4 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다.</h2>
           <p className="mx-auto mt-2 max-w-[520px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t3)' }}>
-            학생을 등록하면 수업 도구의 무작위 선택, 팀 나누기, 진행 순서가 실제 명단으로 작동합니다.
+            학생을 추가하면 수업 기록을 학생별로 관리할 수 있습니다.
           </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
             <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
               <Plus size={15} />
               학생 추가
             </button>
-            <Link href="/spokedu-master/class-tools" className="inline-flex h-11 items-center justify-center gap-2 rounded-[12px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-              <Shuffle size={15} />
-              수업 도구로 돌아가기
-            </Link>
           </div>
         </section>
       ) : null}
@@ -555,6 +558,11 @@ export default function StudentsPage() {
                   </span>
                   <ChevronRight size={16} color="var(--spm-t3)" />
                 </button>
+                <div className="flex w-[116px] shrink-0 flex-col gap-1.5 py-2">
+                  <span className="text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>누적 {studentRecords.length}건</span>
+                  <Link href={`/spokedu-master/students/${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>학생 기록 보기</Link>
+                  <Link href={`/spokedu-master/class-record?student=${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>수업 기록 작성</Link>
+                </div>
                 <button type="button" onClick={() => { void operationalData.deleteStudent(student.id).then(() => { if (selectedId === student.id) setSelectedId(null); }); }} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
                   <Trash2 size={14} color="var(--spm-red)" />
                 </button>
@@ -755,7 +763,7 @@ export default function StudentsPage() {
                 </div>
                 <Link href="/spokedu-master/library" className="flex h-11 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <BookOpen size={14} />
-                  다음 수업안
+                  다음 수업 자료
                 </Link>
               </div>
             </div>

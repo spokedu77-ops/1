@@ -20,9 +20,9 @@ const BUNDLES = [
 ];
 
 const STORE_FLOW = [
-  { icon: BookOpen, label: '수업안 확인', href: '/spokedu-master/library' },
+  { icon: BookOpen, label: '전체 수업 자료 보기', href: '/spokedu-master/library' },
   { icon: MonitorPlay, label: '큰 화면 실행', href: '/spokedu-master/spomove' },
-  { icon: ClipboardCheck, label: '설명 문구', href: '/spokedu-master/report' },
+  { icon: ClipboardCheck, label: '안내문', href: '/spokedu-master/report' },
 ] as const;
 
 function ProductIcon({ tone }: { tone: string }) {
@@ -57,7 +57,7 @@ export default function SpokeduMasterShopPage() {
           수업 준비 키트
         </h1>
         <p className="mt-2 max-w-[760px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          라이브러리 수업안에서 실제로 쓰는 준비물을 빠르게 맞춥니다. 판매 페이지가 아니라 수업 실행에 필요한 교구를 확인하고 견적 요청까지 이어가는 운영 영역입니다.
+          라이브러리 수업 자료에서 실제로 쓰는 준비물을 빠르게 맞춥니다. 판매 페이지가 아니라 수업 실행에 필요한 교구를 확인하고 견적 문의까지 이어가는 운영 영역입니다.
         </p>
         <div className="mt-5 grid gap-2 sm:grid-cols-3 lg:max-w-[760px]">
           {STORE_FLOW.map(({ icon: Icon, label, href }) => (
@@ -79,7 +79,7 @@ export default function SpokeduMasterShopPage() {
           from lesson library
         </p>
         <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-          수업안에서 자주 등장하는 준비물
+          수업 자료에서 자주 등장하는 준비물
         </h2>
         <div className="mt-4 flex flex-wrap gap-2">
           {usedEquipment.map((item) => (
@@ -144,7 +144,7 @@ export default function SpokeduMasterShopPage() {
                 개별 교구
               </h2>
               <Link href="/spokedu-master/library" className="text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>
-                수업안 보기
+                전체 수업 자료 보기
               </Link>
             </div>
             <div className="grid gap-3 md:grid-cols-2">

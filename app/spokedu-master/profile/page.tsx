@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   BookOpen,
-  Building2,
-  CalendarDays,
   CheckCircle2,
   ClipboardList,
   CreditCard,
@@ -16,14 +14,12 @@ import {
   MonitorPlay,
   Pencil,
   ShieldAlert,
-  ShoppingBag,
   Sparkles,
   UsersRound,
   type LucideIcon,
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { PwaInstallCard } from '../components/operations/PwaInstallCard';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { getTrialDaysLeft } from '../lib/subscription';
@@ -65,7 +61,7 @@ const PLANS: PlanInfo[] = [
     price: '14일 무료',
     badge: '체험',
     description: '라이브러리와 SPOMOVE의 핵심 흐름을 먼저 확인하는 체험 플랜입니다.',
-    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '수업 설명 문구 체험'],
+    includes: ['일부 프로그램 열람', 'SPOMOVE 제한 체험', '안내문 체험'],
     target: '처음 확인하는 개인 강사·교사',
     action: '체험 유지',
   },
@@ -85,7 +81,7 @@ const PLANS: PlanInfo[] = [
     price: '39,900원 / 30일',
     badge: '추천',
     description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 30일 이용권입니다.',
-    includes: ['전체 프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '학생 관리와 수업 기록 저장', '학생별 이력과 안내문 초안'],
+    includes: ['라이브러리', 'SPOMOVE 큰 화면 실행', '학생 관리와 수업 기록 저장', '학생별 이력과 안내문 초안'],
     target: '매주 수업을 준비하는 전문 강사',
     action: 'Pro 전환',
     recommended: true,
@@ -116,7 +112,7 @@ const PLANS: PlanInfo[] = [
 const QUICK_ACTIONS = [
   {
     icon: BookOpen,
-    title: '수업안 열기',
+    title: '라이브러리',
     caption: '오늘 쓸 패키지 찾기',
     href: '/spokedu-master/library',
   },
@@ -128,15 +124,9 @@ const QUICK_ACTIONS = [
   },
   {
     icon: FileText,
-    title: '설명 문구',
+    title: '안내문',
     caption: '수업 후 안내문 만들기',
     href: '/spokedu-master/report',
-  },
-  {
-    icon: CalendarDays,
-    title: '주간 계획',
-    caption: '이번 주 수업 흐름 정리',
-    href: '/spokedu-master/plan',
   },
 ];
 
@@ -152,18 +142,6 @@ const EXPANSION_LINKS = [
     label: '학생 이력',
     caption: '기록에서 남은 성장 근거를 봅니다.',
     href: '/spokedu-master/students',
-  },
-  {
-    icon: Building2,
-    label: '센터 운영',
-    caption: '수업안과 기록 흐름을 확인합니다.',
-    href: '/spokedu-master/director',
-  },
-  {
-    icon: ShoppingBag,
-    label: '수업 준비 키트',
-    caption: '수업안에 맞는 준비물을 확인합니다.',
-    href: '/spokedu-master/shop',
   },
 ];
 
@@ -618,13 +596,10 @@ function SpokeduMasterProfileContent() {
             })}
             </div>
           </section>
-
-          <PwaInstallCard />
         </div>
 
         <aside className="space-y-3">
           <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove" />
-          <MenuRow icon={CalendarDays} label="수업 계획" caption="주간 수업 흐름 정리" href="/spokedu-master/plan" />
           <MenuRow icon={CreditCard} label="이용권 확인" caption="플랜 확인 · 이용 만료일 · 결제 문의" href="/spokedu-master/subscription" />
           <MenuRow icon={HelpCircle} label="도입 상담" caption="센터·학교 도입 문의" href="mailto:support@spokedu.com" />
           <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:support@spokedu.com" />
@@ -634,7 +609,7 @@ function SpokeduMasterProfileContent() {
               <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>Expansion</p>
               <h2 className="mt-1 text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>확장 기능 준비</h2>
               <p className="mt-1 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
-                Phase 1에서는 라이브러리, SPOMOVE, 설명 문구를 우선 완성합니다.
+                Phase 1에서는 라이브러리, SPOMOVE, 안내문을 우선 완성합니다.
               </p>
             </div>
             <div className="grid gap-2">

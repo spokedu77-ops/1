@@ -11,6 +11,10 @@
 
 import { describe, test, expect } from 'vitest';
 import * as THREE from 'three';
+import { SpaceEnvironment } from './engine/renderers/SpaceEnvironment';
+import { SpeedVFX } from './engine/renderers/SpeedVFX';
+import { PunchVFX } from './engine/renderers/PunchVFX';
+import { ArenaRenderer } from './engine/renderers/ArenaRenderer';
 import { FlowCamera } from './engine/FlowCamera';
 import type { FlowCameraUpdateInput } from './engine/FlowCamera';
 import {
@@ -518,5 +522,400 @@ describe('BridgeRenderer', () => {
     const g2 = (v2.mesh.children[0] as THREE.Mesh).geometry as THREE.BoxGeometry;
     expect(g1.parameters.width).toBe(g2.parameters.width);
     expect(g1.parameters.depth).toBe(g2.parameters.depth);
+  });
+});
+
+// ── 8. SpaceEnvironment 단위 테스트 ─────────────────────────────────────────
+
+describe('SpaceEnvironment', () => {
+  const makeEnv = (tier: 'HIGH' | 'MED' | 'LOW' = 'HIGH', _loadFn?: (url: string) => Promise<THREE.Texture>) => {
+    const scene = new THREE.Scene();
+    const env   = new SpaceEnvironment({ scene, qualityTier: tier, _loadFn });
+    return { scene, env };
+  };
+
+  const getPts  = (scene: THREE.Scene) => scene.children.filter((c) => c instanceof THREE.Points) as THREE.Points[];
+  const getMesh = (scene: THREE.Scene) => scene.children.filter((c) => c instanceof THREE.Mesh)   as THREE.Mesh[];
+
+  test('1. scene에 Points 3개 추가됨 (별 레이어 3개)', () => {
+    const { scene } = makeEnv();
+    expect(getPts(scene)).toHaveLength(3);
+  });
+
+  test('2. scene에 Mesh 1개 추가됨 (파노라마 구)', () => {
+    const { scene } = makeEnv();
+    expect(getMesh(scene)).toHaveLength(1);
+  });
+
+  test('3. scene.children 총 4개 (3 Points + 1 Mesh)', () => {
+    const { scene } = makeEnv();
+    expect(scene.children).toHaveLength(4);
+  });
+
+  test('4. HIGH tier — far 레이어 별 수 = 350', () => {
+    const { scene } = makeEnv('HIGH');
+    const pts       = getPts(scene);
+    expect(pts[0]!.geometry.getAttribute('position').count).toBe(350);
+  });
+
+  test('5. LOW tier — 총 별 수가 HIGH의 50% 미만', () => {
+    const { scene: sH } = makeEnv('HIGH');
+    const { scene: sL } = makeEnv('LOW');
+    const totalHigh = getPts(sH).reduce((s, p) => s + p.geometry.getAttribute('position').count, 0);
+    const totalLow  = getPts(sL).reduce((s, p) => s + p.geometry.getAttribute('position').count, 0);
+    expect(totalLow).toBeLessThan(totalHigh * 0.5);
+  });
+
+  test('6. getPanoTex() 초기값 null', () => {
+    const { env } = makeEnv();
+    expect(env.getPanoTex()).toBeNull();
+  });
+
+  test('7. loadPanorama 성공 → getPanoTex() !== null', async () => {
+    const mockTex = { dispose: () => {} } as unknown as THREE.Texture;
+    const { env }  = makeEnv('HIGH', async () => mockTex);
+    await env.loadPanorama('https://cdn/pano.webp');
+    expect(env.getPanoTex()).toBe(mockTex);
+  });
+
+  test('8. high 실패 → low fallback 사용', async () => {
+    const mockTex = { dispose: () => {} } as unknown as THREE.Texture;
+    const { env }  = makeEnv('HIGH', async (url) => {
+      if (url.includes('high')) throw new Error('network error');
+      return mockTex;
+    });
+    await env.loadPanorama('https://cdn/high.webp', 'https://cdn/low.webp');
+    expect(env.getPanoTex()).toBe(mockTex);
+  });
+
+  test('9. dispose() → panoTex.dispose() 호출', async () => {
+    let disposed    = false;
+    const mockTex   = { dispose: () => { disposed = true; } } as unknown as THREE.Texture;
+    const { env }   = makeEnv('HIGH', async () => mockTex);
+    await env.loadPanorama('https://cdn/pano.webp');
+    env.dispose();
+    expect(disposed).toBe(true);
+  });
+
+  test('10. 재업로드 → 이전 panoTex dispose, 새 panoTex 적용', async () => {
+    let disposed1 = false;
+    const tex1    = { dispose: () => { disposed1 = true; } } as unknown as THREE.Texture;
+    const tex2    = { dispose: () => {} } as unknown as THREE.Texture;
+    let callNum   = 0;
+    const { env } = makeEnv('HIGH', async () => (++callNum === 1 ? tex1 : tex2));
+    await env.loadPanorama('https://cdn/v1.webp');
+    expect(env.getPanoTex()).toBe(tex1);
+    await env.loadPanorama('https://cdn/v2.webp');
+    expect(disposed1).toBe(true);
+    expect(env.getPanoTex()).toBe(tex2);
+  });
+
+  test('11. update cameraX=80 → 첫 번째 별 레이어 X 위치 변화', () => {
+    const { scene, env } = makeEnv();
+    const pts = getPts(scene);
+    const xBefore = pts[0]!.position.x;
+    env.update({ dt: 1 / 60, speed: 0, cameraX: 80, isIntroPhase: false });
+    expect(pts[0]!.position.x).toBeGreaterThan(xBefore);
+  });
+
+  test('12. yawDeg=90 → 초기 panoRotation이 π/2 (90°)', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH', yawDeg: 90 });
+    const mesh = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat  = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uPanoRotation']!.value).toBeCloseTo(Math.PI / 2, 4);
+  });
+
+  test('13. yawDeg 미지정(default) → 초기 panoRotation = 0', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH' });
+    const mesh  = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat   = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uPanoRotation']!.value).toBeCloseTo(0, 4);
+  });
+
+  test('14. yawDeg=-180 → 초기 panoRotation = -π', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH', yawDeg: -180 });
+    const mesh  = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat   = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uPanoRotation']!.value).toBeCloseTo(-Math.PI, 4);
+  });
+
+  test('15. enhanced 배경 보정 — uVignetteScale > 1.0', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH' });
+    const mesh = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat  = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uVignetteScale']!.value).toBeGreaterThan(1.0);
+  });
+
+  test('16. enhanced 배경 보정 — uGrainScale < 1.0 (grain 최소화)', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH' });
+    const mesh = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat  = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uGrainScale']!.value).toBeLessThan(1.0);
+  });
+});
+
+// ── 9. SpeedVFX 단위 테스트 ──────────────────────────────────────────────────
+
+describe('SpeedVFX', () => {
+  const makeVFX = () => {
+    const scene = new THREE.Scene();
+    const vfx   = new SpeedVFX(scene);
+    return { scene, vfx };
+  };
+
+  test('1. scene에 InstancedMesh 2개 추가됨 (edge + center)', () => {
+    const { scene } = makeVFX();
+    const meshes = scene.children.filter((c) => c instanceof THREE.InstancedMesh);
+    expect(meshes).toHaveLength(2);
+  });
+
+  test('2. 초기 edge opacity = 0', () => {
+    const { vfx } = makeVFX();
+    expect(vfx.getEdgeOpacity()).toBe(0);
+  });
+
+  test('3. 초기 center opacity = 0', () => {
+    const { vfx } = makeVFX();
+    expect(vfx.getCenterOpacity()).toBe(0);
+  });
+
+  test('4. 저속(speed=0.48) → center opacity ≈ 0 유지', () => {
+    const { vfx } = makeVFX();
+    // 60프레임 업데이트
+    for (let i = 0; i < 60; i++) vfx.update(0.48, 0, 1);
+    expect(vfx.getCenterOpacity()).toBeCloseTo(0, 3);
+  });
+
+  test('5. 고속(speed=0.75) → edge opacity > 0', () => {
+    const { vfx } = makeVFX();
+    for (let i = 0; i < 60; i++) vfx.update(0.75, 3, 1);
+    expect(vfx.getEdgeOpacity()).toBeGreaterThan(0);
+  });
+
+  test('6. 고속(speed=0.75) → center opacity > 0', () => {
+    const { vfx } = makeVFX();
+    for (let i = 0; i < 60; i++) vfx.update(0.75, 3, 1);
+    expect(vfx.getCenterOpacity()).toBeGreaterThan(0);
+  });
+
+  test('7. speed=0 → 수렴 후 edge opacity ≈ 0', () => {
+    const { vfx } = makeVFX();
+    for (let i = 0; i < 120; i++) vfx.update(0, 0, 1);
+    expect(vfx.getEdgeOpacity()).toBeCloseTo(0, 2);
+  });
+
+  test('8. opacity 상한 ≤ 0.65', () => {
+    const { vfx } = makeVFX();
+    for (let i = 0; i < 300; i++) vfx.update(1.0, 8, 1);
+    expect(vfx.getEdgeOpacity()).toBeLessThanOrEqual(0.65 + 0.01);
+  });
+
+  test('9. dispose → scene에서 InstancedMesh 제거', () => {
+    const { scene, vfx } = makeVFX();
+    expect(scene.children.filter((c) => c instanceof THREE.InstancedMesh)).toHaveLength(2);
+    vfx.dispose();
+    expect(scene.children.filter((c) => c instanceof THREE.InstancedMesh)).toHaveLength(0);
+  });
+
+  test('10. update 반복 — scene.children 수 변화 없음 (객체 증가 없음)', () => {
+    const { scene, vfx } = makeVFX();
+    const before = scene.children.length;
+    for (let i = 0; i < 120; i++) vfx.update(0.75, 2, 1);
+    expect(scene.children.length).toBe(before);
+  });
+});
+
+// ── 10. BridgeRenderer enhanced 단위 테스트 ──────────────────────────────────
+
+describe('BridgeRenderer (enhanced)', () => {
+  const makeEnhancedBr = () => {
+    const scene = new THREE.Scene();
+    return { scene, br: new BridgeRenderer(scene, true) };
+  };
+
+  test('1. enhanced 브릿지 — 자식 9개 (기반·좌레일·우레일·좌빔·우빔·패드·구분×3)', () => {
+    const { br } = makeEnhancedBr();
+    const v = br.createBridge({ lane: 1, x: 0, z: 0 });
+    expect(v.mesh.children).toHaveLength(9);
+  });
+
+  test('2. 기반 상판 material이 MeshPhongMaterial', () => {
+    const { br } = makeEnhancedBr();
+    const v   = br.createBridge({ lane: 1, x: 0, z: 0 });
+    const top = v.mesh.children[0] as THREE.Mesh;
+    expect(top.material).toBeInstanceOf(THREE.MeshPhongMaterial);
+  });
+
+  test('3. 좌측 네온 레일 — 같은 lane은 동일 material 참조 (공유)', () => {
+    const { br } = makeEnhancedBr();
+    const v0  = br.createBridge({ lane: 0, x: -80, z: 0 });
+    const v0b = br.createBridge({ lane: 0, x: -80, z: -5000 });
+    const rail0  = (v0.mesh.children[1]  as THREE.Mesh).material;
+    const rail0b = (v0b.mesh.children[1] as THREE.Mesh).material;
+    expect(rail0).toBe(rail0b);
+  });
+
+  test('4. 레인별 네온 레일 색상 — 0·1·2 모두 다름 (enhanced)', () => {
+    const { br } = makeEnhancedBr();
+    const v0 = br.createBridge({ lane: 0, x: -80, z: 0 });
+    const v1 = br.createBridge({ lane: 1, x:   0, z: 0 });
+    const v2 = br.createBridge({ lane: 2, x:  80, z: 0 });
+    const hex = (v: typeof v0) =>
+      ((v.mesh.children[1] as THREE.Mesh).material as THREE.MeshPhongMaterial).color.getHex();
+    expect(hex(v0)).not.toBe(hex(v1));
+    expect(hex(v1)).not.toBe(hex(v2));
+  });
+
+  test('5. 상판 geometry 크기 — legacy와 동일 (수치 변경 없음)', () => {
+    const { br } = makeEnhancedBr();
+    const v   = br.createBridge({ lane: 1, x: 0, z: 0 });
+    const top = v.mesh.children[0] as THREE.Mesh;
+    const geo = top.geometry as THREE.BoxGeometry;
+    expect(geo.parameters.width).toBe(LANE_WIDTH - 5);
+    expect(geo.parameters.depth).toBe(BRIDGE_LENGTH);
+  });
+
+  test('6. removeBridge — geometry dispose 호출, scene 제거', () => {
+    const { scene, br } = makeEnhancedBr();
+    const v   = br.createBridge({ lane: 1, x: 0, z: 0 });
+    const top = v.mesh.children[0] as THREE.Mesh;
+    let disposed = false;
+    const orig = top.geometry.dispose.bind(top.geometry);
+    top.geometry.dispose = () => { disposed = true; orig(); };
+    br.removeBridge(v);
+    expect(disposed).toBe(true);
+    expect(scene.children).toHaveLength(0);
+  });
+
+  test('7. dispose — 공유 material dispose 호출', () => {
+    const { br } = makeEnhancedBr();
+    const v   = br.createBridge({ lane: 0, x: 0, z: 0 });
+    const mat = (v.mesh.children[0] as THREE.Mesh).material as THREE.MeshPhongMaterial;
+    let disposed = false;
+    const orig = mat.dispose.bind(mat);
+    mat.dispose = () => { disposed = true; orig(); };
+    // removeBridge → geometry dispose (material은 공유이므로 여기서 dispose 안 함)
+    br.removeBridge(v);
+    expect(disposed).toBe(false);
+    // BridgeRenderer.dispose() → 공유 material 일괄 dispose
+    br.dispose();
+    expect(disposed).toBe(true);
+  });
+});
+
+// ── 11. PunchVFX 단위 테스트 ─────────────────────────────────────────────────
+
+describe('PunchVFX', () => {
+  const makeVFX = () => {
+    const scene = new THREE.Scene();
+    const vfx   = new PunchVFX(scene);
+    return { scene, vfx };
+  };
+
+  test('1. 생성 — scene에 Points 1 + Mesh 2 (링+플래시) 추가', () => {
+    const { scene } = makeVFX();
+    const pts   = scene.children.filter((c) => c instanceof THREE.Points);
+    const mesh  = scene.children.filter((c) => c instanceof THREE.Mesh);
+    expect(pts).toHaveLength(1);
+    expect(mesh).toHaveLength(2);
+  });
+
+  test('2. 초기 상태 — isActive() = false', () => {
+    const { vfx } = makeVFX();
+    expect(vfx.isActive()).toBe(false);
+  });
+
+  test('3. trigger 후 — isActive() = true', () => {
+    const { vfx } = makeVFX();
+    vfx.trigger(0, 60, 300);
+    expect(vfx.isActive()).toBe(true);
+  });
+
+  test('4. 140ms(0.14s) 이상 update 후 — isActive() = false (자동 소멸)', () => {
+    const { vfx } = makeVFX();
+    vfx.trigger(0, 60, 300);
+    vfx.update(0.15); // 150ms
+    expect(vfx.isActive()).toBe(false);
+  });
+
+  test('5. getParticleCount() — 항상 고정 40', () => {
+    const { vfx } = makeVFX();
+    expect(vfx.getParticleCount()).toBe(40);
+    vfx.trigger(0, 0, 0);
+    expect(vfx.getParticleCount()).toBe(40);
+    vfx.update(0.2);
+    expect(vfx.getParticleCount()).toBe(40);
+  });
+
+  test('6. 반복 trigger — scene.children 수 변화 없음 (pool 재사용)', () => {
+    const { scene, vfx } = makeVFX();
+    const before = scene.children.length;
+    for (let i = 0; i < 5; i++) {
+      vfx.trigger(i * 10, 60, 300);
+      vfx.update(0.2);
+    }
+    expect(scene.children.length).toBe(before);
+  });
+
+  test('7. dispose — scene에서 모든 객체 제거', () => {
+    const { scene, vfx } = makeVFX();
+    expect(scene.children).toHaveLength(3);
+    vfx.dispose();
+    expect(scene.children).toHaveLength(0);
+  });
+});
+
+// ── 12. ArenaRenderer 단위 테스트 ────────────────────────────────────────────
+
+describe('ArenaRenderer', () => {
+  const makeArena = (q: 'HIGH' | 'MED' | 'LOW' = 'HIGH') => {
+    const scene = new THREE.Scene();
+    const arena = new ArenaRenderer(scene, q);
+    return { scene, arena };
+  };
+
+  test('1. HIGH quality — scene에 7개 객체 추가 (플랫폼×2 + 링×3 + 운석 + UFO)', () => {
+    const { scene } = makeArena('HIGH');
+    expect(scene.children).toHaveLength(7);
+  });
+
+  test('2. 플랫폼 platLeft/platRight는 InstancedMesh', () => {
+    const { scene } = makeArena('HIGH');
+    const imeshes = scene.children.filter((c) => c instanceof THREE.InstancedMesh);
+    expect(imeshes.length).toBeGreaterThanOrEqual(2);
+  });
+
+  test('3. HIGH vs LOW — platLeft.count HIGH > LOW', () => {
+    const { scene: sH } = makeArena('HIGH');
+    const { scene: sL } = makeArena('LOW');
+    const highPlat = sH.children[0] as THREE.InstancedMesh;
+    const lowPlat  = sL.children[0] as THREE.InstancedMesh;
+    expect(highPlat.count).toBeGreaterThan(lowPlat.count);
+  });
+
+  test('4. update 반복 — scene.children 수 변화 없음 (객체 증가 없음)', () => {
+    const { scene, arena } = makeArena('HIGH');
+    const before = scene.children.length;
+    for (let i = 0; i < 120; i++) arena.update(0.6, 1);
+    expect(scene.children.length).toBe(before);
+  });
+
+  test('5. update 후 Z 위치 변화 (플랫폼 스크롤 확인)', () => {
+    const { arena } = makeArena('HIGH');
+    const zBefore = arena.getPlatLZ(0);
+    arena.update(0.6, 1);
+    expect(arena.getPlatLZ(0)).toBeGreaterThan(zBefore);
+  });
+
+  test('6. dispose — scene에서 모든 객체 제거', () => {
+    const { scene, arena } = makeArena('HIGH');
+    expect(scene.children).toHaveLength(7);
+    arena.dispose();
+    expect(scene.children).toHaveLength(0);
   });
 });

@@ -36,7 +36,7 @@ export function LessonPreviewContent({
     previewEquipment.length > 0 ||
     Boolean(previewScript) ||
     previewRules.length > 0;
-  const meta = [model.theme, model.target, model.space].filter(Boolean).slice(0, 3);
+  const meta = [model.target, program.duration ? `${program.duration}분` : null, model.space].filter(Boolean).slice(0, 3);
 
   return (
     <div className="flex flex-col gap-3">
@@ -76,6 +76,7 @@ export function LessonPreviewContent({
             <div className="space-y-5">
               {previewEquipment.length > 0 ? (
                 <section>
+                  <p className="sr-only">핵심 준비물</p>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">준비물</h3>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {previewEquipment.map((item) => (
@@ -93,6 +94,7 @@ export function LessonPreviewContent({
 
               {previewScript ? (
                 <section className="rounded-[12px] border border-indigo-100 bg-indigo-50/70 p-3">
+                  <p className="sr-only">수업 목표</p>
                   <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-indigo-700">
                     <MessageSquareQuote className="h-3.5 w-3.5" />
                     수업 스크립트
@@ -105,6 +107,7 @@ export function LessonPreviewContent({
 
               {previewRules.length > 0 ? (
                 <section className="border-t border-slate-100 pt-4">
+                  <p className="sr-only">주요 활동 순서 요약</p>
                   <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">활동 방법</h3>
                   <ol className="mt-3 space-y-3">
                     {previewRules.map((rule, index) => (

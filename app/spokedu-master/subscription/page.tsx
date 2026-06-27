@@ -56,7 +56,7 @@ const TRUST_POINTS = [
 ];
 
 const UNLOCK_ITEMS = [
-  { icon: BookOpen, title: '놀이체육', value: '수업안', caption: '영상, 준비물, 진행법 확인' },
+  { icon: BookOpen, title: '놀이체육', value: '수업 자료', caption: '영상, 준비물, 진행법 확인' },
   { icon: MonitorPlay, title: '스포무브', value: '큰 화면', caption: 'TV와 빔에서 바로 실행' },
   { icon: Clipboard, title: '학부모안내', value: '문구', caption: '수업 후 안내문 작성' },
   { icon: Calendar, title: '운영 흐름', value: '연결', caption: '준비부터 기록까지 관리' },
@@ -112,7 +112,7 @@ export default function SubscriptionPage() {
       return {
         eyebrow: '30일 이용권이 정상 적용 중입니다',
         title: `${planLabel} 플랜으로 수업 운영 흐름을 유지하고 있어요`,
-        body: '놀이체육, SPOMOVE, 학부모 안내 기능이 하나의 수업 운영 루프로 이어집니다.',
+        body: '놀이체육, SPOMOVE, 안내문 기능이 하나의 수업 운영 루프로 이어집니다.',
       };
     }
 

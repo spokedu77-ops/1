@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AssetHubTabs, type AssetHubTabId } from '@/app/components/admin/assets/AssetHubTabs';
 import { AssetHubBgmPanel } from '@/app/components/admin/assets/AssetHubBgmPanel';
 import { SpomoveColorPerceptionPanel } from '@/app/components/admin/assets/SpomoveColorPerceptionPanel';
+import { SpomoveDiveEnvironmentPanel } from '@/app/components/admin/assets/SpomoveDiveEnvironmentPanel';
 
 export default function AssetHubPage() {
   const [activeTab, setActiveTabState] = useState<AssetHubTabId>('spomove');
@@ -25,6 +26,7 @@ export default function AssetHubPage() {
 
       {activeTab === 'bgm' && <AssetHubBgmPanel />}
       {activeTab === 'spomove' && <SpomoveColorPerceptionPanel />}
+      {activeTab === 'dive' && <SpomoveDiveEnvironmentPanel />}
     </div>
   );
 }

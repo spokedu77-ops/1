@@ -207,6 +207,16 @@ export function playAssetBgmPath(weekKey: string, fileName: string): string {
   return `play_assets/${weekKey}/bgm/${fileName}`;
 }
 
+/** DIVE 환경 파노라마 — 고해상도 (4096×2048 또는 원본 2048×1024) */
+export function spomoveDivePanoPath(theme: 'space'): string {
+  return `themes/iiwarmup/spomove_dive/${theme}/panorama.webp`;
+}
+
+/** DIVE 환경 파노라마 — 저해상도 (2048×1024) */
+export function spomoveDivePanoLowPath(theme: 'space'): string {
+  return `themes/iiwarmup/spomove_dive/${theme}/panorama-low.webp`;
+}
+
 /**
  * 주차 기반 Theme ID 생성
  * @deprecated Use generateThemeId instead. This function is kept for backward compatibility.

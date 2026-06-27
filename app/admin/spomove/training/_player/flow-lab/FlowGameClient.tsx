@@ -8,19 +8,23 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlowEngine, type FlowGamePhase, type FlowStats } from './engine/FlowEngine';
+import { FlowEngine, type FlowGamePhase, type FlowStats, type VisualMode } from './engine/FlowEngine';
 import { FLOW_MODULES } from './engine/modules/flowModules';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
 
 interface FlowGameClientProps {
-  stages:         FlowStageConfig[];
-  colorTheme?:    'default' | 'space' | 'neon' | 'ocean';
-  motionScale?:   number;
-  bgmPath?:       string;
-  bgImageUrl?:    string;
-  onComplete:     (stats: FlowStats) => void;
-  onExit:         () => void;
-  onEngineReady?: (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
+  stages:            FlowStageConfig[];
+  colorTheme?:       'default' | 'space' | 'neon' | 'ocean';
+  motionScale?:      number;
+  bgmPath?:          string;
+  bgImageUrl?:       string;
+  visualMode?:       VisualMode;
+  panoramaHighUrl?:  string;
+  panoramaLowUrl?:   string;
+  panoramaYawDeg?:   number;
+  onComplete:        (stats: FlowStats) => void;
+  onExit:            () => void;
+  onEngineReady?:    (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
 }
 
 const S = {
@@ -51,6 +55,10 @@ export default function FlowGameClient({
   motionScale = 1,
   bgmPath,
   bgImageUrl,
+  visualMode,
+  panoramaHighUrl,
+  panoramaLowUrl,
+  panoramaYawDeg,
   onComplete,
   onExit,
   onEngineReady,
@@ -125,7 +133,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, colorTheme, motionScale, bgmPath, bgImageUrl },
+        { stages, colorTheme, motionScale, bgmPath, bgImageUrl, visualMode, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -165,7 +173,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, colorTheme, motionScale, bgImageUrl, initKey]); // bgmPath 제외 — 변경 시 위 별도 useEffect가 loadBgmLate 처리
+  }, [stages.length, colorTheme, motionScale, bgImageUrl, visualMode, initKey]); // bgmPath·panoramaHighUrl·panoramaLowUrl 제외 — 마운트 시 캡처, initKey로 강제 재시작
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 

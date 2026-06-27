@@ -14,7 +14,8 @@ import { Suspense, useCallback, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { buildStages } from '../_player/flow-lab/engine/modules/stageBuilder';
 import type { FlowModuleKey } from '../_player/flow-lab/engine/modules/flowModules';
-import type { FlowStats } from '../_player/flow-lab/engine/FlowEngine';
+import type { FlowStats, VisualMode } from '../_player/flow-lab/engine/FlowEngine';
+import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
 
 /* ─── flow-lab FlowGameClient: SSR 비활성 ─── */
 const FlowGameClientLab = dynamic(
@@ -74,6 +75,9 @@ function parseMotionScaleParam(raw: string | null): number {
   const n = Number(raw);
   return n === 0.5 || n === 1 ? n : 1;
 }
+function parseVisualParam(raw: string | null): VisualMode {
+  return raw === 'legacy' ? 'legacy' : 'enhanced';
+}
 
 /* ─── 설정 타입 ─── */
 interface LabSettings {
@@ -81,6 +85,7 @@ interface LabSettings {
   duration:    number;
   theme:       ValidTheme;
   motionScale: number;
+  visual:      VisualMode;
 }
 
 /* ─── 완료 화면 ─── */
@@ -339,6 +344,39 @@ function LabSettingsScreen({
             </div>
           </section>
 
+          {/* 환경 표현 (SPACE 테마에서만 차이 있음) */}
+          <section style={{ marginBottom: 26 }}>
+            <div style={{ marginBottom: 10 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>환경 표현</label>
+              <p style={{ margin: '3px 0 0', fontSize: 10, color: T.textDim }}>
+                개선 환경은 SPACE 테마에서 파노라마 배경 구를 사용합니다.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {(['legacy', 'enhanced'] as const).map((v) => {
+                const active = s.visual === v;
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => setS((p) => ({ ...p, visual: v }))}
+                    style={{
+                      flex: 1, padding: '11px 8px', borderRadius: 12,
+                      border: `1.5px solid ${active ? LAB_ACCENT : T.border}`,
+                      background: active ? `${LAB_ACCENT}16` : T.card,
+                      color: active ? LAB_ACCENT : T.textDim,
+                      fontFamily: 'inherit', fontSize: 13, fontWeight: active ? 900 : 700,
+                      cursor: 'pointer', textAlign: 'center',
+                      transition: 'border-color 0.13s, background 0.13s',
+                    }}
+                  >
+                    {v === 'legacy' ? '기존 환경' : '개선 환경'}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
           {/* 동작 스케일 */}
           <section style={{ marginBottom: 32 }}>
             <div style={{ marginBottom: 10 }}>
@@ -409,13 +447,19 @@ function LabSettingsScreen({
 function LabRunScreen({
   settings,
   runKey,
+  panoramaHighUrl,
+  panoramaLowUrl,
+  panoramaYawDeg,
   onComplete,
   onExit,
 }: {
-  settings:   LabSettings;
-  runKey:     number;
-  onComplete: (stats: FlowStats) => void;
-  onExit:     () => void;
+  settings:          LabSettings;
+  runKey:            number;
+  panoramaHighUrl?:  string;
+  panoramaLowUrl?:   string;
+  panoramaYawDeg?:   number;
+  onComplete:        (stats: FlowStats) => void;
+  onExit:            () => void;
 }) {
   const stages = buildStages(settings.features, settings.duration);
 
@@ -426,6 +470,10 @@ function LabRunScreen({
         stages={stages}
         colorTheme={settings.theme}
         motionScale={settings.motionScale}
+        visualMode={settings.visual}
+        panoramaHighUrl={panoramaHighUrl}
+        panoramaLowUrl={panoramaLowUrl}
+        panoramaYawDeg={panoramaYawDeg}
         onComplete={onComplete}
         onExit={onExit}
       />
@@ -447,7 +495,22 @@ function FlowLabContent() {
     duration:    parseDurationParam(params.get('duration')),
     theme:       parseThemeParam(params.get('theme')),
     motionScale: parseMotionScaleParam(params.get('motionScale')),
+    visual:      parseVisualParam(params.get('visual')),
   };
+
+  // DIVE 파노라마 URL (SPACE 테마 개선 환경용)
+  const { data: diveData, getPreviewUrl: getDivePreviewUrl } = useSpomoveDiveEnvironments();
+  const spaceEntry      = diveData.themes.space ?? null;
+  // Asset Hub에 파노라마가 없을 때 사용할 정적 폴백 (public/spomove/dive/environments/space/panorama.webp)
+  const STATIC_PANORAMA = '/spomove/dive/environments/space/panorama.webp';
+  // hasHighRes=true일 때만 고해상도 URL 사용 (그 외엔 low URL로 fallback)
+  const panoramaHighUrl = (spaceEntry?.hasHighRes === true)
+    ? (getDivePreviewUrl(spaceEntry.panoramaPath) ?? undefined)
+    : undefined;
+  const panoramaLowUrl  = spaceEntry
+    ? (getDivePreviewUrl(spaceEntry.panoramaLowPath) ?? STATIC_PANORAMA)
+    : STATIC_PANORAMA;
+  const panoramaYawDeg  = spaceEntry?.yawDeg ?? 0;
 
   const runKeyRef = useRef(0);
   const [phase, setPhase] = useState<LabPhase>({ tag: 'settings' });
@@ -481,6 +544,9 @@ function FlowLabContent() {
       <LabRunScreen
         settings={phase.settings}
         runKey={phase.runKey}
+        panoramaHighUrl={panoramaHighUrl}
+        panoramaLowUrl={panoramaLowUrl}
+        panoramaYawDeg={panoramaYawDeg}
         onComplete={handleComplete}
         onExit={handleExit}
       />

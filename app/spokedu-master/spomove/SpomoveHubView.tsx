@@ -1,9 +1,9 @@
 'use client';
 
-import { Lock, MonitorPlay } from 'lucide-react';
+import { Eye, Lock, MonitorPlay, RotateCcw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
@@ -12,6 +12,9 @@ import {
 } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import { SPOMOVE_AXIS_META } from '@/app/lib/spomove/spomoveAxisMeta';
+import { BottomSheet } from '../components/ui/BottomSheet';
+import { useMasterStore, useProfile } from '../store';
+import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 
 
 import {
@@ -20,6 +23,11 @@ import {
   type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from './officialSpomovePresets';
+import {
+  SPOMOVE_KEY_ACTION_LABELS,
+  SPOMOVE_RESPONSE_TYPE_LABELS,
+  getOfficialSpomovePresetGuide,
+} from './officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 
 type OfficialLibraryTab = 'all' | 'response' | 'attention' | 'executive';
@@ -82,6 +90,7 @@ const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
 
 // SPOMOVE 4색 시그니처
 const PAD_COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6'] as const;
+const PAD_LAYOUT_LABELS = ['빨강', '노랑', '초록', '파랑'] as const;
 
 function PadSignature({ dim = false }: { dim?: boolean }) {
   return (
@@ -498,6 +507,93 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
   }
 }
 
+function buildSpomoveDecisionItems(preset: OfficialSpomovePreset) {
+  const guide = getSpomovePresetDisplayModel(preset);
+  const response = preset.axisTitle;
+  const equipment = preset.settingChips?.find((chip) => /패드|pad|교구|준비/i.test(chip)) ?? '4색 패드';
+  return [
+    response ? `반응 ${response}` : null,
+    guide.targetLabel ? `대상 ${guide.targetLabel}` : null,
+    guide.durationLabel ? `시간 ${guide.durationLabel}` : null,
+    equipment ? `교구 ${equipment}` : null,
+    guide.difficultyLabel ? `난이도 ${guide.difficultyLabel}` : null,
+  ].filter(Boolean) as string[];
+}
+
+function SpomovePadLayout() {
+  return (
+    <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
+      {PAD_LAYOUT_LABELS.map((label, index) => (
+        <div
+          key={label}
+          className="flex min-h-14 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
+          style={{ background: PAD_COLORS[index] }}
+        >
+          {label}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SpomovePreviewSheet({
+  preset,
+  onClose,
+}: {
+  preset: OfficialSpomovePreset | null;
+  onClose: () => void;
+}) {
+  if (!preset) return null;
+  const display = getSpomovePresetDisplayModel(preset);
+  const guide = getOfficialSpomovePresetGuide(preset);
+  const href = officialPresetSessionHref(preset);
+  return (
+    <BottomSheet open title="프로그램 미리보기" onClose={onClose} size="preview">
+      <div className="space-y-5">
+        <div>
+          <p className="text-xs font-black text-indigo-600">SPOMOVE 미리보기</p>
+          <h2 className="mt-1 text-2xl font-black text-slate-950">{display.displayTitle}</h2>
+          <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{preset.description}</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <InfoBlock title="화면 자극" value={preset.programTitle} />
+          <InfoBlock title="움직임" value={guide.keyActions.map((action) => SPOMOVE_KEY_ACTION_LABELS[action]).join(' · ')} />
+          <InfoBlock title="대상" value={display.targetLabel} />
+          <InfoBlock title="예상 시간" value={display.durationLabel} />
+          <InfoBlock title="필요한 패드·교구" value={preset.settingChips?.join(' · ') || '4색 패드'} />
+          <InfoBlock title="공간 조건" value={preset.recommendedUse} />
+          <InfoBlock title="난이도" value={display.difficultyLabel} />
+          <InfoBlock title="지도 시 확인할 내용" value={SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]} />
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <p className="text-sm font-black text-slate-950">기본 패드 배치</p>
+          <div className="mt-3 max-w-sm">
+            <SpomovePadLayout />
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Link href={href} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+            실행 준비
+          </Link>
+          <button type="button" onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
+            다른 프로그램 보기
+          </button>
+        </div>
+      </div>
+    </BottomSheet>
+  );
+}
+
+function InfoBlock({ title, value }: { title: string; value: string }) {
+  if (!value) return null;
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-[11px] font-black text-slate-500">{title}</p>
+      <p className="mt-2 whitespace-pre-wrap break-words text-sm font-bold leading-6 text-slate-900">{value}</p>
+    </div>
+  );
+}
+
 // ── 프리셋 카드 ───────────────────────────────────────────────────────────────
 
 function CardVisual({
@@ -543,12 +639,19 @@ function CardInfo({
   metaLine,
   displayTitle,
   isReady,
+  href,
+  wasRecent,
+  onPreview,
 }: {
   preset: OfficialSpomovePreset;
   metaLine: string;
   displayTitle: string;
   isReady: boolean;
+  href: string;
+  wasRecent: boolean;
+  onPreview: () => void;
 }) {
+  const decisionItems = buildSpomoveDecisionItems(preset);
   return (
     <div className="flex flex-1 flex-col p-4">
       {/* 분류 태그 (최대 2개) */}
@@ -568,6 +671,39 @@ function CardInfo({
       <p className="mt-1.5 line-clamp-2 text-[13px] font-medium leading-snug text-slate-500">
         {preset.description}
       </p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {decisionItems.map((item) => (
+          <span key={item} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
+            {item}
+          </span>
+        ))}
+        {wasRecent ? (
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">최근 실행</span>
+        ) : null}
+      </div>
+      {isReady ? (
+        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onPreview();
+            }}
+            className="inline-flex min-h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700"
+          >
+            <Eye className="h-3.5 w-3.5" />
+            프로그램 미리보기
+          </button>
+          <Link href={href} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
+            실행 준비
+          </Link>
+          <Link href={href} className="inline-flex min-h-10 items-center justify-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
+            <RotateCcw className="h-3.5 w-3.5" />
+            다시 실행
+          </Link>
+        </div>
+      ) : null}
       {/* 푸터: 메타 + 행동 affordance */}
       <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
         <p className="text-[11px] font-semibold text-slate-400">{metaLine}</p>
@@ -588,10 +724,14 @@ function PresetCard({
   preset,
   href,
   thumbnailUrl,
+  wasRecent,
+  onPreview,
 }: {
   preset: OfficialSpomovePreset;
   href: string;
   thumbnailUrl: string;
+  wasRecent: boolean;
+  onPreview: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset);
@@ -613,6 +753,9 @@ function PresetCard({
         metaLine={metaLine}
         displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
+        href={href}
+        wasRecent={wasRecent}
+        onPreview={onPreview}
       />
     </>
   );
@@ -646,6 +789,19 @@ export default function SpomoveHubView() {
   const [accessState, setAccessState] = useState<AccessState>('checking');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
+  const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
+  const profile = useProfile();
+  const ownerId = getRecentActivityOwnerId(profile);
+  const recentProgramActivities = useMasterStore((state) => state.recentProgramActivities);
+  const recentSpomoveActivities = useMemo(() => {
+    if (!ownerId) return [];
+    const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+    return recentProgramActivities
+      .filter((activity) => activity.ownerId === ownerId && activity.action === 'spomove_started' && validPresetIds.has(activity.programId))
+      .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
+      .slice(0, 3);
+  }, [ownerId, recentProgramActivities]);
+  const recentPresetIds = useMemo(() => new Set(recentSpomoveActivities.map((activity) => activity.programId)), [recentSpomoveActivities]);
 
   useEffect(() => {
     let alive = true;
@@ -760,6 +916,40 @@ export default function SpomoveHubView() {
         </header>
 
         {/* 반응 단계 필터 */}
+        <section className="mt-6 rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[12px] font-black text-indigo-600">최근 SPOMOVE 활동</p>
+              <h2 className="text-xl font-black text-slate-950">최근 실행한 프로그램</h2>
+            </div>
+            <a href="#spomove-program-list" className="text-sm font-black text-indigo-600">프로그램 선택</a>
+          </div>
+          {recentSpomoveActivities.length ? (
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {recentSpomoveActivities.map((activity) => {
+                const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId);
+                const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : activity.programTitle;
+                return (
+                  <article key={`${activity.ownerId}-${activity.programId}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                    <p className="line-clamp-2 text-sm font-black text-slate-950">{title}</p>
+                    <p className="mt-1 text-[11px] font-bold text-slate-500">최근 실행</p>
+                    <div className="mt-3 grid gap-2">
+                      <Link href={`/spokedu-master/spomove/session?preset=${activity.programId}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">다시 실행</Link>
+                      <Link href={`/spokedu-master/class-record?program=${activity.programId}`} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">수업 기록 작성</Link>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
+              <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 프로그램이 없습니다.</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">프로그램을 선택해 첫 활동을 시작해 보세요.</p>
+              <a href="#spomove-program-list" className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white">프로그램 선택</a>
+            </div>
+          )}
+        </section>
+
         <div className="mt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
@@ -829,13 +1019,15 @@ export default function SpomoveHubView() {
 
         {/* 카드 그리드 — 1열(모바일) / 2열(태블릿) / 3열(데스크톱) */}
         {filteredPresets.length > 0 ? (
-          <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div id="spomove-program-list" className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {filteredPresets.map((preset) => (
               <PresetCard
                 key={preset.id}
                 preset={preset}
                 href={officialPresetSessionHref(preset)}
                 thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
+                wasRecent={recentPresetIds.has(preset.id)}
+                onPreview={() => setPreviewPreset(preset)}
               />
             ))}
           </div>
@@ -856,6 +1048,7 @@ export default function SpomoveHubView() {
             </button>
           </div>
         )}
+        <SpomovePreviewSheet preset={previewPreset} onClose={() => setPreviewPreset(null)} />
       </div>
     </main>
   );

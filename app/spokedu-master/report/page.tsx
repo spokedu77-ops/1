@@ -14,6 +14,7 @@ import type { ExplanationAudience, MasterExplanationDto } from '../types/explana
 import type { ClassRecord, Program } from '../types';
 
 type Audience = ExplanationAudience;
+type ReportTarget = 'class' | 'student';
 
 const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: typeof MessageCircle }> = [
   { id: 'parent', label: '학부모용', description: '아이들이 경험한 움직임을 쉽게 안내합니다.', Icon: UsersRound },
@@ -33,6 +34,54 @@ const FOCUS_SKILLS = ['참여', '반응', '협동', '방향 전환', '공간 인
 
 function compactList(values: Array<string | undefined | null>) {
   return values.map((value) => value?.trim()).filter(Boolean).join(' / ');
+}
+
+function getReportQuery(searchParams: URLSearchParams | ReturnType<typeof useSearchParams>) {
+  return {
+    programId: searchParams.get('programId') ?? searchParams.get('program'),
+    recordId: searchParams.get('record') ?? searchParams.get('recordId') ?? searchParams.get('from'),
+    savedId: searchParams.get('saved'),
+  };
+}
+
+function safeParagraph(value: string | undefined | null) {
+  const text = (value ?? '').replace(/\r\n/g, '\n').replace(/\r/g, '\n').trim();
+  if (!text || /undefined|null/i.test(text)) return '';
+  return text;
+}
+
+function formatRecordDate(date: string) {
+  return new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+}
+
+function buildStudentObservation(record: ClassRecord, studentId: string) {
+  const student = record.students.find((item) => item.studentId === studentId);
+  if (!student) return '';
+  const parts: string[] = [];
+  if (student.attendance === 'present') parts.push('출석했습니다');
+  if (student.attendance === 'absent') parts.push('결석했습니다');
+  if (student.focused) parts.push('집중 관찰이 필요하거나 의미 있는 참여가 있었습니다');
+  if (student.skills.length) parts.push(`${student.skills.join(', ')} 부분을 관찰했습니다`);
+  if (student.memo?.trim()) parts.push(student.memo.trim());
+  return parts.join('. ');
+}
+
+function buildRecordDraft(record: ClassRecord, target: ReportTarget, studentId: string | null) {
+  const lines = [
+    '안녕하세요.',
+    '',
+    `오늘은 ${record.programTitle} 활동을 진행했습니다.`,
+    `${formatRecordDate(record.date)} · ${record.classId}`,
+  ];
+  const commonMemo = safeParagraph(record.memo);
+  if (commonMemo) lines.push('', commonMemo);
+  if (target === 'student' && studentId) {
+    const student = record.students.find((item) => item.studentId === studentId);
+    const observation = buildStudentObservation(record, studentId);
+    if (student && observation) lines.push('', `${student.studentName} 학생은 ${observation}`);
+  }
+  lines.push('', '다음 수업에서도 즐겁고 안전하게 참여할 수 있도록 지도하겠습니다.', '감사합니다.');
+  return lines.filter((line, index, array) => line || array[index - 1]).join('\n');
 }
 
 function clean(value: string | undefined | null, fallback = '') {
@@ -243,16 +292,18 @@ function ReportContent() {
   const explanationData = useExplanationData();
   const classRecords = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programPool = useMemo(() => programs, [programs]);
-  const initialProgramId = searchParams.get('programId') ?? searchParams.get('program') ?? programPool[0]?.id ?? '';
-  const hasProgramQuery = Boolean(searchParams.get('programId') ?? searchParams.get('program'));
-  const savedExplanationId = searchParams.get('saved');
-  const recordId = searchParams.get('record');
+  const { programId: queryProgramId, recordId: queryRecordId, savedId: savedExplanationId } = getReportQuery(searchParams);
+  const initialProgramId = queryProgramId ?? programPool[0]?.id ?? '';
+  const hasProgramQuery = Boolean(queryProgramId);
+  const [selectedRecordId, setSelectedRecordId] = useState(queryRecordId ?? '');
   const selectedRecord = useMemo(
-    () => (recordId ? classRecords.find((r) => r.id === recordId) ?? null : null),
-    [classRecords, recordId],
+    () => (selectedRecordId ? classRecords.find((r) => r.id === selectedRecordId) ?? null : null),
+    [classRecords, selectedRecordId],
   );
   const [programId, setProgramId] = useState(initialProgramId);
   const [audience, setAudience] = useState<Audience>('parent');
+  const [target, setTarget] = useState<ReportTarget>('class');
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [mood, setMood] = useState(MOODS[0]);
   const [reaction, setReaction] = useState(REACTIONS[0]);
   const [focusSkills, setFocusSkills] = useState<string[]>(['참여', '반응']);
@@ -261,16 +312,33 @@ function ReportContent() {
   const [search, setSearch] = useState('');
   const [generated, setGenerated] = useState('');
   const [copied, setCopied] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<'error' | 'idle' | 'success'>('idle');
   const [saveStatus, setSaveStatus] = useState<'error' | 'idle' | 'saving' | 'success'>('idle');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [savedOutputId, setSavedOutputId] = useState<string | null>(savedExplanationId);
   const savedQueryAppliedRef = useRef<string | null>(null);
+  const recordQueryAppliedRef = useRef<string | null>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (selectedRecord && !recordNoteApplied) {
-      const n = buildRecordNote(selectedRecord);
-      if (n) setNote(n);
-      setRecordNoteApplied(true);
-    }
+    if (!queryRecordId || recordQueryAppliedRef.current === queryRecordId) return;
+    const record = classRecords.find((item) => item.id === queryRecordId);
+    if (!record) return;
+    recordQueryAppliedRef.current = queryRecordId;
+    setSelectedRecordId(record.id);
+    setProgramId(record.programId);
+    setTarget('class');
+    setSelectedStudentId(record.students[0]?.studentId ?? null);
+    setGenerated(buildRecordDraft(record, 'class', null));
+    setSaveStatus('idle');
+    setSaveError(null);
+  }, [classRecords, queryRecordId]);
+
+  useEffect(() => {
+    if (!selectedRecord || recordNoteApplied) return;
+    const n = buildRecordNote(selectedRecord);
+    if (n) setNote(n);
+    setRecordNoteApplied(true);
   }, [selectedRecord, recordNoteApplied]);
 
   useEffect(() => {
@@ -285,6 +353,7 @@ function ReportContent() {
       setProgramId(savedExplanation.programId);
       setAudience(savedExplanation.audience);
       setGenerated(savedExplanation.text);
+      setSavedOutputId(savedExplanation.id);
       return;
     }
 
@@ -297,6 +366,7 @@ function ReportContent() {
       setProgramId(item.programId);
       setAudience(item.audience);
       setGenerated(item.text);
+      setSavedOutputId(item.id);
     });
 
     return () => {
@@ -309,7 +379,9 @@ function ReportContent() {
     ? programPool.filter((item) => `${item.title} ${item.category} ${item.tags.join(' ')}`.toLowerCase().includes(search.trim().toLowerCase()))
     : programPool;
   const audienceMeta = AUDIENCES.find((item) => item.id === audience) ?? AUDIENCES[0];
-  const draft = program ? buildExplanation({ audience, program, mood, reaction, focusSkills, note }) : '';
+  const draft = selectedRecord
+    ? buildRecordDraft(selectedRecord, target, target === 'student' ? selectedStudentId : null)
+    : program ? buildExplanation({ audience, program, mood, reaction, focusSkills, note }) : '';
   const output = generated || draft;
   const activityPreview = program ? getActivityFlow(program).slice(0, 2) : [];
 
@@ -336,11 +408,46 @@ function ReportContent() {
     }
   };
 
+  const replaceDraft = (nextDraft: string) => {
+    if (output.trim() && generated.trim() && !window.confirm('현재 수정한 안내문이 새 초안으로 교체됩니다.')) return;
+    setGenerated(nextDraft);
+    setSaveStatus('idle');
+    setSaveError(null);
+    setSavedOutputId(null);
+  };
+
+  const handleRecordSelect = (nextRecordId: string) => {
+    const record = classRecords.find((item) => item.id === nextRecordId) ?? null;
+    setSelectedRecordId(nextRecordId);
+    setSelectedStudentId(record?.students[0]?.studentId ?? null);
+    setTarget('class');
+    if (record) {
+      setProgramId(record.programId);
+      replaceDraft(buildRecordDraft(record, 'class', null));
+      router.replace(`/spokedu-master/report?record=${record.id}`);
+    }
+  };
+
+  const handleTargetChange = (nextTarget: ReportTarget) => {
+    setTarget(nextTarget);
+    if (!selectedRecord) return;
+    const nextStudentId = nextTarget === 'student' ? selectedStudentId ?? selectedRecord.students[0]?.studentId ?? null : null;
+    setSelectedStudentId(nextStudentId);
+    replaceDraft(buildRecordDraft(selectedRecord, nextTarget, nextStudentId));
+  };
+
+  const handleStudentChange = (nextStudentId: string) => {
+    setSelectedStudentId(nextStudentId);
+    if (!selectedRecord || target !== 'student') return;
+    replaceDraft(buildRecordDraft(selectedRecord, 'student', nextStudentId));
+  };
+
   const handleSavedExplanationSelect = (item: MasterExplanationDto) => {
     setProgramId(item.programId);
     setAudience(item.audience);
     setGenerated(item.text);
     savedQueryAppliedRef.current = item.id;
+    setSavedOutputId(item.id);
 
     if (selectedRecord) {
       setNote('');
@@ -352,13 +459,23 @@ function ReportContent() {
 
   const copyOutput = async () => {
     if (!output.trim()) return;
-    await navigator.clipboard.writeText(output);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1300);
+    try {
+      await navigator.clipboard.writeText(output);
+      setCopied(true);
+      setCopyStatus('success');
+    } catch {
+      setCopied(false);
+      setCopyStatus('error');
+    }
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => {
+      setCopied(false);
+      setCopyStatus('idle');
+    }, 1600);
   };
 
   const saveOutput = async () => {
-    if (!program || !output.trim()) return;
+    if (!program || !output.trim() || saveStatus === 'saving') return;
     setSaveStatus('saving');
     setSaveError(null);
     try {
@@ -372,6 +489,7 @@ function ReportContent() {
       setAudience(saved.audience);
       setGenerated(saved.text);
       savedQueryAppliedRef.current = saved.id;
+      setSavedOutputId(saved.id);
       if (selectedRecord) {
         setNote('');
         setRecordNoteApplied(false);
@@ -430,6 +548,27 @@ function ReportContent() {
         <aside className={`space-y-4 ${hasProgramQuery ? 'order-2' : 'order-1'}`}>
           <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3 flex items-center gap-2">
+              <FileText size={16} color="var(--spm-acc)" />
+              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>1. 수업 기록 선택</h2>
+            </div>
+            {classRecords.length ? (
+              <select value={selectedRecordId} onChange={(event) => handleRecordSelect(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+                <option value="">수업 기록을 선택하세요</option>
+                {classRecords.map((record) => (
+                  <option key={record.id} value={record.id}>{record.programTitle} · {formatRecordDate(record.date)}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+                <p>안내문을 작성하려면 먼저 수업 기록이 필요합니다.</p>
+                <p className="mt-1">수업 내용을 기록한 뒤 전달용 안내문을 작성할 수 있습니다.</p>
+                <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 작성</Link>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            <div className="mb-3 flex items-center gap-2">
               <BookOpen size={16} color="var(--spm-acc)" />
               <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{hasProgramQuery ? '다른 수업 선택' : '수업 선택'}</h2>
             </div>
@@ -479,13 +618,17 @@ function ReportContent() {
                   Failed to load saved explanations.
                 </p>
               ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
-                <button key={item.id} type="button" onClick={() => handleSavedExplanationSelect(item)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+                <div key={item.id}>
+                <button type="button" onClick={() => handleSavedExplanationSelect(item)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                   <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
-                  <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{AUDIENCES.find((aud) => aud.id === item.audience)?.label} · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
+                  <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(item.createdAt).toLocaleDateString('ko-KR')} · {item.text.includes(' 학생은 ') ? '학생별 안내문' : '전체 수업 안내문'}</span>
                 </button>
+                <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="mt-1 min-h-10 w-full rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>복사</button>
+                </div>
               )) : (
                 <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  아직 만든 설명이 없습니다. 수업을 선택하고 오늘의 활동을 정리해보세요.
+                  아직 저장한 안내문이 없습니다. 수업 기록을 바탕으로 전달용 안내문을 작성할 수 있습니다.
+                  <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 보기</Link>
                 </p>
               )}
             </div>
@@ -509,7 +652,28 @@ function ReportContent() {
 
             <div className="mt-4 grid gap-4 sm:mt-5 sm:gap-5">
               <div>
-                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>설명 대상</p>
+                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>2. 안내 대상 선택</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <button type="button" onClick={() => handleTargetChange('class')} className="min-h-11 rounded-[14px] p-3 text-left" style={{ background: target === 'class' ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: target === 'class' ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                    <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>전체 수업 안내문</strong>
+                    <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>학생별 관찰 내용은 포함하지 않습니다.</span>
+                  </button>
+                  <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord?.students.length} className="min-h-11 rounded-[14px] p-3 text-left disabled:opacity-50" style={{ background: target === 'student' ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: target === 'student' ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                    <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>학생별 안내문</strong>
+                    <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>선택한 학생 1명의 기록만 사용합니다.</span>
+                  </button>
+                </div>
+                {target === 'student' && selectedRecord?.students.length ? (
+                  <select value={selectedStudentId ?? ''} onChange={(event) => handleStudentChange(event.target.value)} className="mt-3 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+                    {selectedRecord.students.map((student) => (
+                      <option key={student.studentId} value={student.studentId}>{student.studentName}</option>
+                    ))}
+                  </select>
+                ) : null}
+              </div>
+
+              <div>
+                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>부가 설정</p>
                 <div className="grid grid-cols-3 gap-2">
                   {AUDIENCES.map(({ id, label, description, Icon }) => {
                     const active = audience === id;
@@ -561,26 +725,34 @@ function ReportContent() {
                 <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{getAudienceOutputTitle(audience)}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => setGenerated(draft)} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                <button type="button" onClick={() => replaceDraft(draft)} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
                   <FileText size={14} />
                   안내문 다시 생성
                 </button>
-                <button type="button" onClick={copyOutput} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: copied ? 'rgba(16,185,129,0.16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                <button type="button" onClick={copyOutput} disabled={!output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-50" style={{ background: copied ? 'rgba(16,185,129,0.16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
                   {copied ? '복사 완료' : '현재 문구 복사'}
                 </button>
-                <button type="button" onClick={() => void saveOutput()} disabled={saveStatus === 'saving'} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                <button type="button" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   <Save size={14} />
-                  {saveStatus === 'saving' ? '\uC800\uC7A5 \uC911' : saveStatus === 'success' ? '\uBCF4\uAD00 \uC644\uB8CC' : '\uB9CC\uB4E0 \uBB38\uAD6C \uBCF4\uAD00'}
+                  {saveStatus === 'saving' ? '저장 중...' : '안내문 저장'}
                 </button>
               </div>
             </div>
+            {copyStatus === 'success' ? <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-grn)' }}>안내문을 복사했습니다.</p> : null}
+            {copyStatus === 'error' ? <p className="mt-2 text-[12px] font-bold text-red-600">자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.</p> : null}
+            {saveStatus === 'success' ? (
+              <div className="mt-3 flex flex-wrap gap-2 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
+                <p className="w-full text-[12px] font-bold">안내문이 저장되었습니다.</p>
+                <button type="button" onClick={copyOutput} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>안내문 복사</button>
+                {savedOutputId ? <Link href={`/spokedu-master/report?saved=${savedOutputId}`} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>저장한 안내문 보기</Link> : null}
+                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>내 활동·기록으로</Link>
+              </div>
+            ) : null}
             {saveStatus === 'error' && saveError ? (
               <p className="mt-2 text-[12px] font-bold text-red-600">{saveError}</p>
             ) : null}
-            <p className="mt-3 whitespace-pre-line rounded-[14px] p-3.5 text-[14px] font-semibold leading-7 sm:mt-4 sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
-              {program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'}
-            </p>
+            <textarea value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'} onChange={(event) => { setGenerated(event.target.value); setSaveStatus('idle'); setSaveError(null); }} disabled={!program} className="mt-3 min-h-[260px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:mt-4 sm:min-h-[340px] sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }} />
           </section>
         </section>
       </div>

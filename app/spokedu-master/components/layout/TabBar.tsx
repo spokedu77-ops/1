@@ -32,6 +32,8 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
   const primaryTabs = withHref(PRIMARY_TABS, basePath);
   const recordTabs = withHref(RECORD_TABS, basePath);
   const recordsActive = recordTabs.some((tab) => isActivePath(pathname, tab.href));
+  const activityHref = `${basePath}/activity`;
+  const activityActive = recordsActive || isActivePath(pathname, activityHref);
 
   const go = (href: string) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8);
@@ -82,15 +84,15 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
 
           <button
             type="button"
-            onClick={() => setRecordsOpen(true)}
+            onClick={() => go(activityHref)}
             className="flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-[16px] transition-opacity active:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-indigo-500"
-            aria-current={recordsActive ? 'page' : undefined}
-            aria-label="내 활동·기록 메뉴 열기"
+            aria-current={activityActive ? 'page' : undefined}
+            aria-label="내 활동·기록"
           >
-            <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: recordsActive ? '#4f46e5' : 'transparent' }}>
-              <FileText size={17} strokeWidth={1.9} color={recordsActive ? '#ffffff' : '#64748b'} />
+            <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: activityActive ? '#4f46e5' : 'transparent' }}>
+              <FileText size={17} strokeWidth={1.9} color={activityActive ? '#ffffff' : '#64748b'} />
             </span>
-            <span className="text-[11px] font-bold leading-none" style={{ color: recordsActive ? '#4338ca' : '#64748b' }}>
+            <span className="text-[11px] font-bold leading-none" style={{ color: activityActive ? '#4338ca' : '#64748b' }}>
               내 활동·기록
             </span>
           </button>

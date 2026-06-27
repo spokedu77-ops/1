@@ -56,7 +56,7 @@ const PLANS: Record<PlanKey, {
     description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 30일 이용권입니다.',
     primaryFor: '개인 강사, 프리랜서 체육교육자, 소규모 클래스 운영자',
     includes: [
-      '전체 프로그램 라이브러리',
+      '라이브러리',
       'SPOMOVE 큰 화면 실행',
       '학생 관리와 수업 기록 저장',
       '학생별 이력과 기록 기반 안내문 초안',
@@ -93,7 +93,7 @@ const VALUE_CARDS = [
   {
     icon: BookOpen,
     title: '수업 준비',
-    body: '라이브러리에서 수업안을 고르고 준비물, 공간, 진행 단계를 한 번에 확인합니다.',
+    body: '라이브러리에서 수업 자료를 고르고 준비물, 공간, 진행 단계를 한 번에 확인합니다.',
   },
   {
     icon: MonitorPlay,
@@ -108,9 +108,9 @@ const VALUE_CARDS = [
 ];
 
 const OUTCOME_STATS = [
-  { label: '매주 추천 수업', value: '4개', caption: '수업안 3개 + 화면 활동 1개' },
+  { label: '매주 추천 수업', value: '4개', caption: '수업 자료 3개 + 화면 활동 1개' },
   { label: '수업 준비 흐름', value: '3단계', caption: '고르기, 실행하기, 설명하기' },
-  { label: '바로 쓰는 자료', value: '5종', caption: '수업안, 영상, 준비물, 세팅, 문구' },
+  { label: '바로 쓰는 자료', value: '5종', caption: '수업 자료, 영상, 준비물, 세팅, 안내문' },
 ];
 
 function normalizePlan(value: string | null): PlanKey {
@@ -359,7 +359,7 @@ function PaymentContent() {
               결제 전에, SPOKEDU MASTER가 매 수업에서 해줄 일을 확인하세요.
             </h2>
             <p className="mt-4 max-w-[690px] text-[14px] font-semibold leading-7 sm:text-[15px]" style={{ color: 'var(--spm-t2)' }}>
-              이 결제는 30일 동안 수업 자료를 확인하고, 공식 SPOMOVE 큰 화면 활동을 별도 메뉴에서 실행하며, 설명 문구를 활용하는 이용권입니다.
+              이 결제는 30일 동안 수업 자료를 확인하고, 공식 SPOMOVE 큰 화면 활동을 별도 메뉴에서 실행하며, 안내문을 활용하는 이용권입니다.
             </p>
             <div className="mt-6 grid gap-2 sm:grid-cols-3">
               {OUTCOME_STATS.map((item) => (
@@ -414,7 +414,7 @@ function PaymentContent() {
               {[
                 ['1', '이번 주 수업 확인', '홈에서 대표 수업과 주간 4선을 확인합니다.'],
                 ['2', '큰 화면 실행', 'SPOMOVE를 TV나 빔에 띄워 바로 움직입니다.'],
-                ['3', '설명 문구 복사', '수업 후 학부모·기관 안내 문구를 남깁니다.'],
+                ['3', '안내문 작성', '수업 후 학부모·기관 안내문을 남깁니다.'],
               ].map(([step, title, body]) => (
                 <div key={step} className="rounded-[15px] p-4" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
                   <span className="grid h-8 w-8 place-items-center rounded-[10px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>{step}</span>

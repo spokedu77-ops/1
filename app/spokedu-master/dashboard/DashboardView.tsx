@@ -11,7 +11,6 @@ import {
   Settings2,
   Sparkles,
   UsersRound,
-  Wrench,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -21,6 +20,7 @@ import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
+import { getFavoritesByOwner, getFavoritesOwnerId } from '../lib/favoriteLib';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   getImageFallbackSrc,
@@ -508,7 +508,6 @@ function ActivityPanel({
     { label: '저장 안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
     { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
     { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
-    { label: '수업 도구', value: null, href: '/spokedu-master/class-tools', Icon: Wrench, action: '수업 도구 열기' },
   ];
 
   return (
@@ -522,7 +521,7 @@ function ActivityPanel({
           {status}
         </Link>
       </div>
-      <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
         {activities.map(({ label, value, href, Icon, action }) => (
           <Link
             key={label}
@@ -621,6 +620,12 @@ export default function DashboardView() {
     serverStudents.length === 0 &&
     serverClassRecords.length === 0;
   const profile = useProfile();
+  const favoritesOwnerId = getFavoritesOwnerId(profile);
+  const favoriteProgramIdsByOwner = useMasterStore((state) => state.favoriteProgramIdsByOwner);
+  const favoriteProgramIds = useMemo(
+    () => getFavoritesByOwner(favoriteProgramIdsByOwner, favoritesOwnerId),
+    [favoriteProgramIdsByOwner, favoritesOwnerId],
+  );
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
     : null;
@@ -684,6 +689,21 @@ export default function DashboardView() {
     () => buildContinueItem(classRecords, recentProgramActivities, recentActivityOwnerId, programs),
     [classRecords, programs, recentActivityOwnerId, recentProgramActivities],
   );
+  const recentLessonPrograms = useMemo(() => {
+    if (!recentActivityOwnerId) return [];
+    return reconcileRecentProgramActivities(recentProgramActivities, programs)
+      .filter((activity) => activity.ownerId === recentActivityOwnerId)
+      .slice(0, 3)
+      .map((activity) => ({
+        activity,
+        program: programs.find((program) => program.id === activity.programId),
+      }))
+      .filter((item): item is { activity: RecentProgramActivity; program: Program } => Boolean(item.program));
+  }, [programs, recentActivityOwnerId, recentProgramActivities]);
+  const favoritePrograms = useMemo(
+    () => favoriteProgramIds.map((id) => programs.find((program) => program.id === id)).filter((program): program is Program => Boolean(program)).slice(0, 3),
+    [favoriteProgramIds, programs],
+  );
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
     [classRecords],
@@ -745,6 +765,45 @@ export default function DashboardView() {
       </header>
 
       {isFirstUser ? <FirstStartGuide /> : null}
+
+      <section data-dashboard-section="lesson-reentry" className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+          <h2 className="text-[18px] font-black text-slate-950">최근 사용한 수업</h2>
+          {recentLessonPrograms.length ? (
+            <div className="mt-3 grid gap-2">
+              {recentLessonPrograms.map(({ activity, program }, index) => (
+                <div key={activity.programId} className="rounded-[14px] bg-slate-50 p-3">
+                  <p className="line-clamp-1 text-[14px] font-black text-slate-950">{program.title}</p>
+                  <p className="mt-1 text-[11px] font-bold text-slate-500">{formatRelativeDate(activity.occurredAt) ?? `최근 사용 ${index + 1}`}</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-10 items-center rounded-[10px] px-3 text-[11px] font-black text-indigo-700 ring-1 ring-indigo-100">전체 수업 자료 보기</Link>
+                    <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-10 items-center rounded-[10px] bg-indigo-600 px-3 text-[11px] font-black text-white">다시 실행</Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Link href="/spokedu-master/library" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">라이브러리에서 첫 수업 찾기</Link>
+          )}
+        </div>
+
+        <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+          <h2 className="text-[18px] font-black text-slate-950">즐겨찾기 수업</h2>
+          {favoritePrograms.length ? (
+            <div className="mt-3 grid gap-2">
+              {favoritePrograms.map((program) => (
+                <Link key={program.id} href={`/spokedu-master/library/${program.id}`} className="rounded-[14px] bg-slate-50 p-3">
+                  <p className="line-clamp-1 text-[14px] font-black text-slate-950">{program.title}</p>
+                  <p className="mt-1 text-[11px] font-bold text-slate-500">{[parseMasterTargets(program.grade)[0], program.duration ? `${program.duration}분` : null].filter(Boolean).join(' · ')}</p>
+                  <span className="mt-2 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[11px] font-black text-indigo-700 ring-1 ring-indigo-100">전체 수업 자료 보기</span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <Link href="/spokedu-master/library" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">라이브러리에서 첫 수업 찾기</Link>
+          )}
+        </div>
+      </section>
 
       <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
         <div className="mb-4 flex items-end justify-between gap-4">

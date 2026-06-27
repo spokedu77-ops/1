@@ -473,6 +473,15 @@ export async function PATCH(request: Request) {
     .select()
     .maybeSingle();
 
-  if (error) return privateNoStoreJson({ error: error.message }, { status: 500 });
+  if (error) {
+    await reportError(error, {
+      context: 'spokedu_master.programs.patch',
+      tags: { method: 'PATCH', stage: 'meta_upsert', status: 500 },
+    });
+    return privateNoStoreJson(
+      { error: '프로그램 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+      { status: 500 },
+    );
+  }
   return privateNoStoreJson({ data });
 }

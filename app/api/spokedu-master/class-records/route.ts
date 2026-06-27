@@ -43,6 +43,7 @@ const RECORD_SELECT = `
 `;
 
 const STUDENT_ID_SELECT = 'id';
+const CLASS_RECORD_SERVER_ERROR = '수업 기록을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -65,7 +66,7 @@ export async function GET() {
       context: 'spokedu_master.operational.class_records',
       tags: { method: 'GET', stage: 'select', status: 500 },
     });
-    return privateNoStoreJson({ error: error.message }, { status: 500 });
+    return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
   }
 
   return privateNoStoreJson({
@@ -143,7 +144,7 @@ export async function POST(request: Request) {
         context: 'spokedu_master.operational.class_records',
         tags: { method: 'POST', stage: 'dedupe_lookup', status: 500 },
       });
-      return privateNoStoreJson({ error: existingError.message }, { status: 500 });
+      return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
     }
 
     if (existing) {
@@ -163,7 +164,7 @@ export async function POST(request: Request) {
       tags: { method: 'POST', stage: 'student_lookup', status: 500 },
     });
     return privateNoStoreJson(
-      { error: error instanceof Error ? error.message : 'Student lookup failed' },
+      { error: CLASS_RECORD_SERVER_ERROR },
       { status: 500 },
     );
   }
@@ -179,7 +180,7 @@ export async function POST(request: Request) {
       context: 'spokedu_master.operational.class_records',
       tags: { method: 'POST', stage: 'record_insert', status: 500 },
     });
-    return privateNoStoreJson({ error: insertError?.message ?? 'Record insert failed' }, { status: 500 });
+    return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
   }
 
   const recordId = (inserted as { id: string }).id;
@@ -204,7 +205,7 @@ export async function POST(request: Request) {
         .eq('id', recordId);
 
       return privateNoStoreJson(
-        { error: childError.message, partialSave: false, rolledBack: true },
+        { error: CLASS_RECORD_SERVER_ERROR, partialSave: false, rolledBack: true },
         { status: 500 },
       );
     }
@@ -288,7 +289,7 @@ export async function PATCH(request: Request) {
       context: 'spokedu_master.operational.class_records',
       tags: { method: 'PATCH', stage: 'reload', status: 500 },
     });
-    return privateNoStoreJson({ error: error?.message ?? 'Record reload failed' }, { status: 500 });
+    return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
   }
 
   return privateNoStoreJson({ data: toClassRecordDto(data as MasterClassRecordRow) });
