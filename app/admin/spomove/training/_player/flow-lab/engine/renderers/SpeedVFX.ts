@@ -8,6 +8,7 @@ const EDGE_X_MIN = 3000;
 // 속도 상수 (FlowEngine 원본 동일)
 const BASE_SPEED_FLOW = 0.6;
 const MOVE_BASE       = 260;
+const MOVE_LEVEL      = 38;
 
 export class SpeedVFX {
   private scene:      THREE.Scene;
@@ -86,10 +87,10 @@ export class SpeedVFX {
     this.centerMesh.setMatrixAt(i, this.dummy.matrix);
   }
 
-  update(speed: number, dt60M: number): void {
+  update(speed: number, stageIdx: number, dt60M: number): void {
     const maxSpeed   = BASE_SPEED_FLOW * 1.25;
     const speedRatio = Math.min(1, Math.max(0, (speed - 0.05) / maxSpeed));
-    const baseTarget = speedRatio * 0.65;
+    const baseTarget = speedRatio * Math.min(0.65, 0.20 + stageIdx * 0.045);
 
     // 급가속 펄스 (이전 프레임 대비 속도 증가 시 일시 boost)
     const accel = Math.max(0, speed - this.prevSpeed);
@@ -100,7 +101,7 @@ export class SpeedVFX {
     const targetOp    = Math.min(0.65, baseTarget + this.pulseOp);
     // 중앙 선: BASE_SPEED 이상일 때만 등장
     const centerTarget = speed > BASE_SPEED_FLOW * 0.95 ? targetOp : 0;
-    const moveSpeed   = (MOVE_BASE + speed * 250) * dt60M;
+    const moveSpeed   = (MOVE_BASE + stageIdx * MOVE_LEVEL) * dt60M;
 
     for (let i = 0; i < EDGE_COUNT; i++) {
       this.edgeZ[i]! += moveSpeed;

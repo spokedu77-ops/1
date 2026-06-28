@@ -31,6 +31,8 @@ import {
 import { SpaceEnvironment } from './renderers/SpaceEnvironment';
 import { SpeedVFX } from './renderers/SpeedVFX';
 import { PunchVFX } from './renderers/PunchVFX';
+import { ArenaRenderer } from './renderers/ArenaRenderer';
+import { PostProcessingRenderer } from './renderers/PostProcessingRenderer';
 import type { VisualMode } from './renderers/EnvironmentThemeConfig';
 
 export type { VisualMode };
@@ -50,8 +52,8 @@ const JUMP_TRIGGER_REL = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
 
 // 속도 (원본: currentSpeed * 50 * dt60)
 const BASE_SPEED = 0.6;
-// P0-2: Stage1 전반=0.48, Stage1 후반+전체=0.552 (BASE_SPEED*0.8*[1.0|1.15])
-const SPEED_STAGE_BASE = 0.8;
+// 스테이지별 배수 (원본 LV1=0.8, LV2+=1.0, LV4+=1.25 참조)
+const SPEED_MULTS: number[] = [0.8, 1.0, 1.0, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25];
 
 // 점프 파라미터 (원본 동일)
 const JUMP_HEIGHT      = 98;
@@ -65,6 +67,7 @@ const MICROJOLT_AMOUNT  = 0.65;
 // 스피드라인
 const SPEEDLINE_COUNT      = 250;
 const SPEEDLINE_BASE_SPEED = 260;
+const SPEEDLINE_LEVEL_MULT = 38;
 
 // 브릿지 프룬
 const BRIDGE_PRUNE_Z = 5000;
@@ -135,8 +138,10 @@ export class FlowEngine {
   private renderer: THREE.WebGLRenderer | null = null;
   private stars:      THREE.Points | null = null;
   private speedLines: THREE.Group | null = null;
-  private speedVFX:      SpeedVFX | null = null;
-  private punchVFX:      PunchVFX | null = null;
+  private speedVFX:      SpeedVFX      | null = null;
+  private punchVFX:      PunchVFX      | null = null;
+  private arenaRenderer: ArenaRenderer | null = null;
+  private postFX:        PostProcessingRenderer | null = null;
   private isEnhancedSpace = false;
   private loadedGltfScenes:  THREE.Object3D[] = []; // 로드된 GLB 템플릿 참조 보관
   private crateGlbScene:     THREE.Object3D | null = null;
@@ -210,11 +215,6 @@ export class FlowEngine {
   private stats:     FlowStats = { stagesCompleted: 0, totalSec: 0 };
   private countdownTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // P0-1: 라이프사이클 가드
-  private disposed         = false;
-  private started          = false;
-  private countdownStarted = false;
-
   constructor(
     canvas: HTMLCanvasElement,
     cb:     Partial<FlowEngineCallbacks>,
@@ -233,10 +233,8 @@ export class FlowEngine {
     this.motionScale  = Math.min(1, Math.max(0.25, this.opts.motionScale ?? 1));
 
     await this.audio.init();
-    if (this.disposed) return;
     if (this.opts.bgmPath) await this.audio.loadBgm(this.opts.bgmPath);
-    if (this.disposed) return;
-    await this.init3D(); // GLB + 파노라마 로드 포함
+    await this.init3D(); // GLB 로드가 포함되므로 async
     // startCountdown은 start()에서 — 렌더 루프 시작 후 호출해야 blank screen 없음
   }
 
@@ -262,54 +260,34 @@ export class FlowEngine {
     this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
     this.renderer.setSize(initW, initH);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio ?? 1, this.aq.getPixelRatioMax()));
-    // P0-4: 색공간·톤매핑 설정 (GLB metallic 표면 정확도)
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping      = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.0;
 
-    if (isEnhancedSpace) {
-      // P0-3: enhanced 전용 조명
-      const hemi = new THREE.HemisphereLight(0x445577, 0x111122, 0.6);
-      this.scene.add(hemi);
-      const dirFront = new THREE.DirectionalLight(0xaabbdd, 0.8);
-      dirFront.position.set(0, 200, 400);
-      this.scene.add(dirFront);
-      const dirFill = new THREE.DirectionalLight(0x334466, 0.4);
-      dirFill.position.set(-200, 100, -200);
-      this.scene.add(dirFill);
-    } else {
-      const amb = new THREE.AmbientLight(0xffffff, theme.ambientInt);
-      this.scene.add(amb);
-    }
+    const amb = new THREE.AmbientLight(0xffffff, theme.ambientInt);
+    this.scene.add(amb);
     const pt = new THREE.PointLight(theme.pointColor, 15, 12000);
     pt.position.set(0, 2000, 800);
     this.scene.add(pt);
 
     if (isEnhancedSpace) {
-      // P0-3: renderer 전달 → PMREM 환경 조명 생성 가능
       this.spaceEnv = new SpaceEnvironment({
         scene:       this.scene,
-        renderer:    this.renderer,
         qualityTier: this.aq.getTier(),
         yawDeg:      this.opts.panoramaYawDeg,
       });
-      // P0-3: await → 파노라마 완료 후 카운트다운
       if (this.opts.panoramaHighUrl || this.opts.panoramaLowUrl) {
-        await this.spaceEnv.loadPanorama(this.opts.panoramaHighUrl, this.opts.panoramaLowUrl);
-        if (this.disposed) return;
-      } else {
-        await this.spaceEnv.loadPanorama(this.opts.panoramaLowUrl, this.opts.panoramaLowUrl);
-        if (this.disposed) return;
+        void this.spaceEnv.loadPanorama(this.opts.panoramaHighUrl, this.opts.panoramaLowUrl);
       }
       this.speedVFX = new SpeedVFX(this.scene);
       this.punchVFX = new PunchVFX(this.scene);
 
       // GLB 자산 로드 (실패 시 null → BoxGeometry 폴백)
       const trackScene = await this.loadGlbScenes();
-      if (this.disposed) return;
 
       this.bridgeRenderer = new BridgeRenderer(this.scene, true, trackScene);
-      // P0-9: ArenaRenderer 생성하지 않음 (enhanced 모드)
+      this.arenaRenderer  = new ArenaRenderer(this.scene, this.aq.getTier()); // 장식 비활성화 단계
+      this.postFX         = new PostProcessingRenderer(
+        this.renderer, this.scene, this.camera,
+        initW, initH, this.aq.getTier(),
+      );
     } else {
       this.bridgeRenderer = new BridgeRenderer(this.scene, false);
       this.buildStars();
@@ -318,7 +296,6 @@ export class FlowEngine {
 
     if ((this.opts.colorTheme ?? 'default') === 'ocean')   this.buildOceanEnvironment();
     if ((this.opts.colorTheme ?? 'default') === 'default') this.buildDefaultAtmosphere();
-    if (this.disposed) return;
     this.createTrackLanes();
 
     this.obstacles = new ObstacleManager(this.scene, BRIDGE_LENGTH, {
@@ -419,8 +396,8 @@ export class FlowEngine {
       const strip = new THREE.Mesh(
         new THREE.PlaneGeometry(LANE_WIDTH, 60000),
         new THREE.MeshPhongMaterial({
-          color:            isEnh ? 0x0a2f72 : 0x3b82f6,
-          emissive:         isEnh ? 0x040f2a : 0x000000,
+          color:            isEnh ? 0x06090f : 0x3b82f6,
+          emissive:         isEnh ? 0x020408 : 0x000000,
           emissiveIntensity: 1.0,
           transparent:      true,
           opacity:          isEnh ? 0.96 : 0.9,
@@ -608,8 +585,6 @@ export class FlowEngine {
   // ── 카운트다운 ───────────────────────────────────────────────────────────
 
   private startCountdown(): void {
-    if (this.countdownStarted) return;
-    this.countdownStarted = true;
     this.setPhase('countdown');
     let n = 3;
     const tick = () => {
@@ -645,8 +620,8 @@ export class FlowEngine {
     this.bridgeLaneIdx = 0; // 스테이지마다 빨강부터 다시 시작
     this.activeBridge = null;
 
-    // 장애물 스케줄 생성 (P0-2: 단계 무관 0.8 기준 추정)
-    const speedMult = SPEED_STAGE_BASE * (idx === 0 ? 1.0 : 1.15);
+    // 장애물 스케줄 생성
+    const speedMult = SPEED_MULTS[Math.min(idx, SPEED_MULTS.length - 1)]!;
     this.stageSchedule = generateObstacleSchedule({
       activeModules: stage.activeModules,
       durationSec: stage.durationSec,
@@ -734,7 +709,11 @@ export class FlowEngine {
       this.lastTickMs = now;
       this.update(Math.min(rawDt, 0.1));
       if (this.renderer && this.scene && this.camera) {
-        this.renderer.render(this.scene, this.camera);
+        if (this.postFX) {
+          this.postFX.render();
+        } else {
+          this.renderer.render(this.scene, this.camera);
+        }
       }
     };
     this.rafId = requestAnimationFrame(animate);
@@ -745,6 +724,9 @@ export class FlowEngine {
     const dtM     = dt * this.motionScale;
     const dt60    = dt * 60;
     const dt60M   = dtM * 60;
+
+    // 아레나 장식은 항상 이동 (인트로·비플레이 중에도 시각적 연속성 유지)
+    this.arenaRenderer?.update(Math.max(0.3, this.currentSpeed), dt60M);
 
     // AQ
     const tierBefore = this.aq.getTier();
@@ -833,9 +815,12 @@ export class FlowEngine {
       return;
     }
 
-    // ── P0-2: 속도 계산 — Stage1 전반=0.48 / 그 외 전체=0.552 ────────────
-    const fasterMult = (this.stageIdx === 0 && this.stageTimer < stage.durationSec / 2) ? 1.0 : 1.15;
-    this.currentSpeed = this.wallBreakActive ? 0 : BASE_SPEED * SPEED_STAGE_BASE * fasterMult;
+    // ── 속도 계산 ──────────────────────────────────────────────────────────
+    const stageMult   = SPEED_MULTS[Math.min(this.stageIdx, SPEED_MULTS.length - 1)]!;
+    // 1단계: 전반 1.0x / 후반 1.15x, 나머지 스테이지: 처음부터 1.15x
+    const fasterMult  = (this.stageIdx === 0 && this.stageTimer < stage.durationSec / 2) ? 1.0 : 1.15;
+    let speedScalar = this.wallBreakActive ? 0.0 : 1.0;
+    this.currentSpeed = BASE_SPEED * stageMult * fasterMult * speedScalar;
     const bridgeMove  = this.currentSpeed * 50 * dt60M;
 
     // ── 브릿지 이동·프룬 ────────────────────────────────────────────────────
@@ -957,11 +942,11 @@ export class FlowEngine {
 
     // ── 스피드라인 / SpeedVFX ─────────────────────────────────────────────
     if (this.speedVFX) {
-      this.speedVFX.update(this.currentSpeed, dt60M);
+      this.speedVFX.update(this.currentSpeed, this.stageIdx, dt60M);
     } else if (this.speedLines) {
       const maxSpeed   = BASE_SPEED * 1.25;
       const speedRatio = Math.max(0, (this.currentSpeed - 0.05) / maxSpeed);
-      const targetOp   = speedRatio * 0.65;
+      const targetOp   = speedRatio * Math.min(0.65, 0.20 + this.stageIdx * 0.045);
       const children   = this.speedLines.children;
       for (let i = 0; i < children.length; i++) {
         const m   = children[i] as THREE.Mesh;
@@ -970,7 +955,7 @@ export class FlowEngine {
           if (mat.opacity > 0) mat.opacity = 0;
           continue;
         }
-        m.position.z += (SPEEDLINE_BASE_SPEED + this.currentSpeed * 250) * dt60M;
+        m.position.z += (SPEEDLINE_BASE_SPEED + this.stageIdx * SPEEDLINE_LEVEL_MULT) * dt60M;
         if (m.position.z > 2500) m.position.z = -12000;
         mat.opacity += (targetOp - mat.opacity) * 0.15 * dt60M;
       }
@@ -1014,6 +999,7 @@ export class FlowEngine {
     if (!this.renderer) return;
     this.renderer.setSize(w, h);
     this.flowCam?.resize(w, h);
+    this.postFX?.resize(w, h);
   }
 
   // ── 유틸 ─────────────────────────────────────────────────────────────────
@@ -1026,12 +1012,7 @@ export class FlowEngine {
 
   // ── 시작 / 종료 ──────────────────────────────────────────────────────────
 
-  start(): void {
-    if (this.started) return;
-    this.started = true;
-    this.startLoop();
-    this.startCountdown();
-  }
+  start(): void { this.startLoop(); this.startCountdown(); }
 
   /** BGM 리스트가 늦게 로딩됐을 때 — init 이후 외부에서 호출 */
   async loadBgmLate(storagePath: string): Promise<void> {
@@ -1046,8 +1027,6 @@ export class FlowEngine {
   }
 
   dispose(): void {
-    if (this.disposed) return;
-    this.disposed = true;
     this.stop();
     this.audio.dispose();
     this.flowCam?.dispose();
@@ -1060,6 +1039,10 @@ export class FlowEngine {
     this.speedVFX = null;
     this.punchVFX?.dispose();
     this.punchVFX = null;
+    this.arenaRenderer?.dispose();
+    this.arenaRenderer = null;
+    this.postFX?.dispose();
+    this.postFX = null;
     if (this.renderer) { this.renderer.dispose(); this.renderer = null; }
     this.crateGlbScene     = null;
     this.spaceshipGlbScene = null;

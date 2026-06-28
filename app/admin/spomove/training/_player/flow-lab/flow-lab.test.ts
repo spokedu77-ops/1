@@ -526,7 +526,6 @@ describe('BridgeRenderer', () => {
 });
 
 // ── 8. SpaceEnvironment 단위 테스트 ─────────────────────────────────────────
-// P0-3: scene.background = texture, PMREM, deferred stars
 
 describe('SpaceEnvironment', () => {
   const makeEnv = (tier: 'HIGH' | 'MED' | 'LOW' = 'HIGH', _loadFn?: (url: string) => Promise<THREE.Texture>) => {
@@ -535,40 +534,33 @@ describe('SpaceEnvironment', () => {
     return { scene, env };
   };
 
-  const makeTex = () => ({ dispose: () => {}, mapping: 0 } as unknown as THREE.Texture);
+  const getPts  = (scene: THREE.Scene) => scene.children.filter((c) => c instanceof THREE.Points) as THREE.Points[];
+  const getMesh = (scene: THREE.Scene) => scene.children.filter((c) => c instanceof THREE.Mesh)   as THREE.Mesh[];
 
-  const getPts = (scene: THREE.Scene) => scene.children.filter((c) => c instanceof THREE.Points) as THREE.Points[];
-
-  test('1. 생성 직후 scene.children 수 = 0 (별 없음, 구 없음)', () => {
+  test('1. scene에 Points 3개 추가됨 (별 레이어 3개)', () => {
     const { scene } = makeEnv();
-    expect(scene.children).toHaveLength(0);
-  });
-
-  test('2. loadPanorama 실패 → scene에 Points 3개 (별 레이어 생성)', async () => {
-    const { scene, env } = makeEnv('HIGH', async () => { throw new Error('fail'); });
-    await env.loadPanorama('https://cdn/pano.webp');
     expect(getPts(scene)).toHaveLength(3);
   });
 
-  test('3. loadPanorama 성공 → scene에 Points 없음 (별 불필요)', async () => {
-    const { scene, env } = makeEnv('HIGH', async () => makeTex());
-    await env.loadPanorama('https://cdn/pano.webp');
-    expect(getPts(scene)).toHaveLength(0);
+  test('2. scene에 Mesh 1개 추가됨 (파노라마 구)', () => {
+    const { scene } = makeEnv();
+    expect(getMesh(scene)).toHaveLength(1);
   });
 
-  test('4. loadPanorama 실패 HIGH → far 별 레이어 350개', async () => {
-    const { scene, env } = makeEnv('HIGH', async () => { throw new Error('fail'); });
-    await env.loadPanorama('https://cdn/pano.webp');
-    const pts = getPts(scene);
+  test('3. scene.children 총 4개 (3 Points + 1 Mesh)', () => {
+    const { scene } = makeEnv();
+    expect(scene.children).toHaveLength(4);
+  });
+
+  test('4. HIGH tier — far 레이어 별 수 = 350', () => {
+    const { scene } = makeEnv('HIGH');
+    const pts       = getPts(scene);
     expect(pts[0]!.geometry.getAttribute('position').count).toBe(350);
   });
 
-  test('5. loadPanorama 실패 LOW 별 수 < HIGH 별 수', async () => {
-    const failFn = async (): Promise<THREE.Texture> => { throw new Error('fail'); };
-    const { scene: sH, env: eH } = makeEnv('HIGH', failFn);
-    const { scene: sL, env: eL } = makeEnv('LOW',  failFn);
-    await eH.loadPanorama('https://cdn/pano.webp');
-    await eL.loadPanorama('https://cdn/pano.webp');
+  test('5. LOW tier — 총 별 수가 HIGH의 50% 미만', () => {
+    const { scene: sH } = makeEnv('HIGH');
+    const { scene: sL } = makeEnv('LOW');
     const totalHigh = getPts(sH).reduce((s, p) => s + p.geometry.getAttribute('position').count, 0);
     const totalLow  = getPts(sL).reduce((s, p) => s + p.geometry.getAttribute('position').count, 0);
     expect(totalLow).toBeLessThan(totalHigh * 0.5);
@@ -579,16 +571,15 @@ describe('SpaceEnvironment', () => {
     expect(env.getPanoTex()).toBeNull();
   });
 
-  test('7. loadPanorama 성공 → getPanoTex() !== null, scene.background 설정됨', async () => {
-    const mockTex = makeTex();
-    const { scene, env } = makeEnv('HIGH', async () => mockTex);
+  test('7. loadPanorama 성공 → getPanoTex() !== null', async () => {
+    const mockTex = { dispose: () => {} } as unknown as THREE.Texture;
+    const { env }  = makeEnv('HIGH', async () => mockTex);
     await env.loadPanorama('https://cdn/pano.webp');
     expect(env.getPanoTex()).toBe(mockTex);
-    expect(scene.background).toBe(mockTex);
   });
 
   test('8. high 실패 → low fallback 사용', async () => {
-    const mockTex = makeTex();
+    const mockTex = { dispose: () => {} } as unknown as THREE.Texture;
     const { env }  = makeEnv('HIGH', async (url) => {
       if (url.includes('high')) throw new Error('network error');
       return mockTex;
@@ -598,9 +589,9 @@ describe('SpaceEnvironment', () => {
   });
 
   test('9. dispose() → panoTex.dispose() 호출', async () => {
-    let disposed  = false;
-    const mockTex = { dispose: () => { disposed = true; }, mapping: 0 } as unknown as THREE.Texture;
-    const { env } = makeEnv('HIGH', async () => mockTex);
+    let disposed    = false;
+    const mockTex   = { dispose: () => { disposed = true; } } as unknown as THREE.Texture;
+    const { env }   = makeEnv('HIGH', async () => mockTex);
     await env.loadPanorama('https://cdn/pano.webp');
     env.dispose();
     expect(disposed).toBe(true);
@@ -608,8 +599,8 @@ describe('SpaceEnvironment', () => {
 
   test('10. 재업로드 → 이전 panoTex dispose, 새 panoTex 적용', async () => {
     let disposed1 = false;
-    const tex1    = { dispose: () => { disposed1 = true; }, mapping: 0 } as unknown as THREE.Texture;
-    const tex2    = { dispose: () => {}, mapping: 0 } as unknown as THREE.Texture;
+    const tex1    = { dispose: () => { disposed1 = true; } } as unknown as THREE.Texture;
+    const tex2    = { dispose: () => {} } as unknown as THREE.Texture;
     let callNum   = 0;
     const { env } = makeEnv('HIGH', async () => (++callNum === 1 ? tex1 : tex2));
     await env.loadPanorama('https://cdn/v1.webp');
@@ -619,46 +610,52 @@ describe('SpaceEnvironment', () => {
     expect(env.getPanoTex()).toBe(tex2);
   });
 
-  test('11. loadPanorama 실패 후 update cameraX=80 → 별 레이어 X 위치 변화', async () => {
-    const { scene, env } = makeEnv('HIGH', async () => { throw new Error('fail'); });
-    await env.loadPanorama('https://cdn/pano.webp');
+  test('11. update cameraX=80 → 첫 번째 별 레이어 X 위치 변화', () => {
+    const { scene, env } = makeEnv();
     const pts = getPts(scene);
     const xBefore = pts[0]!.position.x;
     env.update({ dt: 1 / 60, speed: 0, cameraX: 80, isIntroPhase: false });
     expect(pts[0]!.position.x).toBeGreaterThan(xBefore);
   });
 
-  test('12. yawDeg=90 → 성공 로드 후 scene.backgroundRotation.y ≈ π/2', async () => {
+  test('12. yawDeg=90 → 초기 panoRotation이 π/2 (90°)', () => {
     const scene = new THREE.Scene();
-    const env   = new SpaceEnvironment({ scene, qualityTier: 'HIGH', yawDeg: 90, _loadFn: async () => makeTex() });
-    await env.loadPanorama('https://cdn/pano.webp');
-    expect(scene.backgroundRotation.y).toBeCloseTo(Math.PI / 2, 4);
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH', yawDeg: 90 });
+    const mesh = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat  = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uPanoRotation']!.value).toBeCloseTo(Math.PI / 2, 4);
   });
 
-  test('13. yawDeg 미지정(default) → 성공 로드 후 scene.backgroundRotation.y ≈ 0', async () => {
+  test('13. yawDeg 미지정(default) → 초기 panoRotation = 0', () => {
     const scene = new THREE.Scene();
-    const env   = new SpaceEnvironment({ scene, qualityTier: 'HIGH', _loadFn: async () => makeTex() });
-    await env.loadPanorama('https://cdn/pano.webp');
-    expect(scene.backgroundRotation.y).toBeCloseTo(0, 4);
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH' });
+    const mesh  = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat   = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uPanoRotation']!.value).toBeCloseTo(0, 4);
   });
 
-  test('14. yawDeg=-180 → 성공 로드 후 scene.backgroundRotation.y ≈ -π', async () => {
+  test('14. yawDeg=-180 → 초기 panoRotation = -π', () => {
     const scene = new THREE.Scene();
-    const env   = new SpaceEnvironment({ scene, qualityTier: 'HIGH', yawDeg: -180, _loadFn: async () => makeTex() });
-    await env.loadPanorama('https://cdn/pano.webp');
-    expect(scene.backgroundRotation.y).toBeCloseTo(-Math.PI, 4);
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH', yawDeg: -180 });
+    const mesh  = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat   = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uPanoRotation']!.value).toBeCloseTo(-Math.PI, 4);
   });
 
-  test('15. loadPanorama 성공 → getStarLayerCount() = 0', async () => {
-    const { env } = makeEnv('HIGH', async () => makeTex());
-    await env.loadPanorama('https://cdn/pano.webp');
-    expect(env.getStarLayerCount()).toBe(0);
+  test('15. enhanced 배경 보정 — uVignetteScale > 1.0', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH' });
+    const mesh = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat  = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uVignetteScale']!.value).toBeGreaterThan(1.0);
   });
 
-  test('16. loadPanorama 실패 → getStarLayerCount() = 3', async () => {
-    const { env } = makeEnv('HIGH', async () => { throw new Error('fail'); });
-    await env.loadPanorama('https://cdn/pano.webp');
-    expect(env.getStarLayerCount()).toBe(3);
+  test('16. enhanced 배경 보정 — uGrainScale < 1.0 (grain 최소화)', () => {
+    const scene = new THREE.Scene();
+    new SpaceEnvironment({ scene, qualityTier: 'HIGH' });
+    const mesh = scene.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const mat  = mesh.material as THREE.ShaderMaterial;
+    expect(mat.uniforms['uGrainScale']!.value).toBeLessThan(1.0);
   });
 });
 
@@ -690,31 +687,31 @@ describe('SpeedVFX', () => {
   test('4. 저속(speed=0.48) → center opacity ≈ 0 유지', () => {
     const { vfx } = makeVFX();
     // 60프레임 업데이트
-    for (let i = 0; i < 60; i++) vfx.update(0.48, 1);
+    for (let i = 0; i < 60; i++) vfx.update(0.48, 0, 1);
     expect(vfx.getCenterOpacity()).toBeCloseTo(0, 3);
   });
 
   test('5. 고속(speed=0.75) → edge opacity > 0', () => {
     const { vfx } = makeVFX();
-    for (let i = 0; i < 60; i++) vfx.update(0.75, 1);
+    for (let i = 0; i < 60; i++) vfx.update(0.75, 3, 1);
     expect(vfx.getEdgeOpacity()).toBeGreaterThan(0);
   });
 
   test('6. 고속(speed=0.75) → center opacity > 0', () => {
     const { vfx } = makeVFX();
-    for (let i = 0; i < 60; i++) vfx.update(0.75, 1);
+    for (let i = 0; i < 60; i++) vfx.update(0.75, 3, 1);
     expect(vfx.getCenterOpacity()).toBeGreaterThan(0);
   });
 
   test('7. speed=0 → 수렴 후 edge opacity ≈ 0', () => {
     const { vfx } = makeVFX();
-    for (let i = 0; i < 120; i++) vfx.update(0, 1);
+    for (let i = 0; i < 120; i++) vfx.update(0, 0, 1);
     expect(vfx.getEdgeOpacity()).toBeCloseTo(0, 2);
   });
 
   test('8. opacity 상한 ≤ 0.65', () => {
     const { vfx } = makeVFX();
-    for (let i = 0; i < 300; i++) vfx.update(1.0, 1);
+    for (let i = 0; i < 300; i++) vfx.update(1.0, 8, 1);
     expect(vfx.getEdgeOpacity()).toBeLessThanOrEqual(0.65 + 0.01);
   });
 
@@ -728,7 +725,7 @@ describe('SpeedVFX', () => {
   test('10. update 반복 — scene.children 수 변화 없음 (객체 증가 없음)', () => {
     const { scene, vfx } = makeVFX();
     const before = scene.children.length;
-    for (let i = 0; i < 120; i++) vfx.update(0.75, 1);
+    for (let i = 0; i < 120; i++) vfx.update(0.75, 2, 1);
     expect(scene.children.length).toBe(before);
   });
 });

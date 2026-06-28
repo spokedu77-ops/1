@@ -6,6 +6,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import MileageDetailModal from '@/app/components/admin/MileageDetailModal';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { fetchTeacherLogCounts } from './fetchTeacherLogCounts';
 
 interface Teacher {
   id: string;
@@ -41,18 +42,7 @@ export function CountingTab({ supabase }: CountingTabProps) {
         .order('name', { ascending: true });
 
       const teacherIds = (userData || []).map((u) => u.id);
-      const { data: logRows } = await supabase
-        .from('session_count_logs')
-        .select('teacher_id')
-        .in('teacher_id', teacherIds.length > 0 ? teacherIds : ['']);
-
-      const logCountByTeacher: Record<string, number> = {};
-      if (logRows) {
-        for (const row of logRows) {
-          const tid = row.teacher_id;
-          if (tid) logCountByTeacher[tid] = (logCountByTeacher[tid] || 0) + 1;
-        }
-      }
+      const logCountByTeacher = await fetchTeacherLogCounts(supabase, teacherIds);
 
       const teachersWithLogCount: Teacher[] = (userData || []).map((u) => ({
         ...u,

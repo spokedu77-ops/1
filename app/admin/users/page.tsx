@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { CountingTab } from './CountingTab';
+import { fetchTeacherLogCounts } from './fetchTeacherLogCounts';
 import { TeacherTierBadge } from '@/app/components/admin/TeacherTierBadge';
 import {
   cloneTierFeeMap,
@@ -115,19 +116,7 @@ function UserDashboardPageContent() {
         documents: u.documents || [],
       }));
       const teacherIds = base.map((u) => u.id);
-      const logCountByTeacher: Record<string, number> = {};
-      if (teacherIds.length > 0) {
-        const { data: logRows } = await supabase
-          .from('session_count_logs')
-          .select('teacher_id')
-          .in('teacher_id', teacherIds);
-        if (logRows) {
-          for (const row of logRows) {
-            const tid = row.teacher_id as string;
-            if (tid) logCountByTeacher[tid] = (logCountByTeacher[tid] || 0) + 1;
-          }
-        }
-      }
+      const logCountByTeacher = await fetchTeacherLogCounts(supabase, teacherIds);
       const fetchedUsers = base.map((u) => ({
         ...u,
         logCount: logCountByTeacher[u.id] ?? 0,
