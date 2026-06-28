@@ -34,29 +34,31 @@ export function PrivateCurriculumSection() {
           eyebrow={section.eyebrow}
           title={section.title}
           lead={section.lead}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
           {section.items.map((item) => (
             <article
               key={item.title}
-              className={`overflow-hidden transition hover:border-violet-200/80 ${landingCardShell}`}
+              className={`overflow-hidden transition hover:border-teal-200/80 ${landingCardShell}`}
             >
               <button
                 type="button"
-                className="group flex w-full cursor-zoom-in flex-col items-stretch border-0 bg-slate-50/80 p-2 sm:p-2.5"
+                className="group flex w-full cursor-zoom-in flex-col items-stretch border-0 bg-[#0b0b0d] p-0"
                 onClick={() => setZoomed({ src: item.img, alt: item.alt, title: item.title })}
                 aria-label={`${item.title} 이미지 확대`}
               >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={item.img}
-                  alt={item.alt}
-                  loading="lazy"
-                  decoding="async"
-                  referrerPolicy="no-referrer"
-                  className="mx-auto h-auto w-full max-h-[min(42vw,220px)] object-contain object-center transition duration-200 group-hover:opacity-95 sm:max-h-[200px]"
-                />
+                <div className="relative aspect-[4/3] w-full overflow-hidden">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.img}
+                    alt={item.alt}
+                    loading="lazy"
+                    decoding="async"
+                    referrerPolicy="no-referrer"
+                    className="absolute inset-0 h-full w-full object-contain p-2 transition duration-200 group-hover:opacity-95"
+                  />
+                </div>
               </button>
               <div className="border-t border-slate-100 p-3 sm:p-3.5">
                 <h3 className="text-sm font-semibold text-slate-950">{item.title}</h3>

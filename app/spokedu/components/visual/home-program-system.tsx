@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { HomePhotoZoom } from '../home-photo-zoom';
 import { HOME_MEDIA } from '../../data/home-media';
-import type { HomeProgramSystemItem } from '../../data/home-page';
+import type { ProgramSystemItem } from '../../data/program-system-items';
 import { cardInteractive, koreanLineBreak } from '../../lib/ui-classes';
 import { inferTrackFromHref } from '../../lib/tracking';
 import { MediaPanel } from './media-panel';
@@ -12,7 +12,7 @@ import { MediaPanel } from './media-panel';
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
-function ProgramFeaturedCard({ item }: { item: HomeProgramSystemItem }) {
+function ProgramFeaturedCard({ item }: { item: ProgramSystemItem }) {
   const media = HOME_MEDIA[item.mediaKey];
 
   return (
@@ -45,7 +45,7 @@ function ProgramFeaturedCard({ item }: { item: HomeProgramSystemItem }) {
   );
 }
 
-function ProgramCompactCard({ item }: { item: HomeProgramSystemItem }) {
+function ProgramCompactCard({ item }: { item: ProgramSystemItem }) {
   const media = HOME_MEDIA[item.mediaKey];
 
   return (
@@ -75,7 +75,7 @@ function ProgramCompactCard({ item }: { item: HomeProgramSystemItem }) {
 }
 
 type HomeProgramSystemProps = {
-  items: readonly HomeProgramSystemItem[];
+  items: readonly ProgramSystemItem[];
 };
 
 export function HomeProgramSystem({ items }: HomeProgramSystemProps) {

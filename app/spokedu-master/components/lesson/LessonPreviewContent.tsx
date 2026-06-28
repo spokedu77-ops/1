@@ -32,6 +32,7 @@ export function LessonPreviewContent({
   const previewEquipment = model.equipment.slice(0, 6);
   const previewRules = model.activityMethod.slice(0, 3);
   const previewScript = model.previewCoachScript;
+  const quality = model.quality;
   const hasSummaryContent =
     previewEquipment.length > 0 ||
     Boolean(previewScript) ||
@@ -53,6 +54,11 @@ export function LessonPreviewContent({
               </span>
             ))}
           </div>
+        ) : null}
+        {quality.status !== 'READY' ? (
+          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-800">
+            {quality.status} · 부족: {quality.missing.slice(0, 3).join(', ')}
+          </p>
         ) : null}
       </div>
 

@@ -6,7 +6,7 @@ import { addDays, addWeeks, format, isSameDay, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { getPrimaryOfficialSpomovePreset, getSpomoveSessionHref } from '../lib/program-meta';
+import { getPrimarySupportedSpomovePreset, getSpomoveSessionHref } from '../lib/program-meta';
 import { useMasterStore } from '../store';
 import type { Program } from '../types';
 
@@ -38,7 +38,7 @@ function getProgramForLesson(title: string, programs: Program[]) {
 
 function LessonItem({ lesson, programs, onToggle, onDelete }: { lesson: ReturnType<typeof useMasterStore.getState>['lessons'][number]; programs: Program[]; onToggle: () => void; onDelete: () => void }) {
   const program = getProgramForLesson(lesson.title, programs);
-  const spomovePreset = program ? getPrimaryOfficialSpomovePreset(program) : null;
+  const spomovePreset = program ? getPrimarySupportedSpomovePreset(program) : null;
   return (
     <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br)' }}>
       <div className="flex items-center gap-3">

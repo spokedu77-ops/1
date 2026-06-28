@@ -69,7 +69,10 @@
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\public\\\\spomove\\\\dive\\\\models\\\\dive_track_segment.glb\"\\); $jsonLen = [System.BitConverter]::ToUInt32\\($bytes, 12\\); $json = [System.Text.Encoding]::UTF8.GetString\\($bytes, 20, $jsonLen\\); $obj = $json | ConvertFrom-Json; Write-Host \"---meshes---\"; $obj.meshes | ForEach-Object { $_.name }; Write-Host \"---nodes---\"; $obj.nodes | ForEach-Object { $_.name })",
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\public\\\\spomove\\\\dive\\\\models\\\\dive_obstacle_crate_a.glb\"\\); $jsonLen = [System.BitConverter]::ToUInt32\\($bytes, 12\\); $json = [System.Text.Encoding]::UTF8.GetString\\($bytes, 20, $jsonLen\\); $obj = $json | ConvertFrom-Json; Write-Host \"---meshes---\"; $obj.meshes | ForEach-Object { $_.name }; Write-Host \"---nodes---\"; $obj.nodes | ForEach-Object { $_.name }; Write-Host \"---accessors-bounds---\"; $obj.accessors | Where-Object { $_.max -ne $null } | Select-Object -First 5 | ForEach-Object { \"max: $\\($_.max -join ','\\)  min: $\\($_.min -join ','\\)\" })",
       "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\(\"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\\\\public\\\\spomove\\\\dive\\\\models\\\\dive_duck_spaceship.glb\"\\); $jsonLen = [System.BitConverter]::ToUInt32\\($bytes, 12\\); $json = [System.Text.Encoding]::UTF8.GetString\\($bytes, 20, $jsonLen\\); $obj = $json | ConvertFrom-Json; Write-Host \"---meshes---\"; $obj.meshes | ForEach-Object { $_.name }; Write-Host \"---nodes---\"; $obj.nodes | ForEach-Object { $_.name })",
-      "Bash(xargs grep -l \"useSpomoveTrainingBGM\")"
+      "Bash(xargs grep -l \"useSpomoveTrainingBGM\")",
+      "Bash(find \"C:/Users/joker\" -name \"sci-fi_crate*.glb\" -o -name \"pbr_spaceship*.glb\" -o -name \"sci-fi_wall*.glb\" 2>/dev/null | head -10)",
+      "Read(//c/Users/joker/**)",
+      "PowerShell(cd \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\"; npx tsc --noEmit --pretty false 2>&1 | Where-Object { $_ -notmatch \"site-ia\\\\.test\\\\.ts\" })"
     ],
     "additionalDirectories": [
       "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"

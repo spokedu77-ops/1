@@ -16,12 +16,12 @@ export function DispatchProgramLineup() {
   const section = dispatchPage.programLineup;
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div id="programs" className="scroll-mt-20 space-y-5 sm:space-y-6">
       <LandingSectionHeading
         eyebrow={section.eyebrow}
         title={section.title}
         lead={section.lead}
-        accent="sky"
+        accent="teal"
       />
       <div className="flex flex-col gap-4">
         {section.items.map((item, index) => {
@@ -60,9 +60,9 @@ export function DispatchProgramLineup() {
                 ) : null}
               </div>
               <div className="flex min-w-0 flex-1 flex-col border-t border-slate-100 p-4 sm:border-l sm:border-t-0 sm:p-5">
-                <p className="text-[10px] font-semibold uppercase tracking-wide text-sky-700">{audience}</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-teal-800">{audience}</p>
                 <h3 className="mt-1 text-base font-semibold text-slate-950 sm:text-lg">{name}</h3>
-                <p className="mt-0.5 text-sm text-sky-800">{subtitle}</p>
+                <p className="mt-0.5 text-sm text-teal-900">{subtitle}</p>
                 <div className="mt-2.5 space-y-1.5">
                   {paragraphs.map((p) => (
                     <p key={p} className={`text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
@@ -80,7 +80,7 @@ export function DispatchProgramLineup() {
                     </span>
                   ))}
                 </div>
-                <p className="mt-2.5 text-xs font-medium text-sky-700">{example}</p>
+                <p className="mt-2.5 text-xs font-medium text-teal-800">{example}</p>
               </div>
             </div>
           );

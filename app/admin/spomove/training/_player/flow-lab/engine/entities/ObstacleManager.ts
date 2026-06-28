@@ -358,21 +358,119 @@ export class ObstacleManager {
     }
 
     // ── GLB 시각 치환 (enhanced 모드) ─────────────────────────────────────────
-    // 기존 절차적 geometry는 판정/로직용으로 유지 (invisible)
-    // GLB clone이 visible 시각 자산
-    const template = isReach ? this.wallTemplate : this.crateTemplate;
-    if (template) {
-      const childList = [...g.children];
-      for (const c of childList) c.visible = false; // 기존 메시 숨김
-      const glbClone = template.clone(true);
+
+    if (isReach && this.wallTemplate) {
+      // 벽: wallVisualRoot 구조 + 방향 정규화 + 비균등 스케일 + 중앙 정렬 + HP 인디케이터
+      const BRIDGE_SURF = 40;
+      const HP_W = 16, HP_H = 10, HP_D = 3, HP_GAP = 4;
+      const wallVisualRoot = new THREE.Group();
+
+      const glbClone = this.wallTemplate.clone(true);
       glbClone.frustumCulled = false;
       glbClone.traverse((obj) => {
         const m = obj as THREE.Mesh;
         if (!m.isMesh) return;
         m.frustumCulled = false;
       });
-      // 벽(isReach)은 브릿지 표면(Y=40) 위에 배치, 크레이트는 그룹 Y=40에서 Y=0
-      if (isReach) glbClone.position.y = 40;
+
+      // ① 방향 정규화: Z/Y 비율이 가장 작은 회전 선택 (얇은 Z, 높은 Y)
+      const rotCandidates: THREE.Euler[] = [
+        new THREE.Euler(0,              0, 0),
+        new THREE.Euler(Math.PI / 2,    0, 0),
+        new THREE.Euler(-Math.PI / 2,   0, 0),
+        new THREE.Euler(0,  Math.PI / 2, 0),
+        new THREE.Euler(0, -Math.PI / 2, 0),
+        new THREE.Euler(0,  Math.PI,     0),
+      ];
+      let bestEuler = rotCandidates[0]!;
+      let bestScore = Infinity;
+      glbClone.scale.set(1, 1, 1);
+      glbClone.position.set(0, 0, 0);
+      for (const euler of rotCandidates) {
+        glbClone.rotation.copy(euler);
+        glbClone.updateWorldMatrix(true, true);
+        const tBox  = new THREE.Box3().setFromObject(glbClone);
+        const tSize = tBox.getSize(new THREE.Vector3());
+        if (tSize.x < 0.001 || tSize.y < 0.001 || tSize.z < 0.001) continue;
+        const score = tSize.z / tSize.y;
+        if (score < bestScore) { bestScore = score; bestEuler = euler; }
+      }
+      glbClone.rotation.copy(bestEuler);
+      glbClone.position.set(0, 0, 0);
+      glbClone.updateWorldMatrix(true, true);
+
+      // ② 회전 후 bounds 측정
+      const rotBox  = new THREE.Box3().setFromObject(glbClone);
+      const rotSize = rotBox.getSize(new THREE.Vector3());
+
+      // ③ 비균등 스케일 (W=130, H=250, D=35)
+      const sX = rotSize.x > 0.001 ? 130 / rotSize.x : 1;
+      const sY = rotSize.y > 0.001 ? 250 / rotSize.y : 1;
+      const sZ = rotSize.z > 0.001 ? 35  / rotSize.z : 1;
+      glbClone.scale.set(sX, sY, sZ);
+      glbClone.updateWorldMatrix(true, true);
+
+      // ④ 최종 bounds → X/Z 중앙 정렬 + 하단 → 브릿지 표면
+      const finalBox    = new THREE.Box3().setFromObject(glbClone);
+      const finalCenter = finalBox.getCenter(new THREE.Vector3());
+      glbClone.position.x = -finalCenter.x;
+      glbClone.position.z = -finalCenter.z;
+      glbClone.position.y = BRIDGE_SURF - finalBox.min.y;
+      wallVisualRoot.add(glbClone);
+
+      // ⑤ HP 인디케이터 (wallVisualRoot child, 벽 상단 위 + 정면)
+      const wallTopY   = glbClone.position.y + finalBox.max.y;
+      const wallFrontZ = finalBox.max.z - finalCenter.z;
+      const hpY = wallTopY  + 16;
+      const hpZ = wallFrontZ + 6;
+      const totalHpW = PUNCH_WALL_HP * HP_W + (PUNCH_WALL_HP - 1) * HP_GAP;
+      const hpStartX = -(totalHpW / 2) + HP_W / 2;
+      for (let hp = 0; hp < PUNCH_WALL_HP; hp++) {
+        const seg = new THREE.Mesh(
+          new THREE.BoxGeometry(HP_W, HP_H, HP_D),
+          new THREE.MeshBasicMaterial({ color: 0x22c55e, toneMapped: false }),
+        );
+        seg.position.set(hpStartX + hp * (HP_W + HP_GAP), hpY, hpZ);
+        seg.userData['hpIndex'] = hp;
+        wallVisualRoot.add(seg);
+      }
+
+      // ⑦ SF 네온 프레임 오버레이 — cyan 얇은 수평 바 (상단 + 하단)
+      const fMat = new THREE.MeshBasicMaterial({ color: 0x22d3ee, toneMapped: false });
+      const topBar = new THREE.Mesh(new THREE.BoxGeometry(136, 3, 4), fMat);
+      topBar.position.set(0, wallTopY - 5, wallFrontZ + 2);
+      wallVisualRoot.add(topBar);
+      const botBar = new THREE.Mesh(new THREE.BoxGeometry(136, 3, 4), fMat);
+      botBar.position.set(0, BRIDGE_SURF + 3, wallFrontZ + 2);
+      wallVisualRoot.add(botBar);
+
+      // ⑥ 기존 절차적 메시 숨김 (기존 HP LED hpIndex 제거 — 중복 판정 방지)
+      for (const c of [...g.children]) {
+        if (typeof c.userData['hpIndex'] === 'number') {
+          delete c.userData['hpIndex'];
+        }
+        c.visible = false;
+      }
+      g.add(wallVisualRoot);
+
+    } else if (!isReach && this.crateTemplate) {
+      // 크레이트: 목표 W=82, H=65, D=75 (하단 → 그룹 Y=0, 그룹 자체가 Y=STANDARD_BOX_Y)
+      const glbClone = this.crateTemplate.clone(true);
+      glbClone.frustumCulled = false;
+      glbClone.traverse((obj) => {
+        const m = obj as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.frustumCulled = false;
+      });
+      glbClone.updateWorldMatrix(true, true);
+      const srcBox  = new THREE.Box3().setFromObject(glbClone);
+      const srcSize = srcBox.getSize(new THREE.Vector3());
+      const hasSrc  = srcSize.x > 0.001 && srcSize.y > 0.001 && srcSize.z > 0.001;
+      const scale = hasSrc ? Math.min(82 / srcSize.x, 65 / srcSize.y, 75 / srcSize.z) : 1;
+      glbClone.scale.setScalar(scale);
+      const scaledBox = new THREE.Box3().setFromObject(glbClone);
+      glbClone.position.y = -scaledBox.min.y;
+      for (const c of [...g.children]) c.visible = false;
       g.add(glbClone);
     }
 
@@ -510,11 +608,9 @@ export class ObstacleManager {
     group.add(glow);
 
     // ── GLB 우주선 시각 치환 (enhanced 모드) ──────────────────────────────────
-    // 기존 절차적 UFO 메시: visible=false (invisible 판정 용도)
-    // GLB spaceship: 부모 그룹의 hover·bank 애니메이션 그대로 상속
+    // 기존 절차적 UFO 메시: visible=false (hover·bank 애니메이션은 숨겨진 채 계속 실행)
+    // GLB spaceship: 부모 그룹의 hover·bank 애니메이션 그대로 상속; PBR texture 원본 유지
     if (this.spaceshipTemplate) {
-      const childList = [...group.children];
-      for (const c of childList) c.visible = false;
       const ship = this.spaceshipTemplate.clone(true);
       ship.frustumCulled = false;
       ship.traverse((obj) => {
@@ -522,6 +618,20 @@ export class ObstacleManager {
         if (!m.isMesh) return;
         m.frustumCulled = false;
       });
+
+      // source bounds 측정 → uniform scale (width ~330 기준)
+      ship.updateWorldMatrix(true, true);
+      const srcBox  = new THREE.Box3().setFromObject(ship);
+      const srcSize = srcBox.getSize(new THREE.Vector3());
+      if (srcSize.x > 0.001 && srcSize.y > 0.001) {
+        const scale = Math.min(330 / srcSize.x, 130 / srcSize.y, 220 / srcSize.z);
+        ship.scale.set(scale, scale * 1.30, scale); // Y축 30% 증가 — 우주선 세로 비율 보정
+        // 수직 중심을 그룹 Y=0 (UFO_HEIGHT 부유 높이)에 정렬
+        const scaledBox = new THREE.Box3().setFromObject(ship);
+        ship.position.y = -(scaledBox.min.y + scaledBox.max.y) / 2;
+      }
+
+      for (const c of [...group.children]) c.visible = false;
       group.add(ship);
     }
 

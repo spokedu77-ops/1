@@ -31,9 +31,7 @@ import {
   parseMasterSpaces,
   parseMasterTargets,
 } from '../lib/programDisplayTags';
-import {
-  findOfficialSpomovePreset,
-} from '../spomove/officialSpomovePresets';
+import { getSupportedOfficialSpomovePresets } from '../lib/program-meta';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPro, useMasterStore } from '../store';
@@ -86,8 +84,7 @@ function tagDisplayLabel(group: FilterGroupKey, value: string): string {
 }
 
 function hasSpomoveLink(program: Program) {
-  const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return related.some((id) => Boolean(findOfficialSpomovePreset(id)));
+  return getSupportedOfficialSpomovePresets(program).length > 0;
 }
 
 function normalizeTitle(title: string) {

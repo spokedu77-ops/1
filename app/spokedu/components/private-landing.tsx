@@ -13,12 +13,14 @@ import { LandingStepPanel } from './landing-step-grid';
 import { PrivateCurriculumSection } from './private-curriculum-section';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
-import { PrivateHeroTrustBand } from './private-hero-stats';
+import { PrivateClassFlowGallery } from './private-class-flow-gallery';
 import { PrivateMoveReportSection } from './private-move-report-section';
+import { PrivateTrustMetrics } from './private-trust-metrics';
 import { MediaPanel } from './visual';
 
 const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const locationCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
+const reviewCardShell = `flex h-full flex-col border-l-4 border-l-teal-600 p-4 sm:p-5 ${landingCardShell}`;
 
 function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
@@ -36,28 +38,28 @@ function Section({ children, className = '', delay = 0 }: { children: ReactNode;
 }
 
 export default function PrivateLanding() {
-  const [featuredFlowImage, ...flowImages] = privatePage.classFlow.images;
-
   return (
     <div className={audienceLandingStack}>
-      <div className="space-y-4">
-        <LandingHero
-          kicker={privatePage.hero.kicker}
-          kickerClassName="text-violet-700"
-          lines={privatePage.hero.lines}
-          subtitle={privatePage.hero.subtitle}
-          media={HOME_MEDIA[privatePage.hero.mediaKey]}
-          priority
-          primaryCta={privatePage.heroCtas.primary}
-          secondaryCta={privatePage.heroCtas.secondary}
-        />
-        <PrivateHeroTrustBand trustBadge={privatePage.hero.trustBadge} />
-      </div>
+      <LandingHero
+        kicker={privatePage.hero.kicker}
+        kickerClassName="text-stone-500"
+        lines={privatePage.hero.lines}
+        subtitle={privatePage.hero.subtitle}
+        media={HOME_MEDIA[privatePage.hero.mediaKey]}
+        visualVariant="editorial"
+        priority
+        primaryCta={privatePage.heroCtas.primary}
+        secondaryCta={privatePage.heroCtas.secondary}
+      />
+
+      <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
+        <PrivateTrustMetrics />
+      </Section>
 
       <HomeSectionRule />
 
       <Section className="space-y-5 sm:space-y-6">
-        <LandingSectionHeading eyebrow={privatePage.whoNeeds.eyebrow} title={privatePage.whoNeeds.title} accent="violet" />
+        <LandingSectionHeading eyebrow={privatePage.whoNeeds.eyebrow} title={privatePage.whoNeeds.title} accent="teal" />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5 lg:grid-cols-4">
           {privatePage.whoNeeds.items.map((item) => (
             <article key={item.title} className={whoCardShell}>
@@ -74,22 +76,26 @@ export default function PrivateLanding() {
         <LandingSectionHeading
           eyebrow={privatePage.instructors.eyebrow}
           title={privatePage.instructors.title}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
           {privatePage.instructors.items.map((item) => (
-            <article key={item.name} className={`overflow-hidden ${landingCardShell}`}>
-              <div className="flex items-start gap-3.5 p-4 sm:gap-4 sm:p-5">
-                <div className="relative h-[4.5rem] w-[4.5rem] shrink-0 overflow-hidden rounded-xl bg-slate-100 sm:h-20 sm:w-20">
+            <article key={item.name} className={`relative overflow-hidden pt-1 ${landingCardShell}`}>
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-500 to-teal-700" aria-hidden />
+              <div className="flex flex-col items-center px-5 py-6 text-center sm:px-6 sm:py-7">
+                <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-[1.375rem] border border-slate-200 bg-slate-100 sm:h-44 sm:w-44">
                   <ExternalPhoto src={item.photo} alt={item.name} className="absolute inset-0" fit="cover" />
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-[15px] font-semibold text-slate-950 sm:text-base">{item.name}</h3>
-                  <p className="mt-0.5 text-sm text-slate-600">{item.degree}</p>
-                  <ul className="mt-2 space-y-1">
+                <div className="mt-4 flex min-w-0 flex-1 flex-col items-center">
+                  <h3 className="text-lg font-bold text-slate-950 sm:text-xl">{item.name}</h3>
+                  <p className="mt-1 text-sm font-semibold text-teal-800">{item.degree}</p>
+                  <ul className="mt-3 flex flex-wrap justify-center gap-2">
                     {item.badges.map((badge) => (
-                      <li key={badge} className={`text-xs leading-snug text-slate-600 ${koreanLineBreak}`}>
-                        · {badge}
+                      <li
+                        key={badge}
+                        className={`rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600 ${koreanLineBreak}`}
+                      >
+                        {badge}
                       </li>
                     ))}
                   </ul>
@@ -106,7 +112,7 @@ export default function PrivateLanding() {
         <LandingSectionHeading
           eyebrow={privatePage.classCompare.eyebrow}
           title={privatePage.classCompare.title}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4">
           {privatePage.classCompare.items.map((item, index) => (
@@ -134,13 +140,13 @@ export default function PrivateLanding() {
           eyebrow={privatePage.classFlow.eyebrow}
           title={privatePage.classFlow.title}
           lead={privatePage.classFlow.lead}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid gap-4 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:gap-5">
           <ol className="space-y-2.5">
             {privatePage.classFlow.steps.map((step) => (
               <li key={step.num} className={`px-4 py-3.5 sm:px-5 sm:py-4 ${landingCardShell}`}>
-                <span className="text-[10px] font-bold tracking-[0.1em] text-violet-600">{step.num}</span>
+                <span className="text-[10px] font-bold tracking-[0.1em] text-teal-700">{step.num}</span>
                 <h3 className={`mt-1 text-[15px] font-semibold text-slate-950 sm:text-base ${koreanLineBreak}`}>
                   {step.title}
                 </h3>
@@ -148,27 +154,7 @@ export default function PrivateLanding() {
               </li>
             ))}
           </ol>
-          <div className="grid gap-2.5 sm:grid-cols-2">
-            {featuredFlowImage ? (
-              <div className="relative min-h-[180px] overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 sm:col-span-2 sm:min-h-[200px]">
-                <ExternalPhoto
-                  src={featuredFlowImage.src}
-                  alt={featuredFlowImage.alt}
-                  className="absolute inset-0"
-                  fit="contain"
-                  priority
-                />
-              </div>
-            ) : null}
-            {flowImages.map((img) => (
-              <div
-                key={img.alt}
-                className="relative min-h-[160px] overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 sm:min-h-[180px]"
-              >
-                <ExternalPhoto src={img.src} alt={img.alt} className="absolute inset-0" fit="contain" />
-              </div>
-            ))}
-          </div>
+          <PrivateClassFlowGallery images={privatePage.classFlow.images} />
         </div>
       </Section>
 
@@ -179,7 +165,7 @@ export default function PrivateLanding() {
           eyebrow={privatePage.classFormat.eyebrow}
           title={privatePage.classFormat.title}
           lead={privatePage.classFormat.lead}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-3.5">
           {privatePage.classFormat.locations.map((loc) => (
@@ -196,15 +182,15 @@ export default function PrivateLanding() {
           eyebrow={privatePage.sessionCycles.eyebrow}
           title={privatePage.sessionCycles.title}
           lead={privatePage.sessionCycles.lead}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid gap-3 sm:grid-cols-3">
           {privatePage.sessionCycles.items.map((item) => (
             <article
               key={item.label}
-              className="rounded-2xl border border-violet-100 bg-violet-50/40 px-4 py-3.5 sm:px-5 sm:py-4"
+              className="rounded-2xl border border-teal-100 bg-teal-50/30 px-4 py-3.5 sm:px-5 sm:py-4"
             >
-              <h3 className="text-[15px] font-semibold text-violet-900 sm:text-base">{item.label}</h3>
+              <h3 className="text-[15px] font-semibold text-teal-900 sm:text-base">{item.label}</h3>
               <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.description}</p>
             </article>
           ))}
@@ -220,11 +206,11 @@ export default function PrivateLanding() {
           eyebrow={privatePage.reviews.eyebrow}
           title={privatePage.reviews.title}
           lead={privatePage.reviews.lead}
-          accent="violet"
+          accent="teal"
         />
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
           {privatePage.reviews.items.map((item) => (
-            <article key={item.who + item.course} className={`flex h-full flex-col p-4 sm:p-5 ${landingCardShell}`}>
+            <article key={item.who + item.course} className={reviewCardShell}>
               <p className="text-sm text-amber-500" aria-hidden>
                 ★★★★★
               </p>
@@ -233,7 +219,7 @@ export default function PrivateLanding() {
               </p>
               <div className="mt-3.5 border-t border-slate-100 pt-3">
                 <p className="text-sm font-semibold text-slate-950">{item.who}</p>
-                <p className="mt-0.5 text-xs text-violet-700">{item.course}</p>
+                <p className="mt-0.5 text-xs text-teal-800">{item.course}</p>
               </div>
             </article>
           ))}
@@ -241,18 +227,18 @@ export default function PrivateLanding() {
       </Section>
 
       <Section>
-        <LandingStepPanel steps={privatePage.consultFlow.steps} accent="violet" columns="4">
+        <LandingStepPanel steps={privatePage.consultFlow.steps} accent="teal" columns="4">
           <LandingSectionHeading
             eyebrow={privatePage.consultFlow.eyebrow}
             title={privatePage.consultFlow.title}
-            accent="violet"
+            accent="teal"
           />
         </LandingStepPanel>
       </Section>
 
       <Section className="space-y-5 sm:space-y-6">
-        <LandingSectionHeading eyebrow={privatePage.faq.eyebrow} title={privatePage.faq.title} accent="violet" />
-        <LandingFaqList items={privatePage.faq.items} accent="violet" />
+        <LandingSectionHeading eyebrow={privatePage.faq.eyebrow} title={privatePage.faq.title} accent="teal" />
+        <LandingFaqList items={privatePage.faq.items} accent="teal" />
       </Section>
 
       <HomeSectionRule />

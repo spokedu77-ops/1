@@ -215,6 +215,57 @@ describe('SPOKEDU MASTER program GET validation', () => {
     expect(result.body.data[0].thumbnailUrl).toBe('https://example.com/hero.jpg');
   });
 
+  it('preserves explicit safety, field, setup, and variation sections from Master meta', async () => {
+    mockProgramQueries({
+      curriculum: { data: [{ id: 101, display_order: 1 }], error: null },
+      spokedu_master_program_meta: {
+        data: [validMeta({
+          sm_briefing_notes: [
+            '[사전 교육]',
+            'Brief before class',
+            '[안전 포인트]',
+            'Keep lanes separated',
+            '[운영 팁]',
+            'Run one team at a time',
+            '[세팅]',
+            'Place cones in two lanes',
+          ].join('\n'),
+          sm_variation_method: '[변형 방법]\nShorten the lane\nUse walking only',
+        })],
+        error: null,
+      },
+      spokedu_pro_programs: {
+        data: [validOverlay({ equipment: 'cones', video_url: 'https://youtu.be/dQw4w9WgXcQ' })],
+        error: null,
+      },
+    });
+
+    const result = await getPrograms();
+    const detail = result.body.data[0].lessonDetail;
+
+    expect(result.status).toBe(200);
+    expect(detail.briefingNotes).toContain('Brief before class');
+    expect(detail.safetyNotes).toEqual(['Keep lanes separated']);
+    expect(detail.fieldTips).toEqual(['Run one team at a time']);
+    expect(detail.setupNotes).toEqual(['Place cones in two lanes']);
+    expect(detail.variations).toEqual(['Shorten the lane', 'Use walking only']);
+  });
+
+  it('does not invent safety or field notes when source metadata has none', async () => {
+    mockProgramQueries({
+      curriculum: { data: [{ id: 101, display_order: 1 }], error: null },
+      spokedu_master_program_meta: { data: [validMeta({ sm_briefing_notes: 'Brief only' })], error: null },
+      spokedu_pro_programs: { data: [validOverlay({ equipment: 'cones' })], error: null },
+    });
+
+    const result = await getPrograms();
+    const detail = result.body.data[0].lessonDetail;
+
+    expect(detail.safetyNotes).toEqual([]);
+    expect(detail.fieldTips).toEqual([]);
+    expect(detail.setupNotes).toEqual([]);
+  });
+
   it('returns the existing empty-data contract when there are no published overlays', async () => {
     mockProgramQueries({
       curriculum: { data: [{ id: 101, display_order: 1 }], error: null },

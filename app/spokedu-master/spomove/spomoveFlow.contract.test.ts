@@ -57,8 +57,9 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('완료');
   });
 
-  it('connects completion to class records and activity re-entry', () => {
-    expect(session).toContain('/spokedu-master/class-record?program=${officialPreset.id}');
+  it('connects lesson-context completion to class records and keeps standalone sessions separate', () => {
+    expect(session).toContain('recordProgramHref');
+    expect(session).not.toContain('/spokedu-master/class-record?program=${officialPreset.id}');
     expect(session).toContain('/spokedu-master/activity');
     expect(session).toContain('같은 프로그램 다시 실행');
     expect(session).toContain('다른 프로그램 선택');

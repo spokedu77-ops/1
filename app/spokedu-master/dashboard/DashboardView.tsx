@@ -4,7 +4,6 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  ClipboardList,
   FileText,
   MonitorPlay,
   Play,
@@ -20,7 +19,6 @@ import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
-import { getFavoritesByOwner, getFavoritesOwnerId } from '../lib/favoriteLib';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   getImageFallbackSrc,
@@ -29,6 +27,11 @@ import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
+import {
+  getProgramHomeReadiness,
+  isProgramHomeRecommendationEligible,
+} from '../lib/program-meta';
+import { isMasterFirstUser, selectMasterLoopAction } from '../lib/masterUserLoop';
 import { getTrialDaysLeft, isActiveTrial } from '../lib/subscription';
 import {
   buildProgramResumeHref,
@@ -64,19 +67,19 @@ type ContinueItem = {
 
 const FIRST_START_STEPS = [
   {
-    title: '수업 자료 고르기',
+    title: '오늘 수업 고르기',
     href: '/spokedu-master/library',
     Icon: BookOpen,
   },
   {
-    title: '학생 등록하기',
-    href: '/spokedu-master/students',
-    Icon: UsersRound,
+    title: 'SPOMOVE 체험하기',
+    href: '/spokedu-master/spomove',
+    Icon: MonitorPlay,
   },
   {
-    title: '첫 수업 기록하기',
+    title: '기록·안내문 완성',
     href: '/spokedu-master/class-record',
-    Icon: ClipboardList,
+    Icon: FileText,
   },
 ] as const;
 
@@ -92,14 +95,6 @@ function displayText(value: string | undefined, fallback: string) {
 
 function getProgramTitle(program: Program) {
   return displayText(program.title, 'SPOKEDU 수업');
-}
-
-function getProgramGrade(program: Program) {
-  return displayText(program.grade, '');
-}
-
-function getProgramSpace(program: Program) {
-  return displayText(program.space, '');
 }
 
 function getHeroImage(program: Program) {
@@ -120,31 +115,6 @@ function uniquePrograms(programs: Program[]) {
   });
 }
 
-function hasHomeFlow(program: Program) {
-  return Boolean(program.lessonDetail?.rules?.length || program.steps.length);
-}
-
-function hasHomeContext(program: Program) {
-  return Boolean(program.description && !isPlaceholderText(program.description));
-}
-
-function getHomeReadiness(program: Program) {
-  const checks = [
-    programHasPlayableVideo(program),
-    Boolean(getHeroImage(program)),
-    Boolean(getProgramGrade(program)),
-    Boolean(getProgramSpace(program)),
-    hasHomeFlow(program),
-    hasHomeContext(program),
-    program.equipment.some((item) => !isPlaceholderText(item)),
-  ];
-  return checks.filter(Boolean).length;
-}
-
-function isHomeDisplayable(program: Program) {
-  return getHomeReadiness(program) >= 3 && Boolean(getHeroImage(program) || programHasPlayableVideo(program));
-}
-
 function getHomeSortOrder(program: Program) {
   return program.homeSortOrder ?? 9999;
 }
@@ -153,7 +123,7 @@ function compareHomePrograms(a: Program, b: Program) {
   return (
     Number(b.isHot) - Number(a.isHot) ||
     getHomeSortOrder(a) - getHomeSortOrder(b) ||
-    getHomeReadiness(b) - getHomeReadiness(a) ||
+    getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
     Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
     Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
     Number(b.isNew) - Number(a.isNew)
@@ -213,10 +183,10 @@ function matchesContextTab(program: Program, tab: ContextProgramTab) {
 
 function compareContextPrograms(a: Program, b: Program) {
   return (
-    Number(isHomeDisplayable(b)) - Number(isHomeDisplayable(a)) ||
+    Number(isProgramHomeRecommendationEligible(b)) - Number(isProgramHomeRecommendationEligible(a)) ||
     Number(b.isHot) - Number(a.isHot) ||
     getHomeSortOrder(a) - getHomeSortOrder(b) ||
-    getHomeReadiness(b) - getHomeReadiness(a) ||
+    getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
     Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
     Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
     Number(b.isNew) - Number(a.isNew)
@@ -394,7 +364,7 @@ function WeeklyProgramCard({
 function ContinueSection({ item }: { item: ContinueItem }) {
   return (
     <section className="rounded-[20px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] sm:p-5">
-      <SectionHeader title="계속 사용하기" description="최근 작업을 바로 이어서 열 수 있습니다." />
+      <SectionHeader title="최근 사용" description="최근 열어본 수업과 SPOMOVE를 빠르게 다시 확인합니다." />
       <Link
         data-continue-item={item.id}
         href={item.href}
@@ -430,7 +400,7 @@ function FirstStartGuide() {
           SPOKEDU MASTER 시작하기
         </h2>
         <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-600">
-          수업 자료를 고르고 학생을 등록한 뒤 첫 수업 기록을 남겨 보세요.
+          오늘 바로 쓸 수업을 먼저 고르고, 필요하면 SPOMOVE 화면 활동을 함께 체험해 보세요.
         </p>
       </div>
       <div className="mt-4 grid gap-2 md:grid-cols-3">
@@ -576,7 +546,7 @@ function buildContinueItem(
       type: 'SPOMOVE',
       title: recentSpomove.programTitle,
       status: '최근 실행한 반응 프로그램',
-      action: '프로그램 보기',
+      action: '다시 보기',
       time: formatRelativeDate(recentSpomove.occurredAt),
       href: buildProgramResumeHref(recentSpomove.programId, 'spomove_started'),
     };
@@ -587,8 +557,8 @@ function buildContinueItem(
       id: `lesson-${recentLesson.programId}`,
       type: '수업',
       title: recentLesson.programTitle,
-      status: recentLesson.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 사용한 수업',
-      action: '수업 미리보기',
+      status: recentLesson.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 열어본 수업',
+      action: '다시 보기',
       time: formatRelativeDate(recentLesson.occurredAt),
       href: recentLesson.resumeHref,
     };
@@ -615,20 +585,29 @@ export default function DashboardView() {
   } = useOperationalData();
   const explanationData = useExplanationData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
-  const isFirstUser =
-    operationalStatus === 'ready' &&
-    serverStudents.length === 0 &&
-    serverClassRecords.length === 0;
   const profile = useProfile();
-  const favoritesOwnerId = getFavoritesOwnerId(profile);
-  const favoriteProgramIdsByOwner = useMasterStore((state) => state.favoriteProgramIdsByOwner);
-  const favoriteProgramIds = useMemo(
-    () => getFavoritesByOwner(favoriteProgramIdsByOwner, favoritesOwnerId),
-    [favoriteProgramIdsByOwner, favoritesOwnerId],
-  );
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
     : null;
+  const validLessonActivities = useMemo(() => {
+    if (!recentActivityOwnerId) return [];
+    return reconcileRecentProgramActivities(recentProgramActivities, programs)
+      .filter((activity) => activity.ownerId === recentActivityOwnerId);
+  }, [programs, recentActivityOwnerId, recentProgramActivities]);
+  const validSpomoveActivities = useMemo(() => {
+    if (!recentActivityOwnerId) return [];
+    const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
+    return reconcileRecentSpomoveActivities(recentProgramActivities, validPresetIds)
+      .filter((activity) => activity.ownerId === recentActivityOwnerId);
+  }, [recentActivityOwnerId, recentProgramActivities]);
+  const isFirstUser =
+    operationalStatus === 'ready' &&
+    isMasterFirstUser({
+      studentCount: serverStudents.length,
+      classRecords,
+      recentLessonActivities: validLessonActivities,
+      recentSpomoveActivities: validSpomoveActivities,
+    });
   const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
@@ -641,10 +620,10 @@ export default function DashboardView() {
   const weeklySelection = useMemo(
     () =>
       selectWeeklyRecommendationSlots(programs, {
-        isFallbackEligible: isHomeDisplayable,
+        isRecommendationEligible: isProgramHomeRecommendationEligible,
         compareFallback: (a, b) =>
           Number(b.isHot) - Number(a.isHot) ||
-          getHomeReadiness(b) - getHomeReadiness(a) ||
+          getProgramHomeReadiness(b) - getProgramHomeReadiness(a) ||
           Number(Boolean(getHeroImage(b))) - Number(Boolean(getHeroImage(a))) ||
           Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
           Number(b.isNew) - Number(a.isNew) ||
@@ -689,24 +668,21 @@ export default function DashboardView() {
     () => buildContinueItem(classRecords, recentProgramActivities, recentActivityOwnerId, programs),
     [classRecords, programs, recentActivityOwnerId, recentProgramActivities],
   );
-  const recentLessonPrograms = useMemo(() => {
-    if (!recentActivityOwnerId) return [];
-    return reconcileRecentProgramActivities(recentProgramActivities, programs)
-      .filter((activity) => activity.ownerId === recentActivityOwnerId)
-      .slice(0, 3)
-      .map((activity) => ({
-        activity,
-        program: programs.find((program) => program.id === activity.programId),
-      }))
-      .filter((item): item is { activity: RecentProgramActivity; program: Program } => Boolean(item.program));
-  }, [programs, recentActivityOwnerId, recentProgramActivities]);
-  const favoritePrograms = useMemo(
-    () => favoriteProgramIds.map((id) => programs.find((program) => program.id === id)).filter((program): program is Program => Boolean(program)).slice(0, 3),
-    [favoriteProgramIds, programs],
-  );
+  const showRecentUse = !isFirstUser && Boolean(continueItem);
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
     [classRecords],
+  );
+  const loopAction = useMemo(
+    () => selectMasterLoopAction({
+      profile,
+      trialDaysLeft: getTrialDaysLeft(profile),
+      recentLessonActivities: validLessonActivities,
+      recentSpomoveActivities: validSpomoveActivities,
+      classRecords,
+      explanationCount: explanationData.status === 'loading' ? 0 : explanationData.total,
+    }),
+    [classRecords, explanationData.status, explanationData.total, profile, validLessonActivities, validSpomoveActivities],
   );
 
   useEffect(() => {
@@ -716,7 +692,10 @@ export default function DashboardView() {
     if (weeklySelection.slotConflicts.length > 0) {
       console.error('[SPOKEDU MASTER] Conflicting explicit weekly slots.', weeklySelection.slotConflicts);
     }
-  }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts]);
+    if (weeklySelection.slotDiagnostics.length > 0) {
+      console.error('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.', weeklySelection.slotDiagnostics);
+    }
+  }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts, weeklySelection.slotDiagnostics]);
 
   if (!mounted || !programsLoaded) return <DashboardSkeleton />;
 
@@ -755,55 +734,18 @@ export default function DashboardView() {
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.16em] text-indigo-600">Today</p>
           <h1 className="mt-1 text-[25px] font-black tracking-[-0.035em] text-slate-950">오늘 운영</h1>
-          <p className="mt-1 text-[13px] font-semibold text-slate-500 sm:text-sm">수업 프로그램과 SPOMOVE를 확인하고, 최근 작업을 바로 이어갈 수 있습니다.</p>
+          <p className="mt-1 text-[13px] font-semibold text-slate-500 sm:text-sm">오늘 쓸 수업을 고르고, 필요한 화면 활동과 기록으로 이어가세요.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[13px] font-black text-indigo-700"><BookOpen size={15} />라이브러리</Link>
-          <Link href="/spokedu-master/spomove" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><MonitorPlay size={15} />SPOMOVE</Link>
-          <Link href="/spokedu-master/report" className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-700"><FileText size={15} />안내문</Link>
+        <div className="flex max-w-sm flex-col items-stretch gap-1.5 sm:items-end">
+          <Link href={loopAction.href} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-600 px-4 text-[13px] font-black text-white">
+            <ArrowRight size={15} />
+            {loopAction.label}
+          </Link>
+          <p className="max-w-[280px] text-right text-[11px] font-semibold leading-4 text-slate-500">{loopAction.summary}</p>
         </div>
       </header>
 
       {isFirstUser ? <FirstStartGuide /> : null}
-
-      <section data-dashboard-section="lesson-reentry" className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-          <h2 className="text-[18px] font-black text-slate-950">최근 사용한 수업</h2>
-          {recentLessonPrograms.length ? (
-            <div className="mt-3 grid gap-2">
-              {recentLessonPrograms.map(({ activity, program }, index) => (
-                <div key={activity.programId} className="rounded-[14px] bg-slate-50 p-3">
-                  <p className="line-clamp-1 text-[14px] font-black text-slate-950">{program.title}</p>
-                  <p className="mt-1 text-[11px] font-bold text-slate-500">{formatRelativeDate(activity.occurredAt) ?? `최근 사용 ${index + 1}`}</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-10 items-center rounded-[10px] px-3 text-[11px] font-black text-indigo-700 ring-1 ring-indigo-100">전체 수업 자료 보기</Link>
-                    <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-10 items-center rounded-[10px] bg-indigo-600 px-3 text-[11px] font-black text-white">다시 실행</Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Link href="/spokedu-master/library" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">라이브러리에서 첫 수업 찾기</Link>
-          )}
-        </div>
-
-        <div className="rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-          <h2 className="text-[18px] font-black text-slate-950">즐겨찾기 수업</h2>
-          {favoritePrograms.length ? (
-            <div className="mt-3 grid gap-2">
-              {favoritePrograms.map((program) => (
-                <Link key={program.id} href={`/spokedu-master/library/${program.id}`} className="rounded-[14px] bg-slate-50 p-3">
-                  <p className="line-clamp-1 text-[14px] font-black text-slate-950">{program.title}</p>
-                  <p className="mt-1 text-[11px] font-bold text-slate-500">{[parseMasterTargets(program.grade)[0], program.duration ? `${program.duration}분` : null].filter(Boolean).join(' · ')}</p>
-                  <span className="mt-2 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[11px] font-black text-indigo-700 ring-1 ring-indigo-100">전체 수업 자료 보기</span>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <Link href="/spokedu-master/library" className="mt-3 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-[13px] font-black text-white">라이브러리에서 첫 수업 찾기</Link>
-          )}
-        </div>
-      </section>
 
       <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
         <div className="mb-4 flex items-end justify-between gap-4">
@@ -830,19 +772,12 @@ export default function DashboardView() {
         </div>
         {hasRecommendationDataIssue && profile?.isAdmin ? (
           <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800" role="status">
-            추천 가능한 수업 데이터가 4개보다 적습니다. 관리자에서 이미지와 수업 정보를 확인해 주세요.
+            추천 가능한 수업 데이터가 4개보다 적습니다. 대상·시간·공간·준비물·진행·지도 정보를 확인해 주세요.
           </p>
         ) : null}
       </section>
 
-      {continueItem ? <ContinueSection item={continueItem} /> : null}
-
-      <ActivityPanel
-        reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-        recordCount={classRecords.length}
-        studentMemoCount={studentMemoCount}
-        profile={profile}
-      />
+      {showRecentUse && continueItem ? <ContinueSection item={continueItem} /> : null}
 
       <section data-dashboard-section="spomove">
         <SectionHeader
@@ -912,6 +847,13 @@ export default function DashboardView() {
         ) : null}
       </section>
       ) : null}
+
+      <ActivityPanel
+        reportCount={explanationData.status === 'loading' ? null : explanationData.total}
+        recordCount={classRecords.length}
+        studentMemoCount={studentMemoCount}
+        profile={profile}
+      />
 
       {selectedProgram ? (
         <ProgramPreviewModal

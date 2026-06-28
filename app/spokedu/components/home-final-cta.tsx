@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { homePage } from '../data/home-page';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
-  fineHover,
   homeSectionEyebrow,
   koreanLineBreak,
   landingDarkCtaButton,
@@ -14,7 +13,7 @@ const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-300';
 
 export function HomeFinalCta() {
-  const { finalCta } = homePage;
+  const { closingCta } = homePage;
 
   return (
     <section
@@ -35,23 +34,17 @@ export function HomeFinalCta() {
           id="home-final-cta-title"
           className={`mt-2 text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-[2rem] ${koreanLineBreak}`}
         >
-          {finalCta.title}
+          {closingCta.line}
         </h2>
-        <p className={`mt-3 max-w-2xl text-sm leading-relaxed text-slate-300 sm:text-base ${koreanLineBreak}`}>
-          {finalCta.description}
-        </p>
-        <div className="mt-7 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
-          {finalCta.links.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              data-track={inferTrackFromHref(item.href)}
-              data-track-label={item.trackLabel}
-              className={`${landingDarkCtaButton} !w-full !min-h-12 ${focusRing}`}
-            >
-              {item.label}
-            </Link>
-          ))}
+        <div className="mt-7 grid grid-cols-1 gap-2.5 sm:max-w-xs">
+          <Link
+            href={closingCta.href}
+            data-track={inferTrackFromHref(closingCta.href)}
+            data-track-label={closingCta.trackLabel}
+            className={`${landingDarkCtaButton} !w-full !min-h-12 ${focusRing}`}
+          >
+            {closingCta.label}
+          </Link>
         </div>
       </div>
     </section>

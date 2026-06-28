@@ -34,10 +34,7 @@ import {
   getVideoEmbedUrl,
   isDirectVideoUrl,
 } from '../../lib/program-media';
-import {
-  findOfficialSpomovePreset,
-  officialPresetSessionHref,
-} from '../../spomove/officialSpomovePresets';
+import { getSpomoveSessionHref, getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -134,7 +131,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
     );
   }
 
-  const detail = program.lessonDetail;
   const model = buildLessonDisplayModel(program);
   const title = model.title;
   const parentCopy = model.parentNote;
@@ -197,11 +193,13 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(videoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
   const setupImage = model.setupImageUrl;
-  const hasPreActivityChecklist = model.equipment.length > 0 || Boolean(model.coachScript) || model.briefingNotes.length > 0;
+  const hasPreActivityChecklist =
+    model.equipment.length > 0 ||
+    model.setupNotes.length > 0 ||
+    Boolean(model.coachScript) ||
+    model.briefingNotes.length > 0;
   const galleryImages = model.galleryImageUrls;
-  const relatedSpomovePresets = (detail?.relatedSpomoveIds ?? [])
-    .map((spomoveId) => findOfficialSpomovePreset(spomoveId))
-    .filter((preset): preset is NonNullable<typeof preset> => Boolean(preset));
+  const relatedSpomovePresets = getSupportedOfficialSpomovePresets(program);
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -276,6 +274,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
                       <LessonBulletList items={model.equipment} compact />
                     </LessonChecklistCard>
                   ) : null}
+                  {model.setupNotes.length > 0 ? (
+                    <LessonChecklistCard label="세팅">
+                      <LessonBulletList items={model.setupNotes} compact />
+                    </LessonChecklistCard>
+                  ) : null}
                   {model.coachScript ? (
                     <LessonChecklistCard label="수업 스크립트" accent="indigo">
                       <LessonCoachScript text={model.coachScript} />
@@ -340,6 +343,18 @@ export default function LibraryDetailView({ id }: { id: string }) {
         ) : null}
 
         {/* 보호자 문구 — 등록된 값이 있을 때만 표시 (6순위) */}
+        {model.fieldTips.length > 0 ? (
+          <LessonFullSection title="지도 포인트">
+            <LessonBulletList items={model.fieldTips} />
+          </LessonFullSection>
+        ) : null}
+
+        {model.safetyNotes.length > 0 ? (
+          <LessonFullSection title="안전 유의사항">
+            <LessonBulletList items={model.safetyNotes} />
+          </LessonFullSection>
+        ) : null}
+
         {parentCopy ? (
           <div className="rounded-[14px] border border-emerald-200 bg-emerald-50 p-5">
             <p className="text-xs font-black text-emerald-800">안내문</p>
@@ -360,7 +375,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                   {relatedSpomovePresets.map((preset) => (
                     <Link
                       key={preset.id}
-                      href={officialPresetSessionHref(preset)}
+                      href={getSpomoveSessionHref(program, preset)}
                       className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
                     >
                       <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">

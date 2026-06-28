@@ -67,9 +67,8 @@ export const SPOKEDU_IMAGES = {
     hero: defineImage(
       'home',
       'home-hero',
-      'home-hero-movement.png',
-      'KBS 방송 — 스포키듀 아동 신체 측정·체육 프로그램 소개 장면',
-      { externalSrc: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png' },
+      'home-hero-spomove-class.png',
+      'SPOMOVE 시지각 기반 놀이체육 — 기관 단체 수업 현장',
     ),
     labScene: defineImage(
       'home',

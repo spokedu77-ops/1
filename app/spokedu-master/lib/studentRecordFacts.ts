@@ -16,6 +16,18 @@ export type ClassRecordFacts = {
   recordedStudentCount: number;
 };
 
+export type ClassPreparationSummary = {
+  recordId: string;
+  programId: string;
+  programTitle: string;
+  date: string;
+  presentCount: number;
+  participantNames: string[];
+  memoCount: number;
+  skillCount: number;
+  hasClassMemo: boolean;
+};
+
 export function getStudentRecordFacts(
   records: ClassRecord[],
   studentId: string,
@@ -64,5 +76,31 @@ export function getClassRecordFacts(records: ClassRecord[]): ClassRecordFacts {
     recordedStudentCount: new Set(
       studentEntries.map((student) => student.studentId),
     ).size,
+  };
+}
+
+export function getLatestClassPreparationSummary(
+  records: ClassRecord[],
+): ClassPreparationSummary | null {
+  const latestRecord = [...records]
+    .filter((record) => record.programId)
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+  if (!latestRecord) return null;
+
+  const presentStudents = latestRecord.students.filter(
+    (student) => student.attendance === 'present',
+  );
+  const memoCount = latestRecord.students.filter((student) => student.memo?.trim()).length;
+
+  return {
+    recordId: latestRecord.id,
+    programId: latestRecord.programId,
+    programTitle: latestRecord.programTitle || latestRecord.lessonTitle,
+    date: latestRecord.date,
+    presentCount: latestRecord.present || presentStudents.length,
+    participantNames: presentStudents.map((student) => student.studentName).filter(Boolean).slice(0, 3),
+    memoCount,
+    skillCount: latestRecord.students.filter((student) => student.skills.some((skill) => skill.trim())).length,
+    hasClassMemo: Boolean(latestRecord.memo?.trim()),
   };
 }

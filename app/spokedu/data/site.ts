@@ -27,17 +27,37 @@ export type SiteNavItem = {
   href: string;
 };
 
+/** 개인·기관·커리큘럼 3축 — 기관(단체) 우선, 홈·내비·경로 카드 공통 순서 */
+export type AudienceTrackId = 'private' | 'dispatch' | 'curriculum';
+
+export const AUDIENCE_TRACK_ORDER: readonly AudienceTrackId[] = [
+  'dispatch',
+  'private',
+  'curriculum',
+] as const;
+
+export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
+  private: '/private',
+  dispatch: '/dispatch',
+  curriculum: '/curriculum',
+};
+
 export const siteNavItems: SiteNavItem[] = [
   { label: '브랜드', path: '/about', href: `${SPOKEDU_BASE_PATH}/about` },
-  { label: '개인수업', path: '/private', href: `${SPOKEDU_BASE_PATH}/private` },
-  { label: '기관수업', path: '/dispatch', href: `${SPOKEDU_BASE_PATH}/dispatch` },
-  { label: '커리큘럼', path: '/curriculum', href: `${SPOKEDU_BASE_PATH}/curriculum` },
+  { label: '기관수업', path: AUDIENCE_TRACK_PATHS.dispatch, href: `${SPOKEDU_BASE_PATH}/dispatch` },
+  { label: '개인수업', path: AUDIENCE_TRACK_PATHS.private, href: `${SPOKEDU_BASE_PATH}/private` },
+  { label: '커리큘럼', path: AUDIENCE_TRACK_PATHS.curriculum, href: `${SPOKEDU_BASE_PATH}/curriculum` },
   { label: '수업 사례', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
   { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
 ];
 
-/** Footer 보조 내비 */
+/** Footer 보조 내비 (상단 내비와 동일) */
 export const footerLinks = siteNavItems;
+
+/** Footer 추가 링크 — 상단 내비에 없는 콘텐츠 페이지 */
+export const footerSupplementaryLinks: SiteNavItem[] = [
+  { label: '인사이트', path: '/insights', href: `${SPOKEDU_BASE_PATH}/insights` },
+];
 
 export function getSocialLinks(): BrandChannel[] {
   return getLiveExternalChannels().filter((channel) => channel.href.trim().length > 0);

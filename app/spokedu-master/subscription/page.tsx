@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import { MASTER_PRODUCT_CATALOG } from '../lib/productCatalog';
 
 type SubData = {
   plan: string;
@@ -36,10 +37,10 @@ const PLAN_LABELS: Record<string, string> = {
 };
 
 const PLAN_PRICES: Record<PlanKey, string> = {
-  lite: '19,900원',
-  pro: '39,900원',
-  team: '상담 문의',
-  school: '문의',
+  lite: MASTER_PRODUCT_CATALOG.lite.priceLabel,
+  pro: MASTER_PRODUCT_CATALOG.pro.priceLabel,
+  team: MASTER_PRODUCT_CATALOG.center.priceLabel,
+  school: MASTER_PRODUCT_CATALOG.school.priceLabel,
 };
 
 const PLAN_SUMMARY: Record<PlanKey, string> = {

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
+import type { ReactNode } from 'react';
 import type { HomeMediaItem } from '../data/home-media';
 import {
   btnPrimary,
@@ -29,6 +30,8 @@ type LandingHeroCta = {
 type LandingHeroProps = {
   kicker?: string;
   kickerClassName?: string;
+  /** kicker와 제목 사이 — 신뢰 배지·지표 등 */
+  leading?: ReactNode;
   lines: readonly string[];
   subtitle?: string;
   media: HomeMediaItem;
@@ -43,6 +46,7 @@ type LandingHeroProps = {
 export function LandingHero({
   kicker,
   kickerClassName = 'text-indigo-600',
+  leading,
   lines,
   subtitle,
   media,
@@ -60,8 +64,9 @@ export function LandingHero({
           {kicker ? (
             <p className={`text-[11px] font-bold uppercase tracking-[0.2em] ${kickerClassName}`}>{kicker}</p>
           ) : null}
+          {leading ? <div className={kicker ? 'mt-4' : ''}>{leading}</div> : null}
           <motion.h1
-            className={`${homeHeroH1} mt-2 sm:mt-2.5`}
+            className={`${homeHeroH1} ${kicker || leading ? 'mt-4 sm:mt-5' : 'mt-2 sm:mt-2.5'}`}
             initial={reducedMotion ? false : { opacity: 0, y: 20 }}
             animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}

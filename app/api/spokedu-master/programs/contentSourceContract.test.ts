@@ -11,7 +11,8 @@ describe('public program lesson content sources', () => {
     ), 'utf8');
 
     expect(source).toContain('parseTextareaLines(meta?.sm_briefing_notes)');
-    expect(source).toContain('parseTextareaLines(meta?.sm_variation_method)');
+    expect(source).toContain('parseVariationLines(meta?.sm_variation_method)');
+    expect(source).toContain("extractAnySectionLines(meta?.sm_briefing_notes, ['안전 포인트', '안전 유의사항', '안전'])");
     expect(source).not.toContain('overlay?.checklist');
     expect(source).not.toContain('overlay?.activity_tip');
     expect(source).not.toContain('row.check_list');

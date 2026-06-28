@@ -16,6 +16,7 @@ import { buildStages } from '../_player/flow-lab/engine/modules/stageBuilder';
 import type { FlowModuleKey } from '../_player/flow-lab/engine/modules/flowModules';
 import type { FlowStats, VisualMode } from '../_player/flow-lab/engine/FlowEngine';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
+import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 
 /* ─── flow-lab FlowGameClient: SSR 비활성 ─── */
 const FlowGameClientLab = dynamic(
@@ -447,6 +448,7 @@ function LabSettingsScreen({
 function LabRunScreen({
   settings,
   runKey,
+  bgmPath,
   panoramaHighUrl,
   panoramaLowUrl,
   panoramaYawDeg,
@@ -455,6 +457,7 @@ function LabRunScreen({
 }: {
   settings:          LabSettings;
   runKey:            number;
+  bgmPath?:          string;
   panoramaHighUrl?:  string;
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
@@ -470,6 +473,7 @@ function LabRunScreen({
         stages={stages}
         colorTheme={settings.theme}
         motionScale={settings.motionScale}
+        bgmPath={bgmPath}
         visualMode={settings.visual}
         panoramaHighUrl={panoramaHighUrl}
         panoramaLowUrl={panoramaLowUrl}
@@ -484,7 +488,7 @@ function LabRunScreen({
 /* ─── 페이지 상태 ─── */
 type LabPhase =
   | { tag: 'settings' }
-  | { tag: 'running'; settings: LabSettings; runKey: number }
+  | { tag: 'running'; settings: LabSettings; runKey: number; bgmPath?: string }
   | { tag: 'complete'; stats: FlowStats; settings: LabSettings };
 
 function FlowLabContent() {
@@ -497,6 +501,9 @@ function FlowLabContent() {
     motionScale: parseMotionScaleParam(params.get('motionScale')),
     visual:      parseVisualParam(params.get('visual')),
   };
+
+  // BGM 풀 — spomove 훈련 공통 BGM 목록에서 랜덤 선택
+  const { list: bgmList } = useSpomoveTrainingBGM();
 
   // DIVE 파노라마 URL (SPACE 테마 개선 환경용)
   const { data: diveData, getPreviewUrl: getDivePreviewUrl } = useSpomoveDiveEnvironments();
@@ -517,8 +524,11 @@ function FlowLabContent() {
 
   const handleStart = useCallback((s: LabSettings) => {
     runKeyRef.current += 1;
-    setPhase({ tag: 'running', settings: s, runKey: runKeyRef.current });
-  }, []);
+    const bgmPath = bgmList.length > 0
+      ? bgmList[Math.floor(Math.random() * bgmList.length)]
+      : undefined;
+    setPhase({ tag: 'running', settings: s, runKey: runKeyRef.current, bgmPath });
+  }, [bgmList]);
 
   const handleComplete = useCallback((stats: FlowStats) => {
     setPhase((prev) => {
@@ -544,6 +554,7 @@ function FlowLabContent() {
       <LabRunScreen
         settings={phase.settings}
         runKey={phase.runKey}
+        bgmPath={phase.bgmPath}
         panoramaHighUrl={panoramaHighUrl}
         panoramaLowUrl={panoramaLowUrl}
         panoramaYawDeg={panoramaYawDeg}

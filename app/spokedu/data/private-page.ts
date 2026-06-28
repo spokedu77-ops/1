@@ -48,11 +48,19 @@ export const PRIVATE_COUNTER_DAILY_SESSIONS = 5;
 export const privatePage = {
   hero: {
     kicker: '학부모 · 개인수업',
-    trustBadge: '연세대학교 체육교육 전문가 그룹',
-    lines: ['즐거운 신체활동으로', '평생체육의 경험을', '선물합니다'] as const,
+    trustBadge: '연세대 체육교육학과 출신 운영진',
+    lines: ['즐거운 신체활동으로', '평생체육의 경험을 선물합니다'] as const,
     subtitle:
       '아이의 운동 경험, 수업 목표, 가능한 장소를 함께 확인하고 1:1·소그룹 수업 방향을 안내드립니다.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
+  },
+  trustMetrics: {
+    eyebrow: '운영 지표',
+    items: [
+      { id: 'sessions', kind: 'sessions' as const, label: '누적 수업 (회)' },
+      { id: 'students', kind: 'students' as const, label: '수업 받은 아이 (명)' },
+      { id: 'format', kind: 'static' as const, value: '1:1·소그룹', label: '맞춤 수업 형태' },
+    ],
   },
   heroCtas: {
     primary: {

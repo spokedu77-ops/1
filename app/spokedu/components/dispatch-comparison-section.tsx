@@ -4,7 +4,7 @@ import { LandingSectionHeading } from './landing-section-heading';
 
 function CheckIcon() {
   return (
-    <svg className="mt-0.5 h-4 w-4 shrink-0 text-sky-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+    <svg className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
       <path
         fillRule="evenodd"
         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z"
@@ -36,7 +36,7 @@ export function DispatchComparisonSection() {
         eyebrow={section.eyebrow}
         title={section.title}
         lead={section.lead}
-        accent="sky"
+        accent="teal"
       />
 
       {/* 모바일·태블릿: 카드형 비교 */}
@@ -50,10 +50,10 @@ export function DispatchComparisonSection() {
               <h3 className="text-sm font-semibold text-slate-900">{row.label}</h3>
             </div>
             <div className="divide-y divide-slate-100">
-              <div className="flex gap-3 bg-sky-50/40 px-4 py-3.5">
+              <div className="flex gap-3 bg-teal-50/40 px-4 py-3.5">
                 <CheckIcon />
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-sky-800">SPOKEDU</p>
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-teal-900">SPOKEDU</p>
                   <p className={`mt-1 text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>{row.spokedu}</p>
                 </div>
               </div>
@@ -74,8 +74,8 @@ export function DispatchComparisonSection() {
         <div className="grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-b border-slate-100 bg-slate-50/90">
           <div className="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">비교 항목</div>
           <div className="border-l border-slate-100 px-5 py-3.5">
-            <span className="text-xs font-bold text-sky-800">SPOKEDU</span>
-            <span className="ml-2 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-bold text-sky-700">PREMIUM</span>
+            <span className="text-xs font-bold text-teal-900">SPOKEDU</span>
+            <span className="ml-2 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">PREMIUM</span>
           </div>
           <div className="border-l border-slate-100 px-5 py-3.5 text-xs font-bold text-slate-500">일반 업체</div>
         </div>
@@ -87,7 +87,7 @@ export function DispatchComparisonSection() {
             }`}
           >
             <div className="px-5 py-4 text-sm font-semibold text-slate-900">{row.label}</div>
-            <div className="flex gap-2.5 border-l border-slate-100 bg-sky-50/30 px-5 py-4">
+            <div className="flex gap-2.5 border-l border-slate-100 bg-teal-50/30 px-5 py-4">
               <CheckIcon />
               <p className={`text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>{row.spokedu}</p>
             </div>

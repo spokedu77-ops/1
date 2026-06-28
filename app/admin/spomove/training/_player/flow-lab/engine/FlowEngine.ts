@@ -53,7 +53,7 @@ const JUMP_TRIGGER_REL = PAD_START_REL - PAD_DEPTH * PAD_TRIGGER_RATIO; // -1880
 // 속도 (원본: currentSpeed * 50 * dt60)
 const BASE_SPEED = 0.6;
 // 스테이지별 배수 (원본 LV1=0.8, LV2+=1.0, LV4+=1.25 참조)
-const SPEED_MULTS: number[] = [0.8, 1.0, 1.0, 1.25, 1.25, 1.25, 1.25, 1.25, 1.25];
+const SPEED_MULTS: number[] = [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8];
 
 // 점프 파라미터 (원본 동일)
 const JUMP_HEIGHT      = 98;
@@ -395,12 +395,14 @@ export class FlowEngine {
     for (let i = -1; i <= 1; i++) {
       const strip = new THREE.Mesh(
         new THREE.PlaneGeometry(LANE_WIDTH, 60000),
-        new THREE.MeshPhongMaterial({
-          color:            isEnh ? 0x06090f : 0x3b82f6,
-          emissive:         isEnh ? 0x020408 : 0x000000,
-          emissiveIntensity: 1.0,
-          transparent:      true,
-          opacity:          isEnh ? 0.96 : 0.9,
+        new THREE.MeshStandardMaterial({
+          color:             isEnh ? 0x061b3d : 0x3b82f6,
+          metalness:         isEnh ? 0.35 : 0,
+          roughness:         isEnh ? 0.5  : 1.0,
+          emissive:          isEnh ? 0x010714 : 0x000000,
+          emissiveIntensity: isEnh ? 0.1 : 0,
+          transparent:       true,
+          opacity:           isEnh ? 0.96 : 0.9,
         }),
       );
       strip.rotation.x = -Math.PI / 2;

@@ -93,9 +93,9 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
 
 export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   home: {
-    title: 'SPOKEDU 스포키듀 | 현장 체육교육 운영 브랜드',
+    title: '스포키듀 | 아동·청소년 체육교육의 경험과 기준',
     description:
-      '현장 수업에서 시작해 프로그램·커리큘럼 콘텐츠로 확장하는 아동·청소년 체육교육 운영 브랜드. 개인·기관·콘텐츠 3축 운영.',
+      '다양한 움직임의 경험을 설계하고 체육교육의 기준을 만듭니다. 개인·소그룹 수업, 기관 맞춤 프로그램, SPOMOVE, 지도자 교육.',
   },
   about: {
     title: '스포키듀 소개 | 현장 체육교육 운영 브랜드',
@@ -150,7 +150,7 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
 };
 
 export const seoKeywords: Record<SpokeduSeoPageKey, readonly string[]> = {
-  home: ['스포키듀', 'SPOKEDU', '아동 체육교육', '청소년 체육교육', 'SPOMOVE'],
+  home: ['스포키듀', 'SPOKEDU', '기관 체육수업', '단체 체육', '아동 체육교육', 'SPOMOVE', '체육과외'],
   about: ['스포키듀', 'SPOKEDU', '아동 체육교육', '체육 커리큘럼'],
   private: ['개인 체육수업', '소그룹 체육수업', '어린이 체육수업', '아동 체육교육'],
   dispatch: ['기관 체육수업', '키움센터 체육 프로그램', 'SPOMOVE', 'PAPS 놀이체육'],

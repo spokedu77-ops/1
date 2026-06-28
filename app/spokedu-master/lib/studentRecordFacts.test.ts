@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ClassRecord } from '../types';
-import { getClassRecordFacts, getStudentRecordFacts } from './studentRecordFacts';
+import {
+  getClassRecordFacts,
+  getLatestClassPreparationSummary,
+  getStudentRecordFacts,
+} from './studentRecordFacts';
 
 const record: ClassRecord = {
   id: 'record-1',
@@ -52,5 +56,27 @@ describe('student record facts', () => {
       absentCount: 1,
       recordedStudentCount: 2,
     });
+  });
+
+  it('summarizes the latest record as next-class preparation context without exposing memo text', () => {
+    const older = { ...record, id: 'record-0', date: '2026-06-01T09:00:00.000Z' };
+    const summary = getLatestClassPreparationSummary([older, record]);
+
+    expect(summary).toEqual({
+      recordId: 'record-1',
+      programId: 'program-1',
+      programTitle: record.programTitle,
+      date: record.date,
+      presentCount: 1,
+      participantNames: [record.students[0].studentName],
+      memoCount: 1,
+      skillCount: 1,
+      hasClassMemo: false,
+    });
+    expect(JSON.stringify(summary)).not.toContain(record.students[0].memo);
+  });
+
+  it('returns no preparation context when no record has a program id', () => {
+    expect(getLatestClassPreparationSummary([{ ...record, programId: '' }])).toBeNull();
   });
 });

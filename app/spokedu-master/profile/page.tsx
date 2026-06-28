@@ -22,6 +22,11 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
+import {
+  MASTER_PRODUCT_CATALOG,
+  getMasterProductActionLabel,
+  getMasterProductPriceWithDuration,
+} from '../lib/productCatalog';
 import { getTrialDaysLeft } from '../lib/subscription';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import {
@@ -68,43 +73,43 @@ const PLANS: PlanInfo[] = [
   {
     id: 'lite',
     title: 'Lite',
-    price: '19,900원 / 30일',
-    badge: '준비 중',
+    price: MASTER_PRODUCT_CATALOG.lite.priceLabel,
+    badge: MASTER_PRODUCT_CATALOG.lite.statusLabel,
     description: '가벼운 개인 사용자를 위한 입문 플랜입니다. 현재는 Pro 전환을 우선 안내합니다.',
     includes: ['라이브러리 기본 이용', 'SPOMOVE 제한 실행', '최근 사용·즐겨찾기'],
     target: '가벼운 개인 사용',
-    action: '준비 중',
+    action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.lite),
   },
   {
     id: 'pro',
     title: 'Pro',
-    price: '39,900원 / 30일',
-    badge: '추천',
+    price: getMasterProductPriceWithDuration(MASTER_PRODUCT_CATALOG.pro),
+    badge: MASTER_PRODUCT_CATALOG.pro.statusLabel,
     description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 30일 이용권입니다.',
     includes: ['라이브러리', 'SPOMOVE 큰 화면 실행', '학생 관리와 수업 기록 저장', '학생별 이력과 안내문 초안'],
     target: '매주 수업을 준비하는 전문 강사',
-    action: 'Pro 전환',
+    action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.pro),
     recommended: true,
   },
   {
     id: 'team',
     title: 'Center',
-    price: '상담 문의',
+    price: MASTER_PRODUCT_CATALOG.center.priceLabel,
     badge: '기관·센터용',
     description: '센터·기관 운영자가 현재 제공되는 MASTER 기능을 30일 동안 사용하는 이용권입니다.',
     includes: ['Pro와 동일한 MASTER 기능', '수업 자료와 SPOMOVE 실행', '학생 기록과 안내문 초안 사용', '공동 계정·강사 초대 기능은 현재 미제공'],
     target: '센터·도장·체육관·기관 운영자',
-    action: 'Center 시작',
+    action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.center),
   },
   {
     id: 'school',
     title: 'School',
-    price: '문의',
+    price: MASTER_PRODUCT_CATALOG.school.priceLabel,
     badge: '학교·기관',
     description: '학교 체육수업과 기관 라이선스에 맞춘 별도 도입 플랜입니다.',
     includes: ['학교용 언어와 자료', '교사 계정', '기관 견적'],
     target: '학교·기관·공공 프로젝트',
-    action: '상담 문의',
+    action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.school),
     contact: true,
   },
 ];

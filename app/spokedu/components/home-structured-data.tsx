@@ -14,8 +14,8 @@ export function HomeStructuredData() {
       {
         '@type': 'Organization',
         '@id': `${homeUrl}#organization`,
-        name: 'SPOKEDU',
-        alternateName: '스포키듀',
+        name: '스포키듀',
+        alternateName: ['SPOKEDU', '스포키듀'],
         url: homeUrl,
         logo: heroImage,
         image: heroImage,
@@ -24,7 +24,7 @@ export function HomeStructuredData() {
       {
         '@type': 'WebSite',
         '@id': `${homeUrl}#website`,
-        name: 'SPOKEDU',
+        name: '스포키듀 SPOKEDU',
         url: homeUrl,
         publisher: { '@id': `${homeUrl}#organization` },
         inLanguage: 'ko-KR',

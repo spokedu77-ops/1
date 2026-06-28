@@ -11,7 +11,7 @@ import {
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
-import { parseTextareaLines } from '@/app/spokedu-master/lib/lessonContentContract';
+import { extractExactSectionLines, parseTextareaLines, parseVariationMethod } from '@/app/spokedu-master/lib/lessonContentContract';
 import { findOfficialSpomovePreset } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 
 const FALLBACK_COLORS: [string, string, string, string][] = [
@@ -215,6 +215,16 @@ function splitLines(value: string | null | undefined): string[] {
   return [...new Set(String(value ?? '').split('\n').map((item) => item.trim()).filter((item) => item && !hasBrokenText(item)))];
 }
 
+function extractAnySectionLines(source: string | null | undefined, labels: string[]) {
+  const values = labels.flatMap((label) => extractExactSectionLines(source, label));
+  return cleanList(values, []);
+}
+
+function parseVariationLines(source: string | null | undefined) {
+  const section = parseVariationMethod(source);
+  return section.length > 0 ? section : parseTextareaLines(source);
+}
+
 function getMasterProgramValidationIssues(input: {
   row: CurrRow;
   meta: MetaRow | undefined;
@@ -252,8 +262,11 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
   const videoUrl = rawVideoUrl;
   const equipment = splitLines(overlay?.equipment);
   const steps = splitLines(overlay?.activity_method);
-  const variations = parseTextareaLines(meta?.sm_variation_method);
+  const variations = parseVariationLines(meta?.sm_variation_method);
   const briefingNotes = parseTextareaLines(meta?.sm_briefing_notes);
+  const safetyNotes = extractAnySectionLines(meta?.sm_briefing_notes, ['안전 포인트', '안전 유의사항', '안전']);
+  const fieldTips = extractAnySectionLines(meta?.sm_briefing_notes, ['운영 팁', '지도 포인트', '현장 팁']);
+  const setupNotes = extractAnySectionLines(meta?.sm_briefing_notes, ['세팅', '준비', '사전 준비']);
   const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '');
   const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '');
   const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 0;
@@ -317,9 +330,9 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
       developmentFocus: cleanText(meta?.sm_development_focus, rawCategory),
       coachScript: cleanText(meta?.sm_coach_script, ''),
       parentNote: cleanText(meta?.sm_parent_note, ''),
-      fieldTips: [],
+      fieldTips,
       variations,
-      safetyNotes: [],
+      safetyNotes,
       relatedSpomoveIds,
       videoUrl,
       heroImageUrl,
@@ -327,7 +340,7 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
       galleryImageUrls,
       briefingNotes,
       rules: steps,
-      setupNotes: [],
+      setupNotes,
     },
   };
 

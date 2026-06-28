@@ -1,6 +1,7 @@
 import type { Program } from '../types';
 import { mergeStrengthBodyFunctions } from './lessonDisplay';
 import { resolveProgramHero } from './program-media';
+import { getProgramQualityReport, type ProgramQualityReport } from './program-meta';
 
 const INTERNAL_TAG_PREFIXES = ['움직임:', '신체 기능:', '인원:'];
 
@@ -45,8 +46,12 @@ export type LessonDisplayModel = {
   coachScript: string;
   previewCoachScript: string;
   briefingNotes: string[];
+  setupNotes: string[];
+  safetyNotes: string[];
+  fieldTips: string[];
   activityMethod: string[];
   variationMethod: string[];
+  quality: ProgramQualityReport;
   parentNote: string;
   videoUrl: string | null;
   thumbnailUrl: string | null;
@@ -108,8 +113,12 @@ export function buildLessonDisplayModel(program: Program): LessonDisplayModel {
     coachScript,
     previewCoachScript: getPreviewCoachScript(coachScript),
     briefingNotes: cleanList(detail?.briefingNotes),
+    setupNotes: cleanList(detail?.setupNotes),
+    safetyNotes: cleanList(detail?.safetyNotes),
+    fieldTips: cleanList(detail?.fieldTips),
     activityMethod: cleanList(detail?.rules?.length ? detail.rules : program.steps),
     variationMethod: cleanList(detail?.variations),
+    quality: getProgramQualityReport(program),
     parentNote: cleanValue(detail?.parentNote),
     videoUrl: cleanValue(detail?.videoUrl) || null,
     thumbnailUrl: cleanValue(program.thumbnailUrl) || null,

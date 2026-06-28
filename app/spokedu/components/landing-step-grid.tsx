@@ -11,21 +11,25 @@ export type LandingStepItem = {
 const shellTone = {
   violet: 'border-violet-200/60 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/50',
   sky: 'border-sky-200/60 bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/50',
+  teal: 'border-stone-200/80 bg-[#FAFAF8]',
 } as const;
 
 const cardTone = {
   violet: 'border-violet-100',
   sky: 'border-sky-100',
+  teal: 'border-stone-200/80',
 } as const;
 
 const labelTone = {
   violet: 'text-violet-600',
   sky: 'text-sky-600',
+  teal: 'text-teal-700',
 } as const;
 
 const durationTone = {
   violet: 'text-violet-700',
   sky: 'text-sky-700',
+  teal: 'text-teal-800',
 } as const;
 
 type LandingStepGridProps = {

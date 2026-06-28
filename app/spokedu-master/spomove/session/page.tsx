@@ -221,6 +221,7 @@ function SpomoveSessionContent() {
   const programs = useMasterStore((state) => state.programs);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
+  const recordProgramHref = program ? `/spokedu-master/class-record?program=${program.id}` : null;
   const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
   const selectedBgmPath = useMemo(() => {
     if (requestedBgmPath) return bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
@@ -368,10 +369,12 @@ function SpomoveSessionContent() {
             <p>수행 횟수: {officialPreset.rounds}회 기준</p>
           </div>
           <div className="mt-7 grid w-full max-w-[680px] gap-2 sm:grid-cols-2">
-            <Link href={`/spokedu-master/class-record?program=${officialPreset.id}`} className="flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black">
-              <ClipboardList size={14} className="mr-1.5" />
-              수업 기록 작성
-            </Link>
+            {recordProgramHref ? (
+              <Link href={recordProgramHref} className="flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black">
+                <ClipboardList size={14} className="mr-1.5" />
+                수업 기록 작성
+              </Link>
+            ) : null}
             <button type="button" onClick={startOfficialSession} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-bold text-white shadow-[0_16px_44px_rgba(79,70,229,0.26)]">
               <RotateCcw size={16} />
               같은 프로그램 다시 실행
@@ -383,12 +386,6 @@ function SpomoveSessionContent() {
               내 활동·기록으로
             </Link>
           </div>
-          {programId ? (
-            <Link href={`/spokedu-master/class-record?program=${programId}`} className="mt-4 inline-flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black">
-              <ClipboardList size={14} className="mr-1.5" />
-              수업 기록 작성
-            </Link>
-          ) : null}
         </div>
       ) : null}
 

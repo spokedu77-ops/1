@@ -53,13 +53,13 @@ export function PrivateHeroStats({ compact = false }: PrivateHeroStatsProps) {
       aria-live="polite"
       aria-label="누적 운영 지표"
     >
-      <div className="rounded-xl border border-violet-100 bg-white/80 px-3 py-2.5 sm:px-3.5 sm:py-3">
+      <div className="rounded-xl border border-stone-200 bg-white/80 px-3 py-2.5 sm:px-3.5 sm:py-3">
         <p className="text-base font-bold tabular-nums text-slate-950 sm:text-lg">
           {displaySessions.toLocaleString()}
         </p>
         <p className="mt-0.5 text-[11px] font-medium text-slate-600 sm:text-xs">누적 수업 (회)</p>
       </div>
-      <div className="rounded-xl border border-violet-100 bg-white/80 px-3 py-2.5 sm:px-3.5 sm:py-3">
+      <div className="rounded-xl border border-stone-200 bg-white/80 px-3 py-2.5 sm:px-3.5 sm:py-3">
         <p className="text-base font-bold tabular-nums text-slate-950 sm:text-lg">
           {displayStudents.toLocaleString()}
         </p>
@@ -71,11 +71,11 @@ export function PrivateHeroStats({ compact = false }: PrivateHeroStatsProps) {
 
 export function PrivateHeroTrustBand({ trustBadge }: { trustBadge: string }) {
   return (
-    <div className="rounded-2xl border border-violet-200/70 bg-gradient-to-br from-violet-50/60 via-white to-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-5 sm:py-4">
-      <p className="inline-flex items-center gap-2 text-xs font-semibold leading-snug text-violet-900 sm:max-w-[55%] sm:text-sm">
+    <div className="rounded-2xl border border-stone-200/80 bg-gradient-to-br from-stone-50/60 via-white to-white px-4 py-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:px-5 sm:py-4">
+      <p className="inline-flex items-center gap-2 text-xs font-semibold leading-snug text-stone-800 sm:max-w-[55%] sm:text-sm">
         <span
           aria-hidden
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[10px] text-violet-700"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-600/10 text-[10px] text-teal-800"
         >
           ✓
         </span>

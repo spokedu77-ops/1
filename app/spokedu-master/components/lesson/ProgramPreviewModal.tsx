@@ -3,9 +3,7 @@
 import { Bookmark, BookOpen, Lock } from 'lucide-react';
 import Link from 'next/link';
 
-import {
-  findOfficialSpomovePreset,
-} from '../../spomove/officialSpomovePresets';
+import { getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
 import type { Program } from '../../types';
 import { getLibraryProgramDetailHref } from '../../library/libraryNavigation';
 import type { LibraryViewMode } from '../../library/libraryViewModel';
@@ -13,8 +11,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { LessonPreviewContent } from './LessonPreviewContent';
 
 function hasSpomoveLink(program: Program) {
-  const related = program.lessonDetail?.relatedSpomoveIds ?? [];
-  return related.some((id) => Boolean(findOfficialSpomovePreset(id)));
+  return getSupportedOfficialSpomovePresets(program).length > 0;
 }
 
 export function ProgramPreviewModal({

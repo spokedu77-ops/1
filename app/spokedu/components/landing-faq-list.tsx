@@ -3,6 +3,7 @@ import { koreanLineBreak } from '../lib/ui-classes';
 const accentOpen = {
   violet: 'bg-violet-50 text-violet-700',
   sky: 'bg-sky-50 text-sky-700',
+  teal: 'bg-teal-50 text-teal-800',
 } as const;
 
 type FaqItem = { q: string; a: string };

@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
+import { MASTER_PRODUCT_CATALOG } from '../lib/productCatalog';
 
 const FEATURES = [
   {
@@ -33,8 +34,8 @@ const PRICING = [
     id: 'pro',
     title: 'Pro',
     badge: '가장 인기',
-    price: '39,900',
-    period: '30일',
+    price: MASTER_PRODUCT_CATALOG.pro.priceLabel.replace(/원$/, ''),
+    period: MASTER_PRODUCT_CATALOG.pro.durationLabel,
     desc: '전문 강사가 매주 쓰는 수업 준비 환경',
     includes: ['라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 도구 전체', '안내문 (학부모·기관·학교용)'],
     accent: 'rgba(99,102,241,0.18)',
@@ -46,8 +47,8 @@ const PRICING = [
     id: 'team',
     title: 'Center',
     badge: '기관·센터용',
-    price: '상담 문의',
-    period: '30일',
+    price: MASTER_PRODUCT_CATALOG.center.priceLabel,
+    period: MASTER_PRODUCT_CATALOG.center.durationLabel,
     desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
     includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
     accent: 'rgba(16,185,129,0.12)',

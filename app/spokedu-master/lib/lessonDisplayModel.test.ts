@@ -53,8 +53,10 @@ describe('lessonDisplayModel', () => {
     expect(model.coachScript).toBe('관리자 수업 스크립트');
     expect(model.activityMethod).toEqual(['관리자 활동 방법 1']);
     expect(model.variationMethod).toEqual(['변형 방법 1']);
-    expect(model).not.toHaveProperty('safetyNotes');
-    expect(model).not.toHaveProperty('fieldTips');
+    expect(model.safetyNotes).toEqual(['레거시 안전 정보']);
+    expect(model.fieldTips).toEqual(['레거시 현장 정보']);
+    expect(model.setupNotes).toEqual(['레거시 세팅 문구']);
+    expect(model.quality.status).not.toBe('READY');
   });
 
   it('keeps public tags verbatim while excluding internal structure tags', () => {

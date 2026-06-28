@@ -16,6 +16,7 @@ import {
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getSafeMasterErrorMessage, toMasterClientError } from '../lib/clientErrors';
+import { MASTER_PRODUCT_CATALOG, getMasterProductPriceWithDuration } from '../lib/productCatalog';
 import { isPaidMasterPlan } from '../lib/subscription';
 import { useMasterStore, useProfile } from '../store';
 
@@ -46,11 +47,11 @@ const PLANS: Record<PlanKey, {
   badgeColor: string;
 }> = {
   pro: {
-    title: 'SPOKEDU MASTER Pro',
+    title: MASTER_PRODUCT_CATALOG.pro.displayName,
     shortTitle: 'Pro',
-    price: '39,900',
-    amount: 39900,
-    period: '30일',
+    price: MASTER_PRODUCT_CATALOG.pro.priceLabel.replace(/원$/, ''),
+    amount: MASTER_PRODUCT_CATALOG.pro.serverAmount ?? 0,
+    period: MASTER_PRODUCT_CATALOG.pro.durationLabel,
     badge: '개인 강사 추천',
     description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 30일 이용권입니다.',
     primaryFor: '개인 강사, 프리랜서 체육교육자, 소규모 클래스 운영자',
@@ -67,11 +68,11 @@ const PLANS: Record<PlanKey, {
     badgeColor: 'var(--spm-acc)',
   },
   team: {
-    title: 'SPOKEDU MASTER Center',
+    title: MASTER_PRODUCT_CATALOG.center.displayName,
     shortTitle: 'Center',
-    price: '상담 문의',
+    price: MASTER_PRODUCT_CATALOG.center.priceLabel,
     amount: 0,
-    period: '30일',
+    period: MASTER_PRODUCT_CATALOG.center.durationLabel,
     badge: '기관·센터용',
     description: '센터·기관 운영자가 현재 제공되는 MASTER 기능을 30일 동안 사용하는 이용권입니다.',
     primaryFor: '센터, 도장, 체육관, 기관 수업 운영자',
@@ -176,10 +177,12 @@ function PaymentContent() {
   const orderSummary = useMemo(() => {
     return {
       name: plan.title,
-      price: `${plan.price}원/${plan.period}`,
+      price: planKey === 'pro'
+        ? getMasterProductPriceWithDuration(MASTER_PRODUCT_CATALOG.pro)
+        : MASTER_PRODUCT_CATALOG.center.priceLabel,
       target: plan.primaryFor,
     };
-  }, [plan]);
+  }, [plan, planKey]);
 
   useEffect(() => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-toss-payments="true"]');

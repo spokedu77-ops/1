@@ -3,6 +3,7 @@ import { koreanLineBreak, landingSectionTitle } from '../lib/ui-classes';
 const accentEyebrow = {
   violet: 'text-violet-700',
   sky: 'text-sky-700',
+  teal: 'text-teal-800',
 } as const;
 
 type LandingSectionHeadingProps = {

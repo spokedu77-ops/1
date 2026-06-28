@@ -42,7 +42,7 @@ export default function SpokeduSiteLayout({ children }: { children: ReactNode })
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#F6F4F0]">
       {gaMeasurementId ? (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />

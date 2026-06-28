@@ -41,10 +41,10 @@ export type DispatchLineupItem = {
 
 export const dispatchPage = {
   hero: {
-    kicker: '기관 담당자 · 기관수업',
-    lines: ['움직이게 하는 수업이 아니라', '움직이고 싶게 만드는', '수업입니다'] as const,
+    kicker: '기관·단체 프로그램',
+    lines: ['대상과 현장에 맞는', '체육교육 과정을 설계합니다'] as const,
     subtitle:
-      '연세대학교 체육전공자들의 전문성과 실제 현장 데이터가 적용된 연간 커리큘럼으로, 기관의 체육 수업 운영을 체계적으로 설계합니다.',
+      '키움센터·아동시설·학교·복지관에 맞춘 맞춤 프로그램. 공간·인원·목표에 따라 정규·원데이·방학 운영과 SPOMOVE를 제안합니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
   },
   heroCtas: {
@@ -54,9 +54,9 @@ export const dispatchPage = {
       trackLabel: 'dispatch-cta-program',
     },
     secondary: {
-      label: '스포키듀 차별성 보기',
-      href: '#comparison',
-      trackLabel: 'dispatch-cta-comparison',
+      label: '프로그램 라인업 보기',
+      href: '#programs',
+      trackLabel: 'dispatch-cta-programs',
     },
   },
   trustMetrics: {

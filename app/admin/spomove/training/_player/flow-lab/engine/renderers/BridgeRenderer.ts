@@ -1,17 +1,22 @@
 /**
  * BridgeRenderer — 브릿지 Mesh 생성·제거 전담
  *
- * - legacy 모드: 원본 수치 완전 동일, 브릿지마다 개별 material
- * - enhanced 모드 (BoxGeometry): 어두운 금속 기반 + 레인별 네온 레일 + 발광 점프 패드 + 구분 패널
- *   공유 material (darkMat + neonMats[3] + padMats[3] + sideMat + divMat)
- *   geometry는 브릿지마다 개별 생성·개별 dispose (removeBridge에서 처리)
- * - enhanced + GLB 모드: dive_track_segment.glb를 10개 타일링 (420×10=4200)
- *   GLB geometry/material은 템플릿 공유 — removeBridge에서 pad geometry만 dispose
+ * - legacy 모드: 원본 수치 완전 동일
+ * - enhanced BoxGeometry: SF 네이비 상판 + 레인별 네온 레일/화살표 + 측면 구조 빔
+ *   + cyan 베이스라인 (하부 분위기 네온)
+ * - enhanced GLB: dive_track_segment.glb 10개 타일링
+ *   · 레일(EMISSIVE_RAIL_*): 레인 색 네온
+ *   · 화살표(ARROW_*): 레인 색 네온, position.y+0.8, renderOrder=3
+ *   · 트랙 바디: bodyMat (SF 네이비 메탈)
+ *   · PAD: 숨김
+ *   · 추가 procedural 화살표 (chevron ×5) + cyan 베이스라인
+ *
+ * removeBridge — GLB 모드에서 pad + 오버레이(userData.ownGeo) geometry 개별 dispose
  */
 
 import * as THREE from 'three';
 
-// ─── 브릿지 치수 상수 (FlowEngine과 공유; 원본 수치 그대로) ─────────────────
+// ─── 브릿지 치수 상수 ─────────────────────────────────────────────────────────
 
 export const LANE_COLORS: [number, number, number] = [0x22c55e, 0xef4444, 0xfbbf24];
 export const LANE_WIDTH    = 80;
@@ -19,15 +24,15 @@ export const BRIDGE_LENGTH = 4200;
 export const PAD_DEPTH     = 200;
 
 // ─── GLB 트랙 스킨 상수 ───────────────────────────────────────────────────────
-// dive_track_segment.glb: 420 units long × 80 wide, pivot center, forward -Z
-// 10개 타일 × 420 = BRIDGE_LENGTH(4200)
 const TRACK_SEG_LEN  = 420;
 const TRACK_SEGS     = 10;
-// Y 오프셋: GLB deck 상면 Y_max=7.1 → 브릿지 로직 발판 높이 44에 맞춤 (44-7.1=36.9)
 const TRACK_SEG_Y    = 37;
-// 발광 메시 이름 (레인 색상 tinting 대상)
-const TRACK_NEON_NAMES = new Set(['EMISSIVE_RAIL_LEFT', 'EMISSIVE_RAIL_RIGHT', 'ARROW_00', 'ARROW_01']);
+const TRACK_RAIL_NAMES = new Set(['EMISSIVE_RAIL_LEFT', 'EMISSIVE_RAIL_RIGHT']);
 const TRACK_PAD_NAME   = 'PAD';
+
+// deck 상면 Y (브릿지 그룹 local) — 화살표·베이스라인 배치 기준
+const DECK_SURFACE_Y   = 44.5;   // TRACK_SEG_Y + ~7.5 (GLB deck 두께)
+const BASE_NEON_Y      = TRACK_SEG_Y - 8; // 브릿지 하부 분위기 베이스라인
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
@@ -49,18 +54,17 @@ export class BridgeRenderer {
   private scene:    THREE.Scene;
   private enhanced: boolean;
 
-  // enhanced 공유 material (생성자에서 1회 생성, dispose()에서 일괄 해제)
-  private darkMat:  THREE.MeshPhongMaterial | null = null;
-  private neonMats: [THREE.MeshPhongMaterial, THREE.MeshPhongMaterial, THREE.MeshPhongMaterial] | null = null;
-  private padMats:  [THREE.MeshPhongMaterial, THREE.MeshPhongMaterial, THREE.MeshPhongMaterial] | null = null;
-  private sideMat:  THREE.MeshPhongMaterial | null = null;
-  private divMat:   THREE.MeshPhongMaterial | null = null;
+  // enhanced 공유 material
+  private bodyMat:     THREE.MeshStandardMaterial | null = null;
+  private sideMat:     THREE.MeshStandardMaterial | null = null;
+  private divMat:      THREE.MeshStandardMaterial | null = null;
+  // 레인별 네온 (레일 + 화살표 공용) — MeshStandardMaterial, toneMapped=false, emissiveIntensity>1 → bloom 발동
+  private laneNeonMats: [THREE.MeshStandardMaterial, THREE.MeshStandardMaterial, THREE.MeshStandardMaterial] | null = null;
+  // cyan 베이스라인 네온
+  private baseCyanMat: THREE.MeshStandardMaterial | null = null;
 
-  // GLB 트랙 스킨 (optional — FlowEngine이 로드해서 전달)
   private trackGlbScene: THREE.Object3D | null = null;
   private hasGlb = false;
-  // GLB 비명칭 메시용 베이스 재질 (네이비 블루 — enhanced 공유)
-  private trackBaseMat: THREE.MeshPhongMaterial | null = null;
 
   constructor(scene: THREE.Scene, enhanced = false, trackGlbScene: THREE.Object3D | null = null) {
     this.scene    = scene;
@@ -72,38 +76,29 @@ export class BridgeRenderer {
     }
 
     if (enhanced) {
-      // 어두운 금속 기반 (모든 레인 공유)
-      this.darkMat = new THREE.MeshPhongMaterial({
-        color: 0x080f1e, emissive: 0x010306, emissiveIntensity: 1.0, shininess: 90, specular: 0x304080,
+      this.bodyMat = new THREE.MeshStandardMaterial({
+        color: 0x081a35, metalness: 0.45, roughness: 0.42,
+        emissive: 0x020916, emissiveIntensity: 0.12,
       });
-      // GLB 기본 메시용 네이비 블루 (명칭 없는 트랙 바디)
-      this.trackBaseMat = new THREE.MeshPhongMaterial({
-        color: 0x0b1e3f, emissive: 0x040c1a, emissiveIntensity: 0.4, shininess: 80, specular: 0x1a3060,
+      this.sideMat = new THREE.MeshStandardMaterial({
+        color: 0x050c1b, metalness: 0.65, roughness: 0.38,
+        emissive: 0x01040a, emissiveIntensity: 0.08,
       });
-
-      // 레인별 네온 (레일 + 화살표용)
-      this.neonMats = [
-        new THREE.MeshPhongMaterial({ color: LANE_COLORS[0], emissive: LANE_COLORS[0], emissiveIntensity: 0.85, shininess: 40 }),
-        new THREE.MeshPhongMaterial({ color: LANE_COLORS[1], emissive: LANE_COLORS[1], emissiveIntensity: 0.85, shininess: 40 }),
-        new THREE.MeshPhongMaterial({ color: LANE_COLORS[2], emissive: LANE_COLORS[2], emissiveIntensity: 0.85, shininess: 40 }),
+      this.divMat = new THREE.MeshStandardMaterial({
+        color: 0x061b3d, metalness: 0.35, roughness: 0.5,
+        emissive: 0x010714, emissiveIntensity: 0.1,
+      });
+      // 레인별 네온 — MeshStandardMaterial + emissiveIntensity 색상별 최솟값
+      // 픽셀 휘도 = L(color) × intensity > 0.85(threshold) 로 bloom 발동
+      // green(L≈0.608)×1.5→0.91, red(L≈0.409)×2.2→0.90, yellow(L≈0.755)×1.2→0.91, cyan(L≈0.686)×1.4→0.96
+      // bodyMat·sideMat(emissiveIntensity 0.08~0.12)·GLB obstacle 재질은 threshold 미달 유지 → bloom 미적용
+      this.laneNeonMats = [
+        new THREE.MeshStandardMaterial({ color: 0x000000, emissive: LANE_COLORS[0], emissiveIntensity: 1.5, roughness: 1, metalness: 0, toneMapped: false }),
+        new THREE.MeshStandardMaterial({ color: 0x000000, emissive: LANE_COLORS[1], emissiveIntensity: 2.2, roughness: 1, metalness: 0, toneMapped: false }),
+        new THREE.MeshStandardMaterial({ color: 0x000000, emissive: LANE_COLORS[2], emissiveIntensity: 1.2, roughness: 1, metalness: 0, toneMapped: false }),
       ];
-
-      // 레인별 점프 패드 (더 밝게)
-      this.padMats = [
-        new THREE.MeshPhongMaterial({ color: LANE_COLORS[0], emissive: LANE_COLORS[0], emissiveIntensity: 1.2, shininess: 80, transparent: true, opacity: 0.92 }),
-        new THREE.MeshPhongMaterial({ color: LANE_COLORS[1], emissive: LANE_COLORS[1], emissiveIntensity: 1.2, shininess: 80, transparent: true, opacity: 0.92 }),
-        new THREE.MeshPhongMaterial({ color: LANE_COLORS[2], emissive: LANE_COLORS[2], emissiveIntensity: 1.2, shininess: 80, transparent: true, opacity: 0.92 }),
-      ];
-
-      // 구조 빔 (어두운 측면)
-      this.sideMat = new THREE.MeshPhongMaterial({
-        color: 0x0a1220, emissive: 0x060c18, emissiveIntensity: 1.0, shininess: 60, specular: 0x1a3060,
-      });
-
-      // 구분 패널 크로스빔
-      this.divMat = new THREE.MeshPhongMaterial({
-        color: 0x121c2e, emissive: 0x080e1c, emissiveIntensity: 1.0, shininess: 30,
-      });
+      // cyan 베이스라인 — 분위기 네온
+      this.baseCyanMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22d3ee, emissiveIntensity: 1.4, roughness: 1, metalness: 0, toneMapped: false });
     }
   }
 
@@ -112,82 +107,190 @@ export class BridgeRenderer {
     const g = new THREE.Group();
 
     // ── enhanced + GLB 트랙 스킨 ─────────────────────────────────────────────
-    if (this.hasGlb && this.trackGlbScene && this.neonMats && this.padMats && this.trackBaseMat) {
-      const neonMat    = this.neonMats[lane]!;
-      const padMat     = this.padMats[lane]!;
-      const baseMat    = this.trackBaseMat;
+    if (this.hasGlb && this.trackGlbScene && this.laneNeonMats && this.bodyMat && this.baseCyanMat) {
+      const neonMat = this.laneNeonMats[lane]!;
+      const bMat    = this.bodyMat;
 
       for (let i = 0; i < TRACK_SEGS; i++) {
         const seg = this.trackGlbScene.clone(true);
         const localZ = -(BRIDGE_LENGTH / 2) + TRACK_SEG_LEN * i + TRACK_SEG_LEN / 2;
         seg.position.set(0, TRACK_SEG_Y, localZ);
-        seg.rotation.y = Math.PI; // 화살표 전방(-Z) 방향 맞춤
         seg.frustumCulled = false;
         seg.traverse((obj) => {
           const m = obj as THREE.Mesh;
           if (!m.isMesh) return;
           m.frustumCulled = false;
-          if (TRACK_NEON_NAMES.has(m.name)) {
-            m.material = neonMat;           // 레인 색 네온 (레일·화살표)
-          } else if (m.name === TRACK_PAD_NAME) {
-            m.material = padMat;            // 레인 색 패드
+
+          if (m.name === TRACK_PAD_NAME) {
+            m.visible = false;
+          } else if (TRACK_RAIL_NAMES.has(m.name)) {
+            m.material = neonMat;   // 레일: 레인 색 네온
+            m.visible  = true;
+          } else if (m.name.startsWith('ARROW_')) {
+            m.material      = neonMat;  // GLB 내장 화살표: 레인 색
+            m.rotation.y   += Math.PI;  // 전방(-Z) 방향 보정
+            m.position.y   += 0.8;      // z-fighting 방지
+            m.renderOrder   = 3;
+            m.frustumCulled = false;
+            m.visible       = true;
           } else {
-            m.material = baseMat;           // 네이비 블루 트랙 바디
+            m.material = bMat;  // 트랙 바디: SF 네이비 메탈
+            m.visible  = true;
           }
         });
         g.add(seg);
       }
 
-      // 점프 패드 (z=-2200, 트랙 외부 — 로직 + 시각 가이드)
-      const pad = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH), padMat);
+      // ── 프로시저럴 오버레이 (브릿지 그룹 직접 자식) ──────────────────────────
+      // 화살표가 GLB에 없거나 너무 작아도 반드시 표시되도록 항상 생성
+
+      // cyan 베이스라인 — 브릿지 하부 분위기 네온 (중심 얇은 선)
+      const baseGeo = new THREE.BoxGeometry(8, 3, BRIDGE_LENGTH);
+      const baseNeon = new THREE.Mesh(baseGeo, this.baseCyanMat);
+      baseNeon.position.set(0, BASE_NEON_Y, 0);
+      baseNeon.userData['ownGeo'] = true;
+      g.add(baseNeon);
+
+      // 레인 색 filled 화살표 ×5 — ShapeGeometry (두께 0, 사이드 없음 → T 현상 완전 제거)
+      // tip +Y → rotation.x=-π/2 후 -Z (씬 안쪽), shaft +Z (카메라 방향)
+      // AH=SL=50 이므로 Z 중심=0 → offset 불필요
+      {
+        const A_AW = 68, A_AH = 50, A_SW = 24, A_SL = 50;
+        const arrowShape = new THREE.Shape();
+        arrowShape.moveTo(-A_SW / 2, -A_SL);
+        arrowShape.lineTo(-A_SW / 2,  0);
+        arrowShape.lineTo(-A_AW / 2,  0);
+        arrowShape.lineTo( 0,         A_AH);
+        arrowShape.lineTo( A_AW / 2,  0);
+        arrowShape.lineTo( A_SW / 2,  0);
+        arrowShape.lineTo( A_SW / 2, -A_SL);
+        arrowShape.closePath();
+        const numArrows = 5;
+        const aStep = BRIDGE_LENGTH / numArrows;
+        for (let i = 0; i < numArrows; i++) {
+          const az = -BRIDGE_LENGTH / 2 + aStep * (i + 0.5);
+          const arrowGeo  = new THREE.ShapeGeometry(arrowShape);
+          const arrowMesh = new THREE.Mesh(arrowGeo, neonMat);
+          arrowMesh.rotation.x        = -Math.PI / 2;
+          arrowMesh.position.set(0, DECK_SURFACE_Y + 0.5, az);
+          arrowMesh.renderOrder        = 3;
+          arrowMesh.userData['ownGeo'] = true;
+          g.add(arrowMesh);
+        }
+      }
+
+      // 시작/끝 발판
+      for (const side of [1, -1] as const) {
+        const pg = new THREE.BoxGeometry(LANE_WIDTH, 16, 100);
+        const pm = new THREE.Mesh(pg, bMat);
+        pm.position.set(0, TRACK_SEG_Y, side * (BRIDGE_LENGTH / 2 + 50));
+        pm.userData['ownGeo'] = true;
+        g.add(pm);
+      }
+
+      // 점프 패드 (판정 전용 — 시각 비활성)
+      const pad = new THREE.Mesh(
+        new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH),
+        this.bodyMat,
+      );
       pad.position.set(0, 44, -(BRIDGE_LENGTH / 2 + PAD_DEPTH / 2));
+      pad.visible = false;
       g.add(pad);
+
       g.position.set(x, 0, z);
       this.scene.add(g);
       return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH };
     }
 
     // ── enhanced BoxGeometry (GLB 없을 때 폴백) ──────────────────────────────
-    if (this.enhanced && this.darkMat && this.neonMats && this.padMats && this.sideMat && this.divMat) {
-      const neonMat = this.neonMats[lane]!;
-      const padMat  = this.padMats[lane]!;
+    if (this.enhanced && this.bodyMat && this.laneNeonMats && this.sideMat && this.divMat && this.baseCyanMat) {
+      const neonMat = this.laneNeonMats[lane]!;
 
-      // 0: 어두운 금속 기반 상판
-      const base = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH), this.darkMat);
+      // 상판 (SF 네이비)
+      const base = new THREE.Mesh(
+        new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH),
+        this.bodyMat,
+      );
       base.position.y = 40;
       g.add(base);
 
-      // 1: 좌측 네온 레일
-      const leftRail = new THREE.Mesh(new THREE.BoxGeometry(4, 6, BRIDGE_LENGTH), neonMat);
-      leftRail.position.set(-36, 46, 0);
+      // 좌우 레인 색 네온 레일
+      const leftRail = new THREE.Mesh(new THREE.BoxGeometry(3, 4, BRIDGE_LENGTH), neonMat);
+      leftRail.position.set(-37, 45, 0);
       g.add(leftRail);
-
-      // 2: 우측 네온 레일
-      const rightRail = new THREE.Mesh(new THREE.BoxGeometry(4, 6, BRIDGE_LENGTH), neonMat);
-      rightRail.position.set(36, 46, 0);
+      const rightRail = new THREE.Mesh(new THREE.BoxGeometry(3, 4, BRIDGE_LENGTH), neonMat);
+      rightRail.position.set(37, 45, 0);
       g.add(rightRail);
 
-      // 3: 좌측 구조 빔
-      const leftBeam = new THREE.Mesh(new THREE.BoxGeometry(7, 26, BRIDGE_LENGTH + PAD_DEPTH), this.sideMat);
+      // cyan 베이스라인 — 상판 하부 분위기 네온
+      const baseNeon = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 3, BRIDGE_LENGTH),
+        this.baseCyanMat,
+      );
+      baseNeon.position.set(0, 34, 0);
+      g.add(baseNeon);
+
+      // 좌우 구조 빔
+      const leftBeam = new THREE.Mesh(
+        new THREE.BoxGeometry(7, 26, BRIDGE_LENGTH + PAD_DEPTH), this.sideMat,
+      );
       leftBeam.position.set(-40, 28, -PAD_DEPTH / 2);
       g.add(leftBeam);
-
-      // 4: 우측 구조 빔
-      const rightBeam = new THREE.Mesh(new THREE.BoxGeometry(7, 26, BRIDGE_LENGTH + PAD_DEPTH), this.sideMat);
+      const rightBeam = new THREE.Mesh(
+        new THREE.BoxGeometry(7, 26, BRIDGE_LENGTH + PAD_DEPTH), this.sideMat,
+      );
       rightBeam.position.set(40, 28, -PAD_DEPTH / 2);
       g.add(rightBeam);
 
-      // 5: 발광 점프 패드
-      const pad = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH), padMat);
+      // 점프 패드 (판정 전용)
+      const pad = new THREE.Mesh(
+        new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH),
+        this.bodyMat,
+      );
       pad.position.set(0, 44, -(BRIDGE_LENGTH / 2 + PAD_DEPTH / 2));
+      pad.visible = false;
       g.add(pad);
 
-      // 6~8: 구분 크로스빔 3개 (균등 배치)
+      // 구분 크로스빔 (숨김)
       const divStep = BRIDGE_LENGTH / 3;
       for (let i = 0; i < 3; i++) {
         const div = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH - 2, 3, 6), this.divMat);
         div.position.set(0, 44, -BRIDGE_LENGTH / 2 + divStep * (i + 0.5));
+        div.visible = false;
         g.add(div);
+      }
+
+      // 레인 색 filled 화살표 ×4 — ShapeGeometry (BoxGeometry 폴백 경로)
+      {
+        const A_AW = 68, A_AH = 50, A_SW = 24, A_SL = 50;
+        const arrowShape = new THREE.Shape();
+        arrowShape.moveTo(-A_SW / 2, -A_SL);
+        arrowShape.lineTo(-A_SW / 2,  0);
+        arrowShape.lineTo(-A_AW / 2,  0);
+        arrowShape.lineTo( 0,         A_AH);
+        arrowShape.lineTo( A_AW / 2,  0);
+        arrowShape.lineTo( A_SW / 2,  0);
+        arrowShape.lineTo( A_SW / 2, -A_SL);
+        arrowShape.closePath();
+        const numArrows = 4;
+        const aStep = BRIDGE_LENGTH / (numArrows + 1);
+        for (let i = 0; i < numArrows; i++) {
+          const az = -BRIDGE_LENGTH / 2 + aStep * (i + 1);
+          const arrowGeo  = new THREE.ShapeGeometry(arrowShape);
+          const arrowMesh = new THREE.Mesh(arrowGeo, neonMat);
+          arrowMesh.rotation.x = -Math.PI / 2;
+          arrowMesh.position.set(0, 44.5 + 0.5, az);
+          arrowMesh.renderOrder = 3;
+          g.add(arrowMesh);
+        }
+      }
+
+      // 시작/끝 발판
+      for (const side of [1, -1] as const) {
+        const pg = new THREE.BoxGeometry(LANE_WIDTH - 5, 16, 100);
+        const pm = new THREE.Mesh(pg, this.bodyMat);
+        pm.position.set(0, 36, side * (BRIDGE_LENGTH / 2 + 50));
+        g.add(pm);
       }
 
       g.position.set(x, 0, z);
@@ -197,7 +300,6 @@ export class BridgeRenderer {
 
     // ── legacy 브릿지 (원본 동일) ────────────────────────────────────────────
     const bridgeColor = LANE_COLORS[lane]!;
-
     const top = new THREE.Mesh(
       new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH),
       new THREE.MeshBasicMaterial({ color: bridgeColor }),
@@ -212,13 +314,13 @@ export class BridgeRenderer {
     legacyPad.position.set(0, 44, -(BRIDGE_LENGTH / 2 + PAD_DEPTH / 2));
     g.add(legacyPad);
 
-    const sideGeo   = new THREE.BoxGeometry(6, 25, BRIDGE_LENGTH + PAD_DEPTH);
-    const sideMat   = new THREE.MeshPhongMaterial({ color: 0x222222, emissive: 0x111111 });
-    const leftBeam  = new THREE.Mesh(sideGeo, sideMat);
-    const rightBeam = new THREE.Mesh(sideGeo, sideMat);
-    leftBeam.position.set(-(LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
-    rightBeam.position.set( (LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
-    g.add(leftBeam, rightBeam);
+    const sideGeo  = new THREE.BoxGeometry(6, 25, BRIDGE_LENGTH + PAD_DEPTH);
+    const sMat     = new THREE.MeshPhongMaterial({ color: 0x222222, emissive: 0x111111 });
+    const leftB    = new THREE.Mesh(sideGeo, sMat);
+    const rightB   = new THREE.Mesh(sideGeo, sMat);
+    leftB.position.set(-(LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
+    rightB.position.set( (LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
+    g.add(leftB, rightB);
 
     g.position.set(x, 0, z);
     this.scene.add(g);
@@ -227,41 +329,42 @@ export class BridgeRenderer {
 
   removeBridge(visual: BridgeVisual): void {
     const { mesh } = visual;
-
     if (this.hasGlb) {
-      // GLB geometry/material은 템플릿과 공유 — 패드 BoxGeometry만 개별 dispose
+      // GLB 공유 geometry: dispose 금지
+      // pad + 오버레이(userData.ownGeo) geometry만 개별 dispose
       visual.padMesh.geometry.dispose();
+      mesh.traverse((obj) => {
+        const m = obj as THREE.Mesh;
+        if (m.geometry && (m.userData['ownGeo'] as boolean)) {
+          m.geometry.dispose();
+        }
+      });
     } else {
       mesh.traverse((obj) => {
         const m = obj as THREE.Mesh;
         if (m.geometry) m.geometry.dispose();
-        // enhanced 공유 material은 dispose()에서 일괄 처리; legacy는 여기서 개별 dispose
         if (!this.enhanced && m.material) {
           (Array.isArray(m.material) ? m.material : [m.material])
             .forEach((mat) => (mat as THREE.Material).dispose());
         }
       });
     }
-
     this.scene.remove(mesh);
   }
 
   dispose(): void {
     if (!this.enhanced) return;
-    this.darkMat?.dispose();
-    if (this.neonMats) { for (const m of this.neonMats) m.dispose(); }
-    if (this.padMats)  { for (const m of this.padMats)  m.dispose(); }
+    this.bodyMat?.dispose();
     this.sideMat?.dispose();
     this.divMat?.dispose();
-    this.darkMat       = null;
-    this.neonMats      = null;
-    this.padMats       = null;
-    this.sideMat       = null;
-    this.divMat        = null;
-    // GLB 템플릿은 FlowEngine이 소유 — 참조만 해제
+    this.baseCyanMat?.dispose();
+    if (this.laneNeonMats) { for (const m of this.laneNeonMats) m.dispose(); }
+    this.bodyMat      = null;
+    this.sideMat      = null;
+    this.divMat       = null;
+    this.baseCyanMat  = null;
+    this.laneNeonMats = null;
     this.trackGlbScene = null;
     this.hasGlb        = false;
-    this.trackBaseMat?.dispose();
-    this.trackBaseMat  = null;
   }
 }

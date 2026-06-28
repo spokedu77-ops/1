@@ -36,7 +36,7 @@ export const MASTER_PRODUCT_CATALOG: Record<MasterProductKey, MasterProductCatal
     key: 'pro',
     displayName: 'SPOKEDU MASTER Pro',
     priceLabel: '39,900원',
-    durationLabel: '30일 단건 이용권',
+    durationLabel: '30일 이용권',
     serverPlanKey: 'pro',
     serverAmount: MASTER_PRO_PRICE_KRW,
     autoRenewal: false,
@@ -49,7 +49,7 @@ export const MASTER_PRODUCT_CATALOG: Record<MasterProductKey, MasterProductCatal
   center: {
     key: 'center',
     displayName: 'SPOKEDU MASTER Center',
-    priceLabel: '상담 문의',
+    priceLabel: '도입 상담',
     durationLabel: '기관 도입 상담',
     serverPlanKey: 'team',
     serverAmount: null,
@@ -81,7 +81,7 @@ export const MASTER_PRODUCT_CATALOG: Record<MasterProductKey, MasterProductCatal
   school: {
     key: 'school',
     displayName: 'SPOKEDU MASTER School',
-    priceLabel: '상담 문의',
+    priceLabel: '도입 상담',
     durationLabel: '학교·기관 도입 상담',
     serverPlanKey: null,
     serverAmount: null,
@@ -100,6 +100,21 @@ export function getDirectPurchaseMasterProducts() {
 
 export function getMasterProduct(key: MasterProductKey) {
   return MASTER_PRODUCT_CATALOG[key];
+}
+
+export function getMasterProductRenewalLabel(product: MasterProductCatalogItem) {
+  return product.autoRenewal ? '자동 갱신' : '자동 갱신 없음';
+}
+
+export function getMasterProductPriceWithDuration(product: MasterProductCatalogItem) {
+  return `${product.priceLabel} / ${product.durationLabel}`;
+}
+
+export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
+  if (product.purchasable) return `${product.displayName.replace('SPOKEDU MASTER ', '')} 이용권 보기`;
+  if (product.comingSoon) return product.statusLabel;
+  if (product.contactRequired) return product.priceLabel;
+  return product.statusLabel;
 }
 
 export function buildMasterSupportMailto(subject: string, body = '') {

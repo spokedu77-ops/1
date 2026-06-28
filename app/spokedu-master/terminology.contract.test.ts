@@ -41,21 +41,28 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
   it('does not expose deprecated representative terms in the checked files', () => {
     const source = userVisibleSource();
 
-    expect(source).not.toContain('저장 수업');
-    expect(source).not.toContain('빠른 미리보기');
-    expect(source).not.toContain('프로그램 라이브러리');
-    expect(source).not.toContain('수업 라이브러리');
-    expect(source).not.toContain('학부모 안내 문구');
+    expect(source).not.toContain('맞춤 추천');
+    expect(source).not.toContain('AI 추천');
+    expect(source).not.toContain('성장 분석');
+    expect(source).not.toContain('진행 중');
   });
 
-  it('presents Pro as the only direct purchase product', () => {
+  it('presents Pro as the only direct purchase product from the catalog', () => {
     const landing = read('app/spokedu-master/landing/page.tsx');
     const payment = read('app/spokedu-master/payment/page.tsx');
+    const profile = read('app/spokedu-master/profile/page.tsx');
+    const subscription = read('app/spokedu-master/subscription/page.tsx');
+    const catalog = read('app/spokedu-master/lib/productCatalog.ts');
     const checkout = read('app/api/spokedu-master/payment/create-checkout/route.ts');
 
-    expect(landing).toContain('39,900');
-    expect(landing).toContain('상담 문의');
-    expect(payment).toContain("'39,900'");
+    expect(catalog).toContain("priceLabel: '39,900원'");
+    expect(catalog).toContain("durationLabel: '30일 이용권'");
+    expect(catalog).toContain("priceLabel: '도입 상담'");
+    expect(catalog).toContain("priceLabel: '준비 중'");
+    expect(landing).toContain('MASTER_PRODUCT_CATALOG.pro.priceLabel');
+    expect(payment).toContain('MASTER_PRODUCT_CATALOG.pro.priceLabel');
+    expect(profile).toContain('MASTER_PRODUCT_CATALOG.pro');
+    expect(subscription).toContain('MASTER_PRODUCT_CATALOG.pro.priceLabel');
     expect(payment).toContain("(['pro'] as PlanKey[])");
     expect(checkout).toContain('isSpokeduMasterDirectPurchasePlan(planKey)');
   });
@@ -67,6 +74,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
       read('app/spokedu-master/profile/page.tsx'),
       read('app/spokedu-master/terms/page.tsx'),
       read('app/spokedu-master/privacy/page.tsx'),
+      read('app/spokedu-master/lib/productCatalog.ts'),
     ].join('\n');
 
     expect(source).toContain('안내문 작성·저장·복사');

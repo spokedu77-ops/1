@@ -86,6 +86,9 @@ describe('official SPOMOVE runtime contract', () => {
     expect(source).toContain('지원하지 않는 SPOMOVE 활동입니다.');
     expect(source).not.toContain("fetch('/api/spokedu-master/access'");
 
+    expect(source).not.toContain('class-record?program=${officialPreset.id}');
+    expect(source).toContain('recordProgramHref');
+
     const shell = read('app/spokedu-master/components/layout/AppShell.tsx');
     expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
   });
@@ -96,8 +99,8 @@ describe('official SPOMOVE runtime contract', () => {
 
     expect(classMode).not.toMatch(/\bdrills\b|\?drill=/);
     expect(plan).not.toMatch(/\bdrills\b|\?drill=/);
-    expect(classMode).toContain('getPrimaryOfficialSpomovePreset');
-    expect(plan).toContain('getPrimaryOfficialSpomovePreset');
+    expect(classMode).toContain('getPrimarySupportedSpomovePreset');
+    expect(plan).toContain('getPrimarySupportedSpomovePreset');
   });
 
   it('does not translate legacy drill IDs in the public programs API', () => {

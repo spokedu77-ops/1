@@ -18,10 +18,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
-import { cleanList, cleanText, hasBrokenText, PROGRAM_FALLBACK } from '../../lib/clean';
-import { getPrimaryOfficialSpomovePreset, getSpomoveSessionHref } from '../../lib/program-meta';
+import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
+import { getPrimarySupportedSpomovePreset, getSpomoveSessionHref } from '../../lib/program-meta';
 import { useMasterStore } from '../../store';
-import type { Program } from '../../types';
 
 const STEP_PRESETS = [
   { label: '1분', secs: 60 },
@@ -29,17 +28,32 @@ const STEP_PRESETS = [
   { label: '5분', secs: 300 },
 ] as const;
 
-function cleanProgramText(program: Program, key: 'title' | 'category' | 'grade' | 'space', fallback: string) {
-  const value = program[key];
-  if (!value || hasBrokenText(value)) return (PROGRAM_FALLBACK[program.id]?.[key] as string | undefined) ?? fallback;
-  return value;
-}
+type LessonCard = {
+  type: 'step' | 'coach';
+  label: string;
+  text: string;
+};
 
 function getSpomoveUseLabel(text: string) {
-  if (/도입|집중|신호|주의/.test(text)) return '도입 3분 집중 전환';
-  if (/민첩|순발|반응|스피드|방향|거리|펜싱/.test(text)) return '수업 중 반응 전환';
+  if (/진입|집중|신호|주의/.test(text)) return '진입 3분 집중 전환';
+  if (/민첩|순발|반응|스피드|방향|거리|타이밍/.test(text)) return '수업 중 반응 전환';
   if (/마무리|정리|협동|리듬|기억/.test(text)) return '마무리 참여 게임';
-  return '큰 화면 몰입 활동';
+  return '화면 몰입 활동';
+}
+
+function formatMissingInfo(label: string) {
+  const map: Record<string, string> = {
+    대상: '대상 정보 없음',
+    시간: '시간 정보 없음',
+    공간: '공간 정보 없음',
+    준비물: '준비물 정보 없음',
+    진행: '활동 단계 없음',
+    안전: '안전 정보 없음',
+    '지도·변형': '지도 포인트 없음',
+    '미리보기 자료': '미리보기 자료 없음',
+    '특수 대상 지원 근거': '특수 대상 지원 정보 없음',
+  };
+  return map[label] ?? `${label} 정보 없음`;
 }
 
 function formatElapsed(ms: number) {
@@ -114,11 +128,6 @@ export default function ClassModeView({ programId }: { programId: string }) {
   }, [timerMs, timerRunning, timerStartedAt]);
 
   useEffect(() => {
-    if (!program || done || timerRunning || timerMs > 0) return;
-    timerStart();
-  }, [done, program, timerMs, timerRunning, timerStart]);
-
-  useEffect(() => {
     if (!stepRunning) return;
     const id = window.setInterval(() => {
       setStepRemaining((value) => Math.max(0, value - 1));
@@ -142,36 +151,48 @@ export default function ClassModeView({ programId }: { programId: string }) {
 
   const lesson = useMemo(() => {
     if (!program) return null;
-    const title = cleanProgramText(program, 'title', 'SPOKEDU 수업');
-    const category = cleanProgramText(program, 'category', '체육 수업');
-    const focus = cleanText(program.lessonDetail?.developmentFocus, category);
-    const equipment = cleanList(program.equipment, ['현장 기본 교구']);
-    const steps = cleanList(program.lessonDetail?.rules?.length ? program.lessonDetail.rules : program.steps, [
-      '공간과 준비물을 확인하고 학생들이 움직일 범위를 정합니다.',
-      '규칙을 짧게 설명하고 시범을 보여줍니다.',
-      '기본 라운드 후 학생 반응에 맞춰 난이도를 조절합니다.',
-    ]);
-    const coachScript = cleanText(program.lessonDetail?.coachScript, '');
-    const spomovePreset = getPrimaryOfficialSpomovePreset(program);
-    const cards = [
+    const model = buildLessonDisplayModel(program);
+    const title = model.title || 'SPOKEDU 수업';
+    const category = model.theme || '체육 수업';
+    const focus = program.lessonDetail?.developmentFocus?.trim() || model.previewCoachScript || category;
+    const equipmentLabel = model.equipment.length > 0
+      ? model.equipment.slice(0, 3).join(', ')
+      : model.quality.missing.includes('준비물')
+        ? '준비물 정보 없음'
+        : '준비물 없음';
+    const safetyLabel = model.safetyNotes[0] ?? '안전 정보 없음';
+    const steps = model.activityMethod;
+    const cards: LessonCard[] = [
       ...steps.map((text, index) => ({ type: 'step' as const, label: `${index + 1}단계`, text })),
-      ...(coachScript ? [{ type: 'coach' as const, label: '코치 멘트', text: coachScript }] : []),
+      ...(model.coachScript ? [{ type: 'coach' as const, label: '코치 멘트', text: model.coachScript }] : []),
     ];
+    const spomovePreset = getPrimarySupportedSpomovePreset(program);
 
     return {
       title,
       category,
       focus,
-      equipment,
-      grade: cleanProgramText(program, 'grade', '전 학년'),
-      duration: program.duration,
-      space: cleanProgramText(program, 'space', '실내 또는 체육 공간'),
-      cards: cards.length > 0 ? cards : [{ type: 'step' as const, label: '1단계', text: '수업을 시작합니다.' }],
+      equipmentLabel,
+      safetyLabel,
+      grade: model.target || '대상 정보 없음',
+      durationLabel: program.duration ? `${program.duration}분` : '시간 정보 없음',
+      space: model.space || '공간 정보 없음',
+      quality: model.quality,
+      missingInfo: model.quality.missing.slice(0, 3).map(formatMissingInfo),
+      executionBlocked: model.quality.status === 'INCOMPLETE' && steps.length === 0,
+      cards,
       spomovePreset,
       spomoveName: spomovePreset?.title ?? '연계 SPOMOVE 없음',
       spomoveUse: getSpomoveUseLabel(`${title} ${category} ${focus} ${program.tags.join(' ')}`),
     };
   }, [program]);
+
+  const executionBlocked = lesson?.executionBlocked ?? false;
+
+  useEffect(() => {
+    if (!program || executionBlocked || done || timerRunning || timerMs > 0) return;
+    timerStart();
+  }, [done, executionBlocked, program, timerMs, timerRunning, timerStart]);
 
   const startStepTimer = (seconds: number) => {
     setStepTotal(seconds);
@@ -206,9 +227,10 @@ export default function ClassModeView({ programId }: { programId: string }) {
     );
   }
 
-  const current = lesson.cards[stepIndex] ?? lesson.cards[0]!;
+  const current = lesson.cards[stepIndex] ?? lesson.cards[0] ?? { type: 'step' as const, label: '정보 없음', text: '전체 수업 자료를 확인해 주세요.' };
   const isLast = stepIndex === lesson.cards.length - 1;
   const stepTone = current.type === 'coach' ? '#fbbf24' : '#a5b4fc';
+  const detailHref = `/spokedu-master/library/${program.id}`;
 
   const finishClass = () => {
     timerStop();
@@ -236,6 +258,35 @@ export default function ClassModeView({ programId }: { programId: string }) {
         </Link>
       </header>
 
+      {lesson.quality.status !== 'READY' ? (
+        <section className="mx-auto w-full max-w-5xl px-4 pb-4 sm:px-6">
+          <div className="rounded-2xl border border-amber-300/20 bg-amber-300/[0.07] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-black text-amber-100">
+                  {lesson.executionBlocked ? '이 수업은 실행 정보가 충분하지 않습니다.' : '일부 수업 정보가 제한적입니다.'}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-amber-100/65">
+                  {lesson.executionBlocked ? '전체 수업 자료를 먼저 확인해 주세요.' : '수업 전 전체 수업 자료를 확인해 주세요.'}
+                </p>
+                {lesson.missingInfo.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {lesson.missingInfo.map((item) => (
+                      <span key={item} className="rounded-full bg-white/[0.08] px-2.5 py-1 text-[11px] font-black text-amber-50/75">
+                        {item}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+              <Link href={detailHref} className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-white px-4 text-xs font-black text-slate-950">
+                전체 수업 자료 보기
+              </Link>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {done ? (
         <section className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom))' }}>
           <div className="mx-auto grid h-20 w-20 place-items-center rounded-full border border-emerald-300/25 bg-emerald-400/12">
@@ -261,6 +312,18 @@ export default function ClassModeView({ programId }: { programId: string }) {
             </Link>
           </div>
         </section>
+      ) : lesson.executionBlocked ? (
+        <section className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 text-center" style={{ paddingBottom: 'max(40px, env(safe-area-inset-bottom))' }}>
+          <div className="max-w-[520px] rounded-[24px] border border-white/10 bg-white/[0.045] p-6">
+            <p className="text-2xl font-black">현장 실행 정보가 부족합니다.</p>
+            <p className="mt-3 text-sm font-semibold leading-6 text-white/55">
+              class-mode에서 임의 단계나 안전 문구를 만들지 않습니다. 상세 자료에서 원본 정보를 먼저 확인해 주세요.
+            </p>
+            <Link href={detailHref} className="mt-6 inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">
+              전체 수업 자료 보기
+            </Link>
+          </div>
+        </section>
       ) : (
         <>
           <section className="mx-auto flex w-full max-w-5xl shrink-0 flex-wrap items-center justify-center gap-2 px-4 pb-4 sm:px-6">
@@ -268,7 +331,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
               {lesson.grade}
             </span>
             <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-black text-white/55">
-              {lesson.duration}분
+              {lesson.durationLabel}
             </span>
             <span className="rounded-full border border-white/10 bg-white/[0.045] px-3 py-2 text-xs font-black text-white/55">
               {lesson.space}
@@ -282,10 +345,11 @@ export default function ClassModeView({ programId }: { programId: string }) {
             </Link>
           </section>
 
-          <section className="mx-auto grid w-full max-w-5xl shrink-0 gap-2 px-4 pb-5 sm:grid-cols-3 sm:px-6">
+          <section className="mx-auto grid w-full max-w-5xl shrink-0 gap-2 px-4 pb-5 sm:grid-cols-4 sm:px-6">
             {[
               { icon: Timer, label: '수업 초점', value: lesson.focus },
-              { icon: Package, label: '준비물', value: lesson.equipment.slice(0, 3).join(', ') },
+              { icon: Package, label: '준비물', value: lesson.equipmentLabel },
+              { icon: CheckCircle2, label: '안전', value: lesson.safetyLabel },
               { icon: MonitorPlay, label: '화면 활동', value: lesson.spomoveUse },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3">

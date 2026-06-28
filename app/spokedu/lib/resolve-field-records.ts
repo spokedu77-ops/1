@@ -1,4 +1,4 @@
-import type { HomeFieldRecordCard } from '../data/home-page';
+import type { HomeFieldRecordCardFromCatalog } from '../data/field-records-catalog';
 import type { FieldRecordItem } from '../data/records-page';
 import { fetchNaverBlogThumbnail, isNaverBlogPostUrl } from './naver-blog-thumbnail';
 import { isExternalHref } from './external-link';
@@ -7,7 +7,7 @@ export type FieldRecordWithThumbnail = FieldRecordItem & {
   thumbnailSrc?: string;
 };
 
-export type HomeFieldRecordCardWithThumbnail = HomeFieldRecordCard & {
+export type HomeFieldRecordCardWithThumbnail = HomeFieldRecordCardFromCatalog & {
   thumbnailSrc?: string;
 };
 
@@ -28,7 +28,7 @@ export async function resolveFieldRecordsWithThumbnails(
 }
 
 export async function resolveHomeFieldRecordCards(
-  cards: readonly HomeFieldRecordCard[],
+  cards: readonly HomeFieldRecordCardFromCatalog[],
 ): Promise<HomeFieldRecordCardWithThumbnail[]> {
   return Promise.all(
     cards.map(async (card) => {

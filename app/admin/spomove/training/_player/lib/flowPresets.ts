@@ -9,6 +9,7 @@ export const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
 const FLOW_PRESETS_KEY_LEGACY = 'spomove_flow_presets';
 
 export type FlowColorTheme = 'default' | 'space' | 'neon' | 'ocean';
+export type FlowVisualVariant = 'classic' | 'plus';
 
 export interface FlowPreset {
   id: string;
@@ -16,6 +17,7 @@ export interface FlowPreset {
   features: string[];
   colorTheme: FlowColorTheme;
   duration: number;
+  visualVariant?: FlowVisualVariant;
 }
 
 function isValidPreset(x: unknown): x is FlowPreset {

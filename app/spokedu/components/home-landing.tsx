@@ -1,436 +1,522 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import type { ReactNode } from 'react';
-import type { HomeMediaItem } from '../data/home-media';
-import { HOME_MEDIA, HOME_PROOF_FIELDS } from '../data/home-media';
+import { useEffect, useRef, useState } from 'react';
+import { HOME_MEDIA } from '../data/home-media';
 import { homePage } from '../data/home-page';
+import {
+  PRIVATE_COUNTER_BASE_DATE,
+  PRIVATE_COUNTER_BASE_SESSIONS,
+  PRIVATE_COUNTER_BASE_STUDENTS,
+  PRIVATE_COUNTER_DAILY_SESSIONS,
+  PRIVATE_COUNTER_DAILY_STUDENTS,
+} from '../data/private-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
 import { externalLinkProps, isExternalHref } from '../lib/external-link';
 import { inferTrackFromHref } from '../lib/tracking';
-import {
-  btnPrimary,
-  cardInteractive,
-  fineHover,
-  homeHeroH1,
-  homeHeroH1Line,
-  homeHeroShell,
-  homeSectionEyebrow,
-  landingHeroSubtitle,
-  homeIntroCluster,
-  homePageStack,
-  homeSectionInner,
-  homeSectionInnerLg,
-  homeSkipLink,
-  koreanLineBreak,
-} from '../lib/ui-classes';
-import { HomeFinalCta } from './home-final-cta';
-import { HomeSectionRule } from './home-section-rule';
-import { HomeHeroEditorial } from './home-hero-editorial';
-import { HomePhotoZoom } from './home-photo-zoom';
-import { HomeSectionHeading } from './home-section-heading';
-import { HomeProgramSystem } from './visual/home-program-system';
-import { MediaPanel } from './visual';
+import { koreanLineBreak } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
+import { MediaPanel } from './visual';
 
-const heroMain = HOME_MEDIA.homeHero;
-const heroThumbA = HOME_MEDIA.proofLab;
-const heroThumbB = HOME_MEDIA.heroThumbMedia;
+/** 현장 사진·유니폼 톤 — 크림 + 플럼 (teal SaaS 톤 제거) */
+const CREAM = '#F4F0EA';
+const INK = '#141210';
+const PLUM = '#6B5B7A';
 
-const gateMedia = [HOME_MEDIA.trackDispatch, HOME_MEDIA.gateCurriculum, HOME_MEDIA.trackPrivate] as const;
+const container = 'mx-auto w-full max-w-6xl px-5 sm:px-8';
+const sectionPad = 'py-14 sm:py-16 lg:py-20';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+function getSessionCount(): number {
+  const base = new Date(`${PRIVATE_COUNTER_BASE_DATE}T00:00:00`).getTime();
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const days = Math.max(0, Math.floor((todayStart - base) / (24 * 60 * 60 * 1000)));
+  return PRIVATE_COUNTER_BASE_SESSIONS + days * PRIVATE_COUNTER_DAILY_SESSIONS;
+}
 
-const gateAccent = [
-  'border-t-indigo-400/80',
-  'border-t-sky-400/80',
-  'border-t-violet-400/80',
-] as const;
+function getStudentCount(): number {
+  const base = new Date(`${PRIVATE_COUNTER_BASE_DATE}T00:00:00`).getTime();
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const days = Math.max(0, Math.floor((todayStart - base) / (24 * 60 * 60 * 1000)));
+  return PRIVATE_COUNTER_BASE_STUDENTS + days * PRIVATE_COUNTER_DAILY_STUDENTS;
+}
 
-function Section({
-  id,
-  children,
-  className = '',
-  delay = 0,
-}: {
-  id?: string;
-  children: ReactNode;
-  className?: string;
-  delay?: number;
-}) {
+function useCountUp(target: number, active: boolean, durationMs = 1200): number {
+  const [value, setValue] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    const start = performance.now();
+    const step = (now: number) => {
+      const t = Math.min(1, (now - start) / durationMs);
+      const eased = 1 - (1 - t) ** 2;
+      setValue(Math.round(target * eased));
+      if (t < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [target, active, durationMs]);
+
+  return value;
+}
+
+type SpokeduHomeLandingProps = {
+  proofCards: HomeFieldRecordCardWithThumbnail[];
+};
+
+export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   const reducedMotion = useReducedMotion();
-  return (
-    <motion.section
-      id={id}
-      initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-      whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.12 }}
-      transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1], delay }}
-      className={className}
-    >
-      {children}
-    </motion.section>
-  );
-}
+  const heroMedia = HOME_MEDIA[homePage.hero.mediaKey];
+  const sessionTarget = getSessionCount();
+  const studentTarget = getStudentCount();
+  const statsRef = useRef<HTMLDivElement>(null);
+  const [statsActive, setStatsActive] = useState(false);
+  const featuredProofCards = proofCards.slice(0, homePage.proof.featuredCount);
 
-function resolveFieldProof(card: HomeFieldRecordCardWithThumbnail) {
-  const field = HOME_PROOF_FIELDS.find((f) => f.id === card.proofId);
-  if (!field) return null;
-  return {
-    field,
-    tagline: card.tagline,
-    venue: card.venue,
-    sessionLine: card.sessionLine,
-    href: card.href,
-    trackLabel: card.trackLabel,
-    thumbnailSrc: card.thumbnailSrc,
-  };
-}
+  useEffect(() => {
+    const node = statsRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setStatsActive(true);
+      },
+      { threshold: 0.25 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
-function FieldProofMedia({
-  thumbnailSrc,
-  media,
-  alt,
-  sizes,
-  photoPriority,
-  className,
-}: {
-  thumbnailSrc?: string;
-  media: HomeMediaItem;
-  alt: string;
-  sizes: 'fieldFeatured' | 'fieldSecondary';
-  photoPriority?: boolean;
-  className: string;
-}) {
+  const sessionCount = useCountUp(sessionTarget, statsActive && !reducedMotion);
+  const studentCount = useCountUp(studentTarget, statsActive && !reducedMotion);
+  const displaySessions = (statsActive && !reducedMotion ? sessionCount : sessionTarget).toLocaleString();
+  const displayStudents = (statsActive && !reducedMotion ? studentCount : studentTarget).toLocaleString();
+
   return (
-    <HomePhotoZoom className={className}>
-      {thumbnailSrc ? (
-        <ExternalPhoto
-          src={thumbnailSrc}
-          alt={alt}
-          className="absolute inset-0 h-full w-full"
-          priority={photoPriority}
+    <div className="text-stone-950" style={{ backgroundColor: CREAM }}>
+      <a
+        href="#paths"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold"
+      >
+        안내로 건너뛰기
+      </a>
+
+      {/* 1. 커버 — 현장 사진이 첫인상 */}
+      <section className="relative">
+        <div className="relative min-h-[min(52vh,420px)] w-full sm:min-h-[min(58vh,520px)] lg:min-h-[min(64vh,600px)]">
+          <MediaPanel
+            media={heroMedia}
+            className="absolute inset-0 h-full w-full rounded-none border-0"
+            sizes="heroEditorialMain"
+            photoPriority
+            priority
+          />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141210]/55 via-transparent to-[#141210]/10"
+            aria-hidden
+          />
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:p-10">
+            <div className="mx-auto w-full max-w-6xl">
+              <p
+                className={`max-w-md text-lg font-semibold leading-snug text-white sm:text-xl lg:text-2xl ${koreanLineBreak}`}
+              >
+                &ldquo;{homePage.hero.fieldQuote}&rdquo;
+              </p>
+              <p className="mt-2 text-xs font-medium tracking-wide text-white/70 sm:text-sm">
+                {homePage.hero.fieldCaption}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 -mt-6 px-5 sm:-mt-8 sm:px-8">
+          <div
+            className={`${container} rounded-t-[1.75rem] px-6 pb-10 pt-10 shadow-[0_-8px_40px_-12px_rgba(20,18,16,0.12)] sm:rounded-t-[2rem] sm:px-10 sm:pb-12 sm:pt-12 lg:px-12`}
+            style={{ backgroundColor: CREAM }}
+          >
+            <p
+              className="text-[11px] font-bold uppercase tracking-[0.32em]"
+              style={{ color: PLUM }}
+            >
+              {homePage.signature}
+            </p>
+            <h1
+              className={`mt-5 text-[2.1rem] font-semibold leading-[1.08] tracking-[-0.035em] min-[390px]:text-[2.45rem] sm:text-[3rem] lg:text-[3.5rem] ${koreanLineBreak}`}
+            >
+              {homePage.hero.lines.map((line) => (
+                <span key={line} className="block">
+                  {line}
+                </span>
+              ))}
+            </h1>
+            <p className={`mt-5 max-w-lg text-[15px] leading-relaxed text-stone-600 sm:text-base ${koreanLineBreak}`}>
+              {homePage.hero.support[0]}
+            </p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3">
+              {homePage.hero.audienceCtas.map((cta) => (
+                <Link
+                  key={cta.trackId}
+                  href={cta.href}
+                  data-track={inferTrackFromHref(cta.href)}
+                  data-track-label={cta.trackLabel}
+                  className="group flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-stone-300/80 bg-white/90 px-5 py-4 text-left shadow-sm transition hover:border-stone-950 hover:shadow-md"
+                >
+                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
+                    {cta.audience}
+                  </span>
+                  <span className="mt-2 text-sm font-semibold leading-snug text-stone-950 sm:text-[15px]">
+                    {cta.label}
+                  </span>
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-stone-500 transition group-hover:gap-2 group-hover:text-stone-800">
+                    바로가기
+                    <span aria-hidden>→</span>
+                  </span>
+                </Link>
+              ))}
+            </div>
+            <Link
+              href={homePage.hero.spomoveLink.href}
+              data-track={inferTrackFromHref(homePage.hero.spomoveLink.href)}
+              data-track-label={homePage.hero.spomoveLink.trackLabel}
+              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:gap-3 hover:text-stone-950"
+            >
+              {homePage.hero.spomoveLink.label}
+              <span aria-hidden>→</span>
+            </Link>
+
+            <dl
+              ref={statsRef}
+              className="mt-10 grid grid-cols-2 gap-6 border-t border-stone-300/70 pt-8 sm:grid-cols-4"
+              aria-label="스포키듀 운영 지표"
+            >
+              {homePage.stats.map((stat) => {
+                const value =
+                  stat.kind === 'sessions'
+                    ? displaySessions
+                    : stat.kind === 'students'
+                      ? displayStudents
+                      : stat.value;
+                return (
+                  <StatCell key={stat.id} value={value} label={stat.label} active={statsActive} />
+                );
+              })}
+            </dl>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. 가치 3열 — 짧게 */}
+      <section className="border-b border-stone-300/50" aria-label="스포키듀가 하는 일">
+        <div className={`${container} py-12 sm:py-14`}>
+          <p className={`text-sm font-semibold text-stone-800 sm:text-base ${koreanLineBreak}`}>
+            {homePage.trust.lead}
+          </p>
+          <p className="mt-2 text-xs font-medium text-stone-500">{homePage.trust.badge}</p>
+          <div className="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-6">
+            {homePage.trust.pillars.map((pillar, index) => (
+              <div key={pillar.id} className="relative pl-0 sm:pl-1">
+                <span
+                  className="text-[2.5rem] font-light leading-none tabular-nums text-stone-300 sm:text-5xl"
+                  aria-hidden
+                >
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <p className="mt-2 text-base font-semibold text-stone-950">{pillar.title}</p>
+                <p className={`mt-2 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{pillar.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 2b. 관객별 증거 */}
+      <section
+        id={homePage.audienceProof.id}
+        className="border-b border-stone-300/50 bg-white"
+        aria-labelledby="home-audience-proof-heading"
+      >
+        <div className={`${container} ${sectionPad}`}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
+            {homePage.audienceProof.eyebrow}
+          </p>
+          <h2
+            id="home-audience-proof-heading"
+            className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
+          >
+            {homePage.audienceProof.title}
+          </h2>
+          <p className={`mt-3 max-w-xl text-[15px] text-stone-600 sm:text-base ${koreanLineBreak}`}>
+            {homePage.audienceProof.lead}
+          </p>
+          <div className="mt-10 grid gap-5 lg:grid-cols-3 lg:gap-6">
+            {homePage.audienceProof.items.map((item, index) => (
+              <motion.article
+                key={item.trackId}
+                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
+                className="flex flex-col rounded-2xl border border-stone-200 bg-[#FAF8F5] p-6 sm:p-7"
+              >
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: PLUM }}>
+                  {item.audience}
+                </p>
+                <blockquote
+                  className={`mt-4 text-base font-semibold leading-snug text-stone-950 sm:text-[17px] ${koreanLineBreak}`}
+                >
+                  &ldquo;{item.quote}&rdquo;
+                </blockquote>
+                <p className={`mt-3 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{item.body}</p>
+                <div className="mt-6 flex items-center gap-3 border-t border-stone-200/80 pt-5">
+                  {item.portraitSrc ? (
+                    <ExternalPhoto
+                      src={item.portraitSrc}
+                      alt={item.portraitAlt ?? item.attribution}
+                      className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white"
+                      fit="cover"
+                    />
+                  ) : null}
+                  <p className="text-xs font-medium text-stone-500">{item.attribution}</p>
+                </div>
+                <Link
+                  href={item.href}
+                  data-track={inferTrackFromHref(item.href)}
+                  data-track-label={item.trackLabel}
+                  className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition hover:gap-3"
+                >
+                  {item.cta}
+                  <span aria-hidden>→</span>
+                </Link>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. Paths */}
+      <section
+        id={homePage.audiencePaths.id}
+        className="scroll-mt-[4.5rem] border-b border-stone-300/50 bg-[#EDE8E0]"
+        aria-labelledby="home-paths-heading"
+      >
+        <div className={`${container} ${sectionPad}`}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">시작하기</p>
+          <h2
+            id="home-paths-heading"
+            className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
+          >
+            {homePage.audiencePaths.title}
+          </h2>
+          <p className={`mt-3 max-w-xl text-[15px] text-stone-600 sm:text-base ${koreanLineBreak}`}>
+            {homePage.audiencePaths.lead}
+          </p>
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-3 sm:gap-4 lg:gap-5">
+            {homePage.audiencePaths.items.map((path, index) => (
+              <motion.div
+                key={path.trackId}
+                initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.12 }}
+                transition={{ duration: 0.45, delay: index * 0.07 }}
+              >
+                <PathCard path={path} priority={index === 0} />
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Proof */}
+      {featuredProofCards.length > 0 ? (
+        <section className="border-b border-stone-300/50" aria-labelledby="home-proof-heading">
+          <div className={`${container} ${sectionPad}`}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">현장</p>
+            <h2
+              id="home-proof-heading"
+              className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
+            >
+              {homePage.proof.title}
+            </h2>
+            <p className={`mt-3 max-w-lg text-[15px] text-stone-600 ${koreanLineBreak}`}>{homePage.proof.lead}</p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+              {featuredProofCards.map((record, index) => (
+                <ProofLink key={record.slug} href={record.href} trackLabel={record.trackLabel}>
+                  <div className="group relative overflow-hidden rounded-2xl bg-stone-900 ring-1 ring-stone-900/10">
+                    <div className="relative aspect-[4/3]">
+                      {record.thumbnailSrc ? (
+                        <ExternalPhoto
+                          src={record.thumbnailSrc}
+                          alt={`${record.venue} 수업 사례`}
+                          className="absolute inset-0 transition duration-700 group-hover:scale-[1.02]"
+                          fit="cover"
+                        />
+                      ) : (
+                        <MediaPanel
+                          media={HOME_MEDIA[record.mediaKey]}
+                          className="absolute inset-0 h-full w-full rounded-none border-0"
+                          sizes="gateCard"
+                          photoPriority={index === 0}
+                        />
+                      )}
+                      <div
+                        className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"
+                        aria-hidden
+                      />
+                      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">{record.tagline}</p>
+                        <p className="mt-2 text-lg font-semibold leading-snug text-white sm:text-xl">{record.venue}</p>
+                        <p className={`mt-1.5 text-sm text-white/75 ${koreanLineBreak}`}>{record.sessionLine}</p>
+                      </div>
+                    </div>
+                  </div>
+                </ProofLink>
+              ))}
+            </div>
+            <Link
+              href={homePage.proof.recordsHref}
+              data-track={inferTrackFromHref(homePage.proof.recordsHref)}
+              data-track-label={homePage.proof.recordsTrackLabel}
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition hover:gap-3"
+            >
+              {homePage.proof.recordsLabel}
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {/* 5. Mission */}
+      <section
+        className="relative overflow-hidden text-white"
+        style={{ backgroundColor: INK }}
+        aria-label="스포키듀 미션 및 상담"
+      >
+        <div
+          className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full opacity-30 blur-3xl"
+          style={{ backgroundColor: PLUM }}
+          aria-hidden
         />
-      ) : (
-        <MediaPanel
-          media={media}
-          className="absolute inset-0 h-full w-full rounded-none border-0"
-          sizes={sizes}
-          photoPriority={photoPriority}
-        />
-      )}
-    </HomePhotoZoom>
-  );
-}
-
-function FieldProofCaption({
-  tagline,
-  venue,
-  sessionLine,
-}: {
-  tagline: string;
-  venue: string;
-  sessionLine: string;
-}) {
-  return (
-    <div className="col-start-1 row-start-1 self-end bg-gradient-to-t from-slate-950/85 via-slate-950/50 to-transparent px-4 pb-4 pt-16 sm:px-5 sm:pb-5">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-200 sm:text-xs">
-        {tagline}
-      </span>
-      <h3 className={`mt-1 text-base font-bold leading-snug text-white sm:text-lg ${koreanLineBreak}`}>
-        {venue}
-      </h3>
-      <p className={`mt-1 text-sm leading-snug text-slate-200 ${koreanLineBreak}`}>{sessionLine}</p>
+        <div className={`relative ${container} py-16 sm:py-20 lg:py-24`}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-white/40">{homePage.signature}</p>
+          <p
+            className={`mt-8 max-w-3xl text-[1.75rem] font-medium leading-snug tracking-[-0.03em] sm:text-4xl sm:leading-tight ${koreanLineBreak}`}
+          >
+            {homePage.mission.lines[0]}
+            <br />
+            <span className="text-white/45">{homePage.mission.lines[1]}</span>
+          </p>
+          <p className={`mt-8 max-w-xl text-[15px] leading-relaxed text-white/55 ${koreanLineBreak}`}>
+            <span className="font-medium text-white/80">{homePage.authority.title}</span>
+            <span className="mt-2 block">{homePage.authority.body}</span>
+          </p>
+          <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-10 sm:flex-row sm:justify-end">
+            <Link
+              href={homePage.spomove.href}
+              data-track={inferTrackFromHref(homePage.spomove.href)}
+              data-track-label={homePage.spomove.trackLabel}
+              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 px-7 text-sm font-semibold text-white transition hover:bg-white/10"
+            >
+              SPOMOVE 알아보기
+            </Link>
+            <Link
+              href={homePage.closingCta.href}
+              data-track="cta-contact"
+              data-track-label={homePage.closingCta.trackLabel}
+              className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-stone-950 transition hover:bg-stone-100"
+            >
+              {homePage.closingCta.label}
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-function FieldProofLink({
+function PathCard({
+  path,
+  priority,
+}: {
+  path: (typeof homePage.audiencePaths.items)[number];
+  priority?: boolean;
+}) {
+  return (
+    <Link
+      href={path.href}
+      data-track={inferTrackFromHref(path.href)}
+      data-track-label={path.trackLabel}
+      className="group relative block overflow-hidden rounded-2xl bg-stone-900 shadow-[0_16px_48px_-20px_rgba(20,18,16,0.45)] ring-1 ring-stone-900/10 transition duration-500 hover:-translate-y-1"
+    >
+      <div className="relative aspect-[4/5] sm:aspect-[3/4]">
+        <MediaPanel
+          media={HOME_MEDIA[path.mediaKey]}
+          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.04]"
+          sizes="gateCard"
+          photoPriority={priority}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/5" aria-hidden />
+        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{path.audience}</p>
+          <p className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">{path.title}</p>
+          <p className={`mt-2 text-sm leading-relaxed text-white/75 ${koreanLineBreak}`}>{path.lead}</p>
+          <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/90 transition group-hover:gap-3">
+            자세히 보기
+            <span aria-hidden>→</span>
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function StatCell({
+  value,
+  label,
+  active = true,
+}: {
+  value: string;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <div>
+      <dt className="sr-only">{label}</dt>
+      <dd
+        className={`text-xl font-bold tabular-nums tracking-tight text-stone-950 transition-opacity duration-500 sm:text-2xl ${active ? 'opacity-100' : 'opacity-25'}`}
+        aria-live="polite"
+      >
+        {value}
+      </dd>
+      <dd className="mt-1 text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500">{label}</dd>
+    </div>
+  );
+}
+
+function ProofLink({
   href,
   trackLabel,
-  featured,
   children,
 }: {
   href: string;
   trackLabel: string;
-  featured?: boolean;
   children: ReactNode;
 }) {
-  const className = `group grid w-full grid-cols-1 grid-rows-1 overflow-hidden rounded-2xl border border-slate-200/90 shadow-md shadow-slate-900/10 transition duration-300 sm:rounded-[1.35rem] ${
-    featured
-      ? 'min-h-[300px] sm:min-h-[340px] lg:min-h-[520px] lg:max-h-[560px]'
-      : 'min-h-[280px] sm:min-h-[300px] lg:min-h-[260px] lg:max-h-[300px]'
-  } ${cardInteractive} ${focusRing}`;
+  const className =
+    'block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-stone-900';
 
   if (isExternalHref(href)) {
     return (
-      <a
-        href={href}
-        {...externalLinkProps}
-        data-track="external-naver-blog"
-        data-track-label={trackLabel}
-        className={className}
-      >
+      <a href={href} data-track-label={trackLabel} className={className} {...externalLinkProps}>
         {children}
       </a>
     );
   }
 
   return (
-    <Link
-      href={href}
-      data-track={inferTrackFromHref(href)}
-      data-track-label={trackLabel}
-      className={className}
-    >
+    <Link href={href} data-track={inferTrackFromHref(href)} data-track-label={trackLabel} className={className}>
       {children}
     </Link>
-  );
-}
-
-type SpokeduHomeLandingProps = {
-  fieldRecordCards: HomeFieldRecordCardWithThumbnail[];
-};
-
-export default function SpokeduHomeLanding({ fieldRecordCards }: SpokeduHomeLandingProps) {
-  const reducedMotion = useReducedMotion();
-  const fieldProofItems = fieldRecordCards
-    .map((c) => resolveFieldProof(c))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const [featuredField, ...secondaryFields] = fieldProofItems;
-
-  return (
-    <div className={homePageStack}>
-      <a href={`#${homePage.visitorGate.id}`} className={homeSkipLink}>
-        맞춤 선택으로 건너뛰기
-      </a>
-      <div className={homeIntroCluster}>
-        {/* 1. Hero */}
-        <section className={homeHeroShell}>
-        <div className="flex flex-col gap-8 lg:grid lg:grid-cols-[minmax(0,0.42fr)_minmax(0,0.58fr)] lg:items-center lg:gap-10 xl:gap-12">
-          <div className="order-1 min-w-0 lg:order-1">
-            <p className={homeSectionEyebrow}>{homePage.hero.kicker}</p>
-            <motion.h1
-              className={`${homeHeroH1} mt-2 sm:mt-2.5`}
-              initial={reducedMotion ? false : { opacity: 0, y: 20 }}
-              animate={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, ease: [0.25, 0.1, 0.25, 1] }}
-            >
-              <span className={homeHeroH1Line}>{homePage.hero.lines[0]}</span>
-              <span className={homeHeroH1Line}>{homePage.hero.lines[1]}</span>
-            </motion.h1>
-            <div className="mt-5 space-y-4 sm:mt-6">
-              <div className="max-w-lg space-y-2.5">
-                {homePage.hero.subtitleParagraphs.map((paragraph) => (
-                  <p
-                    key={paragraph.slice(0, 24)}
-                    className={`${landingHeroSubtitle} text-slate-600 ${koreanLineBreak}`}
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
-              <ul className="flex flex-col gap-2 sm:flex-row sm:flex-wrap" aria-label="스포키듀 운영 축">
-                {homePage.hero.supportChips.map((chip) => (
-                  <li
-                    key={chip}
-                    className={`inline-flex rounded-full border border-slate-200/80 bg-slate-50/90 px-3.5 py-2 text-[13px] font-semibold leading-snug text-slate-800 sm:text-sm ${koreanLineBreak}`}
-                  >
-                    {chip}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-6 sm:mt-7">
-              <Link
-                href={homePage.heroCtas.primary.href}
-                data-track="cta-contact"
-                data-track-label={homePage.heroCtas.primary.trackLabel}
-                className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
-              >
-                {homePage.heroCtas.primary.label}
-              </Link>
-            </div>
-          </div>
-          <div className="order-2 lg:order-2">
-            <HomeHeroEditorial main={heroMain} thumbA={heroThumbA} thumbB={heroThumbB} />
-          </div>
-        </div>
-        </section>
-      </div>
-
-      <HomeSectionRule />
-
-      {/* 2. Visitor Gate */}
-      <Section id={homePage.visitorGate.id} className={`scroll-mt-20 ${homeSectionInner}`}>
-        <HomeSectionHeading
-          eyebrow={homePage.visitorGate.eyebrow}
-          title={homePage.visitorGate.title}
-          lead={homePage.visitorGate.lead}
-        />
-        <div className="flex flex-col gap-4 md:grid md:grid-cols-3 md:gap-5">
-          {homePage.visitorGate.cards.map((card, index) => (
-            <motion.div
-              key={card.href}
-              initial={reducedMotion ? false : { opacity: 0, y: 16 }}
-              whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.45, delay: 0.08 * index }}
-              className="min-h-0"
-            >
-              <Link
-                href={card.href}
-                data-track={inferTrackFromHref(card.href)}
-                data-track-label={card.trackLabel}
-                className={`group relative flex min-h-[340px] flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/90 border-t-4 bg-white sm:min-h-[380px] md:min-h-[440px] ${gateAccent[index] ?? ''} ${cardInteractive} ${focusRing}`}
-              >
-                <span
-                  className="pointer-events-none absolute right-4 top-4 z-10 text-4xl font-black leading-none text-slate-950/10"
-                  aria-hidden
-                >
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <div className="relative h-[min(48vw,220px)] min-h-[200px] shrink-0 overflow-hidden sm:h-[220px] md:h-[min(26vw,260px)] md:min-h-[240px]">
-                  <HomePhotoZoom className="absolute inset-0 h-full w-full">
-                    <MediaPanel
-                      media={gateMedia[index]}
-                      className="absolute inset-0 h-full w-full rounded-none border-0"
-                      sizes="gateCard"
-                      photoPriority={index === 0}
-                    />
-                  </HomePhotoZoom>
-                  <div
-                    className="absolute inset-0 bg-gradient-to-t from-slate-900/40 via-transparent to-transparent"
-                    aria-hidden
-                  />
-                </div>
-                <div className="flex min-h-[160px] flex-1 flex-col justify-between p-5 sm:min-h-[170px] sm:p-6 md:min-h-[180px]">
-                  <div>
-                    <p className="text-xs font-medium text-slate-500">{card.audience}</p>
-                    <h3
-                      className={`mt-0.5 text-lg font-semibold tracking-tight text-slate-950 sm:text-xl ${koreanLineBreak}`}
-                    >
-                      {card.title}
-                    </h3>
-                    <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
-                      {card.description}
-                    </p>
-                    <div className="mt-2.5 flex flex-wrap gap-1.5">
-                      {card.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <span
-                    className={`mt-3 text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-800`}
-                  >
-                    {card.linkLabel} →
-                  </span>
-                </div>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
-      </Section>
-
-      <HomeSectionRule />
-
-      {/* 3. Field Records — 대표 1 + 보조 3 (페이지 최대 비주얼 무게) */}
-      <Section className={homeSectionInnerLg}>
-        <HomeSectionHeading
-          eyebrow={homePage.fieldRecords.eyebrow}
-          title={homePage.fieldRecords.title}
-          lead={homePage.fieldRecords.lead}
-        />
-        <div className="flex flex-col gap-4" role="list" aria-label="현장 운영 증거">
-          {featuredField ? (
-            <motion.div
-              role="listitem"
-              initial={reducedMotion ? false : { opacity: 0, y: 14 }}
-              whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.15 }}
-              transition={{ duration: 0.45 }}
-            >
-              <FieldProofLink
-                href={featuredField.href}
-                trackLabel={featuredField.trackLabel}
-                featured
-              >
-                <FieldProofMedia
-                  thumbnailSrc={featuredField.thumbnailSrc}
-                  media={featuredField.field.media}
-                  alt={`${featuredField.venue} 수업 사례`}
-                  sizes="fieldFeatured"
-                  photoPriority
-                  className="col-start-1 row-start-1 h-full min-h-[300px] w-full lg:min-h-[520px]"
-                />
-                <FieldProofCaption
-                  tagline={featuredField.tagline}
-                  venue={featuredField.venue}
-                  sessionLine={featuredField.sessionLine}
-                />
-              </FieldProofLink>
-            </motion.div>
-          ) : null}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {secondaryFields.map(({ field, tagline, venue, sessionLine, href, trackLabel, thumbnailSrc }, index) => (
-              <motion.div
-                key={field.id}
-                role="listitem"
-                initial={reducedMotion ? false : { opacity: 0, y: 14 }}
-                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.45, delay: 0.05 * (index + 1) }}
-              >
-                <FieldProofLink href={href} trackLabel={trackLabel}>
-                  <FieldProofMedia
-                    thumbnailSrc={thumbnailSrc}
-                    media={field.media}
-                    alt={`${venue} 수업 사례`}
-                    sizes="fieldSecondary"
-                    className="col-start-1 row-start-1 h-full min-h-[280px] w-full lg:min-h-[240px]"
-                  />
-                  <FieldProofCaption tagline={tagline} venue={venue} sessionLine={sessionLine} />
-                </FieldProofLink>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-        <p className="pt-1 sm:pt-2">
-          <Link
-            href={homePage.fieldRecords.recordsHref}
-            data-track={inferTrackFromHref(homePage.fieldRecords.recordsHref)}
-            data-track-label={homePage.fieldRecords.recordsTrackLabel}
-            className={`inline-flex min-h-12 items-center justify-center rounded-full border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-800 ${fineHover}hover:border-indigo-200 ${fineHover}hover:bg-indigo-50 ${fineHover}hover:text-indigo-900 ${focusRing}`}
-          >
-            {homePage.fieldRecords.recordsCtaLabel} →
-          </Link>
-        </p>
-      </Section>
-
-      <HomeSectionRule />
-
-      {/* 4. Program System */}
-      <Section id="program-system" className={homeSectionInner} delay={0.02}>
-        <HomeSectionHeading
-          eyebrow={homePage.programSystem.eyebrow}
-          title={homePage.programSystem.title}
-          lead={homePage.programSystem.lead}
-          multilineTitle
-        />
-        <HomeProgramSystem items={homePage.programSystem.items} />
-      </Section>
-
-      <Section delay={0.03}>
-        <HomeFinalCta />
-      </Section>
-    </div>
   );
 }

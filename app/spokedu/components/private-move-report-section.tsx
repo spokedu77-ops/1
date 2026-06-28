@@ -48,12 +48,12 @@ export function PrivateMoveReportSection() {
         eyebrow={section.eyebrow}
         title={section.title}
         lead={section.lead}
-        accent="violet"
+        accent="teal"
       />
 
       <div className="grid gap-5 lg:grid-cols-2 lg:items-start lg:gap-6">
-        <div className="rounded-[1.35rem] border border-violet-200/70 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/40 p-5 sm:p-6">
-          <p className="text-xs font-semibold tracking-wide text-violet-700">{section.kicker}</p>
+        <div className="rounded-[1.35rem] border border-teal-200/70 bg-gradient-to-br from-teal-50/50 via-white to-stone-50/40 p-5 sm:p-6">
+          <p className="text-xs font-semibold tracking-wide text-teal-800">{section.kicker}</p>
           <h3 className={`mt-2 text-base font-semibold text-slate-950 sm:text-lg ${koreanLineBreak}`}>
             {section.headline}
           </h3>
@@ -61,7 +61,7 @@ export function PrivateMoveReportSection() {
           <ol className="mt-4 space-y-2">
             {section.steps.map((step, index) => (
               <li key={step} className="flex gap-2.5 text-sm text-slate-700">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-800">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-600/10 text-[11px] font-bold text-teal-900">
                   {index + 1}
                 </span>
                 <span className={koreanLineBreak}>{step}</span>
@@ -92,7 +92,7 @@ export function PrivateMoveReportSection() {
             onChange={(e) => setSummary(e.target.value)}
             rows={6}
             placeholder="Move report 결과 핵심 내용을 붙여넣어 주세요."
-            className="mt-3 w-full resize-y rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-3 text-sm leading-relaxed text-slate-800 outline-none transition focus:border-violet-300 focus:bg-white focus:ring-2 focus:ring-violet-100"
+            className="mt-3 w-full resize-y rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-3 text-sm leading-relaxed text-slate-800 outline-none transition focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-100"
           />
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
             <button type="button" onClick={handleApply} className={`${btnSecondary} min-h-11 !w-full sm:!w-auto`}>

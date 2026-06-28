@@ -935,7 +935,6 @@ export default function SpomoveHubView() {
                     <p className="mt-1 text-[11px] font-bold text-slate-500">최근 실행</p>
                     <div className="mt-3 grid gap-2">
                       <Link href={`/spokedu-master/spomove/session?preset=${activity.programId}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">다시 실행</Link>
-                      <Link href={`/spokedu-master/class-record?program=${activity.programId}`} className="inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">수업 기록 작성</Link>
                     </div>
                   </article>
                 );

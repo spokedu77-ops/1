@@ -29,10 +29,24 @@ import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
 import { CSS, S } from './styles';
+import dynamic from 'next/dynamic';
 import FlowGameClient from './flow/FlowGameClient';
 import { buildStages } from './flow/engine/modules/stageBuilder';
 import { SELECTABLE_MODULE_KEYS } from './flow/engine/modules/flowModules';
 import type { FlowStats } from './flow/engine/FlowEngine';
+import type { FlowVisualVariant } from './lib/flowPresets';
+
+const DivePlusGameClient = dynamic(
+  () => import('./dive-plus/DivePlusGameClient'),
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617', color: '#fff', fontFamily: 'sans-serif', fontSize: 13 }}>
+        DIVE+ 로딩 중…
+      </div>
+    ),
+  },
+);
 import type { DupStats, FruitSlide } from './lib/signals';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
@@ -96,6 +110,8 @@ type Settings = {
   flowDuration: number;
   /** 플로우 배경 이미지 URL */
   flowBgImageUrl: string;
+  /** Flow 비주얼 모드: classic = 기존 엔진, plus = flow-lab enhanced */
+  flowVisualVariant: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
 };
@@ -123,6 +139,7 @@ const defaultSettings: Settings = {
   flowColorTheme: 'default',
   flowDuration: 25,
   flowBgImageUrl: '',
+  flowVisualVariant: 'classic' as FlowVisualVariant,
   reactTrainConcurrent: 1,
 };
 
@@ -151,6 +168,8 @@ export type MemoryGameAutoLaunch = {
   flowDuration?: number;
   /** Flow 2.0: 배경 이미지 URL */
   flowBgImageUrl?: string;
+  /** Flow 비주얼 모드 */
+  flowVisualVariant?: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent?: 1 | 2 | 3;
 };
@@ -179,6 +198,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       flowFeatures: [...s.flowFeatures],
       flowColorTheme: s.flowColorTheme,
       flowDuration: s.flowDuration,
+      flowVisualVariant: s.flowVisualVariant,
       reactTrainConcurrent: s.reactTrainConcurrent,
     },
   };
@@ -426,6 +446,7 @@ export default function MemoryGameApp({
           ? new Set(flowFeaturesArr as FlowFeatureKey[])
           : defaultSettings.flowFeatures,
         flowColorTheme: fcTheme ?? 'default',
+        flowVisualVariant: autoLaunch.flowVisualVariant === 'plus' ? 'plus' : 'classic',
       };
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
@@ -1119,8 +1140,36 @@ export default function MemoryGameApp({
             </div>
             {settings.mode === 'flow' && (
               <>
+                {/* DIVE 비주얼 모드 선택 */}
                 <div style={S.sec}>
-                  {stepNum(3, '배경 테마')}
+                  {stepNum(3, 'DIVE 비주얼 모드')}
+                  <div style={{ display: 'flex', gap: '0.45rem' }}>
+                    {([
+                      { v: 'classic' as FlowVisualVariant, label: 'DIVE', desc: '기본 3D 트레이닝' },
+                      { v: 'plus' as FlowVisualVariant, label: 'DIVE+', desc: '우주 파노라마 · 네온 브릿지 · PBR 장애물' },
+                    ]).map(({ v, label, desc }) => {
+                      const active = settings.flowVisualVariant === v;
+                      return (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setSettings((s) => ({
+                            ...s,
+                            flowVisualVariant: v,
+                            ...(v === 'plus' ? { flowColorTheme: 'space' } : {}),
+                          }))}
+                          style={{ flex: 1, padding: '0.65rem 0.5rem', borderRadius: '0.9rem', border: `2px solid ${active ? '#22d3ee' : 'var(--border)'}`, background: active ? 'rgba(34,211,238,0.1)' : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' }}
+                        >
+                          <div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#22d3ee' : 'var(--text)' }}>{active ? '✓ ' : ''}{label}</div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem', lineHeight: 1.4 }}>{desc}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {settings.flowVisualVariant !== 'plus' && (
+                <div style={S.sec}>
+                  {stepNum(4, '배경 테마')}
                   <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
                     {(
                       [
@@ -1158,6 +1207,13 @@ export default function MemoryGameApp({
                     })}
                   </div>
                 </div>
+                )}
+                {settings.flowVisualVariant === 'plus' && (
+                  <div style={{ ...S.sec, padding: '0.6rem 0.75rem', borderRadius: '0.75rem', background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.25)', fontSize: '0.8rem', color: '#22d3ee' }}>
+                    DIVE+는 전용 우주 파노라마 테마를 사용합니다.
+                  </div>
+                )}
+                {settings.flowVisualVariant !== 'plus' && (
                 <div style={S.sec}>
                   <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text)', marginBottom: '0.4rem' }}>
                     배경 이미지 URL <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(선택)</span>
@@ -1182,8 +1238,9 @@ export default function MemoryGameApp({
                     }}
                   />
                 </div>
+                )}
                 <div style={S.sec}>
-                  {stepNum(4, '추가 동작 선택')}
+                  {stepNum(5, '추가 동작 선택')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
                     선택한 동작이 게임 중 추가됩니다. 복수 선택 가능합니다.
                   </p>
@@ -1235,7 +1292,7 @@ export default function MemoryGameApp({
                   </div>
                 </div>
                 <div style={S.sec}>
-                  {stepNum(5, '스테이지당 시간')}
+                  {stepNum(6, '스테이지당 시간')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
                     각 스테이지가 끝나는 시간입니다. 스테이지 수 × 이 시간 = 총 운동 시간.
                   </p>
@@ -1602,6 +1659,19 @@ export default function MemoryGameApp({
       setResult({ count: stats.stagesCompleted, cfg, elapsedMs });
       setScreen('result');
     };
+
+    if (settings.flowVisualVariant === 'plus') {
+      return (
+        <DivePlusGameClient
+          stages={stages}
+          motionScale={settings.kidsSafeMode ? 0.5 : 1}
+          bgmPath={flowBgmPathRef.current}
+          onComplete={handleFlowDone}
+          onExit={stop}
+          onEngineReady={(api) => { flowEngineApiRef.current = api; }}
+        />
+      );
+    }
 
     return (
       <FlowGameClient

@@ -4,17 +4,16 @@ import { LandingPageRoot } from './components/landing-page-root';
 import { homePage } from './data/home-page';
 import { buildSpokeduMetadata } from './data/seo';
 import { resolveHomeFieldRecordCards } from './lib/resolve-field-records';
-
 export const metadata = buildSpokeduMetadata('home');
 export const dynamic = 'force-dynamic';
 
 export default async function SpokeduHomePage() {
-  const fieldRecordCards = await resolveHomeFieldRecordCards(homePage.fieldRecords.cards);
+  const cards = await resolveHomeFieldRecordCards(homePage.proof.cards);
 
   return (
     <LandingPageRoot heroMediaKey="homeHero">
       <HomeStructuredData />
-      <SpokeduHomeLanding fieldRecordCards={fieldRecordCards} />
+      <SpokeduHomeLanding proofCards={cards} />
     </LandingPageRoot>
   );
 }

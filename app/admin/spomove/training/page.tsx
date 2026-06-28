@@ -28,7 +28,7 @@ import {
   parseStoredVariantTheme,
   type SpomoveColorThemeId,
 } from './_player/lib/spomoveVariantThemeConfig';
-import { loadFlowPresets, saveFlowPresets, type FlowPreset } from './_player/lib/flowPresets';
+import { loadFlowPresets, saveFlowPresets, type FlowPreset, type FlowVisualVariant } from './_player/lib/flowPresets';
 import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
 
 /* ─── MemoryGameApp (Training 전용): SSR 비활성, 클라이언트 전용 ─── */
@@ -186,6 +186,7 @@ type LaunchSettings = {
   flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
   flowDuration: number;
   flowBgImageUrl: string;
+  flowVisualVariant: FlowVisualVariant;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
 };
@@ -206,6 +207,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowColorTheme: 'default',
   flowDuration: 25,
   flowBgImageUrl: '',
+  flowVisualVariant: 'classic',
   reactTrainConcurrent: 1,
 };
 
@@ -226,6 +228,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowColorTheme: auto.flowColorTheme ?? fallback.flowColorTheme,
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
     flowBgImageUrl: fallback.flowBgImageUrl,
+    flowVisualVariant: auto.flowVisualVariant === 'plus' ? 'plus' : fallback.flowVisualVariant ?? 'classic',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
   };
 }
@@ -293,6 +296,7 @@ function TrainingPortal({
     flowColorTheme: launch.flowColorTheme,
     flowDuration: launch.flowDuration,
     flowBgImageUrl: launch.flowBgImageUrl || undefined,
+    flowVisualVariant: launch.flowVisualVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
   };
 
@@ -303,7 +307,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -569,13 +573,13 @@ function SettingsScreen({
   const saveFlowPreset = () => {
     const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
     if (!name) return;
-    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], colorTheme: launch.flowColorTheme, duration: launch.flowDuration }];
+    const next: FlowPreset[] = [...flowPresets, { id: Date.now().toString(), name, features: [...launch.flowFeatures], colorTheme: launch.flowColorTheme, duration: launch.flowDuration, visualVariant: launch.flowVisualVariant }];
     const result = saveFlowPresets(next);
     if (!result.success) { setFlowPresetError(result.error); return; }
     setFlowPresets(next);
     setFlowPresetError(null);
   };
-  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], flowColorTheme: p.colorTheme, flowDuration: p.duration }));
+  const loadFlowPreset = (p: FlowPreset) => setLaunch((s) => ({ ...s, flowFeatures: [...p.features] as FlowFeatureKey[], flowColorTheme: p.colorTheme, flowDuration: p.duration, flowVisualVariant: p.visualVariant === 'plus' ? 'plus' : 'classic' }));
   const deleteFlowPreset = (id: string) => {
     const next = flowPresets.filter((p) => p.id !== id);
     const result = saveFlowPresets(next);
@@ -855,8 +859,36 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* Flow 전용: 배경 테마 */}
+          {/* Flow 전용: DIVE 비주얼 모드 */}
           {isFlowOrChallenge ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>DIVE 비주얼 모드</label>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { v: 'classic' as FlowVisualVariant, label: 'DIVE', desc: '기본 3D 트레이닝' },
+                  { v: 'plus' as FlowVisualVariant, label: 'DIVE+', desc: '우주 파노라마 · 네온 브릿지 · PBR 장애물' },
+                ]).map(({ v, label, desc }) => {
+                  const active = launch.flowVisualVariant === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, flowVisualVariant: v, ...(v === 'plus' ? { flowColorTheme: 'space' as const } : {}) }))}
+                      style={{ flex: 1, padding: '10px 6px', borderRadius: 12, border: `1.5px solid ${active ? '#22d3ee' : T.border}`, background: active ? 'rgba(34,211,238,0.1)' : T.card, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center' }}
+                    >
+                      <div style={{ fontWeight: 900, fontSize: 13, color: active ? '#22d3ee' : T.text }}>{active ? '✓ ' : ''}{label}</div>
+                      <div style={{ fontSize: 10, color: T.muted, marginTop: 3, lineHeight: 1.4 }}>{desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* Flow 전용: 배경 테마 (DIVE+ 선택 시 숨김) */}
+          {isFlowOrChallenge && launch.flowVisualVariant !== 'plus' ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배경 테마</label>
@@ -894,6 +926,10 @@ function SettingsScreen({
                 })}
               </div>
             </section>
+          ) : isFlowOrChallenge && launch.flowVisualVariant === 'plus' ? (
+            <section style={{ marginBottom: 22, padding: '10px 14px', borderRadius: 12, background: 'rgba(34,211,238,0.07)', border: '1px solid rgba(34,211,238,0.25)', fontSize: 12, color: '#22d3ee', fontWeight: 700 }}>
+              DIVE+는 전용 우주 파노라마 테마를 사용합니다.
+            </section>
           ) : null}
 
           {/* Flow 전용: 스테이지 시간 */}
@@ -928,8 +964,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* Flow 전용: 배경 이미지 URL */}
-          {isFlowOrChallenge ? (
+          {/* Flow 전용: 배경 이미지 URL (DIVE+ 선택 시 숨김) */}
+          {isFlowOrChallenge && launch.flowVisualVariant !== 'plus' ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 6 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배경 이미지 URL <span style={{ fontWeight: 400 }}>(선택)</span></label>
