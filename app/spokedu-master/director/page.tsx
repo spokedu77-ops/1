@@ -134,11 +134,11 @@ export default function DirectorPage() {
             센터 수업 자료와 기관용 안내문을 활용하려면 Center 플랜을 선택하세요. 추가 강사 계정이나 기관 도입은 별도 문의로 안내합니다.
           </p>
           <Link
-            href="/spokedu-master/payment?plan=team"
+            href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4"
             className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >
-            Center 30일 이용권 · 79,000원
+            Center 도입 상담
           </Link>
         </section>
       )}

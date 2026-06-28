@@ -89,7 +89,7 @@ const PLANS: PlanInfo[] = [
   {
     id: 'team',
     title: 'Center',
-    price: '79,000원 / 30일',
+    price: '상담 문의',
     badge: '기관·센터용',
     description: '센터·기관 운영자가 현재 제공되는 MASTER 기능을 30일 동안 사용하는 이용권입니다.',
     includes: ['Pro와 동일한 MASTER 기능', '수업 자료와 SPOMOVE 실행', '학생 기록과 안내문 초안 사용', '공동 계정·강사 초대 기능은 현재 미제공'],
@@ -295,8 +295,8 @@ function CurrentSubscriptionCard({
             <Link href={primaryHref} className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
               {primaryLabel}
             </Link>
-            <Link href="/spokedu-master/payment?plan=team" className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              Center 결제
+            <Link href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4" className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+              Center 도입 상담
             </Link>
           </div>
         </>
@@ -314,7 +314,11 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const selectPlan = (plan: PlanInfo) => {
     if (plan.id === currentPlan) return;
     const hasActivePaidPlan = currentPlan === 'pro' || currentPlan === 'team';
-    const selectedPaidPlan = plan.id === 'pro' || plan.id === 'team';
+    const selectedPaidPlan = plan.id === 'pro';
+    if (plan.id === 'team') {
+      setNotice('Center는 현재 직접 결제 상품이 아닙니다. 강사 초대, 다중 사용자, 기관 단위 데이터 관리는 준비 중이며 도입 상담은 support@spokedu.com으로 문의해 주세요.');
+      return;
+    }
     if (plan.id === 'school' || plan.contact) {
       setNotice('학교·기관 플랜은 도입 범위와 계정 수가 달라 별도 상담으로 진행합니다. support@spokedu.com으로 문의해 주세요.');
       return;

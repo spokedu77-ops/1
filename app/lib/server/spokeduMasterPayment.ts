@@ -10,9 +10,16 @@ export const SPOKEDU_MASTER_PLAN_CONFIG = {
 } as const;
 
 export type SpokeduMasterPaidPlan = keyof typeof SPOKEDU_MASTER_PLAN_CONFIG;
+export type SpokeduMasterDirectPurchasePlan = 'pro';
+
+export const SPOKEDU_MASTER_DIRECT_PURCHASE_PLANS = ['pro'] as const;
 
 export function isSpokeduMasterPaidPlan(value: unknown): value is SpokeduMasterPaidPlan {
   return value === 'pro' || value === 'team';
+}
+
+export function isSpokeduMasterDirectPurchasePlan(value: unknown): value is SpokeduMasterDirectPurchasePlan {
+  return value === 'pro';
 }
 
 export function parseSpokeduMasterOrderId(orderId: unknown): SpokeduMasterPaidPlan | null {

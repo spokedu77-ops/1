@@ -1,9 +1,10 @@
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import type { Metadata } from 'next';
+import { MASTER_SUPPORT_EMAIL } from '../lib/productCatalog';
 
 export const metadata: Metadata = {
-  title: '개인정보처리방침 — SPOKEDU MASTER',
+  title: '개인정보처리방침 · SPOKEDU MASTER',
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -29,64 +30,57 @@ export default function PrivacyPage() {
       </header>
 
       <main className="mx-auto max-w-[720px] px-[22px] pb-12 sm:px-8">
-        <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 5월 15일</p>
+        <p className="mb-8 text-[12px]" style={{ color: 'var(--spm-t3)' }}>최종 수정일: 2026년 6월 28일</p>
 
-        <Section title="1. 수집하는 개인정보 항목">
-          <p>회사는 서비스 제공을 위해 다음의 개인정보를 수집합니다.</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>필수 항목</strong>: 이메일 주소 (서비스 인증 및 이용권 관리용)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 정보</strong>: 결제 처리는 토스페이먼츠에서 담당하며, 회사는 카드 번호 등 결제 상세 정보를 직접 수집·저장하지 않습니다.</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>서비스 이용 정보</strong>: 이용자가 직접 입력한 이름, 소속, 담당 연령대, 프로그램 유형 (선택 사항)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>수업 운영 정보</strong>: 이용자가 직접 입력한 학생 이름, 반/그룹, 수업 출석, 관찰 메모, 동작 체크 기록 (선택 사항)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>자동 수집</strong>: 접속 IP, 브라우저 종류, 서비스 이용 기록 (서비스 개선 목적)</p>
+        <Section title="1. 수집·처리하는 정보">
+          <p>회사는 현재 서비스 제공에 필요한 범위에서 다음 정보를 처리합니다.</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>계정 이메일</li>
+            <li>프로필 이름·소속</li>
+            <li>학생 이름·그룹</li>
+            <li>출석 상태, 관찰·수행·메모, 수업 기록</li>
+            <li>안내문 작성·저장 내용</li>
+            <li>결제 주문 식별 정보와 이용권 상태</li>
+            <li>접속·오류·서비스 이용 기록</li>
+          </ul>
+          <p>현재 제공하지 않는 보호자 공개 링크, 자동 문자·카카오톡 발송, 보호자 계정, 기관 다중 계정 기능을 전제로 한 개인정보는 수집하지 않습니다.</p>
         </Section>
 
-        <Section title="2. 개인정보 수집 및 이용 목적">
-          <p>· 서비스 회원 인증 및 관리</p>
-          <p>· 30일 이용권 결제 처리 및 이용권 상태 관리</p>
-          <p>· 수업 기록, 학생 이력, 보호자 공유 링크 제공</p>
-          <p>· 서비스 이용 통계 분석 및 개선</p>
-          <p>· 이용약관 위반 사항 확인 및 분쟁 해결</p>
+        <Section title="2. 처리 목적">
+          <p>인증 계정 관리, MASTER 이용권 확인, 결제 주문 처리, 수업 운영 데이터 저장, 안내문 작성·복사, 서비스 오류 대응과 보안 관리를 위해 개인정보를 처리합니다.</p>
         </Section>
 
-        <Section title="3. 개인정보 보유 및 이용 기간">
-          <p>회사는 회원 탈퇴 시 즉시 개인정보를 파기합니다. 단, 관련 법령에 따라 일정 기간 보관이 필요한 경우 해당 기간 동안 보관 후 파기합니다.</p>
-          <p>· 전자상거래 등에서의 소비자 보호에 관한 법률: 계약 및 청약 철회 기록 5년, 대금 결제 기록 5년</p>
-          <p>· 통신비밀보호법: 서비스 이용 로그 기록 3개월</p>
+        <Section title="3. 처리 위탁">
+          <p>서비스 운영을 위해 다음 외부 서비스를 사용합니다.</p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>Supabase: 인증 계정과 서비스 운영 데이터 저장</li>
+            <li>Vercel: 웹 서비스 호스팅</li>
+            <li>토스페이먼츠: 결제 처리</li>
+          </ul>
+          <p>실제 사용하지 않는 분석·공유 서비스는 위탁 대상으로 기재하지 않습니다.</p>
         </Section>
 
-        <Section title="4. 개인정보의 제3자 제공">
-          <p>회사는 이용자의 동의 없이 개인정보를 제3자에게 제공하지 않습니다. 단, 다음의 경우는 예외입니다.</p>
-          <p>· 법령에 따른 수사기관의 요청이 있는 경우</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>결제 처리 위탁</strong>: 토스페이먼츠 (한국) — 결제 처리 목적으로 이메일, 결제 금액 등 최소한의 정보를 공유합니다.</p>
+        <Section title="4. 데이터 구분">
+          <p>서비스 운영 데이터에는 학생 정보, 수업 기록, 안내문, 로컬 작업 데이터가 포함됩니다.</p>
+          <p>인증 계정, 결제 증빙, 법정 보관 정보는 운영 데이터 삭제와 별도로 보관될 수 있습니다.</p>
         </Section>
 
-        <Section title="5. 개인정보 처리 위탁">
-          <p>회사는 원활한 서비스 제공을 위해 다음과 같이 개인정보 처리를 위탁합니다.</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>Supabase Inc.</strong> — 인증 및 데이터 저장 (미국)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>토스페이먼츠</strong> — 결제 처리 (한국)</p>
-          <p>· <strong style={{ color: 'var(--spm-t)' }}>Vercel Inc.</strong> — 서비스 호스팅 (미국)</p>
+        <Section title="5. 보유 기간">
+          <p>서비스 운영 데이터는 사용자가 직접 삭제하거나 탈퇴 처리가 완료될 때까지 보관될 수 있습니다. 다만 결제·분쟁·법정 보관이 필요한 정보는 관련 법령상 필요한 기간 동안 보관될 수 있습니다.</p>
+          <p>구체적인 법정 보관 기간과 파기 절차는 법률 전문가 검토가 필요한 항목입니다.</p>
         </Section>
 
         <Section title="6. 이용자의 권리">
-          <p>이용자는 언제든지 자신의 개인정보를 조회, 수정, 삭제할 수 있습니다. 또한 개인정보 처리에 대한 동의를 철회할 수 있으며, 이 경우 서비스 이용이 제한될 수 있습니다.</p>
-          <p>개인정보 관련 요청은 아래 이메일로 문의해 주십시오.</p>
+          <p>이용자는 개인정보 조회, 수정, 삭제, 처리정지를 요청할 수 있습니다. 요청은 본인 확인 후 처리합니다.</p>
+          <p>MASTER 데이터 삭제는 프로필 화면에서 직접 요청할 수 있으며, 회원 탈퇴나 계정 삭제 요청은 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 문의해 주세요.</p>
         </Section>
 
-        <Section title="7. 개인정보 보호 책임자">
-          <p>회사는 개인정보 처리에 관한 업무를 담당하는 개인정보 보호 책임자를 지정하고 있습니다.</p>
-          <p>이메일: <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a></p>
+        <Section title="7. 보호 조치">
+          <p>회사는 HTTPS 통신, Supabase RLS와 서버 권한 검증, 결제 정보의 토스페이먼츠 처리, 오류 정보의 제한적 기록 등 현재 구현된 보호 조치를 적용합니다.</p>
         </Section>
 
-        <Section title="8. 개인정보 보호 조치">
-          <p>회사는 개인정보 보호를 위해 다음의 조치를 취하고 있습니다.</p>
-          <p>· 이메일 OTP 기반 인증으로 비밀번호 저장 없이 안전하게 처리</p>
-          <p>· HTTPS 암호화 통신</p>
-          <p>· Supabase Row Level Security(RLS)를 통한 데이터 접근 제한</p>
-          <p>· 결제 정보의 직접 저장 없이 토스페이먼츠 PCI DSS 준수 처리</p>
-        </Section>
-
-        <Section title="9. 변경 사항 공지">
-          <p>이 방침이 변경되는 경우 변경 시행 7일 전부터 서비스 내 공지 또는 이메일로 알려드립니다.</p>
+        <Section title="8. 문의">
+          <p>개인정보 요청, 회원 탈퇴, 결제·환불, Center·School 도입, 기능 오류 문의는 <a href={`mailto:${MASTER_SUPPORT_EMAIL}`} style={{ color: 'var(--spm-acc)' }}>{MASTER_SUPPORT_EMAIL}</a>로 연락해 주세요.</p>
         </Section>
       </main>
     </div>

@@ -309,6 +309,34 @@ export function classRecordStudentInsertPayload(
   };
 }
 
+function classRecordRpcStudents(input: NormalizedClassRecordInput) {
+  return input.students.map((student) => ({
+    student_id: student.studentId,
+    student_legacy_id: student.studentLegacyId,
+    student_name_snapshot: student.studentName,
+    attendance: student.attendance,
+    focused: student.focused,
+    skills: student.skills,
+    memo: student.memo,
+  }));
+}
+
+export function classRecordCreateRpcPayload(input: NormalizedClassRecordInput, ownerId: string) {
+  return {
+    p_owner_id: ownerId,
+    p_legacy_id: input.legacyId,
+    p_class_date: input.date,
+    p_lesson_title: input.lessonTitle,
+    p_class_id: input.classId,
+    p_program_id: input.programId,
+    p_program_title: input.programTitle,
+    p_record_type: input.recordType,
+    p_memo: input.memo,
+    p_parent_note_snapshot: input.parentNoteSnapshot,
+    p_students: classRecordRpcStudents(input),
+  };
+}
+
 export function classRecordReplaceRpcPayload(
   input: NormalizedClassRecordInput,
   ownerId: string,
@@ -325,14 +353,6 @@ export function classRecordReplaceRpcPayload(
     p_record_type: input.recordType,
     p_memo: input.memo,
     p_parent_note_snapshot: input.parentNoteSnapshot,
-    p_students: input.students.map((student) => ({
-      student_id: student.studentId,
-      student_legacy_id: student.studentLegacyId,
-      student_name_snapshot: student.studentName,
-      attendance: student.attendance,
-      focused: student.focused,
-      skills: student.skills,
-      memo: student.memo,
-    })),
+    p_students: classRecordRpcStudents(input),
   };
 }

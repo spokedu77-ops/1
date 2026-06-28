@@ -498,18 +498,12 @@ function FlowLabContent() {
     visual:      parseVisualParam(params.get('visual')),
   };
 
-  // DIVE 파노라마 URL (SPACE 테마 개선 환경용)
-  const { data: diveData, getPreviewUrl: getDivePreviewUrl } = useSpomoveDiveEnvironments();
+  // P0-3: 정적 파노라마 파일만 사용 — Asset Hub URL 사용 안 함
+  const { data: diveData } = useSpomoveDiveEnvironments();
   const spaceEntry      = diveData.themes.space ?? null;
-  // Asset Hub에 파노라마가 없을 때 사용할 정적 폴백 (public/spomove/dive/environments/space/panorama.webp)
   const STATIC_PANORAMA = '/spomove/dive/environments/space/panorama.webp';
-  // hasHighRes=true일 때만 고해상도 URL 사용 (그 외엔 low URL로 fallback)
-  const panoramaHighUrl = (spaceEntry?.hasHighRes === true)
-    ? (getDivePreviewUrl(spaceEntry.panoramaPath) ?? undefined)
-    : undefined;
-  const panoramaLowUrl  = spaceEntry
-    ? (getDivePreviewUrl(spaceEntry.panoramaLowPath) ?? STATIC_PANORAMA)
-    : STATIC_PANORAMA;
+  const panoramaHighUrl = STATIC_PANORAMA;
+  const panoramaLowUrl  = STATIC_PANORAMA;
   const panoramaYawDeg  = spaceEntry?.yawDeg ?? 0;
 
   const runKeyRef = useRef(0);

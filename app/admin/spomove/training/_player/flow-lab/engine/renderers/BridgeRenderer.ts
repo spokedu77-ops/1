@@ -25,9 +25,19 @@ const TRACK_SEG_LEN  = 420;
 const TRACK_SEGS     = 10;
 // Y 오프셋: GLB deck 상면 Y_max=7.1 → 브릿지 로직 발판 높이 44에 맞춤 (44-7.1=36.9)
 const TRACK_SEG_Y    = 37;
-// 발광 메시 이름 (레인 색상 tinting 대상)
+
+// 메시 이름별 재질 분류
+const DECK_MESH_NAMES = new Set(['BASE', 'DECK', 'DECK_PANEL_00', 'DECK_PANEL_01', 'DECK_PANEL_02']);
+const STRUCTURAL_NAMES = new Set([
+  'SIDE_LEFT', 'SIDE_RIGHT', 'SHOULDER_LEFT', 'SHOULDER_RIGHT',
+  'CROSS_BEAM_00', 'CROSS_BEAM_01', 'CROSS_BEAM_02',
+  'SIDE_POD_L_00', 'SIDE_POD_L_01', 'SIDE_POD_R_00', 'SIDE_POD_R_01', 'PAD_FRAME',
+]);
 const TRACK_NEON_NAMES = new Set(['EMISSIVE_RAIL_LEFT', 'EMISSIVE_RAIL_RIGHT', 'ARROW_00', 'ARROW_01']);
 const TRACK_PAD_NAME   = 'PAD';
+
+// 화살표를 표시할 세그먼트 인덱스 (0-based, 나머지는 ARROW 숨김)
+const VISIBLE_ARROW_SEGS = new Set([1, 4, 7]);
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
@@ -59,8 +69,10 @@ export class BridgeRenderer {
   // GLB 트랙 스킨 (optional — FlowEngine이 로드해서 전달)
   private trackGlbScene: THREE.Object3D | null = null;
   private hasGlb = false;
-  // GLB 비명칭 메시용 베이스 재질 (네이비 블루 — enhanced 공유)
-  private trackBaseMat: THREE.MeshPhongMaterial | null = null;
+  // GLB 재질 (enhanced 공유)
+  private deckMat:       THREE.MeshPhongMaterial | null = null; // 덱 패널 — 네이비 블루
+  private structuralMat: THREE.MeshPhongMaterial | null = null; // 구조재 — 다크 메탈
+  private trackBaseMat:  THREE.MeshPhongMaterial | null = null; // 미분류 폴백 (안전망)
 
   constructor(scene: THREE.Scene, enhanced = false, trackGlbScene: THREE.Object3D | null = null) {
     this.scene    = scene;
@@ -76,7 +88,15 @@ export class BridgeRenderer {
       this.darkMat = new THREE.MeshPhongMaterial({
         color: 0x080f1e, emissive: 0x010306, emissiveIntensity: 1.0, shininess: 90, specular: 0x304080,
       });
-      // GLB 기본 메시용 네이비 블루 (명칭 없는 트랙 바디)
+      // 덱/갑판 패널 — 딥 네이비 블루
+      this.deckMat = new THREE.MeshPhongMaterial({
+        color: 0x0a2f72, emissive: 0x040f2a, emissiveIntensity: 0.4, shininess: 80, specular: 0x1a3060,
+      });
+      // 구조재 — 다크 메탈
+      this.structuralMat = new THREE.MeshPhongMaterial({
+        color: 0x1a2a3a, emissive: 0x0a1218, emissiveIntensity: 0.3, shininess: 55, specular: 0x203040,
+      });
+      // 미분류 폴백 (안전망)
       this.trackBaseMat = new THREE.MeshPhongMaterial({
         color: 0x0b1e3f, emissive: 0x040c1a, emissiveIntensity: 0.4, shininess: 80, specular: 0x1a3060,
       });
@@ -112,34 +132,45 @@ export class BridgeRenderer {
     const g = new THREE.Group();
 
     // ── enhanced + GLB 트랙 스킨 ─────────────────────────────────────────────
-    if (this.hasGlb && this.trackGlbScene && this.neonMats && this.padMats && this.trackBaseMat) {
-      const neonMat    = this.neonMats[lane]!;
-      const padMat     = this.padMats[lane]!;
-      const baseMat    = this.trackBaseMat;
+    if (this.hasGlb && this.trackGlbScene && this.neonMats && this.padMats
+        && this.deckMat && this.structuralMat && this.trackBaseMat) {
+      const neonMat       = this.neonMats[lane]!;
+      const deckMat       = this.deckMat;
+      const structuralMat = this.structuralMat;
+      const baseMat       = this.trackBaseMat;
 
       for (let i = 0; i < TRACK_SEGS; i++) {
         const seg = this.trackGlbScene.clone(true);
         const localZ = -(BRIDGE_LENGTH / 2) + TRACK_SEG_LEN * i + TRACK_SEG_LEN / 2;
         seg.position.set(0, TRACK_SEG_Y, localZ);
-        seg.rotation.y = Math.PI; // 화살표 전방(-Z) 방향 맞춤
+        // P0-8: seg.rotation.y = Math.PI 제거 — GLB forward=-Z, 화살표 이미 정방향
         seg.frustumCulled = false;
+        const showArrows = VISIBLE_ARROW_SEGS.has(i);
         seg.traverse((obj) => {
           const m = obj as THREE.Mesh;
           if (!m.isMesh) return;
           m.frustumCulled = false;
           if (TRACK_NEON_NAMES.has(m.name)) {
-            m.material = neonMat;           // 레인 색 네온 (레일·화살표)
+            m.material = neonMat;
+            // 화살표: 밀도 세그먼트 1,4,7 에만 표시
+            if (m.name === 'ARROW_00' || m.name === 'ARROW_01') {
+              m.visible = showArrows;
+            }
           } else if (m.name === TRACK_PAD_NAME) {
-            m.material = padMat;            // 레인 색 패드
+            m.visible = false;             // 세그먼트 PAD 숨김 (별도 BoxGeometry 패드 사용)
+          } else if (DECK_MESH_NAMES.has(m.name)) {
+            m.material = deckMat;          // 덱/갑판 — 네이비 블루
+          } else if (STRUCTURAL_NAMES.has(m.name)) {
+            m.material = structuralMat;    // 구조재 — 다크 메탈
           } else {
-            m.material = baseMat;           // 네이비 블루 트랙 바디
+            m.material = baseMat;          // 미분류 폴백
           }
         });
         g.add(seg);
       }
 
       // 점프 패드 (z=-2200, 트랙 외부 — 로직 + 시각 가이드)
-      const pad = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH), padMat);
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(LANE_WIDTH - 10, 6, PAD_DEPTH), this.padMats![lane]!);
       pad.position.set(0, 44, -(BRIDGE_LENGTH / 2 + PAD_DEPTH / 2));
       g.add(pad);
       g.position.set(x, 0, z);
@@ -261,6 +292,10 @@ export class BridgeRenderer {
     // GLB 템플릿은 FlowEngine이 소유 — 참조만 해제
     this.trackGlbScene = null;
     this.hasGlb        = false;
+    this.deckMat?.dispose();
+    this.deckMat       = null;
+    this.structuralMat?.dispose();
+    this.structuralMat = null;
     this.trackBaseMat?.dispose();
     this.trackBaseMat  = null;
   }

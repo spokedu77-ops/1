@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+﻿import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
@@ -8,9 +8,12 @@ import {
 } from '@/app/lib/server/spokeduMasterAccess';
 import {
   createSpokeduMasterOrderId,
+  isSpokeduMasterDirectPurchasePlan,
   SPOKEDU_MASTER_PLAN_CONFIG,
   type SpokeduMasterPaidPlan,
 } from '@/app/lib/server/spokeduMasterPayment';
+
+const CHECKOUT_ERROR = '결제 정보를 준비하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
@@ -28,8 +31,8 @@ export async function POST(request: Request) {
 
   const planKey = body.plan as SpokeduMasterPaidPlan;
   const plan = SPOKEDU_MASTER_PLAN_CONFIG[planKey];
-  if (!plan) {
-    return NextResponse.json({ error: '선택할 수 없는 플랜입니다.' }, { status: 400 });
+  if (!plan || !isSpokeduMasterDirectPurchasePlan(planKey)) {
+    return NextResponse.json({ error: '현재 직접 결제 가능한 상품은 Pro 30일 이용권입니다.' }, { status: 400 });
   }
 
   const isAdmin = await isPlatformAdminUser(user, supabase);
@@ -61,7 +64,7 @@ export async function POST(request: Request) {
   }
 
   const orderId = createSpokeduMasterOrderId(planKey);
-  const customerName = user.email?.split('@')[0] ?? '선생님';
+  const customerName = user.email?.split('@')[0] ?? 'SPOKEDU MASTER 사용자';
 
   const { error: orderError } = await service
     .from('spokedu_master_payment_orders')
@@ -86,7 +89,7 @@ export async function POST(request: Request) {
         status: 500,
       },
     });
-    return NextResponse.json({ error: '결제 주문 정보를 준비하지 못했습니다.' }, { status: 500 });
+    return NextResponse.json({ error: CHECKOUT_ERROR }, { status: 500 });
   }
 
   return NextResponse.json({

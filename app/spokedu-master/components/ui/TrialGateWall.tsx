@@ -72,8 +72,8 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center rounded-[12px] bg-indigo-600 text-[14px] font-black text-white shadow-lg shadow-indigo-200">
               Pro 30일 이용권 · 39,900원
             </Link>
-            <Link href="/spokedu-master/payment?plan=team" className="flex h-12 w-full items-center justify-center rounded-[12px] border border-emerald-200 bg-white text-[13px] font-black text-emerald-700">
-              Center 30일 이용권 · 79,000원
+            <Link href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4" className="flex h-12 w-full items-center justify-center rounded-[12px] border border-emerald-200 bg-white text-[13px] font-black text-emerald-700">
+              Center 도입 상담
             </Link>
             <Link href="/spokedu-master/subscription" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold text-slate-500">
               플랜 비교 보기

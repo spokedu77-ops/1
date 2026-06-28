@@ -3,6 +3,12 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { MILEAGE_ACTIONS } from '@/app/admin/classes-shared/constants/mileage';
+import {
+  formatMileageLogDateKo,
+  getMileageLogDisplayAmount,
+  resolveMileageLogDisplayText,
+} from '@/app/admin/classes-shared/lib/sessionUtils';
 import { CreditCard, Star, CheckCircle2, History, Info } from 'lucide-react';
 
 interface MileageLog {
@@ -96,11 +102,6 @@ export default function TeacherReportPage() {
   const tax = Math.floor(beforeTax * 0.033); // 3.3% 원천징수 (절사)
   const afterTax = beforeTax - tax; // 최종 실수령액
 
-  const cleanReason = (reason: string) => {
-    if (!reason) return '';
-    return reason.replace(/\[수업연동\]\s(원복|차감):\s/, '').trim();
-  };
-
   if (fetchError) {
     return (
       <div className="py-20 text-center">
@@ -139,24 +140,31 @@ export default function TeacherReportPage() {
             {(() => {
               const visible = mileageLogs.filter((log) => !log.reason?.includes('[취소]'));
               return visible.length > 0 ? (
-              visible.slice(0, 10).map((log) => (
-                <div key={log.id} className="p-4 flex justify-between items-center">
-                  <div className="flex-1 min-w-0 pr-4">
-                    <p className="text-[12px] font-black text-slate-800 truncate">
-                      {displayTitle(log.session_title)
-                        ? `${displayTitle(log.session_title)} (${new Date(log.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })})`
-                        : new Date(log.created_at).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })}
+              visible.slice(0, 10).map((log) => {
+                const displayAmount = getMileageLogDisplayAmount(log, MILEAGE_ACTIONS);
+                const sessionTitleWithDate = displayTitle(log.session_title)
+                  ? `${displayTitle(log.session_title)} (${formatMileageLogDateKo(log.created_at)})`
+                  : formatMileageLogDateKo(log.created_at);
+                const { primary, secondary } = resolveMileageLogDisplayText(log, sessionTitleWithDate);
+                return (
+                <div key={log.id} className="p-4 flex justify-between items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-black text-slate-800 leading-snug break-words">
+                      {primary}
                     </p>
-                    <p className="text-[9px] font-bold text-slate-400 mt-0.5">{cleanReason(log.reason)}</p>
+                    {secondary && (
+                      <p className="text-[9px] font-bold text-slate-400 mt-0.5">{secondary}</p>
+                    )}
                   </div>
                   <div className="text-right">
-                    <p className={`text-[12px] font-black ${log.amount >= 0 ? 'text-indigo-600' : 'text-red-500'}`}>
-                      {log.amount > 0 ? '+' : ''}{log.amount.toLocaleString()}
+                    <p className={`text-[12px] font-black ${displayAmount >= 0 ? 'text-indigo-600' : 'text-red-500'}`}>
+                      {displayAmount > 0 ? '+' : ''}{displayAmount.toLocaleString()}
                     </p>
                     <p className="text-[8px] font-bold text-slate-300 tabular-nums">{new Date(log.created_at).toLocaleDateString('ko-KR', {month: 'numeric', day: 'numeric'})}</p>
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="py-12 text-center text-slate-200 text-[10px] font-black italic uppercase">No Data</div>
             );

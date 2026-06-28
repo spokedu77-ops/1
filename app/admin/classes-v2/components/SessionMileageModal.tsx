@@ -9,6 +9,7 @@ import { MILEAGE_ACTIONS } from "@/app/admin/classes-shared/constants/mileage";
 import {
   extractMileageAction,
   getMileageTotal,
+  getSessionMileageLogAmount,
   parseExtraTeachers,
 } from "@/app/admin/classes-shared/lib/sessionUtils";
 
@@ -98,6 +99,9 @@ export default function SessionMileageModal({
 
       if (diff !== 0) {
         const sessionTitle = buildSessionTitleWithDate(title, sessionStartAt);
+        const reasonVerb =
+          diff > 0 ? (newTotal < 0 ? "조정" : "원복") : "차감";
+        const logAmount = getSessionMileageLogAmount(diff, newTotal, reasonVerb);
 
         if (created_by && String(created_by).trim()) {
           const mainId = String(created_by).trim();
@@ -108,8 +112,8 @@ export default function SessionMileageModal({
             const { error: logError } = await supabase.from("mileage_logs").insert([
               {
                 teacher_id: mainId,
-                amount: diff,
-                reason: `[수업연동] ${diff > 0 ? "원복" : "차감"}: ${mileageAction || "해제"}`,
+                amount: logAmount,
+                reason: `[수업연동] ${reasonVerb}: ${mileageAction || "해제"}`,
                 session_title: sessionTitle,
                 session_id: sessionId,
                 session_started_at: sessionStartAt,
@@ -135,8 +139,8 @@ export default function SessionMileageModal({
             await supabase.from("mileage_logs").insert([
               {
                 teacher_id: ex.id,
-                amount: diff,
-                reason: `[수업연동/보조] ${diff > 0 ? "원복" : "차감"}: ${mileageAction || "해제"}`,
+                amount: logAmount,
+                reason: `[수업연동/보조] ${reasonVerb}: ${mileageAction || "해제"}`,
                 session_title: sessionTitle,
                 session_id: sessionId,
                 session_started_at: sessionStartAt,

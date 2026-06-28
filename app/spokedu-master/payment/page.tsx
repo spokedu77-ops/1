@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   BookOpen,
@@ -70,8 +69,8 @@ const PLANS: Record<PlanKey, {
   team: {
     title: 'SPOKEDU MASTER Center',
     shortTitle: 'Center',
-    price: '79,000',
-    amount: 79000,
+    price: '상담 문의',
+    amount: 0,
     period: '30일',
     badge: '기관·센터용',
     description: '센터·기관 운영자가 현재 제공되는 MASTER 기능을 30일 동안 사용하는 이용권입니다.',
@@ -113,14 +112,14 @@ const OUTCOME_STATS = [
   { label: '바로 쓰는 자료', value: '5종', caption: '수업 자료, 영상, 준비물, 세팅, 안내문' },
 ];
 
-function normalizePlan(value: string | null): PlanKey {
-  return value === 'team' ? 'team' : 'pro';
+function normalizePlan(): PlanKey {
+  return 'pro';
 }
 
 function PlanSelector({ selected, onSelect }: { selected: PlanKey; onSelect: (plan: PlanKey) => void }) {
   return (
     <div className="grid gap-3 md:grid-cols-2">
-      {(Object.keys(PLANS) as PlanKey[]).map((key) => {
+      {(['pro'] as PlanKey[]).map((key) => {
         const plan = PLANS[key];
         const active = selected === key;
         return (
@@ -155,10 +154,9 @@ function PlanSelector({ selected, onSelect }: { selected: PlanKey; onSelect: (pl
 }
 
 function PaymentContent() {
-  const params = useSearchParams();
   const profile = useProfile();
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
-  const [planKey, setPlanKey] = useState<PlanKey>(normalizePlan(params.get('plan')));
+  const [planKey, setPlanKey] = useState<PlanKey>(normalizePlan());
   const plan = PLANS[planKey];
   const localAlreadySubscribed = isPaidMasterPlan(profile);
 

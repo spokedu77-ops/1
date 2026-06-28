@@ -31,7 +31,8 @@ export function isPaidAccessExpired(profile: UserProfile | null): boolean {
 }
 
 export function isPaidMasterPlan(profile: UserProfile | null): boolean {
-  return profile?.plan === 'pro' || profile?.plan === 'team' || Boolean(profile?.isAdmin);
+  if (profile?.isAdmin) return true;
+  return (profile?.plan === 'pro' || profile?.plan === 'team') && profile.subscriptionStatus === 'active';
 }
 
 export const isActiveMasterPlan = isPaidMasterPlan;

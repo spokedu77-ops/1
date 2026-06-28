@@ -15,6 +15,12 @@ import {
   type TierFeeMap,
 } from '@/app/lib/teacherTierSchedule';
 import { fetchTeacherTierFeeMap } from '@/app/lib/teacherTierFeesStore';
+import { MILEAGE_ACTIONS } from '@/app/admin/classes-shared/constants/mileage';
+import {
+  getMileageLogDisplayAmount,
+  getMileageLogPointDelta,
+  resolveMileageLogDisplayText,
+} from '@/app/admin/classes-shared/lib/sessionUtils';
 
 interface Teacher {
   id: string;
@@ -185,7 +191,8 @@ export default function MileageDetailModal({
   const [mileageSessionStartById, setMileageSessionStartById] = useState<Record<string, string>>({});
   const [countSessionStartById, setCountSessionStartById] = useState<Record<string, string>>({});
   const [teacherCountLogs, setTeacherCountLogs] = useState<SessionCountLog[]>([]);
-  const [editPointValue, setEditPointValue] = useState<number>(teacher.points || 0);
+  const [pointDeltaInput, setPointDeltaInput] = useState('');
+  const [displayPoints, setDisplayPoints] = useState(teacher.points || 0);
   const [editSessionCount, setEditSessionCount] = useState<number>(teacher.session_count || 0);
   const [selectedAdditional, setSelectedAdditional] = useState<string>('');
   const [editReason, setEditReason] = useState<string>('');
@@ -290,7 +297,8 @@ export default function MileageDetailModal({
   }, [supabase, teacher?.id]);
 
   useEffect(() => {
-    setEditPointValue(teacher.points || 0);
+    setDisplayPoints(teacher.points || 0);
+    setPointDeltaInput('');
     setEditSessionCount(teacher.session_count || 0);
     setSelectedAdditional('');
     setEditReason('');
@@ -302,42 +310,70 @@ export default function MileageDetailModal({
     loadLogs();
   }, [teacher, loadLogs]);
 
-  const handleSavePoints = async () => {
-    if (!supabase || !teacher) return;
-    const prevPoints = teacher.points || 0;
-    const nextPoints = editPointValue;
-    const diff = nextPoints - prevPoints;
-    const prevSessionCount = teacher.session_count || 0;
-    const nextSessionCount = editSessionCount;
+  const parsedPointDelta = useMemo(() => {
+    const trimmed = pointDeltaInput.trim();
+    if (!trimmed || trimmed === '-' || trimmed === '+') return 0;
+    const n = Number(trimmed);
+    return Number.isFinite(n) ? n : NaN;
+  }, [pointDeltaInput]);
 
-    if (diff === 0 && prevSessionCount === nextSessionCount) {
-      toast.error("변경된 내용이 없습니다.");
+  const handleApplyMileageDelta = async () => {
+    if (!supabase || !teacher) return;
+    if (!Number.isFinite(parsedPointDelta) || parsedPointDelta === 0) {
+      toast.error('변동 포인트를 입력하세요. (예: 1000, -1000)');
+      return;
+    }
+    if (!editReason.trim()) {
+      toast.error('마일리지 변경 사유를 입력하세요.');
       return;
     }
 
     try {
-      const updateData: Record<string, unknown> = {};
-      if (diff !== 0) updateData.points = nextPoints;
-      if (prevSessionCount !== nextSessionCount) updateData.session_count = nextSessionCount;
+      const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
+      const currentPoints = user?.points ?? 0;
+      const nextPoints = currentPoints + parsedPointDelta;
 
-      const { error: uError } = await supabase.from('users').update(updateData).eq('id', teacher.id);
+      const { error: uError } = await supabase.from('users').update({ points: nextPoints }).eq('id', teacher.id);
       if (uError) throw uError;
 
-      if (diff !== 0) {
-        const { error: lError } = await supabase.from('mileage_logs').insert([{
-          teacher_id: teacher.id,
-          amount: diff,
-          reason: editReason || '운영진 수동 조정',
-          session_title: '직접 수정'
-        }]);
-        if (lError) throw lError;
-      }
+      const { error: lError } = await supabase.from('mileage_logs').insert([{
+        teacher_id: teacher.id,
+        amount: parsedPointDelta,
+        reason: editReason.trim(),
+        session_title: '운영진 수동 조정',
+      }]);
+      if (lError) throw lError;
 
-      toast.success("반영되었습니다.");
+      setDisplayPoints(nextPoints);
+      toast.success('마일리지가 반영되었습니다.');
+      setPointDeltaInput('');
+      setEditReason('');
+      onSaved?.();
+      loadLogs();
+    } catch (error: unknown) {
+      toast.error('실패: ' + (error instanceof Error ? error.message : String(error)));
+    }
+  };
+
+  const handleSaveSessionCount = async () => {
+    if (!supabase || !teacher) return;
+    const prevSessionCount = teacher.session_count || 0;
+    const nextSessionCount = editSessionCount;
+
+    if (prevSessionCount === nextSessionCount) {
+      toast.error('변경된 내용이 없습니다.');
+      return;
+    }
+
+    try {
+      const { error: uError } = await supabase.from('users').update({ session_count: nextSessionCount }).eq('id', teacher.id);
+      if (uError) throw uError;
+
+      toast.success('기존 수업 수가 반영되었습니다.');
       onSaved?.();
       onClose();
     } catch (error: unknown) {
-      toast.error("실패: " + (error instanceof Error ? error.message : String(error)));
+      toast.error('실패: ' + (error instanceof Error ? error.message : String(error)));
     }
   };
 
@@ -345,16 +381,18 @@ export default function MileageDetailModal({
     if (!supabase || !teacher) return;
     const logToDelete = teacherLogs.find(l => l.id === logId);
     if (!logToDelete) return;
-    if (!confirm(`이 기록을 삭제하고 마일리지 ${logToDelete.amount > 0 ? '-' : '+'}${Math.abs(logToDelete.amount).toLocaleString()}P를 복구하시겠습니까?`)) return;
+    const pointDelta = getMileageLogPointDelta(logToDelete, MILEAGE_ACTIONS);
+    if (!confirm(`이 기록을 삭제하고 마일리지 ${pointDelta > 0 ? '-' : '+'}${Math.abs(pointDelta).toLocaleString()}P를 복구하시겠습니까?`)) return;
 
     try {
       const { data: user } = await supabase.from('users').select('points').eq('id', teacher.id).single();
       const currentPoints = user?.points ?? 0;
-      await supabase.from('users').update({ points: currentPoints - logToDelete.amount }).eq('id', teacher.id);
+      await supabase.from('users').update({ points: currentPoints - pointDelta }).eq('id', teacher.id);
       const { error } = await supabase.from('mileage_logs').delete().eq('id', logId);
       if (error) throw error;
       // [취소] 로그는 남기지 않음 (운영진 조치)
       setTeacherLogs(prev => prev.filter(l => l.id !== logId));
+      setDisplayPoints(currentPoints - pointDelta);
       onSaved?.();
       toast.success('마일리지가 복구되었습니다.');
     } catch (error: unknown) {
@@ -379,6 +417,7 @@ export default function MileageDetailModal({
         session_title: '운영진 조치'
       }]).select().single();
       if (newLog) setLastAdditionalLog(newLog as MileageLog);
+      setDisplayPoints(currentPoints + item.value);
       toast.success('지급이 완료되었습니다.');
       onSaved?.();
       loadLogs();
@@ -398,6 +437,7 @@ export default function MileageDetailModal({
       const { error } = await supabase.from('mileage_logs').delete().eq('id', lastAdditionalLog.id);
       if (error) throw error;
       setLastAdditionalLog(null);
+      setDisplayPoints(currentPoints - lastAdditionalLog.amount);
       toast.success('추가 지급이 취소되었습니다.');
       onSaved?.();
       loadLogs();
@@ -406,10 +446,10 @@ export default function MileageDetailModal({
     }
   };
 
-  const cleanReason = (reason: string) => {
-    if (!reason) return '';
-    return reason.replace(/\[수업연동\]\s(원복|차감):\s/, '').trim();
-  };
+  const mileageLogDateIso = (log: MileageLog) =>
+    (log.session_id ? mileageSessionStartById[log.session_id] : undefined)
+      ?? log.session_started_at
+      ?? log.created_at;
 
   return (
     <div className="fixed inset-0 bg-slate-950/40 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 cursor-default" onClick={onClose}>
@@ -421,7 +461,7 @@ export default function MileageDetailModal({
                 <h2 className="text-xl font-black text-slate-950 italic uppercase tracking-tighter">{teacher.name} T</h2>
                 <TeacherTierBadge sessionCount={teacher.session_count} logCount={teacher.logCount} />
               </div>
-              <p className="text-blue-600 font-black text-2xl mt-1">{(teacher.points || 0).toLocaleString()} <span className="text-xs">P</span></p>
+              <p className="text-blue-600 font-black text-2xl mt-1">{displayPoints.toLocaleString()} <span className="text-xs">P</span></p>
               <p className="text-slate-400 font-bold text-sm mt-1 flex items-center gap-1 flex-wrap">
                 <BookOpen size={14} /> {((teacher.session_count || 0) + (teacher.logCount || 0)).toLocaleString()}회 수업 완료
                 {teacher.logCount !== undefined && teacher.logCount > 0 && (
@@ -450,16 +490,26 @@ export default function MileageDetailModal({
           <div className="mb-4 space-y-3">
             <div>
               <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3">마일리지</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 shrink-0">변동 포인트</span>
                 <input
                   type="number"
-                  value={editPointValue}
-                  onChange={(e) => setEditPointValue(Number(e.target.value))}
-                  className="flex-1 bg-transparent px-4 py-2 font-black text-blue-600 text-lg outline-none cursor-text"
+                  value={pointDeltaInput}
+                  onChange={(e) => setPointDeltaInput(e.target.value)}
+                  placeholder="예: 1000 또는 -1000"
+                  className="flex-1 bg-transparent px-4 py-2 font-black text-blue-600 text-lg outline-none cursor-text placeholder:text-blue-200 placeholder:font-bold placeholder:text-sm"
                 />
+                <span className="text-[10px] font-black text-slate-300 pr-3 shrink-0">P</span>
               </div>
+              {Number.isFinite(parsedPointDelta) && parsedPointDelta !== 0 && (
+                <p className="mt-1.5 px-3 text-[10px] font-bold text-slate-400">
+                  반영 후 예상:{' '}
+                  <span className="text-blue-600 font-black">
+                    {((displayPoints) + parsedPointDelta).toLocaleString()}P
+                  </span>
+                </p>
+              )}
               <div className="mt-2 p-1.5 bg-blue-50 rounded-xl border border-blue-100 flex items-center gap-2">
-                <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider px-3">마일리지 변경 사유</span>
+                <span className="text-[9px] font-bold text-blue-600 uppercase tracking-wider px-3 shrink-0">변경 사유</span>
                 <input
                   type="text"
                   value={editReason}
@@ -468,6 +518,12 @@ export default function MileageDetailModal({
                   className="flex-1 bg-transparent px-4 py-2 font-bold text-blue-700 text-sm outline-none cursor-text"
                 />
               </div>
+              <button
+                onClick={() => void handleApplyMileageDelta()}
+                className="mt-2 w-full bg-slate-900 text-white px-5 py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-md cursor-pointer"
+              >
+                <Save size={14}/> 마일리지 반영
+              </button>
             </div>
             <div className="p-1.5 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-2">
               <div className="px-3">
@@ -483,11 +539,13 @@ export default function MileageDetailModal({
                 className="flex-1 bg-transparent px-4 py-2 font-black text-emerald-600 text-lg outline-none cursor-text"
               />
             </div>
+            <button
+              onClick={() => void handleSaveSessionCount()}
+              className="w-full bg-emerald-600 text-white px-5 py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-emerald-700 transition-all shadow-md cursor-pointer"
+            >
+              <Save size={14}/> 기존 수업 수 저장
+            </button>
           </div>
-
-          <button onClick={handleSavePoints} className="w-full bg-slate-900 text-white px-5 py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 hover:bg-blue-600 transition-all shadow-md cursor-pointer mb-6">
-            <Save size={14}/> 변경사항 저장
-          </button>
 
           <div className="border-t border-slate-100 pt-6 mb-8">
             <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3">추가 항목</h4>
@@ -553,23 +611,27 @@ export default function MileageDetailModal({
               (() => {
                 const visibleLogs = teacherLogs.filter((log) => !log.reason?.includes('[취소]'));
                 return visibleLogs.length > 0 ? (
-                visibleLogs.map((log) => (
+                visibleLogs.map((log) => {
+                  const displayAmount = getMileageLogDisplayAmount(log, MILEAGE_ACTIONS);
+                  const dateIso = mileageLogDateIso(log);
+                  const { primary, secondary } = resolveMileageLogDisplayText(
+                    log,
+                    formatSessionWithDate(log.session_title, dateIso),
+                  );
+                  return (
                   <div key={log.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-50 bg-white shadow-sm hover:border-blue-100 transition-all">
-                    <div className="flex items-center gap-4 sm:gap-6">
-                      <div className={`text-sm font-black w-20 sm:w-24 ${log.amount >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                        {log.amount > 0 ? '+' : ''}{log.amount.toLocaleString()}P
+                    <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                      <div className={`text-sm font-black w-20 sm:w-24 shrink-0 ${displayAmount >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                        {displayAmount > 0 ? '+' : ''}{displayAmount.toLocaleString()}P
                       </div>
-                      <div className="hidden xs:block h-6 w-[1px] bg-slate-100"></div>
-                      <div>
-                        <p className="text-[11px] font-black text-slate-800 leading-tight">
-                          {formatSessionWithDate(
-                            log.session_title,
-                            (log.session_id ? mileageSessionStartById[log.session_id] : undefined)
-                              ?? log.session_started_at
-                              ?? log.created_at
-                          )}
+                      <div className="hidden xs:block h-6 w-[1px] bg-slate-100 shrink-0"></div>
+                      <div className="min-w-0">
+                        <p className="text-[12px] sm:text-[13px] font-black text-slate-800 leading-snug break-words">
+                          {primary}
                         </p>
-                        <p className="text-[9px] font-bold text-slate-400 mt-0.5">{cleanReason(log.reason)}</p>
+                        {secondary && (
+                          <p className="text-[9px] font-bold text-slate-400 mt-0.5">{secondary}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -579,7 +641,8 @@ export default function MileageDetailModal({
                       </button>
                     </div>
                   </div>
-                ))
+                  );
+                })
               ) : (
                 <div className="py-16 text-center text-slate-200 font-black italic text-sm tracking-tighter uppercase">No mileage logs found</div>
               );

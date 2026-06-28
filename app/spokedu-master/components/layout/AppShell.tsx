@@ -161,10 +161,10 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
               Pro 30일 이용권 보기
             </Link>
             <Link
-              href="/spokedu-master/payment?plan=team"
+              href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4"
               className="flex min-h-12 items-center justify-center rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 text-[14px] font-black text-emerald-700"
             >
-              Center 30일 이용권 보기
+              Center 도입 상담
             </Link>
           </div>
 

@@ -111,6 +111,7 @@ export default function FlowGameClient({
       return `Flow 초기화 실패: ${msg}`;
     };
 
+    let cancelled = false;
     let engine: FlowEngine;
     try {
       engine = new FlowEngine(
@@ -154,7 +155,9 @@ export default function FlowGameClient({
     canvas.addEventListener('webglcontextlost', handleContextLost);
 
     engine.init(flashRef.current).then(() => {
+      if (cancelled) { engine.dispose(); return; }
       if (!mountedRef.current) { engine.dispose(); return; }
+      if (engineRef.current !== engine) { engine.dispose(); return; }
       onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
       // async init 완료 후 실제 뷰포트 크기로 재조정 (iOS Safari 초기화 타이밍 보정)
       engine.resize(window.innerWidth, window.innerHeight);
@@ -168,6 +171,7 @@ export default function FlowGameClient({
     });
 
     return () => {
+      cancelled = true;
       canvas.removeEventListener('webglcontextlost', handleContextLost);
       engine.dispose();
       engineRef.current = null;

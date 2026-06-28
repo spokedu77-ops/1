@@ -39,7 +39,7 @@ describe('subscriptionSummary', () => {
 
     expect(getSubscriptionPlanLabel(value)).toBe('Center');
     expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
-    expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/payment?plan=team');
+    expect(getSubscriptionPrimaryHref(value)).toContain('mailto:support@spokedu.com');
   });
 
   it('shows expired paid subscriptions as ended', () => {

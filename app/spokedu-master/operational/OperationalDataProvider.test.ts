@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { mergeOperationalRecordById } from './OperationalDataProvider';
+import type { MasterClassRecordDto } from '../types/operational';
 
 const root = process.cwd();
 const readSource = (relativePath: string) =>
@@ -43,6 +45,35 @@ describe('OperationalDataProvider server-first contract', () => {
     expect(text).toContain('deleteStudent');
     expect(text).toContain('saveClassRecord');
     expect(text).not.toContain('owner_id');
+  });
+
+  it('keeps one class record when an idempotent retry returns the same DB id', () => {
+    const original: MasterClassRecordDto = {
+      id: 'record-1',
+      legacyId: 'request-key',
+      date: '2026-06-20',
+      lessonTitle: 'Old',
+      classId: null,
+      programId: 52,
+      programTitle: 'Program',
+      recordType: 'detailed',
+      memo: null,
+      parentNoteSnapshot: null,
+      present: 0,
+      absent: 0,
+      focusCount: 0,
+      skillCount: 0,
+      students: [],
+      createdAt: '2026-06-20T00:00:00.000Z',
+      updatedAt: '2026-06-20T00:00:00.000Z',
+    };
+    const retry: MasterClassRecordDto = {
+      ...original,
+      lessonTitle: 'Server copy',
+      updatedAt: '2026-06-20T00:01:00.000Z',
+    };
+
+    expect(mergeOperationalRecordById([original], retry)).toEqual([retry]);
   });
 });
 

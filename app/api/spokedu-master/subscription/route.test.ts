@@ -145,6 +145,24 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
     });
   });
 
+  it.each([
+    ['missing periodEnd', { plan: 'pro', status: 'active', period_end: null }],
+    ['invalid periodEnd', { plan: 'team', status: 'active', period_end: 'not-a-date' }],
+    ['cancelled subscription', { plan: 'pro', status: 'cancelled', period_end: '2099-06-30T00:00:00.000Z' }],
+  ])('fails closed for %s', async (_label, row) => {
+    mockAuthUser(user);
+    mockSubscriptionRow(row);
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      plan: row.plan,
+      status: row.status === 'cancelled' ? 'cancelled' : 'expired',
+      isAdmin: false,
+    });
+  });
+
   it('creates and returns a server-owned trial when no subscription exists', async () => {
     mockAuthUser(user);
     const query = mockSubscriptionRow(null);

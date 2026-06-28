@@ -30,6 +30,7 @@ type MockDb = {
     subscriptionUpsert: number;
     subscriptionUpdate: number;
     orderUpdate: number;
+    rpc: number;
   };
 };
 
@@ -55,6 +56,7 @@ function createMockDb(): MockDb {
       subscriptionUpsert: 0,
       subscriptionUpdate: 0,
       orderUpdate: 0,
+      rpc: 0,
     },
   };
   return db;
@@ -62,6 +64,14 @@ function createMockDb(): MockDb {
 
 function installMockSupabase(db: MockDb) {
   getServiceSupabase.mockReturnValue({
+    async rpc(name: string, args: Record<string, unknown>) {
+      db.calls.rpc += 1;
+      if (name !== 'spokedu_master_apply_payment') {
+        return { data: null, error: { message: 'unknown rpc' } };
+      }
+      if (db.errors.rpc) return { data: null, error: { message: db.errors.rpc } };
+      return { data: applyPaymentRpc(db, args), error: null };
+    },
     from(table: TableName) {
       const filters: Record<string, unknown> = {};
       let orFilter = '';
@@ -154,6 +164,57 @@ function installMockSupabase(db: MockDb) {
   });
 }
 
+function applyPaymentRpc(db: MockDb, args: Record<string, unknown>) {
+  const orderId = String(args.p_order_id);
+  const paymentKey = String(args.p_payment_key);
+  const source = String(args.p_source);
+  const eventKey = String(args.p_event_key);
+  const order = db.orders.get(orderId);
+  if (!order) return { status: 'rejected', reason: 'order_not_found' };
+  if (order.payment_key && order.payment_key !== paymentKey) {
+    return { status: 'rejected', reason: 'payment_key_conflict' };
+  }
+  db.calls.eventInsert += 1;
+  db.events.set(eventKey, {
+    event_key: eventKey,
+    event_type: source,
+    payment_key: paymentKey,
+    order_id: orderId,
+    status: source === 'partial_cancel_review_required' ? 'ignored' : 'processed',
+  });
+  if (source === 'partial_cancel_review_required') {
+    return { status: 'ignored', reason: 'partial_cancel_review_required' };
+  }
+  if (source === 'cancel') {
+    db.calls.orderUpdate += 1;
+    db.orders.set(orderId, { ...order, status: 'cancelled', payment_key: paymentKey });
+    const subscription = db.subscriptions.find((row) => row.toss_order_id === orderId && row.toss_payment_key === paymentKey);
+    if (subscription) {
+      db.calls.subscriptionUpdate += 1;
+      subscription.status = 'cancelled';
+    }
+    return { status: 'processed', cancelled: true };
+  }
+  const existing = db.subscriptions.find((row) => row.toss_order_id === orderId && row.toss_payment_key === paymentKey);
+  if (existing && existing.status === 'active') {
+    return { status: 'processed', alreadyApplied: true, periodEnd: existing.period_end };
+  }
+  db.calls.subscriptionUpsert += 1;
+  db.subscriptions.push({
+    user_id: order.user_id,
+    plan: order.plan,
+    status: 'active',
+    pg_provider: 'tosspayments',
+    toss_payment_key: paymentKey,
+    toss_order_id: orderId,
+    period_start: args.p_period_start,
+    period_end: args.p_period_end,
+  });
+  db.calls.orderUpdate += 1;
+  db.orders.set(orderId, { ...order, status: 'active', payment_key: paymentKey });
+  return { status: 'processed', alreadyApplied: false, periodEnd: args.p_period_end };
+}
+
 function subscriptionMatchesFilter(row: Record<string, unknown>, filter: string) {
   return filter
     .split(',')
@@ -241,7 +302,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
     expect(db.subscriptions[0].period_end).toBe('2026-07-21T03:00:00.000Z');
     expect(db.events.get(TRANSMISSION_ID)).toMatchObject({
       event_key: TRANSMISSION_ID,
-      event_type: 'PAYMENT_STATUS_CHANGED',
+      event_type: 'webhook',
       payment_key: PAYMENT_KEY,
       order_id: ORDER_ID,
       status: 'processed',
@@ -273,7 +334,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
 
     expect(response.status).toBe(200);
     expect(db.events.get('PAYMENT_STATUS_CHANGED:payment-key-1:transaction-1')).toMatchObject({
-      event_type: 'PAYMENT_STATUS_CHANGED',
+      event_type: 'webhook',
       payment_key: PAYMENT_KEY,
     });
   });
@@ -408,7 +469,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
     await expect(response.json()).resolves.toMatchObject({
       received: true,
       status: 'ignored',
-      reason: 'partial_cancel_requires_policy',
+      reason: 'partial_cancel_review_required',
     });
     expect(db.calls.subscriptionUpdate).toBe(0);
     expect(db.subscriptions[0].status).toBe('active');

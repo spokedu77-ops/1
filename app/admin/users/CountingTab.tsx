@@ -60,6 +60,7 @@ export function CountingTab({ supabase }: CountingTabProps) {
         logCount: logCountByTeacher[u.id] ?? 0,
       })) as Teacher[];
       setTeachers(teachersWithLogCount);
+      return teachersWithLogCount;
     } catch (error) {
       devLogger.error('Fetch error:', error);
     }
@@ -116,7 +117,14 @@ export function CountingTab({ supabase }: CountingTabProps) {
           supabase={supabase}
           hideAppliedFeePreview
           onClose={() => setSelectedTeacher(null)}
-          onSaved={() => fetchData()}
+          onSaved={() => {
+            void fetchData().then((rows) => {
+              setSelectedTeacher((prev) => {
+                if (!prev || !rows) return prev;
+                return rows.find((t) => t.id === prev.id) ?? prev;
+              });
+            });
+          }}
         />
       )}
     </>

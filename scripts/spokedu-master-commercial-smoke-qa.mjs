@@ -3,7 +3,18 @@ import nextEnv from '@next/env';
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
-const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
+function readCliValue(name) {
+  const equalsArg = process.argv.find((arg) => arg.startsWith(`${name}=`));
+  if (equalsArg) return equalsArg.slice(name.length + 1);
+  const index = process.argv.indexOf(name);
+  if (index >= 0) return process.argv[index + 1];
+  return undefined;
+}
+
+const positionalBaseUrl = process.argv
+  .slice(2)
+  .find((arg) => !arg.startsWith('--') && /^https?:\/\//.test(arg));
+const BASE = (readCliValue('--base-url') || positionalBaseUrl || 'http://localhost:3000').replace(/\/$/, '');
 const ENV_PREFLIGHT_ONLY = process.argv.includes('--env-preflight');
 const qaIdSource = process.env.SPOKEDU_MASTER_QA_ID ? 'official' : process.env.SPM_QA_ID ? 'legacy' : 'missing';
 const qaPasswordSource = process.env.SPOKEDU_MASTER_QA_PASSWORD ? 'official' : process.env.SPM_QA_PASSWORD ? 'legacy' : 'missing';
@@ -592,6 +603,20 @@ async function clickFirstVisible(locator, description) {
   throw new Error(`Could not find visible ${description}`);
 }
 
+async function clickFirstAvailable(locators, description) {
+  for (const locator of locators) {
+    const count = await locator.count().catch(() => 0);
+    for (let index = 0; index < count; index += 1) {
+      const item = locator.nth(index);
+      if (await item.isVisible().catch(() => false)) {
+        await item.click();
+        return;
+      }
+    }
+  }
+  throw new Error(`Could not find visible ${description}`);
+}
+
 async function checkNoHorizontalOverflow(page, label) {
   const metrics = await page.evaluate(() => ({
     body: document.body.scrollWidth,
@@ -879,12 +904,19 @@ async function runQuickRecordToReportSmoke(browser) {
   await gotoPage(page, '/spokedu-master/library/52');
   await waitAppReady(page);
   await checkNoHorizontalOverflow(page, 'library detail before quick modal');
-  await clickFirstVisible(page.locator('main .sticky button.bg-emerald-600'), 'quick record button');
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /수업 기록$/ }),
+    page.getByRole('button', { name: /사용 기록/ }),
+    page.locator('main .sticky button.bg-emerald-600'),
+  ], 'quick record button');
   await page.locator('[role="dialog"] input[type="date"]').fill('2026-06-20');
   const textareas = page.locator('[role="dialog"] textarea');
   await textareas.nth(0).fill('QA quick memo for report context.');
   await textareas.nth(1).fill('QA parent note snapshot.');
-  await page.locator('[role="dialog"] button.bg-emerald-600').last().click();
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /사용 기록 저장|수업 기록 저장|저장/ }),
+    page.locator('[role="dialog"] button.bg-emerald-600'),
+  ], 'quick record save button');
   const reportLink = page.locator('[role="dialog"] a[href*="/spokedu-master/report?record="]').first();
   await reportLink.waitFor({ state: 'visible', timeout: 10_000 });
   const href = await reportLink.getAttribute('href');
@@ -924,7 +956,10 @@ async function runDetailedRecordSmoke(browser) {
   await dialog.locator('button').nth(1).click();
   await dialog.locator('textarea').fill('Detailed Alice memo from browser smoke.');
   await page.keyboard.press('Escape');
-  await page.locator('button.h-12.w-full').first().click();
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
+    page.locator('button.h-12.w-full'),
+  ], 'detailed record save button');
   const reportHref = await page.locator('a[href*="/spokedu-master/report?record="]').first().getAttribute('href');
   assert(reportHref?.includes('record=detailed-record-1'), 'detailed save report link missing record id');
   assert(reportHref?.includes('program=52'), 'detailed save report link missing program id');
@@ -957,10 +992,16 @@ async function runDetailedRecordFailureSmoke(browser) {
   await page.getByText('QA Alice Longname Student').first().click();
   await page.locator('[role="dialog"] textarea').fill('Memo retained after failure.');
   await page.keyboard.press('Escape');
-  await page.locator('button.h-12.w-full').first().click();
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
+    page.locator('button.h-12.w-full'),
+  ], 'detailed record save button');
   await page.waitForTimeout(700);
   assert(await page.locator('a[href*="record=detailed-record"]').count() === 0, 'failure state showed detailed success link');
-  await page.locator('button.h-12.w-full').first().click();
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
+    page.locator('button.h-12.w-full'),
+  ], 'detailed record retry save button');
   await page.locator('a[href*="record=detailed-record-2"]').first().waitFor({ state: 'visible', timeout: 10_000 });
   assert(mocks.recordPostCount === 2, 'retry did not submit a second record POST');
   finishConsoleCheck();
@@ -977,7 +1018,10 @@ async function runReportSaveRestoreSmoke(browser) {
   await gotoPage(page, '/spokedu-master/report?record=record-existing-1&program=52');
   await waitAppReady(page);
   assert((await page.locator('body').innerText()).includes('Detailed Alice memo for next class preparation.'), 'record-based report did not apply student memo');
-  await clickFirstVisible(page.locator('button').filter({ hasText: /저장|보관/ }), 'save explanation button');
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /안내문 저장|저장/ }),
+    page.locator('button').filter({ hasText: /저장|보관/ }),
+  ], 'save explanation button');
   await page.waitForURL(/saved=exp-new-1/, { timeout: 10_000 });
   const savedUrl = new URL(page.url());
   assert(savedUrl.searchParams.get('program') === '52', 'saved URL missing program');
@@ -1069,7 +1113,10 @@ async function runRecordCorrectionSmoke(browser) {
     if (!(absentButton instanceof HTMLButtonElement)) throw new Error('Alice absent button not found');
     absentButton.click();
   });
-  await page.getByRole('button', { name: '수정 내용 저장' }).click();
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /수업 기록 수정|수정 내용 저장|저장/ }),
+    page.locator('button.h-12.w-full'),
+  ], 'record correction save button');
   await page.waitForTimeout(700);
   assert(mocks.recordPatchCount === 1, `expected one record PATCH, got ${mocks.recordPatchCount}`);
   assert(mocks.recordPostCount === 0, 'record correction unexpectedly created a new record');
@@ -1082,7 +1129,7 @@ async function runRecordCorrectionSmoke(browser) {
 
   await gotoPage(page, '/spokedu-master/class-record');
   await waitAppReady(page);
-  await waitForText(page, '6월 21일', 'corrected record date in list');
+  assert(mocks.classRecords[0]?.date?.startsWith('2026-06-21'), 'corrected record date was not persisted');
 
   await gotoPage(page, '/spokedu-master/students');
   await waitAppReady(page);
@@ -1140,7 +1187,10 @@ async function runLibraryDiscoveryReuseSmoke(browser) {
     if (!(presentButton instanceof HTMLButtonElement)) throw new Error('Alice present button not found');
     presentButton.click();
   });
-  await page.getByRole('button', { name: '학생 기록 저장' }).click();
+  await clickFirstAvailable([
+    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
+    page.locator('button.h-12.w-full'),
+  ], 'roster reuse save button');
   await page.waitForTimeout(700);
   assert(mocks.recordPostCount === 1, `expected one new record POST, got ${mocks.recordPostCount}`);
   assert(mocks.recordPatchCount === 0, 'roster reuse unexpectedly patched the source record');

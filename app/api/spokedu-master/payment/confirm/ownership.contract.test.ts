@@ -18,19 +18,22 @@ describe('SPOKEDU MASTER confirm ownership contract', () => {
   });
 
   it('returns 404 for an unavailable owner-scoped order', () => {
-    expect(source).toContain("return NextResponse.json({ error: 'Payment order not found' }, { status: 404 })");
+    expect(source).toContain("if (!order)");
+    expect(source).toContain("{ status: 404 }");
   });
 
-  it('limits idempotency to the same order, payment key, plan, user, and active period', () => {
-    expect(source).toContain('data.toss_order_id !== body.orderId');
-    expect(source).toContain('data.toss_payment_key !== body.paymentKey');
-    expect(source).toContain('data.plan !== plan');
+  it('delegates idempotent activation to the single payment application helper', () => {
+    expect(source).toContain('applySpokeduMasterPayment({');
+    expect(source).toContain('userId: user.id');
+    expect(source).toContain('orderId: body.orderId');
+    expect(source).toContain('paymentKey: body.paymentKey');
     expect(source).toContain(".eq('user_id', user.id)");
-    expect(source).toContain('periodEndMs <= Date.now()');
+    expect(source).toContain("source: 'confirm'");
   });
 
-  it('updates only the current user order after subscription activation', () => {
-    const update = source.lastIndexOf(".from('spokedu_master_payment_orders')");
-    expect(source.indexOf(".eq('user_id', user.id)", update)).toBeGreaterThan(update);
+  it('does not update subscription or order rows directly after Toss confirmation', () => {
+    const tossCall = source.indexOf("fetch('https://api.tosspayments.com/v1/payments/confirm'");
+    expect(source.indexOf(".from('spokedu_master_subscriptions')", tossCall)).toBe(-1);
+    expect(source.indexOf('.update({', tossCall)).toBe(-1);
   });
 });

@@ -1,13 +1,35 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
-import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+
 import { hashForMonitoring, reportError } from '@/app/lib/monitoring/errorReporter';
+import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { applySpokeduMasterPayment } from '@/app/lib/server/spokeduMasterPaymentApply';
 import {
   SPOKEDU_MASTER_PLAN_CONFIG,
   parseSpokeduMasterOrderId,
   validateSpokeduMasterPaymentOrder,
   type SpokeduMasterPaymentOrder,
 } from '@/app/lib/server/spokeduMasterPayment';
+import { createServerSupabaseClient } from '@/app/lib/supabase/server';
+
+type ConfirmBody = {
+  paymentKey?: string;
+  orderId?: string;
+  amount?: number;
+};
+
+type TossConfirmResponse = {
+  paymentKey?: string;
+  orderId?: string;
+  totalAmount?: number;
+  approvedAt?: string | null;
+};
+
+function safePaymentError(status = 500) {
+  return NextResponse.json(
+    { error: '결제를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.' },
+    { status },
+  );
+}
 
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
@@ -16,25 +38,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let body: { paymentKey?: string; orderId?: string; amount?: number };
+  let body: ConfirmBody;
   try {
-    body = await request.json();
+    body = await request.json() as ConfirmBody;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
 
   if (!body.paymentKey || !body.orderId || !body.amount) {
-    return NextResponse.json({ error: '필수 결제 정보가 누락되었습니다.' }, { status: 400 });
+    return NextResponse.json({ error: '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' }, { status: 400 });
   }
 
   const plan = parseSpokeduMasterOrderId(body.orderId);
   if (!plan) {
-    return NextResponse.json({ error: 'Invalid orderId' }, { status: 400 });
+    return NextResponse.json({ error: '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' }, { status: 400 });
   }
 
   const expectedAmount = SPOKEDU_MASTER_PLAN_CONFIG[plan].amount;
   if (!Number.isInteger(body.amount) || body.amount !== expectedAmount) {
-    return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+    return NextResponse.json({ error: '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' }, { status: 400 });
   }
 
   const service = getServiceSupabase();
@@ -50,11 +72,13 @@ export async function POST(request: Request) {
       context: 'spokedu_master.payment.confirm',
       tags: { provider: 'tosspayments', stage: 'order_lookup', status: 500 },
     });
-    return NextResponse.json({ error: 'Payment order lookup failed' }, { status: 500 });
+    return safePaymentError(500);
   }
+
   if (!order) {
-    return NextResponse.json({ error: 'Payment order not found' }, { status: 404 });
+    return NextResponse.json({ error: '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' }, { status: 404 });
   }
+
   const orderValidation = validateSpokeduMasterPaymentOrder(
     order as SpokeduMasterPaymentOrder,
     {
@@ -67,77 +91,26 @@ export async function POST(request: Request) {
   );
   if (!orderValidation.ok) {
     return NextResponse.json(
-      { error: orderValidation.error },
+      { error: orderValidation.status === 409 ? '이미 처리된 결제이거나 다시 사용할 수 없는 요청입니다.' : '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' },
       { status: orderValidation.status },
     );
-  }
-
-  const findExistingConfirmation = async () => {
-    const { data, error } = await service
-      .from('spokedu_master_subscriptions')
-      .select('plan,status,period_end,toss_payment_key,toss_order_id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (error || !data) return null;
-    const periodEndMs = data.period_end ? Date.parse(data.period_end) : Number.NaN;
-    if (
-      data.plan !== plan ||
-      data.status !== 'active' ||
-      data.toss_order_id !== body.orderId ||
-      data.toss_payment_key !== body.paymentKey ||
-      !Number.isFinite(periodEndMs) ||
-      periodEndMs <= Date.now()
-    ) {
-      return null;
-    }
-
-    return { periodEnd: data.period_end as string };
-  };
-
-  const idempotentResponse = (periodEnd: string) => NextResponse.json({
-    ok: true,
-    alreadyConfirmed: true,
-    plan,
-    periodEnd,
-  });
-
-  const existingConfirmation = await findExistingConfirmation();
-  if (existingConfirmation) {
-    if (order.status !== 'active') {
-      await service
-        .from('spokedu_master_payment_orders')
-        .update({ status: 'active', payment_key: body.paymentKey })
-        .eq('order_id', body.orderId)
-        .eq('user_id', user.id);
-    }
-    return idempotentResponse(existingConfirmation.periodEnd);
-  }
-  if (order.status === 'active') {
-    return NextResponse.json({ error: 'Confirmed subscription not found' }, { status: 409 });
   }
 
   const tossSecretKey = process.env.TOSS_SECRET_KEY;
   if (!tossSecretKey) {
     await reportError(new Error('TOSS_SECRET_KEY_NOT_CONFIGURED'), {
       context: 'spokedu_master.payment.confirm',
-      tags: {
-        provider: 'tosspayments',
-        stage: 'configuration',
-        plan,
-        status: 503,
-      },
+      tags: { provider: 'tosspayments', stage: 'configuration', plan, status: 503 },
     });
-    return NextResponse.json({ error: '결제 설정 오류' }, { status: 503 });
+    return safePaymentError(503);
   }
 
-  const credentials = Buffer.from(`${tossSecretKey}:`).toString('base64');
   let tossRes: Response;
   try {
     tossRes = await fetch('https://api.tosspayments.com/v1/payments/confirm', {
       method: 'POST',
       headers: {
-        Authorization: `Basic ${credentials}`,
+        Authorization: `Basic ${Buffer.from(`${tossSecretKey}:`).toString('base64')}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -158,11 +131,7 @@ export async function POST(request: Request) {
         orderHash: hashForMonitoring(body.orderId),
       },
     });
-    const confirmedAfterNetworkFailure = await findExistingConfirmation();
-    if (confirmedAfterNetworkFailure) {
-      return idempotentResponse(confirmedAfterNetworkFailure.periodEnd);
-    }
-    return NextResponse.json({ error: 'Payment confirmation request failed' }, { status: 502 });
+    return NextResponse.json({ error: '인터넷 연결을 확인한 뒤 다시 시도해 주세요.' }, { status: 502 });
   }
 
   if (!tossRes.ok) {
@@ -177,85 +146,41 @@ export async function POST(request: Request) {
         orderHash: hashForMonitoring(body.orderId),
       },
     });
-    const confirmedAfterTossFailure = await findExistingConfirmation();
-    if (confirmedAfterTossFailure) {
-      return idempotentResponse(confirmedAfterTossFailure.periodEnd);
-    }
-    const err = await tossRes.json().catch(() => null) as { message?: string } | null;
-    return NextResponse.json({ error: err?.message ?? '결제 확인 실패' }, { status: 400 });
+    return safePaymentError(400);
   }
 
-  const payment = await tossRes.json() as { paymentKey: string; orderId: string; totalAmount?: number };
+  const payment = await tossRes.json() as TossConfirmResponse;
   if (
     payment.paymentKey !== body.paymentKey ||
     payment.orderId !== body.orderId ||
     (typeof payment.totalAmount === 'number' && payment.totalAmount !== expectedAmount)
   ) {
-    return NextResponse.json({ error: 'Payment verification mismatch' }, { status: 400 });
+    return NextResponse.json({ error: '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' }, { status: 400 });
   }
 
-  const periodStart = new Date();
-  const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-  const { error: subscriptionError } = await service.from('spokedu_master_subscriptions').upsert(
-    {
-      user_id: user.id,
-      plan,
-      status: 'active',
-      pg_provider: 'tosspayments',
-      toss_payment_key: payment.paymentKey,
-      toss_order_id: payment.orderId,
-      period_start: periodStart.toISOString(),
-      period_end: periodEnd.toISOString(),
-    },
-    { onConflict: 'user_id' },
-  );
+  const applyResult = await applySpokeduMasterPayment({
+    userId: user.id,
+    orderId: body.orderId,
+    paymentKey: body.paymentKey,
+    plan,
+    amount: expectedAmount,
+    approvedAt: payment.approvedAt,
+    eventKey: `confirm:${body.orderId}:${body.paymentKey}`,
+    source: 'confirm',
+  });
 
-  if (subscriptionError) {
-    await reportError(subscriptionError, {
-      context: 'spokedu_master.payment.confirm',
-      tags: {
-        provider: 'tosspayments',
-        stage: 'subscription_upsert',
-        plan,
-        status: 500,
-        paymentHash: hashForMonitoring(payment.paymentKey),
-        orderHash: hashForMonitoring(payment.orderId),
-      },
-    });
-    const confirmedAfterUpsertFailure = await findExistingConfirmation();
-    if (confirmedAfterUpsertFailure) {
-      return idempotentResponse(confirmedAfterUpsertFailure.periodEnd);
-    }
-    return NextResponse.json({ error: '이용권 활성화에 실패했습니다. 고객센터로 문의해 주세요.' }, { status: 500 });
-  }
-
-  const { error: orderUpdateError } = await service
-    .from('spokedu_master_payment_orders')
-    .update({
-      status: 'active',
-      payment_key: payment.paymentKey,
-    })
-    .eq('order_id', payment.orderId)
-    .eq('user_id', user.id);
-
-  if (orderUpdateError) {
-    await reportError(orderUpdateError, {
-      context: 'spokedu_master.payment.confirm',
-      tags: {
-        provider: 'tosspayments',
-        stage: 'order_update',
-        plan,
-        status: 500,
-        paymentHash: hashForMonitoring(payment.paymentKey),
-        orderHash: hashForMonitoring(payment.orderId),
-      },
-    });
+  if (!applyResult.ok) {
+    if (applyResult.status >= 500) return safePaymentError(500);
+    return NextResponse.json(
+      { error: applyResult.status === 409 ? '이미 처리된 결제이거나 다시 사용할 수 없는 요청입니다.' : '결제 정보를 확인할 수 없습니다. 결제를 다시 시작해 주세요.' },
+      { status: applyResult.status },
+    );
   }
 
   return NextResponse.json({
     ok: true,
-    alreadyConfirmed: false,
+    alreadyConfirmed: applyResult.alreadyApplied,
     plan,
-    periodEnd: periodEnd.toISOString(),
+    periodEnd: applyResult.periodEnd,
   });
 }

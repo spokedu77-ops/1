@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   ensureSpokeduMasterEntitlement,
+  evaluateSpokeduMasterEntitlement,
   isSpokeduMasterPaidPlanActive,
   isSpokeduMasterPaidPlanExpired,
   isSpokeduMasterTrialActive,
@@ -128,6 +129,20 @@ describe('SPOKEDU MASTER entitlement', () => {
       status: 'active',
       period_end: '2026-07-25T00:00:00.000Z',
     }))).toBe(true);
+  });
+
+  it.each([
+    ['trial active', row(), { allowed: true, plan: 'trial', status: 'trial' }],
+    ['trial expired', row({ trial_ends_at: '2026-06-24T00:00:00.000Z' }), { allowed: false, plan: 'free', status: 'expired' }],
+    ['pro active', row({ plan: 'pro', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'pro', status: 'active' }],
+    ['team active', row({ plan: 'team', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'team', status: 'active' }],
+    ['period_end missing', row({ plan: 'pro', status: 'active', period_end: null }), { allowed: false, plan: 'pro', status: 'expired' }],
+    ['period_end invalid', row({ plan: 'team', status: 'active', period_end: 'not-a-date' }), { allowed: false, plan: 'team', status: 'expired' }],
+    ['paid expired', row({ plan: 'pro', status: 'active', period_end: '2026-06-24T00:00:00.000Z' }), { allowed: false, plan: 'pro', status: 'expired' }],
+    ['cancelled', row({ plan: 'team', status: 'cancelled', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: false, plan: 'team', status: 'cancelled' }],
+    ['none', null, { allowed: false, plan: 'free', status: 'expired' }],
+  ])('evaluates %s from the canonical entitlement function', (_label, input, expected) => {
+    expect(evaluateSpokeduMasterEntitlement(input, NOW)).toEqual(expected);
   });
 
   it('returns database lookup errors instead of creating free access', async () => {

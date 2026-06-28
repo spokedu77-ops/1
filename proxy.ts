@@ -5,47 +5,13 @@ import type { NextRequest } from 'next/server';
 const SESSION_CACHE_TTL_MS = 15_000;
 const sessionCache = new Map<string, number>();
 
-type SpokeduMasterSubscription = {
-  plan: string;
-  status: string;
-  period_end: string | null;
-};
-
-const DEFAULT_PLATFORM_ADMIN_EMAILS = [
-  'choijihoon@spokedu.com',
-  'kimkoomin@spokedu.com',
-  'kimyoonki@spokedu.com',
-];
-
-function parseEmailList(value?: string | null): string[] {
-  return Array.from(
-    new Set(
-      (value ?? '')
-        .split(',')
-        .map((email) => email.trim().toLowerCase())
-        .filter(Boolean),
-    ),
-  );
-}
-
-function getSpokeduMasterAdminEmails(): string[] {
-  const spmAdminEmails = parseEmailList(process.env.SPM_ADMIN_EMAILS);
-  if (spmAdminEmails.length > 0) return spmAdminEmails;
-
-  const adminEmails = parseEmailList(process.env.ADMIN_EMAILS);
-  if (adminEmails.length > 0) return adminEmails;
-
-  return DEFAULT_PLATFORM_ADMIN_EMAILS;
-}
-
-const SPM_ADMIN_EMAILS = getSpokeduMasterAdminEmails();
-
 const SPOKEDU_MASTER_PUBLIC_PREFIXES = [
   '/spokedu-master/landing',
   '/spokedu-master/payment',
   '/spokedu-master/privacy',
   '/spokedu-master/terms',
   '/spokedu-master/parent',
+  '/spokedu-master/onboarding',
 ];
 
 function getSessionCacheKey(request: NextRequest): string {
@@ -97,18 +63,6 @@ function redirectWithNext(request: NextRequest, targetPath: string): NextRespons
   return NextResponse.redirect(redirectUrl);
 }
 
-function isActiveSubscription(subscription: SpokeduMasterSubscription | null): boolean {
-  if (!subscription || subscription.status !== 'active') return false;
-  if (!subscription.period_end) return true;
-  return new Date(subscription.period_end).getTime() >= Date.now();
-}
-
-function isInTrial(userCreatedAt: string | undefined): boolean {
-  if (!userCreatedAt) return false;
-  const trialEndsAt = new Date(userCreatedAt).getTime() + 14 * 24 * 60 * 60 * 1000;
-  return trialEndsAt >= Date.now();
-}
-
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next();
   const { pathname } = request.nextUrl;
@@ -134,19 +88,10 @@ export async function proxy(request: NextRequest) {
 
     if (!user) return redirectWithNext(request, '/login');
 
-    const isAdmin = SPM_ADMIN_EMAILS.includes(user.email?.toLowerCase() ?? '');
-    if (!isAdmin) {
-      const { data } = await supabase
-        .from('spokedu_master_subscriptions')
-        .select('plan,status,period_end')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      const subscription = data as SpokeduMasterSubscription | null;
-
-      if (!isActiveSubscription(subscription) && !isInTrial(user.created_at)) {
-        return redirectWithNext(request, '/spokedu-master/payment');
-      }
-    }
+    // MASTER entitlement is intentionally not evaluated in proxy.
+    // The canonical server check lives behind /api/spokedu-master/access and
+    // requireSpokeduMasterAccess(), which create server trials and fail closed
+    // on database lookup errors before protected content is rendered.
   }
 
   if (

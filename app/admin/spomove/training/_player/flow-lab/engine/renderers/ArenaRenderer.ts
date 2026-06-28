@@ -263,18 +263,6 @@ export class ArenaRenderer {
     this.ufo = ufoGroup as unknown as THREE.Mesh;
     scene.add(ufoGroup);
 
-    // ── 이번 단계: 모든 장식 오브젝트 비활성화 ────────────────────────────────
-    // 조잡한 주변 장식 제거 — 브릿지/장애물 집중 목표
-    // 테스트: scene.children 수·InstancedMesh.count·getPlatLZ 구조는 그대로 유지
-    if (this.platLeft)   this.platLeft.visible  = false;
-    if (this.platRight)  this.platRight.visible  = false;
-    for (const g of this.glbPlatLeft)  g.visible = false;
-    for (const g of this.glbPlatRight) g.visible = false;
-    this.ringsGreen.visible  = false;
-    this.ringsRed.visible    = false;
-    this.ringsYellow.visible = false;
-    this.meteors.visible     = false;
-    (this.ufo as unknown as THREE.Group).visible = false;
   }
 
   private updatePlatMatrices(count: number): void {

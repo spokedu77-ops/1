@@ -38,7 +38,7 @@ const PLAN_LABELS: Record<string, string> = {
 const PLAN_PRICES: Record<PlanKey, string> = {
   lite: '19,900원',
   pro: '39,900원',
-  team: '79,000원',
+  team: '상담 문의',
   school: '문의',
 };
 
@@ -103,8 +103,8 @@ export default function SubscriptionPage() {
   const planLabel = PLAN_LABELS[sub?.plan ?? 'free'] ?? '체험/무료';
   const currentPlanKey = (sub?.plan === 'team' || sub?.plan === 'school' || sub?.plan === 'lite' ? sub.plan : 'pro') as PlanKey;
   const periodEndDate = formatDate(sub?.periodEnd);
-  const recommendedPlan: PlanKey = sub?.plan === 'pro' ? 'team' : 'pro';
-  const paymentPlan: PlanKey = isExpired && sub?.plan === 'team' ? 'team' : isExpired ? 'pro' : recommendedPlan;
+  const recommendedPlan: PlanKey = 'pro';
+  const paymentPlan: PlanKey = 'pro';
   const changeRequestHref = changeRequestPlan ? planChangeMailto(sub?.plan, changeRequestPlan) : '';
 
   const heroCopy = useMemo(() => {
@@ -201,7 +201,12 @@ export default function SubscriptionPage() {
                   })}
                 </div>
                 <div className="mt-5 flex flex-col gap-2 sm:flex-row">
-                  <Link href={isPaid ? '#' : `/spokedu-master/payment?plan=${paymentPlan}`} onClick={(event) => {
+                  <Link href={isPaid || sub?.plan === 'team' ? '#' : `/spokedu-master/payment?plan=${paymentPlan}`} onClick={(event) => {
+                    if (sub?.plan === 'team') {
+                      event.preventDefault();
+                      setChangeRequestPlan('team');
+                      return;
+                    }
                     if (!isPaid) return;
                     event.preventDefault();
                     setChangeRequestPlan(recommendedPlan);
@@ -261,7 +266,13 @@ export default function SubscriptionPage() {
                 {(['pro', 'team'] as PlanKey[]).map((plan) => {
                   const isCurrent = sub?.plan === plan && isPaid;
                   const isChangeRequest = isPaid && !isCurrent;
-                  const ctaHref = isCurrent ? '/spokedu-master/library' : isChangeRequest ? '#' : `/spokedu-master/payment?plan=${plan}`;
+                  const ctaHref = isCurrent
+                    ? '/spokedu-master/library'
+                    : plan === 'team'
+                      ? 'mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4'
+                      : isChangeRequest
+                        ? '#'
+                        : `/spokedu-master/payment?plan=${plan}`;
                   return (
                     <div key={plan} className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: isCurrent ? '1px solid rgba(16,185,129,0.35)' : '1px solid var(--spm-br2)' }}>
                       <div className="flex items-start justify-between gap-3">
@@ -288,6 +299,7 @@ export default function SubscriptionPage() {
                       <Link
                         href={ctaHref}
                         onClick={(event) => {
+                          if (plan === 'team') return;
                           if (!isChangeRequest) return;
                           event.preventDefault();
                           setChangeRequestPlan(plan);

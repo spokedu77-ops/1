@@ -54,6 +54,13 @@ function getProviderErrorMessage(caught: unknown) {
   return toNetworkMasterClientError().message;
 }
 
+export function mergeOperationalRecordById(
+  current: MasterClassRecordDto[],
+  next: MasterClassRecordDto,
+) {
+  return [next, ...current.filter((record) => record.id !== next.id)];
+}
+
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
   try {
     const response = await fetch(url, {
@@ -143,7 +150,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify(input),
       method: 'POST',
     });
-    setClassRecords((current) => [json.data, ...current.filter((record) => record.id !== json.data.id)]);
+    setClassRecords((current) => mergeOperationalRecordById(current, json.data));
     return json.data;
   }, []);
 
@@ -155,7 +162,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
         method: 'PATCH',
       },
     );
-    setClassRecords((current) => [json.data, ...current.filter((record) => record.id !== json.data.id)]);
+    setClassRecords((current) => mergeOperationalRecordById(current, json.data));
     return json.data;
   }, []);
 

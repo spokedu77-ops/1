@@ -44,22 +44,51 @@ export function isSpokeduMasterTrialActive(
 
 export function isSpokeduMasterPaidPlanActive(
   row: SpokeduMasterSubscriptionRow | null,
+  now = Date.now(),
 ): row is SpokeduMasterSubscriptionRow & { plan: 'pro' | 'team' } {
   if (!row) return false;
   if (row.status !== 'active') return false;
   if (row.plan !== 'pro' && row.plan !== 'team') return false;
   if (!row.period_end) return false;
   const periodEndMs = Date.parse(row.period_end);
-  return Number.isFinite(periodEndMs) && periodEndMs > Date.now();
+  return Number.isFinite(periodEndMs) && periodEndMs > now;
 }
 
-export function isSpokeduMasterPaidPlanExpired(row: SpokeduMasterSubscriptionRow | null): boolean {
+export function isSpokeduMasterPaidPlanExpired(row: SpokeduMasterSubscriptionRow | null, now = Date.now()): boolean {
   if (!row) return false;
-  if (row.status !== 'active') return false;
   if (row.plan !== 'pro' && row.plan !== 'team') return false;
+  if (row.status === 'cancelled' || row.status === 'expired') return true;
+  if (row.status !== 'active') return false;
   if (!row.period_end) return true;
   const periodEndMs = Date.parse(row.period_end);
-  return !Number.isFinite(periodEndMs) || periodEndMs <= Date.now();
+  return !Number.isFinite(periodEndMs) || periodEndMs <= now;
+}
+
+export type SpokeduMasterEntitlementDecision =
+  | { allowed: true; plan: 'trial' | 'pro' | 'team'; status: 'trial' | 'active' }
+  | { allowed: false; plan: 'free' | 'pro' | 'team'; status: 'expired' | 'cancelled' | 'none' };
+
+export function evaluateSpokeduMasterEntitlement(
+  row: SpokeduMasterSubscriptionRow | null,
+  now = Date.now(),
+): SpokeduMasterEntitlementDecision {
+  if (isSpokeduMasterPaidPlanActive(row, now)) {
+    return { allowed: true, plan: row.plan, status: 'active' };
+  }
+
+  if (row?.plan === 'pro' || row?.plan === 'team') {
+    return {
+      allowed: false,
+      plan: row.plan,
+      status: row.status === 'cancelled' ? 'cancelled' : 'expired',
+    };
+  }
+
+  if (isSpokeduMasterTrialActive(row, now)) {
+    return { allowed: true, plan: 'trial', status: 'trial' };
+  }
+
+  return { allowed: false, plan: 'free', status: 'expired' };
 }
 
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
@@ -143,24 +172,26 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
       };
     }
 
-    if (isSpokeduMasterPaidPlanActive(subscription)) {
+    const entitlement = evaluateSpokeduMasterEntitlement(subscription);
+
+    if (entitlement.allowed && entitlement.status === 'active') {
       return {
         ok: true,
         userId: user.id,
         isAdmin: false,
-        plan: subscription.plan,
+        plan: entitlement.plan,
       };
     }
 
-    if (isSpokeduMasterPaidPlanExpired(subscription)) {
+    if (entitlement.allowed && entitlement.status === 'trial') {
+      return { ok: true, userId: user.id, isAdmin: false, plan: 'trial' };
+    }
+
+    if (entitlement.plan === 'pro' || entitlement.plan === 'team') {
       return {
         ok: false,
         response: NextResponse.json({ error: EXPIRED_ACCESS_MESSAGE }, { status: 403 }),
       };
-    }
-
-    if (isSpokeduMasterTrialActive(subscription)) {
-      return { ok: true, userId: user.id, isAdmin: false, plan: 'trial' };
     }
 
     return {

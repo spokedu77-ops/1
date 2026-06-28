@@ -46,7 +46,7 @@ const PRICING = [
     id: 'team',
     title: 'Center',
     badge: '기관·센터용',
-    price: '79,000',
+    price: '상담 문의',
     period: '30일',
     desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
     includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
@@ -249,8 +249,8 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href="/spokedu-master/profile?plans=1" className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
-                  {p.title} 플랜 보기
+                <Link href={p.id === 'team' ? 'mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4' : '/spokedu-master/profile?plans=1'} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
+                  {p.id === 'team' ? 'Center 도입 상담' : `${p.title} 플랜 보기`}
                 </Link>
               </div>
             ))}

@@ -1,16 +1,6 @@
 import * as THREE from 'three';
 import type { QualityTier } from '../AdaptiveQuality';
-import {
-  LEGACY_PANO_VERTEX,
-  LEGACY_PANO_FRAGMENT,
-  LEGACY_PANO_SPHERE_RADIUS,
-  LEGACY_PANO_ROTATION_DT60_CW,
-} from '../../visuals/LegacyPanoramaShader';
 import type { SpaceEnvUpdateInput } from './EnvironmentThemeConfig';
-import {
-  ENHANCED_VIGNETTE_SCALE,
-  ENHANCED_GRAIN_SCALE,
-} from './EnvironmentThemeConfig';
 
 // HIGH tier 기준 별 수량 (quality에 따라 스케일)
 const FAR_COUNT  = 350;
@@ -24,41 +14,41 @@ const QUALITY_SCALE: Record<QualityTier, number> = {
 };
 
 export interface SpaceEnvironmentConfig {
-  scene:       THREE.Scene;
-  qualityTier: QualityTier;
+  scene:        THREE.Scene;
+  qualityTier:  QualityTier;
+  renderer?:    THREE.WebGLRenderer;
   /** 파노라마 초기 정면 방향 오프셋 (°, -180 ~ +180) */
-  yawDeg?:     number;
+  yawDeg?:      number;
   /** 테스트 전용: THREE.TextureLoader 대체 */
-  _loadFn?:    (url: string) => Promise<THREE.Texture>;
+  _loadFn?:     (url: string) => Promise<THREE.Texture>;
 }
 
 export class SpaceEnvironment {
-  private scene:       THREE.Scene;
-  private sphere:      THREE.Mesh | null = null;
-  private shaderMat:   THREE.ShaderMaterial | null = null;
-  private panoTex:     THREE.Texture | null = null;
-  private defaultTex:  THREE.DataTexture | null = null;
-  private starLayers:  THREE.Points[] = [];
-  private panoRotation = 0;
-  private uTime        = 0;
-  private loadFn:      (url: string) => Promise<THREE.Texture>;
+  private scene:      THREE.Scene;
+  private renderer?:  THREE.WebGLRenderer;
+  private tier:       QualityTier;
+  private yawDeg:     number;
+  private panoTex:    THREE.Texture | null = null;
+  private starLayers: THREE.Points[] = [];
+  private loadFn:     (url: string) => Promise<THREE.Texture>;
 
   constructor(cfg: SpaceEnvironmentConfig) {
-    this.scene        = cfg.scene;
-    this.panoRotation = ((cfg.yawDeg ?? 0) * Math.PI) / 180;
-    this.loadFn  = cfg._loadFn ?? ((url) => new Promise<THREE.Texture>((res, rej) => {
+    this.scene    = cfg.scene;
+    this.renderer = cfg.renderer;
+    this.tier     = cfg.qualityTier;
+    this.yawDeg   = cfg.yawDeg ?? 0;
+    this.loadFn   = cfg._loadFn ?? ((url) => new Promise<THREE.Texture>((res, rej) => {
       new THREE.TextureLoader().load(url, res, undefined, rej);
     }));
-    this.buildStarLayers(cfg.qualityTier);
-    this.buildPanoSphere();
+    // 생성자에서 별/구 없음 — loadPanorama 성공 시 scene.background, 실패 시 별 fallback
   }
 
-  private buildStarLayers(tier: QualityTier): void {
-    const scale = QUALITY_SCALE[tier];
+  private buildStarLayers(): void {
+    const scale = QUALITY_SCALE[this.tier];
     const layers = [
       { count: Math.max(1, Math.round(FAR_COUNT  * scale)), spread: 22000, size: 1.5, opacity: 0.55 },
-      { count: Math.max(1, Math.round(MID_COUNT  * scale)), spread: 12000, size: 2.2, opacity: 0.70 },
-      { count: Math.max(1, Math.round(NEAR_COUNT * scale)), spread:  6000, size: 3.5, opacity: 0.90 },
+      { count: Math.max(1, Math.round(MID_COUNT  * scale)), spread: 12000, size: 2.0, opacity: 0.70 },
+      { count: Math.max(1, Math.round(NEAR_COUNT * scale)), spread:  6000, size: 2.0, opacity: 0.90 },
     ];
     for (const cfg of layers) {
       const pos = new Float32Array(cfg.count * 3);
@@ -78,32 +68,8 @@ export class SpaceEnvironment {
     }
   }
 
-  private buildPanoSphere(): void {
-    // 기본 텍스처 (파노라마 로딩 전 빈 화면 방지)
-    this.defaultTex = new THREE.DataTexture(new Uint8Array([0, 0, 0, 255]), 1, 1);
-    this.defaultTex.needsUpdate = true;
-
-    const geo = new THREE.SphereGeometry(LEGACY_PANO_SPHERE_RADIUS, 64, 32);
-    this.shaderMat = new THREE.ShaderMaterial({
-      vertexShader:   LEGACY_PANO_VERTEX,
-      fragmentShader: LEGACY_PANO_FRAGMENT,
-      uniforms: {
-        map:            { value: this.defaultTex },
-        uTime:          { value: 0 },
-        uVignetteScale: { value: ENHANCED_VIGNETTE_SCALE },
-        uGrainScale:    { value: ENHANCED_GRAIN_SCALE },
-        uPanoRotation:  { value: this.panoRotation },
-      },
-      side:       THREE.BackSide,
-      depthWrite: false,
-    });
-    this.sphere = new THREE.Mesh(geo, this.shaderMat);
-    this.sphere.renderOrder = -1;
-    this.scene.add(this.sphere);
-  }
-
-  async loadPanorama(highUrl?: string, lowUrl?: string): Promise<void> {
-    if (!highUrl && !lowUrl) return;
+  async loadPanorama(highUrl?: string, lowUrl?: string): Promise<boolean> {
+    if (!highUrl && !lowUrl) return false;
 
     let tex: THREE.Texture | null = null;
     if (highUrl) {
@@ -111,74 +77,67 @@ export class SpaceEnvironment {
         tex = await this.loadFn(highUrl);
       } catch {
         if (lowUrl) {
-          try { tex = await this.loadFn(lowUrl); } catch { /* color fallback */ }
+          try { tex = await this.loadFn(lowUrl); } catch { /* stars fallback */ }
         }
       }
     } else if (lowUrl) {
-      try { tex = await this.loadFn(lowUrl); } catch { /* color fallback */ }
-    }
-
-    if (!this.shaderMat) {
-      // dispose 이후에 텍스처 로드 완료된 경우
-      if (tex) tex.dispose();
-      return;
+      try { tex = await this.loadFn(lowUrl); } catch { /* stars fallback */ }
     }
 
     if (tex) {
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+
+      // 이전 텍스처 교체
       if (this.panoTex) {
         this.panoTex.dispose();
-      } else if (this.defaultTex) {
-        this.shaderMat.uniforms['map'].value = null;
-        this.defaultTex.dispose();
-        this.defaultTex = null;
       }
       this.panoTex = tex;
-      this.shaderMat.uniforms['map'].value = tex;
+
+      this.scene.background = tex;
+      this.scene.backgroundRotation.y = this.yawDeg * Math.PI / 180;
+
+      // PMREMGenerator — metallic GLB 표면 환경 조명
+      if (this.renderer) {
+        const pmrem = new THREE.PMREMGenerator(this.renderer);
+        this.scene.environment = pmrem.fromEquirectangular(tex).texture;
+        pmrem.dispose();
+      }
+
+      return true;
     }
+
+    // 파노라마 로드 실패 → 별 레이어 fallback
+    if (this.starLayers.length === 0) {
+      this.buildStarLayers();
+    }
+    return false;
   }
 
   update(inp: SpaceEnvUpdateInput): void {
     if (inp.isIntroPhase) return;
 
-    const dt60 = inp.dt * 60;
-    this.uTime       += inp.dt;
-    this.panoRotation += LEGACY_PANO_ROTATION_DT60_CW * dt60;
-
-    if (this.shaderMat) {
-      this.shaderMat.uniforms['uTime'].value         = this.uTime;
-      this.shaderMat.uniforms['uPanoRotation'].value = this.panoRotation;
-    }
-    if (this.sphere) {
-      this.sphere.position.x = inp.cameraX * 0.02;
-    }
-
-    // 별 레이어별 속도/패럴랙스 차등 (깊이감)
+    // 별 레이어 패럴랙스 (fallback 별이 있을 때만)
     for (let i = 0; i < this.starLayers.length; i++) {
       const layer = this.starLayers[i]!;
-      layer.rotation.y  -= 0.00008 * dt60 * (0.8 + i * 0.4);
-      layer.position.x   = inp.cameraX * (0.01 + i * 0.015);
+      layer.position.x = inp.cameraX * (0.01 + i * 0.015);
     }
   }
 
   dispose(): void {
-    // 텍스처만 직접 dispose — geometry/material은 FlowEngine.scene.traverse가 처리
     if (this.panoTex) {
-      if (this.shaderMat) this.shaderMat.uniforms['map'].value = null;
+      this.scene.background = null;
       this.panoTex.dispose();
       this.panoTex = null;
     }
-    if (this.defaultTex) {
-      if (this.shaderMat && this.shaderMat.uniforms['map'].value === this.defaultTex) {
-        this.shaderMat.uniforms['map'].value = null;
-      }
-      this.defaultTex.dispose();
-      this.defaultTex = null;
+    for (const pts of this.starLayers) {
+      this.scene.remove(pts);
+      pts.geometry.dispose();
+      (pts.material as THREE.PointsMaterial).dispose();
     }
-    this.shaderMat  = null;
-    this.sphere     = null;
     this.starLayers = [];
   }
 
   /** 테스트용 getter */
   getPanoTex(): THREE.Texture | null { return this.panoTex; }
+  getStarLayerCount(): number { return this.starLayers.length; }
 }

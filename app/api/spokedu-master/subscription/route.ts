@@ -3,8 +3,7 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
 import {
   ensureSpokeduMasterEntitlement,
-  isSpokeduMasterPaidPlanActive,
-  isSpokeduMasterTrialActive,
+  evaluateSpokeduMasterEntitlement,
 } from '@/app/lib/server/spokeduMasterAccess';
 
 export const dynamic = 'force-dynamic';
@@ -53,19 +52,21 @@ export async function GET() {
     periodEnd: row.period_end,
   };
 
-  if (isSpokeduMasterPaidPlanActive(row)) {
+  const entitlement = evaluateSpokeduMasterEntitlement(row);
+
+  if (entitlement.allowed && entitlement.status === 'active') {
     return privateNoStoreJson({
       ...common,
-      plan: row.plan,
+      plan: entitlement.plan,
       status: 'active',
     });
   }
 
-  if (row.plan === 'pro' || row.plan === 'team') {
+  if (entitlement.plan === 'pro' || entitlement.plan === 'team') {
     return privateNoStoreJson({
       ...common,
-      plan: row.plan,
-      status: 'expired',
+      plan: entitlement.plan,
+      status: entitlement.status,
       trialEndsAt: null,
     });
   }
@@ -73,6 +74,6 @@ export async function GET() {
   return privateNoStoreJson({
     ...common,
     plan: 'free',
-    status: isSpokeduMasterTrialActive(row) ? 'trial' : 'expired',
+    status: entitlement.status,
   });
 }

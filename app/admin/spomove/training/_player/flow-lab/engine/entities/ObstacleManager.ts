@@ -49,11 +49,11 @@ interface UfoEntity {
   duckStarted: boolean;
   passed: boolean;
   age: number;
-  // 애니메이션 대상 참조
-  discBody:  THREE.Mesh;
-  ringLower: THREE.Mesh;
-  beam:      THREE.Mesh;
-  antLight:  THREE.Mesh;
+  // 절차적 애니메이션 참조 (enhanced GLB 모드에서는 null)
+  discBody:   THREE.Mesh | null;
+  ringLower:  THREE.Mesh | null;
+  beam:       THREE.Mesh | null;
+  antLight:   THREE.Mesh | null;
   enginePods: THREE.Mesh[];
 }
 
@@ -171,8 +171,42 @@ export class ObstacleManager {
     });
   }
 
+  private addHpIndicators(group: THREE.Group, surfY: number): void {
+    for (let hp = 0; hp < PUNCH_WALL_HP; hp++) {
+      const seg = new THREE.Mesh(
+        new THREE.BoxGeometry(18, 14, 12),
+        new THREE.MeshBasicMaterial({ color: 0x22c55e }),
+      );
+      seg.position.set(-36 + hp * 18, surfY + 290, 0);
+      seg.userData['hpIndex'] = hp;
+      group.add(seg);
+    }
+  }
+
   private makeBox(isReach: boolean, reward: boolean): THREE.Group {
     const g = new THREE.Group();
+    const template = isReach ? this.wallTemplate : this.crateTemplate;
+
+    // P0-6: enhanced 모드 — 절차적 geometry 생성 없이 GLB만 사용
+    if (template) {
+      const glbClone = template.clone(true);
+      glbClone.frustumCulled = false;
+      glbClone.traverse((obj) => {
+        const m = obj as THREE.Mesh;
+        if (!m.isMesh) return;
+        m.frustumCulled = false;
+      });
+      if (isReach) {
+        // 벽 하단을 브릿지 표면(Y=40)에 정렬
+        glbClone.position.y = 40;
+        g.add(glbClone);
+        // P0-7: 보이는 HP 인디케이터 (GLB 그룹 자식)
+        this.addHpIndicators(g, 40);
+      } else {
+        g.add(glbClone);
+      }
+      return g;
+    }
 
     if (isReach) {
       // ── 콘크리트 타격 벽 ──────────────────────────────────────────────────
@@ -357,25 +391,6 @@ export class ObstacleManager {
       g.add(glow);
     }
 
-    // ── GLB 시각 치환 (enhanced 모드) ─────────────────────────────────────────
-    // 기존 절차적 geometry는 판정/로직용으로 유지 (invisible)
-    // GLB clone이 visible 시각 자산
-    const template = isReach ? this.wallTemplate : this.crateTemplate;
-    if (template) {
-      const childList = [...g.children];
-      for (const c of childList) c.visible = false; // 기존 메시 숨김
-      const glbClone = template.clone(true);
-      glbClone.frustumCulled = false;
-      glbClone.traverse((obj) => {
-        const m = obj as THREE.Mesh;
-        if (!m.isMesh) return;
-        m.frustumCulled = false;
-      });
-      // 벽(isReach)은 브릿지 표면(Y=40) 위에 배치, 크레이트는 그룹 Y=40에서 Y=0
-      if (isReach) glbClone.position.y = 40;
-      g.add(glbClone);
-    }
-
     return g;
   }
 
@@ -509,10 +524,9 @@ export class ObstacleManager {
     );
     group.add(glow);
 
-    // ── GLB 우주선 시각 치환 (enhanced 모드) ──────────────────────────────────
-    // 기존 절차적 UFO 메시: visible=false (invisible 판정 용도)
-    // GLB spaceship: 부모 그룹의 hover·bank 애니메이션 그대로 상속
+    // P0-6: enhanced 모드 — GLB만 사용, 절차적 UFO 메시 숨김
     if (this.spaceshipTemplate) {
+      // 절차적 메시 숨김
       const childList = [...group.children];
       for (const c of childList) c.visible = false;
       const ship = this.spaceshipTemplate.clone(true);
@@ -527,11 +541,16 @@ export class ObstacleManager {
 
     group.position.set(0, UFO_HEIGHT, -(this.bridgeLength * 0.2));
     bridge.mesh.add(group);
+    // enhanced GLB 모드에서는 절차적 참조를 null로 저장
     this.ufos.push({
       mesh: group,
       warned: false, duckStarted: false, passed: false,
       age: 0,
-      discBody, ringLower, beam, antLight, enginePods,
+      discBody:   this.spaceshipTemplate ? null : discBody,
+      ringLower:  this.spaceshipTemplate ? null : ringLower,
+      beam:       this.spaceshipTemplate ? null : beam,
+      antLight:   this.spaceshipTemplate ? null : antLight,
+      enginePods: this.spaceshipTemplate ? [] : enginePods,
     });
     return true;
   }
@@ -659,22 +678,24 @@ export class ObstacleManager {
       ufo.mesh.rotation.z = Math.sin(ufo.age * 1.6) * 0.20;
       ufo.mesh.rotation.x = -0.06 + Math.sin(ufo.age * 0.9) * 0.06;
 
-      // 선체 디스크 자체 회전
-      ufo.discBody.rotation.y = ufo.age * 1.2;
+      // 절차적 파트 애니메이션 (enhanced GLB 모드에서는 null → 스킵)
+      if (ufo.discBody) ufo.discBody.rotation.y = ufo.age * 1.2;
 
-      // 빔 펄스
-      (ufo.beam.material as THREE.MeshBasicMaterial).opacity =
-        0.06 + Math.abs(Math.sin(ufo.age * 5.5)) * 0.18;
+      if (ufo.beam) {
+        (ufo.beam.material as THREE.MeshBasicMaterial).opacity =
+          0.06 + Math.abs(Math.sin(ufo.age * 5.5)) * 0.18;
+      }
 
-      // 링 펄스
-      (ufo.ringLower.material as THREE.MeshBasicMaterial).opacity =
-        0.45 + Math.sin(ufo.age * 4.0) * 0.22;
+      if (ufo.ringLower) {
+        (ufo.ringLower.material as THREE.MeshBasicMaterial).opacity =
+          0.45 + Math.sin(ufo.age * 4.0) * 0.22;
+      }
 
-      // 안테나 신호 램프 깜빡임
-      const antOn = Math.sin(ufo.age * 8) > 0.3;
-      (ufo.antLight.material as THREE.MeshBasicMaterial).color.setHex(antOn ? 0xff2222 : 0x440000);
+      if (ufo.antLight) {
+        const antOn = Math.sin(ufo.age * 8) > 0.3;
+        (ufo.antLight.material as THREE.MeshBasicMaterial).color.setHex(antOn ? 0xff2222 : 0x440000);
+      }
 
-      // 엔진 포드 순차 점등
       ufo.enginePods.forEach((pod, i) => {
         const on = Math.sin(ufo.age * 6 - i * 1.05) > 0;
         (pod.material as THREE.MeshPhongMaterial).emissiveIntensity = on ? 1.1 : 0.3;

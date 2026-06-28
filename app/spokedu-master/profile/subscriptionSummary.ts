@@ -1,3 +1,5 @@
+import { buildMasterSupportMailto } from '../lib/productCatalog';
+
 export type SubscriptionSummaryPlan = 'free' | 'pro' | 'team';
 
 export type SubscriptionSummaryStatus =
@@ -66,7 +68,7 @@ export function formatSubscriptionEndDate(value: string | null) {
 
 export function getSubscriptionPrimaryHref(summary: SubscriptionSummaryData | null) {
   if (!summary) return '/spokedu-master/profile?plans=1';
-  if (summary.plan === 'team') return '/spokedu-master/payment?plan=team';
+  if (summary.plan === 'team') return buildMasterSupportMailto('SPOKEDU MASTER Center 도입 상담');
   if (summary.plan === 'pro') return '/spokedu-master/payment?plan=pro';
   return '/spokedu-master/payment?plan=pro';
 }
@@ -74,6 +76,6 @@ export function getSubscriptionPrimaryHref(summary: SubscriptionSummaryData | nu
 export function getSubscriptionPrimaryLabel(summary: SubscriptionSummaryData | null) {
   const status = getSubscriptionStatusLabel(summary);
   if (status === '이용 중' || status === '체험 중') return '이용권 변경';
-  if (summary?.plan === 'team') return 'Center 결제';
+  if (summary?.plan === 'team') return 'Center 도입 상담';
   return 'Pro 결제';
 }

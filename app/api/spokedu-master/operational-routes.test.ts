@@ -113,6 +113,8 @@ function createSupabaseMock(options: {
   recordsGetData?: ClassRecordRow[];
   existingRecord?: ClassRecordRow | null;
   ownedStudentIds?: string[];
+  createRpcData?: Array<{ record_id: string; created: boolean }> | null;
+  createRpcError?: { code: string; message: string } | null;
   rpcError?: { code: string; message: string } | null;
 } = {}) {
   const calls: QueryCall[] = [];
@@ -120,6 +122,12 @@ function createSupabaseMock(options: {
   const supabase = {
     rpc: vi.fn((name: string, args: Record<string, unknown>) => {
       calls.push({ table: name, action: 'rpc', args: [args] });
+      if (name === 'spokedu_master_create_class_record') {
+        return Promise.resolve({
+          data: options.createRpcData ?? [{ record_id: 'record-created', created: true }],
+          error: options.createRpcError ?? null,
+        });
+      }
       const missingRecord =
         Object.prototype.hasOwnProperty.call(options, 'existingRecord') &&
         options.existingRecord === null;
@@ -391,9 +399,120 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
     });
   });
 
+  it('creates a class record with one RPC transaction and reloads the DTO', async () => {
+    allowAccess('owner-a');
+    const { calls } = createSupabaseMock({
+      existingRecord: classRecordRow({
+        id: 'record-created',
+        owner_id: 'owner-a',
+        spokedu_master_class_record_students: [
+          {
+            id: 'child-1',
+            owner_id: 'owner-a',
+            record_id: 'record-created',
+            student_id: '11111111-1111-4111-8111-111111111111',
+            student_legacy_id: 'legacy-a',
+            student_name_snapshot: 'Student A',
+            attendance: 'present',
+            focused: true,
+            skills: ['balance'],
+            memo: 'Good',
+            created_at: '2026-06-20T00:00:00.000Z',
+            updated_at: '2026-06-20T00:00:00.000Z',
+          },
+        ],
+      }),
+    });
+
+    const response = await classRecordsRoute.POST(classRecordRequest({
+      legacyId: 'client-request-1',
+      date: '2026-06-20',
+      lessonTitle: 'Lesson',
+      classId: 'A',
+      programId: 52,
+      programTitle: 'Program 52',
+      recordType: 'detailed',
+      students: [
+        {
+          studentId: '11111111-1111-4111-8111-111111111111',
+          studentLegacyId: 'legacy-a',
+          studentName: 'Student A',
+          attendance: 'present',
+          focused: true,
+          skills: ['balance'],
+          memo: 'Good',
+        },
+      ],
+    }));
+
+    expect(response.status).toBe(201);
+    await expect(response.json()).resolves.toMatchObject({
+      duplicate: false,
+      data: {
+        id: 'record-created',
+        students: [{ studentId: '11111111-1111-4111-8111-111111111111' }],
+      },
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_create_class_record',
+      action: 'rpc',
+      args: [
+        expect.objectContaining({
+          p_owner_id: 'owner-a',
+          p_legacy_id: 'client-request-1',
+          p_students: [
+            expect.objectContaining({
+              student_id: '11111111-1111-4111-8111-111111111111',
+              attendance: 'present',
+            }),
+          ],
+        }),
+      ],
+    });
+    expect(calls).not.toContainEqual({
+      table: 'spokedu_master_class_records',
+      action: 'insert',
+      args: expect.any(Array),
+    });
+    expect(calls).not.toContainEqual({
+      table: 'spokedu_master_class_record_students',
+      action: 'insert',
+      args: expect.any(Array),
+    });
+    expect(calls).not.toContainEqual(expect.objectContaining({ action: 'delete' }));
+  });
+
+  it('returns one existing class record on idempotent create retry', async () => {
+    allowAccess('owner-a');
+    const { calls } = createSupabaseMock({
+      createRpcData: [{ record_id: 'record-created', created: false }],
+      existingRecord: classRecordRow({ id: 'record-created', owner_id: 'owner-a' }),
+    });
+
+    const response = await classRecordsRoute.POST(classRecordRequest({
+      legacyId: 'client-request-1',
+      date: '2026-06-20',
+      recordType: 'detailed',
+      students: [],
+    }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      duplicate: true,
+      data: { id: 'record-created' },
+    });
+    expect(calls).toContainEqual({
+      table: 'spokedu_master_create_class_record',
+      action: 'rpc',
+      args: [expect.objectContaining({ p_legacy_id: 'client-request-1' })],
+    });
+  });
+
   it('blocks a class record that references another owner studentId', async () => {
     allowAccess('owner-a');
-    const { calls } = createSupabaseMock({ ownedStudentIds: [] });
+    const { calls } = createSupabaseMock({
+      createRpcError: { code: '22023', message: 'student is not available for this owner' },
+    });
 
     const response = await classRecordsRoute.POST(classRecordRequest({
       date: '2026-06-20',
@@ -414,14 +533,9 @@ describe('SPOKEDU MASTER operational routes ownership contract', () => {
     expect(response.status).toBe(400);
     await expect(response.json()).resolves.toEqual({ error: 'studentId is not available for this owner' });
     expect(calls).toContainEqual({
-      table: 'spokedu_master_students',
-      action: 'eq',
-      args: ['owner_id', 'owner-a'],
-    });
-    expect(calls).toContainEqual({
-      table: 'spokedu_master_students',
-      action: 'in',
-      args: ['id', ['student-b']],
+      table: 'spokedu_master_create_class_record',
+      action: 'rpc',
+      args: [expect.objectContaining({ p_owner_id: 'owner-a' })],
     });
     expect(calls).not.toContainEqual({
       table: 'spokedu_master_class_records',

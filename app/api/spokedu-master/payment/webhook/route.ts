@@ -6,6 +6,7 @@ import {
   isSpokeduMasterPaidPlan,
   parseSpokeduMasterOrderId,
 } from '@/app/lib/server/spokeduMasterPayment';
+import { applySpokeduMasterPayment } from '@/app/lib/server/spokeduMasterPaymentApply';
 
 type TossWebhookPayload = {
   eventType?: unknown;
@@ -41,10 +42,6 @@ type PaymentOrderRow = {
   user_id: string;
   plan: string;
   amount: number;
-};
-
-type SubscriptionRow = {
-  period_end: string | null;
 };
 
 const SUPPORTED_EVENTS = new Set(['PAYMENT_STATUS_CHANGED', 'CANCEL_STATUS_CHANGED']);
@@ -122,18 +119,6 @@ async function verifyTossPayment(
   };
 }
 
-function addDays(date: Date, days: number): Date {
-  return new Date(date.getTime() + days * 24 * 60 * 60 * 1000);
-}
-
-function getPeriodStart(payment: VerifiedTossPayment): Date {
-  if (payment.approvedAt) {
-    const parsed = Date.parse(payment.approvedAt);
-    if (Number.isFinite(parsed)) return new Date(parsed);
-  }
-  return new Date();
-}
-
 function buildFallbackEventKey(eventType: string, payment: VerifiedTossPayment): string {
   // Toss documents the transmission id header for webhook delivery identity.
   // This fallback is only for local tests or legacy manual deliveries without
@@ -145,30 +130,25 @@ function buildFallbackEventKey(eventType: string, payment: VerifiedTossPayment):
   ].join(':');
 }
 
-function applyOrFilter(payment: VerifiedTossPayment) {
-  return `toss_payment_key.eq.${payment.paymentKey},toss_order_id.eq.${payment.orderId}`;
-}
-
-async function findExistingSubscription(service: ReturnType<typeof getServiceSupabase>, payment: VerifiedTossPayment) {
+async function lookupPaymentOrder(
+  service: ReturnType<typeof getServiceSupabase>,
+  payment: VerifiedTossPayment,
+): Promise<(PaymentOrderRow & { user_id: string; plan: 'pro' | 'team' }) | null> {
   const { data, error } = await service
-    .from('spokedu_master_subscriptions')
-    .select('period_end')
-    .or(applyOrFilter(payment))
+    .from('spokedu_master_payment_orders')
+    .select('user_id,plan,amount')
+    .eq('order_id', payment.orderId)
     .maybeSingle();
-
-  if (error) throw new Error('SUBSCRIPTION_LOOKUP_FAILED');
-  return data as SubscriptionRow | null;
+  if (error) throw new Error('ORDER_LOOKUP_FAILED');
+  const order = data as PaymentOrderRow | null;
+  if (!order || !isSpokeduMasterPaidPlan(order.plan)) return null;
+  return order as PaymentOrderRow & { user_id: string; plan: 'pro' | 'team' };
 }
-
 async function handleDonePayment(
   service: ReturnType<typeof getServiceSupabase>,
   payment: VerifiedTossPayment,
+  eventKey: string,
 ) {
-  const existing = await findExistingSubscription(service, payment);
-  if (existing) {
-    return { status: 'processed' as const, alreadyApplied: true, periodEnd: existing.period_end };
-  }
-
   const { data: order, error: orderError } = await service
     .from('spokedu_master_payment_orders')
     .select('user_id,plan,amount')
@@ -191,85 +171,72 @@ async function handleDonePayment(
     return { status: 'rejected' as const, reason: 'amount_mismatch' };
   }
 
-  const periodStart = getPeriodStart(payment);
-  const periodEnd = addDays(periodStart, 30);
-  const { error: subscriptionError } = await service.from('spokedu_master_subscriptions').upsert(
-    {
-      user_id: orderRow.user_id,
-      plan: orderRow.plan,
-      status: 'active',
-      pg_provider: 'tosspayments',
-      toss_payment_key: payment.paymentKey,
-      toss_order_id: payment.orderId,
-      period_start: periodStart.toISOString(),
-      period_end: periodEnd.toISOString(),
-    },
-    { onConflict: 'user_id' },
-  );
+  const applied = await applySpokeduMasterPayment({
+    userId: orderRow.user_id,
+    orderId: payment.orderId,
+    paymentKey: payment.paymentKey,
+    plan: orderRow.plan,
+    amount: expectedAmount,
+    approvedAt: payment.approvedAt,
+    eventKey,
+    source: 'webhook',
+  });
 
-  if (subscriptionError) throw new Error('SUBSCRIPTION_UPSERT_FAILED');
+  if (!applied.ok) {
+    if (applied.status >= 500) throw new Error(applied.code);
+    return { status: 'rejected' as const, reason: applied.code };
+  }
 
-  const { error: orderUpdateError } = await service
-    .from('spokedu_master_payment_orders')
-    .update({
-      status: 'active',
-      payment_key: payment.paymentKey,
-    })
-    .eq('order_id', payment.orderId);
-
-  if (orderUpdateError) throw new Error('ORDER_UPDATE_FAILED');
-
-  return { status: 'processed' as const, alreadyApplied: false, periodEnd: periodEnd.toISOString() };
+  return {
+    status: 'processed' as const,
+    alreadyApplied: applied.alreadyApplied,
+    periodEnd: applied.periodEnd,
+  };
 }
 
 async function handleCanceledPayment(
   service: ReturnType<typeof getServiceSupabase>,
   payment: VerifiedTossPayment,
+  eventKey: string,
 ) {
   if (payment.status === 'PARTIAL_CANCELED') {
-    return { status: 'ignored' as const, reason: 'partial_cancel_requires_policy' };
+    const order = await lookupPaymentOrder(service, payment);
+    if (!order) return { status: 'ignored' as const, reason: 'order_not_found' };
+    const applied = await applySpokeduMasterPayment({
+      userId: order.user_id,
+      orderId: payment.orderId,
+      paymentKey: payment.paymentKey,
+      plan: order.plan,
+      amount: order.amount,
+      approvedAt: payment.approvedAt,
+      eventKey,
+      source: 'partial_cancel_review_required',
+    });
+    if (!applied.ok && applied.status >= 500) throw new Error(applied.code);
+    return { status: 'ignored' as const, reason: 'partial_cancel_review_required' };
   }
 
   if (payment.status !== 'CANCELED' || payment.balanceAmount !== 0) {
     return { status: 'ignored' as const, reason: 'not_full_cancel' };
   }
 
-  const { error: subscriptionError } = await service
-    .from('spokedu_master_subscriptions')
-    .update({ status: 'cancelled' })
-    .or(applyOrFilter(payment));
-
-  if (subscriptionError) throw new Error('SUBSCRIPTION_CANCEL_FAILED');
-
-  const { error: orderUpdateError } = await service
-    .from('spokedu_master_payment_orders')
-    .update({
-      status: 'cancelled',
-      payment_key: payment.paymentKey,
-    })
-    .eq('order_id', payment.orderId);
-
-  if (orderUpdateError) throw new Error('ORDER_CANCEL_UPDATE_FAILED');
-
-  return { status: 'processed' as const, cancelled: true };
-}
-
-async function recordWebhookEvent(
-  service: ReturnType<typeof getServiceSupabase>,
-  eventKey: string,
-  eventType: string,
-  payment: VerifiedTossPayment,
-  status: 'processed' | 'ignored',
-) {
-  const { error } = await service.from('spokedu_master_payment_webhook_events').insert({
-    event_key: eventKey,
-    event_type: eventType,
-    payment_key: payment.paymentKey,
-    order_id: payment.orderId,
-    status,
+  const order = await lookupPaymentOrder(service, payment);
+  if (!order) return { status: 'ignored' as const, reason: 'order_not_found' };
+  const applied = await applySpokeduMasterPayment({
+    userId: order.user_id,
+    orderId: payment.orderId,
+    paymentKey: payment.paymentKey,
+    plan: order.plan,
+    amount: order.amount,
+    approvedAt: payment.approvedAt,
+    eventKey,
+    source: 'cancel',
   });
-
-  if (error && error.code !== '23505') throw new Error('WEBHOOK_EVENT_INSERT_FAILED');
+  if (!applied.ok) {
+    if (applied.status >= 500) throw new Error(applied.code);
+    return { status: 'ignored' as const, reason: applied.code };
+  }
+  return { status: 'processed' as const, cancelled: true };
 }
 
 async function lookupWebhookEvent(service: ReturnType<typeof getServiceSupabase>, eventKey: string) {
@@ -388,7 +355,7 @@ export async function POST(request: Request) {
       | Awaited<ReturnType<typeof handleCanceledPayment>>
       | { status: 'ignored' | 'rejected'; reason: string };
     if (eventType === 'PAYMENT_STATUS_CHANGED' && payment.status === 'DONE') {
-      result = await handleDonePayment(service, payment);
+      result = await handleDonePayment(service, payment, eventKey);
     } else if (
       eventType === 'PAYMENT_STATUS_CHANGED' &&
       (payment.status === 'ABORTED' || payment.status === 'EXPIRED')
@@ -399,7 +366,7 @@ export async function POST(request: Request) {
       payment.status === 'CANCELED' ||
       payment.status === 'PARTIAL_CANCELED'
     ) {
-      result = await handleCanceledPayment(service, payment);
+      result = await handleCanceledPayment(service, payment, eventKey);
     } else {
       result = { status: 'ignored', reason: 'unsupported_payment_status' };
     }
@@ -407,14 +374,6 @@ export async function POST(request: Request) {
     if (result.status === 'rejected') {
       return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 });
     }
-
-    await recordWebhookEvent(
-      service,
-      eventKey,
-      eventType,
-      payment,
-      result.status === 'processed' ? 'processed' : 'ignored',
-    );
 
     return NextResponse.json({ received: true, ...result });
   } catch (error) {

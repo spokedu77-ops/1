@@ -3,9 +3,8 @@ import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/private
 import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import {
-  classRecordInsertPayload,
+  classRecordCreateRpcPayload,
   classRecordReplaceRpcPayload,
-  classRecordStudentInsertPayload,
   normalizeClassRecordInput,
   toClassRecordDto,
   type MasterClassRecordRow,
@@ -42,7 +41,6 @@ const RECORD_SELECT = `
   )
 `;
 
-const STUDENT_ID_SELECT = 'id';
 const CLASS_RECORD_SERVER_ERROR = '수업 기록을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 export const dynamic = 'force-dynamic';
@@ -74,44 +72,19 @@ export async function GET() {
   });
 }
 
-async function resolveOwnedStudentIds(
-  supabase: ReturnType<typeof getServiceSupabase>,
-  ownerId: string,
-  studentIds: string[],
-) {
-  const uniqueIds = Array.from(new Set(studentIds.filter(Boolean)));
-  if (uniqueIds.length === 0) return new Set<string>();
+type ClassRecordCreateRpcRow = {
+  record_id: string;
+  created: boolean;
+};
 
-  const { data, error } = await supabase
-    .from('spokedu_master_students')
-    .select(STUDENT_ID_SELECT)
-    .eq('owner_id', ownerId)
-    .is('deleted_at', null)
-    .in('id', uniqueIds);
-
-  if (error) throw new Error(error.message);
-  return new Set(((data ?? []) as Array<{ id: string }>).map((row) => row.id));
+function firstCreateRpcRow(data: unknown): ClassRecordCreateRpcRow | null {
+  if (Array.isArray(data)) return (data[0] as ClassRecordCreateRpcRow | undefined) ?? null;
+  if (data && typeof data === 'object') return data as ClassRecordCreateRpcRow;
+  return null;
 }
 
-async function validateRecordStudents(
-  supabase: ReturnType<typeof getServiceSupabase>,
-  ownerId: string,
-  input: ReturnType<typeof normalizeClassRecordInput>,
-) {
-  const ownedStudentIds = await resolveOwnedStudentIds(
-    supabase,
-    ownerId,
-    input.students.map((student) => student.studentId).filter((id): id is string => Boolean(id)),
-  );
-
-  const invalidStudent = input.students.find(
-    (student) => student.studentId && !ownedStudentIds.has(student.studentId),
-  );
-  if (invalidStudent) {
-    return { ok: false as const, response: privateNoStoreJson({ error: 'studentId is not available for this owner' }, { status: 400 }) };
-  }
-
-  return { ok: true as const };
+function isExpectedClassRecordInputError(code: string | undefined) {
+  return code === '22023' || code === '22P02' || code === '23514';
 }
 
 export async function POST(request: Request) {
@@ -130,92 +103,31 @@ export async function POST(request: Request) {
 
   const supabase = getServiceSupabase();
 
-  if (input.legacyId) {
-    const { data: existing, error: existingError } = await supabase
-      .from('spokedu_master_class_records')
-      .select(RECORD_SELECT)
-      .eq('owner_id', access.userId)
-      .eq('legacy_id', input.legacyId)
-      .is('deleted_at', null)
-      .maybeSingle();
-
-    if (existingError) {
-      await reportError(existingError, {
-        context: 'spokedu_master.operational.class_records',
-        tags: { method: 'POST', stage: 'dedupe_lookup', status: 500 },
-      });
-      return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
-    }
-
-    if (existing) {
-      return privateNoStoreJson({
-        data: toClassRecordDto(existing as MasterClassRecordRow),
-        duplicate: true,
-      });
-    }
-  }
-
-  try {
-    const validation = await validateRecordStudents(supabase, access.userId, input);
-    if (!validation.ok) return validation.response;
-  } catch (error) {
-    await reportError(error, {
-      context: 'spokedu_master.operational.class_records',
-      tags: { method: 'POST', stage: 'student_lookup', status: 500 },
-    });
-    return privateNoStoreJson(
-      { error: CLASS_RECORD_SERVER_ERROR },
-      { status: 500 },
-    );
-  }
-
-  const { data: inserted, error: insertError } = await supabase
-    .from('spokedu_master_class_records')
-    .insert(classRecordInsertPayload(input, access.userId))
-    .select('id')
-    .single();
-
-  if (insertError || !inserted) {
-    await reportError(insertError ?? new Error('Record insert returned no row'), {
-      context: 'spokedu_master.operational.class_records',
-      tags: { method: 'POST', stage: 'record_insert', status: 500 },
-    });
-    return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
-  }
-
-  const recordId = (inserted as { id: string }).id;
-  const childRows = input.students.map((student) =>
-    classRecordStudentInsertPayload(student, access.userId, recordId, student.studentId),
+  const { data: createData, error: createError } = await supabase.rpc(
+    'spokedu_master_create_class_record',
+    classRecordCreateRpcPayload(input, access.userId),
   );
+  const createdRecord = firstCreateRpcRow(createData);
 
-  if (childRows.length > 0) {
-    const { error: childError } = await supabase
-      .from('spokedu_master_class_record_students')
-      .insert(childRows);
-
-    if (childError) {
-      await reportError(childError, {
-        context: 'spokedu_master.operational.class_records',
-        tags: { method: 'POST', stage: 'child_insert', status: 500 },
-      });
-      await supabase
-        .from('spokedu_master_class_records')
-        .delete()
-        .eq('owner_id', access.userId)
-        .eq('id', recordId);
-
+  if (createError || !createdRecord?.record_id) {
+    if (isExpectedClassRecordInputError(createError?.code)) {
       return privateNoStoreJson(
-        { error: CLASS_RECORD_SERVER_ERROR, partialSave: false, rolledBack: true },
-        { status: 500 },
+        { error: createError?.code === '23514' ? 'Invalid class record payload' : 'studentId is not available for this owner' },
+        { status: 400 },
       );
     }
+    await reportError(createError ?? new Error('Class record create RPC returned no record id'), {
+      context: 'spokedu_master.operational.class_records',
+      tags: { method: 'POST', stage: 'create_transaction', status: 500 },
+    });
+    return privateNoStoreJson({ error: CLASS_RECORD_SERVER_ERROR }, { status: 500 });
   }
 
   const { data, error } = await supabase
     .from('spokedu_master_class_records')
     .select(RECORD_SELECT)
     .eq('owner_id', access.userId)
-    .eq('id', recordId)
+    .eq('id', createdRecord.record_id)
     .maybeSingle();
 
   if (error || !data) {
@@ -227,8 +139,8 @@ export async function POST(request: Request) {
   }
 
   return privateNoStoreJson(
-    { data: toClassRecordDto(data as MasterClassRecordRow), duplicate: false },
-    { status: 201 },
+    { data: toClassRecordDto(data as MasterClassRecordRow), duplicate: !createdRecord.created },
+    { status: createdRecord.created ? 201 : 200 },
   );
 }
 
