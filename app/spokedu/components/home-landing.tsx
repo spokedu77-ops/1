@@ -250,7 +250,10 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
             {homePage.audienceProof.lead}
           </p>
           <div className="mt-10 grid gap-5 lg:grid-cols-3 lg:gap-6">
-            {homePage.audienceProof.items.map((item, index) => (
+            {homePage.audienceProof.items.map((item, index) => {
+              const portraitSrc = item.portraitSrc;
+              const portraitAlt = item.portraitAlt ?? item.attribution;
+              return (
               <motion.article
                 key={item.trackId}
                 initial={reducedMotion ? false : { opacity: 0, y: 10 }}
@@ -269,10 +272,10 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
                 </blockquote>
                 <p className={`mt-3 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{item.body}</p>
                 <div className="mt-6 flex items-center gap-3 border-t border-stone-200/80 pt-5">
-                  {item.portraitSrc ? (
+                  {portraitSrc ? (
                     <ExternalPhoto
-                      src={item.portraitSrc}
-                      alt={item.portraitAlt ?? item.attribution}
+                      src={portraitSrc}
+                      alt={portraitAlt}
                       className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white"
                       fit="cover"
                     />
@@ -289,7 +292,8 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
                   <span aria-hidden>→</span>
                 </Link>
               </motion.article>
-            ))}
+            );
+            })}
           </div>
         </div>
       </section>

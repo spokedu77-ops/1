@@ -81,6 +81,41 @@ const audiencePathCopy: Record<
   },
 };
 
+const homeAudienceProofItems: HomeAudienceProof[] = [
+  {
+    trackId: 'dispatch',
+    audience: '기관 담당자',
+    quote: dispatchPage.partnerReviews.items[1].quote,
+    body: dispatchPage.partnerReviews.items[1].body,
+    attribution: `${dispatchPage.partnerReviews.items[1].name} · ${dispatchPage.partnerReviews.items[1].org}`,
+    href: `${SPOKEDU_BASE_PATH}/dispatch`,
+    cta: '기관 프로그램 보기',
+    trackLabel: 'cta-home-audience-proof-dispatch',
+  },
+  {
+    trackId: 'private',
+    audience: '학부모',
+    quote: '아이가 매주 체육 시간만 기다려요.',
+    body: privatePage.reviews.items[0].text,
+    attribution: `${privatePage.reviews.items[0].who} · ${privatePage.reviews.items[0].course}`,
+    portraitSrc: privatePage.instructors.items[0].photo,
+    portraitAlt: privatePage.instructors.items[0].name,
+    href: `${SPOKEDU_BASE_PATH}/private`,
+    cta: '개인수업 안내 보기',
+    trackLabel: 'cta-home-audience-proof-private',
+  },
+  {
+    trackId: 'curriculum',
+    audience: '지도자·파트너',
+    quote: '현장 수업을 커리큘럼 콘텐츠로 확장합니다',
+    body: `${curriculumPage.contentProducts.items[2].description} ${curriculumPage.serviceExamples.items[0].description}`,
+    attribution: `${curriculumPage.serviceExamples.items[0].title} · ${curriculumPage.serviceExamples.items[0].venue}`,
+    href: `${SPOKEDU_BASE_PATH}/curriculum`,
+    cta: '커리큘럼·교육 보기',
+    trackLabel: 'cta-home-audience-proof-curriculum',
+  },
+];
+
 export const homePage = {
   signature: 'PLAY · THINK · GROW',
   hero: {
@@ -152,40 +187,7 @@ export const homePage = {
     eyebrow: '현장 평가',
     title: '관계자·학부모·지도자가 말하는 스포키듀',
     lead: '같은 브랜드라도 보는 관점이 다릅니다. 각자의 입장에서 확인해 보세요.',
-    items: [
-      {
-        trackId: 'dispatch',
-        audience: '기관 담당자',
-        quote: dispatchPage.partnerReviews.items[1].quote,
-        body: dispatchPage.partnerReviews.items[1].body,
-        attribution: `${dispatchPage.partnerReviews.items[1].name} · ${dispatchPage.partnerReviews.items[1].org}`,
-        href: `${SPOKEDU_BASE_PATH}/dispatch`,
-        cta: '기관 프로그램 보기',
-        trackLabel: 'cta-home-audience-proof-dispatch',
-      },
-      {
-        trackId: 'private',
-        audience: '학부모',
-        quote: '아이가 매주 체육 시간만 기다려요.',
-        body: privatePage.reviews.items[0].text,
-        attribution: `${privatePage.reviews.items[0].who} · ${privatePage.reviews.items[0].course}`,
-        portraitSrc: privatePage.instructors.items[0].photo,
-        portraitAlt: privatePage.instructors.items[0].name,
-        href: `${SPOKEDU_BASE_PATH}/private`,
-        cta: '개인수업 안내 보기',
-        trackLabel: 'cta-home-audience-proof-private',
-      },
-      {
-        trackId: 'curriculum',
-        audience: '지도자·파트너',
-        quote: '현장 수업을 커리큘럼 콘텐츠로 확장합니다',
-        body: `${curriculumPage.contentProducts.items[2].description} ${curriculumPage.serviceExamples.items[0].description}`,
-        attribution: `${curriculumPage.serviceExamples.items[0].title} · ${curriculumPage.serviceExamples.items[0].venue}`,
-        href: `${SPOKEDU_BASE_PATH}/curriculum`,
-        cta: '커리큘럼·교육 보기',
-        trackLabel: 'cta-home-audience-proof-curriculum',
-      },
-    ] satisfies HomeAudienceProof[],
+    items: homeAudienceProofItems,
   },
   audiencePaths: {
     id: 'paths',
