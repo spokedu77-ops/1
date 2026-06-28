@@ -71,7 +71,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
   const heroMedia = HOME_MEDIA[homePage.hero.mediaKey];
   const sessionTarget = getSessionCount();
   const studentTarget = getStudentCount();
-  const statsRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDListElement>(null);
   const [statsActive, setStatsActive] = useState(false);
   const featuredProofCards = proofCards.slice(0, homePage.proof.featuredCount);
 
