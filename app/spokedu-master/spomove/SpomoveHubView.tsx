@@ -770,13 +770,7 @@ function PresetCard({
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2">
-      <Link
-        href={href}
-        className="flex flex-1 flex-col outline-none"
-        aria-label={`${displayModel.displayTitle} 프로그램 보기`}
-      >
-        {inner}
-      </Link>
+      {inner}
     </article>
   );
 }

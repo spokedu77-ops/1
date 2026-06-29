@@ -3,10 +3,20 @@ import { SPOKEDU_BASE_PATH } from './site';
 
 export const curriculumPage = {
   hero: {
+    kicker: '지도자·기관 · 커리큘럼',
+    trustBadge: '연세대 체육교육학과 출신 운영진',
     lines: ['현장 수업을', '커리큘럼 콘텐츠로', '확장합니다'] as const,
     subtitle:
       '수업안, 운영 매뉴얼, 강사교육, 라이선싱까지 현장에서 검증한 수업 경험을 활용 가능한 형태로 정리합니다.',
-    mediaKey: 'trackCurriculum' as HomeMediaKey,
+    mediaKey: 'gateCurriculum' as HomeMediaKey,
+  },
+  trustMetrics: {
+    eyebrow: '운영 지표',
+    items: [
+      { value: '4가지', label: '커리큘럼 콘텐츠 라인업' },
+      { value: '강사 교육', label: '세미나·인큐베이팅 운영' },
+      { value: 'SPOMOVE', label: '자체 개발 프로그램' },
+    ] as const,
   },
   heroCtas: {
     primary: {
@@ -14,8 +24,14 @@ export const curriculumPage = {
       href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
       trackLabel: 'curriculum-cta-inquiry',
     },
+    secondary: {
+      label: 'SPOKEDU MASTER 보기',
+      href: '/spokedu-master/landing',
+      trackLabel: 'curriculum-cta-master',
+    },
   },
   contentProducts: {
+    eyebrow: '콘텐츠',
     title: '현장 수업에서 확장하는 4가지 콘텐츠',
     lead: '자료 나열이 아니라, 강사·기관·파트너가 바로 운영에 쓸 수 있는 형태로 정리합니다.',
     items: [
@@ -46,6 +62,7 @@ export const curriculumPage = {
     ],
   },
   serviceExamples: {
+    eyebrow: '사례',
     title: '실제 운영 사례',
     lead: '현장에서 검증한 수업 경험을 강사교육, 커리큘럼 판매, 구독 서비스로 이어가고 있습니다.',
     items: [
@@ -78,6 +95,22 @@ export const curriculumPage = {
         href: '/spokedu-master/landing',
       },
     ],
+  },
+  masterSpotlight: {
+    eyebrow: '강사용 구독 도구',
+    title: '수업안·SPOMOVE·설명 문구를 매주 쓸 수 있는 도구',
+    lead: 'SPOKEDU MASTER는 프로그램 라이브러리, 큰 화면 실행 도구, 수업 기록, 보호자·기관 설명 문구를 한 곳에서 제공하는 강사용 수업 운영 플랫폼입니다. 커리큘럼 콘텐츠를 실제 수업에서 반복 활용하고 싶은 강사와 기관에 적합합니다.',
+    tags: ['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구 자동 생성', '7일 무료 체험'] as const,
+    primary: {
+      label: 'SPOKEDU MASTER 살펴보기',
+      href: '/spokedu-master/landing',
+      trackLabel: 'curriculum-master-cta-primary',
+    },
+    secondary: {
+      label: '7일 무료 체험',
+      href: '/spokedu-master/landing',
+      trackLabel: 'curriculum-master-cta-trial',
+    },
   },
   finalCta: {
     title: '스포키듀의 수업 콘텐츠를 함께 활용하고 싶다면',

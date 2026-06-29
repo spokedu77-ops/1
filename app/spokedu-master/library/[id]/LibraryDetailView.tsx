@@ -9,6 +9,7 @@ import {
   FileText,
   MonitorPlay,
   Play,
+  Wrench,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -200,6 +201,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     model.briefingNotes.length > 0;
   const galleryImages = model.galleryImageUrls;
   const relatedSpomovePresets = getSupportedOfficialSpomovePresets(program);
+  const classToolsHref = `/spokedu-master/class-tools?returnTo=${encodeURIComponent(`/spokedu-master/library/${program.id}`)}`;
 
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
@@ -413,9 +415,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
             <MonitorPlay className="h-4 w-4" />
             수업 실행
           </Link>
-          <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
-            <FileText className="h-4 w-4" />
-            수업 기록 작성
+          <Link href={classToolsHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
+            <Wrench className="h-4 w-4" />
+            수업 도구
           </Link>
           <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
             <Check className="h-4 w-4" />

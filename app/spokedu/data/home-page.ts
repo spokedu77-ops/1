@@ -54,6 +54,13 @@ export type HomeStatItem =
   | { id: string; kind: 'static'; value: string; label: string }
   | { id: string; kind: 'sessions' | 'students'; label: string };
 
+export type HomePhilosophyItem = {
+  id: string;
+  label: string;
+  title: string;
+  body: string;
+};
+
 const audiencePathCopy: Record<
   AudienceTrackId,
   Pick<HomeAudiencePath, 'audience' | 'title' | 'lead' | 'trackLabel' | 'mediaKey'>
@@ -162,6 +169,7 @@ export const homePage = {
     { id: 'students', kind: 'students', label: '수업 아이' },
   ] satisfies HomeStatItem[],
   trust: {
+    eyebrow: '교육 브랜드',
     badge: '연세대 체육교육학과 출신 운영진',
     lead: '아동·청소년 체육교육을 현장에서 운영하고, 과정과 커리큘럼으로 확장하는 교육 브랜드입니다.',
     pillars: [
@@ -182,6 +190,41 @@ export const homePage = {
       },
     ] satisfies HomeValuePillar[],
   },
+  philosophy: {
+    id: 'philosophy',
+    title: 'PLAY · THINK · GROW',
+    lead: '경험으로 시작해, 판단으로 깊어지고, 기준으로 남습니다.',
+    items: [
+      {
+        id: 'play',
+        label: 'PLAY',
+        title: '몸으로 경험합니다',
+        body: '다양한 움직임과 놀이를 통해 아이가 체육을 ‘과목’이 아니라 즐거운 경험으로 만나게 합니다.',
+      },
+      {
+        id: 'think',
+        label: 'THINK',
+        title: '판단하며 참여합니다',
+        body: 'SPOMOVE처럼 보고, 선택하고, 반응하는 활동으로 집중과 참여의 흐름을 설계합니다.',
+      },
+      {
+        id: 'grow',
+        label: 'GROW',
+        title: '습관과 기준을 만듭니다',
+        body: '현장에서 검증한 수업을 커리큘럼과 지도자 교육으로 확장해 더 나은 체육교육의 기준을 만듭니다.',
+      },
+    ] satisfies HomePhilosophyItem[],
+  },
+  programs: {
+    id: 'programs',
+    eyebrow: '프로그램',
+    title: '어떤 프로그램이 궁금하신가요?',
+    lead: '기관·개인·지도자 현장에서 운영 중인 대표 프로그램입니다.',
+    featuredIds: ['spomove', 'paps', 'play'] as const,
+    allHref: `${SPOKEDU_BASE_PATH}/programs`,
+    allLabel: '전체 프로그램 보기',
+    allTrackLabel: 'cta-home-programs-all',
+  },
   audienceProof: {
     id: 'audience-proof',
     eyebrow: '현장 평가',
@@ -191,8 +234,9 @@ export const homePage = {
   },
   audiencePaths: {
     id: 'paths',
-    title: '관심 있는 영역을 선택하세요',
-    lead: '학부모, 기관 담당자, 지도자 — 목적에 맞는 안내로 연결합니다.',
+    eyebrow: '시작하기',
+    title: '누구를 위한 안내인가요?',
+    lead: '기관 담당자, 학부모, 지도자 — 목적에 맞는 페이지로 연결합니다.',
     items: AUDIENCE_TRACK_ORDER.map((trackId) => {
       const copy = audiencePathCopy[trackId];
       return {
@@ -203,6 +247,7 @@ export const homePage = {
     }) satisfies HomeAudiencePath[],
   },
   proof: {
+    eyebrow: '현장',
     title: '기관 현장 사례',
     lead: '키움센터·아동시설·공공 행사 등 실제 운영 기록입니다.',
     featuredCount: 3,

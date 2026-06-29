@@ -5,16 +5,25 @@ import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { curriculumPage } from '../data/curriculum-page';
-import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import {
+  audienceLandingStack,
+  btnPrimary,
+  btnSecondary,
+  koreanLineBreak,
+  landingCardShell,
+} from '../lib/ui-classes';
+import { inferTrackFromHref } from '../lib/tracking';
+import { HomeSectionRule } from './home-section-rule';
+import { LandingSectionHeading } from './landing-section-heading';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
 
-const contentCardShell =
-  'flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/80 bg-white';
+const contentCardShell = `flex h-full flex-col overflow-hidden ${landingCardShell}`;
+const exampleCardShell = `flex h-full flex-col overflow-hidden ${landingCardShell}`;
 
-const exampleCardShell =
-  'flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white';
+const focusRing =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
 
 function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
@@ -32,25 +41,48 @@ function Section({ children, className = '', delay = 0 }: { children: ReactNode;
 }
 
 export default function CurriculumLanding() {
+  const spotlight = curriculumPage.masterSpotlight;
+
   return (
-    <div className={landingPageStack}>
+    <div className={audienceLandingStack}>
       <LandingHero
-        kicker="강사 · 기관 · 파트너 · 교육 콘텐츠"
-        kickerClassName="text-teal-700"
+        kicker={curriculumPage.hero.kicker}
+        kickerClassName="text-stone-500"
         lines={curriculumPage.hero.lines}
         subtitle={curriculumPage.hero.subtitle}
         media={HOME_MEDIA[curriculumPage.hero.mediaKey]}
+        visualVariant="editorial"
         priority
         primaryCta={curriculumPage.heroCtas.primary}
+        secondaryCta={curriculumPage.heroCtas.secondary}
       />
 
-      <Section className="space-y-5 sm:space-y-7">
-        <div>
-          <h2 className={landingSectionTitle}>{curriculumPage.contentProducts.title}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {curriculumPage.contentProducts.lead}
-          </p>
-        </div>
+      <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
+        <span className="inline-flex items-center rounded-full bg-teal-600/10 px-3.5 py-1.5 text-xs font-semibold text-teal-900">
+          {curriculumPage.hero.trustBadge}
+        </span>
+        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">
+          {curriculumPage.trustMetrics.eyebrow}
+        </p>
+        <dl className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
+          {curriculumPage.trustMetrics.items.map((item) => (
+            <div key={item.label}>
+              <dt className="text-2xl font-bold tracking-tight text-stone-950 sm:text-[1.75rem]">{item.value}</dt>
+              <dd className={`mt-1 text-sm text-stone-600 ${koreanLineBreak}`}>{item.label}</dd>
+            </div>
+          ))}
+        </dl>
+      </Section>
+
+      <HomeSectionRule />
+
+      <Section className="space-y-5 sm:space-y-6">
+        <LandingSectionHeading
+          eyebrow={curriculumPage.contentProducts.eyebrow}
+          title={curriculumPage.contentProducts.title}
+          lead={curriculumPage.contentProducts.lead}
+          accent="teal"
+        />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-stretch sm:gap-4 lg:grid-cols-4">
           {curriculumPage.contentProducts.items.map((item, index) => (
             <article key={item.title} className={contentCardShell}>
@@ -61,7 +93,7 @@ export default function CurriculumLanding() {
               />
               <div className="flex flex-1 flex-col border-t border-slate-100 p-5">
                 <h3 className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</h3>
-                <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+                <p className={`mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                   {item.description}
                 </p>
               </div>
@@ -70,13 +102,15 @@ export default function CurriculumLanding() {
         </div>
       </Section>
 
-      <Section className="space-y-5 sm:space-y-7">
-        <div>
-          <h2 className={landingSectionTitle}>{curriculumPage.serviceExamples.title}</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-            {curriculumPage.serviceExamples.lead}
-          </p>
-        </div>
+      <HomeSectionRule />
+
+      <Section className="space-y-5 sm:space-y-6">
+        <LandingSectionHeading
+          eyebrow={curriculumPage.serviceExamples.eyebrow}
+          title={curriculumPage.serviceExamples.title}
+          lead={curriculumPage.serviceExamples.lead}
+          accent="teal"
+        />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:items-stretch sm:gap-4">
           {curriculumPage.serviceExamples.items.map((item) => {
             const inner = (
@@ -92,15 +126,15 @@ export default function CurriculumLanding() {
                     </span>
                     <span className="text-xs text-slate-500">{item.date}</span>
                   </div>
-                  <h3 className="mt-2 text-base font-semibold text-slate-950 sm:text-lg [word-break:keep-all]">
+                  <h3 className={`mt-2 text-base font-semibold text-slate-950 sm:text-lg ${koreanLineBreak}`}>
                     {item.title}
                   </h3>
-                  <p className="mt-1 text-sm font-medium text-slate-700 [word-break:keep-all]">{item.venue}</p>
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
+                  <p className={`mt-1 text-sm font-medium text-slate-700 ${koreanLineBreak}`}>{item.venue}</p>
+                  <p className={`mt-2 flex-1 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                     {item.description}
                   </p>
                   {'href' in item && item.href ? (
-                    <span className="mt-3 text-sm font-semibold text-indigo-700">자세히 보기 →</span>
+                    <span className="mt-3 text-sm font-semibold text-teal-800">자세히 보기 →</span>
                   ) : null}
                 </div>
               </>
@@ -110,7 +144,7 @@ export default function CurriculumLanding() {
               <Link
                 key={item.title}
                 href={item.href}
-                data-track="curriculum-example-link"
+                data-track={inferTrackFromHref(item.href)}
                 data-track-label={`curriculum-example-${item.title}`}
                 className={`${exampleCardShell} transition hover:border-teal-200 hover:shadow-md`}
               >
@@ -125,42 +159,46 @@ export default function CurriculumLanding() {
         </div>
       </Section>
 
-      <Section className="overflow-hidden rounded-[1.75rem] border border-indigo-200/60 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/40 px-5 py-8 sm:rounded-[2rem] sm:px-8 sm:py-10">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">강사용 구독 도구</p>
-        <h2 className="mt-2 text-xl font-black leading-snug text-slate-950 [word-break:keep-all] sm:text-2xl">
-          수업안·SPOMOVE·설명 문구를 매주 쓸 수 있는 도구
+      <HomeSectionRule />
+
+      <Section className="overflow-hidden rounded-[1.75rem] border border-teal-200/60 bg-gradient-to-br from-teal-50/50 via-white to-stone-50/40 px-5 py-8 sm:rounded-[2rem] sm:px-8 sm:py-10">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">{spotlight.eyebrow}</p>
+        <h2 className={`mt-3 text-xl font-semibold leading-snug text-stone-950 sm:text-2xl ${koreanLineBreak}`}>
+          {spotlight.title}
         </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
-          SPOKEDU MASTER는 프로그램 라이브러리, 큰 화면 실행 도구, 수업 기록, 보호자·기관 설명 문구를 한 곳에서 제공하는 강사용 수업 운영 플랫폼입니다. 커리큘럼 콘텐츠를 실제 수업에서 반복 활용하고 싶은 강사와 기관에 적합합니다.
+        <p className={`mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
+          {spotlight.lead}
         </p>
         <ul className="mt-4 flex flex-wrap gap-2" aria-label="SPOKEDU MASTER 주요 기능">
-          {['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구 자동 생성', '7일 무료 체험'].map((tag) => (
+          {spotlight.tags.map((tag) => (
             <li key={tag}>
-              <span className="rounded-full border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-800">
+              <span className="rounded-full border border-teal-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-teal-900">
                 {tag}
               </span>
             </li>
           ))}
         </ul>
-        <div className="mt-6 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <Link
-            href="/spokedu-master/landing"
-            data-track="curriculum-to-master-landing"
-            data-track-label="curriculum-master-cta-primary"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white transition hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            href={spotlight.primary.href}
+            data-track={inferTrackFromHref(spotlight.primary.href)}
+            data-track-label={spotlight.primary.trackLabel}
+            className={`${btnPrimary} min-h-12 !w-full sm:!w-auto ${focusRing}`}
           >
-            SPOKEDU MASTER 살펴보기
+            {spotlight.primary.label}
           </Link>
           <Link
-            href="/spokedu-master/landing"
-            data-track="curriculum-to-master-trial"
-            data-track-label="curriculum-master-cta-trial"
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-indigo-300 bg-white px-5 text-sm font-bold text-indigo-700 transition hover:border-indigo-400 hover:bg-indigo-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+            href={spotlight.secondary.href}
+            data-track={inferTrackFromHref(spotlight.secondary.href)}
+            data-track-label={spotlight.secondary.trackLabel}
+            className={`${btnSecondary} min-h-12 !w-full sm:!w-auto ${focusRing}`}
           >
-            7일 무료 체험
+            {spotlight.secondary.label}
           </Link>
         </div>
       </Section>
+
+      <HomeSectionRule />
 
       <LandingFinalCta
         title={curriculumPage.finalCta.title}

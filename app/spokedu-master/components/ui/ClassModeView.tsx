@@ -11,6 +11,7 @@ import {
   Play,
   RotateCcw,
   Timer,
+  Wrench,
   X,
   Zap,
 } from 'lucide-react';
@@ -231,6 +232,7 @@ export default function ClassModeView({ programId }: { programId: string }) {
   const isLast = stepIndex === lesson.cards.length - 1;
   const stepTone = current.type === 'coach' ? '#fbbf24' : '#a5b4fc';
   const detailHref = `/spokedu-master/library/${program.id}`;
+  const classToolsHref = `/spokedu-master/class-tools?returnTo=${encodeURIComponent(`/spokedu-master/class-mode/${program.id}`)}`;
 
   const finishClass = () => {
     timerStop();
@@ -342,6 +344,13 @@ export default function ClassModeView({ programId }: { programId: string }) {
             >
               <MonitorPlay className="h-4 w-4 text-indigo-200" />
               <span className="max-w-[220px] truncate text-xs font-black text-indigo-100">{lesson.spomoveName}</span>
+            </Link>
+            <Link
+              href={classToolsHref}
+              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-3 py-2"
+            >
+              <Wrench className="h-4 w-4 text-white/45" />
+              <span className="text-xs font-black text-white/65">수업 도구</span>
             </Link>
           </section>
 

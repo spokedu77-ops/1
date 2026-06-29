@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useEffect, useRef, useState } from 'react';
-import { HOME_MEDIA } from '../data/home-media';
+import { HOME_MEDIA, HOME_SIGNATURE_PROGRAMS, type HomeSignatureProgram } from '../data/home-media';
 import { homePage } from '../data/home-page';
 import {
   PRIVATE_COUNTER_BASE_DATE,
@@ -74,6 +74,10 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
   const statsRef = useRef<HTMLDListElement>(null);
   const [statsActive, setStatsActive] = useState(false);
   const featuredProofCards = proofCards.slice(0, homePage.proof.featuredCount);
+  const featuredPrograms = homePage.programs.featuredIds
+    .map((id) => HOME_SIGNATURE_PROGRAMS.find((program) => program.id === id))
+    .filter((program): program is HomeSignatureProgram => !!program);
+  const [heroProgram, ...supportPrograms] = featuredPrograms;
 
   useEffect(() => {
     const node = statsRef.current;
@@ -96,7 +100,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
   return (
     <div className="text-stone-950" style={{ backgroundColor: CREAM }}>
       <a
-        href="#paths"
+        href="#programs"
         className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold"
       >
         안내로 건너뛰기
@@ -206,16 +210,58 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
         </div>
       </section>
 
-      {/* 2. 가치 3열 — 짧게 */}
-      <section className="border-b border-stone-300/50" aria-label="스포키듀가 하는 일">
-        <div className={`${container} py-12 sm:py-14`}>
-          <p className={`text-sm font-semibold text-stone-800 sm:text-base ${koreanLineBreak}`}>
-            {homePage.trust.lead}
+      {/* 2. PLAY · THINK · GROW — KIDDO식 기준·과정 */}
+      <section
+        id={homePage.philosophy.id}
+        className="border-b border-stone-300/50 bg-[#EDE8E0]"
+        aria-labelledby="home-philosophy-heading"
+      >
+        <div className={`${container} ${sectionPad}`}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.32em]" style={{ color: PLUM }}>
+            {homePage.philosophy.title}
           </p>
-          <p className="mt-2 text-xs font-medium text-stone-500">{homePage.trust.badge}</p>
-          <div className="mt-8 grid gap-8 sm:grid-cols-3 sm:gap-6">
+          <h2
+            id="home-philosophy-heading"
+            className={`mt-4 max-w-2xl text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
+          >
+            {homePage.philosophy.lead}
+          </h2>
+          <div className="mt-10 grid gap-4 sm:grid-cols-3 sm:gap-5">
+            {homePage.philosophy.items.map((item, index) => (
+              <motion.article
+                key={item.id}
+                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.4, delay: index * 0.06 }}
+                className="rounded-2xl border border-stone-300/60 bg-white/90 p-6 sm:p-7"
+              >
+                <p className="text-[11px] font-bold tracking-[0.28em]" style={{ color: PLUM }}>
+                  {item.label}
+                </p>
+                <h3 className={`mt-3 text-lg font-semibold text-stone-950 ${koreanLineBreak}`}>{item.title}</h3>
+                <p className={`mt-2 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{item.body}</p>
+              </motion.article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 3. 브랜드 신뢰 + 가치 3열 */}
+      <section className="border-b border-stone-300/50 bg-white" aria-label="스포키듀가 하는 일">
+        <div className={`${container} ${sectionPad}`}>
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">{homePage.trust.eyebrow}</p>
+          <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-stone-200 bg-[#FAF8F5] p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
+            <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-stone-950 px-4 py-2 text-xs font-bold tracking-wide text-white">
+              {homePage.trust.badge}
+            </span>
+            <p className={`text-sm leading-relaxed text-stone-700 sm:text-[15px] ${koreanLineBreak}`}>
+              {homePage.trust.lead}
+            </p>
+          </div>
+          <div className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
             {homePage.trust.pillars.map((pillar, index) => (
-              <div key={pillar.id} className="relative pl-0 sm:pl-1">
+              <div key={pillar.id} className="relative border-t border-stone-200 pt-6 sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0 first:sm:border-l-0 first:sm:pl-0">
                 <span
                   className="text-[2.5rem] font-light leading-none tabular-nums text-stone-300 sm:text-5xl"
                   aria-hidden
@@ -230,7 +276,48 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
         </div>
       </section>
 
-      {/* 2b. 관객별 증거 */}
+      {/* 4. 대표 프로그램 — imoves식 관심 탐색 */}
+      {heroProgram ? (
+        <section
+          id={homePage.programs.id}
+          className="border-b border-stone-300/50"
+          aria-labelledby="home-programs-heading"
+        >
+          <div className={`${container} ${sectionPad}`}>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
+              {homePage.programs.eyebrow}
+            </p>
+            <h2
+              id="home-programs-heading"
+              className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
+            >
+              {homePage.programs.title}
+            </h2>
+            <p className={`mt-3 max-w-xl text-[15px] text-stone-600 sm:text-base ${koreanLineBreak}`}>
+              {homePage.programs.lead}
+            </p>
+            <div className="mt-10 grid gap-4 lg:grid-cols-2 lg:gap-5">
+              <ProgramFeatureCard program={heroProgram} priority />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                {supportPrograms.map((program) => (
+                  <ProgramCard key={program.id} program={program} />
+                ))}
+              </div>
+            </div>
+            <Link
+              href={homePage.programs.allHref}
+              data-track={inferTrackFromHref(homePage.programs.allHref)}
+              data-track-label={homePage.programs.allTrackLabel}
+              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition hover:gap-3"
+            >
+              {homePage.programs.allLabel}
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {/* 5. 관객별 증거 */}
       <section
         id={homePage.audienceProof.id}
         className="border-b border-stone-300/50 bg-white"
@@ -298,14 +385,16 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
         </div>
       </section>
 
-      {/* 3. Paths */}
+      {/* 6. 관객 경로 — 트니트니 IA, 라이트 카드 */}
       <section
         id={homePage.audiencePaths.id}
         className="scroll-mt-[4.5rem] border-b border-stone-300/50 bg-[#EDE8E0]"
         aria-labelledby="home-paths-heading"
       >
         <div className={`${container} ${sectionPad}`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">시작하기</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
+            {homePage.audiencePaths.eyebrow}
+          </p>
           <h2
             id="home-paths-heading"
             className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
@@ -316,7 +405,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
             {homePage.audiencePaths.lead}
           </p>
 
-          <div className="mt-10 grid gap-5 sm:grid-cols-3 sm:gap-4 lg:gap-5">
+          <div className="mt-10 grid gap-4 sm:grid-cols-3 sm:gap-5">
             {homePage.audiencePaths.items.map((path, index) => (
               <motion.div
                 key={path.trackId}
@@ -325,18 +414,20 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
                 viewport={{ once: true, amount: 0.12 }}
                 transition={{ duration: 0.45, delay: index * 0.07 }}
               >
-                <PathCard path={path} priority={index === 0} />
+                <LightPathCard path={path} priority={index === 0} />
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 4. Proof */}
+      {/* 7. 현장 사례 — 비대칭 에디토리얼 */}
       {featuredProofCards.length > 0 ? (
         <section className="border-b border-stone-300/50" aria-labelledby="home-proof-heading">
           <div className={`${container} ${sectionPad}`}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">현장</p>
+            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
+              {homePage.proof.eyebrow}
+            </p>
             <h2
               id="home-proof-heading"
               className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
@@ -344,38 +435,20 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
               {homePage.proof.title}
             </h2>
             <p className={`mt-3 max-w-lg text-[15px] text-stone-600 ${koreanLineBreak}`}>{homePage.proof.lead}</p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
+            <div className="mt-8 grid gap-4 lg:grid-cols-12 lg:grid-rows-2 lg:gap-5">
               {featuredProofCards.map((record, index) => (
-                <ProofLink key={record.slug} href={record.href} trackLabel={record.trackLabel}>
-                  <div className="group relative overflow-hidden rounded-2xl bg-stone-900 ring-1 ring-stone-900/10">
-                    <div className="relative aspect-[4/3]">
-                      {record.thumbnailSrc ? (
-                        <ExternalPhoto
-                          src={record.thumbnailSrc}
-                          alt={`${record.venue} 수업 사례`}
-                          className="absolute inset-0 transition duration-700 group-hover:scale-[1.02]"
-                          fit="cover"
-                        />
-                      ) : (
-                        <MediaPanel
-                          media={HOME_MEDIA[record.mediaKey]}
-                          className="absolute inset-0 h-full w-full rounded-none border-0"
-                          sizes="gateCard"
-                          photoPriority={index === 0}
-                        />
-                      )}
-                      <div
-                        className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent"
-                        aria-hidden
-                      />
-                      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-                        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/55">{record.tagline}</p>
-                        <p className="mt-2 text-lg font-semibold leading-snug text-white sm:text-xl">{record.venue}</p>
-                        <p className={`mt-1.5 text-sm text-white/75 ${koreanLineBreak}`}>{record.sessionLine}</p>
-                      </div>
-                    </div>
-                  </div>
-                </ProofLink>
+                <div
+                  key={record.slug}
+                  className={index === 0 ? 'lg:col-span-7 lg:row-span-2' : 'lg:col-span-5'}
+                >
+                  <ProofLink href={record.href} trackLabel={record.trackLabel}>
+                    {index === 0 ? (
+                      <ProofCardFeatured record={record} />
+                    ) : (
+                      <ProofCardCompact record={record} index={index} />
+                    )}
+                  </ProofLink>
+                </div>
               ))}
             </div>
             <Link
@@ -391,7 +464,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
         </section>
       ) : null}
 
-      {/* 5. Mission */}
+      {/* 8. 미션 */}
       <section
         className="relative overflow-hidden text-white"
         style={{ backgroundColor: INK }}
@@ -439,7 +512,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
   );
 }
 
-function PathCard({
+function LightPathCard({
   path,
   priority,
 }: {
@@ -451,27 +524,153 @@ function PathCard({
       href={path.href}
       data-track={inferTrackFromHref(path.href)}
       data-track-label={path.trackLabel}
-      className="group relative block overflow-hidden rounded-2xl bg-stone-900 shadow-[0_16px_48px_-20px_rgba(20,18,16,0.45)] ring-1 ring-stone-900/10 transition duration-500 hover:-translate-y-1"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:border-stone-950 hover:shadow-md"
     >
-      <div className="relative aspect-[4/5] sm:aspect-[3/4]">
+      <div className="relative aspect-[16/10] overflow-hidden">
         <MediaPanel
           media={HOME_MEDIA[path.mediaKey]}
-          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.04]"
+          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.03]"
           sizes="gateCard"
           photoPriority={priority}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/5" aria-hidden />
-        <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/55">{path.audience}</p>
-          <p className="mt-2 text-xl font-semibold tracking-tight text-white sm:text-2xl">{path.title}</p>
-          <p className={`mt-2 text-sm leading-relaxed text-white/75 ${koreanLineBreak}`}>{path.lead}</p>
-          <span className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/90 transition group-hover:gap-3">
-            자세히 보기
-            <span aria-hidden>→</span>
-          </span>
-        </div>
+      </div>
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">{path.audience}</p>
+        <p className="mt-2 text-lg font-semibold text-stone-950 sm:text-xl">{path.title}</p>
+        <p className={`mt-2 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{path.lead}</p>
+        <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition group-hover:gap-3">
+          자세히 보기
+          <span aria-hidden>→</span>
+        </span>
       </div>
     </Link>
+  );
+}
+
+function ProgramFeatureCard({ program, priority }: { program: HomeSignatureProgram; priority?: boolean }) {
+  return (
+    <Link
+      href={program.href}
+      data-track={inferTrackFromHref(program.href)}
+      data-track-label={program.trackLabel}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:border-stone-950 hover:shadow-md lg:flex-row"
+    >
+      <div className="relative aspect-[16/10] shrink-0 overflow-hidden lg:aspect-auto lg:w-[52%] lg:min-h-[240px]">
+        <MediaPanel
+          media={program.media}
+          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.02]"
+          sizes="heroEditorialMain"
+          photoPriority={priority}
+          priority={priority}
+        />
+      </div>
+      <div className="flex flex-1 flex-col justify-center p-6 sm:p-8">
+        <span className="w-fit rounded-full border border-stone-200 bg-[#FAF8F5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-stone-600">
+          {program.badge}
+        </span>
+        <h3 className="mt-4 text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">{program.name}</h3>
+        <p className={`mt-3 text-sm leading-relaxed text-stone-600 sm:text-[15px] ${koreanLineBreak}`}>
+          {program.description}
+        </p>
+        <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-900 transition group-hover:gap-3">
+          {program.cta}
+          <span aria-hidden>→</span>
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function ProgramCard({ program }: { program: HomeSignatureProgram }) {
+  return (
+    <Link
+      href={program.href}
+      data-track={inferTrackFromHref(program.href)}
+      data-track-label={program.trackLabel}
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:border-stone-950 hover:shadow-md"
+    >
+      <div className="relative aspect-[16/10] overflow-hidden">
+        <MediaPanel
+          media={program.media}
+          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.03]"
+          sizes="gateCard"
+        />
+      </div>
+      <div className="flex flex-1 flex-col p-5">
+        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">{program.badge}</span>
+        <h3 className="mt-2 text-lg font-semibold text-stone-950">{program.name}</h3>
+        <p className={`mt-2 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{program.description}</p>
+        <span className="mt-3 text-sm font-semibold text-stone-800 transition group-hover:underline">{program.cta}</span>
+      </div>
+    </Link>
+  );
+}
+
+function ProofCardMedia({
+  record,
+  className,
+  sizes,
+  priority,
+}: {
+  record: HomeFieldRecordCardWithThumbnail;
+  className?: string;
+  sizes?: 'gateCard' | 'fieldFeatured' | 'heroEditorialMain';
+  priority?: boolean;
+}) {
+  if (record.thumbnailSrc) {
+    return (
+      <ExternalPhoto
+        src={record.thumbnailSrc}
+        alt={`${record.venue} 수업 사례`}
+        className={`absolute inset-0 transition duration-700 group-hover:scale-[1.02] ${className ?? ''}`}
+        fit="cover"
+      />
+    );
+  }
+  return (
+    <MediaPanel
+      media={HOME_MEDIA[record.mediaKey]}
+      className={`absolute inset-0 h-full w-full rounded-none border-0 ${className ?? ''}`}
+      sizes={sizes ?? 'gateCard'}
+      photoPriority={priority}
+      priority={priority}
+    />
+  );
+}
+
+function ProofCardFeatured({ record }: { record: HomeFieldRecordCardWithThumbnail }) {
+  return (
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:shadow-md">
+      <div className="relative min-h-[220px] flex-1 overflow-hidden">
+        <ProofCardMedia record={record} sizes="fieldFeatured" priority />
+      </div>
+      <div className="border-t border-stone-100 p-5 sm:p-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500">{record.tagline}</p>
+        <p className="mt-2 text-xl font-semibold text-stone-950 sm:text-2xl">{record.venue}</p>
+        <p className={`mt-2 text-sm text-stone-600 ${koreanLineBreak}`}>{record.sessionLine}</p>
+      </div>
+    </div>
+  );
+}
+
+function ProofCardCompact({
+  record,
+  index,
+}: {
+  record: HomeFieldRecordCardWithThumbnail;
+  index: number;
+}) {
+  return (
+    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:shadow-md sm:flex-row lg:flex-col">
+      <div className="relative aspect-[16/10] shrink-0 overflow-hidden sm:w-2/5 lg:w-full">
+        <ProofCardMedia record={record} priority={index === 1} />
+      </div>
+      <div className="flex flex-1 flex-col justify-center border-t border-stone-100 p-5 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-t">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500">{record.tagline}</p>
+        <p className="mt-2 text-lg font-semibold leading-snug text-stone-950">{record.venue}</p>
+        <p className={`mt-1.5 text-sm text-stone-600 ${koreanLineBreak}`}>{record.sessionLine}</p>
+      </div>
+    </div>
   );
 }
 
