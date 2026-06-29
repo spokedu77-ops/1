@@ -7,7 +7,6 @@ import {
   FileText,
   MonitorPlay,
   Play,
-  Settings2,
   Sparkles,
   UsersRound,
 } from 'lucide-react';
@@ -726,8 +725,6 @@ export default function DashboardView() {
     );
   }
 
-  const hasRecommendationDataIssue = weeklyPrograms.length < 4;
-
   return (
     <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-6 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-12">
       <header className="flex min-h-[76px] flex-col justify-center gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
@@ -754,9 +751,6 @@ export default function DashboardView() {
             <h2 id="weekly-heading" className="text-[22px] font-black tracking-[-0.03em] text-slate-950 sm:text-[26px]">이번 주 추천 프로그램</h2>
             <p className="mt-1 text-[13px] font-semibold text-slate-500">이번 주 현장에서 바로 활용하기 좋은 수업 4개를 골랐습니다.</p>
           </div>
-          {profile?.isAdmin ? (
-            <Link href="/admin/spokedu-master/programs" className="inline-flex min-h-11 shrink-0 items-center gap-1.5 text-[12px] font-black text-indigo-600"><Settings2 size={14} />추천 관리</Link>
-          ) : null}
         </div>
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
           {weeklyPrograms.map((program, index) => (
@@ -770,11 +764,6 @@ export default function DashboardView() {
             </div>
           ))}
         </div>
-        {hasRecommendationDataIssue && profile?.isAdmin ? (
-          <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[12px] font-bold text-amber-800" role="status">
-            추천 가능한 수업 데이터가 4개보다 적습니다. 대상·시간·공간·준비물·진행·지도 정보를 확인해 주세요.
-          </p>
-        ) : null}
       </section>
 
       {showRecentUse && continueItem ? <ContinueSection item={continueItem} /> : null}

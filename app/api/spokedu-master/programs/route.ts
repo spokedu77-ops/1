@@ -200,7 +200,6 @@ type ProgramValidationIssue =
   | 'broken_category'
   | 'missing_grade'
   | 'missing_space'
-  | 'invalid_duration'
   | 'missing_steps';
 
 type BuildProgramResult =
@@ -247,7 +246,6 @@ function getMasterProgramValidationIssues(input: {
   if (hasBrokenText(input.rawCategory)) issues.push('broken_category');
   if (!input.grade) issues.push('missing_grade');
   if (!input.space) issues.push('missing_space');
-  if (!Number.isFinite(input.duration) || input.duration <= 0) issues.push('invalid_duration');
   if (input.steps.length === 0) issues.push('missing_steps');
   if (!input.meta) issues.push('missing_category');
 

@@ -2,7 +2,6 @@
 
 import { Fragment, type ReactNode } from 'react';
 import { stripListItemMarkerPrefix, bulletMarkerForLevel } from '../noteBulletInput';
-import { useBlockLiveContent } from './useBlockLiveContent';
 import { createNoteListBlockHandlers } from '../../_lib/noteListBlockHandlers';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
@@ -24,6 +23,7 @@ type NoteListBlockProps = NoteInlineTextBlockProps & {
 
 export function NoteListBlock({
   block,
+  liveContent,
   listType,
   listNestLevel,
   numberedListIndex,
@@ -48,7 +48,6 @@ export function NoteListBlock({
   slashHostRef,
   ...fieldProps
 }: NoteListBlockProps) {
-  const liveContent = useBlockLiveContent(block);
   const rawText = typeof liveContent.text === 'string' ? liveContent.text : '';
   const text = stripListItemMarkerPrefix(rawText);
 

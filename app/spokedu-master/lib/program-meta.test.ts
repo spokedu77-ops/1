@@ -51,7 +51,7 @@ describe('program home recommendation readiness', () => {
     expect(getProgramHomeReadiness(item)).toBeGreaterThanOrEqual(7);
   });
 
-  it('keeps limited content searchable but out of home recommendations', () => {
+  it('keeps limited content searchable and available for home recommendations', () => {
     const item = program({
       lessonDetail: {
         ...program().lessonDetail!,
@@ -60,7 +60,7 @@ describe('program home recommendation readiness', () => {
     });
 
     expect(getProgramQualityReport(item).status).toBe('LIMITED');
-    expect(isProgramHomeRecommendationEligible(item)).toBe(false);
+    expect(isProgramHomeRecommendationEligible(item)).toBe(true);
   });
 
   it('treats placeholder decision metadata as not ready', () => {

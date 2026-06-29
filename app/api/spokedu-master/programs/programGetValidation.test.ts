@@ -151,9 +151,6 @@ describe('SPOKEDU MASTER program GET validation', () => {
     ['broken category', validMeta({ sm_theme: String.fromCharCode(0xfffd) }), validOverlay()],
     ['missing grade', validMeta({ sm_grade: '' }), validOverlay()],
     ['missing space', validMeta({ sm_space: '' }), validOverlay()],
-    ['zero duration', validMeta({ sm_duration: 0 }), validOverlay()],
-    ['negative duration', validMeta({ sm_duration: -1 }), validOverlay()],
-    ['NaN duration', validMeta({ sm_duration: Number.NaN }), validOverlay()],
     ['missing steps', validMeta(), validOverlay({ activity_method: '   ' })],
   ])('returns an error when all published programs are invalid: %s', async (_, meta, overlay) => {
     mockProgramQueries({
@@ -201,13 +198,19 @@ describe('SPOKEDU MASTER program GET validation', () => {
     const result = await getPrograms();
 
     expect(result.status).toBe(200);
-    expect(result.body.total).toBe(1);
-    expect(result.body.data).toHaveLength(1);
+    expect(result.body.total).toBe(2);
+    expect(result.body.data).toHaveLength(2);
     expect(result.body.data[0]).toEqual(expect.objectContaining({
       id: '101',
       title: 'Newest title',
       duration: 10,
       homeSortOrder: 20,
+    }));
+    expect(result.body.data[1]).toEqual(expect.objectContaining({
+      id: '202',
+      title: 'Invalid duration',
+      duration: 0,
+      homeSortOrder: 10,
     }));
     expect(result.body.data[0].steps).toEqual(['Step one', 'Step two']);
     expect(result.body.data[0].lessonDetail.relatedSpomoveIds).toEqual([]);

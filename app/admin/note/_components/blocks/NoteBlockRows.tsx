@@ -16,7 +16,6 @@ import {
   Image as ImageIcon,
   Loader2,
   Plus,
-  Trash2,
   Video,
 } from 'lucide-react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
@@ -341,6 +340,7 @@ function BlockContent({
       <>
         <NoteTodoBlock
           block={block}
+          liveContent={liveContent}
           contentMarginLeft={contentMarginLeft}
           inlineRowPadding={inlineRowPadding}
           rootBlockShell={rootBlockShell}
@@ -380,6 +380,7 @@ function BlockContent({
       <>
         <NoteHeadingBlock
           block={block}
+          liveContent={liveContent}
           variant={block.type}
           contentMarginLeft={contentMarginLeft}
           inlineRowPadding={inlineRowPadding}
@@ -421,6 +422,7 @@ function BlockContent({
       <>
         <NoteListBlock
           block={block}
+          liveContent={liveContent}
           listType={block.type}
           listNestLevel={bulletListNestLevel}
           numberedListIndex={numberedListIndex}
@@ -719,6 +721,7 @@ function BlockContent({
     return (
       <NoteCalloutBlock
         block={block}
+        liveContent={liveContent}
         contentMarginLeft={contentMarginLeft}
         inlineRowPadding={inlineRowPadding}
         rootBlockShell={rootBlockShell}
@@ -758,6 +761,7 @@ function BlockContent({
     return (
       <NoteCodeBlock
         block={block}
+        liveContent={liveContent}
         contentMarginLeft={contentMarginLeft}
         inlineRowPadding={inlineRowPadding}
         rootBlockShell={rootBlockShell}
@@ -796,6 +800,7 @@ function BlockContent({
     return (
       <NoteToggleBlock
         block={block}
+        liveContent={liveContent}
         contentMarginLeft={contentMarginLeft}
         isInsideToggle={isInsideToggle}
         isDropTarget={isDropTarget}
@@ -862,7 +867,6 @@ function BlockContent({
 
 /* ─── BlockRowGutter (+ · 드래그 — 줄 호버 시에만) ───────────────────────── */
 function BlockRowGutter({
-  blockId,
   blockType,
   nestDepth = 1,
   onAddBelow,
@@ -872,7 +876,6 @@ function BlockRowGutter({
   dragListeners,
   onPickerOpenChange,
 }: {
-  blockId: string;
   blockType: NoteBlock['type'];
   nestDepth?: number;
   onAddBelow: (type: NoteBlock['type']) => void;
@@ -990,7 +993,6 @@ function SortableBlockRow({
   onNavigatePrevious,
   onNavigateNext,
   focusedToggleId,
-  onFocusToggle,
   uploadImage,
   isDropTarget,
   childBlocks,
@@ -1035,7 +1037,6 @@ function SortableBlockRow({
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
   focusedToggleId?: string | null;
-  onFocusToggle?: (blockId: string | null) => void;
   uploadImage?: (file: File) => Promise<string>;
   isDropTarget?: boolean;
   childBlocks?: NoteBlock[];
@@ -1170,7 +1171,6 @@ function SortableBlockRow({
       {dropPos === 'before' && <DropInsertLine position="top" />}
       {dropPos === 'after' && <DropInsertLine position="bottom" />}
       <BlockRowGutter
-        blockId={block.id}
         blockType={block.type}
         nestDepth={1}
         onAddBelow={(type) => onAddBelow(type)}
@@ -1252,7 +1252,6 @@ function ToggleInlineRow({
   onNavigatePrevious,
   onNavigateNext,
   focusedToggleId,
-  onFocusToggle,
   uploadImage,
   isDropTarget,
   childBlocks,
@@ -1298,7 +1297,6 @@ function ToggleInlineRow({
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
   focusedToggleId?: string | null;
-  onFocusToggle?: (blockId: string | null) => void;
   uploadImage?: (file: File) => Promise<string>;
   isDropTarget?: boolean;
   childBlocks?: NoteBlock[];
@@ -1441,7 +1439,6 @@ function ToggleInlineRow({
       {dropPos === 'before' && <DropInsertLine position="top" />}
       {dropPos === 'after' && <DropInsertLine position="bottom" />}
       <BlockRowGutter
-        blockId={block.id}
         blockType={block.type}
         nestDepth={nestDepth}
         onAddBelow={(type) => onAddBelow(type)}

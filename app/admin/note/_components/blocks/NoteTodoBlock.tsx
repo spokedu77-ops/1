@@ -12,6 +12,7 @@ import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
 type NoteTodoBlockProps = {
   block: NoteBlock;
+  liveContent: Record<string, unknown>;
   contentMarginLeft: number;
   inlineRowPadding: string;
   rootBlockShell: string;
@@ -44,6 +45,7 @@ type NoteTodoBlockProps = {
 
 export function NoteTodoBlock({
   block,
+  liveContent,
   contentMarginLeft,
   inlineRowPadding,
   rootBlockShell,
@@ -56,7 +58,7 @@ export function NoteTodoBlock({
   slashHostRef,
   ...fieldProps
 }: NoteTodoBlockProps) {
-  const resolved = getMergedBlockContentBase(block);
+  const resolved = getMergedBlockContentBase({ ...block, content: liveContent });
   const checked = resolveTodoChecked(resolved);
   const text = typeof resolved.text === 'string' ? resolved.text : '';
 

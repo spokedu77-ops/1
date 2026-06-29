@@ -79,7 +79,7 @@ export function getProgramQualityReport(program: Program): ProgramQualityReport 
   if (hasSpecialSupportTag(program) && !hasSpecialSupportEvidence(program)) missing.push('특수 대상 지원 근거');
 
   if (missing.length === 0) return { status: 'READY', missing };
-  if (hasTarget && hasDuration && hasSpace && hasEquipment && hasExecution) {
+  if (hasTarget && hasSpace && hasEquipment && hasExecution) {
     return { status: 'LIMITED', missing };
   }
   return { status: 'INCOMPLETE', missing };
@@ -101,7 +101,7 @@ export function getProgramHomeReadiness(program: Program): number {
 }
 
 export function isProgramHomeRecommendationEligible(program: Program): boolean {
-  return getProgramQualityReport(program).status === 'READY';
+  return getProgramQualityReport(program).status !== 'INCOMPLETE';
 }
 
 export function hasExplicitSpomoveLink(program: Program): boolean {

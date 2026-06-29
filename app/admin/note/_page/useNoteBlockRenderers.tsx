@@ -167,7 +167,6 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onNavigatePrevious={() => deps.handleNavigateBlock(block, 'previous')}
         onNavigateNext={() => deps.handleNavigateBlock(block, 'next')}
         focusedToggleId={deps.focusedToggleId}
-        onFocusToggle={deps.setFocusedToggleId}
         onTrackActiveBlock={(part) => deps.trackActiveBlock(block.id, part)}
         uploadImage={deps.uploadNoteImage}
         isDropTarget={deps.dropTarget?.blockId === block.id && deps.dropTarget?.position === 'inside'}
@@ -230,7 +229,6 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onNavigatePrevious={() => deps.handleNavigateBlock(block, 'previous')}
         onNavigateNext={() => deps.handleNavigateBlock(block, 'next')}
         focusedToggleId={deps.focusedToggleId}
-        onFocusToggle={deps.setFocusedToggleId}
         onTrackActiveBlock={(part) => deps.trackActiveBlock(block.id, part)}
         uploadImage={deps.uploadNoteImage}
         isDropTarget={deps.dropTarget?.blockId === block.id && deps.dropTarget?.position === 'inside'}

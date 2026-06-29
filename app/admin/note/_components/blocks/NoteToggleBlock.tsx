@@ -24,12 +24,12 @@ import {
 import { BlockInsideDropSurface, ToggleDisclosureButton } from '../sidebar/NoteDocChrome';
 import { useBlockDragActive } from '../noteContexts';
 import { useBlockContentPatch } from './useBlockContentPatch';
-import { useBlockLiveContent } from './useBlockLiveContent';
 import type { NoteBlock } from '../../_lib/types';
 import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
 type NoteToggleBlockProps = {
   block: NoteBlock;
+  liveContent: Record<string, unknown>;
   contentMarginLeft: number;
   isInsideToggle: boolean;
   isDropTarget: boolean;
@@ -65,6 +65,7 @@ type NoteToggleBlockProps = {
 
 export function NoteToggleBlock({
   block,
+  liveContent,
   contentMarginLeft,
   isInsideToggle,
   isDropTarget,
@@ -83,13 +84,8 @@ export function NoteToggleBlock({
   onTrackActiveBlock,
   onFocusBlockById,
   onNavigatePrevious,
-  onNavigateNext,
   renderSlashMenuPortal,
-  onSlashChange,
-  slashHostRef,
-  ...fieldProps
 }: NoteToggleBlockProps) {
-  const liveContent = useBlockLiveContent(block);
   const isBlockDragActive = useBlockDragActive();
   const imageLightbox = useNoteImageLightbox();
   const toggleTitleInputRef = useRef<HTMLInputElement>(null);
@@ -100,16 +96,16 @@ export function NoteToggleBlock({
   const title = typeof liveContent.title === 'string'
     ? liveContent.title
     : (typeof liveContent.text === 'string' ? liveContent.text : '');
-  const collapsed = !!block.content?.collapsed;
+  const collapsed = !!liveContent.collapsed;
   const showToggleContent = !collapsed && !isDragging;
-  const rawIm = block.content?.images;
+  const rawIm = liveContent.images;
   const toggleImages = Array.isArray(rawIm)
     ? rawIm.map((u) => (typeof u === 'string' ? u : ''))
     : [];
   const isThisToggleFocused = focusedToggleId === block.id;
   const toggleTitleSlashActive = title.startsWith('/');
   const toggleTitleSlashQuery = toggleTitleSlashActive ? title.slice(1) : '';
-  const toggleTitleSlashCommands = filterTurnIntoCommands('toggle', BLOCK_TYPES, block.content);
+  const toggleTitleSlashCommands = filterTurnIntoCommands('toggle', BLOCK_TYPES, liveContent);
 
   useEffect(() => {
     if (autoFocusTitleSignal <= 0) return;

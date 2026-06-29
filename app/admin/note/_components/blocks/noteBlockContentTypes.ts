@@ -46,6 +46,7 @@ export type NoteInlineTextBlockProps =
   & Omit<NoteBlockFieldBindings, 'onChangeType'>
   & {
     block: NoteBlock;
+    liveContent: Record<string, unknown>;
     /** 슬래시·행 UI — 블록 타입 전환 (Enter 빈 줄 → text 포함) */
     onChangeType: (type: NoteBlock['type']) => void;
   };

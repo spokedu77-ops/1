@@ -8,6 +8,7 @@ import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
 
 export function NoteCalloutBlock({
   block,
+  liveContent,
   contentMarginLeft,
   enterCreatesBlockBelow,
   onContentPatch,
@@ -24,9 +25,9 @@ export function NoteCalloutBlock({
   renderFormatToolbar: () => ReactNode;
   renderSlashMenuPortal: () => ReactNode;
 }) {
-  const text = typeof block.content?.text === 'string' ? block.content.text : '';
-  const icon = typeof block.content?.icon === 'string' && block.content.icon.trim()
-    ? block.content.icon
+  const text = typeof liveContent.text === 'string' ? liveContent.text : '';
+  const icon = typeof liveContent.icon === 'string' && liveContent.icon.trim()
+    ? liveContent.icon
     : '💡';
 
   const patchCallout = useBlockContentPatch(block, onContentPatch);

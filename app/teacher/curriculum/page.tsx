@@ -1,7 +1,5 @@
 'use client';
 
-import { toast } from 'sonner';
-
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
@@ -19,7 +17,7 @@ import CenterEquipmentActivityDetailModal from '@/app/components/curriculum/Cent
 import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 import {
-  Instagram, AlertCircle,
+  Instagram,
   Sparkles, X, Calendar, MoreHorizontal,
   CheckSquare, Box, ListOrdered, Play, ArrowLeft, ChevronRight
 } from 'lucide-react';
@@ -78,13 +76,6 @@ interface CenterEquipmentItem {
   image_url: string | null;
 }
 
-/** SUB 커리큘럼 전용 독립 교구 태그 */
-interface CurriculumSubTag {
-  id: number;
-  name: string;
-  display_order: number;
-}
-
 interface CenterEquipmentGuideItem {
   id: number;
   number: number;
@@ -113,9 +104,6 @@ export default function TeacherCurriculumPage() {
  const [selectedItem, setSelectedItem] = useState<CurriculumItem | PersonalCurriculumItem | null>(null);
 const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
- const [centerIsSub, setCenterIsSub] = useState(false);
- const [equipmentTagFilter, setEquipmentTagFilter] = useState<number | null>(null);
- const [subTagList, setSubTagList] = useState<CurriculumSubTag[]>([]);
  const [centerViewMode, setCenterViewMode] = useState<'center' | 'equipment-guide'>('center');
  const [centerEquipmentList, setCenterEquipmentList] = useState<CenterEquipmentItem[]>([]);
  const [equipmentGuideItems, setEquipmentGuideItems] = useState<CenterEquipmentGuideItem[]>([]);
@@ -133,6 +121,7 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
     const { data, error } = await supabase
       .from('curriculum')
       .select('*')
+      .or('is_sub.is.null,is_sub.eq.false')
       .order('display_order', { ascending: true, nullsFirst: false })
       .order('id', { ascending: false });
     
@@ -143,14 +132,14 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
 
     if (data) {
       // DB(snake_case) -> UI(camelCase) 매핑
-      const formattedData = data.map((item: { expert_tip?: string; check_list?: string[]; equipment?: string[]; steps?: string[]; [key: string]: unknown }) => ({
+      const formattedData: CurriculumItem[] = data.map((item: { expert_tip?: string; check_list?: string[]; equipment?: string[]; steps?: string[]; [key: string]: unknown }) => ({
         ...item,
         expertTip: item.expert_tip,
         checkList: item.check_list,
         equipment: item.equipment,
         steps: item.steps
       }));
-      setItems(formattedData);
+      setItems(formattedData.filter((item) => item.is_sub !== true));
     }
  }, [supabase]);
 
@@ -194,17 +183,6 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
    else setCenterEquipmentList((data ?? []) as CenterEquipmentItem[]);
  }, [supabase]);
 
- const fetchSubTags = useCallback(async () => {
-   if (!supabase) return;
-   const { data, error } = await supabase
-     .from('curriculum_sub_tags')
-     .select('*')
-     .order('display_order', { ascending: true })
-     .order('id', { ascending: true });
-   if (error) devLogger.error('Error fetching curriculum_sub_tags:', error);
-   else setSubTagList((data ?? []) as CurriculumSubTag[]);
- }, [supabase]);
-
  const fetchEquipmentGuide = useCallback(async () => {
    if (!supabase) return;
    setEquipmentGuideLoading(true);
@@ -218,25 +196,13 @@ const [activeVideoIndex, setActiveVideoIndex] = useState(0);
    if (supabase && mainTab === 'center') {
      void fetchEquipmentGuide();
      void fetchCenterEquipment();
-     void fetchSubTags();
    }
- }, [supabase, mainTab, fetchEquipmentGuide, fetchCenterEquipment, fetchSubTags]);
+ }, [supabase, mainTab, fetchEquipmentGuide, fetchCenterEquipment]);
 
  const filteredItems = useMemo(() => {
-   let base: CurriculumItem[];
-   if (centerIsSub) {
-     base = items.filter((item) => item.is_sub === true);
-   } else {
-     base = items.filter((item) => !item.is_sub && item.month === selectedMonth && item.week === selectedWeek);
-   }
-   const sorted = sortCenterCurriculumByDisplayOrder(base);
-   if (equipmentTagFilter !== null) {
-     return sorted.filter((item) =>
-       Array.isArray(item.equipment_tag_numbers) && item.equipment_tag_numbers.includes(equipmentTagFilter),
-     );
-   }
-   return sorted;
- }, [items, selectedMonth, selectedWeek, centerIsSub, equipmentTagFilter]);
+   const base = items.filter((item) => item.is_sub !== true && item.month === selectedMonth && item.week === selectedWeek);
+   return sortCenterCurriculumByDisplayOrder(base);
+ }, [items, selectedMonth, selectedWeek]);
 
  const filteredPersonalItems = useMemo(() => {
    return personalItems.filter(p => p.category === categoryTab && p.sub_tab === subTab);
@@ -639,17 +605,14 @@ useEffect(() => {
                 <CurriculumMonthWeekPicker
                   selectedMonth={selectedMonth}
                   selectedWeek={selectedWeek}
-                  onMonthChange={(m) => { setSelectedMonth(m); setEquipmentTagFilter(null); }}
+                  onMonthChange={setSelectedMonth}
                   onWeekChange={setSelectedWeek}
-                  isSubSelected={centerIsSub}
-                  onSubChange={(sub) => { setCenterIsSub(sub); setEquipmentTagFilter(null); }}
                   teacherMode
                   currentMonth={currentMonth}
                 />
 
-                {/* 배너: 월별 모드일 때만 */}
-                {!centerIsSub && (
-                  <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
+                {/* 월별 커리큘럼 안내 배너 */}
+                <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
                     <Sparkles size={120} className="absolute top-0 right-0 p-8 opacity-10 transform translate-x-4 -translate-y-4" />
                     <div className="relative z-10">
                       <div className="flex items-center gap-2 mb-2 opacity-90 text-[10px] font-bold uppercase">
@@ -658,51 +621,7 @@ useEffect(() => {
                       <h2 className="text-2xl md:text-3xl font-black mb-2">{currentTheme.title}</h2>
                       <p className="text-indigo-100 font-medium text-sm md:text-base">{currentTheme.desc}</p>
                     </div>
-                  </div>
-                )}
-
-                {/* 교구 태그 필터 — SUB 모드에서만 표시 */}
-                {centerIsSub && subTagList.length > 0 && (
-                  <div className="bg-slate-50 rounded-2xl p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">교구 태그</span>
-                      {equipmentTagFilter !== null && (
-                        <button
-                          type="button"
-                          onClick={() => setEquipmentTagFilter(null)}
-                          className="text-[11px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
-                        >
-                          전체 보기
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setEquipmentTagFilter(null)}
-                        className={`h-9 px-4 rounded-xl text-xs font-bold transition-all touch-manipulation
-                          ${equipmentTagFilter === null
-                            ? 'bg-slate-800 text-white shadow-sm'
-                            : 'bg-white text-slate-500 border border-slate-200 hover:border-slate-400'}`}
-                      >
-                        전체
-                      </button>
-                      {subTagList.map((tag) => (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => setEquipmentTagFilter(equipmentTagFilter === tag.id ? null : tag.id)}
-                          className={`h-9 px-4 rounded-xl text-xs font-bold transition-all touch-manipulation
-                            ${equipmentTagFilter === tag.id
-                              ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200'
-                              : 'bg-white text-slate-600 border border-slate-200 hover:border-indigo-300 hover:text-indigo-600'}`}
-                        >
-                          {tag.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 {/* 리스트 (조회 전용) */}
                 <div className="w-full">
@@ -760,7 +679,7 @@ useEffect(() => {
                     </div>
                   ) : (
                     <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-black">
-                      {centerIsSub ? 'SUB에 등록된 커리큘럼이 없습니다.' : '해당 주차에 등록된 커리큘럼이 없습니다.'}
+                      해당 주차에 등록된 커리큘럼이 없습니다.
                     </div>
                   )}
                 </div>

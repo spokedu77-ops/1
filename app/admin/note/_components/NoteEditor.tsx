@@ -462,11 +462,11 @@ export function NoteEditor({
 
   const scheduleChange = useCallback((change: NoteEditorChange) => {
     pendingChangeRef.current = change;
-    if (changeTimerRef.current !== null) {
-      window.cancelAnimationFrame(changeTimerRef.current);
+    if (changeTimerRef.current !== null) return;
+    changeTimerRef.current = window.requestAnimationFrame(() => {
       changeTimerRef.current = null;
-    }
-    flushPendingChange();
+      flushPendingChange();
+    });
   }, [flushPendingChange]);
 
   const toolbarNotifyRafRef = useRef<number | null>(null);

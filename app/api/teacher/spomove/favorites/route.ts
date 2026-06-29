@@ -1,18 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 
 const MAX_FAVORITES = 10;
-
-function getClientIp(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) {
-    const first = forwarded.split(',')[0]?.trim();
-    if (first) return first;
-  }
-  const realIp = req.headers.get('x-real-ip')?.trim();
-  if (realIp) return realIp;
-  return 'unknown';
-}
 
 function isValidPayload(p: unknown): boolean {
   if (!p || typeof p !== 'object' || Array.isArray(p)) return false;
@@ -36,17 +26,24 @@ function isValidPayload(p: unknown): boolean {
   );
 }
 
-export async function GET(req: NextRequest) {
-  const ip = getClientIp(req);
-  if (ip === 'unknown') {
-    return NextResponse.json({ ok: false, error: 'IP를 확인할 수 없습니다.' }, { status: 400 });
+async function requireUserId(): Promise<{ userId: string } | { response: NextResponse }> {
+  const supabase = await createServerSupabaseClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.id) {
+    return { response: NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 }) };
   }
+  return { userId: user.id };
+}
+
+export async function GET(_req: NextRequest) {
+  const auth = await requireUserId();
+  if ('response' in auth) return auth.response;
 
   const supabase = getServiceSupabase();
   const { data, error } = await supabase
     .from('spomove_favorites')
     .select('id, label, payload, created_at')
-    .eq('ip', ip)
+    .eq('user_id', auth.userId)
     .order('created_at', { ascending: false })
     .limit(MAX_FAVORITES);
 
@@ -57,10 +54,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const ip = getClientIp(req);
-  if (ip === 'unknown') {
-    return NextResponse.json({ ok: false, error: 'IP를 확인할 수 없습니다.' }, { status: 400 });
-  }
+  const auth = await requireUserId();
+  if ('response' in auth) return auth.response;
 
   const body = await req.json().catch(() => null);
   if (!body) {
@@ -79,21 +74,21 @@ export async function POST(req: NextRequest) {
   const { count, error: countErr } = await supabase
     .from('spomove_favorites')
     .select('id', { count: 'exact', head: true })
-    .eq('ip', ip);
+    .eq('user_id', auth.userId);
 
   if (countErr) {
     return NextResponse.json({ ok: false, error: countErr.message }, { status: 500 });
   }
   if ((count ?? 0) >= MAX_FAVORITES) {
     return NextResponse.json(
-      { ok: false, error: 'limit_exceeded', message: `이 네트워크에서 최대 ${MAX_FAVORITES}개까지 저장할 수 있습니다.` },
+      { ok: false, error: 'limit_exceeded', message: `계정당 최대 ${MAX_FAVORITES}개까지 저장할 수 있습니다.` },
       { status: 429 }
     );
   }
 
   const { data, error: insertErr } = await supabase
     .from('spomove_favorites')
-    .insert({ ip, label: label || '이름 없음', payload })
+    .insert({ user_id: auth.userId, label: label || '이름 없음', payload })
     .select('id, label, payload, created_at')
     .single();
 

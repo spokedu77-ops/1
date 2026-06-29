@@ -7,12 +7,14 @@ import {
   ChevronLeft,
   Image as ImageIcon,
   Loader2,
+  Plus,
   RefreshCw,
   Save,
   Search,
   ShieldAlert,
   Sparkles,
   Trash2,
+  X,
 } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import {
@@ -145,6 +147,13 @@ type EditForm = {
   parentNote: string;
   relatedSpomoveIds: string;
   publicationStatus: PublicationStatus;
+};
+
+type CreateProgramForm = {
+  title: string;
+  videoUrl: string;
+  equipment: string;
+  steps: string;
 };
 
 const STATUS_LABEL: Record<MaterialStatus, string> = {
@@ -962,6 +971,123 @@ function TextArea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   );
 }
 
+function CreateProgramModal({
+  form,
+  creating,
+  onChange,
+  onClose,
+  onSubmit,
+}: {
+  form: CreateProgramForm;
+  creating: boolean;
+  onChange: <K extends keyof CreateProgramForm>(key: K, value: CreateProgramForm[K]) => void;
+  onClose: () => void;
+  onSubmit: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
+      <div className="max-h-[calc(100vh-48px)] w-full max-w-3xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl">
+        <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-slate-200 bg-white px-5 py-4">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-black uppercase text-indigo-600">MASTER program</p>
+            <h2 className="mt-1 text-[20px] font-black text-slate-950">프로그램 직접 추가</h2>
+            <p className="mt-1 text-[12px] font-semibold text-slate-500">
+              생성 후 같은 편집 화면에서 분류, 이미지, 스크립트를 이어서 채울 수 있습니다.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={creating}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-slate-200 text-slate-500 disabled:opacity-50"
+            aria-label="닫기"
+          >
+            <X size={17} />
+          </button>
+        </div>
+
+        <div className="space-y-5 p-5">
+          <section className="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black">
+              <Sparkles size={16} />
+              기본
+            </h3>
+            <div className="grid gap-4">
+              <Field label="제목">
+                <TextInput
+                  value={form.title}
+                  placeholder="예: 밸런스 컬러 점프"
+                  onChange={(event) => onChange('title', event.target.value)}
+                  autoFocus
+                />
+              </Field>
+              <Field label="영상 첨부 링크 (URL)">
+                <TextInput
+                  value={form.videoUrl}
+                  placeholder="https://..."
+                  onChange={(event) => onChange('videoUrl', event.target.value)}
+                />
+              </Field>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black">
+              <ShieldAlert size={16} />
+              사전 체크리스트
+            </h3>
+            <div className="grid gap-4">
+              <Field label="준비물">
+                <TextArea
+                  rows={5}
+                  value={form.equipment}
+                  placeholder="한 줄에 하나씩 입력"
+                  onChange={(event) => onChange('equipment', event.target.value)}
+                />
+              </Field>
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-slate-200 bg-white p-5">
+            <h3 className="mb-4 flex items-center gap-2 text-[15px] font-black">
+              <CheckCircle2 size={16} />
+              수업 운영
+            </h3>
+            <Field label="활동 방법">
+              <TextArea
+                rows={8}
+                value={form.steps}
+                placeholder="한 줄에 한 단계씩 입력"
+                onChange={(event) => onChange('steps', event.target.value)}
+              />
+            </Field>
+          </section>
+        </div>
+
+        <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-white px-5 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={creating}
+            className="inline-flex h-10 items-center rounded-lg border border-slate-200 bg-white px-4 text-[12px] font-black text-slate-600 disabled:opacity-50"
+          >
+            취소
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={creating || !form.title.trim()}
+            className="inline-flex h-10 items-center gap-2 rounded-lg bg-indigo-600 px-4 text-[12px] font-black text-white disabled:opacity-50"
+          >
+            {creating ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+            추가
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function StatusPill({ status }: { status: MaterialStatus }) {
   const style = STATUS_STYLE[status];
   return (
@@ -1220,12 +1346,20 @@ export default function AdminSmProgramsPage() {
   const [items, setItems] = useState<ProgramItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [query, setQuery] = useState('');
   const [activeTab, setActiveTab] = useState<AdminTabKey>('programs');
   const [activeFilter, setActiveFilter] = useState<FilterKey>('all');
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [form, setForm] = useState<EditForm | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState<CreateProgramForm>({
+    title: '',
+    videoUrl: '',
+    equipment: '',
+    steps: '',
+  });
   const selectedIdRef = useRef<number | null>(null);
 
   const load = useCallback(async () => {
@@ -1290,6 +1424,50 @@ export default function AdminSmProgramsPage() {
 
   const updateForm = <K extends keyof EditForm>(key: K, value: EditForm[K]) => {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
+  };
+
+  const updateCreateForm = <K extends keyof CreateProgramForm>(key: K, value: CreateProgramForm[K]) => {
+    setCreateForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const closeCreateModal = () => {
+    if (creating) return;
+    setCreateOpen(false);
+  };
+
+  const createProgram = async () => {
+    const title = createForm.title.trim();
+    if (!title) {
+      toast.error('프로그램 제목을 입력해 주세요.');
+      return;
+    }
+
+    setCreating(true);
+    try {
+      const res = await fetch('/api/admin/spokedu-master/programs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createForm),
+      });
+      const json = await res.json() as { ok?: boolean; error?: string; program?: ProgramItem };
+      if (!res.ok || json.ok !== true || !json.program) {
+        throw new Error(json.error ?? '프로그램 추가에 실패했습니다.');
+      }
+
+      const next = json.program;
+      setItems((current) => [next, ...current.filter((item) => item.curriculum.id !== next.curriculum.id)]);
+      setSelectedId(next.curriculum.id);
+      setForm(toForm(next));
+      setActiveFilter('all');
+      setQuery('');
+      setCreateOpen(false);
+      setCreateForm({ title: '', videoUrl: '', equipment: '', steps: '' });
+      toast.success('프로그램을 추가했습니다. 이어서 상세 정보를 채워 주세요.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '프로그램 추가에 실패했습니다.');
+    } finally {
+      setCreating(false);
+    }
   };
 
   const syncFromCenter = async () => {
@@ -1430,6 +1608,15 @@ export default function AdminSmProgramsPage() {
             <>
           <button
             type="button"
+            onClick={() => setCreateOpen(true)}
+            disabled={creating}
+            className="inline-flex h-9 items-center gap-2 rounded-lg bg-slate-950 px-3 text-[12px] font-black text-white disabled:opacity-50"
+          >
+            <Plus size={14} />
+            프로그램 직접 추가
+          </button>
+          <button
+            type="button"
             onClick={() => void syncFromCenter()}
             disabled={syncing || loading}
             className="inline-flex h-9 items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-800 disabled:opacity-50"
@@ -1461,6 +1648,16 @@ export default function AdminSmProgramsPage() {
       </header>
 
       {activeTab === 'programs' ? <WeeklyRecommendationManager items={items} onSaved={load} /> : null}
+
+      {createOpen ? (
+        <CreateProgramModal
+          form={createForm}
+          creating={creating}
+          onChange={updateCreateForm}
+          onClose={closeCreateModal}
+          onSubmit={() => void createProgram()}
+        />
+      ) : null}
 
       {activeTab === 'spomove-thumbnails' ? (
         <SpomoveThumbnailManager />

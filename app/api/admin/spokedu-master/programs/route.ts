@@ -228,6 +228,96 @@ export async function GET() {
   }
 }
 
+export async function POST(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  let body: {
+    title?: unknown;
+    videoUrl?: unknown;
+    equipment?: unknown;
+    steps?: unknown;
+  };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'invalid json' }, { status: 400 });
+  }
+
+  const title = normalizeUnknownText(body.title);
+  if (!title) {
+    return NextResponse.json({ error: 'title is required' }, { status: 400 });
+  }
+
+  try {
+    const supabase = getServiceSupabase();
+    const equipment = splitLines(isString(body.equipment) ? body.equipment : '');
+    const steps = splitLines(isString(body.steps) ? body.steps : '');
+    const videoUrl = normalizeVideoUrl(isString(body.videoUrl) ? body.videoUrl : null);
+
+    const { data: orderRows, error: orderErr } = await supabase
+      .from('curriculum')
+      .select('display_order')
+      .eq('is_sub', false)
+      .order('display_order', { ascending: false, nullsFirst: false })
+      .limit(1);
+    if (orderErr) throw orderErr;
+
+    const currentMaxOrder = Number((orderRows?.[0] as { display_order?: number | null } | undefined)?.display_order);
+    const displayOrder = Number.isFinite(currentMaxOrder) ? currentMaxOrder + 1 : 0;
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from('curriculum')
+      .insert({
+        title,
+        url: videoUrl,
+        month: null,
+        week: null,
+        display_order: displayOrder,
+        equipment,
+        steps,
+        is_sub: false,
+      })
+      .select('id')
+      .single();
+    if (insertErr) throw insertErr;
+
+    const curriculumId = (inserted as { id: number }).id;
+
+    const { error: overlayErr } = await supabase
+      .from('spokedu_pro_programs')
+      .insert({
+        title,
+        source_center_curriculum_id: curriculumId,
+        video_url: videoUrl,
+        equipment: equipment.join('\n') || null,
+        activity_method: steps.join('\n') || null,
+        is_published: true,
+      });
+    if (overlayErr) throw overlayErr;
+
+    const { error: metaErr } = await supabase
+      .from('spokedu_master_program_meta')
+      .upsert({
+        curriculum_id: curriculumId,
+        sm_tags: [],
+        sm_display_order: displayOrder,
+        sm_is_pro: true,
+        sm_is_new: true,
+        sm_is_hot: false,
+      }, { onConflict: 'curriculum_id' });
+    if (metaErr) throw metaErr;
+
+    const data = await loadPrograms();
+    const program = data.find((item) => item.curriculum.id === curriculumId);
+    if (!program) throw new Error(`Created program ${curriculumId} could not be reloaded.`);
+
+    return NextResponse.json({ ok: true, program });
+  } catch (error) {
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 });
+  }
+}
+
 export async function PATCH(request: Request) {
   const auth = await requireAdmin();
   if (!auth.ok) return auth.response;

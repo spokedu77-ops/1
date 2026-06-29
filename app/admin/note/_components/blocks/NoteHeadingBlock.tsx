@@ -2,7 +2,6 @@
 
 import { createHeadingEnterHandler } from '../../_lib/noteInlineBlockEnter';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
-import { useBlockLiveContent } from './useBlockLiveContent';
 import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
 import type { NoteBlock } from '../../_lib/types';
 
@@ -33,6 +32,7 @@ type NoteHeadingBlockProps = NoteInlineTextBlockProps & {
 
 export function NoteHeadingBlock({
   block,
+  liveContent,
   variant,
   contentMarginLeft,
   rootBlockShell,
@@ -47,7 +47,6 @@ export function NoteHeadingBlock({
   slashHostRef,
   ...fieldProps
 }: NoteHeadingBlockProps) {
-  const liveContent = useBlockLiveContent(block);
   const config = HEADING_VARIANTS[variant];
   const text = typeof liveContent.text === 'string' ? liveContent.text : '';
   const shell = isInsideToggle ? config.rowClassName : rootBlockShell;

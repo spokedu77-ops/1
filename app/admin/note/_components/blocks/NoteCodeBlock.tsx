@@ -7,6 +7,7 @@ import type { NoteInlineTextBlockProps } from './noteBlockContentTypes';
 
 export function NoteCodeBlock({
   block,
+  liveContent,
   contentMarginLeft,
   enterCreatesBlockBelow,
   onContentPatch,
@@ -21,7 +22,7 @@ export function NoteCodeBlock({
 }: NoteInlineTextBlockProps & {
   renderSlashMenuPortal: () => ReactNode;
 }) {
-  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  const text = typeof liveContent.text === 'string' ? liveContent.text : '';
 
   const handleCodeEnter = createInlineBlockEnterHandler({
     block,

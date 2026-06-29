@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   isRichPreviewEmpty,
   resolveRichPreviewHtml,
@@ -46,11 +46,10 @@ export function BlockTextPreview({
   onActivate,
   onOpenDocumentById,
 }: BlockTextPreviewProps) {
-  const [renderKey, setRenderKey] = useState(0);
-  let html = resolveRichPreviewHtml({ content, field, text });
-  if (stripListMarkers) {
-    html = stripListItemMarkerFromHtml(html);
-  }
+  const html = useMemo(() => {
+    const nextHtml = resolveRichPreviewHtml({ content, field, text });
+    return stripListMarkers ? stripListItemMarkerFromHtml(nextHtml) : nextHtml;
+  }, [content, field, text, stripListMarkers]);
   const empty = isRichPreviewEmpty(html, text);
   const imageLightbox = useNoteImageLightbox();
   const pointerStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -74,7 +73,6 @@ export function BlockTextPreview({
     } else {
       clearBlockPreviewCrossHighlight(blockId);
     }
-    setRenderKey((key) => key + 1);
   }, [blockId, html]);
 
   const hasTextSelection = () => {
@@ -148,7 +146,7 @@ export function BlockTextPreview({
       {empty ? (
         <p className="is-editor-empty" data-placeholder={placeholder} />
       ) : (
-        <div key={renderKey} className="min-w-0 w-full" dangerouslySetInnerHTML={{ __html: html }} />
+        <div className="min-w-0 w-full" dangerouslySetInnerHTML={{ __html: html }} />
       )}
     </div>
   );
