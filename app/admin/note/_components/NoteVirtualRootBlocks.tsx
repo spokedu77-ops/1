@@ -1,6 +1,7 @@
 'use client';
 
-import { Fragment, useEffect, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from '../_lib/types';
 
 const DEFAULT_ROW_HEIGHT = 44;
@@ -8,6 +9,12 @@ const OVERSCAN = 16;
 const VIRTUALIZE_THRESHOLD = 48;
 /** 토글·다중 줄 블록은 높이가 달라 고정 px 가상화 시 겹침·교차 선택 오류 발생 */
 const ENABLE_FIXED_ROW_VIRTUALIZATION = false;
+const OFFSCREEN_RENDER_THRESHOLD = 24;
+
+const OFFSCREEN_RENDER_STYLE: CSSProperties = {
+  contentVisibility: 'auto',
+  containIntrinsicSize: `${DEFAULT_ROW_HEIGHT}px`,
+};
 
 type NoteVirtualRootBlocksProps = {
   rootBlocks: NoteBlock[];
@@ -16,7 +23,25 @@ type NoteVirtualRootBlocksProps = {
   /** DnD·마퀴 중에는 전체 DOM 유지 */
   forceRenderAll?: boolean;
   estimatedRowHeight?: number;
+  /** DOM은 유지하되 화면 밖 subtree paint/layout을 브라우저에 지연시킨다. */
+  deferOffscreenRender?: boolean;
 };
+
+function DeferredRootBlock({ children }: { children: ReactNode }) {
+  const [interactive, setInteractive] = useState(false);
+  const activeEditor = useNoteBlockStore((state) => state.activeEditor);
+  const suspendOffscreenRender = interactive || !!activeEditor;
+
+  return (
+    <div
+      style={suspendOffscreenRender ? undefined : OFFSCREEN_RENDER_STYLE}
+      onPointerEnter={() => setInteractive(true)}
+      onFocusCapture={() => setInteractive(true)}
+    >
+      {children}
+    </div>
+  );
+}
 
 /**
  * 노션식 루트 블록 windowing — 화면 밖 블록은 placeholder로 대체.
@@ -28,6 +53,7 @@ export function NoteVirtualRootBlocks({
   renderBlock,
   forceRenderAll = false,
   estimatedRowHeight = DEFAULT_ROW_HEIGHT,
+  deferOffscreenRender = true,
 }: NoteVirtualRootBlocksProps) {
   const [range, setRange] = useState(() => ({
     start: 0,
@@ -73,10 +99,23 @@ export function NoteVirtualRootBlocks({
     || !ENABLE_FIXED_ROW_VIRTUALIZATION
     || rootBlocks.length <= VIRTUALIZE_THRESHOLD
   ) {
+    const offscreenStyle =
+      deferOffscreenRender
+      && !forceRenderAll
+      && rootBlocks.length > OFFSCREEN_RENDER_THRESHOLD
+        ? OFFSCREEN_RENDER_STYLE
+        : undefined;
+
     return (
       <>
         {rootBlocks.map((block) => (
-          <Fragment key={block.id}>{renderBlock(block)}</Fragment>
+          offscreenStyle ? (
+            <DeferredRootBlock key={block.id}>
+              {renderBlock(block)}
+            </DeferredRootBlock>
+          ) : (
+            <Fragment key={block.id}>{renderBlock(block)}</Fragment>
+          )
         ))}
       </>
     );

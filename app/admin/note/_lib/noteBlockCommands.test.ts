@@ -124,6 +124,22 @@ describe('note block commands', () => {
     expect(blocks).toHaveLength(3);
   });
 
+  it('keeps a runtime split hint when merging a list item into previous text', () => {
+    const blocks = [
+      { ...block('a', 0), content: { text: 'hello ' } },
+      { ...block('b', 1), type: 'numberedList', content: { text: 'world' } },
+    ];
+
+    const command = buildMergeWithPreviousBlockCommand(blocks, 'b');
+
+    expect(command?.nextBlocks[0].content.text).toBe('hello world');
+    expect(command?.caretOffset).toBe(6);
+    expect(command?.splitHint).toEqual({
+      blockType: 'numberedList',
+      offset: 6,
+    });
+  });
+
   it('moves a selected group inside one block with one persistence payload', () => {
     const blocks = [
       block('container', 0),

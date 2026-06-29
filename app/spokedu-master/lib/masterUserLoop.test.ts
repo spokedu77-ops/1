@@ -8,8 +8,17 @@ function profile(overrides: Partial<UserProfile> = {}): UserProfile {
     id: 'user-1',
     name: 'Teacher',
     email: 'teacher@example.com',
+    school: '',
+    avatarColor: '#000000',
     plan: 'free',
+    role: 'teacher',
+    centerId: null,
+    centerName: null,
+    ageGroups: [],
+    programTypes: [],
+    onboardingDone: true,
     trialEndsAt: null,
+    createdAt: '2026-06-01T00:00:00.000Z',
     ...overrides,
   };
 }

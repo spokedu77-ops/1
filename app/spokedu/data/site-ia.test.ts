@@ -1,3 +1,4 @@
+import { describe, expect, it } from 'vitest';
 import { homePage } from './home-page';
 import {
   AUDIENCE_TRACK_ORDER,

@@ -1,14 +1,23 @@
 'use client';
 
+import { memo } from 'react';
 import { DragOverlay } from '@dnd-kit/core';
 import { GripVertical } from 'lucide-react';
 import { DragPreview } from '../blocks/NoteBlockRows';
 import { DocIconGlyph, resolveDocIcon } from '../../_lib/noteDocumentUi';
-import { useNotePage } from '../../_page/NotePageContext';
+import type { NoteBlock, NoteDocument } from '../../_lib/types';
 
-export function NoteDragOverlayLayer() {
-  const { activeBlock, multiDragCount, activeDragDocument } = useNotePage();
+type NoteDragOverlayLayerProps = {
+  activeBlock: NoteBlock | null;
+  multiDragCount: number;
+  activeDragDocument: NoteDocument | null;
+};
 
+export const NoteDragOverlayLayer = memo(function NoteDragOverlayLayer({
+  activeBlock,
+  multiDragCount,
+  activeDragDocument,
+}: NoteDragOverlayLayerProps) {
   return (
     <DragOverlay dropAnimation={{ duration: 160, easing: 'ease' }}>
       {activeBlock ? (
@@ -33,4 +42,4 @@ export function NoteDragOverlayLayer() {
       ) : null}
     </DragOverlay>
   );
-}
+});

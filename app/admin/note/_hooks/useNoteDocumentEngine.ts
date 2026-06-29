@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   applyNoteDocumentOp,
   applyServerBlockVersions,
@@ -51,8 +51,10 @@ export function useNoteDocumentEngine(options: {
   const triggerSaveRef = useRef(triggerSave);
   const onErrorRef = useRef(onError);
 
-  triggerSaveRef.current = triggerSave;
-  onErrorRef.current = onError;
+  useLayoutEffect(() => {
+    triggerSaveRef.current = triggerSave;
+    onErrorRef.current = onError;
+  }, [triggerSave, onError]);
 
   const syncPendingFlag = useCallback(() => {
     setNoteContentSavePending(queueRef.current?.hasPendingContent ?? false);
@@ -65,21 +67,28 @@ export function useNoteDocumentEngine(options: {
     const current = createNoteDocumentEngineState(documentId, store.getBlocksArray());
     const next = applyNoteDocumentOp(current, op, { activeBlockId }).blocks;
     setBlocks(next);
-  }, [blocksRef, documentId, setBlocks]);
+  }, [documentId, setBlocks]);
 
   const applyLocalRef = useRef(applyLocal);
-  applyLocalRef.current = applyLocal;
+  useLayoutEffect(() => {
+    applyLocalRef.current = applyLocal;
+  }, [applyLocal]);
 
   const applyServerVersions = useCallback((patched: PatchedNoteBlock[]) => {
     if (!documentId || patched.length === 0) return;
     const nextFromRef = applyServerBlockVersions(blocksRef.current, patched);
     blocksRef.current = nextFromRef;
-    useNoteBlockStore.getState().replaceBlocks(nextFromRef);
-    // version만 갱신 — 본문 타이핑 경로와 같이 React 전체 리렌더 생략
+    const store = useNoteBlockStore.getState();
+    store.replaceBlocks(applyServerBlockVersions(store.getBlocksArray(), patched));
+    // version만 갱신 — 본문 타이핑 경로와 같이 React 전체 리렌더 생략.
+    // store에는 blocksRef보다 최신 타이핑 content가 있을 수 있으므로
+    // stale ref snapshot으로 store 전체를 덮지 않는다.
   }, [blocksRef, documentId]);
 
   const applyServerVersionsRef = useRef(applyServerVersions);
-  applyServerVersionsRef.current = applyServerVersions;
+  useLayoutEffect(() => {
+    applyServerVersionsRef.current = applyServerVersions;
+  }, [applyServerVersions]);
 
   useEffect(() => {
     queueRef.current?.dispose();

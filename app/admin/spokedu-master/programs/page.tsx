@@ -532,13 +532,29 @@ function safeImageExtension(fileName: string, contentType: string) {
 function resolveSetupImageSrc(url: string) {
   const trimmed = url.trim();
   if (!trimmed) return '';
+  const cacheBust = Date.now();
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('/')) {
-    return trimmed;
+    return withPublicUrlCacheBust(trimmed, cacheBust);
   }
   try {
-    return getPublicUrl(trimmed);
+    return withPublicUrlCacheBust(getPublicUrl(trimmed), cacheBust);
   } catch {
     return trimmed;
+  }
+}
+
+function storagePathFromPublicUrl(value: string) {
+  const text = value.trim();
+  if (!text) return '';
+  if (!/^https?:\/\//i.test(text)) return text.split('?')[0] ?? '';
+  try {
+    const url = new URL(text);
+    const marker = '/storage/v1/object/public/iiwarmup-files/';
+    const markerIndex = url.pathname.indexOf(marker);
+    if (markerIndex < 0) return '';
+    return decodeURIComponent(url.pathname.slice(markerIndex + marker.length));
+  } catch {
+    return '';
   }
 }
 
@@ -546,10 +562,12 @@ function SetupImageUpload({
   curriculumId,
   value,
   onChange,
+  onRemove,
 }: {
   curriculumId: number;
   value: string;
   onChange: (next: string) => void;
+  onRemove?: () => void;
 }) {
   const [uploading, setUploading] = useState(false);
   const previewSrc = resolveSetupImageSrc(value);
@@ -567,9 +585,13 @@ function SetupImageUpload({
     setUploading(true);
     try {
       const ext = safeImageExtension(file.name, file.type);
-      const path = `spokedu-master/programs/${curriculumId}/setup.${ext}`;
+      const previousPath = storagePathFromPublicUrl(value);
+      const path = `spokedu-master/programs/${curriculumId}/setup-${Date.now()}.${ext}`;
       await uploadToStorage(path, file, file.type || 'image/jpeg');
-      onChange(getPublicUrl(path));
+      onChange(withPublicUrlCacheBust(getPublicUrl(path), Date.now()));
+      if (previousPath && previousPath !== path) {
+        await deleteFromStorage(previousPath).catch(() => undefined);
+      }
       toast.success('세팅 이미지를 업로드했습니다.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
@@ -605,7 +627,11 @@ function SetupImageUpload({
             <button
               type="button"
               className="shrink-0 text-[11px] font-black text-rose-600"
-              onClick={() => onChange('')}
+              onClick={onRemove ?? (() => {
+                const path = storagePathFromPublicUrl(value);
+                onChange('');
+                if (path) void deleteFromStorage(path).catch(() => undefined);
+              })}
             >
               제거
             </button>
@@ -1574,6 +1600,72 @@ export default function AdminSmProgramsPage() {
     }
   };
 
+  const removeSetupImage = async () => {
+    if (!selected || !form || !form.setupImageUrl.trim()) return;
+    const previousForm = form;
+    const previousImageUrl = form.setupImageUrl;
+    const nextForm = { ...form, setupImageUrl: '' };
+
+    setForm(nextForm);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/spokedu-master/programs?id=${selected.curriculum.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildAdminProgramSavePayload({
+          title: nextForm.title,
+          fallbackTitle: selected.curriculum.title,
+          videoUrl: nextForm.videoUrl,
+          equipment: nextForm.equipment,
+          activityMethod: nextForm.steps,
+          publicationStatus: nextForm.publicationStatus,
+          theme: normalizeLessonTheme(nextForm.theme),
+          target: serializeMasterTags(parseMasterTargets(nextForm.target)),
+          tags: csvToList(nextForm.tags),
+          space: serializeMasterTags(parseMasterSpaces(nextForm.space)),
+          duration: normalizeMasterDuration(nextForm.duration),
+          setupImageUrl: '',
+          coachScript: nextForm.coachScript,
+          briefingNotes: nextForm.briefingNotes,
+          variationMethod: nextForm.variations,
+        })),
+      });
+      const json = await res.json() as {
+        ok?: boolean;
+        partialSave?: boolean;
+        failedStage?: string;
+        error?: string;
+        program?: SavedAdminProgram<Partial<OverlayRow>, MetaRow>;
+      };
+      if (!res.ok || json.ok !== true) {
+        const message = json.partialSave
+          ? `이미지 제거 저장 중 일부 단계가 실패했습니다${json.failedStage ? ` (${json.failedStage})` : ''}.`
+          : json.error ?? '이미지 제거 저장에 실패했습니다.';
+        throw new Error(message);
+      }
+      if (!json.program) throw new Error('저장된 프로그램 응답이 없습니다.');
+
+      const next = mergeSavedProgram(selected, json.program);
+      setItems((current) => replaceAdminProgramByCurriculumId(
+        current,
+        selected.curriculum.id,
+        next,
+        (item) => item.curriculum.id,
+      ));
+      setSelectedId(next.curriculum.id);
+      setForm(toForm(next));
+
+      const path = storagePathFromPublicUrl(previousImageUrl);
+      if (path) await deleteFromStorage(path).catch(() => undefined);
+      toast.success('도식화 이미지를 제거했습니다.');
+    } catch (error) {
+      setForm(previousForm);
+      toast.error(error instanceof Error ? error.message : '이미지 제거에 실패했습니다.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const selectedQuality = form ? getFormQuality(form) : null;
   const selectedQualitySummary = selectedQuality ? qualitySummary(selectedQuality) : '';
 
@@ -1834,6 +1926,7 @@ export default function AdminSmProgramsPage() {
                         curriculumId={selected.curriculum.id}
                         value={form.setupImageUrl}
                         onChange={(next) => updateForm('setupImageUrl', next)}
+                        onRemove={() => void removeSetupImage()}
                       />
                     </Field>
                     <Field label="수업 스크립트"><TextArea rows={6} value={form.coachScript} onChange={(e) => updateForm('coachScript', e.target.value)} /></Field>

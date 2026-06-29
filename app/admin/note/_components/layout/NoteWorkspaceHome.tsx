@@ -1,18 +1,24 @@
 'use client';
 
+import { memo } from 'react';
 import { Loader2, Plus } from 'lucide-react';
 import { NOTE_PAGE_SHELL } from '../../_lib/constants';
 import { DocIconGlyph, relativeTime, resolveDocIcon } from '../../_lib/noteDocumentUi';
-import { useNotePage } from '../../_page/NotePageContext';
+import type { NoteDocument } from '../../_lib/types';
 
-export function NoteWorkspaceHome() {
-  const {
-    loadingDocuments,
-    rootDocuments,
-    handleSelectDocument,
-    handleCreateDocument,
-  } = useNotePage();
+type NoteWorkspaceHomeProps = {
+  loadingDocuments: boolean;
+  rootDocuments: NoteDocument[];
+  handleSelectDocument: (doc: NoteDocument) => void;
+  handleCreateDocument: (parentId?: string | null, options?: { navigateToChild?: boolean }) => Promise<void>;
+};
 
+export const NoteWorkspaceHome = memo(function NoteWorkspaceHome({
+  loadingDocuments,
+  rootDocuments,
+  handleSelectDocument,
+  handleCreateDocument,
+}: NoteWorkspaceHomeProps) {
   return (
     <div className="min-w-0 flex-1 overflow-y-auto bg-white">
       <div className={`${NOTE_PAGE_SHELL} py-10`}>
@@ -65,4 +71,4 @@ export function NoteWorkspaceHome() {
       </div>
     </div>
   );
-}
+});

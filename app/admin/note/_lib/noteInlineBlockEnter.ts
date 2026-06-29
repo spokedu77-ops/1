@@ -4,6 +4,7 @@ import {
   resolveHeadingEnterAction,
   resolveInlineBlockEnterAction,
 } from './noteNotionBlockBehavior';
+import { consumeNoteMergeSplitHint } from './noteMergeSplitHint';
 import type { NoteBlock } from './types';
 
 type InlineEnterHandlerOptions = {
@@ -52,6 +53,23 @@ function runInlineEnterAction(
 
 export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions) {
   return (enterCtx?: NoteEditorEnterContext) => {
+    if (
+      options.followType === 'text'
+      && enterCtx?.split
+    ) {
+      const hint = consumeNoteMergeSplitHint(
+        options.block.id,
+        enterCtx.split.beforeText.length,
+      );
+      if (hint) {
+        options.onAddBelow(hint.blockType, {
+          text: enterCtx.split.afterText,
+          html: enterCtx.split.afterHtml,
+        });
+        return;
+      }
+    }
+
     const action = resolveInlineBlockEnterAction({
       followType: options.followType,
       text: liveTextForBlock(options.block, options.text ?? ''),

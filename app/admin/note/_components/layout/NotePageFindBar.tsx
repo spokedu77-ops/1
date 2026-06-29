@@ -5,8 +5,14 @@ import { ChevronDown, ChevronUp, Search, X } from 'lucide-react';
 import { mergeBlocksWithStoreContent } from '../../_lib/noteBlockStateMerge';
 import { searchNoteBlocks } from '../../_lib/noteBlockSearch';
 import { useNoteBlockStore } from '../../_store/noteBlockStore';
-import { useNotePage } from '../../_page/NotePageContext';
-import type { NoteBlock } from '../../_lib/types';
+import type { NoteBlock, NoteDocument } from '../../_lib/types';
+
+type FocusBlockEditor = (
+  blockId: string | null,
+  part?: 'title' | 'editor',
+  caretOffset?: number,
+  options?: { preventScroll?: boolean },
+) => void;
 
 function NotePageFindBarPanel({
   blocks,
@@ -14,7 +20,7 @@ function NotePageFindBarPanel({
   onClose,
 }: {
   blocks: NoteBlock[];
-  focusBlockEditor: ReturnType<typeof useNotePage>['focusBlockEditor'];
+  focusBlockEditor: FocusBlockEditor;
   onClose: () => void;
 }) {
   const storeById = useNoteBlockStore((state) => state.byId);
@@ -22,10 +28,13 @@ function NotePageFindBarPanel({
   const [hitIndex, setHitIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const hits = useMemo(
-    () => searchNoteBlocks(mergeBlocksWithStoreContent(blocks), query),
-    [blocks, storeById, query],
-  );
+  const hits = useMemo(() => {
+    // storeById is intentionally subscribed: mergeBlocksWithStoreContent reads
+    // the store snapshot, and this dependency recomputes search hits as live
+    // editor content changes.
+    void storeById;
+    return searchNoteBlocks(mergeBlocksWithStoreContent(blocks), query);
+  }, [blocks, storeById, query]);
 
   const goToHit = useCallback((index: number) => {
     if (hits.length === 0) return;
@@ -116,8 +125,15 @@ function NotePageFindBarPanel({
   );
 }
 
-export function NotePageFindBar() {
-  const { blocks, focusBlockEditor, activeDocument } = useNotePage();
+export function NotePageFindBar({
+  blocks,
+  focusBlockEditor,
+  activeDocument,
+}: {
+  blocks: NoteBlock[];
+  focusBlockEditor: FocusBlockEditor;
+  activeDocument: NoteDocument | null;
+}) {
   const [open, setOpen] = useState(false);
   const [panelKey, setPanelKey] = useState(0);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import {
   useIsNoteActiveEditor,
@@ -17,7 +17,6 @@ import {
   setActiveEditorBridge,
 } from '../_lib/noteActiveEditorBridge';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
-import { parseAdminNoteDocumentIdFromHref } from '../_lib/notePaste';
 import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
 import type { MarkdownBlockTrigger } from './noteBulletInput';
@@ -125,6 +124,7 @@ export function NoteEditableField({
   const slashHostRef = externalSlashHostRef ?? internalSlashHostRef;
   const slotRef = useRef<HTMLDivElement>(null);
   const editorPropsRef = useRef<ComponentProps<typeof NoteEditor> | null>(null);
+  const editorReadyRafRef = useRef<number | null>(null);
   const storeContent = useNoteBlockContent(blockId);
   const isActiveEditor = useIsNoteActiveEditor(blockId, field);
   const setActiveEditor = useNoteBlockStore((state) => state.setActiveEditor);
@@ -146,6 +146,22 @@ export function NoteEditableField({
   const hidePreview = shouldMountEditor && editorSurfaceReady;
   const resolvedEditorBackspace =
     onEditorBackspace === false ? undefined : onEditorBackspace;
+
+  const cancelEditorReadyFrame = useCallback(() => {
+    if (editorReadyRafRef.current === null) return;
+    cancelAnimationFrame(editorReadyRafRef.current);
+    editorReadyRafRef.current = null;
+  }, []);
+
+  const markEditorSurfaceReady = useCallback(() => {
+    cancelEditorReadyFrame();
+    editorReadyRafRef.current = requestAnimationFrame(() => {
+      editorReadyRafRef.current = requestAnimationFrame(() => {
+        editorReadyRafRef.current = null;
+        setEditorSurfaceReady(true);
+      });
+    });
+  }, [cancelEditorReadyFrame]);
 
   const activateEditor = () => {
     setActiveEditor({ blockId, field });
@@ -184,9 +200,6 @@ export function NoteEditableField({
     }
     pushContent(nextContent);
   };
-
-  const handleChangeRef = useRef(handleChange);
-  handleChangeRef.current = handleChange;
 
   let editorContent: Record<string, unknown> | null | undefined = resolvedContent as Record<string, unknown>;
   let previewContent: Record<string, unknown> | null | undefined = resolvedContent as Record<string, unknown>;
@@ -239,7 +252,7 @@ export function NoteEditableField({
       setActiveEditor({ blockId, field });
       onTrackActiveBlock?.('editor');
     },
-    onEditorSurfaceReady: () => setEditorSurfaceReady(true),
+    onEditorSurfaceReady: markEditorSurfaceReady,
     onSlashChange,
     onShowFormatToolbar,
     onHideFormatToolbar,
@@ -272,6 +285,7 @@ export function NoteEditableField({
 
   useLayoutEffect(() => {
     if (!shouldMountEditor) {
+      cancelEditorReadyFrame();
       setEditorSurfaceReady(false);
       return;
     }
@@ -280,16 +294,17 @@ export function NoteEditableField({
       return Boolean(editor?.view?.dom?.isConnected);
     };
     if (isConnected()) {
-      setEditorSurfaceReady(true);
+      markEditorSurfaceReady();
       return;
     }
+    cancelEditorReadyFrame();
     setEditorSurfaceReady(false);
     let cancelled = false;
     let framesLeft = 48;
     const waitForEditor = () => {
       if (cancelled) return;
       if (isConnected()) {
-        setEditorSurfaceReady(true);
+        markEditorSurfaceReady();
         return;
       }
       if (framesLeft <= 0) return;
@@ -300,7 +315,11 @@ export function NoteEditableField({
     return () => {
       cancelled = true;
     };
-  }, [shouldMountEditor, blockId, autoFocusSignal]);
+  }, [shouldMountEditor, blockId, autoFocusSignal, cancelEditorReadyFrame, markEditorSurfaceReady]);
+
+  useEffect(() => () => {
+    cancelEditorReadyFrame();
+  }, [cancelEditorReadyFrame]);
 
   const previewNode = (
     <BlockTextPreview

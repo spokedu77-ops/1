@@ -14,7 +14,7 @@ import {
 import { DocItem } from '../_components/sidebar/NoteDocChrome';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
 import type { BlockDropTarget } from '../_components/noteContexts';
-import type { ReactNode } from 'react';
+import { useCallback, useRef, type ReactNode } from 'react';
 import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import { createNotionEmptyBackspaceHandler } from '../_lib/noteNotionBlockBehavior';
 
@@ -89,7 +89,11 @@ export type NoteBlockRendererDeps = {
 };
 
 export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
-  function renderDocumentTree(doc: NoteDocument, depth = 0): ReactNode {
+  const depsRef = useRef(deps);
+  depsRef.current = deps;
+
+  const renderDocumentTree = useCallback(function renderDocumentTree(doc: NoteDocument, depth = 0): ReactNode {
+    const deps = depsRef.current;
     const children = deps.childrenByParent.get(doc.id) ?? [];
     const isExpanded = deps.expandedSidebarDocs.has(doc.id);
     return (
@@ -121,9 +125,10 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         )}
       </div>
     );
-  }
+  }, []);
 
-  function renderToggleInlineChild(block: NoteBlock, nestDepth = 1): ReactNode {
+  const renderToggleInlineChild = useCallback(function renderToggleInlineChild(block: NoteBlock, nestDepth = 1): ReactNode {
+    const deps = depsRef.current;
     const childBlocks = deps.childrenByParentBlock.get(block.id) ?? [];
     const siblings = getBlocksInParent(deps.blocks, block.parent_block_id ?? null);
     const numberedListIndex = block.type === 'numberedList'
@@ -183,9 +188,10 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         }
       />
     );
-  }
+  }, []);
 
-  function renderSortableBlock(block: NoteBlock): ReactNode {
+  const renderSortableBlock = useCallback(function renderSortableBlock(block: NoteBlock): ReactNode {
+    const deps = depsRef.current;
     const childBlocks = deps.childrenByParentBlock.get(block.id) ?? [];
     const siblings = getBlocksInParent(deps.blocks, block.parent_block_id ?? null);
     const numberedListIndex = block.type === 'numberedList'
@@ -240,7 +246,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onFocusBlockById={(id: string, part?: 'title' | 'editor', offset?: number) => deps.focusBlockEditor(id, part, offset)}
       />
     );
-  }
+  }, [renderToggleInlineChild]);
 
   return { renderDocumentTree, renderSortableBlock };
 }

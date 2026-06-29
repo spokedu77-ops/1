@@ -1,11 +1,23 @@
 'use client';
 
+import { memo } from 'react';
 import { Plus } from 'lucide-react';
-import { useNotePage } from '../../_page/NotePageContext';
+import type { LoadingState } from '../../_lib/types';
+import type { MobileTab } from '../../_page/NotePageContext';
 
-export function NoteMobileHeader() {
-  const { mobileTab, setMobileTab, handleCreateDocument, loadingState } = useNotePage();
+type NoteMobileHeaderProps = {
+  mobileTab: MobileTab;
+  setMobileTab: (tab: MobileTab) => void;
+  handleCreateDocument: (parentId?: string | null, options?: { navigateToChild?: boolean }) => Promise<void>;
+  loadingState: LoadingState;
+};
 
+export const NoteMobileHeader = memo(function NoteMobileHeader({
+  mobileTab,
+  setMobileTab,
+  handleCreateDocument,
+  loadingState,
+}: NoteMobileHeaderProps) {
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-3 md:hidden">
       <div className="flex items-center gap-0">
@@ -34,4 +46,4 @@ export function NoteMobileHeader() {
       </button>
     </div>
   );
-}
+});

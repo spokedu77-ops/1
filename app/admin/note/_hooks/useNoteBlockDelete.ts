@@ -16,6 +16,7 @@ import {
   commitActiveNoteEditorToStore,
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
+import { setNoteMergeSplitHint } from '../_lib/noteMergeSplitHint';
 import type { NoteBlock } from '../_lib/types';
 
 export function useNoteBlockDelete(options: {
@@ -128,6 +129,7 @@ export function useNoteBlockDelete(options: {
     finalizeBlockDelete,
     focusBlockEditor,
     onAfterBlocksRemoved,
+    recordBlockCommandUndo,
     setError,
   ]);
 
@@ -192,6 +194,7 @@ export function useNoteBlockDelete(options: {
     finalizeBlockDelete,
     handleDeleteBlock,
     onAfterBlocksRemoved,
+    recordBlockCommandUndo,
     selectedId,
     setError,
   ]);
@@ -204,6 +207,13 @@ export function useNoteBlockDelete(options: {
 
     recordBlockCommandUndo(prevBlocks, command);
     documentEngine.replaceBlocks(command.nextBlocks);
+    if (command.splitHint) {
+      setNoteMergeSplitHint({
+        blockId: command.focusBlockId,
+        offset: command.splitHint.offset,
+        blockType: command.splitHint.blockType,
+      });
+    }
     focusBlockEditor(command.focusBlockId, 'editor', command.caretOffset);
 
     try {

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import {
   ArrowLeft,
   Check,
@@ -32,63 +33,199 @@ import { EditorDocDropZone } from '../sidebar/NoteDocChrome';
 import { NoteVirtualRootBlocks } from '../NoteVirtualRootBlocks';
 import { prefetchNoteDocumentBlocks } from '../../_lib/noteDocumentBlocksPrefetch';
 import { useNoteTextDragActive } from '../../_hooks/useNoteTextDragActive';
-import { useNotePage } from '../../_page/NotePageContext';
+import type { NotePageContextValue } from '../../_page/NotePageContext';
 import { NoteWorkspaceHome } from './NoteWorkspaceHome';
 import { NotePageFindBar } from './NotePageFindBar';
 
-export function NoteEditorPanel() {
-  const {
-    viewMode,
-    mobileTab,
-    activeDocument,
-    selectedId,
-    loadingDocuments,
-    setMobileTab,
-    handleNavigateToWorkspace,
-    documentBreadcrumb,
-    handleSelectDocument,
-    loadingState,
-    lastSavedAt,
-    pageMenuRef,
-    showPageMenu,
-    setShowPageMenu,
-    handleCreateSubPage,
-    handleSetDocumentCover,
-    handleTogglePublic,
-    togglingPublic,
-    shareLinkCopied,
-    handleCopyPublicLink,
-    editorScrollRef,
-    handleDocumentBodyMouseDown,
-    parentDocument,
-    collaborators,
-    backlinks,
-    backlinksExpanded,
-    setBacklinksExpanded,
-    showDocIconPicker,
-    setShowDocIconPicker,
-    docIconDraft,
-    setDocIconDraft,
-    docIconInputRef,
-    handleSetDocumentIcon,
-    titleInputRef,
-    handleRenameDocument,
-    setSelectedBlockIds,
-    loadingBlocks,
-    selectedBlockIds,
-    handleBlockSelect,
-    suppressGripMenuRef,
-    marqueeOverlayRef,
-    handleBlockListPointerDown,
-    allSortableBlockIds,
-    rootBlocks,
-    activeBlockId,
-    blockMarqueeActive,
-    renderSortableBlock,
-    activeDragDocId,
-  } = useNotePage();
+type NoteEditorPanelProps = Pick<
+  NotePageContextValue,
+  | 'viewMode'
+  | 'mobileTab'
+  | 'activeDocument'
+  | 'selectedId'
+  | 'loadingDocuments'
+  | 'rootDocuments'
+  | 'setMobileTab'
+  | 'handleNavigateToWorkspace'
+  | 'documentBreadcrumb'
+  | 'handleSelectDocument'
+  | 'handleCreateDocument'
+  | 'loadingState'
+  | 'lastSavedAt'
+  | 'pageMenuRef'
+  | 'showPageMenu'
+  | 'setShowPageMenu'
+  | 'handleCreateSubPage'
+  | 'handleSetDocumentCover'
+  | 'handleTogglePublic'
+  | 'togglingPublic'
+  | 'shareLinkCopied'
+  | 'handleCopyPublicLink'
+  | 'editorScrollRef'
+  | 'handleDocumentBodyMouseDown'
+  | 'parentDocument'
+  | 'collaborators'
+  | 'backlinks'
+  | 'backlinksExpanded'
+  | 'setBacklinksExpanded'
+  | 'showDocIconPicker'
+  | 'setShowDocIconPicker'
+  | 'docIconDraft'
+  | 'setDocIconDraft'
+  | 'docIconInputRef'
+  | 'handleSetDocumentIcon'
+  | 'titleInputRef'
+  | 'handleRenameDocument'
+  | 'setSelectedBlockIds'
+  | 'loadingBlocks'
+  | 'blocks'
+  | 'selectedBlockIds'
+  | 'handleBlockSelect'
+  | 'suppressGripMenuRef'
+  | 'marqueeOverlayRef'
+  | 'handleBlockListPointerDown'
+  | 'allSortableBlockIds'
+  | 'rootBlocks'
+  | 'activeBlockId'
+  | 'blockMarqueeActive'
+  | 'renderSortableBlock'
+  | 'focusBlockEditor'
+  | 'activeDragDocId'
+>;
+
+type NoteBlockCanvasProps = Pick<
+  NotePageContextValue,
+  | 'loadingBlocks'
+  | 'rootBlocks'
+  | 'selectedBlockIds'
+  | 'handleBlockSelect'
+  | 'suppressGripMenuRef'
+  | 'marqueeOverlayRef'
+  | 'handleBlockListPointerDown'
+  | 'allSortableBlockIds'
+  | 'activeBlockId'
+  | 'blockMarqueeActive'
+  | 'renderSortableBlock'
+  | 'editorScrollRef'
+>;
+
+const NoteBlockCanvas = memo(function NoteBlockCanvas({
+  loadingBlocks,
+  rootBlocks,
+  selectedBlockIds,
+  handleBlockSelect,
+  suppressGripMenuRef,
+  marqueeOverlayRef,
+  handleBlockListPointerDown,
+  allSortableBlockIds,
+  activeBlockId,
+  blockMarqueeActive,
+  renderSortableBlock,
+  editorScrollRef,
+}: NoteBlockCanvasProps) {
   const textDragActive = useNoteTextDragActive();
 
+  if (loadingBlocks && rootBlocks.length === 0) {
+    return (
+      <div className="flex items-center gap-2 py-8 text-[13px] text-slate-400">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        블록 불러오는 중…
+      </div>
+    );
+  }
+
+  return (
+    <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
+      <OnBlockSelectContext.Provider value={handleBlockSelect}>
+        <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
+          <div
+            data-note-marquee-zone
+            className={NOTE_MARQUEE_ZONE}
+            onPointerDown={handleBlockListPointerDown}
+          >
+            <div
+              ref={marqueeOverlayRef}
+              className="pointer-events-none fixed z-[60] hidden border border-blue-400 bg-blue-500/20"
+              aria-hidden
+            />
+            <div className={`${NOTE_PAGE_SHELL} overflow-visible pb-32`}>
+              <SortableContext items={allSortableBlockIds} strategy={verticalListSortingStrategy}>
+                <div data-note-block-list className="relative overflow-visible">
+                  <NoteVirtualRootBlocks
+                    rootBlocks={rootBlocks}
+                    scrollRootRef={editorScrollRef}
+                    forceRenderAll={
+                      Boolean(activeBlockId)
+                      || selectedBlockIds.size > 0
+                      || blockMarqueeActive
+                      || textDragActive
+                    }
+                    renderBlock={renderSortableBlock}
+                  />
+                </div>
+              </SortableContext>
+            </div>
+          </div>
+        </SuppressGripMenuRefContext.Provider>
+      </OnBlockSelectContext.Provider>
+    </SelectedBlockIdsContext.Provider>
+  );
+});
+
+export const NoteEditorPanel = memo(function NoteEditorPanel({
+  viewMode,
+  mobileTab,
+  activeDocument,
+  selectedId,
+  loadingDocuments,
+  rootDocuments,
+  setMobileTab,
+  handleNavigateToWorkspace,
+  documentBreadcrumb,
+  handleSelectDocument,
+  handleCreateDocument,
+  loadingState,
+  lastSavedAt,
+  pageMenuRef,
+  showPageMenu,
+  setShowPageMenu,
+  handleCreateSubPage,
+  handleSetDocumentCover,
+  handleTogglePublic,
+  togglingPublic,
+  shareLinkCopied,
+  handleCopyPublicLink,
+  editorScrollRef,
+  handleDocumentBodyMouseDown,
+  parentDocument,
+  collaborators,
+  backlinks,
+  backlinksExpanded,
+  setBacklinksExpanded,
+  showDocIconPicker,
+  setShowDocIconPicker,
+  docIconDraft,
+  setDocIconDraft,
+  docIconInputRef,
+  handleSetDocumentIcon,
+  titleInputRef,
+  handleRenameDocument,
+  setSelectedBlockIds,
+  loadingBlocks,
+  blocks,
+  selectedBlockIds,
+  handleBlockSelect,
+  suppressGripMenuRef,
+  marqueeOverlayRef,
+  handleBlockListPointerDown,
+  allSortableBlockIds,
+  rootBlocks,
+  activeBlockId,
+  blockMarqueeActive,
+  renderSortableBlock,
+  focusBlockEditor,
+  activeDragDocId,
+}: NoteEditorPanelProps) {
   return (
     <div className={`min-w-0 flex-1 flex-col overflow-hidden bg-white ${
       viewMode === 'board' ? 'hidden' : mobileTab === 'editor' ? 'flex' : 'hidden'
@@ -133,10 +270,19 @@ export function NoteEditorPanel() {
       )}
 
       {!selectedId ? (
-        <NoteWorkspaceHome />
+        <NoteWorkspaceHome
+          loadingDocuments={loadingDocuments}
+          rootDocuments={rootDocuments}
+          handleSelectDocument={handleSelectDocument}
+          handleCreateDocument={handleCreateDocument}
+        />
       ) : (
         <div ref={editorScrollRef} className="min-w-0 flex-1 overflow-y-auto bg-white">
-          <NotePageFindBar />
+          <NotePageFindBar
+            blocks={blocks}
+            focusBlockEditor={focusBlockEditor}
+            activeDocument={activeDocument}
+          />
           {!activeDocument && loadingDocuments ? (
             <div className={`${NOTE_PAGE_SHELL} flex items-center gap-2 py-10 text-[13px] text-neutral-400`}>
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -441,49 +587,22 @@ export function NoteEditorPanel() {
             </div>
           )}
 
-          {loadingBlocks && rootBlocks.length === 0 ? (
-            <div className="flex items-center gap-2 py-8 text-[13px] text-slate-400">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              블록 불러오는 중…
-            </div>
-          ) : (
-            <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
-              <OnBlockSelectContext.Provider value={handleBlockSelect}>
-                <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
-                  <div
-                    data-note-marquee-zone
-                    className={NOTE_MARQUEE_ZONE}
-                    onPointerDown={handleBlockListPointerDown}
-                  >
-                    <div
-                      ref={marqueeOverlayRef}
-                      className="pointer-events-none fixed z-[60] hidden border border-blue-400 bg-blue-500/20"
-                      aria-hidden
-                    />
-                    <div className={`${NOTE_PAGE_SHELL} overflow-visible pb-32`}>
-                      <SortableContext items={allSortableBlockIds} strategy={verticalListSortingStrategy}>
-                        <div data-note-block-list className="relative overflow-visible">
-                          <NoteVirtualRootBlocks
-                            rootBlocks={rootBlocks}
-                            scrollRootRef={editorScrollRef}
-                            forceRenderAll={
-                              Boolean(activeBlockId)
-                              || selectedBlockIds.size > 0
-                              || blockMarqueeActive
-                              || textDragActive
-                            }
-                            renderBlock={renderSortableBlock}
-                          />
-                        </div>
-                      </SortableContext>
-                    </div>
-                  </div>
-                </SuppressGripMenuRefContext.Provider>
-              </OnBlockSelectContext.Provider>
-            </SelectedBlockIdsContext.Provider>
-          )}
+          <NoteBlockCanvas
+            loadingBlocks={loadingBlocks}
+            rootBlocks={rootBlocks}
+            selectedBlockIds={selectedBlockIds}
+            handleBlockSelect={handleBlockSelect}
+            suppressGripMenuRef={suppressGripMenuRef}
+            marqueeOverlayRef={marqueeOverlayRef}
+            handleBlockListPointerDown={handleBlockListPointerDown}
+            allSortableBlockIds={allSortableBlockIds}
+            activeBlockId={activeBlockId}
+            blockMarqueeActive={blockMarqueeActive}
+            renderSortableBlock={renderSortableBlock}
+            editorScrollRef={editorScrollRef}
+          />
         </div>
       )}
     </div>
   );
-}
+});

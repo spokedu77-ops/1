@@ -1,17 +1,26 @@
 'use client';
 
-import { useNotePage } from '../../_page/NotePageContext';
+import { memo, type RefObject } from 'react';
 
-export function NoteSidebarIconPicker() {
-  const {
-    sidebarIconPicker,
-    setSidebarIconPicker,
-    sidebarIconDraft,
-    setSidebarIconDraft,
-    sidebarIconInputRef,
-    handleSetDocumentIcon,
-  } = useNotePage();
+type SidebarIconPickerState = { docId: string; top: number; left: number };
 
+type NoteSidebarIconPickerProps = {
+  sidebarIconPicker: SidebarIconPickerState;
+  setSidebarIconPicker: (picker: SidebarIconPickerState | null) => void;
+  sidebarIconDraft: string;
+  setSidebarIconDraft: (draft: string) => void;
+  sidebarIconInputRef: RefObject<HTMLInputElement | null>;
+  handleSetDocumentIcon: (docId: string, icon: string) => Promise<void>;
+};
+
+export const NoteSidebarIconPicker = memo(function NoteSidebarIconPicker({
+  sidebarIconPicker,
+  setSidebarIconPicker,
+  sidebarIconDraft,
+  setSidebarIconDraft,
+  sidebarIconInputRef,
+  handleSetDocumentIcon,
+}: NoteSidebarIconPickerProps) {
   if (!sidebarIconPicker) return null;
 
   return (
@@ -49,4 +58,4 @@ export function NoteSidebarIconPicker() {
       </button>
     </div>
   );
-}
+});

@@ -219,9 +219,14 @@ export function buildInsertBlockCommand(
 export function buildMergeWithPreviousBlockCommand(
   blocks: NoteBlock[],
   blockId: string,
-): (NoteBlockCommandResult & { focusBlockId: string; caretOffset: number }) | null {
+): (NoteBlockCommandResult & {
+  focusBlockId: string;
+  caretOffset: number;
+  splitHint?: { blockType: NoteBlock['type']; offset: number };
+}) | null {
   const plan = planMergeWithPreviousBlock(blocks, blockId);
   if (!plan) return null;
+  const sourceBlock = blocks.find((block) => block.id === blockId);
   const deleteSet = new Set(collectBlockForestIds([plan.deleteId], blocks));
   const nextBlocks = blocks
     .filter((block) => !deleteSet.has(block.id))
@@ -240,5 +245,8 @@ export function buildMergeWithPreviousBlockCommand(
     removedBlocks: blocks.filter((block) => deleteSet.has(block.id)),
     focusBlockId: plan.previousId,
     caretOffset: plan.caretOffset,
+    ...(sourceBlock?.type === 'bulletList' || sourceBlock?.type === 'numberedList'
+      ? { splitHint: { blockType: sourceBlock.type, offset: plan.caretOffset } }
+      : {}),
   };
 }

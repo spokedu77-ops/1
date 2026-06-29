@@ -1,5 +1,7 @@
 'use client';
 
+import { memo } from 'react';
+import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
 import {
   Check,
   Clock,
@@ -13,49 +15,89 @@ import {
   SortAsc,
 } from 'lucide-react';
 import { BLOCK_TYPES } from '../../_lib/constants';
+import type { LoadingState, NoteBlock, NoteDocument, SortKey } from '../../_lib/types';
+import type { DocTab, MobileTab, ViewMode } from '../../_page/NotePageContext';
 import { DocRootDropZone, WorkspaceTitleDropTarget } from '../sidebar/NoteDocChrome';
-import { useNotePage } from '../../_page/NotePageContext';
 
-export function NoteSidebarPanel() {
-  const {
-    mobileTab,
-    activeDragDocId,
-    handleNavigateToWorkspace,
-    handleCreateDocument,
-    loadingState,
-    handleGoToDashboard,
-    viewMode,
-    setViewMode,
-    docTab,
-    setDocTab,
-    setSelectedId,
-    setBlocks,
-    setMobileTab,
-    loadTrashedBlocks,
-    searchQuery,
-    setSearchQuery,
-    sortKey,
-    setSortKey,
-    showSortMenu,
-    setShowSortMenu,
-    sortMenuRef,
-    loadingDocuments,
-    filteredDocuments,
-    pinnedDocuments,
-    favoriteDocuments,
-    otherDocuments,
-    rootDocuments,
-    renderDocumentTree,
-    selectedId,
-    loadingTrashedBlocks,
-    trashedBlocks,
-    restoringBlockId,
-    purgingBlockId,
-    handleRestoreDocument,
-    handlePurgeDocument,
-    handleRestoreBlockFromTrash,
-    handlePurgeBlockFromTrash,
-  } = useNotePage();
+type NoteSidebarPanelProps = {
+  mobileTab: MobileTab;
+  activeDragDocId: string | null;
+  handleNavigateToWorkspace: () => void;
+  handleCreateDocument: (parentId?: string | null, options?: { navigateToChild?: boolean }) => Promise<void>;
+  loadingState: LoadingState;
+  handleGoToDashboard: () => void;
+  viewMode: ViewMode;
+  setViewMode: (mode: ViewMode) => void;
+  docTab: DocTab;
+  setDocTab: (tab: DocTab) => void;
+  setSelectedId: (id: string | null) => void;
+  setBlocks: Dispatch<SetStateAction<NoteBlock[]>>;
+  setMobileTab: (tab: MobileTab) => void;
+  loadTrashedBlocks: () => Promise<void>;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  sortKey: SortKey;
+  setSortKey: (key: SortKey) => void;
+  showSortMenu: boolean;
+  setShowSortMenu: Dispatch<SetStateAction<boolean>>;
+  sortMenuRef: RefObject<HTMLDivElement | null>;
+  loadingDocuments: boolean;
+  filteredDocuments: NoteDocument[];
+  pinnedDocuments: NoteDocument[];
+  favoriteDocuments: NoteDocument[];
+  otherDocuments: NoteDocument[];
+  rootDocuments: NoteDocument[];
+  renderDocumentTree: (doc: NoteDocument, depth?: number) => ReactNode;
+  selectedId: string | null;
+  loadingTrashedBlocks: boolean;
+  trashedBlocks: NoteBlock[];
+  restoringBlockId: string | null;
+  purgingBlockId: string | null;
+  handleRestoreDocument: (doc: NoteDocument) => Promise<void>;
+  handlePurgeDocument: (doc: NoteDocument) => Promise<void>;
+  handleRestoreBlockFromTrash: (block: NoteBlock) => Promise<void>;
+  handlePurgeBlockFromTrash: (block: NoteBlock) => Promise<void>;
+};
+
+export const NoteSidebarPanel = memo(function NoteSidebarPanel({
+  mobileTab,
+  activeDragDocId,
+  handleNavigateToWorkspace,
+  handleCreateDocument,
+  loadingState,
+  handleGoToDashboard,
+  viewMode,
+  setViewMode,
+  docTab,
+  setDocTab,
+  setSelectedId,
+  setBlocks,
+  setMobileTab,
+  loadTrashedBlocks,
+  searchQuery,
+  setSearchQuery,
+  sortKey,
+  setSortKey,
+  showSortMenu,
+  setShowSortMenu,
+  sortMenuRef,
+  loadingDocuments,
+  filteredDocuments,
+  pinnedDocuments,
+  favoriteDocuments,
+  otherDocuments,
+  rootDocuments,
+  renderDocumentTree,
+  selectedId,
+  loadingTrashedBlocks,
+  trashedBlocks,
+  restoringBlockId,
+  purgingBlockId,
+  handleRestoreDocument,
+  handlePurgeDocument,
+  handleRestoreBlockFromTrash,
+  handlePurgeBlockFromTrash,
+}: NoteSidebarPanelProps) {
 
   return (
     <div className={`flex flex-col border-r border-neutral-200/80 bg-[#f7f7f5] ${
@@ -344,4 +386,4 @@ export function NoteSidebarPanel() {
       </div>
     </div>
   );
-}
+});
