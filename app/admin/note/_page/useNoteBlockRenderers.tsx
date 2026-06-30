@@ -60,6 +60,11 @@ export type NoteBlockRendererDeps = {
   handleDeleteBlock: (block: NoteBlock, fromEmptyBackspace?: boolean) => void;
   handleChangeBlockType: (block: NoteBlock, type: NoteBlock['type']) => void;
   handleInsertBlockAfter: (block: NoteBlock, type?: NoteBlock['type'], content?: NoteBlock['content']) => void;
+  handleSplitListBlockAfterWithChildren: (
+    block: NoteBlock,
+    type?: NoteBlock['type'],
+    content?: NoteBlock['content'],
+  ) => void;
   handleInsertBlockInParent: (parentId: string, type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   handleOpenDocumentById: (documentId: string) => void;
   showFormatToolbar: (
@@ -152,6 +157,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
         onAddBelow={(type, content) => { void deps.handleInsertBlockAfter(block, type ?? block.type, content); }}
+        onSplitWithChildren={(type, content) => { void deps.handleSplitListBlockAfterWithChildren(block, type ?? block.type, content); }}
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}
@@ -215,6 +221,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
         onAddBelow={(type, content) => { void deps.handleInsertBlockAfter(block, type ?? block.type, content); }}
+        onSplitWithChildren={(type, content) => { void deps.handleSplitListBlockAfterWithChildren(block, type ?? block.type, content); }}
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { collapseAllNoteEditorSelections } from '../_components/noteEditorRegistry';
 import { clearAllCrossSelectState, clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
+import { shouldDeleteSelectedNoteBlocks } from '../_lib/noteBlockSelectionKeyboard';
 import {
   getMarqueeSelectedBlockIds,
   isMarqueeSelectStartBlocked,
@@ -63,8 +64,10 @@ export function useNoteBlockSelection(options: {
     marquee: import('../_lib/noteMarquee').MarqueeRect;
     options: { additive: boolean; shiftAnchor: boolean };
   } | null>(null);
-  const handleDeleteBlocksRef = useRef<typeof handleDeleteBlocks | null>(null);
-  handleDeleteBlocksRef.current = handleDeleteBlocks;
+  const handleDeleteBlocksRef = useRef<typeof handleDeleteBlocks | null>(handleDeleteBlocks);
+  useEffect(() => {
+    handleDeleteBlocksRef.current = handleDeleteBlocks;
+  }, [handleDeleteBlocks]);
 
   const applyBlockSelectRange = useCallback((
     anchorId: string,
@@ -82,7 +85,7 @@ export function useNoteBlockSelection(options: {
     } else {
       setSelectedBlockIds(new Set(range));
     }
-  }, []);
+  }, [blocksRef, setSelectedBlockIds]);
 
   const handleBlockSelect = useCallback((id: string, e: React.MouseEvent) => {
     if (e.shiftKey && lastClickedBlockIdRef.current) {
@@ -100,7 +103,7 @@ export function useNoteBlockSelection(options: {
       setSelectedBlockIds(new Set([id]));
     }
     lastClickedBlockIdRef.current = id;
-  }, [applyBlockSelectRange]);
+  }, [applyBlockSelectRange, setSelectedBlockIds]);
 
   const applyMarqueeSelection = useCallback((marquee: MarqueeRect, options: { additive: boolean; shiftAnchor: boolean }) => {
     const ids = getMarqueeSelectedBlockIds(marquee);
@@ -136,7 +139,7 @@ export function useNoteBlockSelection(options: {
 
     setSelectedBlockIds(new Set(nextIds));
     lastClickedBlockIdRef.current = nextIds[nextIds.length - 1] ?? null;
-  }, []);
+  }, [blocksRef, setSelectedBlockIds]);
 
   const paintMarqueeOverlay = useCallback((
     rect: { left: number; top: number; width: number; height: number } | null,
@@ -281,7 +284,14 @@ export function useNoteBlockSelection(options: {
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
     document.addEventListener('pointercancel', onUp);
-  }, [paintMarqueeOverlay, scheduleMarqueePaint]);
+  }, [
+    noteBlockDragActiveRef,
+    paintMarqueeOverlay,
+    scheduleMarqueePaint,
+    setBlockMarqueeActive,
+    setSelectedBlockIds,
+    suppressGripMenuRef,
+  ]);
 
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -297,13 +307,34 @@ export function useNoteBlockSelection(options: {
     };
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
-  }, []);
+  }, [selectedBlockIdsRef, setSelectedBlockIds]);
 
-  // 멀티 블록 선택: Ctrl+A / Escape / Delete
+  const deleteSelectedBlocks = useCallback(() => {
+    const ids = [...selectedBlockIdsRef.current];
+    if (ids.length === 0) return;
+    setSelectedBlockIds(new Set());
+    clearAllNoteTextSelections();
+    clearAllCrossSelectState();
+    collapseAllNoteEditorSelections();
+    const selected = new Set(ids);
+    const blocks = blocksRef.current.filter((block) => selected.has(block.id));
+    void handleDeleteBlocksRef.current?.(blocks, { focusPrevious: true });
+  }, [blocksRef, selectedBlockIdsRef, setSelectedBlockIds]);
+
+  // 멀티 블록 선택: Ctrl+A / Escape / Delete / Backspace
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const meta = e.ctrlKey || e.metaKey;
       const target = e.target as HTMLElement | null;
+      const hasSelectedBlocks = selectedBlockIdsRef.current.size > 0;
+
+      if (hasSelectedBlocks && shouldDeleteSelectedNoteBlocks(e)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        deleteSelectedBlocks();
+        return;
+      }
+
       const isEditing = !!target && (
         target.tagName === 'INPUT' ||
         target.tagName === 'TEXTAREA' ||
@@ -317,25 +348,16 @@ export function useNoteBlockSelection(options: {
         return;
       }
       if (e.key === 'Escape' && !isEditing) {
-        if (selectedBlockIdsRef.current.size > 0) {
+        if (hasSelectedBlocks) {
           setSelectedBlockIds(new Set());
         }
         clearAllNoteTextSelections();
         return;
       }
-      if (e.key === 'Delete' && selectedBlockIdsRef.current.size > 0 && !isEditing) {
-        e.preventDefault();
-        const ids = [...selectedBlockIdsRef.current];
-        setSelectedBlockIds(new Set());
-        const blocks = ids
-          .map((id) => blocksRef.current.find((b) => b.id === id))
-          .filter((block): block is NoteBlock => !!block);
-        void handleDeleteBlocksRef.current?.(blocks);
-      }
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [blocksRef, deleteSelectedBlocks, selectedBlockIdsRef, setSelectedBlockIds]);
 
   return {
     marqueeOverlayRef,

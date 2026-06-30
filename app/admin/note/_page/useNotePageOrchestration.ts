@@ -92,55 +92,59 @@ export function useNotePageOrchestration(): NotePageContextValue {
     setError,
     onBootstrapBlocks: handleBootstrapBlocks,
   });
+  const docSelectedId = docData.selectedId;
+  const docDocuments = docData.documents;
+  const setDocDocuments = docData.setDocuments;
+  const reloadDocumentsForReconcile = docData.reloadDocuments;
 
   useEffect(() => {
     setBootstrapBlocks((prev) => (
-      prev && prev.documentId !== docData.selectedId ? null : prev
+      prev && prev.documentId !== docSelectedId ? null : prev
     ));
-  }, [docData.selectedId]);
+  }, [docSelectedId]);
 
   const handleAfterIdleReconcile = useCallback(() => {
-    void docData.reloadDocuments();
-  }, [docData.reloadDocuments]);
+    void reloadDocumentsForReconcile();
+  }, [reloadDocumentsForReconcile]);
 
   const syncDocumentParentsFromBlocks = useCallback((
     parentDocumentId: string,
     blocksSnapshot: NoteBlock[],
   ) => {
     const patches = planParentPatchesForDocumentBlocks(
-      docData.documents,
+      docDocuments,
       parentDocumentId,
       blocksSnapshot,
     );
     if (patches.length === 0) return;
-    docData.setDocuments((prev) => applyParentPatchesToDocuments(prev, patches));
+    setDocDocuments((prev) => applyParentPatchesToDocuments(prev, patches));
     for (const patch of patches) {
       void enqueueDocumentPatch(patch).catch((e) => {
         devLogger.error('[Note] document parent patch', e);
       });
     }
-  }, [docData.documents, docData.setDocuments]);
+  }, [docDocuments, setDocDocuments]);
 
   const handleAfterBlocksRemoved = useCallback((
     removed: NoteBlock[],
     nextBlocks: NoteBlock[],
   ) => {
-    if (!docData.selectedId) return;
+    if (!docSelectedId) return;
     for (const block of removed) {
       if (block.type !== 'page') continue;
       const childId = getChildDocumentIdFromPageContent(
         block.content as Record<string, unknown>,
       );
       if (!childId) continue;
-      docData.setDocuments((prev) => applyParentPatchesToDocuments(prev, [
+      setDocDocuments((prev) => applyParentPatchesToDocuments(prev, [
         { id: childId, parent_id: null },
       ]));
       void enqueueDocumentPatch({ id: childId, parent_id: null }).catch((e) => {
         devLogger.error('[Note] detach child document', e);
       });
     }
-    syncDocumentParentsFromBlocks(docData.selectedId, nextBlocks);
-  }, [docData.selectedId, docData.setDocuments, syncDocumentParentsFromBlocks]);
+    syncDocumentParentsFromBlocks(docSelectedId, nextBlocks);
+  }, [docSelectedId, setDocDocuments, syncDocumentParentsFromBlocks]);
 
   const blockData = useNoteBlockData({
     selectedId: docData.selectedId,
@@ -383,6 +387,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     handleIndentBlock,
     handleNavigateBlock,
     handleInsertBlockAfter,
+    handleSplitListBlockAfterWithChildren,
     handleInsertBlockInParent,
     handleAddBlock,
     handleClickEditorWhitespace,
@@ -433,6 +438,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     handleDeleteBlock,
     handleChangeBlockType,
     handleInsertBlockAfter,
+    handleSplitListBlockAfterWithChildren,
     handleInsertBlockInParent,
     handleOpenDocumentById,
     showFormatToolbar,
@@ -599,6 +605,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     handleIndentBlock,
     handleNavigateBlock,
     handleInsertBlockAfter,
+    handleSplitListBlockAfterWithChildren,
     handleInsertBlockInParent,
     handleAddBlock,
     handleClickEditorWhitespace,

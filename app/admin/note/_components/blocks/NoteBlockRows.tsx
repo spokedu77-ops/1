@@ -80,6 +80,7 @@ function BlockContent({
   onChangeType,
   onEnter,
   onAddBelow,
+  onSplitWithChildren,
   onOpenDocument,
   resolvePageIcon,
   onShowFormatToolbar,
@@ -118,6 +119,7 @@ function BlockContent({
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
   onShowFormatToolbar?: (
@@ -438,6 +440,7 @@ function BlockContent({
           onContentPatch={onContentPatch}
           onEnter={onEnter}
           onAddBelow={onAddBelow}
+          onSplitWithChildren={onSplitWithChildren}
           onChangeType={onChangeType}
           onRequestCaretOffset={onRequestCaretOffset}
           autoFocusSignal={autoFocusSignal}
@@ -980,6 +983,7 @@ function SortableBlockRow({
   onChangeType,
   onEnter,
   onAddBelow,
+  onSplitWithChildren,
   onOpenDocument,
   resolvePageIcon,
   onShowFormatToolbar,
@@ -1017,6 +1021,7 @@ function SortableBlockRow({
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
   onShowFormatToolbar?: (
@@ -1094,6 +1099,7 @@ function SortableBlockRow({
     onChangeType,
     onEnter,
     onAddBelow,
+    onSplitWithChildren,
     onOpenDocument,
     resolvePageIcon,
     onShowFormatToolbar,
@@ -1239,6 +1245,7 @@ function ToggleInlineRow({
   onChangeType,
   onEnter,
   onAddBelow,
+  onSplitWithChildren,
   onOpenDocument,
   resolvePageIcon,
   onShowFormatToolbar,
@@ -1277,6 +1284,7 @@ function ToggleInlineRow({
   onChangeType: (type: NoteBlock['type']) => void;
   onEnter: () => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onOpenDocument?: (documentId: string) => void;
   resolvePageIcon?: (documentId: string) => string | null;
   onShowFormatToolbar?: (
@@ -1379,6 +1387,7 @@ function ToggleInlineRow({
     onChangeType,
     onEnter,
     onAddBelow,
+    onSplitWithChildren,
     onOpenDocument,
     resolvePageIcon,
     onShowFormatToolbar,
