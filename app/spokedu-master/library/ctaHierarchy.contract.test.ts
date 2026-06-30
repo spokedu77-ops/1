@@ -15,19 +15,17 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   });
 
   it('keeps detail sticky actions limited to execution decisions', () => {
-    expect(detail).toContain('sm:grid-cols-2');
-    expect(detail).toContain('/spokedu-master/class-mode/${program.id}');
     expect(detail).toContain('primarySpomovePreset ?');
     expect(detail).toContain('SPOMOVE 실행');
-    expect(detail).not.toContain('sm:grid-cols-6');
+    expect(detail).not.toContain('/spokedu-master/class-mode/${program.id}');
   });
 
   it('places preparation and after-class actions outside the sticky execution area', () => {
     expect(detail).toContain('수업 준비 보조');
-    expect(detail).toContain('수업 도구');
     expect(detail).toContain('즐겨찾기');
     expect(detail).toContain('수업 후 정리');
     expect(detail).toContain('빠른 수업 기록');
     expect(detail).toContain('기존 기록 보기');
+    expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 });

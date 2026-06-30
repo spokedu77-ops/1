@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, ClipboardList, ListChecks, MonitorPlay, Play, Plus, Trash2 } from 'lucide-react';
+import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, ClipboardList, ListChecks, MonitorPlay, Plus, Trash2 } from 'lucide-react';
 import { addDays, addWeeks, format, isSameDay, startOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { useState } from 'react';
@@ -47,9 +47,8 @@ function LessonItem({ lesson, programs, onToggle, onDelete }: { lesson: ReturnTy
         <button type="button" onClick={onToggle} className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: lesson.done ? 'rgba(16,185,129,0.14)' : 'var(--spm-s3)' }} aria-label="완료 체크"><Check size={17} color={lesson.done ? 'var(--spm-grn)' : 'var(--spm-t3)'} /></button>
         <button type="button" onClick={onDelete} className="grid h-9 w-9 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label="삭제"><Trash2 size={16} color="var(--spm-red)" /></button>
       </div>
-      <div className="mt-3 grid grid-cols-4 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         <Link href={`/spokedu-master/library/${program?.id ?? ''}`} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><BookOpen size={12} />전체 수업 자료 보기</Link>
-        <Link href={`/spokedu-master/class-mode/${program?.id ?? ''}`} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><Play size={11} fill="#fff" />시작</Link>
         <Link href={program && spomovePreset ? getSpomoveSessionHref(program, spomovePreset) : '/spokedu-master/spomove'} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><MonitorPlay size={13} />화면</Link>
         <Link href={`/spokedu-master/report?program=${program?.id ?? ''}`} className="flex h-9 items-center justify-center gap-1 rounded-[10px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}><ClipboardList size={13} />설명</Link>
       </div>

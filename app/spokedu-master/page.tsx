@@ -17,7 +17,7 @@ export default function SpokeduMasterPage() {
       <div className="w-full max-w-[420px] text-center">
         <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>SPOKEDU MASTER</p>
         <h1 className="mt-3 text-[30px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-          수업 실행 화면으로 이동 중입니다
+          SPOKEDU MASTER 불러오는 중입니다
         </h1>
         <p className="mt-3 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           수업 자료, SPOMOVE, 안내문을 이어서 불러오고 있습니다.

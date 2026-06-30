@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, ShieldAlert, Shuffle, Trash2, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, ShieldAlert, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import {
@@ -739,11 +739,7 @@ export default function StudentsPage() {
                   <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 수업 기록이 없습니다.</p>
                 )}
               </div>
-              <div className="grid gap-2 sm:grid-cols-3">
-                <Link href="/spokedu-master/class-tools" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                  <Shuffle size={15} />
-                  도구
-                </Link>
+              <div className="grid gap-2 sm:grid-cols-2">
                 <Link href="/spokedu-master/class-record" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <ClipboardList size={15} />
                   기록

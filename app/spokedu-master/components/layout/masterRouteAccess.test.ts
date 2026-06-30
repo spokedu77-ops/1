@@ -22,7 +22,7 @@ describe('SPOKEDU MASTER route access policy', () => {
     '/spokedu-master',
     '/spokedu-master/dashboard',
     '/spokedu-master/library',
-    '/spokedu-master/class-mode/42',
+    '/spokedu-master/library/42',
     '/spokedu-master/spomove/session',
     '/spokedu-master/unknown-future-screen',
   ])('protects %s by default', (pathname) => {

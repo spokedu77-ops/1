@@ -47,7 +47,7 @@ describe('SPOKEDU MASTER product catalog', () => {
     expect(center.priceLabel).toBe('별도 문의');
     expect(canPurchaseDirectly(center)).toBe(false);
     expect(requiresSalesInquiry(center)).toBe(true);
-    expect(MASTER_SUPPORT_EMAIL).toBe('support@spokedu.com');
+    expect(MASTER_SUPPORT_EMAIL).toBe('spokedu77@gmail.com');
   });
 
   it('has no trial product and keeps SPOMAT contract prices in one place', () => {

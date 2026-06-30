@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
-import { TrialCountdownBanner } from '../ui/TrialGateWall';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
-import { isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
+import { isTrialExpired } from '../../lib/subscription';
+import { MASTER_CENTER_INQUIRY_HREF } from '../../lib/businessInfo';
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useOperationalStatus, useProfile } from '../../store';
@@ -84,18 +84,17 @@ function OperationsBanner() {
   const profile = useProfile();
   const operational = useOperationalStatus();
   const expired = isTrialExpired(profile);
-  const paidExpired = isPaidAccessExpired(profile);
   if (operational.online && !expired) return null;
 
   if (expired) {
     return (
       <div className="mx-[22px] mt-3 flex items-center justify-between gap-3 rounded-[12px] border border-red-200 bg-red-50 px-3 py-2 sm:mx-8 lg:mx-10" role="status">
-        <p className="text-[12px] font-bold text-red-700">{paidExpired ? '이용권이 만료되었습니다.' : '체험 기간이 종료되었습니다.'}</p>
+        <p className="text-[12px] font-bold text-red-700">이용권이 종료되었습니다.</p>
         <Link
-          href={paidExpired ? `/spokedu-master/payment?plan=${profile?.previousPaidPlan === 'team' ? 'team' : 'pro'}` : '/spokedu-master/profile?plans=1'}
+          href="/spokedu-master/payment"
           className="flex min-h-9 shrink-0 items-center rounded-full bg-red-100 px-3 py-1 text-[11px] font-black text-red-700"
         >
-          {paidExpired ? '다시 결제하기' : 'Pro 전환'}
+          이용권 선택
         </Link>
       </div>
     );
@@ -144,24 +143,18 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
             SPOKEDU MASTER 이용 권한이 필요합니다.
           </h1>
           <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
-            수업 자료, 학생 기록, 저장 안내문을 사용하려면 이용권 상태를 확인하거나 30일 이용권을 결제해 주세요.
+            수업 자료, 학생 기록, 저장 안내문을 사용하려면 이용권을 결제해 주세요.
           </p>
 
           <div className="mt-6 grid gap-2">
             <Link
-              href="/spokedu-master/profile?plans=1"
+              href="/spokedu-master/payment"
               className="flex min-h-12 items-center justify-center rounded-[14px] bg-indigo-600 px-4 text-[14px] font-black text-white shadow-lg shadow-indigo-100"
             >
-              이용권 안내 보기
+              이용권 선택
             </Link>
             <Link
-              href="/spokedu-master/payment?plan=pro"
-              className="flex min-h-12 items-center justify-center rounded-[14px] border border-slate-200 bg-white px-4 text-[14px] font-black text-slate-800"
-            >
-              Pro 30일 이용권 보기
-            </Link>
-            <Link
-              href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4"
+              href={MASTER_CENTER_INQUIRY_HREF}
               className="flex min-h-12 items-center justify-center rounded-[14px] border border-emerald-200 bg-emerald-50 px-4 text-[14px] font-black text-emerald-700"
             >
               Center 도입 상담
@@ -207,7 +200,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const [accessRetryKey, setAccessRetryKey] = useState(0);
 
   const isAdmin = basePath.startsWith('/admin');
-  const isSession = pathname.startsWith(`${basePath}/spomove/session`) || pathname.startsWith(`${basePath}/class-mode`);
+  const isSession = pathname.startsWith(`${basePath}/spomove/session`);
   const isOnboarding = pathname.startsWith(`${basePath}/onboarding`);
   const isParentView = pathname.startsWith(`${basePath}/parent`);
   const isPayment = pathname.startsWith(`${basePath}/payment`);
@@ -384,7 +377,6 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
           )}
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
             {shellMounted && !hideChrome && !isAdmin && !isAccessGuardBlocking ? <OperationsBanner /> : null}
-            {shellMounted && !hideChrome && !isAdmin && !isAccessGuardBlocking ? <TrialCountdownBanner /> : null}
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
             ) : isAccessGuardDenied ? (

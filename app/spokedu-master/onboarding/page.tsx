@@ -4,6 +4,7 @@ import { ArrowRight, BookOpen, Check, Clipboard, MonitorPlay, School, Sparkles, 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMasterStore, useProfile } from '../store';
+import { MASTER_CUSTOMER_SERVICE_HREF } from '../lib/businessInfo';
 import type { UserRole } from '../types';
 
 const AGE_GROUPS = ['유치부', '초등 저학년', '초등 고학년', '중등'];
@@ -140,7 +141,7 @@ export default function OnboardingPage() {
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button type="button" onClick={finishAndOpenPlans} className="rounded-[10px] px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-acc)', color: '#fff' }}>Center 이용권 보기</button>
-                      <a href="mailto:support@spokedu.com" className="rounded-[10px] px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>기관 도입 문의</a>
+                      <a href={MASTER_CUSTOMER_SERVICE_HREF} className="rounded-[10px] px-3 py-2 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>기관 도입 문의</a>
                     </div>
                   </div>
                 ) : null}

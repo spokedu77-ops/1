@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { BarChart3, BookOpen, CreditCard, FileText, MessageCircle, MonitorPlay, UserCheck, UserX, UsersRound, type LucideIcon } from 'lucide-react';
 import { OperationsPanel } from '../components/operations/OperationsPanel';
+import { MASTER_CENTER_INQUIRY_HREF } from '../lib/businessInfo';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { getClassRecordFacts } from '../lib/studentRecordFacts';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -134,7 +135,7 @@ export default function DirectorPage() {
             센터 수업 자료와 기관용 안내문을 활용하려면 Center 플랜을 선택하세요. 추가 강사 계정이나 기관 도입은 별도 문의로 안내합니다.
           </p>
           <Link
-            href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4"
+            href={MASTER_CENTER_INQUIRY_HREF}
             className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
             style={{ background: 'var(--spm-acc)' }}
           >

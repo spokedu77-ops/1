@@ -12,6 +12,7 @@ import {
   LogOut,
   Mail,
   MonitorPlay,
+  Package,
   Pencil,
   ShieldAlert,
   Sparkles,
@@ -24,6 +25,9 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import {
   MASTER_PRODUCT_CATALOG,
+  MASTER_BUSINESS_INFO,
+  MASTER_CUSTOMER_SERVICE_HREF,
+  MASTER_CENTER_INQUIRY_HREF,
   getMasterProductActionLabel,
   getMasterProductPriceWithDuration,
 } from '../lib/productCatalog';
@@ -35,10 +39,7 @@ import {
   type MasterDataDeletionStatus,
 } from './masterDataDeletion';
 import {
-  formatSubscriptionEndDate,
   getSubscriptionPlanLabel,
-  getSubscriptionPrimaryHref,
-  getSubscriptionPrimaryLabel,
   getSubscriptionStatusLabel,
   normalizeSubscriptionSummary,
   type SubscriptionSummaryData,
@@ -75,7 +76,7 @@ const PLANS: PlanInfo[] = [
     title: 'Lite',
     price: MASTER_PRODUCT_CATALOG.lite.priceLabel,
     badge: MASTER_PRODUCT_CATALOG.lite.statusLabel,
-    description: '가벼운 개인 사용자를 위한 입문 플랜입니다. 현재는 Pro 전환을 우선 안내합니다.',
+    description: '가벼운 개인 사용자를 위한 입문 플랜입니다.',
     includes: ['라이브러리 기본 이용', 'SPOMOVE 제한 실행', '최근 사용·즐겨찾기'],
     target: '가벼운 개인 사용',
     action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.lite),
@@ -85,7 +86,7 @@ const PLANS: PlanInfo[] = [
     title: 'Premium',
     price: getMasterProductPriceWithDuration(MASTER_PRODUCT_CATALOG.premium),
     badge: MASTER_PRODUCT_CATALOG.premium.statusLabel,
-    description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 30일 이용권입니다.',
+    description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 이용권입니다.',
     includes: ['라이브러리', 'SPOMOVE 큰 화면 실행', '학생 관리와 수업 기록 저장', '학생별 이력과 안내문 초안'],
     target: '매주 수업을 준비하는 전문 강사',
     action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.premium),
@@ -151,17 +152,18 @@ const EXPANSION_LINKS = [
 ];
 
 function planName(plan: PlanType | undefined) {
-  if (plan === 'team') return 'Center';
-  if (plan === 'pro') return 'Pro';
-  return 'Trial';
+  if (plan === 'team') return '센터·기관';
+  if (plan === 'pro' || (plan as string) === 'premium') return '프리미엄';
+  if ((plan as string) === 'lite') return '라이트';
+  return '없음';
 }
 
 function planStatusText(plan: PlanType | undefined, daysLeft: number, isAdmin?: boolean, subscriptionStatus?: string) {
   if (isAdmin) return '관리자 패스';
-  if (plan === 'pro' || plan === 'team') return '이용권 활성';
+  if (plan === 'pro' || plan === 'team' || (plan as string) === 'lite' || (plan as string) === 'premium') return '구독 중';
   if (subscriptionStatus === 'expired') return '이용권 만료';
   if (daysLeft > 0) return `체험 ${daysLeft}일 남음`;
-  return '체험 종료';
+  return '이용권 없음';
 }
 
 function MenuRow({ icon: Icon, label, caption, href, onClick }: { icon: LucideIcon; label: string; caption: string; href?: string; onClick?: () => void }) {
@@ -238,21 +240,14 @@ function CurrentSubscriptionCard({
 }) {
   const planLabel = getSubscriptionPlanLabel(summary);
   const statusLabel = getSubscriptionStatusLabel(summary);
-  const endDate = formatSubscriptionEndDate(summary?.periodEnd ?? summary?.trialEndsAt ?? null);
-  const primaryHref = getSubscriptionPrimaryHref(summary);
-  const primaryLabel = getSubscriptionPrimaryLabel(summary);
+  const isActiveStatus = summary?.status === 'active' || summary?.trialEndsAt != null;
 
   return (
     <section className="rounded-[22px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>
-            Subscription
-          </p>
-          <h2 className="mt-1 text-[20px] font-black" style={{ color: 'var(--spm-t)' }}>
-            현재 이용권
-          </h2>
-        </div>
+        <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
+          현재 이용권
+        </h2>
         {status === 'loading' ? (
           <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
             확인 중
@@ -262,7 +257,7 @@ function CurrentSubscriptionCard({
             확인 실패
           </span>
         ) : (
-          <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: statusLabel === '이용 중' || statusLabel === '체험 중' ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)', color: statusLabel === '이용 중' || statusLabel === '체험 중' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
+          <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: isActiveStatus ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)', color: isActiveStatus ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
             {statusLabel}
           </span>
         )}
@@ -279,31 +274,18 @@ function CurrentSubscriptionCard({
         </div>
       ) : (
         <>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Plan</p>
-              <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>{status === 'loading' ? '확인 중' : planLabel}</p>
-            </div>
-            <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Status</p>
-              <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>{status === 'loading' ? '확인 중' : statusLabel}</p>
-            </div>
-            <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)' }}>
-              <p className="text-[10px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>Until</p>
-              <p className="mt-1 text-[14px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>{status === 'loading' ? '확인 중' : endDate}</p>
-            </div>
+          <div className="mt-3 flex items-center gap-2">
+            <span className="text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
+              {status === 'loading' ? '확인 중' : planLabel}
+            </span>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
-            <Link href="/spokedu-master/profile?plans=1" className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              이용권 확인·변경
-            </Link>
-            <Link href={primaryHref} className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-              {primaryLabel}
-            </Link>
-            <Link href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4" className="flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-              Center 도입 상담
-            </Link>
-          </div>
+          <Link
+            href="/spokedu-master/subscription"
+            className="mt-4 flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black text-white"
+            style={{ background: 'var(--spm-acc)' }}
+          >
+            구독 관리
+          </Link>
         </>
       )}
     </section>
@@ -321,11 +303,11 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
     const hasActivePaidPlan = currentPlan === 'lite' || currentPlan === 'premium' || currentPlan === 'pro' || currentPlan === 'team';
     const selectedPaidPlan = plan.id === 'lite' || plan.id === 'premium';
     if (plan.id === 'team') {
-      setNotice('Center는 현재 직접 결제 상품이 아닙니다. 강사 초대, 다중 사용자, 기관 단위 데이터 관리는 준비 중이며 도입 상담은 support@spokedu.com으로 문의해 주세요.');
+      setNotice(`Center는 현재 직접 결제 상품이 아닙니다. 강사 초대, 다중 사용자, 기관 단위 데이터 관리는 준비 중이며 도입 상담은 ${MASTER_BUSINESS_INFO.customerServiceEmail}으로 문의해 주세요.`);
       return;
     }
     if (plan.id === 'school' || plan.contact) {
-      setNotice('학교·기관 플랜은 도입 범위와 계정 수가 달라 별도 상담으로 진행합니다. support@spokedu.com으로 문의해 주세요.');
+      setNotice(`학교·기관 플랜은 도입 범위와 계정 수가 달라 별도 상담으로 진행합니다. ${MASTER_BUSINESS_INFO.customerServiceEmail}으로 문의해 주세요.`);
       return;
     }
     if (plan.id === 'lite' && false) {
@@ -431,10 +413,7 @@ function SpokeduMasterProfileContent() {
   const currentPlan = profile?.plan ?? 'free';
   const daysLeft = getTrialDaysLeft(profile);
   const isPaidExpired = profile?.subscriptionStatus === 'expired';
-  const expiredPlan = profile?.previousPaidPlan;
-  const currentPlanName = isPaidExpired
-    ? `${expiredPlan === 'team' ? 'Center' : expiredPlan === 'pro' ? 'Pro' : '30일'} 이용권`
-    : planName(currentPlan);
+  const currentPlanName = isPaidExpired ? '이용권 종료' : planName(currentPlan);
   const statusText = planStatusText(currentPlan, daysLeft, profile?.isAdmin, profile?.subscriptionStatus);
   const initial = (profile?.name ?? '선생님').slice(0, 1);
 
@@ -557,16 +536,16 @@ function SpokeduMasterProfileContent() {
             <div className="mt-4 flex flex-wrap items-end justify-between gap-3">
               <h2 className="text-[34px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{currentPlanName}</h2>
               <Link href="/spokedu-master/subscription" className="rounded-[12px] px-4 py-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-                이용권 확인
+                구독 관리
               </Link>
             </div>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
-              <Link href={isPaidExpired ? '/spokedu-master/payment?plan=premium' : '/spokedu-master/dashboard'} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                {isPaidExpired ? '프리미엄 월 자동결제 다시 시작' : '홈으로 돌아가 수업 실행'}
+              <Link href={isPaidExpired ? '/spokedu-master/payment' : '/spokedu-master/dashboard'} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                {isPaidExpired ? '이용권 다시 선택' : '홈으로 돌아가기'}
               </Link>
-              <button type="button" onClick={() => setPlanOpen(true)} className="h-12 rounded-[12px] px-5 text-[14px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-                플랜 보기
-              </button>
+              <Link href="/spokedu-master/subscription" className="flex h-12 items-center justify-center rounded-[12px] px-5 text-[14px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+                구독 관리
+              </Link>
             </div>
             {isPaidExpired ? (
               <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-red)' }}>
@@ -609,9 +588,10 @@ function SpokeduMasterProfileContent() {
 
         <aside className="space-y-3">
           <MenuRow icon={MonitorPlay} label="SPOMOVE 큰 화면" caption="수업 공간에서 바로 실행" href="/spokedu-master/spomove" />
-          <MenuRow icon={CreditCard} label="이용권 확인" caption="플랜 확인 · 이용 만료일 · 결제 문의" href="/spokedu-master/subscription" />
-          <MenuRow icon={HelpCircle} label="도입 상담" caption="센터·학교 도입 문의" href="mailto:support@spokedu.com" />
-          <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href="mailto:support@spokedu.com" />
+          <MenuRow icon={CreditCard} label="구독 관리" caption="이용권 확인 · 다음 결제일 · 구독 해지" href="/spokedu-master/subscription" />
+          <MenuRow icon={Package} label="SPOMAT 스토어" caption="4색 패드 구매" href="/spokedu-master/shop" />
+          <MenuRow icon={HelpCircle} label="도입 상담" caption="센터·학교 도입 문의" href={MASTER_CENTER_INQUIRY_HREF} />
+          <MenuRow icon={Mail} label="문의하기" caption="기능 제안과 오류 제보" href={MASTER_CUSTOMER_SERVICE_HREF} />
 
           <section className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <div className="mb-3">
@@ -708,7 +688,7 @@ function SpokeduMasterProfileContent() {
           <span className="mx-2">·</span>
           <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-t3)' }}>개인정보처리방침</Link>
           <span className="mx-2">·</span>
-          <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-t3)' }}>support@spokedu.com</a>
+          <a href={MASTER_CUSTOMER_SERVICE_HREF} style={{ color: 'var(--spm-t3)' }}>{MASTER_BUSINESS_INFO.customerServiceEmail}</a>
         </p>
       </div>
     </div>

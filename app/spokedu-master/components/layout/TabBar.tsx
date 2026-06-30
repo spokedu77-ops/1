@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, ClipboardList, FileText, Home, MessageSquare, Tv, UsersRound } from 'lucide-react';
+import { BookOpen, ClipboardList, FileText, Home, MessageSquare, Tv, UsersRound, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { BottomSheet } from '../ui/BottomSheet';
@@ -9,6 +9,7 @@ const PRIMARY_TABS = [
   { key: 'dashboard', label: '홈', Icon: Home },
   { key: 'library', label: '라이브러리', Icon: BookOpen },
   { key: 'spomove', label: 'SPOMOVE', Icon: Tv },
+  { key: 'class-tools', label: '수업 도구', Icon: Wrench },
 ] as const;
 
 const RECORD_TABS = [
@@ -54,7 +55,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
         aria-label="SPOKEDU MASTER 주요 메뉴"
       >
         <div
-          className="mx-auto grid h-[62px] w-full max-w-[620px] grid-cols-4 rounded-[18px] border"
+          className="mx-auto grid h-[62px] w-full max-w-[620px] grid-cols-5 rounded-[18px] border"
           style={{
             background: 'rgba(255,255,255,0.97)',
             borderColor: '#e2e8f0',

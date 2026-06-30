@@ -9,7 +9,6 @@ function read(path: string) {
 const library = read('app/spokedu-master/library/LibraryView.tsx');
 const preview = read('app/spokedu-master/components/lesson/LessonPreviewContent.tsx');
 const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
-const classMode = read('app/spokedu-master/components/ui/ClassModeView.tsx');
 const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
 describe('lesson discovery and execution flow contract', () => {
@@ -25,16 +24,8 @@ describe('lesson discovery and execution flow contract', () => {
   });
 
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
-    expect(detail).toContain('/spokedu-master/class-mode/${program.id}');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('getSpomoveSessionHref(program, primarySpomovePreset)');
-  });
-
-  it('guards class-mode step navigation and exposes record return controls', () => {
-    expect(classMode).toContain('stepNavLocked');
-    expect(classMode).toContain('const moveStep = (direction: -1 | 1)');
-    expect(classMode).toContain('disabled={stepIndex === 0 || stepNavLocked}');
-    expect(classMode).toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
   it('keeps dashboard discovery first and removes duplicate home favorite re-entry', () => {

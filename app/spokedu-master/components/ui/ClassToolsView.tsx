@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, BookOpen, CheckCircle2, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
+import { BookOpen, CheckCircle2, LayoutList, ListOrdered, MonitorPlay, Pause, Play, RotateCcw, Shuffle, Timer, UserPlus, Users, Volume2, VolumeX } from 'lucide-react';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -664,21 +664,10 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
 
 export default function ClassToolsView() {
   const [tab, setTab] = useState<TabId>('stopwatch');
-  const [returnTo, setReturnTo] = useState<string | null>(null);
   const operationalData = useOperationalData();
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
   const usingSample = false;
   const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
-  const classContextReturnLabel = returnTo?.startsWith('/spokedu-master/class-mode/')
-    ? '수업 실행으로 돌아가기'
-    : returnTo?.startsWith('/spokedu-master/library/')
-      ? '전체 수업 자료로 돌아가기'
-      : null;
-  const classContextReturnHref = classContextReturnLabel ? returnTo : null;
-
-  useEffect(() => {
-    setReturnTo(new URLSearchParams(window.location.search).get('returnTo'));
-  }, []);
 
   return (
     <div className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
@@ -713,12 +702,6 @@ export default function ClassToolsView() {
             </div>
           </div>
           <div className="flex shrink-0 gap-2">
-            {classContextReturnHref ? (
-              <Link href={classContextReturnHref} className="inline-flex h-10 items-center gap-2 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-acc)', color: 'white' }}>
-                <ArrowLeft size={15} />
-                {classContextReturnLabel}
-              </Link>
-            ) : null}
             <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="라이브러리">
               <BookOpen size={16} />
             </Link>

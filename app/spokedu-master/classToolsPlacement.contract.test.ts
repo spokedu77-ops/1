@@ -15,27 +15,24 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(preview).not.toContain('/spokedu-master/class-tools');
   });
 
-  it('exposes class tools from execution and preparation contexts', () => {
-    const classMode = read('app/spokedu-master/components/ui/ClassModeView.tsx');
+  it('adds class tools to primary navigation', () => {
+    const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
+    const tabBar = read('app/spokedu-master/components/layout/TabBar.tsx');
     const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
-    expect(classMode).toContain('/spokedu-master/class-tools?returnTo=');
-    expect(classMode).toContain('href={classToolsHref}');
-    expect(classMode).toContain('target="_blank"');
-    expect(classMode).toContain('rel="noreferrer"');
-    expect(detail).toContain('/spokedu-master/class-tools?returnTo=');
-    expect(detail).toContain('href={classToolsHref}');
+    expect(statusBar).toContain('/spokedu-master/class-tools');
+    expect(tabBar).toContain("key: 'class-tools'");
+    expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 
-  it('allows returning only to lesson execution or detail contexts from class tools', () => {
+  it('ClassToolsView operates as standalone tool without lesson context', () => {
     const tools = read('app/spokedu-master/components/ui/ClassToolsView.tsx');
 
-    expect(tools).toContain("returnTo?.startsWith('/spokedu-master/class-mode/')");
-    expect(tools).toContain("returnTo?.startsWith('/spokedu-master/library/')");
-    expect(tools).toContain('classContextReturnHref');
-    expect(tools).toContain('classContextReturnLabel');
-    expect(tools).toContain('수업 실행으로 돌아가기');
-    expect(tools).toContain('전체 수업 자료로 돌아가기');
+    expect(tools).not.toContain('returnTo');
+    expect(tools).not.toContain('classContextReturnHref');
+    expect(tools).not.toContain('전체 수업 자료로 돌아가기');
+    expect(tools).not.toContain("returnTo?.startsWith('/spokedu-master/class-mode/')");
+    expect(tools).not.toContain("returnTo?.startsWith('/spokedu-master/library/')");
     expect(tools).not.toContain('window.location.href');
   });
 });

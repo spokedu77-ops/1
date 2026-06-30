@@ -46,7 +46,7 @@ export function hasMasterAccess(profile: UserProfile | null): boolean {
 }
 
 export function getUpgradeHref(profile: UserProfile | null): string {
-  return isPaidMasterPlan(profile) ? '/spokedu-master/subscription' : '/spokedu-master/profile?plans=1';
+  return isPaidMasterPlan(profile) ? '/spokedu-master/subscription' : '/spokedu-master/payment';
 }
 
 export function getUpgradeLabel(profile: UserProfile | null): string {

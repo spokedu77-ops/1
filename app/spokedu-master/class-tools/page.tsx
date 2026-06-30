@@ -1,12 +1,12 @@
 'use client';
 
-import { TrialGateWall } from '../components/ui/TrialGateWall';
+import { SubscriptionGateWall } from '../components/ui/SubscriptionGateWall';
 import ClassToolsView from '../components/ui/ClassToolsView';
 
 export default function ClassToolsPage() {
   return (
-    <TrialGateWall feature="class-tools">
+    <SubscriptionGateWall feature="class-tools">
       <ClassToolsView />
-    </TrialGateWall>
+    </SubscriptionGateWall>
   );
 }

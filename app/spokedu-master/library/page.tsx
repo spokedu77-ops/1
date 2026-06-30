@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { TrialGateWall } from '../components/ui/TrialGateWall';
+import { SubscriptionGateWall } from '../components/ui/SubscriptionGateWall';
 import LibraryView from './LibraryView';
 
 export const metadata: Metadata = {
@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 
 export default function SpokeduMasterLibraryPage() {
   return (
-    <TrialGateWall feature="library">
+    <SubscriptionGateWall feature="library">
       <Suspense fallback={null}>
         <LibraryView />
       </Suspense>
-    </TrialGateWall>
+    </SubscriptionGateWall>
   );
 }

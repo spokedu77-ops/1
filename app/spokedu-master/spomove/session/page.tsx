@@ -26,16 +26,15 @@ import {
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 
 type SessionState = 'idle' | 'running' | 'done' | 'ended';
-type LaunchMode = 'projector' | 'mobile' | 'class';
+type LaunchMode = 'projector' | 'mobile';
 
 function normalizeMode(mode: string | null): LaunchMode {
-  if (mode === 'projector' || mode === 'class' || mode === 'mobile') return mode;
+  if (mode === 'projector' || mode === 'mobile') return mode;
   return 'projector';
 }
 
 function getModeLabel(mode: LaunchMode) {
   if (mode === 'projector') return '큰 화면 모드';
-  if (mode === 'class') return 'Class Mode';
   return '모바일 모드';
 }
 

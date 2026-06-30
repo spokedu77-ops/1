@@ -525,7 +525,7 @@ export default function LibraryView() {
       programsError === 'unauthorized'
         ? '로그인 후 수업 자료를 확인할 수 있습니다.'
         : programsError === 'forbidden'
-          ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제하면 수업 자료를 이용할 수 있습니다.'
+          ? '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 이용권을 구독하면 수업 자료를 이용할 수 있습니다.'
           : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.';
     return (
       <main className="mx-auto flex h-full w-full max-w-7xl items-center justify-center overflow-y-auto bg-[#f5f7fb] px-4 py-16 sm:px-6 lg:px-8">
@@ -534,7 +534,7 @@ export default function LibraryView() {
           <h1 className="mt-3 text-xl font-black text-slate-950">수업 자료를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{message}</p>
           <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">
-            30일 이용권 다시 결제하기
+            이용권 다시 구독하기
           </Link>
         </section>
       </main>

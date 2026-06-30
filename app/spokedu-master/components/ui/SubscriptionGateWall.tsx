@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { BookOpen, FileText, Lock, MonitorPlay, Sparkles, Timer, Users } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { getTrialDaysLeft, isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
+import { isPaidAccessExpired, isTrialExpired } from '../../lib/subscription';
 import { useProfile } from '../../store';
+import { MASTER_CENTER_INQUIRY_HREF } from '../../lib/businessInfo';
 
 const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> = {
   library: [
@@ -14,7 +15,7 @@ const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> 
   ],
   spomove: [
     { icon: MonitorPlay, label: 'SPOMOVE 큰 화면 실행' },
-    { icon: Sparkles, label: 'TV·빔용 Class Mode' },
+    { icon: Sparkles, label: 'TV·빔용 SPOMOVE 실행' },
     { icon: BookOpen, label: '라이브러리 수업 자료 연결' },
   ],
   report: [
@@ -29,12 +30,12 @@ const PLAN_FEATURES: Record<string, { icon: typeof BookOpen; label: string }[]> 
   ],
 };
 
-type TrialGateWallProps = {
+type SubscriptionGateWallProps = {
   children: ReactNode;
   feature: 'library' | 'spomove' | 'report' | 'class-tools';
 };
 
-export function TrialGateWall({ children, feature }: TrialGateWallProps) {
+export function SubscriptionGateWall({ children, feature }: SubscriptionGateWallProps) {
   const profile = useProfile();
   const expired = isTrialExpired(profile);
   const paidExpired = isPaidAccessExpired(profile);
@@ -51,9 +52,9 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
           <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-red-200 bg-red-50">
             <Lock size={24} className="text-red-600" />
           </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-red-600">{paidExpired ? '이용권 만료' : '체험 기간 종료'}</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-red-600">{paidExpired ? '이용권 만료' : '이용 만료'}</p>
           <h2 className="mt-2 text-[28px] font-black leading-tight tracking-[-0.03em] text-slate-950">
-            30일 이용권을 다시 결제하고 계속 사용하세요.
+            이용권을 결제하고 계속 사용하세요.
           </h2>
           <p className="mt-3 text-[14px] font-medium leading-6 text-slate-500">
             수업 자료, SPOMOVE 화면 활동, 안내문과 수업 운영 도구를 계속 이용할 수 있습니다.
@@ -69,10 +70,10 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
             ))}
           </ul>
           <div className="mt-7 space-y-2">
-            <Link href="/spokedu-master/payment?plan=pro" className="flex h-12 w-full items-center justify-center rounded-[12px] bg-indigo-600 text-[14px] font-black text-white shadow-lg shadow-indigo-200">
-              Pro 30일 이용권 · 39,900원
+            <Link href="/spokedu-master/payment" className="flex h-12 w-full items-center justify-center rounded-[12px] bg-indigo-600 text-[14px] font-black text-white shadow-lg shadow-indigo-200">
+              이용권 선택
             </Link>
-            <Link href="mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4" className="flex h-12 w-full items-center justify-center rounded-[12px] border border-emerald-200 bg-white text-[13px] font-black text-emerald-700">
+            <Link href={MASTER_CENTER_INQUIRY_HREF} className="flex h-12 w-full items-center justify-center rounded-[12px] border border-emerald-200 bg-white text-[13px] font-black text-emerald-700">
               Center 도입 상담
             </Link>
             <Link href="/spokedu-master/subscription" className="flex h-10 w-full items-center justify-center rounded-[12px] text-[12px] font-semibold text-slate-500">
@@ -81,25 +82,6 @@ export function TrialGateWall({ children, feature }: TrialGateWallProps) {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-export function TrialCountdownBanner() {
-  const profile = useProfile();
-  const daysLeft = getTrialDaysLeft(profile);
-  if (profile?.isAdmin) return null;
-  if ((profile?.plan ?? 'free') !== 'free') return null;
-  if (daysLeft <= 0 || daysLeft > 7) return null;
-
-  return (
-    <div className="mx-[22px] mt-3 flex items-center justify-end gap-2 sm:mx-8 lg:mx-10" role="status">
-      <span className="inline-flex min-h-8 items-center rounded-full border border-amber-200 bg-amber-50 px-3 text-[11px] font-black text-amber-800">
-        무료 체험 D-{daysLeft}
-      </span>
-      <Link href="/spokedu-master/profile?plans=1" className="inline-flex min-h-8 items-center rounded-full bg-amber-100 px-3 text-[11px] font-black text-amber-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600">
-        이용권 보기
-      </Link>
     </div>
   );
 }

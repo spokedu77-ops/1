@@ -37,11 +37,17 @@ function mockSubscriptionRow(row: {
   period_end: string | null;
   trial_started_at?: string | null;
   trial_ends_at?: string | null;
+  cancel_at_period_end?: boolean | null;
+  next_billing_at?: string | null;
+  current_period_end?: string | null;
 } | null, lookupError: unknown = null) {
   let stored = row
     ? {
         trial_started_at: null,
         trial_ends_at: null,
+        cancel_at_period_end: false,
+        next_billing_at: null,
+        current_period_end: null,
         ...row,
       }
     : null;
@@ -55,6 +61,9 @@ function mockSubscriptionRow(row: {
       period_end: null,
       trial_started_at: String(payload.trial_started_at),
       trial_ends_at: String(payload.trial_ends_at),
+      cancel_at_period_end: false,
+      next_billing_at: null,
+      current_period_end: null,
     };
     return { error: null };
   });
@@ -117,7 +126,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
 
     expect(query.from).toHaveBeenCalledWith('spokedu_master_subscriptions');
     expect(query.select).toHaveBeenCalledWith(
-      'plan,status,period_end,trial_started_at,trial_ends_at',
+      'plan,status,period_end,trial_started_at,trial_ends_at,cancel_at_period_end,next_billing_at,current_period_end',
     );
     expect(query.eq).toHaveBeenCalledWith('user_id', user.id);
     expect(response.status).toBe(200);
@@ -128,6 +137,30 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
       isAdmin: false,
       userId: user.id,
       email: user.email,
+      cancelAtPeriodEnd: false,
+    });
+  });
+
+  it('returns cancelAtPeriodEnd and nextBillingAt for active subscriptions pending cancellation', async () => {
+    mockAuthUser(user);
+    mockSubscriptionRow({
+      plan: 'premium',
+      status: 'active',
+      period_end: '2099-06-30T00:00:00.000Z',
+      cancel_at_period_end: true,
+      next_billing_at: '2099-07-01T00:00:00.000Z',
+      current_period_end: '2099-06-30T00:00:00.000Z',
+    });
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      plan: 'premium',
+      status: 'active',
+      cancelAtPeriodEnd: true,
+      nextBillingAt: '2099-07-01T00:00:00.000Z',
+      currentPeriodEnd: '2099-06-30T00:00:00.000Z',
     });
   });
 

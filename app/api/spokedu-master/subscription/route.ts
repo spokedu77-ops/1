@@ -63,6 +63,9 @@ export async function GET() {
     trialStartedAt: row.trial_started_at,
     trialEndsAt: row.trial_ends_at,
     periodEnd: row.period_end,
+    cancelAtPeriodEnd: row.cancel_at_period_end ?? false,
+    nextBillingAt: row.next_billing_at ?? null,
+    currentPeriodEnd: row.current_period_end ?? null,
   };
 
   const entitlement = evaluateSpokeduMasterEntitlement(row);

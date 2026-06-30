@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Home, Loader2, Mail } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
+import { MASTER_PRODUCT_CATALOG, MASTER_CUSTOMER_SERVICE_HREF } from '../../lib/productCatalog';
 import { useMasterStore } from '../../store';
 
 type PaidPlanId = 'lite' | 'premium';
@@ -228,7 +228,7 @@ function SuccessContent() {
         <Link href={`/spokedu-master/payment?plan=${isPaidPlanId(plan) ? plan : 'premium'}`} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
           다시 시도
         </Link>
-        <a href="mailto:support@spokedu.com" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+        <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
           <Mail size={15} />
           문의하기
         </a>

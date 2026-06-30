@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
-import { MASTER_PRODUCT_CATALOG } from '../lib/productCatalog';
+import { MASTER_PRODUCT_CATALOG, MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF } from '../lib/productCatalog';
 
 const FEATURES = [
   {
@@ -250,7 +250,7 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={p.id === 'team' ? 'mailto:support@spokedu.com?subject=SPOKEDU%20MASTER%20Center%20%EB%8F%84%EC%9E%85%20%EC%83%81%EB%8B%B4' : '/spokedu-master/profile?plans=1'} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
+                <Link href={p.id === 'team' ? MASTER_CENTER_INQUIRY_HREF : '/spokedu-master/payment'} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
                   {p.id === 'team' ? 'Center 도입 상담' : `${p.title} 플랜 보기`}
                 </Link>
               </div>
@@ -263,7 +263,7 @@ export default function LandingPage() {
             </p>
           </div>
           <p className="mt-5 text-center text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>
-            학교와 기관 도입은 <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-acc)' }}>support@spokedu.com</a>으로 문의해 주세요.
+            학교와 기관 도입은 <a href={MASTER_CUSTOMER_SERVICE_HREF} style={{ color: 'var(--spm-acc)' }}>{MASTER_BUSINESS_INFO.customerServiceEmail}</a>으로 문의해 주세요.
           </p>
         </div>
       </section>
@@ -296,12 +296,13 @@ export default function LandingPage() {
             <p className="text-[10px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>사업자 정보</p>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
               {[
-                ['상호', '스포케듀'],
-                ['대표자', '최지훈'],
-                ['사업자등록번호', '311-63-00356'],
-                ['통신판매업신고', '신청 중'],
-                ['주소', '서울특별시 강동구 성내동 430-2, 7층 2호'],
-                ['고객센터', 'support@spokedu.com'],
+                ['상호', MASTER_BUSINESS_INFO.businessName],
+                ['대표자', MASTER_BUSINESS_INFO.representativeName],
+                ['사업자등록번호', MASTER_BUSINESS_INFO.businessRegistrationNumber],
+                ['통신판매업', MASTER_BUSINESS_INFO.mailOrderStatus],
+                ['주소', MASTER_BUSINESS_INFO.businessAddress],
+                ['고객센터', MASTER_BUSINESS_INFO.customerServicePhone],
+                ['이메일', MASTER_BUSINESS_INFO.customerServiceEmail],
               ].map(([label, value]) => (
                 <div key={label} className="contents">
                   <dt className="text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</dt>
@@ -313,7 +314,7 @@ export default function LandingPage() {
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]" style={{ color: 'var(--spm-t3)' }}>
             <Link href="/spokedu-master/terms" style={{ color: 'var(--spm-t3)' }}>이용약관</Link>
             <Link href="/spokedu-master/privacy" style={{ color: 'var(--spm-t3)' }}>개인정보처리방침</Link>
-            <a href="mailto:support@spokedu.com" style={{ color: 'var(--spm-t3)' }}>고객센터</a>
+            <a href={MASTER_CUSTOMER_SERVICE_HREF} style={{ color: 'var(--spm-t3)' }}>고객센터</a>
           </div>
           <p className="mt-4 text-[10px]" style={{ color: 'var(--spm-t3)' }}>
             <Clock size={10} className="mr-1 inline" />가격과 기능은 공지 없이 변경될 수 있습니다. 결제 전 최신 플랜 내용을 확인해 주세요.

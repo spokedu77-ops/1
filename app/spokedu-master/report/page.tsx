@@ -599,7 +599,7 @@ function ReportContent() {
               ) : (
                 <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
                   {programsError === 'forbidden'
-                    ? '이용권 만료로 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제해 주세요.'
+                    ? '이용권 만료로 수업 자료를 불러올 수 없습니다. 이용권을 구독해 주세요.'
                     : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'}
                 </p>
               )}

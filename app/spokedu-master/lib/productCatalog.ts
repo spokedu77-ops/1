@@ -1,4 +1,5 @@
-export const MASTER_SUPPORT_EMAIL = 'support@spokedu.com';
+export { MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF } from './businessInfo';
+export const MASTER_SUPPORT_EMAIL = 'spokedu77@gmail.com';
 
 export const MASTER_LITE_PRICE_KRW = 9900;
 export const MASTER_PREMIUM_PRICE_KRW = 28900;

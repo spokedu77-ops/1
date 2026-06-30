@@ -29,6 +29,9 @@ export type SpokeduMasterSubscriptionRow = {
   period_end: string | null;
   trial_started_at: string | null;
   trial_ends_at: string | null;
+  cancel_at_period_end?: boolean | null;
+  next_billing_at?: string | null;
+  current_period_end?: string | null;
 };
 
 export function isSpokeduMasterTrialActive(
@@ -93,7 +96,7 @@ export async function ensureSpokeduMasterEntitlement(
 ): Promise<{ row: SpokeduMasterSubscriptionRow | null; error: unknown | null }> {
   const selectRow = async () => serviceSupabase
     .from('spokedu_master_subscriptions')
-    .select('plan,status,period_end,trial_started_at,trial_ends_at')
+    .select('plan,status,period_end,trial_started_at,trial_ends_at,cancel_at_period_end,next_billing_at,current_period_end')
     .eq('user_id', userId)
     .maybeSingle();
 

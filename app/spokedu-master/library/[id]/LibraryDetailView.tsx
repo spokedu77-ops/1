@@ -9,7 +9,6 @@ import {
   FileText,
   MonitorPlay,
   Play,
-  Wrench,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -202,8 +201,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const galleryImages = model.galleryImageUrls;
   const relatedSpomovePresets = getSupportedOfficialSpomovePresets(program);
   const primarySpomovePreset = relatedSpomovePresets[0] ?? null;
-  const classToolsHref = `/spokedu-master/class-tools?returnTo=${encodeURIComponent(`/spokedu-master/library/${program.id}`)}`;
-
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
     setCopied(true);
@@ -415,11 +412,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
               <h2 className="mt-1 text-lg font-black text-slate-950">수업 준비 보조</h2>
             </div>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <Link href={classToolsHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700">
-              <Wrench className="h-4 w-4" />
-              수업 도구
-            </Link>
+          <div className="mt-4">
             <button
               type="button"
               onClick={() => toggleFavoriteProgram(ownerId, program.id)}
@@ -463,21 +456,17 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </div>
         </section>
 
-        <div
-          className={`sticky bottom-[78px] z-40 grid grid-cols-1 gap-1.5 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl ${primarySpomovePreset ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} lg:bottom-0`}
-          style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
-        >
-          <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
-            <MonitorPlay className="h-4 w-4" />
-            수업 실행
-          </Link>
-          {primarySpomovePreset ? (
-            <Link href={getSpomoveSessionHref(program, primarySpomovePreset)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
+        {primarySpomovePreset ? (
+          <div
+            className="sticky bottom-[78px] z-40 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:bottom-0"
+            style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
+          >
+            <Link href={getSpomoveSessionHref(program, primarySpomovePreset)} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
               <MonitorPlay className="h-4 w-4" />
               SPOMOVE 실행
             </Link>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       <BottomSheet open={quickModalOpen} title="수업 기록" onClose={() => setQuickModalOpen(false)}>

@@ -84,8 +84,17 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
   it('keeps support contact unified', () => {
     const source = userVisibleSource();
 
-    expect(source).toContain('support@spokedu.com');
+    expect(source).not.toContain('support@spokedu.com');
     expect(source).not.toContain('help@spokedu.com');
     expect(source).not.toContain('contact@spokedu.com');
+    expect(source).not.toContain('스포케듀');
+    // Contact is supplied via the MASTER_BUSINESS_INFO constants (verified in businessInfo.contract.test.ts)
+    const usesApprovedContact =
+      source.includes('spokedu77@gmail.com') ||
+      source.includes('MASTER_SUPPORT_EMAIL') ||
+      source.includes('MASTER_BUSINESS_INFO') ||
+      source.includes('MASTER_CUSTOMER_SERVICE_HREF') ||
+      source.includes('MASTER_CENTER_INQUIRY_HREF');
+    expect(usesApprovedContact).toBe(true);
   });
 });

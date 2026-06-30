@@ -93,13 +93,10 @@ describe('official SPOMOVE runtime contract', () => {
     expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
   });
 
-  it('keeps ClassMode and Plan independent from drill metadata', () => {
-    const classMode = read('app/spokedu-master/components/ui/ClassModeView.tsx');
+  it('keeps Plan independent from drill metadata', () => {
     const plan = read('app/spokedu-master/plan/PlanView.tsx');
 
-    expect(classMode).not.toMatch(/\bdrills\b|\?drill=/);
     expect(plan).not.toMatch(/\bdrills\b|\?drill=/);
-    expect(classMode).toContain('getPrimarySupportedSpomovePreset');
     expect(plan).toContain('getPrimarySupportedSpomovePreset');
   });
 
@@ -121,7 +118,6 @@ describe('official SPOMOVE runtime contract', () => {
     const source = read('app/spokedu-master/subscription/page.tsx');
 
     expect(source).not.toContain('href="/spokedu-master/spomove/session"');
-    expect(source).toContain('href="/spokedu-master/spomove"');
   });
 
   it('removes the unused MASTER drills and remote preset runtime', () => {

@@ -35,24 +35,29 @@ describe('SPOKEDU MASTER service truthfulness contracts', () => {
     expect(store).not.toContain('setLastSyncNow');
   });
 
-  it('keeps the cart and opens a quote inquiry without a completion state', () => {
+  it('presents SPOMAT as a single product without a fake order or completion state', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
 
-    expect(shop).toContain('href={quoteInquiryHref}');
-    expect(shop).toContain('견적 문의 메일 열기');
-    expect(shop).toContain('현재 금액은 참고용입니다.');
+    expect(shop).toContain('SPOMAT');
+    expect(shop).toContain('SPOMAT_PRODUCT_CONTRACT');
+    expect(shop).toContain('canBuySpomatAtMemberPrice');
+    expect(shop).toContain('/api/spokedu-master/shop/spomat/purchase');
+    expect(shop).toContain('SPOMAT_BULK_INQUIRY_HREF');
     expect(shop).not.toContain('createOrderRequest');
     expect(shop).not.toContain('주문 요청 완료');
     expect(shop).not.toContain('접수됩니다');
     expect(shop).not.toContain('<BottomSheet');
-    expect(shop).not.toMatch(/href=\{quoteInquiryHref\}[\s\S]{0,300}clearCart/);
+    expect(shop).not.toContain('addToCart');
+    expect(shop).not.toContain('clearCart');
   });
 
-  it('keeps the core lesson flow links unchanged', () => {
+  it('keeps the shop focused on SPOMAT without repeating lesson navigation links', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
 
-    expect(shop).toContain("href: '/spokedu-master/library'");
-    expect(shop).toContain("href: '/spokedu-master/spomove'");
-    expect(shop).toContain("href: '/spokedu-master/report'");
+    expect(shop).toContain('SPOMAT');
+    // lesson flow links belong in the main navigation, not duplicated in the shop
+    expect(shop).not.toContain("href: '/spokedu-master/library'");
+    expect(shop).not.toContain("href: '/spokedu-master/spomove'");
+    expect(shop).not.toContain("href: '/spokedu-master/report'");
   });
 });

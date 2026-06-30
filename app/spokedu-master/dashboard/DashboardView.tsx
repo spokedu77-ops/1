@@ -31,7 +31,7 @@ import {
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
 import { isMasterFirstUser, selectMasterLoopAction } from '../lib/masterUserLoop';
-import { getTrialDaysLeft, isActiveTrial } from '../lib/subscription';
+import { getTrialDaysLeft } from '../lib/subscription';
 import {
   buildProgramResumeHref,
   getRecentActivityOwnerId,
@@ -459,13 +459,11 @@ function ActivityPanel({
 }) {
   const status = profile?.isAdmin
     ? 'Admin'
-    : isActiveTrial(profile)
-      ? `무료 체험 D-${getTrialDaysLeft(profile)}`
-      : profile?.plan === 'team'
-        ? 'Team 이용 중'
-        : profile?.plan === 'pro'
-          ? 'Pro 이용 중'
-          : '이용권 확인';
+    : profile?.plan === 'team'
+      ? 'Team 이용 중'
+      : profile?.plan === 'pro'
+        ? 'Pro 이용 중'
+        : '이용권 확인';
 
   const activities: Array<{
     label: string;
@@ -716,7 +714,7 @@ export default function DashboardView() {
           {isUnauthorized ? (
             <Link href="/login?next=/spokedu-master/dashboard" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">로그인하기</Link>
           ) : isForbidden ? (
-            <Link href="/spokedu-master/subscription" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">30일 이용권 다시 결제하기</Link>
+            <Link href="/spokedu-master/subscription" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">이용권 다시 구독하기</Link>
           ) : (
             <button type="button" onClick={() => void reloadPrograms()} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white">다시 시도하기</button>
           )}
