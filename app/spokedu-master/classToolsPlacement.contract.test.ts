@@ -21,6 +21,8 @@ describe('SPOKEDU MASTER class tools placement', () => {
 
     expect(classMode).toContain('/spokedu-master/class-tools?returnTo=');
     expect(classMode).toContain('href={classToolsHref}');
+    expect(classMode).toContain('target="_blank"');
+    expect(classMode).toContain('rel="noreferrer"');
     expect(detail).toContain('/spokedu-master/class-tools?returnTo=');
     expect(detail).toContain('href={classToolsHref}');
   });
@@ -31,6 +33,9 @@ describe('SPOKEDU MASTER class tools placement', () => {
     expect(tools).toContain("returnTo?.startsWith('/spokedu-master/class-mode/')");
     expect(tools).toContain("returnTo?.startsWith('/spokedu-master/library/')");
     expect(tools).toContain('classContextReturnHref');
+    expect(tools).toContain('classContextReturnLabel');
+    expect(tools).toContain('수업 실행으로 돌아가기');
+    expect(tools).toContain('전체 수업 자료로 돌아가기');
     expect(tools).not.toContain('window.location.href');
   });
 });

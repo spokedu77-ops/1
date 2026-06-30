@@ -3,64 +3,25 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import { useEffect, useRef, useState } from 'react';
-import { HOME_MEDIA, HOME_SIGNATURE_PROGRAMS, type HomeSignatureProgram } from '../data/home-media';
-import { homePage } from '../data/home-page';
-import {
-  PRIVATE_COUNTER_BASE_DATE,
-  PRIVATE_COUNTER_BASE_SESSIONS,
-  PRIVATE_COUNTER_BASE_STUDENTS,
-  PRIVATE_COUNTER_DAILY_SESSIONS,
-  PRIVATE_COUNTER_DAILY_STUDENTS,
-} from '../data/private-page';
+import { HOME_MEDIA } from '../data/home-media';
+import { homePage, type HomeProgramItem } from '../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
 import { externalLinkProps, isExternalHref } from '../lib/external-link';
 import { inferTrackFromHref } from '../lib/tracking';
-import { koreanLineBreak } from '../lib/ui-classes';
+import { koreanLineBreak, homePhotoGrade } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { MediaPanel } from './visual';
 
-/** 현장 사진·유니폼 톤 — 크림 + 플럼 (teal SaaS 톤 제거) */
-const CREAM = '#F4F0EA';
-const INK = '#141210';
-const PLUM = '#6B5B7A';
+const NAVY = '#0B1220';
+const ATHLETIC_BLUE = '#1D4ED8';
 
-const container = 'mx-auto w-full max-w-6xl px-5 sm:px-8';
-const sectionPad = 'py-14 sm:py-16 lg:py-20';
+const container = 'mx-auto w-full max-w-[1400px] px-5 sm:px-8 lg:px-12';
+const sectionPadStrong = 'py-20 sm:py-24 lg:py-28';
+const sectionPadMedium = 'py-12 sm:py-16 lg:py-20';
 
-function getSessionCount(): number {
-  const base = new Date(`${PRIVATE_COUNTER_BASE_DATE}T00:00:00`).getTime();
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const days = Math.max(0, Math.floor((todayStart - base) / (24 * 60 * 60 * 1000)));
-  return PRIVATE_COUNTER_BASE_SESSIONS + days * PRIVATE_COUNTER_DAILY_SESSIONS;
-}
-
-function getStudentCount(): number {
-  const base = new Date(`${PRIVATE_COUNTER_BASE_DATE}T00:00:00`).getTime();
-  const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-  const days = Math.max(0, Math.floor((todayStart - base) / (24 * 60 * 60 * 1000)));
-  return PRIVATE_COUNTER_BASE_STUDENTS + days * PRIVATE_COUNTER_DAILY_STUDENTS;
-}
-
-function useCountUp(target: number, active: boolean, durationMs = 1200): number {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    if (!active) return;
-    const start = performance.now();
-    const step = (now: number) => {
-      const t = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - (1 - t) ** 2;
-      setValue(Math.round(target * eased));
-      if (t < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  }, [target, active, durationMs]);
-
-  return value;
-}
+const heroH1 = `font-bold leading-[1.12] tracking-tight ${koreanLineBreak} text-[2.5rem] min-[390px]:text-[3rem] sm:text-[3.375rem] md:text-[4rem] lg:text-[4.5rem] xl:text-[5.25rem]`;
+const sectionH2 = `font-bold tracking-tight text-[#0B1220] ${koreanLineBreak} text-[1.75rem] sm:text-[2.625rem] lg:text-[3rem] leading-[1.15]`;
+const sectionLead = `mt-3 max-w-2xl text-[15px] leading-relaxed text-slate-600 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
 
 type SpokeduHomeLandingProps = {
   proofCards: HomeFieldRecordCardWithThumbnail[];
@@ -68,632 +29,752 @@ type SpokeduHomeLandingProps = {
 
 export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   const reducedMotion = useReducedMotion();
-  const heroMedia = HOME_MEDIA[homePage.hero.mediaKey];
-  const sessionTarget = getSessionCount();
-  const studentTarget = getStudentCount();
-  const statsRef = useRef<HTMLDListElement>(null);
-  const [statsActive, setStatsActive] = useState(false);
-  const featuredProofCards = proofCards.slice(0, homePage.proof.featuredCount);
-  const featuredPrograms = homePage.programs.featuredIds
-    .map((id) => HOME_SIGNATURE_PROGRAMS.find((program) => program.id === id))
-    .filter((program): program is HomeSignatureProgram => !!program);
-  const [heroProgram, ...supportPrograms] = featuredPrograms;
-
-  useEffect(() => {
-    const node = statsRef.current;
-    if (!node) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) setStatsActive(true);
-      },
-      { threshold: 0.25 },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  const sessionCount = useCountUp(sessionTarget, statsActive && !reducedMotion);
-  const studentCount = useCountUp(studentTarget, statsActive && !reducedMotion);
-  const displaySessions = (statsActive && !reducedMotion ? sessionCount : sessionTarget).toLocaleString();
-  const displayStudents = (statsActive && !reducedMotion ? studentCount : studentTarget).toLocaleString();
+  const caseCards = mergeCaseCards(proofCards);
 
   return (
-    <div className="text-stone-950" style={{ backgroundColor: CREAM }}>
+    <div className="w-full overflow-x-clip bg-white text-[#0B1220]">
       <a
-        href="#programs"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold"
+        href="#expertise"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-20 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#0B1220] focus:shadow-lg focus:outline focus:outline-2 focus:outline-blue-600"
       >
-        안내로 건너뛰기
+        본문으로 건너뛰기
       </a>
 
-      {/* 1. 커버 — 현장 사진이 첫인상 */}
-      <section className="relative">
-        <div className="relative min-h-[min(52vh,420px)] w-full sm:min-h-[min(58vh,520px)] lg:min-h-[min(64vh,600px)]">
-          <MediaPanel
-            media={heroMedia}
-            className="absolute inset-0 h-full w-full rounded-none border-0"
-            sizes="heroEditorialMain"
-            photoPriority
-            priority
-          />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#141210]/55 via-transparent to-[#141210]/10"
-            aria-hidden
-          />
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:p-10">
-            <div className="mx-auto w-full max-w-6xl">
-              <p
-                className={`max-w-md text-lg font-semibold leading-snug text-white sm:text-xl lg:text-2xl ${koreanLineBreak}`}
-              >
-                &ldquo;{homePage.hero.fieldQuote}&rdquo;
-              </p>
-              <p className="mt-2 text-xs font-medium tracking-wide text-white/70 sm:text-sm">
-                {homePage.hero.fieldCaption}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10 -mt-6 px-5 sm:-mt-8 sm:px-8">
-          <div
-            className={`${container} rounded-t-[1.75rem] px-6 pb-10 pt-10 shadow-[0_-8px_40px_-12px_rgba(20,18,16,0.12)] sm:rounded-t-[2rem] sm:px-10 sm:pb-12 sm:pt-12 lg:px-12`}
-            style={{ backgroundColor: CREAM }}
-          >
-            <p
-              className="text-[11px] font-bold uppercase tracking-[0.32em]"
-              style={{ color: PLUM }}
-            >
-              {homePage.signature}
-            </p>
-            <h1
-              className={`mt-5 text-[2.1rem] font-semibold leading-[1.08] tracking-[-0.035em] min-[390px]:text-[2.45rem] sm:text-[3rem] lg:text-[3.5rem] ${koreanLineBreak}`}
-            >
-              {homePage.hero.lines.map((line) => (
-                <span key={line} className="block">
-                  {line}
-                </span>
-              ))}
-            </h1>
-            <p className={`mt-5 max-w-lg text-[15px] leading-relaxed text-stone-600 sm:text-base ${koreanLineBreak}`}>
-              {homePage.hero.support[0]}
-            </p>
-            <div className="mt-8 grid gap-3 sm:grid-cols-3">
-              {homePage.hero.audienceCtas.map((cta) => (
-                <Link
-                  key={cta.trackId}
-                  href={cta.href}
-                  data-track={inferTrackFromHref(cta.href)}
-                  data-track-label={cta.trackLabel}
-                  className="group flex min-h-[5.5rem] flex-col justify-between rounded-2xl border border-stone-300/80 bg-white/90 px-5 py-4 text-left shadow-sm transition hover:border-stone-950 hover:shadow-md"
-                >
-                  <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">
-                    {cta.audience}
-                  </span>
-                  <span className="mt-2 text-sm font-semibold leading-snug text-stone-950 sm:text-[15px]">
-                    {cta.label}
-                  </span>
-                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-stone-500 transition group-hover:gap-2 group-hover:text-stone-800">
-                    바로가기
-                    <span aria-hidden>→</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-            <Link
-              href={homePage.hero.spomoveLink.href}
-              data-track={inferTrackFromHref(homePage.hero.spomoveLink.href)}
-              data-track-label={homePage.hero.spomoveLink.trackLabel}
-              className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-stone-600 transition hover:gap-3 hover:text-stone-950"
-            >
-              {homePage.hero.spomoveLink.label}
-              <span aria-hidden>→</span>
-            </Link>
-
-            <dl
-              ref={statsRef}
-              className="mt-10 grid grid-cols-2 gap-6 border-t border-stone-300/70 pt-8 sm:grid-cols-4"
-              aria-label="스포키듀 운영 지표"
-            >
-              {homePage.stats.map((stat) => {
-                const value =
-                  stat.kind === 'sessions'
-                    ? displaySessions
-                    : stat.kind === 'students'
-                      ? displayStudents
-                      : stat.value;
-                return (
-                  <StatCell key={stat.id} value={value} label={stat.label} active={statsActive} />
-                );
-              })}
-            </dl>
-          </div>
-        </div>
-      </section>
-
-      {/* 2. PLAY · THINK · GROW — KIDDO식 기준·과정 */}
-      <section
-        id={homePage.philosophy.id}
-        className="border-b border-stone-300/50 bg-[#EDE8E0]"
-        aria-labelledby="home-philosophy-heading"
-      >
-        <div className={`${container} ${sectionPad}`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.32em]" style={{ color: PLUM }}>
-            {homePage.philosophy.title}
-          </p>
-          <h2
-            id="home-philosophy-heading"
-            className={`mt-4 max-w-2xl text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
-          >
-            {homePage.philosophy.lead}
-          </h2>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3 sm:gap-5">
-            {homePage.philosophy.items.map((item, index) => (
-              <motion.article
-                key={item.id}
-                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.4, delay: index * 0.06 }}
-                className="rounded-2xl border border-stone-300/60 bg-white/90 p-6 sm:p-7"
-              >
-                <p className="text-[11px] font-bold tracking-[0.28em]" style={{ color: PLUM }}>
-                  {item.label}
-                </p>
-                <h3 className={`mt-3 text-lg font-semibold text-stone-950 ${koreanLineBreak}`}>{item.title}</h3>
-                <p className={`mt-2 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{item.body}</p>
-              </motion.article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 3. 브랜드 신뢰 + 가치 3열 */}
-      <section className="border-b border-stone-300/50 bg-white" aria-label="스포키듀가 하는 일">
-        <div className={`${container} ${sectionPad}`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">{homePage.trust.eyebrow}</p>
-          <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-stone-200 bg-[#FAF8F5] p-5 sm:flex-row sm:items-center sm:gap-6 sm:p-6">
-            <span className="inline-flex w-fit shrink-0 items-center rounded-full bg-stone-950 px-4 py-2 text-xs font-bold tracking-wide text-white">
-              {homePage.trust.badge}
-            </span>
-            <p className={`text-sm leading-relaxed text-stone-700 sm:text-[15px] ${koreanLineBreak}`}>
-              {homePage.trust.lead}
-            </p>
-          </div>
-          <div className="mt-10 grid gap-8 sm:grid-cols-3 sm:gap-6">
-            {homePage.trust.pillars.map((pillar, index) => (
-              <div key={pillar.id} className="relative border-t border-stone-200 pt-6 sm:border-t-0 sm:border-l sm:pl-6 sm:pt-0 first:sm:border-l-0 first:sm:pl-0">
-                <span
-                  className="text-[2.5rem] font-light leading-none tabular-nums text-stone-300 sm:text-5xl"
-                  aria-hidden
-                >
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <p className="mt-2 text-base font-semibold text-stone-950">{pillar.title}</p>
-                <p className={`mt-2 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{pillar.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 4. 대표 프로그램 — imoves식 관심 탐색 */}
-      {heroProgram ? (
-        <section
-          id={homePage.programs.id}
-          className="border-b border-stone-300/50"
-          aria-labelledby="home-programs-heading"
-        >
-          <div className={`${container} ${sectionPad}`}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
-              {homePage.programs.eyebrow}
-            </p>
-            <h2
-              id="home-programs-heading"
-              className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
-            >
-              {homePage.programs.title}
-            </h2>
-            <p className={`mt-3 max-w-xl text-[15px] text-stone-600 sm:text-base ${koreanLineBreak}`}>
-              {homePage.programs.lead}
-            </p>
-            <div className="mt-10 grid gap-4 lg:grid-cols-2 lg:gap-5">
-              <ProgramFeatureCard program={heroProgram} priority />
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                {supportPrograms.map((program) => (
-                  <ProgramCard key={program.id} program={program} />
-                ))}
-              </div>
-            </div>
-            <Link
-              href={homePage.programs.allHref}
-              data-track={inferTrackFromHref(homePage.programs.allHref)}
-              data-track-label={homePage.programs.allTrackLabel}
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition hover:gap-3"
-            >
-              {homePage.programs.allLabel}
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {/* 5. 관객별 증거 */}
-      <section
-        id={homePage.audienceProof.id}
-        className="border-b border-stone-300/50 bg-white"
-        aria-labelledby="home-audience-proof-heading"
-      >
-        <div className={`${container} ${sectionPad}`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
-            {homePage.audienceProof.eyebrow}
-          </p>
-          <h2
-            id="home-audience-proof-heading"
-            className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
-          >
-            {homePage.audienceProof.title}
-          </h2>
-          <p className={`mt-3 max-w-xl text-[15px] text-stone-600 sm:text-base ${koreanLineBreak}`}>
-            {homePage.audienceProof.lead}
-          </p>
-          <div className="mt-10 grid gap-5 lg:grid-cols-3 lg:gap-6">
-            {homePage.audienceProof.items.map((item, index) => {
-              const portraitSrc = item.portraitSrc;
-              const portraitAlt = item.portraitAlt ?? item.attribution;
-              return (
-              <motion.article
-                key={item.trackId}
-                initial={reducedMotion ? false : { opacity: 0, y: 10 }}
-                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.15 }}
-                transition={{ duration: 0.4, delay: index * 0.06 }}
-                className="flex flex-col rounded-2xl border border-stone-200 bg-[#FAF8F5] p-6 sm:p-7"
-              >
-                <p className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: PLUM }}>
-                  {item.audience}
-                </p>
-                <blockquote
-                  className={`mt-4 text-base font-semibold leading-snug text-stone-950 sm:text-[17px] ${koreanLineBreak}`}
-                >
-                  &ldquo;{item.quote}&rdquo;
-                </blockquote>
-                <p className={`mt-3 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{item.body}</p>
-                <div className="mt-6 flex items-center gap-3 border-t border-stone-200/80 pt-5">
-                  {portraitSrc ? (
-                    <ExternalPhoto
-                      src={portraitSrc}
-                      alt={portraitAlt}
-                      className="h-10 w-10 shrink-0 rounded-full ring-2 ring-white"
-                      fit="cover"
-                    />
-                  ) : null}
-                  <p className="text-xs font-medium text-stone-500">{item.attribution}</p>
-                </div>
-                <Link
-                  href={item.href}
-                  data-track={inferTrackFromHref(item.href)}
-                  data-track-label={item.trackLabel}
-                  className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition hover:gap-3"
-                >
-                  {item.cta}
-                  <span aria-hidden>→</span>
-                </Link>
-              </motion.article>
-            );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. 관객 경로 — 트니트니 IA, 라이트 카드 */}
-      <section
-        id={homePage.audiencePaths.id}
-        className="scroll-mt-[4.5rem] border-b border-stone-300/50 bg-[#EDE8E0]"
-        aria-labelledby="home-paths-heading"
-      >
-        <div className={`${container} ${sectionPad}`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
-            {homePage.audiencePaths.eyebrow}
-          </p>
-          <h2
-            id="home-paths-heading"
-            className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
-          >
-            {homePage.audiencePaths.title}
-          </h2>
-          <p className={`mt-3 max-w-xl text-[15px] text-stone-600 sm:text-base ${koreanLineBreak}`}>
-            {homePage.audiencePaths.lead}
-          </p>
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-3 sm:gap-5">
-            {homePage.audiencePaths.items.map((path, index) => (
-              <motion.div
-                key={path.trackId}
-                initial={reducedMotion ? false : { opacity: 0, y: 12 }}
-                whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.12 }}
-                transition={{ duration: 0.45, delay: index * 0.07 }}
-              >
-                <LightPathCard path={path} priority={index === 0} />
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. 현장 사례 — 비대칭 에디토리얼 */}
-      {featuredProofCards.length > 0 ? (
-        <section className="border-b border-stone-300/50" aria-labelledby="home-proof-heading">
-          <div className={`${container} ${sectionPad}`}>
-            <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-stone-500">
-              {homePage.proof.eyebrow}
-            </p>
-            <h2
-              id="home-proof-heading"
-              className={`mt-3 text-[1.75rem] font-semibold tracking-[-0.03em] text-stone-950 sm:text-[2.25rem] ${koreanLineBreak}`}
-            >
-              {homePage.proof.title}
-            </h2>
-            <p className={`mt-3 max-w-lg text-[15px] text-stone-600 ${koreanLineBreak}`}>{homePage.proof.lead}</p>
-            <div className="mt-8 grid gap-4 lg:grid-cols-12 lg:grid-rows-2 lg:gap-5">
-              {featuredProofCards.map((record, index) => (
-                <div
-                  key={record.slug}
-                  className={index === 0 ? 'lg:col-span-7 lg:row-span-2' : 'lg:col-span-5'}
-                >
-                  <ProofLink href={record.href} trackLabel={record.trackLabel}>
-                    {index === 0 ? (
-                      <ProofCardFeatured record={record} />
-                    ) : (
-                      <ProofCardCompact record={record} index={index} />
-                    )}
-                  </ProofLink>
-                </div>
-              ))}
-            </div>
-            <Link
-              href={homePage.proof.recordsHref}
-              data-track={inferTrackFromHref(homePage.proof.recordsHref)}
-              data-track-label={homePage.proof.recordsTrackLabel}
-              className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition hover:gap-3"
-            >
-              {homePage.proof.recordsLabel}
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
-        </section>
-      ) : null}
-
-      {/* 8. 미션 */}
-      <section
-        className="relative overflow-hidden text-white"
-        style={{ backgroundColor: INK }}
-        aria-label="스포키듀 미션 및 상담"
-      >
-        <div
-          className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full opacity-30 blur-3xl"
-          style={{ backgroundColor: PLUM }}
-          aria-hidden
-        />
-        <div className={`relative ${container} py-16 sm:py-20 lg:py-24`}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.32em] text-white/40">{homePage.signature}</p>
-          <p
-            className={`mt-8 max-w-3xl text-[1.75rem] font-medium leading-snug tracking-[-0.03em] sm:text-4xl sm:leading-tight ${koreanLineBreak}`}
-          >
-            {homePage.mission.lines[0]}
-            <br />
-            <span className="text-white/45">{homePage.mission.lines[1]}</span>
-          </p>
-          <p className={`mt-8 max-w-xl text-[15px] leading-relaxed text-white/55 ${koreanLineBreak}`}>
-            <span className="font-medium text-white/80">{homePage.authority.title}</span>
-            <span className="mt-2 block">{homePage.authority.body}</span>
-          </p>
-          <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-10 sm:flex-row sm:justify-end">
-            <Link
-              href={homePage.spomove.href}
-              data-track={inferTrackFromHref(homePage.spomove.href)}
-              data-track-label={homePage.spomove.trackLabel}
-              className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/30 px-7 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              SPOMOVE 알아보기
-            </Link>
-            <Link
-              href={homePage.closingCta.href}
-              data-track="cta-contact"
-              data-track-label={homePage.closingCta.trackLabel}
-              className="inline-flex min-h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-stone-950 transition hover:bg-stone-100"
-            >
-              {homePage.closingCta.label}
-            </Link>
-          </div>
-        </div>
-      </section>
+      <HeroSection reducedMotion={reducedMotion} />
+      <ExpertiseSection reducedMotion={reducedMotion} />
+      <BusinessPathsSection reducedMotion={reducedMotion} />
+      <SpomoveSection reducedMotion={reducedMotion} />
+      <ProgramsSection reducedMotion={reducedMotion} />
+      <CasesSection caseCards={caseCards} reducedMotion={reducedMotion} />
+      <EducationSystemSection reducedMotion={reducedMotion} />
+      <FinalCtaSection reducedMotion={reducedMotion} />
     </div>
   );
 }
 
-function LightPathCard({
+function mergeCaseCards(
+  resolved: HomeFieldRecordCardWithThumbnail[],
+): HomeFieldRecordCardWithThumbnail[] {
+  const bySlug = new Map(resolved.map((card) => [card.slug, card]));
+  return homePage.cases.cards.map((item) => {
+    const resolvedCard = bySlug.get(item.slug);
+    if (resolvedCard) return resolvedCard;
+    return item as HomeFieldRecordCardWithThumbnail;
+  });
+}
+
+function FadeIn({
+  children,
+  className = '',
+  reducedMotion,
+}: {
+  children: ReactNode;
+  className?: string;
+  reducedMotion: boolean | null;
+}) {
+  if (reducedMotion) {
+    return <div className={className}>{children}</div>;
+  }
+  return (
+    <motion.div
+      className={className}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function HeroSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const media = HOME_MEDIA[homePage.hero.mediaKey];
+
+  return (
+    <section id={homePage.hero.id} className="relative w-full">
+      {/* Mobile: text → CTA → image */}
+      <div className="flex flex-col lg:hidden">
+        <div className="px-5 pb-8 pt-24 sm:px-8" style={{ backgroundColor: NAVY }}>
+          <HeroCopy variant="mobile" />
+        </div>
+        <div className="relative aspect-[4/3] w-full sm:aspect-[16/10]">
+          <MediaPanel
+            media={media}
+            className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`}
+            sizes="heroEditorialMain"
+            photoPriority
+            priority
+          />
+        </div>
+      </div>
+
+      {/* Desktop: full-bleed image + overlay text */}
+      <div className="relative hidden h-[min(820px,calc(100vh-4rem))] min-h-[760px] max-h-[900px] w-full lg:block">
+        <MediaPanel
+          media={media}
+          className={`absolute inset-0 h-full w-full rounded-none border-0 object-[50%_38%] ${homePhotoGrade}`}
+          sizes="heroEditorialMain"
+          photoPriority
+          priority
+        />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              'linear-gradient(90deg, rgba(11,18,32,0.88) 0%, rgba(11,18,32,0.72) 34%, rgba(11,18,32,0.28) 58%, rgba(11,18,32,0.08) 100%)',
+          }}
+          aria-hidden
+        />
+        <div className={`${container} relative z-10 flex h-full items-center pt-24 pb-12`}>
+          <FadeIn reducedMotion={reducedMotion} className="max-w-xl lg:max-w-2xl">
+            <HeroCopy variant="desktop" />
+          </FadeIn>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HeroCopy({ variant }: { variant: 'mobile' | 'desktop' }) {
+  const onDark = variant === 'desktop' || variant === 'mobile';
+  const titleClass = `${heroH1} ${onDark ? 'text-white' : 'text-[#0B1220]'}`;
+  const supportClass = `mt-5 max-w-xl text-[15px] leading-relaxed sm:text-base sm:leading-7 lg:text-[17px] ${onDark ? 'text-white/85' : 'text-slate-600'} ${koreanLineBreak}`;
+
+  return (
+    <div>
+      <h1 className={titleClass}>
+        {homePage.hero.lines.map((line) => (
+          <span key={line} className="block">
+            {line}
+          </span>
+        ))}
+      </h1>
+      <p className={supportClass}>{homePage.hero.support}</p>
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        <TrackedLink
+          href={homePage.hero.primaryCta.href}
+          trackLabel={homePage.hero.primaryCta.trackLabel}
+          className="inline-flex min-h-11 items-center justify-center rounded-md px-6 py-3 text-sm font-semibold text-white transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          style={{ backgroundColor: ATHLETIC_BLUE }}
+        >
+          {homePage.hero.primaryCta.label}
+        </TrackedLink>
+        <TrackedLink
+          href={homePage.hero.secondaryCta.href}
+          trackLabel={homePage.hero.secondaryCta.trackLabel}
+          className={`inline-flex min-h-11 items-center justify-center rounded-md border px-6 py-3 text-sm font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+            onDark
+              ? 'border-white/50 text-white hover:bg-white/10 focus-visible:outline-white'
+              : 'border-slate-300 text-[#0B1220] hover:border-slate-500 focus-visible:outline-blue-600'
+          }`}
+        >
+          {homePage.hero.secondaryCta.label}
+        </TrackedLink>
+      </div>
+      <TrackedLink
+        href={homePage.hero.spomoveLink.href}
+        trackLabel={homePage.hero.spomoveLink.trackLabel}
+        className={`mt-4 inline-flex min-h-11 items-center text-sm font-semibold underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+          onDark ? 'text-white/80 focus-visible:outline-white' : 'text-[#1D4ED8] focus-visible:outline-[#1D4ED8]'
+        }`}
+      >
+        {homePage.hero.spomoveLink.label} →
+      </TrackedLink>
+    </div>
+  );
+}
+
+function ExpertiseSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const media = HOME_MEDIA[homePage.expertise.mediaKey];
+
+  return (
+    <section id={homePage.expertise.id} className={`${sectionPadMedium} bg-white`}>
+      <div className={`${container} grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-14`}>
+        <FadeIn reducedMotion={reducedMotion}>
+          <h2 className={`whitespace-pre-line ${sectionH2}`}>{homePage.expertise.headline}</h2>
+          <ul className={`mt-7 space-y-2.5 ${koreanLineBreak}`}>
+            {homePage.expertise.proofs.map((proof) => (
+              <li key={proof} className="flex gap-3 text-[15px] leading-relaxed text-slate-700 sm:text-base">
+                <span className="mt-2.5 h-px w-5 shrink-0 bg-[#1D4ED8]" aria-hidden />
+                {proof}
+              </li>
+            ))}
+          </ul>
+        </FadeIn>
+        <FadeIn reducedMotion={reducedMotion} className="relative aspect-[4/3] w-full overflow-hidden lg:aspect-[5/4]">
+          <MediaPanel
+            media={media}
+            className={`absolute inset-0 h-full w-full border-0 ${homePhotoGrade}`}
+            sizes="heroEditorialMain"
+          />
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+function BusinessPathsSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const [dispatch, privatePath, curriculum] = homePage.businessPaths.items;
+  const dispatchMedia = HOME_MEDIA[dispatch.mediaKey];
+  const privateMedia = HOME_MEDIA[privatePath.mediaKey];
+  const curriculumMedia = HOME_MEDIA[curriculum.mediaKey];
+
+  return (
+    <section id={homePage.businessPaths.id} className={`${sectionPadStrong} bg-slate-50`}>
+      <div className={container}>
+        <FadeIn reducedMotion={reducedMotion}>
+          <h2 className={sectionH2}>세 가지 사업 경로</h2>
+          <p className={sectionLead}>
+            현장 수업에서 시작해 프로그램과 강사교육까지 이어지는 세 가지 운영 방식입니다.
+          </p>
+        </FadeIn>
+
+        <div className="mt-10 grid gap-6 lg:grid-cols-12 lg:gap-5">
+          {/* 기관 — 가장 큰 비중 */}
+          <FadeIn reducedMotion={reducedMotion} className="lg:col-span-7">
+            <PathBlock
+              path={dispatch}
+              media={dispatchMedia}
+              size="large"
+              priority
+            />
+          </FadeIn>
+
+          <div className="flex flex-col gap-6 lg:col-span-5">
+            <FadeIn reducedMotion={reducedMotion}>
+              <PathBlock path={privatePath} media={privateMedia} size="compact" />
+            </FadeIn>
+            <FadeIn reducedMotion={reducedMotion}>
+              <PathBlock path={curriculum} media={curriculumMedia} size="compact" />
+            </FadeIn>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PathBlock({
   path,
+  media,
+  size,
   priority,
 }: {
-  path: (typeof homePage.audiencePaths.items)[number];
+  path: (typeof homePage.businessPaths.items)[number];
+  media: (typeof HOME_MEDIA)[keyof typeof HOME_MEDIA];
+  size: 'large' | 'compact';
   priority?: boolean;
 }) {
+  const imageHeight = size === 'large' ? 'min-h-[240px] sm:min-h-[320px] lg:min-h-[380px]' : 'min-h-[160px] sm:min-h-[180px]';
+
   return (
     <Link
       href={path.href}
       data-track={inferTrackFromHref(path.href)}
       data-track-label={path.trackLabel}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:border-stone-950 hover:shadow-md"
+      className="group flex h-full flex-col bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1D4ED8]"
     >
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <div className={`relative overflow-hidden ${imageHeight}`}>
         <MediaPanel
-          media={HOME_MEDIA[path.mediaKey]}
-          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.03]"
-          sizes="gateCard"
-          photoPriority={priority}
-        />
-      </div>
-      <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-stone-500">{path.audience}</p>
-        <p className="mt-2 text-lg font-semibold text-stone-950 sm:text-xl">{path.title}</p>
-        <p className={`mt-2 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{path.lead}</p>
-        <span className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-stone-800 transition group-hover:gap-3">
-          자세히 보기
-          <span aria-hidden>→</span>
-        </span>
-      </div>
-    </Link>
-  );
-}
-
-function ProgramFeatureCard({ program, priority }: { program: HomeSignatureProgram; priority?: boolean }) {
-  return (
-    <Link
-      href={program.href}
-      data-track={inferTrackFromHref(program.href)}
-      data-track-label={program.trackLabel}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:border-stone-950 hover:shadow-md lg:flex-row"
-    >
-      <div className="relative aspect-[16/10] shrink-0 overflow-hidden lg:aspect-auto lg:w-[52%] lg:min-h-[240px]">
-        <MediaPanel
-          media={program.media}
-          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.02]"
-          sizes="heroEditorialMain"
+          media={media}
+          className={`absolute inset-0 h-full w-full border-0 transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+          sizes={size === 'large' ? 'heroEditorialMain' : 'gateCard'}
           photoPriority={priority}
           priority={priority}
         />
       </div>
-      <div className="flex flex-1 flex-col justify-center p-6 sm:p-8">
-        <span className="w-fit rounded-full border border-stone-200 bg-[#FAF8F5] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-stone-600">
-          {program.badge}
-        </span>
-        <h3 className="mt-4 text-2xl font-semibold tracking-tight text-stone-950 sm:text-3xl">{program.name}</h3>
-        <p className={`mt-3 text-sm leading-relaxed text-stone-600 sm:text-[15px] ${koreanLineBreak}`}>
-          {program.description}
-        </p>
-        <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-stone-900 transition group-hover:gap-3">
-          {program.cta}
-          <span aria-hidden>→</span>
+      <div className={`bg-white px-5 py-5 sm:px-6 ${size === 'large' ? 'lg:px-7 lg:py-6' : ''}`}>
+        <h3 className={`text-lg font-bold text-[#0B1220] sm:text-xl ${koreanLineBreak}`}>{path.title}</h3>
+        <p className={`mt-2 text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>{path.lead}</p>
+        <ul className={`mt-3 space-y-1 text-sm text-slate-700 ${koreanLineBreak}`}>
+          {path.bullets.map((bullet) => (
+            <li key={bullet}>· {bullet}</li>
+          ))}
+        </ul>
+        <span className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-[#1D4ED8] transition [@media(hover:hover)_and_(pointer:fine)]:group-hover:underline">
+          {path.cta} →
         </span>
       </div>
     </Link>
   );
 }
 
-function ProgramCard({ program }: { program: HomeSignatureProgram }) {
+function SpomoveSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const media = HOME_MEDIA[homePage.spomove.mediaKey];
+  const padColors = ['bg-red-500', 'bg-yellow-400', 'bg-green-500', 'bg-blue-600'];
+
+  return (
+    <section id={homePage.spomove.id} className={`${sectionPadStrong} bg-[#0B1220] text-white`}>
+      <div className={`${container} grid gap-10 lg:grid-cols-2 lg:items-center lg:gap-16`}>
+        <FadeIn reducedMotion={reducedMotion}>
+          <h2 className={`${sectionH2} text-white`}>{homePage.spomove.title}</h2>
+          <p className={`mt-4 text-[15px] leading-relaxed text-white/80 sm:text-[17px] lg:text-lg ${koreanLineBreak}`}>
+            {homePage.spomove.lead}
+          </p>
+
+          <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+            {homePage.spomove.flow.map((step, index) => (
+              <div key={step} className="min-w-0">
+                <div className={`aspect-square ${padColors[index]}`} aria-hidden />
+                <p className="mt-2 text-sm font-semibold text-white">{step}</p>
+                <p className="mt-0.5 text-xs leading-relaxed text-white/60">{homePage.spomove.flowPlain[index]}</p>
+              </div>
+            ))}
+          </div>
+
+          <ul className={`mt-6 space-y-1.5 text-sm text-white/70 sm:text-[15px] ${koreanLineBreak}`}>
+            {homePage.spomove.points.map((point) => (
+              <li key={point}>· {point}</li>
+            ))}
+          </ul>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <TrackedLink
+              href={homePage.spomove.primaryCta.href}
+              trackLabel={homePage.spomove.primaryCta.trackLabel}
+              className="inline-flex min-h-11 items-center justify-center rounded-md bg-cyan-500 px-6 py-3 text-sm font-semibold text-[#0B1220] transition hover:bg-cyan-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-300"
+            >
+              {homePage.spomove.primaryCta.label}
+            </TrackedLink>
+            <TrackedLink
+              href={homePage.spomove.secondaryCta.href}
+              trackLabel={homePage.spomove.secondaryCta.trackLabel}
+              className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/40 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              {homePage.spomove.secondaryCta.label}
+            </TrackedLink>
+          </div>
+        </FadeIn>
+
+        <FadeIn reducedMotion={reducedMotion} className="relative aspect-[4/3] overflow-hidden">
+          <MediaPanel
+            media={media}
+            className={`absolute inset-0 h-full w-full border-0 ${homePhotoGrade}`}
+            sizes="heroEditorialMain"
+          />
+        </FadeIn>
+      </div>
+    </section>
+  );
+}
+
+function ProgramsSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const { featured, list } = homePage.programs;
+  const featuredMedia = HOME_MEDIA[featured.mediaKey];
+  const educationPrograms = list.filter((p) => p.category === 'education');
+  const operationPrograms = list.filter((p) => p.category === 'operation');
+
+  return (
+    <section id={homePage.programs.id} className={`${sectionPadMedium} bg-white`}>
+      <div className={container}>
+        <FadeIn reducedMotion={reducedMotion}>
+          <h2 className={sectionH2}>{homePage.programs.title}</h2>
+          <p className={sectionLead}>{homePage.programs.lead}</p>
+        </FadeIn>
+
+        <FadeIn reducedMotion={reducedMotion} className="mt-8">
+          <ProgramFeaturedBlock program={featured} media={featuredMedia} />
+        </FadeIn>
+
+        {educationPrograms.length > 0 ? (
+          <div className="mt-10">
+            <p className="text-sm font-semibold text-slate-500">교육 프로그램</p>
+            <div className="mt-3">
+              {educationPrograms.map((program) => (
+                <FadeIn key={program.id} reducedMotion={reducedMotion}>
+                  <ProgramListRow program={program} />
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {operationPrograms.length > 0 ? (
+          <div className="mt-10">
+            <p className="text-sm font-semibold text-slate-500">운영 형태</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              {operationPrograms.map((program, index) => (
+                <FadeIn key={program.id} reducedMotion={reducedMotion}>
+                  <ProgramTile program={program} priority={index === 0} />
+                </FadeIn>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function ProgramFeaturedBlock({
+  program,
+  media,
+}: {
+  program: HomeProgramItem;
+  media: (typeof HOME_MEDIA)[keyof typeof HOME_MEDIA];
+}) {
   return (
     <Link
       href={program.href}
       data-track={inferTrackFromHref(program.href)}
       data-track-label={program.trackLabel}
-      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:border-stone-950 hover:shadow-md"
+      className="group grid overflow-hidden bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1D4ED8] lg:grid-cols-[1.2fr_1fr]"
     >
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <div className="relative min-h-[220px] lg:min-h-[280px]">
         <MediaPanel
-          media={program.media}
-          className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 group-hover:scale-[1.03]"
-          sizes="gateCard"
+          media={media}
+          className={`absolute inset-0 h-full w-full rounded-none border-0 transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+          sizes="heroEditorialMain"
+          photoPriority
+          priority
         />
       </div>
-      <div className="flex flex-1 flex-col p-5">
-        <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-stone-500">{program.badge}</span>
-        <h3 className="mt-2 text-lg font-semibold text-stone-950">{program.name}</h3>
-        <p className={`mt-2 flex-1 text-sm leading-relaxed text-stone-600 ${koreanLineBreak}`}>{program.description}</p>
-        <span className="mt-3 text-sm font-semibold text-stone-800 transition group-hover:underline">{program.cta}</span>
+      <div className="flex flex-col justify-center px-6 py-8 lg:py-10">
+        <p className="text-xs font-semibold text-slate-500">교육 프로그램 · {program.audience}</p>
+        <h3 className={`mt-2 text-2xl font-bold text-[#0B1220] sm:text-3xl ${koreanLineBreak}`}>{program.name}</h3>
+        <p className={`mt-3 text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
+          {program.description}
+        </p>
+        <span className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-[#1D4ED8] [@media(hover:hover)_and_(pointer:fine)]:group-hover:underline">
+          프로그램 상세 보기 →
+        </span>
       </div>
     </Link>
   );
 }
 
-function ProofCardMedia({
-  record,
-  className,
-  sizes,
+function ProgramListRow({ program }: { program: HomeProgramItem }) {
+  const media = HOME_MEDIA[program.mediaKey];
+
+  return (
+    <Link
+      href={program.href}
+      data-track={inferTrackFromHref(program.href)}
+      data-track-label={program.trackLabel}
+      className="group flex flex-col overflow-hidden bg-slate-50 sm:flex-row focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1D4ED8]"
+    >
+      <div className="relative aspect-[16/9] shrink-0 overflow-hidden sm:w-2/5 lg:w-1/3">
+        <MediaPanel
+          media={media}
+          className={`absolute inset-0 h-full w-full border-0 transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+          sizes="gateCard"
+        />
+      </div>
+      <div className="flex flex-1 flex-col justify-center px-5 py-5 sm:py-6">
+        <p className="text-xs font-semibold text-slate-500">{program.audience}</p>
+        <h3 className={`mt-1 text-xl font-bold text-[#0B1220] ${koreanLineBreak}`}>{program.name}</h3>
+        <p className={`mt-2 text-sm text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>{program.description}</p>
+        <span className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[#1D4ED8] [@media(hover:hover)_and_(pointer:fine)]:group-hover:underline">
+          상세 보기 →
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function ProgramTile({ program, priority }: { program: HomeProgramItem; priority?: boolean }) {
+  const media = HOME_MEDIA[program.mediaKey];
+
+  return (
+    <Link
+      href={program.href}
+      data-track={inferTrackFromHref(program.href)}
+      data-track-label={program.trackLabel}
+      className="group flex h-full flex-col bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1D4ED8]"
+    >
+      <div className="relative aspect-[16/10] overflow-hidden">
+        <MediaPanel
+          media={media}
+          className={`absolute inset-0 h-full w-full rounded-none border-0 transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+          sizes="gateCard"
+          photoPriority={priority}
+          priority={priority}
+        />
+      </div>
+      <div className="flex flex-1 flex-col px-4 py-4">
+        <p className="text-[11px] font-semibold text-slate-500">운영 형태 · {program.audience}</p>
+        <h3 className={`mt-1 text-lg font-bold text-[#0B1220] ${koreanLineBreak}`}>{program.name}</h3>
+        <p className={`mt-2 flex-1 text-sm text-slate-600 ${koreanLineBreak}`}>{program.description}</p>
+      </div>
+    </Link>
+  );
+}
+
+function CasesSection({
+  caseCards,
+  reducedMotion,
+}: {
+  caseCards: HomeFieldRecordCardWithThumbnail[];
+  reducedMotion: boolean | null;
+}) {
+  const featured = caseCards.find((c) => c.slug === homePage.cases.featuredSlug) ?? caseCards[0];
+  const rest = caseCards.filter((c) => c.slug !== featured?.slug);
+
+  return (
+    <section id={homePage.cases.id} className={`${sectionPadStrong} bg-slate-50`}>
+      <div className={container}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <FadeIn reducedMotion={reducedMotion}>
+            <h2 className={sectionH2}>{homePage.cases.title}</h2>
+            <p className={`${sectionLead} max-w-xl`}>{homePage.cases.lead}</p>
+          </FadeIn>
+          <TrackedLink
+            href={homePage.cases.recordsHref}
+            trackLabel={homePage.cases.recordsTrackLabel}
+            className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-[#1D4ED8] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]"
+          >
+            {homePage.cases.recordsLabel} →
+          </TrackedLink>
+        </div>
+
+        {featured ? (
+          <FadeIn reducedMotion={reducedMotion} className="mt-10">
+            <CaseFeatured card={featured} />
+          </FadeIn>
+        ) : null}
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          {rest.map((card, index) => (
+            <FadeIn key={card.slug} reducedMotion={reducedMotion}>
+              <CaseCompact card={card} priority={index === 0} />
+            </FadeIn>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CaseFeatured({ card }: { card: HomeFieldRecordCardWithThumbnail }) {
+  const caseMeta = homePage.cases.cards.find((c) => c.slug === card.slug);
+
+  return (
+    <ProofLink href={card.href} trackLabel={card.trackLabel}>
+      <article className="group grid overflow-hidden bg-white lg:grid-cols-[1.35fr_1fr]">
+        <div className="relative min-h-[280px] lg:min-h-[400px]">
+          <CaseMedia card={card} sizes="fieldFeatured" priority />
+        </div>
+        <div className="flex flex-col justify-center px-6 py-8 lg:px-8 lg:py-10">
+          <p className="text-xs font-semibold text-slate-500">
+            {caseMeta?.tagline} · {caseMeta?.operationType ?? card.tagline}
+          </p>
+          <h3 className={`mt-2 text-2xl font-bold text-[#0B1220] sm:text-3xl ${koreanLineBreak}`}>{card.venue}</h3>
+          <p className={`mt-2 text-sm font-medium text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
+            {card.sessionLine}
+          </p>
+          {caseMeta?.description ? (
+            <p className={`mt-3 text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
+              {caseMeta.description}
+            </p>
+          ) : null}
+          <span className="mt-5 inline-flex min-h-11 items-center text-sm font-semibold text-[#1D4ED8] [@media(hover:hover)_and_(pointer:fine)]:group-hover:underline">
+            {caseMeta?.ctaLabel ?? '기록 보기'} →
+          </span>
+        </div>
+      </article>
+    </ProofLink>
+  );
+}
+
+function CaseCompact({
+  card,
   priority,
 }: {
-  record: HomeFieldRecordCardWithThumbnail;
-  className?: string;
+  card: HomeFieldRecordCardWithThumbnail;
+  priority?: boolean;
+}) {
+  const caseMeta = homePage.cases.cards.find((c) => c.slug === card.slug);
+
+  return (
+    <ProofLink href={card.href} trackLabel={card.trackLabel}>
+      <article className="group flex h-full flex-col bg-white sm:flex-row">
+        <div className="relative aspect-[16/10] shrink-0 overflow-hidden sm:w-2/5">
+          <CaseMedia card={card} priority={priority} />
+        </div>
+        <div className="flex flex-1 flex-col justify-center px-4 py-4 sm:py-5">
+          <p className="text-[11px] font-semibold text-slate-500">{caseMeta?.operationType ?? card.tagline}</p>
+          <h3 className={`mt-1 text-lg font-bold leading-snug text-[#0B1220] ${koreanLineBreak}`}>{card.venue}</h3>
+          <p className={`mt-1 text-sm text-slate-600 ${koreanLineBreak}`}>{card.sessionLine}</p>
+          <span className="mt-3 text-sm font-semibold text-[#1D4ED8] [@media(hover:hover)_and_(pointer:fine)]:group-hover:underline">
+            {caseMeta?.ctaLabel ?? '기록 보기'} →
+          </span>
+        </div>
+      </article>
+    </ProofLink>
+  );
+}
+
+function CaseMedia({
+  card,
+  sizes = 'gateCard',
+  priority,
+}: {
+  card: HomeFieldRecordCardWithThumbnail;
   sizes?: 'gateCard' | 'fieldFeatured' | 'heroEditorialMain';
   priority?: boolean;
 }) {
-  if (record.thumbnailSrc) {
+  if (card.thumbnailSrc) {
     return (
       <ExternalPhoto
-        src={record.thumbnailSrc}
-        alt={`${record.venue} 수업 사례`}
-        className={`absolute inset-0 transition duration-700 group-hover:scale-[1.02] ${className ?? ''}`}
+        src={card.thumbnailSrc}
+        alt={`${card.venue} 수업 사례`}
+        className={`absolute inset-0 transition duration-500 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
         fit="cover"
+        priority={priority}
       />
     );
   }
   return (
     <MediaPanel
-      media={HOME_MEDIA[record.mediaKey]}
-      className={`absolute inset-0 h-full w-full rounded-none border-0 ${className ?? ''}`}
-      sizes={sizes ?? 'gateCard'}
+      media={HOME_MEDIA[card.mediaKey]}
+      className={`absolute inset-0 h-full w-full rounded-none border-0 ${homePhotoGrade}`}
+      sizes={sizes}
       photoPriority={priority}
       priority={priority}
     />
   );
 }
 
-function ProofCardFeatured({ record }: { record: HomeFieldRecordCardWithThumbnail }) {
+function EducationSystemSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const media = HOME_MEDIA[homePage.educationSystem.mediaKey];
+  const { steps } = homePage.educationSystem;
+
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:shadow-md">
-      <div className="relative min-h-[220px] flex-1 overflow-hidden">
-        <ProofCardMedia record={record} sizes="fieldFeatured" priority />
+    <section id={homePage.educationSystem.id} className={`${sectionPadMedium} bg-white`}>
+      <div className={container}>
+        <FadeIn reducedMotion={reducedMotion}>
+          <h2 className={sectionH2}>{homePage.educationSystem.title}</h2>
+          <p className={sectionLead}>{homePage.educationSystem.headline}</p>
+        </FadeIn>
+
+        <div className="mt-10 grid gap-8 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:gap-12">
+          <FadeIn reducedMotion={reducedMotion}>
+            <div className="hidden lg:block">
+              <div className="grid grid-cols-5 gap-3 border-t-2 border-[#1D4ED8] pt-5">
+                {steps.map((step, index) => (
+                  <div key={step.label} className={koreanLineBreak}>
+                    <p className="text-xs font-semibold tabular-nums text-[#1D4ED8]">
+                      {String(index + 1).padStart(2, '0')}
+                    </p>
+                    <p className="mt-2 text-sm font-bold text-[#0B1220]">{step.label}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-600">{step.body}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <ol className={`space-y-4 lg:hidden ${koreanLineBreak}`}>
+              {steps.map((step, index) => (
+                <li key={step.label} className="border-l-2 border-[#1D4ED8]/40 pl-4">
+                  <p className="text-xs font-semibold text-[#1D4ED8]">{String(index + 1).padStart(2, '0')}</p>
+                  <p className="font-bold text-[#0B1220]">{step.label}</p>
+                  <p className="mt-1 text-sm text-slate-600">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+            <p className={`mt-8 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
+              {homePage.educationSystem.credentials}
+            </p>
+            <TrackedLink
+              href={homePage.educationSystem.cta.href}
+              trackLabel={homePage.educationSystem.cta.trackLabel}
+              className="mt-6 inline-flex min-h-11 items-center text-sm font-semibold text-[#1D4ED8] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]"
+            >
+              {homePage.educationSystem.cta.label} →
+            </TrackedLink>
+          </FadeIn>
+
+          <FadeIn reducedMotion={reducedMotion} className="relative aspect-[4/3] overflow-hidden lg:aspect-[5/4]">
+            <MediaPanel
+              media={media}
+              className={`absolute inset-0 h-full w-full border-0 ${homePhotoGrade}`}
+              sizes="heroEditorialMain"
+            />
+          </FadeIn>
+        </div>
       </div>
-      <div className="border-t border-stone-100 p-5 sm:p-6">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500">{record.tagline}</p>
-        <p className="mt-2 text-xl font-semibold text-stone-950 sm:text-2xl">{record.venue}</p>
-        <p className={`mt-2 text-sm text-stone-600 ${koreanLineBreak}`}>{record.sessionLine}</p>
-      </div>
-    </div>
+    </section>
   );
 }
 
-function ProofCardCompact({
-  record,
-  index,
-}: {
-  record: HomeFieldRecordCardWithThumbnail;
-  index: number;
-}) {
+function FinalCtaSection({ reducedMotion }: { reducedMotion: boolean | null }) {
+  const media = HOME_MEDIA[homePage.finalCta.mediaKey];
+
   return (
-    <div className="group flex h-full flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-sm transition hover:shadow-md sm:flex-row lg:flex-col">
-      <div className="relative aspect-[16/10] shrink-0 overflow-hidden sm:w-2/5 lg:w-full">
-        <ProofCardMedia record={record} priority={index === 1} />
+    <section id={homePage.finalCta.id} className="relative w-full overflow-hidden bg-[#0B1220]">
+      <div className="relative min-h-[340px] sm:min-h-[380px]">
+        <MediaPanel
+          media={media}
+          className={`absolute inset-0 h-full w-full border-0 opacity-40 ${homePhotoGrade}`}
+          sizes="heroEditorialMain"
+        />
+        <div className="absolute inset-0 bg-[#0B1220]/75" aria-hidden />
+        <div className={`${container} relative flex min-h-[340px] flex-col justify-center py-14 sm:min-h-[380px] sm:py-16`}>
+          <FadeIn reducedMotion={reducedMotion} className="max-w-xl">
+            <h2 className={`text-2xl font-bold text-white sm:text-4xl ${koreanLineBreak}`}>
+              {homePage.finalCta.headline}
+            </h2>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <TrackedLink
+                href={homePage.finalCta.primary.href}
+                trackLabel={homePage.finalCta.primary.trackLabel}
+                className="inline-flex min-h-11 items-center justify-center rounded-md px-6 py-3 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                style={{ backgroundColor: ATHLETIC_BLUE }}
+              >
+                {homePage.finalCta.primary.label}
+              </TrackedLink>
+              <TrackedLink
+                href={homePage.finalCta.secondary.href}
+                trackLabel={homePage.finalCta.secondary.trackLabel}
+                className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/50 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              >
+                {homePage.finalCta.secondary.label}
+              </TrackedLink>
+            </div>
+            <TrackedLink
+              href={homePage.finalCta.link.href}
+              trackLabel={homePage.finalCta.link.trackLabel}
+              className="mt-4 inline-flex min-h-11 items-center text-sm font-semibold text-white/75 underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              {homePage.finalCta.link.label} →
+            </TrackedLink>
+          </FadeIn>
+        </div>
       </div>
-      <div className="flex flex-1 flex-col justify-center border-t border-stone-100 p-5 sm:border-l sm:border-t-0 lg:border-l-0 lg:border-t">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-stone-500">{record.tagline}</p>
-        <p className="mt-2 text-lg font-semibold leading-snug text-stone-950">{record.venue}</p>
-        <p className={`mt-1.5 text-sm text-stone-600 ${koreanLineBreak}`}>{record.sessionLine}</p>
-      </div>
-    </div>
+    </section>
   );
 }
 
-function StatCell({
-  value,
-  label,
-  active = true,
+function TrackedLink({
+  href,
+  trackLabel,
+  children,
+  className,
+  style,
 }: {
-  value: string;
-  label: string;
-  active?: boolean;
+  href: string;
+  trackLabel: string;
+  children: ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
 }) {
+  if (isExternalHref(href)) {
+    return (
+      <a href={href} data-track-label={trackLabel} className={className} style={style} {...externalLinkProps}>
+        {children}
+      </a>
+    );
+  }
   return (
-    <div>
-      <dt className="sr-only">{label}</dt>
-      <dd
-        className={`text-xl font-bold tabular-nums tracking-tight text-stone-950 transition-opacity duration-500 sm:text-2xl ${active ? 'opacity-100' : 'opacity-25'}`}
-        aria-live="polite"
-      >
-        {value}
-      </dd>
-      <dd className="mt-1 text-[11px] font-medium uppercase tracking-[0.12em] text-stone-500">{label}</dd>
-    </div>
+    <Link
+      href={href}
+      data-track={inferTrackFromHref(href)}
+      data-track-label={trackLabel}
+      className={className}
+      style={style}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -707,7 +788,7 @@ function ProofLink({
   children: ReactNode;
 }) {
   const className =
-    'block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-stone-900';
+    'block focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#1D4ED8]';
 
   if (isExternalHref(href)) {
     return (

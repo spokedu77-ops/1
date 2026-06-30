@@ -225,9 +225,7 @@ function ProgramCard({
 
   return (
     <article className="group relative">
-      <button
-        type="button"
-        onClick={onPreview}
+      <div
         className={`${THUMBNAIL_FRAME} block w-full border border-slate-200 bg-white text-left shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-indigo-200 group-hover:shadow-[0_18px_38px_rgba(99,102,241,0.14)]`}
       >
         {heroImage ? (
@@ -296,12 +294,10 @@ function ProgramCard({
             ) : (
               <span />
             )}
-            <span className="inline-flex h-8 shrink-0 items-center justify-center rounded-full bg-white px-3 text-[12px] font-black text-slate-950 shadow-[0_8px_18px_rgba(0,0,0,0.18)]">
-              수업 미리보기
-            </span>
+            <span />
           </div>
         </div>
-      </button>
+      </div>
 
       <button
         type="button"
@@ -324,12 +320,9 @@ function ProgramCard({
       <button type="button" onClick={onPreview} className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
         수업 미리보기
       </button>
-      <div className="mt-2 grid grid-cols-2 gap-2">
+      <div className="mt-2 grid gap-2">
         <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
           전체 수업 자료 보기
-        </Link>
-        <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
-          수업 기록 작성
         </Link>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">

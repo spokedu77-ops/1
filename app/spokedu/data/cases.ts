@@ -1,6 +1,6 @@
 import { SPOKEDU_BASE_PATH } from './site';
 import type { HomeMediaKey } from './home-media';
-import { recordsCaseImageBySlug, SPOKEDU_IMAGES } from './images';
+import { recordsCaseImageBySlug } from './images';
 import type { ProgramSlug } from './programs-catalog';
 import type { CaseFilterId } from './cases-page';
 

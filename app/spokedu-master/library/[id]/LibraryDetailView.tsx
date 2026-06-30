@@ -201,6 +201,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     model.briefingNotes.length > 0;
   const galleryImages = model.galleryImageUrls;
   const relatedSpomovePresets = getSupportedOfficialSpomovePresets(program);
+  const primarySpomovePreset = relatedSpomovePresets[0] ?? null;
   const classToolsHref = `/spokedu-master/class-tools?returnTo=${encodeURIComponent(`/spokedu-master/library/${program.id}`)}`;
 
   const copyParentNote = async () => {
@@ -407,47 +408,75 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </details>
         ) : null}
 
+        <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-500">Preparation</p>
+              <h2 className="mt-1 text-lg font-black text-slate-950">수업 준비 보조</h2>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-2">
+            <Link href={classToolsHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700">
+              <Wrench className="h-4 w-4" />
+              수업 도구
+            </Link>
+            <button
+              type="button"
+              onClick={() => toggleFavoriteProgram(ownerId, program.id)}
+              className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3 text-[12px] font-black ${
+                favorite
+                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                  : ownerId
+                    ? 'border-slate-200 bg-white text-slate-700'
+                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`}
+              aria-pressed={favorite}
+              aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+              disabled={!ownerId}
+            >
+              <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
+              즐겨찾기
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600">After class</p>
+            <h2 className="mt-1 text-lg font-black text-slate-950">수업 후 정리</h2>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-700">
+              <Check className="h-4 w-4" />
+              빠른 수업 기록
+            </button>
+            <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700">
+              <FileText className="h-4 w-4" />
+              안내문
+            </Link>
+            {usageCount > 0 ? (
+              <Link href="/spokedu-master/class-record" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">
+                <Clipboard className="h-4 w-4" />
+                기존 기록 보기
+              </Link>
+            ) : null}
+          </div>
+        </section>
+
         <div
-          className="sticky bottom-[78px] z-40 grid grid-cols-2 gap-1.5 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:grid-cols-6 lg:bottom-0"
+          className={`sticky bottom-[78px] z-40 grid grid-cols-1 gap-1.5 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl ${primarySpomovePreset ? 'sm:grid-cols-2' : 'sm:grid-cols-1'} lg:bottom-0`}
           style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
         >
           <Link href={`/spokedu-master/class-mode/${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
             <MonitorPlay className="h-4 w-4" />
             수업 실행
           </Link>
-          <Link href={classToolsHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
-            <Wrench className="h-4 w-4" />
-            수업 도구
-          </Link>
-          <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
-            <Check className="h-4 w-4" />
-            수업 기록
-          </button>
-          <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
-            <FileText className="h-4 w-4" />
-            안내문
-          </Link>
-          <button
-            type="button"
-            onClick={() => toggleFavoriteProgram(ownerId, program.id)}
-            className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-2 text-[12px] font-black ${
-              favorite
-                ? 'border-amber-200 bg-amber-50 text-amber-700'
-                : ownerId
-                  ? 'border-slate-200 bg-white text-slate-700'
-                  : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-            } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`}
-            aria-pressed={favorite}
-            aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-            disabled={!ownerId}
-          >
-            <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-            즐겨찾기
-          </button>
-          <Link href={libraryReturnHref} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700">
-            <ArrowLeft className="h-4 w-4" />
-            라이브러리로
-          </Link>
+          {primarySpomovePreset ? (
+            <Link href={getSpomoveSessionHref(program, primarySpomovePreset)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
+              <MonitorPlay className="h-4 w-4" />
+              SPOMOVE 실행
+            </Link>
+          ) : null}
         </div>
       </div>
 

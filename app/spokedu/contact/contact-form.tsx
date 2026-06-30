@@ -331,7 +331,7 @@ export default function SpokeduContactForm() {
           text: `${activeOption.successMessage}\n\n접수 내용은 안전하게 저장되었으며, 담당자가 순차적으로 확인합니다.`,
         });
       }
-    } catch (error) {
+    } catch {
       setNotice({
         kind: 'error',
         text: SUBMIT_ERROR_MESSAGE,

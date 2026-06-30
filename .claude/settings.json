@@ -72,7 +72,8 @@
       "Bash(xargs grep -l \"useSpomoveTrainingBGM\")",
       "Bash(find \"C:/Users/joker\" -name \"sci-fi_crate*.glb\" -o -name \"pbr_spaceship*.glb\" -o -name \"sci-fi_wall*.glb\" 2>/dev/null | head -10)",
       "Read(//c/Users/joker/**)",
-      "PowerShell(cd \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\"; npx tsc --noEmit --pretty false 2>&1 | Where-Object { $_ -notmatch \"site-ia\\\\.test\\\\.ts\" })"
+      "PowerShell(cd \"C:\\\\Users\\\\joker\\\\Documents\\\\GitHub\\\\1\"; npx tsc --noEmit --pretty false 2>&1 | Where-Object { $_ -notmatch \"site-ia\\\\.test\\\\.ts\" })",
+      "Bash(echo \"exit:$?\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"

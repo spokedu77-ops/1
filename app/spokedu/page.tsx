@@ -8,10 +8,10 @@ export const metadata = buildSpokeduMetadata('home');
 export const dynamic = 'force-dynamic';
 
 export default async function SpokeduHomePage() {
-  const cards = await resolveHomeFieldRecordCards(homePage.proof.cards);
+  const cards = await resolveHomeFieldRecordCards(homePage.cases.cards);
 
   return (
-    <LandingPageRoot heroMediaKey="homeHero">
+    <LandingPageRoot heroMediaKey={homePage.hero.mediaKey}>
       <HomeStructuredData />
       <SpokeduHomeLanding proofCards={cards} />
     </LandingPageRoot>

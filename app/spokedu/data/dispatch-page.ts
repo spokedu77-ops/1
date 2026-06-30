@@ -1,5 +1,5 @@
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
+import { HOME_PROGRAM_SYSTEM_HREF, SPOKEDU_BASE_PATH } from './site';
 
 export type DispatchExampleItem = {
   venue: string;
@@ -55,7 +55,7 @@ export const dispatchPage = {
     },
     secondary: {
       label: '프로그램 라인업 보기',
-      href: '#programs',
+      href: HOME_PROGRAM_SYSTEM_HREF,
       trackLabel: 'dispatch-cta-programs',
     },
   },

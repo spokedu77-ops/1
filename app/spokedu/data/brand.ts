@@ -1,7 +1,7 @@
 export const brandProfile = {
   nameEn: 'SPOKEDU',
   nameKo: '스포키듀',
-  tagline: '아동·청소년 체육교육 전문 운영 단체',
+  tagline: '아동·청소년 체육교육 운영 브랜드',
   representative: '최지훈',
   phone: '010-4437-9294',
   email: 'spokedu77@gmail.com',

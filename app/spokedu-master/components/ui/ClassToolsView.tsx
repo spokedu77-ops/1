@@ -669,10 +669,12 @@ export default function ClassToolsView() {
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
   const usingSample = false;
   const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
-  const classContextReturnHref =
-    returnTo?.startsWith('/spokedu-master/class-mode/') || returnTo?.startsWith('/spokedu-master/library/')
-      ? returnTo
+  const classContextReturnLabel = returnTo?.startsWith('/spokedu-master/class-mode/')
+    ? '수업 실행으로 돌아가기'
+    : returnTo?.startsWith('/spokedu-master/library/')
+      ? '전체 수업 자료로 돌아가기'
       : null;
+  const classContextReturnHref = classContextReturnLabel ? returnTo : null;
 
   useEffect(() => {
     setReturnTo(new URLSearchParams(window.location.search).get('returnTo'));
@@ -714,7 +716,7 @@ export default function ClassToolsView() {
             {classContextReturnHref ? (
               <Link href={classContextReturnHref} className="inline-flex h-10 items-center gap-2 rounded-[11px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-acc)', color: 'white' }}>
                 <ArrowLeft size={15} />
-                수업 실행
+                {classContextReturnLabel}
               </Link>
             ) : null}
             <Link href="/spokedu-master/library" className="grid h-10 w-10 place-items-center rounded-[11px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }} aria-label="라이브러리">

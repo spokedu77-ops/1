@@ -16,7 +16,7 @@ describe('lesson discovery and execution flow contract', () => {
   it('shows decision metadata and non-conflicting card actions in the library', () => {
     expect(library).toContain('function getCardDecisionItems');
     expect(library).toContain('event.stopPropagation();');
-    expect(library).toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
   it('keeps preview focused on quick suitability information', () => {
@@ -27,7 +27,7 @@ describe('lesson discovery and execution flow contract', () => {
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
     expect(detail).toContain('/spokedu-master/class-mode/${program.id}');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
-    expect(detail).toContain('getSpomoveSessionHref(program, preset)');
+    expect(detail).toContain('getSpomoveSessionHref(program, primarySpomovePreset)');
   });
 
   it('guards class-mode step navigation and exposes record return controls', () => {

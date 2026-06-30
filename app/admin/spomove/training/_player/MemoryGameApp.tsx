@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { COLORS, MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS, MEMORY_ROUNDS } from './constants';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
+import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { useStudents } from './hooks/useStudents';
@@ -310,6 +311,17 @@ export default function MemoryGameApp({
 
   const { list: spomoveBgmList, loading: spomoveBgmLoading } = useSpomoveTrainingBGM();
   const pendingBgmStartRef = useRef<null | { mode: string }>(null);
+
+  // 파노라마 URL을 엔진 초기화 전에 미리 로드 (타이밍 문제 방지)
+  const { data: diveEnvData, getPreviewUrl: getDivePreviewUrl } = useSpomoveDiveEnvironments();
+  const diveSpaceEntry = diveEnvData.themes.space ?? null;
+  const divePanoramaHighUrl = diveSpaceEntry?.hasHighRes === true
+    ? (getDivePreviewUrl(diveSpaceEntry.panoramaPath) ?? undefined)
+    : undefined;
+  const divePanoramaLowUrl = diveSpaceEntry
+    ? (getDivePreviewUrl(diveSpaceEntry.panoramaLowPath) ?? undefined)
+    : undefined;
+  const divePanoramaYawDeg = diveSpaceEntry?.yawDeg ?? 0;
 
 
   useEffect(() => {
@@ -1660,12 +1672,17 @@ export default function MemoryGameApp({
       setScreen('result');
     };
 
-    if (settings.flowVisualVariant === 'plus') {
+    // DIVE+: enhanced 브릿지+파노라마 / classic+space: legacy 브릿지+파노라마
+    if (settings.flowVisualVariant === 'plus' || settings.flowColorTheme === 'space') {
       return (
         <DivePlusGameClient
           stages={stages}
+          visualMode={settings.flowVisualVariant === 'plus' ? 'enhanced' : 'legacy'}
           motionScale={settings.kidsSafeMode ? 0.5 : 1}
           bgmPath={flowBgmPathRef.current}
+          panoramaHighUrl={divePanoramaHighUrl}
+          panoramaLowUrl={divePanoramaLowUrl}
+          panoramaYawDeg={divePanoramaYawDeg}
           onComplete={handleFlowDone}
           onExit={stop}
           onEngineReady={(api) => { flowEngineApiRef.current = api; }}

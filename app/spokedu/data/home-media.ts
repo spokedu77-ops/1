@@ -41,12 +41,6 @@ function fromPhoto(
   };
 }
 
-function media(
-  item: Omit<HomeMediaItem, 'type'> & { type?: HomeMediaType },
-): HomeMediaItem {
-  return { type: item.type ?? 'visual', ...item };
-}
-
 export const HOME_MEDIA = {
   homeHero: fromPhoto(SPOKEDU_IMAGES.home.hero, {
     id: 'home-hero',

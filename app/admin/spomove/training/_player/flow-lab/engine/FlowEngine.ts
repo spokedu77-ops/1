@@ -290,7 +290,16 @@ export class FlowEngine {
       );
     } else {
       this.bridgeRenderer = new BridgeRenderer(this.scene, false);
-      this.buildStars();
+      if (this.opts.panoramaLowUrl || this.opts.panoramaHighUrl) {
+        this.spaceEnv = new SpaceEnvironment({
+          scene:       this.scene,
+          qualityTier: this.aq.getTier(),
+          yawDeg:      this.opts.panoramaYawDeg,
+        });
+        void this.spaceEnv.loadPanorama(this.opts.panoramaHighUrl, this.opts.panoramaLowUrl);
+      } else {
+        this.buildStars();
+      }
       this.buildSpeedLines();
     }
 
