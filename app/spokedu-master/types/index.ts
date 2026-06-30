@@ -1,4 +1,4 @@
-export type PlanType = 'free' | 'pro' | 'team';
+export type PlanType = 'free' | 'lite' | 'premium' | 'pro' | 'team';
 export type UserRole = 'teacher' | 'director';
 
 export interface UserProfile {
@@ -18,7 +18,7 @@ export interface UserProfile {
   createdAt: string;
   isAdmin?: boolean;
   subscriptionStatus?: 'none' | 'active' | 'expired' | 'cancelled';
-  previousPaidPlan?: 'pro' | 'team' | null;
+  previousPaidPlan?: 'lite' | 'premium' | 'pro' | 'team' | null;
   periodEnd?: string | null;
 }
 

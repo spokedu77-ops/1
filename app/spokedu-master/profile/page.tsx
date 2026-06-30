@@ -81,14 +81,14 @@ const PLANS: PlanInfo[] = [
     action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.lite),
   },
   {
-    id: 'pro',
-    title: 'Pro',
-    price: getMasterProductPriceWithDuration(MASTER_PRODUCT_CATALOG.pro),
-    badge: MASTER_PRODUCT_CATALOG.pro.statusLabel,
+    id: 'premium',
+    title: 'Premium',
+    price: getMasterProductPriceWithDuration(MASTER_PRODUCT_CATALOG.premium),
+    badge: MASTER_PRODUCT_CATALOG.premium.statusLabel,
     description: '수업 자료, SPOMOVE, 학생 기록, 안내문 초안을 한 흐름으로 사용하는 30일 이용권입니다.',
     includes: ['라이브러리', 'SPOMOVE 큰 화면 실행', '학생 관리와 수업 기록 저장', '학생별 이력과 안내문 초안'],
     target: '매주 수업을 준비하는 전문 강사',
-    action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.pro),
+    action: getMasterProductActionLabel(MASTER_PRODUCT_CATALOG.premium),
     recommended: true,
   },
   {
@@ -318,8 +318,8 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   const selectPlan = (plan: PlanInfo) => {
     if (plan.id === currentPlan) return;
-    const hasActivePaidPlan = currentPlan === 'pro' || currentPlan === 'team';
-    const selectedPaidPlan = plan.id === 'pro';
+    const hasActivePaidPlan = currentPlan === 'lite' || currentPlan === 'premium' || currentPlan === 'pro' || currentPlan === 'team';
+    const selectedPaidPlan = plan.id === 'lite' || plan.id === 'premium';
     if (plan.id === 'team') {
       setNotice('Center는 현재 직접 결제 상품이 아닙니다. 강사 초대, 다중 사용자, 기관 단위 데이터 관리는 준비 중이며 도입 상담은 support@spokedu.com으로 문의해 주세요.');
       return;
@@ -328,12 +328,12 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
       setNotice('학교·기관 플랜은 도입 범위와 계정 수가 달라 별도 상담으로 진행합니다. support@spokedu.com으로 문의해 주세요.');
       return;
     }
-    if (plan.id === 'lite') {
-      setNotice('Lite 플랜은 준비 중입니다. 현재는 Pro 또는 Center 플랜을 우선 제공합니다.');
+    if (plan.id === 'lite' && false) {
+      setNotice('Lite 플랜은 월 자동결제로 시작할 수 있습니다.');
       return;
     }
     if (plan.id === 'free') {
-      setNotice('무료 체험은 신규 계정에 자동 적용됩니다. 이미 체험 중이라면 현재 상태가 유지됩니다.');
+      setNotice('무료 체험은 제공하지 않습니다. 라이트 또는 프리미엄을 선택해 주세요.');
       return;
     }
     if (hasActivePaidPlan && selectedPaidPlan) {
@@ -347,7 +347,7 @@ function PlanSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <BottomSheet open={open} title="플랜 선택" onClose={onClose}>
       <div className="space-y-3">
-        {PLANS.map((plan) => (
+        {PLANS.filter((plan) => plan.id !== 'free' && plan.id !== 'school').map((plan) => (
           <PlanCard key={plan.id} plan={plan} current={plan.id === currentPlan} onSelect={() => selectPlan(plan)} />
         ))}
         {notice ? (
@@ -561,8 +561,8 @@ function SpokeduMasterProfileContent() {
               </Link>
             </div>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
-              <Link href={isPaidExpired ? `/spokedu-master/payment?plan=${expiredPlan === 'team' ? 'team' : 'pro'}` : '/spokedu-master/dashboard'} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                {isPaidExpired ? '30일 이용권 다시 결제하기' : '홈으로 돌아가 수업 실행'}
+              <Link href={isPaidExpired ? '/spokedu-master/payment?plan=premium' : '/spokedu-master/dashboard'} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                {isPaidExpired ? '프리미엄 월 자동결제 다시 시작' : '홈으로 돌아가 수업 실행'}
               </Link>
               <button type="button" onClick={() => setPlanOpen(true)} className="h-12 rounded-[12px] px-5 text-[14px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
                 플랜 보기
@@ -570,7 +570,7 @@ function SpokeduMasterProfileContent() {
             </div>
             {isPaidExpired ? (
               <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-red)' }}>
-                이용 기간이 종료되었습니다. 30일 이용권을 다시 결제하면 수업 자료를 이용할 수 있습니다.
+                이용 기간이 종료되었습니다. 월 자동결제를 다시 시작하면 수업 자료를 이용할 수 있습니다.
               </p>
             ) : currentPlan === 'free' ? (
               <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>

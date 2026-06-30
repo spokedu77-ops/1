@@ -4,12 +4,10 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 
-const TRIAL_DAYS = 14;
-const TRIAL_MS = TRIAL_DAYS * 24 * 60 * 60 * 1000;
 const EXPIRED_ACCESS_MESSAGE =
   '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제해 주세요.';
 
-type MasterPlan = 'trial' | 'pro' | 'team' | 'admin';
+type MasterPlan = 'lite' | 'premium' | 'team' | 'admin';
 
 type MasterAccessOk = {
   ok: true;
@@ -45,10 +43,10 @@ export function isSpokeduMasterTrialActive(
 export function isSpokeduMasterPaidPlanActive(
   row: SpokeduMasterSubscriptionRow | null,
   now = Date.now(),
-): row is SpokeduMasterSubscriptionRow & { plan: 'pro' | 'team' } {
+): row is SpokeduMasterSubscriptionRow & { plan: 'lite' | 'premium' | 'team' } {
   if (!row) return false;
   if (row.status !== 'active') return false;
-  if (row.plan !== 'pro' && row.plan !== 'team') return false;
+  if (row.plan !== 'lite' && row.plan !== 'premium' && row.plan !== 'team') return false;
   if (!row.period_end) return false;
   const periodEndMs = Date.parse(row.period_end);
   return Number.isFinite(periodEndMs) && periodEndMs > now;
@@ -56,7 +54,7 @@ export function isSpokeduMasterPaidPlanActive(
 
 export function isSpokeduMasterPaidPlanExpired(row: SpokeduMasterSubscriptionRow | null, now = Date.now()): boolean {
   if (!row) return false;
-  if (row.plan !== 'pro' && row.plan !== 'team') return false;
+  if (row.plan !== 'lite' && row.plan !== 'premium' && row.plan !== 'team') return false;
   if (row.status === 'cancelled' || row.status === 'expired') return true;
   if (row.status !== 'active') return false;
   if (!row.period_end) return true;
@@ -65,8 +63,8 @@ export function isSpokeduMasterPaidPlanExpired(row: SpokeduMasterSubscriptionRow
 }
 
 export type SpokeduMasterEntitlementDecision =
-  | { allowed: true; plan: 'trial' | 'pro' | 'team'; status: 'trial' | 'active' }
-  | { allowed: false; plan: 'free' | 'pro' | 'team'; status: 'expired' | 'cancelled' | 'none' };
+  | { allowed: true; plan: 'lite' | 'premium' | 'team'; status: 'active' }
+  | { allowed: false; plan: 'free' | 'lite' | 'premium' | 'team'; status: 'expired' | 'cancelled' | 'none' };
 
 export function evaluateSpokeduMasterEntitlement(
   row: SpokeduMasterSubscriptionRow | null,
@@ -76,16 +74,12 @@ export function evaluateSpokeduMasterEntitlement(
     return { allowed: true, plan: row.plan, status: 'active' };
   }
 
-  if (row?.plan === 'pro' || row?.plan === 'team') {
+  if (row?.plan === 'lite' || row?.plan === 'premium' || row?.plan === 'team') {
     return {
       allowed: false,
       plan: row.plan,
       status: row.status === 'cancelled' ? 'cancelled' : 'expired',
     };
-  }
-
-  if (isSpokeduMasterTrialActive(row, now)) {
-    return { allowed: true, plan: 'trial', status: 'trial' };
   }
 
   return { allowed: false, plan: 'free', status: 'expired' };
@@ -109,27 +103,7 @@ export async function ensureSpokeduMasterEntitlement(
     return { row: existing.data as SpokeduMasterSubscriptionRow, error: null };
   }
 
-  const trialStartedAt = new Date();
-  const trialEndsAt = new Date(trialStartedAt.getTime() + TRIAL_MS);
-  const inserted = await serviceSupabase
-    .from('spokedu_master_subscriptions')
-    .insert({
-      user_id: userId,
-      plan: 'free',
-      status: 'trial',
-      trial_started_at: trialStartedAt.toISOString(),
-      trial_ends_at: trialEndsAt.toISOString(),
-    });
-
-  if (inserted.error && (inserted.error as { code?: string }).code !== '23505') {
-    return { row: null, error: inserted.error };
-  }
-
-  const resolved = await selectRow();
-  return {
-    row: (resolved.data as SpokeduMasterSubscriptionRow | null) ?? null,
-    error: resolved.error ?? null,
-  };
+  return { row: null, error: null };
 }
 
 export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> {
@@ -183,11 +157,7 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
       };
     }
 
-    if (entitlement.allowed && entitlement.status === 'trial') {
-      return { ok: true, userId: user.id, isAdmin: false, plan: 'trial' };
-    }
-
-    if (entitlement.plan === 'pro' || entitlement.plan === 'team') {
+    if (entitlement.plan === 'lite' || entitlement.plan === 'premium' || entitlement.plan === 'team') {
       return {
         ok: false,
         response: NextResponse.json({ error: EXPIRED_ACCESS_MESSAGE }, { status: 403 }),

@@ -58,16 +58,12 @@ describe('SPOKEDU MASTER entitlement', () => {
     vi.setSystemTime(NOW);
   });
 
-  it('creates a 14-day server trial on first MASTER access', async () => {
+  it('does not create a server trial on first MASTER access', async () => {
     const db = entitlementDb(null);
     const result = await ensureSpokeduMasterEntitlement(db.service, 'user-a');
     expect(result.error).toBeNull();
-    expect(result.row).toMatchObject({
-      plan: 'free',
-      status: 'trial',
-      trial_started_at: '2026-06-25T00:00:00.000Z',
-      trial_ends_at: '2026-07-09T00:00:00.000Z',
-    });
+    expect(result.row).toBeNull();
+    expect(db.getInsertCount()).toBe(0);
   });
 
   it('resolves concurrent first access to one stored entitlement row', async () => {
@@ -77,7 +73,8 @@ describe('SPOKEDU MASTER entitlement', () => {
       ensureSpokeduMasterEntitlement(db.service, 'user-a'),
     ]);
     expect(first.row).toEqual(second.row);
-    expect(db.getStored()).not.toBeNull();
+    expect(db.getStored()).toBeNull();
+    expect(db.getInsertCount()).toBe(0);
   });
 
   it('does not extend an existing trial on reconnect', async () => {
@@ -90,7 +87,8 @@ describe('SPOKEDU MASTER entitlement', () => {
 
   it('does not overwrite paid or expired rows with a trial', async () => {
     for (const existing of [
-      row({ plan: 'pro', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }),
+      row({ plan: 'premium', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }),
+      row({ plan: 'lite', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }),
       row({ plan: 'team', status: 'expired', period_end: '2026-06-01T00:00:00.000Z' }),
     ]) {
       const db = entitlementDb(existing);
@@ -110,19 +108,24 @@ describe('SPOKEDU MASTER entitlement', () => {
 
   it('fails closed for paid access without a valid future period_end', () => {
     expect(isSpokeduMasterPaidPlanActive(row({
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: null,
     }))).toBe(false);
     expect(isSpokeduMasterPaidPlanActive(row({
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: 'invalid',
     }))).toBe(false);
     expect(isSpokeduMasterPaidPlanExpired(row({
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: null,
+    }))).toBe(true);
+    expect(isSpokeduMasterPaidPlanActive(row({
+      plan: 'lite',
+      status: 'active',
+      period_end: '2026-07-25T00:00:00.000Z',
     }))).toBe(true);
     expect(isSpokeduMasterPaidPlanActive(row({
       plan: 'team',
@@ -132,13 +135,14 @@ describe('SPOKEDU MASTER entitlement', () => {
   });
 
   it.each([
-    ['trial active', row(), { allowed: true, plan: 'trial', status: 'trial' }],
+    ['trial active', row(), { allowed: false, plan: 'free', status: 'expired' }],
     ['trial expired', row({ trial_ends_at: '2026-06-24T00:00:00.000Z' }), { allowed: false, plan: 'free', status: 'expired' }],
-    ['pro active', row({ plan: 'pro', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'pro', status: 'active' }],
+    ['lite active', row({ plan: 'lite', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'lite', status: 'active' }],
+    ['premium active', row({ plan: 'premium', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'premium', status: 'active' }],
     ['team active', row({ plan: 'team', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'team', status: 'active' }],
-    ['period_end missing', row({ plan: 'pro', status: 'active', period_end: null }), { allowed: false, plan: 'pro', status: 'expired' }],
+    ['period_end missing', row({ plan: 'premium', status: 'active', period_end: null }), { allowed: false, plan: 'premium', status: 'expired' }],
     ['period_end invalid', row({ plan: 'team', status: 'active', period_end: 'not-a-date' }), { allowed: false, plan: 'team', status: 'expired' }],
-    ['paid expired', row({ plan: 'pro', status: 'active', period_end: '2026-06-24T00:00:00.000Z' }), { allowed: false, plan: 'pro', status: 'expired' }],
+    ['paid expired', row({ plan: 'premium', status: 'active', period_end: '2026-06-24T00:00:00.000Z' }), { allowed: false, plan: 'premium', status: 'expired' }],
     ['cancelled', row({ plan: 'team', status: 'cancelled', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: false, plan: 'team', status: 'cancelled' }],
     ['none', null, { allowed: false, plan: 'free', status: 'expired' }],
   ])('evaluates %s from the canonical entitlement function', (_label, input, expected) => {

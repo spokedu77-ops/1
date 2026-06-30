@@ -47,24 +47,22 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).not.toContain('진행 중');
   });
 
-  it('presents Pro as the only direct purchase product from the catalog', () => {
-    const landing = read('app/spokedu-master/landing/page.tsx');
+  it('presents Lite and Premium as the only direct purchase products from the catalog', () => {
     const payment = read('app/spokedu-master/payment/page.tsx');
     const profile = read('app/spokedu-master/profile/page.tsx');
     const subscription = read('app/spokedu-master/subscription/page.tsx');
     const catalog = read('app/spokedu-master/lib/productCatalog.ts');
     const checkout = read('app/api/spokedu-master/payment/create-checkout/route.ts');
 
-    expect(catalog).toContain("priceLabel: '39,900원'");
-    expect(catalog).toContain("durationLabel: '30일 이용권'");
-    expect(catalog).toContain("priceLabel: '도입 상담'");
-    expect(catalog).toContain("priceLabel: '준비 중'");
-    expect(landing).toContain('MASTER_PRODUCT_CATALOG.pro.priceLabel');
-    expect(payment).toContain('MASTER_PRODUCT_CATALOG.pro.priceLabel');
-    expect(profile).toContain('MASTER_PRODUCT_CATALOG.pro');
-    expect(subscription).toContain('MASTER_PRODUCT_CATALOG.pro.priceLabel');
-    expect(payment).toContain("(['pro'] as PlanKey[])");
-    expect(checkout).toContain('isSpokeduMasterDirectPurchasePlan(planKey)');
+    expect(catalog).toContain('MASTER_LITE_PRICE_KRW = 9900');
+    expect(catalog).toContain('MASTER_PREMIUM_PRICE_KRW = 28900');
+    expect(catalog).toContain("serverPlanKey: 'lite'");
+    expect(catalog).toContain("serverPlanKey: 'premium'");
+    expect(payment).toContain('getDirectPurchaseMasterProducts');
+    expect(subscription).toContain('getDirectPurchaseMasterProducts');
+    expect(profile).toContain('MASTER_PRODUCT_CATALOG.premium');
+    expect(payment).not.toContain("(['pro'] as PlanKey[])");
+    expect(checkout).toContain('월 자동결제 등록 API를 사용해 주세요.');
   });
 
   it('does not present unavailable parent sharing or automated delivery as provided features', () => {

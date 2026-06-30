@@ -12,21 +12,22 @@ const route = readFileSync(
   'utf8',
 );
 
-describe('SPOKEDU MASTER checkout product boundary', () => {
-  it('keeps legacy paid plan compatibility while allowing direct purchase only for Pro', () => {
-    expect(isSpokeduMasterPaidPlan('pro')).toBe(true);
-    expect(isSpokeduMasterPaidPlan('team')).toBe(true);
-    expect(isSpokeduMasterDirectPurchasePlan('pro')).toBe(true);
-    expect(isSpokeduMasterDirectPurchasePlan('team')).toBe(false);
-    expect(SPOKEDU_MASTER_PLAN_CONFIG.pro.amount).toBe(39900);
+describe('SPOKEDU MASTER legacy checkout boundary', () => {
+  it('uses Lite and Premium as the only paid server plans', () => {
+    expect(isSpokeduMasterPaidPlan('lite')).toBe(true);
+    expect(isSpokeduMasterPaidPlan('premium')).toBe(true);
+    expect(isSpokeduMasterPaidPlan('pro')).toBe(false);
+    expect(isSpokeduMasterPaidPlan('team')).toBe(false);
+    expect(isSpokeduMasterDirectPurchasePlan('center')).toBe(false);
+    expect(SPOKEDU_MASTER_PLAN_CONFIG.lite.amount).toBe(9900);
+    expect(SPOKEDU_MASTER_PLAN_CONFIG.premium.amount).toBe(28900);
   });
 
-  it('checks direct purchase eligibility before creating a Toss order', () => {
-    const directPlanCheck = route.indexOf('isSpokeduMasterDirectPurchasePlan(planKey)');
-    const orderId = route.indexOf('createSpokeduMasterOrderId(planKey)');
-    const upsert = route.indexOf(".from('spokedu_master_payment_orders')");
-    expect(directPlanCheck).toBeGreaterThan(-1);
-    expect(orderId).toBeGreaterThan(directPlanCheck);
-    expect(upsert).toBeGreaterThan(directPlanCheck);
+  it('does not create orders from the old one-time checkout route', () => {
+    expect(route).toContain("body.plan === 'pro'");
+    expect(route).toContain("body.plan === 'team'");
+    expect(route).toContain('월 자동결제 등록 API');
+    expect(route).not.toContain("spokedu_master_payment_orders");
+    expect(route).not.toContain('createSpokeduMasterOrderId');
   });
 });

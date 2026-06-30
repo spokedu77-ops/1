@@ -42,6 +42,7 @@ type PaymentOrderRow = {
   user_id: string;
   plan: string;
   amount: number;
+  billing_cycle_key?: string | null;
 };
 
 const SUPPORTED_EVENTS = new Set(['PAYMENT_STATUS_CHANGED', 'CANCEL_STATUS_CHANGED']);
@@ -74,7 +75,7 @@ async function verifyTossPayment(
   options: { expectedStatus?: string | null } = {},
 ): Promise<VerifiedTossPayment | null> {
   const tossSecretKey = process.env.TOSS_SECRET_KEY?.trim();
-  if (!tossSecretKey) {
+  if (!tossSecretKey || !tossSecretKey.startsWith('test_')) {
     throw new Error('TOSS_SECRET_KEY_NOT_CONFIGURED');
   }
 
@@ -133,16 +134,16 @@ function buildFallbackEventKey(eventType: string, payment: VerifiedTossPayment):
 async function lookupPaymentOrder(
   service: ReturnType<typeof getServiceSupabase>,
   payment: VerifiedTossPayment,
-): Promise<(PaymentOrderRow & { user_id: string; plan: 'pro' | 'team' }) | null> {
+): Promise<(PaymentOrderRow & { user_id: string; plan: 'lite' | 'premium' }) | null> {
   const { data, error } = await service
     .from('spokedu_master_payment_orders')
-    .select('user_id,plan,amount')
+    .select('user_id,plan,amount,billing_cycle_key')
     .eq('order_id', payment.orderId)
     .maybeSingle();
   if (error) throw new Error('ORDER_LOOKUP_FAILED');
   const order = data as PaymentOrderRow | null;
   if (!order || !isSpokeduMasterPaidPlan(order.plan)) return null;
-  return order as PaymentOrderRow & { user_id: string; plan: 'pro' | 'team' };
+  return order as PaymentOrderRow & { user_id: string; plan: 'lite' | 'premium' };
 }
 async function handleDonePayment(
   service: ReturnType<typeof getServiceSupabase>,
@@ -151,7 +152,7 @@ async function handleDonePayment(
 ) {
   const { data: order, error: orderError } = await service
     .from('spokedu_master_payment_orders')
-    .select('user_id,plan,amount')
+    .select('user_id,plan,amount,billing_cycle_key')
     .eq('order_id', payment.orderId)
     .maybeSingle();
 
@@ -171,15 +172,27 @@ async function handleDonePayment(
     return { status: 'rejected' as const, reason: 'amount_mismatch' };
   }
 
+  let approvedAt = payment.approvedAt;
+  if (payment.orderId.includes('-renewal-')) {
+    const { data: subscription } = await service
+      .from('spokedu_master_subscriptions')
+      .select('current_period_end')
+      .eq('user_id', orderRow.user_id)
+      .maybeSingle();
+    const currentPeriodEnd = (subscription as { current_period_end?: string | null } | null)?.current_period_end;
+    approvedAt = currentPeriodEnd ?? payment.approvedAt;
+  }
+
   const applied = await applySpokeduMasterPayment({
     userId: orderRow.user_id,
     orderId: payment.orderId,
     paymentKey: payment.paymentKey,
     plan: orderRow.plan,
     amount: expectedAmount,
-    approvedAt: payment.approvedAt,
+    approvedAt,
     eventKey,
     source: 'webhook',
+    billingCycleKey: orderRow.billing_cycle_key ?? null,
   });
 
   if (!applied.ok) {

@@ -11,7 +11,7 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
 import { POST } from './route';
 
 const USER_ID = '11111111-1111-4111-8111-111111111111';
-const ORDER_ID = 'spm-pro-202606211200';
+const ORDER_ID = 'spm-premium-initial-202606211200';
 const PAYMENT_KEY = 'payment-key-1';
 const TRANSMISSION_ID = 'transmission-1';
 
@@ -43,8 +43,8 @@ function createMockDb(): MockDb {
         {
           order_id: ORDER_ID,
           user_id: USER_ID,
-          plan: 'pro',
-          amount: 39900,
+          plan: 'premium',
+          amount: 28900,
           status: 'pending',
         },
       ],
@@ -191,7 +191,8 @@ function applyPaymentRpc(db: MockDb, args: Record<string, unknown>) {
     const subscription = db.subscriptions.find((row) => row.toss_order_id === orderId && row.toss_payment_key === paymentKey);
     if (subscription) {
       db.calls.subscriptionUpdate += 1;
-      subscription.status = 'cancelled';
+      subscription.cancel_at_period_end = true;
+      subscription.canceled_at = 'now';
     }
     return { status: 'processed', cancelled: true };
   }
@@ -233,8 +234,8 @@ function paymentResponse(overrides: Record<string, unknown> = {}) {
     paymentKey: PAYMENT_KEY,
     orderId: ORDER_ID,
     status: 'DONE',
-    totalAmount: 39900,
-    balanceAmount: 39900,
+    totalAmount: 28900,
+    balanceAmount: 28900,
     currency: 'KRW',
     approvedAt: '2026-06-21T12:00:00+09:00',
     lastTransactionKey: 'transaction-1',
@@ -257,7 +258,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    process.env.TOSS_SECRET_KEY = 'test-secret';
+    process.env.TOSS_SECRET_KEY = 'test_secret';
     db = createMockDb();
     installMockSupabase(db);
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse()), { status: 200 })));
@@ -293,7 +294,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
     expect(db.calls.subscriptionUpsert).toBe(1);
     expect(db.subscriptions[0]).toMatchObject({
       user_id: USER_ID,
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       pg_provider: 'tosspayments',
       toss_payment_key: PAYMENT_KEY,
@@ -342,7 +343,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
   it('keeps access fields stable when the payment was already confirmed', async () => {
     db.subscriptions.push({
       user_id: USER_ID,
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: '2026-07-21T03:00:00.000Z',
       toss_payment_key: PAYMENT_KEY,
@@ -363,7 +364,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
     });
     expect(db.calls.subscriptionUpsert).toBe(0);
     expect(db.subscriptions[0]).toMatchObject({
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: '2026-07-21T03:00:00.000Z',
     });
@@ -373,8 +374,8 @@ describe('SPOKEDU MASTER payment webhook', () => {
     db.orders.set(ORDER_ID, {
       order_id: ORDER_ID,
       user_id: USER_ID,
-      plan: 'pro',
-      amount: 79000,
+      plan: 'premium',
+      amount: 9900,
       status: 'pending',
     });
 
@@ -391,7 +392,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
 
   it('blocks mismatched orderId or paymentKey before subscription changes', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify(paymentResponse({
-      orderId: 'spm-pro-999999999999',
+      orderId: 'spm-premium-initial-999999999999',
     })), { status: 200 })));
 
     const response = await POST(webhookRequest({
@@ -407,7 +408,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
   it('cancels access only for a verified full cancel event', async () => {
     db.subscriptions.push({
       user_id: USER_ID,
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: '2026-07-21T03:00:00.000Z',
       toss_payment_key: PAYMENT_KEY,
@@ -437,13 +438,14 @@ describe('SPOKEDU MASTER payment webhook', () => {
       cancelled: true,
     });
     expect(db.calls.subscriptionUpdate).toBe(1);
-    expect(db.subscriptions[0].status).toBe('cancelled');
+    expect(db.subscriptions[0].status).toBe('active');
+    expect(db.subscriptions[0].cancel_at_period_end).toBe(true);
   });
 
   it('keeps access for a partial cancel until policy is decided', async () => {
     db.subscriptions.push({
       user_id: USER_ID,
-      plan: 'pro',
+      plan: 'premium',
       status: 'active',
       period_end: '2026-07-21T03:00:00.000Z',
       toss_payment_key: PAYMENT_KEY,
@@ -483,7 +485,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
       eventType: 'CANCEL_STATUS_CHANGED',
       data: {
         transactionKey: 'cancel-only-1',
-        cancelAmount: 39900,
+        cancelAmount: 28900,
         cancelStatus: 'DONE',
       },
     }));
@@ -526,7 +528,7 @@ describe('SPOKEDU MASTER payment webhook', () => {
     const body = await response.json() as Record<string, unknown>;
     expect(body).toEqual({ error: 'Webhook processing failed' });
     expect(JSON.stringify(body)).not.toContain('raw db failure');
-    expect(JSON.stringify(body)).not.toContain('test-secret');
+    expect(JSON.stringify(body)).not.toContain('test_secret');
   });
 
   it('does not expose secrets when the Toss secret is missing', async () => {

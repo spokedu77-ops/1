@@ -1,36 +1,48 @@
 export const SPOKEDU_MASTER_PLAN_CONFIG = {
-  pro: {
-    name: 'SPOKEDU MASTER Pro 플랜',
-    amount: 39900,
+  lite: {
+    name: 'SPOKEDU MASTER Lite',
+    amount: 9900,
   },
-  team: {
-    name: 'SPOKEDU MASTER Center 플랜',
-    amount: 79000,
+  premium: {
+    name: 'SPOKEDU MASTER Premium',
+    amount: 28900,
   },
 } as const;
 
 export type SpokeduMasterPaidPlan = keyof typeof SPOKEDU_MASTER_PLAN_CONFIG;
-export type SpokeduMasterDirectPurchasePlan = 'pro';
+export type SpokeduMasterDirectPurchasePlan = SpokeduMasterPaidPlan;
 
-export const SPOKEDU_MASTER_DIRECT_PURCHASE_PLANS = ['pro'] as const;
+export const SPOKEDU_MASTER_DIRECT_PURCHASE_PLANS = ['lite', 'premium'] as const;
 
 export function isSpokeduMasterPaidPlan(value: unknown): value is SpokeduMasterPaidPlan {
-  return value === 'pro' || value === 'team';
+  return value === 'lite' || value === 'premium';
 }
 
 export function isSpokeduMasterDirectPurchasePlan(value: unknown): value is SpokeduMasterDirectPurchasePlan {
-  return value === 'pro';
+  return isSpokeduMasterPaidPlan(value);
+}
+
+export function getSpokeduMasterPlanAmount(plan: SpokeduMasterPaidPlan): number {
+  return SPOKEDU_MASTER_PLAN_CONFIG[plan].amount;
 }
 
 export function parseSpokeduMasterOrderId(orderId: unknown): SpokeduMasterPaidPlan | null {
   if (typeof orderId !== 'string') return null;
-  const match = /^spm-(pro|team)-(?:\d{10,}|[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.exec(orderId);
+  const match = /^spm-(lite|premium)-(?:initial|renewal)-([0-9a-z-]+)$/i.exec(orderId);
   if (!match) return null;
   return match[1] as SpokeduMasterPaidPlan;
 }
 
-export function createSpokeduMasterOrderId(plan: SpokeduMasterPaidPlan): string {
-  return `spm-${plan}-${crypto.randomUUID()}`;
+export function createSpokeduMasterOrderId(plan: SpokeduMasterPaidPlan, kind: 'initial' | 'renewal' = 'initial'): string {
+  return `spm-${plan}-${kind}-${crypto.randomUUID()}`;
+}
+
+export function createSpokeduMasterRenewalOrderId(
+  plan: SpokeduMasterPaidPlan,
+  subscriptionId: string,
+  billingCycleKey: string,
+): string {
+  return `spm-${plan}-renewal-${subscriptionId}-${billingCycleKey}`;
 }
 
 export type SpokeduMasterPaymentOrder = {

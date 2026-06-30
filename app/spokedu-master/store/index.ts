@@ -381,11 +381,13 @@ export const useMasterStore = create<MasterState>()(
             email?: string | null;
             trialEndsAt?: string | null;
           };
-          const serverPlan: 'free' | 'pro' | 'team' =
+          const serverPlan: 'free' | 'lite' | 'premium' | 'pro' | 'team' =
             json.isAdmin ? 'team' :
             json.status === 'active' && json.plan === 'team' ? 'team' :
+            json.status === 'active' && json.plan === 'lite' ? 'lite' :
+            json.status === 'active' && json.plan === 'premium' ? 'premium' :
             json.status === 'active' && json.plan === 'pro' ? 'pro' : 'free';
-          const hasActivePaidAccess = json.isAdmin || serverPlan === 'pro' || serverPlan === 'team';
+          const hasActivePaidAccess = json.isAdmin || serverPlan === 'lite' || serverPlan === 'premium' || serverPlan === 'pro' || serverPlan === 'team';
           const hasExpiredPaidAccess = json.status === 'expired';
           set((state) => {
             const nextProfile: UserProfile | null = state.profile
@@ -400,7 +402,7 @@ export const useMasterStore = create<MasterState>()(
                       ? json.status
                       : 'none',
                   previousPaidPlan:
-                    hasExpiredPaidAccess && (json.plan === 'pro' || json.plan === 'team')
+                    hasExpiredPaidAccess && (json.plan === 'lite' || json.plan === 'premium' || json.plan === 'pro' || json.plan === 'team')
                       ? json.plan
                       : hasActivePaidAccess
                         ? null

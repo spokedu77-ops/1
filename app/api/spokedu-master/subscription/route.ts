@@ -36,11 +36,24 @@ export async function GET() {
     getServiceSupabase(),
     user.id,
   );
-  if (error || !row) {
+  if (error) {
     return privateNoStoreJson(
       { error: 'Subscription lookup failed' },
       { status: 500 },
     );
+  }
+
+  if (!row) {
+    return privateNoStoreJson({
+      plan: 'free',
+      status: 'none',
+      isAdmin: false,
+      userId: user.id,
+      email: user.email ?? null,
+      trialStartedAt: null,
+      trialEndsAt: null,
+      periodEnd: null,
+    });
   }
 
   const common = {
@@ -62,7 +75,7 @@ export async function GET() {
     });
   }
 
-  if (entitlement.plan === 'pro' || entitlement.plan === 'team') {
+  if (entitlement.plan === 'lite' || entitlement.plan === 'premium' || entitlement.plan === 'team') {
     return privateNoStoreJson({
       ...common,
       plan: entitlement.plan,

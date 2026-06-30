@@ -106,7 +106,8 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
   });
 
   it.each([
-    ['pro', '2099-06-30T00:00:00.000Z'],
+    ['lite', '2099-05-31T00:00:00.000Z'],
+    ['premium', '2099-06-30T00:00:00.000Z'],
     ['team', '2099-07-31T00:00:00.000Z'],
   ])('returns active %s subscription summary', async (plan, periodEnd) => {
     mockAuthUser(user);
@@ -132,13 +133,13 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
 
   it('returns expired paid subscription with periodEnd', async () => {
     mockAuthUser(user);
-    mockSubscriptionRow({ plan: 'pro', status: 'expired', period_end: '2026-06-30T00:00:00.000Z' });
+    mockSubscriptionRow({ plan: 'premium', status: 'expired', period_end: '2026-06-30T00:00:00.000Z' });
 
     const response = await GET();
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
-      plan: 'pro',
+      plan: 'premium',
       status: 'expired',
       periodEnd: '2026-06-30T00:00:00.000Z',
       trialEndsAt: null,
@@ -146,9 +147,9 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
   });
 
   it.each([
-    ['missing periodEnd', { plan: 'pro', status: 'active', period_end: null }],
+    ['missing periodEnd', { plan: 'premium', status: 'active', period_end: null }],
     ['invalid periodEnd', { plan: 'team', status: 'active', period_end: 'not-a-date' }],
-    ['cancelled subscription', { plan: 'pro', status: 'cancelled', period_end: '2099-06-30T00:00:00.000Z' }],
+    ['cancelled subscription', { plan: 'premium', status: 'cancelled', period_end: '2099-06-30T00:00:00.000Z' }],
   ])('fails closed for %s', async (_label, row) => {
     mockAuthUser(user);
     mockSubscriptionRow(row);
@@ -163,7 +164,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
     });
   });
 
-  it('creates and returns a server-owned trial when no subscription exists', async () => {
+  it('returns free none without creating a trial when no subscription exists', async () => {
     mockAuthUser(user);
     const query = mockSubscriptionRow(null);
 
@@ -173,14 +174,14 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
     const body = await response.json();
     expect(body).toMatchObject({
       plan: 'free',
-      status: 'trial',
+      status: 'none',
       isAdmin: false,
       userId: user.id,
       email: user.email,
+      trialStartedAt: null,
+      trialEndsAt: null,
     });
-    expect(query.insert).toHaveBeenCalledTimes(1);
-    expect(typeof body.trialStartedAt).toBe('string');
-    expect(typeof body.trialEndsAt).toBe('string');
+    expect(query.insert).not.toHaveBeenCalled();
   });
 
   it('returns 500 when the subscription lookup fails', async () => {

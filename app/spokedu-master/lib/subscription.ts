@@ -1,4 +1,5 @@
 import type { PlanType, UserProfile } from '../types';
+import { MASTER_PRODUCT_CATALOG, type MasterProductKey } from './productCatalog';
 
 export type LimitStatus = {
   allowed: boolean;
@@ -8,6 +9,8 @@ export type LimitStatus = {
 
 export const PLAN_LIMITS: Record<PlanType, { kakaoMonthly: number | null; aiMonthly: number | null; pdfMonthly: number | null; canUseDirectorDashboard: boolean }> = {
   free: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
+  lite: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
+  premium: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
   pro: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
   team: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
 };
@@ -18,12 +21,13 @@ export function getTrialDaysLeft(profile: UserProfile | null): number {
 }
 
 export function isActiveTrial(profile: UserProfile | null): boolean {
-  return (profile?.plan ?? 'free') === 'free' && getTrialDaysLeft(profile) > 0;
+  void profile;
+  return false;
 }
 
 export function isTrialExpired(profile: UserProfile | null): boolean {
   if (profile?.isAdmin) return false;
-  return (profile?.plan ?? 'free') === 'free' && !isActiveTrial(profile);
+  return (profile?.plan ?? 'free') === 'free';
 }
 
 export function isPaidAccessExpired(profile: UserProfile | null): boolean {
@@ -32,13 +36,13 @@ export function isPaidAccessExpired(profile: UserProfile | null): boolean {
 
 export function isPaidMasterPlan(profile: UserProfile | null): boolean {
   if (profile?.isAdmin) return true;
-  return (profile?.plan === 'pro' || profile?.plan === 'team') && profile.subscriptionStatus === 'active';
+  return (profile?.plan === 'lite' || profile?.plan === 'premium' || profile?.plan === 'pro' || profile?.plan === 'team') && profile.subscriptionStatus === 'active';
 }
 
 export const isActiveMasterPlan = isPaidMasterPlan;
 
 export function hasMasterAccess(profile: UserProfile | null): boolean {
-  return isPaidMasterPlan(profile) || isActiveTrial(profile);
+  return isPaidMasterPlan(profile);
 }
 
 export function getUpgradeHref(profile: UserProfile | null): string {
@@ -46,7 +50,40 @@ export function getUpgradeHref(profile: UserProfile | null): string {
 }
 
 export function getUpgradeLabel(profile: UserProfile | null): string {
-  return isPaidMasterPlan(profile) ? '이용권 확인' : '30일 이용권 보기';
+  return isPaidMasterPlan(profile) ? '이용권 확인' : '상품 보기';
+}
+
+function resolveMasterProductKey(profile: UserProfile | null): MasterProductKey | null {
+  if (profile?.isAdmin) return 'center';
+  if (profile?.plan === 'lite' && profile.subscriptionStatus === 'active') return 'lite';
+  if (profile?.plan === 'team' && profile.subscriptionStatus === 'active') return 'center';
+  if ((profile?.plan === 'premium' || profile?.plan === 'pro') && profile.subscriptionStatus === 'active') return 'premium';
+  return null;
+}
+
+export function canUseLibrary(profile: UserProfile | null): boolean {
+  const productKey = resolveMasterProductKey(profile);
+  return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseLibrary : false;
+}
+
+export function canUseClassTools(profile: UserProfile | null): boolean {
+  const productKey = resolveMasterProductKey(profile);
+  return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseClassTools : false;
+}
+
+export function canUseRecords(profile: UserProfile | null): boolean {
+  const productKey = resolveMasterProductKey(profile);
+  return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseRecords : false;
+}
+
+export function canUseSpomove(profile: UserProfile | null): boolean {
+  const productKey = resolveMasterProductKey(profile);
+  return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseSpomove : false;
+}
+
+export function canBuySpomatAtMemberPrice(profile: UserProfile | null): boolean {
+  const productKey = resolveMasterProductKey(profile);
+  return productKey ? MASTER_PRODUCT_CATALOG[productKey].canBuySpomatAtMemberPrice : false;
 }
 
 export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
@@ -55,14 +92,14 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
     return {
       allowed: false,
       label: '이용권 만료',
-      reason: '이용 기간이 종료되어 새 수업 기록 생성이 제한됩니다. 30일 이용권을 다시 결제해 주세요.',
+      reason: '이용 기간이 종료되어 새 수업 기록 생성이 제한됩니다.',
     };
   }
-  if (isTrialExpired(profile)) {
+  if (!canUseRecords(profile)) {
     return {
       allowed: false,
-      label: '체험 만료',
-      reason: '무료 체험이 종료되어 새 수업 기록 생성이 제한됩니다. 기존 데이터는 계속 열람할 수 있습니다.',
+      label: '권한 없음',
+      reason: '활성 이용권이 필요합니다.',
     };
   }
   return { allowed: true, label: '사용 가능' };

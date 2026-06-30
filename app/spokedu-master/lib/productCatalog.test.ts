@@ -1,47 +1,66 @@
 import { describe, expect, it } from 'vitest';
 import {
+  canPurchaseDirectly,
   getDirectPurchaseMasterProducts,
   MASTER_PRODUCT_CATALOG,
-  MASTER_PRO_DURATION_DAYS,
-  MASTER_PRO_PRICE_KRW,
   MASTER_SUPPORT_EMAIL,
+  MASTER_LITE_PRICE_KRW,
+  MASTER_PREMIUM_PRICE_KRW,
+  requiresSalesInquiry,
+  SPOMAT_PRODUCT_CONTRACT,
 } from './productCatalog';
-import {
-  isSpokeduMasterDirectPurchasePlan,
-  SPOKEDU_MASTER_PLAN_CONFIG,
-} from '@/app/lib/server/spokeduMasterPayment';
 
 describe('SPOKEDU MASTER product catalog', () => {
-  it('keeps Pro display price and server payment amount aligned', () => {
-    expect(MASTER_PRODUCT_CATALOG.pro.serverPlanKey).toBe('pro');
-    expect(MASTER_PRODUCT_CATALOG.pro.serverAmount).toBe(SPOKEDU_MASTER_PLAN_CONFIG.pro.amount);
-    expect(MASTER_PRO_PRICE_KRW).toBe(SPOKEDU_MASTER_PLAN_CONFIG.pro.amount);
-    expect(MASTER_PRODUCT_CATALOG.pro.priceLabel).toContain('39,900');
-    expect(MASTER_PRODUCT_CATALOG.pro.durationLabel).toContain(String(MASTER_PRO_DURATION_DAYS));
+  it('contains only the new public product IDs', () => {
+    expect(Object.keys(MASTER_PRODUCT_CATALOG).sort()).toEqual(['center', 'lite', 'premium']);
   });
 
-  it('allows direct purchase only for Pro', () => {
-    expect(getDirectPurchaseMasterProducts().map((product) => product.key)).toEqual(['pro']);
-    expect(isSpokeduMasterDirectPurchasePlan('pro')).toBe(true);
-    expect(isSpokeduMasterDirectPurchasePlan('team')).toBe(false);
-    expect(MASTER_PRODUCT_CATALOG.pro.purchasable).toBe(true);
+  it('defines Lite as a monthly direct-purchase plan without SPOMOVE', () => {
+    const lite = MASTER_PRODUCT_CATALOG.lite;
+    expect(lite.monthlyPriceKrw).toBe(9900);
+    expect(MASTER_LITE_PRICE_KRW).toBe(9900);
+    expect(lite.billingCycle).toBe('monthly');
+    expect(lite.autoRenewal).toBe(true);
+    expect(canPurchaseDirectly(lite)).toBe(true);
+    expect(lite.featureEntitlements).toMatchObject({
+      canUseLibrary: true,
+      canUseClassTools: true,
+      canUseRecords: true,
+      canUseSpomove: false,
+    });
   });
 
-  it('treats Center and School as contact products and Lite as coming soon', () => {
-    expect(MASTER_PRODUCT_CATALOG.center.purchasable).toBe(false);
-    expect(MASTER_PRODUCT_CATALOG.center.contactRequired).toBe(true);
-    expect(MASTER_PRODUCT_CATALOG.school.purchasable).toBe(false);
-    expect(MASTER_PRODUCT_CATALOG.school.contactRequired).toBe(true);
-    expect(MASTER_PRODUCT_CATALOG.lite.purchasable).toBe(false);
-    expect(MASTER_PRODUCT_CATALOG.lite.comingSoon).toBe(true);
+  it('defines Premium as a monthly direct-purchase plan with SPOMOVE and SPOMAT member price', () => {
+    const premium = MASTER_PRODUCT_CATALOG.premium;
+    expect(premium.monthlyPriceKrw).toBe(28900);
+    expect(MASTER_PREMIUM_PRICE_KRW).toBe(28900);
+    expect(premium.billingCycle).toBe('monthly');
+    expect(premium.autoRenewal).toBe(true);
+    expect(canPurchaseDirectly(premium)).toBe(true);
+    expect(premium.featureEntitlements.canUseSpomove).toBe(true);
+    expect(premium.canBuySpomatAtMemberPrice).toBe(true);
+  });
+
+  it('keeps Center as sales-inquiry only without direct checkout', () => {
+    const center = MASTER_PRODUCT_CATALOG.center;
+    expect(center.monthlyPriceKrw).toBeNull();
+    expect(center.priceLabel).toBe('별도 문의');
+    expect(canPurchaseDirectly(center)).toBe(false);
+    expect(requiresSalesInquiry(center)).toBe(true);
     expect(MASTER_SUPPORT_EMAIL).toBe('support@spokedu.com');
   });
 
-  it('does not promise unavailable parent sharing or automated delivery as Pro features', () => {
-    const features = MASTER_PRODUCT_CATALOG.pro.features.join('\n');
-    expect(features).toContain('안내문 작성·저장·복사');
-    expect(features).not.toContain('보호자용 공개 링크');
-    expect(features).not.toContain('카카오톡');
-    expect(features).not.toContain('문자 자동');
+  it('has no trial product and keeps SPOMAT contract prices in one place', () => {
+    expect(Object.keys(MASTER_PRODUCT_CATALOG)).not.toContain('trial');
+    expect(SPOMAT_PRODUCT_CONTRACT).toEqual({
+      regularPrice: 20900,
+      premiumPrice: 15900,
+      discountAmount: 5000,
+      premiumRequired: true,
+    });
+  });
+
+  it('returns only directly purchasable public products', () => {
+    expect(getDirectPurchaseMasterProducts().map((product) => product.id)).toEqual(['lite', 'premium']);
   });
 });

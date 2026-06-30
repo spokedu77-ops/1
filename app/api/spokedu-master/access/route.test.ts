@@ -18,7 +18,7 @@ describe('SPOKEDU MASTER access endpoint', () => {
   });
 
   it.each([
-    ['pro subscriber', { ok: true, userId: 'pro-user', isAdmin: false, plan: 'pro' }],
+    ['premium subscriber', { ok: true, userId: 'premium-user', isAdmin: false, plan: 'premium' }],
     ['admin', { ok: true, userId: 'admin-user', isAdmin: true, plan: 'admin' }],
   ])('allows %s', async (_label, access) => {
     requireSpokeduMasterAccess.mockResolvedValue(access);

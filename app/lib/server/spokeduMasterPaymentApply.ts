@@ -8,11 +8,9 @@ import {
   type SpokeduMasterPaidPlan,
 } from './spokeduMasterPayment';
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-const ENTITLEMENT_DAYS = 30;
-
 export type SpokeduMasterPaymentSource =
-  | 'confirm'
+  | 'initial'
+  | 'renewal'
   | 'webhook'
   | 'cancel'
   | 'partial_cancel_review_required';
@@ -26,6 +24,9 @@ export type ApplySpokeduMasterPaymentInput = {
   approvedAt?: string | null;
   eventKey: string;
   source: SpokeduMasterPaymentSource;
+  providerCustomerKey?: string | null;
+  providerBillingKeySecretId?: string | null;
+  billingCycleKey?: string | null;
 };
 
 export type ApplySpokeduMasterPaymentResult =
@@ -34,6 +35,7 @@ export type ApplySpokeduMasterPaymentResult =
       alreadyApplied: boolean;
       plan: SpokeduMasterPaidPlan;
       periodEnd: string | null;
+      nextBillingAt?: string | null;
       cancelled?: boolean;
       ignored?: boolean;
       reason?: string;
@@ -53,12 +55,35 @@ function parsePeriodStart(approvedAt?: string | null) {
   return new Date();
 }
 
+function daysInUtcMonth(year: number, monthIndex: number): number {
+  return new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+}
+
+export function addOneBillingMonth(date: Date): Date {
+  const year = date.getUTCFullYear();
+  const month = date.getUTCMonth();
+  const targetMonth = month + 1;
+  const targetYear = year + Math.floor(targetMonth / 12);
+  const normalizedTargetMonth = targetMonth % 12;
+  const day = Math.min(date.getUTCDate(), daysInUtcMonth(targetYear, normalizedTargetMonth));
+  return new Date(Date.UTC(
+    targetYear,
+    normalizedTargetMonth,
+    day,
+    date.getUTCHours(),
+    date.getUTCMinutes(),
+    date.getUTCSeconds(),
+    date.getUTCMilliseconds(),
+  ));
+}
+
 export function calculateSpokeduMasterPaymentPeriod(approvedAt?: string | null) {
   const periodStart = parsePeriodStart(approvedAt);
-  const periodEnd = new Date(periodStart.getTime() + ENTITLEMENT_DAYS * DAY_MS);
+  const periodEnd = addOneBillingMonth(periodStart);
   return {
     periodStart: periodStart.toISOString(),
     periodEnd: periodEnd.toISOString(),
+    nextBillingAt: periodEnd.toISOString(),
   };
 }
 
@@ -72,7 +97,7 @@ function mapRpcReason(reason: string | null | undefined): ApplySpokeduMasterPaym
   if (reason === 'plan_mismatch' || reason === 'invalid_plan') return reject(400, reason, 'Invalid order plan');
   if (reason === 'amount_mismatch') return reject(400, reason, 'Invalid order amount');
   if (reason === 'invalid_period') return reject(400, reason, 'Invalid payment period');
-  if (reason === 'payment_key_conflict' || reason === 'unique_conflict' || reason === 'active_order_without_subscription') {
+  if (reason === 'payment_key_conflict' || reason === 'unique_conflict' || reason === 'active_order_without_subscription' || reason === 'billing_cycle_already_processed') {
     return reject(409, reason, 'Payment order already confirmed');
   }
   return reject(500, reason ?? 'payment_apply_failed', 'Payment activation failed');
@@ -96,7 +121,7 @@ export async function applySpokeduMasterPayment(
   const validation = validateSpokeduMasterPaymentApplyInput(input);
   if (validation) return validation;
 
-  const { periodStart, periodEnd } = calculateSpokeduMasterPaymentPeriod(input.approvedAt);
+  const { periodStart, periodEnd, nextBillingAt } = calculateSpokeduMasterPaymentPeriod(input.approvedAt);
   const service = getServiceSupabase();
 
   const { data, error } = await service.rpc('spokedu_master_apply_payment', {
@@ -107,8 +132,12 @@ export async function applySpokeduMasterPayment(
     p_amount: input.amount,
     p_period_start: input.source === 'cancel' || input.source === 'partial_cancel_review_required' ? null : periodStart,
     p_period_end: input.source === 'cancel' || input.source === 'partial_cancel_review_required' ? null : periodEnd,
+    p_next_billing_at: input.source === 'renewal' || input.source === 'initial' || input.source === 'webhook' ? nextBillingAt : null,
     p_event_key: input.eventKey,
     p_source: input.source,
+    p_provider_customer_key: input.providerCustomerKey ?? null,
+    p_provider_billing_key_secret_id: input.providerBillingKeySecretId ?? null,
+    p_billing_cycle_key: input.billingCycleKey ?? null,
   });
 
   if (error) {
@@ -131,6 +160,7 @@ export async function applySpokeduMasterPayment(
     status?: string;
     alreadyApplied?: boolean;
     periodEnd?: string | null;
+    nextBillingAt?: string | null;
     cancelled?: boolean;
     reason?: string;
   } | null;
@@ -141,6 +171,7 @@ export async function applySpokeduMasterPayment(
       alreadyApplied: Boolean(result.alreadyApplied),
       plan: input.plan,
       periodEnd: result.periodEnd ?? null,
+      nextBillingAt: result.nextBillingAt ?? null,
       cancelled: result.cancelled,
     };
   }
