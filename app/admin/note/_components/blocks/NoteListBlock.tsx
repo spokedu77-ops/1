@@ -17,6 +17,7 @@ type NoteListBlockProps = NoteInlineTextBlockProps & {
   omitExternalizedChildren?: boolean;
   onChangeType: (type: NoteBlock['type']) => void;
   onRequestCaretOffset?: (offset: number) => void;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   canMergeWithPrevious?: () => boolean;
   onMergeWithPrevious?: () => void;
 };
@@ -42,6 +43,7 @@ export function NoteListBlock({
   onChangeType,
   onIndentChange,
   onRequestCaretOffset,
+  onSplitWithChildren,
   canMergeWithPrevious,
   onMergeWithPrevious,
   onSlashChange,
@@ -61,6 +63,7 @@ export function NoteListBlock({
     onChangeType,
     onRequestCaretOffset,
     onAddBelow,
+    onSplitWithChildren: childBlocks.length > 0 ? onSplitWithChildren : undefined,
     canMergeWithPrevious,
     onMergeWithPrevious,
   });

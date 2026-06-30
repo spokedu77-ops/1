@@ -10,6 +10,7 @@ export type NoteListBlockHandlerContext = {
   onChangeType: (type: NoteBlock['type']) => void;
   onRequestCaretOffset?: (offset: number) => void;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
+  onSplitWithChildren?: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   canMergeWithPrevious?: () => boolean;
   onMergeWithPrevious?: () => void;
 };
@@ -68,6 +69,10 @@ export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
 
     switch (action.kind) {
     case 'add-below':
+      if (!enterCtx?.split && ctx.onSplitWithChildren) {
+        ctx.onSplitWithChildren(action.followType, action.content);
+        return;
+      }
       ctx.onAddBelow(action.followType, action.content);
       return;
     case 'outdent':

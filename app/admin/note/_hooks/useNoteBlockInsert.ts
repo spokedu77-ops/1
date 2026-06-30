@@ -195,6 +195,86 @@ export function useNoteBlockInsert(options: {
     await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
   }, [blocksRef, handleCreateSubPage, insertBlockAmongSiblings, selectedId]);
 
+  const handleSplitListBlockAfterWithChildren = useCallback(async (
+    afterBlock: NoteBlock,
+    type: NoteBlock['type'] = afterBlock.type,
+    content?: Record<string, unknown>,
+  ) => {
+    if (!selectedId || (afterBlock.type !== 'bulletList' && afterBlock.type !== 'numberedList')) {
+      await handleInsertBlockAfter(afterBlock, type, content);
+      return;
+    }
+    const previousBlocks = blocksRef.current;
+    const directChildren = getBlocksInParent(previousBlocks, afterBlock.id);
+    if (directChildren.length === 0) {
+      await handleInsertBlockAfter(afterBlock, type, content);
+      return;
+    }
+
+    const parentId = afterBlock.parent_block_id ?? null;
+    const siblings = getBlocksInParent(previousBlocks, parentId);
+    const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
+    const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
+
+    try {
+      setLoadingState('saving');
+      const normalizedExistingOrders = siblings.map((sibling, index) => ({
+        id: sibling.id,
+        order_index: index >= insertIndex ? index + 1 : index,
+      }));
+      const createdBlock = await documentEngine.persistCreateBlock({
+        documentId: selectedId,
+        blockType: type,
+        content: content ?? defaultBlockContent(type),
+        order_index: insertIndex,
+        parent_block_id: parentId,
+        normalizeOrders: normalizedExistingOrders,
+      });
+      const insertCommand = buildInsertBlockCommand(
+        previousBlocks,
+        createdBlock,
+        parentId,
+        insertIndex,
+      );
+      const childPatches = directChildren.map((child, index) => ({
+        id: child.id,
+        parent_block_id: createdBlock.id,
+        order_index: index,
+      }));
+      const childPatchById = new Map(childPatches.map((patch) => [patch.id, patch]));
+      const nextBlocks = insertCommand.nextBlocks.map((block) => {
+        const patch = childPatchById.get(block.id);
+        return patch
+          ? { ...block, parent_block_id: patch.parent_block_id, order_index: patch.order_index }
+          : block;
+      });
+      const affectedIds = [...new Set([
+        ...insertCommand.affectedIds,
+        createdBlock.id,
+        ...directChildren.map((child) => child.id),
+      ])];
+      recordBlockTransactionUndo(previousBlocks, nextBlocks, affectedIds);
+      setBlocks(nextBlocks);
+      focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
+      await documentEngine.persistBlockTransaction(childPatches);
+    } catch (e) {
+      devLogger.error('[Note] splitListBlockAfterWithChildren', e);
+      setBlocks(previousBlocks);
+      setError(e instanceof Error ? e.message : '리스트 분할 저장 실패');
+      setLoadingState('idle');
+    }
+  }, [
+    blocksRef,
+    documentEngine,
+    focusBlockEditor,
+    handleInsertBlockAfter,
+    recordBlockTransactionUndo,
+    selectedId,
+    setBlocks,
+    setError,
+    setLoadingState,
+  ]);
+
   const handleInsertBlockInParent = useCallback(async (
     parentBlockId: string,
     type: NoteBlock['type'] = 'text',
@@ -332,13 +412,11 @@ export function useNoteBlockInsert(options: {
     }
   }, [
     blocks,
-    focusBlockEditor,
     focusedToggleId,
     handleCreateSubPage,
     handleInsertBlockInParent,
     handleUpdateBlock,
     selectedId,
-    setBlocks,
     setError,
     setLoadingState,
     insertBlockAmongSiblings,
@@ -348,6 +426,7 @@ export function useNoteBlockInsert(options: {
     insertBlockAmongSiblings,
     handleDuplicateBlock,
     handleInsertBlockAfter,
+    handleSplitListBlockAfterWithChildren,
     handleInsertBlockInParent,
     handleAddBlock,
     ensureMinimumRootTextBlock,

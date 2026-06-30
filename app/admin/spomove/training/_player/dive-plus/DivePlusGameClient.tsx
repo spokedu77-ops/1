@@ -17,7 +17,7 @@ type Props = {
 };
 
 export default function DivePlusGameClient(props: Props) {
-  const { data, getPreviewUrl } = useSpomoveDiveEnvironments();
+  const { data, loading, getPreviewUrl } = useSpomoveDiveEnvironments();
   const spaceEntry = data.themes.space ?? null;
 
   const panoramaHighUrl =
@@ -28,6 +28,15 @@ export default function DivePlusGameClient(props: Props) {
   const panoramaLowUrl = spaceEntry
     ? (getPreviewUrl(spaceEntry.panoramaLowPath) ?? STATIC_PANORAMA)
     : STATIC_PANORAMA;
+
+  if (loading) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#020617' }}>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', border: '2px solid #6366f1', borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
 
   return (
     <FlowGameClientPlus
