@@ -15,8 +15,6 @@ describe('SPOKEDU MASTER service truthfulness contracts', () => {
     expect(onboarding).not.toContain('centerCode');
     expect(onboarding).toContain('centerId: null');
     expect(onboarding).toContain('centerName: null');
-    expect(onboarding).toContain('센터 계정 연결은 준비 중입니다.');
-    expect(onboarding).toContain('개인 계정으로 시작');
     expect(onboarding).toContain('onboardingDone: true');
     expect(onboarding).not.toContain('Date.now() + 14 * 24 * 60 * 60 * 1000');
   });

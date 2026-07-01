@@ -208,7 +208,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             row.map((padColorId, ci) => {
               const cell = cellMap.get(padColorId);
               const isActive = !!cell;
-              const bodyActionId = cell?.bodyActionId ?? 'twoFeet';
+              const bodyActionId = cell?.bodyActionId ?? 'bothFeet';
               const label = isActive ? BODY_ACTION_LABELS[bodyActionId] : '';
               return (
                 <div

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { SubscriptionGateWall } from '../components/ui/SubscriptionGateWall';
 import SpomoveHubView from './SpomoveHubView';
 
 export const metadata: Metadata = {
@@ -8,9 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function SpokeduMasterSpomovePage() {
-  return (
-    <SubscriptionGateWall feature="spomove">
-      <SpomoveHubView />
-    </SubscriptionGateWall>
-  );
+  return <SpomoveHubView />;
 }

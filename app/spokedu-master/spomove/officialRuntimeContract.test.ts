@@ -93,11 +93,9 @@ describe('official SPOMOVE runtime contract', () => {
     expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
   });
 
-  it('keeps Plan independent from drill metadata', () => {
-    const plan = read('app/spokedu-master/plan/PlanView.tsx');
-
-    expect(plan).not.toMatch(/\bdrills\b|\?drill=/);
-    expect(plan).toContain('getPrimarySupportedSpomovePreset');
+  it('does not keep the removed class plan route around as dead runtime code', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'app/spokedu-master/plan/page.tsx'))).toBe(false);
+    expect(fs.existsSync(path.join(process.cwd(), 'app/spokedu-master/plan/PlanView.tsx'))).toBe(false);
   });
 
   it('does not translate legacy drill IDs in the public programs API', () => {

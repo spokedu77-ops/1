@@ -52,7 +52,6 @@ function activity(action: RecentProgramActivity['action'], programId?: string): 
 
 const base = {
   profile: profile(),
-  trialDaysLeft: 10,
   recentLessonActivities: [] as RecentProgramActivity[],
   recentSpomoveActivities: [] as RecentProgramActivity[],
   classRecords: [] as ClassRecord[],
@@ -86,7 +85,7 @@ describe('isMasterFirstUser', () => {
 });
 
 describe('selectMasterLoopAction', () => {
-  it('sends a new trial user to lesson discovery first', () => {
+  it('sends a new unsubscribed user to lesson discovery first', () => {
     expect(selectMasterLoopAction(base)).toMatchObject({
       key: 'choose_lesson',
       href: '/spokedu-master/library',
@@ -117,22 +116,11 @@ describe('selectMasterLoopAction', () => {
     })).toMatchObject({ key: 'prepare_next', href: '/spokedu-master/activity' });
   });
 
-  it('prioritizes trial ending soon with real usage summary only from existing data', () => {
-    expect(selectMasterLoopAction({
-      ...base,
-      trialDaysLeft: 2,
-      classRecords: [record()],
-      explanationCount: 1,
-    })).toMatchObject({
-      key: 'review_pass',
-      summary: '수업 기록 1개 · 안내문 1개',
-    });
-  });
 
-  it('keeps active Pro users focused on operation when they have records', () => {
+  it('keeps active Premium users focused on operation when they have records', () => {
     expect(selectMasterLoopAction({
       ...base,
-      profile: profile({ plan: 'pro', subscriptionStatus: 'active' }),
+      profile: profile({ plan: 'premium', subscriptionStatus: 'active' }),
       classRecords: [record()],
     })).toMatchObject({ key: 'operate' });
   });

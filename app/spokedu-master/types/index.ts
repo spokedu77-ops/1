@@ -120,13 +120,6 @@ export interface ClassRecord {
   recordType?: 'quick' | 'detailed';
 }
 
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  qty: number;
-}
-
 export interface Notification {
   id: string;
   type: 'program' | 'report' | 'achievement' | 'billing';

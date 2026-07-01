@@ -23,7 +23,7 @@ import {
   upsertRecentProgramActivity,
 } from '../lib/recentProgramActivity';
 import { createLegacyOperationalArchiveFromPersistedStore } from '../lib/legacyOperationalArchive';
-import type { CartItem, Lesson, Notification, Program, Session, UserProfile } from '../types';
+import type { Lesson, Notification, Program, Session, UserProfile } from '../types';
 import { enrichProgramsWithStaticVisuals } from '../lib/enrich-programs';
 
 type ActiveSession = {
@@ -81,10 +81,6 @@ interface MasterState {
   getFavoriteProgramIds: (ownerId: string | null) => string[];
   isFavoriteProgram: (ownerId: string | null, programId: string) => boolean;
   toggleFavoriteProgram: (ownerId: string | null, programId: string) => void;
-  cart: CartItem[];
-  addToCart: (item: CartItem) => void;
-  updateQty: (id: string, delta: number) => void;
-  clearCart: () => void;
   notifications: Notification[];
   markRead: (id: string) => void;
   markAllRead: () => void;
@@ -131,7 +127,6 @@ type LocalWorkspaceState = Pick<
   | 'lessons'
   | 'sessions'
   | 'activeSession'
-  | 'cart'
   | 'notifications'
   | 'classTimerMs'
   | 'classTimerRunning'
@@ -146,7 +141,6 @@ export function clearedLocalWorkspace(
     lessons: [],
     sessions: [],
     activeSession: null,
-    cart: [],
     notifications: [],
     classTimerMs: 0,
     classTimerRunning: false,
@@ -164,7 +158,6 @@ function hasLegacyWorkspace(state: PersistedMasterState): boolean {
     state.lessons?.length ||
     state.sessions?.length ||
     state.activeSession ||
-    state.cart?.length ||
     state.notifications?.length ||
     state.classTimerMs ||
     state.classTimerRunning ||
@@ -228,7 +221,6 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
         lessons: hasBrokenText(state.lessons) ? defaultLessons : state.lessons ?? defaultLessons,
         sessions: state.sessions ?? [],
         activeSession: state.activeSession ?? null,
-        cart: hasBrokenText(state.cart) ? [] : state.cart ?? [],
         notifications: hasBrokenText(state.notifications)
           ? defaultNotifications
           : state.notifications ?? defaultNotifications,
@@ -545,15 +537,6 @@ export const useMasterStore = create<MasterState>()(
         set((state) => ({
           favoriteProgramIdsByOwner: toggleFavoriteByOwner(state.favoriteProgramIdsByOwner, ownerId, programId),
         })),
-      cart: [],
-      addToCart: (item) =>
-        set((state) => {
-          if (!state.localWorkspaceOwnerId) return {};
-          const existing = state.cart.find((cartItem) => cartItem.id === item.id);
-          return { cart: existing ? state.cart.map((cartItem) => (cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + item.qty } : cartItem)) : [...state.cart, item] };
-        }),
-      updateQty: (id, delta) => set((state) => state.localWorkspaceOwnerId ? ({ cart: state.cart.map((cartItem) => (cartItem.id === id ? { ...cartItem, qty: cartItem.qty + delta } : cartItem)).filter((cartItem) => cartItem.qty > 0) }) : {}),
-      clearCart: () => set((state) => state.localWorkspaceOwnerId ? ({ cart: [] }) : {}),
       notifications: defaultNotifications,
       markRead: (id) => set((state) => state.localWorkspaceOwnerId ? ({ notifications: state.notifications.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)) }) : {}),
       markAllRead: () => set((state) => state.localWorkspaceOwnerId ? ({ notifications: state.notifications.map((notification) => ({ ...notification, read: true })) }) : {}),
@@ -583,7 +566,6 @@ export const useMasterStore = create<MasterState>()(
         recentProgramActivities: state.recentProgramActivities,
         favoriteProgramIdsByOwner: state.favoriteProgramIdsByOwner,
         pendingLegacyFavoriteProgramIds: state.pendingLegacyFavoriteProgramIds,
-        cart: state.cart,
         notifications: state.notifications,
       }),
     },
@@ -593,7 +575,6 @@ export const useMasterStore = create<MasterState>()(
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
 export const useIsPro = () => useMasterStore((state) => hasMasterAccess(state.profile));
-export const useCartCount = () => useMasterStore((state) => state.cart.reduce((total, item) => item.qty + total, 0));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
 export const useClassTimerState = () =>
   useMasterStore(

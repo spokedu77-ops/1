@@ -44,13 +44,13 @@ const PRICING = [
     recommended: true,
   },
   {
-    id: 'team',
+    id: 'center',
     title: 'Center',
     badge: '기관·센터용',
     price: MASTER_PRODUCT_CATALOG.center.priceLabel,
     period: MASTER_PRODUCT_CATALOG.center.billingCycleLabel,
     desc: '여러 수업을 운영하는 센터와 기관을 위한 플랜',
-    includes: ['Pro 기능 전체', '센터 수업 자료 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
+    includes: ['프리미엄 기능 전체', '센터 수업 자료 활용', '기관 제출용 안내문', '추가 계정·기관 도입 별도 문의'],
     accent: 'rgba(16,185,129,0.12)',
     border: 'rgba(16,185,129,0.38)',
     badgeColor: 'var(--spm-grn)',
@@ -81,21 +81,21 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
 export const metadata = {
   title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-  description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
+  description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 월 구독 서비스입니다.',
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
     siteName: 'SPOKEDU MASTER',
     title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
+    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 월 구독 서비스입니다.',
     locale: 'ko_KR',
     images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
     title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 30일 이용권 서비스. 14일 무료 체험으로 시작하세요.',
+    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 월 구독 서비스입니다.',
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
@@ -113,8 +113,8 @@ export default function LandingPage() {
           <Link href="/spokedu-master/dashboard" className="hidden h-9 items-center rounded-full px-4 text-[12px] font-black sm:flex" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
-          <Link href="/login?mode=trial&next=/spokedu-master/onboarding" className="flex h-9 items-center rounded-full px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
-            무료 체험
+          <Link href="/login?next=/spokedu-master/onboarding" className="flex h-9 items-center rounded-full px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
+            시작하기
           </Link>
         </div>
       </header>
@@ -131,7 +131,7 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-[1120px] gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.5fr)] lg:items-end">
           <div className="max-w-[720px]">
             <span className="inline-flex items-center rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em]" style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', color: '#dbeafe' }}>
-              체육교육 OTT · 14일 무료 체험
+              체육교육 OTT · 월 구독
             </span>
             <h1 className="mt-5 text-[46px] font-black leading-[0.98] md:text-[76px]" style={{ fontFamily: 'var(--spm-font-display)', color: '#fff', letterSpacing: 0, wordBreak: 'keep-all' }}>
               SPOKEDU<br />MASTER
@@ -143,9 +143,9 @@ export default function LandingPage() {
               오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/login?mode=trial&next=/spokedu-master/onboarding" className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black text-white sm:w-auto sm:min-w-[200px]" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
+            <Link href="/login?next=/spokedu-master/onboarding" className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black text-white sm:w-auto sm:min-w-[200px]" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
               <Play size={16} fill="#fff" />
-              무료 체험으로 수업 열기
+              SPOKEDU MASTER 시작하기
             </Link>
             <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-black sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
               서비스 구성 보기 <ChevronRight size={16} />
@@ -226,7 +226,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[760px]">
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
           <h2 className="mb-4 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
-          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>14일 무료 체험 후 선택 · 결제 후 30일 이용</p>
+          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>라이트와 프리미엄 월 자동결제</p>
           <div className="grid gap-5 md:grid-cols-2">
             {PRICING.map((p) => (
               <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>
@@ -250,8 +250,8 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={p.id === 'team' ? MASTER_CENTER_INQUIRY_HREF : '/spokedu-master/payment'} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
-                  {p.id === 'team' ? 'Center 도입 상담' : `${p.title} 플랜 보기`}
+                <Link href={p.id === 'center' ? MASTER_CENTER_INQUIRY_HREF : '/spokedu-master/payment'} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
+                  {p.id === 'center' ? 'Center 도입 상담' : `${p.title} 플랜 보기`}
                 </Link>
               </div>
             ))}
@@ -275,11 +275,11 @@ export default function LandingPage() {
             오늘 첫 수업을 골라보세요
           </h2>
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
-            14일 무료 체험으로 라이브러리, SPOMOVE, 수업 도구를 경험해보세요.
+            라이브러리, SPOMOVE, 수업 도구를 월 구독으로 이용해 보세요.
           </p>
-          <Link href="/login?mode=trial&next=/spokedu-master/onboarding" className="mt-8 inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
+          <Link href="/login?next=/spokedu-master/onboarding" className="mt-8 inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
             <Play size={16} fill="#fff" />
-            14일 무료 체험 시작
+            이용권 선택
           </Link>
           <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>신용카드 없이 시작 · 14일 후 자동 만료</p>
         </div>

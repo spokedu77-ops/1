@@ -36,12 +36,12 @@ export async function GET() {
                 textTransform: 'uppercase',
               }}
             >
-              14일 무료 체험
+              월 자동결제
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
             <span style={{ color: '#6b7280', fontSize: 13, fontWeight: 800, letterSpacing: '0.18em', textTransform: 'uppercase' }}>SPOKEDU</span>
-            <span style={{ color: '#f9fafb', fontSize: 20, fontWeight: 800 }}>PRO</span>
+            <span style={{ color: '#f9fafb', fontSize: 20, fontWeight: 800 }}>MASTER</span>
           </div>
         </div>
 

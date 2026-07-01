@@ -5,10 +5,12 @@
 import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS } from '../constants';
 
 export const BODY_ACTIONS = [
-  { id: 'twoFeet' as const, label: '두 발' },
-  { id: 'oneFoot' as const, label: '한 발' },
-  { id: 'oneHand' as const, label: '한 손' },
-  { id: 'twoHands' as const, label: '두 손' },
+  { id: 'rightFoot' as const, label: '오른발' },
+  { id: 'leftFoot' as const, label: '왼발' },
+  { id: 'rightHand' as const, label: '오른손' },
+  { id: 'leftHand' as const, label: '왼손' },
+  { id: 'bothHands' as const, label: '양손' },
+  { id: 'bothFeet' as const, label: '양발' },
 ] as const;
 
 export type BodyActionId = (typeof BODY_ACTIONS)[number]['id'];
@@ -135,7 +137,7 @@ function pickN<T>(arr: readonly T[], n: number): T[] {
 }
 
 const QUAD_BODY_LABELS: Record<BodyActionId, string> = {
-  twoFeet: '두 발', oneFoot: '한 발', oneHand: '한 손', twoHands: '두 손',
+  rightFoot: '오른발', leftFoot: '왼발', rightHand: '오른손', leftHand: '왼손', bothHands: '양손', bothFeet: '양발',
 };
 
 function makeQuadCell(c: ColorItem, actionId: BodyActionId) {
@@ -145,8 +147,10 @@ function makeQuadCell(c: ColorItem, actionId: BodyActionId) {
   };
 }
 
-const rFoot = (): BodyActionId => (Math.random() < 0.5 ? 'oneFoot' : 'twoFeet');
-const rHand = (): BodyActionId => (Math.random() < 0.5 ? 'oneHand' : 'twoHands');
+const randomSingleFoot = (): BodyActionId => (Math.random() < 0.5 ? 'rightFoot' : 'leftFoot');
+const randomSingleHand = (): BodyActionId => (Math.random() < 0.5 ? 'rightHand' : 'leftHand');
+const randomFoot = (): BodyActionId => (Math.random() < 0.5 ? randomSingleFoot() : 'bothFeet');
+const randomHand = (): BodyActionId => (Math.random() < 0.5 ? randomSingleHand() : 'bothHands');
 
 export function generateMemoryPattern(level: number, colors: ColorItem[] = COLORS): ColorItem[] {
   if (level === 1) return generateWithMaxDup(colors, 3);
@@ -501,7 +505,7 @@ export function generateSignal(
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: [makeQuadCell(c, rFoot())] },
+        content: { cells: [makeQuadCell(c, randomFoot())] },
         voice: null,
       };
     }
@@ -511,14 +515,14 @@ export function generateSignal(
       const twoColors = Math.random() < 0.85 && activeColors.length >= 2;
       if (!twoColors) {
         const c = r(activeColors);
-        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(c, rFoot())] }, voice: null };
+        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(c, randomFoot())] }, voice: null };
       }
       const [c1, c2] = pickN(activeColors, 2) as [ColorItem, ColorItem];
       const footFirst = Math.random() < 0.5;
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: [makeQuadCell(c1, footFirst ? rFoot() : rHand()), makeQuadCell(c2, footFirst ? rHand() : rFoot())] },
+        content: { cells: [makeQuadCell(c1, footFirst ? randomFoot() : randomHand()), makeQuadCell(c2, footFirst ? randomHand() : randomFoot())] },
         voice: null,
       };
     }
@@ -529,7 +533,7 @@ export function generateSignal(
       const n = p < 0.10 ? 1 : p < 0.90 ? 2 : 3;
       const picked = pickN(activeColors, n);
       if (n === 1) {
-        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(picked[0]!, rFoot())] }, voice: null };
+        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(picked[0]!, randomFoot())] }, voice: null };
       }
       if (n === 2 || picked.length === 2) {
         const [c1, c2] = picked as [ColorItem, ColorItem];
@@ -537,13 +541,13 @@ export function generateSignal(
         return {
           type: 'think_quad_body',
           bg: '#0F172A',
-          content: { cells: [makeQuadCell(c1, footFirst ? rFoot() : rHand()), makeQuadCell(c2, footFirst ? rHand() : rFoot())] },
+          content: { cells: [makeQuadCell(c1, footFirst ? randomFoot() : randomHand()), makeQuadCell(c2, footFirst ? randomHand() : randomFoot())] },
           voice: null,
         };
       }
-      // n === 3: 각 셀에 한 발 또는 한 손만 (두 발/두 손 없음)
+      // n === 3: 각 셀에 단일 발 또는 단일 손만 (양발/양손 없음)
       const [c1, c2, c3] = picked as [ColorItem, ColorItem, ColorItem];
-      const singleAct = (): BodyActionId => (Math.random() < 0.5 ? 'oneFoot' : 'oneHand');
+      const singleAct = (): BodyActionId => (Math.random() < 0.5 ? randomSingleFoot() : randomSingleHand());
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
@@ -562,10 +566,10 @@ export function generateSignal(
       const actions: BodyActionId[] = colors.map((_, i) => {
         if (patternA) {
           // 한발×2 + singleton 손
-          return i === singletonIdx ? rHand() : 'oneFoot';
+          return i === singletonIdx ? randomHand() : randomSingleFoot();
         } else {
           // 한손×2 + singleton 발
-          return i === singletonIdx ? rFoot() : 'oneHand';
+          return i === singletonIdx ? randomFoot() : randomSingleHand();
         }
       });
       return {

@@ -65,9 +65,11 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
 
   it('keeps profile commercial and data-management actions available', () => {
     const profile = read('app/spokedu-master/profile/page.tsx');
+    const summary = read('app/spokedu-master/profile/subscriptionSummary.ts');
 
     expect(profile).toContain('/spokedu-master/subscription');
-    expect(profile).toContain('/spokedu-master/payment?plan=');
+    expect(summary).toContain('/spokedu-master/payment');
+    expect(profile).not.toContain('/spokedu-master/payment?plan=');
     expect(profile).toContain('MASTER_DATA_DELETE_CONFIRMATION');
     expect(profile).toContain('handleLogout');
   });

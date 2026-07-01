@@ -31,7 +31,6 @@ import {
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
 import { isMasterFirstUser, selectMasterLoopAction } from '../lib/masterUserLoop';
-import { getTrialDaysLeft } from '../lib/subscription';
 import {
   buildProgramResumeHref,
   getRecentActivityOwnerId,
@@ -462,7 +461,7 @@ function ActivityPanel({
     : profile?.plan === 'team'
       ? 'Team 이용 중'
       : profile?.plan === 'pro'
-        ? 'Pro 이용 중'
+        ? '프리미엄 이용 중'
         : '이용권 확인';
 
   const activities: Array<{
@@ -673,7 +672,6 @@ export default function DashboardView() {
   const loopAction = useMemo(
     () => selectMasterLoopAction({
       profile,
-      trialDaysLeft: getTrialDaysLeft(profile),
       recentLessonActivities: validLessonActivities,
       recentSpomoveActivities: validSpomoveActivities,
       classRecords,

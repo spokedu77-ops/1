@@ -2,26 +2,60 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { requireSpokeduMasterAccess } = vi.hoisted(() => ({
-  requireSpokeduMasterAccess: vi.fn(),
+const { getSpokeduMasterAccessSnapshot } = vi.hoisted(() => ({
+  getSpokeduMasterAccessSnapshot: vi.fn(),
 }));
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
-  requireSpokeduMasterAccess,
+  getSpokeduMasterAccessSnapshot,
 }));
 
 import { GET } from './route';
 
 describe('SPOKEDU MASTER access endpoint', () => {
   beforeEach(() => {
-    requireSpokeduMasterAccess.mockReset();
+    getSpokeduMasterAccessSnapshot.mockReset();
   });
 
   it.each([
-    ['premium subscriber', { ok: true, userId: 'premium-user', isAdmin: false, plan: 'premium' }],
-    ['admin', { ok: true, userId: 'admin-user', isAdmin: true, plan: 'admin' }],
+    ['free user', {
+      ok: true,
+      userId: 'free-user',
+      snapshot: {
+        authenticated: true,
+        onboardingDone: false,
+        plan: 'free',
+        subscriptionStatus: 'none',
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+        isAdmin: false,
+        isCenterOrTeam: false,
+        canUseLibrary: false,
+        canUseClassTools: false,
+        canUseRecords: false,
+        canUseSpomove: false,
+      },
+    }],
+    ['admin', {
+      ok: true,
+      userId: 'admin-user',
+      snapshot: {
+        authenticated: true,
+        onboardingDone: true,
+        plan: 'team',
+        subscriptionStatus: 'active',
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+        isAdmin: true,
+        isCenterOrTeam: true,
+        canUseLibrary: true,
+        canUseClassTools: true,
+        canUseRecords: true,
+        canUseSpomove: true,
+      },
+    }],
   ])('allows %s', async (_label, access) => {
-    requireSpokeduMasterAccess.mockResolvedValue(access);
+    getSpokeduMasterAccessSnapshot.mockResolvedValue(access);
 
     const response = await GET();
 
@@ -29,7 +63,7 @@ describe('SPOKEDU MASTER access endpoint', () => {
     expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0');
     expect(response.headers.get('Pragma')).toBe('no-cache');
     expect(response.headers.get('Vary')).toBe('Cookie, Authorization');
-    await expect(response.json()).resolves.toEqual({ ok: true, allowed: true });
+    await expect(response.json()).resolves.toEqual({ ok: true, allowed: true, ...access.snapshot });
   });
 
   it.each([
@@ -37,7 +71,7 @@ describe('SPOKEDU MASTER access endpoint', () => {
     [403, 'ACCESS_DENIED'],
     [500, 'ACCESS_CHECK_FAILED'],
   ])('preserves denied status %s', async (status, code) => {
-    requireSpokeduMasterAccess.mockResolvedValue({
+    getSpokeduMasterAccessSnapshot.mockResolvedValue({
       ok: false,
       response: new Response(null, { status }),
     });

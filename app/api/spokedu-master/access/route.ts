@@ -1,4 +1,4 @@
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { getSpokeduMasterAccessSnapshot } from '@/app/lib/server/spokeduMasterAccess';
 import { privateNoStoreJson } from '@/app/lib/server/privateNoStore';
 
 export const dynamic = 'force-dynamic';
@@ -11,10 +11,14 @@ function accessErrorCode(status: number) {
 }
 
 export async function GET() {
-  const access = await requireSpokeduMasterAccess();
+  const access = await getSpokeduMasterAccessSnapshot();
 
   if (access.ok) {
-    return privateNoStoreJson({ ok: true, allowed: true });
+    return privateNoStoreJson({
+      ok: true,
+      allowed: true,
+      ...access.snapshot,
+    });
   }
 
   return privateNoStoreJson(

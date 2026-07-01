@@ -33,7 +33,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).toContain('수업 미리보기');
     expect(source).toContain('전체 수업 자료 보기');
     expect(source).toContain('수업 기록');
-    expect(source).toContain('안내문');
+    expect(source).toContain('안내문 작성·복사');
     expect(source).toContain('즐겨찾기');
     expect(source).toContain('내 활동·기록');
   });
@@ -49,8 +49,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
 
   it('presents Lite and Premium as the only direct purchase products from the catalog', () => {
     const payment = read('app/spokedu-master/payment/page.tsx');
-    const profile = read('app/spokedu-master/profile/page.tsx');
-    const subscription = read('app/spokedu-master/subscription/page.tsx');
+    const summary = read('app/spokedu-master/profile/subscriptionSummary.ts');
     const catalog = read('app/spokedu-master/lib/productCatalog.ts');
     const checkout = read('app/api/spokedu-master/payment/create-checkout/route.ts');
 
@@ -59,8 +58,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(catalog).toContain("serverPlanKey: 'lite'");
     expect(catalog).toContain("serverPlanKey: 'premium'");
     expect(payment).toContain('getDirectPurchaseMasterProducts');
-    expect(subscription).toContain('getDirectPurchaseMasterProducts');
-    expect(profile).toContain('MASTER_PRODUCT_CATALOG.premium');
+    expect(summary).toContain('MASTER_PRODUCT_CATALOG.premium');
     expect(payment).not.toContain("(['pro'] as PlanKey[])");
     expect(checkout).toContain('월 자동결제 등록 API를 사용해 주세요.');
   });
@@ -75,7 +73,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
       read('app/spokedu-master/lib/productCatalog.ts'),
     ].join('\n');
 
-    expect(source).toContain('안내문 작성·저장·복사');
+    expect(source).toContain('안내문 작성·복사');
     expect(source).not.toContain('보호자용 공개 링크 제공');
     expect(source).not.toContain('카카오톡 자동 발송 제공');
     expect(source).not.toContain('문자 자동 발송 제공');

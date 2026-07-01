@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
-import { SubscriptionGateWall } from '../components/ui/SubscriptionGateWall';
 import LibraryView from './LibraryView';
 
 export const metadata: Metadata = {
@@ -10,10 +9,8 @@ export const metadata: Metadata = {
 
 export default function SpokeduMasterLibraryPage() {
   return (
-    <SubscriptionGateWall feature="library">
-      <Suspense fallback={null}>
-        <LibraryView />
-      </Suspense>
-    </SubscriptionGateWall>
+    <Suspense fallback={null}>
+      <LibraryView />
+    </Suspense>
   );
 }

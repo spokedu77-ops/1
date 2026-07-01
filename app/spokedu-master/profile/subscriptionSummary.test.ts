@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatSubscriptionEndDate,
+  getSubscriptionDisplaySummary,
   getSubscriptionPlanLabel,
   getSubscriptionPrimaryHref,
   getSubscriptionPrimaryLabel,
@@ -29,36 +30,64 @@ function summary(overrides: Partial<SubscriptionSummaryData>): SubscriptionSumma
 
 describe('subscriptionSummary', () => {
   it('maps active Premium subscriptions for display', () => {
-    const value = summary({ plan: 'premium', status: 'active', periodEnd: future });
+    const value = summary({ plan: 'premium', status: 'active', nextBillingAt: future });
 
     expect(getSubscriptionPlanLabel(value)).toBe('프리미엄');
-    expect(getSubscriptionStatusLabel(value)).toBe('구독 중');
+    expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 관리');
     expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/subscription');
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'active',
+      amountText: '월 28,900원',
+      canCancel: true,
+      canUseSpomatMemberPrice: true,
+    });
   });
 
   it('maps active Lite subscriptions for display', () => {
-    const value = summary({ plan: 'lite', status: 'active', periodEnd: future });
+    const value = summary({ plan: 'lite', status: 'active', nextBillingAt: future });
 
     expect(getSubscriptionPlanLabel(value)).toBe('라이트');
-    expect(getSubscriptionStatusLabel(value)).toBe('구독 중');
+    expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 관리');
     expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/subscription');
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'active',
+      amountText: '월 9,900원',
+      canCancel: true,
+      canUseSpomatMemberPrice: false,
+    });
   });
 
-  it('maps active Center subscriptions for display', () => {
-    const value = summary({ plan: 'team', status: 'active', periodEnd: future });
+  it('maps active Center or admin subscriptions as managed access without payment CTAs', () => {
+    const center = summary({ plan: 'team', status: 'active', periodEnd: future });
+    const admin = summary({ plan: 'free', status: 'active', isAdmin: true });
 
-    expect(getSubscriptionPlanLabel(value)).toBe('센터·기관');
-    expect(getSubscriptionStatusLabel(value)).toBe('구독 중');
-    expect(getSubscriptionPrimaryHref(value)).toContain('mailto:spokedu77@gmail.com');
+    expect(getSubscriptionPlanLabel(center)).toBe('센터·기관');
+    expect(getSubscriptionStatusLabel(center)).toBe('기관 관리');
+    expect(getSubscriptionDisplaySummary(center)).toMatchObject({
+      state: 'managed',
+      primaryHref: null,
+      canCancel: false,
+    });
+    expect(getSubscriptionDisplaySummary(admin)).toMatchObject({
+      planLabel: '관리자 권한',
+      state: 'managed',
+      primaryHref: null,
+      canCancel: false,
+    });
   });
 
-  it('shows cancel_at_period_end as 해지 예정', () => {
-    const value = summary({ plan: 'premium', status: 'active', periodEnd: future, cancelAtPeriodEnd: true });
+  it('shows cancel_at_period_end as 해지 예정 without a second cancel action', () => {
+    const value = summary({ plan: 'premium', status: 'active', currentPeriodEnd: future, cancelAtPeriodEnd: true });
 
     expect(getSubscriptionStatusLabel(value)).toBe('해지 예정');
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 관리');
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'cancelScheduled',
+      dateLabel: '이용 종료일',
+      canCancel: false,
+    });
   });
 
   it('shows expired paid subscriptions as ended', () => {
@@ -66,21 +95,29 @@ describe('subscriptionSummary', () => {
 
     expect(getSubscriptionStatusLabel(value)).toBe('이용 종료');
     expect(getSubscriptionPrimaryLabel(value)).toBe('이용권 선택');
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'ended',
+      primaryHref: '/spokedu-master/payment',
+    });
   });
 
-  it('maps legacy pro plan as 프리미엄', () => {
-    const value = summary({ plan: 'pro', status: 'active', periodEnd: future });
+  it('maps legacy pro plan as Premium for existing data only', () => {
+    const value = summary({ plan: 'pro', status: 'active', nextBillingAt: future });
 
     expect(getSubscriptionPlanLabel(value)).toBe('프리미엄');
-    expect(getSubscriptionStatusLabel(value)).toBe('구독 중');
+    expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
   });
 
   it('shows free users without trial as no subscription', () => {
-    const value = summary({ plan: 'free', status: 'none' });
+    const value = summary({ plan: 'free', status: 'none', trialEndsAt: future });
 
     expect(getSubscriptionPlanLabel(value)).toBe('없음');
     expect(getSubscriptionStatusLabel(value)).toBe('이용권 없음');
     expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/payment');
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'none',
+      primaryLabel: '이용권 선택',
+    });
   });
 
   it('normalizes unknown API values without exposing raw status as user copy', () => {
@@ -102,7 +139,7 @@ describe('subscriptionSummary', () => {
       trialEndsAt: future,
       isAdmin: false,
     });
-    expect(getSubscriptionStatusLabel(value)).toBe('체험 중');
+    expect(getSubscriptionStatusLabel(value)).toBe('이용권 없음');
   });
 
   it('normalizes lite and premium plans', () => {

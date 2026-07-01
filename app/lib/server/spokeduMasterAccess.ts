@@ -5,7 +5,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 
 const EXPIRED_ACCESS_MESSAGE =
-  '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 30일 이용권을 다시 결제해 주세요.';
+  '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 이용권을 다시 선택해 주세요.';
 
 type MasterPlan = 'lite' | 'premium' | 'team' | 'admin';
 
@@ -22,6 +22,29 @@ type MasterAccessFail = {
 };
 
 export type MasterAccessResult = MasterAccessOk | MasterAccessFail;
+
+export type MasterSessionResult =
+  | { ok: true; userId: string; isAdmin: boolean }
+  | MasterAccessFail;
+
+export type SpokeduMasterAccessSnapshot = {
+  authenticated: true;
+  onboardingDone: boolean;
+  plan: 'free' | 'lite' | 'premium' | 'team';
+  subscriptionStatus: 'none' | 'active' | 'expired' | 'cancelled';
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  isAdmin: boolean;
+  isCenterOrTeam: boolean;
+  canUseLibrary: boolean;
+  canUseClassTools: boolean;
+  canUseRecords: boolean;
+  canUseSpomove: boolean;
+};
+
+export type MasterAccessSnapshotResult =
+  | { ok: true; userId: string; snapshot: SpokeduMasterAccessSnapshot }
+  | MasterAccessFail;
 
 export type SpokeduMasterSubscriptionRow = {
   plan: string | null;
@@ -86,6 +109,92 @@ export function evaluateSpokeduMasterEntitlement(
   }
 
   return { allowed: false, plan: 'free', status: 'expired' };
+}
+
+function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: SpokeduMasterAccessSnapshot['subscriptionStatus'], isAdmin: boolean) {
+  if (isAdmin || (plan === 'team' && status === 'active')) {
+    return {
+      canUseLibrary: true,
+      canUseClassTools: true,
+      canUseRecords: true,
+      canUseSpomove: true,
+    };
+  }
+
+  if (status !== 'active') {
+    return {
+      canUseLibrary: false,
+      canUseClassTools: false,
+      canUseRecords: false,
+      canUseSpomove: false,
+    };
+  }
+
+  if (plan === 'lite') {
+    return {
+      canUseLibrary: true,
+      canUseClassTools: true,
+      canUseRecords: true,
+      canUseSpomove: false,
+    };
+  }
+
+  if (plan === 'premium') {
+    return {
+      canUseLibrary: true,
+      canUseClassTools: true,
+      canUseRecords: true,
+      canUseSpomove: true,
+    };
+  }
+
+  return {
+    canUseLibrary: false,
+    canUseClassTools: false,
+    canUseRecords: false,
+    canUseSpomove: false,
+  };
+}
+
+export function buildSpokeduMasterAccessSnapshot(input: {
+  row: SpokeduMasterSubscriptionRow | null;
+  isAdmin: boolean;
+  onboardingDone?: boolean;
+}): SpokeduMasterAccessSnapshot {
+  if (input.isAdmin) {
+    return {
+      authenticated: true,
+      onboardingDone: input.onboardingDone ?? true,
+      plan: 'team',
+      subscriptionStatus: 'active',
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      isAdmin: true,
+      isCenterOrTeam: true,
+      ...buildCapabilities('team', 'active', true),
+    };
+  }
+
+  const entitlement = evaluateSpokeduMasterEntitlement(input.row);
+  const plan = entitlement.plan === 'lite' || entitlement.plan === 'premium' || entitlement.plan === 'team'
+    ? entitlement.plan
+    : 'free';
+  const subscriptionStatus = input.row
+    ? entitlement.status
+    : 'none';
+  const currentPeriodEnd = input.row?.current_period_end ?? input.row?.period_end ?? null;
+
+  return {
+    authenticated: true,
+    onboardingDone: input.onboardingDone ?? false,
+    plan,
+    subscriptionStatus,
+    currentPeriodEnd,
+    cancelAtPeriodEnd: input.row?.cancel_at_period_end ?? false,
+    isAdmin: false,
+    isCenterOrTeam: plan === 'team',
+    ...buildCapabilities(plan, subscriptionStatus, false),
+  };
 }
 
 type ServiceSupabase = ReturnType<typeof getServiceSupabase>;
@@ -175,6 +284,106 @@ export async function requireSpokeduMasterAccess(): Promise<MasterAccessResult> 
     devLogger.error('[requireSpokeduMasterAccess]', err);
     await reportError(err, {
       context: 'spokedu_master.access',
+      tags: {
+        stage: 'unexpected',
+        status: 500,
+      },
+    });
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Server error' }, { status: 500 }),
+    };
+  }
+}
+
+export async function requireSpokeduMasterSession(): Promise<MasterSessionResult> {
+  try {
+    const serverSupabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await serverSupabase.auth.getUser();
+
+    if (!user) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      };
+    }
+
+    return {
+      ok: true,
+      userId: user.id,
+      isAdmin: await isPlatformAdminUser(user, serverSupabase),
+    };
+  } catch (err) {
+    devLogger.error('[requireSpokeduMasterSession]', err);
+    await reportError(err, {
+      context: 'spokedu_master.session',
+      tags: {
+        stage: 'unexpected',
+        status: 500,
+      },
+    });
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Server error' }, { status: 500 }),
+    };
+  }
+}
+
+export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnapshotResult> {
+  try {
+    const serverSupabase = await createServerSupabaseClient();
+    const {
+      data: { user },
+    } = await serverSupabase.auth.getUser();
+
+    if (!user) {
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      };
+    }
+
+    const isAdmin = await isPlatformAdminUser(user, serverSupabase);
+    if (isAdmin) {
+      return {
+        ok: true,
+        userId: user.id,
+        snapshot: buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true }),
+      };
+    }
+
+    const serviceSupabase = getServiceSupabase();
+    const { row: subscription, error } = await ensureSpokeduMasterEntitlement(
+      serviceSupabase,
+      user.id,
+    );
+
+    if (error) {
+      devLogger.error('[getSpokeduMasterAccessSnapshot] subscription lookup failed', error);
+      await reportError(error, {
+        context: 'spokedu_master.access_snapshot',
+        tags: {
+          stage: 'subscription_lookup',
+          status: 500,
+        },
+      });
+      return {
+        ok: false,
+        response: NextResponse.json({ error: 'Subscription lookup failed' }, { status: 500 }),
+      };
+    }
+
+    return {
+      ok: true,
+      userId: user.id,
+      snapshot: buildSpokeduMasterAccessSnapshot({ row: subscription, isAdmin: false }),
+    };
+  } catch (err) {
+    devLogger.error('[getSpokeduMasterAccessSnapshot]', err);
+    await reportError(err, {
+      context: 'spokedu_master.access_snapshot',
       tags: {
         stage: 'unexpected',
         status: 500,

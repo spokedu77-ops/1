@@ -32,7 +32,6 @@ import { getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 
 type OfficialLibraryTab = 'all' | 'response' | 'attention' | 'executive';
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
-type AccessState = 'checking' | 'allowed' | 'unauthorized' | 'forbidden' | 'error';
 type SpomoveThumbnailAssetsJson = {
   thumbnails?: Record<string, string | null | undefined>;
 };
@@ -780,7 +779,6 @@ function PresetCard({
 export default function SpomoveHubView() {
   const [activeTab, setActiveTab] = useState<OfficialLibraryTab>('all');
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
-  const [accessState, setAccessState] = useState<AccessState>('checking');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
@@ -796,24 +794,6 @@ export default function SpomoveHubView() {
       .slice(0, 3);
   }, [ownerId, recentProgramActivities]);
   const recentPresetIds = useMemo(() => new Set(recentSpomoveActivities.map((activity) => activity.programId)), [recentSpomoveActivities]);
-
-  useEffect(() => {
-    let alive = true;
-    fetch('/api/spokedu-master/access', { cache: 'no-store' })
-      .then((response) => {
-        if (!alive) return;
-        if (response.ok) setAccessState('allowed');
-        else if (response.status === 401) setAccessState('unauthorized');
-        else if (response.status === 403) setAccessState('forbidden');
-        else setAccessState('error');
-      })
-      .catch(() => {
-        if (alive) setAccessState('error');
-      });
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -846,38 +826,6 @@ export default function SpomoveHubView() {
       alive = false;
     };
   }, []);
-
-  if (accessState === 'checking') {
-    return (
-      <main className="flex h-full items-center justify-center bg-[#f5f7fb]" aria-busy="true">
-        <div className="h-9 w-9 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-      </main>
-    );
-  }
-
-  if (accessState !== 'allowed') {
-    const message =
-      accessState === 'unauthorized'
-        ? '로그인 후 SPOMOVE를 이용할 수 있습니다.'
-        : accessState === 'forbidden'
-          ? '이용 기간이 종료되어 SPOMOVE를 실행할 수 없습니다.'
-          : 'SPOMOVE 이용 권한을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-    return (
-      <main className="flex h-full items-center justify-center overflow-y-auto bg-[#f5f7fb] px-4 py-16">
-        <section className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm">
-          <Lock className="mx-auto h-6 w-6 text-slate-400" />
-          <h1 className="mt-4 text-xl font-black text-slate-950">SPOMOVE를 실행할 수 없습니다.</h1>
-          <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">{message}</p>
-          <Link
-            href="/spokedu-master/subscription"
-            className="mt-5 inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-black text-white"
-          >
-            이용권 확인
-          </Link>
-        </section>
-      </main>
-    );
-  }
 
   const filteredPresets = OFFICIAL_SPOMOVE_LIBRARY.filter((p) => {
     const axisMatch = activeTab === 'all' || p.axis === activeTab;

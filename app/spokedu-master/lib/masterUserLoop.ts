@@ -19,7 +19,6 @@ export type MasterLoopAction = {
 
 export type MasterLoopStateInput = {
   profile: UserProfile | null;
-  trialDaysLeft: number;
   recentLessonActivities: RecentProgramActivity[];
   recentSpomoveActivities: RecentProgramActivity[];
   classRecords: ClassRecord[];
@@ -46,24 +45,7 @@ export function selectMasterLoopAction(input: MasterLoopStateInput): MasterLoopA
   const hasUseExperience =
     hasLessonUseExperience || hasSpomoveUseExperience || input.classRecords.length > 0;
   const hasRecords = input.classRecords.length > 0;
-  const isTrialEndingSoon =
-    (input.profile?.plan ?? 'free') === 'free' &&
-    input.trialDaysLeft > 0 &&
-    input.trialDaysLeft <= 3;
   const isPaid = isPaidMasterPlan(input.profile);
-
-  if (isTrialEndingSoon) {
-    const created = [
-      input.classRecords.length ? `수업 기록 ${input.classRecords.length}개` : null,
-      input.explanationCount ? `안내문 ${input.explanationCount}개` : null,
-    ].filter(Boolean).join(' · ');
-    return {
-      key: 'review_pass',
-      label: '30일 이용권 확인',
-      href: '/spokedu-master/subscription',
-      summary: created || `무료 체험 ${input.trialDaysLeft}일 남음 · 자동 갱신 없음`,
-    };
-  }
 
   if (isPaid && hasRecords) {
     return {

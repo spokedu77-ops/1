@@ -11,7 +11,7 @@ describe('SPOMOVE access separation contract', () => {
     const source = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 
     expect(source).not.toMatch(/\bdrillsLoaded\b|\bdrillsError\b/);
-    expect(source).toContain("fetch('/api/spokedu-master/access'");
+    expect(source).not.toContain("fetch('/api/spokedu-master/access'");
     expect(source).toContain('OFFICIAL_SPOMOVE_LIBRARY');
   });
 
@@ -28,7 +28,7 @@ describe('SPOMOVE access separation contract', () => {
 
     expect(shell).toContain('pathname.startsWith(`${basePath}/spomove/session`)');
     expect(shell).toContain('isAccessGuardPending');
-    expect(shell).toContain('isAccessGuardDenied');
+    expect(shell).toContain('routeGateDenied');
     expect(shell).toContain('isAccessGuardError');
     expect(session).not.toContain("fetch('/api/spokedu-master/access'");
     expect(session).not.toContain('OfficialAccessState');

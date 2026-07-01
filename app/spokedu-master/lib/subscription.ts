@@ -15,21 +15,6 @@ export const PLAN_LIMITS: Record<PlanType, { kakaoMonthly: number | null; aiMont
   team: { kakaoMonthly: 0, aiMonthly: 0, pdfMonthly: 0, canUseDirectorDashboard: false },
 };
 
-export function getTrialDaysLeft(profile: UserProfile | null): number {
-  if (!profile?.trialEndsAt) return 0;
-  return Math.max(0, Math.ceil((new Date(profile.trialEndsAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000)));
-}
-
-export function isActiveTrial(profile: UserProfile | null): boolean {
-  void profile;
-  return false;
-}
-
-export function isTrialExpired(profile: UserProfile | null): boolean {
-  if (profile?.isAdmin) return false;
-  return (profile?.plan ?? 'free') === 'free';
-}
-
 export function isPaidAccessExpired(profile: UserProfile | null): boolean {
   return profile?.subscriptionStatus === 'expired';
 }

@@ -3,9 +3,6 @@ export const MASTER_SUPPORT_EMAIL = 'spokedu77@gmail.com';
 
 export const MASTER_LITE_PRICE_KRW = 9900;
 export const MASTER_PREMIUM_PRICE_KRW = 28900;
-export const MASTER_PRO_PRICE_KRW = MASTER_PREMIUM_PRICE_KRW;
-export const MASTER_PRO_DURATION_DAYS = 0;
-export const MASTER_TRIAL_DAYS = 0;
 
 export const SPOMAT_PRODUCT_CONTRACT = {
   regularPrice: 20900,
@@ -50,20 +47,7 @@ export const MASTER_BASE_FEATURE_ENTITLEMENTS: MasterFeatureEntitlements = {
   canUseSpomove: false,
 };
 
-export const MASTER_PRO_FEATURES = [
-  '라이브러리',
-  'SPOMOVE',
-  '수업 도구',
-  '학생',
-  '수업 기록',
-  '안내문',
-  '내 활동·기록',
-] as const;
 
-type MasterProductCatalog = Record<MasterProductKey, MasterProductCatalogItem> & {
-  readonly pro: MasterProductCatalogItem;
-  readonly school: MasterProductCatalogItem;
-};
 
 const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalogItem> = {
   lite: {
@@ -133,18 +117,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
   },
 };
 
-Object.defineProperties(MASTER_PRODUCT_CATALOG_BASE, {
-  pro: {
-    value: MASTER_PRODUCT_CATALOG_BASE.premium,
-    enumerable: false,
-  },
-  school: {
-    value: MASTER_PRODUCT_CATALOG_BASE.center,
-    enumerable: false,
-  },
-});
-
-export const MASTER_PRODUCT_CATALOG = MASTER_PRODUCT_CATALOG_BASE as MasterProductCatalog;
+export const MASTER_PRODUCT_CATALOG = MASTER_PRODUCT_CATALOG_BASE;
 
 export function getDirectPurchaseMasterProducts() {
   return Object.values(MASTER_PRODUCT_CATALOG).filter((product) => product.purchasable);
@@ -166,6 +139,26 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
   if (product.purchasable) return `${product.displayName.replace('SPOKEDU MASTER ', '')} 시작하기`;
   if (product.contactRequired) return product.priceLabel;
   return product.billingCycleLabel;
+}
+
+export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
+  if (product.id === 'lite') {
+    return ['라이브러리', '수업 도구', '수업 기록', '안내문', '내 활동·기록'];
+  }
+  if (product.id === 'premium') {
+    return ['라이트의 모든 기능', 'SPOMOVE', 'SPOMAT 회원가 구매 대상'];
+  }
+  return ['별도 문의', '직접 결제 없음'];
+}
+
+export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
+  if (product.id === 'lite') {
+    return 'SPOMOVE를 제외한 수업 준비·운영 기능을 이용할 수 있습니다.';
+  }
+  if (product.id === 'premium') {
+    return 'SPOMOVE를 포함한 SPOKEDU MASTER의 모든 기능을 이용할 수 있습니다.';
+  }
+  return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }
 
 export function canPurchaseDirectly(product: MasterProductCatalogItem) {

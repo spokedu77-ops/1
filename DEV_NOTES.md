@@ -9,7 +9,7 @@
 | UI | `app/spokedu-master/` |
 | API | `app/api/spokedu-master/` |
 | Admin | `app/admin/spokedu-master/` |
-| 결제·구독 DB | `sql/71_spokedu_master_subscriptions.sql`, `spokedu_master_subscriptions` |
+| 결제·구독 DB | `supabase/migrations/2026063*_spokedu_master_*` |
 | 진입 가드 | `proxy.ts` (`/spokedu-master/*`) |
 
 `subscription-new`, `spokedu-pro`에 직접 구현하지 않는다. MASTER에만 흡수.
@@ -22,51 +22,60 @@
 
 ---
 
-## 구독 상용화 점검 (2026-05-29)
+## 구독 상용화 현황
 
 ### ✅ 구현·연결됨
 
 | 기능 | 위치 | 비고 |
 |------|------|------|
 | 로그인 필수 | `proxy.ts` | `/spokedu-master` 대부분, 공개: landing·payment·privacy·terms·parent |
-| 14일 체험 | `proxy.ts` `isInTrial`, `subscription/route.ts` | `user.created_at` + 14일 |
-| 체험 만료 → 결제 유도 | `proxy.ts` | 활성 구독 없으면 `/spokedu-master/payment` 리다이렉트 |
-| 토스 결제 (Pro/Center) | `payment/page.tsx`, `payment/confirm`, `create-checkout` | `TOSS_SECRET_KEY`, 주문 `spm-{plan}-{ts}` |
+| 구독 접근 검사 | `requireSpokeduMasterAccess()` | API 호출 시 서버에서 구독·어드민 여부 검증, fail closed |
+| Toss 빌링키 발급 | `payment/billing/issue/route.ts` | OTP 로그인 후 requestBillingAuth → 서버에서 billing key 발급 |
+| 첫 결제 처리 | `payment/billing/issue/route.ts` | 서버 가격 재검증 (lite 9,900 · premium 28,900), `apply_payment` RPC |
+| Supabase Vault 빌링키 저장 | `spokeduMasterBillingKeyVault.ts`, `20260630123000_spokedu_master_billing_key_vault.sql` | 원문 billing key를 직접 저장하지 않음 |
+| 자동 갱신 | `payment/billing/renew/route.ts`, `20260630124000_spokedu_master_billing_supabase_cron.sql` | pg_cron 매시간 → Vault에서 URL·secret 읽어 호출, cancel_at_period_end=false 대상만, billing_cycle_key 중복 방지 |
+| Toss 웹훅 | `payment/webhook/route.ts` | PAYMENT_STATUS_CHANGED·CANCEL_STATUS_CHANGED 처리, transmission-id 기반 idempotency, Toss API 재검증 |
+| 구독 해지 예약 | `payment/billing/cancel/route.ts` | cancel_at_period_end=true, 기간 종료일까지 사용 가능 |
 | 구독 상태 API | `GET /api/spokedu-master/subscription` | `spokedu_master_subscriptions` |
-| 결제 후 DB 반영 | `payment/confirm` | 30일 `period_end` upsert |
 | 클라이언트 플랜 동기화 | `store` `syncSubscription` | 로그인·포커스 시 |
-| 체험 배너 | `TrialCountdownBanner` | 만료 7일 전부터 |
-| 체험 만료 UI (일부) | `TrialGateWall` | library·spomove·class-tools 페이지 래핑 |
-| SPOMOVE PRO 잠금 | `SpomoveHubView`, `spomove/session` | `drill.isPro` + `useIsPro` |
-| 라이브러리 PRO 잠금 (UI) | `LibraryView`, `LibraryDetailView` | `program.isPro` + `useIsPro` |
-| 수업 기록 생성 제한 | `canCreateClassRecord` | 체험 만료 시 신규 기록 불가 |
+| SPOMOVE 권한 잠금 | `SubscriptionGateWall`, `canUseSpomove` | lite → 구독 관리 CTA, 미구독 → 이용권 선택 CTA |
+| 라이브러리·수업 도구·기록 권한 잠금 | `SubscriptionGateWall`, `canUseLibrary/ClassTools/Records` | 서버 access snapshot 기반 |
+| programs API 서버 권한 | `programs/route.ts` | `requireSpokeduMasterAccess()` — 로그인만으로 curriculum 전체 반환하지 않음 |
+| operational-data API 서버 권한 | `operational-data/route.ts` | `requireSpokeduMasterAccess()` |
 | 구독·플랜 안내 | `subscription/page.tsx`, `profile` 플랜 시트 | Center/School은 문의 유도 |
-| 프로그램 API | `programs/route.ts` | curriculum + `spokedu_master_program_meta`, `overlay.video_url`만 참고 영상 |
 | Admin | `admin/spokedu-master/programs` | HOT·표시순서·`sm_is_pro`·home-featured·video-gaps |
+| 결제 포털 | `payment/portal/route.ts` | 410 + 이메일 고객센터 안내 (토스에는 Billing Portal 없음) |
 
-### ❌ 미완·상용 리스크 (우선 처리)
+### ❌ 운영·미완 항목
 
 | 항목 | 문제 | 권장 |
 |------|------|------|
-| **서버 콘텐츠 잠금 없음** | `programs` GET이 로그인만 되면 전체 curriculum 반환. UI 잠금만으로는 API 우회 가능 | 구독·체험 상태 검사 후 필드 마스킹 또는 403 |
-| **프로그램 `isPro` 거의 미사용** | 정적 `data.ts`는 전부 `isPro: false`. DB `sm_is_pro` 미설정 시 라이브러리 잠금 안 걸림 | admin에서 PRO 표시 과금 콘텐츠 지정 + API 반영 확인 |
-| **Center(팀) 플랜** | UI·카피에 「강사 3명」 있으나 **멀티시트·초대·RLS 없음** | 결제 전 카피 정리 또는 2단계 스키마 |
-| **Lite 플랜** | 프로필·문구만, **결제 불가** | 출시 전 UI에서 제거 또는 checkout 추가 |
-| **자동 갱신** | `confirm`이 30일 1회 기간만 저장. **정기결제·웹훅 없음** | 토스 빌링키/구독 API 또는 수동 갱신 운영 명시 |
-| **웹훅** | `payment/webhook` 스텁 | 결제 실패·취소·환불 동기화 |
-| **결제 포털** | `payment/portal` → 410, 이메일 안내 | 취소·카드변경 플로우 문서화 |
-| **리포트** | `TrialGateWall` 없음. 탭 일부만 `isPro`/`trialExpired` | library와 동일 만료 정책 적용 |
-| **홈(대시보드)** | `TrialGateWall` 없음 (proxy는 만료 시 payment로 보냄) | 만료 사용자가 payment 외 경로 필요 시 공개 경로 검토 |
-| **체험 시계 불일치 가능** | store 기본 `trialEndsAt` vs 서버 `created_at` | 만료 판단은 **항상 서버·proxy 기준**으로 통일 |
+| **프로그램 `isPro` 거의 미사용** | DB `sm_is_pro` 미설정 시 라이브러리 잠금 안 걸림 (programs API는 보호되나 pro 여부가 DB에 없음) | admin에서 PRO 표시 과금 콘텐츠 지정 |
+| **Center(팀) 플랜** | 직접 결제 UI 없음 (문의 유도만). 멀티시트·초대·RLS 없음 | landing·문의 카피만 유지, 직접 결제는 Phase 2 |
 | **School 플랜** | 문의만, 코드 경로 없음 | 의도적이면 landing에만 노출 |
 
-### 상용화 우선 작업 순서
+### 현재 운영 정책 (코드 기준)
 
-1. **서버 entitlements** — `programs`·`drills` API에 체험/구독 검증 (최소: 만료 시 lessonDetail 일부 제거).
-2. **PRO 콘텐츠 지정** — admin `sm_is_pro` + 라이브러리 잠금이 실제 과금 콘텐츠와 일치하는지 확인.
-3. **결제·구독 운영** — 갱신 방식(수동 30일 vs 정기), 취소·환불 안내 페이지와 `subscription` 경로를 proxy 공개 목록에 넣을지 결정.
-4. **Center 플랜** — 멀티 강사 없으면 결제 페이지·플랜 카드에서 「3명 포함」 문구 제거 또는 Phase 2 명시.
-5. **E2E** — `npm run qa:spokedu-master`, CI 시크릿 있을 때 로그인 홈 스모크 (`scripts/spokedu-master-home-logged-qa.mjs`).
+**결제:**
+- lite 월 9,900원 · premium 월 28,900원
+- Toss requestBillingAuth → billing key 발급 → 첫 결제 → apply_payment RPC
+- Supabase pg_cron 매시간 자동 갱신 (Vault 저장 billing key 사용)
+- 기간 종료 해지 (`cancel_at_period_end=true`)
+
+**권한:**
+- 미구독: 홈·프로필·구독·결제·스토어 접근 가능
+- lite: library·class-tools·records 기능 사용 가능
+- premium: SPOMOVE 포함 전체 기능 사용 가능
+- team/admin: 전체 기능 접근 (직접 결제·해지 CTA 없음)
+- 유료 데이터 API: `requireSpokeduMasterAccess()` 서버 검증
+
+### 출시 전 확인 필요
+
+1. **PRO 콘텐츠 지정** — admin `sm_is_pro` + 라이브러리 잠금이 실제 과금 콘텐츠와 일치하는지 확인.
+2. **Vault·Cron 운영 적용** — `spokedu_master_billing_renew_url`·`spokedu_master_billing_cron_secret` Vault 등록, migration 적용, 1회 갱신 통제 테스트.
+3. **SPOMAT 스토어 URL** — `SPOMAT_PUBLIC_PURCHASE_URL`·`SPOMAT_PREMIUM_PURCHASE_URL` 실제 URL로 교체.
+4. **통신판매업 신고번호** — 등록 완료 시 `businessInfo.ts`·landing footer 반영.
+5. **E2E** — `npm run qa:spokedu-master`, CI 시크릿 있을 때 로그인 홈 스모크.
 
 ---
 
@@ -82,11 +91,21 @@
 | 변수 | 용도 |
 |------|------|
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 클라이언트·proxy |
-| `SUPABASE_SERVICE_ROLE_KEY` | 결제 confirm, admin, programs |
-| `TOSS_SECRET_KEY` | 결제 승인 |
-| `TOSS_CLIENT_KEY` (또는 페이지에 쓰는 키) | 결제 위젯 |
-| `SPM_ADMIN_EMAILS` | 구독·proxy 관리자 우회 |
+| `SUPABASE_SERVICE_ROLE_KEY` | 결제·admin·programs API |
+| `TOSS_SECRET_KEY` | billing key 발급·결제 승인·웹훅 검증 (`test_` 또는 운영 key) |
+| `NEXT_PUBLIC_TOSS_CLIENT_KEY` | 결제 위젯 클라이언트 |
+| `CRON_SECRET` | billing renew cron Bearer auth |
+| `SPM_ADMIN_EMAILS` | 관리자 우회 |
+| `SPOMAT_PUBLIC_PURCHASE_URL` | SPOMAT 일반가 구매 redirect (기본: example.com) |
+| `SPOMAT_PREMIUM_PURCHASE_URL` | SPOMAT 회원가 구매 redirect (기본: example.com) |
 | `SPOKEDU_MASTER_QA_ID`, `SPOKEDU_MASTER_QA_PASSWORD` | 선택 E2E |
+
+Supabase Vault 항목 (migration으로 등록, 코드에서 직접 읽지 않음):
+
+| Vault 이름 | 용도 |
+|------|------|
+| `spokedu_master_billing_renew_url` | pg_cron이 호출할 renew endpoint URL |
+| `spokedu_master_billing_cron_secret` | renew endpoint Bearer 인증값 |
 
 ## 로컬 QA
 
@@ -101,4 +120,6 @@ npm run qa:spokedu-master
 - 홈: `dashboard/DashboardView.tsx`
 - 미디어: `lib/program-media.ts`, `lib/verified-program-video.ts`
 - 구독 로직: `lib/subscription.ts`, `store/index.ts` (`useIsPro`, `syncSubscription`)
-- 결제: `payment/page.tsx`, `api/.../payment/*`
+- 결제: `payment/page.tsx`, `api/spokedu-master/payment/billing/issue`, `api/spokedu-master/payment/billing/renew`
+- 자동 갱신 migration: `supabase/migrations/20260630124000_spokedu_master_billing_supabase_cron.sql`
+- Vault migration: `supabase/migrations/20260630123000_spokedu_master_billing_key_vault.sql`

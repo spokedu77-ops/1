@@ -13,13 +13,13 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BottomSheet } from '../../components/ui/BottomSheet';
 
 import {
   LessonBulletList,
-  LessonChecklistCard,
   LessonCoachScript,
   LessonFullSection,
   LessonMetaGrid,
@@ -35,6 +35,7 @@ import {
   isDirectVideoUrl,
 } from '../../lib/program-media';
 import { getSpomoveSessionHref, getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
+import type { ProgramQualityReport } from '../../lib/program-meta';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -44,6 +45,38 @@ import { getLibraryReturnHref } from '../libraryNavigation';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
 const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
+
+function getQualityNotice(quality: ProgramQualityReport) {
+  if (quality.status === 'READY' || quality.missing.length === 0) return null;
+  return {
+    title: quality.status === 'INCOMPLETE' ? '수업 정보 보강이 필요합니다' : '일부 정보가 부족합니다',
+    missing: quality.missing.slice(0, 4).join(', '),
+  };
+}
+
+function LessonPrepBlock({
+  label,
+  accent = 'slate',
+  children,
+}: {
+  label: string;
+  accent?: 'emerald' | 'indigo' | 'slate';
+  children: ReactNode;
+}) {
+  const accentClass =
+    accent === 'emerald'
+      ? 'text-emerald-600'
+      : accent === 'indigo'
+        ? 'text-indigo-600'
+        : 'text-slate-600';
+
+  return (
+    <section className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+      <h4 className={`text-[11px] font-black uppercase tracking-[0.08em] ${accentClass}`}>{label}</h4>
+      <div className="mt-2">{children}</div>
+    </section>
+  );
+}
 
 function BookOpenFallback() {
   return (
@@ -133,6 +166,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const model = buildLessonDisplayModel(program);
   const title = model.title;
+  const qualityNotice = getQualityNotice(model.quality);
   const parentCopy = model.parentNote;
   const favorite = Boolean(storedFavoriteIds) && isFavoriteProgram(ownerId, program.id);
   const usageCount = usageRecords.length;
@@ -208,7 +242,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[#f6f7f9] pb-44 text-slate-950 lg:pb-14">
+    <main className={`min-h-dvh bg-[#f6f7f9] text-slate-950 ${primarySpomovePreset ? 'pb-44 lg:pb-14' : 'pb-10 lg:pb-12'}`}>
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href={libraryReturnHref} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
@@ -250,44 +284,54 @@ export default function LibraryDetailView({ id }: { id: string }) {
               ].filter((cell) => cell.value)}
             />
           </div>
+          {qualityNotice ? (
+            <div className="mt-4 max-w-xl rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-3 text-[12px] font-bold text-amber-900">
+              <p className="text-[13px] font-black">{qualityNotice.title}</p>
+              <p className="mt-1 text-amber-800">부족 정보: {qualityNotice.missing}</p>
+            </div>
+          ) : null}
         </section>
 
         {setupImage || hasPreActivityChecklist ? (
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:items-stretch">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,0.78fr)_minmax(0,1fr)] lg:items-start">
             {setupImage ? (
-              <LessonFullSection title="초기 교구 세팅" className="h-full">
-                <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50 p-3">
-                  <div className="overflow-hidden rounded-[10px] border border-slate-200 bg-white">
-                    <div className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-square lg:aspect-[4/5]">
-                      <Image src={setupImage} alt={`${title} 세팅 방법`} fill sizes="(min-width: 1024px) 480px, 100vw" className="object-cover" unoptimized />
-                    </div>
-                  </div>
+              <LessonFullSection title="초기 교구 세팅">
+                <div className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-100 p-2">
+                  <Image
+                    src={setupImage}
+                    alt={`${title} 세팅 방법`}
+                    width={960}
+                    height={720}
+                    sizes="(min-width: 1024px) 44vw, 100vw"
+                    className="mx-auto h-auto max-h-[420px] w-full rounded-[10px] object-contain lg:max-h-[500px]"
+                    unoptimized
+                  />
                 </div>
               </LessonFullSection>
             ) : null}
 
             {hasPreActivityChecklist ? (
-              <LessonFullSection title="사전 체크리스트" className="h-full">
-                <div className="flex flex-col gap-3">
+              <LessonFullSection title="사전 체크리스트">
+                <div className="space-y-4">
                   {model.equipment.length > 0 ? (
-                    <LessonChecklistCard label="준비물" accent="emerald">
+                    <LessonPrepBlock label="준비물" accent="emerald">
                       <LessonBulletList items={model.equipment} compact />
-                    </LessonChecklistCard>
+                    </LessonPrepBlock>
                   ) : null}
                   {model.setupNotes.length > 0 ? (
-                    <LessonChecklistCard label="세팅">
+                    <LessonPrepBlock label="세팅">
                       <LessonBulletList items={model.setupNotes} compact />
-                    </LessonChecklistCard>
+                    </LessonPrepBlock>
                   ) : null}
                   {model.coachScript ? (
-                    <LessonChecklistCard label="수업 스크립트" accent="indigo">
+                    <LessonPrepBlock label="수업 스크립트" accent="indigo">
                       <LessonCoachScript text={model.coachScript} />
-                    </LessonChecklistCard>
+                    </LessonPrepBlock>
                   ) : null}
                   {model.briefingNotes.length > 0 ? (
-                    <LessonChecklistCard label="사전 교육">
+                    <LessonPrepBlock label="사전 교육">
                       <LessonBulletList items={model.briefingNotes} compact />
-                    </LessonChecklistCard>
+                    </LessonPrepBlock>
                   ) : null}
                 </div>
               </LessonFullSection>

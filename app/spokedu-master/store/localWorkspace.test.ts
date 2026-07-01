@@ -4,7 +4,6 @@ import { migrateMasterStore, useMasterStore } from './index';
 
 const lesson = { id: 1, done: false } as never;
 const session = { id: 'session-a', times: [100] } as never;
-const cartItem = { id: 'cart-a', qty: 1 } as never;
 const notification = { id: 'note-a', read: false } as never;
 
 function seedWorkspace(ownerId: string | null = 'id:user-a') {
@@ -20,7 +19,6 @@ function seedWorkspace(ownerId: string | null = 'id:user-a') {
       running: true,
       paused: false,
     },
-    cart: [cartItem],
     notifications: [notification],
     classTimerMs: 5000,
     classTimerRunning: true,
@@ -63,7 +61,6 @@ describe('local workspace owner isolation', () => {
       localWorkspaceOwnerId: 'id:user-a',
       lessons: [lesson],
       sessions: [session],
-      cart: [cartItem],
     });
   });
 
@@ -86,7 +83,6 @@ describe('local workspace owner isolation', () => {
       lessons: [],
       sessions: [],
       activeSession: null,
-      cart: [],
       notifications: [],
       classTimerMs: 0,
       classTimerRunning: false,
@@ -107,14 +103,12 @@ describe('local workspace owner isolation', () => {
 
     useMasterStore.getState().addLesson(lesson);
     useMasterStore.getState().addSession(session);
-    useMasterStore.getState().addToCart(cartItem);
     useMasterStore.getState().classTimerStart();
 
     expect(useMasterStore.getState()).toMatchObject({
       localWorkspaceOwnerId: null,
       lessons: [],
       sessions: [],
-      cart: [],
       classTimerRunning: false,
     });
   });
@@ -132,7 +126,6 @@ describe('local workspace owner isolation', () => {
       profile: { trialEndsAt: null },
       lessons: [],
       sessions: [],
-      cart: [],
       operational: { online: false, lastSyncAt: null, retryQueue: [] },
     });
   });
@@ -168,7 +161,6 @@ describe('local workspace migration', () => {
   const workspace = {
     lessons: [lesson],
     sessions: [session],
-    cart: [cartItem],
     operational: {
       online: true,
       lastSyncAt: '2026-06-25T00:00:00.000Z',

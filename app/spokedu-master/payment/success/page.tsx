@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, CheckCircle2, Home, Loader2, Mail } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { MASTER_PRODUCT_CATALOG, MASTER_CUSTOMER_SERVICE_HREF } from '../../lib/productCatalog';
+import { MASTER_CUSTOMER_SERVICE_HREF, MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
 import { useMasterStore } from '../../store';
 
 type PaidPlanId = 'lite' | 'premium';
@@ -135,7 +135,7 @@ function SuccessContent() {
       <PaymentStatusShell>
         <Loader2 size={58} className="mx-auto animate-spin" color="var(--spm-acc)" strokeWidth={1.7} />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>Billing Activation</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>결제 확인</p>
           <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
             {status === 'checking-access' ? '구독 활성화를 확인하고 있습니다' : '첫 결제를 진행하고 있습니다'}
           </h1>
@@ -156,12 +156,12 @@ function SuccessContent() {
       <PaymentStatusShell>
         <CheckCircle2 size={66} color="var(--spm-grn)" strokeWidth={1.5} className="mx-auto" />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-grn)' }}>Subscription Active</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-grn)' }}>구독 활성화</p>
           <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            구독 시작 완료
+            결제가 완료되었습니다.
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-            첫 결제와 구독 활성화가 완료되었습니다.
+            {product.displayName.replace('SPOKEDU MASTER ', '')} 이용권이 활성화되었습니다.
           </p>
         </div>
         <dl className="grid gap-2 rounded-[18px] p-4 text-left" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -180,10 +180,10 @@ function SuccessContent() {
         </dl>
         <div className="grid gap-3">
           <Link href="/spokedu-master/dashboard" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-            SPOKEDU MASTER 시작하기
+            홈으로
           </Link>
           <Link href="/spokedu-master/subscription" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
-            이용권 상태 화면
+            구독 관리
           </Link>
         </div>
       </PaymentStatusShell>
@@ -195,9 +195,9 @@ function SuccessContent() {
       <PaymentStatusShell>
         <AlertCircle size={64} color="var(--spm-acc)" strokeWidth={1.5} className="mx-auto" />
         <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>Access Check Pending</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>구독 확인</p>
           <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            이용권 반영을 다시 확인해 주세요
+            이용권 반영을 다시 확인해 주세요.
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             첫 결제는 처리되었지만 접근 권한 확인이 지연되고 있습니다. 결제를 반복하지 말고 이용권 상태만 다시 확인해 주세요.
@@ -215,13 +215,13 @@ function SuccessContent() {
       <AlertCircle size={64} color="var(--spm-red)" strokeWidth={1.5} className="mx-auto" />
       <div>
         <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-red)' }}>
-          {status === 'invalid' ? 'Invalid Billing Auth' : 'Billing Failed'}
+          결제 실패
         </p>
         <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
           결제를 완료하지 못했습니다.
         </h1>
         <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-          결제수단을 확인한 뒤 다시 시도해 주세요. 완료 전에는 유료 권한이 부여되지 않습니다.
+          결제 인증이 취소되었거나 처리 중 오류가 발생했습니다. 결제수단을 확인한 뒤 다시 시도해 주세요.
         </p>
       </div>
       <div className="grid gap-3">
@@ -230,12 +230,8 @@ function SuccessContent() {
         </Link>
         <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
           <Mail size={15} />
-          문의하기
+          고객센터
         </a>
-        <Link href="/spokedu-master/dashboard" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'transparent', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
-          <Home size={15} />
-          홈으로 이동
-        </Link>
       </div>
     </PaymentStatusShell>
   );

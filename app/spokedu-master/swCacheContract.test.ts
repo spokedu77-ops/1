@@ -122,7 +122,6 @@ describe('SPOKEDU MASTER protected response cache contract', () => {
 
   it('uses network wording without promising server health or sync completion', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
-    const appShell = read('app/spokedu-master/components/layout/AppShell.tsx');
     const operationsPanel = read('app/spokedu-master/components/operations/OperationsPanel.tsx');
 
     expect(statusBar).toContain('인터넷 연결됨');
@@ -130,13 +129,12 @@ describe('SPOKEDU MASTER protected response cache contract', () => {
     expect(operationsPanel).toContain('인터넷 연결됨');
     expect(operationsPanel).toContain('인터넷 연결 없음');
     expect(operationsPanel).toContain("operational.online ? '연결됨' : '연결 없음'");
-    expect(appShell).toContain('인터넷 연결 없음. 수업 자료와 기록 기능은 온라인 상태에서 사용해 주세요.');
+    expect(read('app/spokedu-master/components/layout/AppShell.tsx')).not.toContain('OperationsBanner');
     expect(statusBar).not.toContain('서버 정상');
     expect(statusBar).not.toContain('동기화 완료');
     expect(statusBar).not.toContain('모든 자료 최신');
     expect(operationsPanel).not.toContain('동기화 완료');
     expect(operationsPanel).not.toContain("operational.online ? '정상' : '보관'");
-    expect(appShell).not.toContain('이미 불러온 수업 자료와 SPOMOVE 화면은 계속 확인할 수 있습니다.');
   });
 
   it('does not show an install success CTA without a real install state', () => {
