@@ -205,7 +205,3 @@ async function runRenewal(request: Request) {
 export async function POST(request: Request) {
   return runRenewal(request);
 }
-
-export async function GET(request: Request) {
-  return runRenewal(request);
-}

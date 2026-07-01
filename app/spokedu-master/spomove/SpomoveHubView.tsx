@@ -114,6 +114,7 @@ const THEME_LABELS: Record<string, string> = {
   animal: '동물',
   nature: '자연',
   target: '타겟',
+  food: '음식',
 };
 
 function ThemeIcon({ theme, className = 'h-10 w-10 text-white/80' }: { theme?: string; className?: string }) {
@@ -163,6 +164,15 @@ function ThemeIcon({ theme, className = 'h-10 w-10 text-white/80' }: { theme?: s
       <circle cx="12" cy="12" r="6" strokeOpacity="0.6" strokeWidth="1.5" />
       <circle cx="12" cy="12" r="2.5" strokeOpacity="0.85" strokeWidth="1.5" />
       <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+  if (theme === 'food') return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M5 12 Q5 20 12 20 Q19 20 19 12 Z" />
+      <rect x="4" y="10.5" width="16" height="2.5" rx="1.25" />
+      <path d="M9 10 Q10 8 9 6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M12 9.5 Q13 7.5 12 5.5" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M15 10 Q16 8 15 6" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
     </svg>
   );
   return null;

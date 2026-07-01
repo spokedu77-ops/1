@@ -79,7 +79,11 @@
       "Bash(grep -rn \"\\\\/spokedu-master\\\\/shop\\\\|href.*shop\" app/spokedu-master --include=\"*.tsx\" --include=\"*.ts\")",
       "Bash(ls .env*)",
       "Bash(cat .env.example)",
-      "Bash(rg \"\\\\bPro\\\\b\" app/spokedu-master --include=\"*.tsx\" --include=\"*.ts\" -n -l)"
+      "Bash(rg \"\\\\bPro\\\\b\" app/spokedu-master --include=\"*.tsx\" --include=\"*.ts\" -n -l)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3000/spomove/training/body-actions/right-foot.png\")",
+      "Bash(curl -s -o /dev/null -w \"right-foot: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/right-foot.png\")",
+      "Bash(curl -s -o /dev/null -w \"left-foot: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/left-foot.png\")",
+      "Bash(curl -s -o /dev/null -w \"both-feet: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/both-feet.png\")"
     ],
     "additionalDirectories": [
       "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"

@@ -4,9 +4,9 @@
 
 export const SPOMOVE_VARIANT_THEME_LS_KEY = 'spomove_variant_training_theme';
 
-export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature';
+export type SpomoveColorThemeId = 'color' | 'fruit' | 'vehicle' | 'emotion' | 'animal' | 'nature' | 'food';
 
-export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['emotion', 'fruit', 'animal', 'nature', 'color', 'vehicle'];
+export const SPOMOVE_COLOR_THEME_ORDER: SpomoveColorThemeId[] = ['emotion', 'fruit', 'animal', 'nature', 'food', 'color', 'vehicle'];
 
 export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   color: '색상',
@@ -15,12 +15,14 @@ export const SPOMOVE_COLOR_THEME_LABELS: Record<SpomoveColorThemeId, string> = {
   emotion: '감정',
   animal: '동물',
   nature: '자연물',
+  food: '음식',
 };
 
 export const SPOMOVE_VARIANT_VEHICLE_PACK_ID = 'spomove_variant_vehicles';
 export const SPOMOVE_VARIANT_EMOTION_PACK_ID = 'spomove_variant_emotions';
 export const SPOMOVE_VARIANT_ANIMAL_PACK_ID = 'spomove_variant_animals';
 export const SPOMOVE_VARIANT_NATURE_PACK_ID = 'spomove_variant_nature';
+export const SPOMOVE_VARIANT_FOOD_PACK_ID = 'spomove_variant_food';
 
 export const SPOMOVE_THEMED_SLOT_COUNT = 8 as const;
 
@@ -28,7 +30,8 @@ export type SpomoveThemedStorageSubfolder =
   | 'spomove_variant_vehicles'
   | 'spomove_variant_emotions'
   | 'spomove_variant_animals'
-  | 'spomove_variant_nature';
+  | 'spomove_variant_nature'
+  | 'spomove_variant_food';
 
 export type SpomoveThemedPackDef = {
   packId: string;
@@ -80,6 +83,13 @@ export const SPOMOVE_THEMED_PACK_BY_THEME: Record<
     slotLabels: ['나무', '꽃', '잎', '돌', '구름', '해', '달', '파도'],
     intro: '자연물 테마 이미지 8슬롯입니다. 업로드·반영 방식은 탈 것 탭과 동일합니다.',
   },
+  food: {
+    packId: SPOMOVE_VARIANT_FOOD_PACK_ID,
+    packName: 'SPOMOVE 색지각 음식',
+    subfolder: 'spomove_variant_food',
+    slotLabels: ['사과', '바나나', '빵', '케이크', '라면', '피자', '밥', '햄버거'],
+    intro: '음식 테마 이미지 8슬롯입니다. 업로드·반영 방식은 탈 것 탭과 동일합니다.',
+  },
 };
 
 /** Asset Hub 색지각 — 6개 섹션 (1: 테마·미리보기, 2~6: 자산 편집) */
@@ -93,9 +103,10 @@ export const SPOMOVE_COLOR_HUB_SECTIONS: {
   { id: 'emotion', tabLabel: '4. 감정' },
   { id: 'animal', tabLabel: '5. 동물' },
   { id: 'nature', tabLabel: '6. 자연물' },
+  { id: 'food', tabLabel: '7. 음식' },
 ];
 
 export function parseStoredVariantTheme(raw: string | null): SpomoveColorThemeId {
-  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'emotion' || raw === 'animal' || raw === 'nature') return raw;
+  if (raw === 'color' || raw === 'fruit' || raw === 'vehicle' || raw === 'emotion' || raw === 'animal' || raw === 'nature' || raw === 'food') return raw;
   return 'color';
 }

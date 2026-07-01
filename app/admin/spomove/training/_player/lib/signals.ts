@@ -545,37 +545,43 @@ export function generateSignal(
           voice: null,
         };
       }
-      // n === 3: 각 셀에 단일 발 또는 단일 손만 (양발/양손 없음)
+      // n === 3: 4개 단일 동작 셔플 후 3개 선택 — 같은 신체 부위 중복 방지
       const [c1, c2, c3] = picked as [ColorItem, ColorItem, ColorItem];
-      const singleAct = (): BodyActionId => (Math.random() < 0.5 ? randomSingleFoot() : randomSingleHand());
+      const [a1, a2, a3] = fisherYates<BodyActionId>(['rightFoot', 'leftFoot', 'rightHand', 'leftHand']) as [BodyActionId, BodyActionId, BodyActionId];
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: [makeQuadCell(c1, singleAct()), makeQuadCell(c2, singleAct()), makeQuadCell(c3, singleAct())] },
+        content: { cells: [makeQuadCell(c1, a1), makeQuadCell(c2, a2), makeQuadCell(c3, a3)] },
         voice: null,
       };
     }
 
     // level 10: 변형 사분할 4단계 — 3개 색상, 발 합계 ≤ 2 & 손 합계 ≤ 2
-    // 유효 패턴: A) 한발×2 + (한손 또는 두손)×1  B) 한손×2 + (한발 또는 두발)×1
+    // 유효 패턴: A) 오른발+왼발 + singleton 손  B) 오른손+왼손 + singleton 발
     if (level === 10) {
       const [c1, c2, c3] = pickN(activeColors.length >= 3 ? activeColors : COLORS, 3) as [ColorItem, ColorItem, ColorItem];
-      const colors = [c1, c2, c3];
+      const colorList = [c1, c2, c3];
       const singletonIdx = Math.floor(Math.random() * 3);
       const patternA = Math.random() < 0.5;
-      const actions: BodyActionId[] = colors.map((_, i) => {
-        if (patternA) {
-          // 한발×2 + singleton 손
-          return i === singletonIdx ? randomHand() : randomSingleFoot();
-        } else {
-          // 한손×2 + singleton 발
-          return i === singletonIdx ? randomFoot() : randomSingleHand();
-        }
-      });
+      const otherIdxs = [0, 1, 2].filter(i => i !== singletonIdx) as [number, number];
+      const actions: BodyActionId[] = new Array(3) as BodyActionId[];
+      if (patternA) {
+        // 오른발+왼발 (순서 무작위) + singleton 손 — 같은 발 중복 방지
+        const [f1, f2] = fisherYates<BodyActionId>(['rightFoot', 'leftFoot']);
+        actions[singletonIdx] = randomHand();
+        actions[otherIdxs[0]] = f1!;
+        actions[otherIdxs[1]] = f2!;
+      } else {
+        // 오른손+왼손 (순서 무작위) + singleton 발 — 같은 손 중복 방지
+        const [h1, h2] = fisherYates<BodyActionId>(['rightHand', 'leftHand']);
+        actions[singletonIdx] = randomFoot();
+        actions[otherIdxs[0]] = h1!;
+        actions[otherIdxs[1]] = h2!;
+      }
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: colors.map((c, i) => makeQuadCell(c, actions[i]!)) },
+        content: { cells: colorList.map((c, i) => makeQuadCell(c, actions[i]!)) },
         voice: null,
       };
     }

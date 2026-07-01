@@ -17,7 +17,7 @@ export type TossBillingPaymentResult = {
 function getTossSecretKey(): string | null {
   const secretKey = process.env.TOSS_SECRET_KEY?.trim();
   if (!secretKey) return null;
-  if (!secretKey.startsWith('test_')) return null;
+  if (!secretKey.startsWith('test_') && !secretKey.startsWith('live_')) return null;
   return secretKey;
 }
 

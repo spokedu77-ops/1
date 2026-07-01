@@ -197,6 +197,8 @@ type LaunchSettings = {
   reactTrainConcurrent: 1 | 2 | 3;
   /** 반응 인지 11번 색상 릴레이: 세트당 색상 수 */
   relayCount: 2 | 3 | 4;
+  /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
+  bodyLabelMode: 'easy' | 'hard';
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -218,6 +220,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowVisualVariant: 'classic',
   reactTrainConcurrent: 1,
   relayCount: 2,
+  bodyLabelMode: 'hard',
 };
 
 function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
@@ -240,6 +243,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowVisualVariant: auto.flowVisualVariant === 'plus' ? 'plus' : fallback.flowVisualVariant ?? 'classic',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
     relayCount: (auto.relayCount as 2 | 3 | 4 | undefined) ?? fallback.relayCount,
+    bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
   };
 }
 
@@ -309,6 +313,7 @@ function TrainingPortal({
     flowVisualVariant: launch.flowVisualVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
     relayCount: launch.relayCount,
+    bodyLabelMode: launch.bodyLabelMode,
   };
 
   return createPortal(
@@ -1219,6 +1224,48 @@ function SettingsScreen({
                   })}
                 </div>
               )}
+            </section>
+          ) : null}
+
+          {/* 변형 사분할 Easy/Hard 라벨 표시 */}
+          {modeId === 'basic' && (levelId === 7 || levelId === 8 || levelId === 9 || levelId === 10) ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>라벨 표시</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  이미지 아래에 왼발·오른손 등 글자를 표시할지 설정합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {(['easy', 'hard'] as const).map((mode) => {
+                  const active = launch.bodyLabelMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, bodyLabelMode: mode }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {active ? '✓ ' : ''}{mode === 'easy' ? 'Easy' : 'Hard'}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {mode === 'easy' ? '글자 숨김' : '글자 표시'}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 

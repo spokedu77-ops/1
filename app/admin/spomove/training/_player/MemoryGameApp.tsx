@@ -183,6 +183,8 @@ export type MemoryGameAutoLaunch = {
   reactTrainConcurrent?: 1 | 2 | 3;
   /** 반응 인지 11번 색상 릴레이: 세트당 색상 수 */
   relayCount?: 2 | 3 | 4;
+  /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
+  bodyLabelMode?: 'easy' | 'hard';
 };
 
 /** Training 포털 복귀 시 설정 화면에 되돌릴 실행 세션 정보 */
@@ -268,6 +270,7 @@ export default function MemoryGameApp({
   const [isOffline, setIsOffline] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [showVariantAppendix, setShowVariantAppendix] = useState(false);
+  const [bodyLabelMode, setBodyLabelMode] = useState<'easy' | 'hard'>(autoLaunch?.bodyLabelMode ?? 'hard');
 
   const [isTraining, setIsTraining] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -401,6 +404,12 @@ export default function MemoryGameApp({
   /** 변형 색지각(basic 3·4·5·6번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
     () => settings.mode === 'basic' && (settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
+    [settings.mode, settings.level]
+  );
+
+  /** 변형 사분할(basic 7·8·9·10번): 신체 동작 이미지 표시 레벨 */
+  const quadBodyLevel = useMemo(
+    () => settings.mode === 'basic' && (settings.level === 7 || settings.level === 8 || settings.level === 9 || settings.level === 10),
     [settings.mode, settings.level]
   );
 
@@ -1515,6 +1524,39 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 )}
+                {quadBodyLevel && (
+                  <div style={S.sec}>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>라벨 표시</div>
+                    <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
+                      이미지 아래에 왼발·오른손 등 글자를 표시할지 설정합니다.
+                    </p>
+                    <div style={{ display: 'flex', gap: '0.45rem' }}>
+                      {(['easy', 'hard'] as const).map((mode) => {
+                        const active = bodyLabelMode === mode;
+                        return (
+                          <button
+                            key={mode}
+                            type="button"
+                            onClick={() => setBodyLabelMode(mode)}
+                            style={{
+                              padding: '0.55rem 1.1rem',
+                              borderRadius: '0.75rem',
+                              border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                              background: active ? `${M.accent}12` : 'var(--card)',
+                              color: active ? M.accent : 'var(--text)',
+                              fontWeight: active ? 800 : 600,
+                              fontSize: '0.92rem',
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            {active ? '✓ ' : ''}{mode === 'easy' ? 'Easy (글자 숨김)' : 'Hard (글자 표시)'}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div style={S.sec}>
                   <button type="button" onClick={() => setAdvancedOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.65rem 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.96rem', fontWeight: 700, color: '#64748B' }}>
                     <span>{advancedOpen ? '▼' : '▶'}</span>
@@ -1850,6 +1892,45 @@ export default function MemoryGameApp({
             </div>
           </div>
         )}
+        {quadBodyLevel && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '1.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 20,
+              display: 'flex',
+              gap: '0.5rem',
+            }}
+          >
+            {(['easy', 'hard'] as const).map((mode) => {
+              const active = bodyLabelMode === mode;
+              return (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setBodyLabelMode(mode)}
+                  style={{
+                    padding: '0.4rem 0.9rem',
+                    borderRadius: '2rem',
+                    border: `2px solid ${active ? '#fff' : 'rgba(255,255,255,0.3)'}`,
+                    background: active ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.45)',
+                    backdropFilter: 'blur(10px)',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.6)',
+                    fontWeight: active ? 800 : 600,
+                    fontSize: 'clamp(0.72rem,2vw,0.88rem)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  {mode === 'easy' ? 'Easy' : 'Hard'}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {settings.intervalMode ? <><span style={{ color: intervalPhase === 'work' ? '#FCA5A5' : '#86EFAC' }}>{intervalPhase === 'work' ? '🔥' : '😮‍💨'}</span><span>{intervalLeft}초</span><span style={{ fontSize: '0.7rem', opacity: 0.6 }}>{intervalSet}/{settings.intervalSets}세트</span></> : settings.timeMode === 'time' ? <><span style={{ color: '#FCA5A5' }}>⏱</span> {stats.timeLeft}초</> : <><span style={{ color: '#86EFAC' }}>🎯</span> {stats.repsLeft}회</>}
@@ -1871,7 +1952,7 @@ export default function MemoryGameApp({
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0 }}>
-          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '2rem', fontWeight: 700 }}>준비하세요</div>}
+          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} bodyLabelMode={quadBodyLevel ? bodyLabelMode : undefined} /> : <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#475569', fontSize: '2rem', fontWeight: 700 }}>준비하세요</div>}
           {dupFlashVisible && countdown === null ? (
             <div
               key={dupFlashNonce}

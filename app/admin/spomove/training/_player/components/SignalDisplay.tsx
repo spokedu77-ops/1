@@ -37,9 +37,11 @@ function VariantFruitImg({ slide }: { slide: FruitSlide }) {
 export const SignalDisplay = React.memo(function SignalDisplay({
   signal,
   animKey,
+  bodyLabelMode = 'hard',
 }: {
   signal: Record<string, unknown> | null;
   animKey: number;
+  bodyLabelMode?: 'easy' | 'hard';
 }) {
   if (!signal) return null;
   const type = signal.type as string;
@@ -233,25 +235,25 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                           height: '58%',
                           minWidth: 0,
                           minHeight: 0,
-                          filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
                         }}
                         aria-label={label}
                       >
                         <BodyActionIcon actionId={bodyActionId} />
                       </div>
-                      <span
-                        style={{
-                          fontSize: 'clamp(11px, 2.6vmin, 22px)',
-                          fontWeight: 800,
-                          color: 'rgba(255,255,255,0.95)',
-                          letterSpacing: '0.04em',
-                          lineHeight: 1,
-                          textShadow: '0 1px 4px rgba(0,0,0,0.5)',
-                          userSelect: 'none',
-                        }}
-                      >
-                        {label}
-                      </span>
+                      {bodyLabelMode !== 'easy' && (
+                        <span
+                          style={{
+                            fontSize: 'clamp(16px, 3.8vmin, 32px)',
+                            fontWeight: 800,
+                            color: '#000',
+                            letterSpacing: '0.04em',
+                            lineHeight: 1,
+                            userSelect: 'none',
+                          }}
+                        >
+                          {label}
+                        </span>
+                      )}
                       <span className="sr-only">{label}</span>
                     </>
                   ) : null}

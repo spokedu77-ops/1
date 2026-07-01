@@ -75,7 +75,7 @@ async function verifyTossPayment(
   options: { expectedStatus?: string | null } = {},
 ): Promise<VerifiedTossPayment | null> {
   const tossSecretKey = process.env.TOSS_SECRET_KEY?.trim();
-  if (!tossSecretKey || !tossSecretKey.startsWith('test_')) {
+  if (!tossSecretKey || (!tossSecretKey.startsWith('test_') && !tossSecretKey.startsWith('live_'))) {
     throw new Error('TOSS_SECRET_KEY_NOT_CONFIGURED');
   }
 

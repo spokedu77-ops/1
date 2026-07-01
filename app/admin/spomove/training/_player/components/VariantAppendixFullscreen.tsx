@@ -19,7 +19,7 @@ const MUTED = 'rgba(255,255,255,0.38)';
 const ACCENT = '#3B82F6';
 
 type AppendixTheme = Exclude<SpomoveColorThemeId, 'color'>;
-const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'vehicle', 'emotion', 'animal', 'nature'];
+const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'vehicle', 'emotion', 'animal', 'nature', 'food'];
 
 function getDefaultLabels(theme: AppendixTheme): string[] {
   if (theme === 'fruit') return [...VARIANT_FRUIT_SLOT_LABELS];

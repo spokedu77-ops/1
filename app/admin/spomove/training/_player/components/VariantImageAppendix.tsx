@@ -11,7 +11,7 @@ import { VARIANT_FRUIT_SLOT_LABELS } from '../lib/variantFruitAssets';
 
 type AppendixTheme = Exclude<SpomoveColorThemeId, 'color'>;
 
-const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'vehicle', 'emotion', 'animal', 'nature'];
+const APPENDIX_THEMES: AppendixTheme[] = ['fruit', 'vehicle', 'emotion', 'animal', 'nature', 'food'];
 
 function getSlotLabels(theme: AppendixTheme): readonly string[] {
   if (theme === 'fruit') return VARIANT_FRUIT_SLOT_LABELS;

@@ -98,6 +98,7 @@ export function SpomoveColorPerceptionPanel() {
       {section === 'emotion' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.emotion} />}
       {section === 'animal' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.animal} />}
       {section === 'nature' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.nature} />}
+      {section === 'food' && <SpomoveVariantThemedSlotsPanel def={SPOMOVE_THEMED_PACK_BY_THEME.food} />}
     </div>
   );
 }

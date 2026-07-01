@@ -46,6 +46,7 @@ export function BodyActionIcon({
         display: 'block',
         userSelect: 'none',
         pointerEvents: 'none',
+        mixBlendMode: 'multiply',
         ...style,
       }}
     />

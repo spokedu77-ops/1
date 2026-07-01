@@ -36,11 +36,13 @@ BEGIN
     RETURN;
   END IF;
 
-  PERFORM net.http_get(
+  PERFORM net.http_post(
     url := trim(v_renew_url),
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || trim(v_cron_secret)
+      'Authorization', 'Bearer ' || trim(v_cron_secret),
+      'Content-Type', 'application/json'
     ),
+    body := '{}'::jsonb,
     timeout_milliseconds := 30000
   );
 EXCEPTION
