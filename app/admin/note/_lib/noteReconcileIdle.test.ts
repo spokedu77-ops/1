@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   NOTE_RECONCILE_IDLE_MS,
+  NOTE_RECONCILE_REMOTE_MS,
   bumpNoteReconcileIdle,
   cancelNoteReconcileIdle,
   registerNoteReconcileIdleHandler,
+  scheduleNoteReconcileRemote,
 } from './noteReconcileIdle';
 
 describe('noteReconcileIdle', () => {
@@ -47,5 +49,31 @@ describe('noteReconcileIdle', () => {
     cancelNoteReconcileIdle();
     vi.advanceTimersByTime(NOTE_RECONCILE_IDLE_MS);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('runs realtime invalidation faster than normal idle reconcile', () => {
+    const handler = vi.fn();
+    registerNoteReconcileIdleHandler(handler);
+    scheduleNoteReconcileRemote('doc-a');
+
+    vi.advanceTimersByTime(NOTE_RECONCILE_REMOTE_MS - 1);
+    expect(handler).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith('doc-a');
+  });
+
+  it('coalesces repeated realtime invalidations', () => {
+    const handler = vi.fn();
+    registerNoteReconcileIdleHandler(handler);
+    scheduleNoteReconcileRemote('doc-a');
+    vi.advanceTimersByTime(NOTE_RECONCILE_REMOTE_MS - 100);
+    scheduleNoteReconcileRemote('doc-a');
+    vi.advanceTimersByTime(NOTE_RECONCILE_REMOTE_MS - 100);
+    expect(handler).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(100);
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 });

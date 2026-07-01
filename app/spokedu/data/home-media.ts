@@ -47,7 +47,14 @@ export const HOME_MEDIA = {
     label: 'SPOMOVE 단체 수업',
     fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
     tone: 'indigo',
-    objectPosition: '50% 36%',
+    objectPosition: '50% 82%',
+  }),
+  homeHeroWide: fromPhoto(SPOKEDU_IMAGES.records.dongjak, {
+    id: 'home-hero-wide',
+    label: 'SPOMOVE 기관 수업',
+    fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
+    tone: 'indigo',
+    objectPosition: '50% 48%',
   }),
   heroThumbMedia: fromPhoto(SPOKEDU_IMAGES.home.heroMedia, {
     id: 'hero-thumb-media',
@@ -61,12 +68,21 @@ export const HOME_MEDIA = {
     label: '개인·소그룹',
     fallbackGradient: 'from-violet-500 via-indigo-600 to-slate-800',
     tone: 'violet',
+    objectPosition: '50% 42%',
+  }),
+  trackSmallGroup: fromPhoto(SPOKEDU_IMAGES.private.smallGroup, {
+    id: 'track-small-group',
+    label: '소그룹 수업',
+    fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '50% 38%',
   }),
   trackDispatch: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
     id: 'track-dispatch',
     label: '기관 파견',
     fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
     tone: 'sky',
+    objectPosition: '50% 65%',
   }),
   trackCurriculum: fromPhoto(SPOKEDU_IMAGES.curriculum.lessonPlan, {
     id: 'track-curriculum',
@@ -85,18 +101,21 @@ export const HOME_MEDIA = {
     label: 'SPOMOVE',
     fallbackGradient: 'from-sky-400 via-blue-600 to-indigo-950',
     tone: 'sky',
+    objectPosition: '50% 48%',
   }),
   proofYangcheon: fromPhoto(SPOKEDU_IMAGES.records.yangcheon, {
     id: 'proof-yangcheon',
     label: '양천 SPOMOVE',
     fallbackGradient: 'from-sky-400 via-blue-600 to-indigo-950',
     tone: 'sky',
+    objectPosition: '50% 22%',
   }),
   proofDongjak: fromPhoto(SPOKEDU_IMAGES.records.dongjak, {
     id: 'proof-dongjak',
     label: '동작 SPOMOVE',
     fallbackGradient: 'from-cyan-400 via-teal-600 to-slate-900',
     tone: 'sky',
+    objectPosition: '50% 58%',
   }),
   proofDasarang: fromPhoto(SPOKEDU_IMAGES.records.dasarang, {
     id: 'proof-dasarang',
@@ -109,12 +128,14 @@ export const HOME_MEDIA = {
     label: '기관 수업',
     fallbackGradient: 'from-cyan-400 via-teal-600 to-slate-900',
     tone: 'sky',
+    objectPosition: '50% 52%',
   }),
   proofCommunity: fromPhoto(SPOKEDU_IMAGES.dispatch.oneDayEvent, {
     id: 'proof-community',
     label: '원데이',
     fallbackGradient: 'from-lime-400 via-emerald-600 to-slate-900',
     tone: 'lime',
+    objectPosition: '50% 62%',
   }),
   proofLounge: fromPhoto(SPOKEDU_IMAGES.records.playz, {
     id: 'proof-lounge',
@@ -127,6 +148,7 @@ export const HOME_MEDIA = {
     label: '강사 교육',
     fallbackGradient: 'from-emerald-500 via-teal-700 to-slate-900',
     tone: 'lime',
+    objectPosition: '50% 38%',
   }),
   proofEvent: fromPhoto(SPOKEDU_IMAGES.dispatch.oneDayEvent, {
     id: 'proof-event',
@@ -146,6 +168,7 @@ export const HOME_MEDIA = {
     label: 'SPOMOVE',
     fallbackGradient: 'from-fuchsia-500 via-violet-700 to-slate-900',
     tone: 'violet',
+    objectPosition: '50% 45%',
   }),
   programPaps: fromPhoto(SPOKEDU_IMAGES.programs.paps, {
     id: 'program-paps',

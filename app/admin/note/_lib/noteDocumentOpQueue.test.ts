@@ -113,6 +113,7 @@ describe('NoteDocumentOpQueue', () => {
   it('creates block and normalizes sibling orders in one transaction', async () => {
     const blocks = new Map<string, NoteBlock>([
       ['a', { ...baseBlock('a', 'a', 2), order_index: 0 }],
+      ['child', { ...baseBlock('child', 'child', 7), parent_block_id: 'a' }],
     ]);
     const created: NoteBlock = {
       ...baseBlock('new-1', '', 1),
@@ -136,6 +137,7 @@ describe('NoteDocumentOpQueue', () => {
 
     const result = await queue.enqueueCreateBlock({
       type: 'createBlock',
+      id: 'client-new-1',
       documentId: 'doc-1',
       blockType: 'text',
       content: { text: '' },
@@ -144,12 +146,26 @@ describe('NoteDocumentOpQueue', () => {
       normalizeOrders: [
         { id: 'a', order_index: 0 },
       ],
+      transactionUpdates: [
+        { id: 'child', parent_block_id: 'client-new-1', order_index: 0 },
+      ],
     });
 
     expect(result.id).toBe('new-1');
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0][0]).toBe('/api/admin/note/blocks/transaction');
     expect(String((fetchMock.mock.calls[0][1] as RequestInit).method)).toBe('POST');
+    const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    expect(body.creates[0]).toEqual(expect.objectContaining({ id: 'client-new-1' }));
+    expect(body.updates).toEqual([
+      expect.objectContaining({ id: 'a', order_index: 0, expected_version: 2 }),
+      expect.objectContaining({
+        id: 'child',
+        parent_block_id: 'client-new-1',
+        order_index: 0,
+        expected_version: 7,
+      }),
+    ]);
     expect(triggerSave).toHaveBeenCalledOnce();
   });
 
@@ -190,6 +206,53 @@ describe('NoteDocumentOpQueue', () => {
       expect.objectContaining({ id: 'root', document_id: 'doc-2', expected_version: 2 }),
       expect.objectContaining({ id: 'child', document_id: 'doc-2', expected_version: 5 }),
     ]);
+  });
+
+  it('retries block transactions after version conflict without surfacing a blocking error', async () => {
+    const blocks = new Map([
+      ['root', { ...baseBlock('root', 'a', 2), parent_block_id: null }],
+    ]);
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{
+            id: 'root',
+            version: 4,
+            updated_at: '2026-02-01T00:00:00Z',
+          }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: [{ id: 'root', version: 5, updated_at: '2026-02-01T00:00:01Z' }],
+        }),
+        { status: 200 },
+      ));
+    const onError = vi.fn();
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => blocks.get(id),
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      onError,
+    });
+
+    await queue.enqueue({
+      type: 'blockTransaction',
+      patches: [{ id: 'root', order_index: 1 }],
+      deleteIds: [],
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const retryBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
+    expect(retryBody.updates[0]).toEqual(expect.objectContaining({
+      id: 'root',
+      order_index: 1,
+      expected_version: 4,
+    }));
+    expect(onError).not.toHaveBeenCalled();
   });
 
   it('restores block from trash via POST', async () => {

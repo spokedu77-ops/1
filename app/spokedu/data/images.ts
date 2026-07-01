@@ -83,6 +83,12 @@ export const SPOKEDU_IMAGES = {
       'KBS 슈돌 방송 — 스포키듀 신체 측정 프로그램 현장',
     ),
     dispatchScene: defineImage('home', 'home-dispatch', 'home-dispatch-scene.jpg', '기관 파견 체육수업 현장 장면'),
+    heroMovement: defineImage(
+      'home',
+      'home-hero-movement',
+      'home-hero-movement.png',
+      '아동·청소년 체육수업 현장 — 지도자와 참여 활동',
+    ),
   },
   private: {
     oneToOne: defineImage(

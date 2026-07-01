@@ -3,7 +3,19 @@
 import { FormEvent, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { brandContactLinks, brandProfile, type ContactInquiryType } from '../data/site';
-import { contactPageContent, contactTypeOptions } from './contact-page-data';
+import {
+  CONTACT_API_FAILURE_MESSAGE,
+  CONTACT_SUCCESS_MESSAGE,
+  contactPageContent,
+  contactTypeOptions,
+} from './contact-page-data';
+import { ContactFallback } from './contact-fallback';
+import {
+  clearStoredInquiryDraft,
+  loadStoredInquiryDraft,
+  migrateLegacyInquiryStorage,
+  type StoredInquiryDraft,
+} from './inquiry-draft';
 import { submitInquiry } from './inquiry-submit';
 import { btnPrimary, cardInteractive, fineHover } from '../lib/ui-classes';
 import type {
@@ -12,10 +24,15 @@ import type {
   InquiryCommonFields,
   InquiryPayload,
   InquiryType,
+  OtherInquiryFields,
   PrivateInquiryFields,
+  SpomoveInquiryFields,
 } from './inquiry-types';
 
-type SubmitNotice = { kind: 'ok' | 'error'; text: string } | null;
+type SubmitNotice =
+  | { kind: 'ok'; text: string }
+  | { kind: 'error'; text: string; showFallback: boolean }
+  | null;
 
 const COMMON_DEFAULT: InquiryCommonFields = {
   name: '',
@@ -40,6 +57,8 @@ const DISPATCH_DEFAULT: DispatchInquiryFields = {
   preferredOperation: '',
 };
 
+const SPOMOVE_DEFAULT: SpomoveInquiryFields = { ...DISPATCH_DEFAULT };
+
 const CURRICULUM_DEFAULT: CurriculumInquiryFields = {
   ...COMMON_DEFAULT,
   nameOrOrg: '',
@@ -47,11 +66,17 @@ const CURRICULUM_DEFAULT: CurriculumInquiryFields = {
   utilizationTarget: '',
 };
 
+const OTHER_DEFAULT: OtherInquiryFields = {
+  ...COMMON_DEFAULT,
+  nameOrOrg: '',
+  collaborationPurpose: '',
+};
+
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
 const inputClass =
-  'min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
+  'min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
 
 const accentStyles = {
   violet: {
@@ -66,16 +91,25 @@ const accentStyles = {
     activeTitle: 'text-sky-950',
     cta: 'text-sky-700',
   },
+  cyan: {
+    badge: 'border border-cyan-200/80 bg-cyan-50/80 text-cyan-800',
+    activeBorder: 'border-cyan-300 bg-cyan-50/70 ring-1 ring-cyan-200/90',
+    activeTitle: 'text-cyan-950',
+    cta: 'text-cyan-700',
+  },
   teal: {
     badge: 'border border-teal-200/80 bg-teal-50/80 text-teal-800',
     activeBorder: 'border-teal-300 bg-teal-50/70 ring-1 ring-teal-200/90',
     activeTitle: 'text-teal-950',
     cta: 'text-teal-700',
   },
+  slate: {
+    badge: 'border border-slate-200/80 bg-slate-50/80 text-slate-800',
+    activeBorder: 'border-slate-300 bg-slate-50/70 ring-1 ring-slate-200/90',
+    activeTitle: 'text-slate-950',
+    cta: 'text-slate-700',
+  },
 } as const;
-
-const SUBMIT_ERROR_MESSAGE =
-  '문의 내용을 전송하는 중 일시적인 문제가 발생했습니다.\n잠시 후 다시 시도하시거나, 아래 전화·이메일로 직접 연락 주셔도 빠르게 안내드립니다.';
 
 function isInquiryType(value: string | null): value is InquiryType {
   return contactTypeOptions.some((option) => option.id === value);
@@ -101,7 +135,7 @@ function ContactSidebar() {
   const { sidebar } = contactPageContent;
 
   return (
-    <aside className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/60 p-5 shadow-sm shadow-slate-900/[0.04] sm:p-6 lg:sticky lg:top-24">
+    <aside className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 lg:sticky lg:top-24">
       <p className="text-base font-bold text-slate-950">{sidebar.title}</p>
       <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{sidebar.description}</p>
       <dl className="mt-5 space-y-4 border-t border-slate-100 pt-5 text-sm">
@@ -214,6 +248,139 @@ function CommonFields({
   );
 }
 
+function InstitutionFields({
+  values,
+  onChange,
+  title,
+}: {
+  values: DispatchInquiryFields | SpomoveInquiryFields;
+  onChange: (patch: Partial<DispatchInquiryFields>) => void;
+  title: string;
+}) {
+  return (
+    <div className="space-y-3 border-t border-slate-100 pt-4">
+      <p className="text-sm font-bold text-slate-900">{title}</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Field label="기관명" required>
+            <input
+              required
+              value={values.organizationName}
+              onChange={(e) => onChange({ organizationName: e.target.value })}
+              className={inputClass}
+            />
+          </Field>
+        </div>
+        <Field label="대상 연령" required>
+          <input
+            required
+            value={values.targetAge}
+            onChange={(e) => onChange({ targetAge: e.target.value })}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="예상 인원" required>
+          <input
+            required
+            value={values.expectedParticipants}
+            onChange={(e) => onChange({ expectedParticipants: e.target.value })}
+            className={inputClass}
+          />
+        </Field>
+        <div className="sm:col-span-2">
+          <Field label="희망 운영 형태" required>
+            <select
+              required
+              value={values.preferredOperation}
+              onChange={(e) => onChange({ preferredOperation: e.target.value })}
+              className={`${inputClass} bg-white`}
+            >
+              <option value="">선택해 주세요</option>
+              <option value="정규수업">정규수업</option>
+              <option value="원데이">원데이</option>
+              <option value="방학캠프">방학캠프</option>
+              <option value="SPOMOVE 도입">SPOMOVE 도입</option>
+              <option value="제안 요청">제안 요청</option>
+            </select>
+          </Field>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function applyPayloadToForms(payload: InquiryPayload, handlers: {
+  setPrivateForm: (v: PrivateInquiryFields) => void;
+  setDispatchForm: (v: DispatchInquiryFields) => void;
+  setSpomoveForm: (v: SpomoveInquiryFields) => void;
+  setCurriculumForm: (v: CurriculumInquiryFields) => void;
+  setOtherForm: (v: OtherInquiryFields) => void;
+}) {
+  if (payload.type === 'private') {
+    handlers.setPrivateForm({
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email,
+      preferredRegion: payload.preferredRegion,
+      message: payload.message,
+      childAge: payload.childAge,
+      preferredClassType: payload.preferredClassType,
+      preferredLocation: payload.preferredLocation,
+    });
+    return;
+  }
+  if (payload.type === 'dispatch') {
+    handlers.setDispatchForm({
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email,
+      preferredRegion: payload.preferredRegion,
+      message: payload.message,
+      organizationName: payload.organizationName,
+      targetAge: payload.targetAge,
+      expectedParticipants: payload.expectedParticipants,
+      preferredOperation: payload.preferredOperation,
+    });
+    return;
+  }
+  if (payload.type === 'spomove') {
+    handlers.setSpomoveForm({
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email,
+      preferredRegion: payload.preferredRegion,
+      message: payload.message,
+      organizationName: payload.organizationName,
+      targetAge: payload.targetAge,
+      expectedParticipants: payload.expectedParticipants,
+      preferredOperation: payload.preferredOperation,
+    });
+    return;
+  }
+  if (payload.type === 'curriculum') {
+    handlers.setCurriculumForm({
+      name: payload.name,
+      phone: payload.phone,
+      email: payload.email,
+      preferredRegion: payload.preferredRegion,
+      message: payload.message,
+      nameOrOrg: payload.nameOrOrg,
+      inquiryPurpose: payload.inquiryPurpose,
+      utilizationTarget: payload.utilizationTarget,
+    });
+    return;
+  }
+  handlers.setOtherForm({
+    name: payload.name,
+    phone: payload.phone,
+    email: payload.email,
+    preferredRegion: payload.preferredRegion,
+    message: payload.message,
+    nameOrOrg: payload.nameOrOrg,
+    collaborationPurpose: payload.collaborationPurpose,
+  });
+}
+
 export default function SpokeduContactForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -221,9 +388,18 @@ export default function SpokeduContactForm() {
   const [inquiryType, setInquiryType] = useState<InquiryType>('private');
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<SubmitNotice>(null);
+  const [storedDraft, setStoredDraft] = useState<StoredInquiryDraft | null>(null);
   const [privateForm, setPrivateForm] = useState<PrivateInquiryFields>(PRIVATE_DEFAULT);
   const [dispatchForm, setDispatchForm] = useState<DispatchInquiryFields>(DISPATCH_DEFAULT);
+  const [spomoveForm, setSpomoveForm] = useState<SpomoveInquiryFields>(SPOMOVE_DEFAULT);
   const [curriculumForm, setCurriculumForm] = useState<CurriculumInquiryFields>(CURRICULUM_DEFAULT);
+  const [otherForm, setOtherForm] = useState<OtherInquiryFields>(OTHER_DEFAULT);
+
+  useEffect(() => {
+    migrateLegacyInquiryStorage();
+    const draft = loadStoredInquiryDraft();
+    if (draft) setStoredDraft(draft);
+  }, []);
 
   useEffect(() => {
     const requestedType = searchParams.get('type');
@@ -292,13 +468,38 @@ export default function SpokeduContactForm() {
 
   function buildPayload(): InquiryPayload {
     const createdAt = new Date().toISOString();
-    if (inquiryType === 'private') {
-      return { type: 'private', createdAt, ...privateForm };
-    }
-    if (inquiryType === 'dispatch') {
-      return { type: 'dispatch', createdAt, ...dispatchForm };
-    }
-    return { type: 'curriculum', createdAt, ...curriculumForm };
+    if (inquiryType === 'private') return { type: 'private', createdAt, ...privateForm };
+    if (inquiryType === 'dispatch') return { type: 'dispatch', createdAt, ...dispatchForm };
+    if (inquiryType === 'spomove') return { type: 'spomove', createdAt, ...spomoveForm };
+    if (inquiryType === 'curriculum') return { type: 'curriculum', createdAt, ...curriculumForm };
+    return { type: 'other', createdAt, ...otherForm };
+  }
+
+  function resetFormForType(type: InquiryType) {
+    if (type === 'private') setPrivateForm(PRIVATE_DEFAULT);
+    else if (type === 'dispatch') setDispatchForm(DISPATCH_DEFAULT);
+    else if (type === 'spomove') setSpomoveForm(SPOMOVE_DEFAULT);
+    else if (type === 'curriculum') setCurriculumForm(CURRICULUM_DEFAULT);
+    else setOtherForm(OTHER_DEFAULT);
+  }
+
+  function restoreDraft() {
+    if (!storedDraft) return;
+    setInquiryType(storedDraft.payload.type);
+    router.replace(`/spokedu/contact?type=${storedDraft.payload.type}`, { scroll: false });
+    applyPayloadToForms(storedDraft.payload, {
+      setPrivateForm,
+      setDispatchForm,
+      setSpomoveForm,
+      setCurriculumForm,
+      setOtherForm,
+    });
+    setNotice(null);
+  }
+
+  function discardDraft() {
+    clearStoredInquiryDraft();
+    setStoredDraft(null);
   }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -312,29 +513,25 @@ export default function SpokeduContactForm() {
       const payload = buildPayload();
       const result = await submitInquiry(payload);
 
-      if (inquiryType === 'private') {
-        setPrivateForm(PRIVATE_DEFAULT);
-      } else if (inquiryType === 'dispatch') {
-        setDispatchForm(DISPATCH_DEFAULT);
-      } else {
-        setCurriculumForm(CURRICULUM_DEFAULT);
-      }
-
-      setNotice({
-        kind: 'ok',
-        text: activeOption.successMessage,
-      });
-
-      if (result.mode === 'temp') {
+      if (!result.ok) {
+        setStoredDraft(loadStoredInquiryDraft());
         setNotice({
-          kind: 'ok',
-          text: `${activeOption.successMessage}\n\n접수 내용은 안전하게 저장되었으며, 담당자가 순차적으로 확인합니다.`,
+          kind: 'error',
+          text: CONTACT_API_FAILURE_MESSAGE,
+          showFallback: true,
         });
+        return;
       }
+
+      clearStoredInquiryDraft();
+      setStoredDraft(null);
+      resetFormForType(inquiryType);
+      setNotice({ kind: 'ok', text: CONTACT_SUCCESS_MESSAGE });
     } catch {
       setNotice({
         kind: 'error',
-        text: SUBMIT_ERROR_MESSAGE,
+        text: CONTACT_API_FAILURE_MESSAGE,
+        showFallback: true,
       });
     } finally {
       setSubmitting(false);
@@ -342,10 +539,49 @@ export default function SpokeduContactForm() {
   }
 
   const inquiryTypeLabel = activeOption.title;
+  const commonValues =
+    inquiryType === 'private'
+      ? privateForm
+      : inquiryType === 'dispatch'
+        ? dispatchForm
+        : inquiryType === 'spomove'
+          ? spomoveForm
+          : inquiryType === 'curriculum'
+            ? curriculumForm
+            : otherForm;
+
+  const onCommonChange = (patch: Partial<InquiryCommonFields>) => {
+    if (inquiryType === 'private') setPrivateForm((p) => ({ ...p, ...patch }));
+    else if (inquiryType === 'dispatch') setDispatchForm((p) => ({ ...p, ...patch }));
+    else if (inquiryType === 'spomove') setSpomoveForm((p) => ({ ...p, ...patch }));
+    else if (inquiryType === 'curriculum') setCurriculumForm((p) => ({ ...p, ...patch }));
+    else setOtherForm((p) => ({ ...p, ...patch }));
+  };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-12 lg:items-start lg:gap-8">
+    <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
       <div className="space-y-6 lg:col-span-8">
+        {storedDraft ? (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm text-amber-950">
+            <p className="font-semibold">임시 보관된 문의 내용이 있습니다.</p>
+            <p className="mt-1 leading-relaxed [word-break:keep-all]">
+              이전에 작성하신 내용이 브라우저에 보관되어 있습니다. 불러오거나 삭제할 수 있습니다.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={restoreDraft} className={`${btnPrimary} !w-auto px-4`}>
+                작성 내용 불러오기
+              </button>
+              <button
+                type="button"
+                onClick={discardDraft}
+                className="inline-flex min-h-11 items-center rounded-lg border border-amber-300 bg-white px-4 text-sm font-semibold text-amber-900"
+              >
+                임시 내용 삭제하기
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         <section id="contact-type-select" className="space-y-4">
           <div>
             <h2 className="text-lg font-bold tracking-tight text-slate-950 sm:text-xl">목적에 맞는 상담 흐름</h2>
@@ -353,7 +589,7 @@ export default function SpokeduContactForm() {
               아래에서 문의 유형을 선택하면 맞춤 입력 항목이 바로 표시됩니다.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {contactTypeOptions.map((option) => {
               const active = inquiryType === option.id;
               const accent = accentStyles[option.accent];
@@ -364,20 +600,16 @@ export default function SpokeduContactForm() {
                   data-track={`contact-${option.id}`}
                   data-track-label={option.selectTrackLabel}
                   onClick={() => selectType(option.id)}
-                  className={`flex h-full min-h-[10.75rem] flex-col rounded-2xl border p-4 text-left transition active:scale-[0.99] sm:min-h-[11.25rem] sm:p-5 ${cardInteractive} ${focusRing} ${
+                  className={`flex h-full min-h-[10.5rem] flex-col rounded-lg border p-4 text-left transition active:scale-[0.99] sm:p-5 ${cardInteractive} ${focusRing} ${
                     active
                       ? accent.activeBorder
-                      : `border-slate-200/90 bg-white shadow-sm ${fineHover}hover:border-slate-300 ${fineHover}hover:shadow-md`
+                      : `border-slate-200/90 bg-white ${fineHover}hover:border-slate-300`
                   }`}
                 >
-                  <span
-                    className={`inline-flex w-fit rounded-full px-2.5 py-1 text-xs font-bold tracking-wide ${accent.badge}`}
-                  >
+                  <span className={`inline-flex w-fit rounded-md px-2.5 py-1 text-xs font-bold tracking-wide ${accent.badge}`}>
                     {option.step}
                   </span>
-                  <p
-                    className={`mt-3 text-base font-bold leading-snug sm:text-[17px] ${active ? accent.activeTitle : 'text-slate-950'}`}
-                  >
+                  <p className={`mt-3 text-base font-bold leading-snug ${active ? accent.activeTitle : 'text-slate-950'}`}>
                     {option.title}
                   </p>
                   <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 line-clamp-3">{option.description}</p>
@@ -392,10 +624,7 @@ export default function SpokeduContactForm() {
         </section>
 
         <div ref={formRef}>
-          <form
-            onSubmit={onSubmit}
-            className="space-y-5 rounded-2xl border border-slate-200/90 bg-white p-4 shadow-sm shadow-slate-900/[0.04] sm:p-5"
-          >
+          <form onSubmit={onSubmit} className="space-y-5 rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
             <div className="border-b border-slate-100 pb-3">
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600">상담 접수</p>
               <h3 className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">{activeOption.title}</h3>
@@ -403,27 +632,7 @@ export default function SpokeduContactForm() {
 
             <div className="space-y-3">
               <p className="text-sm font-bold text-slate-900">기본 정보</p>
-              {inquiryType === 'private' ? (
-                <CommonFields
-                  values={privateForm}
-                  inquiryTypeLabel={inquiryTypeLabel}
-                  onChange={(patch) => setPrivateForm((p) => ({ ...p, ...patch }))}
-                />
-              ) : null}
-              {inquiryType === 'dispatch' ? (
-                <CommonFields
-                  values={dispatchForm}
-                  inquiryTypeLabel={inquiryTypeLabel}
-                  onChange={(patch) => setDispatchForm((p) => ({ ...p, ...patch }))}
-                />
-              ) : null}
-              {inquiryType === 'curriculum' ? (
-                <CommonFields
-                  values={curriculumForm}
-                  inquiryTypeLabel={inquiryTypeLabel}
-                  onChange={(patch) => setCurriculumForm((p) => ({ ...p, ...patch }))}
-                />
-              ) : null}
+              <CommonFields values={commonValues} inquiryTypeLabel={inquiryTypeLabel} onChange={onCommonChange} />
             </div>
 
             {inquiryType === 'private' ? (
@@ -473,58 +682,24 @@ export default function SpokeduContactForm() {
             ) : null}
 
             {inquiryType === 'dispatch' ? (
-              <div className="space-y-3 border-t border-slate-100 pt-4">
-                <p className="text-sm font-bold text-slate-900">기관 프로그램 정보</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <Field label="기관명" required>
-                      <input
-                        required
-                        value={dispatchForm.organizationName}
-                        onChange={(e) => setDispatchForm((p) => ({ ...p, organizationName: e.target.value }))}
-                        className={inputClass}
-                      />
-                    </Field>
-                  </div>
-                  <Field label="대상 연령" required>
-                    <input
-                      required
-                      value={dispatchForm.targetAge}
-                      onChange={(e) => setDispatchForm((p) => ({ ...p, targetAge: e.target.value }))}
-                      className={inputClass}
-                    />
-                  </Field>
-                  <Field label="예상 인원" required>
-                    <input
-                      required
-                      value={dispatchForm.expectedParticipants}
-                      onChange={(e) => setDispatchForm((p) => ({ ...p, expectedParticipants: e.target.value }))}
-                      className={inputClass}
-                    />
-                  </Field>
-                  <div className="sm:col-span-2">
-                    <Field label="희망 운영 형태" required>
-                      <select
-                        required
-                        value={dispatchForm.preferredOperation}
-                        onChange={(e) => setDispatchForm((p) => ({ ...p, preferredOperation: e.target.value }))}
-                        className={`${inputClass} bg-white`}
-                      >
-                        <option value="">선택해 주세요</option>
-                        <option value="정규수업">정규수업</option>
-                        <option value="원데이">원데이</option>
-                        <option value="방학캠프">방학캠프</option>
-                        <option value="제안 요청">제안 요청</option>
-                      </select>
-                    </Field>
-                  </div>
-                </div>
-              </div>
+              <InstitutionFields
+                values={dispatchForm}
+                onChange={(patch) => setDispatchForm((p) => ({ ...p, ...patch }))}
+                title="기관 출강 정보"
+              />
+            ) : null}
+
+            {inquiryType === 'spomove' ? (
+              <InstitutionFields
+                values={spomoveForm}
+                onChange={(patch) => setSpomoveForm((p) => ({ ...p, ...patch }))}
+                title="SPOMOVE 도입 정보"
+              />
             ) : null}
 
             {inquiryType === 'curriculum' ? (
               <div className="space-y-3 border-t border-slate-100 pt-4">
-                <p className="text-sm font-bold text-slate-900">커리큘럼·콘텐츠 정보</p>
+                <p className="text-sm font-bold text-slate-900">커리큘럼·지도자 교육 정보</p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="sm:col-span-2">
                     <Field label="기관명 또는 소속" required>
@@ -546,7 +721,7 @@ export default function SpokeduContactForm() {
                       <option value="">선택해 주세요</option>
                       <option value="수업안">수업안</option>
                       <option value="매뉴얼">매뉴얼</option>
-                      <option value="강사교육">강사교육</option>
+                      <option value="지도자 교육">지도자 교육</option>
                       <option value="라이선싱">라이선싱</option>
                       <option value="기타">기타</option>
                     </select>
@@ -569,9 +744,38 @@ export default function SpokeduContactForm() {
               </div>
             ) : null}
 
+            {inquiryType === 'other' ? (
+              <div className="space-y-3 border-t border-slate-100 pt-4">
+                <p className="text-sm font-bold text-slate-900">협업 정보</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <Field label="기관명 또는 소속" required>
+                      <input
+                        required
+                        value={otherForm.nameOrOrg}
+                        onChange={(e) => setOtherForm((p) => ({ ...p, nameOrOrg: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Field label="협업 목적" required>
+                      <input
+                        required
+                        placeholder="예: 행사 협업, 미디어 제휴, 콘텐츠 협력"
+                        value={otherForm.collaborationPurpose}
+                        onChange={(e) => setOtherForm((p) => ({ ...p, collaborationPurpose: e.target.value }))}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             {notice ? (
               <div
-                className={`rounded-xl px-4 py-3.5 text-sm ${
+                className={`rounded-lg px-4 py-3.5 text-sm ${
                   notice.kind === 'ok'
                     ? 'border border-emerald-200 bg-emerald-50 text-emerald-900'
                     : 'border border-red-200 bg-red-50 text-red-900'
@@ -590,6 +794,15 @@ export default function SpokeduContactForm() {
                     다른 문의 유형으로 접수하기
                   </button>
                 ) : null}
+                {notice.kind === 'error' && notice.showFallback ? (
+                  <div className="mt-4 border-t border-red-200/60 pt-4">
+                    <ContactFallback
+                      title="다른 방법으로 문의하기"
+                      description="아래 연락처로 직접 문의하시거나 다시 시도해 주세요."
+                      onRetry={() => setNotice(null)}
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -600,7 +813,7 @@ export default function SpokeduContactForm() {
                   disabled={submitting}
                   data-track={`contact-submit-${inquiryType}`}
                   data-track-label={activeOption.submitTrackLabel}
-                  className={`${btnPrimary} w-full sm:w-full`}
+                  className={`${btnPrimary} w-full`}
                 >
                   {submitting ? '접수 중...' : '문의 접수하기'}
                 </button>
@@ -608,16 +821,10 @@ export default function SpokeduContactForm() {
             ) : null}
           </form>
         </div>
-
-        <div className="lg:hidden">
-          <ContactSidebar />
-        </div>
       </div>
 
       <div className="lg:col-span-4">
-        <div className="hidden lg:block">
-          <ContactSidebar />
-        </div>
+        <ContactSidebar />
       </div>
     </div>
   );

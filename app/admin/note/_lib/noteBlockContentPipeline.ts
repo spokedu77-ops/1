@@ -25,7 +25,11 @@ export type ApplyBlockContentChangeArgs = {
   blocksRef: MutableRefObject<NoteBlock[]>;
   setBlocks: Dispatch<SetStateAction<NoteBlock[]>>;
   recordContentUndoBeforeChange: (blockId: string) => void;
-  scheduleBlockContentSave: (blockId: string, content: unknown) => void;
+  scheduleBlockContentSave: (
+    blockId: string,
+    content: unknown,
+    baseContent?: Record<string, unknown>,
+  ) => void;
   onAfterChange?: () => void;
 };
 
@@ -64,7 +68,7 @@ export function applyBlockContentChange({
     item.id === block.id ? { ...item, content: nextRecord } : item,
   );
 
-  scheduleBlockContentSave(block.id, nextRecord);
+  scheduleBlockContentSave(block.id, nextRecord, prevRecord);
   onAfterChange?.();
 
   if (!contentChangeNeedsReactBlocks(prevRecord, nextRecord)) {

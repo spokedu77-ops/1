@@ -1,5 +1,4 @@
-import { Suspense } from 'react';
-import SpokeduContactForm from './contact-form';
+import ContactFormShell from './contact-form-shell';
 import { contactPageContent } from './contact-page-data';
 import { buildSpokeduMetadata } from '../data/seo';
 import { homeSectionEyebrow, koreanLineBreak, landingHeroShell, landingH1, landingPageStack, landingHeroSubtitle } from '../lib/ui-classes';
@@ -29,15 +28,7 @@ export default function SpokeduContactPage() {
         </div>
       </section>
 
-      <Suspense
-        fallback={
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 sm:p-6">
-            문의 폼을 불러오는 중입니다.
-          </div>
-        }
-      >
-        <SpokeduContactForm />
-      </Suspense>
+      <ContactFormShell />
     </div>
   );
 }

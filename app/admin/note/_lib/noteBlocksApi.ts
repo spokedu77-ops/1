@@ -9,6 +9,7 @@ export type NoteBlockFieldPatch = {
   id: string;
   type?: string;
   content?: unknown;
+  baseContent?: Record<string, unknown>;
   order_index?: number;
   parent_block_id?: string | null;
   document_id?: string;
@@ -24,11 +25,27 @@ export type NoteBlockVersionLookup = (
   id: string,
 ) => (Pick<NoteBlock, 'id' | 'version'> & Partial<Pick<NoteBlock, 'content'>>) | undefined;
 
+const MAX_VERSION_CONFLICT_RETRIES = 6;
+
 function contentRecordsEqual(left: unknown, right: unknown): boolean {
   return JSON.stringify(left ?? {}) === JSON.stringify(right ?? {});
 }
 
 /** 409 재시도 시 큐·스토어에 더 새로운 content가 있으면 반영 */
+function changedContentKeys(
+  base: Record<string, unknown>,
+  next: Record<string, unknown>,
+): string[] {
+  const keys = new Set([...Object.keys(base), ...Object.keys(next)]);
+  return [...keys].filter((key) => base[key] !== next[key]);
+}
+
+function stripLocalPatchMeta(patch: NoteBlockFieldPatch): NoteBlockFieldPatch {
+  const serverPatch = { ...patch };
+  delete serverPatch.baseContent;
+  return serverPatch;
+}
+
 function applyLiveContentOnConflictRetry(
   patch: NoteBlockFieldPatch,
   conflict: PatchedNoteBlock | undefined,
@@ -38,6 +55,19 @@ function applyLiveContentOnConflictRetry(
   const live = getLiveBlock(patch.id);
   const liveContent = live?.content;
   if (!liveContent || typeof liveContent !== 'object') return patch;
+  if (
+    patch.baseContent
+    && conflict?.content
+    && typeof conflict.content === 'object'
+  ) {
+    const intendedContent = liveContent as Record<string, unknown>;
+    const changedKeys = changedContentKeys(patch.baseContent, intendedContent);
+    const mergedContent = { ...(conflict.content as Record<string, unknown>) };
+    for (const key of changedKeys) {
+      mergedContent[key] = intendedContent[key];
+    }
+    return { ...patch, content: mergedContent };
+  }
   if (contentRecordsEqual(patch.content, liveContent)) return patch;
   if (conflict?.content && contentRecordsEqual(liveContent, conflict.content)) return patch;
   return { ...patch, content: liveContent };
@@ -112,7 +142,24 @@ function versionSourceForPatch(
   return getLiveBlock?.(patch.id);
 }
 
-/** 409 시 서버 version으로 1회 재시도 */
+/** 409 충돌은 최신 서버 version을 흡수한 뒤 같은 저장 의도를 반복 재시도한다. */
+function buildVersionedPatches(
+  patches: NoteBlockFieldPatch[],
+  getLiveBlock: NoteBlockVersionLookup | undefined,
+  conflictMap = new Map<string, PatchedNoteBlock>(),
+): NoteBlockFieldPatch[] {
+  return patches.map((patch) => {
+    const conflict = conflictMap.get(patch.id);
+    const resolvedPatch = conflictMap.size > 0
+      ? applyLiveContentOnConflictRetry(patch, conflict, getLiveBlock)
+      : patch;
+    return withExpectedVersion(
+      stripLocalPatchMeta(resolvedPatch),
+      versionSourceForPatch(resolvedPatch, getLiveBlock, conflictMap),
+    );
+  });
+}
+
 export async function patchNoteBlocksResolvingConflicts(
   updates: NoteBlockFieldPatch[],
   getLiveBlock?: NoteBlockVersionLookup,
@@ -122,25 +169,19 @@ export async function patchNoteBlocksResolvingConflicts(
   const patchChunk = async (
     chunk: NoteBlockFieldPatch[],
   ): Promise<PatchedNoteBlock[]> => {
-    const buildPatches = (conflictMap = new Map<string, PatchedNoteBlock>()) =>
-      chunk.map((patch) => {
-        const conflict = conflictMap.get(patch.id);
-        const resolvedPatch = conflictMap.size > 0
-          ? applyLiveContentOnConflictRetry(patch, conflict, getLiveBlock)
-          : patch;
-        return withExpectedVersion(
-          resolvedPatch,
-          versionSourceForPatch(resolvedPatch, getLiveBlock, conflictMap),
+    let conflictMap = new Map<string, PatchedNoteBlock>();
+    for (let attempt = 0; attempt <= MAX_VERSION_CONFLICT_RETRIES; attempt += 1) {
+      try {
+        return await patchNoteBlockBatch(
+          buildVersionedPatches(chunk, getLiveBlock, conflictMap),
         );
-      });
-
-    try {
-      return await patchNoteBlockBatch(buildPatches());
-    } catch (error) {
-      if (!(error instanceof NoteBlockVersionConflictError)) throw error;
-      const conflictMap = new Map(error.conflicts.map((block) => [block.id, block]));
-      return await patchNoteBlockBatch(buildPatches(conflictMap));
+      } catch (error) {
+        if (!(error instanceof NoteBlockVersionConflictError)) throw error;
+        if (attempt === MAX_VERSION_CONFLICT_RETRIES) throw error;
+        conflictMap = new Map(error.conflicts.map((block) => [block.id, block]));
+      }
     }
+    return [];
   };
 
   const patched: PatchedNoteBlock[] = [];
@@ -151,6 +192,7 @@ export async function patchNoteBlocksResolvingConflicts(
 }
 
 export type CreateNoteBlockPayload = {
+  id?: string;
   documentId: string;
   blockType: string;
   content: unknown;
@@ -189,11 +231,12 @@ async function patchNoteBlockBatch(
   if (updates.length > NOTE_BLOCK_PATCH_BATCH_MAX) {
     throw new Error(`Note block patch batch exceeds ${NOTE_BLOCK_PATCH_BATCH_MAX} updates.`);
   }
+  const serverUpdates = updates.map(stripLocalPatchMeta);
   const res = await fetch('/api/admin/note/blocks', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(updates.length === 1 ? updates[0] : { updates }),
+    body: JSON.stringify(serverUpdates.length === 1 ? serverUpdates[0] : { updates: serverUpdates }),
   });
   if (!res.ok) await parseApiError(res, '블록 저장 실패');
   const json = await res.json().catch(() => ({}));
@@ -244,16 +287,28 @@ export async function postNoteBlockTransaction(
   for (const update of updates) {
     merged.set(update.id, { ...merged.get(update.id), ...update });
   }
-  const versioned = [...merged.values()].map((patch) =>
-    withExpectedVersion(patch, getLiveBlock?.(patch.id)));
-  const res = await fetch('/api/admin/note/blocks/transaction', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ updates: versioned, deleteIds }),
-  });
-  if (!res.ok) await parseApiError(res, '블록 트랜잭션 저장 실패');
-  return parsePatchedBlocks(await res.json().catch(() => ({})));
+  const patches = [...merged.values()];
+  let conflictMap = new Map<string, PatchedNoteBlock>();
+  for (let attempt = 0; attempt <= MAX_VERSION_CONFLICT_RETRIES; attempt += 1) {
+    const res = await fetch('/api/admin/note/blocks/transaction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        updates: buildVersionedPatches(patches, getLiveBlock, conflictMap),
+        deleteIds,
+      }),
+    });
+    try {
+      if (!res.ok) await parseApiError(res, '블록 트랜잭션 저장 실패');
+      return parsePatchedBlocks(await res.json().catch(() => ({})));
+    } catch (error) {
+      if (!(error instanceof NoteBlockVersionConflictError)) throw error;
+      if (attempt === MAX_VERSION_CONFLICT_RETRIES) throw error;
+      conflictMap = new Map(error.conflicts.map((block) => [block.id, block]));
+    }
+  }
+  return [];
 }
 
 export async function postNoteBlockCreateTransaction(
@@ -261,35 +316,44 @@ export async function postNoteBlockCreateTransaction(
   updates: NoteBlockFieldPatch[],
   getLiveBlock?: NoteBlockVersionLookup,
 ): Promise<{ createdBlock: NoteBlock; patchedBlocks: PatchedNoteBlock[] }> {
-  const versioned = updates.map((patch) =>
-    withExpectedVersion(patch, getLiveBlock?.(patch.id)));
-  const res = await fetch('/api/admin/note/blocks/transaction', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({
-      updates: versioned,
-      deleteIds: [],
-      creates: [{
-        document_id: create.documentId,
-        parent_block_id: create.parent_block_id ?? null,
-        type: create.blockType,
-        order_index: create.order_index ?? 0,
-        content: create.content,
-      }],
-    }),
-  });
-  if (!res.ok) await parseApiError(res, '블록 생성 트랜잭션 실패');
-  const json = await res.json().catch(() => ({})) as {
-    blocks?: PatchedNoteBlock[];
-    createdBlocks?: NoteBlock[];
-  };
-  const createdBlock = json.createdBlocks?.[0];
-  if (!createdBlock?.id) throw new Error('생성된 블록 응답이 없습니다.');
-  return {
-    createdBlock: ensureNoteBlockVersion(createdBlock),
-    patchedBlocks: parsePatchedBlocks(json),
-  };
+  let conflictMap = new Map<string, PatchedNoteBlock>();
+  for (let attempt = 0; attempt <= MAX_VERSION_CONFLICT_RETRIES; attempt += 1) {
+    const res = await fetch('/api/admin/note/blocks/transaction', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        updates: buildVersionedPatches(updates, getLiveBlock, conflictMap),
+        deleteIds: [],
+        creates: [{
+          id: create.id,
+          document_id: create.documentId,
+          parent_block_id: create.parent_block_id ?? null,
+          type: create.blockType,
+          order_index: create.order_index ?? 0,
+          content: create.content,
+        }],
+      }),
+    });
+    try {
+      if (!res.ok) await parseApiError(res, '블록 생성 트랜잭션 실패');
+      const json = await res.json().catch(() => ({})) as {
+        blocks?: PatchedNoteBlock[];
+        createdBlocks?: NoteBlock[];
+      };
+      const createdBlock = json.createdBlocks?.[0];
+      if (!createdBlock?.id) throw new Error('생성된 블록 응답이 없습니다.');
+      return {
+        createdBlock: ensureNoteBlockVersion(createdBlock),
+        patchedBlocks: parsePatchedBlocks(json),
+      };
+    } catch (error) {
+      if (!(error instanceof NoteBlockVersionConflictError)) throw error;
+      if (attempt === MAX_VERSION_CONFLICT_RETRIES) throw error;
+      conflictMap = new Map(error.conflicts.map((block) => [block.id, block]));
+    }
+  }
+  throw new Error('생성된 블록 응답이 없습니다.');
 }
 
 export async function purgeNoteBlockFromTrash(id: string): Promise<void> {

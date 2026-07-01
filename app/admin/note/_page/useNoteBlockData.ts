@@ -23,6 +23,7 @@ import {
   cancelNoteReconcileIdle,
   registerNoteReconcileIdleHandler,
   scheduleNoteReconcileIdle,
+  scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import {
@@ -31,6 +32,7 @@ import {
 } from '../_lib/noteDocumentBlocksCache';
 import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
+import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import type { NoteBlock } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
@@ -111,6 +113,18 @@ export function useNoteBlockData(options: {
     reconcileLoadGenRef.current = loadGen;
     scheduleNoteReconcileIdle(documentId);
   }, []);
+
+  const handleRealtimeInvalidate = useCallback((documentId: string) => {
+    if (selectedId !== documentId) return;
+    reconcileDocumentIdRef.current = documentId;
+    reconcileLoadGenRef.current = blockLoadGenRef.current;
+    scheduleNoteReconcileRemote(documentId);
+  }, [selectedId]);
+
+  useNoteBlocksRealtimeInvalidation({
+    documentId: selectedId,
+    onInvalidate: handleRealtimeInvalidate,
+  });
 
   const runReconcileFetch = useCallback(async (
     documentId: string,

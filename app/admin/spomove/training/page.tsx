@@ -90,6 +90,11 @@ type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = '/teacher/spomove';
 
 function levelLabel(modeId: string, levelId: number): string {
+  if (modeId === 'basic') {
+    const m = MODES[modeId];
+    const idx = m?.levels.findIndex((lv) => lv.id === levelId) ?? -1;
+    if (idx >= 0) return `${idx + 1}번`;
+  }
   return `${levelId}번`;
 }
 
@@ -101,6 +106,7 @@ function modeLabelKoEn(modeId: string): string {
 
 const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Quad Color': '사분할 색상',
+  'Modified Quadrant': '변형 사분할',
   'Full-Screen Color': '전면 색상',
   'Variant Color (1)': '전면 2패널 (서로 다른 색)',
   'Variant Color (2)': '전면 3패널 (같은 색)',
@@ -189,6 +195,8 @@ type LaunchSettings = {
   flowVisualVariant: FlowVisualVariant;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
+  /** 반응 인지 11번 색상 릴레이: 세트당 색상 수 */
+  relayCount: 2 | 3 | 4;
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -209,6 +217,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowBgImageUrl: '',
   flowVisualVariant: 'classic',
   reactTrainConcurrent: 1,
+  relayCount: 2,
 };
 
 function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
@@ -230,6 +239,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowBgImageUrl: fallback.flowBgImageUrl,
     flowVisualVariant: auto.flowVisualVariant === 'plus' ? 'plus' : fallback.flowVisualVariant ?? 'classic',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
+    relayCount: (auto.relayCount as 2 | 3 | 4 | undefined) ?? fallback.relayCount,
   };
 }
 
@@ -298,6 +308,7 @@ function TrainingPortal({
     flowBgImageUrl: launch.flowBgImageUrl || undefined,
     flowVisualVariant: launch.flowVisualVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
+    relayCount: launch.relayCount,
   };
 
   return createPortal(
@@ -763,6 +774,52 @@ function SettingsScreen({
               <VariantAppendixFullscreen onClose={() => setShowVariantAppendix(false)} />
             )}
           </section>
+
+          {/* 반응 인지 11번 색상 릴레이: 릴레이 색상 수 */}
+          {modeId === 'basic' && levelId === 11 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>릴레이 색상 수</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  한 세트당 순서대로 나타나는 색상 수입니다. 세트가 끝나면 3초 후 다음 세트가 시작됩니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { v: 2 as const, label: '기본', sub: '2개' },
+                  { v: 3 as const, label: '3개', sub: '중급' },
+                  { v: 4 as const, label: '4개', sub: '고급' },
+                ] as const).map(({ v, label, sub }) => {
+                  const active = launch.relayCount === v;
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, relayCount: v }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
           {isReactTrain && levelId === 1 ? (

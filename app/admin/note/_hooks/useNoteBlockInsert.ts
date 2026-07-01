@@ -5,6 +5,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
 import {
+  buildInsertBlockAndReparentChildrenCommand,
   buildInsertBlockCommand,
   collectBlockTransactionIds,
 } from '../_lib/noteBlockCommands';
@@ -195,6 +196,41 @@ export function useNoteBlockInsert(options: {
     await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
   }, [blocksRef, handleCreateSubPage, insertBlockAmongSiblings, selectedId]);
 
+  const runPostCreateStructuralCommand = useCallback(async (
+    previousBlocks: NoteBlock[],
+    command: NoteBlockCommandResult,
+    options: {
+      focusBlockId: string;
+      focusPart: 'title' | 'editor';
+      logLabel: string;
+      errorMessage: string;
+      persistFieldPatches?: boolean;
+    },
+  ): Promise<boolean> => {
+    recordBlockTransactionUndo(previousBlocks, command.nextBlocks, command.affectedIds);
+    setBlocks(command.nextBlocks);
+    focusBlockEditor(options.focusBlockId, options.focusPart);
+    try {
+      if (options.persistFieldPatches !== false && command.fieldPatches.length > 0) {
+        await documentEngine.persistBlockTransaction(command.fieldPatches);
+      }
+      return true;
+    } catch (e) {
+      devLogger.error(options.logLabel, e);
+      setBlocks(previousBlocks);
+      setError(e instanceof Error ? e.message : options.errorMessage);
+      setLoadingState('idle');
+      return false;
+    }
+  }, [
+    documentEngine,
+    focusBlockEditor,
+    recordBlockTransactionUndo,
+    setBlocks,
+    setError,
+    setLoadingState,
+  ]);
+
   const handleSplitListBlockAfterWithChildren = useCallback(async (
     afterBlock: NoteBlock,
     type: NoteBlock['type'] = afterBlock.type,
@@ -222,41 +258,36 @@ export function useNoteBlockInsert(options: {
         id: sibling.id,
         order_index: index >= insertIndex ? index + 1 : index,
       }));
+      const createdBlockId = crypto.randomUUID();
+      const childPatches = directChildren.map((child, orderIndex) => ({
+        id: child.id,
+        parent_block_id: createdBlockId,
+        order_index: orderIndex,
+      }));
       const createdBlock = await documentEngine.persistCreateBlock({
+        id: createdBlockId,
         documentId: selectedId,
         blockType: type,
         content: content ?? defaultBlockContent(type),
         order_index: insertIndex,
         parent_block_id: parentId,
         normalizeOrders: normalizedExistingOrders,
+        transactionUpdates: childPatches,
       });
-      const insertCommand = buildInsertBlockCommand(
+      const command = buildInsertBlockAndReparentChildrenCommand(
         previousBlocks,
         createdBlock,
         parentId,
         insertIndex,
+        directChildren.map((child) => child.id),
       );
-      const childPatches = directChildren.map((child, index) => ({
-        id: child.id,
-        parent_block_id: createdBlock.id,
-        order_index: index,
-      }));
-      const childPatchById = new Map(childPatches.map((patch) => [patch.id, patch]));
-      const nextBlocks = insertCommand.nextBlocks.map((block) => {
-        const patch = childPatchById.get(block.id);
-        return patch
-          ? { ...block, parent_block_id: patch.parent_block_id, order_index: patch.order_index }
-          : block;
+      await runPostCreateStructuralCommand(previousBlocks, command, {
+        focusBlockId: createdBlock.id,
+        focusPart: type === 'toggle' ? 'title' : 'editor',
+        logLabel: '[Note] splitListBlockAfterWithChildren',
+        errorMessage: '리스트 분할 저장 실패',
+        persistFieldPatches: false,
       });
-      const affectedIds = [...new Set([
-        ...insertCommand.affectedIds,
-        createdBlock.id,
-        ...directChildren.map((child) => child.id),
-      ])];
-      recordBlockTransactionUndo(previousBlocks, nextBlocks, affectedIds);
-      setBlocks(nextBlocks);
-      focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
-      await documentEngine.persistBlockTransaction(childPatches);
     } catch (e) {
       devLogger.error('[Note] splitListBlockAfterWithChildren', e);
       setBlocks(previousBlocks);
@@ -266,9 +297,8 @@ export function useNoteBlockInsert(options: {
   }, [
     blocksRef,
     documentEngine,
-    focusBlockEditor,
     handleInsertBlockAfter,
-    recordBlockTransactionUndo,
+    runPostCreateStructuralCommand,
     selectedId,
     setBlocks,
     setError,

@@ -10,17 +10,26 @@ export type NoteDocumentOp =
 
 /** 서버에 순차 반영할 영속 연산 */
 export type NotePersistOp =
-  | { type: 'patchContent'; updates: Array<{ id: string; content: Record<string, unknown> }> }
+  | {
+    type: 'patchContent';
+    updates: Array<{
+      id: string;
+      content: Record<string, unknown>;
+      baseContent?: Record<string, unknown>;
+    }>;
+  }
   | { type: 'patchFields'; patches: NoteBlockFieldPatch[] }
   | { type: 'softDelete'; ids: string[] }
   | {
     type: 'createBlock';
+    id?: string;
     documentId: string;
     blockType: NoteBlock['type'];
     content: Record<string, unknown>;
     order_index?: number;
     parent_block_id: string | null;
     normalizeOrders?: Array<{ id: string; order_index: number }>;
+    transactionUpdates?: NoteBlockFieldPatch[];
   }
   | {
     type: 'blockTransaction';

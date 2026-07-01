@@ -21,7 +21,11 @@ import type { NoteBlock } from '../_lib/types';
 export type NoteDocumentEngineApi = {
   replaceBlocks: (blocks: NoteBlock[]) => void;
   updateContent: (blockId: string, content: Record<string, unknown>) => void;
-  scheduleContentPatch: (blockId: string, content: Record<string, unknown>) => void;
+  scheduleContentPatch: (
+    blockId: string,
+    content: Record<string, unknown>,
+    baseContent?: Record<string, unknown>,
+  ) => void;
   clearContentPatch: (blockId: string) => void;
   flushContentPatches: () => Promise<void>;
   flushPersistQueue: () => Promise<void>;
@@ -69,11 +73,6 @@ export function useNoteDocumentEngine(options: {
     setBlocks(next);
   }, [documentId, setBlocks]);
 
-  const applyLocalRef = useRef(applyLocal);
-  useLayoutEffect(() => {
-    applyLocalRef.current = applyLocal;
-  }, [applyLocal]);
-
   const applyServerVersions = useCallback((patched: PatchedNoteBlock[]) => {
     if (!documentId || patched.length === 0) return;
     const nextFromRef = applyServerBlockVersions(blocksRef.current, patched);
@@ -90,6 +89,31 @@ export function useNoteDocumentEngine(options: {
     applyServerVersionsRef.current = applyServerVersions;
   }, [applyServerVersions]);
 
+  const applyServerConflicts = useCallback((conflicts: NoteBlock[]) => {
+    if (!documentId || conflicts.length === 0) return;
+    const activeBlockId = useNoteBlockStore.getState().activeEditor?.blockId ?? null;
+    const nextFromRef = applyNoteDocumentOp(
+      createNoteDocumentEngineState(documentId, blocksRef.current),
+      { type: 'syncFromServer', blocks: conflicts },
+      { activeBlockId },
+    ).blocks;
+    blocksRef.current = nextFromRef;
+    setBlocks(nextFromRef);
+
+    const store = useNoteBlockStore.getState();
+    const nextStoreBlocks = applyNoteDocumentOp(
+      createNoteDocumentEngineState(documentId, store.getBlocksArray()),
+      { type: 'syncFromServer', blocks: conflicts },
+      { activeBlockId },
+    ).blocks;
+    store.syncBlocksStructure(nextStoreBlocks);
+  }, [blocksRef, documentId, setBlocks]);
+
+  const applyServerConflictsRef = useRef(applyServerConflicts);
+  useLayoutEffect(() => {
+    applyServerConflictsRef.current = applyServerConflicts;
+  }, [applyServerConflicts]);
+
   useEffect(() => {
     queueRef.current?.dispose();
     queueRef.current = null;
@@ -104,9 +128,7 @@ export function useNoteDocumentEngine(options: {
       triggerSave: () => triggerSaveRef.current(),
       onError: (error) => onErrorRef.current?.(error),
       onServerPatches: (patched) => applyServerVersionsRef.current(patched),
-      onServerConflicts: (conflicts) => {
-        applyLocalRef.current({ type: 'syncFromServer', blocks: conflicts });
-      },
+      onServerConflicts: (conflicts) => applyServerConflictsRef.current(conflicts),
     });
 
     return () => {
@@ -124,9 +146,13 @@ export function useNoteDocumentEngine(options: {
     applyLocal({ type: 'updateContent', blockId, content });
   }, [applyLocal]);
 
-  const scheduleContentPatch = useCallback((blockId: string, content: Record<string, unknown>) => {
+  const scheduleContentPatch = useCallback((
+    blockId: string,
+    content: Record<string, unknown>,
+    baseContent?: Record<string, unknown>,
+  ) => {
     useNoteBlockStore.getState().patchContent(blockId, content);
-    queueRef.current?.scheduleContentPatch(blockId, content);
+    queueRef.current?.scheduleContentPatch(blockId, content, baseContent);
     syncPendingFlag();
   }, [syncPendingFlag]);
 
@@ -168,12 +194,14 @@ export function useNoteDocumentEngine(options: {
     }
     return queueRef.current?.enqueueCreateBlock({
       type: 'createBlock',
+      id: args.id,
       documentId: args.documentId,
       blockType: args.blockType,
       content: args.content,
       order_index: args.order_index,
       parent_block_id: args.parent_block_id,
       normalizeOrders: args.normalizeOrders,
+      transactionUpdates: args.transactionUpdates,
     }) ?? Promise.reject(new Error('문서 엔진이 준비되지 않았습니다'));
   }, [documentId]);
 

@@ -88,6 +88,81 @@ describe('patchNoteBlocksResolvingConflicts', () => {
     expect(result[0].version).toBe(5);
   });
 
+  it('keeps absorbing newer server versions across repeated conflicts', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{ id: 'a', version: 4, updated_at: '2026-02-01T00:00:00Z' }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{ id: 'a', version: 5, updated_at: '2026-02-01T00:00:01Z' }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: [{ id: 'a', version: 6, updated_at: '2026-02-02T00:00:00Z' }],
+        }),
+        { status: 200 },
+      ));
+
+    await patchNoteBlocksResolvingConflicts(
+      [{ id: 'a', content: { text: 'local intent' } }],
+      () => ({ id: 'a', version: 3 }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const thirdBody = JSON.parse(String((fetchMock.mock.calls[2][1] as RequestInit).body));
+    expect(thirdBody.expected_version).toBe(5);
+  });
+
+  it('merges only locally changed content fields on conflict retry', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{
+            id: 'todo',
+            version: 4,
+            updated_at: '2026-02-01T00:00:00Z',
+            content: { text: 'server edited text', checked: false },
+          }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: [{ id: 'todo', version: 5, updated_at: '2026-02-02T00:00:00Z' }],
+        }),
+        { status: 200 },
+      ));
+
+    await patchNoteBlocksResolvingConflicts(
+      [{
+        id: 'todo',
+        content: { text: 'old text', checked: true },
+        baseContent: { text: 'old text', checked: false },
+      }],
+      () => ({ id: 'todo', version: 3, content: { text: 'old text', checked: true } }),
+    );
+
+    const initialBody = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+    const retryBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
+    expect(initialBody.baseContent).toBeUndefined();
+    expect(retryBody.content).toEqual({
+      text: 'server edited text',
+      checked: true,
+    });
+    expect(retryBody.baseContent).toBeUndefined();
+  });
+
   it('retries only the conflicting chunk when updates exceed the server limit', async () => {
     const updates = Array.from({ length: 201 }, (_, index) => ({
       id: `block-${index}`,
@@ -247,6 +322,38 @@ describe('postNoteBlockTransaction', () => {
       deleteIds: ['deleted'],
     });
   });
+
+  it('retries transaction updates with the server conflict version', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{ id: 'a', version: 4, updated_at: '2026-06-25T00:00:00Z' }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: [{ id: 'a', version: 5, updated_at: '2026-06-25T00:00:01Z' }],
+        }),
+        { status: 200 },
+      ));
+
+    await postNoteBlockTransaction(
+      [{ id: 'a', order_index: 2 }],
+      [],
+      () => ({ id: 'a', version: 3 }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const retryBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
+    expect(retryBody.updates[0]).toEqual(expect.objectContaining({
+      id: 'a',
+      order_index: 2,
+      expected_version: 4,
+    }));
+  });
 });
 
 describe('postNoteBlockCreateTransaction', () => {
@@ -272,6 +379,7 @@ describe('postNoteBlockCreateTransaction', () => {
 
     const result = await postNoteBlockCreateTransaction(
       {
+        id: 'client-new',
         documentId: 'doc',
         blockType: 'text',
         content: { text: '' },
@@ -289,12 +397,64 @@ describe('postNoteBlockCreateTransaction', () => {
       expected_version: 2,
     });
     expect(body.creates[0]).toEqual({
+      id: 'client-new',
       document_id: 'doc',
       parent_block_id: null,
       type: 'text',
       order_index: 0,
       content: { text: '' },
     });
+    expect(result.createdBlock.id).toBe('new');
+  });
+
+  it('retries create transaction before creating when sibling order version conflicts', async () => {
+    const fetchMock = vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          error: 'version_conflict',
+          conflicts: [{ id: 'a', version: 4, updated_at: '2026-06-25T00:00:00Z' }],
+        }),
+        { status: 409 },
+      ))
+      .mockResolvedValueOnce(new Response(
+        JSON.stringify({
+          ok: true,
+          blocks: [{ id: 'a', version: 5, updated_at: '2026-06-25T00:00:01Z' }],
+          createdBlocks: [{
+            id: 'new',
+            document_id: 'doc',
+            parent_block_id: null,
+            type: 'text',
+            order_index: 0,
+            content: { text: '' },
+            created_at: '2026-06-25T00:00:01Z',
+            updated_at: '2026-06-25T00:00:01Z',
+            version: 1,
+          }],
+        }),
+        { status: 200 },
+      ));
+
+    const result = await postNoteBlockCreateTransaction(
+      {
+        documentId: 'doc',
+        blockType: 'text',
+        content: { text: '' },
+        order_index: 0,
+        parent_block_id: null,
+      },
+      [{ id: 'a', order_index: 1 }],
+      () => ({ id: 'a', version: 3 }),
+    );
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    const retryBody = JSON.parse(String((fetchMock.mock.calls[1][1] as RequestInit).body));
+    expect(retryBody.updates[0]).toEqual(expect.objectContaining({
+      id: 'a',
+      order_index: 1,
+      expected_version: 4,
+    }));
+    expect(retryBody.creates).toHaveLength(1);
     expect(result.createdBlock.id).toBe('new');
   });
 });

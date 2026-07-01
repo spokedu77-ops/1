@@ -19,6 +19,8 @@ import {
 import { setNoteMergeSplitHint } from '../_lib/noteMergeSplitHint';
 import type { NoteBlock } from '../_lib/types';
 
+type MergeWithPreviousCommand = NonNullable<ReturnType<typeof buildMergeWithPreviousBlockCommand>>;
+
 export function useNoteBlockDelete(options: {
   blocksRef: React.MutableRefObject<NoteBlock[]>;
   setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
@@ -81,23 +83,24 @@ export function useNoteBlockDelete(options: {
     triggerSave();
   }, [docTab, loadTrashedBlocks, setMobileTab, setPendingDeleteUndo, triggerSave]);
 
-  const handleDeleteBlock = useCallback(async (
-    block: NoteBlock,
-    focusPrevious = false,
-    skipDeleteUndo = false,
-  ) => {
-    const prevBlocks = blocksRef.current;
-    const command = buildDeleteBlockForestCommand(prevBlocks, [block.id]);
-    if (command.affectedIds.length === 0) return;
+  const runDeleteForestCommand = useCallback(async (params: {
+    prevBlocks: NoteBlock[];
+    command: NoteBlockCommandResult;
+    skipDeleteUndo?: boolean;
+    deletedBlock?: NoteBlock | null;
+    emptyRootDocumentId?: string | null;
+    logLabel: string;
+  }) => {
+    const {
+      prevBlocks,
+      command,
+      skipDeleteUndo = false,
+      deletedBlock = null,
+      emptyRootDocumentId = null,
+      logLabel,
+    } = params;
+
     if (!skipDeleteUndo) recordBlockCommandUndo(prevBlocks, command);
-
-    if (focusPrevious) {
-      const siblings = filterSiblingBlocks(prevBlocks, block);
-      const sibIdx = siblings.findIndex((b) => b.id === block.id);
-      const nextFocus = siblings[sibIdx - 1]?.id ?? siblings[sibIdx + 1]?.id ?? null;
-      if (nextFocus) focusBlockEditor(nextFocus);
-    }
-
     documentEngine.replaceBlocks(command.nextBlocks);
 
     try {
@@ -106,105 +109,38 @@ export function useNoteBlockDelete(options: {
       });
       await finalizeBlockDelete({
         skipDeleteUndo,
-        deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
+        deletedBlock,
       });
       onAfterBlocksRemoved?.(command.removedBlocks, command.nextBlocks);
-      const rootsAfterDelete = sortRootBlocks(
-        command.nextBlocks.filter(
-          (b) => b.document_id === block.document_id && (b.parent_block_id ?? null) === null,
-        ),
-      );
-      if (rootsAfterDelete.length === 0) {
-        await ensureMinimumRootTextBlock();
+
+      if (emptyRootDocumentId) {
+        const rootsAfterDelete = sortRootBlocks(
+          command.nextBlocks.filter(
+            (b) => b.document_id === emptyRootDocumentId && (b.parent_block_id ?? null) === null,
+          ),
+        );
+        if (rootsAfterDelete.length === 0) {
+          await ensureMinimumRootTextBlock();
+        }
       }
     } catch (e) {
-      devLogger.error('[Note] deleteBlock', e);
+      devLogger.error(logLabel, e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
       documentEngine.replaceBlocks(prevBlocks);
     }
   }, [
-    blocksRef,
     documentEngine,
     ensureMinimumRootTextBlock,
     finalizeBlockDelete,
-    focusBlockEditor,
     onAfterBlocksRemoved,
     recordBlockCommandUndo,
     setError,
   ]);
 
-  const handleDeleteBlocks = useCallback(async (
-    blocksToDelete: NoteBlock[],
-    deleteOptions?: { skipDeleteUndo?: boolean; focusPrevious?: boolean },
+  const runMergeWithPreviousCommand = useCallback(async (
+    prevBlocks: NoteBlock[],
+    command: MergeWithPreviousCommand,
   ) => {
-    const targets = blocksToDelete.filter((block) =>
-      blocksRef.current.some((item) => item.id === block.id),
-    );
-    if (targets.length === 0) return;
-
-    if (targets.length === 1) {
-      await handleDeleteBlock(
-        targets[0],
-        deleteOptions?.focusPrevious ?? false,
-        deleteOptions?.skipDeleteUndo ?? false,
-      );
-      return;
-    }
-
-    const prevBlocks = blocksRef.current;
-    const command = buildDeleteBlockForestCommand(
-      prevBlocks,
-      targets.map((item) => item.id),
-    );
-    if (command.affectedIds.length === 0) return;
-    if (!deleteOptions?.skipDeleteUndo) recordBlockCommandUndo(prevBlocks, command);
-
-    documentEngine.replaceBlocks(command.nextBlocks);
-
-    try {
-      await documentEngine.persistSoftDelete({
-        ids: command.affectedIds,
-      });
-      await finalizeBlockDelete({
-        skipDeleteUndo: deleteOptions?.skipDeleteUndo,
-        deletedBlock: prevBlocks.find(
-          (b) => b.id === command.affectedIds[command.affectedIds.length - 1],
-        )
-          ?? targets[targets.length - 1]
-          ?? null,
-      });
-      onAfterBlocksRemoved?.(command.removedBlocks, command.nextBlocks);
-      const rootsAfterDelete = sortRootBlocks(
-        command.nextBlocks.filter(
-          (b) => selectedId && b.document_id === selectedId && (b.parent_block_id ?? null) === null,
-        ),
-      );
-      if (rootsAfterDelete.length === 0) {
-        await ensureMinimumRootTextBlock();
-      }
-    } catch (e) {
-      devLogger.error('[Note] deleteBlocks', e);
-      setError(e instanceof Error ? e.message : '블록 삭제 실패');
-      documentEngine.replaceBlocks(prevBlocks);
-    }
-  }, [
-    blocksRef,
-    documentEngine,
-    ensureMinimumRootTextBlock,
-    finalizeBlockDelete,
-    handleDeleteBlock,
-    onAfterBlocksRemoved,
-    recordBlockCommandUndo,
-    selectedId,
-    setError,
-  ]);
-
-  const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {
-    commitActiveNoteEditorToStore();
-    const prevBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-    const command = buildMergeWithPreviousBlockCommand(prevBlocks, block.id);
-    if (!command) return;
-
     recordBlockCommandUndo(prevBlocks, command);
     documentEngine.replaceBlocks(command.nextBlocks);
     if (command.splitHint) {
@@ -229,12 +165,97 @@ export function useNoteBlockDelete(options: {
       window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
     }
   }, [
-    blocksRef,
     documentEngine,
     focusBlockEditor,
     recordBlockCommandUndo,
     setError,
     setMergeFocusCaretOffset,
+  ]);
+
+  const handleDeleteBlock = useCallback(async (
+    block: NoteBlock,
+    focusPrevious = false,
+    skipDeleteUndo = false,
+  ) => {
+    const prevBlocks = blocksRef.current;
+    const command = buildDeleteBlockForestCommand(prevBlocks, [block.id]);
+    if (command.affectedIds.length === 0) return;
+    if (focusPrevious) {
+      const siblings = filterSiblingBlocks(prevBlocks, block);
+      const sibIdx = siblings.findIndex((b) => b.id === block.id);
+      const nextFocus = siblings[sibIdx - 1]?.id ?? siblings[sibIdx + 1]?.id ?? null;
+      if (nextFocus) focusBlockEditor(nextFocus);
+    }
+
+    await runDeleteForestCommand({
+      prevBlocks,
+      command,
+      skipDeleteUndo,
+      deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
+      emptyRootDocumentId: block.document_id,
+      logLabel: '[Note] deleteBlock',
+    });
+  }, [
+    blocksRef,
+    focusBlockEditor,
+    runDeleteForestCommand,
+  ]);
+
+  const handleDeleteBlocks = useCallback(async (
+    blocksToDelete: NoteBlock[],
+    deleteOptions?: { skipDeleteUndo?: boolean; focusPrevious?: boolean },
+  ) => {
+    const targets = blocksToDelete.filter((block) =>
+      blocksRef.current.some((item) => item.id === block.id),
+    );
+    if (targets.length === 0) return;
+
+    const prevBlocks = blocksRef.current;
+    const command = buildDeleteBlockForestCommand(
+      prevBlocks,
+      targets.map((item) => item.id),
+    );
+    if (command.affectedIds.length === 0) return;
+
+    if (deleteOptions?.focusPrevious && targets.length === 1) {
+      const [block] = targets;
+      const siblings = filterSiblingBlocks(prevBlocks, block);
+      const sibIdx = siblings.findIndex((b) => b.id === block.id);
+      const nextFocus = siblings[sibIdx - 1]?.id ?? siblings[sibIdx + 1]?.id ?? null;
+      if (nextFocus) {
+        focusBlockEditor(nextFocus);
+      }
+    }
+
+    await runDeleteForestCommand({
+      prevBlocks,
+      command,
+      skipDeleteUndo: deleteOptions?.skipDeleteUndo,
+      deletedBlock: prevBlocks.find(
+        (b) => b.id === command.affectedIds[command.affectedIds.length - 1],
+      )
+        ?? targets[targets.length - 1]
+        ?? null,
+      emptyRootDocumentId: targets[targets.length - 1]?.document_id ?? selectedId,
+      logLabel: '[Note] deleteBlocks',
+    });
+  }, [
+    blocksRef,
+    focusBlockEditor,
+    runDeleteForestCommand,
+    selectedId,
+  ]);
+
+  const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {
+    commitActiveNoteEditorToStore();
+    const prevBlocks = mergeBlocksWithStoreContent(blocksRef.current);
+    const command = buildMergeWithPreviousBlockCommand(prevBlocks, block.id);
+    if (!command) return;
+
+    await runMergeWithPreviousCommand(prevBlocks, command);
+  }, [
+    blocksRef,
+    runMergeWithPreviousCommand,
   ]);
 
   const handleRestoreBlockFromTrash = useCallback(async (block: NoteBlock) => {

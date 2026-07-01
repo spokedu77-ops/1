@@ -50,7 +50,7 @@ function syncBlocksFromServer(
 ): NoteBlock[] {
   if (serverBlocks.length === 0) return blocks;
   const serverMap = new Map(serverBlocks.map((block) => [block.id, ensureNoteBlockVersion(block)]));
-  return blocks.map((block) => {
+  return blocks.filter((block) => !serverMap.get(block.id)?.deleted_at).map((block) => {
     const server = serverMap.get(block.id);
     if (!server) return block;
     if (block.id === activeBlockId) {

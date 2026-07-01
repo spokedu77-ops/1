@@ -4,6 +4,15 @@
 
 import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS } from '../constants';
 
+export const BODY_ACTIONS = [
+  { id: 'twoFeet' as const, label: '두 발' },
+  { id: 'oneFoot' as const, label: '한 발' },
+  { id: 'oneHand' as const, label: '한 손' },
+  { id: 'twoHands' as const, label: '두 손' },
+] as const;
+
+export type BodyActionId = (typeof BODY_ACTIONS)[number]['id'];
+
 type ColorItem = (typeof COLORS)[number];
 export type { ColorItem };
 
@@ -94,6 +103,50 @@ function fisherYates<T>(arr: T[]): T[] {
   }
   return a;
 }
+
+/** 색상 릴레이: count개 색상 시퀀스 생성 — 연속 동일 색 10% 허용 */
+function generateRelay(count: number, lastColorId: string | null, pool: ColorItem[]): ColorItem[] {
+  const result: ColorItem[] = [];
+  let prevId = lastColorId;
+  for (let i = 0; i < count; i++) {
+    let pick: ColorItem;
+    if (prevId !== null && Math.random() < 0.10) {
+      pick = pool.find(c => c.id === prevId) ?? pool[Math.floor(Math.random() * pool.length)]!;
+    } else {
+      const cands = prevId ? pool.filter(c => c.id !== prevId) : pool;
+      pick = (cands.length > 0 ? cands : pool)[Math.floor(Math.random() * (cands.length > 0 ? cands.length : pool.length))]!;
+    }
+    result.push(pick);
+    prevId = pick.id;
+  }
+  return result;
+}
+
+/** 배열에서 n개를 중복 없이 무작위 추출 */
+function pickN<T>(arr: readonly T[], n: number): T[] {
+  const pool = [...arr];
+  const res: T[] = [];
+  for (let i = 0; i < Math.min(n, pool.length); i++) {
+    const j = i + Math.floor(Math.random() * (pool.length - i));
+    const tmp = pool[i]!; pool[i] = pool[j]!; pool[j] = tmp;
+    res.push(pool[i]!);
+  }
+  return res;
+}
+
+const QUAD_BODY_LABELS: Record<BodyActionId, string> = {
+  twoFeet: '두 발', oneFoot: '한 발', oneHand: '한 손', twoHands: '두 손',
+};
+
+function makeQuadCell(c: ColorItem, actionId: BodyActionId) {
+  return {
+    colorId: c.id, fillHex: c.bg, symbol: c.symbol, name: c.name, textColor: c.text,
+    bodyActionId: actionId, bodyActionLabel: QUAD_BODY_LABELS[actionId],
+  };
+}
+
+const rFoot = (): BodyActionId => (Math.random() < 0.5 ? 'oneFoot' : 'twoFeet');
+const rHand = (): BodyActionId => (Math.random() < 0.5 ? 'oneHand' : 'twoHands');
 
 export function generateMemoryPattern(level: number, colors: ColorItem[] = COLORS): ColorItem[] {
   if (level === 1) return generateWithMaxDup(colors, 3);
@@ -439,6 +492,86 @@ export function generateSignal(
         type: 'basic_variant_color',
         bg: '#000000',
         content: { variantTier: 4, panels },
+        voice: null,
+      };
+    }
+    // level 7: 변형 사분할 1단계 — 1개 색상, 발만
+    if (level === 7) {
+      const c = r(activeColors);
+      return {
+        type: 'think_quad_body',
+        bg: '#0F172A',
+        content: { cells: [makeQuadCell(c, rFoot())] },
+        voice: null,
+      };
+    }
+
+    // level 8: 변형 사분할 2단계 — 1~2개 색상, 2개 확률 85%
+    if (level === 8) {
+      const twoColors = Math.random() < 0.85 && activeColors.length >= 2;
+      if (!twoColors) {
+        const c = r(activeColors);
+        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(c, rFoot())] }, voice: null };
+      }
+      const [c1, c2] = pickN(activeColors, 2) as [ColorItem, ColorItem];
+      const footFirst = Math.random() < 0.5;
+      return {
+        type: 'think_quad_body',
+        bg: '#0F172A',
+        content: { cells: [makeQuadCell(c1, footFirst ? rFoot() : rHand()), makeQuadCell(c2, footFirst ? rHand() : rFoot())] },
+        voice: null,
+      };
+    }
+
+    // level 9: 변형 사분할 3단계 — 1/2/3개 색상 (10%/80%/10%)
+    if (level === 9) {
+      const p = Math.random();
+      const n = p < 0.10 ? 1 : p < 0.90 ? 2 : 3;
+      const picked = pickN(activeColors, n);
+      if (n === 1) {
+        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(picked[0]!, rFoot())] }, voice: null };
+      }
+      if (n === 2 || picked.length === 2) {
+        const [c1, c2] = picked as [ColorItem, ColorItem];
+        const footFirst = Math.random() < 0.5;
+        return {
+          type: 'think_quad_body',
+          bg: '#0F172A',
+          content: { cells: [makeQuadCell(c1, footFirst ? rFoot() : rHand()), makeQuadCell(c2, footFirst ? rHand() : rFoot())] },
+          voice: null,
+        };
+      }
+      // n === 3: 각 셀에 한 발 또는 한 손만 (두 발/두 손 없음)
+      const [c1, c2, c3] = picked as [ColorItem, ColorItem, ColorItem];
+      const singleAct = (): BodyActionId => (Math.random() < 0.5 ? 'oneFoot' : 'oneHand');
+      return {
+        type: 'think_quad_body',
+        bg: '#0F172A',
+        content: { cells: [makeQuadCell(c1, singleAct()), makeQuadCell(c2, singleAct()), makeQuadCell(c3, singleAct())] },
+        voice: null,
+      };
+    }
+
+    // level 10: 변형 사분할 4단계 — 3개 색상, 발 합계 ≤ 2 & 손 합계 ≤ 2
+    // 유효 패턴: A) 한발×2 + (한손 또는 두손)×1  B) 한손×2 + (한발 또는 두발)×1
+    if (level === 10) {
+      const [c1, c2, c3] = pickN(activeColors.length >= 3 ? activeColors : COLORS, 3) as [ColorItem, ColorItem, ColorItem];
+      const colors = [c1, c2, c3];
+      const singletonIdx = Math.floor(Math.random() * 3);
+      const patternA = Math.random() < 0.5;
+      const actions: BodyActionId[] = colors.map((_, i) => {
+        if (patternA) {
+          // 한발×2 + singleton 손
+          return i === singletonIdx ? rHand() : 'oneFoot';
+        } else {
+          // 한손×2 + singleton 발
+          return i === singletonIdx ? rFoot() : 'oneHand';
+        }
+      });
+      return {
+        type: 'think_quad_body',
+        bg: '#0F172A',
+        content: { cells: colors.map((c, i) => makeQuadCell(c, actions[i]!)) },
         voice: null,
       };
     }
@@ -905,6 +1038,14 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     const id = (sig.content as { colorId?: string })?.colorId ?? '';
     return `tq:${id}`;
   }
+  if (t === 'think_quad_body') {
+    const cells = (sig.content as { cells?: { colorId?: string; bodyActionId?: string }[] })?.cells ?? [];
+    return `tqb:${cells.map(c => `${c.colorId ?? ''}:${c.bodyActionId ?? ''}`).sort().join('|')}`;
+  }
+  if (t === 'color_relay') {
+    const id = (sig.content as { colorId?: string })?.colorId ?? '';
+    return `cr:${id}`;
+  }
   if (t === 'basic_variant_color') {
     const c = sig.content as {
       variantTier?: number;
@@ -1009,6 +1150,11 @@ function signalColorBalanceKeys(sig: Record<string, unknown>): string[] {
 
   if (t === 'full_color') return uniqueColorKeys([colorIdFromHex(sig.bg)]);
   if (t === 'think_quad') return uniqueColorKeys([content.colorId as string | undefined]);
+  if (t === 'think_quad_body') {
+    const cells = (content.cells as { colorId?: string }[] | undefined) ?? [];
+    return uniqueColorKeys(cells.map(c => c.colorId));
+  }
+  if (t === 'color_relay') return uniqueColorKeys([content.colorId as string | undefined]);
   if (t === 'basic_variant_color') {
     const panels = (content.panels as VariantPanelContent[] | undefined) ?? [];
     return uniqueColorKeys(
@@ -1054,7 +1200,8 @@ export function createBasicSignalGenerator(
   level: number,
   colors: ColorItem[],
   fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
-  basicNumberOverlay?: 'none' | '2' | '3'
+  basicNumberOverlay?: 'none' | '2' | '3',
+  relayCount?: number
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1066,6 +1213,11 @@ export function createBasicSignalGenerator(
   let totalColorHits = 0;
   const colorCounts = new Map<string, number>();
   const colorBucketCount = Math.max(1, colors.length || COLORS.length);
+  /** level 11 색상 릴레이 */
+  const relayCountOpt = Math.max(2, Math.min(4, relayCount ?? 2));
+  let relayQueue: ColorItem[] = [];
+  let relayQueuePos = 0;
+  let relayPauseUntilMs = 0;
   /** 2·4단계: 직전 대표 과일 URL */
   let lastVariantImageUrl: string | null = null;
   /** 3단계: 직전 과일 쌍 키 (정렬 url|url) */
@@ -1133,7 +1285,42 @@ export function createBasicSignalGenerator(
     return sig;
   };
 
+  const emitRelaySignal = (): Record<string, unknown> => {
+    const now = performance.now();
+    const pauseSig = (): Record<string, unknown> => ({
+      type: 'color_relay' as const,
+      bg: '#0F172A',
+      content: { colorId: '', fillHex: '#0F172A', relayIdx: 0, relayTotal: relayCountOpt, isPause: true },
+      voice: null,
+    });
+    // 세트 사이 3초 휴식 중
+    if (now < relayPauseUntilMs) return pauseSig();
+    // 새 큐 필요
+    if (relayQueuePos >= relayQueue.length) {
+      const isFirst = relayQueue.length === 0;
+      const lastId = isFirst ? null : relayQueue[relayQueue.length - 1]!.id;
+      relayQueue = generateRelay(relayCountOpt, lastId, colors.length > 0 ? colors : COLORS);
+      relayQueuePos = 0;
+      if (!isFirst) {
+        relayPauseUntilMs = now + 3000;
+        return pauseSig();
+      }
+    }
+    const c = relayQueue[relayQueuePos]!;
+    const relayIdx = relayQueuePos + 1;
+    relayQueuePos++;
+    const isLastInSet = relayQueuePos >= relayQueue.length;
+    const sig = {
+      type: 'color_relay' as const,
+      bg: c.bg,
+      content: { colorId: c.id, fillHex: c.bg, symbol: c.symbol, name: c.name, textColor: c.text, relayIdx, relayTotal: relayCountOpt, isPause: false, isLastInSet },
+      voice: null,
+    };
+    return acceptSignal(sig, signalFingerprint(sig));
+  };
+
   const tryEmit = (): Record<string, unknown> | null => {
+    if (level === 11) return emitRelaySignal();
     const emittedBefore = emitted;
     for (let attempt = 0; attempt < 120; attempt++) {
       const sig = generateSignal('basic', level, colors, genOpts());

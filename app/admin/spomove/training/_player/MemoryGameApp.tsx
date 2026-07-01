@@ -67,6 +67,11 @@ function modeLevelRangeLabel(modeId: string, levelCount: number): string {
 }
 
 function resultLevelLabel(mode: string | undefined, level: number): string {
+  if (mode === 'basic') {
+    const m = MODES[mode];
+    const idx = m?.levels.findIndex((lv) => lv.id === level) ?? -1;
+    if (idx >= 0) return `${idx + 1}번`;
+  }
   return `${level}번`;
 }
 
@@ -103,6 +108,8 @@ type Settings = {
   variantColorTheme: SpomoveColorThemeId;
   /** basic 3번 + 색상 테마: 전면 색상 위 숫자 오버레이 범위 */
   basicNumberOverlay: 'none' | '2' | '3';
+  /** basic 11번 색상 릴레이: 릴레이 색상 수 */
+  relayCount: 2 | 3 | 4;
   /** 플로우 추가 동작 기능 플래그 */
   flowFeatures: Set<FlowFeatureKey>;
   /** 플로우 배경 색상 테마 */
@@ -136,6 +143,7 @@ const defaultSettings: Settings = {
   kidsSafeMode: false,
   variantColorTheme: 'color',
   basicNumberOverlay: 'none',
+  relayCount: 2,
   flowFeatures: new Set<FlowFeatureKey>(),
   flowColorTheme: 'default',
   flowDuration: 25,
@@ -173,6 +181,8 @@ export type MemoryGameAutoLaunch = {
   flowVisualVariant?: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent?: 1 | 2 | 3;
+  /** 반응 인지 11번 색상 릴레이: 세트당 색상 수 */
+  relayCount?: 2 | 3 | 4;
 };
 
 /** Training 포털 복귀 시 설정 화면에 되돌릴 실행 세션 정보 */
@@ -482,15 +492,19 @@ export default function MemoryGameApp({
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
+    const isRelayPause = sig.type === 'color_relay' && (sig.content as { isPause?: boolean })?.isPause === true;
     const dupKey =
-      sig.type === 'think_quad'
+      !isRelayPause && (sig.type === 'think_quad' || sig.type === 'think_quad_body' || sig.type === 'color_relay')
         ? String((sig.content as { colorId?: string })?.colorId ?? '')
         : String(sig.bg ?? '');
     const dupFlashColorBg =
-      sig.type === 'full_color' ||
-      sig.type === 'gonogo_color' ||
-      sig.type === 'think_quad' ||
-      (sig.type === 'task_switch' && (sig.content as { stimulusKind?: string })?.stimulusKind === 'color');
+      !isRelayPause && (
+        sig.type === 'full_color' ||
+        sig.type === 'gonogo_color' ||
+        sig.type === 'think_quad' ||
+        sig.type === 'color_relay' ||
+        (sig.type === 'task_switch' && (sig.content as { stimulusKind?: string })?.stimulusKind === 'color')
+      );
     if (dupFlashColorBg && dupKey === prevBgRef.current) {
       setDupFlashNonce((n) => n + 1);
       setDupFlashVisible(true);
@@ -537,6 +551,7 @@ export default function MemoryGameApp({
     colors: COLORS,
     fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
+    relayCount: settings.relayCount,
     onSignal,
     onFinish,
   });
@@ -553,6 +568,7 @@ export default function MemoryGameApp({
     colors: COLORS,
     fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
+    relayCount: settings.relayCount,
     onSignal,
     onFinish,
   });
@@ -1086,9 +1102,9 @@ export default function MemoryGameApp({
               {stepNum(2, '난이도를 선택하세요')}
               <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {M.levels.map((lv) => (
+                {M.levels.map((lv, lvIdx) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : 'var(--border)'}`, background: settings.level === lv.id ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{lv.id}번</div>
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{settings.mode === 'basic' ? `${lvIdx + 1}번` : `${lv.id}번`}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
@@ -1117,7 +1133,7 @@ export default function MemoryGameApp({
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 2·3·4·5번 신호에 반영됩니다.
+                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 7·8·9·10번 신호에 반영됩니다.
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
                     {SPOMOVE_COLOR_THEME_ORDER
@@ -1150,6 +1166,43 @@ export default function MemoryGameApp({
                 </div>
               )}
             </div>
+            {settings.mode === 'basic' && settings.level === 11 && (
+              <div style={S.sec}>
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>릴레이 설정</div>
+                <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
+                  한 세트당 순서대로 나타나는 색상 수를 선택하세요. 한 세트가 끝나면 <strong style={{ color: 'var(--text)' }}>3초 휴식</strong> 후 다음 세트가 시작됩니다.
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                  {([
+                    { v: 2 as const, label: '기본 (2개)' },
+                    { v: 3 as const, label: '3개' },
+                    { v: 4 as const, label: '4개' },
+                  ]).map(({ v, label }) => {
+                    const active = settings.relayCount === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => set('relayCount', v)}
+                        style={{
+                          padding: '0.55rem 0.95rem',
+                          borderRadius: '0.75rem',
+                          border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                          background: active ? `${M.accent}12` : 'var(--card)',
+                          color: active ? M.accent : 'var(--text)',
+                          fontWeight: active ? 800 : 600,
+                          fontSize: '0.88rem',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {active ? '✓ ' : ''}{label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {settings.mode === 'flow' && (
               <>
                 {/* DIVE 비주얼 모드 선택 */}

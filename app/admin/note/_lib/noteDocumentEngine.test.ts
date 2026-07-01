@@ -81,6 +81,25 @@ describe('noteDocumentEngine', () => {
     expect(getEngineBlock(next, 'b')?.version).toBe(3);
   });
 
+  it('syncFromServer removes blocks that were deleted by another editor', () => {
+    const state = createNoteDocumentEngineState('doc-1', [
+      block('a', 'local', { version: 2 }),
+      block('b', 'other', { version: 1 }),
+    ]);
+    const next = applyNoteDocumentOp(state, {
+      type: 'syncFromServer',
+      blocks: [
+        block('a', 'server-deleted', {
+          version: 5,
+          deleted_at: '2026-07-01T00:00:00Z',
+        }),
+      ],
+    }, { activeBlockId: 'a' });
+
+    expect(getEngineBlock(next, 'a')).toBeUndefined();
+    expect(getEngineBlock(next, 'b')?.content?.text).toBe('other');
+  });
+
   it('applyServerBlockVersions bumps version only', () => {
     const blocks = [block('a', 'text', { version: 2 })];
     const next = applyServerBlockVersions(blocks, [{

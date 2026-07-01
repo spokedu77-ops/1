@@ -13,6 +13,7 @@ type MediaPanelProps = {
   /** LCP용 — 페이지 Hero 1장만 true 권장 */
   priority?: boolean;
   sizes?: string | ImageSizesPreset;
+  objectFit?: 'cover' | 'contain';
 };
 
 function resolveSizes(sizes?: string | ImageSizesPreset): string {
@@ -28,6 +29,7 @@ export function MediaPanel({
   photoPriority = false,
   priority = false,
   sizes = 'card3',
+  objectFit = 'cover',
 }: MediaPanelProps) {
   return (
     <figure className={`relative m-0 bg-slate-200 ${className}`}>
@@ -39,6 +41,7 @@ export function MediaPanel({
         className="absolute inset-0 h-full w-full"
         sizes={resolveSizes(sizes)}
         priority={priority}
+        objectFit={objectFit}
       />
     </figure>
   );

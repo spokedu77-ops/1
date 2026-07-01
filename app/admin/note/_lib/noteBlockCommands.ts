@@ -216,6 +216,46 @@ export function buildInsertBlockCommand(
   };
 }
 
+export function buildInsertBlockAndReparentChildrenCommand(
+  blocks: NoteBlock[],
+  createdBlock: NoteBlock,
+  parentId: string | null,
+  insertIndex: number,
+  childIds: string[],
+): NoteBlockCommandResult {
+  const insertCommand = buildInsertBlockCommand(blocks, createdBlock, parentId, insertIndex);
+  if (insertCommand.affectedIds.length === 0 || childIds.length === 0) {
+    return insertCommand;
+  }
+
+  const childPatches = childIds.map((id, index) => ({
+    id,
+    parent_block_id: createdBlock.id,
+    order_index: index,
+  }));
+  const childPatchById = new Map(childPatches.map((patch) => [patch.id, patch]));
+  const nextBlocks = insertCommand.nextBlocks.map((block) => {
+    const patch = childPatchById.get(block.id);
+    return patch
+      ? { ...block, parent_block_id: patch.parent_block_id, order_index: patch.order_index }
+      : block;
+  });
+
+  return {
+    ...insertCommand,
+    nextBlocks,
+    affectedIds: [...new Set([
+      ...insertCommand.affectedIds,
+      createdBlock.id,
+      ...childIds,
+    ])],
+    fieldPatches: [
+      ...insertCommand.fieldPatches,
+      ...childPatches,
+    ],
+  };
+}
+
 export function buildMergeWithPreviousBlockCommand(
   blocks: NoteBlock[],
   blockId: string,

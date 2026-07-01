@@ -3,6 +3,7 @@
 import React from 'react';
 import { PAD_POSITIONS } from '@/app/lib/admin/constants/padGrid';
 import type { FruitSlide, VariantPanelContent } from '../lib/signals';
+import { BodyActionIcon, BODY_ACTION_LABELS, type BodyActionId } from './BodyActionIcons';
 
 function variantCells(panel: VariantPanelContent | null | undefined): FruitSlide[] {
   if (!panel) return [];
@@ -106,6 +107,153 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                     <span style={{ fontSize: 'clamp(40px, 11vmin, 100px)', lineHeight: 1, color: textColor, opacity: 0.45, userSelect: 'none' }}>
                       {symbol}
                     </span>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'color_relay') {
+    const isPause = (content?.isPause as boolean) ?? false;
+    const fillHex = isPause ? '#0F172A' : ((content?.fillHex as string) ?? '#EF4444');
+    const relayIdx = (content?.relayIdx as number) ?? 1;
+    const relayTotal = (content?.relayTotal as number) ?? 2;
+    return (
+      <div
+        key={animKey}
+        className={isPause ? undefined : 'signal-blink'}
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: fillHex,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          padding: 'clamp(1.5rem, 5vmin, 4rem)',
+          boxSizing: 'border-box',
+          transition: 'background 0.08s',
+        }}
+      >
+        {/* 릴레이 진행 점 */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 'clamp(8px, 2vmin, 18px)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {Array.from({ length: relayTotal }, (_, i) => {
+            const state = isPause ? 'future' : (i + 1 < relayIdx ? 'past' : i + 1 === relayIdx ? 'current' : 'future');
+            const sz = state === 'current' ? 'clamp(14px, 3vmin, 26px)' : 'clamp(10px, 2vmin, 18px)';
+            return (
+              <div
+                key={i}
+                style={{
+                  width: sz,
+                  height: sz,
+                  borderRadius: '50%',
+                  background: state === 'future' ? 'transparent' : 'rgba(255,255,255,0.92)',
+                  border: '2.5px solid rgba(255,255,255,0.72)',
+                  opacity: state === 'future' ? 0.35 : 1,
+                  flexShrink: 0,
+                  transition: 'all 0.15s',
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'think_quad_body') {
+    const cells = (content?.cells as { colorId: string; fillHex: string; bodyActionId: BodyActionId }[] | undefined) ?? [];
+    const cellMap = new Map(cells.map(c => [c.colorId, c]));
+    return (
+      <div
+        key={animKey}
+        className="signal-blink"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'clamp(0.75rem, 5vmin, 2.5rem)',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            maxWidth: 'min(96vw, 96vh)',
+            maxHeight: 'min(96vw, 96vh)',
+            aspectRatio: '1',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gridTemplateRows: '1fr 1fr',
+            gap: 'clamp(6px, 1.2vw, 14px)',
+            minHeight: 0,
+          }}
+        >
+          {PAD_POSITIONS.map((row, ri) =>
+            row.map((padColorId, ci) => {
+              const cell = cellMap.get(padColorId);
+              const isActive = !!cell;
+              const bodyActionId = cell?.bodyActionId ?? 'twoFeet';
+              const label = isActive ? BODY_ACTION_LABELS[bodyActionId] : '';
+              return (
+                <div
+                  key={`${ri}-${ci}`}
+                  style={{
+                    borderRadius: 12,
+                    border: '1px solid rgba(148,163,184,0.55)',
+                    backgroundColor: isActive ? cell!.fillHex : 'rgba(255,255,255,0.15)',
+                    minHeight: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 'clamp(2px, 0.6vmin, 6px)',
+                  }}
+                >
+                  {isActive ? (
+                    <>
+                      <div
+                        style={{
+                          width: '58%',
+                          height: '58%',
+                          minWidth: 0,
+                          minHeight: 0,
+                          filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.4))',
+                        }}
+                        aria-label={label}
+                      >
+                        <BodyActionIcon actionId={bodyActionId} />
+                      </div>
+                      <span
+                        style={{
+                          fontSize: 'clamp(11px, 2.6vmin, 22px)',
+                          fontWeight: 800,
+                          color: 'rgba(255,255,255,0.95)',
+                          letterSpacing: '0.04em',
+                          lineHeight: 1,
+                          textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                          userSelect: 'none',
+                        }}
+                      >
+                        {label}
+                      </span>
+                      <span className="sr-only">{label}</span>
+                    </>
                   ) : null}
                 </div>
               );

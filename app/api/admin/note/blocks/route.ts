@@ -639,20 +639,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: beforeError.message }, { status: 500 });
     }
 
-    const { error } = await supabase
-      .from('note_blocks')
-      .update({
-        deleted_at: now,
-        deleted_by: auth.userId,
-        updated_at: now,
-        updated_by: auth.userId,
-      })
-      .in('id', uniqueIds)
-      .is('deleted_at', null);
-
-    if (error) {
-      devLogger.error('[admin/note/blocks] DELETE error', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    const deleteTargets = ((beforeBlocks ?? []) as NoteBlock[])
+      .filter((block) => !block.deleted_at);
+    const deleteResults = await Promise.all(
+      deleteTargets.map((block) =>
+        supabase
+          .from('note_blocks')
+          .update({
+            deleted_at: now,
+            deleted_by: auth.userId,
+            updated_at: now,
+            updated_by: auth.userId,
+            version: (block.version ?? 1) + 1,
+          })
+          .eq('id', block.id)
+          .is('deleted_at', null)),
+    );
+    const failedDelete = deleteResults.find((result) => result.error);
+    if (failedDelete?.error) {
+      devLogger.error('[admin/note/blocks] DELETE error', failedDelete.error);
+      return NextResponse.json({ error: failedDelete.error.message }, { status: 500 });
     }
 
     await Promise.all(

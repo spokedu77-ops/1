@@ -9,10 +9,15 @@ export function useNoteBlockContentSave(options: {
 }) {
   const { documentEngine } = options;
 
-  const scheduleBlockContentSave = useCallback((blockId: string, content: unknown) => {
+  const scheduleBlockContentSave = useCallback((
+    blockId: string,
+    content: unknown,
+    baseContent?: Record<string, unknown>,
+  ) => {
     documentEngine.scheduleContentPatch(
       blockId,
       (content ?? {}) as Record<string, unknown>,
+      baseContent,
     );
   }, [documentEngine]);
 

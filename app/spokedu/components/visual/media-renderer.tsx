@@ -19,6 +19,7 @@ type MediaRendererProps = {
   animateZoom?: boolean;
   /** Home 등: 로드 실패 시 gradient/SVG placeholder 대신 빈 실사 영역 */
   strictPhoto?: boolean;
+  objectFit?: 'cover' | 'contain';
 };
 
 function resolveFallback(media: HomeMediaItem): string {
@@ -34,6 +35,7 @@ export function MediaRenderer({
   sizes = '(max-width: 768px) 100vw, 50vw',
   animateZoom = false,
   strictPhoto = false,
+  objectFit = 'cover',
 }: MediaRendererProps) {
   const reducedMotion = useReducedMotion();
   const primarySrc = media.src;
@@ -89,7 +91,7 @@ export function MediaRenderer({
   }
 
   const isLocalSpokedu = imgSrc.startsWith('/images/spokedu/');
-  const photoClass = intensity === 'photo' ? homePhotoGrade : 'object-cover';
+  const fitClass = objectFit === 'contain' ? 'object-contain' : homePhotoGrade;
 
   const imageNode = (
     <Image
@@ -99,8 +101,8 @@ export function MediaRenderer({
       sizes={sizes}
       priority={priority}
       unoptimized={isLocalSpokedu}
-      className={photoClass}
-      style={media.objectPosition ? { objectPosition: media.objectPosition } : undefined}
+      className={intensity === 'photo' ? fitClass : 'object-cover'}
+      style={objectFit === 'cover' && media.objectPosition ? { objectPosition: media.objectPosition } : undefined}
       onError={handleError}
     />
   );

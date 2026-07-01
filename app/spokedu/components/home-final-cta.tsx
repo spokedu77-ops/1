@@ -22,7 +22,7 @@ export function HomeFinalCta() {
           id="home-final-cta-title"
           className={`text-2xl font-black tracking-tight text-white sm:text-3xl lg:text-[2rem] ${koreanLineBreak}`}
         >
-          {finalCta.headline}
+          {finalCta.headlineLines.join(' ')}
         </h2>
         <div className="mt-7 grid grid-cols-1 gap-2.5 sm:max-w-xs">
           <Link

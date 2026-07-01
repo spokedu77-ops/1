@@ -2,25 +2,106 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { siteNavItems as navItems } from '../data/site';
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import {
   brandContactLinks,
   brandProfile,
-  footerLinks,
-  footerSupplementaryLinks,
   getSocialLinks,
+  siteNav,
   SPOKEDU_BASE_PATH,
+  type SiteNavEntry,
+  type SiteNavLink,
 } from '../data/site';
 import { inferTrackFromHref } from '../lib/tracking';
+import { siteContainer } from '../lib/ui-classes';
+import { isExternalHref, externalLinkProps } from '../lib/external-link';
+
+const ATHLETIC_BLUE = '#1D4ED8';
+const NAVY = '#0B1220';
+
+function normalizePath(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.slice(0, -1);
+  }
+  return pathname;
+}
+
+function isLinkActive(pathname: string, href: string, matchPrefix?: string): boolean {
+  const current = normalizePath(pathname);
+  if (href.includes('#')) {
+    const base = href.split('#')[0];
+    return current === base || current.startsWith(`${base}/`);
+  }
+  if (matchPrefix) {
+    return current === `${SPOKEDU_BASE_PATH}${matchPrefix}` || current.startsWith(`${SPOKEDU_BASE_PATH}${matchPrefix}/`);
+  }
+  return current === href;
+}
+
+function isGroupActive(pathname: string, children: SiteNavLink[]): boolean {
+  return children.some((child) => {
+    const base = child.href.split('#')[0];
+    const prefix = base.replace(SPOKEDU_BASE_PATH, '');
+    return isLinkActive(pathname, child.href, prefix || undefined);
+  });
+}
+
+function NavAnchor({
+  href,
+  trackLabel,
+  className,
+  style,
+  children,
+  onNavigate,
+}: {
+  href: string;
+  trackLabel: string;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+  onNavigate?: () => void;
+}) {
+  const external = isExternalHref(href);
+  const props = {
+    'data-track': inferTrackFromHref(href),
+    'data-track-label': trackLabel,
+    className,
+    style,
+    onClick: onNavigate,
+  };
+
+  if (external) {
+    return (
+      <a href={href} {...externalLinkProps} {...props}>
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} {...props}>
+      {children}
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const pathname = usePathname();
   const isHome = pathname === '/spokedu';
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [programsOpen, setProgramsOpen] = useState(false);
+  const [mobileProgramsOpen, setMobileProgramsOpen] = useState(false);
+  const programsButtonRef = useRef<HTMLButtonElement>(null);
+  const programsPanelRef = useRef<HTMLDivElement>(null);
+  const mobileProgramsId = useId();
 
   const onHero = isHome && !scrolled;
+  const closeMenus = useCallback(() => {
+    setMenuOpen(false);
+    setProgramsOpen(false);
+    setMobileProgramsOpen(false);
+  }, []);
 
   useEffect(() => {
     if (!isHome) {
@@ -34,13 +115,13 @@ export function SiteHeader() {
   }, [isHome]);
 
   useEffect(() => {
-    setMenuOpen(false);
-  }, [pathname]);
+    closeMenus();
+  }, [pathname, closeMenus]);
 
   useEffect(() => {
     if (!menuOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMenuOpen(false);
+      if (e.key === 'Escape') closeMenus();
     };
     document.addEventListener('keydown', onKey);
     document.body.style.overflow = 'hidden';
@@ -48,17 +129,158 @@ export function SiteHeader() {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = '';
     };
-  }, [menuOpen]);
+  }, [menuOpen, closeMenus]);
+
+  useEffect(() => {
+    if (!programsOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        programsPanelRef.current?.contains(target) ||
+        programsButtonRef.current?.contains(target)
+      ) {
+        return;
+      }
+      setProgramsOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setProgramsOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [programsOpen]);
+
+  const linkClass = (active: boolean) =>
+    `text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+      onHero
+        ? active
+          ? 'text-white'
+          : 'text-white/85 hover:text-white focus-visible:outline-white'
+        : active
+          ? 'text-[#0B1220]'
+          : 'text-slate-600 hover:text-[#0B1220] focus-visible:outline-blue-600'
+    }`;
+
+  const renderDesktopEntry = (entry: SiteNavEntry) => {
+    if (entry.type === 'link') {
+      const active = isLinkActive(pathname, entry.href, entry.matchPrefix);
+      return (
+        <NavAnchor
+          key={entry.href}
+          href={entry.href}
+          trackLabel={entry.trackLabel}
+          className={linkClass(active)}
+        >
+          {entry.label}
+        </NavAnchor>
+      );
+    }
+
+    const groupActive = isGroupActive(pathname, entry.children);
+    return (
+      <div key={entry.label} className="relative">
+        <button
+          ref={programsButtonRef}
+          type="button"
+          className={`inline-flex items-center gap-1 ${linkClass(groupActive || programsOpen)}`}
+          aria-expanded={programsOpen}
+          aria-controls="desktop-programs-menu"
+          aria-haspopup="true"
+          onClick={() => setProgramsOpen((open) => !open)}
+        >
+          {entry.label}
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={programsOpen ? 'rotate-180' : ''}>
+            <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+        {programsOpen ? (
+          <div
+            id="desktop-programs-menu"
+            ref={programsPanelRef}
+            role="menu"
+            className="absolute left-0 top-[calc(100%+0.5rem)] z-50 min-w-[13.5rem] border border-slate-200 bg-white py-1.5 shadow-sm"
+          >
+            {entry.children.map((child) => (
+              <NavAnchor
+                key={child.href}
+                href={child.href}
+                trackLabel={child.trackLabel}
+                className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1D4ED8]"
+                onNavigate={() => setProgramsOpen(false)}
+              >
+                {child.label}
+              </NavAnchor>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderMobileEntry = (entry: SiteNavEntry) => {
+    if (entry.type === 'link') {
+      const active = isLinkActive(pathname, entry.href, entry.matchPrefix);
+      return (
+        <NavAnchor
+          key={entry.href}
+          href={entry.href}
+          trackLabel={`mobile-${entry.trackLabel}`}
+          className={`flex min-h-12 items-center border-b border-white/10 text-base font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+            active ? 'text-white' : 'text-white/90'
+          }`}
+          onNavigate={closeMenus}
+        >
+          {entry.label}
+        </NavAnchor>
+      );
+    }
+
+    return (
+      <div key={entry.label} className="border-b border-white/10">
+        <button
+          type="button"
+          className="flex min-h-12 w-full items-center justify-between text-base font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          aria-expanded={mobileProgramsOpen}
+          aria-controls={mobileProgramsId}
+          onClick={() => setMobileProgramsOpen((open) => !open)}
+        >
+          {entry.label}
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden className={mobileProgramsOpen ? 'rotate-180' : ''}>
+            <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+        {mobileProgramsOpen ? (
+          <div id={mobileProgramsId} className="pb-2 pl-3">
+            {entry.children.map((child) => (
+              <NavAnchor
+                key={child.href}
+                href={child.href}
+                trackLabel={`mobile-${child.trackLabel}`}
+                className="flex min-h-11 items-center text-[15px] text-white/85 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                onNavigate={closeMenus}
+              >
+                {child.label}
+              </NavAnchor>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    );
+  };
 
   return (
     <header
       className={`${isHome ? 'fixed inset-x-0' : 'sticky'} top-0 z-40 transition-colors duration-300 ${
         onHero
-          ? 'border-b border-white/10 bg-[#0B1220]/35 backdrop-blur-sm'
-          : 'border-b border-slate-200 bg-white/95 backdrop-blur-md'
+          ? 'border-b border-white/10 bg-[#0B1220]'
+          : 'border-b border-slate-200 bg-white'
       }`}
     >
-      <div className="mx-auto flex w-full max-w-[1400px] items-center justify-between gap-3 px-5 py-3.5 sm:gap-4 sm:px-8 sm:py-4 lg:px-12">
+      <div className={`${siteContainer} flex items-center justify-between gap-3 py-3.5 sm:py-4`}>
         <Link
           href={SPOKEDU_BASE_PATH}
           className={`text-[13px] font-semibold tracking-[0.14em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
@@ -71,37 +293,22 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-6 lg:flex" aria-label="주 메뉴">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              data-track={inferTrackFromHref(item.href)}
-              data-track-label={`nav-${item.label}`}
-              className={`text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                onHero
-                  ? 'text-white/85 hover:text-white focus-visible:outline-white'
-                  : 'text-slate-600 hover:text-[#0B1220] focus-visible:outline-blue-600'
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
+          {siteNav.map(renderDesktopEntry)}
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
+          <NavAnchor
             href={`${SPOKEDU_BASE_PATH}/contact`}
-            id="header-contact-button"
-            data-track="cta-contact"
-            data-track-label="header-contact"
+            trackLabel="header-contact"
             className={`hidden min-h-11 items-center justify-center rounded-md px-4 py-2 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
               onHero
                 ? 'border border-white/40 bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white'
-                : 'bg-[#1D4ED8] text-white hover:bg-blue-700 focus-visible:outline-blue-600'
+                : 'text-white hover:opacity-90 focus-visible:outline-blue-600'
             }`}
+            style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
           >
             문의하기
-          </Link>
+          </NavAnchor>
 
           <button
             type="button"
@@ -131,33 +338,23 @@ export function SiteHeader() {
       {menuOpen ? (
         <div
           id="mobile-nav-panel"
-          className="fixed inset-0 top-[57px] z-50 bg-[#0B1220]/95 backdrop-blur-md lg:hidden"
+          className="fixed inset-0 top-[57px] z-50 lg:hidden"
+          style={{ backgroundColor: `${NAVY}f2` }}
           role="dialog"
           aria-modal="true"
           aria-label="모바일 메뉴"
         >
-          <nav className="flex flex-col gap-1 px-5 py-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                data-track={inferTrackFromHref(item.href)}
-                data-track-label={`mobile-nav-${item.label}`}
-                className="flex min-h-12 items-center border-b border-white/10 text-base font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                onClick={() => setMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <Link
+          <nav className="flex flex-col px-5 py-4 backdrop-blur-md">
+            {siteNav.map(renderMobileEntry)}
+            <NavAnchor
               href={`${SPOKEDU_BASE_PATH}/contact`}
-              data-track="cta-contact"
-              data-track-label="mobile-header-contact"
-              className="mt-4 inline-flex min-h-12 items-center justify-center rounded-md bg-[#1D4ED8] px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              onClick={() => setMenuOpen(false)}
+              trackLabel="mobile-header-contact"
+              className="mt-4 inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              style={{ backgroundColor: ATHLETIC_BLUE }}
+              onNavigate={closeMenus}
             >
               문의하기
-            </Link>
+            </NavAnchor>
           </nav>
         </div>
       ) : null}
@@ -167,107 +364,104 @@ export function SiteHeader() {
 
 export function SiteFooter() {
   const socialLinks = getSocialLinks();
+  const blogLink = socialLinks.find((c) => c.key === 'naver-blog');
+
+  const programLinks = [
+    { label: '개인·소그룹 수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-program-private' },
+    { label: '기관 출강', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-program-dispatch' },
+    { label: '특수체육', href: `${SPOKEDU_BASE_PATH}/dispatch#special`, trackLabel: 'footer-program-special' },
+    { label: '커리큘럼·지도자 교육', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-program-curriculum' },
+    { label: 'SPOMOVE', href: `${SPOKEDU_BASE_PATH}/programs/spomove`, trackLabel: 'footer-program-spomove' },
+  ];
+
+  const infoLinks = [
+    { label: '스포키듀 소개', href: `${SPOKEDU_BASE_PATH}/about`, trackLabel: 'footer-info-about' },
+    { label: '수업 사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-info-records' },
+    { label: '문의', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'footer-info-contact' },
+  ];
+
+  const footerLinkClass =
+    'text-[15px] leading-relaxed text-white/75 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
 
   return (
-    <footer className="border-t border-slate-200 bg-slate-50">
-      <div className="mx-auto w-full max-w-[1400px] space-y-5 px-5 py-10 sm:px-8 lg:px-12">
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between sm:gap-10">
-          <div className="space-y-2">
-            <p className="text-sm font-semibold tracking-wide text-[#0B1220]">
+    <footer style={{ backgroundColor: NAVY }} className="text-white">
+      <div className={`${siteContainer} py-14 sm:py-16`}>
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:items-start lg:gap-12">
+          <div className="space-y-4 sm:col-span-2 lg:col-span-1">
+            <Link href={SPOKEDU_BASE_PATH} className="inline-block text-lg font-bold tracking-[0.14em] text-white">
               {brandProfile.nameEn}
-              <span className="mx-2 font-normal text-slate-400">/</span>
-              {brandProfile.nameKo}
-            </p>
-            <p className="max-w-sm text-sm leading-relaxed text-slate-600">{brandProfile.tagline}</p>
-            <p className="text-sm text-slate-500">운영지역 {brandProfile.serviceArea}</p>
+            </Link>
+            <p className="text-[15px] font-medium text-white/90">{brandProfile.nameKo}</p>
+            <p className="max-w-xs text-[15px] leading-relaxed text-white/70">{brandProfile.tagline}</p>
+            <p className="text-sm text-white/55">운영지역 {brandProfile.serviceArea}</p>
           </div>
-          <div className="grid gap-1.5 text-sm text-slate-600">
-            <p>
-              <span className="font-medium text-slate-800">대표</span> {brandProfile.representative}
-            </p>
-            <p>
-              <span className="font-medium text-slate-800">연락처</span>{' '}
-              <a
-                id="footer-phone-link"
-                data-track="cta-phone"
-                data-track-label="footer-phone"
-                href={brandContactLinks.phone}
-                className="underline-offset-2 hover:underline"
-              >
-                {brandProfile.phone}
-              </a>
-            </p>
-            <p>
-              <span className="font-medium text-slate-800">이메일</span>{' '}
-              <a
-                id="footer-email-link"
-                data-track="cta-email"
-                data-track-label="footer-email"
-                href={brandContactLinks.email}
-                className="underline-offset-2 hover:underline"
-              >
-                {brandProfile.email}
-              </a>
-            </p>
-          </div>
-        </div>
 
-        <nav aria-label="사이트 메뉴" className="border-t border-slate-200 pt-4">
-          <ul className="flex flex-wrap gap-x-4 gap-y-2">
-            {footerLinks.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  data-track={inferTrackFromHref(link.href)}
-                  data-track-label={`footer-nav-${link.label}`}
-                  className="text-xs font-medium text-slate-500 transition hover:text-[#0B1220]"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {footerSupplementaryLinks.length > 0 ? (
-          <nav aria-label="추가 콘텐츠" className="border-t border-slate-200 pt-4">
-            <ul className="flex flex-wrap gap-x-4 gap-y-2">
-              {footerSupplementaryLinks.map((link) => (
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white/50">프로그램</p>
+            <ul className="mt-4 space-y-2.5">
+              {programLinks.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    data-track={inferTrackFromHref(link.href)}
-                    data-track-label={`footer-supplementary-${link.label}`}
-                    className="text-xs font-medium text-slate-500 transition hover:text-[#0B1220]"
-                  >
+                  <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
                     {link.label}
                   </Link>
                 </li>
               ))}
             </ul>
-          </nav>
-        ) : null}
-
-        {socialLinks.length > 0 ? (
-          <div className="border-t border-slate-200 pt-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">공식 채널</p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              {socialLinks.map((channel) => (
-                <a
-                  key={channel.key}
-                  href={channel.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  data-track={`external-${channel.key}`}
-                  data-track-label={`footer-${channel.key}`}
-                  className="rounded-md border border-slate-300 bg-white px-3.5 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-500 hover:text-[#0B1220]"
-                >
-                  {channel.label}
-                </a>
-              ))}
-            </div>
           </div>
-        ) : null}
+
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white/50">정보</p>
+            <ul className="mt-4 space-y-2.5">
+              {infoLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white/50">연락처</p>
+            <ul className="mt-4 space-y-3 text-[15px] text-white/80">
+              <li>
+                <span className="text-white/55">대표 </span>
+                {brandProfile.representative}
+              </li>
+              <li>
+                <a id="footer-phone-link" href={brandContactLinks.phone} data-track="cta-phone" data-track-label="footer-phone" className={footerLinkClass}>
+                  {brandProfile.phone}
+                </a>
+              </li>
+              <li>
+                <a id="footer-email-link" href={brandContactLinks.email} data-track="cta-email" data-track-label="footer-email" className={`${footerLinkClass} break-all`}>
+                  {brandProfile.email}
+                </a>
+              </li>
+              {blogLink ? (
+                <li>
+                  <a
+                    href={blogLink.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-track="external-naver-blog"
+                    data-track-label="footer-naver-blog"
+                    className={footerLinkClass}
+                  >
+                    네이버 블로그
+                  </a>
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 border-t border-white/10 pt-6">
+          <p className="text-sm text-white/45">
+            © {new Date().getFullYear()} {brandProfile.nameEn}. All rights reserved.
+          </p>
+        </div>
       </div>
     </footer>
   );

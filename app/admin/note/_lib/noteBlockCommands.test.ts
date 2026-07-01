@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { planBlockDropAt } from '@/app/lib/note/noteBlockTree';
 import {
   buildDeleteBlockForestCommand,
+  buildInsertBlockAndReparentChildrenCommand,
   buildInsertBlockCommand,
   buildMergeWithPreviousBlockCommand,
   buildMoveBlockGroupCommand,
@@ -97,6 +98,37 @@ describe('note block commands', () => {
       { id: 'b', order_index: 2 },
     ]);
     expect(blocks).toHaveLength(3);
+  });
+
+  it('inserts a list sibling and moves existing children under the new sibling', () => {
+    const blocks = [
+      { ...block('parent', 0), type: 'numberedList' },
+      { ...block('child', 0, 'parent'), type: 'numberedList' },
+      { ...block('after', 1), type: 'numberedList' },
+    ];
+    const created = { ...block('new', 99), type: 'numberedList' };
+
+    const command = buildInsertBlockAndReparentChildrenCommand(
+      blocks,
+      created,
+      null,
+      1,
+      ['child'],
+    );
+
+    expect(command.nextBlocks.find((item) => item.id === 'new')).toMatchObject({
+      parent_block_id: null,
+      order_index: 1,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'child')).toMatchObject({
+      parent_block_id: 'new',
+      order_index: 0,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'after')?.order_index).toBe(2);
+    expect(command.fieldPatches).toEqual([
+      { id: 'child', parent_block_id: 'new', order_index: 0 },
+    ]);
+    expect(new Set(command.affectedIds)).toEqual(new Set(['parent', 'new', 'after', 'child']));
   });
 
   it('collects created, removed, and structurally changed blocks for one transaction', () => {

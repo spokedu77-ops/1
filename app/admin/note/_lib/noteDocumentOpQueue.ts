@@ -37,7 +37,10 @@ export class NoteDocumentOpQueue {
 
   private contentTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
-  private pendingContent = new Map<string, Record<string, unknown>>();
+  private pendingContent = new Map<string, {
+    content: Record<string, unknown>;
+    baseContent?: Record<string, unknown>;
+  }>();
 
   private contentFlushPending = false;
 
@@ -58,11 +61,19 @@ export class NoteDocumentOpQueue {
     await this.serial;
   }
 
-  scheduleContentPatch(blockId: string, content: Record<string, unknown>): void {
-    this.pendingContent.set(blockId, content);
+  scheduleContentPatch(
+    blockId: string,
+    content: Record<string, unknown>,
+    baseContent?: Record<string, unknown>,
+  ): void {
+    const previousPending = this.pendingContent.get(blockId);
+    this.pendingContent.set(blockId, {
+      content,
+      baseContent: previousPending?.baseContent ?? baseContent,
+    });
     this.contentFlushPending = true;
-    const prev = this.contentTimers.get(blockId);
-    if (prev) clearTimeout(prev);
+    const previousTimer = this.contentTimers.get(blockId);
+    if (previousTimer) clearTimeout(previousTimer);
     const timer = setTimeout(() => {
       this.contentTimers.delete(blockId);
       void this.flushContentPatches();
@@ -97,8 +108,12 @@ export class NoteDocumentOpQueue {
     this.pendingContent.clear();
     this.contentFlushPending = false;
 
-    const updates = [...snapshot.entries()].map(([id, content]) => {
-      return { id, content };
+    const updates = [...snapshot.entries()].map(([id, pending]) => {
+      return {
+        id,
+        content: pending.content,
+        baseContent: pending.baseContent,
+      };
     });
 
     await this.enqueue({ type: 'patchContent', updates });
@@ -188,16 +203,20 @@ export class NoteDocumentOpQueue {
   private async runCreateBlock(
     op: Extract<NotePersistOp, { type: 'createBlock' }>,
   ): Promise<NoteBlock> {
-    if (op.normalizeOrders !== undefined) {
+    if (op.normalizeOrders !== undefined || op.transactionUpdates !== undefined) {
       const result = await postNoteBlockCreateTransaction(
         {
+          id: op.id,
           documentId: op.documentId,
           blockType: op.blockType,
           content: op.content,
           order_index: op.order_index,
           parent_block_id: op.parent_block_id,
         },
-        op.normalizeOrders,
+        [
+          ...(op.normalizeOrders ?? []),
+          ...(op.transactionUpdates ?? []),
+        ],
         (id) => this.deps.getBlock(id),
       );
       if (result.patchedBlocks.length > 0) {
@@ -254,6 +273,7 @@ export class NoteDocumentOpQueue {
       retries.push({
         id: update.id,
         content: localContent,
+        baseContent: update.baseContent,
         expected_version: server.version,
       });
     }
@@ -271,6 +291,7 @@ export class NoteDocumentOpQueue {
         const patches = op.updates.map((update) => ({
           id: update.id,
           content: update.content,
+          baseContent: update.baseContent,
         }));
         try {
           await this.patchWithVersionRetry(patches);
@@ -296,7 +317,6 @@ export class NoteDocumentOpQueue {
         } catch (error) {
           if (error instanceof NoteBlockVersionConflictError) {
             this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
-            this.deps.onError?.(new Error('다른 탭에서 블록이 수정되어 저장하지 못했습니다.'));
             return;
           }
           throw error;
@@ -304,13 +324,21 @@ export class NoteDocumentOpQueue {
         return;
       }
       case 'blockTransaction': {
-        const patched = await postNoteBlockTransaction(
-          op.patches,
-          op.deleteIds,
-          (id) => this.deps.getBlock(id),
-        );
-        if (patched.length > 0) this.deps.onServerPatches?.(patched);
-        this.deps.triggerSave();
+        try {
+          const patched = await postNoteBlockTransaction(
+            op.patches,
+            op.deleteIds,
+            (id) => this.deps.getBlock(id),
+          );
+          if (patched.length > 0) this.deps.onServerPatches?.(patched);
+          this.deps.triggerSave();
+        } catch (error) {
+          if (error instanceof NoteBlockVersionConflictError) {
+            this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
+            return;
+          }
+          throw error;
+        }
         return;
       }
       case 'softDelete': {
@@ -362,10 +390,12 @@ export type SoftDeletePersistArgs = {
 };
 
 export type CreateBlockPersistArgs = {
+  id?: string;
   documentId: string;
   blockType: NoteBlock['type'];
   content: Record<string, unknown>;
   order_index?: number;
   parent_block_id: string | null;
   normalizeOrders?: Array<{ id: string; order_index: number }>;
+  transactionUpdates?: NoteBlockFieldPatch[];
 };

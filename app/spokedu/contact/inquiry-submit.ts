@@ -1,12 +1,16 @@
-import type { CurriculumInquiryPayload, DispatchInquiryPayload, InquiryPayload, PrivateInquiryPayload } from './inquiry-types';
+import { storeInquiryDraft } from './inquiry-draft';
+import type {
+  CurriculumInquiryPayload,
+  DispatchInquiryPayload,
+  InquiryPayload,
+  OtherInquiryPayload,
+  PrivateInquiryPayload,
+  SpomoveInquiryPayload,
+} from './inquiry-types';
 
-const TEMP_INQUIRY_STORAGE_KEY = 'spokedu.contact.inquiries.temp';
-
-type InquirySubmitResult = {
-  ok: boolean;
-  mode: 'api' | 'temp';
-  message?: string;
-};
+export type InquirySubmitResult =
+  | { ok: true; mode: 'api' }
+  | { ok: false; mode: 'temp' };
 
 function formatPrivateContent(payload: PrivateInquiryPayload): string {
   return [
@@ -25,7 +29,23 @@ function formatPrivateContent(payload: PrivateInquiryPayload): string {
 
 function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
   return [
-    '[기관 프로그램 문의]',
+    '[기관 출강 문의]',
+    `이름: ${payload.name}`,
+    `연락처: ${payload.phone}`,
+    `이메일: ${payload.email}`,
+    `희망 지역: ${payload.preferredRegion}`,
+    `문의 내용: ${payload.message}`,
+    `기관명: ${payload.organizationName}`,
+    `대상 연령: ${payload.targetAge}`,
+    `예상 인원: ${payload.expectedParticipants}`,
+    `희망 운영 형태: ${payload.preferredOperation}`,
+    `createdAt: ${payload.createdAt}`,
+  ].join('\n');
+}
+
+function formatSpomoveInquiry(payload: SpomoveInquiryPayload): string {
+  return [
+    '[SPOMOVE 도입 문의]',
     `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
     `이메일: ${payload.email}`,
@@ -41,7 +61,7 @@ function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
 
 function formatCurriculumExtra(payload: CurriculumInquiryPayload): string {
   return [
-    '[커리큘럼·콘텐츠 문의]',
+    '[커리큘럼·지도자 교육 문의]',
     `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
     `이메일: ${payload.email}`,
@@ -50,6 +70,20 @@ function formatCurriculumExtra(payload: CurriculumInquiryPayload): string {
     `기관명 또는 소속: ${payload.nameOrOrg}`,
     `문의 목적: ${payload.inquiryPurpose}`,
     `활용 대상: ${payload.utilizationTarget}`,
+    `createdAt: ${payload.createdAt}`,
+  ].join('\n');
+}
+
+function formatOtherExtra(payload: OtherInquiryPayload): string {
+  return [
+    '[기타 협업 문의]',
+    `이름: ${payload.name}`,
+    `연락처: ${payload.phone}`,
+    `이메일: ${payload.email}`,
+    `희망 지역: ${payload.preferredRegion}`,
+    `문의 내용: ${payload.message}`,
+    `기관명 또는 소속: ${payload.nameOrOrg}`,
+    `협업 목적: ${payload.collaborationPurpose}`,
     `createdAt: ${payload.createdAt}`,
   ].join('\n');
 }
@@ -95,6 +129,46 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
     };
   }
 
+  if (payload.type === 'spomove') {
+    return {
+      endpoint: '/api/dispatch/leads',
+      body: {
+        type: 'dispatch',
+        organization: payload.organizationName,
+        manager: payload.name,
+        phone: payload.phone,
+        email: payload.email,
+        location: payload.preferredRegion,
+        startDate: '',
+        endDate: '',
+        headcount: payload.expectedParticipants,
+        specialNeeds: payload.message,
+        inquiry: formatSpomoveInquiry(payload),
+        programs: ['SPOMOVE', ...(payload.preferredOperation ? [payload.preferredOperation] : [])],
+        targetAge: payload.targetAge ? [payload.targetAge] : [],
+        source: 'spokedu-contact-spomove',
+      },
+    };
+  }
+
+  if (payload.type === 'other') {
+    return {
+      endpoint: '/api/curriculum/leads',
+      body: {
+        type: 'curriculum',
+        name_or_org: payload.nameOrOrg || payload.name,
+        phone: payload.phone,
+        email: payload.email,
+        content_type: payload.collaborationPurpose || '기타 협업',
+        target_age: payload.preferredRegion,
+        purpose: payload.message,
+        teacher_training: '해당 없음',
+        partnership_type: '기타 협업',
+        extra: formatOtherExtra(payload),
+      },
+    };
+  }
+
   return {
     endpoint: '/api/curriculum/leads',
     body: {
@@ -110,18 +184,6 @@ function toLegacyRequest(payload: InquiryPayload): LegacyRequest {
       extra: formatCurriculumExtra(payload),
     },
   };
-}
-
-function storeTemporaryInquiry(payload: InquiryPayload) {
-  if (typeof window === 'undefined') return;
-  try {
-    const prevRaw = window.localStorage.getItem(TEMP_INQUIRY_STORAGE_KEY);
-    const prev = prevRaw ? (JSON.parse(prevRaw) as InquiryPayload[]) : [];
-    const next = [payload, ...prev].slice(0, 50);
-    window.localStorage.setItem(TEMP_INQUIRY_STORAGE_KEY, JSON.stringify(next));
-  } catch (error) {
-    console.warn('[spokedu/contact] temp inquiry store failed', error);
-  }
 }
 
 export async function submitInquiry(payload: InquiryPayload): Promise<InquirySubmitResult> {
@@ -141,7 +203,7 @@ export async function submitInquiry(payload: InquiryPayload): Promise<InquirySub
 
     return { ok: true, mode: 'api' };
   } catch {
-    storeTemporaryInquiry(payload);
-    return { ok: true, mode: 'temp' };
+    storeInquiryDraft(payload);
+    return { ok: false, mode: 'temp' };
   }
 }

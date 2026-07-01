@@ -40,7 +40,10 @@ export function DispatchProgramLineup() {
             trackLabel,
           } = item;
 
-          const body = (
+          const wrapperClassName = item.id === 'slow-sports' ? 'scroll-mt-20' : undefined;
+          const itemId = item.id === 'slow-sports' ? 'special' : undefined;
+
+          const row = (
             <div className="flex flex-col overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white sm:flex-row">
               <div className="relative h-[12.5rem] w-full shrink-0 overflow-hidden bg-slate-100 sm:h-[13.75rem] sm:w-[38%] lg:h-[15rem] lg:w-[36%]">
                 {image ? (
@@ -87,21 +90,22 @@ export function DispatchProgramLineup() {
 
           if (href) {
             return (
-              <Link
-                key={id}
-                href={href}
-                data-track={inferTrackFromHref(href)}
-                data-track-label={trackLabel}
-                className={`block ${cardInteractive} ${focusRing}`}
-              >
-                {body}
-              </Link>
+              <div key={id} id={itemId} className={wrapperClassName}>
+                <Link
+                  href={href}
+                  data-track={inferTrackFromHref(href)}
+                  data-track-label={trackLabel}
+                  className={`block ${cardInteractive} ${focusRing}`}
+                >
+                  {row}
+                </Link>
+              </div>
             );
           }
 
           return (
-            <article key={id} className="shadow-sm shadow-slate-900/[0.02]">
-              {body}
+            <article key={id} id={itemId} className={`shadow-sm shadow-slate-900/[0.02] ${wrapperClassName ?? ''}`}>
+              {row}
             </article>
           );
         })}

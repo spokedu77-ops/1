@@ -42,7 +42,8 @@ begin
     perform 1 from public.note_blocks where id = any(p_delete_ids) for update;
     update public.note_blocks
     set deleted_at = now_value, deleted_by = p_actor_id,
-        updated_at = now_value, updated_by = p_actor_id
+        updated_at = now_value, updated_by = p_actor_id,
+        version = version + 1
     where id = any(p_delete_ids) and deleted_at is null;
   end if;
 

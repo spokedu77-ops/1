@@ -50,7 +50,8 @@ begin
     set deleted_at = now_value,
         deleted_by = p_actor_id,
         updated_at = now_value,
-        updated_by = p_actor_id
+        updated_by = p_actor_id,
+        version = version + 1
     where id = any(p_delete_ids)
       and deleted_at is null;
   end if;

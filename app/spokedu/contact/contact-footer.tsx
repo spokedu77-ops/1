@@ -1,17 +1,11 @@
 import Link from 'next/link';
-import { navItems } from '../data/content';
-import { brandContactLinks, brandProfile, SPOKEDU_BASE_PATH } from '../data/site';
-import { contactPageContent } from './contact-page-data';
+import { brandContactLinks, brandProfile, footerNavLinks, SPOKEDU_BASE_PATH } from '../data/site';
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
 
 export function ContactPageFooter() {
-  const nav = navItems.filter((item) =>
-    contactPageContent.footer.navLabels.includes(item.label as (typeof contactPageContent.footer.navLabels)[number]),
-  );
-
   return (
     <footer className="mt-10 border-t border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white">
       <div className="mx-auto w-full max-w-6xl px-3.5 py-10 sm:px-6 sm:py-12">
@@ -20,7 +14,7 @@ export function ContactPageFooter() {
             <p className="text-base font-bold tracking-tight text-slate-950">
               {brandProfile.nameEn} / {brandProfile.nameKo}
             </p>
-            <p className="text-sm leading-relaxed text-slate-600">{contactPageContent.footer.tagline}</p>
+            <p className="text-sm leading-relaxed text-slate-600">{brandProfile.tagline}</p>
           </div>
           <div className="space-y-3 text-sm text-slate-700">
             <p>
@@ -57,12 +51,12 @@ export function ContactPageFooter() {
         </div>
         <nav aria-label="사이트 메뉴" className="mt-8 border-t border-slate-200/80 pt-6">
           <ul className="flex flex-wrap gap-x-4 gap-y-2">
-            {nav.map((link) => (
+            {footerNavLinks.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   data-track={inferTrackFromHref(link.href)}
-                  data-track-label={`contact-footer-nav-${link.label}`}
+                  data-track-label={link.trackLabel}
                   className={`text-sm font-medium text-slate-600 hover:text-indigo-700 ${focusRing}`}
                 >
                   {link.label}

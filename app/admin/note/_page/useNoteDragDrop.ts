@@ -15,7 +15,6 @@ import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   flattenVisualBlockIds,
-  getBlocksInParent,
   planBlockDropAt,
   sortRootBlocks,
   topLevelSelectedDragIds,
@@ -121,7 +120,7 @@ export function useNoteDragDrop(options: {
     }
     setDropTarget(null);
     dropTargetRef.current = null;
-  }, []);
+  }, [blocksRef, selectedBlockIdsRef]);
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
@@ -152,7 +151,7 @@ export function useNoteDragDrop(options: {
     const nextTarget = resolveBlockDropTarget(overId, blocksRef.current, event, pointerYRef.current);
     setDropTarget(nextTarget);
     dropTargetRef.current = nextTarget;
-  }, []);
+  }, [blocksRef]);
 
   const handleDragCancel = useCallback(() => {
     setActiveBlockId(null);
@@ -195,7 +194,7 @@ export function useNoteDragDrop(options: {
       setDocuments(prevDocuments);
       setError(e instanceof Error ? e.message : '문서 이동 실패');
     }
-  }, [documents, selectedId, triggerSave, documentEngine, blocksRef, setBlocks, setError]);
+  }, [documents, selectedId, triggerSave, documentEngine, setBlocks, setDocuments, setError]);
 
   const persistBlockReparent = useCallback(async (
     command: NoteBlockCommandResult,
@@ -213,19 +212,59 @@ export function useNoteDragDrop(options: {
     await documentEngine.persistBlockTransaction([...patchesById.values()]);
   }, [documentEngine]);
 
-  const persistBlockTransfer = useCallback(async (
-    sourceBlocks: NoteBlock[],
-    rootIds: string[],
-    targetDocumentId: string,
-  ) => {
-    const command = buildBlockForestTransferCommand(
-      sourceBlocks,
-      rootIds,
-      targetDocumentId,
+  const runOptimisticBlockCommand = useCallback(async (
+    prevBlocks: NoteBlock[],
+    command: NoteBlockCommandResult,
+    options: {
+      logLabel: string;
+      errorMessage: string;
+      afterPersist?: () => void;
+    },
+  ): Promise<boolean> => {
+    if (command.affectedIds.length === 0) return false;
+    noteUndo.pushBlockTransactionUndo(
+      prevBlocks,
+      command.nextBlocks,
+      command.affectedIds,
     );
-    await documentEngine.persistBlockTransaction(command.patches);
-    return command;
-  }, [documentEngine]);
+    setBlocks(command.nextBlocks);
+    try {
+      await persistBlockReparent(command);
+      options.afterPersist?.();
+      return true;
+    } catch (e) {
+      devLogger.error(options.logLabel, e);
+      setBlocks(prevBlocks);
+      setError(e instanceof Error ? e.message : options.errorMessage);
+      return false;
+    }
+  }, [noteUndo, persistBlockReparent, setBlocks, setError]);
+
+  const runPersistedBlockTransfer = useCallback(async (
+    prevBlocks: NoteBlock[],
+    command: ReturnType<typeof buildBlockForestTransferCommand>,
+    options: {
+      logLabel: string;
+      errorMessage: string;
+      afterPersist?: () => void;
+    },
+  ): Promise<boolean> => {
+    noteUndo.pushRestoreBlocksUndo(
+      mergeBlocksWithStoreContent(prevBlocks),
+      command.movedIds,
+    );
+    try {
+      await documentEngine.persistBlockTransaction(command.patches);
+      setBlocks(command.nextBlocks);
+      options.afterPersist?.();
+      return true;
+    } catch (e) {
+      devLogger.error(options.logLabel, e);
+      setBlocks(prevBlocks);
+      setError(e instanceof Error ? e.message : options.errorMessage);
+      return false;
+    }
+  }, [documentEngine, noteUndo, setBlocks, setError]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
@@ -296,45 +335,29 @@ export function useNoteDragDrop(options: {
           'before',
         );
         if (command.affectedIds.length === 0) return;
-        noteUndo.pushBlockTransactionUndo(
+        await runOptimisticBlockCommand(
           prevBlocks,
-          command.nextBlocks,
-          command.affectedIds,
+          command,
+          {
+            logLabel: '[Note] moveBlockToCurrentDoc',
+            errorMessage: '블록 순서 저장 실패',
+          },
         );
-        setBlocks(command.nextBlocks);
-        try {
-          await documentEngine.persistBlockTransaction(command.fieldPatches);
-        } catch (e) {
-          devLogger.error('[Note] moveBlockToCurrentDoc', e);
-          setBlocks(prevBlocks);
-          setError(e instanceof Error ? e.message : '블록 순서 저장 실패');
-        }
         return;
       }
 
       // Move the whole subtree across documents so toggle children are not orphaned.
       const previousBlocks = blocksRef.current;
-      try {
-        const planned = buildBlockForestTransferCommand(
-          previousBlocks,
-          [movingBlock.id],
-          targetDocumentId,
-        );
-        noteUndo.pushRestoreBlocksUndo(
-          mergeBlocksWithStoreContent(previousBlocks),
-          planned.movedIds,
-        );
-        const command = await persistBlockTransfer(
-          previousBlocks,
-          [movingBlock.id],
-          targetDocumentId,
-        );
-        setBlocks(command.nextBlocks);
-        triggerSave();
-      } catch (e) {
-        devLogger.error('[Note] moveBlockToDoc', e);
-        setError(e instanceof Error ? e.message : '블록 이동 실패');
-      }
+      const command = buildBlockForestTransferCommand(
+        previousBlocks,
+        [movingBlock.id],
+        targetDocumentId,
+      );
+      await runPersistedBlockTransfer(previousBlocks, command, {
+        logLabel: '[Note] moveBlockToDoc',
+        errorMessage: '블록 이동 실패',
+        afterPersist: triggerSave,
+      });
       return;
     }
 
@@ -370,13 +393,11 @@ export function useNoteDragDrop(options: {
                   roots,
                   targetDocId,
                 );
-                noteUndo.pushRestoreBlocksUndo(
-                  mergeBlocksWithStoreContent(prevBlocks),
-                  command.movedIds,
-                );
-                await documentEngine.persistBlockTransaction(command.patches);
-                setBlocks(command.nextBlocks);
-                triggerSave();
+                await runPersistedBlockTransfer(prevBlocks, command, {
+                  logLabel: '[Note] moveBlockGroupToSubPage',
+                  errorMessage: '하위 페이지로 블록 묶음 이동 실패',
+                  afterPersist: triggerSave,
+                });
               } catch (e) {
                 devLogger.error('[Note] moveBlockGroupToSubPage', e);
                 setBlocks(prevBlocks);
@@ -396,21 +417,11 @@ export function useNoteDragDrop(options: {
               target.blockId,
               'inside',
             );
-            if (command.affectedIds.length === 0) return;
-            try {
-              noteUndo.pushBlockTransactionUndo(
-                prevBlocks,
-                command.nextBlocks,
-                command.affectedIds,
-              );
-              setBlocks(command.nextBlocks);
-              await documentEngine.persistBlockTransaction(command.fieldPatches);
-              triggerSave();
-            } catch (e) {
-              devLogger.error('[Note] moveBlockGroupInsideBlock', e);
-              setBlocks(prevBlocks);
-              setError(e instanceof Error ? e.message : '하위 블록 묶음 이동 저장 실패');
-            }
+            await runOptimisticBlockCommand(prevBlocks, command, {
+              logLabel: '[Note] moveBlockGroupInsideBlock',
+              errorMessage: '하위 블록 묶음 이동 저장 실패',
+              afterPersist: triggerSave,
+            });
             return;
           }
         }
@@ -422,19 +433,10 @@ export function useNoteDragDrop(options: {
             target.position,
           );
           if (command.affectedIds.length > 0) {
-            noteUndo.pushBlockTransactionUndo(
-              prevBlocks,
-              command.nextBlocks,
-              command.affectedIds,
-            );
-            setBlocks(command.nextBlocks);
-            try {
-              await documentEngine.persistBlockTransaction(command.fieldPatches);
-            } catch (e) {
-              devLogger.error('[Note] moveBlockGroup', e);
-              setBlocks(prevBlocks);
-              setError(e instanceof Error ? e.message : '블록 묶음 이동 저장 실패');
-            }
+            await runOptimisticBlockCommand(prevBlocks, command, {
+              logLabel: '[Note] moveBlockGroup',
+              errorMessage: '블록 묶음 이동 저장 실패',
+            });
             return;
           }
         }
@@ -457,13 +459,11 @@ export function useNoteDragDrop(options: {
             [moving.id],
             targetDocId,
           );
-          noteUndo.pushRestoreBlocksUndo(
-            mergeBlocksWithStoreContent(prevBlocks),
-            command.movedIds,
-          );
-          await documentEngine.persistBlockTransaction(command.patches);
-          setBlocks(command.nextBlocks);
-          triggerSave();
+          await runPersistedBlockTransfer(prevBlocks, command, {
+            logLabel: '[Note] moveBlockToSubPage',
+            errorMessage: '하위 페이지로 블록 이동 실패',
+            afterPersist: triggerSave,
+          });
         } catch (e) {
           devLogger.error('[Note] moveBlockToSubPage', e);
           setError(e instanceof Error ? e.message : '하위 페이지로 블록 이동 실패');
@@ -484,16 +484,21 @@ export function useNoteDragDrop(options: {
 
     const command = buildMoveBlockCommand(prevBlocks, moving.id, plan);
     if (command.affectedIds.length === 0) return;
-    noteUndo.pushBlockTransactionUndo(prevBlocks, command.nextBlocks, command.affectedIds);
-    setBlocks(command.nextBlocks);
-    try {
-      await persistBlockReparent(command);
-    } catch (e) {
-      devLogger.error('[Note] reparentBlock', e);
-      setBlocks(prevBlocks);
-      setError(e instanceof Error ? e.message : '블록 이동 저장 실패');
-    }
-  }, [noteUndo, persistBlockReparent, persistBlockTransfer, selectedId, triggerSave, handleReparentDocument, documents, setBlocks, setError]);
+    await runOptimisticBlockCommand(prevBlocks, command, {
+      logLabel: '[Note] reparentBlock',
+      errorMessage: '블록 이동 저장 실패',
+    });
+  }, [
+    blocksRef,
+    documents,
+    handleReparentDocument,
+    runOptimisticBlockCommand,
+    runPersistedBlockTransfer,
+    selectedId,
+    setBlocks,
+    setError,
+    triggerSave,
+  ]);
 
   return {
     sensors,

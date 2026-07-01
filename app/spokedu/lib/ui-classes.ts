@@ -107,3 +107,61 @@ export const homeHeroShell =
 
 /** 다크 CTA 그리드 — 모바일 2줄·높이 균일 */
 export const landingDarkCtaButton = `${btnPrimaryOnDark} text-center`;
+
+/** 스포키듀 마케팅 사이트 공통 콘텐츠 너비 */
+export const siteContainer = 'mx-auto w-full max-w-[1240px] px-5 sm:px-8 lg:px-10';
+
+/** 홈·공통 섹션 상하 여백 — 모바일 56~72 / 태블릿 72~88 / 데스크톱 96~120 */
+export const siteSectionPad =
+  'py-14 sm:py-[4.5rem] md:py-[5.5rem] lg:py-24 xl:py-[7.5rem]';
+
+export const siteSectionPadCompact =
+  'py-12 sm:py-16 md:py-20 lg:py-[6.5rem]';
+
+/** 브랜드 컬러 */
+export const brandNavy = '#0B1220';
+export const brandBlue = '#1D4ED8';
+export const brandSurface = '#EEF3FA';
+
+/** 홈 H1 — Hero 56~68px */
+export const homeHeroTitle = `font-bold leading-[1.15] tracking-tight text-white ${koreanLineBreak} text-[2rem] min-[390px]:text-[2.25rem] sm:text-[2.75rem] md:text-[3.25rem] lg:text-[3.5rem] xl:text-[4.25rem]`;
+
+/** 홈 섹션 H2 — 40~48px */
+export const homeSectionH2 = `font-bold tracking-tight text-[#0B1220] ${koreanLineBreak} text-[1.75rem] sm:text-[2.125rem] lg:text-[2.5rem] xl:text-[3rem] leading-[1.25]`;
+
+export const homeSectionH2OnDark = `font-bold tracking-tight text-white ${koreanLineBreak} text-[1.75rem] sm:text-[2.125rem] lg:text-[2.5rem] xl:text-[3rem] leading-[1.25]`;
+
+/** 섹션 리드 18~20px */
+export const homeBodyLead = `mt-5 max-w-[40rem] text-base leading-[1.7] text-slate-600 sm:text-[17px] lg:text-lg xl:text-xl ${koreanLineBreak}`;
+
+export const homeBodyLeadOnDark = `mt-5 max-w-[40rem] text-base leading-[1.7] text-white/80 sm:text-[17px] lg:text-lg xl:text-xl ${koreanLineBreak}`;
+
+/** 섹션 라벨 */
+export const homeSectionEyebrowDark = 'text-[13px] font-semibold uppercase tracking-[0.18em] text-[#1D4ED8] sm:text-sm';
+
+export const homeSectionEyebrowLight = 'text-[13px] font-semibold uppercase tracking-[0.18em] text-white/70 sm:text-sm';
+
+/** 카드 제목 20~24px */
+export const homeCardTitle = `text-xl font-bold text-[#0B1220] sm:text-[1.35rem] lg:text-2xl ${koreanLineBreak}`;
+
+/** 기본 본문 16~18px */
+export const homeBody = `text-base leading-[1.7] text-slate-600 sm:text-[17px] ${koreanLineBreak}`;
+
+/** 캡션 13~14px */
+export const homeCaption = 'text-[13px] font-medium leading-snug text-slate-500 sm:text-sm';
+
+/** 브랜드 primary CTA — 48~52px */
+export const siteBtnPrimary =
+  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-7 py-3.5 text-[15px] font-semibold text-white transition hover:bg-[#1a44c4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] sm:min-h-[3.25rem] sm:text-base';
+
+export const siteBtnSecondary =
+  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] sm:min-h-[3.25rem] sm:text-base';
+
+export const siteBtnSecondaryOnDark =
+  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/5 px-7 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
+
+export const siteBtnGhostOnDark =
+  'inline-flex min-h-[3rem] items-center justify-center gap-1.5 text-[15px] font-semibold text-white/85 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
+
+/** 얇은 border 카드 — 그림자 최소 */
+export const siteCardBorder = 'border border-slate-200/90 bg-white';
