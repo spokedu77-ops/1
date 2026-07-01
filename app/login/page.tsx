@@ -33,8 +33,6 @@ function LoginContent() {
     (nextSafe != null && nextSafe.startsWith('/spokedu-master/profile?'));
   const isTrialMode = type !== 'admin' && (searchParams.get('mode') === 'trial' || isSpokeduMasterTrialNext);
   const showTrialLogin = isTrialMode && !showPasswordLogin;
-  const showSpokeduProNextHint =
-    nextSafe === '/spokedu-pro' || (nextSafe != null && nextSafe.startsWith('/spokedu-pro/'));
 
   // 페이지 로드 시 리프레시 토큰이 무효한 경우에만 세션 클리어
   // 3초 타임아웃: getSession()이 토큰 갱신 네트워크 호출로 auth lock을 점유해
@@ -193,17 +191,7 @@ function LoginContent() {
           <p className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.3em] mt-4">
             {showTrialLogin ? 'SPOKEDU MASTER Trial' : type === 'admin' ? 'System Administrator' : 'Physical Education Expert'}
           </p>
-          {showSpokeduProNextHint && (
-            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/90 px-4 py-3 text-left text-sm text-blue-950 space-y-1.5">
-              <p className="font-bold leading-snug">
-                SPOKEDU PRO 체험은 신청하신 이메일로 로그인해야 연결됩니다.
-              </p>
-              <p className="text-xs font-medium text-blue-900/85 leading-relaxed">
-                다른 이메일로 로그인하면 체험 권한이 연결되지 않을 수 있습니다.
-              </p>
-            </div>
-          )}
-          {type === 'admin' && !showSpokeduProNextHint && (
+          {type === 'admin' && (
             <p className="mt-4 text-xs font-medium text-slate-500 leading-relaxed">
               관리자 ID는 <span className="font-bold text-slate-700">choijihoon</span>,{' '}
               <span className="font-bold text-slate-700">kimkoomin</span>,{' '}

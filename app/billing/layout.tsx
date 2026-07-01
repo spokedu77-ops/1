@@ -3,8 +3,7 @@
 import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 /**
- * /billing 은 대부분 /spokedu-pro 로 리다이렉트되지만,
- * 계획상 구독(결제) 경로에도 언어 스위처를 둘 수 있도록 최소 셸만 둔다.
+ * /billing 은 /spokedu-master/subscription 으로 리다이렉트된다.
  */
 export default function BillingLayout({ children }: { children: React.ReactNode }) {
   return (

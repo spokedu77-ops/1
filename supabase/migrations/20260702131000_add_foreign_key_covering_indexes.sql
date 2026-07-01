@@ -30,15 +30,3 @@ CREATE INDEX IF NOT EXISTS idx_spm_class_record_students_owner_id
 
 CREATE INDEX IF NOT EXISTS idx_spm_class_record_students_student_id
   ON public.spokedu_master_class_record_students (student_id);
-
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_ai_reports_created_by
-  ON public.spokedu_pro_ai_reports (created_by);
-
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_attendance_recorded_by
-  ON public.spokedu_pro_attendance (recorded_by);
-
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_observations_program_id
-  ON public.spokedu_pro_observations (program_id);
-
-CREATE INDEX IF NOT EXISTS idx_spokedu_pro_observations_teacher_id
-  ON public.spokedu_pro_observations (teacher_id);

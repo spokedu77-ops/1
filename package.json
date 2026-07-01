@@ -19,7 +19,6 @@
     "qa:note-invariants": "node scripts/note-invariant-qa.mjs",
     "qa:note-invariants:quick": "node scripts/note-invariant-qa.mjs --quick",
     "qa:note-cross-select": "node scripts/verify-note-cross-select-qa.mjs",
-    "verify:spokedu-plan-copy": "node scripts/verify-spokedu-plan-copy.mjs",
     "qa:spokedu-master": "node scripts/spokedu-master-commercial-smoke-qa.mjs",
     "qa:spokedu-master:data-integrity": "node scripts/spokedu-master-data-integrity.mjs",
     "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs"

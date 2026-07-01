@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
-import { LanguageSwitcher } from '@/app/components/LanguageSwitcher';
 
 const CACHE_TTL = 5 * 60 * 1000;
 const SLOW_CHECK_MS = 3000;
@@ -44,7 +43,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [checkSlow, setCheckSlow] = useState(false);
   const isNoteRoute = pathname != null && pathname.startsWith('/admin/note');
   const isFullscreenRoute =
-    pathname != null && (pathname.startsWith('/admin/spokedu-pro') || pathname.startsWith('/admin/spokedu-master'));
+    pathname != null && pathname.startsWith('/admin/spokedu-master');
   // 실제 존재하는 플레이어 라우트만 유지해 유령 prefix 재유입을 막습니다.
   const GAME_ROUTE_PREFIXES = ['/admin/camera', '/admin/spomove/training/_player'] as const;
   const isGameRoute =
@@ -132,11 +131,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               : 'flex-1 pt-16 md:pt-0 bg-white min-h-screen text-gray-900'
       }
     >
-      {isFullscreenRoute && (
-        <div className="pointer-events-auto absolute left-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[200] sm:left-3">
-          <LanguageSwitcher variant="dark" className="max-w-[130px]" />
-        </div>
-      )}
       {children}
     </main>
   );

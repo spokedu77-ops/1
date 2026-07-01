@@ -26,5 +26,5 @@ rg "\x{FFFD}|怨|諛|吏|媛|蹂|鍮|湲|醫|嫄|珥|獄|筌|揶|癰|疫|椰" ap
 
 ## 개발 현황
 
-- DEV_NOTES.md를 반드시 먼저 읽는다.
-- 대화 기록이 없어도 DEV_NOTES.md와 코드 기준으로 이어받을 수 있다.
+- 작업 기준은 `app/spokedu-master`, `app/api/spokedu-master`, `app/admin/spokedu-master` 코드다.
+- 대화 기록이 없어도 위 경로와 `supabase/migrations/*spokedu_master*`를 기준으로 이어받는다.

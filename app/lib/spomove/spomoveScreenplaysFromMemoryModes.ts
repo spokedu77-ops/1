@@ -2,7 +2,7 @@
  * SPOMOVE 스크린플레이(프로그램 뱅크 · 브레인체육) 발행용 행 생성.
  *
  * 단일 소스: `app/admin/spomove/training/_player/constants.ts` 의 MODES.
- * DB `spokedu_pro_screenplays`는 GET /api/spokedu-pro/screenplays 가 읽는 공식 카탈로그.
+ * Memory Game 모드에서 SPOMOVE 스크린플레이 후보를 생성한다.
  *
  * mode_id 값은 `getSpomoveLaunchParams` 의 역매핑과 일치해야 함.
  */

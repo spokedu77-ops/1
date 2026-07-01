@@ -124,25 +124,8 @@ export default function CameraControlPage() {
     setParticipantSlots(mergeParticipantSlots(savedSettings.participantSlots));
   }, []);
 
-  const loadRosterStudents = async () => {
-    setRosterMessage('');
-    try {
-      const res = await fetch('/api/spokedu-pro/students', { cache: 'no-store' });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setRosterMessage(typeof json?.error === 'string' ? json.error : '원생 목록을 불러오지 못했습니다.');
-        return;
-      }
-      const students = Array.isArray(json?.students) ? json.students as CameraRosterStudent[] : [];
-      setRosterStudents(students.filter((student) => student.id && student.name));
-      setRosterMessage(students.length ? '' : '등록된 원생이 없습니다.');
-    } catch {
-      setRosterMessage('네트워크 오류로 원생 목록을 불러오지 못했습니다.');
-    }
-  };
-
   useEffect(() => {
-    void loadRosterStudents();
+    setRosterMessage('원생 목록 연동은 종료되었습니다.');
   }, []);
 
   const loadRecentResults = async () => {

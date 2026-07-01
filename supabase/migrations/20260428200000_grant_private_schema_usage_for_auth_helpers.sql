@@ -13,8 +13,7 @@ BEGIN
       'is_admin',
       'rls_is_admin',
       'is_admin_or_master',
-      'current_org_id',
-      'spokedu_pro_is_center_member'
+      'current_org_id'
     ]
     LOOP
       FOR r IN

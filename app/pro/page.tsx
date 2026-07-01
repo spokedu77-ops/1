@@ -289,7 +289,7 @@ export default function ProLandingPage() {
             <p className="mt-6 text-xs text-slate-500 sm:text-sm">베타 관장단은 한정 모집으로 운영됩니다.</p>
           </div>
           <p className="mt-10 text-center text-xs text-slate-600">
-            <Link href="/spokedu-pro/legal/subscription" className="font-bold text-slate-500 underline-offset-2 hover:text-slate-400 hover:underline">
+            <Link href="/spokedu-master/terms" className="font-bold text-slate-500 underline-offset-2 hover:text-slate-400 hover:underline">
               구독·청약철회·환불 안내
             </Link>
           </p>

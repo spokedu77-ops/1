@@ -41,7 +41,6 @@ const eslintConfig = defineConfig([
       "app/admin/**/*.{tsx,ts}",
       "app/components/admin/**/*.{tsx,ts}",
       "app/components/runtime/**/*.{tsx,ts}",
-      "app/(pro)/spokedu-pro/**/*.{tsx,ts}",
       "app/teacher/**/*.{tsx,ts}",
       "app/info/**/*.{tsx,ts}",
     ],
