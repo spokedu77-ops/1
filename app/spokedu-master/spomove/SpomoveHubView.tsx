@@ -691,7 +691,7 @@ function CardInfo({
         ) : null}
       </div>
       {isReady ? (
-        <div className="mt-3 grid gap-2 sm:grid-cols-3">
+        <div className={`mt-3 grid gap-2 ${wasRecent ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           <button
             type="button"
             onClick={(event) => {
@@ -707,17 +707,29 @@ function CardInfo({
           <Link href={href} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
             실행 준비
           </Link>
+          {wasRecent ? (
           <Link href={href} className="inline-flex min-h-10 items-center justify-center gap-1 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
             <RotateCcw className="h-3.5 w-3.5" />
             다시 실행
           </Link>
+          ) : null}
         </div>
       ) : null}
       {/* 푸터: 메타 + 행동 affordance */}
       <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-3">
         <p className="text-[11px] font-semibold text-slate-400">{metaLine}</p>
         {isReady ? (
-          <span className="shrink-0 pl-2 text-[12px] font-black text-indigo-600">보기 →</span>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onPreview();
+            }}
+            className="shrink-0 pl-2 text-[12px] font-black text-indigo-600"
+          >
+            보기 →
+          </button>
         ) : (
           <span className="inline-flex shrink-0 items-center gap-1 pl-2 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />

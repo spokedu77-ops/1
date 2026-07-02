@@ -89,8 +89,10 @@ describe('spokedu_master recurring billing migration contract', () => {
     expect(cronSql).toContain('CREATE OR REPLACE FUNCTION public.spokedu_master_run_billing_renewal_cron');
     expect(cronSql).toContain("WHERE name = 'spokedu_master_billing_renew_url'");
     expect(cronSql).toContain("WHERE name = 'spokedu_master_billing_cron_secret'");
-    expect(cronSql).toContain('PERFORM net.http_get');
+    expect(cronSql).toContain('PERFORM net.http_post');
+    expect(cronSql).not.toContain('PERFORM net.http_get');
     expect(cronSql).toContain("'Authorization', 'Bearer ' || trim(v_cron_secret)");
+    expect(cronSql).toContain("'Content-Type', 'application/json'");
     expect(cronSql).toContain("cron.unschedule('spokedu-master-billing-renew-hourly')");
     expect(cronSql).toContain("'spokedu-master-billing-renew-hourly'");
     expect(cronSql).toContain("'0 * * * *'");
