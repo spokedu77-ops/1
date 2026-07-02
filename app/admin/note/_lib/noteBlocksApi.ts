@@ -123,7 +123,10 @@ async function parseApiError(res: Response, fallback: string): Promise<never> {
   const j = await res.json().catch(() => null);
   if (res.status === 409) {
     const conflicts = parsePatchedBlocks(j);
-    if (conflicts.length > 0) {
+    if (
+      conflicts.length > 0
+      || (j && typeof j === 'object' && (j as { error?: string }).error === 'version_conflict')
+    ) {
       throw new NoteBlockVersionConflictError(conflicts);
     }
   }

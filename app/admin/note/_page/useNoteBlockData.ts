@@ -48,6 +48,19 @@ function noteBlocksStructureChanged(prev: NoteBlock[], next: NoteBlock[]): boole
   });
 }
 
+function noteBlocksServerStateChanged(prev: NoteBlock[], next: NoteBlock[]): boolean {
+  if (noteBlocksStructureChanged(prev, next)) return true;
+  const prevById = new Map(prev.map((block) => [block.id, block]));
+  return next.some((block) => {
+    const previous = prevById.get(block.id);
+    if (!previous) return true;
+    return previous.version !== block.version
+      || previous.updated_at !== block.updated_at
+      || previous.deleted_at !== block.deleted_at
+      || previous.deleted_by !== block.deleted_by;
+  });
+}
+
 export function useNoteBlockData(options: {
   selectedId: string | null;
   docTab: DocTab;
@@ -170,7 +183,7 @@ export function useNoteBlockData(options: {
         scheduleIdleReconcile(documentId, loadGen);
         return;
       }
-      if (!noteBlocksStructureChanged(blocksRef.current, merged)) {
+      if (!noteBlocksServerStateChanged(blocksRef.current, merged)) {
         onAfterIdleReconcile?.();
         return;
       }
@@ -222,7 +235,7 @@ export function useNoteBlockData(options: {
       if (wouldReconcileRegressLocalStructure(blocksRef.current, merged)) {
         return;
       }
-      if (!noteBlocksStructureChanged(blocksRef.current, merged)) {
+      if (!noteBlocksServerStateChanged(blocksRef.current, merged)) {
         return;
       }
       documentEngineRef.current.replaceBlocks(merged);

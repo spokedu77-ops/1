@@ -53,6 +53,24 @@ describe('NoteBlockVersionConflictError', () => {
     expect(error).toBeInstanceOf(NoteBlockVersionConflictError);
     expect(error.conflicts[0].version).toBe(3);
   });
+
+  it('can represent an empty server conflict payload without becoming a plain error', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({
+        error: 'version_conflict',
+        conflicts: [],
+      }),
+      { status: 409 },
+    ));
+
+    await expect(patchNoteBlocksResolvingConflicts(
+      [{ id: 'a', content: { text: 'x' } }],
+      () => ({ id: 'a', version: 1 }),
+    )).rejects.toMatchObject({
+      name: 'NoteBlockVersionConflictError',
+      conflicts: [],
+    });
+  });
 });
 
 describe('patchNoteBlocksResolvingConflicts', () => {

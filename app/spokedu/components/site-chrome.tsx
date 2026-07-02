@@ -158,8 +158,8 @@ export function SiteHeader() {
     `text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
       onHero
         ? active
-          ? 'text-white'
-          : 'text-white/85 hover:text-white focus-visible:outline-white'
+          ? 'text-[#0a2540]'
+          : 'text-[#425466] hover:text-[#0a2540] focus-visible:outline-[#635bff]'
         : active
           ? 'text-[#0B1220]'
           : 'text-slate-600 hover:text-[#0B1220] focus-visible:outline-blue-600'
@@ -276,8 +276,8 @@ export function SiteHeader() {
     <header
       className={`${isHome ? 'fixed inset-x-0' : 'sticky'} top-0 z-40 transition-colors duration-300 ${
         onHero
-          ? 'border-b border-white/10 bg-[#0B1220]'
-          : 'border-b border-slate-200 bg-white'
+          ? 'border-b border-transparent bg-[#f6f9fc]/80 backdrop-blur-md'
+          : 'border-b border-slate-200/80 bg-white/95 backdrop-blur-md'
       }`}
     >
       <div className={`${siteContainer} flex items-center justify-between gap-3 py-3.5 sm:py-4`}>
@@ -285,7 +285,7 @@ export function SiteHeader() {
           href={SPOKEDU_BASE_PATH}
           className={`text-[13px] font-semibold tracking-[0.14em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
             onHero
-              ? 'text-white focus-visible:outline-white'
+              ? 'text-[#0a2540] focus-visible:outline-[#635bff]'
               : 'text-[#0B1220] focus-visible:outline-blue-600'
           }`}
         >
@@ -300,9 +300,9 @@ export function SiteHeader() {
           <NavAnchor
             href={`${SPOKEDU_BASE_PATH}/contact`}
             trackLabel="header-contact"
-            className={`hidden min-h-11 items-center justify-center rounded-md px-4 py-2 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
+            className={`hidden min-h-11 items-center justify-center rounded-full px-5 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
               onHero
-                ? 'border border-white/40 bg-white/10 text-white hover:bg-white/20 focus-visible:outline-white'
+                ? 'bg-[#0a2540] text-white hover:bg-[#0d2d4f] focus-visible:outline-[#635bff]'
                 : 'text-white hover:opacity-90 focus-visible:outline-blue-600'
             }`}
             style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
@@ -312,9 +312,9 @@ export function SiteHeader() {
 
           <button
             type="button"
-            className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border px-3 lg:hidden ${
+            className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
               onHero
-                ? 'border-white/40 text-white focus-visible:outline-white'
+                ? 'border-slate-300/80 text-[#0a2540] focus-visible:outline-[#635bff]'
                 : 'border-slate-300 text-[#0B1220] focus-visible:outline-blue-600'
             } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
             aria-expanded={menuOpen}

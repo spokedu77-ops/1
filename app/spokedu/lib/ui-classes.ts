@@ -165,3 +165,37 @@ export const siteBtnGhostOnDark =
 
 /** 얇은 border 카드 — 그림자 최소 */
 export const siteCardBorder = 'border border-slate-200/90 bg-white';
+
+/** Stripe-style marketing home — 라이트 Hero·풀 라운드 CTA */
+export const homeMarketingHero =
+  'relative overflow-hidden bg-[#f6f9fc] pt-28 sm:pt-32 lg:pt-36';
+
+export const homeMarketingH1 = `font-semibold tracking-[-0.03em] text-[#0a2540] ${koreanLineBreak} text-[2.125rem] leading-[1.12] min-[390px]:text-[2.375rem] sm:text-[3rem] md:text-[3.5rem] lg:text-[4rem] lg:leading-[1.08]`;
+
+export const homeMarketingLead = `mt-6 max-w-xl text-[17px] leading-[1.65] text-[#425466] sm:text-lg sm:leading-[1.7] ${koreanLineBreak}`;
+
+export const homeMarketingSectionTitle = `font-semibold tracking-[-0.025em] text-[#0a2540] ${koreanLineBreak} text-[1.875rem] leading-[1.2] sm:text-[2.25rem] lg:text-[2.75rem]`;
+
+export const homeMarketingSectionLead = `mt-4 max-w-2xl text-base leading-[1.7] text-[#425466] sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+
+export const homeMarketingLabel = 'text-sm font-medium text-[#635bff]';
+
+export const homeMarketingCard = 'overflow-hidden rounded-2xl bg-white shadow-[0_13px_27px_-5px_rgba(50,50,93,0.12),0_8px_16px_-8px_rgba(0,0,0,0.12)]';
+
+export const homeMarketingImageFrame =
+  'overflow-hidden rounded-2xl shadow-[0_50px_100px_-20px_rgba(50,50,93,0.18),0_30px_60px_-30px_rgba(0,0,0,0.22)] ring-1 ring-slate-900/[0.04]';
+
+export const homeMarketingBtn =
+  'inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-[#0a2540] px-6 text-[15px] font-medium text-white shadow-sm transition hover:bg-[#0d2d4f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:px-7 sm:text-base';
+
+export const homeMarketingBtnOutline =
+  'inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-slate-300/90 bg-white px-6 text-[15px] font-medium text-[#0a2540] shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:px-7 sm:text-base';
+
+export const homeMarketingBtnGhost =
+  'inline-flex min-h-[2.75rem] items-center gap-1.5 text-[15px] font-medium text-[#425466] underline-offset-4 transition hover:text-[#0a2540] hover:underline sm:text-base';
+
+export const homeMarketingDarkSection = 'relative overflow-hidden bg-[#0a2540]';
+
+export const homeMarketingDarkTitle = `font-semibold tracking-[-0.025em] text-white ${koreanLineBreak} text-[1.875rem] leading-[1.2] sm:text-[2.25rem] lg:text-[2.75rem]`;
+
+export const homeMarketingDarkLead = `mt-4 max-w-xl text-base leading-[1.7] text-white/75 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
