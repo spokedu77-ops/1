@@ -2,10 +2,12 @@
 
 import { homePage } from '../../data/home-page';
 import {
+  homeCardPanelPad,
   homeFinalCtaPad,
   homeFocusRing,
   homeSectionH2,
-  koreanLineBreak,
+  homeSectionScrollMt,
+  koreanText,
   siteBtnPrimary,
   siteBtnSecondary,
   siteContainer,
@@ -16,23 +18,25 @@ export function HomeFinalCta() {
   const [primary, secondary, tertiary] = homePage.finalCta.items;
 
   return (
-    <section id={homePage.finalCta.id} className={`${homeFinalCtaPad} bg-[#FAFAF8]`}>
+    <section id={homePage.finalCta.id} className={`${homeSectionScrollMt} ${homeFinalCtaPad} bg-[#FAFAF8]`}>
       <div className={siteContainer}>
-        <div className="w-full rounded-2xl border border-[#1D4ED8]/12 bg-[#EEF3FA] px-6 py-8 sm:px-10 sm:py-10 lg:grid lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-center lg:gap-12 lg:px-12 lg:py-11">
+        <div
+          className={`w-full min-w-0 rounded-2xl border border-[#1D4ED8]/12 bg-[#EEF3FA] ${homeCardPanelPad} min-[1200px]:grid min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] min-[1200px]:items-start min-[1200px]:gap-10 lg:px-7 lg:py-7`}
+        >
           <div className="min-w-0">
-            <h2 className={homeSectionH2}>
+            <h2 className={`${homeSectionH2} max-w-[36rem]`}>
               {homePage.finalCta.headlineLines.map((line) => (
-                <span key={line} className="block lg:whitespace-nowrap">
+                <span key={line} className="block">
                   {line}
                 </span>
               ))}
             </h2>
-            <p className={`mt-4 max-w-xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanLineBreak}`}>
+            <p className={`mt-4 max-w-xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.finalCta.lead}
             </p>
           </div>
 
-          <div className="mt-8 flex w-full flex-col gap-3 lg:mt-0 lg:max-w-sm lg:justify-self-end">
+          <div className="mt-8 flex w-full min-w-0 flex-col gap-3 min-[1200px]:mt-0">
             {primary ? (
               <TrackedLink
                 href={primary.href}

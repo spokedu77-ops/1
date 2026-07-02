@@ -260,3 +260,12 @@ body {
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
 }
+
+/** SPOKEDU 마케팅 — 섹션 콘텐츠 정렬 (clamp padding은 Tailwind arbitrary px 미지원 대비) */
+.site-container {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1240px;
+  margin-inline: auto;
+  padding-inline: clamp(1.25rem, 4vw, 3rem);
+}

@@ -693,6 +693,7 @@ function CardInfo({
       {isReady ? (
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <button
+            data-spm-spomove-card-action="preview"
             type="button"
             onClick={(event) => {
               event.preventDefault();
@@ -704,7 +705,11 @@ function CardInfo({
             <Eye className="h-3.5 w-3.5" />
             프로그램 미리보기
           </button>
-          <Link href={href} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white">
+          <Link
+            href={href}
+            data-spm-spomove-card-action="start"
+            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white"
+          >
             실행 준비
           </Link>
         </div>
@@ -879,7 +884,13 @@ export default function SpomoveHubView() {
                     <p className="line-clamp-2 text-sm font-black text-slate-950">{title}</p>
                     <p className="mt-1 text-[11px] font-bold text-slate-500">최근 실행</p>
                     <div className="mt-3 grid gap-2">
-                      <Link href={`/spokedu-master/spomove/session?preset=${activity.programId}`} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">다시 실행</Link>
+                      <Link
+                        href={`/spokedu-master/spomove/session?preset=${activity.programId}`}
+                        data-spm-spomove-recent-action="rerun"
+                        className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
+                      >
+                        다시 실행
+                      </Link>
                     </div>
                   </article>
                 );

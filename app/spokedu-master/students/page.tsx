@@ -104,6 +104,9 @@ export default function StudentsPage() {
     if (new URLSearchParams(window.location.search).get('add') === '1') {
       setStudentSaveError(null);
       setAddOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('add');
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
     }
   }, []);
 
@@ -774,19 +777,55 @@ export default function StudentsPage() {
         ) : null}
       </div>
 
-      <BottomSheet open={addOpen} title="학생 추가" onClose={() => setAddOpen(false)}>
+      <BottomSheet
+        open={addOpen}
+        title="학생 추가"
+        onClose={() => setAddOpen(false)}
+        initialFocusSelector="[data-spm-student-add-name]"
+      >
         <div className="space-y-4">
           <label className="block">
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름 *</span>
-            <input type="text" value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="예: 김민서" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <input
+              data-spm-student-add-name
+              data-testid="spm-student-add-name"
+              name="studentName"
+              type="text"
+              value={newName}
+              onChange={(event) => setNewName(event.target.value)}
+              placeholder="예: 김민서"
+              autoComplete="off"
+              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+            />
           </label>
           <label className="block">
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 / 그룹</span>
-            <input type="text" value={newGroup} onChange={(event) => setNewGroup(event.target.value)} placeholder="예: 초등 A반 / 유아반" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <input
+              data-testid="spm-student-add-group"
+              name="studentGroup"
+              type="text"
+              value={newGroup}
+              onChange={(event) => setNewGroup(event.target.value)}
+              placeholder="예: 초등 A반 / 유아반"
+              autoComplete="off"
+              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+            />
           </label>
           <label className="block">
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>나이 / 수강 기간</span>
-            <input type="text" value={newMeta} onChange={(event) => setNewMeta(event.target.value)} placeholder="예: 8세 / 3개월차" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <input
+              data-testid="spm-student-add-meta"
+              name="studentMeta"
+              type="text"
+              value={newMeta}
+              onChange={(event) => setNewMeta(event.target.value)}
+              placeholder="예: 8세 / 3개월차"
+              autoComplete="off"
+              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+            />
           </label>
           {studentSaveError ? (
             <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>

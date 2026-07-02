@@ -119,61 +119,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
-  if (type === 'color_relay') {
-    const isPause = (content?.isPause as boolean) ?? false;
-    const fillHex = isPause ? '#0F172A' : ((content?.fillHex as string) ?? '#EF4444');
-    const relayIdx = (content?.relayIdx as number) ?? 1;
-    const relayTotal = (content?.relayTotal as number) ?? 2;
-    return (
-      <div
-        key={animKey}
-        className={isPause ? undefined : 'signal-blink'}
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: fillHex,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-end',
-          padding: 'clamp(1.5rem, 5vmin, 4rem)',
-          boxSizing: 'border-box',
-          transition: 'background 0.08s',
-        }}
-      >
-        {/* 릴레이 진행 점 */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 'clamp(8px, 2vmin, 18px)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          {Array.from({ length: relayTotal }, (_, i) => {
-            const state = isPause ? 'future' : (i + 1 < relayIdx ? 'past' : i + 1 === relayIdx ? 'current' : 'future');
-            const sz = state === 'current' ? 'clamp(14px, 3vmin, 26px)' : 'clamp(10px, 2vmin, 18px)';
-            return (
-              <div
-                key={i}
-                style={{
-                  width: sz,
-                  height: sz,
-                  borderRadius: '50%',
-                  background: state === 'future' ? 'transparent' : 'rgba(255,255,255,0.92)',
-                  border: '2.5px solid rgba(255,255,255,0.72)',
-                  opacity: state === 'future' ? 0.35 : 1,
-                  flexShrink: 0,
-                  transition: 'all 0.15s',
-                }}
-              />
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
+
 
   if (type === 'think_quad_body') {
     const cells = (content?.cells as { colorId: string; fillHex: string; bodyActionId: BodyActionId }[] | undefined) ?? [];

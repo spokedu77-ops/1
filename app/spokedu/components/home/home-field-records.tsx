@@ -6,12 +6,14 @@ import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-r
 import {
   homeCaption,
   homeCaseCard,
+  homeCardPanelPad,
   homeCardTitle,
   homeFocusRing,
   homePhotoGrade,
   homeSectionH2,
   homeSectionPadCompact,
-  koreanLineBreak,
+  homeSectionScrollMt,
+  koreanText,
   siteContainer,
 } from '../../lib/ui-classes';
 import { ExternalPhoto } from '../external-photo';
@@ -29,24 +31,24 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
   const [featured, ...rest] = caseCards;
 
   return (
-    <section id={homePage.cases.id} className={`${homeSectionPadCompact} bg-white pb-10 sm:pb-12 lg:pb-14`}>
+    <section id={homePage.cases.id} className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-white pb-10 sm:pb-12 lg:pb-14`}>
       <div className={siteContainer}>
         <h2 className={homeSectionH2}>{homePage.cases.title}</h2>
-        <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanLineBreak}`}>
+        <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
           {homePage.cases.lead}
         </p>
 
-        <div className="mt-8 flex flex-col gap-5 lg:mt-10 lg:flex-row lg:items-start lg:gap-6">
+        <div className="mt-8 grid grid-cols-1 gap-5 min-[720px]:mt-10 min-[720px]:grid-cols-2 min-[1180px]:grid-cols-[58%_1fr] min-[1180px]:items-start min-[1180px]:gap-6">
           {featured ? (
-            <div className="w-full lg:w-[58%] lg:shrink-0">
+            <div className="min-w-0 min-[720px]:col-span-2 min-[1180px]:col-span-1">
               <FeaturedCaseCard card={featured} priority />
             </div>
           ) : null}
-          <div className="flex w-full min-w-0 flex-col gap-5 lg:flex-1">
-            {rest.map((card, index) => (
-              <CompactCaseCard key={card.slug} card={card} priority={index === 0} />
-            ))}
-          </div>
+          {rest.map((card, index) => (
+            <div key={card.slug} className="min-w-0">
+              <CompactCaseCard card={card} priority={index === 0} />
+            </div>
+          ))}
         </div>
       </div>
     </section>
@@ -71,10 +73,10 @@ function FeaturedCaseCard({ card, priority }: { card: CaseCardWithThumb; priorit
             className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/70 via-[#0B1220]/15 to-transparent"
             aria-hidden
           />
-          <div className="absolute inset-x-0 bottom-0 border-t border-white/20 bg-white/95 px-5 py-5 backdrop-blur-sm sm:px-6 sm:py-6">
+          <div className={`absolute inset-x-0 bottom-0 border-t border-white/20 bg-white/95 backdrop-blur-sm ${homeCardPanelPad}`}>
             <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-            <h3 className={`${homeCardTitle} mt-1.5`}>{card.programName}</h3>
-            <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanLineBreak}`}>
+            <h3 className={`${homeCardTitle} mt-5`}>{card.programName}</h3>
+            <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanText}`}>
               {card.description}
             </p>
             <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8] sm:text-base">
@@ -95,13 +97,13 @@ function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority
         <div className="relative aspect-[16/10] overflow-hidden">
           <CaseMedia card={card} priority={priority} />
         </div>
-        <div className="px-5 py-5 sm:px-6 sm:py-6">
+        <div className={homeCardPanelPad}>
           <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-          <h3 className={`${homeCardTitle} mt-1.5`}>{card.programName}</h3>
-          <p className={`mt-2 text-sm text-slate-600 line-clamp-1 sm:text-[15px] ${koreanLineBreak}`}>
+          <h3 className={`${homeCardTitle} mt-5`}>{card.programName}</h3>
+          <p className={`mt-2 text-sm text-slate-600 line-clamp-1 sm:text-[15px] ${koreanText}`}>
             {card.audience}
           </p>
-          <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanLineBreak}`}>
+          <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanText}`}>
             {card.description}
           </p>
           <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8] sm:text-base">

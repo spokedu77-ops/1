@@ -10,12 +10,14 @@ export function BottomSheet({
   children,
   onClose,
   size = 'default',
+  initialFocusSelector,
 }: {
   open: boolean;
   title: string;
   children: ReactNode;
   onClose: () => void;
   size?: 'default' | 'document' | 'preview';
+  initialFocusSelector?: string;
 }) {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement | null>(null);
@@ -33,7 +35,12 @@ export function BottomSheet({
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => closeButtonRef.current?.focus());
+    requestAnimationFrame(() => {
+      const initialFocusTarget = initialFocusSelector && dialogRef.current
+        ? dialogRef.current.querySelector<HTMLElement>(initialFocusSelector)
+        : null;
+      (initialFocusTarget ?? closeButtonRef.current)?.focus();
+    });
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
@@ -68,7 +75,7 @@ export function BottomSheet({
       document.body.style.overflow = previousOverflow;
       previousFocusRef.current?.focus();
     };
-  }, [open]);
+  }, [initialFocusSelector, open]);
 
   if (!open) return null;
 

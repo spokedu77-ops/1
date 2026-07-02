@@ -43,4 +43,16 @@ describe('student history flow contract', () => {
     expect(classRecord).toContain('if (!requestedStudentId || editingRecord || sourceRecord) return');
     expect(classRecord).toContain('student.id === requestedStudentId');
   });
+
+  it('opens the add-student sheet from add=1 with a stable focused name input', () => {
+    expect(studentsList).toContain("new URLSearchParams(window.location.search).get('add') === '1'");
+    expect(studentsList).toContain("url.searchParams.delete('add')");
+    expect(studentsList).toContain('window.history.replaceState');
+    expect(studentsList).toContain('initialFocusSelector="[data-spm-student-add-name]"');
+    expect(studentsList).toContain('data-spm-student-add-name');
+    expect(studentsList).toContain('data-testid="spm-student-add-name"');
+    expect(studentsList).toContain('name="studentName"');
+    expect(studentsList).toContain('value={newName}');
+    expect(studentsList).toContain('onChange={(event) => setNewName(event.target.value)}');
+  });
 });

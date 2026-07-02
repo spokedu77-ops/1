@@ -1,5 +1,5 @@
 import { homePage } from '../../data/home-page';
-import { koreanLineBreak, siteContainer } from '../../lib/ui-classes';
+import { koreanText, siteContainer } from '../../lib/ui-classes';
 
 export function HomeProofStrip() {
   const items = homePage.proofStrip.items;
@@ -11,7 +11,7 @@ export function HomeProofStrip() {
           {items.map((item) => (
             <li
               key={item}
-              className={`flex-1 py-3 text-sm font-semibold text-slate-700 first:sm:pr-8 sm:py-0 sm:text-[15px] sm:[&:not(:first-child)]:px-8 ${koreanLineBreak}`}
+              className={`flex-1 py-3 text-sm font-semibold text-slate-700 first:sm:pr-8 sm:py-0 sm:text-[15px] sm:[&:not(:first-child)]:px-8 ${koreanText}`}
             >
               {item}
             </li>

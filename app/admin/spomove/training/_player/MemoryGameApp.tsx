@@ -108,8 +108,6 @@ type Settings = {
   variantColorTheme: SpomoveColorThemeId;
   /** basic 3번 + 색상 테마: 전면 색상 위 숫자 오버레이 범위 */
   basicNumberOverlay: 'none' | '2' | '3';
-  /** basic 11번 색상 릴레이: 릴레이 색상 수 */
-  relayCount: 2 | 3 | 4;
   /** 플로우 추가 동작 기능 플래그 */
   flowFeatures: Set<FlowFeatureKey>;
   /** 플로우 배경 색상 테마 */
@@ -143,7 +141,6 @@ const defaultSettings: Settings = {
   kidsSafeMode: false,
   variantColorTheme: 'color',
   basicNumberOverlay: 'none',
-  relayCount: 2,
   flowFeatures: new Set<FlowFeatureKey>(),
   flowColorTheme: 'default',
   flowDuration: 25,
@@ -181,8 +178,6 @@ export type MemoryGameAutoLaunch = {
   flowVisualVariant?: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent?: 1 | 2 | 3;
-  /** 반응 인지 11번 색상 릴레이: 세트당 색상 수 */
-  relayCount?: 2 | 3 | 4;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode?: 'easy' | 'hard';
 };
@@ -501,19 +496,15 @@ export default function MemoryGameApp({
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
-    const isRelayPause = sig.type === 'color_relay' && (sig.content as { isPause?: boolean })?.isPause === true;
     const dupKey =
-      !isRelayPause && (sig.type === 'think_quad' || sig.type === 'think_quad_body' || sig.type === 'color_relay')
+      (sig.type === 'think_quad' || sig.type === 'think_quad_body')
         ? String((sig.content as { colorId?: string })?.colorId ?? '')
         : String(sig.bg ?? '');
     const dupFlashColorBg =
-      !isRelayPause && (
-        sig.type === 'full_color' ||
-        sig.type === 'gonogo_color' ||
-        sig.type === 'think_quad' ||
-        sig.type === 'color_relay' ||
-        (sig.type === 'task_switch' && (sig.content as { stimulusKind?: string })?.stimulusKind === 'color')
-      );
+      sig.type === 'full_color' ||
+      sig.type === 'gonogo_color' ||
+      sig.type === 'think_quad' ||
+      (sig.type === 'task_switch' && (sig.content as { stimulusKind?: string })?.stimulusKind === 'color');
     if (dupFlashColorBg && dupKey === prevBgRef.current) {
       setDupFlashNonce((n) => n + 1);
       setDupFlashVisible(true);
@@ -560,7 +551,6 @@ export default function MemoryGameApp({
     colors: COLORS,
     fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
-    relayCount: settings.relayCount,
     onSignal,
     onFinish,
   });
@@ -577,7 +567,6 @@ export default function MemoryGameApp({
     colors: COLORS,
     fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
-    relayCount: settings.relayCount,
     onSignal,
     onFinish,
   });
@@ -1175,43 +1164,6 @@ export default function MemoryGameApp({
                 </div>
               )}
             </div>
-            {settings.mode === 'basic' && settings.level === 11 && (
-              <div style={S.sec}>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>릴레이 설정</div>
-                <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                  한 세트당 순서대로 나타나는 색상 수를 선택하세요. 한 세트가 끝나면 <strong style={{ color: 'var(--text)' }}>3초 휴식</strong> 후 다음 세트가 시작됩니다.
-                </p>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                  {([
-                    { v: 2 as const, label: '기본 (2개)' },
-                    { v: 3 as const, label: '3개' },
-                    { v: 4 as const, label: '4개' },
-                  ]).map(({ v, label }) => {
-                    const active = settings.relayCount === v;
-                    return (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => set('relayCount', v)}
-                        style={{
-                          padding: '0.55rem 0.95rem',
-                          borderRadius: '0.75rem',
-                          border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                          background: active ? `${M.accent}12` : 'var(--card)',
-                          color: active ? M.accent : 'var(--text)',
-                          fontWeight: active ? 800 : 600,
-                          fontSize: '0.88rem',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                        }}
-                      >
-                        {active ? '✓ ' : ''}{label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
             {settings.mode === 'flow' && (
               <>
                 {/* DIVE 비주얼 모드 선택 */}

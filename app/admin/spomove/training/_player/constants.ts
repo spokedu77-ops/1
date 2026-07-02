@@ -101,7 +101,6 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 4, name: '전면 2패널 (서로 다른 색)', enName: 'Variant Color (1)', desc: '전면 2패널에 서로 다른 색 신호가 나타납니다.' },
       { id: 5, name: '전면 3패널 (같은 색)', enName: 'Variant Color (2)', desc: '전면 3패널에 같은 색(이미지) 신호가 나타납니다.' },
       { id: 6,  name: '전면 3패널 (서로 다른 색)', enName: 'Variant 3', desc: '전면 3패널에 서로 다른 색 신호가 나타납니다.' },
-      { id: 11, name: '색상 릴레이', enName: 'Color Relay', desc: '설정한 색상 수(2·3·4개)만큼 색이 연속으로 나타납니다. 각 색상이 나올 때마다 해당 색 패드로 이동하며, 신호속도는 색상 간 간격입니다.' },
     ],
   },
 

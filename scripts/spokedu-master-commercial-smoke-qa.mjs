@@ -963,14 +963,26 @@ async function runStudentCreationSmoke(browser) {
   const mocks = await installOperationalMocks(page);
   const newStudentName = 'QA New Student Name';
 
-  await gotoPage(page, '/spokedu-master/students');
+  await gotoPage(page, '/spokedu-master/students?add=1');
   await waitAppReady(page);
-  await page.locator('button').filter({ hasText: '학생 추가' }).first().click();
   const dialog = page.locator('[role="dialog"]');
-  await dialog.waitFor({ state: 'visible', timeout: 10_000 });
-  await dialog.locator('input').nth(0).fill(newStudentName);
-  await dialog.locator('input').nth(1).fill('QA New Class');
-  await dialog.locator('input').nth(2).fill('QA 3 months');
+  try {
+    await dialog.waitFor({ state: 'visible', timeout: 10_000 });
+  } catch (error) {
+    const body = await page.locator('body').innerText().catch(() => '');
+    throw new Error(`student add dialog did not open from add=1. URL: ${page.url()}. Body: ${body.slice(0, 900).replace(/\s+/g, ' ')}. ${safeErrorMessage(error)}`);
+  }
+  const nameInput = dialog.getByTestId('spm-student-add-name');
+  const groupInput = dialog.getByTestId('spm-student-add-group');
+  const metaInput = dialog.getByTestId('spm-student-add-meta');
+  await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
+  assert(await nameInput.evaluate((node) => document.activeElement === node), 'add=1 did not focus the student name input');
+  await nameInput.pressSequentially(newStudentName, { delay: 5 });
+  await groupInput.pressSequentially('QA New Class', { delay: 5 });
+  await metaInput.pressSequentially('QA 3 months', { delay: 5 });
+  await expectValue(nameInput, newStudentName, 'student name typed character-by-character');
+  await expectValue(groupInput, 'QA New Class', 'student group typed character-by-character');
+  await expectValue(metaInput, 'QA 3 months', 'student meta typed character-by-character');
   await dialog.locator('button').last().click();
   await waitForText(page, newStudentName, 'created student name');
   assert(mocks.studentPostCount === 1, `expected one student POST, got ${mocks.studentPostCount}`);

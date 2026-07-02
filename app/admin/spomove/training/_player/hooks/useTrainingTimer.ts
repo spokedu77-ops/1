@@ -30,7 +30,6 @@ export function useTrainingTimer({
   colors,
   fruitSlides,
   basicNumberOverlay,
-  relayCount,
   onSignal,
   onFinish,
 }: {
@@ -47,8 +46,6 @@ export function useTrainingTimer({
   /** basic 변형 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
-  /** basic 색상 릴레이(11번): 릴레이 색상 수 */
-  relayCount?: number;
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -81,7 +78,7 @@ export function useTrainingTimer({
       const getSlidesRef = fruitSlides !== undefined
         ? () => fruitSlidesRef.current
         : undefined;
-      genRef.current = createBasicSignalGenerator(level, colors, getSlidesRef, basicNumberOverlay, relayCount);
+      genRef.current = createBasicSignalGenerator(level, colors, getSlidesRef, basicNumberOverlay);
     } else if (engineMode === 'simon') {
       genRef.current = createSimonSignalGenerator(engineLevel, colors);
     } else if (engineMode === 'taskswitch') {
@@ -128,10 +125,7 @@ export function useTrainingTimer({
           if (v) tts(v, true);
         }
       }
-      // 색상 릴레이(level 11): 세트의 마지막 색상만 1회로 카운트 (pause·중간 색상 제외)
-      const isRelayLastInSet = sig?.type === 'color_relay' && (sig.content as { isLastInSet?: boolean })?.isLastInSet === true;
-      const isRelaySignal = sig?.type === 'color_relay';
-      const hasValidSignal = sig !== null && (!isRelaySignal || isRelayLastInSet);
+      const hasValidSignal = sig !== null;
       const { next: nextReps } = registerPresentedSignal({
         state: repsStateRef.current,
         hasValidSignal,
@@ -188,7 +182,7 @@ export function useTrainingTimer({
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, relayCount, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

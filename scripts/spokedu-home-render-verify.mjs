@@ -32,7 +32,7 @@ async function main() {
     { name: 'dispatch-gate-link', ok: html.includes('/spokedu/dispatch'), expect: 'dispatch path link' },
     { name: 'private-gate-link', ok: html.includes('/spokedu/private'), expect: 'private path link' },
     { name: 'contact-link', ok: html.includes('/spokedu/contact'), expect: 'contact link' },
-    { name: 'final-cta-grid', ok: html.includes('lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]'), expect: '2-col final cta' },
+    { name: 'final-cta-grid', ok: html.includes('min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]'), expect: '2-col final cta @1200' },
   ];
 
   let failed = 0;

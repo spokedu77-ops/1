@@ -106,24 +106,6 @@ function fisherYates<T>(arr: T[]): T[] {
   return a;
 }
 
-/** 색상 릴레이: count개 색상 시퀀스 생성 — 연속 동일 색 10% 허용 */
-function generateRelay(count: number, lastColorId: string | null, pool: ColorItem[]): ColorItem[] {
-  const result: ColorItem[] = [];
-  let prevId = lastColorId;
-  for (let i = 0; i < count; i++) {
-    let pick: ColorItem;
-    if (prevId !== null && Math.random() < 0.10) {
-      pick = pool.find(c => c.id === prevId) ?? pool[Math.floor(Math.random() * pool.length)]!;
-    } else {
-      const cands = prevId ? pool.filter(c => c.id !== prevId) : pool;
-      pick = (cands.length > 0 ? cands : pool)[Math.floor(Math.random() * (cands.length > 0 ? cands.length : pool.length))]!;
-    }
-    result.push(pick);
-    prevId = pick.id;
-  }
-  return result;
-}
-
 /** 배열에서 n개를 중복 없이 무작위 추출 */
 function pickN<T>(arr: readonly T[], n: number): T[] {
   const pool = [...arr];
@@ -1052,10 +1034,6 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     const cells = (sig.content as { cells?: { colorId?: string; bodyActionId?: string }[] })?.cells ?? [];
     return `tqb:${cells.map(c => `${c.colorId ?? ''}:${c.bodyActionId ?? ''}`).sort().join('|')}`;
   }
-  if (t === 'color_relay') {
-    const id = (sig.content as { colorId?: string })?.colorId ?? '';
-    return `cr:${id}`;
-  }
   if (t === 'basic_variant_color') {
     const c = sig.content as {
       variantTier?: number;
@@ -1164,7 +1142,6 @@ function signalColorBalanceKeys(sig: Record<string, unknown>): string[] {
     const cells = (content.cells as { colorId?: string }[] | undefined) ?? [];
     return uniqueColorKeys(cells.map(c => c.colorId));
   }
-  if (t === 'color_relay') return uniqueColorKeys([content.colorId as string | undefined]);
   if (t === 'basic_variant_color') {
     const panels = (content.panels as VariantPanelContent[] | undefined) ?? [];
     return uniqueColorKeys(
@@ -1210,8 +1187,7 @@ export function createBasicSignalGenerator(
   level: number,
   colors: ColorItem[],
   fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
-  basicNumberOverlay?: 'none' | '2' | '3',
-  relayCount?: number
+  basicNumberOverlay?: 'none' | '2' | '3'
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1223,11 +1199,6 @@ export function createBasicSignalGenerator(
   let totalColorHits = 0;
   const colorCounts = new Map<string, number>();
   const colorBucketCount = Math.max(1, colors.length || COLORS.length);
-  /** level 11 색상 릴레이 */
-  const relayCountOpt = Math.max(2, Math.min(4, relayCount ?? 2));
-  let relayQueue: ColorItem[] = [];
-  let relayQueuePos = 0;
-  let relayPauseUntilMs = 0;
   /** 2·4단계: 직전 대표 과일 URL */
   let lastVariantImageUrl: string | null = null;
   /** 3단계: 직전 과일 쌍 키 (정렬 url|url) */
@@ -1295,42 +1266,7 @@ export function createBasicSignalGenerator(
     return sig;
   };
 
-  const emitRelaySignal = (): Record<string, unknown> => {
-    const now = performance.now();
-    const pauseSig = (): Record<string, unknown> => ({
-      type: 'color_relay' as const,
-      bg: '#0F172A',
-      content: { colorId: '', fillHex: '#0F172A', relayIdx: 0, relayTotal: relayCountOpt, isPause: true },
-      voice: null,
-    });
-    // 세트 사이 3초 휴식 중
-    if (now < relayPauseUntilMs) return pauseSig();
-    // 새 큐 필요
-    if (relayQueuePos >= relayQueue.length) {
-      const isFirst = relayQueue.length === 0;
-      const lastId = isFirst ? null : relayQueue[relayQueue.length - 1]!.id;
-      relayQueue = generateRelay(relayCountOpt, lastId, colors.length > 0 ? colors : COLORS);
-      relayQueuePos = 0;
-      if (!isFirst) {
-        relayPauseUntilMs = now + 3000;
-        return pauseSig();
-      }
-    }
-    const c = relayQueue[relayQueuePos]!;
-    const relayIdx = relayQueuePos + 1;
-    relayQueuePos++;
-    const isLastInSet = relayQueuePos >= relayQueue.length;
-    const sig = {
-      type: 'color_relay' as const,
-      bg: c.bg,
-      content: { colorId: c.id, fillHex: c.bg, symbol: c.symbol, name: c.name, textColor: c.text, relayIdx, relayTotal: relayCountOpt, isPause: false, isLastInSet },
-      voice: null,
-    };
-    return acceptSignal(sig, signalFingerprint(sig));
-  };
-
   const tryEmit = (): Record<string, unknown> | null => {
-    if (level === 11) return emitRelaySignal();
     const emittedBefore = emitted;
     for (let attempt = 0; attempt < 120; attempt++) {
       const sig = generateSignal('basic', level, colors, genOpts());

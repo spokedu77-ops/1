@@ -13,7 +13,7 @@ import {
   type SiteNavLink,
 } from '../data/site';
 import { inferTrackFromHref } from '../lib/tracking';
-import { siteContainer } from '../lib/ui-classes';
+import { koreanText, siteContainer } from '../lib/ui-classes';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
 
 const ATHLETIC_BLUE = '#1D4ED8';
@@ -386,18 +386,18 @@ export function SiteFooter() {
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">
       <div className={`${siteContainer} py-14 sm:py-16`}>
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:items-start lg:gap-12">
-          <div className="space-y-4 sm:col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-1 gap-10 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-4 min-[1200px]:items-start min-[1200px]:gap-12">
+          <div className="min-w-0 space-y-4 min-[640px]:col-span-2 min-[1200px]:col-span-1">
             <Link href={SPOKEDU_BASE_PATH} className="inline-block text-lg font-bold tracking-[0.14em] text-white">
               {brandProfile.nameEn}
             </Link>
-            <p className="text-[15px] font-medium text-white/90">{brandProfile.nameKo}</p>
-            <p className="max-w-xs text-[15px] leading-relaxed text-white/70">{brandProfile.tagline}</p>
-            <p className="text-sm text-white/55">운영지역 {brandProfile.serviceArea}</p>
+            <p className={`text-[15px] font-medium text-white/90 ${koreanText}`}>{brandProfile.nameKo}</p>
+            <p className={`max-w-sm text-[15px] leading-relaxed text-white/70 ${koreanText}`}>{brandProfile.tagline}</p>
+            <p className={`text-sm text-white/55 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
           </div>
 
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white/50">프로그램</p>
+          <div className="min-w-0">
+            <p className={`text-sm font-semibold tracking-wide text-white/50 ${koreanText}`}>프로그램</p>
             <ul className="mt-4 space-y-2.5">
               {programLinks.map((link) => (
                 <li key={link.href}>
@@ -409,8 +409,8 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white/50">정보</p>
+          <div className="min-w-0">
+            <p className={`text-sm font-semibold tracking-wide text-white/50 ${koreanText}`}>정보</p>
             <ul className="mt-4 space-y-2.5">
               {infoLinks.map((link) => (
                 <li key={link.href}>
@@ -422,8 +422,8 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.12em] text-white/50">연락처</p>
+          <div className="min-w-0">
+            <p className={`text-sm font-semibold tracking-wide text-white/50 ${koreanText}`}>연락처</p>
             <ul className="mt-4 space-y-3 text-[15px] text-white/80">
               <li>
                 <span className="text-white/55">대표 </span>

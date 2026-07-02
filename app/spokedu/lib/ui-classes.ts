@@ -88,10 +88,23 @@ export const landingHeroVisual = 'order-2 lg:order-2';
 /** 한국어 제목·본문 — 단어 중간 줄바꿈 방지 (기|관 등) */
 export const koreanLineBreak = 'break-keep [word-break:keep-all] [line-break:strict]';
 
-export const landingH1 = `text-[1.25rem] font-black leading-[1.14] tracking-tight text-slate-950 min-[360px]:text-[1.35rem] min-[390px]:text-[1.4375rem] min-[430px]:text-[1.5625rem] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] xl:text-[3.5rem] ${koreanLineBreak}`;
+/** 한국어 제목·본문 — keep-all + 균형 줄바꿈 */
+export const koreanText = `${koreanLineBreak} text-balance`;
 
-/** Home Hero H1 — 모바일에서도 의미 2줄 유지 (단어 단위 세로 쪼개짐 방지) */
-export const homeHeroH1 = `font-bold tracking-tight text-[#0B1220] ${koreanLineBreak} text-[1.625rem] leading-[1.16] min-[360px]:text-[1.75rem] min-[390px]:text-[1.875rem] min-[430px]:text-[2rem] sm:text-[2.5rem] sm:leading-[1.12] lg:text-[3rem] xl:text-[3.25rem]`;
+/** 스포키듀 마케팅 사이트 공통 콘텐츠 너비 — padding은 globals.css `.site-container` */
+export const siteContainer = 'site-container';
+
+/** 홈 카드 텍스트 패널 — 모바일 20 / 태블릿 22~24 / 데스크톱 24~28 */
+export const homeCardPanelPad = 'p-5 md:px-6 md:py-[22px] lg:px-7 lg:py-7';
+
+/** 이미지 하단 → 제목 최소 간격 */
+export const homeCardImageToTitle = 'mt-5';
+
+/** @deprecated landingH1 등 서브용 — `koreanText` 참고 */
+export const landingH1 = `text-[1.25rem] font-black leading-[1.14] tracking-tight text-slate-950 min-[360px]:text-[1.35rem] min-[390px]:text-[1.4375rem] min-[430px]:text-[1.5625rem] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] xl:text-[3.5rem] ${koreanText}`;
+
+/** Home Hero H1 */
+export const homeHeroH1 = `font-bold tracking-tight text-[#0B1220] ${koreanText} text-[1.625rem] leading-[1.16] min-[360px]:text-[1.75rem] min-[390px]:text-[1.875rem] min-[430px]:text-[2rem] sm:text-[2.5rem] sm:leading-[1.12] lg:text-[3rem] xl:text-[3.25rem]`;
 
 /** 의미 줄 1개 = 블록 1줄 (내부에서 다시 쪼개지지 않게 폭·크기는 homeHeroH1이 담당) */
 export const homeHeroH1Line = 'block';
@@ -107,9 +120,6 @@ export const homeHeroShell =
 
 /** 다크 CTA 그리드 — 모바일 2줄·높이 균일 */
 export const landingDarkCtaButton = `${btnPrimaryOnDark} text-center`;
-
-/** 스포키듀 마케팅 사이트 공통 콘텐츠 너비 */
-export const siteContainer = 'mx-auto w-full max-w-[1240px] px-5 sm:px-8 lg:px-10';
 
 /** 홈·공통 섹션 상하 여백 — 모바일 56~72 / 태블릿 72~88 / 데스크톱 96~120 */
 export const siteSectionPad =
@@ -127,14 +137,14 @@ export const brandSurface = '#EEF3FA';
 export const homeHeroTitle = `font-bold leading-[1.15] tracking-tight text-white ${koreanLineBreak} text-[2rem] min-[390px]:text-[2.25rem] sm:text-[2.75rem] md:text-[3.25rem] lg:text-[3.5rem] xl:text-[4.25rem]`;
 
 /** 홈 섹션 H2 — 40~48px */
-export const homeSectionH2 = `font-bold tracking-tight text-[#0B1220] ${koreanLineBreak} text-[1.75rem] sm:text-[2.125rem] lg:text-[2.5rem] xl:text-[3rem] leading-[1.25]`;
+export const homeSectionH2 = `font-bold tracking-tight text-[#0B1220] ${koreanText} text-[1.75rem] sm:text-[2.125rem] lg:text-[2.5rem] xl:text-[3rem] leading-[1.25]`;
 
-export const homeSectionH2OnDark = `font-bold tracking-tight text-white ${koreanLineBreak} text-[1.75rem] sm:text-[2.125rem] lg:text-[2.5rem] xl:text-[3rem] leading-[1.25]`;
+export const homeSectionH2OnDark = `font-bold tracking-tight text-white ${koreanText} text-[1.75rem] sm:text-[2.125rem] lg:text-[2.5rem] xl:text-[3rem] leading-[1.25]`;
 
 /** 섹션 리드 18~20px */
-export const homeBodyLead = `mt-5 max-w-[40rem] text-base leading-[1.7] text-slate-600 sm:text-[17px] lg:text-lg xl:text-xl ${koreanLineBreak}`;
+export const homeBodyLead = `mt-5 max-w-[40rem] text-base leading-[1.7] text-slate-600 sm:text-[17px] lg:text-lg xl:text-xl ${koreanText}`;
 
-export const homeBodyLeadOnDark = `mt-5 max-w-[40rem] text-base leading-[1.7] text-white/80 sm:text-[17px] lg:text-lg xl:text-xl ${koreanLineBreak}`;
+export const homeBodyLeadOnDark = `mt-5 max-w-[40rem] text-base leading-[1.7] text-white/80 sm:text-[17px] lg:text-lg xl:text-xl ${koreanText}`;
 
 /** 섹션 라벨 */
 export const homeSectionEyebrowDark = 'text-[13px] font-semibold uppercase tracking-[0.18em] text-[#1D4ED8] sm:text-sm';
@@ -142,10 +152,10 @@ export const homeSectionEyebrowDark = 'text-[13px] font-semibold uppercase track
 export const homeSectionEyebrowLight = 'text-[13px] font-semibold uppercase tracking-[0.18em] text-white/70 sm:text-sm';
 
 /** 카드 제목 20~24px */
-export const homeCardTitle = `text-xl font-bold text-[#0B1220] sm:text-[1.35rem] lg:text-2xl ${koreanLineBreak}`;
+export const homeCardTitle = `text-xl font-bold text-[#0B1220] sm:text-[1.35rem] lg:text-2xl ${koreanText}`;
 
 /** 기본 본문 16~18px */
-export const homeBody = `text-base leading-[1.7] text-slate-600 sm:text-[17px] ${koreanLineBreak}`;
+export const homeBody = `text-base leading-[1.7] text-slate-600 sm:text-[17px] ${koreanText}`;
 
 /** 캡션 13~14px */
 export const homeCaption = 'text-[13px] font-medium leading-snug text-slate-500 sm:text-sm';
@@ -177,9 +187,12 @@ export const homeSectionPadCompact = 'py-12 sm:py-14 lg:py-20 xl:py-[5.5rem]';
 /** Final CTA — SPOMOVE 하단·Footer 직전 여백 축소 */
 export const homeFinalCtaPad = 'pt-8 pb-12 sm:pt-10 sm:pb-14 lg:pt-12 lg:pb-16';
 
+/** 앵커 스크롤 — sticky header 가림 방지 */
+export const homeSectionScrollMt = 'scroll-mt-24 sm:scroll-mt-28';
+
 export const homeHeroSection = 'relative bg-[#FAFAF8] pt-24 sm:pt-28 lg:pt-32';
 
-export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-slate-600 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-slate-600 sm:text-[17px] lg:text-lg ${koreanText}`;
 
 export const homeHeroImage = 'overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-200';
 

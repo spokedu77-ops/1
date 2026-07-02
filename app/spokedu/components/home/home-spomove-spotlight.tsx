@@ -11,7 +11,8 @@ import {
   homePhotoGrade,
   homeSectionH2OnDark,
   homeSectionPad,
-  koreanLineBreak,
+  homeSectionScrollMt,
+  koreanText,
   siteBtnSecondaryOnDark,
   siteContainer,
 } from '../../lib/ui-classes';
@@ -22,14 +23,14 @@ export function HomeSpomoveSpotlight() {
   const media = HOME_MEDIA[homePage.spomove.mediaKey];
 
   return (
-    <section id={homePage.spomove.id} className={`${homeDarkSection} ${homeSectionPad} pb-10 sm:pb-12 lg:pb-14`}>
+    <section id={homePage.spomove.id} className={`${homeSectionScrollMt} ${homeDarkSection} ${homeSectionPad} pb-10 sm:pb-12 lg:pb-14`}>
       <div className={siteContainer}>
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center lg:gap-12 xl:gap-14">
-          <div className="min-w-0 lg:max-w-xl">
+        <div className="grid gap-10 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] min-[1100px]:items-center min-[1100px]:gap-12 xl:gap-14">
+          <div className="min-w-0 min-[1100px]:max-w-xl">
             <p className="text-sm font-semibold text-[#1D4ED8]">SPOMOVE</p>
             <h2 className={`${homeSectionH2OnDark} mt-3`}>
-              <span className="block lg:whitespace-nowrap">{homePage.spomove.title}</span>
-              <span className="mt-1 block lg:whitespace-nowrap">{homePage.spomove.titleLine2}</span>
+              <span className="block">{homePage.spomove.title}</span>
+              <span className="mt-1 block">{homePage.spomove.titleLine2}</span>
             </h2>
             <p className={homeBodyLeadOnDark}>{homePage.spomove.lead}</p>
 
@@ -74,16 +75,16 @@ function SpomoveFlow({ className = '' }: { className?: string }) {
     <div className={className}>
       <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">학습 흐름</p>
       <ol
-        className="mt-4 grid grid-cols-2 gap-x-5 gap-y-6 border-t border-white/15 pt-5 sm:grid-cols-4 sm:gap-x-4"
+        className="mt-4 grid grid-cols-2 gap-x-5 gap-y-6 border-t border-white/15 pt-5 min-[600px]:grid-cols-4 min-[600px]:gap-x-4"
         aria-label="SPOMOVE 학습 흐름"
       >
         {steps.map((step, index) => (
-          <li key={step.label} className="min-w-0 border-l border-white/15 pl-4 first:border-l-0 first:pl-0 sm:pl-0 sm:first:border-l-0">
+          <li key={step.label} className="min-w-0 border-l border-white/15 pl-4 first:border-l-0 first:pl-0 min-[600px]:pl-0 min-[600px]:first:border-l-0">
             <p className="text-[11px] font-bold tabular-nums tracking-wider text-[#1D4ED8] sm:text-xs">
               {String(index + 1).padStart(2, '0')}
             </p>
-            <p className={`mt-1 text-base font-semibold text-white sm:text-lg ${koreanLineBreak}`}>{step.label}</p>
-            <p className={`mt-1 text-sm leading-snug text-white/70 ${koreanLineBreak}`}>{step.hint}</p>
+            <p className={`mt-1 text-base font-semibold text-white sm:text-lg ${koreanText}`}>{step.label}</p>
+            <p className={`mt-1 text-sm leading-snug text-white/70 ${koreanText}`}>{step.hint}</p>
           </li>
         ))}
       </ol>

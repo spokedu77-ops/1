@@ -29,7 +29,6 @@ export function useIntervalTimer({
   colors,
   fruitSlides,
   basicNumberOverlay,
-  relayCount,
   onSignal,
   onFinish,
 }: {
@@ -44,7 +43,6 @@ export function useIntervalTimer({
   colors: ColorItem[];
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
-  relayCount?: number;
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -76,7 +74,7 @@ export function useIntervalTimer({
     const fruitOpts = fruitSlides ? { fruitSlides } : undefined;
     const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
     if (engineMode === 'basic') {
-      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides, basicNumberOverlay, relayCount);
+      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides, basicNumberOverlay);
     } else if (engineMode === 'simon') {
       genRef.current = createSimonSignalGenerator(engineLevel, colors);
     } else if (engineMode === 'taskswitch') {
@@ -163,7 +161,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, relayCount, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

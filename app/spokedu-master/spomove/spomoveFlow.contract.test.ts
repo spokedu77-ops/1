@@ -18,6 +18,20 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('최근 실행');
   });
 
+  it('keeps normal program cards separate from recent rerun actions', () => {
+    expect(hub).toContain('data-spm-spomove-card-action="preview"');
+    expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).toContain('data-spm-spomove-recent-action="rerun"');
+
+    const cardInfoBlock = hub.slice(
+      hub.indexOf('function CardInfo'),
+      hub.indexOf('function PresetCard'),
+    );
+    expect(cardInfoBlock).toContain('data-spm-spomove-card-action="start"');
+    expect(cardInfoBlock).not.toContain('data-spm-spomove-recent-action="rerun"');
+    expect(cardInfoBlock).not.toContain('다시 실행');
+  });
+
   it('shows recent SPOMOVE re-entry without exposing other owners', () => {
     expect(hub).toContain('최근 SPOMOVE 활동');
     expect(hub).toContain('아직 실행한 SPOMOVE 프로그램이 없습니다.');
