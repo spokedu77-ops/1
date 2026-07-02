@@ -63,9 +63,8 @@ describe('NoteBlockVersionConflictError', () => {
       { status: 409 },
     ));
 
-    await expect(patchNoteBlocksResolvingConflicts(
+    await expect(patchNoteBlocks(
       [{ id: 'a', content: { text: 'x' } }],
-      () => ({ id: 'a', version: 1 }),
     )).rejects.toMatchObject({
       name: 'NoteBlockVersionConflictError',
       conflicts: [],

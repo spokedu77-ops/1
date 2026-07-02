@@ -168,34 +168,48 @@ export const siteCardBorder = 'border border-slate-200/90 bg-white';
 
 /** Stripe-style marketing home — 라이트 Hero·풀 라운드 CTA */
 export const homeMarketingHero =
-  'relative overflow-hidden bg-[#f6f9fc] pt-28 sm:pt-32 lg:pt-36';
+  'relative overflow-hidden bg-[#f6f9fc] pt-28 sm:pt-32 lg:pt-36 xl:pt-40';
 
-export const homeMarketingH1 = `font-semibold tracking-[-0.03em] text-[#0a2540] ${koreanLineBreak} text-[2.125rem] leading-[1.12] min-[390px]:text-[2.375rem] sm:text-[3rem] md:text-[3.5rem] lg:text-[4rem] lg:leading-[1.08]`;
+export const homeMarketingH1 = `font-semibold tracking-[-0.035em] text-[#0a2540] ${koreanLineBreak} text-[2.125rem] leading-[1.1] min-[390px]:text-[2.5rem] sm:text-[3.125rem] md:text-[3.625rem] lg:text-[4.25rem] xl:text-[4.75rem] lg:leading-[1.06]`;
 
-export const homeMarketingLead = `mt-6 max-w-xl text-[17px] leading-[1.65] text-[#425466] sm:text-lg sm:leading-[1.7] ${koreanLineBreak}`;
+export const homeMarketingLead = `mt-6 max-w-[34rem] text-[17px] leading-[1.68] text-[#425466] sm:text-lg sm:leading-[1.72] ${koreanLineBreak}`;
 
-export const homeMarketingSectionTitle = `font-semibold tracking-[-0.025em] text-[#0a2540] ${koreanLineBreak} text-[1.875rem] leading-[1.2] sm:text-[2.25rem] lg:text-[2.75rem]`;
+export const homeMarketingSection = 'py-20 sm:py-24 lg:py-28 xl:py-32';
 
-export const homeMarketingSectionLead = `mt-4 max-w-2xl text-base leading-[1.7] text-[#425466] sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+export const homeMarketingSectionTitle = `font-semibold tracking-[-0.03em] text-[#0a2540] ${koreanLineBreak} text-[1.875rem] leading-[1.18] sm:text-[2.375rem] lg:text-[2.875rem] xl:text-[3.125rem]`;
 
-export const homeMarketingLabel = 'text-sm font-medium text-[#635bff]';
+export const homeMarketingFeatureTitle = `font-semibold tracking-[-0.025em] text-[#0a2540] ${koreanLineBreak} text-[1.5rem] leading-[1.22] sm:text-[1.875rem] lg:text-[2.125rem]`;
 
-export const homeMarketingCard = 'overflow-hidden rounded-2xl bg-white shadow-[0_13px_27px_-5px_rgba(50,50,93,0.12),0_8px_16px_-8px_rgba(0,0,0,0.12)]';
+export const homeMarketingSectionLead = `mt-4 max-w-2xl text-base leading-[1.72] text-[#425466] sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+
+export const homeMarketingLabel = 'text-[13px] font-semibold tracking-[0.04em] text-[#635bff] uppercase';
+
+export const homeMarketingCard =
+  'overflow-hidden rounded-[1.25rem] bg-white shadow-[0_13px_27px_-5px_rgba(50,50,93,0.11),0_8px_16px_-8px_rgba(0,0,0,0.1)] ring-1 ring-slate-900/[0.04] transition duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_20px_40px_-12px_rgba(50,50,93,0.18)]';
+
+export const homeMarketingBentoCard =
+  'rounded-[1.25rem] bg-white p-6 shadow-[0_6px_18px_-4px_rgba(50,50,93,0.1)] ring-1 ring-slate-900/[0.05] sm:p-7 lg:p-8';
 
 export const homeMarketingImageFrame =
-  'overflow-hidden rounded-2xl shadow-[0_50px_100px_-20px_rgba(50,50,93,0.18),0_30px_60px_-30px_rgba(0,0,0,0.22)] ring-1 ring-slate-900/[0.04]';
+  'relative overflow-hidden rounded-[1.25rem] shadow-[0_50px_100px_-24px_rgba(50,50,93,0.2),0_30px_60px_-32px_rgba(0,0,0,0.24)] ring-1 ring-slate-900/[0.06] before:pointer-events-none before:absolute before:inset-0 before:z-10 before:rounded-[inherit] before:ring-1 before:ring-inset before:ring-white/20';
+
+export const homeMarketingImageFrameGlow =
+  'after:pointer-events-none after:absolute after:-inset-px after:-z-10 after:rounded-[1.35rem] after:bg-gradient-to-br after:from-[#635bff]/30 after:via-[#1d4ed8]/15 after:to-transparent after:opacity-80';
 
 export const homeMarketingBtn =
-  'inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full bg-[#0a2540] px-6 text-[15px] font-medium text-white shadow-sm transition hover:bg-[#0d2d4f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:px-7 sm:text-base';
+  'inline-flex min-h-[2.875rem] items-center justify-center gap-2 rounded-full bg-[#0a2540] px-7 text-[15px] font-medium text-white shadow-[0_4px_14px_rgba(10,37,64,0.25)] transition hover:bg-[#0d2d4f] hover:shadow-[0_6px_20px_rgba(10,37,64,0.3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:text-base';
 
 export const homeMarketingBtnOutline =
-  'inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-full border border-slate-300/90 bg-white px-6 text-[15px] font-medium text-[#0a2540] shadow-sm transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:px-7 sm:text-base';
+  'inline-flex min-h-[2.875rem] items-center justify-center gap-2 rounded-full border border-slate-300/90 bg-white/90 px-7 text-[15px] font-medium text-[#0a2540] shadow-sm backdrop-blur-sm transition hover:border-slate-400 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:text-base';
 
 export const homeMarketingBtnGhost =
   'inline-flex min-h-[2.75rem] items-center gap-1.5 text-[15px] font-medium text-[#425466] underline-offset-4 transition hover:text-[#0a2540] hover:underline sm:text-base';
 
 export const homeMarketingDarkSection = 'relative overflow-hidden bg-[#0a2540]';
 
-export const homeMarketingDarkTitle = `font-semibold tracking-[-0.025em] text-white ${koreanLineBreak} text-[1.875rem] leading-[1.2] sm:text-[2.25rem] lg:text-[2.75rem]`;
+export const homeMarketingDarkTitle = `font-semibold tracking-[-0.03em] text-white ${koreanLineBreak} text-[1.875rem] leading-[1.18] sm:text-[2.375rem] lg:text-[2.875rem]`;
 
-export const homeMarketingDarkLead = `mt-4 max-w-xl text-base leading-[1.7] text-white/75 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+export const homeMarketingDarkLead = `mt-5 max-w-xl text-base leading-[1.72] text-white/78 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+
+export const homeMarketingProofChip =
+  'inline-flex items-center rounded-full border border-slate-200/80 bg-white/70 px-3.5 py-1.5 text-[13px] font-medium text-[#425466] shadow-sm backdrop-blur-sm sm:text-sm';

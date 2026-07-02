@@ -274,13 +274,13 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`${isHome ? 'fixed inset-x-0' : 'sticky'} top-0 z-40 transition-colors duration-300 ${
+      className={`${isHome ? 'fixed inset-x-0' : 'sticky'} top-0 z-40 transition-all duration-300 ${
         onHero
-          ? 'border-b border-transparent bg-[#f6f9fc]/80 backdrop-blur-md'
-          : 'border-b border-slate-200/80 bg-white/95 backdrop-blur-md'
+          ? 'border-b border-slate-200/40 bg-[#f6f9fc]/75 backdrop-blur-xl'
+          : 'border-b border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-xl'
       }`}
     >
-      <div className={`${siteContainer} flex items-center justify-between gap-3 py-3.5 sm:py-4`}>
+      <div className={`${siteContainer} flex items-center justify-between gap-3 py-4 sm:py-[1.125rem]`}>
         <Link
           href={SPOKEDU_BASE_PATH}
           className={`text-[13px] font-semibold tracking-[0.14em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
