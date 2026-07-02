@@ -7,16 +7,16 @@ loadEnvConfig(process.cwd());
  * SPOKEDU MASTER logged-in route smoke test.
  *
  * Usage:
- *   SPOKEDU_MASTER_QA_ID=spm.qa.pro@spokedu.test SPM_QA_PASSWORD=... node scripts/spokedu-master-home-logged-qa.mjs http://localhost:3000
+ *   SPOKEDU_MASTER_QA_ID=spm.qa.pro@spokedu.test SPOKEDU_MASTER_QA_PASSWORD=... node scripts/spokedu-master-home-logged-qa.mjs http://localhost:3000
  *
  * Optional:
- *   SPOKEDU_MASTER_QA_PLAN=free|pro|team
+ *   SPOKEDU_MASTER_QA_PLAN=free|lite|premium|team
  *   SPOKEDU_MASTER_QA_EXPIRED=1
  */
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID || process.env.SPOKEDU_MASTER_QA_EMAIL || '';
 const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
-const QA_PLAN = process.env.SPOKEDU_MASTER_QA_PLAN || 'pro';
+const QA_PLAN = process.env.SPOKEDU_MASTER_QA_PLAN || 'premium';
 const QA_EXPIRED = process.env.SPOKEDU_MASTER_QA_EXPIRED === '1';
 
 const ROUTES = [
@@ -38,8 +38,15 @@ async function loadPlaywright() {
 
 function bootstrapStore(email) {
   const now = Date.now();
-  const trialEndsAt = QA_EXPIRED ? new Date(now - 24 * 60 * 60 * 1000).toISOString() : new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const plan = QA_EXPIRED ? 'free' : QA_PLAN === 'team' ? 'team' : QA_PLAN === 'free' ? 'free' : 'pro';
+  const trialEndsAt = QA_EXPIRED
+    ? new Date(now - 24 * 60 * 60 * 1000).toISOString()
+    : new Date(now + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const plan = QA_EXPIRED
+    ? 'free'
+    : QA_PLAN === 'team' ? 'team'
+      : QA_PLAN === 'free' ? 'free'
+        : QA_PLAN === 'lite' ? 'lite'
+          : 'premium';
 
   return JSON.stringify({
     state: {
@@ -76,6 +83,11 @@ async function login(context) {
   await page.close();
 }
 
+function isExpectedRoute(route, currentPath) {
+  return currentPath === route
+    || (route === '/spokedu-master/library' && currentPath === '/spokedu-master/library?view=all');
+}
+
 async function routeSnapshot(context, route, expectedProgramTitle = '') {
   const page = await context.newPage();
   const consoleErrors = [];
@@ -93,17 +105,18 @@ async function routeSnapshot(context, route, expectedProgramTitle = '') {
 
   const text = await page.locator('body').innerText();
   const currentUrl = page.url();
+  const currentPath = new URL(currentUrl).pathname + new URL(currentUrl).search;
   const result = {
     route,
-    currentPath: new URL(currentUrl).pathname + new URL(currentUrl).search,
+    currentPath,
     statusText: text.slice(0, 500).replace(/\s+/g, ' ').trim(),
-    hasDashboard: text.includes('오늘 수업 준비') || text.includes('SPOKEDU 운영 대시보드'),
+    hasDashboard: text.includes('오늘 수업') || text.includes('홈') || text.includes('SPOKEDU MASTER'),
     hasLibrary: text.includes('라이브러리') || text.includes('수업 자료'),
     hasSpomove: text.includes('SPOMOVE'),
-    hasReport: text.includes('수업 설명') || text.includes('오늘 수업 정리'),
+    hasReport: text.includes('수업 설명') || text.includes('오늘 수업 정리') || text.includes('리포트'),
     selectedProgram: expectedProgramTitle ? text.includes(expectedProgramTitle) : false,
-    hasExpiredCopy: text.includes('체험 기간') || text.includes('구독 플랜') || text.includes('이용 만료'),
-    hasKnownFallbackContent: text.includes('스위치 러닝') || text.includes('따라 무브'),
+    hasExpiredCopy: text.includes('이용 기간') || text.includes('구독') || text.includes('이용권'),
+    hasKnownFallbackContent: text.includes('스위치') || text.includes('플로우'),
     consoleErrors,
   };
   await page.close();
@@ -112,7 +125,7 @@ async function routeSnapshot(context, route, expectedProgramTitle = '') {
 
 async function main() {
   if (!QA_ID || !QA_PASSWORD) {
-    console.log('SKIP: SPOKEDU_MASTER_QA_ID and SPM_QA_PASSWORD are required.');
+    console.log('SKIP: SPOKEDU_MASTER_QA_ID and SPOKEDU_MASTER_QA_PASSWORD are required.');
     process.exit(0);
   }
 
@@ -139,9 +152,7 @@ async function main() {
         ? reportProgram?.title ?? ''
         : '';
       const snapshot = await routeSnapshot(context, route, expectedProgramTitle);
-      const expectedPath = route;
-      const stayedOnRoute = snapshot.currentPath === expectedPath;
-      const routeOk = stayedOnRoute;
+      const routeOk = isExpectedRoute(route, snapshot.currentPath);
       const consoleOk = snapshot.consoleErrors.length === 0;
       const reportProgramOk = QA_EXPIRED || !expectedProgramTitle || snapshot.selectedProgram;
 

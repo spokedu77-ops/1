@@ -50,12 +50,18 @@ export type SpokeduMasterSubscriptionRow = {
   plan: string | null;
   status: string | null;
   period_end: string | null;
-  trial_started_at: string | null;
-  trial_ends_at: string | null;
+  trial_started_at?: string | null;
+  trial_ends_at?: string | null;
   cancel_at_period_end?: boolean | null;
   next_billing_at?: string | null;
   current_period_end?: string | null;
 };
+
+function normalizeSpokeduMasterPlan(plan: string | null | undefined): 'free' | 'lite' | 'premium' | 'team' {
+  if (plan === 'lite' || plan === 'team') return plan;
+  if (plan === 'premium' || plan === 'pro') return 'premium';
+  return 'free';
+}
 
 export function isSpokeduMasterTrialActive(
   row: SpokeduMasterSubscriptionRow | null,
@@ -69,10 +75,10 @@ export function isSpokeduMasterTrialActive(
 export function isSpokeduMasterPaidPlanActive(
   row: SpokeduMasterSubscriptionRow | null,
   now = Date.now(),
-): row is SpokeduMasterSubscriptionRow & { plan: 'lite' | 'premium' | 'team' } {
+): row is SpokeduMasterSubscriptionRow & { plan: 'lite' | 'premium' | 'pro' | 'team' } {
   if (!row) return false;
   if (row.status !== 'active') return false;
-  if (row.plan !== 'lite' && row.plan !== 'premium' && row.plan !== 'team') return false;
+  if (normalizeSpokeduMasterPlan(row.plan) === 'free') return false;
   if (!row.period_end) return false;
   const periodEndMs = Date.parse(row.period_end);
   return Number.isFinite(periodEndMs) && periodEndMs > now;
@@ -80,7 +86,7 @@ export function isSpokeduMasterPaidPlanActive(
 
 export function isSpokeduMasterPaidPlanExpired(row: SpokeduMasterSubscriptionRow | null, now = Date.now()): boolean {
   if (!row) return false;
-  if (row.plan !== 'lite' && row.plan !== 'premium' && row.plan !== 'team') return false;
+  if (normalizeSpokeduMasterPlan(row.plan) === 'free') return false;
   if (row.status === 'cancelled' || row.status === 'expired') return true;
   if (row.status !== 'active') return false;
   if (!row.period_end) return true;
@@ -97,14 +103,15 @@ export function evaluateSpokeduMasterEntitlement(
   now = Date.now(),
 ): SpokeduMasterEntitlementDecision {
   if (isSpokeduMasterPaidPlanActive(row, now)) {
-    return { allowed: true, plan: row.plan, status: 'active' };
+    return { allowed: true, plan: normalizeSpokeduMasterPlan(row.plan) as 'lite' | 'premium' | 'team', status: 'active' };
   }
 
-  if (row?.plan === 'lite' || row?.plan === 'premium' || row?.plan === 'team') {
+  const normalizedPlan = normalizeSpokeduMasterPlan(row?.plan);
+  if (normalizedPlan !== 'free') {
     return {
       allowed: false,
-      plan: row.plan,
-      status: row.status === 'cancelled' ? 'cancelled' : 'expired',
+      plan: normalizedPlan,
+      status: row?.status === 'cancelled' ? 'cancelled' : 'expired',
     };
   }
 
@@ -205,7 +212,7 @@ export async function ensureSpokeduMasterEntitlement(
 ): Promise<{ row: SpokeduMasterSubscriptionRow | null; error: unknown | null }> {
   const selectRow = async () => serviceSupabase
     .from('spokedu_master_subscriptions')
-    .select('plan,status,period_end,trial_started_at,trial_ends_at,cancel_at_period_end,next_billing_at,current_period_end')
+    .select('plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end')
     .eq('user_id', userId)
     .maybeSingle();
 

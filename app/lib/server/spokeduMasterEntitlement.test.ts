@@ -132,6 +132,11 @@ describe('SPOKEDU MASTER entitlement', () => {
       status: 'active',
       period_end: '2026-07-25T00:00:00.000Z',
     }))).toBe(true);
+    expect(isSpokeduMasterPaidPlanActive(row({
+      plan: 'pro',
+      status: 'active',
+      period_end: '2026-07-25T00:00:00.000Z',
+    }))).toBe(true);
   });
 
   it.each([
@@ -139,6 +144,7 @@ describe('SPOKEDU MASTER entitlement', () => {
     ['trial expired', row({ trial_ends_at: '2026-06-24T00:00:00.000Z' }), { allowed: false, plan: 'free', status: 'expired' }],
     ['lite active', row({ plan: 'lite', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'lite', status: 'active' }],
     ['premium active', row({ plan: 'premium', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'premium', status: 'active' }],
+    ['legacy pro active', row({ plan: 'pro', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'premium', status: 'active' }],
     ['team active', row({ plan: 'team', status: 'active', period_end: '2026-07-25T00:00:00.000Z' }), { allowed: true, plan: 'team', status: 'active' }],
     ['period_end missing', row({ plan: 'premium', status: 'active', period_end: null }), { allowed: false, plan: 'premium', status: 'expired' }],
     ['period_end invalid', row({ plan: 'team', status: 'active', period_end: 'not-a-date' }), { allowed: false, plan: 'team', status: 'expired' }],

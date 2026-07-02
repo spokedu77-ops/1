@@ -126,7 +126,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
 
     expect(query.from).toHaveBeenCalledWith('spokedu_master_subscriptions');
     expect(query.select).toHaveBeenCalledWith(
-      'plan,status,period_end,trial_started_at,trial_ends_at,cancel_at_period_end,next_billing_at,current_period_end',
+      'plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end',
     );
     expect(query.eq).toHaveBeenCalledWith('user_id', user.id);
     expect(response.status).toBe(200);

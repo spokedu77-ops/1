@@ -100,6 +100,13 @@ export default function StudentsPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('add') === '1') {
+      setStudentSaveError(null);
+      setAddOpen(true);
+    }
+  }, []);
+
   const handleAdd = () => {
     if (!newName.trim() || studentSaving) return;
     const legacyId = crypto.randomUUID();
@@ -771,11 +778,11 @@ export default function StudentsPage() {
         <div className="space-y-4">
           <label className="block">
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름 *</span>
-            <input type="text" value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="예: 김민준" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <input type="text" value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="예: 김민서" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
           </label>
           <label className="block">
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 / 그룹</span>
-            <input type="text" value={newGroup} onChange={(event) => setNewGroup(event.target.value)} placeholder="예: 초등 A반, 유아반" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+            <input type="text" value={newGroup} onChange={(event) => setNewGroup(event.target.value)} placeholder="예: 초등 A반 / 유아반" className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
           </label>
           <label className="block">
             <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>나이 / 수강 기간</span>
