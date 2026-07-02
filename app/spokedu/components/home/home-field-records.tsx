@@ -29,7 +29,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
   const [featured, ...rest] = caseCards;
 
   return (
-    <section id={homePage.cases.id} className={`${homeSectionPadCompact} bg-white pb-12 sm:pb-14 lg:pb-16`}>
+    <section id={homePage.cases.id} className={`${homeSectionPadCompact} bg-white pb-10 sm:pb-12 lg:pb-14`}>
       <div className={siteContainer}>
         <h2 className={homeSectionH2}>{homePage.cases.title}</h2>
         <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanLineBreak}`}>
@@ -67,18 +67,21 @@ function FeaturedCaseCard({ card, priority }: { card: CaseCardWithThumb; priorit
       <article className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-200">
         <div className="relative aspect-[4/5] w-full sm:aspect-[3/4] lg:aspect-[5/6]">
           <CaseMedia card={card} priority={priority} />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/55 via-[#0B1220]/10 to-transparent" aria-hidden />
-        </div>
-        <div className="absolute inset-x-0 bottom-0 border-t border-white/20 bg-white/95 px-5 py-5 backdrop-blur-sm sm:px-6 sm:py-6">
-          <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-          <h3 className={`${homeCardTitle} mt-1.5`}>{card.programName}</h3>
-          <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanLineBreak}`}>
-            {card.description}
-          </p>
-          <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8] sm:text-base">
-            {card.ctaLabel}
-            <HomeChevron />
-          </span>
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/70 via-[#0B1220]/15 to-transparent"
+            aria-hidden
+          />
+          <div className="absolute inset-x-0 bottom-0 border-t border-white/20 bg-white/95 px-5 py-5 backdrop-blur-sm sm:px-6 sm:py-6">
+            <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
+            <h3 className={`${homeCardTitle} mt-1.5`}>{card.programName}</h3>
+            <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanLineBreak}`}>
+              {card.description}
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8] sm:text-base">
+              {card.ctaLabel}
+              <HomeChevron />
+            </span>
+          </div>
         </div>
       </article>
     </TrackedLink>
@@ -95,7 +98,7 @@ function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority
         <div className="px-5 py-5 sm:px-6 sm:py-6">
           <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
           <h3 className={`${homeCardTitle} mt-1.5`}>{card.programName}</h3>
-          <p className={`mt-2 text-sm text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
+          <p className={`mt-2 text-sm text-slate-600 line-clamp-1 sm:text-[15px] ${koreanLineBreak}`}>
             {card.audience}
           </p>
           <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanLineBreak}`}>

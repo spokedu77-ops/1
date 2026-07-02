@@ -94,7 +94,7 @@ export const homePage = {
         bullets: ['정규수업', '원데이·방학 프로그램'] as const,
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'cta-home-gate-dispatch',
-        mediaKey: 'trackDispatch',
+        mediaKey: 'proofYangcheon',
       },
       {
         id: 'private',
@@ -103,7 +103,7 @@ export const homePage = {
         bullets: ['기초 움직임', '운동 자신감'] as const,
         href: `${SPOKEDU_BASE_PATH}/private`,
         trackLabel: 'cta-home-gate-private',
-        mediaKey: 'trackSmallGroup',
+        mediaKey: 'homeHero',
       },
       {
         id: 'curriculum',
@@ -127,7 +127,7 @@ export const homePage = {
       { label: '수행', hint: '몸으로 실행' },
       { label: '조절', hint: '속도·동작 조정' },
     ] as const satisfies readonly HomeSpomoveFlowStep[],
-    mediaKey: 'programSpomove' as HomeMediaKey,
+    mediaKey: 'trackDispatch' as HomeMediaKey,
     primaryCta: {
       label: 'SPOMOVE 자세히 보기',
       href: `${SPOKEDU_BASE_PATH}/programs/spomove`,

@@ -11,7 +11,7 @@ export function HomeProofStrip() {
           {items.map((item) => (
             <li
               key={item}
-              className={`flex-1 py-4 text-sm font-medium text-slate-700 first:sm:pr-8 sm:py-0 sm:text-[15px] sm:[&:not(:first-child)]:px-8 ${koreanLineBreak}`}
+              className={`flex-1 py-3 text-sm font-semibold text-slate-700 first:sm:pr-8 sm:py-0 sm:text-[15px] sm:[&:not(:first-child)]:px-8 ${koreanLineBreak}`}
             >
               {item}
             </li>

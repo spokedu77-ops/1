@@ -5,7 +5,6 @@ import { homePage } from '../../data/home-page';
 import {
   homeFocusRing,
   homeHeroH1,
-  homeHeroH1Line,
   homeHeroImage,
   homeHeroLead,
   homeHeroSection,
@@ -24,11 +23,11 @@ export function HomeHero() {
   return (
     <section id={homePage.hero.id} className={homeHeroSection}>
       <div className={siteContainer}>
-        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.5fr)_minmax(0,0.5fr)] lg:gap-10 xl:gap-12">
-          <div className="order-1 min-w-0">
+        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,0.52fr)_minmax(0,0.48fr)] lg:gap-8 xl:gap-10">
+          <div className="order-1 min-w-0 lg:max-w-[34rem]">
             <h1 className={homeHeroH1}>
-              <span className={`${homeHeroH1Line} lg:whitespace-nowrap`}>{homePage.hero.lines[0]}</span>
-              <span className={homeHeroH1Line}>{homePage.hero.lines[1]}</span>
+              <span className="block lg:whitespace-nowrap">{homePage.hero.lines[0]}</span>
+              <span className="block lg:whitespace-nowrap">{homePage.hero.lines[1]}</span>
             </h1>
             <p className={homeHeroLead}>{homePage.hero.support}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">

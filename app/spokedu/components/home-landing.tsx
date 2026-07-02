@@ -1,5 +1,6 @@
 'use client';
 
+import { SPOKEDU_HOME_BUILD_ID } from '../data/home-build';
 import { homePage } from '../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../lib/resolve-field-records';
 import { homePageSurface, homeSkipLink } from '../lib/ui-classes';
@@ -17,7 +18,10 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
   const caseCards = mergeHomeCaseCards(proofCards);
 
   return (
-    <div className={`w-full overflow-x-clip font-sans antialiased ${homePageSurface}`}>
+    <div
+      className={`w-full overflow-x-clip font-sans antialiased ${homePageSurface}`}
+      data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID}
+    >
       <a href={`#${homePage.audienceGate.id}`} className={homeSkipLink}>
         본문으로 건너뛰기
       </a>
