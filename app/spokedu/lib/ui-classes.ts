@@ -54,9 +54,9 @@ export const landingSectionInner = 'space-y-6 sm:space-y-8';
 export const homePageStack =
   'flex w-full flex-col gap-14 overflow-x-clip pb-8 sm:gap-[4.5rem] sm:pb-10 lg:gap-24 lg:pb-12';
 
-/** 스크린리더·키보드 — Hero 건너뛰고 맞춤 선택으로 */
+/** 스크린리더·키보드 — Hero 건너뛰고 본문으로 */
 export const homeSkipLink =
-  'sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-indigo-700 focus:shadow-lg focus:outline focus:outline-2 focus:outline-indigo-500';
+  'sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-20 focus:z-50 focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:shadow-lg focus:outline focus:outline-2 focus:outline-[#1D4ED8]';
 
 /** Hero + 운영 증거 — 한 덩어리로 붙여 위계 정리 */
 export const homeIntroCluster = 'flex w-full flex-col gap-10 sm:gap-12';
@@ -91,7 +91,7 @@ export const koreanLineBreak = 'break-keep [word-break:keep-all] [line-break:str
 export const landingH1 = `text-[1.25rem] font-black leading-[1.14] tracking-tight text-slate-950 min-[360px]:text-[1.35rem] min-[390px]:text-[1.4375rem] min-[430px]:text-[1.5625rem] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] xl:text-[3.5rem] ${koreanLineBreak}`;
 
 /** Home Hero H1 — 모바일에서도 의미 2줄 유지 (단어 단위 세로 쪼개짐 방지) */
-export const homeHeroH1 = `font-black tracking-tight text-slate-950 ${koreanLineBreak} text-[1.25rem] leading-[1.14] min-[360px]:text-[1.35rem] min-[390px]:text-[1.4375rem] min-[430px]:text-[1.5625rem] sm:text-[2.75rem] sm:leading-[1.08] lg:text-[3.25rem] xl:text-[3.5rem]`;
+export const homeHeroH1 = `font-bold tracking-tight text-[#0B1220] ${koreanLineBreak} text-[1.625rem] leading-[1.16] min-[360px]:text-[1.75rem] min-[390px]:text-[1.875rem] min-[430px]:text-[2rem] sm:text-[2.5rem] sm:leading-[1.12] lg:text-[3rem] xl:text-[3.25rem]`;
 
 /** 의미 줄 1개 = 블록 1줄 (내부에서 다시 쪼개지지 않게 폭·크기는 homeHeroH1이 담당) */
 export const homeHeroH1Line = 'block';
@@ -166,50 +166,30 @@ export const siteBtnGhostOnDark =
 /** 얇은 border 카드 — 그림자 최소 */
 export const siteCardBorder = 'border border-slate-200/90 bg-white';
 
-/** Stripe-style marketing home — 라이트 Hero·풀 라운드 CTA */
-export const homeMarketingHero =
-  'relative overflow-hidden bg-[#f6f9fc] pt-28 sm:pt-32 lg:pt-36 xl:pt-40';
+/** 홈 에디토리얼 — 현장 기반 브랜드 톤 */
+export const homePageSurface = 'bg-[#FAFAF8] text-[#0B1220]';
 
-export const homeMarketingH1 = `font-semibold tracking-[-0.035em] text-[#0a2540] ${koreanLineBreak} text-[2.125rem] leading-[1.1] min-[390px]:text-[2.5rem] sm:text-[3.125rem] md:text-[3.625rem] lg:text-[4.25rem] xl:text-[4.75rem] lg:leading-[1.06]`;
+export const homeSectionPad = 'py-16 sm:py-20 lg:py-24 xl:py-28';
 
-export const homeMarketingLead = `mt-6 max-w-[34rem] text-[17px] leading-[1.68] text-[#425466] sm:text-lg sm:leading-[1.72] ${koreanLineBreak}`;
+/** Audience·Cases 등 — 기본 대비 15~20% 축소 */
+export const homeSectionPadCompact = 'py-12 sm:py-14 lg:py-20 xl:py-[5.5rem]';
 
-export const homeMarketingSection = 'py-20 sm:py-24 lg:py-28 xl:py-32';
+/** Final CTA — SPOMOVE 하단·Footer 직전 여백 축소 */
+export const homeFinalCtaPad = 'pt-8 pb-12 sm:pt-10 sm:pb-14 lg:pt-12 lg:pb-16';
 
-export const homeMarketingSectionTitle = `font-semibold tracking-[-0.03em] text-[#0a2540] ${koreanLineBreak} text-[1.875rem] leading-[1.18] sm:text-[2.375rem] lg:text-[2.875rem] xl:text-[3.125rem]`;
+export const homeHeroSection = 'relative bg-[#FAFAF8] pt-24 sm:pt-28 lg:pt-32';
 
-export const homeMarketingFeatureTitle = `font-semibold tracking-[-0.025em] text-[#0a2540] ${koreanLineBreak} text-[1.5rem] leading-[1.22] sm:text-[1.875rem] lg:text-[2.125rem]`;
+export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-slate-600 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
 
-export const homeMarketingSectionLead = `mt-4 max-w-2xl text-base leading-[1.72] text-[#425466] sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
+export const homeHeroImage = 'overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-200';
 
-export const homeMarketingLabel = 'text-[13px] font-semibold tracking-[0.04em] text-[#635bff] uppercase';
+export const homeFocusRing =
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]';
 
-export const homeMarketingCard =
-  'overflow-hidden rounded-[1.25rem] bg-white shadow-[0_13px_27px_-5px_rgba(50,50,93,0.11),0_8px_16px_-8px_rgba(0,0,0,0.1)] ring-1 ring-slate-900/[0.04] transition duration-300 [@media(hover:hover)_and_(pointer:fine)]:hover:shadow-[0_20px_40px_-12px_rgba(50,50,93,0.18)]';
+export const homeGateCard =
+  `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition ${fineHover}hover:border-slate-300`;
 
-export const homeMarketingBentoCard =
-  'rounded-[1.25rem] bg-white p-6 shadow-[0_6px_18px_-4px_rgba(50,50,93,0.1)] ring-1 ring-slate-900/[0.05] sm:p-7 lg:p-8';
+export const homeCaseCard =
+  `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition ${fineHover}hover:border-slate-300`;
 
-export const homeMarketingImageFrame =
-  'relative overflow-hidden rounded-[1.25rem] shadow-[0_50px_100px_-24px_rgba(50,50,93,0.2),0_30px_60px_-32px_rgba(0,0,0,0.24)] ring-1 ring-slate-900/[0.06] before:pointer-events-none before:absolute before:inset-0 before:z-10 before:rounded-[inherit] before:ring-1 before:ring-inset before:ring-white/20';
-
-export const homeMarketingImageFrameGlow =
-  'after:pointer-events-none after:absolute after:-inset-px after:-z-10 after:rounded-[1.35rem] after:bg-gradient-to-br after:from-[#635bff]/30 after:via-[#1d4ed8]/15 after:to-transparent after:opacity-80';
-
-export const homeMarketingBtn =
-  'inline-flex min-h-[2.875rem] items-center justify-center gap-2 rounded-full bg-[#0a2540] px-7 text-[15px] font-medium text-white shadow-[0_4px_14px_rgba(10,37,64,0.25)] transition hover:bg-[#0d2d4f] hover:shadow-[0_6px_20px_rgba(10,37,64,0.3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:text-base';
-
-export const homeMarketingBtnOutline =
-  'inline-flex min-h-[2.875rem] items-center justify-center gap-2 rounded-full border border-slate-300/90 bg-white/90 px-7 text-[15px] font-medium text-[#0a2540] shadow-sm backdrop-blur-sm transition hover:border-slate-400 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#635bff] sm:min-h-[3rem] sm:text-base';
-
-export const homeMarketingBtnGhost =
-  'inline-flex min-h-[2.75rem] items-center gap-1.5 text-[15px] font-medium text-[#425466] underline-offset-4 transition hover:text-[#0a2540] hover:underline sm:text-base';
-
-export const homeMarketingDarkSection = 'relative overflow-hidden bg-[#0a2540]';
-
-export const homeMarketingDarkTitle = `font-semibold tracking-[-0.03em] text-white ${koreanLineBreak} text-[1.875rem] leading-[1.18] sm:text-[2.375rem] lg:text-[2.875rem]`;
-
-export const homeMarketingDarkLead = `mt-5 max-w-xl text-base leading-[1.72] text-white/78 sm:text-[17px] lg:text-lg ${koreanLineBreak}`;
-
-export const homeMarketingProofChip =
-  'inline-flex items-center rounded-full border border-slate-200/80 bg-white/70 px-3.5 py-1.5 text-[13px] font-medium text-[#425466] shadow-sm backdrop-blur-sm sm:text-sm';
+export const homeDarkSection = 'relative overflow-hidden bg-[#0B1220] text-white';

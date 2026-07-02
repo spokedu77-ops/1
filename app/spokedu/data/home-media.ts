@@ -47,7 +47,14 @@ export const HOME_MEDIA = {
     label: 'SPOMOVE 단체 수업',
     fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
     tone: 'indigo',
-    objectPosition: '50% 82%',
+    objectPosition: '50% 55%',
+  }),
+  homeHeroMovement: fromPhoto(SPOKEDU_IMAGES.home.heroMovement, {
+    id: 'home-hero-movement',
+    label: '체육수업 현장',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
+    tone: 'sky',
+    objectPosition: '50% 42%',
   }),
   homeHeroWide: fromPhoto(SPOKEDU_IMAGES.records.dongjak, {
     id: 'home-hero-wide',

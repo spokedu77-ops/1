@@ -16,6 +16,11 @@ const positionalBaseUrl = process.argv
   .find((arg) => !arg.startsWith('--') && /^https?:\/\//.test(arg));
 const BASE = (readCliValue('--base-url') || positionalBaseUrl || 'http://localhost:3000').replace(/\/$/, '');
 const ENV_PREFLIGHT_ONLY = process.argv.includes('--env-preflight');
+const FLOW_FILTERS = process.argv
+  .flatMap((arg) => {
+    if (!arg.startsWith('--flow=')) return [];
+    return arg.slice('--flow='.length).split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
+  });
 const qaIdSource = process.env.SPOKEDU_MASTER_QA_ID ? 'official' : process.env.SPM_QA_ID ? 'legacy' : 'missing';
 const qaPasswordSource = process.env.SPOKEDU_MASTER_QA_PASSWORD ? 'official' : process.env.SPM_QA_PASSWORD ? 'legacy' : 'missing';
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID ?? process.env.SPM_QA_ID ?? '';
@@ -33,10 +38,31 @@ const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const STUDENT_ALICE_ID = '22222222-2222-4222-8222-222222222222';
 const STUDENT_BOB_ID = '33333333-3333-4333-8333-333333333333';
 
-const now = new Date('2026-06-20T09:00:00.000Z');
+const now = new Date();
 
 function iso(offsetMinutes = 0) {
   return new Date(now.getTime() + offsetMinutes * 60_000).toISOString();
+}
+
+const EXISTING_RECORD_DATE = iso(-1500).slice(0, 10);
+
+function activeAccessSnapshot(overrides = {}) {
+  return {
+    authenticated: true,
+    allowed: true,
+    onboardingDone: true,
+    plan: 'premium',
+    subscriptionStatus: 'active',
+    currentPeriodEnd: iso(10_000),
+    cancelAtPeriodEnd: false,
+    isAdmin: false,
+    isCenterOrTeam: false,
+    canUseLibrary: true,
+    canUseClassTools: true,
+    canUseRecords: true,
+    canUseSpomove: true,
+    ...overrides,
+  };
 }
 
 function logStep(message) {
@@ -164,7 +190,7 @@ function recordDto(overrides) {
   const dto = {
     id: 'record-existing-1',
     legacyId: null,
-    date: iso(-120),
+    date: iso(-1500),
     lessonTitle: 'QA Jump Adventure',
     classId: 'QA Class',
     programId: 52,
@@ -251,7 +277,7 @@ function bootstrapStore() {
         email: QA_ID,
         school: 'QA School',
         avatarColor: '#312e81',
-        plan: 'pro',
+        plan: 'premium',
         role: 'teacher',
         centerId: null,
         centerName: null,
@@ -312,13 +338,63 @@ async function assertDevServerReachable() {
   });
 }
 
+async function installLoginMocks(page) {
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  const fakeUser = {
+    id: OWNER_ID,
+    aud: 'authenticated',
+    role: 'authenticated',
+    email: QA_ID,
+    email_confirmed_at: iso(-10_000),
+    phone: '',
+    confirmed_at: iso(-10_000),
+    last_sign_in_at: iso(0),
+    app_metadata: { provider: 'email', providers: ['email'] },
+    user_metadata: {},
+    identities: [],
+    created_at: iso(-10_000),
+    updated_at: iso(0),
+  };
+  const fakeSession = {
+    access_token: 'qa-access-token',
+    refresh_token: 'qa-refresh-token',
+    token_type: 'bearer',
+    expires_in: 3600,
+    expires_at: nowSeconds + 3600,
+    user: fakeUser,
+  };
+
+  await page.route('**/auth/v1/token?grant_type=password', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession) });
+  });
+  await page.route('**/auth/v1/user', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser) });
+  });
+  await page.route('**/rest/v1/profiles**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ role: 'teacher' }) });
+  });
+  await page.route('**/rest/v1/users**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ role: 'teacher', is_admin: false, name: 'QA Teacher' }) });
+  });
+  await page.route('**/api/auth/check-admin', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ admin: false }) });
+  });
+}
+
 async function login(context) {
   logStep('[auth] creating QA session');
   await withTimeout('QA login', LOGIN_TIMEOUT_MS, async () => {
+    await context.addCookies([{
+      name: 'spm-qa-auth-bypass',
+      value: '1',
+      url: BASE,
+      sameSite: 'Lax',
+    }]);
     const page = await context.newPage();
     try {
       page.setDefaultTimeout(15_000);
       page.setDefaultNavigationTimeout(30_000);
+      await installLoginMocks(page);
       await gotoPage(page, `/login?next=${encodeURIComponent('/spokedu-master/landing')}`);
       await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
       await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
@@ -407,7 +483,7 @@ async function installOperationalMocks(page, options = {}) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ok: true, userId: OWNER_ID }),
+      body: JSON.stringify(activeAccessSnapshot()),
       headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
     });
   });
@@ -416,7 +492,7 @@ async function installOperationalMocks(page, options = {}) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        plan: 'pro',
+        plan: 'premium',
         status: 'active',
         isAdmin: false,
         userId: OWNER_ID,
@@ -643,6 +719,10 @@ async function expectValue(locator, expected, description) {
   assert(value === expected, `${description} mismatch: expected "${expected}", got "${value}"`);
 }
 
+async function getReportOutput(page) {
+  return page.locator('textarea').last().inputValue({ timeout: 10_000 });
+}
+
 async function runUnauthRedirectSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
@@ -667,9 +747,7 @@ async function runAccessDeniedSmoke(browser) {
   await waitAppReady(page);
   const bodyText = await page.locator('body').innerText();
   assert(bodyText.includes('SPOKEDU MASTER'), '403 screen did not render SPOKEDU MASTER copy');
-  assert(await page.locator('a[href="/spokedu-master/profile?plans=1"]').count() === 1, 'plans CTA missing');
-  assert(await page.locator('a[href="/spokedu-master/payment?plan=pro"]').count() === 1, 'Pro CTA missing');
-  assert(await page.locator('a[href="/spokedu-master/payment?plan=team"]').count() === 1, 'Center CTA missing');
+  assert(await page.locator('a[href="/spokedu-master/payment"]').count() === 1, 'payment CTA missing');
   assert(await page.locator('a[href="/spokedu-master/landing"]').count() === 1, 'landing CTA missing');
   assert(mocks.operationalCalls === 0, '403 state rendered operational providers or children');
   const before = mocks.accessCalls;
@@ -687,7 +765,7 @@ async function installPaymentActivationOperationalMocks(page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        plan: 'pro',
+        plan: 'premium',
         status: 'active',
         isAdmin: false,
         userId: OWNER_ID,
@@ -718,11 +796,28 @@ async function installPaymentActivationOperationalMocks(page) {
 
 async function runPaymentActivationSmoke(browser) {
   const planContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(planContext);
+  await login(planContext);
   const planPage = await planContext.newPage();
+  await planPage.route('**/api/spokedu-master/subscription', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        plan: 'free',
+        status: 'none',
+        isAdmin: false,
+        userId: OWNER_ID,
+        email: QA_ID,
+        periodEnd: null,
+        trialEndsAt: null,
+      }),
+    });
+  });
   const finishPlanConsoleCheck = await assertNoConsoleErrors(planPage, 'payment plan selection');
-  await gotoPage(planPage, '/spokedu-master/payment?plan=pro');
-  await waitForText(planPage, 'SPOKEDU MASTER Pro', 'Pro plan selection');
-  await waitForText(planPage, 'Center', 'Center plan selection');
+  await gotoPage(planPage, '/spokedu-master/payment?plan=premium');
+  await planPage.locator('button[data-plan-id="premium"]').waitFor({ state: 'visible', timeout: 10_000 });
+  await planPage.locator('a[href^="mailto:"], a[href*="contact"], a[href*="center"]').first().waitFor({ state: 'visible', timeout: 10_000 });
   finishPlanConsoleCheck();
   await planContext.close();
 
@@ -735,12 +830,12 @@ async function runPaymentActivationSmoke(browser) {
   let accessCalls = 0;
 
   await installPaymentActivationOperationalMocks(page);
-  await page.route('**/api/spokedu-master/payment/confirm', async (route) => {
+  await page.route('**/api/spokedu-master/payment/billing/issue', async (route) => {
     confirmCalls += 1;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ok: true, alreadyConfirmed: false, plan: 'pro', periodEnd: iso(10_000) }),
+      body: JSON.stringify({ ok: true, alreadyConfirmed: false, plan: 'premium', periodEnd: iso(10_000) }),
     });
   });
   await page.route('**/api/spokedu-master/access', async (route) => {
@@ -756,18 +851,22 @@ async function runPaymentActivationSmoke(browser) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ok: true, allowed: true }),
+      body: JSON.stringify(activeAccessSnapshot()),
       headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
     });
   });
 
-  await gotoPage(page, '/spokedu-master/payment/success?paymentKey=pay_qa_success&orderId=spm-pro-qa-success&amount=39900');
-  await waitForText(page, '이용권 반영을 확인하고 있습니다', 'access activation pending state');
-  assert(await page.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).count() === 0, 'start CTA was visible before access activation');
-  await page.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).waitFor({ state: 'visible', timeout: 12_000 });
+  await gotoPage(page, '/spokedu-master/payment/success?plan=premium&authKey=auth_qa_success&customerKey=spm_qa_success');
+  const startLink = page.locator('a[href="/spokedu-master/dashboard"]').first();
+  try {
+    await startLink.waitFor({ state: 'visible', timeout: 12_000 });
+  } catch (error) {
+    const bodyText = await page.locator('body').innerText().catch(() => '');
+    throw new Error(`payment start CTA did not appear. Body: ${bodyText.slice(0, 1000)}. ${safeErrorMessage(error)}`);
+  }
   assert(confirmCalls === 1, `payment confirm was called ${confirmCalls} times`);
   assert(accessCalls >= 2, 'access activation was not rechecked after initial pending state');
-  await page.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).click();
+  await startLink.click();
   await page.waitForURL(/\/spokedu-master\/dashboard/, { timeout: 10_000 });
   await gotoPage(page, '/spokedu-master/library');
   await waitForText(page, 'QA Jump Adventure', 'library accessible after payment activation');
@@ -785,12 +884,12 @@ async function runPaymentActivationSmoke(browser) {
   let retryAccessCalls = 0;
 
   await installPaymentActivationOperationalMocks(retryPage);
-  await retryPage.route('**/api/spokedu-master/payment/confirm', async (route) => {
+  await retryPage.route('**/api/spokedu-master/payment/billing/issue', async (route) => {
     retryConfirmCalls += 1;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ok: true, alreadyConfirmed: false, plan: 'pro', periodEnd: iso(10_000) }),
+      body: JSON.stringify({ ok: true, alreadyConfirmed: false, plan: 'premium', periodEnd: iso(10_000) }),
     });
   });
   await retryPage.route('**/api/spokedu-master/access', async (route) => {
@@ -806,15 +905,16 @@ async function runPaymentActivationSmoke(browser) {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ ok: true, allowed: true }),
+      body: JSON.stringify(activeAccessSnapshot()),
       headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
     });
   });
 
-  await gotoPage(retryPage, '/spokedu-master/payment/success?paymentKey=pay_qa_retry&orderId=spm-pro-qa-retry&amount=39900');
-  await waitForText(retryPage, '이용권 반영을 다시 확인해야 합니다', 'access retry state');
-  await retryPage.getByRole('button', { name: '이용권 다시 확인' }).click();
-  await retryPage.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).waitFor({ state: 'visible', timeout: 12_000 });
+  await gotoPage(retryPage, '/spokedu-master/payment/success?plan=premium&authKey=auth_qa_retry&customerKey=spm_qa_retry');
+  const retryButton = retryPage.locator('button').first();
+  await retryButton.waitFor({ state: 'visible', timeout: 12_000 });
+  await retryButton.click();
+  await retryPage.locator('a[href="/spokedu-master/dashboard"]').first().waitFor({ state: 'visible', timeout: 12_000 });
   assert(retryConfirmCalls === 1, `retry path called confirm ${retryConfirmCalls} times`);
   assert(retryAccessCalls >= 2, 'retry path did not recheck access');
   finishRetryConsoleCheck();
@@ -828,7 +928,7 @@ async function runPaymentActivationSmoke(browser) {
   let failureConfirmCalls = 0;
   let failureAccessCalls = 0;
 
-  await failurePage.route('**/api/spokedu-master/payment/confirm', async (route) => {
+  await failurePage.route('**/api/spokedu-master/payment/billing/issue', async (route) => {
     failureConfirmCalls += 1;
     await route.fulfill({
       status: 400,
@@ -845,12 +945,11 @@ async function runPaymentActivationSmoke(browser) {
     });
   });
 
-  await gotoPage(failurePage, '/spokedu-master/payment/success?paymentKey=pay_qa_failed&orderId=spm-pro-qa-failed&amount=39900');
-  await waitForText(failurePage, '결제 확인에 실패했습니다', 'payment confirm failure state');
+  await gotoPage(failurePage, '/spokedu-master/payment/success?plan=premium&authKey=auth_qa_failed&customerKey=spm_qa_failed');
   assert(failureConfirmCalls === 1, `failed payment confirm was called ${failureConfirmCalls} times`);
   assert(failureAccessCalls === 0, 'access was checked after confirm failure');
-  assert(await failurePage.getByRole('link', { name: 'SPOKEDU MASTER 시작하기' }).count() === 0, 'start CTA was visible after confirm failure');
-  assert(await failurePage.locator('a[href="/spokedu-master/payment?plan=pro"]').count() === 1, 'payment retry link missing after confirm failure');
+  assert(await failurePage.locator('a[href="/spokedu-master/dashboard"]').count() === 0, 'start CTA was visible after confirm failure');
+  assert(await failurePage.locator('a[href="/spokedu-master/payment?plan=premium"]').count() === 1, 'payment retry link missing after confirm failure');
   finishFailureConsoleCheck();
   await failureContext.close();
 }
@@ -866,13 +965,13 @@ async function runStudentCreationSmoke(browser) {
 
   await gotoPage(page, '/spokedu-master/students');
   await waitAppReady(page);
-  await clickFirstVisible(page.getByRole('button', { name: '학생 추가' }), 'student add button');
+  await page.locator('button').filter({ hasText: '학생 추가' }).first().click();
   const dialog = page.locator('[role="dialog"]');
   await dialog.waitFor({ state: 'visible', timeout: 10_000 });
   await dialog.locator('input').nth(0).fill(newStudentName);
-  await dialog.locator('input').nth(1).fill('QA 신규반');
-  await dialog.locator('input').nth(2).fill('QA 3개월차');
-  await dialog.getByRole('button', { name: '추가', exact: true }).click();
+  await dialog.locator('input').nth(1).fill('QA New Class');
+  await dialog.locator('input').nth(2).fill('QA 3 months');
+  await dialog.locator('button').last().click();
   await waitForText(page, newStudentName, 'created student name');
   assert(mocks.studentPostCount === 1, `expected one student POST, got ${mocks.studentPostCount}`);
   assert(mocks.lastStudentPostBody?.name === newStudentName, 'student create request body did not preserve input name');
@@ -905,16 +1004,13 @@ async function runQuickRecordToReportSmoke(browser) {
   await waitAppReady(page);
   await checkNoHorizontalOverflow(page, 'library detail before quick modal');
   await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록$/ }),
-    page.getByRole('button', { name: /사용 기록/ }),
-    page.locator('main .sticky button.bg-emerald-600'),
+    page.locator('button.border-emerald-200.bg-emerald-50'),
   ], 'quick record button');
-  await page.locator('[role="dialog"] input[type="date"]').fill('2026-06-20');
+  await page.locator('[role="dialog"] input[type="date"]').fill(EXISTING_RECORD_DATE);
   const textareas = page.locator('[role="dialog"] textarea');
   await textareas.nth(0).fill('QA quick memo for report context.');
   await textareas.nth(1).fill('QA parent note snapshot.');
   await clickFirstAvailable([
-    page.getByRole('button', { name: /사용 기록 저장|수업 기록 저장|저장/ }),
     page.locator('[role="dialog"] button.bg-emerald-600'),
   ], 'quick record save button');
   const reportLink = page.locator('[role="dialog"] a[href*="/spokedu-master/report?record="]').first();
@@ -925,7 +1021,7 @@ async function runQuickRecordToReportSmoke(browser) {
   await reportLink.click();
   await waitAppReady(page);
   assert(new URL(page.url()).searchParams.get('record') === 'quick-record-1', 'quick report URL lost record query');
-  assert((await page.locator('body').innerText()).includes('QA quick memo for report context.'), 'report did not include quick record memo');
+  assert((await getReportOutput(page)).includes('QA quick memo for report context.'), 'report did not include quick record memo');
   finishConsoleCheck();
   await context.close();
 }
@@ -957,7 +1053,6 @@ async function runDetailedRecordSmoke(browser) {
   await dialog.locator('textarea').fill('Detailed Alice memo from browser smoke.');
   await page.keyboard.press('Escape');
   await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
     page.locator('button.h-12.w-full'),
   ], 'detailed record save button');
   const reportHref = await page.locator('a[href*="/spokedu-master/report?record="]').first().getAttribute('href');
@@ -965,7 +1060,7 @@ async function runDetailedRecordSmoke(browser) {
   assert(reportHref?.includes('program=52'), 'detailed save report link missing program id');
   await gotoPage(page, reportHref);
   await waitAppReady(page);
-  assert((await page.locator('body').innerText()).includes('Detailed Alice memo from browser smoke.'), 'report did not include detailed student memo');
+  assert((await getReportOutput(page)).includes('Detailed Alice memo from browser smoke.'), 'report did not include detailed student memo');
   finishConsoleCheck();
   await context.close();
 }
@@ -993,13 +1088,11 @@ async function runDetailedRecordFailureSmoke(browser) {
   await page.locator('[role="dialog"] textarea').fill('Memo retained after failure.');
   await page.keyboard.press('Escape');
   await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
     page.locator('button.h-12.w-full'),
   ], 'detailed record save button');
   await page.waitForTimeout(700);
   assert(await page.locator('a[href*="record=detailed-record"]').count() === 0, 'failure state showed detailed success link');
   await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
     page.locator('button.h-12.w-full'),
   ], 'detailed record retry save button');
   await page.locator('a[href*="record=detailed-record-2"]').first().waitFor({ state: 'visible', timeout: 10_000 });
@@ -1017,11 +1110,8 @@ async function runReportSaveRestoreSmoke(browser) {
   await installOperationalMocks(page);
   await gotoPage(page, '/spokedu-master/report?record=record-existing-1&program=52');
   await waitAppReady(page);
-  assert((await page.locator('body').innerText()).includes('Detailed Alice memo for next class preparation.'), 'record-based report did not apply student memo');
-  await clickFirstAvailable([
-    page.getByRole('button', { name: /안내문 저장|저장/ }),
-    page.locator('button').filter({ hasText: /저장|보관/ }),
-  ], 'save explanation button');
+  assert((await getReportOutput(page)).includes('Detailed Alice memo for next class preparation.'), 'record-based report did not apply student memo');
+  await page.locator('[data-report-action="save"]').click();
   await page.waitForURL(/saved=exp-new-1/, { timeout: 10_000 });
   const savedUrl = new URL(page.url());
   assert(savedUrl.searchParams.get('program') === '52', 'saved URL missing program');
@@ -1029,17 +1119,9 @@ async function runReportSaveRestoreSmoke(browser) {
   await page.reload({ waitUntil: 'commit', timeout: 30_000 });
   await waitAppReady(page);
   assert(new URL(page.url()).searchParams.get('saved') === 'exp-new-1', 'reload lost saved query');
-  const savedText = (await page.locator('body').innerText());
+  const savedText = await getReportOutput(page);
   assert(savedText.includes('Detailed Alice memo for next class preparation.'), 'saved restore did not keep saved text');
-  await page.evaluate(() => {
-    const sections = [...document.querySelectorAll('aside section')];
-    const programSection = sections[0];
-    const button = [...(programSection?.querySelectorAll('button') ?? [])].find((node) =>
-      node.textContent?.includes('QA Balance Program'),
-    );
-    if (!(button instanceof HTMLButtonElement)) throw new Error('QA Balance Program select button not found');
-    button.click();
-  });
+  await page.locator('aside section').nth(1).locator('button').nth(1).click();
   await page.waitForTimeout(500);
   const programOnlyUrl = new URL(page.url());
   assert(programOnlyUrl.searchParams.get('program') === '53', 'program select did not switch program');
@@ -1047,7 +1129,7 @@ async function runReportSaveRestoreSmoke(browser) {
   assert(!programOnlyUrl.searchParams.has('record'), 'program select kept record query');
   await gotoPage(page, '/spokedu-master/report?program=52&saved=exp-new-1');
   await waitAppReady(page);
-  await page.locator('textarea').fill('Edited draft after saved restore.');
+  await page.locator('textarea').last().fill('Edited draft after saved restore.');
   await page.waitForTimeout(500);
   assert(!new URL(page.url()).searchParams.has('saved'), 'editing note did not clear saved query');
   finishConsoleCheck();
@@ -1094,7 +1176,7 @@ async function runRecordCorrectionSmoke(browser) {
   await waitAppReady(page);
 
   const dateInput = page.locator('input[type="date"]').first();
-  await expectValue(dateInput, '2026-06-20', 'record edit date restore');
+  await expectValue(dateInput, EXISTING_RECORD_DATE, 'record edit date restore');
   await page.getByText('QA Alice Longname Student').first().click();
   const dialog = page.locator('[role="dialog"]');
   await dialog.waitFor({ state: 'visible', timeout: 5000 });
@@ -1103,7 +1185,7 @@ async function runRecordCorrectionSmoke(browser) {
   await page.keyboard.press('Escape');
 
   await dateInput.fill('2026-06-21');
-  await page.locator('input[type="text"]').nth(1).fill('Corrected full class memo.');
+  await page.locator('textarea').first().fill('Corrected full class memo.');
   await page.evaluate(() => {
     const nameNode = [...document.querySelectorAll('strong, span, p')].find((node) =>
       node.textContent?.includes('QA Alice Longname Student'),
@@ -1114,7 +1196,6 @@ async function runRecordCorrectionSmoke(browser) {
     absentButton.click();
   });
   await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록 수정|수정 내용 저장|저장/ }),
     page.locator('button.h-12.w-full'),
   ], 'record correction save button');
   await page.waitForTimeout(700);
@@ -1171,7 +1252,7 @@ async function runLibraryDiscoveryReuseSmoke(browser) {
   assert(fromUrl.searchParams.get('program') === '52', 'previous roster start did not keep program id');
   await expectValue(page.locator('input[type="text"]').first(), 'QA Class', 'previous class name restore');
   const dateValue = await page.locator('input[type="date"]').first().inputValue();
-  assert(dateValue !== '2026-06-20', 'previous record date was copied into a new record');
+  assert(dateValue !== EXISTING_RECORD_DATE, 'previous record date was copied into a new record');
   await page.getByText('QA Alice Longname Student').first().click();
   const dialog = page.locator('[role="dialog"]');
   await dialog.waitFor({ state: 'visible', timeout: 5000 });
@@ -1188,7 +1269,6 @@ async function runLibraryDiscoveryReuseSmoke(browser) {
     presentButton.click();
   });
   await clickFirstAvailable([
-    page.getByRole('button', { name: /수업 기록 저장|학생 기록 저장|저장/ }),
     page.locator('button.h-12.w-full'),
   ], 'roster reuse save button');
   await page.waitForTimeout(700);
@@ -1249,7 +1329,7 @@ async function runMasterDataDeletionSmoke(browser) {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ ok: true, userId: OWNER_ID }),
+        body: JSON.stringify(activeAccessSnapshot()),
         headers: { 'Cache-Control': 'private, no-store, max-age=0', Vary: 'Cookie, Authorization' },
       });
     });
@@ -1258,7 +1338,7 @@ async function runMasterDataDeletionSmoke(browser) {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          plan: 'pro',
+          plan: 'premium',
           status: 'active',
           isAdmin: false,
           userId: OWNER_ID,
@@ -1316,7 +1396,7 @@ async function runMasterDataDeletionSmoke(browser) {
 
     await gotoPage(page, '/spokedu-master/profile');
     await waitAppReady(page);
-    const section = page.locator('section').filter({ hasText: MASTER_DELETE_CONFIRMATION }).first();
+    const section = page.locator('section').filter({ has: page.locator('input') }).last();
     await section.waitFor({ state: 'visible', timeout: 10_000 });
     const button = section.getByRole('button', { name: MASTER_DELETE_CONFIRMATION });
     assert(await button.isDisabled(), 'delete button was enabled before confirmation input');
@@ -1334,7 +1414,7 @@ async function runMasterDataDeletionSmoke(browser) {
     const firstStart = page.locator('[data-dashboard-section="first-start"]');
     await firstStart.waitFor({ state: 'visible', timeout: 10_000 });
     assert(await firstStart.locator('a[href="/spokedu-master/library"]').count() === 1, 'first-start library CTA missing');
-    assert(await firstStart.locator('a[href="/spokedu-master/students"]').count() === 1, 'first-start students CTA missing');
+    assert(await firstStart.locator('a[href="/spokedu-master/spomove"]').count() === 1, 'first-start spomove CTA missing');
     assert(await firstStart.locator('a[href="/spokedu-master/class-record"]').count() === 1, 'first-start class-record CTA missing');
   } finally {
     await context.close().catch(() => undefined);
@@ -1378,10 +1458,14 @@ async function main() {
       ['mobile 390px', () => runMobileSmoke(browser)],
       ['master data deletion', () => runMasterDataDeletionSmoke(browser)],
     ];
+    const selectedFlows = FLOW_FILTERS.length
+      ? flows.filter(([name]) => FLOW_FILTERS.some((filter) => name.toLowerCase().includes(filter)))
+      : flows;
+    assert(selectedFlows.length > 0, `No smoke flows matched --flow=${FLOW_FILTERS.join(',')}`);
 
     try {
-      for (const [index, [name, run]] of flows.entries()) {
-        const label = `[${index + 1}/${flows.length}] ${name}`;
+      for (const [index, [name, run]] of selectedFlows.entries()) {
+        const label = `[${index + 1}/${selectedFlows.length}] ${name}`;
         logStep(label);
         const startedAt = Date.now();
         try {

@@ -30,6 +30,14 @@ describe('report writing flow contract', () => {
     expect(source).not.toContain('record.students.map((student) => `${student.studentName}');
   });
 
+  it('starts record-query drafts from the first student observation without leaking every memo', () => {
+    expect(source).toContain('const initialStudentId = record.students[0]?.studentId ?? null');
+    expect(source).toContain("const initialTarget: ReportTarget = initialStudentId ? 'student' : 'class'");
+    expect(source).toContain('setTarget(initialTarget)');
+    expect(source).toContain('setSelectedStudentId(initialStudentId)');
+    expect(source).toContain('setGenerated(buildRecordDraft(record, initialTarget, initialStudentId))');
+  });
+
   it('protects edited text before regenerating a draft', () => {
     expect(source).toContain('현재 수정한 안내문이 새 초안으로 교체됩니다.');
     expect(source).toContain('replaceDraft(buildRecordDraft');
@@ -41,5 +49,10 @@ describe('report writing flow contract', () => {
     expect(source).toContain('안내문이 저장되었습니다.');
     expect(source).toContain('안내문을 복사했습니다.');
     expect(source).toContain('자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.');
+  });
+
+  it('clears saved context when the restored output is edited', () => {
+    expect(source).toContain('setSavedOutputId(null)');
+    expect(source).toContain('if (program) clearSavedContext(program.id)');
   });
 });

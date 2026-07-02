@@ -325,11 +325,13 @@ function ReportContent() {
     const record = classRecords.find((item) => item.id === queryRecordId);
     if (!record) return;
     recordQueryAppliedRef.current = queryRecordId;
+    const initialStudentId = record.students[0]?.studentId ?? null;
+    const initialTarget: ReportTarget = initialStudentId ? 'student' : 'class';
     setSelectedRecordId(record.id);
     setProgramId(record.programId);
-    setTarget('class');
-    setSelectedStudentId(record.students[0]?.studentId ?? null);
-    setGenerated(buildRecordDraft(record, 'class', null));
+    setTarget(initialTarget);
+    setSelectedStudentId(initialStudentId);
+    setGenerated(buildRecordDraft(record, initialTarget, initialStudentId));
     setSaveStatus('idle');
     setSaveError(null);
   }, [classRecords, queryRecordId]);
@@ -733,7 +735,7 @@ function ReportContent() {
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
                   {copied ? '복사 완료' : '현재 문구 복사'}
                 </button>
-                <button type="button" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                <button type="button" data-report-action="save" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   <Save size={14} />
                   {saveStatus === 'saving' ? '저장 중...' : '안내문 저장'}
                 </button>
@@ -752,7 +754,7 @@ function ReportContent() {
             {saveStatus === 'error' && saveError ? (
               <p className="mt-2 text-[12px] font-bold text-red-600">{saveError}</p>
             ) : null}
-            <textarea value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'} onChange={(event) => { setGenerated(event.target.value); setSaveStatus('idle'); setSaveError(null); }} disabled={!program} className="mt-3 min-h-[260px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:mt-4 sm:min-h-[340px] sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }} />
+            <textarea value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'} onChange={(event) => { setGenerated(event.target.value); setSaveStatus('idle'); setSaveError(null); setSavedOutputId(null); if (program) clearSavedContext(program.id); }} disabled={!program} className="mt-3 min-h-[260px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:mt-4 sm:min-h-[340px] sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }} />
           </section>
         </section>
       </div>

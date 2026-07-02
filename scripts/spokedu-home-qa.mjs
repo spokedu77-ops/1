@@ -10,13 +10,15 @@ const BASE_URL = process.env.SPOKEDU_QA_URL ?? 'http://localhost:3000/spokedu';
 const OUT_DIR = path.join(process.cwd(), 'qa-screenshots', 'spokedu-home');
 
 const VIEWPORTS = [
-  { name: '375x812', width: 375, height: 812 },
+  { name: '360x800', width: 360, height: 800 },
+  { name: '390x844', width: 390, height: 844 },
+  { name: '430x932', width: 430, height: 932 },
   { name: '768x1024', width: 768, height: 1024 },
+  { name: '1024x900', width: 1024, height: 900 },
   { name: '1440x1000', width: 1440, height: 1000 },
-  { name: '1920x1080', width: 1920, height: 1080 },
 ];
 
-const SECTION_IDS = ['hero', 'paths', 'spomove', 'cases'];
+const SECTION_IDS = ['hero', 'paths', 'cases', 'spomove', 'contact-cta'];
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });

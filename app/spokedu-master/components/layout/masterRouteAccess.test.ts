@@ -10,6 +10,9 @@ describe('SPOKEDU MASTER route access policy', () => {
     '/spokedu-master/terms',
     '/spokedu-master/privacy',
     '/spokedu-master/parent/shared-token',
+    '/spokedu-master/payment',
+    '/spokedu-master/payment/success',
+    '/spokedu-master/payment/cancel',
   ])('keeps %s public', (pathname) => {
     expect(isProtectedMasterRoute(pathname, basePath)).toBe(false);
   });
@@ -17,9 +20,6 @@ describe('SPOKEDU MASTER route access policy', () => {
   it.each([
     '/spokedu-master',
     '/spokedu-master/dashboard',
-    '/spokedu-master/payment',
-    '/spokedu-master/payment/success',
-    '/spokedu-master/payment/cancel',
     '/spokedu-master/onboarding',
     '/spokedu-master/library',
     '/spokedu-master/library/42',

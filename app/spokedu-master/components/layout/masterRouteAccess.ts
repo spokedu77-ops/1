@@ -12,6 +12,7 @@ export function isProtectedMasterRoute(pathname: string, basePath: string) {
     `${basePath}/terms`,
     `${basePath}/privacy`,
     `${basePath}/parent`,
+    `${basePath}/payment`,
   ];
   if (publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`))) {
     return false;

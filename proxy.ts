@@ -55,6 +55,10 @@ function isSpokeduMasterProtectedPath(pathname: string): boolean {
   return pathname === '/spokedu-master' || (pathname.startsWith('/spokedu-master/') && !isSpokeduMasterPublicPath(pathname));
 }
 
+function canBypassSpokeduMasterAuthForQa(request: NextRequest): boolean {
+  return process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1' && request.cookies.get('spm-qa-auth-bypass')?.value === '1';
+}
+
 function redirectWithNext(request: NextRequest, targetPath: string): NextResponse {
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = targetPath;
@@ -78,7 +82,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (isSpokeduMasterProtectedPath(pathname)) {
+  if (isSpokeduMasterProtectedPath(pathname) && !canBypassSpokeduMasterAuthForQa(request)) {
     supabase ??= createSupabaseProxyClient(request, response);
     if (!supabase) return redirectWithNext(request, '/login');
 

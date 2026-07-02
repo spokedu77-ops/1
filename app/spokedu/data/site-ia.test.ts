@@ -27,13 +27,14 @@ describe('spokedu site IA', () => {
     expect(special?.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch#special`);
   });
 
-  it('defines seven home sections with SPOMOVE flow labels', () => {
-    expect(homePage.hero.lines[0]).toContain('전문성과 현장 경험');
-    expect(homePage.trust.items).toHaveLength(5);
-    expect(homePage.coreBusiness.items).toHaveLength(4);
-    expect(homePage.spomove.flow).toEqual(['인지', '선택', '수행', '조절']);
+  it('defines five home sections with proof strip and audience gate', () => {
+    expect(homePage.hero.lines[0]).toContain('아이의 움직임');
+    expect(homePage.proofStrip.items).toHaveLength(3);
+    expect(homePage.audienceGate.items).toHaveLength(3);
+    expect(homePage.spomove.flowSteps).toHaveLength(4);
+    expect(homePage.spomove.flowSteps.map((step) => step.label)).toEqual(['인지', '선택', '수행', '조절']);
     expect(homePage.cases.cards).toHaveLength(3);
-    expect(homePage.operation.steps).toHaveLength(3);
+    expect(homePage.finalCta.items).toHaveLength(3);
   });
 
   it('uses verified catalog slugs for home cases', () => {

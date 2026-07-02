@@ -23,4 +23,11 @@ describe('SPOKEDU MASTER proxy/access authority contract', () => {
     expect(proxySource).toContain("if (!user) return redirectWithNext(request, '/login')");
     expect(proxySource).toContain('MASTER entitlement is intentionally not evaluated in proxy');
   });
+
+  it('keeps the QA auth bypass double-gated by env and cookie', () => {
+    expect(proxySource).toContain('canBypassSpokeduMasterAuthForQa');
+    expect(proxySource).toContain("process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1'");
+    expect(proxySource).toContain("request.cookies.get('spm-qa-auth-bypass')?.value === '1'");
+    expect(proxySource).toContain('isSpokeduMasterProtectedPath(pathname) && !canBypassSpokeduMasterAuthForQa(request)');
+  });
 });
