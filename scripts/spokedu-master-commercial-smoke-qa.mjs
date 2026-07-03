@@ -16,6 +16,7 @@ const positionalBaseUrl = process.argv
   .find((arg) => !arg.startsWith('--') && /^https?:\/\//.test(arg));
 const BASE = (readCliValue('--base-url') || positionalBaseUrl || 'http://localhost:3000').replace(/\/$/, '');
 const ENV_PREFLIGHT_ONLY = process.argv.includes('--env-preflight');
+const SKIP_SERVER_CHECK = process.argv.includes('--skip-server-check');
 const FLOW_FILTERS = process.argv
   .flatMap((arg) => {
     if (!arg.startsWith('--flow=')) return [];
@@ -23,6 +24,7 @@ const FLOW_FILTERS = process.argv
   });
 const qaIdSource = process.env.SPOKEDU_MASTER_QA_ID ? 'official' : process.env.SPM_QA_ID ? 'legacy' : 'missing';
 const qaPasswordSource = process.env.SPOKEDU_MASTER_QA_PASSWORD ? 'official' : process.env.SPM_QA_PASSWORD ? 'legacy' : 'missing';
+const qaBypassEnabled = process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1';
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID ?? process.env.SPM_QA_ID ?? '';
 const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD ?? process.env.SPM_QA_PASSWORD ?? '';
 const MASTER_DELETE_CONFIRMATION = 'MASTER \uB370\uC774\uD130 \uC0AD\uC81C';
@@ -316,10 +318,12 @@ function assertRequiredEnv() {
   const passwordLoaded = QA_PASSWORD.trim().length > 0;
   console.log(`QA ID loaded: ${idLoaded ? 'yes' : 'no'}`);
   console.log(`QA password loaded: ${passwordLoaded ? 'yes' : 'no'}`);
+  console.log(`QA auth bypass loaded: ${qaBypassEnabled ? 'yes' : 'no'}`);
   console.log(`Credential source: ${qaIdSource === 'official' && qaPasswordSource === 'official' ? 'official' : qaIdSource === 'legacy' || qaPasswordSource === 'legacy' ? 'legacy' : 'missing'}`);
   const missing = [
     ...(!idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
     ...(!passwordLoaded ? ['SPOKEDU_MASTER_QA_PASSWORD or SPM_QA_PASSWORD'] : []),
+    ...(!qaBypassEnabled ? ['SPOKEDU_MASTER_QA_BYPASS_AUTH=1'] : []),
   ];
   if (missing.length > 0) {
     console.error(`Missing required environment variable(s): ${missing.join(', ')}`);
@@ -1298,6 +1302,40 @@ async function runLibraryDiscoveryReuseSmoke(browser) {
   await context.close();
 }
 
+async function runShopPurchaseSafetySmoke(browser) {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await installAppState(context);
+  await login(context);
+  const page = await context.newPage();
+  const finishConsoleCheck = await assertNoConsoleErrors(page, 'shop purchase safety');
+  await installOperationalMocks(page);
+
+  await gotoPage(page, '/spokedu-master/shop');
+  await waitForText(page, 'SPOMAT', 'shop product title');
+  await waitForText(page, '회원가로 구매하기', 'shop purchase CTA');
+  await checkNoHorizontalOverflow(page, 'shop 390px');
+
+  const purchaseHref = await page.locator('a[href="/api/spokedu-master/shop/spomat/purchase"]').first().getAttribute('href');
+  assert(purchaseHref === '/api/spokedu-master/shop/spomat/purchase', 'shop purchase CTA does not use the server redirect route');
+
+  const purchaseResponse = await page.evaluate(async () => {
+    const response = await fetch('/api/spokedu-master/shop/spomat/purchase', { redirect: 'manual' });
+    const text = await response.text();
+    return {
+      status: response.status,
+      location: response.headers.get('location'),
+      text,
+    };
+  });
+  assert(purchaseResponse.status === 503, `shop purchase route should fail closed without env URL, got ${purchaseResponse.status}`);
+  assert(!purchaseResponse.location, `shop purchase route unexpectedly redirected to ${purchaseResponse.location}`);
+  assert(!purchaseResponse.text.includes('example.com'), 'shop purchase route exposed an example.com placeholder');
+  assert(purchaseResponse.text.includes('구매 링크가 아직 연결되지 않았습니다'), 'shop purchase route missing safe unavailable message');
+
+  finishConsoleCheck();
+  await context.close();
+}
+
 async function runMobileSmoke(browser) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   await installAppState(context);
@@ -1444,9 +1482,13 @@ async function main() {
       logStep('[setup] env preflight passed');
       return;
     }
-    logStep('[setup] checking dev server');
-    await assertDevServerReachable();
-    logStep('[setup] dev server reachable');
+    if (SKIP_SERVER_CHECK) {
+      logStep('[setup] skipping dev server preflight');
+    } else {
+      logStep('[setup] checking dev server');
+      await assertDevServerReachable();
+      logStep('[setup] dev server reachable');
+    }
 
     logStep('[setup] loading playwright');
     const chromium = await loadPlaywright();
@@ -1467,6 +1509,7 @@ async function main() {
       ['student next lesson preparation', () => runStudentPreparationSmoke(browser)],
       ['record correction to report', () => runRecordCorrectionSmoke(browser)],
       ['library discovery roster reuse', () => runLibraryDiscoveryReuseSmoke(browser)],
+      ['shop purchase safety', () => runShopPurchaseSafetySmoke(browser)],
       ['mobile 390px', () => runMobileSmoke(browser)],
       ['master data deletion', () => runMasterDataDeletionSmoke(browser)],
     ];

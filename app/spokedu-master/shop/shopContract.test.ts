@@ -76,14 +76,14 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(isSafePurchaseUrl('https://example.com/spomat')).toBe(true);
   });
 
-  it('route has default URLs so development works without env vars', () => {
+  it('route does not include placeholder purchase URLs', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain('SPOMAT_DEFAULT_PUBLIC_URL');
-    expect(route).toContain('SPOMAT_DEFAULT_PREMIUM_URL');
-    expect(route).toContain('https://example.com/spomat');
-    expect(route).toContain('https://example.com/spomat-premium');
-    expect(route).toContain('??');
+    expect(route).not.toContain('SPOMAT_DEFAULT_PUBLIC_URL');
+    expect(route).not.toContain('SPOMAT_DEFAULT_PREMIUM_URL');
+    expect(route).not.toContain('https://example.com/spomat');
+    expect(route).not.toContain('https://example.com/spomat-premium');
+    expect(route).toContain('구매 링크가 아직 연결되지 않았습니다');
   });
 
   it('route checks server-side plan, not client params', () => {
@@ -97,12 +97,15 @@ describe('SPOMAT purchase redirect route contract', () => {
     expect(route).not.toContain('GET(request');
   });
 
-  it('route uses env vars with fallback defaults for purchase URLs', () => {
+  it('route uses env vars without fallback defaults for purchase URLs', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
     expect(route).toContain('SPOMAT_PUBLIC_PURCHASE_URL');
     expect(route).toContain('SPOMAT_PREMIUM_PURCHASE_URL');
     expect(route).toContain('isSafePurchaseUrl');
+    expect(route).toContain('process.env.SPOMAT_PUBLIC_PURCHASE_URL;');
+    expect(route).toContain('process.env.SPOMAT_PREMIUM_PURCHASE_URL;');
+    expect(route).not.toContain('?? SPOMAT_DEFAULT');
     expect(route).not.toMatch(/redirect\(['"]https?:/);
   });
 
@@ -116,7 +119,7 @@ describe('SPOMAT purchase redirect route contract', () => {
   it('route does not silently fallback premium users to public URL', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
-    expect(route).toContain('회원가 구매 링크를 사용할 수 없습니다');
+    expect(route).toContain('회원가 구매 링크가 아직 연결되지 않았습니다');
     expect(route).toContain('isSafePurchaseUrl(premiumUrl)');
   });
 

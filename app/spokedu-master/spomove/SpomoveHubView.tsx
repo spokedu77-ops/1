@@ -582,7 +582,7 @@ function SpomovePreviewSheet({
         </div>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link href={href} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
-            실행 준비
+            바로 실행
           </Link>
           <button type="button" onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
             다른 프로그램 보기
@@ -635,7 +635,7 @@ function CardVisual({
       {!preset.isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-[1px]">
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-black text-white">
-            {preset.readyLabel ?? '준비 중'}
+            {preset.readyLabel ?? '제공 제외'}
           </span>
         </div>
       )}
@@ -710,7 +710,7 @@ function CardInfo({
             data-spm-spomove-card-action="start"
             className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white"
           >
-            실행 준비
+            바로 실행
           </Link>
         </div>
       ) : null}
@@ -719,7 +719,7 @@ function CardInfo({
         {!isReady ? (
           <span className="inline-flex shrink-0 items-center gap-1 pl-2 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />
-            준비 중
+            제공 제외
           </span>
         ) : null}
       </div>

@@ -4,7 +4,6 @@ import { MessageSquareQuote, Package } from 'lucide-react';
 import type { ReactNode } from 'react';
 
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
-import type { ProgramQualityReport } from '../../lib/program-meta';
 import type { Program } from '../../types';
 import { LessonPreviewMedia } from './LessonPreviewMedia';
 import { LessonTitle } from './LessonPanels';
@@ -14,14 +13,6 @@ function quoteScript(script: string) {
   if (!trimmed) return '';
   if (/^["“”'‘’「『]/.test(trimmed) && /["“”'‘’」』]$/.test(trimmed)) return trimmed;
   return `"${trimmed}"`;
-}
-
-function getQualityNotice(quality: ProgramQualityReport) {
-  if (quality.status === 'READY' || quality.missing.length === 0) return null;
-  return {
-    title: quality.status === 'INCOMPLETE' ? '수업 정보 보강이 필요합니다' : '일부 정보가 부족합니다',
-    missing: quality.missing.slice(0, 3).join(', '),
-  };
 }
 
 export function LessonPreviewContent({
@@ -41,8 +32,6 @@ export function LessonPreviewContent({
   const previewEquipment = model.equipment.slice(0, 6);
   const previewRules = model.activityMethod.slice(0, 3);
   const previewScript = model.previewCoachScript;
-  const quality = model.quality;
-  const qualityNotice = getQualityNotice(quality);
   const hasSummaryContent =
     previewEquipment.length > 0 ||
     Boolean(previewScript) ||
@@ -64,11 +53,6 @@ export function LessonPreviewContent({
               </span>
             ))}
           </div>
-        ) : null}
-        {qualityNotice ? (
-          <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11px] font-bold text-amber-800">
-            {qualityNotice.title} · 부족 정보: {qualityNotice.missing}
-          </p>
         ) : null}
       </div>
 

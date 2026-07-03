@@ -13,7 +13,7 @@ describe('SPOMOVE pilot flow contract', () => {
   it('shows program decision information and preview actions on hub cards', () => {
     expect(hub).toContain('function buildSpomoveDecisionItems');
     expect(hub).toContain('프로그램 미리보기');
-    expect(hub).toContain('실행 준비');
+    expect(hub).toContain('바로 실행');
     expect(hub).toContain('다시 실행');
     expect(hub).toContain('최근 실행');
   });

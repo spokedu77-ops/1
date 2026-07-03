@@ -30,15 +30,14 @@ describe('SPOKEDU MASTER library detail layout contract', () => {
     expect(detail).not.toContain('LessonChecklistCard');
   });
 
-  it('shows lesson quality as user-facing Korean copy instead of internal status codes', () => {
-    expect(detail).toContain('일부 정보가 부족합니다');
-    expect(detail).toContain('수업 정보 보강이 필요합니다');
-    expect(detail).toContain('부족 정보:');
-    expect(detail).not.toContain('{quality.status}');
-
-    expect(preview).toContain('일부 정보가 부족합니다');
-    expect(preview).toContain('부족 정보:');
-    expect(preview).not.toContain('{quality.status}');
+  it('does not expose internal lesson quality warnings in user-facing library screens', () => {
+    for (const source of [detail, preview]) {
+      expect(source).not.toContain('일부 정보가 부족합니다');
+      expect(source).not.toContain('수업 정보 보강이 필요합니다');
+      expect(source).not.toContain('부족 정보:');
+      expect(source).not.toContain('{quality.status}');
+      expect(source).not.toContain('qualityNotice');
+    }
   });
 
   it('only reserves large bottom padding when a sticky SPOMOVE action exists', () => {

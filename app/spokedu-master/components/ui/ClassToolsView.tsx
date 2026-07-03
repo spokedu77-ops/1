@@ -125,7 +125,13 @@ function StopwatchTab() {
   );
 }
 
-const RETURN_TIMER_DURATION_MS = 10 * 60 * 1000;
+const RETURN_TIMER_OPTIONS = [
+  { label: '3분', value: 3 * 60 * 1000 },
+  { label: '5분', value: 5 * 60 * 1000 },
+  { label: '10분', value: 10 * 60 * 1000 },
+] as const;
+
+const DEFAULT_RETURN_TIMER_DURATION_MS = 10 * 60 * 1000;
 
 type ReturnTimerStatus = 'idle' | 'running' | 'paused' | 'expired' | 'completed';
 
@@ -145,7 +151,8 @@ function formatElapsed(ms: number) {
 }
 
 function ReturnTimerTab() {
-  const [remainingMs, setRemainingMs] = useState(RETURN_TIMER_DURATION_MS);
+  const [selectedDurationMs, setSelectedDurationMs] = useState(DEFAULT_RETURN_TIMER_DURATION_MS);
+  const [remainingMs, setRemainingMs] = useState(DEFAULT_RETURN_TIMER_DURATION_MS);
   const [status, setStatus] = useState<ReturnTimerStatus>('idle');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [completedMs, setCompletedMs] = useState<number | null>(null);
@@ -250,10 +257,10 @@ function ReturnTimerTab() {
     if (soundEnabledRef.current) await ensureAudioContext();
     lastBeepSecondRef.current = null;
     setCompletedMs(null);
-    setRemainingMs(RETURN_TIMER_DURATION_MS);
-    endAtRef.current = Date.now() + RETURN_TIMER_DURATION_MS;
+    setRemainingMs(selectedDurationMs);
+    endAtRef.current = Date.now() + selectedDurationMs;
     setStatus('running');
-  }, [ensureAudioContext]);
+  }, [ensureAudioContext, selectedDurationMs]);
 
   const pause = useCallback(() => {
     const endAt = endAtRef.current;
@@ -274,9 +281,9 @@ function ReturnTimerTab() {
     endAtRef.current = null;
     lastBeepSecondRef.current = null;
     setCompletedMs(null);
-    setRemainingMs(RETURN_TIMER_DURATION_MS);
+    setRemainingMs(selectedDurationMs);
     setStatus('idle');
-  }, []);
+  }, [selectedDurationMs]);
 
   const complete = useCallback(() => {
     const endAt = endAtRef.current;
@@ -284,9 +291,19 @@ function ReturnTimerTab() {
     endAtRef.current = null;
     lastBeepSecondRef.current = null;
     setRemainingMs(nextRemainingMs);
-    setCompletedMs(RETURN_TIMER_DURATION_MS - nextRemainingMs);
+    setCompletedMs(selectedDurationMs - nextRemainingMs);
     setStatus('completed');
-  }, [remainingMs, status]);
+  }, [remainingMs, selectedDurationMs, status]);
+
+  const selectDuration = useCallback((durationMs: number) => {
+    if (status === 'running' || status === 'paused') return;
+    setSelectedDurationMs(durationMs);
+    setRemainingMs(durationMs);
+    setCompletedMs(null);
+    endAtRef.current = null;
+    lastBeepSecondRef.current = null;
+    setStatus('idle');
+  }, [status]);
 
   const toggleSound = useCallback(async () => {
     if (soundEnabledRef.current) {
@@ -301,7 +318,8 @@ function ReturnTimerTab() {
 
   const remainingSeconds = Math.ceil(remainingMs / 1000);
   const isFinalThirty = status === 'running' && remainingSeconds <= 30;
-  const progress = Math.max(0, Math.min(100, (remainingMs / RETURN_TIMER_DURATION_MS) * 100));
+  const progress = Math.max(0, Math.min(100, (remainingMs / selectedDurationMs) * 100));
+  const durationSelectDisabled = status === 'running' || status === 'paused';
   const statusLabel = status === 'idle'
     ? '대기 중'
     : status === 'paused'
@@ -349,6 +367,29 @@ function ReturnTimerTab() {
           <p className="mx-auto mt-2 max-w-[620px] text-[13px] font-semibold leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>
             쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 10분 카운트다운 도구입니다.
           </p>
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="복귀 타이머 시간 선택">
+          {RETURN_TIMER_OPTIONS.map((option) => {
+            const active = selectedDurationMs === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => selectDuration(option.value)}
+                disabled={durationSelectDisabled}
+                className="h-11 min-w-[72px] rounded-[12px] px-4 text-[13px] font-black transition-opacity disabled:opacity-45"
+                style={{
+                  background: active ? tone.accent : 'var(--spm-s2)',
+                  border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
+                  color: active ? '#fff' : 'var(--spm-t2)',
+                }}
+                aria-pressed={active}
+              >
+                {option.label}
+              </button>
+            );
+          })}
         </div>
 
         <div

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, ShieldAlert, Trash2, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import {
@@ -72,6 +72,8 @@ export default function StudentsPage() {
   const [newMeta, setNewMeta] = useState('');
   const [studentSaving, setStudentSaving] = useState(false);
   const [studentSaveError, setStudentSaveError] = useState<string | null>(null);
+  const [studentDeletingId, setStudentDeletingId] = useState<string | null>(null);
+  const [studentDeleteError, setStudentDeleteError] = useState<string | null>(null);
   const [legacyPreviewAvailable, setLegacyPreviewAvailable] = useState(false);
   const [legacyPreview, setLegacyPreview] = useState<LegacyOperationalImportPreview | null>(null);
   const [legacyOwnerConfirmed, setLegacyOwnerConfirmed] = useState(false);
@@ -134,6 +136,24 @@ export default function StudentsPage() {
       })
       .finally(() => {
         setStudentSaving(false);
+      });
+  };
+  const handleDeleteStudent = (student: { id: string; name: string }) => {
+    if (studentDeletingId) return;
+    const confirmed = window.confirm(`${student.name} 학생을 삭제할까요?\n연결된 수업 기록에서는 기존 이름 스냅샷이 보존됩니다.`);
+    if (!confirmed) return;
+    setStudentDeletingId(student.id);
+    setStudentDeleteError(null);
+    void operationalData
+      .deleteStudent(student.id)
+      .then(() => {
+        if (selectedId === student.id) setSelectedId(null);
+      })
+      .catch(() => {
+        setStudentDeleteError('학생을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      })
+      .finally(() => {
+        setStudentDeletingId(null);
       });
   };
   const selectedFacts = selected ? getStudentRecordFacts(records, selected.id) : null;
@@ -545,6 +565,12 @@ export default function StudentsPage() {
       ) : null}
 
       <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
+        {studentDeleteError ? (
+          <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
+            {studentDeleteError}
+          </p>
+        ) : null}
+
         {students.length > 0 ? <section className="space-y-2">
           {students.map((student) => {
             const studentRecords = getStudentRecordEntries(records, student.id);
@@ -573,7 +599,7 @@ export default function StudentsPage() {
                   <Link href={`/spokedu-master/students/${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>학생 기록 보기</Link>
                   <Link href={`/spokedu-master/class-record?student=${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>수업 기록 작성</Link>
                 </div>
-                <button type="button" onClick={() => { void operationalData.deleteStudent(student.id).then(() => { if (selectedId === student.id) setSelectedId(null); }); }} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
+                <button type="button" onClick={() => handleDeleteStudent(student)} disabled={studentDeletingId === student.id} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px] disabled:opacity-50" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
                   <Trash2 size={14} color="var(--spm-red)" />
                 </button>
               </div>
@@ -759,14 +785,7 @@ export default function StudentsPage() {
                   문구
                 </Link>
               </div>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <div className="flex min-h-10 items-center gap-2 rounded-[11px] px-3 py-2 text-[11px] font-bold" style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--spm-t2)' }}>
-                  <ShieldAlert size={14} className="shrink-0" color="var(--spm-acc)" />
-                  <span>
-                    <strong className="block" style={{ color: 'var(--spm-t)' }}>학부모 공유 기능 준비 중</strong>
-                    <span className="mt-0.5 block">학생 정보 보호를 위해 안전한 공유 방식으로 개편하고 있습니다.</span>
-                  </span>
-                </div>
+              <div className="mt-2 grid gap-2">
                 <Link href="/spokedu-master/library" className="flex h-11 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <BookOpen size={14} />
                   다음 수업 자료

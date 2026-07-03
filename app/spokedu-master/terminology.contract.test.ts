@@ -8,9 +8,12 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/dashboard/DashboardView.tsx',
   'app/spokedu-master/library/LibraryView.tsx',
   'app/spokedu-master/library/[id]/LibraryDetailView.tsx',
+  'app/spokedu-master/activity/page.tsx',
   'app/spokedu-master/class-record/page.tsx',
+  'app/spokedu-master/components/record/RecordProgramPicker.tsx',
   'app/spokedu-master/report/page.tsx',
   'app/spokedu-master/spomove/page.tsx',
+  'app/spokedu-master/spomove/SpomoveHubView.tsx',
   'app/spokedu-master/spomove/session/page.tsx',
   'app/spokedu-master/components/layout/StatusBar.tsx',
   'app/spokedu-master/components/layout/TabBar.tsx',
@@ -25,6 +28,11 @@ const USER_VISIBLE_FILES = [
 
 const userVisibleSource = () => USER_VISIBLE_FILES.map(read).join('\n');
 
+const unfinishedCopySource = () => [
+  ...USER_VISIBLE_FILES,
+  'app/spokedu-master/components/ui/ClassToolsView.tsx',
+].map(read).join('\n');
+
 describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
   it('uses the fixed representative terms on user-facing screens', () => {
     const source = userVisibleSource();
@@ -35,7 +43,7 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).toContain('수업 기록');
     expect(source).toContain('안내문 작성·복사');
     expect(source).toContain('즐겨찾기');
-    expect(source).toContain('내 활동·기록');
+    expect(source).toContain('오늘 수업 기록 남기기');
   });
 
   it('does not expose deprecated representative terms in the checked files', () => {
@@ -45,6 +53,19 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).not.toContain('AI 추천');
     expect(source).not.toContain('성장 분석');
     expect(source).not.toContain('진행 중');
+  });
+
+  it('does not expose internal diagnostics or unfinished-feature copy in user-facing screens', () => {
+    const source = unfinishedCopySource();
+
+    expect(source).not.toContain('일부 정보가 부족합니다');
+    expect(source).not.toContain('수업 정보 보강이 필요합니다');
+    expect(source).not.toContain('부족 정보:');
+    expect(source).not.toContain('qualityNotice');
+    expect(source).not.toContain('학부모 공유 기능 준비 중');
+    expect(source).not.toContain('학부모 공유 준비 중');
+    expect(source).not.toContain('준비 중');
+    expect(source).not.toContain('실행 준비');
   });
 
   it('presents Lite and Premium as the only direct purchase products from the catalog', () => {

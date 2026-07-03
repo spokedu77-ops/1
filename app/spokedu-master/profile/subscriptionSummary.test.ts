@@ -155,7 +155,7 @@ describe('subscriptionSummary', () => {
 
   it('formats Korean end dates and handles missing values', () => {
     expect(formatSubscriptionEndDate(null)).toBe('종료일 없음');
-    expect(formatSubscriptionEndDate('not-a-date')).toBe('종료일 확인 필요');
+    expect(formatSubscriptionEndDate('not-a-date')).toBe('이용 기간 확인 중');
     expect(formatSubscriptionEndDate('2026-06-23T00:00:00.000Z')).toContain('2026');
   });
 });

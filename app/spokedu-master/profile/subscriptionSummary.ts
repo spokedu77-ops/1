@@ -87,7 +87,7 @@ export function getSubscriptionStatusLabel(summary: SubscriptionSummaryData | nu
 export function formatSubscriptionEndDate(value: string | null) {
   if (!value) return '종료일 없음';
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '종료일 확인 필요';
+  if (Number.isNaN(date.getTime())) return '이용 기간 확인 중';
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
     month: '2-digit',

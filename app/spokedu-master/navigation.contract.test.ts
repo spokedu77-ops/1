@@ -12,7 +12,7 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
     expect(statusBar).toContain("href: '/spokedu-master/library', label: '라이브러리'");
     expect(statusBar).toContain("href: '/spokedu-master/spomove', label: 'SPOMOVE'");
     expect(statusBar).toContain("href: '/spokedu-master/class-tools', label: '수업 도구'");
-    expect(statusBar).toContain("href: '/spokedu-master/activity', label: '내 활동·기록'");
+    expect(statusBar).toContain("href: '/spokedu-master/activity', label: '수업 기록'");
     expect(statusBar).toContain("href: '/spokedu-master/profile', label: '프로필'");
     expect(statusBar).not.toContain("href: '/spokedu-master/plan'");
     expect(statusBar).not.toContain("href: '/spokedu-master/director'");
@@ -27,7 +27,7 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
     expect(tabBar).toContain("key: 'library'");
     expect(tabBar).toContain("key: 'spomove'");
     expect(tabBar).toContain("key: 'class-tools'");
-    expect(tabBar).toContain('내 활동·기록');
+    expect(tabBar).toContain('수업 기록');
     expect(tabBar).toContain('const activityHref = `${basePath}/activity`');
     expect(statusBar).toContain('href="/spokedu-master/profile"');
     expect(tabBar).not.toContain('plan');
@@ -50,14 +50,16 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
     expect(dashboard).not.toContain("href: '/spokedu-master/class-tools'");
   });
 
-  it('keeps the activity hub scoped to students, records, explanations, and recent work', () => {
+  it('keeps the activity page focused on the simplified class record flow', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
 
-    expect(activity).toContain("href: '/spokedu-master/students'");
-    expect(activity).toContain("href: '/spokedu-master/class-record'");
-    expect(activity).toContain("href: '/spokedu-master/report'");
+    expect(activity).toContain('<RecordProgramPicker');
+    expect(activity).toContain('오늘 수업 기록 남기기');
     expect(activity).toContain('최근 수업 기록');
-    expect(activity).toContain('최근 안내문');
+    expect(activity).toContain('기록 보기');
+    expect(activity).toContain('안내문 만들기');
+    expect(activity).not.toContain('최근 안내문');
+    expect(activity).not.toContain("href: '/spokedu-master/students'");
     expect(activity).not.toContain('/spokedu-master/plan');
     expect(activity).not.toContain('/spokedu-master/director');
     expect(activity).not.toContain('/spokedu-master/shop');

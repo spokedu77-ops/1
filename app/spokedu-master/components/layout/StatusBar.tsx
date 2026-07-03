@@ -10,7 +10,7 @@ const APP_LINKS = [
   { href: '/spokedu-master/library', label: '라이브러리', Icon: BookOpen },
   { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Tv },
   { href: '/spokedu-master/class-tools', label: '수업 도구', Icon: Wrench },
-  { href: '/spokedu-master/activity', label: '내 활동·기록', Icon: FileText },
+  { href: '/spokedu-master/activity', label: '수업 기록', Icon: FileText },
   { href: '/spokedu-master/profile', label: '프로필', Icon: CircleUserRound },
 ] as const;
 

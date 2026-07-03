@@ -55,4 +55,14 @@ describe('student history flow contract', () => {
     expect(studentsList).toContain('value={newName}');
     expect(studentsList).toContain('onChange={(event) => setNewName(event.target.value)}');
   });
+
+  it('guards student deletion against accidental taps and duplicate requests', () => {
+    expect(studentsList).toContain('const handleDeleteStudent');
+    expect(studentsList).toContain('window.confirm(`${student.name} 학생을 삭제할까요?');
+    expect(studentsList).toContain('studentDeletingId');
+    expect(studentsList).toContain('studentDeleteError');
+    expect(studentsList).toContain('onClick={() => handleDeleteStudent(student)}');
+    expect(studentsList).toContain('disabled={studentDeletingId === student.id}');
+    expect(studentsList).not.toContain('onClick={() => { void operationalData.deleteStudent(student.id)');
+  });
 });

@@ -35,7 +35,6 @@ import {
   isDirectVideoUrl,
 } from '../../lib/program-media';
 import { getSpomoveSessionHref, getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
-import type { ProgramQualityReport } from '../../lib/program-meta';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -45,14 +44,6 @@ import { getLibraryReturnHref } from '../libraryNavigation';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
 const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
-
-function getQualityNotice(quality: ProgramQualityReport) {
-  if (quality.status === 'READY' || quality.missing.length === 0) return null;
-  return {
-    title: quality.status === 'INCOMPLETE' ? '수업 정보 보강이 필요합니다' : '일부 정보가 부족합니다',
-    missing: quality.missing.slice(0, 4).join(', '),
-  };
-}
 
 function LessonPrepBlock({
   label,
@@ -166,7 +157,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const model = buildLessonDisplayModel(program);
   const title = model.title;
-  const qualityNotice = getQualityNotice(model.quality);
   const parentCopy = model.parentNote;
   const favorite = Boolean(storedFavoriteIds) && isFavoriteProgram(ownerId, program.id);
   const usageCount = usageRecords.length;
@@ -284,12 +274,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
               ].filter((cell) => cell.value)}
             />
           </div>
-          {qualityNotice ? (
-            <div className="mt-4 max-w-xl rounded-[12px] border border-amber-200 bg-amber-50 px-3.5 py-3 text-[12px] font-bold text-amber-900">
-              <p className="text-[13px] font-black">{qualityNotice.title}</p>
-              <p className="mt-1 text-amber-800">부족 정보: {qualityNotice.missing}</p>
-            </div>
-          ) : null}
         </section>
 
         {setupImage || hasPreActivityChecklist ? (

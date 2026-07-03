@@ -92,7 +92,7 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
 
 export function canUseMonthlyLimit(_plan: PlanType, _used: number, kind: 'kakao' | 'ai' | 'pdf', isAdmin = false): LimitStatus {
   if (isAdmin) return { allowed: true, label: '관리자' };
-  const label = kind === 'kakao' ? '준비 중' : kind === 'ai' ? '준비 중' : '안내문 우선';
+  const label = kind === 'kakao' ? '미제공' : kind === 'ai' ? '미제공' : '안내문 우선';
   return {
     allowed: false,
     label,

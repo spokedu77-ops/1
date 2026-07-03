@@ -108,7 +108,7 @@ function OfficialEngineBriefing({
 
         <div className="grid gap-4 border-t border-white/10 px-5 py-5 sm:grid-cols-[1fr_220px] sm:px-7">
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">실행 준비</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">시작 전 확인</p>
             <ol className="mt-3 grid gap-2 text-sm font-bold text-white/78 sm:grid-cols-2">
               {['1. 프로그램', '2. 준비물', '3. 패드 배치', '4. 진행 방식', '5. 실행 설정', '6. 시작'].map((item) => (
                 <li key={item} className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">{item}</li>
@@ -185,7 +185,7 @@ function OfficialEngineBriefing({
             className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5 fill-black" />
-            {startDisabled ? 'BGM 준비 중' : '큰 화면으로 실행'}
+            {startDisabled ? 'BGM 불러오는 중' : '큰 화면으로 실행'}
           </button>
         </div>
       </section>
