@@ -21,7 +21,7 @@ function CancelContent() {
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>결제 취소</p>
           <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>
-            결제를 완료하지 못했습니다.
+            결제를 완료하지 못했습니다
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             결제 인증이 취소되었거나 처리 중 오류가 발생했습니다. 구독은 활성화되지 않았습니다.

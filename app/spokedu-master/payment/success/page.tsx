@@ -158,7 +158,7 @@ function SuccessContent() {
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-grn)' }}>구독 활성화</p>
           <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            결제가 완료되었습니다.
+            결제가 완료되었습니다
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             {product.displayName.replace('SPOKEDU MASTER ', '')} 이용권이 활성화되었습니다.
@@ -197,7 +197,7 @@ function SuccessContent() {
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>구독 확인</p>
           <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-            이용권 반영을 다시 확인해 주세요.
+            이용권 반영을 다시 확인해 주세요
           </h1>
           <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
             첫 결제는 처리되었지만 접근 권한 확인이 지연되고 있습니다. 결제를 반복하지 말고 이용권 상태만 다시 확인해 주세요.
@@ -218,7 +218,7 @@ function SuccessContent() {
           결제 실패
         </p>
         <h1 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)' }}>
-          결제를 완료하지 못했습니다.
+          결제를 완료하지 못했습니다
         </h1>
         <p className="mt-3 text-[15px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           결제 인증이 취소되었거나 처리 중 오류가 발생했습니다. 결제수단을 확인한 뒤 다시 시도해 주세요.

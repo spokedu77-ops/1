@@ -38,6 +38,19 @@ function fail(status: number, error = '결제를 처리하지 못했습니다.')
   return NextResponse.json({ error }, { status });
 }
 
+async function cleanupPendingBillingAttempt(input: {
+  service: ReturnType<typeof getServiceSupabase>;
+  userId: string;
+  secretId: string;
+}) {
+  await input.service
+    .from('spokedu_master_subscriptions')
+    .delete()
+    .eq('user_id', input.userId)
+    .eq('status', 'pending')
+    .eq('provider_billing_key_secret_id', input.secretId);
+}
+
 export async function POST(request: Request) {
   const supabase = await createServerSupabaseClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -136,6 +149,7 @@ export async function POST(request: Request) {
 
   if (orderError) {
     await deleteSpokeduMasterBillingKey({ userId: user.id, secretId: billingKeySecretId });
+    await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId });
     await reportError(orderError, {
       context: 'spokedu_master.billing.issue',
       tags: { provider: 'tosspayments', stage: 'order_create', plan, status: 500 },
@@ -156,6 +170,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     await deleteSpokeduMasterBillingKey({ userId: user.id, secretId: billingKeySecretId });
+    await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId });
     await reportError(error, {
       context: 'spokedu_master.billing.issue',
       tags: {
@@ -175,6 +190,7 @@ export async function POST(request: Request) {
       .update({ status: 'failed', last_error_code: 'initial_payment_failed' })
       .eq('order_id', orderId);
     await deleteSpokeduMasterBillingKey({ userId: user.id, secretId: billingKeySecretId });
+    await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId });
     return fail(400, '첫 결제가 승인되지 않았습니다.');
   }
 
@@ -194,6 +210,7 @@ export async function POST(request: Request) {
 
   if (!applyResult.ok) {
     await deleteSpokeduMasterBillingKey({ userId: user.id, secretId: billingKeySecretId });
+    await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId });
     if (applyResult.status >= 500) return fail(500);
     return fail(applyResult.status, '결제 확정에 실패했습니다.');
   }

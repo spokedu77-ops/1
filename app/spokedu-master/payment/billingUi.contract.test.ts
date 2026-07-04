@@ -62,7 +62,14 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(issueRoute).toContain('body.amount !== undefined && body.amount !== amount');
   });
 
-  it('keeps failure and cancel paths non-entitling and retryable', () => {
+  it('cleans pending billing attempts when first payment activation fails', () => {
+    expect(issueRoute).toContain('cleanupPendingBillingAttempt');
+    expect(issueRoute).toContain(".eq('status', 'pending')");
+    expect(issueRoute).toContain(".eq('provider_billing_key_secret_id', input.secretId)");
+    expect(issueRoute).toContain('await cleanupPendingBillingAttempt({ service, userId: user.id, secretId: billingKeySecretId })');
+  });
+
+  it('keeps failure and cancel paths non-entitling, readable, and retryable', () => {
     expect(cancel).toContain('구독은 활성화되지 않았습니다.');
     expect(cancel).toContain('/spokedu-master/payment?plan=${retryPlan}');
     expect(cancel).toContain('MASTER_CUSTOMER_SERVICE_HREF');
