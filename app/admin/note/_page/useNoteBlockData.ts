@@ -220,7 +220,7 @@ export function useNoteBlockData(options: {
         blockType: child.type,
         content: child.content as Record<string, unknown>,
         order_index: child.order_index,
-        parent_block_id: child.parent_block_id,
+        parent_block_id: child.parent_block_id ?? null,
         id: child.id,
       });
     }
