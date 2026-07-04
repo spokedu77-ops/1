@@ -21,11 +21,17 @@ blob-report/
 
 # SPOKEDU QA artifacts
 qa-artifacts/
+qa-screenshots/
 .qa-screenshots/
 .qa-spokedu/
+.qa-spokedu-v*/
 
 # Temporary local artifacts
 .tmp/
+
+# dev server logs (local only)
+.next-dev.log
+.next-dev.err.log
 
 # Generated PDF page renders
 scripts/pdf-pages/page-*.png
@@ -49,7 +55,7 @@ yarn-error.log*
 tsc-out.txt
 .eslintcache
 eslint-report.json
-.cursor/debug-*.log
+.cursor/debug*.log
 
 # local agent settings (do not commit API keys in allow rules)
 .claude/settings.json
