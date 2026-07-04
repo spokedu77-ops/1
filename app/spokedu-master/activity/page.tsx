@@ -1,9 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ClipboardList, FileText } from 'lucide-react';
+import { BookOpen, ClipboardList, FileText, UserPlus, UsersRound } from 'lucide-react';
 import { useMemo } from 'react';
-import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 
@@ -32,10 +31,17 @@ export default function ActivityPage() {
           수업 기록
         </h1>
         <p className="mt-2 max-w-[620px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업 후 짧게 남긴 기록은 학생 이력과 안내문 작성에 활용됩니다.
+          라이브러리 수업을 진행한 뒤 남긴 기록과 안내문을 모아 봅니다.
         </p>
-        <div className="mt-5">
-          <RecordProgramPicker label="오늘 수업 기록 남기기" />
+        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] px-5 text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <BookOpen size={17} />
+            라이브러리에서 수업 고르기
+          </Link>
+          <Link href="/spokedu-master/students?add=1" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+            <UserPlus size={16} />
+            내 반 명단 준비
+          </Link>
         </div>
       </header>
 
@@ -75,14 +81,27 @@ export default function ActivityPage() {
               })}
             </div>
           ) : (
-            <div className="mt-4 rounded-[15px] p-5 text-center" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
-              <h3 className="text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>아직 남긴 수업 기록이 없습니다.</h3>
-              <p className="mx-auto mt-2 max-w-[420px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-                수업 후 날짜와 출석, 간단한 메모만 남겨도 학생 이력과 안내문 작성에 활용할 수 있습니다.
-              </p>
-              <div className="mt-5 flex justify-center">
-                <RecordProgramPicker label="첫 수업 기록 남기기" />
+            <div className="mt-4 rounded-[15px] p-5" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+              <div className="mx-auto max-w-[620px] text-center">
+                <h3 className="text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>아직 진행한 수업 기록이 없습니다.</h3>
+                <p className="mx-auto mt-2 max-w-[460px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+                  라이브러리에서 오늘 수업을 고르면 기록, 학생 이력, 안내문까지 이어집니다.
+                </p>
               </div>
+              <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                <Link href="/spokedu-master/library" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                  <BookOpen size={16} />
+                  수업 라이브러리 열기
+                </Link>
+                <Link href="/spokedu-master/students?add=1" className="inline-flex min-h-12 items-center justify-center gap-2 rounded-[14px] px-5 text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                  <UserPlus size={16} />
+                  내 반 명단 준비
+                </Link>
+              </div>
+              <Link href="/spokedu-master/students" className="mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-[12px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>
+                <UsersRound size={14} />
+                학생 명단 관리
+              </Link>
             </div>
           )}
         </section>

@@ -53,13 +53,15 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
   it('keeps the activity page focused on the simplified class record flow', () => {
     const activity = read('app/spokedu-master/activity/page.tsx');
 
-    expect(activity).toContain('<RecordProgramPicker');
-    expect(activity).toContain('오늘 수업 기록 남기기');
+    expect(activity).toContain('/spokedu-master/library');
+    expect(activity).toContain('라이브러리에서 수업 고르기');
     expect(activity).toContain('최근 수업 기록');
     expect(activity).toContain('기록 보기');
     expect(activity).toContain('안내문 만들기');
+    expect(activity).toContain('/spokedu-master/students?add=1');
+    expect(activity).toContain('내 반 명단 준비');
+    expect(activity).toContain('학생 명단 관리');
     expect(activity).not.toContain('최근 안내문');
-    expect(activity).not.toContain("href: '/spokedu-master/students'");
     expect(activity).not.toContain('/spokedu-master/plan');
     expect(activity).not.toContain('/spokedu-master/director');
     expect(activity).not.toContain('/spokedu-master/shop');

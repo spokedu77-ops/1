@@ -36,7 +36,28 @@ export function ProgramPreviewModal({
   const locked = program.isPro && !isPro;
 
   return (
-    <BottomSheet open title="수업 미리보기" onClose={onClose} size="preview">
+    <BottomSheet
+      open
+      title="수업 미리보기"
+      onClose={onClose}
+      size="preview"
+      headerActions={onFavorite ? (
+        <button
+          type="button"
+          onClick={onFavorite}
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+            favorite
+              ? 'border-amber-200 bg-amber-50 text-amber-600'
+              : 'border-slate-200 bg-white text-slate-500'
+          }`}
+          aria-pressed={Boolean(favorite)}
+          aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+          title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+        >
+          <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
+        </button>
+      ) : undefined}
+    >
       <LessonPreviewContent
         program={program}
         autoplayVideo={autoplayVideo}
@@ -53,21 +74,6 @@ export function ProgramPreviewModal({
               <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">
                 SPOMOVE 연결
               </span>
-            ) : null}
-            {onFavorite ? (
-              <button
-                type="button"
-                onClick={onFavorite}
-                className={`inline-flex h-11 w-11 items-center justify-center rounded-full border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
-                  favorite
-                    ? 'border-amber-200 bg-amber-50 text-amber-600'
-                    : 'border-slate-200 bg-white text-slate-500'
-                }`}
-                aria-pressed={Boolean(favorite)}
-                aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-              >
-                <Bookmark className={`h-3.5 w-3.5 ${favorite ? 'fill-current' : ''}`} />
-              </button>
             ) : null}
           </>
         }

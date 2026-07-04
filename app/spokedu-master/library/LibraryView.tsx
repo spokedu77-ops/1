@@ -6,7 +6,6 @@ import {
   Check,
   ChevronDown,
   Lock,
-  MonitorPlay,
   Play,
   Search,
   SlidersHorizontal,
@@ -225,8 +224,11 @@ function ProgramCard({
 
   return (
     <article className="group relative">
-      <div
-        className={`${THUMBNAIL_FRAME} block w-full border border-slate-200 bg-white text-left shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-indigo-200 group-hover:shadow-[0_18px_38px_rgba(99,102,241,0.14)]`}
+      <button
+        type="button"
+        onClick={onPreview}
+        className={`${THUMBNAIL_FRAME} block w-full border border-slate-200 bg-white text-left shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-all duration-300 group-hover:-translate-y-0.5 group-hover:border-indigo-200 group-hover:shadow-[0_18px_38px_rgba(99,102,241,0.14)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`}
+        aria-label={`${program.title} 수업 미리보기`}
       >
         {heroImage ? (
           <>
@@ -297,7 +299,7 @@ function ProgramCard({
             <span />
           </div>
         </div>
-      </div>
+      </button>
 
       <button
         type="button"
@@ -317,12 +319,12 @@ function ProgramCard({
         <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
       </button>
 
-      <button type="button" onClick={onPreview} className="mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-        수업 미리보기
-      </button>
-      <div className="mt-2 grid gap-2">
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <button type="button" onClick={onPreview} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+          수업 미리보기
+        </button>
         <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-          전체 수업 자료 보기
+          전체 자료 보기
         </Link>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
@@ -470,15 +472,7 @@ export default function LibraryView() {
   const packageStats = useMemo(() => {
     const videoCount = pool.filter(programHasPlayableVideo).length;
     const spomoveCount = pool.filter(hasSpomoveLink).length;
-    const lessonPlanCount = pool.filter(
-      (program) => program.steps.length > 0 || Boolean(program.lessonDetail?.objective),
-    ).length;
-    return [
-      { label: '전체 수업', value: pool.length },
-      { label: '영상 포함', value: videoCount },
-      { label: 'SPOMOVE', value: spomoveCount },
-      { label: '라이브러리', value: lessonPlanCount },
-    ];
+    return { videoCount, spomoveCount };
   }, [pool]);
 
   const filterGroups = useMemo<FilterGroup[]>(() => {
@@ -544,113 +538,120 @@ export default function LibraryView() {
   return (
     <>
       <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto bg-[#f5f7fb] px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12">
-        <header className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.06)]">
-          {/* 헤더 상단: 타이틀 + 통계 */}
-          <div className="border-b border-slate-200 p-5 sm:p-7">
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-end">
+        <header className="rounded-[18px] border border-slate-200 bg-white shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+          <div className="space-y-4 p-4 sm:p-5">
+            <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-indigo-500">
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-500">
                   Master Library
                 </p>
-                <h1 className="mt-2 text-2xl font-black tracking-[-0.035em] text-slate-950 sm:text-3xl">
+                <h1 className="mt-1 text-[22px] font-black text-slate-950 sm:text-2xl">
                   조건에 맞는 수업 찾기
                 </h1>
-                <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-slate-600">
-                  대상, 공간, 기능과 자료 조건을 선택해 필요한 수업을 빠르게 확인하세요.
-                </p>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-2">
-                {packageStats.map((item) => (
-                  <div key={item.label} className="rounded-xl border border-slate-100 bg-slate-50 px-3.5 py-3">
-                    <p className="text-[11px] font-black text-slate-400">{item.label}</p>
-                    <p className="mt-1 text-lg font-black text-slate-950">{item.value}</p>
-                  </div>
-                ))}
+              <div className="flex flex-wrap items-center gap-2 text-[11px] font-black text-slate-500">
+                <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                  결과 {filteredPrograms.length}개
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                  영상 {packageStats.videoCount}
+                </span>
+                <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                  SPOMOVE {packageStats.spomoveCount}
+                </span>
               </div>
             </div>
-          </div>
 
-          {/* 뷰 모드 전환 — 전체 수업 / 즐겨찾기 */}
-          <div className="border-b border-slate-200 px-5 py-3 sm:px-7">
-            <div
-              className="grid min-h-11 w-full grid-cols-2 items-center rounded-xl border border-slate-200 bg-slate-50 p-1 sm:inline-grid sm:w-auto"
-              aria-label="라이브러리 보기"
-            >
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="수업명, 교구, 태그 검색"
+                className="h-12 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-950 outline-none placeholder:text-slate-400 focus:border-indigo-300 focus-visible:ring-2 focus-visible:ring-indigo-500/20"
+              />
+            </label>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className="grid min-h-10 grid-cols-2 items-center rounded-xl border border-slate-200 bg-slate-50 p-1"
+                aria-label="라이브러리 보기"
+              >
+                <button
+                  type="button"
+                  onClick={() => changeView('all')}
+                  className={`min-h-8 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    view === 'all'
+                      ? 'bg-white text-slate-950 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                  aria-pressed={view === 'all'}
+                >
+                  전체 <span className="ml-1 text-[11px] opacity-60">{pool.length}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeView('favorites')}
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    view === 'favorites'
+                      ? 'bg-white text-slate-950 shadow-sm'
+                      : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                  aria-pressed={view === 'favorites'}
+                >
+                  <Bookmark className="h-3.5 w-3.5" />
+                  저장 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
+                </button>
+              </div>
               <button
                 type="button"
-                onClick={() => changeView('all')}
-                className={`min-h-9 rounded-lg px-3.5 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                  view === 'all'
-                    ? 'bg-white text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                onClick={() => setFilter(filter?.group === 'material' && filter.value === '참고 영상' ? null : { group: 'material', value: '참고 영상' })}
+                className={`h-10 rounded-xl px-3 text-[12px] font-black transition ${
+                  filter?.group === 'material' && filter.value === '참고 영상'
+                    ? 'bg-slate-950 text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'
                 }`}
-                aria-pressed={view === 'all'}
+                aria-pressed={filter?.group === 'material' && filter.value === '참고 영상'}
               >
-                전체 수업 <span className="ml-1 text-[11px] opacity-60">{pool.length}</span>
+                영상 {packageStats.videoCount}
               </button>
               <button
                 type="button"
-                onClick={() => changeView('favorites')}
-                className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3.5 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
-                  view === 'favorites'
-                    ? 'bg-white text-slate-950 shadow-sm'
-                    : 'text-slate-500 hover:text-slate-700'
+                onClick={() => setFilter(filter?.group === 'material' && filter.value === 'SPOMOVE 연결' ? null : { group: 'material', value: 'SPOMOVE 연결' })}
+                className={`h-10 rounded-xl px-3 text-[12px] font-black transition ${
+                  filter?.group === 'material' && filter.value === 'SPOMOVE 연결'
+                    ? 'bg-slate-950 text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'
                 }`}
-                aria-pressed={view === 'favorites'}
+                aria-pressed={filter?.group === 'material' && filter.value === 'SPOMOVE 연결'}
               >
-                <Bookmark className="h-3.5 w-3.5" />
-                즐겨찾기 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
+                SPOMOVE {packageStats.spomoveCount}
               </button>
-            </div>
-            <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
-              <label className="relative block">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-500" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="수업명, 설명, 교구, 태그 검색"
-                  className="h-14 w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 text-sm font-semibold text-slate-950 shadow-[0_8px_22px_rgba(15,23,42,0.04)] outline-none placeholder:text-slate-400 focus:border-indigo-300 focus-visible:ring-2 focus-visible:ring-indigo-500/20"
-                />
-              </label>
-              <Link href="/spokedu-master/spomove" className="inline-flex h-14 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 text-sm font-extrabold text-indigo-700">
-                <MonitorPlay className="h-4 w-4" />
-                SPOMOVE
-              </Link>
-            </div>
-          </div>
-
-          {/* 필터 영역 */}
-          <div className="bg-slate-50/80 px-5 py-4 sm:px-7">
-            <div className="flex items-center justify-between gap-4">
-              <p className="text-xs font-black text-slate-700">필터</p>
               {filter ? (
-                <button type="button" onClick={() => setFilter(null)} className="text-[12px] font-black text-indigo-600">
-                  필터 초기화
+                <button type="button" onClick={() => setFilter(null)} className="h-10 px-2 text-[12px] font-black text-indigo-600">
+                  초기화
                 </button>
               ) : null}
             </div>
 
-            {/* 기본 필터: 대상 / 공간 / 자료 */}
-            <div className="mt-3 space-y-2.5">
+            <div className="space-y-2.5 border-t border-slate-100 pt-3">
               {basicGroups.map((group) => (
                 <FilterRow key={group.key} group={group} filter={filter} onFilter={setFilter} />
               ))}
             </div>
 
-            {/* 상세 필터 토글 버튼 */}
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              className="mt-4 flex items-center gap-1.5 text-[12px] font-black text-slate-500 hover:text-slate-800"
+              className="flex items-center gap-1.5 text-[12px] font-black text-slate-500 hover:text-slate-800"
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
               신체 기능 · 움직임 · 테마
               <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* 상세 필터: 신체 기능 / 움직임 / 테마 */}
             {isAdvancedOpen ? (
-              <div className="mt-3 space-y-2.5 border-t border-slate-200 pt-3">
+              <div className="space-y-2.5 border-t border-slate-200 pt-3">
                 {advancedGroups.map((group) => (
                   <FilterRow key={group.key} group={group} filter={filter} onFilter={setFilter} />
                 ))}

@@ -7,6 +7,7 @@ import { useEffect, useId, useRef } from 'react';
 export function BottomSheet({
   open,
   title,
+  headerActions,
   children,
   onClose,
   size = 'default',
@@ -14,6 +15,7 @@ export function BottomSheet({
 }: {
   open: boolean;
   title: string;
+  headerActions?: ReactNode;
   children: ReactNode;
   onClose: () => void;
   size?: 'default' | 'document' | 'preview';
@@ -102,7 +104,9 @@ export function BottomSheet({
           <h2 id={titleId} className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: '#0f172a', letterSpacing: 0 }}>
             {title}
           </h2>
-          <button
+          <div className="flex shrink-0 items-center gap-2">
+            {headerActions}
+            <button
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
@@ -111,7 +115,8 @@ export function BottomSheet({
             aria-label={`${title} 닫기`}
           >
             <X size={17} color="currentColor" />
-          </button>
+            </button>
+          </div>
         </div>
         {children}
       </div>

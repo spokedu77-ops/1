@@ -25,6 +25,15 @@ describe('library card and preview favorite synchronization', () => {
     expect(previewSource).not.toContain('onClick={() => { onFavorite');
   });
 
+  it('places preview favorite in the modal header instead of the lesson badges', () => {
+    expect(previewSource).toContain('headerActions={onFavorite ?');
+    expect(previewSource).toContain("title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}");
+    const badgesIndex = previewSource.indexOf('badges={');
+    const footerIndex = previewSource.indexOf('footer={');
+    const badgesBlock = previewSource.slice(badgesIndex, footerIndex);
+    expect(badgesBlock).not.toContain('onClick={onFavorite}');
+  });
+
   it('keeps cards driven by the same canonical selector after a modal toggle', () => {
     expect(librarySource).toContain(
       'isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}',

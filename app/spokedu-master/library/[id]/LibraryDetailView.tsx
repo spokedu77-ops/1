@@ -233,14 +233,31 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   return (
     <main className={`min-h-dvh bg-[#f6f7f9] text-slate-950 ${primarySpomovePreset ? 'pb-44 lg:pb-14' : 'pb-10 lg:pb-12'}`}>
-      <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href={libraryReturnHref} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
           라이브러리로
         </Link>
-        <p className="min-w-0 truncate text-right text-[14px] font-black text-slate-950 sm:text-center">
+        <p className="min-w-0 truncate text-center text-[14px] font-black text-slate-950">
           {title}
         </p>
+        <button
+          type="button"
+          onClick={() => toggleFavoriteProgram(ownerId, program.id)}
+          className={`inline-flex h-10 w-10 items-center justify-center rounded-full border text-slate-600 ${
+            favorite
+              ? 'border-amber-200 bg-amber-50 text-amber-600'
+              : ownerId
+                ? 'border-slate-200 bg-white'
+                : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
+          } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`}
+          aria-pressed={favorite}
+          aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+          title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+          disabled={!ownerId}
+        >
+          <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
+        </button>
       </header>
 
       <div className="mx-auto w-full max-w-[1360px] space-y-4 px-4 py-6 sm:px-6 lg:px-8">
@@ -433,55 +450,33 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </details>
         ) : null}
 
-        <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-500">Preparation</p>
-              <h2 className="mt-1 text-lg font-black text-slate-950">수업 준비 보조</h2>
-            </div>
-          </div>
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={() => toggleFavoriteProgram(ownerId, program.id)}
-              className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3 text-[12px] font-black ${
-                favorite
-                  ? 'border-amber-200 bg-amber-50 text-amber-700'
-                  : ownerId
-                    ? 'border-slate-200 bg-white text-slate-700'
-                    : 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400'
-              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2`}
-              aria-pressed={favorite}
-              aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-              disabled={!ownerId}
-            >
-              <Bookmark className={`h-4 w-4 ${favorite ? 'fill-amber-400 text-amber-400' : ''}`} />
-              즐겨찾기
-            </button>
-          </div>
-        </section>
-
-        <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
+        <section className="rounded-[14px] border border-indigo-100 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600">After class</p>
-            <h2 className="mt-1 text-lg font-black text-slate-950">수업 후 정리</h2>
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-600">Use this lesson</p>
+            <h2 className="mt-1 text-lg font-black text-slate-950">이 수업으로 진행하기</h2>
+            <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+              라이브러리 수업을 내 반 기록과 안내문으로 이어갑니다.
+            </p>
           </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+          <div className="mt-4 grid gap-2 sm:grid-cols-[1.2fr_1fr_1fr]">
+            <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
+              <Clipboard className="h-4 w-4" />
+              수업 기록 시작
+            </Link>
             <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-700">
               <Check className="h-4 w-4" />
-              빠른 수업 기록
+              빠른 기록
             </button>
             <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700">
               <FileText className="h-4 w-4" />
-              안내문
+              안내문 초안
             </Link>
-            {usageCount > 0 ? (
-              <Link href="/spokedu-master/class-record" className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">
-                <Clipboard className="h-4 w-4" />
-                기존 기록 보기
-              </Link>
-            ) : null}
           </div>
+          {usageCount > 0 ? (
+            <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-xl px-1 text-[12px] font-black text-slate-500">
+              기존 기록 보기
+            </Link>
+          ) : null}
         </section>
 
         {primarySpomovePreset ? (

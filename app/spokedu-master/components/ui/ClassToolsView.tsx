@@ -501,9 +501,9 @@ function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   return (
     <div className="mx-auto mb-4 flex max-w-[560px] flex-col items-center gap-3 rounded-[14px] px-4 py-3 text-center text-[12px] font-bold sm:flex-row sm:justify-between sm:text-left" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.24)', color: 'var(--spm-amb)' }}>
       <span>등록된 학생 명단이 없어 예시 명단으로 흐름을 보여줍니다.</span>
-      <Link href="/spokedu-master/students" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.26)', color: 'var(--spm-amb)' }}>
+      <Link href="/spokedu-master/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.26)', color: 'var(--spm-amb)' }}>
         <UserPlus size={14} />
-        명단 등록
+        학생 추가
       </Link>
     </div>
   );
@@ -519,9 +519,9 @@ function EmptyStudentsForTools() {
           학생 관리에서 학생을 먼저 등록해 주세요.
         </p>
       </div>
-      <Link href="/spokedu-master/students" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+      <Link href="/spokedu-master/students?add=1" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
         <UserPlus size={14} />
-        학생 관리로 이동
+        학생 추가하기
       </Link>
     </div>
   );
