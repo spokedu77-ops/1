@@ -317,7 +317,7 @@ describe('planMoveSiblingBlockGroup', () => {
       block('b', 1, 'toggle'),
       block('c', 2, 'toggle'),
     ];
-    const next = planMoveSiblingBlockGroup(blocks, ['a', 'b'], 'c', 'before');
+    const next = planMoveSiblingBlockGroup(blocks, ['a', 'b'], 'c', 'after');
     const children = next!
       .filter((item) => item.parent_block_id === 'toggle')
       .sort((x, y) => x.order_index - y.order_index);

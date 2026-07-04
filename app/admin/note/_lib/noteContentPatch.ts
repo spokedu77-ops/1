@@ -1,11 +1,11 @@
+import { TOGGLE_LEGACY_CONTENT_KEYS } from './noteBlockTypes';
+
 /** TipTap·스토어 전용 — React blocks 재렌더 없이 patchContent로 처리 */
 export const STORE_ONLY_CONTENT_KEYS = new Set([
   'text',
-  'body',
   'html',
-  'bodyHtml',
   'legacyText',
-  'legacyBody',
+  ...TOGGLE_LEGACY_CONTENT_KEYS,
 ]);
 
 /** React·서버 content와 스토어(편집 중 text/html)를 병합 — title·checked 등은 React 우선 */

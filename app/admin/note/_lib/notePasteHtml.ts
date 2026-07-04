@@ -1,7 +1,18 @@
 import type { NoteBlock } from './types';
 import type { PastedBlockSpec } from './notePasteBlocks';
+import { parseCodeLanguageFromClassName } from './noteCodeBlock';
+import {
+  detectClipboardHtmlSource,
+  parseNotionCalloutElement,
+  parseNotionToggleElement,
+  unwrapGoogleDocsElement,
+} from './notePasteHtmlNotion';
+import { normalizeTableContent, type NoteTableCell } from './noteTableBlock';
 
-const BLOCK_TAGS = new Set(['H1', 'H2', 'H3', 'P', 'UL', 'OL', 'LI', 'HR', 'PRE', 'BLOCKQUOTE', 'DIV']);
+const BLOCK_TAGS = new Set([
+  'H1', 'H2', 'H3', 'P', 'UL', 'OL', 'LI', 'HR', 'PRE', 'BLOCKQUOTE', 'DIV',
+  'IMG', 'FIGURE', 'TABLE', 'TBODY', 'THEAD', 'TR', 'TD', 'TH', 'DETAILS', 'SUMMARY',
+]);
 
 function stripUnsafeHtml(html: string): string {
   return html
@@ -18,6 +29,68 @@ function elementInnerHtml(el: Element): string | undefined {
   const inner = el.innerHTML.trim();
   if (!inner) return undefined;
   return stripUnsafeHtml(inner);
+}
+
+function preElementText(el: Element): string {
+  const codeEl = el.querySelector('code');
+  const source = codeEl ?? el;
+  return (source.textContent ?? '').replace(/\r\n/g, '\n');
+}
+
+function parsePreBlock(el: Element): PastedBlockSpec | null {
+  const text = preElementText(el);
+  if (!text.trim()) return null;
+  const codeEl = el.querySelector('code');
+  const language = parseCodeLanguageFromClassName(codeEl?.getAttribute('class'));
+  return { type: 'code', text, language };
+}
+
+function parseImageElement(el: Element): PastedBlockSpec | null {
+  const src = el.getAttribute('src')?.trim();
+  if (!src) return null;
+  return {
+    type: 'image',
+    text: '',
+    imageUrl: src,
+    caption: el.getAttribute('alt')?.trim() ?? '',
+  };
+}
+
+function parseFigureBlock(el: Element): PastedBlockSpec | null {
+  const img = el.querySelector('img');
+  if (!img) return null;
+  const src = img.getAttribute('src')?.trim();
+  if (!src) return null;
+  const figcaption = el.querySelector('figcaption');
+  const caption = figcaption ? elementText(figcaption) : (img.getAttribute('alt')?.trim() ?? '');
+  return { type: 'image', text: '', imageUrl: src, caption };
+}
+
+function parseTableCell(el: Element): NoteTableCell {
+  return {
+    text: elementText(el),
+    html: elementInnerHtml(el),
+  };
+}
+
+function parseTableBlock(el: Element): PastedBlockSpec | null {
+  const rowEls = el.querySelectorAll('tr');
+  if (rowEls.length === 0) return null;
+  const rows = Array.from(rowEls).map((row) =>
+    Array.from(row.querySelectorAll('th, td')).map((cell) => parseTableCell(cell)),
+  ).filter((row) => row.length > 0);
+  if (rows.length === 0) return null;
+  const hasHeaderRow = el.querySelector('thead tr') != null
+    || rows[0]?.some((_, index) => rowEls[0]?.children[index]?.tagName === 'TH') === true;
+  return {
+    type: 'table',
+    text: '',
+    tableContent: normalizeTableContent({
+      rows,
+      hasHeaderRow,
+      columnCount: rows[0]?.length ?? 1,
+    }),
+  };
 }
 
 function pushTextBlock(out: PastedBlockSpec[], type: NoteBlock['type'], el: Element) {
@@ -41,7 +114,7 @@ function parseTodoDiv(el: Element): PastedBlockSpec | null {
   };
 }
 
-function parseListItems(listEl: Element, ordered: boolean): PastedBlockSpec[] {
+function parseListItems(listEl: Element, ordered: boolean, depth = 0): PastedBlockSpec[] {
   const out: PastedBlockSpec[] = [];
   const type: NoteBlock['type'] = ordered ? 'numberedList' : 'bulletList';
   for (const child of listEl.children) {
@@ -49,33 +122,70 @@ function parseListItems(listEl: Element, ordered: boolean): PastedBlockSpec[] {
     const text = elementText(child);
     const html = elementInnerHtml(child);
     if (!text && !html) continue;
-    out.push({ type, text, html });
+    out.push({ type, text, html, listNestLevel: depth });
     for (const nested of child.children) {
-      if (nested.tagName === 'UL') out.push(...parseListItems(nested, false));
-      if (nested.tagName === 'OL') out.push(...parseListItems(nested, true));
+      if (nested.tagName === 'UL') out.push(...parseListItems(nested, false, depth + 1));
+      if (nested.tagName === 'OL') out.push(...parseListItems(nested, true, depth + 1));
     }
   }
   return out;
 }
 
-function walkElements(nodes: Iterable<Node>, out: PastedBlockSpec[]) {
+function walkElements(nodes: Iterable<Node>, out: PastedBlockSpec[], htmlSource: ReturnType<typeof detectClipboardHtmlSource>) {
+  const parseChildNodes = (childNodes: Iterable<Node>) => {
+    const nested: PastedBlockSpec[] = [];
+    walkElements(childNodes, nested, htmlSource);
+    return nested;
+  };
+
   for (const node of nodes) {
     if (node.nodeType !== Node.ELEMENT_NODE) continue;
-    const el = node as Element;
+    let el = node as Element;
+    if (htmlSource === 'google-docs') {
+      el = unwrapGoogleDocsElement(el);
+    }
     const tag = el.tagName;
 
     if (tag === 'META' || tag === 'STYLE' || tag === 'HEAD') continue;
+    if (tag === 'SUMMARY') continue;
 
     if (tag === 'H1') { pushTextBlock(out, 'heading', el); continue; }
     if (tag === 'H2') { pushTextBlock(out, 'heading2', el); continue; }
     if (tag === 'H3') { pushTextBlock(out, 'heading3', el); continue; }
     if (tag === 'P') { pushTextBlock(out, 'text', el); continue; }
     if (tag === 'HR') { out.push({ type: 'divider', text: '' }); continue; }
-    if (tag === 'PRE') { pushTextBlock(out, 'code', el); continue; }
-    if (tag === 'BLOCKQUOTE') { pushTextBlock(out, 'callout', el); continue; }
+    if (tag === 'PRE') {
+      const codeBlock = parsePreBlock(el);
+      if (codeBlock) out.push(codeBlock);
+      continue;
+    }
+    if (tag === 'BLOCKQUOTE') { pushTextBlock(out, 'quote', el); continue; }
+    if (tag === 'IMG') {
+      const image = parseImageElement(el);
+      if (image) out.push(image);
+      continue;
+    }
+    if (tag === 'FIGURE') {
+      const figure = parseFigureBlock(el);
+      if (figure) out.push(figure);
+      continue;
+    }
+    if (tag === 'TABLE') {
+      const table = parseTableBlock(el);
+      if (table) out.push(table);
+      continue;
+    }
+    if (tag === 'DETAILS') {
+      const toggle = parseNotionToggleElement(el, parseChildNodes);
+      if (toggle) {
+        out.push(toggle);
+        continue;
+      }
+    }
     if (tag === 'UL') { out.push(...parseListItems(el, false)); continue; }
     if (tag === 'OL') { out.push(...parseListItems(el, true)); continue; }
     if (tag === 'LI') continue;
+    if (tag === 'TBODY' || tag === 'THEAD' || tag === 'TR' || tag === 'TD' || tag === 'TH') continue;
 
     if (tag === 'DIV') {
       const todo = parseTodoDiv(el);
@@ -83,9 +193,19 @@ function walkElements(nodes: Iterable<Node>, out: PastedBlockSpec[]) {
         out.push(todo);
         continue;
       }
+      const toggle = parseNotionToggleElement(el, parseChildNodes);
+      if (toggle) {
+        out.push(toggle);
+        continue;
+      }
+      const callout = parseNotionCalloutElement(el);
+      if (callout) {
+        out.push(callout);
+        continue;
+      }
       const hasBlockChild = [...el.children].some((child) => BLOCK_TAGS.has(child.tagName));
       if (hasBlockChild) {
-        walkElements(el.childNodes, out);
+        walkElements(el.childNodes, out, htmlSource);
         continue;
       }
       pushTextBlock(out, 'text', el);
@@ -93,7 +213,7 @@ function walkElements(nodes: Iterable<Node>, out: PastedBlockSpec[]) {
     }
 
     if (el.children.length > 0) {
-      walkElements(el.childNodes, out);
+      walkElements(el.childNodes, out, htmlSource);
     }
   }
 }
@@ -101,7 +221,8 @@ function walkElements(nodes: Iterable<Node>, out: PastedBlockSpec[]) {
 function parseWithDomParser(html: string): PastedBlockSpec[] {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const out: PastedBlockSpec[] = [];
-  walkElements(doc.body.childNodes, out);
+  const source = detectClipboardHtmlSource(html);
+  walkElements(doc.body.childNodes, out, source);
   return out;
 }
 
@@ -120,5 +241,8 @@ export function shouldSplitHtmlPaste(specs: PastedBlockSpec[]): boolean {
   if (specs.length > 1) return true;
   const only = specs[0];
   if (!only) return false;
+  if (only.type === 'image' || only.type === 'table' || only.type === 'divider') return true;
+  if (only.type === 'toggle' && (only.children?.length ?? 0) > 0) return true;
+  if (only.listNestLevel != null && only.listNestLevel > 0) return true;
   return only.type !== 'text' || !!only.html?.includes('<');
 }

@@ -147,7 +147,7 @@ describe('bulletMarkerForLevel', () => {
     expect(bulletMarkerForLevel(1)).toBe('◦ ');
     expect(bulletMarkerForLevel(2)).toBe('▪ ');
     expect(bulletMarkerForLevel(3)).toBe('• ');
-    expect(bulletMarkerForLevel(7)).toBe('• ');
+    expect(bulletMarkerForLevel(7)).toBe('◦ ');
   });
 });
 

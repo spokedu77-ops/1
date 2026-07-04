@@ -6,6 +6,7 @@ import {
   removeTableColumn,
   removeTableRow,
   resolveTableCellAfterStructureChange,
+  setTableHasHeaderRow,
 } from './noteTableBlock';
 
 describe('noteTableBlock structure', () => {
@@ -30,6 +31,12 @@ describe('noteTableBlock structure', () => {
     expect(next?.columnCount).toBe(3);
     expect((next?.rows as unknown[][])[0]).toHaveLength(3);
     expect(removeTableColumn({ rows: [[{ text: 'a' }]], columnCount: 1 }, 0)).toBeNull();
+  });
+
+  it('toggles header row flag', () => {
+    const content = defaultTableBlockContent() as Record<string, unknown>;
+    expect(setTableHasHeaderRow(content, false).hasHeaderRow).toBe(false);
+    expect(setTableHasHeaderRow(content, true).hasHeaderRow).toBe(true);
   });
 
   it('refocuses cell index after row/col removal', () => {

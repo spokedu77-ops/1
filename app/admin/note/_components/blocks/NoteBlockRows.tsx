@@ -26,7 +26,9 @@ import { NoteToggleBlock } from './NoteToggleBlock';
 import { NoteHeadingBlock, isHeadingBlockType } from './NoteHeadingBlock';
 import { NoteListBlock } from './NoteListBlock';
 import { NoteCalloutBlock } from './NoteCalloutBlock';
+import { NoteQuoteBlock } from './NoteQuoteBlock';
 import { NoteCodeBlock } from './NoteCodeBlock';
+import { NoteColumnListBlock } from './NoteColumnListBlock';
 import { NoteChromeBlockShell } from './NoteChromeBlockShell';
 import { NoteBlockFormattedField } from './NoteBlockFormattedField';
 import { useBlockContentPatch } from './useBlockContentPatch';
@@ -71,6 +73,15 @@ import {
   noteBlockRowMouseLeave,
   readBlockColor,
 } from '../../_lib/noteBlockRowUi';
+import {
+  IMAGE_ALIGN_OPTIONS,
+  IMAGE_WIDTH_OPTIONS,
+  imageBlockAlignClass,
+  imageCaptionAlignClass,
+  imageFrameWidthClass,
+  readImageAlign,
+  readImageWidth,
+} from '../../_lib/noteImageBlock';
 import { DocIconGlyph } from '../../_lib/noteDocumentUi';
 import type { NoteBlock } from '../../_lib/types';
 
@@ -113,6 +124,8 @@ function BlockContent({
   numberedListIndex,
   bulletListNestLevel = 0,
   omitExternalizedChildren = false,
+  lookupChildBlocks,
+  onAddChildInColumn,
 }: {
   block: NoteBlock;
   onContentPatch: (content: any) => void;
@@ -160,6 +173,8 @@ function BlockContent({
   numberedListIndex?: number;
   bulletListNestLevel?: number;
   omitExternalizedChildren?: boolean;
+  lookupChildBlocks?: (parentId: string) => NoteBlock[];
+  onAddChildInColumn?: (columnId: string, type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
 }) {
   const isBlockDragActive = useBlockDragActive();
   const liveContent = useBlockLiveContent(block);
@@ -231,6 +246,7 @@ function BlockContent({
     || block.type === 'bulletList'
     || block.type === 'numberedList'
     || block.type === 'callout'
+    || block.type === 'quote'
     || block.type === 'code'
     || isHeadingBlockType(block.type);
 
@@ -254,7 +270,7 @@ function BlockContent({
     text: string;
     placeholder: string;
     textClassName: string;
-    field?: 'text' | 'body';
+    field?: 'text';
     tabBehavior?: 'block-indent' | 'insert-text-indent';
     enterCreatesBlock?: boolean;
     enterSplitOnMidBlock?: boolean;
@@ -472,8 +488,10 @@ function BlockContent({
   }
 
   if (block.type === 'image') {
-    const url = typeof block.content?.url === 'string' ? block.content.url : '';
-    const caption = typeof block.content?.caption === 'string' ? block.content.caption : '';
+    const url = typeof liveContent.url === 'string' ? liveContent.url : '';
+    const caption = typeof liveContent.caption === 'string' ? liveContent.caption : '';
+    const imageWidth = readImageWidth(liveContent);
+    const imageAlign = readImageAlign(liveContent);
     const fileInputRef = imgFileInputRef;
 
     const handleImageFile = async (file: File) => {
@@ -580,51 +598,85 @@ function BlockContent({
         onAddBelow={onAddBelow}
         onDelete={onDelete}
       >
-        <div
-          className="relative overflow-hidden rounded-lg bg-neutral-100"
-          onDragOver={(e) => { e.preventDefault(); setImgDragOver(true); }}
-          onDragLeave={() => setImgDragOver(false)}
-          onDrop={async (e) => {
-            e.preventDefault();
-            setImgDragOver(false);
-            const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/'));
-            if (file) await handleImageFile(file);
-          }}
-        >
-          <img
-            src={url}
-            alt={caption || ''}
-            className="w-full cursor-zoom-in object-contain"
-            onClick={(e) => {
-              e.stopPropagation();
-              imageLightbox?.open(url, caption || undefined);
+        <div className={`${imageFrameWidthClass(imageWidth)} ${imageBlockAlignClass(imageAlign)}`}>
+          <div
+            className="relative overflow-hidden rounded-lg bg-neutral-100"
+            onDragOver={(e) => { e.preventDefault(); setImgDragOver(true); }}
+            onDragLeave={() => setImgDragOver(false)}
+            onDrop={async (e) => {
+              e.preventDefault();
+              setImgDragOver(false);
+              const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith('image/'));
+              if (file) await handleImageFile(file);
             }}
-          />
-          {imgDragOver && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-blue-500/20 text-[14px] font-medium text-blue-700">
-              이미지 교체
+          >
+            <img
+              src={url}
+              alt={caption || ''}
+              className="w-full cursor-zoom-in object-contain"
+              onClick={(e) => {
+                e.stopPropagation();
+                imageLightbox?.open(url, caption || undefined);
+              }}
+            />
+            {imgDragOver && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-blue-500/20 text-[14px] font-medium text-blue-700">
+                이미지 교체
+              </div>
+            )}
+            {imgUploading && (
+              <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/70">
+                <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
+              </div>
+            )}
+            <div className="absolute right-2 top-2 hidden flex-col items-end gap-1 group-hover:flex">
+              <div className="flex items-center gap-1 rounded-md bg-white/95 p-1 shadow-sm">
+                {IMAGE_WIDTH_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => patchContent({ width: option.id })}
+                    className={`rounded px-2 py-1 text-[11px] font-medium ${
+                      imageWidth === option.id
+                        ? 'bg-neutral-900 text-white'
+                        : 'text-neutral-600 hover:bg-neutral-100'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1 rounded-md bg-white/95 p-1 shadow-sm">
+                {IMAGE_ALIGN_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => patchContent({ align: option.id })}
+                    className={`rounded px-2 py-1 text-[11px] font-medium ${
+                      imageAlign === option.id
+                        ? 'bg-neutral-900 text-white'
+                        : 'text-neutral-600 hover:bg-neutral-100'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1">
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) await handleImageFile(f); e.target.value = ''; }} />
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-md bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-neutral-600 shadow-sm hover:bg-white">
+                  교체
+                </button>
+              </div>
             </div>
-          )}
-          {imgUploading && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-white/70">
-              <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
-            </div>
-          )}
-          {/* hover 오버레이 */}
-          <div className="absolute right-2 top-2 hidden items-center gap-1 group-hover:flex">
-            <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) await handleImageFile(f); e.target.value = ''; }} />
-            <button type="button" onClick={() => fileInputRef.current?.click()} className="rounded-md bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-neutral-600 shadow-sm hover:bg-white">
-              교체
-            </button>
           </div>
+          <input
+            value={caption}
+            onChange={(e) => patchContent({ caption: e.target.value })}
+            placeholder="캡션 추가"
+            className={`mt-1.5 w-full bg-transparent text-[13px] text-neutral-400 outline-none placeholder:text-neutral-300 focus:text-neutral-600 ${imageCaptionAlignClass(imageAlign)}`}
+          />
         </div>
-        {/* 캡션 */}
-        <input
-          value={caption}
-          onChange={(e) => patchContent({ caption: e.target.value })}
-          placeholder="캡션 추가"
-          className="mt-1.5 w-full bg-transparent text-center text-[13px] text-neutral-400 outline-none placeholder:text-neutral-300 focus:text-neutral-600"
-        />
       </NoteChromeBlockShell>
     );
   }
@@ -762,6 +814,46 @@ function BlockContent({
     );
   }
 
+  if (block.type === 'quote') {
+    return (
+      <NoteQuoteBlock
+        block={block}
+        liveContent={liveContent}
+        contentMarginLeft={contentMarginLeft}
+        inlineRowPadding={inlineRowPadding}
+        rootBlockShell={rootBlockShell}
+        isInsideToggle={isInsideToggle}
+        enterCreatesBlockBelow={enterCreatesBlockBelow}
+        onContentPatch={onContentPatch}
+        onEnter={onEnter}
+        onAddBelow={onAddBelow}
+        onChangeType={onChangeType}
+        onIndentChange={onIndentChange}
+        onSlashChange={(nextShow, nextQuery) => {
+          setShowSlash(nextShow);
+          setSlashQuery(nextQuery);
+        }}
+        slashHostRef={slashHostRef}
+        renderFormatToolbar={renderFormatToolbar}
+        renderSlashMenuPortal={renderSlashMenuPortal}
+        autoFocusSignal={autoFocusSignal}
+        mergeFocusCaretOffset={mergeFocusCaretOffset}
+        onShowFormatToolbar={onShowFormatToolbar}
+        onHideFormatToolbar={onHideFormatToolbar}
+        onNavigatePrevious={onNavigatePrevious}
+        onNavigateNext={onNavigateNext}
+        onTrackActiveBlock={onTrackActiveBlock}
+        onFocusBlock={onFocusBlock}
+        onEmptyBackspace={onEmptyBackspace}
+        onMergeWithPrevious={onMergeWithPrevious}
+        canMergeWithPrevious={canMergeWithPrevious}
+        uploadImage={uploadImage}
+        onOpenDocument={onOpenDocument}
+        onMultilinePaste={onMultilinePaste}
+      />
+    );
+  }
+
   if (block.type === 'code') {
     return (
       <NoteCodeBlock
@@ -801,6 +893,22 @@ function BlockContent({
     );
   }
 
+  if (block.type === 'columnList') {
+    const columnBlocks = childBlocks.filter((child) => child.type === 'column');
+    return (
+      <NoteColumnListBlock
+        columnBlocks={columnBlocks}
+        lookupChildBlocks={lookupChildBlocks ?? (() => [])}
+        renderChildBlock={renderChildBlock}
+        onAddChildInColumn={(columnId, type, content) => {
+          onAddChildInColumn?.(columnId, type, content);
+        }}
+        contentMarginLeft={contentMarginLeft}
+        rootBlockShell={rootBlockShell}
+      />
+    );
+  }
+
   if (block.type === 'toggle') {
     return (
       <NoteToggleBlock
@@ -814,7 +922,6 @@ function BlockContent({
         childBlocks={childBlocks}
         renderChildBlock={renderChildBlock}
         toggleNestDepth={toggleNestDepth}
-        omitExternalizedChildren={omitExternalizedChildren}
         autoFocusTitleSignal={autoFocusTitleSignal}
         onContentPatch={onContentPatch}
         onChangeType={onChangeType}
@@ -822,22 +929,8 @@ function BlockContent({
         onAddChildBelow={onAddChildBelow}
         onIndentChange={onIndentChange}
         onTrackActiveBlock={onTrackActiveBlock}
-        renderSlashMenuPortal={renderSlashMenuPortal}
-        autoFocusSignal={autoFocusSignal}
-        mergeFocusCaretOffset={mergeFocusCaretOffset}
-        onShowFormatToolbar={onShowFormatToolbar}
-        onHideFormatToolbar={onHideFormatToolbar}
-        onFocusBlock={onFocusBlock}
         onFocusBlockById={onFocusBlockById}
         onNavigatePrevious={onNavigatePrevious}
-        onNavigateNext={onNavigateNext}
-        uploadImage={uploadImage}
-        onOpenDocument={onOpenDocument}
-        onSlashChange={(nextShow, nextQuery) => {
-          setShowSlash(nextShow);
-          setSlashQuery(nextQuery);
-        }}
-        slashHostRef={slashHostRef}
       />
     );
   }
@@ -1016,6 +1109,8 @@ function SortableBlockRow({
   autoFocusTitleSignal = 0,
   numberedListIndex,
   bulletListNestLevel = 0,
+  lookupChildBlocks,
+  onAddChildInColumn,
 }: {
   block: NoteBlock;
   onContentPatch: (content: any) => void;
@@ -1062,6 +1157,8 @@ function SortableBlockRow({
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
+  lookupChildBlocks?: (parentId: string) => NoteBlock[];
+  onAddChildInColumn?: (columnId: string, type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
 }) {
   const applyBlockColor = useCallback((colorId: string) => {
     onRecordBlockUndo?.();
@@ -1134,18 +1231,17 @@ function SortableBlockRow({
     numberedListIndex,
     bulletListNestLevel,
     omitExternalizedChildren: blockExternalizesChildren(block.type),
+    lookupChildBlocks,
+    onAddChildInColumn,
   };
 
   const blockContentNode = <BlockContent {...sharedBlockContentProps} />;
 
-  const toggleCollapsed = block.type === 'toggle' && !!block.content?.collapsed;
-  const toggleExpanded = block.type === 'toggle' && !toggleCollapsed && !isDragging;
   const showExternalChildren =
-    !isDragging
-    && childBlocks
+    childBlocks
     && childBlocks.length > 0
     && renderChildBlock
-    && (block.type !== 'toggle' || toggleExpanded);
+    && blockExternalizesChildren(block.type);
 
   const style: React.CSSProperties | undefined = isDragging
     ? { opacity: 0, zIndex: 10 }
@@ -1280,6 +1376,8 @@ function ToggleInlineRow({
   autoFocusTitleSignal = 0,
   numberedListIndex,
   bulletListNestLevel = 0,
+  lookupChildBlocks,
+  onAddChildInColumn,
 }: {
   block: NoteBlock;
   onContentPatch: (content: any) => void;
@@ -1327,6 +1425,8 @@ function ToggleInlineRow({
   autoFocusTitleSignal?: number;
   numberedListIndex?: number;
   bulletListNestLevel?: number;
+  lookupChildBlocks?: (parentId: string) => NoteBlock[];
+  onAddChildInColumn?: (columnId: string, type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
 }) {
   const applyBlockColor = useCallback((colorId: string) => {
     onRecordBlockUndo?.();
@@ -1375,14 +1475,11 @@ function ToggleInlineRow({
     ...(rowIndentPx > 0 ? { paddingLeft: rowIndentPx } : {}),
   };
 
-  const toggleCollapsed = block.type === 'toggle' && !!block.content?.collapsed;
-  const toggleExpanded = block.type === 'toggle' && !toggleCollapsed && !isDragging;
   const showExternalChildren =
-    !isDragging
-    && childBlocks
+    childBlocks
     && childBlocks.length > 0
     && renderChildBlock
-    && (block.type !== 'toggle' || toggleExpanded);
+    && blockExternalizesChildren(block.type);
 
   const inlineBlockContentProps = {
     block,
@@ -1423,6 +1520,8 @@ function ToggleInlineRow({
     numberedListIndex,
     bulletListNestLevel,
     omitExternalizedChildren: blockExternalizesChildren(block.type),
+    lookupChildBlocks,
+    onAddChildInColumn,
   };
 
   return (

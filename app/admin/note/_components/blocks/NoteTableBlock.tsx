@@ -11,7 +11,9 @@ import {
   removeTableColumn,
   removeTableRow,
   resolveTableCellAfterStructureChange,
+  setTableHasHeaderRow,
   tableCellField,
+  type TableCellNavigateDirection,
 } from '../../_lib/noteTableBlock';
 import { NoteEditableField } from '../NoteEditableField';
 import type { NoteBlock } from '../../_lib/types';
@@ -128,6 +130,35 @@ export function NoteTableBlock({
 
   const canRemoveRow = table.rows.length > 1;
   const canRemoveColumn = (table.rows[0]?.length ?? 0) > 1;
+  const hasHeaderRow = table.hasHeaderRow !== false;
+
+  const handleCellNavigate = useCallback((
+    row: number,
+    col: number,
+    direction: TableCellNavigateDirection,
+  ) => {
+    const rowCount = table.rows.length;
+    const colCount = table.rows[0]?.length ?? 0;
+    if (direction === 'left') {
+      handleNavigateCell(row, col, 'previous');
+      return;
+    }
+    if (direction === 'right') {
+      handleNavigateCell(row, col, 'next');
+      return;
+    }
+    if (direction === 'up') {
+      if (row > 0) focusCell(row - 1, col);
+      return;
+    }
+    if (row < rowCount - 1) {
+      focusCell(row + 1, col);
+      return;
+    }
+    const nextContent = appendTableRow(content as Record<string, unknown>);
+    patchTable(nextContent);
+    focusCell(rowCount, col);
+  }, [content, focusCell, handleNavigateCell, patchTable, table.rows]);
 
   const renderCell = (rowIndex: number, colIndex: number, isHeader: boolean) => {
     const cell = table.rows[rowIndex]?.[colIndex] ?? { text: '', html: '' };
@@ -160,6 +191,7 @@ export function NoteTableBlock({
             onContentPatch={onContentPatch}
             onNavigatePrevious={() => handleNavigateCell(rowIndex, colIndex, 'previous')}
             onNavigateNext={() => handleNavigateCell(rowIndex, colIndex, 'next')}
+            onCellNavigate={(direction) => handleCellNavigate(rowIndex, colIndex, direction)}
             onShowFormatToolbar={onShowFormatToolbar}
             onHideFormatToolbar={onHideFormatToolbar}
             uploadImage={uploadImage}
@@ -192,7 +224,18 @@ export function NoteTableBlock({
           })}
         </tbody>
       </table>
-      <div className="mt-2 flex flex-wrap gap-2">
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100">
+          <input
+            type="checkbox"
+            className="rounded border-slate-300"
+            checked={hasHeaderRow}
+            onChange={(e) => {
+              patchTable(setTableHasHeaderRow(content as Record<string, unknown>, e.target.checked));
+            }}
+          />
+          헤더 행
+        </label>
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100"

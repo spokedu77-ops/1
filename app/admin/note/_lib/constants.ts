@@ -1,6 +1,7 @@
 import {
   CheckSquare,
   ChevronDown,
+  Columns2,
   FileText,
   Heading2,
   Heading3,
@@ -9,11 +10,14 @@ import {
   ListOrdered,
   MessageSquareQuote,
   Minus,
+  Quote,
   Table2,
   Type,
   Video,
 } from 'lucide-react';
 import { defaultTableBlockContent } from './noteTableBlock';
+import { defaultColumnContent, defaultColumnListContent } from './noteColumnBlock';
+import { defaultImageBlockContent } from './noteImageBlock';
 import type { NoteBlock } from './types';
 
 export const BLOCK_TYPES: {
@@ -32,8 +36,10 @@ export const BLOCK_TYPES: {
   { type: 'todo', label: '체크리스트', icon: CheckSquare, desc: '완료 상태를 체크하는 할 일', shortcut: '[]' },
   { type: 'toggle', label: '토글 목록', icon: ChevronDown, desc: '접고 펼치는 섹션', shortcut: '>' },
   { type: 'callout', label: '콜아웃', icon: MessageSquareQuote, desc: '강조 메시지', shortcut: '!!' },
+  { type: 'quote', label: '인용', icon: Quote, desc: '인용문 블록' },
   { type: 'code', label: '코드', icon: Type, desc: '고정폭 코드 블록', shortcut: '```' },
   { type: 'table', label: '표', icon: Table2, desc: '행·열 표 블록' },
+  { type: 'columnList', label: '2단 레이아웃', icon: Columns2, desc: '나란히 2개 열' },
   { type: 'divider', label: '구분선', icon: Minus, desc: '가로 구분선', shortcut: '---' },
   { type: 'image', label: '이미지', icon: ImageIcon, desc: '이미지 업로드 또는 URL' },
   { type: 'video', label: '영상', icon: Video, desc: 'YouTube · Vimeo 임베드' },
@@ -57,11 +63,11 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
     return {
       title: '',
       collapsed: false,
-      images: [],
       ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }
   if (type === 'callout') return { text: '', icon: '💡' };
+  if (type === 'quote') return { text: '' };
   if (type === 'divider') return {};
   if (type === 'page') {
     return {
@@ -72,7 +78,9 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
   }
   if (type === 'code') return { text: '', language: 'plain' };
   if (type === 'table') return defaultTableBlockContent();
-  if (type === 'image') return { url: '' };
+  if (type === 'columnList') return defaultColumnListContent();
+  if (type === 'column') return defaultColumnContent();
+  if (type === 'image') return defaultImageBlockContent();
   if (type === 'video') return { url: '' };
   if (type === 'text') {
     return {
@@ -128,8 +136,10 @@ export function blockGutterTopPx(type: NoteBlock['type']): number | 'center' {
     case 'image':
     case 'video':
     case 'callout':
+    case 'quote':
     case 'code':
     case 'table':
+    case 'columnList':
       return 'center';
     default:
       return 3;

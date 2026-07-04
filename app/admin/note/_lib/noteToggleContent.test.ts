@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  migrateToggleBodyToChildBlocks,
-  stripToggleLegacyBodyFields,
+  migrateToggleLegacyToChildBlocks,
+  stripToggleLegacyContentFields,
   toggleBodyHasLegacyContent,
 } from './noteToggleContent';
 import type { NoteBlock } from './types';
@@ -25,7 +25,7 @@ describe('toggle body migration', () => {
 
   it('migrates body to a child text block when toggle has no children', () => {
     const blocks = [toggle('t1', { title: 'Section', body: 'legacy body', bodyHtml: '<p>legacy</p>' })];
-    const result = migrateToggleBodyToChildBlocks(blocks);
+    const result = migrateToggleLegacyToChildBlocks(blocks);
 
     expect(result.created).toHaveLength(1);
     expect(result.created[0]).toMatchObject({
@@ -54,17 +54,34 @@ describe('toggle body migration', () => {
         order_index: 0,
       },
     ];
-    const result = migrateToggleBodyToChildBlocks(blocks);
+    const result = migrateToggleLegacyToChildBlocks(blocks);
     expect(result.created).toHaveLength(0);
     expect(result.blocks.find((block) => block.id === 't1')?.content?.body).toBe('legacy');
   });
 
   it('strips legacy body keys', () => {
-    expect(stripToggleLegacyBodyFields({
+    expect(stripToggleLegacyContentFields({
       title: 'T',
       body: 'x',
       bodyHtml: '<p>x</p>',
       legacyBody: 'y',
+      images: ['https://example.com/a.png'],
     })).toEqual({ title: 'T' });
+  });
+
+  it('migrates legacy images to child image blocks', () => {
+    const blocks = [toggle('t1', { title: 'T', images: ['https://example.com/a.png', ''] })];
+    const result = migrateToggleLegacyToChildBlocks(blocks);
+
+    expect(result.created).toHaveLength(1);
+    expect(result.created[0]).toMatchObject({
+      type: 'image',
+      parent_block_id: 't1',
+      content: expect.objectContaining({
+        url: 'https://example.com/a.png',
+        migratedFromToggleImages: true,
+      }),
+    });
+    expect(result.blocks.find((block) => block.id === 't1')?.content?.images).toBeUndefined();
   });
 });

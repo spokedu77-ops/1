@@ -12,7 +12,7 @@ export type NoteBlockFormattedFieldProps = {
   text: string;
   placeholder: string;
   textClassName: string;
-  field?: 'text' | 'body';
+  field?: 'text';
   tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
   enterCreatesBlock?: boolean;
   enterSplitOnMidBlock?: boolean;

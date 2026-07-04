@@ -124,7 +124,7 @@ export const LIST_CONTAINER_TYPES = new Set(['bulletList', 'numberedList']);
 
 /** Backspace 병합 대상 타입 */
 export const MERGEABLE_BLOCK_TYPES = new Set([
-  'text', 'heading', 'heading2', 'heading3', 'todo', 'callout', 'bulletList', 'numberedList',
+  'text', 'heading', 'heading2', 'heading3', 'todo', 'callout', 'quote', 'bulletList', 'numberedList',
 ]);
 
 export type CanonicalTreePatch = {

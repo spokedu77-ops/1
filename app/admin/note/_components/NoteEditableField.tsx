@@ -17,6 +17,7 @@ import {
   clearActiveEditorBridge,
   setActiveEditorBridge,
 } from '../_lib/noteActiveEditorBridge';
+import { isInlineRichTextBlockType } from '../_lib/noteBlockTypes';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
 import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
@@ -60,6 +61,7 @@ type NoteEditableFieldProps = {
   onIndentChange?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
+  onCellNavigate?: (direction: import('../_lib/noteTableBlock').TableCellNavigateDirection) => void;
   onTrackActiveBlock?: (part: 'title' | 'editor') => void;
   onFocusBlock?: () => void;
   onContentPatch?: (content: Record<string, unknown>) => void;
@@ -108,6 +110,7 @@ export function NoteEditableField({
   onIndentChange,
   onNavigatePrevious,
   onNavigateNext,
+  onCellNavigate,
   onTrackActiveBlock,
   onFocusBlock,
   onContentPatch,
@@ -189,16 +192,14 @@ export function NoteEditableField({
       pushContent(nextContent);
       return;
     }
-    const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
-    const legacyKey = field === 'body' ? 'legacyBody' : 'legacyText';
     const nextContent: Record<string, unknown> = {
       ...baseContent,
-      [field]: nextText,
-      [htmlKey]: nextHtml,
+      text: nextText,
+      html: nextHtml,
     };
-    const original = baseContent[field];
-    if (typeof baseContent[legacyKey] !== 'string' && typeof original === 'string') {
-      nextContent[legacyKey] = original;
+    const original = baseContent.text;
+    if (typeof baseContent.legacyText !== 'string' && typeof original === 'string') {
+      nextContent.legacyText = original;
     }
     pushContent(nextContent);
   };
@@ -217,7 +218,7 @@ export function NoteEditableField({
   }
 
   const resolvedEditorText = rawPreviewText;
-  const editorRichField = cellRefForEditor ? 'text' as const : (field === 'body' ? 'body' as const : 'text' as const);
+  const editorRichField = 'text' as const;
 
   const editorProps: ComponentProps<typeof NoteEditor> = {
     content: editorContent,
@@ -235,14 +236,7 @@ export function NoteEditableField({
     onMergeWithPrevious: onEditorMergeWithPrevious,
     canMergeWithPrevious: onEditorCanMergeWithPrevious,
     onMarkdownBlockTrigger:
-      onChangeType
-      && (blockType === 'text'
-        || blockType === 'heading'
-        || blockType === 'heading2'
-        || blockType === 'heading3'
-        || blockType === 'todo'
-        || blockType === 'callout'
-        || blockType === 'code')
+      onChangeType && isInlineRichTextBlockType(blockType)
         ? onChangeType
         : undefined,
     focusCaretOffset: editorMergeFocusCaretOffset ?? mergeFocusCaretOffset,
@@ -250,6 +244,7 @@ export function NoteEditableField({
     tabBehavior,
     onNavigatePrevious: onNavigatePrevious,
     onNavigateNext: onNavigateNext,
+    onCellNavigate,
     onEditorFocus: () => {
       setActiveEditor({ blockId, field });
       onTrackActiveBlock?.('editor');

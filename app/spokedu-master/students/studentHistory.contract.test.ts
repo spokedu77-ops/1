@@ -7,11 +7,10 @@ const studentDetail = readFileSync(join(process.cwd(), 'app/spokedu-master/stude
 const classRecord = readFileSync(join(process.cwd(), 'app/spokedu-master/class-record/page.tsx'), 'utf8');
 
 describe('student history flow contract', () => {
-  it('exposes student detail and library-first record actions from the student list', () => {
-    expect(studentsList).toContain('/spokedu-master/students/${student.id}');
-    expect(studentsList).toContain('<RecordProgramPicker label="수업 골라 기록" studentId={student.id} size="compact" />');
+  it('exposes student detail and a single primary record CTA from the student history screen', () => {
+    expect(studentsList).toContain('/spokedu-master/students/${selected.id}');
+    expect(studentsList).toContain('<RecordProgramPicker label="수업 결과 기록" studentId={selected.id} />');
     expect(studentsList).toContain('학생 기록 보기');
-    expect(studentsList).toContain('수업 골라 기록');
     expect(studentsList).not.toContain('/spokedu-master/class-record?student=${student.id}');
   });
 

@@ -5,6 +5,11 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
 import {
+  buildDefaultColumnChildren,
+  COLUMN_LIST_TYPE,
+  COLUMN_TYPE,
+} from '../_lib/noteColumnBlock';
+import {
   buildInsertBlockAndReparentChildrenCommand,
   buildInsertBlockCommand,
   collectBlockTransactionIds,
@@ -110,13 +115,45 @@ export function useNoteBlockInsert(options: {
         insertIndex,
       );
       const previousBlocks = blocksRef.current;
-      setBlocks(command.nextBlocks);
+      let nextBlocks = command.nextBlocks;
+      let affectedIds = [...command.affectedIds];
+      if (type === COLUMN_LIST_TYPE) {
+        for (const spec of buildDefaultColumnChildren(createdBlock)) {
+          const columnBlock = await documentEngine.persistCreateBlock({
+            documentId: selectedId,
+            blockType: COLUMN_TYPE,
+            content: spec.content as Record<string, unknown>,
+            order_index: spec.order_index,
+            parent_block_id: createdBlock.id,
+          });
+          const columnCommand = buildInsertBlockCommand(
+            nextBlocks,
+            columnBlock,
+            createdBlock.id,
+            spec.order_index,
+          );
+          nextBlocks = columnCommand.nextBlocks;
+          affectedIds = [...new Set([...affectedIds, ...columnCommand.affectedIds])];
+        }
+      }
+      setBlocks(nextBlocks);
       if (insertOptions?.focus !== false) {
-        focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
+        if (type === COLUMN_LIST_TYPE) {
+          const firstColumn = nextBlocks.find(
+            (block) => block.parent_block_id === createdBlock.id && block.type === COLUMN_TYPE,
+          );
+          if (firstColumn) {
+            focusBlockEditor(firstColumn.id, 'editor');
+          }
+        } else {
+          focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
+        }
       }
+
       if (insertOptions?.registerUndo !== false) {
-        recordBlockCommandUndo(previousBlocks, command);
+        recordBlockCommandUndo(previousBlocks, { ...command, nextBlocks, affectedIds });
       }
+
       return createdBlock;
     } catch (e) {
       devLogger.error('[Note] insertBlockAmongSiblings', e);
@@ -411,14 +448,8 @@ export function useNoteBlockInsert(options: {
     if (!selectedId) return;
     try {
       if (type === 'image' && focusedToggleId) {
-        const target = blocks.find((b) => b.id === focusedToggleId);
-        if (target?.type === 'toggle') {
-          const c = (target.content ?? {}) as Record<string, unknown>;
-          const rawIm = c.images;
-          const imgs = Array.isArray(rawIm) ? rawIm.map((u) => (typeof u === 'string' ? u : '')) : [];
-          handleUpdateBlock(target, { ...c, collapsed: false, images: [...imgs, ''] });
-          return;
-        }
+        await handleInsertBlockInParent(focusedToggleId, 'image');
+        return;
       }
       if (type === 'page') {
         await handleCreateSubPage(selectedId, {

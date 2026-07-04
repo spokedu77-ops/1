@@ -8,6 +8,7 @@ import {
 } from '../_components/noteCrossSelect';
 import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { extractActiveCrossSelectClipboardText } from '../_components/noteListCrossHighlight';
+import { parseBlockClipboardText } from '../_lib/noteBlockClipboard';
 import type { useNoteBlockUndo } from './useNoteBlockUndo';
 import type { NoteBlock } from '../_lib/types';
 
@@ -25,6 +26,9 @@ export function useNoteBlockKeyboard(options: {
   runNoteRedo: () => Promise<void>;
   handleDuplicateBlock: (block: NoteBlock) => Promise<void>;
   handleCopyBlockLink: (block: NoteBlock) => void;
+  handleCopySelectedBlocks: () => Promise<boolean>;
+  handleCutSelectedBlocks: () => Promise<void>;
+  handlePasteBlockClipboard: (payloadText: string) => Promise<void>;
 }) {
   const {
     docTab,
@@ -38,6 +42,9 @@ export function useNoteBlockKeyboard(options: {
     runNoteRedo,
     handleDuplicateBlock,
     handleCopyBlockLink,
+    handleCopySelectedBlocks,
+    handleCutSelectedBlocks,
+    handlePasteBlockClipboard,
   } = options;
 
   useEffect(() => {
@@ -155,6 +162,68 @@ export function useNoteBlockKeyboard(options: {
     window.addEventListener('keydown', onCopyKey, true);
     return () => window.removeEventListener('keydown', onCopyKey, true);
   }, []);
+
+  useEffect(() => {
+    const shouldUseBlockClipboard = () => {
+      if (docTab !== 'active' || !selectedId) return false;
+      if (getActiveCrossRanges().length > 0 || getActiveListCrossRanges().length > 0) return false;
+      if (selectedBlockIdsRef.current.size === 0) return false;
+      const active = document.activeElement as HTMLElement | null;
+      if (active?.closest('.ProseMirror')) {
+        const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
+        if (editor && !editor.state.selection.empty) return false;
+      }
+      return true;
+    };
+
+    const onBlockClipboardKey = (e: KeyboardEvent) => {
+      if (docTab !== 'active' || !selectedId) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-note-doc-title]')) return;
+      const meta = e.ctrlKey || e.metaKey;
+      if (!meta || e.shiftKey || e.altKey) return;
+      const key = e.key.toLowerCase();
+
+      if (key === 'c' && shouldUseBlockClipboard()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        void handleCopySelectedBlocks();
+        return;
+      }
+
+      if (key === 'x' && shouldUseBlockClipboard()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        void handleCutSelectedBlocks();
+      }
+    };
+
+    const onBlockClipboardPaste = (e: ClipboardEvent) => {
+      if (docTab !== 'active' || !selectedId) return;
+      const target = e.target as HTMLElement | null;
+      if (target?.closest('[data-note-doc-title]')) return;
+      const plain = e.clipboardData?.getData('text/plain') ?? '';
+      if (!parseBlockClipboardText(plain)) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      void handlePasteBlockClipboard(plain);
+    };
+
+    window.addEventListener('keydown', onBlockClipboardKey, true);
+    document.addEventListener('paste', onBlockClipboardPaste, true);
+    return () => {
+      window.removeEventListener('keydown', onBlockClipboardKey, true);
+      document.removeEventListener('paste', onBlockClipboardPaste, true);
+    };
+  }, [
+    docTab,
+    selectedId,
+    focusedEditorBlockIdRef,
+    selectedBlockIdsRef,
+    handleCopySelectedBlocks,
+    handleCutSelectedBlocks,
+    handlePasteBlockClipboard,
+  ]);
 
   useEffect(() => {
     const resolveShortcutBlock = (): NoteBlock | null => {

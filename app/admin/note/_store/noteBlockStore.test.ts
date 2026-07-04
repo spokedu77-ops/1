@@ -40,20 +40,17 @@ describe('syncBlocksStructure list type change', () => {
     expect(stored?.content?.html).toBeUndefined();
   });
 
-  it('keeps incoming title while preserving store text', () => {
+  it('keeps store title when structure sync updates toggle title from server', () => {
     useNoteBlockStore.getState().hydrate([
-      block('t', 'toggle', { title: '', body: 'old' }),
+      block('t', 'toggle', { title: '로컬 제목' }),
     ]);
-    useNoteBlockStore.getState().setActiveEditor({ blockId: 't', field: 'body' });
-    useNoteBlockStore.getState().patchContent('t', { title: '', body: 'typed' });
+    useNoteBlockStore.getState().patchContent('t', { title: '로컬 제목' });
 
     useNoteBlockStore.getState().syncBlocksStructure([
-      block('t', 'toggle', { title: '제목', body: 'old' }),
+      block('t', 'toggle', { title: '서버 제목' }),
     ]);
 
-    const stored = useNoteBlockStore.getState().getBlock('t');
-    expect(stored?.content?.title).toBe('제목');
-    expect(stored?.content?.body).toBe('typed');
+    expect(useNoteBlockStore.getState().getBlock('t')?.content?.title).toBe('서버 제목');
   });
 
   it('does not revive stale inactive store content during structure sync', () => {
@@ -72,9 +69,9 @@ describe('syncBlocksStructure list type change', () => {
 
   it('persists title-only patchContent updates', () => {
     useNoteBlockStore.getState().hydrate([
-      block('t', 'toggle', { title: '', body: 'body' }),
+      block('t', 'toggle', { title: '' }),
     ]);
-    useNoteBlockStore.getState().patchContent('t', { title: '새 제목', body: 'body' });
+    useNoteBlockStore.getState().patchContent('t', { title: '새 제목' });
 
     expect(useNoteBlockStore.getState().getBlock('t')?.content?.title).toBe('새 제목');
   });

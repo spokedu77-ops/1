@@ -1,4 +1,5 @@
 import { setPendingEditorClick } from '../_components/noteEditorRegistry';
+import { isColumnContainerBlock } from './noteColumnBlock';
 import { isNoteTextSurfaceTarget, notePointerTargetElement } from './notePointerTarget';
 
 export const EMPTY_BLOCK_PLACEHOLDER = "명령어는 '/'를 입력하세요.";
@@ -63,6 +64,9 @@ export function noteBlockRowMouseLeave(e: React.MouseEvent<HTMLDivElement>) {
   e.currentTarget.removeAttribute('data-row-hovered');
 }
 
+/** list — 자식을 sibling BlockRow로 렌더. toggle/columnList/column은 인라인 컨테이너 */
 export function blockExternalizesChildren(type: string): boolean {
-  return type === 'toggle' || type === 'bulletList' || type === 'numberedList';
+  if (isColumnContainerBlock(type)) return false;
+  if (type === 'toggle') return false;
+  return type === 'bulletList' || type === 'numberedList';
 }

@@ -7,9 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Image as ImageIcon, Trash2 } from 'lucide-react';
 import { SlashMenuFixed } from '../SlashMenu';
-import { useNoteImageLightbox } from '../NoteImageLightbox';
 import { BLOCK_TYPES, toggleNestPaddingPx } from '../../_lib/constants';
 import { filterTurnIntoCommands } from '../../_lib/noteBlockTypeChange';
 import {
@@ -25,7 +23,6 @@ import { BlockInsideDropSurface, ToggleDisclosureButton } from '../sidebar/NoteD
 import { useBlockDragActive } from '../noteContexts';
 import { useBlockContentPatch } from './useBlockContentPatch';
 import type { NoteBlock } from '../../_lib/types';
-import type { NoteBlockFormattedFieldProps } from './NoteBlockFormattedField';
 
 type NoteToggleBlockProps = {
   block: NoteBlock;
@@ -35,10 +32,10 @@ type NoteToggleBlockProps = {
   isDropTarget: boolean;
   isDragging?: boolean;
   focusedToggleId?: string | null;
+  /** ArrowDown 네비·인라인 자식 렌더 */
   childBlocks?: NoteBlock[];
   renderChildBlock?: (child: NoteBlock, nestDepth?: number) => ReactNode;
   toggleNestDepth?: number;
-  omitExternalizedChildren?: boolean;
   autoFocusTitleSignal?: number;
   onContentPatch: (content: Record<string, unknown>) => void;
   onChangeType: (type: NoteBlock['type']) => void;
@@ -48,20 +45,7 @@ type NoteToggleBlockProps = {
   onTrackActiveBlock?: (part?: 'title' | 'editor') => void;
   onFocusBlockById?: (blockId: string, part?: 'title' | 'editor', caretOffset?: number) => void;
   onNavigatePrevious?: () => void;
-  onNavigateNext?: () => void;
-  renderSlashMenuPortal: () => ReactNode;
-  onSlashChange?: NoteBlockFormattedFieldProps['onSlashChange'];
-  slashHostRef?: React.RefObject<HTMLDivElement | null>;
-} & Pick<
-  NoteBlockFormattedFieldProps,
-  | 'autoFocusSignal'
-  | 'mergeFocusCaretOffset'
-  | 'onShowFormatToolbar'
-  | 'onHideFormatToolbar'
-  | 'onFocusBlock'
-  | 'uploadImage'
-  | 'onOpenDocument'
->;
+};
 
 export function NoteToggleBlock({
   block,
@@ -74,7 +58,6 @@ export function NoteToggleBlock({
   childBlocks = [],
   renderChildBlock,
   toggleNestDepth = 1,
-  omitExternalizedChildren = false,
   autoFocusTitleSignal = 0,
   onContentPatch,
   onChangeType,
@@ -84,10 +67,8 @@ export function NoteToggleBlock({
   onTrackActiveBlock,
   onFocusBlockById,
   onNavigatePrevious,
-  renderSlashMenuPortal,
 }: NoteToggleBlockProps) {
   const isBlockDragActive = useBlockDragActive();
-  const imageLightbox = useNoteImageLightbox();
   const toggleTitleInputRef = useRef<HTMLInputElement>(null);
   const [toggleTitleSlashAnchor, setToggleTitleSlashAnchor] = useState<{ top: number; left: number } | null>(null);
 
@@ -97,11 +78,7 @@ export function NoteToggleBlock({
     ? liveContent.title
     : (typeof liveContent.text === 'string' ? liveContent.text : '');
   const collapsed = !!liveContent.collapsed;
-  const showToggleContent = !collapsed && !isDragging;
-  const rawIm = liveContent.images;
-  const toggleImages = Array.isArray(rawIm)
-    ? rawIm.map((u) => (typeof u === 'string' ? u : ''))
-    : [];
+  const showToggleContent = !collapsed;
   const isThisToggleFocused = focusedToggleId === block.id;
   const toggleTitleSlashActive = title.startsWith('/');
   const toggleTitleSlashQuery = toggleTitleSlashActive ? title.slice(1) : '';
@@ -125,10 +102,9 @@ export function NoteToggleBlock({
   }, [toggleTitleSlashActive, toggleTitleSlashQuery]);
 
   const toggleChildIndentPx = toggleNestPaddingPx(toggleNestDepth + 1);
-  const hasInlineToggleChildren = !omitExternalizedChildren && childBlocks.length > 0;
-  const showToggleEmptySlot = showToggleContent && !!onAddChildBelow && childBlocks.length === 0;
-  const showToggleExtrasWrapper = showToggleContent
-    && (hasInlineToggleChildren || showToggleEmptySlot);
+  const showToggleEmptySlot = showToggleContent
+    && !!onAddChildBelow
+    && childBlocks.length === 0;
 
   return (
     <div
@@ -221,73 +197,34 @@ export function NoteToggleBlock({
           placeholder="토글 (/ 로 변환)"
         />
       </BlockInsideDropSurface>
-      {showToggleExtrasWrapper && (
+      {showToggleEmptySlot && (
         <div
           className="overflow-visible"
           style={toggleChildIndentPx > 0 ? { paddingLeft: toggleChildIndentPx } : undefined}
         >
-          {hasInlineToggleChildren ? (
-            <div className="note-block-children space-y-0 overflow-visible">
-              {childBlocks.map((child) => (
-                <Fragment key={child.id}>
-                  {renderChildBlock?.(child, toggleNestDepth + 1)}
-                </Fragment>
-              ))}
-            </div>
-          ) : showToggleEmptySlot ? (
-            <div
-              className="min-h-[30px] cursor-text py-0.5"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                onAddChildBelow?.('text');
-              }}
-            >
-              <span className="text-[16px] leading-[1.7] text-neutral-400">
-                {EMPTY_BLOCK_PLACEHOLDER}
-              </span>
-            </div>
-          ) : null}
-          {renderSlashMenuPortal()}
-          {toggleImages.length > 0 && (
-            <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">토글 안 이미지</p>
-              {toggleImages.map((url, idx) => (
-                <div key={idx} className="rounded-lg border border-slate-100 bg-slate-50/80 p-2">
-                  <div className="mb-1 flex items-center gap-2">
-                    <ImageIcon className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                    <input
-                      className="min-w-0 flex-1 rounded border border-slate-200 bg-white px-2 py-1 text-[13px] text-slate-700 outline-none focus:border-blue-400"
-                      placeholder="이미지 URL"
-                      value={url}
-                      onChange={(e) => {
-                        const next = [...toggleImages];
-                        next[idx] = e.target.value;
-                        patchToggle({ images: next });
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="shrink-0 rounded p-1 text-slate-400 hover:text-rose-500"
-                      title="이미지 제거"
-                      onClick={() => patchToggle({ images: toggleImages.filter((_, j) => j !== idx) })}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                  {url.trim() ? (
-                    <div className="overflow-hidden rounded-md bg-white">
-                      <img
-                        src={url.trim()}
-                        alt=""
-                        className="max-h-56 w-full cursor-zoom-in object-contain"
-                        onClick={() => imageLightbox?.open(url.trim())}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
+          <div
+            className="min-h-[30px] cursor-text py-0.5"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              onAddChildBelow?.('text');
+            }}
+          >
+            <span className="text-[16px] leading-[1.7] text-neutral-400">
+              {EMPTY_BLOCK_PLACEHOLDER}
+            </span>
+          </div>
+        </div>
+      )}
+      {showToggleContent && childBlocks.length > 0 && renderChildBlock && (
+        <div
+          className="note-block-children space-y-0 overflow-visible"
+          style={toggleChildIndentPx > 0 ? { paddingLeft: toggleChildIndentPx } : undefined}
+        >
+          {childBlocks.map((child) => (
+            <Fragment key={child.id}>
+              {renderChildBlock(child, toggleNestDepth + 1)}
+            </Fragment>
+          ))}
         </div>
       )}
       <SlashMenuFixed

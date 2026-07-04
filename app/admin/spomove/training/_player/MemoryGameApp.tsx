@@ -21,7 +21,7 @@ import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { VisualReactionTraining, type ReactTrainCompleteStats } from './components/VisualReactionTraining';
 import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
 import { DeepReactionTraining } from './components/DeepReactionTraining';
-import { PulseReactionTraining } from './components/PulseReactionTraining';
+import { BeatWaveReactionTraining } from './components/BeatWaveReactionTraining';
 import { SweepReactionTraining } from './components/SweepReactionTraining';
 import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
@@ -1658,7 +1658,7 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 5 ? (
-          <PulseReactionTraining
+          <BeatWaveReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}

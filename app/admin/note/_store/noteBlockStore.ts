@@ -10,7 +10,7 @@ import {
 import type { NoteTableCellField } from '../_lib/noteTableBlock';
 import type { NoteBlock } from '../_lib/types';
 
-export type NoteActiveEditorField = 'text' | 'body' | NoteTableCellField;
+export type NoteActiveEditorField = 'text' | NoteTableCellField;
 
 export type NoteActiveEditor = {
   blockId: string;

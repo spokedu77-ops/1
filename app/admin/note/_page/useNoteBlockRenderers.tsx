@@ -190,10 +190,14 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onFocusBlock={() => deps.focusBlockEditor(block.id)}
         onFocusBlockById={(id: string, part?: 'title' | 'editor', offset?: number) => deps.focusBlockEditor(id, part, offset)}
         onAddChildBelow={
-          block.type === 'toggle'
+          block.type === 'toggle' || block.type === 'column'
             ? (type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }
             : undefined
         }
+        lookupChildBlocks={(parentId) => deps.childrenByParentBlock.get(parentId) ?? []}
+        onAddChildInColumn={(columnId, type, content) => {
+          void deps.handleInsertBlockInParent(columnId, type ?? 'text', content);
+        }}
       />
     );
   }, []);
@@ -253,6 +257,10 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onRequestCaretOffset={deps.requestCaretOffset}
         onFocusBlock={() => deps.focusBlockEditor(block.id)}
         onFocusBlockById={(id: string, part?: 'title' | 'editor', offset?: number) => deps.focusBlockEditor(id, part, offset)}
+        lookupChildBlocks={(parentId) => deps.childrenByParentBlock.get(parentId) ?? []}
+        onAddChildInColumn={(columnId, type, content) => {
+          void deps.handleInsertBlockInParent(columnId, type ?? 'text', content);
+        }}
       />
     );
   }, [renderToggleInlineChild]);

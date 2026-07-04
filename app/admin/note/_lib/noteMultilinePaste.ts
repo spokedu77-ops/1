@@ -1,16 +1,6 @@
 import { defaultBlockContent } from './constants';
+import { MULTILINE_PASTE_SPLIT_TYPES } from './noteBlockTypes';
 import type { NoteBlock } from './types';
-
-const MULTILINE_PASTE_SPLIT_TYPES = new Set<NoteBlock['type']>([
-  'text',
-  'heading',
-  'heading2',
-  'heading3',
-  'todo',
-  'callout',
-  'bulletList',
-  'numberedList',
-]);
 
 export function canSplitMultilinePasteToBlocks(blockType: string): boolean {
   return MULTILINE_PASTE_SPLIT_TYPES.has(blockType as NoteBlock['type']);

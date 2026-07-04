@@ -233,7 +233,7 @@ describe('note block commands', () => {
       blocks,
       ['a', 'b'],
       'c',
-      'before',
+      'after',
     );
 
     const children = command.nextBlocks

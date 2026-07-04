@@ -41,10 +41,20 @@ import {
   canSplitMultilinePasteToBlocks,
 } from '../_lib/noteMultilinePaste';
 import {
-  contentForPastedBlock,
+  isStructuralHtmlPasteSpec,
   pastedBlocksFromPlainLines,
   type PastedBlockSpec,
 } from '../_lib/notePasteBlocks';
+import {
+  buildBlockClipboardPayload,
+  clipboardPayloadToPasteSpecs,
+  parseBlockClipboardText,
+  serializeBlockClipboardPayload,
+} from '../_lib/noteBlockClipboard';
+import {
+  insertPastedBlockSpecsAfterAnchor,
+  insertPastedBlockSpecsAfterBlock,
+} from '../_lib/notePasteInsert';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -400,33 +410,28 @@ export function useNoteBlockActions(options: {
   }, []);
 
   const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
-    if (!selectedId || specs.length <= 1 || !canSplitMultilinePasteToBlocks(block.type)) return;
+    if (!selectedId || specs.length === 0) return;
+    const singleSpecialPaste = specs.length === 1 && (
+      isStructuralHtmlPasteSpec(specs[0])
+      || specs[0].type !== block.type
+    );
+    if (specs.length > 1 && !canSplitMultilinePasteToBlocks(block.type)) return;
+    if (specs.length === 1 && !singleSpecialPaste) return;
+
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-
     const sourceContent = (block.content ?? {}) as Record<string, unknown>;
-    const [first, ...rest] = specs;
-    if (first.type !== block.type) {
-      await handleChangeBlockType(block, first.type);
-    }
-    syncBlockContent(block.id, contentForPastedBlock(first, sourceContent));
 
-    const parentId = block.parent_block_id ?? null;
-    const siblings = getBlocksInParent(blocksRef.current, parentId)
-      .sort((a, b) => a.order_index - b.order_index);
-    let insertIndex = siblings.findIndex((item) => item.id === block.id) + 1;
-    let lastFocusId = block.id;
-
-    for (const spec of rest) {
-      const content = contentForPastedBlock(spec, sourceContent);
-      const created = await insertBlockAmongSiblings(parentId, spec.type, insertIndex, {
-        content,
-        focus: false,
-        registerUndo: false,
-      });
-      if (!created) break;
-      lastFocusId = created.id;
-      insertIndex += 1;
-    }
+    const { lastFocusId, lastFocusPart } = await insertPastedBlockSpecsAfterAnchor(
+      {
+        blocksRef,
+        insertBlockAmongSiblings,
+        changeBlockType: handleChangeBlockType,
+        syncBlockContent,
+      },
+      block,
+      specs,
+      sourceContent,
+    );
 
     const nextBlocks = mergeBlocksWithStoreContent(blocksRef.current);
     recordBlockTransactionUndo(
@@ -434,7 +439,10 @@ export function useNoteBlockActions(options: {
       nextBlocks,
       collectBlockTransactionIds(previousBlocks, nextBlocks),
     );
-    focusBlockEditor(lastFocusId, 'editor');
+    if (specs[0]?.type === 'image' || specs[0]?.type === 'table' || specs[0]?.type === 'divider') {
+      return;
+    }
+    focusBlockEditor(lastFocusId, lastFocusPart);
   }, [
     selectedId,
     syncBlockContent,
@@ -442,7 +450,77 @@ export function useNoteBlockActions(options: {
     insertBlockAmongSiblings,
     recordBlockTransactionUndo,
     focusBlockEditor,
+    blocksRef,
   ]);
+
+  const handlePasteBlockClipboard = useCallback(async (payloadText: string, afterBlock?: NoteBlock | null) => {
+    if (!selectedId) return;
+    const payload = parseBlockClipboardText(payloadText);
+    if (!payload) return;
+    const specs = clipboardPayloadToPasteSpecs(payload);
+    if (specs.length === 0) return;
+
+    const anchor = afterBlock
+      ?? (focusedEditorBlockIdRef.current
+        ? blocksRef.current.find((block) => block.id === focusedEditorBlockIdRef.current) ?? null
+        : null)
+      ?? sortRootBlocks(blocksRef.current).at(-1)
+      ?? null;
+    if (!anchor) return;
+
+    const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
+    const sourceContent = (anchor.content ?? {}) as Record<string, unknown>;
+    const { lastFocusId, lastFocusPart } = await insertPastedBlockSpecsAfterBlock(
+      {
+        blocksRef,
+        insertBlockAmongSiblings,
+        changeBlockType: handleChangeBlockType,
+        syncBlockContent,
+      },
+      anchor,
+      specs,
+      sourceContent,
+    );
+
+    const nextBlocks = mergeBlocksWithStoreContent(blocksRef.current);
+    recordBlockTransactionUndo(
+      previousBlocks,
+      nextBlocks,
+      collectBlockTransactionIds(previousBlocks, nextBlocks),
+    );
+    focusBlockEditor(lastFocusId, lastFocusPart);
+  }, [
+    selectedId,
+    focusedEditorBlockIdRef,
+    blocksRef,
+    insertBlockAmongSiblings,
+    handleChangeBlockType,
+    syncBlockContent,
+    recordBlockTransactionUndo,
+    focusBlockEditor,
+  ]);
+
+  const handleCopySelectedBlocks = useCallback(async () => {
+    const selected = [...selectedBlockIdsRef.current];
+    const payload = buildBlockClipboardPayload(blocksRef.current, selected);
+    if (!payload) return false;
+    const serialized = serializeBlockClipboardPayload(payload);
+    try {
+      await navigator.clipboard.writeText(serialized);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [blocksRef, selectedBlockIdsRef]);
+
+  const handleCutSelectedBlocks = useCallback(async () => {
+    const selected = [...selectedBlockIdsRef.current];
+    if (selected.length === 0) return;
+    const copied = await handleCopySelectedBlocks();
+    if (!copied) return;
+    const blocksToDelete = blocksRef.current.filter((block) => selected.includes(block.id));
+    await handleDeleteBlocks(blocksToDelete);
+  }, [blocksRef, handleCopySelectedBlocks, handleDeleteBlocks, selectedBlockIdsRef]);
 
   const handleCopyBlockLink = useCallback((block: NoteBlock) => {
     if (!selectedId) return;
@@ -479,6 +557,9 @@ export function useNoteBlockActions(options: {
     runNoteRedo,
     handleDuplicateBlock,
     handleCopyBlockLink,
+    handleCopySelectedBlocks,
+    handleCutSelectedBlocks,
+    handlePasteBlockClipboard,
   });
 
   return {
@@ -492,6 +573,9 @@ export function useNoteBlockActions(options: {
     insertBlockAmongSiblings,
     handleDuplicateBlock,
     handleMultilinePaste,
+    handlePasteBlockClipboard,
+    handleCopySelectedBlocks,
+    handleCutSelectedBlocks,
     handleInsertBlockAfter,
     handleSplitListBlockAfterWithChildren,
     handleInsertBlockInParent,

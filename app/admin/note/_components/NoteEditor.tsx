@@ -43,7 +43,9 @@ import {
   notePageLinkInsertHtml,
 } from '../_lib/notePaste';
 import { parseClipboardHtmlToBlocks, shouldSplitHtmlPaste } from '../_lib/notePasteHtml';
-import { pastedBlocksFromPlainLines, type PastedBlockSpec } from '../_lib/notePasteBlocks';
+import { parseMarkdownPlainToBlocks, shouldSplitMarkdownPaste } from '../_lib/notePasteMarkdown';
+import { pastedBlocksFromPlainLines, type PastedBlockSpec, isStructuralHtmlPasteSpec } from '../_lib/notePasteBlocks';
+import type { TableCellNavigateDirection } from '../_lib/noteTableBlock';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
@@ -76,7 +78,7 @@ const HeadingWithShortcuts = Heading.extend({
   },
 }).configure({ levels: [1, 2, 3] });
 
-type RichField = 'text' | 'body';
+type RichField = 'text';
 
 type NoteEditorChange = {
   text: string;
@@ -172,14 +174,8 @@ function richTextSourceHtml({
   field: RichField;
   text: string;
 }) {
-  const htmlKey = field === 'body' ? 'bodyHtml' : 'html';
-  const legacyHtmlKey = field === 'body' ? 'legacyBodyHtml' : null;
-  const html = content?.[htmlKey];
+  const html = content?.html;
   if (typeof html === 'string' && html.trim().length > 0) return html;
-  if (legacyHtmlKey) {
-    const legacyHtml = content?.[legacyHtmlKey];
-    if (typeof legacyHtml === 'string' && legacyHtml.trim().length > 0) return legacyHtml;
-  }
   return legacyTextToEditorHtml(text);
 }
 
@@ -325,6 +321,7 @@ export function NoteEditor({
   onIndent,
   onNavigatePrevious,
   onNavigateNext,
+  onCellNavigate,
   onEditorFocus,
   onEditorSurfaceReady,
   onOpenDocumentById,
@@ -368,6 +365,7 @@ export function NoteEditor({
   onIndent?: (direction: 'in' | 'out') => void;
   onNavigatePrevious?: () => void;
   onNavigateNext?: () => void;
+  onCellNavigate?: (direction: TableCellNavigateDirection) => void;
   onEditorFocus?: () => void;
   onEditorSurfaceReady?: () => void;
   onOpenDocumentById?: (documentId: string) => void;
@@ -403,6 +401,7 @@ export function NoteEditor({
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
+    onCellNavigate,
     onEditorFocus,
     onEditorSurfaceReady,
     onOpenDocumentById,
@@ -429,6 +428,7 @@ export function NoteEditor({
     onIndent,
     onNavigatePrevious,
     onNavigateNext,
+    onCellNavigate,
     onEditorFocus,
     onEditorSurfaceReady,
     onOpenDocumentById,
@@ -652,6 +652,7 @@ export function NoteEditor({
           onMarkdownBlockTrigger: currentOnMarkdownBlockTrigger,
           onNavigatePrevious: currentOnNavigatePrevious,
           onNavigateNext: currentOnNavigateNext,
+          onCellNavigate: currentOnCellNavigate,
           onEnter: currentOnEnter,
           enterCreatesBlock: currentEnterCreatesBlock,
         } = callbacksRef.current;
@@ -738,8 +739,38 @@ export function NoteEditor({
             }
           }
         }
+        if (currentTabBehavior === 'table-cell-nav' && currentOnCellNavigate) {
+          const { selection, doc } = view.state;
+          const atStart = selection.empty && selection.from <= 1;
+          const atEnd = selection.empty && selection.to >= doc.content.size - 1;
+          if (event.key === 'ArrowLeft' && atStart) {
+            event.preventDefault();
+            flush();
+            currentOnCellNavigate('left');
+            return true;
+          }
+          if (event.key === 'ArrowUp' && atStart) {
+            event.preventDefault();
+            flush();
+            currentOnCellNavigate('up');
+            return true;
+          }
+          if (event.key === 'ArrowRight' && atEnd) {
+            event.preventDefault();
+            flush();
+            currentOnCellNavigate('right');
+            return true;
+          }
+          if (event.key === 'ArrowDown' && atEnd) {
+            event.preventDefault();
+            flush();
+            currentOnCellNavigate('down');
+            return true;
+          }
+        }
         if (
-          (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
+          currentTabBehavior !== 'table-cell-nav'
+          && (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
           && currentOnNavigatePrevious
         ) {
           const { selection } = view.state;
@@ -751,7 +782,8 @@ export function NoteEditor({
           }
         }
         if (
-          (event.key === 'ArrowRight' || event.key === 'ArrowDown')
+          currentTabBehavior !== 'table-cell-nav'
+          && (event.key === 'ArrowRight' || event.key === 'ArrowDown')
           && currentOnNavigateNext
         ) {
           const { doc, selection } = view.state;
@@ -801,6 +833,24 @@ export function NoteEditor({
           editorRef.current?.chain().focus().insertContent(notePageLinkInsertHtml(pageLink)).run();
           return true;
         }
+        const mdSpecs = !html && plain ? parseMarkdownPlainToBlocks(plain) : null;
+        if (mdSpecs && shouldSplitMarkdownPaste(mdSpecs)) {
+          const { onMultilinePaste, canSplitMultilinePaste: splitEnabled } = callbacksRef.current;
+          if (splitEnabled && onMultilinePaste) {
+            event.preventDefault();
+            callbacksRef.current.flushPendingChange();
+            const first = mdSpecs[0];
+            if (!isStructuralHtmlPasteSpec(first)) {
+              const firstHtml = first.html?.trim()
+                ? first.html
+                : legacyTextToEditorHtml(first.text);
+              editorRef.current?.chain().focus().setContent(firstHtml).run();
+              scheduleChange({ text: first.text, html: first.html ?? '' });
+            }
+            onMultilinePaste(mdSpecs);
+            return true;
+          }
+        }
         const htmlSpecs = html ? parseClipboardHtmlToBlocks(html) : null;
         if (htmlSpecs && shouldSplitHtmlPaste(htmlSpecs)) {
           const { onMultilinePaste, canSplitMultilinePaste: splitEnabled } = callbacksRef.current;
@@ -808,11 +858,13 @@ export function NoteEditor({
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
             const first = htmlSpecs[0];
-            const firstHtml = first.html?.trim()
-              ? first.html
-              : legacyTextToEditorHtml(first.text);
-            editorRef.current?.chain().focus().setContent(firstHtml).run();
-            scheduleChange({ text: first.text, html: first.html ?? '' });
+            if (!isStructuralHtmlPasteSpec(first)) {
+              const firstHtml = first.html?.trim()
+                ? first.html
+                : legacyTextToEditorHtml(first.text);
+              editorRef.current?.chain().focus().setContent(firstHtml).run();
+              scheduleChange({ text: first.text, html: first.html ?? '' });
+            }
             onMultilinePaste(htmlSpecs);
             return true;
           }

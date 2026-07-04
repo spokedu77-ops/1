@@ -297,7 +297,7 @@ export default function StudentsPage() {
             <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>student history</p>
             <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
             <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-              수업 기록에서 남긴 출석, 관찰, 동작 체크를 학생별 성장 근거로 정리합니다.
+              수업 후 남긴 기록을 학생별로 모아 다음 수업 준비와 안내문 작성에 활용합니다.
             </p>
           </div>
           <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="mt-1 flex h-11 shrink-0 items-center gap-2 rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
@@ -307,17 +307,18 @@ export default function StudentsPage() {
         </div>
       </header>
 
-      <section className="mx-[22px] mb-5 grid gap-2 sm:mx-8 sm:grid-cols-3 lg:mx-10">
-        {[
-          ['등록 명단', `${students.length || 0}명`],
-          ['기록 연결', `${recordedStudentCount}/${students.length || 0}명`],
-          ['수업 기록', `${records.length}건`],
-        ].map(([label, value]) => (
-          <div key={label} className="rounded-[14px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-            <p className="mt-1 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{value}</p>
-          </div>
-        ))}
+      <section className="mx-[22px] mb-5 sm:mx-8 lg:mx-10">
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5 rounded-[12px] px-4 py-2.5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          {[
+            ['등록 학생', `${students.length || 0}명`],
+            ['기록된 학생', `${recordedStudentCount}/${students.length || 0}명`],
+            ['전체 수업 기록', `${records.length}건`],
+          ].map(([label, value]) => (
+            <p key={label} className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>
+              {label} <span className="font-black" style={{ color: 'var(--spm-t2)' }}>{value}</span>
+            </p>
+          ))}
+        </div>
       </section>
 
       {operationalLoading ? (
@@ -574,34 +575,25 @@ export default function StudentsPage() {
 
         {students.length > 0 ? <section className="space-y-2">
           {students.map((student) => {
-            const studentRecords = getStudentRecordEntries(records, student.id);
-            const latestRecord = studentRecords[0] ?? null;
-            const latestMemoRecord = studentRecords.find((entry) => entry.student.memo?.trim()) ?? null;
+            const studentRecordCount = getStudentRecordEntries(records, student.id).length;
 
             return (
-              <div key={student.id} className="flex items-center gap-2 rounded-[15px]" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
+              <div key={student.id} className="flex items-center gap-1 rounded-[15px]" style={{ background: selectedId === student.id ? 'rgba(99,102,241,0.14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br)' }}>
                 <button type="button" onClick={() => setSelectedId(student.id)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
                     {student.name.slice(0, 1)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
-                    <span className="mt-1 block text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[student.group, student.meta].filter(Boolean).join(' / ')}</span>
-                    <span className="mt-1 block line-clamp-1 text-[11px] font-bold" style={{ color: latestRecord ? 'var(--spm-t2)' : 'var(--spm-t3)' }}>
-                      {latestRecord
-                        ? `최근 ${formatStudentRecordDate(latestRecord.record.date)} · ${latestRecord.record.programTitle}${latestMemoRecord ? ' · 메모 있음' : ''}`
-                        : '아직 저장된 수업 기록이 없습니다.'}
+                    <span className="flex items-center gap-2">
+                      <strong className="truncate text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
+                      <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>누적 {studentRecordCount}건</span>
                     </span>
+                    <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[student.group, student.meta].filter(Boolean).join(' / ') || '학년/수준 미입력'}</span>
                   </span>
-                  <ChevronRight size={16} color="var(--spm-t3)" />
+                  <ChevronRight size={16} color="var(--spm-t3)" className="shrink-0" />
                 </button>
-                <div className="flex w-[116px] shrink-0 flex-col gap-1.5 py-2">
-                  <span className="text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>누적 {studentRecords.length}건</span>
-                  <Link href={`/spokedu-master/students/${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>학생 기록 보기</Link>
-                  <RecordProgramPicker label="수업 골라 기록" studentId={student.id} size="compact" />
-                </div>
-                <button type="button" onClick={() => handleDeleteStudent(student)} disabled={studentDeletingId === student.id} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px] disabled:opacity-50" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
-                  <Trash2 size={14} color="var(--spm-red)" />
+                <button type="button" onClick={() => handleDeleteStudent(student)} disabled={studentDeletingId === student.id} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px] disabled:opacity-50" style={{ color: 'var(--spm-t3)' }} aria-label={`${student.name} 삭제`}>
+                  <Trash2 size={14} />
                 </button>
               </div>
             );
@@ -616,141 +608,141 @@ export default function StudentsPage() {
                   <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{selected.group}</p>
                   <h2 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
                   {selected.meta ? <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.meta}</p> : null}
-                  <p className="mt-2 text-[11px] font-semibold" style={{ color: 'var(--spm-grn)' }}>연결된 수업 기록 {selectedFacts?.recordCount ?? 0}건</p>
                 </div>
                 <span className="grid h-12 w-12 place-items-center rounded-full" style={{ background: 'rgba(16,185,129,0.14)' }}>
                   <ClipboardList size={20} color="var(--spm-grn)" />
                 </span>
               </div>
-              <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {[
-                  ['수업 기록', `${selectedFacts?.recordCount ?? 0}건`],
-                  ['출석 체크', `${selectedFacts?.presentCount ?? 0}건`],
-                  ['결석 체크', `${selectedFacts?.absentCount ?? 0}건`],
-                  ['집중 관찰', `${selectedFacts?.focusedCount ?? 0}건`],
-                ].map(([label, value]) => (
-                  <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
-                    <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
-                    <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
-                  </div>
-                ))}
+
+              <div className="mt-5">
+                <RecordProgramPicker label="수업 결과 기록" studentId={selected.id} />
               </div>
+              <Link href={`/spokedu-master/students/${selected.id}`} className="mt-3 inline-block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>학생 기록 보기</Link>
             </div>
 
-            <div className="space-y-5 border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
-              <div>
-                <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                  <CalendarDays size={17} color="var(--spm-acc)" />
-                  최근 수업 요약
-                </h3>
-                {selectedLatestRecord ? (
-                  <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                    <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedLatestRecord.record.programTitle}</p>
-                    <p className="mt-1">
-                      {formatStudentRecordDate(selectedLatestRecord.record.date)} · {getAttendanceLabel(selectedLatestRecord.student.attendance)}
-                      {selectedLatestRecord.student.focused ? ' · 집중 관찰' : ''}
-                    </p>
-                    {selectedLatestRecord.student.skills.length ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {selectedLatestRecord.student.skills.map((skill) => (
-                          <span key={skill} className="rounded-full px-2 py-1 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                    {selectedLatestRecord.student.memo ? (
-                      <p className="mt-2 max-h-24 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                        학생 메모: {selectedLatestRecord.student.memo}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 수업 기록이 없습니다.</p>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 학생 메모</h3>
-                {selectedLatestMemoRecord ? (
-                  <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                    <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedLatestMemoRecord.record.programTitle}</p>
-                    <p className="mt-1">
-                      {formatStudentRecordDate(selectedLatestMemoRecord.record.date)} · {getAttendanceLabel(selectedLatestMemoRecord.student.attendance)}
-                      {selectedLatestMemoRecord.student.focused ? ' · 집중 관찰' : ''}
-                    </p>
-                    <p className="mt-2 max-h-28 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                      {selectedLatestMemoRecord.student.memo}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 학생별 메모가 없습니다.</p>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                  <BookOpen size={17} color="var(--spm-acc)" />
-                  다음 수업 준비
-                </h3>
-                {selectedPreparationRecord ? (
-                  <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
-                    <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedPreparationRecord.record.programTitle}</p>
-                    <p className="mt-1">
-                      {formatStudentRecordDate(selectedPreparationRecord.record.date)}
-                      {selectedPreparationRecord.student.focused ? ' · 집중 관찰' : ''}
-                    </p>
-                    {selectedPreparationRecord.student.memo ? (
-                      <p className="mt-2 max-h-28 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                        {selectedPreparationRecord.student.memo}
-                      </p>
-                    ) : null}
-                    {selectedPreparationRecord.student.skills.length ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {selectedPreparationRecord.student.skills.map((skill) => (
-                          <span key={skill} className="rounded-full px-2 py-1 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                        <BookOpen size={15} />
-                        수업 자료 보기
-                      </Link>
-                      <Link href={`/spokedu-master/class-record?program=${selectedPreparationRecord.record.programId}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
-                        <ClipboardList size={15} />
-                        같은 수업으로 기록 준비
-                      </Link>
+            {selectedFacts && selectedFacts.recordCount > 0 ? (
+              <div className="space-y-5 border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {[
+                    ['수업 기록', `${selectedFacts.recordCount}건`],
+                    ['출석 체크', `${selectedFacts.presentCount}건`],
+                    ['결석 체크', `${selectedFacts.absentCount}건`],
+                    ['집중 관찰', `${selectedFacts.focusedCount}건`],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-[12px] p-3 text-center" style={{ background: 'var(--spm-s3)' }}>
+                      <p className="text-[18px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
+                      <p className="mt-1 text-[10px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
                     </div>
-                  </div>
-                ) : (
-                  <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                    <p>아직 다음 수업 준비에 활용할 기록이 없습니다.</p>
-                    <Link href="/spokedu-master/library" className="mt-3 flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                      <BookOpen size={15} />
-                      수업 자료 찾기
-                    </Link>
-                  </div>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>기록된 기능 태그</h3>
-                {selectedFacts?.skillTags.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedFacts.skillTags.map((skill) => (
-                      <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>{skill}</span>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 기록된 기능 태그가 없습니다.</p>
-                )}
-              </div>
-              <div>
-                <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
-                  <CalendarDays size={17} color="var(--spm-acc)" />
-                  최근 수업 기록
-                </h3>
-                {selectedRecords.length > 0 ? (
+                  ))}
+                </div>
+
+                <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                  <FileText size={15} />
+                  안내문
+                </Link>
+
+                <div>
+                  <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
+                    <CalendarDays size={17} color="var(--spm-acc)" />
+                    최근 수업 요약
+                  </h3>
+                  {selectedLatestRecord ? (
+                    <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                      <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedLatestRecord.record.programTitle}</p>
+                      <p className="mt-1">
+                        {formatStudentRecordDate(selectedLatestRecord.record.date)} · {getAttendanceLabel(selectedLatestRecord.student.attendance)}
+                        {selectedLatestRecord.student.focused ? ' · 집중 관찰' : ''}
+                      </p>
+                      {selectedLatestRecord.student.skills.length ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {selectedLatestRecord.student.skills.map((skill) => (
+                            <span key={skill} className="rounded-full px-2 py-1 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      {selectedLatestRecord.student.memo ? (
+                        <p className="mt-2 max-h-24 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                          학생 메모: {selectedLatestRecord.student.memo}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </div>
+                <div>
+                  <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>최근 학생 메모</h3>
+                  {selectedLatestMemoRecord ? (
+                    <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                      <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedLatestMemoRecord.record.programTitle}</p>
+                      <p className="mt-1">
+                        {formatStudentRecordDate(selectedLatestMemoRecord.record.date)} · {getAttendanceLabel(selectedLatestMemoRecord.student.attendance)}
+                        {selectedLatestMemoRecord.student.focused ? ' · 집중 관찰' : ''}
+                      </p>
+                      <p className="mt-2 max-h-28 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                        {selectedLatestMemoRecord.student.memo}
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 학생별 메모가 없습니다.</p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
+                    <BookOpen size={17} color="var(--spm-acc)" />
+                    다음 수업 준비
+                  </h3>
+                  {selectedPreparationRecord ? (
+                    <div className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
+                      <p className="font-black" style={{ color: 'var(--spm-t)' }}>{selectedPreparationRecord.record.programTitle}</p>
+                      <p className="mt-1">
+                        {formatStudentRecordDate(selectedPreparationRecord.record.date)}
+                        {selectedPreparationRecord.student.focused ? ' · 집중 관찰' : ''}
+                      </p>
+                      {selectedPreparationRecord.student.memo ? (
+                        <p className="mt-2 max-h-28 overflow-y-auto break-words rounded-[10px] p-2 leading-5" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                          {selectedPreparationRecord.student.memo}
+                        </p>
+                      ) : null}
+                      {selectedPreparationRecord.student.skills.length ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {selectedPreparationRecord.student.skills.map((skill) => (
+                            <span key={skill} className="rounded-full px-2 py-1 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                          <BookOpen size={15} />
+                          다음 수업 자료
+                        </Link>
+                        <Link href={`/spokedu-master/class-record?program=${selectedPreparationRecord.record.programId}`} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                          <ClipboardList size={15} />
+                          같은 수업으로 기록 준비
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+                <div>
+                  <h3 className="mb-3 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>기록된 기능 태그</h3>
+                  {selectedFacts.skillTags.length ? (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedFacts.skillTags.map((skill) => (
+                        <span key={skill} className="rounded-full px-3 py-2 text-[12px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>{skill}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 기록된 기능 태그가 없습니다.</p>
+                  )}
+                </div>
+                <div>
+                  <h3 className="mb-3 flex items-center gap-2 text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>
+                    <CalendarDays size={17} color="var(--spm-acc)" />
+                    최근 수업 기록
+                  </h3>
                   <div className="space-y-2">
                     {selectedRecords.slice(0, 8).map(({ record, student }) => (
                       <div key={record.id} className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
@@ -772,26 +764,20 @@ export default function StudentsPage() {
                       </div>
                     ))}
                   </div>
-                ) : (
-                  <p className="rounded-[12px] p-3 text-[12px] font-semibold" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>아직 저장된 수업 기록이 없습니다.</p>
-                )}
+                </div>
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {selected ? (
-                  <RecordProgramPicker label="수업 골라 기록" studentId={selected.id} />
-                ) : null}
-                <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  <FileText size={15} />
-                  안내문
-                </Link>
+            ) : (
+              <div className="border-t p-5" style={{ borderColor: 'var(--spm-br2)' }}>
+                <div className="rounded-[14px] p-5 text-center" style={{ background: 'var(--spm-s3)' }}>
+                  <p className="text-[13px] font-black leading-6" style={{ color: 'var(--spm-t)' }}>
+                    아직 이 학생의 수업 기록이 없습니다.
+                  </p>
+                  <p className="mt-2 text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t3)' }}>
+                    첫 수업 후 결과를 남기면 최근 변화, 학생 메모, 다음 수업 준비가 이곳에 정리됩니다.
+                  </p>
+                </div>
               </div>
-              <div className="mt-2 grid gap-2">
-                <Link href="/spokedu-master/library" className="flex h-11 items-center justify-center gap-2 rounded-[11px] text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  <BookOpen size={14} />
-                  다음 수업 자료
-                </Link>
-              </div>
-            </div>
+            )}
           </section>
         ) : null}
       </div>

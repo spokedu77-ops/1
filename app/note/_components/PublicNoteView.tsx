@@ -9,6 +9,14 @@ import { resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { resolveVideoEmbedContent, videoProviderLabel } from '@/app/lib/note/videoEmbed';
 import { bulletMarkerForLevel, stripListItemMarkerPrefix } from '@/app/admin/note/_components/noteBulletInput';
 import { normalizeTableContent } from '@/app/admin/note/_lib/noteTableBlock';
+import { codeLanguageLabel, readCodeLanguage } from '@/app/admin/note/_lib/noteCodeBlock';
+import {
+  imageBlockAlignClass,
+  imageCaptionAlignClass,
+  imageFrameWidthClass,
+  readImageAlign,
+  readImageWidth,
+} from '@/app/admin/note/_lib/noteImageBlock';
 import { VideoEmbedFrame } from '@/app/admin/note/_components/VideoEmbedFrame';
 
 function listItemContent(content: Record<string, unknown> | null | undefined) {
@@ -62,12 +70,14 @@ function PublicBlock({
   block,
   publicPages,
   childBlocks = [],
+  lookupChildBlocks,
   renderChildBlock,
   isInsideToggle = false,
 }: {
   block: PublicNoteBlock;
   publicPages: Record<string, string>;
   childBlocks?: PublicNoteBlock[];
+  lookupChildBlocks?: (parentId: string) => PublicNoteBlock[];
   renderChildBlock?: (child: PublicNoteBlock) => React.ReactNode;
   isInsideToggle?: boolean;
 }) {
@@ -219,10 +229,22 @@ function PublicBlock({
     );
   }
 
+  if (block.type === 'quote') {
+    return (
+      <div className="border-l-[3px] border-slate-300 pl-3 py-0.5" style={indentStyle}>
+        <RichText content={block.content} className="text-[15px] leading-7 text-slate-600 italic" />
+      </div>
+    );
+  }
+
   if (block.type === 'code') {
     const text = typeof block.content?.text === 'string' ? block.content.text : '';
+    const language = readCodeLanguage(block.content);
     return (
       <div className="rounded-xl border border-slate-200 bg-slate-950 px-4 py-3" style={indentStyle}>
+        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+          {codeLanguageLabel(language)}
+        </div>
         <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[13px] leading-6 text-slate-100">{text}</pre>
       </div>
     );
@@ -232,14 +254,18 @@ function PublicBlock({
     const url = typeof block.content?.url === 'string' ? block.content.url.trim() : '';
     if (!url) return null;
     const caption = typeof block.content?.caption === 'string' ? block.content.caption.trim() : '';
+    const imageWidth = readImageWidth(block.content);
+    const imageAlign = readImageAlign(block.content);
     return (
       <div className="py-2" style={indentStyle}>
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
-          <img src={url} alt={caption || ''} className="max-h-96 w-full object-contain" />
+        <div className={`${imageFrameWidthClass(imageWidth)} ${imageBlockAlignClass(imageAlign)}`}>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+            <img src={url} alt={caption || ''} className="max-h-96 w-full object-contain" />
+          </div>
+          {caption ? (
+            <p className={`mt-1.5 text-[12px] text-slate-500 ${imageCaptionAlignClass(imageAlign)}`}>{caption}</p>
+          ) : null}
         </div>
-        {caption ? (
-          <p className="mt-1.5 text-center text-[12px] text-slate-500">{caption}</p>
-        ) : null}
       </div>
     );
   }
@@ -282,6 +308,35 @@ function PublicBlock({
             {inner}
           </Link>
         ) : inner}
+      </div>
+    );
+  }
+
+  if (block.type === 'columnList') {
+    const columns = [...childBlocks]
+      .filter((child) => child.type === 'column')
+      .sort((left, right) => left.order_index - right.order_index);
+    return (
+      <div className={`overflow-x-auto py-2 ${rootBlockShell}`} style={indentStyle}>
+        <div className="flex w-full items-start gap-3">
+          {columns.map((column) => {
+            const columnChildren = lookupChildBlocks?.(column.id) ?? [];
+            return (
+              <div
+                key={column.id}
+                className="min-w-0 flex-1 rounded-md border border-slate-200/80 bg-white px-2 py-1.5"
+              >
+                {columnChildren.length > 0 ? (
+                  <div className="space-y-0">
+                    {columnChildren.map((child) => renderChildBlock?.(child))}
+                  </div>
+                ) : (
+                  <div className="min-h-[30px]" aria-hidden />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -395,6 +450,7 @@ export function PublicNoteView({
       publicPages={publicPages}
       isInsideToggle={insideToggle}
       childBlocks={childrenByParentBlock.get(block.id) ?? []}
+      lookupChildBlocks={(parentId) => childrenByParentBlock.get(parentId) ?? []}
       renderChildBlock={(child) => renderPublicBlock(child, true)}
     />
   );

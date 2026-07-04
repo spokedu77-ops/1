@@ -1,16 +1,15 @@
+import { TEXT_CARRYING_BLOCK_TYPES } from './noteBlockTypes';
 import type { MarkdownBlockTrigger } from '../_components/noteBulletInput';
 import { stripListItemMarkerPrefix, stripMarkdownTriggerForTypeChange } from '../_components/noteBulletInput';
 import { defaultBlockContent } from './constants';
 import { normalizeTodoBlockContentRecord } from './noteTodoContent';
 import type { NoteBlock } from './types';
 
-const TEXT_CARRYING_BLOCK_TYPES = new Set<NoteBlock['type']>([
-  'text', 'heading', 'heading2', 'heading3', 'bulletList', 'numberedList', 'todo', 'callout', 'code',
-]);
+const TEXT_CARRYING_TYPES = TEXT_CARRYING_BLOCK_TYPES;
 
 /** 전환 시 고유 데이터(하위 문서 연결·미디어·표 등)가 사라지는 블록 */
 const NON_CONVERTIBLE_FROM_TYPES = new Set<NoteBlock['type']>([
-  'page', 'image', 'video', 'table', 'divider',
+  'page', 'image', 'video', 'table', 'divider', 'columnList', 'column',
 ]);
 
 const NON_CONVERTIBLE_FROM_LABELS: Partial<Record<NoteBlock['type'], string>> = {
@@ -19,6 +18,8 @@ const NON_CONVERTIBLE_FROM_LABELS: Partial<Record<NoteBlock['type'], string>> = 
   video: '영상',
   table: '표',
   divider: '구분선',
+  columnList: '2단 레이아웃',
+  column: '열',
 };
 
 /** 블록 형식 전환이 데이터 손실을 일으키면 사용자에게 보여줄 이유. 허용이면 null */
@@ -83,7 +84,7 @@ export function buildContentForTypeChange(
 
   if (nextType === 'toggle') {
     const base = defaultBlockContent('toggle');
-    const canCarry = TEXT_CARRYING_BLOCK_TYPES.has(prevType) || prevType === 'toggle';
+    const canCarry = TEXT_CARRYING_TYPES.has(prevType) || prevType === 'toggle';
     if (!canCarry) return base;
     const rawText = readCarriedTextForTypeChange(prevContent, prevType);
     const title = stripMarkdownTriggerForTypeChange(rawText, 'toggle');
@@ -95,7 +96,7 @@ export function buildContentForTypeChange(
     };
   }
 
-  if (prevType === 'toggle' && TEXT_CARRYING_BLOCK_TYPES.has(nextType)) {
+  if (prevType === 'toggle' && TEXT_CARRYING_TYPES.has(nextType)) {
     const base = defaultBlockContent(nextType);
     const rawText = readCarriedTextForTypeChange(prevContent, prevType);
     const text = stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger);
@@ -108,11 +109,11 @@ export function buildContentForTypeChange(
   }
 
   const base = defaultBlockContent(nextType);
-  if (!TEXT_CARRYING_BLOCK_TYPES.has(prevType) || !TEXT_CARRYING_BLOCK_TYPES.has(nextType)) {
+  if (!TEXT_CARRYING_TYPES.has(prevType) || !TEXT_CARRYING_TYPES.has(nextType)) {
     return base;
   }
   const rawText = typeof prev.text === 'string' ? prev.text : '';
-  let text = TEXT_CARRYING_BLOCK_TYPES.has(nextType)
+  let text = TEXT_CARRYING_TYPES.has(nextType)
     ? stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger)
     : rawText;
   if (nextType === 'bulletList' || nextType === 'numberedList') {
@@ -120,12 +121,10 @@ export function buildContentForTypeChange(
   }
   const didStripTrigger = text !== rawText;
   const html = typeof prev.html === 'string' ? prev.html : undefined;
-  const bodyHtml = typeof prev.bodyHtml === 'string' ? prev.bodyHtml : undefined;
   const next = {
     ...base,
     text,
     ...(!didStripTrigger && html !== undefined ? { html } : {}),
-    ...(!didStripTrigger && bodyHtml !== undefined ? { bodyHtml } : {}),
     ...(typeof prev.checked === 'boolean' && nextType === 'todo' ? { checked: prev.checked } : {}),
   };
   if (nextType === 'todo') {

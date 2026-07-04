@@ -1,4 +1,5 @@
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
+import { INLINE_DECORATED_BLOCK_TYPES } from './noteBlockTypes';
 import type { NoteBlock } from './types';
 
 /** Notion 스타일 인라인 블록(todo·bullet 등) Enter 결과 */
@@ -105,6 +106,19 @@ export function resolveHeadingEnterAction(options: {
   });
 }
 
+export function resolveQuoteEnterAction(options: {
+  text: string;
+  parentBlockId: string | null;
+  enterCtx?: NoteEditorEnterContext;
+}): NotionInlineEnterAction {
+  return resolveInlineBlockEnterAction({
+    followType: 'quote',
+    text: options.text,
+    parentBlockId: options.parentBlockId,
+    enterCtx: options.enterCtx,
+  });
+}
+
 export function resolveCalloutEnterAction(options: {
   text: string;
   parentBlockId: string | null;
@@ -174,15 +188,7 @@ export function resolveEmptyBackspaceAction(canMergeWithPrevious: boolean): Noti
     : { kind: 'delete-block' };
 }
 
-const INLINE_TEXT_DECORATED_BLOCK_TYPES = new Set<NoteBlock['type']>([
-  'heading',
-  'heading2',
-  'heading3',
-  'todo',
-  'callout',
-  'code',
-]);
-
+/** 인라인 텍스트 블록 맨 앞 Backspace */
 export type NotionInlineBackspaceAtStartAction =
   | { kind: 'convert-to-text' }
   | { kind: 'default' };
@@ -190,7 +196,7 @@ export type NotionInlineBackspaceAtStartAction =
 export function resolveInlineBackspaceAtStartAction(
   blockType: NoteBlock['type'],
 ): NotionInlineBackspaceAtStartAction {
-  return INLINE_TEXT_DECORATED_BLOCK_TYPES.has(blockType)
+  return INLINE_DECORATED_BLOCK_TYPES.has(blockType)
     ? { kind: 'convert-to-text' }
     : { kind: 'default' };
 }

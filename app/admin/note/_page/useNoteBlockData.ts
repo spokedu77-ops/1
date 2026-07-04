@@ -31,7 +31,7 @@ import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
-import { stripToggleLegacyBodyFields } from '../_lib/noteToggleContent';
+import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import type { NoteBlock } from '../_lib/types';
@@ -228,7 +228,7 @@ export function useNoteBlockData(options: {
       const toggle = normalized.find((block) => block.id === id);
       return {
         id,
-        content: stripToggleLegacyBodyFields(
+        content: stripToggleLegacyContentFields(
           (toggle?.content ?? {}) as Record<string, unknown>,
         ),
       };

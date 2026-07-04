@@ -23,9 +23,9 @@ const DeepReactionTraining = lazy(() =>
   })),
 );
 
-const PulseReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/PulseReactionTraining').then((m) => ({
-    default: m.PulseReactionTraining,
+const BeatWaveReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining').then((m) => ({
+    default: m.BeatWaveReactionTraining,
   })),
 );
 
@@ -219,7 +219,7 @@ export function EngineRouter({
     if (level === 5) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <PulseReactionTraining
+          <BeatWaveReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}

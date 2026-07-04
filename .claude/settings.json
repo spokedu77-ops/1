@@ -83,7 +83,15 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" \"http://localhost:3000/spomove/training/body-actions/right-foot.png\")",
       "Bash(curl -s -o /dev/null -w \"right-foot: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/right-foot.png\")",
       "Bash(curl -s -o /dev/null -w \"left-foot: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/left-foot.png\")",
-      "Bash(curl -s -o /dev/null -w \"both-feet: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/both-feet.png\")"
+      "Bash(curl -s -o /dev/null -w \"both-feet: %{http_code}\\\\n\" \"http://localhost:3000/spomove/training/body-actions/both-feet.png\")",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(ls .claude/skills)",
+      "Bash(find . -maxdepth 3 -iname \"SKILL.md\")",
+      "Bash(grep -c \"SUPABASE\" .env.local)",
+      "Bash(node .tmp/spm-env-readiness.mjs)",
+      "Bash(node .tmp/run-spm-mobile-360-with-server.mjs)",
+      "PowerShell(Get-Process -Id 23808 -ErrorAction SilentlyContinue)"
     ],
     "additionalDirectories": [
       "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"

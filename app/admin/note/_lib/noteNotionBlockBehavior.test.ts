@@ -144,6 +144,7 @@ describe('resolveInlineBackspaceAtStartAction', () => {
     expect(resolveInlineBackspaceAtStartAction('heading3')).toEqual({ kind: 'convert-to-text' });
     expect(resolveInlineBackspaceAtStartAction('todo')).toEqual({ kind: 'convert-to-text' });
     expect(resolveInlineBackspaceAtStartAction('callout')).toEqual({ kind: 'convert-to-text' });
+    expect(resolveInlineBackspaceAtStartAction('quote')).toEqual({ kind: 'convert-to-text' });
     expect(resolveInlineBackspaceAtStartAction('code')).toEqual({ kind: 'convert-to-text' });
   });
 

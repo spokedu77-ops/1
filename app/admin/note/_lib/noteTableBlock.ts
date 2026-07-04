@@ -12,6 +12,7 @@ export type NoteTableContent = {
 export const DEFAULT_TABLE_ROWS = 3;
 export const DEFAULT_TABLE_COLS = 3;
 
+export type TableCellNavigateDirection = 'up' | 'down' | 'left' | 'right';
 export type NoteTableCellField = `cell:${number}:${number}`;
 
 export function tableCellField(row: number, col: number): NoteTableCellField {
@@ -153,8 +154,12 @@ export function removeTableRow(
   content: Record<string, unknown> | null | undefined,
   rowIndex: number,
 ): Record<string, unknown> | null {
+  const rawRows = content && typeof content === 'object' && Array.isArray(content.rows)
+    ? content.rows
+    : [];
+  if (rawRows.length <= 1) return null;
+
   const table = normalizeTableContent(content);
-  if (table.rows.length <= 1) return null;
   if (rowIndex < 0 || rowIndex >= table.rows.length) return null;
   const rows = table.rows.filter((_, index) => index !== rowIndex);
   return {
@@ -179,6 +184,19 @@ export function removeTableColumn(
     rows,
     columnCount: columnCount - 1,
     hasHeaderRow: table.hasHeaderRow,
+  };
+}
+
+export function setTableHasHeaderRow(
+  content: Record<string, unknown> | null | undefined,
+  hasHeaderRow: boolean,
+): Record<string, unknown> {
+  const table = normalizeTableContent(content);
+  return {
+    ...((content ?? {}) as Record<string, unknown>),
+    rows: table.rows,
+    columnCount: table.columnCount,
+    hasHeaderRow,
   };
 }
 

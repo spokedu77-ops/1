@@ -11,6 +11,7 @@ import {
   LIST_CONTAINER_TYPES,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
+import { COLUMN_TYPE } from './noteColumnBlock';
 import type { NoteBlock } from './types';
 import type { BlockDropTarget } from '../_components/noteContexts';
 
@@ -29,7 +30,7 @@ function escapeCssAttrValue(value: string): string {
 }
 
 export function blockSupportsInsideDrop(type: string): boolean {
-  return type === 'toggle' || type === 'page' || LIST_CONTAINER_TYPES.has(type);
+  return type === 'toggle' || type === 'page' || type === COLUMN_TYPE || LIST_CONTAINER_TYPES.has(type);
 }
 
 /** 블록 타입·행 rect·포인터 Y로 before / after / inside 결정 (Notion-style) */
@@ -57,6 +58,12 @@ export function resolveDropPositionForBlock(
   }
 
   if (LIST_CONTAINER_TYPES.has(blockType)) {
+    if (rel <= height * LIST_DROP_EDGE_RATIO) return 'before';
+    if (rel >= height * (1 - LIST_DROP_EDGE_RATIO)) return 'after';
+    return 'inside';
+  }
+
+  if (blockType === COLUMN_TYPE) {
     if (rel <= height * LIST_DROP_EDGE_RATIO) return 'before';
     if (rel >= height * (1 - LIST_DROP_EDGE_RATIO)) return 'after';
     return 'inside';
