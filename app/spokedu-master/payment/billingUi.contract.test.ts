@@ -11,6 +11,7 @@ const subscription = read('app/spokedu-master/subscription/page.tsx');
 const profile = read('app/spokedu-master/profile/page.tsx');
 const catalog = read('app/spokedu-master/lib/productCatalog.ts');
 const issueRoute = read('app/api/spokedu-master/payment/billing/issue/route.ts');
+const nextConfig = read('next.config.ts');
 
 describe('SPOKEDU MASTER recurring billing UI contract', () => {
   it('shows Lite and Premium prices from the shared catalog and keeps Center inquiry-only', () => {
@@ -33,6 +34,12 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(payment).not.toContain('requestPayment');
     expect(payment).not.toContain('amount:');
     expect(payment).not.toContain('localStorage');
+  });
+
+  it('allows the Toss billing auth frame through CSP', () => {
+    expect(nextConfig).toContain('Content-Security-Policy');
+    expect(nextConfig).toContain('payment-gateway-sandbox.tosspayments.com');
+    expect(nextConfig).toContain('payment-gateway.tosspayments.com');
   });
 
   it('uses only lite and premium plan IDs for payment CTAs', () => {

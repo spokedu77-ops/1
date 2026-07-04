@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
+            value: "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://payment-gateway-sandbox.tosspayments.com https://payment-gateway.tosspayments.com",
           },
         ],
       },
