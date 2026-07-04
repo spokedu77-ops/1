@@ -480,7 +480,7 @@ function ActivityPanel({
     <section data-dashboard-section="activity" aria-labelledby="activity-heading" className="rounded-[20px] border border-slate-200 bg-white p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="activity-heading" className="text-[18px] font-black text-slate-950">내 활동·기록</h2>
+          <h2 id="activity-heading" className="text-[18px] font-black text-slate-950">수업 기록</h2>
           <p className="mt-1 text-[13px] font-semibold text-slate-500">안내문과 수업 운영 기록을 한곳에서 이어가세요.</p>
         </div>
         <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-indigo-50 px-3 text-[12px] font-black text-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500">
@@ -511,7 +511,7 @@ function ActivityPanel({
 }
 
 // 계속 사용하기: 일반 수업과 SPOMOVE 중 가장 최근 하나만 반환.
-// 안내문은 내 활동·기록 섹션 전용이므로 여기에 포함하지 않는다.
+// 안내문은 수업 기록 섹션 전용이므로 여기에 포함하지 않는다.
 function buildContinueItem(
   classRecords: ClassRecord[],
   recentProgramActivities: RecentProgramActivity[],

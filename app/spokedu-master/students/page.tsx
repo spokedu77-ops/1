@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import {
   canRunLegacyOperationalImport,
@@ -597,7 +598,7 @@ export default function StudentsPage() {
                 <div className="flex w-[116px] shrink-0 flex-col gap-1.5 py-2">
                   <span className="text-[11px] font-black" style={{ color: 'var(--spm-acc)' }}>누적 {studentRecords.length}건</span>
                   <Link href={`/spokedu-master/students/${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>학생 기록 보기</Link>
-                  <Link href={`/spokedu-master/class-record?student=${student.id}`} className="inline-flex min-h-10 items-center justify-center rounded-[10px] px-2 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--spm-grn)' }}>수업 기록 작성</Link>
+                  <RecordProgramPicker label="수업 골라 기록" studentId={student.id} size="compact" />
                 </div>
                 <button type="button" onClick={() => handleDeleteStudent(student)} disabled={studentDeletingId === student.id} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px] disabled:opacity-50" style={{ background: 'var(--spm-s3)' }} aria-label={`${student.name} 삭제`}>
                   <Trash2 size={14} color="var(--spm-red)" />
@@ -776,13 +777,12 @@ export default function StudentsPage() {
                 )}
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
-                <Link href="/spokedu-master/class-record" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  <ClipboardList size={15} />
-                  기록
-                </Link>
+                {selected ? (
+                  <RecordProgramPicker label="수업 골라 기록" studentId={selected.id} />
+                ) : null}
                 <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <FileText size={15} />
-                  문구
+                  안내문
                 </Link>
               </div>
               <div className="mt-2 grid gap-2">

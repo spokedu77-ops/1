@@ -538,7 +538,7 @@ function RecordEntryView() {
             <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>아직 등록된 학생이 없습니다.</p>
             <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생을 추가하면 수업 기록을 학생별로 관리할 수 있습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/spokedu-master/students" className="inline-flex h-11 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가</Link>
+              <Link href="/spokedu-master/students?add=1" className="inline-flex h-11 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가</Link>
             </div>
           </div>
         )}

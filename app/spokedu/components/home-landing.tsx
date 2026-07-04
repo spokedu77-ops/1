@@ -8,6 +8,7 @@ import { HomeAudienceGates } from './home/home-audience-gates';
 import { HomeFieldRecords, mergeHomeCaseCards } from './home/home-field-records';
 import { HomeFinalCta } from './home/home-final-cta';
 import { HomeHero } from './home/home-hero';
+import { HomeProofStrip } from './home/home-proof-strip';
 import { HomeSpomoveSpotlight } from './home/home-spomove-spotlight';
 
 type SpokeduHomeLandingProps = {
@@ -27,9 +28,10 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       </a>
 
       <HomeHero />
+      <HomeProofStrip />
       <HomeAudienceGates />
-      <HomeFieldRecords caseCards={caseCards} />
       <HomeSpomoveSpotlight />
+      <HomeFieldRecords caseCards={caseCards} />
       <HomeFinalCta />
     </div>
   );

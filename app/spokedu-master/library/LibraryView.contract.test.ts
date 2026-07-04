@@ -43,6 +43,12 @@ describe('LibraryView favorites contract', () => {
     expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
   });
 
+  it('does not expose record cloning as a default library action', () => {
+    expect(source).not.toContain('class-record?from=');
+    expect(source).toContain('class-record?record=${record.id}&program=${program.id}');
+    expect(source).toContain('기록 보기');
+  });
+
   it('returns the existing loading skeleton before rendering favorites empty states', () => {
     const loadingIndex = source.indexOf('if (!programsLoaded) return <LibrarySkeleton />');
     const emptyStateIndex = source.indexOf("favoritesEmptyState === 'no-favorites'");

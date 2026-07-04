@@ -3,9 +3,9 @@ import { getLiveExternalChannels } from './external-channels';
 
 export const SPOKEDU_BASE_PATH = '/spokedu';
 
-/** @deprecated 홈 프로그램 앵커 — 서브 페이지 호환용 */
+/** @deprecated 홈 #program-system 제거 — `/programs`로 대체 */
 export const HOME_PROGRAM_SYSTEM_ID = 'program-system';
-export const HOME_PROGRAM_SYSTEM_HREF = `${SPOKEDU_BASE_PATH}#${HOME_PROGRAM_SYSTEM_ID}`;
+export const HOME_PROGRAM_SYSTEM_HREF = `${SPOKEDU_BASE_PATH}/programs`;
 
 export const siteBrand = {
   brandName: brandProfile.nameEn,

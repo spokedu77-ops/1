@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { getSafeMasterErrorMessage } from '../lib/clientErrors';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
@@ -564,7 +565,9 @@ function ReportContent() {
               <div className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
                 <p>안내문을 작성하려면 먼저 수업 기록이 필요합니다.</p>
                 <p className="mt-1">수업 내용을 기록한 뒤 전달용 안내문을 작성할 수 있습니다.</p>
-                <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 작성</Link>
+                <div className="mt-3">
+                  <RecordProgramPicker label="수업 골라 기록" />
+                </div>
               </div>
             )}
           </section>
@@ -613,11 +616,11 @@ function ReportContent() {
             <div className="mt-3 space-y-2">
               {explanationData.status === 'loading' ? (
                 <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  Loading saved explanations.
+                  저장한 안내문을 불러오는 중입니다.
                 </p>
               ) : explanationData.status === 'error' ? (
                 <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  Failed to load saved explanations.
+                  저장한 안내문을 불러오지 못했습니다.
                 </p>
               ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
                 <div key={item.id}>
@@ -628,10 +631,9 @@ function ReportContent() {
                 <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="mt-1 min-h-10 w-full rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>복사</button>
                 </div>
               )) : (
-                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
+                <div className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
                   아직 저장한 안내문이 없습니다. 수업 기록을 바탕으로 전달용 안내문을 작성할 수 있습니다.
-                  <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 보기</Link>
-                </p>
+                </div>
               )}
             </div>
           </section>
@@ -748,7 +750,7 @@ function ReportContent() {
                 <p className="w-full text-[12px] font-bold">안내문이 저장되었습니다.</p>
                 <button type="button" onClick={copyOutput} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>안내문 복사</button>
                 {savedOutputId ? <Link href={`/spokedu-master/report?saved=${savedOutputId}`} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>저장한 안내문 보기</Link> : null}
-                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>내 활동·기록으로</Link>
+                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
               </div>
             ) : null}
             {saveStatus === 'error' && saveError ? (

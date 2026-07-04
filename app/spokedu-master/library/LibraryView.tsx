@@ -679,8 +679,8 @@ export default function LibraryView() {
                     <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
                       전체 수업 자료 보기
                     </Link>
-                    <Link href={`/spokedu-master/class-record?from=${record.id}&program=${program.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
-                      같은 구성으로 기록 준비
+                    <Link href={`/spokedu-master/class-record?record=${record.id}&program=${program.id}`} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
+                      기록 보기
                     </Link>
                   </div>
                 </article>

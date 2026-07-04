@@ -32,6 +32,11 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('선택 {selectedStudentCount}명 / 전체 {students.length}명');
   });
 
+  it('opens the student creation sheet directly when records need students', () => {
+    expect(source).toContain('/spokedu-master/students?add=1');
+    expect(source).not.toContain('href="/spokedu-master/students" className="inline-flex h-11');
+  });
+
   it('saves only selected students and avoids overwriting existing per-student memo on bulk apply', () => {
     expect(source).toContain('students: selectedStudents.map');
     expect(source).toContain("if (!next[student.id]?.trim()) next[student.id] = memo");

@@ -182,7 +182,7 @@ export default function SpomoveProgramLanding() {
           },
           {
             label: '전체 프로그램 보기',
-            href: '/spokedu#program-system',
+            href: '/spokedu/programs',
             trackLabel: 'program-spomove-all',
             variant: 'on-light-outline',
           },

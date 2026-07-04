@@ -55,4 +55,11 @@ describe('report writing flow contract', () => {
     expect(source).toContain('setSavedOutputId(null)');
     expect(source).toContain('if (program) clearSavedContext(program.id)');
   });
+
+  it('sends empty report users through lesson selection before record writing', () => {
+    expect(source).toContain("import { RecordProgramPicker } from '../components/record/RecordProgramPicker'");
+    expect(source).toContain('<RecordProgramPicker label="수업 골라 기록" />');
+    expect(source).not.toContain('>수업 기록 작성</Link>');
+    expect(source).not.toContain('>수업 기록 보기</Link>');
+  });
 });

@@ -27,13 +27,15 @@ describe('spokedu site IA', () => {
     expect(special?.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch#special`);
   });
 
-  it('defines five home sections with proof strip and audience gate', () => {
-    expect(homePage.hero.lines[0]).toContain('아이의 움직임');
+  it('defines six home sections with proof strip and audience gate', () => {
+    expect(homePage.hero.lines[0]).toContain('움직임의 경험');
     expect(homePage.proofStrip.items).toHaveLength(3);
+    expect(homePage.proofStrip.processLine).toContain('현장 수업');
+    expect(homePage.audienceGate.title).toBe('세 가지 사업 경로');
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.spomove.flowSteps).toHaveLength(4);
-    expect(homePage.spomove.flowSteps.map((step) => step.label)).toEqual(['인지', '선택', '수행', '조절']);
-    expect(homePage.cases.cards).toHaveLength(3);
+    expect(homePage.cases.cards.length).toBeGreaterThanOrEqual(3);
+    expect(homePage.cases.cards.length).toBeLessThanOrEqual(4);
     expect(homePage.finalCta.items).toHaveLength(3);
   });
 

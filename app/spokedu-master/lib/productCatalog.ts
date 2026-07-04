@@ -143,7 +143,7 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
 
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['라이브러리', '수업 도구', '수업 기록', '안내문', '내 활동·기록'];
+    return ['라이브러리', '수업 도구', '수업 기록', '안내문'];
   }
   if (product.id === 'premium') {
     return ['라이트의 모든 기능', 'SPOMOVE', 'SPOMAT 회원가 구매 대상'];

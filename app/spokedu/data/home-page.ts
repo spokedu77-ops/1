@@ -61,9 +61,9 @@ function buildHomeCaseCard(slug: FieldRecordSlug): HomeCaseCard {
 export const homePage = {
   hero: {
     id: 'hero',
-    lines: ['아이의 움직임을 설계하고,', '현장에서 검증합니다.'] as const,
+    lines: ['움직임의 경험을 설계하고,', '현장에서 검증합니다.'] as const,
     support:
-      '연세대학교 체육교육학과 출신 운영진이 개인·소그룹 수업과 기관 프로그램을 직접 운영하며, SPOMOVE와 체육교육 커리큘럼을 개발합니다.',
+      '개인수업부터 기관 프로그램, SPOMOVE와 커리큘럼까지 현장에서 검증한 체육교육을 설계합니다.',
     mediaKey: 'homeHero' as HomeMediaKey,
     primaryCta: {
       label: '프로그램 상담하기',
@@ -71,21 +71,24 @@ export const homePage = {
       trackLabel: 'cta-home-contact-hero',
     },
     secondaryCta: {
-      label: '운영 분야 보기',
+      label: '사업 경로 보기',
       href: '#paths',
       trackLabel: 'cta-home-audience-gate-hero',
     },
   },
   proofStrip: {
+    id: 'proof',
     items: [
       '2020년부터 직접 운영',
       '연세대 체육교육학과 출신 운영진',
       '개인·기관·특수체육 현장 기반',
     ] as const,
+    processLine:
+      '현장 수업 → 아동 반응 관찰 → 프로그램 표준화 → 강사교육 확장' as const,
   },
   audienceGate: {
     id: 'paths',
-    title: '필요한 방식으로 시작하세요.',
+    title: '세 가지 사업 경로',
     items: [
       {
         id: 'dispatch',

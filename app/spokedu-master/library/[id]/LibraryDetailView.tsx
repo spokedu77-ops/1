@@ -545,9 +545,9 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 사용 기록이 저장되었습니다.
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                <Link href="/spokedu-master/class-record" onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">수업 기록 보기</Link>
+                <Link href={`/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">수업 기록 보기</Link>
                 <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">안내문</Link>
-                <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">학생 기록 작성</Link>
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-white px-3 text-center text-xs font-black text-emerald-700">상세 기록 작성</Link>
               </div>
             </div>
           ) : (

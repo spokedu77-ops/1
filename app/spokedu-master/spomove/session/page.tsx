@@ -382,7 +382,7 @@ function SpomoveSessionContent() {
               다른 프로그램 선택
             </Link>
             <Link href="/spokedu-master/activity" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
-              내 활동·기록으로
+              수업 기록으로
             </Link>
           </div>
         </div>

@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, ClipboardList, FileText, Pencil, Users } from 'lucide-react';
+import { CalendarDays, FileText, Pencil, Users } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { RecordProgramPicker } from '../../components/record/RecordProgramPicker';
 import { toClassRecord, toStudentProfile } from '../../lib/operationalDataAdapter';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import type { ClassRecord } from '../../types';
@@ -63,8 +64,6 @@ export default function StudentDetailPage() {
     );
   }
 
-  const reportHref = latest ? `/spokedu-master/report?record=${latest.record.id}` : '/spokedu-master/class-record';
-
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
@@ -86,8 +85,12 @@ export default function StudentDetailPage() {
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>2. 빠른 행동</h2>
           <div className="mt-4 grid gap-2 sm:grid-cols-4">
-            <Link href={`/spokedu-master/class-record?student=${student.id}`} className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}><ClipboardList size={15} />수업 기록 작성</Link>
-            <Link href={reportHref} className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={15} />안내문 작성</Link>
+            <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
+            {latest ? (
+              <Link href={`/spokedu-master/report?record=${latest.record.id}`} className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={15} />안내문 작성</Link>
+            ) : (
+              <span className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={15} />기록 후 안내문</span>
+            )}
             <Link href="/spokedu-master/students" className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Pencil size={15} />학생 정보 수정</Link>
             <Link href="/spokedu-master/students" className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Users size={15} />학생 목록으로</Link>
           </div>
@@ -126,7 +129,9 @@ export default function StudentDetailPage() {
             <div className="mt-4 rounded-[14px] p-4" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
               <p className="text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>아직 이 학생의 수업 기록이 없습니다.</p>
               <p className="mt-2 text-[12px] font-semibold leading-5">첫 수업 기록을 작성하면 참여 이력을 학생별로 확인할 수 있습니다.</p>
-              <Link href={`/spokedu-master/class-record?student=${student.id}`} className="mt-3 inline-flex min-h-11 items-center rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>수업 기록 작성</Link>
+              <div className="mt-3">
+                <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
+              </div>
             </div>
           )}
         </section>
@@ -149,9 +154,15 @@ export default function StudentDetailPage() {
           <div className="mt-3 rounded-[14px] p-4" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t2)' }}>
             <p className="text-[13px] font-bold">이 학생과 연결된 안내문이 없습니다.</p>
             <p className="mt-2 text-[12px] font-semibold leading-5">수업 기록을 작성한 뒤 학생별 안내문을 만들 수 있습니다.</p>
-            <Link href={latest ? `/spokedu-master/report?record=${latest.record.id}` : `/spokedu-master/class-record?student=${student.id}`} className="mt-3 inline-flex min-h-11 items-center rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-              {latest ? '최근 수업 기록 보기' : '수업 기록 작성'}
-            </Link>
+            {latest ? (
+              <Link href={`/spokedu-master/report?record=${latest.record.id}`} className="mt-3 inline-flex min-h-11 items-center rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+                최근 수업 기록 보기
+              </Link>
+            ) : (
+              <div className="mt-3">
+                <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
+              </div>
+            )}
           </div>
         </section>
       </main>

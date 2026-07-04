@@ -18,7 +18,15 @@ function uniqueByProgram<T extends { programId: string }>(items: T[]) {
   });
 }
 
-export function RecordProgramPicker({ label = '오늘 수업 기록 남기기' }: { label?: string }) {
+export function RecordProgramPicker({
+  label = '오늘 수업 기록 남기기',
+  studentId,
+  size = 'default',
+}: {
+  label?: string;
+  studentId?: string;
+  size?: 'default' | 'compact';
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -59,7 +67,9 @@ export function RecordProgramPicker({ label = '오늘 수업 기록 남기기' }
 
   const startRecord = (programId: string) => {
     setOpen(false);
-    router.push(`/spokedu-master/class-record?program=${programId}`);
+    const params = new URLSearchParams({ program: programId });
+    if (studentId) params.set('student', studentId);
+    router.push(`/spokedu-master/class-record?${params.toString()}`);
   };
 
   return (
@@ -67,10 +77,12 @@ export function RecordProgramPicker({ label = '오늘 수업 기록 남기기' }
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] px-5 text-[14px] font-black text-white sm:w-auto"
+        className={size === 'compact'
+          ? 'inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-black text-white'
+          : 'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] px-5 text-[14px] font-black text-white sm:w-auto'}
         style={{ background: 'var(--spm-acc)' }}
       >
-        <ClipboardList size={17} />
+        <ClipboardList size={size === 'compact' ? 13 : 17} />
         {label}
       </button>
 

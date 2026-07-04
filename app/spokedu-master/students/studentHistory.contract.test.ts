@@ -7,11 +7,12 @@ const studentDetail = readFileSync(join(process.cwd(), 'app/spokedu-master/stude
 const classRecord = readFileSync(join(process.cwd(), 'app/spokedu-master/class-record/page.tsx'), 'utf8');
 
 describe('student history flow contract', () => {
-  it('exposes student detail and class-record actions from the student list', () => {
+  it('exposes student detail and library-first record actions from the student list', () => {
     expect(studentsList).toContain('/spokedu-master/students/${student.id}');
-    expect(studentsList).toContain('/spokedu-master/class-record?student=${student.id}');
+    expect(studentsList).toContain('<RecordProgramPicker label="수업 골라 기록" studentId={student.id} size="compact" />');
     expect(studentsList).toContain('학생 기록 보기');
-    expect(studentsList).toContain('수업 기록 작성');
+    expect(studentsList).toContain('수업 골라 기록');
+    expect(studentsList).not.toContain('/spokedu-master/class-record?student=${student.id}');
   });
 
   it('renders only the current owner-scoped student from provider data', () => {
@@ -42,6 +43,18 @@ describe('student history flow contract', () => {
     expect(classRecord).toContain("studentId: searchParams.get('student') ?? searchParams.get('studentId')");
     expect(classRecord).toContain('if (!requestedStudentId || editingRecord || sourceRecord) return');
     expect(classRecord).toContain('student.id === requestedStudentId');
+  });
+
+  it('preserves student context only after a library program has been selected', () => {
+    const picker = readFileSync(join(process.cwd(), 'app/spokedu-master/components/record/RecordProgramPicker.tsx'), 'utf8');
+    expect(picker).toContain("studentId?: string");
+    expect(picker).toContain("const params = new URLSearchParams({ program: programId })");
+    expect(picker).toContain("if (studentId) params.set('student', studentId)");
+    expect(picker).toContain("router.push(`/spokedu-master/class-record?${params.toString()}`)");
+    expect(studentDetail).toContain('<RecordProgramPicker label="수업 골라 기록" studentId={student.id} />');
+    expect(studentDetail).not.toContain('/spokedu-master/class-record?student=${student.id}');
+    expect(studentDetail).not.toContain("latest ? `/spokedu-master/report?record=${latest.record.id}` : '/spokedu-master/class-record'");
+    expect(studentDetail).toContain('기록 후 안내문');
   });
 
   it('opens the add-student sheet from add=1 with a stable focused name input', () => {

@@ -28,6 +28,7 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   it('makes library detail the compact bridge from lesson choice to operation', () => {
     expect(detail).toContain('이 수업으로 진행하기');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
+    expect(detail).toContain('/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}');
     expect(detail).toContain('수업 기록 시작');
     expect(detail).toContain('빠른 기록');
     expect(detail).toContain('안내문 초안');

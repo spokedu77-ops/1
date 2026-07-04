@@ -108,7 +108,7 @@ export default function MonthlyNewsportsProgramLanding() {
           },
           {
             label: '전체 프로그램 보기',
-            href: '/spokedu#program-system',
+            href: '/spokedu/programs',
             trackLabel: 'program-monthly-newsports-all',
             variant: 'on-light-outline',
           },
