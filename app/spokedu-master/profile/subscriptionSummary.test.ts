@@ -24,13 +24,19 @@ function summary(overrides: Partial<SubscriptionSummaryData>): SubscriptionSumma
     cancelAtPeriodEnd: false,
     trialEndsAt: null,
     isAdmin: false,
+    canCancelAutoBilling: false,
     ...overrides,
   };
 }
 
 describe('subscriptionSummary', () => {
-  it('maps active Premium subscriptions for display', () => {
-    const value = summary({ plan: 'premium', status: 'active', nextBillingAt: future });
+  it('maps active Premium billing subscriptions for display', () => {
+    const value = summary({
+      plan: 'premium',
+      status: 'active',
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+    });
 
     expect(getSubscriptionPlanLabel(value)).toBe('프리미엄');
     expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
@@ -39,13 +45,19 @@ describe('subscriptionSummary', () => {
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'active',
       amountText: '월 28,900원',
+      isDirectBillingPlan: true,
       canCancel: true,
       canUseSpomatMemberPrice: true,
     });
   });
 
-  it('maps active Lite subscriptions for display', () => {
-    const value = summary({ plan: 'lite', status: 'active', nextBillingAt: future });
+  it('maps active Lite billing subscriptions for display', () => {
+    const value = summary({
+      plan: 'lite',
+      status: 'active',
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+    });
 
     expect(getSubscriptionPlanLabel(value)).toBe('라이트');
     expect(getSubscriptionStatusLabel(value)).toBe('이용 중');
@@ -54,8 +66,20 @@ describe('subscriptionSummary', () => {
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'active',
       amountText: '월 9,900원',
+      isDirectBillingPlan: true,
       canCancel: true,
       canUseSpomatMemberPrice: false,
+    });
+  });
+
+  it('hides cancellation for manually issued paid subscriptions', () => {
+    const value = summary({ plan: 'premium', status: 'active', nextBillingAt: future });
+
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'active',
+      isDirectBillingPlan: false,
+      canCancel: false,
+      description: '수동 발급 또는 기관 관리 이용권입니다. 변경이 필요하면 고객센터로 문의해 주세요.',
     });
   });
 
@@ -63,7 +87,7 @@ describe('subscriptionSummary', () => {
     const center = summary({ plan: 'team', status: 'active', periodEnd: future });
     const admin = summary({ plan: 'free', status: 'active', isAdmin: true });
 
-    expect(getSubscriptionPlanLabel(center)).toBe('센터·기관');
+    expect(getSubscriptionPlanLabel(center)).toBe('센터/기관');
     expect(getSubscriptionStatusLabel(center)).toBe('기관 관리');
     expect(getSubscriptionDisplaySummary(center)).toMatchObject({
       state: 'managed',
@@ -79,7 +103,13 @@ describe('subscriptionSummary', () => {
   });
 
   it('shows cancel_at_period_end as 해지 예정 without a second cancel action', () => {
-    const value = summary({ plan: 'premium', status: 'active', currentPeriodEnd: future, cancelAtPeriodEnd: true });
+    const value = summary({
+      plan: 'premium',
+      status: 'active',
+      currentPeriodEnd: future,
+      cancelAtPeriodEnd: true,
+      canCancelAutoBilling: true,
+    });
 
     expect(getSubscriptionStatusLabel(value)).toBe('해지 예정');
     expect(getSubscriptionPrimaryLabel(value)).toBe('구독 관리');
@@ -138,19 +168,28 @@ describe('subscriptionSummary', () => {
       cancelAtPeriodEnd: false,
       trialEndsAt: future,
       isAdmin: false,
+      canCancelAutoBilling: false,
     });
     expect(getSubscriptionStatusLabel(value)).toBe('이용권 없음');
   });
 
   it('normalizes lite and premium plans', () => {
-    const lite = normalizeSubscriptionSummary({ plan: 'lite', status: 'active', cancelAtPeriodEnd: true, nextBillingAt: future });
+    const lite = normalizeSubscriptionSummary({
+      plan: 'lite',
+      status: 'active',
+      cancelAtPeriodEnd: true,
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+    });
     expect(lite.plan).toBe('lite');
     expect(lite.cancelAtPeriodEnd).toBe(true);
     expect(lite.nextBillingAt).toBe(future);
+    expect(lite.canCancelAutoBilling).toBe(true);
 
     const premium = normalizeSubscriptionSummary({ plan: 'premium', status: 'active' });
     expect(premium.plan).toBe('premium');
     expect(premium.cancelAtPeriodEnd).toBe(false);
+    expect(premium.canCancelAutoBilling).toBe(false);
   });
 
   it('formats Korean end dates and handles missing values', () => {

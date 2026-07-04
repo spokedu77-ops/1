@@ -61,6 +61,8 @@ const MATERIAL_LABEL: Record<string, string> = {
   '참고 영상': '영상',
   'SPOMOVE 연결': 'SPOMOVE',
 };
+const MATERIAL_VIDEO_VALUE = '참고 영상';
+const MATERIAL_SPOMOVE_VALUE = 'SPOMOVE 연결';
 
 type FilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme' | 'material';
 
@@ -118,8 +120,8 @@ function getStructuredValues(program: Program, group: FilterGroupKey): string[] 
     return (LESSON_THEME_OPTIONS as readonly string[]).includes(theme) ? [theme] : [];
   }
   return [
-    ...(program.lessonDetail?.videoUrl ? ['참고 영상'] : []),
-    ...(hasSpomoveLink(program) ? ['SPOMOVE 연결'] : []),
+    ...(program.lessonDetail?.videoUrl ? [MATERIAL_VIDEO_VALUE] : []),
+    ...(hasSpomoveLink(program) ? [MATERIAL_SPOMOVE_VALUE] : []),
   ];
 }
 
@@ -470,10 +472,14 @@ export default function LibraryView() {
   };
 
   const packageStats = useMemo(() => {
-    const videoCount = pool.filter(programHasPlayableVideo).length;
-    const spomoveCount = pool.filter(hasSpomoveLink).length;
+    const videoCount = viewPool.filter((program) =>
+      getStructuredValues(program, 'material').includes(MATERIAL_VIDEO_VALUE),
+    ).length;
+    const spomoveCount = viewPool.filter((program) =>
+      getStructuredValues(program, 'material').includes(MATERIAL_SPOMOVE_VALUE),
+    ).length;
     return { videoCount, spomoveCount };
-  }, [pool]);
+  }, [viewPool]);
 
   const filterGroups = useMemo<FilterGroup[]>(() => {
     const definitions: Array<{ key: FilterGroupKey; label: string }> = [
@@ -605,25 +611,25 @@ export default function LibraryView() {
               </div>
               <button
                 type="button"
-                onClick={() => setFilter(filter?.group === 'material' && filter.value === '참고 영상' ? null : { group: 'material', value: '참고 영상' })}
+                onClick={() => setFilter(filter?.group === 'material' && filter.value === MATERIAL_VIDEO_VALUE ? null : { group: 'material', value: MATERIAL_VIDEO_VALUE })}
                 className={`h-10 rounded-xl px-3 text-[12px] font-black transition ${
-                  filter?.group === 'material' && filter.value === '참고 영상'
+                  filter?.group === 'material' && filter.value === MATERIAL_VIDEO_VALUE
                     ? 'bg-slate-950 text-white'
                     : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'
                 }`}
-                aria-pressed={filter?.group === 'material' && filter.value === '참고 영상'}
+                aria-pressed={filter?.group === 'material' && filter.value === MATERIAL_VIDEO_VALUE}
               >
                 영상 {packageStats.videoCount}
               </button>
               <button
                 type="button"
-                onClick={() => setFilter(filter?.group === 'material' && filter.value === 'SPOMOVE 연결' ? null : { group: 'material', value: 'SPOMOVE 연결' })}
+                onClick={() => setFilter(filter?.group === 'material' && filter.value === MATERIAL_SPOMOVE_VALUE ? null : { group: 'material', value: MATERIAL_SPOMOVE_VALUE })}
                 className={`h-10 rounded-xl px-3 text-[12px] font-black transition ${
-                  filter?.group === 'material' && filter.value === 'SPOMOVE 연결'
+                  filter?.group === 'material' && filter.value === MATERIAL_SPOMOVE_VALUE
                     ? 'bg-slate-950 text-white'
                     : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'
                 }`}
-                aria-pressed={filter?.group === 'material' && filter.value === 'SPOMOVE 연결'}
+                aria-pressed={filter?.group === 'material' && filter.value === MATERIAL_SPOMOVE_VALUE}
               >
                 SPOMOVE {packageStats.spomoveCount}
               </button>

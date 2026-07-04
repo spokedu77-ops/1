@@ -723,11 +723,11 @@ export default function ClassToolsView() {
               타이머, 쉬는 시간 복귀, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
             </p>
           </div>
-          <div className="grid gap-2 sm:grid-cols-3 lg:w-[420px]">
+          <div className="grid gap-2 sm:grid-cols-3 lg:w-[520px]">
             {TOOL_STATUS.map((item) => (
               <div key={item.label} className="rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
-                <p className="mt-1 text-[14px] font-black" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
+                <p className="mt-1 whitespace-nowrap text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
               </div>
             ))}
           </div>
@@ -765,7 +765,7 @@ export default function ClassToolsView() {
               key={id}
               type="button"
               onClick={() => setTab(id)}
-              className="flex min-h-[48px] items-center gap-2 whitespace-nowrap border-b-2 px-5 py-3 text-[13px] font-black transition-colors"
+              className="flex min-h-[48px] shrink-0 items-center gap-2 whitespace-nowrap border-b-2 px-5 py-3 text-[13px] font-black transition-colors"
               style={{
                 borderColor: active ? 'var(--spm-acc)' : 'transparent',
                 color: active ? 'var(--spm-acc)' : 'var(--spm-t3)',

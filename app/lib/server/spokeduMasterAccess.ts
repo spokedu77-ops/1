@@ -55,6 +55,7 @@ export type SpokeduMasterSubscriptionRow = {
   cancel_at_period_end?: boolean | null;
   next_billing_at?: string | null;
   current_period_end?: string | null;
+  provider_billing_key_secret_id?: string | null;
 };
 
 function normalizeSpokeduMasterPlan(plan: string | null | undefined): 'free' | 'lite' | 'premium' | 'team' {
@@ -212,7 +213,7 @@ export async function ensureSpokeduMasterEntitlement(
 ): Promise<{ row: SpokeduMasterSubscriptionRow | null; error: unknown | null }> {
   const selectRow = async () => serviceSupabase
     .from('spokedu_master_subscriptions')
-    .select('plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end')
+    .select('plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end,provider_billing_key_secret_id')
     .eq('user_id', userId)
     .maybeSingle();
 

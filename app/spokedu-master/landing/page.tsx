@@ -60,7 +60,7 @@ const PRICING = [
 
 const STATS = [
   { label: '수업 프로그램', value: '100+', Icon: BookOpen },
-  { label: 'SPOMOVE 공식 활동', value: '4개', Icon: Zap },
+  { label: 'SPOMOVE 공식 활동', value: '60개', Icon: Zap },
   { label: '연령 대상', value: '유아~중등', Icon: Users },
   { label: '수업 공간', value: '실내 · 실외', Icon: MapPin },
 ];
@@ -74,7 +74,7 @@ const FLOW = [
 const HERO_PROOF = [
   { label: 'SPOMOVE 활용', value: '별도 실행', caption: '일부 수업은 활동과 함께 활용 가능' },
   { label: '수업 준비 흐름', value: '3단계', caption: '고르기, 실행하기, 설명하기' },
-  { label: '바로 쓰는 자료', value: '5종', caption: '영상, 준비물, 세팅, 문구' },
+  { label: '바로 쓰는 자료', value: '4종', caption: '영상, 준비물, 세팅, 문구' },
 ] as const;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';

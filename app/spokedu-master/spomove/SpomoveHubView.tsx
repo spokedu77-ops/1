@@ -700,7 +700,7 @@ function CardInfo({
               event.stopPropagation();
               onPreview();
             }}
-            className="inline-flex min-h-10 items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700"
+            className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
           >
             <Eye className="h-3.5 w-3.5" />
             프로그램 미리보기
@@ -708,7 +708,7 @@ function CardInfo({
           <Link
             href={href}
             data-spm-spomove-card-action="start"
-            className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-2 text-[12px] font-black text-white"
+            className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
           >
             바로 실행
           </Link>

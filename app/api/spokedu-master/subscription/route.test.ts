@@ -40,6 +40,7 @@ function mockSubscriptionRow(row: {
   cancel_at_period_end?: boolean | null;
   next_billing_at?: string | null;
   current_period_end?: string | null;
+  provider_billing_key_secret_id?: string | null;
 } | null, lookupError: unknown = null) {
   let stored = row
     ? {
@@ -48,6 +49,7 @@ function mockSubscriptionRow(row: {
         cancel_at_period_end: false,
         next_billing_at: null,
         current_period_end: null,
+        provider_billing_key_secret_id: null,
         ...row,
       }
     : null;
@@ -64,6 +66,7 @@ function mockSubscriptionRow(row: {
       cancel_at_period_end: false,
       next_billing_at: null,
       current_period_end: null,
+      provider_billing_key_secret_id: null,
     };
     return { error: null };
   });
@@ -92,6 +95,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
       plan: 'free',
       status: 'none',
       isAdmin: false,
+      canCancelAutoBilling: false,
     });
     expect(getServiceSupabase).not.toHaveBeenCalled();
   });
@@ -126,7 +130,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
 
     expect(query.from).toHaveBeenCalledWith('spokedu_master_subscriptions');
     expect(query.select).toHaveBeenCalledWith(
-      'plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end',
+      'plan,status,period_end,cancel_at_period_end,next_billing_at,current_period_end,provider_billing_key_secret_id',
     );
     expect(query.eq).toHaveBeenCalledWith('user_id', user.id);
     expect(response.status).toBe(200);
@@ -138,6 +142,26 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
       userId: user.id,
       email: user.email,
       cancelAtPeriodEnd: false,
+      canCancelAutoBilling: false,
+    });
+  });
+
+  it('marks active paid subscriptions cancellable only when backed by billing credentials', async () => {
+    mockAuthUser(user);
+    mockSubscriptionRow({
+      plan: 'premium',
+      status: 'active',
+      period_end: '2099-06-30T00:00:00.000Z',
+      provider_billing_key_secret_id: '22222222-2222-4222-8222-222222222222',
+    });
+
+    const response = await GET();
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      plan: 'premium',
+      status: 'active',
+      canCancelAutoBilling: true,
     });
   });
 

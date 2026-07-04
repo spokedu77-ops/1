@@ -85,6 +85,15 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(cancelRoute).toContain('deleteSpokeduMasterBillingKey');
   });
 
+  it('rejects non-billing subscriptions before scheduling cancellation', () => {
+    const billingGuard = cancelRoute.indexOf('!row.provider_billing_key_secret_id');
+    const subscriptionUpdate = cancelRoute.indexOf('cancel_at_period_end: true');
+    expect(billingGuard).toBeGreaterThan(-1);
+    expect(subscriptionUpdate).toBeGreaterThan(billingGuard);
+    expect(cancelRoute).toContain('자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.');
+    expect(cancelRoute).toContain('{ status: 422 }');
+  });
+
   it('fails closed without valid Toss credentials', () => {
     expect(provider).toContain("startsWith('test_')");
     expect(provider).toContain("startsWith('live_')");

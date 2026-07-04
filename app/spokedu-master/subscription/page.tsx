@@ -11,6 +11,8 @@ import {
   type SubscriptionSummaryData,
 } from '../profile/subscriptionSummary';
 
+const NON_BILLING_CANCEL_MESSAGE = '자동결제 해지 대상이 아닙니다. 고객센터로 문의해 주세요.';
+
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-2 border-t py-3 first:border-t-0" style={{ borderColor: 'var(--spm-br2)' }}>
@@ -113,16 +115,24 @@ export default function SubscriptionPage() {
   }).dateText;
 
   const handleCancelConfirm = async () => {
-    if (cancelling || !display.canCancel) return;
+    if (cancelling) return;
+    if (!display.canCancel) {
+      setCancelError(NON_BILLING_CANCEL_MESSAGE);
+      return;
+    }
+
     setCancelling(true);
     setCancelError('');
     try {
       const res = await fetch('/api/spokedu-master/payment/billing/cancel', { method: 'POST' });
-      if (!res.ok) throw new Error('cancel failed');
+      if (!res.ok) {
+        const body = await res.json().catch(() => null) as { error?: string } | null;
+        throw new Error(body?.error ?? '구독 해지를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      }
       setConfirmOpen(false);
       await loadSubscription();
-    } catch {
-      setCancelError('구독 해지를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    } catch (error) {
+      setCancelError(error instanceof Error ? error.message : '구독 해지를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setCancelling(false);
     }
@@ -177,8 +187,8 @@ export default function SubscriptionPage() {
             구독을 해지하시겠어요?
           </p>
           <p className="text-[13px] font-semibold leading-6" style={{ color: '#475569' }}>
-            해지 후에도 <strong>{cancelEndDate ?? '현재 이용 기간 종료일'}</strong>까지 이용할 수 있으며,<br />
-            다음 결제일부터 자동결제되지 않습니다.
+            해지 후에도 <strong>{cancelEndDate ?? '현재 이용 기간 종료일'}</strong>까지 이용할 수 있으며<br />
+            다음 결제일부터는 자동결제되지 않습니다.
           </p>
           {cancelError ? (
             <p className="rounded-[10px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.08)', color: '#dc2626' }}>

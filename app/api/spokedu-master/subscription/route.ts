@@ -16,7 +16,12 @@ export async function GET() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return privateNoStoreJson({ plan: 'free', status: 'none', isAdmin: false });
+    return privateNoStoreJson({
+      plan: 'free',
+      status: 'none',
+      isAdmin: false,
+      canCancelAutoBilling: false,
+    });
   }
 
   if (await isPlatformAdminUser(user, supabase)) {
@@ -29,6 +34,7 @@ export async function GET() {
       trialStartedAt: null,
       trialEndsAt: null,
       periodEnd: null,
+      canCancelAutoBilling: false,
     });
   }
 
@@ -53,8 +59,15 @@ export async function GET() {
       trialStartedAt: null,
       trialEndsAt: null,
       periodEnd: null,
+      canCancelAutoBilling: false,
     });
   }
+
+  const canCancelAutoBilling =
+    row.status === 'active' &&
+    (row.plan === 'lite' || row.plan === 'premium' || row.plan === 'pro') &&
+    row.cancel_at_period_end !== true &&
+    Boolean(row.provider_billing_key_secret_id);
 
   const common = {
     isAdmin: false,
@@ -66,6 +79,7 @@ export async function GET() {
     cancelAtPeriodEnd: row.cancel_at_period_end ?? false,
     nextBillingAt: row.next_billing_at ?? null,
     currentPeriodEnd: row.current_period_end ?? null,
+    canCancelAutoBilling,
   };
 
   const entitlement = evaluateSpokeduMasterEntitlement(row);

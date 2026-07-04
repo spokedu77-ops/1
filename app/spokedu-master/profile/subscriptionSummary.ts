@@ -18,6 +18,7 @@ export type SubscriptionSummaryData = {
   cancelAtPeriodEnd: boolean;
   trialEndsAt: string | null;
   isAdmin: boolean;
+  canCancelAutoBilling: boolean;
 };
 
 export type SubscriptionDisplayState =
@@ -62,12 +63,13 @@ export function normalizeSubscriptionSummary(value: unknown): SubscriptionSummar
     cancelAtPeriodEnd: input.cancelAtPeriodEnd === true,
     trialEndsAt: typeof input.trialEndsAt === 'string' ? input.trialEndsAt : null,
     isAdmin: input.isAdmin === true,
+    canCancelAutoBilling: input.canCancelAutoBilling === true,
   };
 }
 
 export function getSubscriptionPlanLabel(summary: SubscriptionSummaryData | null) {
   if (summary?.isAdmin) return '관리자 권한';
-  if (summary?.plan === 'team') return '센터·기관';
+  if (summary?.plan === 'team') return '센터/기관';
   if (summary?.plan === 'premium' || summary?.plan === 'pro') return '프리미엄';
   if (summary?.plan === 'lite') return '라이트';
   return '없음';
@@ -98,7 +100,7 @@ export function formatSubscriptionEndDate(value: string | null) {
 export function getSubscriptionPrimaryHref(summary: SubscriptionSummaryData | null) {
   const display = getSubscriptionDisplaySummary(summary);
   if (display.primaryHref) return display.primaryHref;
-  return buildMasterSupportMailto('SPOKEDU MASTER 센터·기관 이용권 문의');
+  return buildMasterSupportMailto('SPOKEDU MASTER 센터/기관 이용권 문의');
 }
 
 export function getSubscriptionPrimaryLabel(summary: SubscriptionSummaryData | null) {
@@ -139,7 +141,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     return {
       state: 'managed',
       planLabel,
-      statusLabel: summary.isAdmin ? '관리자 권한' : '센터·기관 이용권',
+      statusLabel: summary.isAdmin ? '관리자 권한' : '센터/기관 이용권',
       primaryLabel: null,
       primaryHref: null,
       dateLabel: null,
@@ -181,9 +183,11 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateLabel: '다음 결제일',
       dateText: formatSubscriptionEndDate(summary.nextBillingAt),
       amountText: getAmountText(summary.plan),
-      description: '매월 최초 결제일에 자동 결제됩니다.',
-      isDirectBillingPlan: true,
-      canCancel: summary.plan === 'lite' || summary.plan === 'premium',
+      description: summary.canCancelAutoBilling
+        ? '매월 결제일에 자동 결제됩니다.'
+        : '수동 발급 또는 기관 관리 이용권입니다. 변경이 필요하면 고객센터로 문의해 주세요.',
+      isDirectBillingPlan: summary.canCancelAutoBilling,
+      canCancel: summary.canCancelAutoBilling,
       canUseSpomatMemberPrice: summary.plan === 'premium' || summary.plan === 'pro',
     };
   }

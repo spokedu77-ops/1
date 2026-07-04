@@ -20,8 +20,8 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(library).toContain('조건에 맞는 수업 찾기');
     expect(library).toContain('결과 {filteredPrograms.length}개');
     expect(library).toContain('placeholder="수업명, 교구, 태그 검색"');
-    expect(library).toContain("value === '참고 영상'");
-    expect(library).toContain("value === 'SPOMOVE 연결'");
+    expect(library).toContain('MATERIAL_VIDEO_VALUE');
+    expect(library).toContain('MATERIAL_SPOMOVE_VALUE');
     expect(library).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
   });
 
