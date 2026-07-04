@@ -148,3 +148,63 @@ export function appendTableColumn(content: Record<string, unknown> | null | unde
     hasHeaderRow: table.hasHeaderRow,
   };
 }
+
+export function removeTableRow(
+  content: Record<string, unknown> | null | undefined,
+  rowIndex: number,
+): Record<string, unknown> | null {
+  const table = normalizeTableContent(content);
+  if (table.rows.length <= 1) return null;
+  if (rowIndex < 0 || rowIndex >= table.rows.length) return null;
+  const rows = table.rows.filter((_, index) => index !== rowIndex);
+  return {
+    ...((content ?? {}) as Record<string, unknown>),
+    rows,
+    columnCount: table.columnCount,
+    hasHeaderRow: table.hasHeaderRow,
+  };
+}
+
+export function removeTableColumn(
+  content: Record<string, unknown> | null | undefined,
+  colIndex: number,
+): Record<string, unknown> | null {
+  const table = normalizeTableContent(content);
+  const columnCount = table.columnCount ?? table.rows[0]?.length ?? DEFAULT_TABLE_COLS;
+  if (columnCount <= 1) return null;
+  if (colIndex < 0 || colIndex >= columnCount) return null;
+  const rows = table.rows.map((cells) => cells.filter((_, index) => index !== colIndex));
+  return {
+    ...((content ?? {}) as Record<string, unknown>),
+    rows,
+    columnCount: columnCount - 1,
+    hasHeaderRow: table.hasHeaderRow,
+  };
+}
+
+export function resolveTableCellAfterStructureChange(options: {
+  row: number;
+  col: number;
+  nextRowCount: number;
+  nextColCount: number;
+  removedRow?: number;
+  removedCol?: number;
+}): { row: number; col: number } {
+  let { row, col } = options;
+  if (options.removedRow !== undefined) {
+    if (row > options.removedRow) row -= 1;
+    else if (row === options.removedRow) {
+      row = Math.min(options.removedRow, options.nextRowCount - 1);
+    }
+  }
+  if (options.removedCol !== undefined) {
+    if (col > options.removedCol) col -= 1;
+    else if (col === options.removedCol) {
+      col = Math.min(options.removedCol, options.nextColCount - 1);
+    }
+  }
+  return {
+    row: Math.max(0, Math.min(row, options.nextRowCount - 1)),
+    col: Math.max(0, Math.min(col, options.nextColCount - 1)),
+  };
+}

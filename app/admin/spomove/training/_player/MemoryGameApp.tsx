@@ -22,7 +22,6 @@ import { VisualReactionTraining, type ReactTrainCompleteStats } from './componen
 import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
 import { DeepReactionTraining } from './components/DeepReactionTraining';
 import { PulseReactionTraining } from './components/PulseReactionTraining';
-import { BlackoutReactionTraining } from './components/BlackoutReactionTraining';
 import { SweepReactionTraining } from './components/SweepReactionTraining';
 import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
@@ -1652,14 +1651,6 @@ export default function MemoryGameApp({
           />
         ) : settings.level === 7 ? (
           <SweepReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
-        ) : settings.level === 6 ? (
-          <BlackoutReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}

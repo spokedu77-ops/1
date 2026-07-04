@@ -30,7 +30,8 @@ import {
   readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
-import { normalizeLoadedNoteBlocks } from '../_components/noteBulletInput';
+import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
+import { stripToggleLegacyBodyFields } from '../_lib/noteToggleContent';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import type { NoteBlock } from '../_lib/types';
@@ -208,20 +209,65 @@ export function useNoteBlockData(options: {
     };
   }, [runReconcileFetch]);
 
-  const replaceBlocks = useCallback((loaded: NoteBlock[], documentId: string) => {
-    const normalized = dedupeNoteBlocksById(normalizeLoadedNoteBlocks(loaded));
+  const persistToggleBodyMigration = useCallback(async (
+    normalized: NoteBlock[],
+    toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
+  ) => {
+    if (toggleMigration.created.length === 0) return;
+    for (const child of toggleMigration.created) {
+      await documentEngineRef.current.persistCreateBlock({
+        documentId: child.document_id,
+        blockType: child.type,
+        content: child.content as Record<string, unknown>,
+        order_index: child.order_index,
+        parent_block_id: child.parent_block_id,
+        id: child.id,
+      });
+    }
+    const togglePatches = toggleMigration.updatedToggleIds.map((id) => {
+      const toggle = normalized.find((block) => block.id === id);
+      return {
+        id,
+        content: stripToggleLegacyBodyFields(
+          (toggle?.content ?? {}) as Record<string, unknown>,
+        ),
+      };
+    });
+    if (togglePatches.length > 0) {
+      await documentEngineRef.current.persistFieldPatches(togglePatches);
+    }
+  }, []);
+
+  const installPreparedBlocks = useCallback((
+    normalized: NoteBlock[],
+    documentId: string,
+    toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
+  ) => {
     documentEngineRef.current.replaceBlocks(normalized);
     rememberNoteDocumentBlocks(documentId, normalized);
     const store = useNoteBlockStore.getState();
     store.setActiveDocumentId(documentId);
-  }, []);
+
+    if (toggleMigration.created.length > 0) {
+      void persistToggleBodyMigration(normalized, toggleMigration).catch((e) => {
+        devLogger.error('[Note] persistToggleBodyMigration', e);
+      });
+    }
+  }, [persistToggleBodyMigration]);
+
+  const replaceBlocks = useCallback((loaded: NoteBlock[], documentId: string) => {
+    const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(loaded);
+    const normalized = dedupeNoteBlocksById(prepared);
+    installPreparedBlocks(normalized, documentId, toggleMigration);
+  }, [installPreparedBlocks]);
 
   const applyFetchedBlocks = useCallback((
     loaded: NoteBlock[],
     documentId: string,
     options?: { mergeWithCurrent?: boolean },
   ) => {
-    const normalized = dedupeNoteBlocksById(normalizeLoadedNoteBlocks(loaded));
+    const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(loaded);
+    const normalized = dedupeNoteBlocksById(prepared);
 
     if (options?.mergeWithCurrent && blocksRef.current.length > 0) {
       const merged = unionReconciledWithLocalBlocks(
@@ -244,12 +290,16 @@ export function useNoteBlockData(options: {
       rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
         merged.filter((block) => block.document_id === documentId),
       ));
+      if (toggleMigration.created.length > 0) {
+        void persistToggleBodyMigration(merged, toggleMigration).catch((e) => {
+          devLogger.error('[Note] persistToggleBodyMigration', e);
+        });
+      }
       return;
     }
 
-    rememberNoteDocumentBlocks(documentId, normalized);
-    replaceBlocks(normalized, documentId);
-  }, [replaceBlocks]);
+    installPreparedBlocks(normalized, documentId, toggleMigration);
+  }, [installPreparedBlocks, persistToggleBodyMigration]);
 
   useEffect(() => {
     return () => {

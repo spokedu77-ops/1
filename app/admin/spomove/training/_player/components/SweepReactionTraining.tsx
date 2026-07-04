@@ -353,7 +353,7 @@ export function SweepReactionTraining({ durationSec, speedSec, onExit, onComplet
       const elapsed = now - g.lineStart;
       const progress = elapsed / g.lineDur;
       g.lineX = progress * g.W;
-      if (g.lineX >= cv.width) {
+      if (g.lineX >= g.W) {
         g.lineStart = now;
         g.lineX = 0;
         g.colorLastFired = [-1, -1, -1, -1];

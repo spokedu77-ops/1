@@ -147,7 +147,6 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   Diagonal: '대각선 반응',
   'Deep Reaction': '심해 반응',
   Pulse: '펄스 반응',
-  Blackout: '블랙아웃 반응',
   Sweep: '스윕 반응',
   Rush: '러시 반응',
 };

@@ -1,12 +1,16 @@
 'use client';
 
 import { useCallback, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import { useNoteBlockStore, type NoteActiveEditorField } from '../../_store/noteBlockStore';
 import {
   appendTableColumn,
   appendTableRow,
   normalizeTableContent,
+  parseTableCellField,
+  removeTableColumn,
+  removeTableRow,
+  resolveTableCellAfterStructureChange,
   tableCellField,
 } from '../../_lib/noteTableBlock';
 import { NoteEditableField } from '../NoteEditableField';
@@ -87,6 +91,44 @@ export function NoteTableBlock({
     focusCell(nextRow, nextCol);
   }, [content, focusCell, patchTable, table.rows]);
 
+  const activeCell = activeEditor?.blockId === block.id
+    ? parseTableCellField(String(activeEditor.field))
+    : null;
+
+  const handleRemoveRow = useCallback(() => {
+    if (!activeCell) return;
+    const nextContent = removeTableRow(content as Record<string, unknown>, activeCell.row);
+    if (!nextContent) return;
+    patchTable(nextContent);
+    const next = resolveTableCellAfterStructureChange({
+      row: activeCell.row,
+      col: activeCell.col,
+      nextRowCount: table.rows.length - 1,
+      nextColCount: table.rows[0]?.length ?? 1,
+      removedRow: activeCell.row,
+    });
+    focusCell(next.row, next.col);
+  }, [activeCell, content, focusCell, patchTable, table.rows]);
+
+  const handleRemoveColumn = useCallback(() => {
+    if (!activeCell) return;
+    const nextContent = removeTableColumn(content as Record<string, unknown>, activeCell.col);
+    if (!nextContent) return;
+    patchTable(nextContent);
+    const colCount = table.rows[0]?.length ?? 1;
+    const next = resolveTableCellAfterStructureChange({
+      row: activeCell.row,
+      col: activeCell.col,
+      nextRowCount: table.rows.length,
+      nextColCount: colCount - 1,
+      removedCol: activeCell.col,
+    });
+    focusCell(next.row, next.col);
+  }, [activeCell, content, focusCell, patchTable, table.rows]);
+
+  const canRemoveRow = table.rows.length > 1;
+  const canRemoveColumn = (table.rows[0]?.length ?? 0) > 1;
+
   const renderCell = (rowIndex: number, colIndex: number, isHeader: boolean) => {
     const cell = table.rows[rowIndex]?.[colIndex] ?? { text: '', html: '' };
     const field = tableCellField(rowIndex, colIndex) as NoteActiveEditorField;
@@ -112,7 +154,7 @@ export function NoteTableBlock({
             textClassName={`text-[14px] leading-6 ${isHeader ? 'font-medium' : ''}`}
             autoFocusSignal={autoFocusSignal}
             enterCreatesBlock={false}
-            tabBehavior="insert-text-indent"
+            tabBehavior="table-cell-nav"
             onTrackActiveBlock={onTrackActiveBlock}
             onFocusBlock={onFocusBlock}
             onContentPatch={onContentPatch}
@@ -150,7 +192,7 @@ export function NoteTableBlock({
           })}
         </tbody>
       </table>
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-wrap gap-2">
         <button
           type="button"
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100"
@@ -167,6 +209,26 @@ export function NoteTableBlock({
           <Plus className="h-3.5 w-3.5" />
           열 추가
         </button>
+        {activeCell && canRemoveRow && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100"
+            onClick={handleRemoveRow}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            행 삭제
+          </button>
+        )}
+        {activeCell && canRemoveColumn && (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[12px] text-slate-500 hover:bg-slate-100"
+            onClick={handleRemoveColumn}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            열 삭제
+          </button>
+        )}
       </div>
     </div>
   );

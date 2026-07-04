@@ -12,6 +12,7 @@ import type {
   NoteDocument,
   SortKey,
 } from '../_lib/types';
+import type { PastedBlockSpec } from '../_lib/notePasteBlocks';
 
 export type DocTab = 'active' | 'trash' | 'block-trash';
 export type MobileTab = 'list' | 'editor';
@@ -189,9 +190,10 @@ export interface NotePageContextValue {
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   hideFormatToolbar: () => void;
-  handleMultilinePaste: (block: NoteBlock, lines: string[]) => Promise<void>;
+  handleMultilinePaste: (block: NoteBlock, specs: PastedBlockSpec[]) => Promise<void>;
   handleCopyBlockLink: (block: NoteBlock) => void;
   uploadNoteImage: (file: File) => Promise<string>;
   handleUpdateBlock: (block: NoteBlock, content: unknown) => void;

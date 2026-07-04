@@ -1,12 +1,12 @@
 import { TextSelection } from '@tiptap/pm/state';
 import type { EditorView } from '@tiptap/pm/view';
 import { ensureNoteBlockVersion } from '../_lib/noteBlockVersion';
+import { migrateToggleBodyToChildBlocks } from '../_lib/noteToggleContent';
 import type { NoteBlock } from '../_lib/types';
 
 export const TEXT_INDENT_UNIT = '\u00A0\u00A0\u00A0\u00A0';
 
 const BULLET_MARKERS = ['• ', '◦ ', '▪ '] as const;
-const MAX_BULLET_LEVEL = BULLET_MARKERS.length - 1;
 
 export type ParsedTextLine = {
   level: number;
@@ -53,8 +53,7 @@ export function parseTextBlockLine(text: string): ParsedTextLine {
 }
 
 export function bulletMarkerForLevel(level: number): string {
-  const idx = Math.max(0, Math.min(level, MAX_BULLET_LEVEL));
-  return BULLET_MARKERS[idx];
+  return BULLET_MARKERS[Math.max(0, level) % BULLET_MARKERS.length];
 }
 
 /** 목록 블록 content.text에 섞인 마커(-, •, 1. 등) 제거 — UI 글리프와 중복 방지 */
@@ -171,9 +170,12 @@ export function resolveMarkdownBlockTriggerFromTextBeforeCursor(
   return null;
 }
 
-/** 서버·bootstrap 로드 직후 목록 블록 content 정리 (부모·하위 문서 공통) */
-export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {
-  return blocks.map((block) => {
+/** 서버·bootstrap 로드 직후 목록·토글 content 정리 (부모·하위 문서 공통) */
+export function prepareLoadedNoteBlocks(blocks: NoteBlock[]): {
+  blocks: NoteBlock[];
+  toggleMigration: ReturnType<typeof migrateToggleBodyToChildBlocks>;
+} {
+  const listNormalized = blocks.map((block) => {
     const withVersion = ensureNoteBlockVersion(block);
     if (withVersion.type !== 'bulletList' && withVersion.type !== 'numberedList') {
       return withVersion;
@@ -182,6 +184,12 @@ export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {
     if (content === withVersion.content) return withVersion;
     return { ...withVersion, content };
   });
+  const toggleMigration = migrateToggleBodyToChildBlocks(listNormalized);
+  return { blocks: toggleMigration.blocks, toggleMigration };
+}
+
+export function normalizeLoadedNoteBlocks(blocks: NoteBlock[]): NoteBlock[] {
+  return prepareLoadedNoteBlocks(blocks).blocks;
 }
 
 /** 줄 맨 앞 마크다운 트리거 + Space → 블록 타입 변환 */
@@ -280,7 +288,7 @@ export function adjustBulletIndent(view: EditorView, direction: 'in' | 'out'): b
   const cursorOffset = $from.pos - blockStart;
 
   if (direction === 'in') {
-    const newLevel = Math.min(parsed.level + 1, MAX_BULLET_LEVEL);
+    const newLevel = parsed.level + 1;
     const newText = buildLinePrefix(newLevel, true) + parsed.body;
     replaceBlockText(view, blockStart, blockEnd, newText, cursorOffset, parsed.prefixLength);
     return true;

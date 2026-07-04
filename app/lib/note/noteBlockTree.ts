@@ -397,7 +397,7 @@ export function bulletListNestLevelAmongContainers<T extends BlockWithMeta>(
     }
     parentId = parent.parent_block_id ?? null;
   }
-  return Math.max(0, Math.min(2, level));
+  return Math.max(0, level);
 }
 
 /** 같은 부모 아래 번호 목록 형제 중 표시 순번 (1부터) */
@@ -493,6 +493,49 @@ export function planMoveRootBlockGroup<T extends BlockWithMeta>(
     ...moving,
     ...remaining.slice(insertIdx),
   ].map((block, index) => ({ ...block, order_index: index, parent_block_id: null }));
+}
+
+/** 동일 부모 아래 형제 블록 그룹을 before/after 타깃 기준으로 재정렬 */
+export function planMoveSiblingBlockGroup<T extends BlockWithMeta>(
+  blocks: T[],
+  movingIds: string[],
+  targetBlockId: string,
+  position: BlockDropPosition,
+): T[] | null {
+  if (position === 'inside' || movingIds.length === 0 || movingIds.includes(targetBlockId)) {
+    return null;
+  }
+
+  const movingSet = new Set(movingIds);
+  const movingBlocks = movingIds
+    .map((id) => blocks.find((block) => block.id === id))
+    .filter((block): block is T => !!block);
+  if (movingBlocks.length === 0) return null;
+
+  const parentId = movingBlocks[0].parent_block_id ?? null;
+  if (!movingBlocks.every((block) => (block.parent_block_id ?? null) === parentId)) {
+    return null;
+  }
+
+  const siblings = getBlocksInParent(blocks, parentId);
+  if (!siblings.some((block) => block.id === targetBlockId)) return null;
+
+  const remaining = siblings.filter((block) => !movingSet.has(block.id));
+  const targetIdx = remaining.findIndex((block) => block.id === targetBlockId);
+  if (targetIdx < 0) return null;
+
+  const insertAt = position === 'before' ? targetIdx : targetIdx + 1;
+  const reordered = [
+    ...remaining.slice(0, insertAt),
+    ...movingBlocks,
+    ...remaining.slice(insertAt),
+  ].map((block, index) => ({ ...block, order_index: index }));
+
+  const reorderedMap = new Map(reordered.map((block) => [block.id, block]));
+  return blocks.map((block) => {
+    if ((block.parent_block_id ?? null) !== parentId) return block;
+    return reorderedMap.get(block.id) ?? block;
+  });
 }
 
 export function getBlockMergeText(block: BlockWithMeta): string {

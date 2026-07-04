@@ -29,6 +29,8 @@ import {
   registerNoteEditor,
   scheduleFocusNoteEditorAtClick,
   selectAllNoteEditorText,
+  isNoteEditorFullBlockSelected,
+  selectAllDocumentBlocksRef,
   unregisterNoteEditor,
   getNoteEditor,
 } from './noteEditorRegistry';
@@ -40,6 +42,9 @@ import {
   parseAdminNoteDocumentIdFromHref,
   notePageLinkInsertHtml,
 } from '../_lib/notePaste';
+import { parseClipboardHtmlToBlocks, shouldSplitHtmlPaste } from '../_lib/notePasteHtml';
+import { pastedBlocksFromPlainLines, type PastedBlockSpec } from '../_lib/notePasteBlocks';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
 import {
@@ -50,6 +55,7 @@ import { resolveEditorShiftEnterAction } from '../_lib/noteNotionBlockBehavior';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
+import { beginNoteLinkEdit } from '../_lib/noteEditorLink';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -344,6 +350,7 @@ export function NoteEditor({
     applyHighlight: (color: string | null) => void,
     position: ToolbarPosition,
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   uploadImage?: (file: File) => Promise<string>;
@@ -364,9 +371,9 @@ export function NoteEditor({
   onEditorFocus?: () => void;
   onEditorSurfaceReady?: () => void;
   onOpenDocumentById?: (documentId: string) => void;
-  onMultilinePaste?: (lines: string[]) => void;
+  onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   canSplitMultilinePaste?: boolean;
-  tabBehavior?: 'block-indent' | 'insert-text-indent';
+  tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
   resetKey?: string;
   editorBlockId?: string;
   focusCaretOffset?: number;
@@ -501,6 +508,8 @@ export function NoteEditor({
           flushPendingChange();
         },
         position,
+        undefined,
+        () => beginNoteLinkEdit({ editor: currentEditor, flush: flushPendingChange }),
       );
     });
   }, [flushPendingChange]);
@@ -604,11 +613,24 @@ export function NoteEditor({
             callbacksRef.current.flushPendingChange,
           )) return true;
           if (event.key !== 'Tab') return false;
-          const { tabBehavior: currentTabBehavior, onIndent: currentOnIndent, flushPendingChange: flush } = callbacksRef.current;
+          const {
+            tabBehavior: currentTabBehavior,
+            onIndent: currentOnIndent,
+            flushPendingChange: flush,
+            onNavigatePrevious: currentOnNavigatePrevious,
+            onNavigateNext: currentOnNavigateNext,
+          } = callbacksRef.current;
           if (currentTabBehavior === 'insert-text-indent') {
             event.preventDefault();
             flush();
             return handleTextIndent(view, event.shiftKey ? 'out' : 'in');
+          }
+          if (currentTabBehavior === 'table-cell-nav') {
+            event.preventDefault();
+            flush();
+            if (event.shiftKey) currentOnNavigatePrevious?.();
+            else currentOnNavigateNext?.();
+            return true;
           }
           if (!currentOnIndent) return false;
           event.preventDefault();
@@ -641,6 +663,13 @@ export function NoteEditor({
             flush();
             return handleTextIndent(view, event.shiftKey ? 'out' : 'in');
           }
+          if (currentTabBehavior === 'table-cell-nav') {
+            event.preventDefault();
+            flush();
+            if (event.shiftKey) currentOnNavigatePrevious?.();
+            else currentOnNavigateNext?.();
+            return true;
+          }
           if (currentOnIndent) {
             event.preventDefault();
             flush();
@@ -668,28 +697,22 @@ export function NoteEditor({
           }
           return false;
         }
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'a') {
+          const ed = editorRef.current;
+          if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed && isNoteEditorFullBlockSelected(ed)) {
+            event.preventDefault();
+            flush();
+            selectAllDocumentBlocksRef.current?.();
+            return true;
+          }
+          return false;
+        }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
           const ed = editorRef.current;
           if (!ed || (ed as { isDestroyed?: boolean }).isDestroyed) return false;
           event.preventDefault();
           flush();
-          const previousUrl = String(ed.getAttributes('link').href ?? '');
-          const url = window.prompt('링크 URL', previousUrl || 'https://');
-          if (url === null) return true;
-          const trimmed = url.trim();
-          if (!trimmed) {
-            ed.chain().focus().extendMarkRange('link').unsetLink().run();
-            return true;
-          }
-          const { empty, from } = ed.state.selection;
-          if (empty) {
-            ed.chain().focus().insertContent(trimmed).setTextSelection({
-              from,
-              to: from + trimmed.length,
-            }).setLink({ href: trimmed }).run();
-          } else {
-            ed.chain().focus().extendMarkRange('link').setLink({ href: trimmed }).run();
-          }
+          beginNoteLinkEdit({ editor: ed, flush });
           return true;
         }
         if (event.key === 'Backspace') {
@@ -771,11 +794,28 @@ export function NoteEditor({
           return true;
         }
         const plain = event.clipboardData?.getData('text/plain') ?? '';
+        const html = event.clipboardData?.getData('text/html') ?? '';
         const pageLink = plain ? tryParsePastedNotePageLink(plain) : null;
         if (pageLink) {
           event.preventDefault();
           editorRef.current?.chain().focus().insertContent(notePageLinkInsertHtml(pageLink)).run();
           return true;
+        }
+        const htmlSpecs = html ? parseClipboardHtmlToBlocks(html) : null;
+        if (htmlSpecs && shouldSplitHtmlPaste(htmlSpecs)) {
+          const { onMultilinePaste, canSplitMultilinePaste: splitEnabled } = callbacksRef.current;
+          if (splitEnabled && onMultilinePaste) {
+            event.preventDefault();
+            callbacksRef.current.flushPendingChange();
+            const first = htmlSpecs[0];
+            const firstHtml = first.html?.trim()
+              ? first.html
+              : legacyTextToEditorHtml(first.text);
+            editorRef.current?.chain().focus().setContent(firstHtml).run();
+            scheduleChange({ text: first.text, html: first.html ?? '' });
+            onMultilinePaste(htmlSpecs);
+            return true;
+          }
         }
         if (plain && shouldHandlePlainMultilinePaste(plain)) {
           const lines = splitClipboardLines(plain);
@@ -783,10 +823,14 @@ export function NoteEditor({
           if (splitEnabled && onMultilinePaste && lines.length > 1) {
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
-            const firstLine = lines[0] ?? '';
-            editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(firstLine)).run();
-            scheduleChange({ text: firstLine, html: '' });
-            onMultilinePaste(lines);
+            const blockType = (editorBlockId
+              ? useNoteBlockStore.getState().getBlock(editorBlockId)?.type
+              : null) ?? 'text';
+            const specs = pastedBlocksFromPlainLines(blockType, lines);
+            const first = specs[0];
+            editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(first.text)).run();
+            scheduleChange({ text: first.text, html: '' });
+            onMultilinePaste(specs);
             return true;
           }
           event.preventDefault();

@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
+import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 
 /** 0=RED(TL) 1=GREEN(TR) 2=BLUE(BL) 3=YELLOW(BR) — 원본 HTML 순서 유지 */
 const C = [
@@ -40,6 +41,7 @@ type GameRef = {
   particles: (JellyBubble | BurstBubble)[];
   ripples: Ripple[];
   bubbles: AmbientBubble[];
+  isLow: boolean;
 };
 
 /* ─── helper: roundRect polyfill ─── */
@@ -188,7 +190,7 @@ class Jellyfish {
     this.x += this.vx * stepPx;
     this.y += this.vy * stepPx;
     this.bubbleTimer++;
-    if (this.bubbleTimer % 4 === 0 && G.particles.length < 250) {
+    if (this.bubbleTimer % (G.isLow ? 10 : 4) === 0 && G.particles.length < (G.isLow ? 80 : 250)) {
       G.particles.push(new JellyBubble(this.x, this.y, this.color.main));
     }
     const dx = this.tx - this.x, dy = this.ty - this.y;
@@ -197,7 +199,7 @@ class Jellyfish {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, isLow = false) {
     if (this.dead) return;
     const pulse = Math.sin(this.phase);
     const scaleY = 1 + pulse * 0.12, scaleX = 1 - pulse * 0.07;
@@ -223,7 +225,7 @@ class Jellyfish {
       const tx1 = tx0 + wave, ty1 = ty0 + t.len * (0.9 + Math.sin(t.phase * 0.5) * 0.1);
       ctx.save();
       ctx.globalAlpha = 0.75 + pulse * 0.15;
-      ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 14;
+      ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = isLow ? 0 : 14;
       ctx.lineWidth = 2.2; ctx.lineCap = 'round';
       ctx.beginPath(); ctx.moveTo(tx0, ty0);
       ctx.bezierCurveTo(tx0 + wave * 0.5, ty0 + t.len * 0.35, tx1 - wave * 0.3, ty0 + t.len * 0.7, tx1, ty1);
@@ -238,7 +240,7 @@ class Jellyfish {
     ctx.save();
     ctx.scale(scaleX, scaleY);
 
-    ctx.shadowColor = col; ctx.shadowBlur = bw * 2.2;
+    ctx.shadowColor = col; ctx.shadowBlur = isLow ? 0 : bw * 2.2;
     const outerGlow = ctx.createRadialGradient(0, 0, bw * 0.3, 0, 0, bw * 1.4);
     outerGlow.addColorStop(0, `rgba(${rgb},0.0)`);
     outerGlow.addColorStop(0.7, `rgba(${rgb},0.35)`);
@@ -266,11 +268,11 @@ class Jellyfish {
     ctx.quadraticCurveTo(-bw * 0.72, bh * 0.55, -bw, 0);
     ctx.fill();
 
-    ctx.shadowColor = col; ctx.shadowBlur = bw * 1.6;
+    ctx.shadowColor = col; ctx.shadowBlur = isLow ? 0 : bw * 1.6;
     ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.ellipse(0, 0, bw, bh, 0, Math.PI, 0, true); ctx.stroke();
 
-    ctx.shadowBlur = bw * 0.8; ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.globalAlpha = 0.5;
+    ctx.shadowBlur = isLow ? 0 : bw * 0.8; ctx.strokeStyle = col; ctx.lineWidth = 4; ctx.globalAlpha = 0.5;
     ctx.beginPath(); ctx.ellipse(0, 0, bw * 1.05, bh * 1.05, 0, Math.PI, 0, true); ctx.stroke();
 
     ctx.globalAlpha = 0.18; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 1; ctx.shadowBlur = 0;
@@ -309,6 +311,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
   const G = useRef<GameRef | null>(null);
   const L = useRef<LayoutState>({ W: 0, H: 0, cx: 0, cy: 0, pad: 0, inset: 0, corners: [] });
   const lastFrameMsRef = useRef(0);
+  const perfRef = useRef<PerfMonitor | null>(null);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   const onExitRef = useRef(onExit);
@@ -484,8 +487,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     [0, 5, 11].forEach(delay => {
       g.ripples.push({ x, y, r: 0, maxR: L.current.pad * 2.6, color: C[ci].main, rgb: C[ci].rgb, life: 1, delay });
     });
-    for (let i = 0; i < 22; i++) g.particles.push(new BurstBubble(x, y, C[ci].main, C[ci].rgb));
-    for (let i = 0; i < 10; i++) g.particles.push(new BurstBubble(x, y, '#ffffff', '255,255,255'));
+    for (let i = 0; i < (g.isLow ? 8 : 22); i++) g.particles.push(new BurstBubble(x, y, C[ci].main, C[ci].rgb));
+    for (let i = 0; i < (g.isLow ? 3 : 10); i++) g.particles.push(new BurstBubble(x, y, '#ffffff', '255,255,255'));
 
     if (g.combo >= 5 && g.combo % 5 === 0) showComboPop(g.combo);
     checkMilestone(g.combo);
@@ -523,6 +526,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     if (!g || !g.running || !cv) return;
     const deltaSec = lastFrameMsRef.current > 0 ? Math.min((now - lastFrameMsRef.current) / 1000, 0.05) : 1 / 60;
     lastFrameMsRef.current = now;
+    const perf = perfRef.current;
+    if (perf) { perf.tick(now); if (perf.isLow) g.isLow = true; }
     const t60 = deltaSec * 60;
     const ctx = cv.getContext('2d'); if (!ctx) return;
     ctx.clearRect(0, 0, L.current.W, L.current.H);
@@ -531,7 +536,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     drawDeepBg(ctx, g.waveOffset);
 
     // ambient bubbles
-    if (Math.random() < 0.06 && g.bubbles.length < 30) g.bubbles.push(new AmbientBubble(L.current));
+    if (Math.random() < 0.06 && g.bubbles.length < (g.isLow ? 8 : 30)) g.bubbles.push(new AmbientBubble(L.current));
     g.bubbles.forEach(b => { b.update(); b.draw(ctx); });
 
     drawCornerPads(ctx, g.cornerPulse as unknown as number[]);
@@ -551,7 +556,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     // update jellies
     for (let i = g.jellies.length - 1; i >= 0; i--) {
       const j = g.jellies[i];
-      j.update(g, deltaSec); j.draw(ctx);
+      j.update(g, deltaSec); j.draw(ctx, g.isLow);
       if (j.dead) {
         onStim(j.ci, j.tx, j.ty);
         g.jellies.splice(i, 1);
@@ -565,7 +570,7 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
       rp.r += rp.maxR * 0.07 * t60; rp.life -= 0.055 * t60;
       if (rp.life <= 0) { g.ripples.splice(i, 1); continue; }
       ctx.save(); ctx.globalAlpha = rp.life * 0.75;
-      ctx.strokeStyle = rp.color; ctx.shadowColor = rp.color; ctx.shadowBlur = 18 * rp.life;
+      ctx.strokeStyle = rp.color; ctx.shadowColor = rp.color; ctx.shadowBlur = g.isLow ? 0 : 18 * rp.life;
       ctx.lineWidth = 2.5 * rp.life;
       ctx.beginPath();
       for (let a = 0; a <= Math.PI * 2; a += 0.12) {
@@ -596,6 +601,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
     const cv = canvasRef.current; if (!cv) return;
     resizeCv(); calcLayout();
 
+    perfRef.current = new PerfMonitor();
+    const isLowInit = staticPerfTier === 'low';
     const g: GameRef = {
       running: true,
       timeLeft: durationSec, elapsed: 0,
@@ -608,7 +615,8 @@ export function DeepReactionTraining({ durationSec, speedLevel, speedSec, onExit
       cornerPulse: [0, 0, 0, 0],
       waveOffset: 0,
       jellies: [], particles: [], ripples: [],
-      bubbles: Array.from({ length: 18 }, () => new AmbientBubble(L.current, true)),
+      bubbles: Array.from({ length: isLowInit ? 6 : 18 }, () => new AmbientBubble(L.current, true)),
+      isLow: isLowInit,
     };
     G.current = g;
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bulletListNestLevelAmongContainers,
   collectBlockForestIds,
   collectBlockSubtreeIds,
   flattenVisualBlockIds,
@@ -8,7 +9,9 @@ import {
   planBlockDropAt,
   planBlockTabIndent,
   planCanonicalizeBlockTree,
+  planMoveSiblingBlockGroup,
   resolveVisualNavigateTarget,
+  topLevelSelectedDragIds,
 } from './noteBlockTree';
 
 type Block = {
@@ -266,5 +269,58 @@ describe('getBlockRangeIdsInVisualOrder', () => {
 
     expect(getBlockRangeIdsInVisualOrder(blocks, 'a', 'c')).toEqual(['a', 'b', 'c']);
     expect(getBlockRangeIdsInVisualOrder(blocks, 'c', 'a')).toEqual(['a', 'b', 'c']);
+  });
+});
+
+describe('bulletListNestLevelAmongContainers', () => {
+  it('counts list container ancestors without depth cap', () => {
+    const blocks = [
+      block('l0', 0, null, 'bulletList'),
+      block('l1', 0, 'l0', 'bulletList'),
+      block('l2', 0, 'l1', 'bulletList'),
+      block('l3', 0, 'l2', 'bulletList'),
+      block('l4', 0, 'l3', 'bulletList'),
+    ];
+    expect(bulletListNestLevelAmongContainers(blocks[4], blocks)).toBe(4);
+  });
+
+  it('ignores non-list parents when counting nest level', () => {
+    const blocks = [
+      block('toggle', 0, null, 'toggle'),
+      block('item', 0, 'toggle', 'bulletList'),
+    ];
+    expect(bulletListNestLevelAmongContainers(blocks[1], blocks)).toBe(0);
+  });
+});
+
+describe('multi-drag selection helpers', () => {
+  it('topLevelSelectedDragIds drops nested ids when ancestor is selected', () => {
+    const blocks = [
+      block('toggle', 0, null, 'toggle'),
+      block('a', 0, 'toggle'),
+      block('b', 1, 'toggle'),
+      block('root', 1),
+    ];
+    expect(topLevelSelectedDragIds(['toggle', 'a', 'b', 'root'], blocks)).toEqual([
+      'toggle',
+      'root',
+    ]);
+    expect(topLevelSelectedDragIds(['a', 'b'], blocks)).toEqual(['a', 'b']);
+  });
+});
+
+describe('planMoveSiblingBlockGroup', () => {
+  it('reorders nested siblings inside a toggle', () => {
+    const blocks = [
+      block('toggle', 0, null, 'toggle'),
+      block('a', 0, 'toggle'),
+      block('b', 1, 'toggle'),
+      block('c', 2, 'toggle'),
+    ];
+    const next = planMoveSiblingBlockGroup(blocks, ['a', 'b'], 'c', 'before');
+    const children = next!
+      .filter((item) => item.parent_block_id === 'toggle')
+      .sort((x, y) => x.order_index - y.order_index);
+    expect(children.map((item) => item.id)).toEqual(['c', 'a', 'b']);
   });
 });

@@ -1,9 +1,11 @@
 import {
   applyBlockDropPlanInMemory,
   collectBlockForestIds,
+  flattenVisualBlockIds,
   planBlockDropAt,
   planMergeWithPreviousBlock,
   planMoveRootBlockGroup,
+  planMoveSiblingBlockGroup,
   type BlockDropPlan,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
@@ -138,18 +140,45 @@ export function buildMoveBlockGroupCommand(
   }
 
   if (position !== 'inside') {
-    const nextRoots = planMoveRootBlockGroup(
+    const allRoot = movingIds.every((id) => {
+      const block = blocks.find((item) => item.id === id);
+      return !block?.parent_block_id;
+    });
+    if (allRoot) {
+      const nextRoots = planMoveRootBlockGroup(
+        blocks,
+        movingIds,
+        targetBlockId,
+        position,
+      );
+      if (nextRoots) {
+        const rootMap = new Map(nextRoots.map((block) => [block.id, block]));
+        return buildStructureCommandResult(
+          blocks,
+          blocks.map((block) => rootMap.get(block.id) ?? block),
+        );
+      }
+    }
+
+    const nextSiblings = planMoveSiblingBlockGroup(
       blocks,
       movingIds,
       targetBlockId,
       position,
     );
-    if (!nextRoots) return emptyCommandResult(blocks);
-    const rootMap = new Map(nextRoots.map((block) => [block.id, block]));
-    return buildStructureCommandResult(
-      blocks,
-      blocks.map((block) => rootMap.get(block.id) ?? block),
+    if (nextSiblings) return buildStructureCommandResult(blocks, nextSiblings);
+
+    let nextBlocks = blocks;
+    const visualIds = flattenVisualBlockIds(blocks);
+    const ordered = [...movingIds].sort(
+      (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
     );
+    for (const movingId of ordered) {
+      const plan = planBlockDropAt(nextBlocks, movingId, targetBlockId, position);
+      if (!plan) return emptyCommandResult(blocks);
+      nextBlocks = applyBlockDropPlanInMemory(nextBlocks, movingId, plan);
+    }
+    return buildStructureCommandResult(blocks, nextBlocks);
   }
 
   let nextBlocks = blocks;

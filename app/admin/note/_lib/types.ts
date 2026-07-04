@@ -54,5 +54,6 @@ export type FormatToolbarState = {
   applyTextColor: (color: string | null) => void;
   applyHighlight: (color: string | null) => void;
   insertTable?: () => void;
+  editLink?: () => void;
   position: { top: number; left: number };
 };

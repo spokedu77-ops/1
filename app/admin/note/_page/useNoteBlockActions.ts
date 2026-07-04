@@ -39,9 +39,12 @@ import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { buildContentForTypeChange, getBlockedTypeChangeReason } from '../_lib/noteBlockTypeChange';
 import {
   canSplitMultilinePasteToBlocks,
-  contentForMultilinePasteLine,
-  insertTypeForMultilinePasteFollowUp,
 } from '../_lib/noteMultilinePaste';
+import {
+  contentForPastedBlock,
+  pastedBlocksFromPlainLines,
+  type PastedBlockSpec,
+} from '../_lib/notePasteBlocks';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -379,32 +382,43 @@ export function useNoteBlockActions(options: {
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => {
-    formatToolbarApiRef.current.show(applyMark, applyTextStyle, applyTextColor, applyHighlight, position, insertTable);
+    formatToolbarApiRef.current.show(
+      applyMark,
+      applyTextStyle,
+      applyTextColor,
+      applyHighlight,
+      position,
+      insertTable,
+      editLink,
+    );
   }, []);
 
   const hideFormatToolbar = useCallback(() => {
     formatToolbarApiRef.current.hide();
   }, []);
 
-  const handleMultilinePaste = useCallback(async (block: NoteBlock, lines: string[]) => {
-    if (!selectedId || lines.length <= 1 || !canSplitMultilinePasteToBlocks(block.type)) return;
+  const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
+    if (!selectedId || specs.length <= 1 || !canSplitMultilinePasteToBlocks(block.type)) return;
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
 
     const sourceContent = (block.content ?? {}) as Record<string, unknown>;
-    const firstContent = contentForMultilinePasteLine(block.type, lines[0] ?? '', sourceContent);
-    syncBlockContent(block.id, firstContent);
+    const [first, ...rest] = specs;
+    if (first.type !== block.type) {
+      await handleChangeBlockType(block, first.type);
+    }
+    syncBlockContent(block.id, contentForPastedBlock(first, sourceContent));
 
     const parentId = block.parent_block_id ?? null;
     const siblings = getBlocksInParent(blocksRef.current, parentId)
       .sort((a, b) => a.order_index - b.order_index);
     let insertIndex = siblings.findIndex((item) => item.id === block.id) + 1;
-    const followType = insertTypeForMultilinePasteFollowUp(block.type);
     let lastFocusId = block.id;
 
-    for (const line of lines.slice(1)) {
-      const content = contentForMultilinePasteLine(followType, line, sourceContent);
-      const created = await insertBlockAmongSiblings(parentId, followType, insertIndex, {
+    for (const spec of rest) {
+      const content = contentForPastedBlock(spec, sourceContent);
+      const created = await insertBlockAmongSiblings(parentId, spec.type, insertIndex, {
         content,
         focus: false,
         registerUndo: false,
@@ -424,6 +438,7 @@ export function useNoteBlockActions(options: {
   }, [
     selectedId,
     syncBlockContent,
+    handleChangeBlockType,
     insertBlockAmongSiblings,
     recordBlockTransactionUndo,
     focusBlockEditor,

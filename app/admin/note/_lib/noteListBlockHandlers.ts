@@ -1,7 +1,11 @@
 import { stripListItemMarkerPrefix } from '../_components/noteBulletInput';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
-import { resolveInlineBlockEnterAction } from './noteNotionBlockBehavior';
+import {
+  resolveInlineBlockEnterAction,
+  resolveListBackspaceAtStartAction,
+  resolveListEmptyBackspaceAction,
+} from './noteNotionBlockBehavior';
 import type { NoteBlock } from './types';
 
 export type NoteListBlockHandlerContext = {
@@ -15,6 +19,28 @@ export type NoteListBlockHandlerContext = {
   onMergeWithPrevious?: () => void;
 };
 
+function runListBackspaceAction(
+  action: ReturnType<typeof resolveListBackspaceAtStartAction>,
+  ctx: Pick<NoteListBlockHandlerContext, 'onIndentChange' | 'onChangeType' | 'onRequestCaretOffset' | 'onMergeWithPrevious'>,
+) {
+  switch (action.kind) {
+  case 'outdent':
+    ctx.onIndentChange?.('out');
+    return;
+  case 'merge-with-previous':
+    ctx.onMergeWithPrevious?.();
+    return;
+  case 'convert-to-text':
+    ctx.onRequestCaretOffset?.(0);
+    ctx.onChangeType('text');
+    return;
+  default: {
+    const _exhaustive: never = action;
+    return _exhaustive;
+  }
+  }
+}
+
 export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
   const listItemText = () => {
     const fromStore = useNoteBlockStore.getState().getBlock(ctx.block.id)?.content?.text;
@@ -24,36 +50,21 @@ export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
     return stripListItemMarkerPrefix(raw);
   };
 
+  const parentBlockId = () => ctx.block.parent_block_id ?? null;
+
   const handleListItemBackspaceAtStart = (): boolean => {
     if (ctx.block.type !== 'bulletList' && ctx.block.type !== 'numberedList') return false;
-    const itemText = listItemText();
-    if (itemText.length === 0) {
-      if (ctx.block.parent_block_id) {
-        ctx.onIndentChange?.('out');
-      } else {
-        ctx.onChangeType('text');
-      }
-      return true;
-    }
-    if (ctx.canMergeWithPrevious?.()) {
-      ctx.onMergeWithPrevious?.();
-      return true;
-    }
-    if (ctx.block.parent_block_id) {
-      ctx.onIndentChange?.('out');
-      return true;
-    }
-    ctx.onRequestCaretOffset?.(0);
-    ctx.onChangeType('text');
+    const action = resolveListBackspaceAtStartAction({
+      itemText: listItemText(),
+      parentBlockId: parentBlockId(),
+      canMergeWithPrevious: ctx.canMergeWithPrevious?.() ?? false,
+    });
+    runListBackspaceAction(action, ctx);
     return true;
   };
 
   const handleListItemEmptyBackspace = () => {
-    if (ctx.block.parent_block_id) {
-      ctx.onIndentChange?.('out');
-      return;
-    }
-    ctx.onChangeType('text');
+    runListBackspaceAction(resolveListEmptyBackspaceAction(parentBlockId()), ctx);
   };
 
   const handleListItemEnter = (
@@ -63,7 +74,7 @@ export function createNoteListBlockHandlers(ctx: NoteListBlockHandlerContext) {
     const action = resolveInlineBlockEnterAction({
       followType: listType,
       text: listItemText(),
-      parentBlockId: ctx.block.parent_block_id ?? null,
+      parentBlockId: parentBlockId(),
       enterCtx,
     });
 

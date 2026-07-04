@@ -32,7 +32,7 @@ import {
 } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { BlockDropTarget } from '../_components/noteContexts';
-import { resolveBlockDropTarget } from '../_lib/noteDropResolver';
+import { resolveBlockDropTarget, resolveBlockDropTargetFromPointer } from '../_lib/noteDropResolver';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
 import type { useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
 
@@ -108,11 +108,11 @@ export function useNoteDragDrop(options: {
       noteBlockDragActiveRef.current = true;
       const selected = selectedBlockIdsRef.current;
       if (selected.size > 1 && selected.has(activeId)) {
-        const rootIds = sortRootBlocks(blocksRef.current)
-          .filter((block) => selected.has(block.id))
-          .map((block) => block.id);
-        multiDragBlockIdsRef.current = rootIds.length > 1 ? rootIds : null;
-        setMultiDragCount(rootIds.length > 1 ? rootIds.length : 0);
+        const visualIds = flattenVisualBlockIds(blocksRef.current);
+        const orderedSelected = visualIds.filter((id) => selected.has(id));
+        const dragIds = topLevelSelectedDragIds(orderedSelected, blocksRef.current);
+        multiDragBlockIdsRef.current = dragIds.length > 1 ? dragIds : null;
+        setMultiDragCount(orderedSelected.length > 1 ? orderedSelected.length : 0);
       } else {
         multiDragBlockIdsRef.current = null;
         setMultiDragCount(0);
@@ -148,7 +148,11 @@ export function useNoteDragDrop(options: {
       dropTargetRef.current = null;
       return;
     }
-    const nextTarget = resolveBlockDropTarget(overId, blocksRef.current, event, pointerYRef.current);
+    const nextTarget = resolveBlockDropTargetFromPointer(
+      pointerYRef.current,
+      blocksRef.current,
+      activeId,
+    ) ?? resolveBlockDropTarget(overId, blocksRef.current, event, pointerYRef.current, activeId);
     setDropTarget(nextTarget);
     dropTargetRef.current = nextTarget;
   }, [blocksRef]);
@@ -275,18 +279,33 @@ export function useNoteDragDrop(options: {
     setMultiDragCount(0);
     noteBlockDragActiveRef.current = false;
     const { active, over } = event;
+    const activeId = String(active.id);
+    const blockDropTarget = wasBlockDrag
+      ? resolveBlockDropTargetFromPointer(
+        pointerYRef.current,
+        blocksRef.current,
+        activeId,
+      ) ?? dropTargetRef.current
+      : null;
     const resolvedTarget = over
-      ? resolveBlockDropTarget(String(over.id), blocksRef.current, event, pointerYRef.current)
-      : dropTargetRef.current;
+      ? resolveBlockDropTarget(
+        String(over.id),
+        blocksRef.current,
+        event,
+        pointerYRef.current,
+        activeId,
+      ) ?? blockDropTarget
+      : blockDropTarget;
     setDropTarget(null);
     dropTargetRef.current = null;
-    if (!over || active.id === over.id) return;
+    if (!over && !resolvedTarget) return;
+    if (over && active.id === over.id && !resolvedTarget) return;
 
-    const activeId = String(active.id);
-    const overId = String(over.id);
+    const overId = over ? String(over.id) : '';
 
     // 사이드바 문서 드래그 → 부모 변경
     if (activeId.startsWith('doc-drag:')) {
+      if (!over) return;
       const movingDocId = activeId.slice('doc-drag:'.length);
       if (overId === 'doc-root' || overId === 'doc-root-bottom' || overId === 'doc-workspace-root') {
         await handleReparentDocument(movingDocId, null);
@@ -317,7 +336,7 @@ export function useNoteDragDrop(options: {
     }
 
     // Drop target is a document (sidebar DocItem) — 블록 이동
-    if (overId.startsWith('doc:')) {
+    if (over && overId.startsWith('doc:')) {
       const targetDocumentId = overId.slice('doc:'.length);
       const movingBlock = blocksRef.current.find((b) => b.id === activeId);
       if (!movingBlock) return;
@@ -368,7 +387,9 @@ export function useNoteDragDrop(options: {
     const resolvedOverBlockId = overId.startsWith('block-inside:')
       ? overId.slice('block-inside:'.length)
       : overId;
-    const overBlock = prevBlocks.find((block) => block.id === resolvedOverBlockId);
+    const overBlock = resolvedOverBlockId
+      ? prevBlocks.find((block) => block.id === resolvedOverBlockId)
+      : undefined;
 
     if (groupDragIds && groupDragIds.length > 1) {
       const target = resolvedTarget ?? (overBlock ? { blockId: resolvedOverBlockId, position: 'before' as BlockDropPosition } : null);
@@ -426,9 +447,13 @@ export function useNoteDragDrop(options: {
           }
         }
         if (target.position !== 'inside') {
+          const visualIds = flattenVisualBlockIds(prevBlocks);
+          const ordered = [...groupDragIds].sort(
+            (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
+          );
           const command = buildMoveBlockGroupCommand(
             prevBlocks,
-            groupDragIds,
+            ordered,
             target.blockId,
             target.position,
           );
@@ -472,7 +497,7 @@ export function useNoteDragDrop(options: {
       }
     }
 
-    const target = resolvedTarget ?? (overBlock ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
+    const target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
     if (!target) return;
     const plan = planBlockDropAt(
       wasBlockDrag ? blocksRef.current : prevBlocks,

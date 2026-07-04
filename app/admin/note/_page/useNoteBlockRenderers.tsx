@@ -1,6 +1,7 @@
 'use client';
 
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import type { PastedBlockSpec } from '../_lib/notePasteBlocks';
 import {
   bulletListNestLevelAmongContainers,
   getBlocksInParent,
@@ -74,9 +75,10 @@ export type NoteBlockRendererDeps = {
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   hideFormatToolbar: () => void;
-  handleMultilinePaste: (block: NoteBlock, lines: string[]) => void | Promise<void>;
+  handleMultilinePaste: (block: NoteBlock, specs: PastedBlockSpec[]) => void | Promise<void>;
   handleMergeWithPreviousBlock: (block: NoteBlock) => void | Promise<void>;
   handleDuplicateBlock: (block: NoteBlock) => void | Promise<void>;
   handleCopyBlockLink: (block: NoteBlock) => void;
@@ -161,7 +163,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}
-        onMultilinePaste={(lines) => { void deps.handleMultilinePaste(block, lines); }}
+        onMultilinePaste={(specs) => { void deps.handleMultilinePaste(block, specs); }}
         autoFocusSignal={
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart !== 'title' ? deps.focusSignal : 0
         }
@@ -225,7 +227,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         onOpenDocument={deps.handleOpenDocumentById}
         onShowFormatToolbar={deps.showFormatToolbar}
         onHideFormatToolbar={deps.hideFormatToolbar}
-        onMultilinePaste={(lines) => { void deps.handleMultilinePaste(block, lines); }}
+        onMultilinePaste={(specs) => { void deps.handleMultilinePaste(block, specs); }}
         autoFocusSignal={
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart !== 'title' ? deps.focusSignal : 0
         }

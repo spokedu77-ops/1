@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { collapseAllNoteEditorSelections } from '../_components/noteEditorRegistry';
+import { collapseAllNoteEditorSelections, selectAllDocumentBlocksRef } from '../_components/noteEditorRegistry';
 import { clearAllCrossSelectState, clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { noteBlockMarqueeGuard, noteTextDragGuard } from '../_lib/noteBlockMarqueeGuard';
 import { shouldDeleteSelectedNoteBlocks } from '../_lib/noteBlockSelectionKeyboard';
@@ -11,6 +11,7 @@ import {
   type MarqueeRect,
 } from '../_lib/noteMarquee';
 import { getSiblingBlockRangeIds } from '../_lib/noteDropResolver';
+import { flattenVisualBlockIds } from '@/app/lib/note/noteBlockTree';
 import {
   isNoteTextSurfaceTarget,
   notePointerTargetElement,
@@ -69,6 +70,18 @@ export function useNoteBlockSelection(options: {
     handleDeleteBlocksRef.current = handleDeleteBlocks;
   }, [handleDeleteBlocks]);
 
+  useEffect(() => {
+    selectAllDocumentBlocksRef.current = () => {
+      collapseAllNoteEditorSelections();
+      clearAllNoteTextSelections();
+      clearAllCrossSelectState();
+      setSelectedBlockIds(new Set(blocksRef.current.map((block) => block.id)));
+    };
+    return () => {
+      selectAllDocumentBlocksRef.current = null;
+    };
+  }, [blocksRef, setSelectedBlockIds]);
+
   const applyBlockSelectRange = useCallback((
     anchorId: string,
     endId: string,
@@ -106,7 +119,9 @@ export function useNoteBlockSelection(options: {
   }, [applyBlockSelectRange, setSelectedBlockIds]);
 
   const applyMarqueeSelection = useCallback((marquee: MarqueeRect, options: { additive: boolean; shiftAnchor: boolean }) => {
-    const ids = getMarqueeSelectedBlockIds(marquee);
+    const hitIds = getMarqueeSelectedBlockIds(marquee);
+    const visualIds = flattenVisualBlockIds(blocksRef.current);
+    const ids = visualIds.filter((id) => hitIds.includes(id));
     if (ids.length === 0) {
       if (!options.additive && !options.shiftAnchor) setSelectedBlockIds(new Set());
       return;
@@ -115,11 +130,9 @@ export function useNoteBlockSelection(options: {
     let nextIds = ids;
     if (options.shiftAnchor && lastClickedBlockIdRef.current) {
       const anchorId = lastClickedBlockIdRef.current;
-      const sorted = [...ids].sort((a, b) => {
-        const blockA = blocksRef.current.find((item) => item.id === a);
-        const blockB = blocksRef.current.find((item) => item.id === b);
-        return (blockA?.order_index ?? 0) - (blockB?.order_index ?? 0);
-      });
+      const sorted = [...ids].sort(
+        (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
+      );
       const rangeIds = getSiblingBlockRangeIds(
         blocksRef.current,
         anchorId,

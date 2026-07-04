@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import type { PastedBlockSpec } from '../_lib/notePasteBlocks';
 import {
   useIsNoteActiveEditor,
   useNoteBlockContent,
@@ -48,7 +49,7 @@ type NoteEditableFieldProps = {
   autoFocusSignal?: number;
   enterCreatesBlock?: boolean;
   enterSplitOnMidBlock?: boolean;
-  tabBehavior?: 'block-indent' | 'insert-text-indent';
+  tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
   onEditorEnter?: (ctx?: NoteEditorEnterContext) => void;
   onEditorBackspace?: (() => void) | false;
   onEditorBackspaceAtBlockStart?: () => boolean;
@@ -72,12 +73,13 @@ type NoteEditableFieldProps = {
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   onSlashChange?: (show: boolean, query: string) => void;
   uploadImage?: (file: File) => Promise<string>;
   onOpenDocumentById?: (documentId: string) => void;
-  onMultilinePaste?: (lines: string[]) => void;
+  onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 };
 

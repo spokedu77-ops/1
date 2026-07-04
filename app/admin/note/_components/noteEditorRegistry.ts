@@ -33,6 +33,21 @@ export function selectAllNoteEditorText(editor: Editor): void {
   editor.chain().focus().setTextSelection({ from, to }).run();
 }
 
+/** Mod+A 2단계 — 현재 블록 텍스트가 이미 전부 선택됐는지 */
+export function isNoteEditorFullBlockSelected(editor: Editor): boolean {
+  if ((editor as { isDestroyed?: boolean }).isDestroyed) return false;
+  const { empty, from, to } = editor.state.selection;
+  if (empty) return false;
+  const blockFrom = 1;
+  const blockTo = Math.max(blockFrom, editor.state.doc.content.size - 1);
+  return from <= blockFrom && to >= blockTo;
+}
+
+/** Mod+A 2단째 — 문서 전체 블록 선택 (useNoteBlockSelection에서 등록) */
+export const selectAllDocumentBlocksRef = {
+  current: null as (() => void) | null,
+};
+
 export function registerNoteEditor(blockId: string, editor: Editor) {
   editors.set(blockId, editor);
 }

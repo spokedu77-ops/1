@@ -73,7 +73,6 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 3, name: '3단계', enName: 'Diagonal', desc: '대각선 방향으로 이동하는 자극을 보고 해당 위치로 이동합니다.' },
       { id: 4, name: '4단계', enName: 'Deep Reaction', desc: '깊이감이 있는 자극을 보고 빠르게 반응합니다.' },
       { id: 5, name: '5단계', enName: 'Pulse', desc: '중앙에서 퍼지는 펄스 자극에 맞춰 반응합니다.' },
-      { id: 6, name: '6단계', enName: 'Blackout', desc: '사라지는 색 자극을 기억하고 반응합니다.' },
       { id: 7, name: '7단계', enName: 'Sweep', desc: '좌우로 쓸고 지나가는 자극에 맞춰 반응합니다.' },
       { id: 8, name: '8단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
       { id: 9, name: '블록 두더지', enName: 'Mole Simulator', desc: '3x3 구역에서 나타나는 색 자극에 반응합니다.' },

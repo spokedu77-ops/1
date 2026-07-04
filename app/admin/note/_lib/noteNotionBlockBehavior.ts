@@ -210,6 +210,36 @@ export function createNotionEmptyBackspaceHandler(options: {
   };
 }
 
+/** 목록 — 블록 맨 앞 Backspace (Notion: outdent → merge → paragraph) */
+export type NotionListBackspaceAtStartAction =
+  | { kind: 'outdent' }
+  | { kind: 'merge-with-previous' }
+  | { kind: 'convert-to-text' };
+
+export function resolveListBackspaceAtStartAction(options: {
+  itemText: string;
+  parentBlockId: string | null;
+  canMergeWithPrevious: boolean;
+}): NotionListBackspaceAtStartAction {
+  if (options.itemText.length === 0) {
+    return options.parentBlockId ? { kind: 'outdent' } : { kind: 'convert-to-text' };
+  }
+  if (options.canMergeWithPrevious) {
+    return { kind: 'merge-with-previous' };
+  }
+  if (options.parentBlockId) {
+    return { kind: 'outdent' };
+  }
+  return { kind: 'convert-to-text' };
+}
+
+/** 목록 — 빈 항목 Backspace (에디터 onEmptyBackspace) */
+export function resolveListEmptyBackspaceAction(
+  parentBlockId: string | null,
+): NotionListBackspaceAtStartAction {
+  return parentBlockId ? { kind: 'outdent' } : { kind: 'convert-to-text' };
+}
+
 /** page 블록 Enter·Space — true면 이벤트를 처리했다 */
 export function handleNotionPageBlockKeyDown(
   event: Pick<KeyboardEvent, 'key' | 'shiftKey'>,

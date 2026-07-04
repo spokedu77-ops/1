@@ -19,6 +19,7 @@ import {
   Video,
 } from 'lucide-react';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
+import type { PastedBlockSpec } from '../../_lib/notePasteBlocks';
 import { NoteTableBlock } from './NoteTableBlock';
 import { NoteTodoBlock } from './NoteTodoBlock';
 import { NoteToggleBlock } from './NoteToggleBlock';
@@ -129,9 +130,10 @@ function BlockContent({
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
-  onMultilinePaste?: (lines: string[]) => void;
+  onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
@@ -1031,9 +1033,10 @@ function SortableBlockRow({
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
-  onMultilinePaste?: (lines: string[]) => void;
+  onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;
@@ -1294,9 +1297,10 @@ function ToggleInlineRow({
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
-  onMultilinePaste?: (lines: string[]) => void;
+  onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
   onMergeWithPrevious?: () => void;

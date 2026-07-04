@@ -4,6 +4,7 @@ import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import { NoteEditableField } from '../NoteEditableField';
 import type { NoteEditorEnterContext } from '../NoteEditor';
 import { resolveInlineBackspaceAtStartAction } from '../../_lib/noteNotionBlockBehavior';
+import type { PastedBlockSpec } from '../../_lib/notePasteBlocks';
 import type { NoteBlock } from '../../_lib/types';
 
 export type NoteBlockFormattedFieldProps = {
@@ -12,7 +13,7 @@ export type NoteBlockFormattedFieldProps = {
   placeholder: string;
   textClassName: string;
   field?: 'text' | 'body';
-  tabBehavior?: 'block-indent' | 'insert-text-indent';
+  tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
   enterCreatesBlock?: boolean;
   enterSplitOnMidBlock?: boolean;
   autoFocusSignal?: number;
@@ -34,6 +35,7 @@ export type NoteBlockFormattedFieldProps = {
     applyHighlight: (color: string | null) => void,
     position: { top: number; left: number },
     insertTable?: () => void,
+    editLink?: () => void,
   ) => void;
   onHideFormatToolbar?: () => void;
   onSlashChange?: (show: boolean, query: string) => void;
@@ -47,7 +49,7 @@ export type NoteBlockFormattedFieldProps = {
   canMergeWithPrevious?: () => boolean;
   uploadImage?: (file: File) => Promise<string>;
   onOpenDocument?: (documentId: string) => void;
-  onMultilinePaste?: (lines: string[]) => void;
+  onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 };
 

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
+import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 
 const HUD_H = 64;
 const BG = '#06060E';
@@ -62,6 +63,7 @@ type GameState = {
   baseSpeedMult: number;
   raf: number | null;
   padPulse: number[];
+  isLow: boolean;
 };
 
 function fillRoundRect(
@@ -232,7 +234,7 @@ class Tile {
     this.x += this.vx * stepPx;
     this.y += this.vy * stepPx;
     this.sparkTimer++;
-    if (this.sparkTimer % 3 === 0 && g.particles.length < 180) {
+    if (this.sparkTimer % (g.isLow ? 7 : 3) === 0 && g.particles.length < (g.isLow ? 60 : 180)) {
       g.particles.push(new MeteorSpark(this.x, this.y, this.color.main));
     }
     const dx = this.tx - this.x;
@@ -245,7 +247,7 @@ class Tile {
     }
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, isLow = false) {
     if (this.dead) return;
     const col = this.color.main;
     const rgb = this.color.rgb;
@@ -266,7 +268,7 @@ class Tile {
       ctx.lineWidth = lw;
       ctx.lineCap = 'round';
       ctx.shadowColor = col;
-      ctx.shadowBlur = lw * 2.5;
+      ctx.shadowBlur = isLow ? 0 : lw * 2.5;
       ctx.stroke();
     }
     const tailStart = this.trail[Math.max(0, tlen - 12)]!;
@@ -277,7 +279,7 @@ class Tile {
     ctx.globalAlpha = 0.55;
     ctx.lineWidth = this.size * 0.45;
     ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = this.size * 1.5;
+    ctx.shadowBlur = isLow ? 0 : this.size * 1.5;
     ctx.stroke();
     ctx.restore();
     ctx.save();
@@ -294,7 +296,7 @@ class Tile {
     ctx.arc(hx, hy, hr * 3.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.shadowColor = col;
-    ctx.shadowBlur = hr * 4;
+    ctx.shadowBlur = isLow ? 0 : hr * 4;
     const mid = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr * 1.4);
     mid.addColorStop(0, `rgba(${rgb},0.9)`);
     mid.addColorStop(0.6, col);
@@ -303,7 +305,7 @@ class Tile {
     ctx.beginPath();
     ctx.arc(hx, hy, hr * 1.4, 0, Math.PI * 2);
     ctx.fill();
-    ctx.shadowBlur = hr * 2;
+    ctx.shadowBlur = isLow ? 0 : hr * 2;
     ctx.shadowColor = '#ffffff';
     const core = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr * 0.55);
     core.addColorStop(0, '#ffffff');
@@ -417,6 +419,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       baseSpeedMult: 1,
       raf: null,
       padPulse: [0, 0, 0, 0],
+      isLow: staticPerfTier === 'low',
     };
     gRef.current = g;
 
@@ -507,8 +510,8 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
         life: 0.5,
         delay: 8,
       });
-      for (let i = 0; i < 30; i++) g.particles.push(new Particle(x, y, col.main));
-      for (let i = 0; i < 8; i++) g.particles.push(new Particle(x, y, '#ffffff'));
+      for (let i = 0; i < (g.isLow ? 10 : 30); i++) g.particles.push(new Particle(x, y, col.main));
+      for (let i = 0; i < (g.isLow ? 3 : 8); i++) g.particles.push(new Particle(x, y, '#ffffff'));
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;
         const nEl = comboNRef.current;
@@ -655,7 +658,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
         ctx.globalAlpha = s.life * 0.85;
         ctx.strokeStyle = s.color;
         ctx.shadowColor = s.color;
-        ctx.shadowBlur = 28 * s.life;
+        ctx.shadowBlur = g.isLow ? 0 : 28 * s.life;
         ctx.lineWidth = 4 * s.life;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
@@ -680,11 +683,14 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
       ctx.fillRect(0, 0, L.W, fadeH + 30);
     };
 
+    const perf = new PerfMonitor();
     let lastFrameMs = 0;
     const loop = (now: number) => {
       if (!gRef.current?.running) return;
       const deltaSec = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
       lastFrameMs = now;
+      perf.tick(now);
+      if (perf.isLow) g.isLow = true;
 
       // endsAt 기반 타이머 (setInterval 대신 RAF 루프에서 직접 계산)
       const remainingSec = Math.max(0, (g.endsAtMs - now) / 1000);
@@ -718,7 +724,7 @@ export function DiagonalReactionTraining({ durationSec, speedLevel, speedSec, on
         const Ln = LRef.current;
         if (!Ln) break;
         t.update(Ln, g, deltaSec, onStim);
-        t.draw(ctx2);
+        t.draw(ctx2, g.isLow);
         if (t.dead) g.tiles.splice(i, 1);
       }
       updateShockwaves(ctx2, deltaSec);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bulletMarkerForLevel,
   normalizeListBlockContentRecord,
   normalizeLoadedNoteBlocks,
   resolveMarkdownBlockTriggerFromTextBeforeCursor,
@@ -121,6 +122,32 @@ describe('normalizeLoadedNoteBlocks', () => {
     const normalized = normalizeLoadedNoteBlocks([parent, child]);
     expect(normalized[0].content?.text).toBe('');
     expect(normalized[1].content?.text).toBe('item');
+  });
+
+  it('migrates legacy toggle body into a child text block on load', () => {
+    const toggle = {
+      id: 't1',
+      document_id: 'doc',
+      type: 'toggle' as const,
+      content: { title: 'Section', body: 'inside toggle' },
+      order_index: 0,
+      parent_block_id: null,
+      created_at: '',
+      updated_at: '',
+    };
+    const normalized = normalizeLoadedNoteBlocks([toggle]);
+    expect(normalized.find((block) => block.id === 't1')?.content?.body).toBeUndefined();
+    expect(normalized.some((block) => block.parent_block_id === 't1' && block.content?.text === 'inside toggle')).toBe(true);
+  });
+});
+
+describe('bulletMarkerForLevel', () => {
+  it('cycles markers at depth without cap', () => {
+    expect(bulletMarkerForLevel(0)).toBe('• ');
+    expect(bulletMarkerForLevel(1)).toBe('◦ ');
+    expect(bulletMarkerForLevel(2)).toBe('▪ ');
+    expect(bulletMarkerForLevel(3)).toBe('• ');
+    expect(bulletMarkerForLevel(7)).toBe('• ');
   });
 });
 

@@ -7,6 +7,7 @@ import {
   Code2,
   Highlighter,
   Italic,
+  Link2,
   Palette,
   Strikethrough,
   Table2,
@@ -73,12 +74,14 @@ export function BubbleToolbar({
   applyTextColor = () => undefined,
   applyHighlight = () => undefined,
   insertTable,
+  editLink,
 }: {
   applyMark: (mark: InlineMark) => void;
   applyTextStyle?: (style: TextStyle) => void;
   applyTextColor?: (color: string | null) => void;
   applyHighlight?: (color: string | null) => void;
   insertTable?: () => void;
+  editLink?: () => void;
 }) {
   const [showTextStyleMenu, setShowTextStyleMenu] = useState(false);
   const [showTextColorMenu, setShowTextColorMenu] = useState(false);
@@ -185,6 +188,20 @@ export function BubbleToolbar({
           }}
         >
           <Table2 className="h-4 w-4" />
+        </button>
+      ) : null}
+      {editLink ? (
+        <button
+          type="button"
+          title={`링크 (${formatShortcutLabel('Mod+K')})`}
+          className="rounded-lg px-2 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            closeMenus();
+            editLink();
+          }}
+        >
+          <Link2 className="h-4 w-4" />
         </button>
       ) : null}
       <div className="h-5 w-px bg-slate-200" />

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 
 import { setupCanvas } from '../lib/canvasUtils';
 
@@ -53,6 +54,7 @@ type GameState = {
   stimConsumedThisFrame: boolean;
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
+  isLow: boolean;
 };
 
 function fillRoundPath(
@@ -144,7 +146,7 @@ class FlowTile {
 
     ctx.save();
     ctx.shadowColor = this.color.main;
-    ctx.shadowBlur = 24;
+    ctx.shadowBlur = g.isLow ? 4 : 24;
     const grd = ctx.createLinearGradient(0, top, 0, top + dh);
     grd.addColorStop(0, '#ffffff');
     grd.addColorStop(0.22, this.color.main);
@@ -217,13 +219,13 @@ class FlashBubble {
     if (this.y - this.r > g.H) return;
     ctx.save();
     ctx.shadowColor = this.color.main;
-    ctx.shadowBlur = 30;
+    ctx.shadowBlur = g.isLow ? 6 : 30;
     ctx.strokeStyle = this.color.main;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.shadowBlur = 20;
+    ctx.shadowBlur = g.isLow ? 0 : 20;
     const grd = ctx.createRadialGradient(
       this.x - this.r * 0.25,
       this.y - this.r * 0.25,
@@ -544,6 +546,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       stimConsumedThisFrame: false,
       raf: null,
       timer: null,
+      isLow: staticPerfTier === 'low',
     };
     gRef.current = g;
 
@@ -706,11 +709,14 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       }
     };
 
+    const perf = new PerfMonitor();
     let lastFrameMs = 0;
     const loop = (now: number) => {
       if (!gRef.current?.running) return;
       const deltaSec = lastFrameMs > 0 ? Math.min((now - lastFrameMs) / 1000, 0.05) : 1 / 60;
       lastFrameMs = now;
+      perf.tick(now);
+      if (perf.isLow) g.isLow = true;
       const ctx2 = cv.getContext('2d');
       if (!ctx2) return;
       const gg = gRef.current;

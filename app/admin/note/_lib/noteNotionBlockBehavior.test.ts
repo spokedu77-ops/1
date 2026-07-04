@@ -11,6 +11,8 @@ import {
   resolveHeadingEnterAction,
   resolveInlineBackspaceAtStartAction,
   resolveInlineBlockEnterAction,
+  resolveListBackspaceAtStartAction,
+  resolveListEmptyBackspaceAction,
   resolvePageBlockEnterAction,
   resolveToggleTitleBackspaceAction,
   resolveToggleTitleEnterAction,
@@ -233,6 +235,14 @@ describe('resolveCalloutEnterAction', () => {
     })).toEqual({ kind: 'add-below', followType: 'callout' });
   });
 
+  it('empty nested callout Enter outdents', () => {
+    expect(resolveCalloutEnterAction({
+      text: '',
+      parentBlockId: 'toggle-1',
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'outdent' });
+  });
+
   it('empty callout Enter converts to text', () => {
     expect(resolveCalloutEnterAction({
       text: '',
@@ -248,6 +258,13 @@ describe('resolveCodeEnterAction', () => {
       text: 'const x = 1',
       parentBlockId: null,
     })).toEqual({ kind: 'add-below', followType: 'code' });
+  });
+
+  it('empty nested code Enter outdents', () => {
+    expect(resolveCodeEnterAction({
+      text: '',
+      parentBlockId: 'toggle-1',
+    })).toEqual({ kind: 'outdent' });
   });
 
   it('empty code Enter converts to text', () => {
@@ -294,5 +311,82 @@ describe('handleNotionChromeBlockKeyDown', () => {
     )).toBe(true);
     expect(onDelete).toHaveBeenCalledOnce();
     expect(onAddBelow).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveInlineBlockEnterAction (lists)', () => {
+  it('empty nested bullet Enter outdents', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'bulletList',
+      text: '',
+      parentBlockId: 'list-parent',
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'outdent' });
+  });
+
+  it('empty root bullet Enter converts to text', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'bulletList',
+      text: '',
+      parentBlockId: null,
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'convert-to-text' });
+  });
+
+  it('empty nested numbered Enter outdents', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'numberedList',
+      text: '',
+      parentBlockId: 'list-parent',
+    })).toEqual({ kind: 'outdent' });
+  });
+});
+
+describe('resolveListBackspaceAtStartAction', () => {
+  it('empty nested item outdents', () => {
+    expect(resolveListBackspaceAtStartAction({
+      itemText: '',
+      parentBlockId: 'parent',
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'outdent' });
+  });
+
+  it('empty root item converts to text', () => {
+    expect(resolveListBackspaceAtStartAction({
+      itemText: '',
+      parentBlockId: null,
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'convert-to-text' });
+  });
+
+  it('non-empty at start merges when previous exists', () => {
+    expect(resolveListBackspaceAtStartAction({
+      itemText: 'item',
+      parentBlockId: null,
+      canMergeWithPrevious: true,
+    })).toEqual({ kind: 'merge-with-previous' });
+  });
+
+  it('non-empty nested at start outdents when merge unavailable', () => {
+    expect(resolveListBackspaceAtStartAction({
+      itemText: 'nested',
+      parentBlockId: 'parent',
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'outdent' });
+  });
+
+  it('non-empty root at start converts to text when merge unavailable', () => {
+    expect(resolveListBackspaceAtStartAction({
+      itemText: 'solo',
+      parentBlockId: null,
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'convert-to-text' });
+  });
+});
+
+describe('resolveListEmptyBackspaceAction', () => {
+  it('nested outdents, root converts', () => {
+    expect(resolveListEmptyBackspaceAction('parent')).toEqual({ kind: 'outdent' });
+    expect(resolveListEmptyBackspaceAction(null)).toEqual({ kind: 'convert-to-text' });
   });
 });

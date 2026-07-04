@@ -29,12 +29,6 @@ const PulseReactionTraining = lazy(() =>
   })),
 );
 
-const BlackoutReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/BlackoutReactionTraining').then((m) => ({
-    default: m.BlackoutReactionTraining,
-  })),
-);
-
 const SweepReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/SweepReactionTraining').then((m) => ({
     default: m.SweepReactionTraining,
@@ -226,19 +220,6 @@ export function EngineRouter({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <PulseReactionTraining
-            durationSec={dur}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
-    if (level === 6) {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <BlackoutReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}

@@ -6,7 +6,7 @@ export function rowSubstantiallyInMarquee(row: DOMRect, marquee: MarqueeRect): b
   const overlapTop = Math.max(row.top, marquee.top);
   const overlapBottom = Math.min(row.bottom, marquee.bottom);
   const overlapHeight = Math.max(0, overlapBottom - overlapTop);
-  if (overlapHeight < row.height * 0.45) return false;
+  if (overlapHeight < row.height * 0.35) return false;
   const cx = (row.left + row.right) / 2;
   const cy = (row.top + row.bottom) / 2;
   return cx >= marquee.left && cx <= marquee.right && cy >= marquee.top && cy <= marquee.bottom;

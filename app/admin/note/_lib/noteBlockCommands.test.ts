@@ -221,6 +221,28 @@ describe('note block commands', () => {
     expect(command.fieldPatches).toHaveLength(3);
   });
 
+  it('reorders a nested sibling group inside a toggle', () => {
+    const blocks = [
+      { ...block('toggle', 0), type: 'toggle' as const, content: { title: 'T' } },
+      block('a', 0, 'toggle'),
+      block('b', 1, 'toggle'),
+      block('c', 2, 'toggle'),
+    ];
+
+    const command = buildMoveBlockGroupCommand(
+      blocks,
+      ['a', 'b'],
+      'c',
+      'before',
+    );
+
+    const children = command.nextBlocks
+      .filter((item) => item.parent_block_id === 'toggle')
+      .sort((x, y) => x.order_index - y.order_index);
+    expect(children.map((item) => item.id)).toEqual(['c', 'a', 'b']);
+    expect(command.fieldPatches.length).toBeGreaterThan(0);
+  });
+
   it('single block move persists sibling order changes in the command payload', () => {
     const blocks = [
       block('a', 0),
