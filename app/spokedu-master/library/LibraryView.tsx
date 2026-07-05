@@ -33,7 +33,7 @@ import {
 import { getSupportedOfficialSpomovePresets } from '../lib/program-meta';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
-import { useIsPro, useMasterStore } from '../store';
+import { useIsPremium, useMasterStore } from '../store';
 import type { Program } from '../types';
 import {
   countValidFavoritePrograms,
@@ -389,7 +389,7 @@ export default function LibraryView() {
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
-  const isPro = useIsPro();
+  const isPremium = useIsPremium();
   const favoriteIds = storedFavoriteIds ?? getFavoriteProgramIds(ownerId);
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
@@ -717,7 +717,7 @@ export default function LibraryView() {
           </div>
           <ProgramGrid
             programs={filteredPrograms}
-            isPro={isPro}
+            isPro={isPremium}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={ownerId != null}
             sourceLibraryView={view}
@@ -770,7 +770,7 @@ export default function LibraryView() {
         <ProgramPreviewModal
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
-          isPro={isPro}
+          isPro={isPremium}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
           sourceLibraryView={view}

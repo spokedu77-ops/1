@@ -17,7 +17,7 @@ const FEATURES = [
     ic: 'var(--spm-grn)',
     title: 'SPOMOVE',
     desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다.',
-    items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '반응 시간 기록'],
+    items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '화면 신호 반응 활동'],
   },
   {
     icon: Timer,
@@ -226,7 +226,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-[760px]">
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
           <h2 className="mb-4 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
-          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>라이트와 프리미엄 월 자동결제</p>
+          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>프리미엄 월 자동결제 · 라이트는 결제 화면에서 선택</p>
           <div className="grid gap-5 md:grid-cols-2">
             {PRICING.map((p) => (
               <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>

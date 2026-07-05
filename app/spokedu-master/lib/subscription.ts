@@ -30,6 +30,14 @@ export function hasMasterAccess(profile: UserProfile | null): boolean {
   return isPaidMasterPlan(profile);
 }
 
+export function hasPremiumMasterAccess(profile: UserProfile | null): boolean {
+  if (profile?.isAdmin) return true;
+  return (
+    (profile?.plan === 'premium' || profile?.plan === 'pro' || profile?.plan === 'team') &&
+    profile.subscriptionStatus === 'active'
+  );
+}
+
 export function getUpgradeHref(profile: UserProfile | null): string {
   return isPaidMasterPlan(profile) ? '/spokedu-master/subscription' : '/spokedu-master/payment';
 }

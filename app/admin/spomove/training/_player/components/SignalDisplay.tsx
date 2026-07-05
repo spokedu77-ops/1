@@ -729,8 +729,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             top: `${posY * 100}%`,
             transform: 'translate(-50%, -50%)',
             // posX/posY가 극단(0/1)에 가까울 때도 화면 밖으로 잘리지 않게, 뷰포트 대비 사이즈를 보수적으로 제한한다.
-            width: 'min(34vw, 34vh)',
-            height: 'min(34vw, 34vh)',
+            width: 'min(40vw, 40vh)',
+            height: 'min(40vw, 40vh)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',

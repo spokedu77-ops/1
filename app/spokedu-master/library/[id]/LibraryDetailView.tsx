@@ -38,7 +38,7 @@ import { getSpomoveSessionHref, getSupportedOfficialSpomovePresets } from '../..
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
-import { useMasterStore } from '../../store';
+import { useIsPremium, useMasterStore } from '../../store';
 import type { ClassRecord } from '../../types';
 import { getLibraryReturnHref } from '../libraryNavigation';
 
@@ -79,6 +79,7 @@ function BookOpenFallback() {
 
 export default function LibraryDetailView({ id }: { id: string }) {
   const programs = useMasterStore((state) => state.programs);
+  const isPremium = useIsPremium();
   const profile = useMasterStore((state) => state.profile);
   const ownerId = getFavoritesOwnerId(profile);
   const storedFavoriteIds = useMasterStore((state) =>
@@ -151,6 +152,28 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <Link href={libraryReturnHref} className="mt-6 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-extrabold text-white">
           라이브러리로 돌아가기
         </Link>
+      </main>
+    );
+  }
+
+  if (program.isPro && !isPremium) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-[#f5f7fb] px-6 text-center">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-[18px] border border-amber-200 bg-amber-50 text-amber-600">
+          <FileText className="h-7 w-7" />
+        </div>
+        <h1 className="mt-5 text-xl font-black text-slate-950">프리미엄 전용 수업 자료입니다.</h1>
+        <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-slate-500">
+          이 수업의 전체 지도안, 코치 스크립트, 영상 자료는 프리미엄 이용권에서 열람할 수 있습니다.
+        </p>
+        <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
+          <Link href="/spokedu-master/payment?plan=premium" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+            프리미엄 보기
+          </Link>
+          <Link href="/spokedu-master/library" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
+            라이브러리로
+          </Link>
+        </div>
       </main>
     );
   }

@@ -24,6 +24,11 @@ type BillingIssueResponse = {
   nextBillingAt?: string | null;
 };
 
+type AccessResponse = {
+  allowed?: boolean;
+  plan?: string;
+};
+
 const ACCESS_POLL_ATTEMPTS = 6;
 const ACCESS_POLL_INTERVAL_MS = 800;
 
@@ -88,8 +93,8 @@ function SuccessContent() {
         return;
       }
 
-      const access = await response.json().catch(() => null) as { allowed?: boolean } | null;
-      if (response.ok && access?.allowed === true) {
+      const access = await response.json().catch(() => null) as AccessResponse | null;
+      if (response.ok && access?.allowed === true && access.plan === plan) {
         setStatus('success');
         return;
       }
@@ -100,7 +105,7 @@ function SuccessContent() {
     }
 
     setStatus('delayed');
-  }, [syncSubscription]);
+  }, [plan, syncSubscription]);
 
   useEffect(() => {
     if (!hasValidParams || confirmationStarted.current || !isPaidPlanId(plan)) return;
@@ -115,7 +120,7 @@ function SuccessContent() {
         });
         const json = await response.json().catch(() => null) as BillingIssueResponse | null;
 
-        if (!response.ok || json?.ok !== true) {
+        if (!response.ok || json?.ok !== true || json.plan !== plan) {
           setStatus('failed');
           return;
         }

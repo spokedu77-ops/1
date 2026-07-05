@@ -29,6 +29,12 @@ const BeatWaveReactionTraining = lazy(() =>
   })),
 );
 
+const CamouflageReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/CamouflageReactionTraining').then((m) => ({
+    default: m.CamouflageReactionTraining,
+  })),
+);
+
 const SweepReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/SweepReactionTraining').then((m) => ({
     default: m.SweepReactionTraining,
@@ -220,6 +226,19 @@ export function EngineRouter({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <BeatWaveReactionTraining
+            durationSec={dur}
+            speedLevel={reactSpeedLevel}
+            speedSec={sp}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    if (level === 6) {
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <CamouflageReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}

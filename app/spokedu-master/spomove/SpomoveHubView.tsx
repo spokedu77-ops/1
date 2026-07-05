@@ -26,12 +26,13 @@ import {
 import {
   SPOMOVE_KEY_ACTION_LABELS,
   SPOMOVE_RESPONSE_TYPE_LABELS,
+  SPOMOVE_THINKING_LEVEL_LABELS,
   getOfficialSpomovePresetGuide,
-  type SpomoveResponseType,
+  type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 
-type ResponseTypeTab = 'all' | SpomoveResponseType;
+type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
 type SpomoveThumbnailAssetsJson = {
   thumbnails?: Record<string, string | null | undefined>;
@@ -43,14 +44,13 @@ type SpomoveThumbnailPackQueryResult = {
 
 const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
 
-const RESPONSE_TYPE_TABS: ResponseTypeTab[] = ['all', 'direct', 'select', 'memory', 'rule'];
+const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
 
-const RESPONSE_TYPE_FILTER_LABELS: Record<ResponseTypeTab, string> = {
+const THINKING_LEVEL_FILTER_LABELS: Record<ThinkingLevelTab, string> = {
   all: '전체',
-  direct: '바로 반응',
-  select: '골라서',
-  memory: '기억',
-  rule: '규칙',
+  easy: SPOMOVE_THINKING_LEVEL_LABELS.easy,
+  normal: SPOMOVE_THINKING_LEVEL_LABELS.normal,
+  hard: SPOMOVE_THINKING_LEVEL_LABELS.hard,
 };
 
 const PROGRAM_GROUP_TABS: ProgramGroupTab[] = [
@@ -192,7 +192,7 @@ function ThemeLabelBadge({ theme }: { theme?: string }) {
   );
 }
 
-// level 2: 사분할 2×2
+// level 2: 사분할 2×2 — PAD_GRID: 위 빨·노 / 아래 초·파
 function QuadVisual({ theme }: { theme?: string }) {
   const isColorTheme = !theme || theme === 'color';
   if (isColorTheme) {
@@ -205,13 +205,18 @@ function QuadVisual({ theme }: { theme?: string }) {
     );
   }
   return (
-    <div className="relative flex h-full w-full items-center justify-center bg-slate-800">
+    <div className="relative h-full w-full bg-slate-950">
       <div className="absolute inset-0 grid grid-cols-2 grid-rows-2 gap-[2px]">
         {PAD_COLORS.map((color, i) => (
-          <div key={i} style={{ background: color, opacity: 0.18 }} />
+          <div
+            key={i}
+            className="relative flex items-center justify-center"
+            style={{ background: color, opacity: 0.28 }}
+          >
+            <ThemeIcon theme={theme} className="h-9 w-9 text-white/90" />
+          </div>
         ))}
       </div>
-      <ThemeIcon theme={theme} className="relative z-10 h-12 w-12 text-white/80" />
       <ThemeLabelBadge theme={theme} />
     </div>
   );
@@ -296,18 +301,45 @@ function ThreePanelVisual({ theme }: { theme?: string }) {
   );
 }
 
-function DirectionArrowVisual() {
+/** 반응 인지 1번 · 공간 방향 — 플레이어 simon_arrow와 동일한 기둥+화살표 실루엣(거대) */
+function SpatialDirectionVisual() {
   return (
-    <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-indigo-900 to-slate-900">
-      <svg viewBox="0 0 80 80" className="h-[52px] w-[52px] text-white">
-        <polygon points="40,9 33,23 47,23" fill="currentColor" opacity="0.9" />
-        <polygon points="40,71 33,57 47,57" fill="currentColor" opacity="0.9" />
-        <polygon points="9,40 23,33 23,47" fill="currentColor" opacity="0.9" />
-        <polygon points="71,40 57,33 57,47" fill="currentColor" opacity="0.9" />
-        <circle cx="40" cy="40" r="5" fill="currentColor" opacity="0.4" />
-      </svg>
+    <div className="relative h-full w-full overflow-hidden bg-[#0F172A]">
+      <div
+        className="absolute flex items-center justify-center"
+        style={{
+          left: '78%',
+          top: '50%',
+          width: 'min(52%, 88%)',
+          height: 'min(78%, 92%)',
+          transform: 'translate(-50%, -50%)',
+        }}
+      >
+        <svg
+          viewBox="0 0 100 130"
+          preserveAspectRatio="xMidYMid meet"
+          className="h-full w-full"
+          style={{ filter: 'drop-shadow(0 10px 48px rgba(0,0,0,0.55))' }}
+          aria-hidden
+        >
+          <g transform="rotate(0 50 67)">
+            <path
+              d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+              fill="#FFFFFF"
+              stroke="rgba(255,255,255,0.22)"
+              strokeWidth={6}
+              strokeLinejoin="round"
+            />
+          </g>
+        </svg>
+      </div>
+      <div className="absolute bottom-3 left-3">
+        <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-white/60">
+          공간 방향
+        </span>
+      </div>
       <div className="absolute bottom-3 right-3">
-        <PadSignature />
+        <PadSignature dim />
       </div>
     </div>
   );
@@ -473,7 +505,7 @@ function SpomoveProgramVisual({ preset }: { preset: OfficialSpomovePreset }) {
   if (programGroup === 'stroop') return <StroopVisual />;
   // reaction-cognition: level × theme 조합으로 시각 결정
   const theme = engine.variantColorTheme;
-  if (engine.level === 1) return <DirectionArrowVisual />;
+  if (engine.level === 1) return <SpatialDirectionVisual />;
   if (engine.level === 3) return <FullVisual theme={theme} />;
   if (engine.level === 4) return <TwoPanelVisual theme={theme} />;
   if (engine.level === 5) return <ThreePanelVisual theme={theme} />;
@@ -490,26 +522,26 @@ function matchesProgramGroup(preset: OfficialSpomovePreset, tab: ProgramGroupTab
   return preset.programGroup === tab;
 }
 
-function matchesResponseType(preset: OfficialSpomovePreset, tab: ResponseTypeTab) {
+function matchesThinkingLevel(preset: OfficialSpomovePreset, tab: ThinkingLevelTab) {
   if (tab === 'all') return true;
-  return getOfficialSpomovePresetGuide(preset).responseType === tab;
+  return getOfficialSpomovePresetGuide(preset).thinkingLevel === tab;
 }
 
-function programGroupCount(tab: ProgramGroupTab, responseType: ResponseTypeTab = 'all') {
+function programGroupCount(tab: ProgramGroupTab, thinkingLevel: ThinkingLevelTab = 'all') {
   return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => matchesProgramGroup(preset, tab) && matchesResponseType(preset, responseType),
+    (preset) => matchesProgramGroup(preset, tab) && matchesThinkingLevel(preset, thinkingLevel),
   ).length;
 }
 
-function responseTypeCount(tab: ResponseTypeTab, programGroup: ProgramGroupTab = 'all') {
+function thinkingLevelCount(tab: ThinkingLevelTab, programGroup: ProgramGroupTab = 'all') {
   return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => matchesResponseType(preset, tab) && matchesProgramGroup(preset, programGroup),
+    (preset) => matchesThinkingLevel(preset, tab) && matchesProgramGroup(preset, programGroup),
   ).length;
 }
 
-function filterOfficialPresets(programGroup: ProgramGroupTab, responseType: ResponseTypeTab) {
+function filterOfficialPresets(programGroup: ProgramGroupTab, thinkingLevel: ThinkingLevelTab) {
   return OFFICIAL_SPOMOVE_LIBRARY.filter(
-    (preset) => matchesProgramGroup(preset, programGroup) && matchesResponseType(preset, responseType),
+    (preset) => matchesProgramGroup(preset, programGroup) && matchesThinkingLevel(preset, thinkingLevel),
   );
 }
 
@@ -536,10 +568,9 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
 
 function buildSpomoveDecisionItems(preset: OfficialSpomovePreset) {
   const display = getSpomovePresetDisplayModel(preset);
-  const guide = getOfficialSpomovePresetGuide(preset);
   const equipment = preset.settingChips?.find((chip) => /패드|pad|교구|준비/i.test(chip)) ?? '4색 패드';
   return [
-    `반응 ${SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]}`,
+    display.difficultyLabel ? `난이도 ${display.difficultyLabel}` : null,
     display.targetLabel ? `대상 ${display.targetLabel}` : null,
     display.durationLabel ? `시간 ${display.durationLabel}` : null,
     equipment ? `교구 ${equipment}` : null,
@@ -685,7 +716,7 @@ function CardInfo({
       {/* 분류 태그 (최대 2개) */}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
-          {SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]}
+          {SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}
         </span>
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
           {preset.programTitle}
@@ -805,7 +836,7 @@ function PresetCard({
 
 export default function SpomoveHubView() {
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
-  const [activeResponseType, setActiveResponseType] = useState<ResponseTypeTab>('all');
+  const [activeThinkingLevel, setActiveThinkingLevel] = useState<ThinkingLevelTab>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
@@ -855,10 +886,10 @@ export default function SpomoveHubView() {
   }, []);
 
   const filteredPresets = useMemo(
-    () => filterOfficialPresets(activeProgramGroup, activeResponseType),
-    [activeProgramGroup, activeResponseType],
+    () => filterOfficialPresets(activeProgramGroup, activeThinkingLevel),
+    [activeProgramGroup, activeThinkingLevel],
   );
-  const showAxisSections = activeProgramGroup === 'all' && activeResponseType === 'all';
+  const showAxisSections = activeProgramGroup === 'all' && activeThinkingLevel === 'all';
   const axisSections = useMemo(() => {
     if (!showAxisSections) return [];
     return SPOMOVE_AXIS_ORDER.map((axis) => ({
@@ -899,7 +930,7 @@ export default function SpomoveHubView() {
             SPOMOVE 공식 프로그램
           </h1>
           <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
-            프로그램 이름으로 바로 찾고, 반응 유형으로 세팅을 좁혀 보세요. 전체 보기에서는 단순·선택·복합
+            프로그램 이름으로 바로 찾고, 생각 난이도로 세팅을 좁혀 보세요. 전체 보기에서는 단순·선택·복합
             반응 축으로 묶어 두었습니다.
           </p>
           <p className="mt-3 text-[12px] font-semibold text-white/30">
@@ -956,7 +987,7 @@ export default function SpomoveHubView() {
             <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
               {PROGRAM_GROUP_TABS.map((tab) => {
                 const active = activeProgramGroup === tab;
-                const count = programGroupCount(tab, activeResponseType);
+                const count = programGroupCount(tab, activeThinkingLevel);
                 return (
                   <button
                     key={tab}
@@ -977,28 +1008,28 @@ export default function SpomoveHubView() {
           </div>
         </div>
 
-        {/* 반응 유형 필터 (2차) */}
+        {/* 생각 난이도 필터 (2차) */}
         <div className="mt-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
-              반응 유형
+              생각 난이도
             </span>
             <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
-              {RESPONSE_TYPE_TABS.map((tab) => {
-                const active = activeResponseType === tab;
-                const count = responseTypeCount(tab, activeProgramGroup);
+              {THINKING_LEVEL_TABS.map((tab) => {
+                const active = activeThinkingLevel === tab;
+                const count = thinkingLevelCount(tab, activeProgramGroup);
                 return (
                   <button
                     key={tab}
                     type="button"
-                    onClick={() => setActiveResponseType(tab)}
+                    onClick={() => setActiveThinkingLevel(tab)}
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${
                       active
                         ? 'border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
                         : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
                     }`}
                   >
-                    {RESPONSE_TYPE_FILTER_LABELS[tab]}
+                    {THINKING_LEVEL_FILTER_LABELS[tab]}
                     <span className="text-[10px] font-semibold opacity-60">{count}</span>
                   </button>
                 );
@@ -1041,7 +1072,7 @@ export default function SpomoveHubView() {
               type="button"
               onClick={() => {
                 setActiveProgramGroup('all');
-                setActiveResponseType('all');
+                setActiveThinkingLevel('all');
               }}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
             >

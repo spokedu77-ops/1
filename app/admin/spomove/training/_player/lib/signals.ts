@@ -3,6 +3,10 @@
  */
 
 import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS } from '../constants';
+import {
+  SPOMOVE_VARIANT_SLOT_COLOR_IDS,
+  SPOMOVE_VARIANT_SLOT_COUNT,
+} from '@/app/lib/admin/constants/padGrid';
 
 export const BODY_ACTIONS = [
   { id: 'rightFoot' as const, label: '오른발' },
@@ -181,24 +185,15 @@ export type VariantPanelContent = {
 };
 
 /** Asset Hub 과일 슬롯 수(테마 슬롯과 동일 8칸) */
-export const SPOMOVE_VARIANT_FRUIT_SLOT_COUNT = 8 as const;
+export const SPOMOVE_VARIANT_FRUIT_SLOT_COUNT = SPOMOVE_VARIANT_SLOT_COUNT;
 
 /**
  * 레거시 참조용(런타임 기본 과일 이미지는 쓰지 않음 — 업로드된 슬롯만 반영).
  */
 export const VARIANT_FRUIT_IMAGE_URLS: readonly string[] = [];
 
-/** 슬롯 순서별 4색 패드 매핑 */
-export const VARIANT_FRUIT_SLOT_COLOR_IDS: readonly ('red' | 'yellow' | 'blue' | 'green')[] = [
-  'red',
-  'yellow',
-  'blue',
-  'blue',
-  'green',
-  'yellow',
-  'yellow',
-  'green',
-];
+/** @deprecated SPOMOVE_VARIANT_SLOT_COLOR_IDS 사용 */
+export const VARIANT_FRUIT_SLOT_COLOR_IDS = SPOMOVE_VARIANT_SLOT_COLOR_IDS;
 
 export function buildFruitSlidesFromUrls(urls: readonly string[]): FruitSlide[] {
   return urls.map((imageUrl, i) => ({
@@ -345,6 +340,8 @@ export type GenerateSignalOptions = {
   taskSwitchPrevRule?: 'color' | 'position' | 'reverse' | null;
   /** basic 3번 + 색상 테마: 전면 색상 위에 오버레이할 숫자 범위 */
   basicNumberOverlay?: 'none' | '2' | '3';
+  /** basic 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 (0~3) */
+  poleEdgeIndex?: number;
 };
 
 export function generateSignal(
@@ -366,7 +363,8 @@ export function generateSignal(
   if (mode === 'basic') {
     if (level === 1) {
       const a = r(ARROWS);
-      return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
+      const edge = opts?.poleEdgeIndex ?? Math.floor(Math.random() * 4);
+      return buildPoleArrowSignal(a, edge);
     }
     if (level === 2) {
       const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
@@ -957,6 +955,26 @@ export function pickSimonPolePosition(edge: number, margin = 0.125): { posX: num
   }
 }
 
+/** 반응 인지 1번·사이먼 2번 공통: 화면 극단 거대 기둥+화살표 */
+export function buildPoleArrowSignal(
+  arrow: (typeof ARROWS)[number],
+  edge: number,
+): Record<string, unknown> {
+  const { posX, posY } = pickSimonPolePosition(edge);
+  return {
+    type: 'simon_arrow',
+    bg: '#0F172A',
+    content: {
+      arrowId: arrow.id,
+      icon: arrow.icon,
+      label: arrow.label,
+      posX,
+      posY,
+    },
+    voice: null,
+  };
+}
+
 /** 사이먼 전용: 1번=도형+색 / 2번=↑↓←→ 화살표+방향 · 색(또는 방향) 중복 규칙 + 좌→우→상→하 극단 순환 */
 export function createSimonSignalGenerator(level: number, colors: ColorItem[]) {
   const activeColors = colors.length >= 2 ? colors : COLORS;
@@ -985,18 +1003,7 @@ export function createSimonSignalGenerator(level: number, colors: ColorItem[]) {
       }
       if (level === 2) {
         const a = ARROWS[Math.floor(Math.random() * ARROWS.length)]!;
-        return {
-          type: 'simon_arrow',
-          bg: '#0F172A',
-          content: {
-            arrowId: a.id,
-            icon: a.icon,
-            label: a.label,
-            posX,
-            posY,
-          },
-          voice: null,
-        };
+        return buildPoleArrowSignal(a, edgeIdx % 4);
       }
       return null;
     },
@@ -1205,6 +1212,8 @@ export function createBasicSignalGenerator(
   let lastVariantPairKey: string | null = null;
   /** 5단계: 직전 3패널의 슬롯별 이미지 URL */
   let lastVariantPanelImageUrls: (string | null)[] = [null, null, null];
+  /** 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 */
+  let poleEdgeIdx = 0;
 
   const genOpts = (): GenerateSignalOptions => {
     const o: GenerateSignalOptions = {};
@@ -1212,6 +1221,7 @@ export function createBasicSignalGenerator(
     const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
     if (slides !== undefined) o.fruitSlides = slides;
     if (basicNumberOverlay && basicNumberOverlay !== 'none') o.basicNumberOverlay = basicNumberOverlay;
+    if (level === 1) o.poleEdgeIndex = poleEdgeIdx;
     if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;
     else if (level === 6) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;
@@ -1263,6 +1273,7 @@ export function createBasicSignalGenerator(
         lastVariantPanelImageUrls = [null, null, null];
       }
     }
+    if (level === 1) poleEdgeIdx = (poleEdgeIdx + 1) % 4;
     return sig;
   };
 

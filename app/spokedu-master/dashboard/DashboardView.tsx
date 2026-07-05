@@ -47,6 +47,7 @@ import {
 } from '../spomove/officialSpomovePresets';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
+import { canUseSpomove } from '../lib/subscription';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -63,15 +64,17 @@ type ContinueItem = {
   href: string;
 };
 
-const FIRST_START_STEPS = [
+function getFirstStartSteps(profile: UserProfile | null) {
+  const spomoveAvailable = canUseSpomove(profile);
+  return [
   {
     title: '오늘 수업 고르기',
     href: '/spokedu-master/library',
     Icon: BookOpen,
   },
   {
-    title: 'SPOMOVE 체험하기',
-    href: '/spokedu-master/spomove',
+    title: spomoveAvailable ? 'SPOMOVE 실행하기' : '프리미엄 SPOMOVE 보기',
+    href: spomoveAvailable ? '/spokedu-master/spomove' : '/spokedu-master/payment?plan=premium',
     Icon: MonitorPlay,
   },
   {
@@ -79,7 +82,8 @@ const FIRST_START_STEPS = [
     href: '/spokedu-master/class-record',
     Icon: FileText,
   },
-] as const;
+  ] as const;
+}
 
 function isPlaceholderText(value?: string | null) {
   const text = (value ?? '').trim();
@@ -385,7 +389,9 @@ function ContinueSection({ item }: { item: ContinueItem }) {
   );
 }
 
-function FirstStartGuide() {
+function FirstStartGuide({ profile }: { profile: UserProfile | null }) {
+  const firstStartSteps = getFirstStartSteps(profile);
+  const spomoveAvailable = canUseSpomove(profile);
   return (
     <section
       data-dashboard-section="first-start"
@@ -398,11 +404,11 @@ function FirstStartGuide() {
           SPOKEDU MASTER 시작하기
         </h2>
         <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-600">
-          오늘 바로 쓸 수업을 먼저 고르고, 필요하면 SPOMOVE 화면 활동을 함께 체험해 보세요.
+          오늘 바로 쓸 수업을 먼저 고르고, {spomoveAvailable ? 'SPOMOVE 화면 활동까지 이어서 실행해 보세요.' : 'SPOMOVE는 프리미엄에서 함께 사용할 수 있습니다.'}
         </p>
       </div>
       <div className="mt-4 grid gap-2 md:grid-cols-3">
-        {FIRST_START_STEPS.map(({ title, href, Icon }, index) => (
+        {firstStartSteps.map(({ title, href, Icon }, index) => (
           <Link
             key={href}
             href={href}
@@ -738,7 +744,7 @@ export default function DashboardView() {
         </div>
       </header>
 
-      {isFirstUser ? <FirstStartGuide /> : null}
+      {isFirstUser ? <FirstStartGuide profile={profile} /> : null}
 
       <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
         <div className="mb-4 flex items-end justify-between gap-4">

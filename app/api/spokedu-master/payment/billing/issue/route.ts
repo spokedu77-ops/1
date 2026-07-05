@@ -38,6 +38,12 @@ function fail(status: number, error = '결제를 처리하지 못했습니다.')
   return NextResponse.json({ error }, { status });
 }
 
+function normalizePaidPlan(plan: string | null | undefined): SpokeduMasterPaidPlan | null {
+  if (plan === 'lite' || plan === 'premium') return plan;
+  if (plan === 'pro') return 'premium';
+  return null;
+}
+
 async function cleanupPendingBillingAttempt(input: {
   service: ReturnType<typeof getServiceSupabase>;
   userId: string;
@@ -102,6 +108,36 @@ export async function POST(request: Request) {
   }
 
   const activeSubscription = isSpokeduMasterPaidPlanActive(subscription as SpokeduMasterSubscriptionRow | null);
+  if (activeSubscription) {
+    const activeRow = subscription as BillingIssueSubscriptionRow | null;
+    const activePlan = normalizePaidPlan(activeRow?.plan);
+    const activePeriodEnd = activeRow?.current_period_end ?? activeRow?.period_end ?? null;
+
+    if (activePlan === plan) {
+      return NextResponse.json({
+        error: '이미 활성화된 이용권입니다.',
+        plan: activePlan,
+        periodEnd: activePeriodEnd,
+      }, { status: 409 });
+    }
+
+    if (activePlan === 'premium') {
+      return NextResponse.json({
+        error: '프리미엄 이용권은 결제 페이지에서 라이트로 변경할 수 없습니다. 구독 관리에서 해지 후 다시 선택해 주세요.',
+        plan: activePlan,
+        periodEnd: activePeriodEnd,
+      }, { status: 409 });
+    }
+
+    if (activePlan !== 'lite' || plan !== 'premium') {
+      return NextResponse.json({
+        error: '현재 이용권에서 요청한 상품으로 바로 변경할 수 없습니다. 고객센터로 문의해 주세요.',
+        plan: activePlan,
+        periodEnd: activePeriodEnd,
+      }, { status: 409 });
+    }
+  }
+  const billingMode = activeSubscription ? 'upgrade' : 'initial';
 
   let billing;
   try {
@@ -124,16 +160,6 @@ export async function POST(request: Request) {
   });
   if (!billingKeySecretId) return fail(503, '자동결제 설정이 완료되지 않았습니다.');
 
-  if (activeSubscription) {
-    const activeRow = subscription as BillingIssueSubscriptionRow | null;
-    return NextResponse.json({
-      ok: true,
-      replaced: true,
-      plan,
-      periodEnd: activeRow?.current_period_end ?? activeRow?.period_end ?? null,
-    });
-  }
-
   const orderId = createSpokeduMasterOrderId(plan as SpokeduMasterPaidPlan, 'initial');
   const orderName = SPOKEDU_MASTER_PLAN_CONFIG[plan].name;
   const { error: orderError } = await service
@@ -144,7 +170,7 @@ export async function POST(request: Request) {
       plan,
       amount,
       status: 'pending',
-      billing_cycle_key: `initial:${orderId}`,
+      billing_cycle_key: `${billingMode}:${orderId}`,
     }, { onConflict: 'order_id' });
 
   if (orderError) {
@@ -201,11 +227,11 @@ export async function POST(request: Request) {
     plan,
     amount,
     approvedAt: payment.approvedAt,
-    eventKey: `initial:${orderId}:${payment.paymentKey}`,
+    eventKey: `${billingMode}:${orderId}:${payment.paymentKey}`,
     source: 'initial',
     providerCustomerKey: billing.customerKey,
     providerBillingKeySecretId: billingKeySecretId,
-    billingCycleKey: `initial:${orderId}`,
+    billingCycleKey: `${billingMode}:${orderId}`,
   });
 
   if (!applyResult.ok) {

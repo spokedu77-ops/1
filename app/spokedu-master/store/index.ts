@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
-import { hasMasterAccess } from '../lib/subscription';
+import { hasMasterAccess, hasPremiumMasterAccess } from '../lib/subscription';
 import {
   claimPendingLegacyFavorites,
   getFavoritesByOwner,
@@ -575,6 +575,7 @@ export const useMasterStore = create<MasterState>()(
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
 export const useIsPro = () => useMasterStore((state) => hasMasterAccess(state.profile));
+export const useIsPremium = () => useMasterStore((state) => hasPremiumMasterAccess(state.profile));
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
 export const useClassTimerState = () =>
   useMasterStore(

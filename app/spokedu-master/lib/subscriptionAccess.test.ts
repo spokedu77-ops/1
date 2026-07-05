@@ -7,6 +7,7 @@ import {
   canUseRecords,
   canUseSpomove,
   hasMasterAccess,
+  hasPremiumMasterAccess,
   isPaidMasterPlan,
 } from './subscription';
 import type { UserProfile } from '../types';
@@ -55,11 +56,14 @@ describe('SPOKEDU MASTER client subscription cache', () => {
     expect(canUseClassTools(lite)).toBe(true);
     expect(canUseRecords(lite)).toBe(true);
     expect(canUseSpomove(lite)).toBe(false);
+    expect(hasMasterAccess(lite)).toBe(true);
+    expect(hasPremiumMasterAccess(lite)).toBe(false);
   });
 
   it('keeps Premium-equivalent paid access open for SPOMOVE', () => {
     const premium = profile({ plan: 'premium', subscriptionStatus: 'active' });
     expect(canUseSpomove(premium)).toBe(true);
+    expect(hasPremiumMasterAccess(premium)).toBe(true);
   });
 
   it('allows SPOMAT member price only for Premium-equivalent active access', () => {

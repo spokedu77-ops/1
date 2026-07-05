@@ -152,6 +152,18 @@ function normalizeProgramForMaster(program: Program): Program {
   };
 }
 
+function canAccessProProgramDetails(access: Awaited<ReturnType<typeof requireSpokeduMasterAccess>>): boolean {
+  return access.ok && (access.isAdmin || access.plan === 'premium' || access.plan === 'team' || access.plan === 'admin');
+}
+
+function redactProgramForAccess(program: Program, canAccessProDetails: boolean): Program {
+  if (!program.isPro || canAccessProDetails) return program;
+  return {
+    ...program,
+    lessonDetail: undefined,
+  };
+}
+
 type MetaRow = {
   curriculum_id: number;
   sm_tags: string[] | null;
@@ -447,7 +459,10 @@ export async function GET() {
     return privateNoStoreJson(PROGRAM_SOURCE_ERROR, { status: 500 });
   }
 
-  return privateNoStoreJson({ data: programs, total: programs.length });
+  const canAccessProDetails = canAccessProProgramDetails(access);
+  const visiblePrograms = programs.map((program) => redactProgramForAccess(program, canAccessProDetails));
+
+  return privateNoStoreJson({ data: visiblePrograms, total: visiblePrograms.length });
 }
 
 export async function PATCH(request: Request) {

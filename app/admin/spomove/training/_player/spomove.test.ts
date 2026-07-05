@@ -116,6 +116,15 @@ describe('getAssetRequirement', () => {
     expect(getAssetRequirement({ mode: 'basic', level: 1, theme: 'fruit' }).minimumCount).toBe(0);
   });
 
+  test('basic level 1 → simon_arrow at screen-edge pole', () => {
+    const sig = generateSignal('basic', 1, Object.values(COLORS_META));
+    expect(sig?.type).toBe('simon_arrow');
+    const content = sig?.content as { arrowId?: string; posX?: number; posY?: number };
+    expect(content.arrowId).toBeTruthy();
+    expect(typeof content.posX).toBe('number');
+    expect(typeof content.posY).toBe('number');
+  });
+
   test('basic level 2 non-color: minimumCount=1 (think_quad 이미지 지원)', () => {
     const r = getAssetRequirement({ mode: 'basic', level: 2, theme: 'fruit' });
     expect(r.minimumCount).toBe(1);
@@ -614,5 +623,27 @@ describe('FlowPreset', () => {
     const r: SavePresetResult = saveFlowPresets([VALID]);
     expect(r.success).toBe(false);
     if (!r.success) expect(r.error.toLowerCase()).toMatch(/quota|저장/i);
+  });
+});
+
+describe('SPOMOVE variant slot pad colors', () => {
+  test('8 slots map to PAD_GRID: red/yellow top, green/blue bottom (2 per color)', async () => {
+    const { SPOMOVE_VARIANT_SLOT_COLOR_IDS, PAD_POSITIONS } = await import(
+      '@/app/lib/admin/constants/padGrid'
+    );
+    expect(SPOMOVE_VARIANT_SLOT_COLOR_IDS).toEqual([
+      'red',
+      'yellow',
+      'green',
+      'blue',
+      'red',
+      'yellow',
+      'green',
+      'blue',
+    ]);
+    expect(PAD_POSITIONS).toEqual([
+      ['red', 'yellow'],
+      ['green', 'blue'],
+    ]);
   });
 });

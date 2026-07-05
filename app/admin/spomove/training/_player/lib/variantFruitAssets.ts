@@ -14,16 +14,16 @@ import {
 
 export const SPOMOVE_VARIANT_PACK_ID = 'spomove_variant_fruits';
 
-/** UI·순서 고정 (8슬롯 = 시그널 슬롯과 동일) */
+/** UI·순서: 1~4=각 패드, 5~8=같은 패드 두 번째 (1·5 빨 / 2·6 노 / 3·7 초 / 4·8 파) */
 export const VARIANT_FRUIT_SLOT_LABELS: readonly string[] = [
-  '사과 (빨강)',
-  '바나나 (노랑)',
-  '블루베리 (파랑)',
-  '포도 (파랑)',
-  '키위 (초록)',
-  '참외 (노랑)',
-  '레몬 (노랑)',
-  '멜론 (초록)',
+  '1. 사과 (빨강)',
+  '2. 바나나 (노랑)',
+  '3. 키위 (초록)',
+  '4. 블루베리 (파랑)',
+  '5. 딸기 (빨강)',
+  '6. 레몬 (노랑)',
+  '7. 멜론 (초록)',
+  '8. 포도 (파랑)',
 ];
 
 export type SpomoveVariantAssetsJson = {

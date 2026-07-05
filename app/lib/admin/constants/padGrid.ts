@@ -39,6 +39,24 @@ export const PAD_POSITIONS: PADColor[][] = [
   [PAD_GRID.BOTTOM_LEFT, PAD_GRID.BOTTOM_RIGHT],
 ];
 
+/** SPOMOVE 변형 색지각 Asset Hub 슬롯 수 (패드색당 2칸) */
+export const SPOMOVE_VARIANT_SLOT_COUNT = 8 as const;
+
+/**
+ * 슬롯 0~7 → 패드색.
+ * 사람 기준 번호: 1·5=빨강, 2·6=노랑, 3·7=초록, 4·8=파랑 (PAD_GRID 좌상→우상→좌하→우하, 각 2장).
+ */
+export const SPOMOVE_VARIANT_SLOT_COLOR_IDS: readonly PADColor[] = [
+  'red',
+  'yellow',
+  'green',
+  'blue',
+  'red',
+  'yellow',
+  'green',
+  'blue',
+];
+
 /** Week3 ANTI: 대각선 매핑 RED↔BLUE, YELLOW↔GREEN (4분할: 빨강/노랑 | 초록/파랑) */
 export function diagonal(color: PADColor): PADColor {
   const map: Record<PADColor, PADColor> = {
