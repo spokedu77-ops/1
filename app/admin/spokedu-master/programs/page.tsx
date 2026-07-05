@@ -784,7 +784,7 @@ function SpomoveThumbnailManager() {
               </p>
               <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 프리셋 썸네일</h2>
               <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-                공식 프리셋 60개의 썸네일만 관리합니다. 프리셋 설정과 실행 엔진은 변경하지 않습니다.
+                공식 프리셋 60개의 썸네일만 관리합니다. SPOMAT 2×2 패드와 맞추려면 1:1 정사각형으로 업로드하세요.
               </p>
             </div>
             <button
@@ -844,7 +844,7 @@ function SpomoveThumbnailManager() {
                   ) : null}
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {presets.map((preset) => {
                     const path = thumbnailPaths[preset.id] ?? '';
                     const imageUrl = resolveSpomoveThumbnailUrl(path, cacheBust);
@@ -852,8 +852,8 @@ function SpomoveThumbnailManager() {
                     const deletingThis = deletingPresetId === preset.id;
 
                     return (
-                      <article key={preset.id} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
-                        <div className="grid h-24 w-32 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-white">
+                      <article key={preset.id} className="overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+                        <div className="relative aspect-square overflow-hidden border-b border-slate-200 bg-white">
                           {imageUrl ? (
                             <img src={imageUrl} alt={`${preset.title} 썸네일`} className="h-full w-full object-cover" />
                           ) : (
@@ -862,20 +862,19 @@ function SpomoveThumbnailManager() {
                             </div>
                           )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-[13px] font-black text-slate-950">{preset.title}</p>
-                          <p className="mt-1 break-all text-[11px] font-bold text-slate-500">{preset.id}</p>
-                          <p className="mt-1 text-[11px] font-black text-indigo-600">{group.label}</p>
+                        <div className="p-3">
+                          <p className="line-clamp-2 text-[12px] font-black leading-4 text-slate-950">{preset.title}</p>
+                          <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
                           {path ? (
                             <p className="mt-2 truncate text-[10px] font-semibold text-slate-400">{path}</p>
                           ) : (
                             <p className="mt-2 text-[10px] font-semibold text-slate-400">썸네일 없음</p>
                           )}
 
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <label className="inline-flex h-9 cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-3 text-[12px] font-black text-white has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
+                          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                            <label className="inline-flex h-8 flex-1 cursor-pointer items-center justify-center rounded-lg bg-indigo-600 px-2 text-[11px] font-black text-white has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50">
                               {savingThis ? (
-                                <Loader2 size={14} className="mr-1.5 animate-spin" />
+                                <Loader2 size={13} className="mr-1 animate-spin" />
                               ) : null}
                               {path ? '교체' : '업로드'}
                               <input
@@ -894,10 +893,10 @@ function SpomoveThumbnailManager() {
                               type="button"
                               onClick={() => void deleteThumbnail(preset.id)}
                               disabled={!path || savingThis || deletingThis}
-                              className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-black text-rose-600 disabled:opacity-40"
+                              className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-2 text-[11px] font-black text-rose-600 disabled:opacity-40"
+                              aria-label={`${preset.title} 썸네일 삭제`}
                             >
-                              {deletingThis ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
-                              삭제
+                              {deletingThis ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                             </button>
                           </div>
                         </div>

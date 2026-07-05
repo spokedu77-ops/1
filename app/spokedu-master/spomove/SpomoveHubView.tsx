@@ -11,7 +11,7 @@ import {
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
-import { SPOMOVE_AXIS_META } from '@/app/lib/spomove/spomoveAxisMeta';
+import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
@@ -27,10 +27,11 @@ import {
   SPOMOVE_KEY_ACTION_LABELS,
   SPOMOVE_RESPONSE_TYPE_LABELS,
   getOfficialSpomovePresetGuide,
+  type SpomoveResponseType,
 } from './officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 
-type OfficialLibraryTab = 'all' | 'response' | 'attention' | 'executive';
+type ResponseTypeTab = 'all' | SpomoveResponseType;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
 type SpomoveThumbnailAssetsJson = {
   thumbnails?: Record<string, string | null | undefined>;
@@ -42,13 +43,14 @@ type SpomoveThumbnailPackQueryResult = {
 
 const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
 
-const TABS: OfficialLibraryTab[] = ['all', 'response', 'attention', 'executive'];
+const RESPONSE_TYPE_TABS: ResponseTypeTab[] = ['all', 'direct', 'select', 'memory', 'rule'];
 
-const TAB_LABELS: Record<OfficialLibraryTab, string> = {
+const RESPONSE_TYPE_FILTER_LABELS: Record<ResponseTypeTab, string> = {
   all: '전체',
-  response: SPOMOVE_AXIS_META.response.title,
-  attention: SPOMOVE_AXIS_META.attention.title,
-  executive: SPOMOVE_AXIS_META.executive.title,
+  direct: '바로 반응',
+  select: '골라서',
+  memory: '기억',
+  rule: '규칙',
 };
 
 const PROGRAM_GROUP_TABS: ProgramGroupTab[] = [
@@ -482,17 +484,33 @@ function SpomoveProgramVisual({ preset }: { preset: OfficialSpomovePreset }) {
 
 // ── 데이터 helpers ───────────────────────────────────────────────────────────
 
-function tabCount(tab: OfficialLibraryTab) {
-  if (tab === 'all') return OFFICIAL_SPOMOVE_LIBRARY.length;
-  return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.axis === tab).length;
+function matchesProgramGroup(preset: OfficialSpomovePreset, tab: ProgramGroupTab) {
+  if (tab === 'all') return true;
+  if (tab === 'dive') return preset.programGroup === 'dive' || preset.programGroup === 'bonus';
+  return preset.programGroup === tab;
 }
 
-function programGroupCount(tab: ProgramGroupTab) {
-  if (tab === 'all') return OFFICIAL_SPOMOVE_LIBRARY.length;
-  if (tab === 'dive') {
-    return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.programGroup === 'dive' || p.programGroup === 'bonus').length;
-  }
-  return OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.programGroup === tab).length;
+function matchesResponseType(preset: OfficialSpomovePreset, tab: ResponseTypeTab) {
+  if (tab === 'all') return true;
+  return getOfficialSpomovePresetGuide(preset).responseType === tab;
+}
+
+function programGroupCount(tab: ProgramGroupTab, responseType: ResponseTypeTab = 'all') {
+  return OFFICIAL_SPOMOVE_LIBRARY.filter(
+    (preset) => matchesProgramGroup(preset, tab) && matchesResponseType(preset, responseType),
+  ).length;
+}
+
+function responseTypeCount(tab: ResponseTypeTab, programGroup: ProgramGroupTab = 'all') {
+  return OFFICIAL_SPOMOVE_LIBRARY.filter(
+    (preset) => matchesResponseType(preset, tab) && matchesProgramGroup(preset, programGroup),
+  ).length;
+}
+
+function filterOfficialPresets(programGroup: ProgramGroupTab, responseType: ResponseTypeTab) {
+  return OFFICIAL_SPOMOVE_LIBRARY.filter(
+    (preset) => matchesProgramGroup(preset, programGroup) && matchesResponseType(preset, responseType),
+  );
 }
 
 function normalizeSpomoveThumbnailMap(raw: unknown) {
@@ -517,15 +535,15 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
 }
 
 function buildSpomoveDecisionItems(preset: OfficialSpomovePreset) {
-  const guide = getSpomovePresetDisplayModel(preset);
-  const response = preset.axisTitle;
+  const display = getSpomovePresetDisplayModel(preset);
+  const guide = getOfficialSpomovePresetGuide(preset);
   const equipment = preset.settingChips?.find((chip) => /패드|pad|교구|준비/i.test(chip)) ?? '4색 패드';
   return [
-    response ? `반응 ${response}` : null,
-    guide.targetLabel ? `대상 ${guide.targetLabel}` : null,
-    guide.durationLabel ? `시간 ${guide.durationLabel}` : null,
+    `반응 ${SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]}`,
+    display.targetLabel ? `대상 ${display.targetLabel}` : null,
+    display.durationLabel ? `시간 ${display.durationLabel}` : null,
     equipment ? `교구 ${equipment}` : null,
-    guide.difficultyLabel ? `난이도 ${guide.difficultyLabel}` : null,
+    display.difficultyLabel ? `난이도 ${display.difficultyLabel}` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -618,14 +636,14 @@ function CardVisual({
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   return (
-    <div className="relative aspect-video overflow-hidden">
+    <div className="relative aspect-square overflow-hidden">
       {showThumbnail ? (
         <Image
           src={thumbnailUrl}
           alt=""
           fill
           unoptimized
-          sizes="(min-width: 1280px) 33vw, (min-width: 640px) 50vw, 100vw"
+          sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
           className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           onError={onImageError}
         />
@@ -660,13 +678,14 @@ function CardInfo({
   wasRecent: boolean;
   onPreview: () => void;
 }) {
+  const guide = getOfficialSpomovePresetGuide(preset);
   const decisionItems = buildSpomoveDecisionItems(preset);
   return (
     <div className="flex flex-1 flex-col p-4">
       {/* 분류 태그 (최대 2개) */}
       <div className="flex flex-wrap items-center gap-1.5">
         <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
-          {preset.axisTitle}
+          {SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]}
         </span>
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
           {preset.programTitle}
@@ -785,8 +804,8 @@ function PresetCard({
 // ── 메인 뷰 ──────────────────────────────────────────────────────────────────
 
 export default function SpomoveHubView() {
-  const [activeTab, setActiveTab] = useState<OfficialLibraryTab>('all');
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
+  const [activeResponseType, setActiveResponseType] = useState<ResponseTypeTab>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
@@ -835,14 +854,37 @@ export default function SpomoveHubView() {
     };
   }, []);
 
-  const filteredPresets = OFFICIAL_SPOMOVE_LIBRARY.filter((p) => {
-    const axisMatch = activeTab === 'all' || p.axis === activeTab;
-    const groupMatch =
-      activeProgramGroup === 'all' ||
-      p.programGroup === activeProgramGroup ||
-      (activeProgramGroup === 'dive' && p.programGroup === 'bonus');
-    return axisMatch && groupMatch;
-  });
+  const filteredPresets = useMemo(
+    () => filterOfficialPresets(activeProgramGroup, activeResponseType),
+    [activeProgramGroup, activeResponseType],
+  );
+  const showAxisSections = activeProgramGroup === 'all' && activeResponseType === 'all';
+  const axisSections = useMemo(() => {
+    if (!showAxisSections) return [];
+    return SPOMOVE_AXIS_ORDER.map((axis) => ({
+      axis,
+      meta: SPOMOVE_AXIS_META[axis],
+      presets: filteredPresets.filter((preset) => preset.axis === axis),
+    })).filter((section) => section.presets.length > 0);
+  }, [filteredPresets, showAxisSections]);
+
+  const renderPresetGrid = (presets: OfficialSpomovePreset[], gridId?: string) => (
+    <div
+      id={gridId}
+      className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4"
+    >
+      {presets.map((preset) => (
+        <PresetCard
+          key={preset.id}
+          preset={preset}
+          href={officialPresetSessionHref(preset)}
+          thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
+          wasRecent={recentPresetIds.has(preset.id)}
+          onPreview={() => setPreviewPreset(preset)}
+        />
+      ))}
+    </div>
+  );
 
   return (
     <main className="h-full overflow-y-auto bg-[#f5f7fb]">
@@ -857,15 +899,15 @@ export default function SpomoveHubView() {
             SPOMOVE 공식 프로그램
           </h1>
           <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
-            바로 실행할 수 있는 구독자용 SPOMOVE 공식 세팅 라이브러리입니다. 단순·선택·복합 반응 축을 기준으로
-            아이들이 보고, 고르고, 기억하고, 움직이는 경험을 제공합니다.
+            프로그램 이름으로 바로 찾고, 반응 유형으로 세팅을 좁혀 보세요. 전체 보기에서는 단순·선택·복합
+            반응 축으로 묶어 두었습니다.
           </p>
           <p className="mt-3 text-[12px] font-semibold text-white/30">
             각 프로그램은 사전 설정된 공식 조건으로 실행됩니다.
           </p>
         </header>
 
-        {/* 반응 단계 필터 */}
+        {/* 최근 활동 */}
         <section className="mt-6 rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -905,41 +947,8 @@ export default function SpomoveHubView() {
           )}
         </section>
 
+        {/* 프로그램 필터 (1차) */}
         <div className="mt-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-            <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
-              반응 단계
-            </span>
-            <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
-              {TABS.map((tab) => {
-                const active = activeTab === tab;
-                const count = tabCount(tab);
-                return (
-                  <button
-                    key={tab}
-                    type="button"
-                    onClick={() => setActiveTab(tab)}
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all ${
-                      active
-                        ? 'bg-slate-950 text-white shadow-sm'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
-                    }`}
-                  >
-                    {TAB_LABELS[tab]}
-                    <span
-                      className={`text-[10px] font-semibold opacity-60`}
-                    >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* 프로그램 필터 */}
-        <div className="mt-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
               프로그램
@@ -947,7 +956,7 @@ export default function SpomoveHubView() {
             <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
               {PROGRAM_GROUP_TABS.map((tab) => {
                 const active = activeProgramGroup === tab;
-                const count = programGroupCount(tab);
+                const count = programGroupCount(tab, activeResponseType);
                 return (
                   <button
                     key={tab}
@@ -956,15 +965,11 @@ export default function SpomoveHubView() {
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all ${
                       active
                         ? 'bg-slate-950 text-white shadow-sm'
-                        : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
                     }`}
                   >
                     {PROGRAM_GROUP_LABELS[tab]}
-                    <span
-                      className={`text-[10px] font-semibold opacity-60`}
-                    >
-                      {count}
-                    </span>
+                    <span className="text-[10px] font-semibold opacity-60">{count}</span>
                   </button>
                 );
               })}
@@ -972,20 +977,61 @@ export default function SpomoveHubView() {
           </div>
         </div>
 
-        {/* 카드 그리드 — 1열(모바일) / 2열(태블릿) / 3열(데스크톱) */}
-        {filteredPresets.length > 0 ? (
-          <div id="spomove-program-list" className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredPresets.map((preset) => (
-              <PresetCard
-                key={preset.id}
-                preset={preset}
-                href={officialPresetSessionHref(preset)}
-                thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
-                wasRecent={recentPresetIds.has(preset.id)}
-                onPreview={() => setPreviewPreset(preset)}
-              />
-            ))}
+        {/* 반응 유형 필터 (2차) */}
+        <div className="mt-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+            <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
+              반응 유형
+            </span>
+            <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
+              {RESPONSE_TYPE_TABS.map((tab) => {
+                const active = activeResponseType === tab;
+                const count = responseTypeCount(tab, activeProgramGroup);
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    onClick={() => setActiveResponseType(tab)}
+                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${
+                      active
+                        ? 'border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
+                        : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                    }`}
+                  >
+                    {RESPONSE_TYPE_FILTER_LABELS[tab]}
+                    <span className="text-[10px] font-semibold opacity-60">{count}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+        </div>
+
+        {/* 카드 그리드 — 1:1 썸네일 · 2열(모바일) / 3열 / 4열 */}
+        {filteredPresets.length > 0 ? (
+          showAxisSections ? (
+            <div id="spomove-program-list" className="mt-6 space-y-10">
+              {axisSections.map((section) => (
+                <section key={section.axis}>
+                  <header className="flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-[11px] font-black tracking-[0.08em] text-slate-400">
+                        {section.meta.enTitle}
+                      </p>
+                      <h2 className="mt-1 text-xl font-black text-slate-950">{section.meta.title}</h2>
+                      <p className="mt-1 text-[13px] font-medium text-slate-500">{section.meta.tabSub}</p>
+                    </div>
+                    <p className="text-[12px] font-bold text-slate-400">{section.presets.length}개 세팅</p>
+                  </header>
+                  <div className="mt-5">
+                    {renderPresetGrid(section.presets)}
+                  </div>
+                </section>
+              ))}
+            </div>
+          ) : (
+            <div className="mt-6">{renderPresetGrid(filteredPresets, 'spomove-program-list')}</div>
+          )
         ) : (
           <div className="mt-12 flex flex-col items-center gap-4 text-center">
             <p className="text-[14px] font-semibold text-slate-500">
@@ -994,8 +1040,8 @@ export default function SpomoveHubView() {
             <button
               type="button"
               onClick={() => {
-                setActiveTab('all');
                 setActiveProgramGroup('all');
+                setActiveResponseType('all');
               }}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
             >

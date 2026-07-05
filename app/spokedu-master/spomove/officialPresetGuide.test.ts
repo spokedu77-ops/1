@@ -59,7 +59,7 @@ describe('official SPOMOVE preset guide contract', () => {
     const groupTabsSource = source.match(/const PROGRAM_GROUP_TABS[\s\S]*?\];/)?.[0] ?? '';
     expect(source).toContain("Exclude<OfficialSpomoveProgramGroup, 'bonus'>");
     expect(groupTabsSource).not.toContain("'bonus'");
-    expect(source).toContain("activeProgramGroup === 'dive' && p.programGroup === 'bonus'");
+    expect(source).toContain("preset.programGroup === 'dive' || preset.programGroup === 'bonus'");
   });
 
   it('renders thumbnail fallback, card display metadata, and briefing guide labels', () => {

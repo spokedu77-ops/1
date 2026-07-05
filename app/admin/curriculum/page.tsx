@@ -193,17 +193,9 @@ function curriculumTextLines(value: unknown): string[] {
 }
 
 function matchesCenterProgramSearch(item: CurriculumItem, query: string) {
-  const haystack = [
-    item.title,
-    String(item.id),
-    item.expertTip,
-    ...curriculumTextLines(item.equipment),
-    ...curriculumTextLines(item.steps),
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
-  return haystack.includes(query);
+  const title = (item.title ?? '').trim().toLowerCase();
+  const idText = String(item.id);
+  return title.includes(query) || idText.includes(query);
 }
 
 function SortableCenterCurriculumCard({

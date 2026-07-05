@@ -84,7 +84,7 @@ function FloatingTimerPill() {
             setDisplayMs(0);
           }}
           className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-[11px] font-black text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-          aria-label="타이머 초기화"
+          aria-label="스탑워치 초기화"
         >
           ×
         </button>

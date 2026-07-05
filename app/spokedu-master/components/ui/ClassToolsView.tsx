@@ -12,8 +12,8 @@ import type { StudentProfile } from '../../types';
 type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 'order';
 
 const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
-  { id: 'stopwatch', label: '타이머', icon: Timer },
-  { id: 'return-timer', label: '복귀 타이머', icon: Timer },
+  { id: 'stopwatch', label: '스탑워치', icon: Timer },
+  { id: 'return-timer', label: '복귀 스탑워치', icon: Timer },
   { id: 'scoreboard', label: '점수판', icon: LayoutList },
   { id: 'picker', label: '무작위 선택', icon: Shuffle },
   { id: 'teams', label: '팀 나누기', icon: Users },
@@ -21,7 +21,7 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
 ];
 
 const TOOL_STATUS = [
-  { label: '화면 도구', value: '타이머·복귀·점수판' },
+  { label: '화면 도구', value: '스탑워치·복귀·점수판' },
   { label: '명단 도구', value: '선택·팀·순서' },
   { label: '운영 방식', value: '수업 중 즉시 실행' },
 ] as const;
@@ -98,7 +98,7 @@ function StopwatchTab() {
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-10 p-8">
-      <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 진행 타이머</p>
+      <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 진행 스탑워치</p>
       <div
         className="font-mono text-[clamp(4rem,20vw,9rem)] font-black tabular-nums leading-none"
         style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}
@@ -362,14 +362,14 @@ function ReturnTimerTab() {
 
         <div className="mt-5">
           <h2 className="text-[24px] font-black sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-            쉬는 시간 복귀 타이머
+            쉬는 시간 복귀 스탑워치
           </h2>
           <p className="mx-auto mt-2 max-w-[620px] text-[13px] font-semibold leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>
             쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 10분 카운트다운 도구입니다.
           </p>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="복귀 타이머 시간 선택">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="복귀 스탑워치 시간 선택">
           {RETURN_TIMER_OPTIONS.map((option) => {
             const active = selectedDurationMs === option.value;
             return (
@@ -425,7 +425,7 @@ function ReturnTimerTab() {
         <div className="mt-4 flex w-full max-w-[760px] flex-wrap justify-center gap-3">
           {status === 'idle' ? (
             <ActionButton onClick={start}>
-              <Play size={18} fill="currentColor" />타이머 시작하기
+              <Play size={18} fill="currentColor" />스탑워치 시작하기
             </ActionButton>
           ) : null}
           {status === 'running' ? (
@@ -720,7 +720,7 @@ export default function ClassToolsView() {
               수업 중 바로 꺼내 쓰는 진행 콘솔
             </h1>
             <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              타이머, 쉬는 시간 복귀, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
+              스탑워치, 쉬는 시간 복귀, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:w-[520px]">
