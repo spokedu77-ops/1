@@ -56,19 +56,49 @@ jobs:
       SPM_QA_PASSWORD: ${{ secrets.SPM_QA_PASSWORD }}
       NOTE_QA_BASE_URL: http://127.0.0.1:3099
     steps:
+      - name: Gate E2E (require secrets on main push)
+        id: gate
+        run: |
+          set -euo pipefail
+          is_main_push=false
+          if [ "${GITHUB_EVENT_NAME}" = "push" ] && { [ "${GITHUB_REF}" = "refs/heads/main" ] || [ "${GITHUB_REF}" = "refs/heads/master" ]; }; then
+            is_main_push=true
+          fi
+
+          missing=()
+          for name in NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY SUPABASE_SERVICE_ROLE_KEY SPM_QA_PASSWORD; do
+            eval "val=\${$name:-}"
+            if [ -z "$val" ]; then
+              missing+=("$name")
+            fi
+          done
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            if [ "$is_main_push" = "true" ]; then
+              echo "::error::Admin Note E2E requires repository secrets on main push: ${missing[*]}"
+              exit 1
+            fi
+            echo "E2E skipped (${missing[*]} not configured)."
+            echo "e2e_enabled=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "E2E enabled."
+          echo "e2e_enabled=true" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: steps.gate.outputs.e2e_enabled == 'true'
       - uses: actions/setup-node@v4
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: steps.gate.outputs.e2e_enabled == 'true'
         with:
           node-version: '20'
           cache: npm
       - run: npm ci
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: steps.gate.outputs.e2e_enabled == 'true'
       - run: npx playwright install chromium --with-deps
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: steps.gate.outputs.e2e_enabled == 'true'
       - name: Start Next.js
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: steps.gate.outputs.e2e_enabled == 'true'
         run: |
           npm run build
           npm run start -- -p 3099 &
@@ -82,11 +112,11 @@ jobs:
           echo "Server did not start in time"
           exit 1
       - name: Smoke QA
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != ''
+        if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-smoke-qa.mjs http://127.0.0.1:3099
       - name: Cross-select invariants (quick pair scan)
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '' && github.event_name == 'pull_request'
+        if: steps.gate.outputs.e2e_enabled == 'true' && github.event_name == 'pull_request'
         run: npm run qa:note-invariants:quick
       - name: Cross-select invariants (full pair scan)
-        if: env.NEXT_PUBLIC_SUPABASE_URL != '' && env.SUPABASE_SERVICE_ROLE_KEY != '' && github.event_name != 'pull_request'
+        if: steps.gate.outputs.e2e_enabled == 'true' && github.event_name != 'pull_request'
         run: npm run qa:note-invariants

@@ -52,7 +52,7 @@ import {
 } from '@/app/spokedu-master/lib/programDisplayTags';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
-type FilterKey = 'all' | 'incomplete' | 'ready' | 'home-ready' | 'image-needed' | 'spomove-needed';
+type FilterKey = 'all' | 'home-ready' | 'image-needed';
 type AdminTabKey = 'programs' | 'spomove-thumbnails';
 
 type SpomoveThumbnailAssetsJson = {
@@ -144,8 +144,6 @@ type EditForm = {
   briefingNotes: string;
   steps: string;
   variations: string;
-  parentNote: string;
-  relatedSpomoveIds: string;
   publicationStatus: PublicationStatus;
 };
 
@@ -172,11 +170,8 @@ const STATUS_STYLE: Record<MaterialStatus, { bg: string; color: string }> = {
 
 const FILTER_OPTIONS: Array<{ key: FilterKey; label: string }> = [
   { key: 'all', label: '전체' },
-  { key: 'incomplete', label: '미완성' },
-  { key: 'ready', label: '운영 가능' },
   { key: 'home-ready', label: '홈 노출 가능' },
   { key: 'image-needed', label: '이미지 필요' },
-  { key: 'spomove-needed', label: 'SPOMOVE 연결 필요' },
 ];
 
 const SPACE_OPTIONS = [...MASTER_SPACE_TAGS];
@@ -281,8 +276,6 @@ type QualityReport = {
     equipment: boolean;
     steps: boolean;
     variations: boolean;
-    parentNote: boolean;
-    spomove: boolean;
     homeExposure: boolean;
   };
   reasons: string[];
@@ -299,23 +292,22 @@ function resolveStatus(checks: QualityReport['checks']): MaterialStatus {
   const homeReady = operationReady && hasHomeMedia;
   if (homeReady) return 'home-ready';
 
-  const needsProductWork = operationReady && (hasHomeMedia || !checks.variations || !checks.setupImage || !checks.parentNote);
+  const needsProductWork = operationReady && (!checks.variations || !checks.setupImage);
   if (needsProductWork) return 'needs-improvement';
 
   return 'ready';
 }
 
 function buildQualityReport(checks: QualityReport['checks'], displayOrder: number): QualityReport {
+  const hasMedia = checks.video || checks.setupImage;
   const weightedChecks = [
-    checks.video,
-    checks.setupImage,
+    hasMedia,
     checks.target,
     checks.space,
     checks.participant,
     checks.equipment,
     checks.steps,
     checks.variations,
-    checks.parentNote,
   ];
   const score = Math.round((weightedChecks.filter(Boolean).length / weightedChecks.length) * 100);
   const modalReady =
@@ -330,13 +322,11 @@ function buildQualityReport(checks: QualityReport['checks'], displayOrder: numbe
     checks.equipment &&
     checks.setupImage &&
     checks.steps &&
-    checks.variations &&
-    checks.parentNote;
+    checks.variations;
   const dashboardCandidates = [
     checks.homeExposure && displayOrder < 100 ? '홈 첫 row 후보' : '',
     checks.indoorSpace ? '실내/교실 row 후보' : '',
     checks.video ? '영상 수업 row 후보' : '',
-    checks.spomove ? 'SPOMOVE 연결 후보' : '',
   ].filter(Boolean);
   const grade: QualityReport['grade'] =
     score >= 90 && modalReady && detailReady && checks.homeExposure
@@ -360,36 +350,30 @@ function buildQualityReport(checks: QualityReport['checks'], displayOrder: numbe
 }
 
 function qualityReasons(checks: QualityReport['checks']) {
+  const hasMedia = checks.video || checks.setupImage;
   const items: Array<[string, boolean]> = [
-    ['영상', checks.video],
-    ['세팅 이미지', checks.setupImage],
+    ['영상/세팅 이미지', hasMedia],
     ['대상', checks.target],
     ['공간', checks.space],
     ['인원', checks.participant],
     ['준비물', checks.equipment],
-    ['세팅 이미지', checks.setupImage],
     ['진행 순서', checks.steps],
     ['변형 방법', checks.variations],
-    ['학부모 문구', checks.parentNote],
-    ['SPOMOVE', checks.spomove],
     ['홈 노출', checks.homeExposure],
   ];
   return items.map(([label, ok]) => `${label} ${ok ? '있음' : '없음'}`);
 }
 
 function missingQualityLabels(checks: QualityReport['checks']) {
+  const hasMedia = checks.video || checks.setupImage;
   const items: Array<[string, boolean]> = [
+    ['영상/세팅 이미지', hasMedia],
     ['대상', checks.target],
     ['공간', checks.space],
     ['인원', checks.participant],
     ['준비물', checks.equipment],
-    ['세팅 이미지', checks.setupImage],
     ['활동 방법', checks.steps],
     ['변형 방법', checks.variations],
-    ['학부모 문구', checks.parentNote],
-    ['세팅 이미지', checks.setupImage],
-    ['SPOMOVE', checks.spomove],
-    ['홈 노출', checks.homeExposure],
   ];
   return items.filter(([, ok]) => !ok).map(([label]) => label);
 }
@@ -418,8 +402,6 @@ function getItemQuality(item: ProgramItem): QualityReport {
     equipment: item.effective.equipment.length > 0,
     steps: item.effective.steps.length > 0,
     variations: Boolean(meta?.sm_variation_method?.trim()),
-    parentNote: Boolean(item.effective.parentNote),
-    spomove: item.effective.relatedSpomoveIds.length > 0,
     homeExposure: item.effective.publicationStatus === 'featured' || Boolean(meta?.sm_is_hot),
   };
   return buildQualityReport(checks, meta?.sm_display_order ?? item.curriculum.displayOrder ?? 9999);
@@ -436,8 +418,6 @@ function getFormQuality(form: EditForm): QualityReport {
     equipment: splitLines(form.equipment).length > 0,
     steps: splitLines(form.steps).length > 0,
     variations: Boolean(form.variations.trim()),
-    parentNote: Boolean(form.parentNote.trim()),
-    spomove: csvToList(form.relatedSpomoveIds).length > 0,
     homeExposure: form.publicationStatus === 'featured',
   };
   return buildQualityReport(checks, 999);
@@ -446,9 +426,8 @@ function getFormQuality(form: EditForm): QualityReport {
 function matchesFilter(item: ProgramItem, filter: FilterKey) {
   const quality = getItemQuality(item);
   if (filter === 'all') return true;
-  if (filter === 'incomplete' || filter === 'ready' || filter === 'home-ready') return quality.status === filter;
+  if (filter === 'home-ready') return quality.status === filter;
   if (filter === 'image-needed') return !quality.checks.setupImage;
-  if (filter === 'spomove-needed') return !quality.checks.spomove;
   return true;
 }
 
@@ -462,7 +441,7 @@ function sortForFilter(items: ProgramItem[], filter: FilterKey) {
   if (filter === 'home-ready') {
     return copy.sort((a, b) => displayOrderOf(a) - displayOrderOf(b));
   }
-  if (filter === 'image-needed' || filter === 'spomove-needed' || filter === 'incomplete') {
+  if (filter === 'image-needed') {
     return copy.sort((a, b) => qualityWeight(b) - qualityWeight(a) || displayOrderOf(a) - displayOrderOf(b));
   }
   return copy;
@@ -485,8 +464,6 @@ function toForm(item: ProgramItem): EditForm {
     briefingNotes: resolveAdminBriefingNotes(meta?.sm_briefing_notes),
     steps: overlay?.activity_method || joinLines(item.curriculum.steps),
     variations: resolveAdminVariationMethod(meta?.sm_variation_method),
-    parentNote: meta?.sm_parent_note || '',
-    relatedSpomoveIds: listToCsv(meta?.sm_related_spomove_ids),
     publicationStatus: item.effective.publicationStatus,
   };
 }
@@ -1135,11 +1112,12 @@ function Flag({ ok, label }: { ok: boolean; label: string }) {
 }
 
 function QualityFlags({ report }: { report: QualityReport }) {
+  const hasMedia = report.checks.video || report.checks.setupImage;
   return (
     <div className="flex flex-wrap gap-1">
-      <Flag ok={report.checks.video} label="영상" />
-      <Flag ok={report.checks.setupImage} label="세팅 이미지" />
-      <Flag ok={report.checks.spomove} label="SPOMOVE" />
+      <Flag ok={hasMedia} label="미디어" />
+      <Flag ok={report.checks.setupImage} label="세팅" />
+      <Flag ok={report.checks.variations} label="변형" />
       <Flag ok={report.checks.homeExposure} label="홈" />
     </div>
   );
@@ -1437,10 +1415,9 @@ export default function AdminSmProgramsPage() {
   }, [activeFilter, items, query]);
 
   const summary = useMemo(() => ({
-    incomplete: items.filter((item) => getItemQuality(item).status === 'incomplete').length,
     needsImprovement: items.filter((item) => getItemQuality(item).status === 'needs-improvement').length,
-    ready: items.filter((item) => getItemQuality(item).status === 'ready').length,
     homeReady: items.filter((item) => getItemQuality(item).status === 'home-ready').length,
+    imageNeeded: items.filter((item) => !getItemQuality(item).checks.setupImage).length,
   }), [items]);
 
   const selectItem = (item: ProgramItem) => {
@@ -1757,22 +1734,18 @@ export default function AdminSmProgramsPage() {
       <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="space-y-3 border-b border-slate-200 p-4">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <div className="rounded-lg bg-rose-50 p-3">
-                <p className="text-[10px] font-black text-rose-700">미완성</p>
-                <p className="mt-1 text-[18px] font-black text-rose-900">{summary.incomplete}</p>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="rounded-lg bg-indigo-50 p-3">
+                <p className="text-[10px] font-black text-indigo-700">홈 가능</p>
+                <p className="mt-1 text-[18px] font-black text-indigo-900">{summary.homeReady}</p>
               </div>
               <div className="rounded-lg bg-amber-50 p-3">
                 <p className="text-[10px] font-black text-amber-700">보강 필요</p>
                 <p className="mt-1 text-[18px] font-black text-amber-900">{summary.needsImprovement}</p>
               </div>
-              <div className="rounded-lg bg-emerald-50 p-3">
-                <p className="text-[10px] font-black text-emerald-700">운영 가능</p>
-                <p className="mt-1 text-[18px] font-black text-emerald-900">{summary.ready}</p>
-              </div>
-              <div className="rounded-lg bg-indigo-50 p-3">
-                <p className="text-[10px] font-black text-indigo-700">홈 가능</p>
-                <p className="mt-1 text-[18px] font-black text-indigo-900">{summary.homeReady}</p>
+              <div className="rounded-lg bg-slate-100 p-3">
+                <p className="text-[10px] font-black text-slate-600">이미지 필요</p>
+                <p className="mt-1 text-[18px] font-black text-slate-900">{summary.imageNeeded}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">

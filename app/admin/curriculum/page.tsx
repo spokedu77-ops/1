@@ -53,7 +53,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
-  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, GripVertical
+  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, GripVertical, Search
 } from 'lucide-react';
 
 export type MainCurriculumTab = 'personal' | 'center';
@@ -176,20 +176,46 @@ function formatSaveError(err: unknown): string {
   return String(err);
 }
 
+function formatCenterScheduleLabel(item: CurriculumItem) {
+  if (item.month == null || item.week == null) return null;
+  return `${item.month}월 · ${item.week}주`;
+}
+
+function matchesCenterProgramSearch(item: CurriculumItem, query: string) {
+  const haystack = [
+    item.title,
+    String(item.id),
+    item.expertTip,
+    ...(item.equipment ?? []),
+    ...(item.steps ?? []),
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
 function SortableCenterCurriculumCard({
   item,
   getSafeThumbnailUrl,
   openDetailModal,
   openEditModal,
   deleteItem,
+  scheduleLabel,
+  sortable = true,
 }: {
   item: CurriculumItem;
   getSafeThumbnailUrl: (row: { url?: string; thumbnail?: string }) => string;
   openDetailModal: (row: CurriculumItem) => void;
   openEditModal: (row: CurriculumItem, e: React.MouseEvent) => void;
   deleteItem: (id: number, e: React.MouseEvent) => void;
+  scheduleLabel?: string | null;
+  sortable?: boolean;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+    disabled: !sortable,
+  });
   const { onPointerDown: sortablePointerDown, ...restListeners } = listeners as typeof listeners & {
     onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
   };
@@ -206,7 +232,7 @@ function SortableCenterCurriculumCard({
     >
       <button
         type="button"
-        className="absolute top-4 left-4 z-30 p-2 rounded-full bg-white/95 backdrop-blur text-slate-400 hover:text-slate-700 shadow-sm cursor-grab active:cursor-grabbing touch-manipulation"
+        className={`absolute top-4 left-4 z-30 p-2 rounded-full bg-white/95 backdrop-blur text-slate-400 hover:text-slate-700 shadow-sm touch-manipulation ${sortable ? 'cursor-grab active:cursor-grabbing' : 'hidden'}`}
         aria-label="순서 변경"
         {...attributes}
         {...restListeners}
@@ -231,7 +257,7 @@ function SortableCenterCurriculumCard({
         ) : (
           <img src={getSafeThumbnailUrl(item) || 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'} className="w-full h-full object-cover" alt="" />
         )}
-        <div className="absolute top-4 left-14 pointer-events-none">
+        <div className={`absolute top-4 pointer-events-none ${sortable ? 'left-14' : 'left-4'}`}>
           <span className={`px-2 py-1 rounded text-[10px] font-black text-white uppercase ${item.type === 'youtube' ? 'bg-red-600' : 'bg-purple-600'}`}>{item.type}</span>
         </div>
         <div className="absolute inset-0 flex items-center justify-center bg-black/10 group-hover:bg-black/20 transition-all pointer-events-none">
@@ -241,7 +267,12 @@ function SortableCenterCurriculumCard({
         </div>
       </div>
       <div className="p-6 space-y-3">
-        <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
+        <div className="space-y-1">
+          {scheduleLabel ? (
+            <p className="text-[11px] font-black uppercase tracking-wide text-indigo-500">{scheduleLabel}</p>
+          ) : null}
+          <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
+        </div>
         {item.equipment && item.equipment.length > 0 ? (
           <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
             <Box size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
@@ -291,6 +322,7 @@ export default function AdminCurriculumPage() {
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedWeek, setSelectedWeek] = useState(() => getCurrentWeekOfMonth());
+  const [centerProgramSearch, setCenterProgramSearch] = useState('');
   const [items, setItems] = useState<CurriculumItem[]>([]);
   const [personalItems, setPersonalItems] = useState<PersonalCurriculumItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -671,20 +703,29 @@ export default function AdminCurriculumPage() {
   }, [supabase]);
 
   const filteredItems = useMemo(() => {
+    const query = centerProgramSearch.trim().toLowerCase();
     let base: CurriculumItem[];
     if (centerIsSub) {
       base = items.filter((item) => item.is_sub === true);
+    } else if (query) {
+      base = items.filter((item) => !item.is_sub);
     } else {
       base = items.filter((item) => !item.is_sub && item.month === selectedMonth && item.week === selectedWeek);
     }
     const sorted = sortCenterCurriculumByDisplayOrder(base);
+    let result = sorted;
     if (equipmentTagFilter !== null) {
-      return sorted.filter((item) =>
+      result = result.filter((item) =>
         Array.isArray(item.equipment_tag_numbers) && item.equipment_tag_numbers.includes(equipmentTagFilter),
       );
     }
-    return sorted;
-  }, [items, selectedMonth, selectedWeek, centerIsSub, equipmentTagFilter]);
+    if (query) {
+      result = result.filter((item) => matchesCenterProgramSearch(item, query));
+    }
+    return result;
+  }, [items, selectedMonth, selectedWeek, centerIsSub, equipmentTagFilter, centerProgramSearch]);
+
+  const centerProgramSearchActive = centerProgramSearch.trim().length > 0;
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -692,6 +733,7 @@ export default function AdminCurriculumPage() {
   );
 
   const handleCenterCurriculumDragEnd = async (event: DragEndEvent) => {
+    if (centerProgramSearchActive) return;
     const { active, over } = event;
     if (!over || active.id === over.id || !supabase) return;
     const activeId = Number(active.id);
@@ -1758,8 +1800,35 @@ export default function AdminCurriculumPage() {
                    onMonthChange={(m) => { setSelectedMonth(m); setEquipmentTagFilter(null); }}
                    onWeekChange={setSelectedWeek}
                    isSubSelected={centerIsSub}
-                   onSubChange={(sub) => { setCenterIsSub(sub); setEquipmentTagFilter(null); }}
+                   onSubChange={(sub) => { setCenterIsSub(sub); setEquipmentTagFilter(null); setCenterProgramSearch(''); }}
                  />
+
+                 <div className="space-y-2">
+                   <div className="relative">
+                     <Search className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                     <input
+                       value={centerProgramSearch}
+                       onChange={(event) => setCenterProgramSearch(event.target.value)}
+                       placeholder={centerIsSub ? 'SUB 프로그램명·ID 검색' : '프로그램명·ID 검색 (전체 월/주차)'}
+                       className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-11 text-sm font-semibold text-slate-900 outline-none transition-colors focus:border-indigo-400"
+                     />
+                     {centerProgramSearch ? (
+                       <button
+                         type="button"
+                         aria-label="검색어 지우기"
+                         onClick={() => setCenterProgramSearch('')}
+                         className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                       >
+                         <X size={16} />
+                       </button>
+                     ) : null}
+                   </div>
+                   {centerProgramSearchActive && !centerIsSub ? (
+                     <p className="text-xs font-semibold text-slate-500">
+                       검색 중에는 월·주차 선택을 무시하고 전체 센터 프로그램에서 찾습니다.
+                     </p>
+                   ) : null}
+                 </div>
 
                  {!centerIsSub && (
                    <div className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-[32px] p-8 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
@@ -1901,6 +1970,8 @@ export default function AdminCurriculumPage() {
                                    openDetailModal={openDetailModal}
                                    openEditModal={openEditModal}
                                    deleteItem={deleteItem}
+                                   sortable={!centerProgramSearchActive}
+                                   scheduleLabel={centerProgramSearchActive && !centerIsSub ? formatCenterScheduleLabel(item) : null}
                                  />
                                ))}
                              </div>
@@ -1908,7 +1979,11 @@ export default function AdminCurriculumPage() {
                          </DndContext>
                      ) : (
                          <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-black">
-                             {centerIsSub ? 'SUB에 등록된 커리큘럼이 없습니다.' : '해당 주차에 등록된 커리큘럼이 없습니다.'}
+                             {centerProgramSearchActive
+                               ? '검색 결과가 없습니다.'
+                               : centerIsSub
+                                 ? 'SUB에 등록된 커리큘럼이 없습니다.'
+                                 : '해당 주차에 등록된 커리큘럼이 없습니다.'}
                          </div>
                      )}
                  </div>
