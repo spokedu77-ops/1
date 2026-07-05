@@ -151,7 +151,7 @@ export default function LandingPage() {
               서비스 구성 보기 <ChevronRight size={16} />
             </Link>
             </div>
-            <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>신용카드 없이 시작 · 14일 후 자동 만료 · 결제 후 30일 이용</p>
+            <p className="mt-4 text-[12px] font-semibold" style={{ color: 'rgba(255,255,255,0.62)' }}>월 자동결제 · 언제든 해지 예약 · 이용 기간 종료일까지 사용</p>
           </div>
           <div className="grid gap-3">
             {HERO_PROOF.map((item) => (
@@ -259,7 +259,7 @@ export default function LandingPage() {
           <div className="mt-8 flex items-start gap-3 rounded-[14px] px-5 py-4" style={{ background: 'rgba(16,185,129,0.07)', border: '1px solid rgba(16,185,129,0.16)' }}>
             <Shield size={16} color="var(--spm-grn)" className="mt-0.5 shrink-0" />
             <p className="text-[12px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              토스페이먼츠 보안 결제 · 결제 후 30일 이용 · 플랜 변경은 문의 기반으로 처리 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
+              토스페이먼츠 보안 결제 · 월 자동결제 · 해지 후에도 이용 기간 종료일까지 사용 · 카드 정보는 SPOKEDU 서버에 저장되지 않습니다.
             </p>
           </div>
           <p className="mt-5 text-center text-[13px] font-medium" style={{ color: 'var(--spm-t3)' }}>
@@ -281,7 +281,7 @@ export default function LandingPage() {
             <Play size={16} fill="#fff" />
             이용권 선택
           </Link>
-          <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>신용카드 없이 시작 · 14일 후 자동 만료</p>
+          <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제</p>
         </div>
       </section>
 
