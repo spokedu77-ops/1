@@ -1092,10 +1092,11 @@ function CreateProgramModal({
 }
 
 function StatusPill({ status }: { status: MaterialStatus }) {
-  const style = STATUS_STYLE[status];
+  const style = STATUS_STYLE[status] ?? STATUS_STYLE['needs-improvement'];
+  const label = STATUS_LABEL[status] ?? status;
   return (
     <span className="inline-flex h-7 items-center rounded-full px-2.5 text-[11px] font-black" style={{ background: style.bg, color: style.color }}>
-      {STATUS_LABEL[status]}
+      {label}
     </span>
   );
 }

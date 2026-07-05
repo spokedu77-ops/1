@@ -181,13 +181,24 @@ function formatCenterScheduleLabel(item: CurriculumItem) {
   return `${item.month}월 · ${item.week}주`;
 }
 
+function curriculumTextLines(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value
+      .filter((line): line is string => typeof line === 'string')
+      .map((line) => line.trim())
+      .filter(Boolean);
+  }
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
+}
+
 function matchesCenterProgramSearch(item: CurriculumItem, query: string) {
   const haystack = [
     item.title,
     String(item.id),
     item.expertTip,
-    ...(item.equipment ?? []),
-    ...(item.steps ?? []),
+    ...curriculumTextLines(item.equipment),
+    ...curriculumTextLines(item.steps),
   ]
     .filter(Boolean)
     .join(' ')
@@ -216,13 +227,15 @@ function SortableCenterCurriculumCard({
     id: item.id,
     disabled: !sortable,
   });
-  const { onPointerDown: sortablePointerDown, ...restListeners } = listeners as typeof listeners & {
-    onPointerDown?: (e: React.PointerEvent<HTMLButtonElement>) => void;
-  };
+  const sortablePointerDown = listeners?.onPointerDown;
+  const restListeners = listeners
+    ? Object.fromEntries(Object.entries(listeners).filter(([key]) => key !== 'onPointerDown'))
+    : {};
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
   };
+  const equipmentLines = curriculumTextLines(item.equipment);
   return (
     <div
       ref={setNodeRef}
@@ -273,10 +286,10 @@ function SortableCenterCurriculumCard({
           ) : null}
           <h4 className="text-lg font-black line-clamp-1">{item.title}</h4>
         </div>
-        {item.equipment && item.equipment.length > 0 ? (
+        {equipmentLines.length > 0 ? (
           <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
             <Box size={14} className="text-slate-400 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{item.equipment.join(' · ')}</p>
+            <p className="text-xs text-slate-500 font-bold leading-relaxed line-clamp-3">{equipmentLines.join(' · ')}</p>
           </div>
         ) : (
           <div className="bg-slate-50 p-4 rounded-2xl flex gap-2 items-start">
