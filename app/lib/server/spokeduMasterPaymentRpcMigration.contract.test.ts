@@ -14,7 +14,11 @@ const cronSql = readFileSync(
   join(process.cwd(), 'supabase/migrations/20260630124000_spokedu_master_billing_supabase_cron.sql'),
   'utf8',
 );
-const sql = `${recurringSql}\n${vaultSql}\n${cronSql}`;
+const planConstraintFixSql = readFileSync(
+  join(process.cwd(), 'supabase/migrations/20260705130000_fix_spokedu_master_subscription_plan_constraints.sql'),
+  'utf8',
+);
+const sql = `${recurringSql}\n${vaultSql}\n${cronSql}\n${planConstraintFixSql}`;
 
 describe('spokedu_master recurring billing migration contract', () => {
   it('defines recurring subscription state and Vault billing key reference', () => {
@@ -39,6 +43,12 @@ describe('spokedu_master recurring billing migration contract', () => {
     expect(sql).toContain("WHEN 'premium' THEN 28900");
     expect(sql).not.toContain("WHEN 'pro' THEN 39900");
     expect(sql).not.toContain("WHEN 'team' THEN 79000");
+  });
+
+  it('drops legacy subscription plan constraints before enforcing Lite and Premium', () => {
+    expect(planConstraintFixSql).toContain('spokedu_master_subscriptions_plan_check');
+    expect(planConstraintFixSql).toContain('spm_subscriptions_plan_check');
+    expect(planConstraintFixSql).toContain("CHECK (plan IN ('lite', 'premium'))");
   });
 
   it('keeps atomic idempotent payment application inside the RPC', () => {
