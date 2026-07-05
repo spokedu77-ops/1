@@ -215,12 +215,13 @@ export function useNoteBlockData(options: {
   ) => {
     if (toggleMigration.created.length === 0) return;
     for (const child of toggleMigration.created) {
+      const parentBlockId: string | null = child.parent_block_id ?? null;
       await documentEngineRef.current.persistCreateBlock({
         documentId: child.document_id,
         blockType: child.type,
         content: child.content as Record<string, unknown>,
         order_index: child.order_index,
-        parent_block_id: child.parent_block_id ?? null,
+        parent_block_id: parentBlockId,
         id: child.id,
       });
     }
