@@ -7,7 +7,7 @@ import {
   parseNotionToggleElement,
   unwrapGoogleDocsElement,
 } from './notePasteHtmlNotion';
-import { normalizeTableContent, type NoteTableCell } from './noteTableBlock';
+import type { NoteTableCell } from './noteTableBlock';
 
 const BLOCK_TAGS = new Set([
   'H1', 'H2', 'H3', 'P', 'UL', 'OL', 'LI', 'HR', 'PRE', 'BLOCKQUOTE', 'DIV',
@@ -85,12 +85,94 @@ function parseTableBlock(el: Element): PastedBlockSpec | null {
   return {
     type: 'table',
     text: '',
-    tableContent: normalizeTableContent({
+    tableContent: {
       rows,
       hasHeaderRow,
       columnCount: rows[0]?.length ?? 1,
-    }),
+    },
   };
+}
+
+function decodeBasicHtmlEntities(value: string): string {
+  return value
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'");
+}
+
+function stripTags(value: string): string {
+  return decodeBasicHtmlEntities(value.replace(/<[^>]*>/g, '')).trim();
+}
+
+function readHtmlAttribute(source: string, name: string): string | undefined {
+  const match = source.match(new RegExp(`\\s${name}=(["'])(.*?)\\1`, 'i'));
+  return match?.[2]?.trim() || undefined;
+}
+
+function elementInnerHtmlFallback(html: string): string | undefined {
+  const safe = stripUnsafeHtml(html).trim();
+  return safe ? safe : undefined;
+}
+
+function parsePreBlockFallback(html: string): PastedBlockSpec | null {
+  const preMatch = html.match(/<pre\b[^>]*>([\s\S]*?)<\/pre>/i);
+  if (!preMatch?.[1]) return null;
+  const codeMatch = preMatch[1].match(/<code\b([^>]*)>([\s\S]*?)<\/code>/i);
+  const codeAttrs = codeMatch?.[1] ?? '';
+  const rawText = codeMatch?.[2] ?? preMatch[1];
+  const text = decodeBasicHtmlEntities(rawText.replace(/<[^>]*>/g, '')).replace(/\r\n/g, '\n');
+  if (!text.trim()) return null;
+  const language = parseCodeLanguageFromClassName(readHtmlAttribute(codeAttrs, 'class'));
+  return { type: 'code', text, language };
+}
+
+function parseFigureBlockFallback(html: string): PastedBlockSpec | null {
+  const figureMatch = html.match(/<figure\b[^>]*>([\s\S]*?)<\/figure>/i);
+  const source = figureMatch?.[1] ?? html;
+  const imgMatch = source.match(/<img\b([^>]*)>/i);
+  if (!imgMatch?.[1]) return null;
+  const src = readHtmlAttribute(imgMatch[1], 'src');
+  if (!src) return null;
+  const captionMatch = source.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i);
+  const caption = captionMatch?.[1] ? stripTags(captionMatch[1]) : (readHtmlAttribute(imgMatch[1], 'alt') ?? '');
+  return { type: 'image', text: '', imageUrl: src, caption };
+}
+
+function parseTableBlockFallback(html: string): PastedBlockSpec | null {
+  const tableMatch = html.match(/<table\b[^>]*>([\s\S]*?)<\/table>/i);
+  if (!tableMatch?.[1]) return null;
+  const rowMatches = Array.from(tableMatch[1].matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi));
+  const rows = rowMatches.map((rowMatch) =>
+    Array.from(rowMatch[1].matchAll(/<t[hd]\b[^>]*>([\s\S]*?)<\/t[hd]>/gi)).map((cellMatch) => ({
+      text: stripTags(cellMatch[1]),
+      html: elementInnerHtmlFallback(cellMatch[1]),
+    })),
+  ).filter((row) => row.length > 0);
+  if (rows.length === 0) return null;
+  const hasHeaderRow = /<thead\b/i.test(tableMatch[1]) || /<th\b/i.test(rowMatches[0]?.[1] ?? '');
+  return {
+    type: 'table',
+    text: '',
+    tableContent: {
+      rows,
+      hasHeaderRow,
+      columnCount: rows[0]?.length ?? 1,
+    },
+  };
+}
+
+function parseWithoutDomParser(html: string): PastedBlockSpec[] {
+  const out: PastedBlockSpec[] = [];
+  const pre = parsePreBlockFallback(html);
+  if (pre) out.push(pre);
+  const figure = parseFigureBlockFallback(html);
+  if (figure) out.push(figure);
+  const table = parseTableBlockFallback(html);
+  if (table) out.push(table);
+  return out;
 }
 
 function pushTextBlock(out: PastedBlockSpec[], type: NoteBlock['type'], el: Element) {
@@ -226,11 +308,14 @@ function parseWithDomParser(html: string): PastedBlockSpec[] {
   return out;
 }
 
-/** Notion·Docs HTML — 블록 단위 분리. DOMParser 없으면 null(기본 paste). */
+/** Notion·Docs HTML — 블록 단위 분리. DOMParser 없으면 구조 블록만 보존한다. */
 export function parseClipboardHtmlToBlocks(html: string): PastedBlockSpec[] | null {
   const trimmed = html.trim();
   if (!trimmed || !/<[a-z][\s\S]*>/i.test(trimmed)) return null;
-  if (typeof DOMParser === 'undefined') return null;
+  if (typeof DOMParser === 'undefined') {
+    const fallbackSpecs = parseWithoutDomParser(trimmed);
+    return fallbackSpecs.length > 0 ? fallbackSpecs : null;
+  }
 
   const specs = parseWithDomParser(trimmed);
   if (specs.length === 0) return null;
