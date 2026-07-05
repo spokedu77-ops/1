@@ -16,8 +16,8 @@ const FEATURES = [
     color: 'rgba(16,185,129,0.15)',
     ic: 'var(--spm-grn)',
     title: 'SPOMOVE',
-    desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다.',
-    items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '화면 신호 반응 활동'],
+    desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다. 프리미엄 이용권에서 60개 공식 활동을 실행할 수 있습니다.',
+    items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '화면 신호 반응 활동 (프리미엄)'],
   },
   {
     icon: Timer,
@@ -67,7 +67,7 @@ const STATS = [
 
 const FLOW = [
   { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업 자료를 30초 안에 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
-  { num: '2', label: 'SPOMOVE 큰 화면 실행', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
+  { num: '2', label: 'SPOMOVE 큰 화면 실행 (프리미엄)', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
   { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
 ] as const;
 
@@ -137,7 +137,7 @@ export default function LandingPage() {
               SPOKEDU<br />MASTER
             </h1>
             <p className="mt-6 max-w-[640px] text-[19px] font-black leading-8 md:text-[23px]" style={{ color: '#fff', wordBreak: 'keep-all' }}>
-              수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 이용합니다.
+              수업 자료와 영상, 안내문을 이용하고 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 연결합니다.
             </p>
             <p className="mt-4 max-w-[620px] text-[14px] font-semibold leading-7 md:text-[15px]" style={{ color: 'rgba(255,255,255,0.78)' }}>
               오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.

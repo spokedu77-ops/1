@@ -15,24 +15,6 @@ export type SpomovePresetDisplayModel = {
   isAvailable: boolean;
 };
 
-const DISPLAY_THEME_LABELS: Record<string, string> = {
-  color: '색상',
-  fruit: '과일',
-  vehicle: '탈것',
-  emotion: '감정',
-  animal: '동물',
-  nature: '자연',
-  target: '타겟',
-};
-
-const DISPLAY_LEVEL_LABELS: Record<number, string> = {
-  1: '공간 방향',
-  2: '사분할',
-  3: '전면',
-  4: '2분할',
-  5: '3패널',
-};
-
 const TARGET_LABELS: Record<SpomoveTargetGroup, string> = {
   preschool: '미취학',
   elementaryLower: '초등 저학년',
@@ -53,42 +35,24 @@ function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
   return groups.slice(0, 2).map((g) => TARGET_LABELS[g]).join(' · ');
 }
 
-function buildDisplayTitle(preset: OfficialSpomovePreset): string {
-  const { programGroup, programTitle, engine } = preset;
-
-  if (programGroup === 'reaction-cognition') {
-    const levelLabel = DISPLAY_LEVEL_LABELS[engine.level] ?? `${engine.level}단계`;
-    if (engine.level === 1) return `${programTitle} · ${levelLabel}`;
-    const themeLabel = engine.variantColorTheme
-      ? (DISPLAY_THEME_LABELS[engine.variantColorTheme] ?? '')
-      : '';
-    return themeLabel
-      ? `${programTitle} · ${levelLabel} ${themeLabel}`
-      : `${programTitle} · ${levelLabel}`;
+function buildDurationLabel(preset: OfficialSpomovePreset): string {
+  if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
+    return `세션 ${preset.engine.flowDuration ?? 25}초`;
   }
-
-  if (programGroup === 'visual-reaction') {
-    if (engine.level >= 2) return `${programTitle} · 순간 반응`;
-    const concurrent = engine.reactTrainConcurrent ?? 1;
-    return `${programTitle} · ${concurrent}개 동시`;
-  }
-
-  // simon, flanker, stroop, sequential-memory, dive, bonus
-  return programTitle;
+  const runtime = preset.executionFacts.find((fact) => fact.label === '실행 시간')?.value;
+  const runtimeText = runtime ?? '약 75초';
+  return `${runtimeText} · ${preset.rounds}회`;
 }
 
 export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): SpomovePresetDisplayModel {
   const guide = getOfficialSpomovePresetGuide(preset);
-  const isDive = preset.programGroup === 'dive' || preset.programGroup === 'bonus';
   return {
-    displayTitle: buildDisplayTitle(preset),
+    displayTitle: preset.title,
     axisLabel: preset.axisTitle,
     programLabel: preset.programTitle,
     targetLabel: buildTargetLabel(guide.targetGroups),
     difficultyLabel: SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel],
-    durationLabel: isDive
-      ? `세션 ${preset.engine.flowDuration ?? 25}초`
-      : `자극 ${preset.cueSeconds}초`,
+    durationLabel: buildDurationLabel(preset),
     isAvailable: preset.isReady,
   };
 }

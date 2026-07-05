@@ -79,6 +79,10 @@ export async function POST(request: Request) {
   if (!body.authKey || !body.customerKey) {
     return fail(400, '자동결제 인증 정보가 필요합니다.');
   }
+  const expectedCustomerKey = `spm_${user.id.replaceAll('-', '')}`;
+  if (body.customerKey !== expectedCustomerKey) {
+    return fail(400, '결제 고객 정보가 일치하지 않습니다.');
+  }
   if (!isSpokeduMasterBillingProviderConfigured()) {
     return fail(503, '자동결제 설정이 완료되지 않았습니다.');
   }

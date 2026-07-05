@@ -45,13 +45,14 @@ import {
   officialPresetSessionHref,
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
+import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
 import { canUseSpomove } from '../lib/subscription';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
-import { useMasterStore, useProfile } from '../store';
+import { useIsPremium, useMasterStore, useProfile } from '../store';
 import type { ClassRecord, Program, UserProfile } from '../types';
 
 type ContinueItem = {
@@ -432,10 +433,9 @@ function SpomoveCard({ preset }: { preset: OfficialSpomovePreset }) {
     <article data-spomove-preset={preset.id} className="flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-700 bg-[radial-gradient(circle_at_82%_12%,rgba(99,102,241,0.48),transparent_34%),linear-gradient(145deg,#111827,#0f172a_62%,#020617)] p-4 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
       <div className="flex items-start justify-between gap-3">
         <div className="grid grid-cols-2 gap-1.5" aria-hidden="true">
-          <span className="h-3 w-3 rounded-[4px] bg-rose-400" />
-          <span className="h-3 w-3 rounded-[4px] bg-sky-400" />
-          <span className="h-3 w-3 rounded-[4px] bg-amber-300" />
-          <span className="h-3 w-3 rounded-[4px] bg-emerald-400" />
+          {SPOMOVE_PAD_GRID_HEX.map((color) => (
+            <span key={color} className="h-3 w-3 rounded-[4px]" style={{ background: color }} />
+          ))}
         </div>
         <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/85">{preset.axisTitle}</span>
       </div>
@@ -588,6 +588,7 @@ export default function DashboardView() {
   const explanationData = useExplanationData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const profile = useProfile();
+  const isPremium = useIsPremium();
   const recentActivityOwnerId = recentActivityOwnerResolved
     ? getRecentActivityOwnerId(profile)
     : null;
@@ -850,6 +851,7 @@ export default function DashboardView() {
         <ProgramPreviewModal
           program={selectedProgram}
           autoplayVideo={previewAutoplay}
+          isPremium={isPremium}
           onPlaybackStarted={() => {
             recordRecentProgramActivity({
               programId: selectedProgram.id,

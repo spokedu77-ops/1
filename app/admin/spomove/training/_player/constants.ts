@@ -73,10 +73,11 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 3, name: '3단계', enName: 'Diagonal', desc: '대각선 방향으로 이동하는 자극을 보고 해당 위치로 이동합니다.' },
       { id: 4, name: '4단계', enName: 'Deep Reaction', desc: '깊이감이 있는 자극을 보고 빠르게 반응합니다.' },
       { id: 5, name: '5단계', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 6, name: '6단계', enName: 'Camouflage', desc: '위장된 색 도형이 노이즈 속에서 서서히 드러날 때 해당 색을 찾습니다.' },
+      { id: 6, name: '카모플라쥬', enName: 'Camouflage', desc: '위장된 색 도형이 노이즈 속에서 서서히 드러날 때 해당 색을 찾습니다.' },
       { id: 7, name: '7단계', enName: 'Sweep', desc: '좌우로 쓸고 지나가는 자극에 맞춰 반응합니다.' },
       { id: 8, name: '8단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
       { id: 9, name: '블록 두더지', enName: 'Mole Simulator', desc: '3x3 구역에서 나타나는 색 자극에 반응합니다.' },
+      { id: 10, name: '우주 몰입', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
     ],
   },
   basic: {

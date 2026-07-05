@@ -20,22 +20,25 @@ export function LessonPreviewContent({
   badges,
   footer,
   autoplayVideo = false,
+  locked = false,
   onPlaybackStarted,
 }: {
   program: Program;
   badges?: ReactNode;
   footer?: ReactNode;
   autoplayVideo?: boolean;
+  locked?: boolean;
   onPlaybackStarted?: () => void;
 }) {
   const model = buildLessonDisplayModel(program);
-  const previewEquipment = model.equipment.slice(0, 6);
-  const previewRules = model.activityMethod.slice(0, 3);
-  const previewScript = model.previewCoachScript;
+  const previewEquipment = locked ? [] : model.equipment.slice(0, 6);
+  const previewRules = locked ? [] : model.activityMethod.slice(0, 3);
+  const previewScript = locked ? '' : model.previewCoachScript;
   const hasSummaryContent =
-    previewEquipment.length > 0 ||
-    Boolean(previewScript) ||
-    previewRules.length > 0;
+    !locked &&
+    (previewEquipment.length > 0 ||
+      Boolean(previewScript) ||
+      previewRules.length > 0);
   const meta = [model.target, program.duration ? `${program.duration}분` : null, model.space].filter(Boolean).slice(0, 3);
 
   return (
@@ -61,12 +64,24 @@ export function LessonPreviewContent({
           <LessonPreviewMedia
             program={program}
             layout="preview"
-            autoplay={autoplayVideo}
+            autoplay={locked ? false : autoplayVideo}
             onPlaybackStarted={onPlaybackStarted}
           />
         </div>
 
-        {hasSummaryContent ? (
+        {locked ? (
+          <aside
+            data-preview-column="content"
+            className="min-w-0 rounded-[14px] border border-amber-200 bg-amber-50/80 p-4"
+          >
+            <p className="text-[11px] font-black uppercase tracking-[0.08em] text-amber-800">프리미엄 전용</p>
+            <p className="mt-2 text-[13px] font-semibold leading-6 text-amber-950">
+              준비물, 코치 스크립트, 활동 방법, 참고 영상은 프리미엄 이용권에서 확인할 수 있습니다.
+            </p>
+          </aside>
+        ) : null}
+
+        {!locked && hasSummaryContent ? (
           <aside
             data-preview-column="content"
             data-preview-summary

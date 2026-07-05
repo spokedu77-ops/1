@@ -25,12 +25,12 @@ import {
 } from './officialSpomovePresets';
 import {
   SPOMOVE_KEY_ACTION_LABELS,
-  SPOMOVE_RESPONSE_TYPE_LABELS,
   SPOMOVE_THINKING_LEVEL_LABELS,
   getOfficialSpomovePresetGuide,
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { SPOMOVE_PAD_GRID_HEX, SPOMOVE_PAD_LAYOUT_LABELS } from './spomovePadDisplay';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
@@ -89,9 +89,9 @@ const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
   executive: 'bg-slate-100 text-slate-600',
 };
 
-// SPOMOVE 4색 시그니처
-const PAD_COLORS = ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6'] as const;
-const PAD_LAYOUT_LABELS = ['빨강', '노랑', '초록', '파랑'] as const;
+// SPOMOVE 4색 — padGrid.ts 단일 출처
+const PAD_COLORS = SPOMOVE_PAD_GRID_HEX;
+const PAD_LAYOUT_LABELS = SPOMOVE_PAD_LAYOUT_LABELS;
 
 function PadSignature({ dim = false }: { dim?: boolean }) {
   return (
@@ -372,14 +372,15 @@ function VisualReactionVisual() {
 }
 
 function SimonVisual() {
+  const [red, yellow, green, blue] = SPOMOVE_PAD_GRID_HEX;
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
-      {/* Simon 4-pad compass layout */}
+      {/* Simon 4-pad compass — 상 빨 / 우 노 / 하 초 / 좌 파 (PAD_GRID) */}
       <div className="relative h-[60px] w-[60px]">
-        <div className="absolute left-[18px] top-0 h-[22px] w-[22px] rounded-lg bg-red-500 opacity-90" />
-        <div className="absolute right-0 top-[18px] h-[22px] w-[22px] rounded-lg bg-blue-500 opacity-90" />
-        <div className="absolute bottom-0 left-[18px] h-[22px] w-[22px] rounded-lg bg-emerald-500 opacity-90" />
-        <div className="absolute left-0 top-[18px] h-[22px] w-[22px] rounded-lg bg-amber-400 opacity-90" />
+        <div className="absolute left-[18px] top-0 h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: red }} />
+        <div className="absolute right-0 top-[18px] h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: yellow }} />
+        <div className="absolute bottom-0 left-[18px] h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: green }} />
+        <div className="absolute left-0 top-[18px] h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: blue }} />
         <div className="absolute left-[14px] top-[14px] h-[30px] w-[30px] rounded-xl border border-white/10 bg-slate-700" />
       </div>
       <div className="absolute bottom-3 left-3">
@@ -574,7 +575,6 @@ function buildSpomoveDecisionItems(preset: OfficialSpomovePreset) {
     display.targetLabel ? `대상 ${display.targetLabel}` : null,
     display.durationLabel ? `시간 ${display.durationLabel}` : null,
     equipment ? `교구 ${equipment}` : null,
-    display.difficultyLabel ? `난이도 ${display.difficultyLabel}` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -621,7 +621,7 @@ function SpomovePreviewSheet({
           <InfoBlock title="필요한 패드·교구" value={preset.settingChips?.join(' · ') || '4색 패드'} />
           <InfoBlock title="공간 조건" value={preset.recommendedUse} />
           <InfoBlock title="난이도" value={display.difficultyLabel} />
-          <InfoBlock title="지도 시 확인할 내용" value={SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]} />
+          <InfoBlock title="반응 축" value={preset.axisTitle} />
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <p className="text-sm font-black text-slate-950">기본 패드 배치</p>

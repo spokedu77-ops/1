@@ -53,6 +53,12 @@ const RobloxMoleReactionTraining = lazy(() =>
   })),
 );
 
+const WormholeReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining').then((m) => ({
+    default: m.WormholeReactionTraining,
+  })),
+);
+
 const MemoryGame = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/MemoryGame').then((module) => ({
     default: module.MemoryGame,
@@ -274,10 +280,23 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    // level 9+
+    if (level === 9) {
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <RobloxMoleReactionTraining
+            durationSec={dur}
+            speedLevel={reactSpeedLevel}
+            speedSec={sp}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    // level 10+
     return (
       <Suspense fallback={<LoadingOverlay />}>
-        <RobloxMoleReactionTraining
+        <WormholeReactionTraining
           durationSec={dur}
           speedLevel={reactSpeedLevel}
           speedSec={sp}

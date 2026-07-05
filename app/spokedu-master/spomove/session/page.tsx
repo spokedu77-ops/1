@@ -24,6 +24,7 @@ import {
   getOfficialSpomovePresetGuide,
 } from '../officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
+import { SPOMOVE_PAD_GRID_HEX, SPOMOVE_PAD_LAYOUT_LABELS } from '../spomovePadDisplay';
 
 type SessionState = 'idle' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
@@ -79,20 +80,21 @@ function OfficialEngineBriefing({
   onStart: () => void;
 }) {
   const guide = getOfficialSpomovePresetGuide(preset);
-  const [ef1, ef2, ef3] = preset.executionFacts ?? [];
-  const facts = [
-    { icon: Gauge, label: '프로그램', value: `${preset.axisTitle} · ${preset.programTitle}` },
-    { icon: Volume2, label: ef1?.label ?? '신호 간격', value: ef1?.value ?? `${preset.cueSeconds}초` },
-    { icon: Users, label: ef2?.label ?? '반복', value: ef2?.value ?? `${preset.rounds}회` },
-    { icon: Music2, label: ef3?.label ?? 'BGM', value: ef3?.value ?? 'BGM 자동 재생' },
-  ];
+  const display = getSpomovePresetDisplayModel(preset);
+  const factIcons = [Volume2, Users, Music2, Gauge] as const;
+  const facts = (preset.executionFacts ?? []).slice(0, 4).map((fact, index) => ({
+    icon: factIcons[index] ?? Gauge,
+    label: fact.label,
+    value: fact.value,
+  }));
+  const checklist = (preset.executionFacts ?? []).slice(0, 6);
 
   return (
     <div className="flex h-full items-center justify-center px-5 pb-8 pt-24 sm:px-8">
       <section className="w-full max-w-[880px] overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.06] shadow-[0_28px_90px_rgba(0,0,0,0.38)] backdrop-blur-xl">
         <div className="border-b border-white/10 bg-white/[0.04] px-5 py-4 sm:px-7">
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-200/70">SPOMOVE official preset</p>
-          <h1 className="mt-2 text-[30px] font-black leading-tight text-white sm:text-[44px]">{preset.title}</h1>
+          <h1 className="mt-2 text-[30px] font-black leading-tight text-white sm:text-[44px]">{display.displayTitle}</h1>
           <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/58">{preset.description}</p>
         </div>
 
@@ -110,12 +112,14 @@ function OfficialEngineBriefing({
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">시작 전 확인</p>
             <ol className="mt-3 grid gap-2 text-sm font-bold text-white/78 sm:grid-cols-2">
-              {['1. 프로그램', '2. 준비물', '3. 패드 배치', '4. 진행 방식', '5. 실행 설정', '6. 시작'].map((item) => (
-                <li key={item} className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">{item}</li>
+              {checklist.map((item) => (
+                <li key={`${item.label}-${item.value}`} className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">
+                  {item.label}: {item.value}
+                </li>
               ))}
             </ol>
             <div className="mt-3 flex flex-wrap gap-2 text-[12px] font-black text-white/72">
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">진행 시간: {preset.engine.flowDuration ?? preset.rounds} 기준</span>
+              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">진행 시간: {display.durationLabel}</span>
               <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">반복 횟수: {preset.rounds}회</span>
               <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">자극 속도: {preset.cueSeconds}초</span>
               <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">음향: 사용 가능</span>
@@ -126,8 +130,8 @@ function OfficialEngineBriefing({
             <p className="text-sm font-black">기본 2×2 패드 배치</p>
             <div className="mt-3">
               <div className="grid grid-cols-2 gap-2" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
-                {['빨강', '노랑', '초록', '파랑'].map((label, index) => (
-                  <div key={label} className="flex min-h-14 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: ['#ef4444', '#f59e0b', '#22c55e', '#3b82f6'][index] }}>
+                {SPOMOVE_PAD_LAYOUT_LABELS.map((label, index) => (
+                  <div key={label} className="flex min-h-14 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: SPOMOVE_PAD_GRID_HEX[index] }}>
                     {label}
                   </div>
                 ))}
@@ -213,6 +217,10 @@ function SpomoveSessionContent() {
   const searchParams = useSearchParams();
   const presetId = searchParams.get('preset') ?? '';
   const officialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
+  const displayModel = useMemo(
+    () => (officialPreset ? getSpomovePresetDisplayModel(officialPreset) : null),
+    [officialPreset],
+  );
   const launchMode = normalizeMode(searchParams.get('mode'));
   const requestedBgmPath = searchParams.get('bgm') ?? '';
   const soundEnabled = searchParams.get('sound') !== 'off';
@@ -337,7 +345,7 @@ function SpomoveSessionContent() {
   return (
     <div className="relative h-dvh overflow-hidden select-none bg-[#050509] text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
       <TopBar
-        drillName={officialPreset.title}
+        drillName={displayModel?.displayTitle ?? officialPreset.title}
         mode={launchMode}
         isFullscreen={isFullscreen}
         onToggleFullscreen={toggleFullscreen}

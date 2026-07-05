@@ -160,6 +160,8 @@ function redactProgramForAccess(program: Program, canAccessProDetails: boolean):
   if (!program.isPro || canAccessProDetails) return program;
   return {
     ...program,
+    steps: [],
+    equipment: [],
     lessonDetail: undefined,
   };
 }

@@ -91,7 +91,9 @@
       "Bash(grep -c \"SUPABASE\" .env.local)",
       "Bash(node .tmp/spm-env-readiness.mjs)",
       "Bash(node .tmp/run-spm-mobile-360-with-server.mjs)",
-      "PowerShell(Get-Process -Id 23808 -ErrorAction SilentlyContinue)"
+      "PowerShell(Get-Process -Id 23808 -ErrorAction SilentlyContinue)",
+      "Bash(grep -n \"no-unused-vars\" -A5 .eslintrc.json)",
+      "Bash(grep -rn \"no-unused-vars\" eslint.config.*)"
     ],
     "additionalDirectories": [
       "C:\\Users\\joker\\Documents\\GitHub\\1\\docs"

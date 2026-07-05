@@ -967,11 +967,11 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 
-  // sortOrder 33: BLACKOUT (level 6)
+  // sortOrder 33: CAMOUFLAGE (level 6)
   {
     id: 'visual-reaction-blackout-37',
     sortOrder: 33,
-    title: '시지각 반응 · BLACKOUT',
+    title: '시지각 반응 · 카모플라쥬',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -979,18 +979,18 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 6 },
-    description: '암전과 조명 자극을 활용한 고난도 시지각 반응 활동',
+    description: '노이즈 속에 위장된 색 도형을 찾아내는 고난도 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '고난도 집중, 암전 반응, 극한 훈련',
+    recommendedUse: '고난도 집중, 색 변별, 위장 탐지',
     isReady: true,
-    settingSummary: '암전 자극 · 약 75초 · BGM 자동',
-    settingChips: ['암전 자극', '약 75초', 'BGM 자동'],
+    settingSummary: '위장 도형 · 약 75초 · BGM 자동',
+    settingChips: ['위장 도형', '약 75초', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'BLACKOUT' },
-      { label: '진행 방식', value: '암전 반응' },
+      { label: '자극 방식', value: 'CAMOUFLAGE' },
+      { label: '진행 방식', value: '위장 탐지' },
       { label: '실행 시간', value: '약 75초' },
       { label: 'BGM', value: '자동 재생' },
     ],

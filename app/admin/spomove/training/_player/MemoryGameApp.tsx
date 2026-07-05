@@ -22,9 +22,11 @@ import { VisualReactionTraining, type ReactTrainCompleteStats } from './componen
 import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
 import { DeepReactionTraining } from './components/DeepReactionTraining';
 import { BeatWaveReactionTraining } from './components/BeatWaveReactionTraining';
+import { CamouflageReactionTraining } from './components/CamouflageReactionTraining';
 import { SweepReactionTraining } from './components/SweepReactionTraining';
 import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
+import { WormholeReactionTraining } from './components/WormholeReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -1633,6 +1635,14 @@ export default function MemoryGameApp({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
+        ) : settings.level === 10 ? (
+          <WormholeReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
         ) : settings.level === 9 ? (
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
@@ -1651,6 +1661,14 @@ export default function MemoryGameApp({
           />
         ) : settings.level === 7 ? (
           <SweepReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : settings.level === 6 ? (
+          <CamouflageReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}

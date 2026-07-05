@@ -325,9 +325,15 @@ function ProgramCard({
         <button type="button" onClick={onPreview} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
           수업 미리보기
         </button>
-        <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-          전체 자료 보기
-        </Link>
+        {locked ? (
+          <Link href="/spokedu-master/payment?plan=premium" className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white ring-1 ring-indigo-600">
+            프리미엄 자료
+          </Link>
+        ) : (
+          <Link href={detailHref} className="inline-flex min-h-10 items-center justify-center rounded-xl bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+            전체 자료 보기
+          </Link>
+        )}
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         {decisionItems.map((item) => (
@@ -717,7 +723,7 @@ export default function LibraryView() {
           </div>
           <ProgramGrid
             programs={filteredPrograms}
-            isPro={isPremium}
+            isPremium={isPremium}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={ownerId != null}
             sourceLibraryView={view}
@@ -770,7 +776,7 @@ export default function LibraryView() {
         <ProgramPreviewModal
           program={selected.program}
           autoplayVideo={selected.autoplayVideo}
-          isPro={isPremium}
+          isPremium={isPremium}
           favorite={isFavoriteProgram(ownerId, selected.program.id)}
           onFavorite={ownerId ? () => toggleFavoriteProgram(ownerId, selected.program.id) : undefined}
           sourceLibraryView={view}
@@ -791,7 +797,7 @@ export default function LibraryView() {
 
 function ProgramGrid({
   programs,
-  isPro,
+  isPremium,
   isFavorite,
   favoriteEnabled,
   sourceLibraryView,
@@ -800,7 +806,7 @@ function ProgramGrid({
   setSelected,
 }: {
   programs: Program[];
-  isPro: boolean;
+  isPremium: boolean;
   isFavorite: (programId: string) => boolean;
   favoriteEnabled: boolean;
   sourceLibraryView: LibraryViewMode;
@@ -814,7 +820,7 @@ function ProgramGrid({
         <ProgramCard
           key={program.id}
           program={program}
-          locked={program.isPro && !isPro}
+          locked={program.isPro && !isPremium}
           favorite={isFavorite(program.id)}
           favoriteEnabled={favoriteEnabled}
           detailHref={getLibraryProgramDetailHref(program.id, sourceLibraryView)}

@@ -11,15 +11,17 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     const source = read('app/api/spokedu-master/programs/route.ts');
     expect(source).toContain('function redactProgramForAccess');
     expect(source).toContain('lessonDetail: undefined');
+    expect(source).toContain('steps: []');
+    expect(source).toContain('equipment: []');
     expect(source).toContain('visiblePrograms');
     expect(source).toContain('canAccessProProgramDetails(access)');
   });
 
-  it('does not treat an active Lite subscription as PRO in the library UI', () => {
+  it('does not treat an active Lite subscription as premium in the library UI', () => {
     const source = read('app/spokedu-master/library/LibraryView.tsx');
     expect(source).toContain('useIsPremium');
     expect(source).not.toContain('useIsPro');
-    expect(source).toContain('locked={program.isPro && !isPro}');
+    expect(source).toContain('locked={program.isPro && !isPremium}');
   });
 
   it('blocks direct premium lesson detail access for non-premium users', () => {
@@ -29,11 +31,22 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(source).toContain('/spokedu-master/payment?plan=premium');
   });
 
+  it('hides locked lesson preview content and routes to premium payment', () => {
+    const previewModal = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
+    const previewContent = read('app/spokedu-master/components/lesson/LessonPreviewContent.tsx');
+    expect(previewModal).toContain('isPremium');
+    expect(previewModal).toContain('locked={locked}');
+    expect(previewModal).toContain('/spokedu-master/payment?plan=premium');
+    expect(previewContent).toContain('locked?: boolean');
+    expect(previewContent).toContain('프리미엄 전용');
+  });
+
   it('does not fake success for active subscriptions during Lite to Premium billing', () => {
     const source = read('app/api/spokedu-master/payment/billing/issue/route.ts');
     expect(source).not.toContain('replaced: true');
     expect(source).toContain("activePlan !== 'lite' || plan !== 'premium'");
     expect(source).toContain("billingMode = activeSubscription ? 'upgrade' : 'initial'");
+    expect(source).toContain('expectedCustomerKey');
   });
 
   it('requires payment success to match the requested plan and the active access plan', () => {

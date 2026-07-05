@@ -17,7 +17,7 @@ function hasSpomoveLink(program: Program) {
 export function ProgramPreviewModal({
   program,
   autoplayVideo,
-  isPro = true,
+  isPremium = true,
   favorite,
   onFavorite,
   sourceLibraryView,
@@ -26,14 +26,14 @@ export function ProgramPreviewModal({
 }: {
   program: Program;
   autoplayVideo: boolean;
-  isPro?: boolean;
+  isPremium?: boolean;
   favorite?: boolean;
   onFavorite?: () => void;
   sourceLibraryView?: LibraryViewMode;
   onPlaybackStarted?: () => void;
   onClose: () => void;
 }) {
-  const locked = program.isPro && !isPro;
+  const locked = program.isPro && !isPremium;
 
   return (
     <BottomSheet
@@ -60,6 +60,7 @@ export function ProgramPreviewModal({
     >
       <LessonPreviewContent
         program={program}
+        locked={locked}
         autoplayVideo={autoplayVideo}
         onPlaybackStarted={onPlaybackStarted}
         badges={
@@ -86,13 +87,23 @@ export function ProgramPreviewModal({
             >
               닫기
             </button>
-            <Link
-              href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
-            >
-              <BookOpen className="h-4 w-4" />
-              전체 수업 자료 보기
-            </Link>
+            {locked ? (
+              <Link
+                href="/spokedu-master/payment?plan=premium"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
+              >
+                <Lock className="h-4 w-4" />
+                프리미엄으로 열기
+              </Link>
+            ) : (
+              <Link
+                href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
+              >
+                <BookOpen className="h-4 w-4" />
+                전체 수업 자료 보기
+              </Link>
+            )}
           </div>
         }
       />
