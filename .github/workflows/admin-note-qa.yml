@@ -41,7 +41,9 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - run: npm run test:admin-note
+      - run: npm run verify:admin-note
+      - name: Production build (Vercel parity)
+        run: npm run build
 
   e2e:
     name: Playwright smoke & invariants

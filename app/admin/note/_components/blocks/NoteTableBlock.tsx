@@ -17,7 +17,6 @@ import {
 } from '../../_lib/noteTableBlock';
 import { NoteEditableField } from '../NoteEditableField';
 import type { NoteBlock } from '../../_lib/types';
-import type { NoteEditorEnterContext } from '../NoteEditor';
 import { useBlockContentPatch } from './useBlockContentPatch';
 
 type NoteTableBlockProps = {
@@ -197,9 +196,6 @@ export function NoteTableBlock({
             uploadImage={uploadImage}
             onOpenDocumentById={onOpenDocument}
             mergeFocusCaretOffset={mergeFocusCaretOffset}
-            onEditorEnter={(_ctx?: NoteEditorEnterContext) => {
-              handleNavigateCell(rowIndex, colIndex, 'next');
-            }}
           />
         </div>
       </td>

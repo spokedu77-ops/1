@@ -18,6 +18,10 @@ function isListSpec(spec: PastedBlockSpec): boolean {
   return spec.type === 'bulletList' || spec.type === 'numberedList';
 }
 
+function parentInsertKey(parentId: string | null): string {
+  return parentId ?? '__root__';
+}
+
 export async function insertPastedBlockSpecsAfterAnchor(
   ctx: PasteInsertContext,
   anchor: NoteBlock,
@@ -106,7 +110,9 @@ async function insertSpecsAmongSiblings(
 ): Promise<{ lastFocusId: string; lastFocusPart: 'title' | 'editor' } | null> {
   if (specs.length === 0) return null;
 
-  let insertIndex = startIndex;
+  const insertIndexByParent = new Map<string, number>();
+  insertIndexByParent.set(parentInsertKey(parentId), startIndex);
+
   let lastFocusId = '';
   let lastFocusPart: 'title' | 'editor' = 'editor';
   const stack = [...listParentStack];
@@ -115,11 +121,16 @@ async function insertSpecsAmongSiblings(
     let targetParentId = parentId;
     if (isListSpec(spec)) {
       const level = spec.listNestLevel ?? 0;
-      targetParentId = stack[level] ?? parentId;
+      targetParentId = level === 0 ? parentId : (stack[level - 1] ?? parentId);
     }
 
+    const parentKey = parentInsertKey(targetParentId);
+    if (!insertIndexByParent.has(parentKey)) {
+      insertIndexByParent.set(parentKey, 0);
+    }
     const siblings = getBlocksInParent(ctx.blocksRef.current, targetParentId);
-    const clampedIndex = Math.max(0, Math.min(insertIndex, siblings.length));
+    const rawIndex = insertIndexByParent.get(parentKey) ?? 0;
+    const clampedIndex = Math.max(0, Math.min(rawIndex, siblings.length));
 
     const content = contentForPastedBlock(spec, sourceContent);
     const created = await ctx.insertBlockAmongSiblings(
@@ -132,6 +143,7 @@ async function insertSpecsAmongSiblings(
 
     lastFocusId = created.id;
     lastFocusPart = created.type === 'toggle' ? 'title' : 'editor';
+    insertIndexByParent.set(parentKey, clampedIndex + 1);
 
     if (isListSpec(spec)) {
       const level = spec.listNestLevel ?? 0;
@@ -152,10 +164,6 @@ async function insertSpecsAmongSiblings(
         lastFocusId = nested.lastFocusId;
         lastFocusPart = nested.lastFocusPart;
       }
-    }
-
-    if (targetParentId === parentId) {
-      insertIndex += 1;
     }
   }
 

@@ -42,7 +42,7 @@ export const BLOCK_TYPES: {
   { type: 'columnList', label: '2단 레이아웃', icon: Columns2, desc: '나란히 2개 열' },
   { type: 'divider', label: '구분선', icon: Minus, desc: '가로 구분선', shortcut: '---' },
   { type: 'image', label: '이미지', icon: ImageIcon, desc: '이미지 업로드 또는 URL' },
-  { type: 'video', label: '영상', icon: Video, desc: 'YouTube · Vimeo 임베드' },
+  { type: 'video', label: '영상', icon: Video, desc: 'YouTube · Vimeo · Loom 임베드' },
   { type: 'page', label: '하위 문서', icon: FileText, desc: '클릭하면 열리는 페이지' },
 ];
 

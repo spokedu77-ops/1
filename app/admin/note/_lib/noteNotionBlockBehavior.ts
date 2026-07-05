@@ -24,12 +24,30 @@ export type NotionPageKeyAction =
 /** Shift+Enter — 같은 블록 안 줄바꿈 */
 export type NotionShiftEnterAction = { kind: 'hard-break' };
 
+export type EditorShiftEnterContext = {
+  tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
+};
+
+/** 표 셀 Enter — Notion: 셀 안 줄바꿈(Shift+Enter 동일), Tab/화살표로 셀 이동 */
+export type NotionTableCellEnterAction =
+  | { kind: 'hard-break' }
+  | { kind: 'defer' };
+
+export function resolveTableCellEnterAction(shiftKey: boolean): NotionTableCellEnterAction {
+  if (shiftKey) return { kind: 'hard-break' };
+  return { kind: 'defer' };
+}
+
 export function shouldEditorShiftEnterHardBreak(shiftKey: boolean): boolean {
   return shiftKey;
 }
 
-export function resolveEditorShiftEnterAction(shiftKey: boolean): NotionShiftEnterAction | null {
-  return shouldEditorShiftEnterHardBreak(shiftKey) ? { kind: 'hard-break' } : null;
+export function resolveEditorShiftEnterAction(
+  shiftKey: boolean,
+  _context?: EditorShiftEnterContext,
+): NotionShiftEnterAction | null {
+  if (!shouldEditorShiftEnterHardBreak(shiftKey)) return null;
+  return { kind: 'hard-break' };
 }
 
 export function resolveInlineBlockEnterAction(options: {

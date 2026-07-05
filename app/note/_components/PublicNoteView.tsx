@@ -13,9 +13,9 @@ import { codeLanguageLabel, readCodeLanguage } from '@/app/admin/note/_lib/noteC
 import {
   imageBlockAlignClass,
   imageCaptionAlignClass,
-  imageFrameWidthClass,
+  imageFrameWidthStyle,
   readImageAlign,
-  readImageWidth,
+  readImageWidthPercent,
 } from '@/app/admin/note/_lib/noteImageBlock';
 import { VideoEmbedFrame } from '@/app/admin/note/_components/VideoEmbedFrame';
 
@@ -254,11 +254,14 @@ function PublicBlock({
     const url = typeof block.content?.url === 'string' ? block.content.url.trim() : '';
     if (!url) return null;
     const caption = typeof block.content?.caption === 'string' ? block.content.caption.trim() : '';
-    const imageWidth = readImageWidth(block.content);
+    const imageWidthPercent = readImageWidthPercent(block.content);
     const imageAlign = readImageAlign(block.content);
     return (
       <div className="py-2" style={indentStyle}>
-        <div className={`${imageFrameWidthClass(imageWidth)} ${imageBlockAlignClass(imageAlign)}`}>
+        <div
+          className={`${imageBlockAlignClass(imageAlign)}`}
+          style={imageFrameWidthStyle(imageWidthPercent)}
+        >
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
             <img src={url} alt={caption || ''} className="max-h-96 w-full object-contain" />
           </div>

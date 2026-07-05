@@ -12,6 +12,34 @@ export const IMAGE_ALIGN_OPTIONS: Array<{ id: ImageBlockAlign; label: string }> 
   { id: 'right', label: '오른쪽' },
 ];
 
+export const IMAGE_WIDTH_PERCENT_MIN = 25;
+export const IMAGE_WIDTH_PERCENT_MAX = 100;
+
+export function snapImageWidthPercent(percent: number): number {
+  return Math.max(IMAGE_WIDTH_PERCENT_MIN, Math.min(IMAGE_WIDTH_PERCENT_MAX, Math.round(percent)));
+}
+
+export function readImageWidthPercent(content: Record<string, unknown> | null | undefined): number {
+  const raw = content?.widthPercent;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    return snapImageWidthPercent(raw);
+  }
+  return readImageWidth(content) === 'half' ? 50 : 100;
+}
+
+export function buildImageWidthPatch(percent: number): Pick<Record<string, unknown>, 'width' | 'widthPercent'> {
+  const widthPercent = snapImageWidthPercent(percent);
+  return {
+    widthPercent,
+    width: widthPercent <= 55 ? 'half' : 'full',
+  };
+}
+
+export function imageFrameWidthStyle(percent: number): { width: string; maxWidth: string } {
+  const widthPercent = snapImageWidthPercent(percent);
+  return { width: `${widthPercent}%`, maxWidth: `${widthPercent}%` };
+}
+
 export function readImageWidth(content: Record<string, unknown> | null | undefined): ImageBlockWidth {
   return content?.width === 'half' ? 'half' : 'full';
 }

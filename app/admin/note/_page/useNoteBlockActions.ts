@@ -453,15 +453,14 @@ export function useNoteBlockActions(options: {
     blocksRef,
   ]);
 
-  const handlePasteBlockClipboard = useCallback(async (payloadText: string, afterBlock?: NoteBlock | null) => {
+  const handlePasteBlockClipboard = useCallback(async (payloadText: string) => {
     if (!selectedId) return;
     const payload = parseBlockClipboardText(payloadText);
     if (!payload) return;
     const specs = clipboardPayloadToPasteSpecs(payload);
     if (specs.length === 0) return;
 
-    const anchor = afterBlock
-      ?? (focusedEditorBlockIdRef.current
+    const anchor = (focusedEditorBlockIdRef.current
         ? blocksRef.current.find((block) => block.id === focusedEditorBlockIdRef.current) ?? null
         : null)
       ?? sortRootBlocks(blocksRef.current).at(-1)

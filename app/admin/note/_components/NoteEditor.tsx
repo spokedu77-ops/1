@@ -53,7 +53,7 @@ import {
   shouldSuppressCrossFormatToolbar,
 } from './noteCrossSelect';
 import { noteSuppressEditorScrollRef } from '../_lib/noteEditorScrollGuard';
-import { resolveEditorShiftEnterAction } from '../_lib/noteNotionBlockBehavior';
+import { resolveEditorShiftEnterAction, resolveTableCellEnterAction } from '../_lib/noteNotionBlockBehavior';
 import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
@@ -794,6 +794,16 @@ export function NoteEditor({
             return true;
           }
         }
+        if (currentTabBehavior === 'table-cell-nav' && event.key === 'Enter') {
+          const tableEnter = resolveTableCellEnterAction(event.shiftKey);
+          if (tableEnter.kind === 'hard-break') {
+            event.preventDefault();
+            flush();
+            editorRef.current?.chain().focus().setHardBreak().run();
+            return true;
+          }
+          return false;
+        }
         // 글머리·번호 블록 — NoteBlockEnterExtension이 Keymap Enter보다 먼저 처리
         if (event.key === 'Enter' && currentEnterCreatesBlock) {
           return false;
@@ -955,10 +965,10 @@ export function NoteEditor({
       return;
     }
     storage.handler = (currentEditor, shiftKey) => {
-      if (resolveEditorShiftEnterAction(shiftKey)) {
+      const cbs = callbacksRef.current;
+      if (resolveEditorShiftEnterAction(shiftKey, { tabBehavior: cbs.tabBehavior })) {
         return currentEditor.commands.setHardBreak();
       }
-      const cbs = callbacksRef.current;
       cbs.onSlashChange?.(false, '');
       let split: NoteEditorEnterSplit | undefined;
       if (cbs.enterSplitOnMidBlock) {

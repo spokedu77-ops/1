@@ -57,7 +57,8 @@ export function filterTurnIntoCommands<T extends { type: NoteBlock['type'] }>(
   prevContent?: Record<string, unknown> | null,
 ): T[] {
   return commands.filter(
-    (command) => !getBlockedTypeChangeReason(blockType, command.type, prevContent),
+    (command) => command.type !== blockType
+      && !getBlockedTypeChangeReason(blockType, command.type, prevContent),
   );
 }
 
@@ -113,18 +114,22 @@ export function buildContentForTypeChange(
     return base;
   }
   const rawText = typeof prev.text === 'string' ? prev.text : '';
-  let text = TEXT_CARRYING_TYPES.has(nextType)
+  const textAfterMarkdown = TEXT_CARRYING_TYPES.has(nextType)
     ? stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger)
     : rawText;
+  let text = textAfterMarkdown;
   if (nextType === 'bulletList' || nextType === 'numberedList') {
     text = stripListItemMarkerPrefix(text);
   }
-  const didStripTrigger = text !== rawText;
+  if (prevType === 'bulletList' || prevType === 'numberedList') {
+    text = stripListItemMarkerPrefix(text);
+  }
+  const didStripMarkdownTrigger = textAfterMarkdown !== rawText;
   const html = typeof prev.html === 'string' ? prev.html : undefined;
   const next = {
     ...base,
     text,
-    ...(!didStripTrigger && html !== undefined ? { html } : {}),
+    ...(!didStripMarkdownTrigger && html !== undefined ? { html } : {}),
     ...(typeof prev.checked === 'boolean' && nextType === 'todo' ? { checked: prev.checked } : {}),
   };
   if (nextType === 'todo') {

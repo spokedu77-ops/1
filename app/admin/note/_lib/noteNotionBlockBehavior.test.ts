@@ -14,6 +14,7 @@ import {
   resolveListBackspaceAtStartAction,
   resolveListEmptyBackspaceAction,
   resolvePageBlockEnterAction,
+  resolveTableCellEnterAction,
   resolveToggleTitleBackspaceAction,
   resolveToggleTitleEnterAction,
   shouldEditorShiftEnterHardBreak,
@@ -189,7 +190,18 @@ describe('resolveEditorShiftEnterAction', () => {
   it('Shift+Enter inserts hard break in same block', () => {
     expect(shouldEditorShiftEnterHardBreak(true)).toBe(true);
     expect(resolveEditorShiftEnterAction(true)).toEqual({ kind: 'hard-break' });
+    expect(resolveEditorShiftEnterAction(true, { tabBehavior: 'table-cell-nav' })).toEqual({ kind: 'hard-break' });
     expect(resolveEditorShiftEnterAction(false)).toBeNull();
+  });
+});
+
+describe('resolveTableCellEnterAction', () => {
+  it('Shift+Enter hard-breaks inside cell', () => {
+    expect(resolveTableCellEnterAction(true)).toEqual({ kind: 'hard-break' });
+  });
+
+  it('Enter defers to in-cell newline (Notion parity)', () => {
+    expect(resolveTableCellEnterAction(false)).toEqual({ kind: 'defer' });
   });
 });
 
