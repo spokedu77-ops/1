@@ -15,6 +15,8 @@ const DOOR_COLORS = [
 const DOOR_Z = -15;
 const CART_START = new THREE.Vector3(0, 0, 35);
 
+export type NumberCartTier = 1 | 2 | 3;
+
 type Phase = 'PREP' | 'TRANSIT' | 'ARRIVE';
 
 type DoorObj = {
@@ -24,7 +26,15 @@ type DoorObj = {
   group: THREE.Group;
   signCtx: CanvasRenderingContext2D;
   signTex: THREE.CanvasTexture;
-  numbers: number[];
+  doorMat: THREE.MeshStandardMaterial;
+  doorLight: THREE.PointLight;
+  label: string;
+};
+
+type RoundPayload = {
+  cartLabel: string;
+  targetDoorIdx: number;
+  doorLabels: [string, string, string, string];
 };
 
 type CartGame = {
@@ -34,7 +44,6 @@ type CartGame = {
   phaseStartMs: number;
   prepMs: number;
   travelMs: number;
-  targetNumber: number;
   targetDoorIdx: number;
   rounds: number;
   laneCount: [number, number, number, number];
@@ -47,6 +56,8 @@ type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
+  /** L1=1~4 단일, L2=1~8 쌍, L3=사칙연산 */
+  tier?: NumberCartTier;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
@@ -61,6 +72,97 @@ function shuffle<T>(arr: T[]): T[] {
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+function tierHudTitle(tier: NumberCartTier): string {
+  if (tier === 3) return '계산';
+  return '숫자';
+}
+
+function tierBadge(tier: NumberCartTier): string {
+  if (tier === 1) return 'L1 · 1~4';
+  if (tier === 2) return 'L2 · 1~8';
+  return 'L3 · 사칙연산';
+}
+
+function pickUniqueDistractors(correct: number, count: number): number[] {
+  const out = new Set<number>();
+  const deltas = [-10, -5, -3, -2, -1, 1, 2, 3, 5, 10, 7, -7];
+  let guard = 0;
+  while (out.size < count && guard < 80) {
+    guard += 1;
+    let cand = correct + deltas[Math.floor(Math.random() * deltas.length)]!;
+    if (cand <= 0) cand = correct + 2 + Math.floor(Math.random() * 6);
+    if (cand !== correct) out.add(cand);
+  }
+  while (out.size < count) {
+    const cand = 2 + Math.floor(Math.random() * 98);
+    if (cand !== correct) out.add(cand);
+  }
+  return [...out].slice(0, count);
+}
+
+function generateMathRound(): { cartLabel: string; answer: number } {
+  const ops = ['+', '−', '×', '÷'] as const;
+  const op = ops[Math.floor(Math.random() * ops.length)]!;
+  if (op === '+') {
+    const a = 2 + Math.floor(Math.random() * 11);
+    const b = 2 + Math.floor(Math.random() * 11);
+    return { cartLabel: `${a}+${b}`, answer: a + b };
+  }
+  if (op === '−') {
+    const a = 6 + Math.floor(Math.random() * 15);
+    const b = 1 + Math.floor(Math.random() * (a - 1));
+    return { cartLabel: `${a}−${b}`, answer: a - b };
+  }
+  if (op === '×') {
+    const a = 2 + Math.floor(Math.random() * 8);
+    const b = 2 + Math.floor(Math.random() * 8);
+    return { cartLabel: `${a}×${b}`, answer: a * b };
+  }
+  const b = 2 + Math.floor(Math.random() * 8);
+  const answer = 2 + Math.floor(Math.random() * 8);
+  const a = b * answer;
+  return { cartLabel: `${a}÷${b}`, answer };
+}
+
+function buildRound(tier: NumberCartTier): RoundPayload {
+  if (tier === 1) {
+    const nums = shuffle([1, 2, 3, 4]);
+    const targetDoorIdx = Math.floor(Math.random() * 4);
+    return {
+      cartLabel: String(nums[targetDoorIdx]),
+      targetDoorIdx,
+      doorLabels: nums.map(String) as [string, string, string, string],
+    };
+  }
+  if (tier === 2) {
+    const numbers = shuffle([1, 2, 3, 4, 5, 6, 7, 8]);
+    const doorLabels = [
+      `${numbers[0]}   ${numbers[1]}`,
+      `${numbers[2]}   ${numbers[3]}`,
+      `${numbers[4]}   ${numbers[5]}`,
+      `${numbers[6]}   ${numbers[7]}`,
+    ] as [string, string, string, string];
+    const targetNumber = numbers[Math.floor(Math.random() * 8)]!;
+    let targetDoorIdx = 0;
+    for (let i = 0; i < 4; i++) {
+      if (numbers[i * 2] === targetNumber || numbers[i * 2 + 1] === targetNumber) {
+        targetDoorIdx = i;
+        break;
+      }
+    }
+    return { cartLabel: String(targetNumber), targetDoorIdx, doorLabels };
+  }
+  const { cartLabel, answer } = generateMathRound();
+  const wrong = pickUniqueDistractors(answer, 3);
+  const options = shuffle([answer, ...wrong]);
+  const targetDoorIdx = options.indexOf(answer);
+  return {
+    cartLabel,
+    targetDoorIdx,
+    doorLabels: options.map(String) as [string, string, string, string],
+  };
 }
 
 /** 노이즈 텍스처(암벽·바닥) — 외부 이미지 없이 캔버스로 절차적 생성 */
@@ -132,16 +234,27 @@ const css = `
 .ncart-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .ncart-play{position:relative;flex:1;min-height:0}
 .ncart-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(circle,rgba(0,0,0,0) 55%,rgba(0,0,0,.75) 100%)}
-.ncart-status{position:absolute;left:50%;bottom:clamp(16px,3vw,32px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:8px 24px;border-radius:999px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.14);font-family:monospace;font-size:clamp(13px,1.8vw,18px);letter-spacing:.08em;color:#10b981;white-space:nowrap}
+.ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(ellipse 85% 70% at 50% 42%,rgba(0,0,0,0) 0%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.78) 100%)}
+.ncart-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:5px 14px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#10b981;white-space:nowrap;max-width:min(92vw,560px);overflow:hidden;text-overflow:ellipsis}
+.ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:14px;background:rgba(6,10,18,.52);border:1px solid rgba(245,158,11,.2);backdrop-filter:blur(8px);box-shadow:0 6px 22px rgba(0,0,0,.32);transition:opacity .3s ease,transform .3s ease}
+.ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
+.ncart-target-k{font-size:clamp(9px,1.15vw,11px);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.36);text-transform:uppercase;line-height:1}
+.ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#ffe8b8;text-shadow:0 0 14px rgba(245,158,11,.5);-webkit-text-stroke:1px rgba(245,158,11,.22);white-space:nowrap}
+.ncart-target-v.expr{font-size:clamp(34px,6.2vw,50px);letter-spacing:.05em}
+.ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#f59e0b;margin-top:2px}
 `;
 
-export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: Props) {
+export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, tier = 2, onExit, onComplete }: Props) {
+  const cartTier: NumberCartTier = tier === 1 || tier === 3 ? tier : 2;
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudRoundsRef = useRef<HTMLDivElement>(null);
+  const hudTierRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  const targetHudRef = useRef<HTMLDivElement>(null);
+  const targetNumRef = useRef<HTMLDivElement>(null);
+  const targetKeyRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
   const gRef = useRef<CartGame | null>(null);
   const onCompleteRef = useRef(onComplete);
@@ -196,7 +309,6 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       phaseStartMs: 0,
       prepMs,
       travelMs,
-      targetNumber: 0,
       targetDoorIdx: 0,
       rounds: 0,
       laneCount: [0, 0, 0, 0],
@@ -414,30 +526,57 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       frameGroup.add(signMesh);
 
       scene.add(frameGroup);
-      doors.push({ colorIdx: index, x: config.x, z: DOOR_Z, group: frameGroup, signCtx, signTex, numbers: [] });
+      doors.push({
+        colorIdx: index,
+        x: config.x,
+        z: DOOR_Z,
+        group: frameGroup,
+        signCtx,
+        signTex,
+        doorMat,
+        doorLight,
+        label: '',
+      });
     });
 
-    const updateDoorSign = (door: DoorObj, num1: number, num2: number) => {
+    const updateDoorSignText = (door: DoorObj, text: string) => {
       const ctx = door.signCtx;
       const hex = DOOR_COLORS[door.colorIdx].css;
+      const compact = text.replace(/\s+/g, '');
+      const fontSize = compact.length <= 2 ? 180 : compact.length <= 3 ? 150 : 120;
       ctx.fillStyle = '#0c1420';
       ctx.fillRect(0, 0, 512, 256);
       ctx.strokeStyle = hex;
       ctx.lineWidth = 6;
       ctx.strokeRect(6, 6, 500, 244);
       ctx.fillStyle = '#ffffff';
-      ctx.font = '900 180px "Arial", sans-serif';
+      ctx.font = `900 ${fontSize}px "Arial", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = hex;
       ctx.shadowBlur = 60;
-      ctx.fillText(`${num1}   ${num2}`, 256, 128);
+      ctx.fillText(text, 256, 128);
       ctx.shadowBlur = 25;
-      ctx.fillText(`${num1}   ${num2}`, 256, 128);
+      ctx.fillText(text, 256, 128);
       ctx.shadowBlur = 0;
-      ctx.fillText(`${num1}   ${num2}`, 256, 128);
+      ctx.fillText(text, 256, 128);
       door.signTex.needsUpdate = true;
-      door.numbers = [num1, num2];
+      door.label = text;
+    };
+
+    const resetDoorGlow = () => {
+      doors.forEach((door) => {
+        door.doorMat.emissiveIntensity = 0.45;
+        door.doorLight.intensity = 4;
+      });
+    };
+
+    const pulseDoorGlow = (doorIdx: number, strength: number) => {
+      doors.forEach((door, idx) => {
+        const active = idx === doorIdx;
+        door.doorMat.emissiveIntensity = active ? 0.45 + strength * 0.55 : 0.22 + strength * 0.08;
+        door.doorLight.intensity = active ? 4 + strength * 4 : 2.2;
+      });
     };
 
     // 5. 수레
@@ -533,17 +672,17 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
     // 목표 숫자판: 카메라(뒤쪽)를 향한 뒷면에 부착 — 대기 상태에서도 즉시 보이도록
     const cartSignCanvas = document.createElement('canvas');
-    cartSignCanvas.width = 128;
+    cartSignCanvas.width = 256;
     cartSignCanvas.height = 128;
     const cartSignCtx = cartSignCanvas.getContext('2d')!;
     const cartSignTexture = new THREE.CanvasTexture(cartSignCanvas);
     disposeTex.push(cartSignTexture);
     const displayMat = new THREE.MeshBasicMaterial({ map: cartSignTexture, side: THREE.DoubleSide });
     disposeMats.push(displayMat);
-    const displayGeo = new THREE.PlaneGeometry(1.9, 1.9);
+    const displayGeo = new THREE.PlaneGeometry(3.1, 1.55);
     disposeGeos.push(displayGeo);
     const display = new THREE.Mesh(displayGeo, displayMat);
-    display.position.set(0, 2.05, 2.2);
+    display.position.set(0, 2.35, 2.35);
     bucketGroup.add(display);
 
     cart.position.copy(CART_START);
@@ -551,22 +690,35 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
     const updateCartSign = (text: string) => {
       const ctx = cartSignCtx;
-      ctx.fillStyle = '#10182a';
-      ctx.fillRect(0, 0, 128, 128);
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 5;
-      ctx.strokeRect(3, 3, 122, 122);
-      ctx.fillStyle = '#ffe8b8';
-      ctx.font = 'bold 80px "Courier New", monospace';
+      const w = cartSignCanvas.width;
+      const h = cartSignCanvas.height;
+      const compact = text.replace(/\s+/g, '');
+      const fontSize = compact.length <= 2 ? 78 : compact.length <= 4 ? 64 : 52;
+      ctx.fillStyle = '#0a1224';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(4, 4, w - 8, h - 8);
+      ctx.fillStyle = '#fff4d6';
+      ctx.font = `bold ${fontSize}px "Courier New", monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.shadowColor = '#f59e0b';
       ctx.shadowBlur = 22;
-      ctx.fillText(text, 64, 64);
+      ctx.fillText(text, w / 2, h / 2);
       ctx.shadowBlur = 4;
-      ctx.fillText(text, 64, 64);
+      ctx.fillText(text, w / 2, h / 2);
       ctx.shadowBlur = 0;
       cartSignTexture.needsUpdate = true;
+      if (targetNumRef.current) {
+        targetNumRef.current.textContent = text;
+        targetNumRef.current.classList.toggle('expr', compact.length > 2);
+      }
+      if (targetKeyRef.current) targetKeyRef.current.textContent = tierHudTitle(cartTier);
+    };
+
+    const showTargetHud = (visible: boolean) => {
+      if (targetHudRef.current) targetHudRef.current.classList.toggle('hidden', !visible);
     };
     updateCartSign('?');
 
@@ -597,6 +749,8 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     };
     updateHudTime();
     if (hudRoundsRef.current) hudRoundsRef.current.textContent = '0';
+    if (hudTierRef.current) hudTierRef.current.textContent = tierBadge(cartTier);
+    if (targetKeyRef.current) targetKeyRef.current.textContent = tierHudTitle(cartTier);
 
     const setStatus = (text: string, color: string) => {
       if (!statusRef.current) return;
@@ -610,14 +764,14 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     const startRound = () => {
       cart.position.copy(CART_START);
       cart.rotation.y = 0;
+      resetDoorGlow();
 
-      const numbers = shuffle([1, 2, 3, 4, 5, 6, 7, 8]);
-      doors.forEach((door, idx) => updateDoorSign(door, numbers[idx * 2]!, numbers[idx * 2 + 1]!));
+      const round = buildRound(cartTier);
+      doors.forEach((door, idx) => updateDoorSignText(door, round.doorLabels[idx]!));
 
-      g.targetNumber = numbers[Math.floor(Math.random() * 8)]!;
-      const targetDoor = doors.find((d) => d.numbers.includes(g.targetNumber))!;
-      g.targetDoorIdx = targetDoor.colorIdx;
-      updateCartSign(String(g.targetNumber));
+      const targetDoor = doors[round.targetDoorIdx]!;
+      g.targetDoorIdx = round.targetDoorIdx;
+      updateCartSign(round.cartLabel);
 
       g.rounds++;
       g.laneCount[g.targetDoorIdx]++;
@@ -626,14 +780,16 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       g.phase = 'PREP';
       g.phaseStartMs = performance.now();
       display.visible = true;
-      setStatus(`목표 확인 · ${Math.ceil(g.prepMs / 1000)}초 후 출발`, '#f59e0b');
+      showTargetHud(true);
+      const prepHint = cartTier === 3 ? '식을 계산하고 맞는 문을 찾으세요' : '목표 숫자가 있는 문을 찾으세요';
+      setStatus(`${prepHint} · ${Math.ceil(g.prepMs / 1000)}초 후 출발`, '#f59e0b');
 
       let remaining = Math.ceil(g.prepMs / 1000);
       const tick = () => {
         if (!g.running || g.phase !== 'PREP') return;
         remaining -= 1;
         if (remaining > 0) {
-          setStatus(`목표 확인 · ${remaining}초 후 출발`, '#f59e0b');
+          setStatus(`${prepHint} · ${remaining}초 후 출발`, '#f59e0b');
           g.roundTimer = setTimeout(tick, 1000);
         }
       };
@@ -643,8 +799,9 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
         if (!gRef.current?.running) return;
         g.phase = 'TRANSIT';
         g.phaseStartMs = performance.now();
-        display.visible = false;
-        setStatus('이동 중', '#10b981');
+        display.visible = true;
+        showTargetHud(false);
+        setStatus('이동 중 · 수레 뒤판 확인', '#10b981');
         endPos = new THREE.Vector3(targetDoor.x, 0, targetDoor.z + 4);
         controlPoint = new THREE.Vector3(0, 0, 8);
       }, g.prepMs);
@@ -663,6 +820,21 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       cartLight.position.y += 1.5;
       cartLight.intensity = 2 + Math.random() * 0.2;
 
+      // 수레 숫자판이 항상 카메라를 향하도록 — 이동 중에도 읽기 쉽게
+      display.lookAt(camera.position);
+
+      const phaseElapsed = performance.now() - g.phaseStartMs;
+      if (g.phase === 'PREP') {
+        const breathe = 0.35 + Math.sin(phaseElapsed * 0.005) * 0.18;
+        doors.forEach((door) => {
+          door.doorMat.emissiveIntensity = 0.42 + breathe * 0.14;
+          door.doorLight.intensity = 3.4 + breathe * 1.2;
+        });
+      } else if (g.phase === 'ARRIVE') {
+        const flash = 0.55 + Math.sin(phaseElapsed * 0.018) * 0.45;
+        pulseDoorGlow(g.targetDoorIdx, flash);
+      }
+
       if (g.phase === 'TRANSIT') {
         const t = Math.min(1, (performance.now() - g.phaseStartMs) / g.travelMs);
         const easedT = easeInOutCubic(t);
@@ -680,7 +852,9 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
         if (t >= 1) {
           g.phase = 'ARRIVE';
           g.phaseStartMs = performance.now();
-          setStatus('도착', '#6b7280');
+          display.visible = false;
+          showTargetHud(false);
+          setStatus(cartTier === 3 ? '정답 문 도착' : '도착', '#6b7280');
           g.roundTimer = setTimeout(() => {
             if (gRef.current?.running) startRound();
           }, 1400);
@@ -739,7 +913,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       disposeTex.forEach((tex) => tex.dispose());
       renderer.dispose();
     };
-  }, [durationSec, endGame, prepMs, travelMs]);
+  }, [durationSec, endGame, prepMs, travelMs, cartTier]);
 
   return (
     <div className="ncart">
@@ -757,6 +931,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
           <div className="ncart-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
             NUMBER CART
           </div>
+          <div className="ncart-tier" ref={hudTierRef} />
         </div>
         <div className="ncart-hc" style={{ borderRight: 'none', borderLeft: '1px solid rgba(255,255,255,.05)' }}>
           <button type="button" className="ncart-stop" onClick={stopGame}>
@@ -771,6 +946,14 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       <div ref={playRef} className="ncart-play">
         <canvas className="ncart-canvas" ref={cvRef} />
         <div className="ncart-vignette" />
+        <div className="ncart-target hidden" ref={targetHudRef}>
+          <div className="ncart-target-k" ref={targetKeyRef}>
+            목표
+          </div>
+          <div className="ncart-target-v" ref={targetNumRef}>
+            ?
+          </div>
+        </div>
         <div className="ncart-status" ref={statusRef} />
       </div>
     </div>

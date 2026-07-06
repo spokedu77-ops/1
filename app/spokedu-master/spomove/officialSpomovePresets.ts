@@ -45,6 +45,8 @@ export type OfficialSpomovePreset = {
     variantColorTheme?: SpomoveColorThemeId;
     reactTrainConcurrent?: 1 | 2 | 3;
     moleDualPanel?: boolean;
+    numberCartTier?: 1 | 2 | 3;
+    colorTrackerTier?: 1 | 2 | 3;
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
   };
@@ -1067,7 +1069,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 9 },
-    description: '광산 수레에 뜬 목표 숫자를 보고 같은 숫자가 붙은 색 문으로 미리 이동하는 시지각 반응 활동',
+    description: '광산 수레의 목표 숫자(또는 +-×÷ 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어가는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
@@ -1079,6 +1081,35 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     executionFacts: [
       { label: '자극 방식', value: 'NUMBER CART' },
       { label: '진행 방식', value: '숫자·색 매칭' },
+      { label: '실행 시간', value: '약 75초' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+
+  // sortOrder 61: COLOR TRACKER (level 10)
+  {
+    id: 'visual-reaction-color-tracker-43',
+    sortOrder: 61,
+    title: '시지각 반응 · 컬러 트래커',
+    en: 'Visual Reaction',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'visual-reaction',
+    programTitle: '시지각 반응',
+    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
+    engine: { mode: 'reactTrain', level: 10 },
+    description: '시지각 10번 컬러 트래커 — 흰 공 추적 후 빨·노·초·파 구역 맞추기(L1~L3)',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '시각 추적, 지속 주의, 다중 물체 추적',
+    isReady: true,
+    settingSummary: '시각 추적 · 약 75초 · BGM 자동',
+    settingChips: ['시각 추적', '약 75초', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: 'COLOR TRACKER' },
+      { label: '진행 방식', value: '시각 추적' },
       { label: '실행 시간', value: '약 75초' },
       { label: 'BGM', value: '자동 재생' },
     ],

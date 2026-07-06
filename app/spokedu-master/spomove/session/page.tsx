@@ -325,6 +325,8 @@ function SpomoveSessionContent() {
         variantColorTheme={officialPreset.engine.variantColorTheme}
         reactTrainConcurrent={officialPreset.engine.reactTrainConcurrent}
         moleDualPanel={officialPreset.engine.moleDualPanel}
+        numberCartTier={officialPreset.engine.numberCartTier}
+        colorTrackerTier={officialPreset.engine.colorTrackerTier}
         flowFeatures={officialPreset.engine.flowFeatures}
         flowDuration={officialPreset.engine.flowDuration}
         onExit={() => {

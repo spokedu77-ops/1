@@ -200,6 +200,10 @@ type LaunchSettings = {
   reactTrainConcurrent: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 두더지(7번) 전용: 2패널 양손 모드 */
   moleDualPanel: boolean;
+  /** 시지각반응(reactTrain) 숫자 수레(9번) 전용: L1/L2/L3 */
+  numberCartTier: 1 | 2 | 3;
+  /** 시지각반응(reactTrain) 컬러 트래커(10번) 전용: L1/L2/L3 */
+  colorTrackerTier: 1 | 2 | 3;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
@@ -225,6 +229,8 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowVisualVariant: 'classic',
   reactTrainConcurrent: 1,
   moleDualPanel: false,
+  numberCartTier: 2,
+  colorTrackerTier: 2,
   bodyLabelMode: 'hard',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -249,6 +255,8 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowVisualVariant: auto.flowVisualVariant === 'plus' ? 'plus' : fallback.flowVisualVariant ?? 'classic',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
     moleDualPanel: auto.moleDualPanel ?? fallback.moleDualPanel,
+    numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
+    colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
   };
@@ -320,6 +328,8 @@ function TrainingPortal({
     flowVisualVariant: launch.flowVisualVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
     moleDualPanel: launch.moleDualPanel,
+    numberCartTier: launch.numberCartTier,
+    colorTrackerTier: launch.colorTrackerTier,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
   };
@@ -331,7 +341,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.moleDualPanel}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.moleDualPanel}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -851,6 +861,98 @@ function SettingsScreen({
                       key={opt.label}
                       type="button"
                       onClick={() => setLaunch((s) => ({ ...s, moleDualPanel: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 시지각반응 숫자 수레(9번) 전용: 난이도 */}
+          {isReactTrain && levelId === 9 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  L1은 1~4 단일 숫자, L2는 문마다 두 숫자, L3는 수레에 식(+-×÷)이 뜨고 문에는 답이 표시됩니다. 보고 맞는 문을 미리 찾는 시지각 반응입니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 1 as const, label: 'L1', sub: '1~4' },
+                  { id: 2 as const, label: 'L2', sub: '1~8' },
+                  { id: 3 as const, label: 'L3', sub: '사칙연산' },
+                ]).map((opt) => {
+                  const active = launch.numberCartTier === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, numberCartTier: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 시지각반응 컬러 트래커(10번) 전용: 난이도 */}
+          {isReactTrain && levelId === 10 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  시지각 10번 컬러 트래커. L1 입문 / L2 기본 / L3 집중. 첫 라운드는 훈련 시작 카운트다운 직후 바로 시작하고, 2라운드부터 3-2-1 후 시작합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 1 as const, label: 'L1', sub: '입문' },
+                  { id: 2 as const, label: 'L2', sub: '기본' },
+                  { id: 3 as const, label: 'L3', sub: '집중' },
+                ]).map((opt) => {
+                  const active = launch.colorTrackerTier === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, colorTrackerTier: opt.id }))}
                       style={{
                         flex: 1,
                         padding: '11px 8px',

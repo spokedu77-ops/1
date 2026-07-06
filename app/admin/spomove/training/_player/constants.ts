@@ -76,7 +76,8 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 6, name: '6단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
       { id: 7, name: '팝업 두더지', enName: 'Mole Simulator', desc: '화면 곳곳 구멍에서 튀어나오는 색 자극에 반응합니다.' },
       { id: 8, name: '우주 몰입', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
-      { id: 9, name: '숫자 수레', enName: 'Number Cart', desc: '광산 수레 앞에 뜬 목표 숫자를 보고, 같은 숫자가 붙은 색 문 위치로 미리 이동합니다.' },
+      { id: 9, name: '숫자 수레', enName: 'Number Cart', desc: '광산 수레의 목표 숫자(또는 식)를 보고, 같은 답이 붙은 색 문으로 수레가 들어갑니다. L1~L3 난이도 선택.' },
+      { id: 10, name: '컬러 트래커', enName: 'Color Tracker', desc: '시지각 10번. 흰 공을 눈으로 추적해 멈춘 뒤 빨·노·초·파 구역을 맞춰봅니다. L1~L3, 라운드마다 3-2-1.' },
     ],
   },
   basic: {

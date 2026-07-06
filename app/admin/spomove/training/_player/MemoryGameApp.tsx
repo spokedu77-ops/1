@@ -26,6 +26,7 @@ import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
 import { WormholeReactionTraining } from './components/WormholeReactionTraining';
 import { NumberCartReactionTraining } from './components/NumberCartReactionTraining';
+import { ColorTrackerReactionTraining } from './components/ColorTrackerReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -128,6 +129,10 @@ type Settings = {
   reactTrainConcurrent: 1 | 2 | 3;
   /** 시지각반응 두더지(7번) 2패널 양손 모드 */
   moleDualPanel: boolean;
+  /** 시지각반응 숫자 수레(9번) L1/L2/L3 */
+  numberCartTier: 1 | 2 | 3;
+  /** 시지각반응 컬러 트래커(10번) L1/L2/L3 */
+  colorTrackerTier: 1 | 2 | 3;
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
   memoryColorSlots: SpomoveMemoryColorId[];
 };
@@ -158,6 +163,8 @@ const defaultSettings: Settings = {
   flowVisualVariant: 'classic' as FlowVisualVariant,
   reactTrainConcurrent: 1,
   moleDualPanel: false,
+  numberCartTier: 2,
+  colorTrackerTier: 2,
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
 
@@ -192,6 +199,10 @@ export type MemoryGameAutoLaunch = {
   reactTrainConcurrent?: 1 | 2 | 3;
   /** 시지각반응 두더지(7번) 2패널 양손 모드 */
   moleDualPanel?: boolean;
+  /** 시지각반응 숫자 수레(9번) L1/L2/L3 */
+  numberCartTier?: 1 | 2 | 3;
+  /** 시지각반응 컬러 트래커(10번) L1/L2/L3 */
+  colorTrackerTier?: 1 | 2 | 3;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode?: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
@@ -225,6 +236,8 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       flowVisualVariant: s.flowVisualVariant,
       reactTrainConcurrent: s.reactTrainConcurrent,
       moleDualPanel: s.moleDualPanel,
+      numberCartTier: s.numberCartTier,
+      colorTrackerTier: s.colorTrackerTier,
       memoryColorSlots: [...s.memoryColorSlots],
     },
   };
@@ -1685,11 +1698,21 @@ export default function MemoryGameApp({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
+        ) : settings.level === 10 ? (
+          <ColorTrackerReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            tier={settings.colorTrackerTier}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
         ) : settings.level === 9 ? (
           <NumberCartReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
+            tier={settings.numberCartTier}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />

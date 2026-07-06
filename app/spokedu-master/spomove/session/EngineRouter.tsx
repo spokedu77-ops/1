@@ -53,6 +53,12 @@ const NumberCartReactionTraining = lazy(() =>
   })),
 );
 
+const ColorTrackerReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining').then((m) => ({
+    default: m.ColorTrackerReactionTraining,
+  })),
+);
+
 const MemoryGame = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/MemoryGame').then((module) => ({
     default: module.MemoryGame,
@@ -91,6 +97,8 @@ type Props = {
   variantColorTheme?: string;
   reactTrainConcurrent?: 1 | 2 | 3;
   moleDualPanel?: boolean;
+  numberCartTier?: 1 | 2 | 3;
+  colorTrackerTier?: 1 | 2 | 3;
   flowFeatures?: string[];
   flowDuration?: number;
   onComplete: (payload: EngineCompletePayload) => void;
@@ -126,6 +134,8 @@ export function EngineRouter({
   variantColorTheme,
   reactTrainConcurrent,
   moleDualPanel,
+  numberCartTier,
+  colorTrackerTier,
   flowFeatures,
   flowDuration,
   onComplete,
@@ -277,13 +287,28 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    // level 9+
+    if (level === 9) {
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <NumberCartReactionTraining
+            durationSec={dur}
+            speedLevel={reactSpeedLevel}
+            speedSec={sp}
+            tier={numberCartTier ?? 2}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    // level 10+
     return (
       <Suspense fallback={<LoadingOverlay />}>
-        <NumberCartReactionTraining
+        <ColorTrackerReactionTraining
           durationSec={dur}
           speedLevel={reactSpeedLevel}
           speedSec={sp}
+          tier={colorTrackerTier ?? 2}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />
