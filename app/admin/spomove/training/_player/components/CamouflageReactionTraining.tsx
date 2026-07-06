@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
-import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 
 /** 인덱스 순서: 빨 → 파 → 초 → 노 (다른 reactTrain 레벨과 동일) */
 const CAMO_COLORS = [
@@ -15,8 +14,8 @@ const CAMO_COLORS = [
 
 const SPD_NAMES = ['매우 느림', '느림', '약간 느림', '보통', '약간 빠름', '빠름', '매우 빠름'];
 
-/** 정답 도형이 완전히 드러난 뒤 다음 라운드로 넘어가기 전 유지하는 시간 */
-const HOLD_MS = 700;
+/** 정답 사물이 완전히 드러난 뒤 다음 라운드로 넘어가기 전 유지하는 시간 — 속도 설정과 무관하게 확인할 시간을 충분히 준다 */
+const HOLD_MS = 2000;
 
 type Phase = 'NOISE' | 'REVEAL' | 'HOLD';
 
@@ -26,6 +25,7 @@ type CamoGame = {
   phase: Phase;
   phaseStartMs: number;
   targetColorIdx: number;
+  targetItemName: string;
   shapePath: Path2D | null;
   rounds: number;
   laneCount: [number, number, number, number];
@@ -34,7 +34,6 @@ type CamoGame = {
   blockSize: number;
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
-  isLow: boolean;
 };
 
 type Props = {
@@ -45,39 +44,237 @@ type Props = {
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-function createStarPath(cx: number, cy: number, spikes: number, outerR: number, innerR: number): Path2D {
-  let rot = (Math.PI / 2) * 3;
-  let x = cx;
-  let y = cy;
-  const step = Math.PI / spikes;
+function createApplePath(cx: number, cy: number, size: number): Path2D {
+  const r = size * 0.42;
+  // 몸통(잎·꼭지 제외) 세로 범위가 cy보다 아래로 치우치므로 위로 살짝 보정해 화면 중앙에 맞춘다
+  const cyA = cy - r * 0.2;
   const path = new Path2D();
-  path.moveTo(cx, cy - outerR);
-  for (let i = 0; i < spikes; i++) {
-    x = cx + Math.cos(rot) * outerR;
-    y = cy + Math.sin(rot) * outerR;
-    path.lineTo(x, y);
-    rot += step;
-    x = cx + Math.cos(rot) * innerR;
-    y = cy + Math.sin(rot) * innerR;
-    path.lineTo(x, y);
-    rot += step;
-  }
-  path.lineTo(cx, cy - outerR);
+  // 몸통: 위쪽 가운데가 살짝 파인 두 갈래 어깨 + 아래로 갈수록 둥글게 퍼지는 형태
+  path.moveTo(cx, cyA - r * 0.5);
+  path.bezierCurveTo(cx + r * 0.1, cyA - r * 0.85, cx + r * 0.5, cyA - r * 0.95, cx + r * 0.82, cyA - r * 0.58);
+  path.bezierCurveTo(cx + r * 1.28, cyA - r * 0.02, cx + r * 1.12, cyA + r * 0.82, cx + r * 0.5, cyA + r * 1.18);
+  path.bezierCurveTo(cx + r * 0.22, cyA + r * 1.34, cx - r * 0.22, cyA + r * 1.34, cx - r * 0.5, cyA + r * 1.18);
+  path.bezierCurveTo(cx - r * 1.12, cyA + r * 0.82, cx - r * 1.28, cyA - r * 0.02, cx - r * 0.82, cyA - r * 0.58);
+  path.bezierCurveTo(cx - r * 0.5, cyA - r * 0.95, cx - r * 0.1, cyA - r * 0.85, cx, cyA - r * 0.5);
+  path.closePath();
+  // 꼭지 — 격자 블록에 묻히지 않도록 두껍게
+  path.moveTo(cx - r * 0.13, cyA - r * 0.5);
+  path.lineTo(cx + r * 0.13, cyA - r * 0.5);
+  path.lineTo(cx + r * 0.18, cyA - r * 0.95);
+  path.lineTo(cx - r * 0.08, cyA - r * 0.95);
+  path.closePath();
+  // 잎
+  path.moveTo(cx + r * 0.1, cyA - r * 0.8);
+  path.quadraticCurveTo(cx + r * 0.75, cyA - r * 1.1, cx + r * 0.6, cyA - r * 0.5);
+  path.quadraticCurveTo(cx + r * 0.3, cyA - r * 0.5, cx + r * 0.1, cyA - r * 0.8);
   path.closePath();
   return path;
 }
 
-function createCirclePath(cx: number, cy: number, r: number): Path2D {
+function createStrawberryPath(cx: number, cy: number, size: number): Path2D {
+  const r = size * 0.45;
+  const top = cy - r * 0.65;
   const path = new Path2D();
-  path.arc(cx, cy, r, 0, Math.PI * 2);
+  path.moveTo(cx - r * 0.95, top);
+  path.bezierCurveTo(cx - r * 1.05, cy + r * 0.15, cx - r * 0.55, cy + r * 1.15, cx, cy + r * 1.25);
+  path.bezierCurveTo(cx + r * 0.55, cy + r * 1.15, cx + r * 1.05, cy + r * 0.15, cx + r * 0.95, top);
+  path.bezierCurveTo(cx + r * 0.55, cy - r * 0.85, cx - r * 0.55, cy - r * 0.85, cx - r * 0.95, top);
+  path.closePath();
+  [-0.5, 0, 0.5].forEach((dx) => {
+    path.moveTo(cx + dx * r, top);
+    path.lineTo(cx + (dx - 0.22) * r, top - r * 0.35);
+    path.lineTo(cx + (dx + 0.22) * r, top - r * 0.35);
+    path.closePath();
+  });
   return path;
 }
 
-function createSquarePath(cx: number, cy: number, size: number): Path2D {
+function createTomatoPath(cx: number, cy: number, size: number): Path2D {
+  const r = size * 0.45;
   const path = new Path2D();
-  path.rect(cx - size / 2, cy - size / 2, size, size);
+  path.moveTo(cx + r, cy + r * 0.08);
+  path.arc(cx, cy + r * 0.08, r, 0, Math.PI * 2);
+  path.closePath();
+
+  const spikes = 5;
+  const outerR = r * 0.32;
+  const innerR = r * 0.12;
+  const topCy = cy - r * 0.85;
+  let rot = -Math.PI / 2;
+  const step = Math.PI / spikes;
+  path.moveTo(cx, topCy - outerR);
+  for (let i = 0; i < spikes; i++) {
+    let px = cx + Math.cos(rot) * outerR;
+    let py = topCy + Math.sin(rot) * outerR;
+    path.lineTo(px, py);
+    rot += step;
+    px = cx + Math.cos(rot) * innerR;
+    py = topCy + Math.sin(rot) * innerR;
+    path.lineTo(px, py);
+    rot += step;
+  }
+  path.closePath();
   return path;
 }
+
+function createBananaPath(cx: number, cy: number, size: number): Path2D {
+  const halfLen = size * 0.62;
+  const w = size * 0.26;
+  const bow = size * 0.62;
+  // 초승달 곡선이 위쪽으로 치우치므로 아래로 보정해 화면 중앙에 맞춘다
+  const cyA = cy + size * 0.25;
+  const leftX = cx - halfLen;
+  const rightX = cx + halfLen;
+  const path = new Path2D();
+  path.moveTo(leftX, cyA + w * 0.25);
+  // 바깥쪽(위) 곡선: 왼쪽 끝 → 크게 휘어 오른쪽 끝
+  path.bezierCurveTo(cx - halfLen * 0.25, cyA - bow, cx + halfLen * 0.7, cyA - bow * 0.75, rightX, cyA - w * 0.1);
+  // 오른쪽 끝 캡
+  path.quadraticCurveTo(rightX + w * 0.3, cyA + w * 0.1, rightX - w * 0.05, cyA + w * 0.45);
+  // 안쪽(아래) 곡선: 오른쪽 끝 → 왼쪽 끝 (바깥 곡선과 두께만큼 안쪽으로 평행)
+  path.bezierCurveTo(cx + halfLen * 0.55, cyA - bow * 0.3 + w, cx - halfLen * 0.2, cyA - bow * 0.55 + w, leftX + w * 0.05, cyA + w * 0.55);
+  // 왼쪽 끝 캡
+  path.quadraticCurveTo(leftX - w * 0.25, cyA + w * 0.4, leftX, cyA + w * 0.25);
+  path.closePath();
+  return path;
+}
+
+function createLemonPath(cx: number, cy: number, size: number): Path2D {
+  const rx = size * 0.55;
+  const ry = size * 0.38;
+  const path = new Path2D();
+  path.moveTo(cx + rx, cy);
+  path.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+  path.closePath();
+  path.moveTo(cx - rx, cy);
+  path.lineTo(cx - rx - ry * 0.35, cy);
+  path.lineTo(cx - rx, cy - ry * 0.25);
+  path.closePath();
+  path.moveTo(cx + rx, cy);
+  path.lineTo(cx + rx + ry * 0.35, cy);
+  path.lineTo(cx + rx, cy - ry * 0.25);
+  path.closePath();
+  return path;
+}
+
+function createPineapplePath(cx: number, cy: number, size: number): Path2D {
+  const rx = size * 0.4;
+  const ry = size * 0.55;
+  // 잎 왕관이 위쪽 무게를 더하므로 몸통을 아래로 보정해 화면 중앙에 맞춘다
+  const bodyCy = cy + size * 0.08 + size * 0.145;
+  const path = new Path2D();
+  path.moveTo(cx + rx, bodyCy);
+  path.ellipse(cx, bodyCy, rx, ry, 0, 0, Math.PI * 2);
+  path.closePath();
+
+  const crownY = bodyCy - ry - size * 0.05;
+  const leafCount = 5;
+  for (let i = 0; i < leafCount; i++) {
+    const t = (i - (leafCount - 1) / 2) / leafCount;
+    const bx = cx + t * rx * 1.6;
+    path.moveTo(bx - size * 0.05, crownY + size * 0.05);
+    path.lineTo(bx, crownY - size * 0.3 - Math.abs(t) * size * 0.1);
+    path.lineTo(bx + size * 0.05, crownY + size * 0.05);
+    path.closePath();
+  }
+  return path;
+}
+
+function createGrapePath(cx: number, cy: number, size: number): Path2D {
+  const r = size * 0.15;
+  const spacing = r * 1.9;
+  const path = new Path2D();
+  const offsets: [number, number][] = [
+    [0, -0.9],
+    [-0.6, -0.55],
+    [0.6, -0.55],
+    [-1.05, -0.1],
+    [0, -0.15],
+    [1.05, -0.1],
+    [-0.6, 0.35],
+    [0.6, 0.35],
+    [0, 0.75],
+  ];
+  offsets.forEach(([ox, oy]) => {
+    const gx = cx + ox * spacing;
+    const gy = cy + oy * spacing;
+    path.moveTo(gx + r, gy);
+    path.arc(gx, gy, r, 0, Math.PI * 2);
+    path.closePath();
+  });
+  // 줄기 — 격자 블록에 묻히지 않도록 두껍게
+  const stemTopY = cy - 0.9 * spacing - r * 1.8;
+  const stemBotY = cy - 0.9 * spacing - r * 0.75;
+  path.moveTo(cx - size * 0.05, stemTopY);
+  path.lineTo(cx + size * 0.06, stemTopY);
+  path.lineTo(cx + size * 0.08, stemBotY);
+  path.lineTo(cx - size * 0.03, stemBotY);
+  path.closePath();
+  return path;
+}
+
+function createBlueberryPath(cx: number, cy: number, size: number): Path2D {
+  const r = size * 0.22;
+  const spacing = r * 2.1;
+  const path = new Path2D();
+  const offsets: [number, number][] = [
+    [-0.55, 0.25],
+    [0.55, 0.25],
+    [0, -0.4],
+  ];
+  offsets.forEach(([ox, oy]) => {
+    const bx = cx + ox * spacing;
+    const by = cy + oy * spacing;
+    path.moveTo(bx + r, by);
+    path.arc(bx, by, r, 0, Math.PI * 2);
+    path.closePath();
+  });
+  return path;
+}
+
+function createWatermelonWedgePath(cx: number, cy: number, size: number): Path2D {
+  // 이전 버전은 쐐기 전체가 cx 오른쪽으로 치우쳐 있었다 — 꼭짓점을 아래에 두고
+  // 둥근 테두리가 위로 향하는 대칭 쐐기(피자 조각) 모양으로 다시 그려 중앙에 맞춘다
+  const r = size * 0.62;
+  const arcCy = cy - r * 0.25;
+  const apexY = cy + r * 0.7;
+  const half = Math.PI * 0.32;
+  const path = new Path2D();
+  path.moveTo(cx, apexY);
+  path.arc(cx, arcCy, r, -Math.PI / 2 - half, -Math.PI / 2 + half);
+  path.closePath();
+  return path;
+}
+
+function createLeafPath(cx: number, cy: number, size: number): Path2D {
+  const r = size * 0.5;
+  const path = new Path2D();
+  path.moveTo(cx, cy - r * 1.1);
+  path.bezierCurveTo(cx + r * 0.95, cy - r * 0.7, cx + r * 0.75, cy + r * 0.85, cx, cy + r * 1.1);
+  path.bezierCurveTo(cx - r * 0.75, cy + r * 0.85, cx - r * 0.95, cy - r * 0.7, cx, cy - r * 1.1);
+  path.closePath();
+  return path;
+}
+
+type CamoItem = {
+  colorIdx: number;
+  name: string;
+  makePath: (cx: number, cy: number, size: number) => Path2D;
+};
+
+/** 색(빨·파·초·노) — 사물 고정 짝. 실루엣만으로 색을 유추할 수 있는 과일·사물 10종 */
+const CAMO_ITEMS: CamoItem[] = [
+  { colorIdx: 0, name: '사과', makePath: createApplePath },
+  { colorIdx: 0, name: '딸기', makePath: createStrawberryPath },
+  { colorIdx: 0, name: '토마토', makePath: createTomatoPath },
+  { colorIdx: 3, name: '바나나', makePath: createBananaPath },
+  { colorIdx: 3, name: '레몬', makePath: createLemonPath },
+  { colorIdx: 3, name: '파인애플', makePath: createPineapplePath },
+  { colorIdx: 1, name: '포도', makePath: createGrapePath },
+  { colorIdx: 1, name: '블루베리', makePath: createBlueberryPath },
+  { colorIdx: 2, name: '수박', makePath: createWatermelonWedgePath },
+  { colorIdx: 2, name: '나뭇잎', makePath: createLeafPath },
+];
 
 const css = `
 .camo{position:fixed;inset:0;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
@@ -156,6 +353,7 @@ export function CamouflageReactionTraining({ durationSec, speedLevel, speedSec, 
       phase: 'NOISE',
       phaseStartMs: 0,
       targetColorIdx: 0,
+      targetItemName: '',
       shapePath: null,
       rounds: 0,
       laneCount: [0, 0, 0, 0],
@@ -164,7 +362,6 @@ export function CamouflageReactionTraining({ durationSec, speedLevel, speedSec, 
       blockSize: 20,
       raf: null,
       timer: null,
-      isLow: staticPerfTier === 'low',
     };
     gRef.current = g;
 
@@ -175,7 +372,9 @@ export function CamouflageReactionTraining({ durationSec, speedLevel, speedSec, 
       const r = setupCanvas(cv, w, h);
       g.W = r.cssW;
       g.H = r.cssH;
-      g.blockSize = g.W < 600 ? 15 : g.W > 1200 ? 25 : 20;
+      // 실루엣 디테일(꼭지·잎 등)이 격자에 묻히지 않도록 항상 고운 블록을 쓴다.
+      // navigator.hardwareConcurrency 기반 저사양 판정은 브라우저별 편차가 커서 신뢰하지 않는다.
+      g.blockSize = g.W < 600 ? 9 : g.W > 1200 ? 15 : 12;
     };
 
     const updateHudTime = () => {
@@ -190,17 +389,15 @@ export function CamouflageReactionTraining({ durationSec, speedLevel, speedSec, 
     const newShapePath = () => {
       const cx = g.W / 2;
       const cy = g.H / 2;
-      const size = Math.min(g.W, g.H) * 0.35;
-      const shapes = [
-        () => createStarPath(cx, cy, 5, size, size * 0.4),
-        () => createCirclePath(cx, cy, size * 0.8),
-        () => createSquarePath(cx, cy, size * 1.4),
-      ];
-      g.shapePath = shapes[Math.floor(Math.random() * shapes.length)]!();
-      g.targetColorIdx = Math.floor(Math.random() * 4);
+      const size = Math.min(g.W, g.H) * 0.35 * 1.3;
+      const item = CAMO_ITEMS[Math.floor(Math.random() * CAMO_ITEMS.length)]!;
+      g.shapePath = item.makePath(cx, cy, size);
+      g.targetColorIdx = item.colorIdx;
+      g.targetItemName = item.name;
     };
 
     const startRound = () => {
+      calcLayout();
       newShapePath();
       g.phase = 'NOISE';
       g.phaseStartMs = performance.now();
@@ -210,11 +407,8 @@ export function CamouflageReactionTraining({ durationSec, speedLevel, speedSec, 
       }
     };
 
-    const perf = new PerfMonitor();
     const loop = (now: number) => {
       if (!gRef.current?.running) return;
-      perf.tick(now);
-      if (perf.isLow) g.isLow = true;
       const ctx = cv.getContext('2d');
       if (!ctx) return;
 
@@ -228,7 +422,7 @@ export function CamouflageReactionTraining({ durationSec, speedLevel, speedSec, 
         g.rounds++;
         g.laneCount[g.targetColorIdx]++;
         if (hudRoundsRef.current) hudRoundsRef.current.textContent = String(g.rounds);
-        if (msgRef.current) msgRef.current.textContent = '정답 확인!';
+        if (msgRef.current) msgRef.current.textContent = `${g.targetItemName} 확인!`;
       } else if (g.phase === 'HOLD' && elapsed >= HOLD_MS) {
         startRound();
       }

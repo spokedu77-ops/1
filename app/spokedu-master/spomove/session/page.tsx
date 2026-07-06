@@ -188,7 +188,7 @@ function OfficialEngineBriefing({
             className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5 fill-black" />
-            {startDisabled ? '준비 중…' : '큰 화면으로 실행'}
+            {startDisabled ? '불러오는 중…' : '큰 화면으로 실행'}
           </button>
         </div>
       </section>
@@ -324,6 +324,7 @@ function SpomoveSessionContent() {
         soundEnabled={soundEnabled}
         variantColorTheme={officialPreset.engine.variantColorTheme}
         reactTrainConcurrent={officialPreset.engine.reactTrainConcurrent}
+        moleDualPanel={officialPreset.engine.moleDualPanel}
         flowFeatures={officialPreset.engine.flowFeatures}
         flowDuration={officialPreset.engine.flowDuration}
         onExit={() => {

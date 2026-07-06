@@ -19,14 +19,13 @@ import { MemoryGame } from './components/MemoryGame';
 import { MemoryGameLevel4 } from './components/MemoryGameLevel4';
 import { MemoryGameLevel5 } from './components/MemoryGameLevel5';
 import { VisualReactionTraining, type ReactTrainCompleteStats } from './components/VisualReactionTraining';
-import { DiagonalReactionTraining } from './components/DiagonalReactionTraining';
-import { DeepReactionTraining } from './components/DeepReactionTraining';
 import { BeatWaveReactionTraining } from './components/BeatWaveReactionTraining';
 import { CamouflageReactionTraining } from './components/CamouflageReactionTraining';
 import { SweepReactionTraining } from './components/SweepReactionTraining';
 import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
 import { WormholeReactionTraining } from './components/WormholeReactionTraining';
+import { NumberCartReactionTraining } from './components/NumberCartReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -34,6 +33,12 @@ import { CSS, S } from './styles';
 import dynamic from 'next/dynamic';
 import FlowGameClient from './flow/FlowGameClient';
 import { buildStages } from './flow/engine/modules/stageBuilder';
+import {
+  DEFAULT_MEMORY_COLOR_SLOTS,
+  normalizeMemoryColorSlots,
+  type SpomoveMemoryColorId,
+} from './lib/memoryColorSlots';
+import { MemoryColorSlotsPicker } from './components/MemoryColorSlotsPicker';
 import { SELECTABLE_MODULE_KEYS } from './flow/engine/modules/flowModules';
 import type { FlowStats } from './flow/engine/FlowEngine';
 import type { FlowVisualVariant } from './lib/flowPresets';
@@ -121,6 +126,10 @@ type Settings = {
   flowVisualVariant: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
+  /** 시지각반응 두더지(7번) 2패널 양손 모드 */
+  moleDualPanel: boolean;
+  /** 순차 기억 6단계: 1~10번 슬롯 색상 */
+  memoryColorSlots: SpomoveMemoryColorId[];
 };
 
 const defaultSettings: Settings = {
@@ -148,6 +157,8 @@ const defaultSettings: Settings = {
   flowBgImageUrl: '',
   flowVisualVariant: 'classic' as FlowVisualVariant,
   reactTrainConcurrent: 1,
+  moleDualPanel: false,
+  memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
 
 export type MemoryGameAutoLaunch = {
@@ -179,8 +190,12 @@ export type MemoryGameAutoLaunch = {
   flowVisualVariant?: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent?: 1 | 2 | 3;
+  /** 시지각반응 두더지(7번) 2패널 양손 모드 */
+  moleDualPanel?: boolean;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode?: 'easy' | 'hard';
+  /** 순차 기억 6단계: 1~10번 슬롯 색상 */
+  memoryColorSlots?: SpomoveMemoryColorId[];
 };
 
 /** Training 포털 복귀 시 설정 화면에 되돌릴 실행 세션 정보 */
@@ -209,6 +224,8 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       flowDuration: s.flowDuration,
       flowVisualVariant: s.flowVisualVariant,
       reactTrainConcurrent: s.reactTrainConcurrent,
+      moleDualPanel: s.moleDualPanel,
+      memoryColorSlots: [...s.memoryColorSlots],
     },
   };
 }
@@ -399,7 +416,7 @@ export default function MemoryGameApp({
 
   /** 변형 색지각(basic 3·4·5·6번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
-    () => settings.mode === 'basic' && (settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
+    () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
     [settings.mode, settings.level]
   );
 
@@ -474,6 +491,7 @@ export default function MemoryGameApp({
           : defaultSettings.flowFeatures,
         flowColorTheme: fcTheme ?? 'default',
         flowVisualVariant: autoLaunch.flowVisualVariant === 'plus' ? 'plus' : 'classic',
+        memoryColorSlots: normalizeMemoryColorSlots(autoLaunch.memoryColorSlots),
       };
       autoLaunchCfgRef.current = merged;
       setSettings(merged);
@@ -617,10 +635,16 @@ export default function MemoryGameApp({
   useEffect(() => {
     if (embed) return;
     if (screen !== 'memory') return;
+    // 전체화면 진입 + 스크롤바 숨김 (flow 화면과 동일한 가드)
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     const id = requestAnimationFrame(() => {
       document.documentElement.requestFullscreen?.().catch(() => {});
     });
-    return () => cancelAnimationFrame(id);
+    return () => {
+      cancelAnimationFrame(id);
+      document.body.style.overflow = prevOverflow;
+    };
   }, [embed, screen]);
 
   useEffect(() => {
@@ -1398,6 +1422,24 @@ export default function MemoryGameApp({
                   <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
                 </div>
 
+                {settings.mode === 'spatial' && settings.level === 6 ? (
+                  <div style={S.sec}>
+                    {stepNum(stepSpeed + 1, '1~10번 색상을 선택하세요')}
+                    <p style={{ margin: '0 0 0.75rem', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
+                      각 번호에 빨·노·초·파 중 하나를 지정합니다. 지정한 순서대로 10색 기억 훈련이 진행됩니다.
+                    </p>
+                    <MemoryColorSlotsPicker
+                      slots={settings.memoryColorSlots}
+                      onChange={(next) => setSettings((s) => ({ ...s, memoryColorSlots: next }))}
+                      accent={M.accent}
+                      borderColor="var(--border)"
+                      mutedColor="var(--text-muted)"
+                      textColor="var(--text)"
+                      cardBg="var(--card)"
+                    />
+                  </div>
+                ) : null}
+
                 {/* 시지각 반응: 훈련 시간 / 그 외(spatial 제외): 분량(횟수) */}
                 {settings.mode === 'reactTrain' && (
                   <div style={S.sec}>
@@ -1616,7 +1658,15 @@ export default function MemoryGameApp({
     if (settings.level === 5)
       return <MemoryGameLevel5 onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />;
     return (
-      <MemoryGame level={settings.level} onExit={stop} onComplete={handleMemoryComplete} audioMode={settings.audioMode} speedSec={settings.speed} startDelayMs={0} />
+      <MemoryGame
+        level={settings.level}
+        onExit={stop}
+        onComplete={handleMemoryComplete}
+        audioMode={settings.audioMode}
+        speedSec={settings.speed}
+        startDelayMs={0}
+        slotColorIds={settings.level === 6 ? settings.memoryColorSlots : undefined}
+      />
     );
   }
 
@@ -1635,16 +1685,8 @@ export default function MemoryGameApp({
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
-        ) : settings.level === 10 ? (
-          <WormholeReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
         ) : settings.level === 9 ? (
-          <RobloxMoleReactionTraining
+          <NumberCartReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -1652,7 +1694,7 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 8 ? (
-          <RushReactionTraining
+          <WormholeReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -1660,15 +1702,16 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 7 ? (
-          <SweepReactionTraining
+          <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
+            dualPanel={settings.moleDualPanel}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 6 ? (
-          <CamouflageReactionTraining
+          <RushReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -1676,7 +1719,7 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 5 ? (
-          <BeatWaveReactionTraining
+          <SweepReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -1684,7 +1727,7 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 4 ? (
-          <DeepReactionTraining
+          <CamouflageReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -1692,7 +1735,7 @@ export default function MemoryGameApp({
             onComplete={handleReactTrainComplete}
           />
         ) : settings.level === 3 ? (
-          <DiagonalReactionTraining
+          <BeatWaveReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}

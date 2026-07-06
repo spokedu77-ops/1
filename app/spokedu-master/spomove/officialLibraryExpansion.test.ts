@@ -155,8 +155,8 @@ describe('OFFICIAL_SPOMOVE_LIBRARY 60개 확장 계약', () => {
   it('spatial level 5 존재 (clamp 제거)', () => {
     expect(OFFICIAL_SPOMOVE_LIBRARY.some(p => p.engine.mode === 'spatial' && p.engine.level === 5)).toBe(true);
   });
-  it('reactTrain level 2~9 각각 존재', () => {
-    for (let lv = 2; lv <= 9; lv++) {
+  it('reactTrain level 2~7 각각 존재', () => {
+    for (let lv = 2; lv <= 7; lv++) {
       expect(OFFICIAL_SPOMOVE_LIBRARY.some(p => p.engine.mode === 'reactTrain' && p.engine.level === lv)).toBe(true);
     }
   });

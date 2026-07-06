@@ -138,6 +138,7 @@ export function NotePageShell() {
     handleRenameDocument,
     setSelectedBlockIds,
     loadingBlocks,
+    blocksSyncing,
     blocks,
     selectedBlockIds,
     handleBlockSelect,
@@ -320,6 +321,7 @@ export function NotePageShell() {
                   handleRenameDocument={handleRenameDocument}
                   setSelectedBlockIds={setSelectedBlockIds}
                   loadingBlocks={loadingBlocks}
+                  blocksSyncing={blocksSyncing}
                   blocks={blocks}
                   selectedBlockIds={selectedBlockIds}
                   handleBlockSelect={handleBlockSelect}

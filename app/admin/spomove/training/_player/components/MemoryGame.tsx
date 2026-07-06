@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { MEMORY_ROUNDS } from '../constants';
 import { generateMemoryPattern } from '../lib/signals';
+import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';
 import { playBeep } from '../lib/audio';
 import { LongPressButton } from './LongPressButton';
 import { CSS } from '../styles';
@@ -18,6 +19,7 @@ export function MemoryGame({
   audioMode,
   speedSec,
   startDelayMs = 500,
+  slotColorIds,
 }: {
   level: number;
   onExit: () => void;
@@ -25,8 +27,17 @@ export function MemoryGame({
   audioMode: string;
   speedSec: number;
   startDelayMs?: number;
+  /** 6단계: 선생님이 지정한 1~10번 슬롯 색상 */
+  slotColorIds?: string[];
 }) {
-  const [patterns] = useState<ColorItem[][]>(() => Array.from({ length: TOTAL }, () => generateMemoryPattern(level)));
+  const [patterns] = useState<ColorItem[][]>(() => {
+    if (level === 6) {
+      const ids = slotColorIds?.length ? slotColorIds : DEFAULT_MEMORY_COLOR_SLOTS;
+      const fixed = buildMemoryPatternFromSlots(ids);
+      return Array.from({ length: TOTAL }, () => fixed);
+    }
+    return Array.from({ length: TOTAL }, () => generateMemoryPattern(level));
+  });
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<'idle' | 'showing' | 'waiting' | 'reveal' | 'summary' | 'done'>('idle');
   const [colorIdx, setColorIdx] = useState(-1);
@@ -42,6 +53,7 @@ export function MemoryGame({
     timerRef.current = null;
   };
   const currentPattern = patterns[round] ?? [];
+  const isTenItemLevel = level === 3 || level === 6;
 
   const runSequence = useCallback((pattern: ColorItem[], idx: number) => {
     if (idx >= pattern.length) {
@@ -125,7 +137,7 @@ export function MemoryGame({
       setPhase('reveal');
     } else if (p === 'reveal') {
       const isLast = r + 1 >= TOTAL;
-      if (isLast && level === 3) {
+      if (isLast && isTenItemLevel) {
         setSummaryReady(false);
         setPhase('summary');
       } else if (isLast) {
@@ -142,7 +154,7 @@ export function MemoryGame({
     } else if (p === 'done') {
       onComplete(patterns);
     }
-  }, [level, patterns, startRound, onComplete]);
+  }, [isTenItemLevel, patterns, startRound, onComplete]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -259,9 +271,9 @@ export function MemoryGame({
   if (phase === 'reveal') {
     const isLast = round + 1 >= TOTAL;
     const displayPattern = currentPattern;
-    const nextLabel = isLast ? (level === 3 ? '📋 전체 정답 목록' : '🎉 완료') : `▶ 다음 (${round + 2} / ${TOTAL})`;
-    const nextBg = isLast && level === 3 ? '#A855F7' : isLast ? '#22C55E' : '#F97316';
-    const nextShadow = isLast && level === 3 ? '0 8px 28px rgba(168,85,247,0.4)' : isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
+    const nextLabel = isLast ? (isTenItemLevel ? '📋 전체 정답 목록' : '🎉 완료') : `▶ 다음 (${round + 2} / ${TOTAL})`;
+    const nextBg = isLast && isTenItemLevel ? '#A855F7' : isLast ? '#22C55E' : '#F97316';
+    const nextShadow = isLast && isTenItemLevel ? '0 8px 28px rgba(168,85,247,0.4)' : isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
@@ -314,7 +326,7 @@ export function MemoryGame({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📋 <span>전체 정답 목록</span></div>
-                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', fontWeight: 500 }}>3번 · {TOTAL}번 진행 · 4가지 색</div>
+                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', fontWeight: 500 }}>{level}번 · {TOTAL}번 진행 · 4가지 색</div>
               </div>
               <button onClick={onExit} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', cursor: 'pointer', fontWeight: 700, fontFamily: 'inherit' }}>🏠 처음으로</button>
             </div>

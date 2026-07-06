@@ -147,8 +147,8 @@ const catalogSeed: Core5Catalog = [
         programId: 'SR-06',
         title: '공간 챌린지',
         stages: [
-          { stage: 1, label: '정확도 챌린지', engine: { mode: 'reactTrain', level: 4 } },
-          { stage: 2, label: '속도 챌린지',   engine: { mode: 'reactTrain', level: 5 } },
+          { stage: 1, label: '정확도 챌린지', engine: { mode: 'reactTrain', level: 3 } },
+          { stage: 2, label: '속도 챌린지',   engine: { mode: 'reactTrain', level: 4 } },
           { stage: 3, label: '혼합 챌린지',   engine: { mode: 'reactTrain', level: 5 } },
         ],
       },

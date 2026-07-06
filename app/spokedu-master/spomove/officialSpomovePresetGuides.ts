@@ -110,8 +110,8 @@ function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingL
   if (preset.engine.mode === 'simon') return preset.engine.level <= 1 ? 'normal' : 'hard';
 
   if (preset.engine.mode === 'reactTrain') {
-    if ((preset.engine.reactTrainConcurrent ?? 1) >= 3 || preset.engine.level >= 7) return 'hard';
-    if ((preset.engine.reactTrainConcurrent ?? 1) >= 2 || preset.engine.level >= 4) return 'normal';
+    if ((preset.engine.reactTrainConcurrent ?? 1) >= 3 || preset.engine.level >= 5) return 'hard';
+    if ((preset.engine.reactTrainConcurrent ?? 1) >= 2 || preset.engine.level >= 3) return 'normal';
     return 'easy';
   }
 

@@ -11,18 +11,6 @@ const VisualReactionTraining = lazy(() =>
   })),
 );
 
-const DiagonalReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/DiagonalReactionTraining').then((m) => ({
-    default: m.DiagonalReactionTraining,
-  })),
-);
-
-const DeepReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/DeepReactionTraining').then((m) => ({
-    default: m.DeepReactionTraining,
-  })),
-);
-
 const BeatWaveReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/BeatWaveReactionTraining').then((m) => ({
     default: m.BeatWaveReactionTraining,
@@ -56,6 +44,12 @@ const RobloxMoleReactionTraining = lazy(() =>
 const WormholeReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/WormholeReactionTraining').then((m) => ({
     default: m.WormholeReactionTraining,
+  })),
+);
+
+const NumberCartReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/NumberCartReactionTraining').then((m) => ({
+    default: m.NumberCartReactionTraining,
   })),
 );
 
@@ -96,6 +90,7 @@ type Props = {
   soundEnabled?: boolean;
   variantColorTheme?: string;
   reactTrainConcurrent?: 1 | 2 | 3;
+  moleDualPanel?: boolean;
   flowFeatures?: string[];
   flowDuration?: number;
   onComplete: (payload: EngineCompletePayload) => void;
@@ -130,6 +125,7 @@ export function EngineRouter({
   soundEnabled = true,
   variantColorTheme,
   reactTrainConcurrent,
+  moleDualPanel,
   flowFeatures,
   flowDuration,
   onComplete,
@@ -205,7 +201,7 @@ export function EngineRouter({
     if (level === 3) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <DiagonalReactionTraining
+          <BeatWaveReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -218,7 +214,7 @@ export function EngineRouter({
     if (level === 4) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <DeepReactionTraining
+          <CamouflageReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -231,7 +227,7 @@ export function EngineRouter({
     if (level === 5) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <BeatWaveReactionTraining
+          <SweepReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -244,7 +240,7 @@ export function EngineRouter({
     if (level === 6) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <CamouflageReactionTraining
+          <RushReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -257,10 +253,11 @@ export function EngineRouter({
     if (level === 7) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <SweepReactionTraining
+          <RobloxMoleReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
+            dualPanel={moleDualPanel ?? false}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
@@ -270,7 +267,7 @@ export function EngineRouter({
     if (level === 8) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
-          <RushReactionTraining
+          <WormholeReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
@@ -280,23 +277,10 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    if (level === 9) {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <RobloxMoleReactionTraining
-            durationSec={dur}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
-    // level 10+
+    // level 9+
     return (
       <Suspense fallback={<LoadingOverlay />}>
-        <WormholeReactionTraining
+        <NumberCartReactionTraining
           durationSec={dur}
           speedLevel={reactSpeedLevel}
           speedSec={sp}

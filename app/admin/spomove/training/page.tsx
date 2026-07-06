@@ -28,6 +28,12 @@ import {
   parseStoredVariantTheme,
   type SpomoveColorThemeId,
 } from './_player/lib/spomoveVariantThemeConfig';
+import { MemoryColorSlotsPicker } from './_player/components/MemoryColorSlotsPicker';
+import {
+  DEFAULT_MEMORY_COLOR_SLOTS,
+  normalizeMemoryColorSlots,
+  type SpomoveMemoryColorId,
+} from './_player/lib/memoryColorSlots';
 import { loadFlowPresets, saveFlowPresets, type FlowPreset, type FlowVisualVariant } from './_player/lib/flowPresets';
 import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
 
@@ -144,8 +150,6 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Rhythm Program': '리듬 프로그램',
   FLOW: '플로우',
   FLASH: '플래시',
-  Diagonal: '대각선 반응',
-  'Deep Reaction': '심해 반응',
   'Beat Wave': '비트 웨이브 반응',
   Sweep: '스윕 반응',
   Rush: '러시 반응',
@@ -194,8 +198,12 @@ type LaunchSettings = {
   flowVisualVariant: FlowVisualVariant;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
+  /** 시지각반응(reactTrain) 두더지(7번) 전용: 2패널 양손 모드 */
+  moleDualPanel: boolean;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
+  /** 순차 기억 6단계: 1~10번 슬롯 색상 */
+  memoryColorSlots: SpomoveMemoryColorId[];
 };
 
 const DEFAULT_LAUNCH: LaunchSettings = {
@@ -216,7 +224,9 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowBgImageUrl: '',
   flowVisualVariant: 'classic',
   reactTrainConcurrent: 1,
+  moleDualPanel: false,
   bodyLabelMode: 'hard',
+  memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
 
 function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: LaunchSettings): LaunchSettings {
@@ -238,7 +248,9 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowBgImageUrl: fallback.flowBgImageUrl,
     flowVisualVariant: auto.flowVisualVariant === 'plus' ? 'plus' : fallback.flowVisualVariant ?? 'classic',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
+    moleDualPanel: auto.moleDualPanel ?? fallback.moleDualPanel,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
+    memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
   };
 }
 
@@ -307,7 +319,9 @@ function TrainingPortal({
     flowBgImageUrl: launch.flowBgImageUrl || undefined,
     flowVisualVariant: launch.flowVisualVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
+    moleDualPanel: launch.moleDualPanel,
     bodyLabelMode: launch.bodyLabelMode,
+    memoryColorSlots: launch.memoryColorSlots,
   };
 
   return createPortal(
@@ -317,7 +331,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.moleDualPanel}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -817,6 +831,51 @@ function SettingsScreen({
             </section>
           ) : null}
 
+          {/* 시지각반응 두더지(7번) 전용: 패널 모드 */}
+          {isReactTrain && levelId === 7 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>패널 모드</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  단일 화면은 넓은 필드에서 구멍을 추적합니다. 2패널 양손은 좌·우에서 동시에 뜨는 경우 각각 왼손·오른손으로 반응합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: false, label: '단일 화면', sub: '기본' },
+                  { id: true, label: '2패널 양손', sub: '양손' },
+                ] as const).map((opt) => {
+                  const active = launch.moleDualPanel === opt.id;
+                  return (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, moleDualPanel: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
           {/* 속도 (DIVE MODE는 내부 타이밍으로 동작하므로 숨김) */}
           {!isFlowOrChallenge ? (
             <section style={{ marginBottom: 26 }}>
@@ -830,6 +889,27 @@ function SettingsScreen({
                 value={launch.speed}
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
+              />
+            </section>
+          ) : null}
+
+          {/* 순차 기억 6단계: 슬롯 색상 */}
+          {isSpatial && levelId === 6 ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>1~10번 색상 선택</label>
+                <p style={{ margin: '4px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.55 }}>
+                  각 번호에 빨·노·초·파 중 하나를 지정합니다. 지정한 순서대로 10색 기억 훈련이 진행됩니다.
+                </p>
+              </div>
+              <MemoryColorSlotsPicker
+                slots={launch.memoryColorSlots}
+                onChange={(next) => setLaunch((s) => ({ ...s, memoryColorSlots: next }))}
+                accent={accent}
+                borderColor={T.border}
+                mutedColor={T.muted}
+                textColor={T.text}
+                cardBg={T.card}
               />
             </section>
           ) : null}
@@ -1218,7 +1298,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 변형 색지각 테마 */}
-          {modeId === 'basic' && (levelId === 3 || levelId === 4 || levelId === 5 || levelId === 6) ? (
+          {modeId === 'basic' && (levelId === 2 || levelId === 3 || levelId === 4 || levelId === 5 || levelId === 6) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>변형 색지각 이미지 테마</label>

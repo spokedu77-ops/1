@@ -31,6 +31,7 @@ import {
 } from '../noteContexts';
 import { EditorDocDropZone } from '../sidebar/NoteDocChrome';
 import { NoteVirtualRootBlocks } from '../NoteVirtualRootBlocks';
+import { NoteBlockLoadSkeleton } from './NoteBlockLoadSkeleton';
 import { prefetchNoteDocumentBlocks } from '../../_lib/noteDocumentBlocksPrefetch';
 import { useNoteTextDragActive } from '../../_hooks/useNoteTextDragActive';
 import type { NotePageContextValue } from '../../_page/NotePageContext';
@@ -78,6 +79,7 @@ type NoteEditorPanelProps = Pick<
   | 'handleRenameDocument'
   | 'setSelectedBlockIds'
   | 'loadingBlocks'
+  | 'blocksSyncing'
   | 'blocks'
   | 'selectedBlockIds'
   | 'handleBlockSelect'
@@ -96,6 +98,7 @@ type NoteEditorPanelProps = Pick<
 type NoteBlockCanvasProps = Pick<
   NotePageContextValue,
   | 'loadingBlocks'
+  | 'blocksSyncing'
   | 'rootBlocks'
   | 'selectedBlockIds'
   | 'handleBlockSelect'
@@ -111,6 +114,7 @@ type NoteBlockCanvasProps = Pick<
 
 const NoteBlockCanvas = memo(function NoteBlockCanvas({
   loadingBlocks,
+  blocksSyncing,
   rootBlocks,
   selectedBlockIds,
   handleBlockSelect,
@@ -126,15 +130,19 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
   const textDragActive = useNoteTextDragActive();
 
   if (loadingBlocks && rootBlocks.length === 0) {
-    return (
-      <div className="flex items-center gap-2 py-8 text-[13px] text-slate-400">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        블록 불러오는 중…
-      </div>
-    );
+    return <NoteBlockLoadSkeleton />;
   }
 
   return (
+    <div className="relative">
+      {blocksSyncing && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5 overflow-hidden bg-neutral-100"
+          aria-hidden
+        >
+          <div className="h-full w-1/4 animate-pulse bg-blue-400/70" />
+        </div>
+      )}
     <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
       <OnBlockSelectContext.Provider value={handleBlockSelect}>
         <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
@@ -169,6 +177,7 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
         </SuppressGripMenuRefContext.Provider>
       </OnBlockSelectContext.Provider>
     </SelectedBlockIdsContext.Provider>
+    </div>
   );
 });
 
@@ -212,6 +221,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   handleRenameDocument,
   setSelectedBlockIds,
   loadingBlocks,
+  blocksSyncing,
   blocks,
   selectedBlockIds,
   handleBlockSelect,
@@ -589,6 +599,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
 
           <NoteBlockCanvas
             loadingBlocks={loadingBlocks}
+            blocksSyncing={blocksSyncing}
             rootBlocks={rootBlocks}
             selectedBlockIds={selectedBlockIds}
             handleBlockSelect={handleBlockSelect}

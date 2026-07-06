@@ -61,4 +61,9 @@ describe('noteDocumentBlocksCache', () => {
     expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(1);
     expect(readRememberedNoteDocumentBlocks('doc-1')?.[0].id).toBe('b1');
   });
+
+  it('remembers empty documents so revisits skip skeleton flash', () => {
+    rememberNoteDocumentBlocks('doc-empty', []);
+    expect(readRememberedNoteDocumentBlocks('doc-empty')).toEqual([]);
+  });
 });

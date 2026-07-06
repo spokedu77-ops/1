@@ -70,14 +70,13 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '1단계', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
       { id: 2, name: '2단계', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
-      { id: 3, name: '3단계', enName: 'Diagonal', desc: '대각선 방향으로 이동하는 자극을 보고 해당 위치로 이동합니다.' },
-      { id: 4, name: '4단계', enName: 'Deep Reaction', desc: '깊이감이 있는 자극을 보고 빠르게 반응합니다.' },
-      { id: 5, name: '5단계', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 6, name: '카모플라쥬', enName: 'Camouflage', desc: '위장된 색 도형이 노이즈 속에서 서서히 드러날 때 해당 색을 찾습니다.' },
-      { id: 7, name: '7단계', enName: 'Sweep', desc: '좌우로 쓸고 지나가는 자극에 맞춰 반응합니다.' },
-      { id: 8, name: '8단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
-      { id: 9, name: '블록 두더지', enName: 'Mole Simulator', desc: '3x3 구역에서 나타나는 색 자극에 반응합니다.' },
-      { id: 10, name: '우주 몰입', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
+      { id: 3, name: '3단계', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
+      { id: 4, name: '카모플라쥬', enName: 'Camouflage', desc: '노이즈 속에 위장된 사물(사과·바나나·포도 등)이 서서히 드러날 때 해당 색을 찾습니다.' },
+      { id: 5, name: '5단계', enName: 'Sweep', desc: '좌우로 쓸고 지나가는 자극에 맞춰 반응합니다.' },
+      { id: 6, name: '6단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
+      { id: 7, name: '팝업 두더지', enName: 'Mole Simulator', desc: '화면 곳곳 구멍에서 튀어나오는 색 자극에 반응합니다.' },
+      { id: 8, name: '우주 몰입', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
+      { id: 9, name: '숫자 수레', enName: 'Number Cart', desc: '광산 수레 앞에 뜬 목표 숫자를 보고, 같은 숫자가 붙은 색 문 위치로 미리 이동합니다.' },
     ],
   },
   basic: {
@@ -93,7 +92,7 @@ export const MODES: Record<string, SpomoveMode> = {
     desc: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
     levels: [
       { id: 1, name: '1단계', enName: 'Spatial Orientation', desc: '화면 극단의 거대 기둥+화살표 방향을 보고 해당 방향 패드로 이동합니다.' },
-      { id: 2, name: '2단계', enName: 'Quad Color', desc: '4분할 색 신호를 보고 해당 위치로 이동합니다.' },
+      { id: 2, name: '2단계', enName: 'Quad Color', desc: '4분할 색 신호를 보고 해당 위치로 이동합니다. 변형 색지각 테마 이미지를 쓸 수 있습니다.' },
       { id: 7,  name: '변형 사분할 1단계', enName: 'Modified Quadrant L1', desc: '색상 자극 1개와 신체 부위(발만)가 나타납니다. 표시된 색상의 패드에 지정된 발(한 발 또는 두 발)을 접촉합니다.' },
       { id: 8,  name: '변형 사분할 2단계', enName: 'Modified Quadrant L2', desc: '색상 자극 1~2개와 신체 부위가 나타납니다. 2개 색상이 나타날 확률이 높으며, 한 쪽은 발, 다른 쪽은 손입니다.' },
       { id: 9,  name: '변형 사분할 3단계', enName: 'Modified Quadrant L3', desc: '색상 자극 1~3개와 신체 부위가 나타납니다. 3개 색상에서는 각각 한 발 또는 한 손이 배정됩니다.' },
@@ -175,71 +174,16 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '1단계', enName: '3 Color Memory', desc: '색 3개 순서를 기억합니다.' },
-      { id: 2, name: '2단계', enName: '5 Color Memory', desc: '색 5개 순서를 기억합니다.' },
-      { id: 3, name: '3단계', enName: '10 Color Memory', desc: '색 10개 순서를 기억합니다.' },
-      { id: 4, name: '4단계', enName: 'Color-Number Memory', desc: '색과 번호를 함께 기억합니다.' },
-      { id: 5, name: '5단계', enName: 'Full Reveal', desc: '전체 정답을 확인하며 기억 전략을 점검합니다.' },
+      { id: 1, name: '색 3개 기억', enName: '3-Color Sequence', desc: '색 3개가 순서대로 나타납니다. 같은 순서로 기억·재현합니다.' },
+      { id: 2, name: '색 5개 기억', enName: '5-Color Sequence', desc: '색 5개가 순서대로 나타납니다. 항 수가 늘어난 기본 순차 기억입니다.' },
+      { id: 3, name: '색 10개 기억', enName: '10-Color Sequence', desc: '색 10개가 순서대로 나타납니다. 끝에 전체 정답 목록으로 복습합니다.' },
+      { id: 4, name: '색·번호 맞추기', enName: 'Color-Number Quiz', desc: '번호 1~10에 매칭된 색을 기억하고 질문에 답합니다.' },
+      { id: 5, name: '색·번호 전체 보기', enName: 'Color-Number Full Board', desc: '10회 제시 후 번호별 정답을 한 화면에서 확인합니다.' },
+      { id: 6, name: '10색 직접 지정', enName: 'Custom 10-Color Sequence', desc: '1~10번 슬롯에 빨·노·초·파를 직접 지정해 순서를 기억합니다.' },
     ],
   },
 
-  // ── Legacy / Hidden ────────────────────────────────────────────────────────
-  // Go / No-Go and Task Switching are no longer standalone catalog modes.
-  // They may return later as modifiers such as noGoSignal or ruleSwitch.
-  gonogo: {
-    id: 'gonogo',
-    title: 'Go / No-Go',
-    en: 'Go / No-Go',
-    icon: '🛑',
-    accent: '#F97316',
-    coreCode: 'EWM',
-    isHidden: true,
-    tag: '반응 억제',
-    desc: '움직여야 할 때와 멈춰야 할 때를 구분해 반응을 조절합니다.',
-    levels: [
-      { id: 1, name: '1단계', enName: 'Go / No-Go (Color)', desc: '색 기준으로 Go와 No-Go를 구분합니다.' },
-      { id: 2, name: '2단계', enName: 'Go / No-Go (Shape)', desc: '도형 기준으로 Go와 No-Go를 구분합니다.' },
-      { id: 3, name: '3단계', enName: 'Go / No-Go (Action)', desc: '행동 신호 기준으로 이동과 멈춤을 구분합니다.' },
-      { id: 4, name: '4단계', enName: 'Go / No-Go (Dual)', desc: '색과 도형의 이중 규칙을 함께 판단합니다.' },
-    ],
-  },
-  taskswitch: {
-    id: 'taskswitch',
-    title: 'Task Switching',
-    en: 'Task Switching',
-    icon: '🔀',
-    accent: '#EA580C',
-    coreCode: 'EWM',
-    isHidden: true,
-    tag: '규칙 전환',
-    desc: 'cue에 따라 색, 위치, 반대로 규칙을 바꿔 반응합니다.',
-    levels: [
-      { id: 1, name: '1단계', enName: 'Task Switching (Text Cues)', desc: '텍스트 cue에 따라 반응 기준을 바꿉니다.' },
-      { id: 2, name: '2단계', enName: 'Task Switching (Icon Cues)', desc: '아이콘 cue로 규칙 전환을 수행합니다.' },
-      { id: 3, name: '3단계', enName: 'Task Switching (Border Cues)', desc: '테두리 cue만 보고 규칙을 읽어냅니다.' },
-    ],
-  },
-  // Executive Control was a combined mode of Go/No-Go + Task Switching. Removed from catalog.
-  executive: {
-    id: 'executive',
-    title: '실행 조절',
-    en: 'Executive Control',
-    icon: '🧠',
-    accent: '#F97316',
-    coreCode: 'EWM',
-    isHidden: true,
-    tag: '반응 억제 · 규칙 전환',
-    desc: 'Go / No-Go와 Task Switching을 통합한 실행 조절 훈련입니다.',
-    levels: [
-      { id: 1, name: '1단계', enName: 'Go / No-Go (Color)', desc: '색 기준 Go / No-Go.' },
-      { id: 2, name: '2단계', enName: 'Go / No-Go (Shape)', desc: '도형 기준 Go / No-Go.' },
-      { id: 3, name: '3단계', enName: 'Go / No-Go (Action)', desc: '행동 기준 Go / No-Go.' },
-      { id: 4, name: '4단계', enName: 'Go / No-Go (Dual)', desc: '이중 규칙 Go / No-Go.' },
-      { id: 5, name: '5단계', enName: 'Task Switching (Text Cues)', desc: '텍스트 cue 규칙 전환.' },
-      { id: 6, name: '6단계', enName: 'Task Switching (Icon Cues)', desc: '아이콘 cue 규칙 전환.' },
-      { id: 7, name: '7단계', enName: 'Task Switching (Border Cues)', desc: '테두리 cue 규칙 전환.' },
-    ],
-  },
+  // ── Legacy / Hidden (removed from catalog — engine code retained in signals.ts for core5) ──
   flow: {
     id: 'flow',
     title: '다이브',
@@ -250,54 +194,6 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '몰입 러닝 · 반응 전환',
     desc: '3D 몰입 환경에서 달리고, 점프하고, 동작을 수행하는 DIVE 트레이닝입니다.',
     levels: [{ id: 1, name: '1단계', enName: 'Dive Program', desc: 'DIVE 전체 시퀀스를 진행합니다.' }],
-  },
-  tbd1: {
-    id: 'tbd1',
-    title: '준비 중',
-    en: 'TBD',
-    icon: '＋',
-    accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'VM',
-    isHidden: true,
-    tag: '보류',
-    desc: '추후 확정할 SPOMOVE 모드입니다.',
-    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
-  },
-  tbd2: {
-    id: 'tbd2',
-    title: '준비 중',
-    en: 'TBD',
-    icon: '＋',
-    accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'IC',
-    isHidden: true,
-    tag: '보류',
-    desc: '추후 확정할 SPOMOVE 모드입니다.',
-    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
-  },
-  tbd3: {
-    id: 'tbd3',
-    title: '준비 중',
-    en: 'TBD',
-    icon: '＋',
-    accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'EWM',
-    isHidden: true,
-    tag: '보류',
-    desc: '추후 확정할 SPOMOVE 모드입니다.',
-    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
-  },
-  tbd4: {
-    id: 'tbd4',
-    title: '준비 중',
-    en: 'TBD',
-    icon: '＋',
-    accent: 'rgba(148,163,184,0.55)',
-    coreCode: 'VM',
-    isHidden: true,
-    tag: '보류',
-    desc: '추후 확정할 SPOMOVE 모드입니다.',
-    levels: [{ id: 1, name: '준비 중', enName: 'TBD', desc: '비워둠' }],
   },
 };
 
@@ -321,10 +217,6 @@ export const SPOMOVE_CATALOG_SLOT_IDS = [
 export const SPOMOVE_BOTTOM_CATALOG_SLOT_IDS = [
   'flow', // 다이브 / Dive Mode
 ] as const;
-
-export function isSpomoveCatalogTbdMode(modeId: string): boolean {
-  return modeId === 'tbd1' || modeId === 'tbd2' || modeId === 'tbd3' || modeId === 'tbd4';
-}
 
 export function resolveTrainingEngine(mode: string, level: number): { engineMode: string; engineLevel: number } {
   if (mode === 'executive') {

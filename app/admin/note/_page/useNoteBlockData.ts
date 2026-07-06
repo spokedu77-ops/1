@@ -355,14 +355,12 @@ export function useNoteBlockData(options: {
       }
 
       const remembered = readRememberedNoteDocumentBlocks(documentId);
-      const hasInstantSnapshot = Boolean(remembered?.length);
-      if (hasInstantSnapshot && remembered) {
+      const hasInstantSnapshot = remembered !== null;
+      if (hasInstantSnapshot) {
         replaceBlocks(remembered, documentId);
         setLoadingBlocks(false);
         setBlocksSyncing(true);
       } else {
-        setBlocks([]);
-        blocksRef.current = [];
         setLoadingBlocks(true);
         setBlocksSyncing(false);
       }
@@ -438,9 +436,13 @@ export function useNoteBlockData(options: {
     }
   }, [blocks, selectedId]);
 
-  const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
-  const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);
-  const allSortableBlockIds = useMemo(() => flattenVisualBlockIds(blocks), [blocks]);
+  const documentBlocks = useMemo(
+    () => (selectedId ? blocks.filter((block) => block.document_id === selectedId) : blocks),
+    [blocks, selectedId],
+  );
+  const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(documentBlocks), [documentBlocks]);
+  const rootBlocks = useMemo(() => sortRootBlocks(documentBlocks), [documentBlocks]);
+  const allSortableBlockIds = useMemo(() => flattenVisualBlockIds(documentBlocks), [documentBlocks]);
 
   const loadTrashedBlocks = useCallback(async () => {
     if (!selectedId) {

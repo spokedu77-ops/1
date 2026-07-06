@@ -1,54 +1,18 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 
+import {
+  TEACHER_SPOMOVE_WEEKS,
+  buildTeacherAutoLaunch,
+  getProgramSettingChips,
+  getTeacherWeek,
+  type TeacherSpomoveProgram,
+} from './teacherSpomoveCurriculum';
+
 const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
-
-type TeacherSpomovePreset = {
-  id: string;
-  title: string;
-  mode: string;
-  level: number;
-  variantColorTheme?: 'color' | 'animal' | 'vehicle';
-};
-
-const TEACHER_SPOMOVE_PRESETS: TeacherSpomovePreset[] = [
-  {
-    id: 'rc-1-arrow',
-    title: '반응인지 1번 · 공간 방향',
-    mode: 'basic',
-    level: 1,
-  },
-  {
-    id: 'rc-3-color',
-    title: '반응인지 3번 · 전면 색상 반응 (색상)',
-    mode: 'basic',
-    level: 3,
-    variantColorTheme: 'color',
-  },
-  {
-    id: 'rc-3-animal',
-    title: '반응인지 3번 · 전면 색상 반응 (동물)',
-    mode: 'basic',
-    level: 3,
-    variantColorTheme: 'animal',
-  },
-  {
-    id: 'rc-3-vehicle',
-    title: '반응인지 3번 · 전면 색상 반응 (탈것)',
-    mode: 'basic',
-    level: 3,
-    variantColorTheme: 'vehicle',
-  },
-  {
-    id: 'rc-4-split',
-    title: '반응인지 4번 · 2분할 색상 반응',
-    mode: 'basic',
-    level: 4,
-    variantColorTheme: 'color',
-  },
-];
 
 const COLOR_OPTIONS = [
   { id: 'red', label: '빨강', hex: '#FF3B3B' },
@@ -1847,10 +1811,70 @@ button {
   background: rgba(200,255,0,0.07);
 }
 
+/* ── 주차 목록 ────────────────────────────────────────────── */
+
+.spm-week-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.spm-week-item {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  padding: 22px 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(20,23,33,0.94) 0%, rgba(13,15,23,0.94) 100%);
+  cursor: pointer;
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.spm-week-item:hover {
+  transform: translateY(-1px);
+  border-color: rgba(200,255,0,0.2);
+  box-shadow: 0 12px 24px rgba(200,255,0,0.06);
+}
+
+.spm-week-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.spm-week-label {
+  font-family: 'Outfit', 'Pretendard', sans-serif;
+  font-weight: 900;
+  font-size: 20px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.spm-week-summary {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-3);
+  margin-bottom: 8px;
+}
+
+.spm-week-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--accent-2);
+}
+
 .spm-runner-loading {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 99999;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2239,7 +2263,7 @@ function IntroScreen({
           <button className="spm-intro-btn fav" onClick={onSpomove}>
             <div className="spm-intro-btn-num">03</div>
             <div className="spm-intro-btn-title">Spomove</div>
-            <div className="spm-intro-btn-desc">반응인지 프로그램 5종을 바로 실행합니다.</div>
+            <div className="spm-intro-btn-desc">8주차 커리큘럼 프로그램을 선택해 실행합니다.</div>
           </button>
         </div>
       </div>
@@ -2356,12 +2380,12 @@ function FavoriteListScreen({
   );
 }
 
-function PresetListScreen({
+function WeekListScreen({
   onBack,
-  onSelect,
+  onSelectWeek,
 }: {
   onBack: () => void;
-  onSelect: (preset: TeacherSpomovePreset) => void;
+  onSelectWeek: (week: number) => void;
 }) {
   return (
     <ScreenShell>
@@ -2373,23 +2397,75 @@ function PresetListScreen({
             </svg>
           </button>
           <span className="spm-presetlist-title">Spomove</span>
-          <span className="spm-presetlist-count">{TEACHER_SPOMOVE_PRESETS.length} 프로그램</span>
+          <span className="spm-presetlist-count">{TEACHER_SPOMOVE_WEEKS.length}주차</span>
+        </div>
+
+        <div className="spm-week-items">
+          {TEACHER_SPOMOVE_WEEKS.map((week) => (
+            <button
+              key={week.week}
+              type="button"
+              className="spm-week-item"
+              onClick={() => onSelectWeek(week.week)}
+            >
+              <div className="spm-week-item-body">
+                <div className="spm-week-label">{week.label}</div>
+                <div className="spm-week-summary">{week.summary}</div>
+                <div className="spm-week-meta">{week.programs.length} 프로그램</div>
+              </div>
+              <div className="spm-preset-arrow" aria-hidden>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6" />
+                </svg>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScreenShell>
+  );
+}
+
+function WeekProgramListScreen({
+  week,
+  onBack,
+  onSelect,
+}: {
+  week: number;
+  onBack: () => void;
+  onSelect: (program: TeacherSpomoveProgram) => void;
+}) {
+  const weekData = getTeacherWeek(week);
+  if (!weekData) return null;
+
+  return (
+    <ScreenShell>
+      <div className="spm-presetlist">
+        <div className="spm-presetlist-head">
+          <button className="spm-presetlist-back" onClick={onBack} aria-label="뒤로">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <span className="spm-presetlist-title">{weekData.label}</span>
+          <span className="spm-presetlist-count">{weekData.programs.length} 프로그램</span>
         </div>
 
         <div className="spm-preset-items">
-          {TEACHER_SPOMOVE_PRESETS.map((preset, idx) => (
+          {weekData.programs.map((program, idx) => (
             <button
-              key={preset.id}
+              key={program.id}
+              type="button"
               className="spm-preset-item"
-              onClick={() => onSelect(preset)}
+              onClick={() => onSelect(program)}
             >
               <div className="spm-preset-item-body">
                 <div className="spm-preset-num">{String(idx + 1).padStart(2, '0')}</div>
-                <div className="spm-preset-title">{preset.title}</div>
+                <div className="spm-preset-title">{program.title}</div>
                 <div className="spm-preset-chips">
-                  <span className="spm-preset-chip">2초</span>
-                  <span className="spm-preset-chip">15회</span>
-                  <span className="spm-preset-chip">BGM 자동</span>
+                  {getProgramSettingChips(program).map((chip) => (
+                    <span key={chip} className="spm-preset-chip">{chip}</span>
+                  ))}
                 </div>
               </div>
               <div className="spm-preset-arrow" aria-hidden>
@@ -2414,39 +2490,46 @@ function PresetRunnerLoadingOverlay() {
 }
 
 function PresetRunnerScreen({
-  preset,
+  program,
   runKey,
   onExit,
   onComplete,
 }: {
-  preset: TeacherSpomovePreset;
+  program: TeacherSpomoveProgram;
   runKey: number;
   onExit: () => void;
   onComplete: () => void;
 }) {
-  return (
-    <>
+  const autoLaunch = buildTeacherAutoLaunch(program);
+
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 99999,
+        display: 'flex',
+        flexDirection: 'column',
+        background: '#020617',
+      }}
+    >
       <style>{CSS}</style>
       <Suspense fallback={<PresetRunnerLoadingOverlay />}>
         <MemoryGameApp
           key={runKey}
-          initialMode={preset.mode}
-          initialLevel={preset.level}
-          autoLaunch={{
-            speed: 2,
-            timeMode: 'reps',
-            targetReps: 15,
-            warmup: 3,
-            audioMode: 'beep',
-            variantColorTheme: preset.variantColorTheme,
-          }}
+          initialMode={program.mode}
+          initialLevel={program.level}
+          autoLaunch={autoLaunch}
           embed
           disableBgm={false}
           onExit={onExit}
           onComplete={onComplete}
         />
       </Suspense>
-    </>
+    </div>,
+    document.body,
   );
 }
 
@@ -2592,7 +2675,8 @@ export default function SpomovePage() {
   const [screen, setScreen] = useState('intro');
   const [step, setStep] = useState(1);
   const [tab, setTab] = useState('basic');
-  const [selectedPreset, setSelectedPreset] = useState<TeacherSpomovePreset | null>(null);
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const [selectedProgram, setSelectedProgram] = useState<TeacherSpomoveProgram | null>(null);
   const [runKey, setRunKey] = useState(0);
 
   // 저장 모달
@@ -2929,7 +3013,7 @@ export default function SpomovePage() {
           setScreen('settings');
         }}
         onFavorite={() => setScreen('favoriteList')}
-        onSpomove={() => setScreen('presetList')}
+        onSpomove={() => setScreen('weekList')}
       />
     );
   }
@@ -2943,12 +3027,25 @@ export default function SpomovePage() {
     );
   }
 
-  if (screen === 'presetList') {
+  if (screen === 'weekList') {
     return (
-      <PresetListScreen
+      <WeekListScreen
         onBack={() => setScreen('intro')}
-        onSelect={(preset) => {
-          setSelectedPreset(preset);
+        onSelectWeek={(week) => {
+          setSelectedWeek(week);
+          setScreen('weekPrograms');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'weekPrograms' && selectedWeek != null) {
+    return (
+      <WeekProgramListScreen
+        week={selectedWeek}
+        onBack={() => setScreen('weekList')}
+        onSelect={(program) => {
+          setSelectedProgram(program);
           setRunKey((k) => k + 1);
           setScreen('presetRunner');
         }}
@@ -2956,25 +3053,25 @@ export default function SpomovePage() {
     );
   }
 
-  if (screen === 'presetRunner' && selectedPreset) {
+  if (screen === 'presetRunner' && selectedProgram) {
     return (
       <PresetRunnerScreen
-        preset={selectedPreset}
+        program={selectedProgram}
         runKey={runKey}
-        onExit={() => setScreen('presetList')}
+        onExit={() => setScreen('weekPrograms')}
         onComplete={() => setScreen('presetComplete')}
       />
     );
   }
 
-  if (screen === 'presetComplete' && selectedPreset) {
+  if (screen === 'presetComplete' && selectedProgram) {
     return (
       <PresetCompleteScreen
         onRetry={() => {
           setRunKey((k) => k + 1);
           setScreen('presetRunner');
         }}
-        onBack={() => setScreen('presetList')}
+        onBack={() => setScreen('weekPrograms')}
       />
     );
   }

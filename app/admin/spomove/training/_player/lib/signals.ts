@@ -363,29 +363,13 @@ export function generateSignal(
   if (mode === 'basic') {
     if (level === 1) {
       const a = r(ARROWS);
-      const edge = opts?.poleEdgeIndex ?? Math.floor(Math.random() * 4);
-      return buildPoleArrowSignal(a, edge);
+      return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
     }
     if (level === 2) {
       const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
-      const validSlides = vSlides.filter((s) => (s.imageUrl ?? '').trim() !== '');
-      if (validSlides.length > 0) {
-        const themed = r(validSlides);
-        return {
-          type: 'think_quad',
-          bg: '#0F172A',
-          content: {
-            colorId: themed.color.id,
-            fillHex: themed.color.bg,
-            symbol: themed.color.symbol,
-            name: themed.color.name,
-            textColor: themed.color.text,
-            imageUrl: themed.imageUrl,
-          },
-          voice: null,
-        };
-      }
-      const c = r(activeColors);
+      const themed =
+        vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
+      const c = themed?.color ?? r(activeColors);
       /** Think Studio StageA와 동일 2×2(PAD_GRID: 위 빨·노 / 아래 초·파), 해당 칸만 강조 */
       return {
         type: 'think_quad',
@@ -396,7 +380,7 @@ export function generateSignal(
           symbol: c.symbol,
           name: c.name,
           textColor: c.text,
-          imageUrl: null,
+          imageUrl: themed?.imageUrl ?? null,
         },
         voice: null,
       };

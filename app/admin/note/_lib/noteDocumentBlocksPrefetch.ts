@@ -46,7 +46,7 @@ export function prefetchNoteDocumentBlocks(documentId: string): void {
       entry.blocks = blocks;
       entry.fetchedAt = Date.now();
       const activeDocId = useNoteBlockStore.getState().activeDocumentId;
-      if (blocks?.length && activeDocId !== documentId) {
+      if (blocks && activeDocId !== documentId) {
         rememberNoteDocumentBlocks(documentId, blocks);
       }
       return blocks;
@@ -65,7 +65,7 @@ export async function consumePrefetchedNoteBlocks(
   if (!entry) return null;
   cache.delete(documentId);
   const blocks = entry.blocks ? entry.blocks : await entry.promise;
-  if (blocks?.length) {
+  if (blocks) {
     const activeDocId = useNoteBlockStore.getState().activeDocumentId;
     if (activeDocId !== documentId) {
       rememberNoteDocumentBlocks(documentId, blocks);

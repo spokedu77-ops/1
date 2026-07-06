@@ -44,6 +44,7 @@ export type OfficialSpomovePreset = {
     level: number;
     variantColorTheme?: SpomoveColorThemeId;
     reactTrainConcurrent?: 1 | 2 | 3;
+    moleDualPanel?: boolean;
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
   };
@@ -880,68 +881,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 
-  // sortOrder 30: DIAGONAL (level 3)
-  {
-    id: 'visual-reaction-diagonal-34',
-    sortOrder: 30,
-    title: '시지각 반응 · DIAGONAL',
-    en: 'Visual Reaction',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'visual-reaction',
-    programTitle: '시지각 반응',
-    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 3 },
-    description: '대각선 방향으로 이동하는 자극에 빠르게 반응하는 시지각 반응 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '공간 추적, 대각 이동, 반응 심화',
-    isReady: true,
-    settingSummary: '대각 자극 · 약 75초 · BGM 자동',
-    settingChips: ['대각 자극', '약 75초', 'BGM 자동'],
-    executionFacts: [
-      { label: '자극 방식', value: 'DIAGONAL' },
-      { label: '진행 방식', value: '공간 추적' },
-      { label: '실행 시간', value: '약 75초' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 31: DEEP (level 4)
-  {
-    id: 'visual-reaction-deep-35',
-    sortOrder: 31,
-    title: '시지각 반응 · DEEP',
-    en: 'Visual Reaction',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'visual-reaction',
-    programTitle: '시지각 반응',
-    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 4 },
-    description: '깊이감이 있는 입체적 자극에 빠르게 반응하는 시지각 반응 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '공간 인지, 입체 반응, 집중력 심화',
-    isReady: true,
-    settingSummary: '입체 자극 · 약 75초 · BGM 자동',
-    settingChips: ['입체 자극', '약 75초', 'BGM 자동'],
-    executionFacts: [
-      { label: '자극 방식', value: 'DEEP' },
-      { label: '진행 방식', value: '입체 반응' },
-      { label: '실행 시간', value: '약 75초' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 32: PULSE (level 5)
+  // sortOrder 30: PULSE (level 3)
   {
     id: 'visual-reaction-pulse-36',
-    sortOrder: 32,
+    sortOrder: 30,
     title: '시지각 반응 · PULSE',
     en: 'Visual Reaction',
     axis: 'response',
@@ -949,7 +892,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 5 },
+    engine: { mode: 'reactTrain', level: 3 },
     description: '맥박처럼 리듬감 있게 제시되는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -967,10 +910,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 
-  // sortOrder 33: CAMOUFLAGE (level 6)
+  // sortOrder 31: CAMOUFLAGE (level 4)
   {
     id: 'visual-reaction-blackout-37',
-    sortOrder: 33,
+    sortOrder: 31,
     title: '시지각 반응 · 카모플라쥬',
     en: 'Visual Reaction',
     axis: 'response',
@@ -978,8 +921,8 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 6 },
-    description: '노이즈 속에 위장된 색 도형을 찾아내는 고난도 시지각 반응 활동',
+    engine: { mode: 'reactTrain', level: 4 },
+    description: '노이즈 속에 위장된 색 사물(과일 등)을 찾아내는 고난도 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
@@ -996,10 +939,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 
-  // sortOrder 34: SWEEP (level 7)
+  // sortOrder 32: SWEEP (level 5)
   {
     id: 'visual-reaction-sweep-38',
-    sortOrder: 34,
+    sortOrder: 32,
     title: '시지각 반응 · SWEEP',
     en: 'Visual Reaction',
     axis: 'response',
@@ -1007,7 +950,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 7 },
+    engine: { mode: 'reactTrain', level: 5 },
     description: '화면을 쓸듯이 이동하는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -1025,10 +968,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 
-  // sortOrder 35: RUSH (level 8)
+  // sortOrder 33: RUSH (level 6)
   {
     id: 'visual-reaction-rush-39',
-    sortOrder: 35,
+    sortOrder: 33,
     title: '시지각 반응 · RUSH',
     en: 'Visual Reaction',
     axis: 'response',
@@ -1036,7 +979,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 8 },
+    engine: { mode: 'reactTrain', level: 6 },
     description: '빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -1054,10 +997,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 
-  // sortOrder 36: MOLE (level 9)
+  // sortOrder 34: MOLE (level 7)
   {
     id: 'visual-reaction-mole-40',
-    sortOrder: 36,
+    sortOrder: 34,
     title: '시지각 반응 · MOLE',
     en: 'Visual Reaction',
     axis: 'response',
@@ -1065,19 +1008,77 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 9 },
-    description: '두더지처럼 튀어나오는 자극에 빠르게 반응하는 시지각 반응 활동',
+    engine: { mode: 'reactTrain', level: 7 },
+    description: '화면 곳곳 구멍에서 튀어나오는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '순발력, 팝업 반응, 게임형 활동',
     isReady: true,
-    settingSummary: '두더지 자극 · 약 75초 · BGM 자동',
-    settingChips: ['두더지 자극', '약 75초', 'BGM 자동'],
+    settingSummary: '팝업 두더지 · 약 75초 · BGM 자동',
+    settingChips: ['팝업 두더지', '약 75초', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: 'MOLE' },
       { label: '진행 방식', value: '팝업 반응' },
+      { label: '실행 시간', value: '약 75초' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+
+  // sortOrder 35: WORMHOLE (level 8)
+  {
+    id: 'visual-reaction-wormhole-41',
+    sortOrder: 35,
+    title: '시지각 반응 · 우주 몰입',
+    en: 'Visual Reaction',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'visual-reaction',
+    programTitle: '시지각 반응',
+    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
+    engine: { mode: 'reactTrain', level: 8 },
+    description: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피하는 고난도 시지각 반응 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '고난도 집중, 회피 반응, 몰입 훈련',
+    isReady: true,
+    settingSummary: '웜홀 회피 · 약 75초 · BGM 자동',
+    settingChips: ['웜홀 회피', '약 75초', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: 'WORMHOLE' },
+      { label: '진행 방식', value: '회피 반응' },
+      { label: '실행 시간', value: '약 75초' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+
+  // sortOrder 36: NUMBER CART (level 9)
+  {
+    id: 'visual-reaction-number-cart-42',
+    sortOrder: 36,
+    title: '시지각 반응 · 숫자 수레',
+    en: 'Visual Reaction',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'visual-reaction',
+    programTitle: '시지각 반응',
+    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
+    engine: { mode: 'reactTrain', level: 9 },
+    description: '광산 수레에 뜬 목표 숫자를 보고 같은 숫자가 붙은 색 문으로 미리 이동하는 시지각 반응 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '숫자·색 매칭, 사전 판단, 선택 반응',
+    isReady: true,
+    settingSummary: '숫자 매칭 · 약 75초 · BGM 자동',
+    settingChips: ['숫자 매칭', '약 75초', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: 'NUMBER CART' },
+      { label: '진행 방식', value: '숫자·색 매칭' },
       { label: '실행 시간', value: '약 75초' },
       { label: 'BGM', value: '자동 재생' },
     ],

@@ -7,19 +7,13 @@ type VisitCacheEntry = {
 };
 
 const visitCache = new Map<string, VisitCacheEntry>();
-const MAX_ENTRIES = 12;
-const MAX_AGE_MS = 10 * 60_000;
-
-function pruneVisitCache() {
-  const now = Date.now();
-  for (const [id, entry] of visitCache) {
-    if (now - entry.savedAt > MAX_AGE_MS) visitCache.delete(id);
-  }
-  while (visitCache.size > MAX_ENTRIES) {
-    const oldest = visitCache.keys().next().value;
-    if (oldest) visitCache.delete(oldest);
-  }
-}
+const MEMORY_MAX_ENTRIES = 48;
+/** In-memory hot cache — sessionStorage가 더 오래 보관 */
+const MEMORY_MAX_AGE_MS = 30 * 60_000;
+/** Notion처럼 탭/새로고침 후에도 즉시 표시 */
+const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
+const SESSION_MAX_ENTRIES = 64;
+const SESSION_STORAGE_KEY = 'spm-note-doc-blocks-v1';
 
 function cloneBlocks(blocks: NoteBlock[]): NoteBlock[] {
   return blocks.map((block) => ({
@@ -32,30 +26,127 @@ function cloneBlocks(blocks: NoteBlock[]): NoteBlock[] {
   }));
 }
 
-/** 문서 전환 시 즉시 표시용 — 마지막으로 본 블록 스냅샷 */
+function pruneMemoryCache() {
+  const now = Date.now();
+  for (const [id, entry] of visitCache) {
+    if (now - entry.savedAt > MEMORY_MAX_AGE_MS) visitCache.delete(id);
+  }
+  while (visitCache.size > MEMORY_MAX_ENTRIES) {
+    const oldest = visitCache.keys().next().value;
+    if (oldest) visitCache.delete(oldest);
+  }
+}
+
+type SessionPayload = Record<string, { b: NoteBlock[]; t: number }>;
+
+function readSessionPayload(): SessionPayload {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as SessionPayload;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeSessionPayload(payload: SessionPayload) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+  } catch {
+    const ids = Object.entries(payload).sort((a, b) => a[1].t - b[1].t);
+    while (ids.length > SESSION_MAX_ENTRIES / 2) {
+      delete payload[ids.shift()![0]];
+    }
+    try {
+      window.sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload));
+    } catch {
+      // quota — session cache is best-effort
+    }
+  }
+}
+
+function pruneSessionPayload(payload: SessionPayload): SessionPayload {
+  const now = Date.now();
+  const next: SessionPayload = {};
+  for (const [id, entry] of Object.entries(payload)) {
+    if (now - entry.t <= SESSION_MAX_AGE_MS) next[id] = entry;
+  }
+  const sorted = Object.entries(next).sort((a, b) => b[1].t - a[1].t);
+  return Object.fromEntries(sorted.slice(0, SESSION_MAX_ENTRIES));
+}
+
+function readSessionEntry(documentId: string): VisitCacheEntry | null {
+  const payload = readSessionPayload();
+  const entry = payload[documentId];
+  if (!entry) return null;
+  if (Date.now() - entry.t > SESSION_MAX_AGE_MS) return null;
+  return { blocks: cloneBlocks(entry.b), savedAt: entry.t };
+}
+
+function writeSessionEntry(documentId: string, entry: VisitCacheEntry) {
+  const payload = pruneSessionPayload(readSessionPayload());
+  payload[documentId] = { b: cloneBlocks(entry.blocks), t: entry.savedAt };
+  writeSessionPayload(pruneSessionPayload(payload));
+}
+
+function readEntry(documentId: string): VisitCacheEntry | null {
+  const memory = visitCache.get(documentId);
+  if (memory && Date.now() - memory.savedAt <= MEMORY_MAX_AGE_MS) {
+    return { blocks: cloneBlocks(memory.blocks), savedAt: memory.savedAt };
+  }
+  if (memory) visitCache.delete(documentId);
+
+  const session = readSessionEntry(documentId);
+  if (session) {
+    visitCache.set(documentId, { blocks: cloneBlocks(session.blocks), savedAt: session.savedAt });
+    return session;
+  }
+  return null;
+}
+
+/** 문서 전환·새로고침 시 즉시 표시 — Notion stale-while-revalidate 스냅샷 */
 export function rememberNoteDocumentBlocks(documentId: string, blocks: NoteBlock[]): void {
   if (!documentId) return;
   const incoming = blocks.filter((block) => block.document_id === documentId);
-  if (incoming.length === 0) return;
-  pruneVisitCache();
-  visitCache.set(documentId, {
+  if (blocks.length > 0 && incoming.length === 0) return;
+  const entry: VisitCacheEntry = {
     blocks: cloneBlocks(dedupeNoteBlocksById(incoming)),
     savedAt: Date.now(),
-  });
+  };
+  pruneMemoryCache();
+  visitCache.set(documentId, entry);
+  writeSessionEntry(documentId, entry);
 }
 
-/** 동기 읽기 — 있으면 즉시 렌더 (백그라운드 fetch는 별도) */
+/**
+ * null = 한 번도 본 적 없음(스켈레톤)
+ * []   = 빈 문서를 이미 로드함(빈 편집기)
+ */
 export function readRememberedNoteDocumentBlocks(documentId: string): NoteBlock[] | null {
-  const entry = visitCache.get(documentId);
+  const entry = readEntry(documentId);
   if (!entry) return null;
-  if (Date.now() - entry.savedAt > MAX_AGE_MS) {
-    visitCache.delete(documentId);
-    return null;
-  }
   return cloneBlocks(entry.blocks);
 }
 
 export function invalidateRememberedNoteDocumentBlocks(documentId?: string): void {
-  if (documentId) visitCache.delete(documentId);
-  else visitCache.clear();
+  if (documentId) {
+    visitCache.delete(documentId);
+    if (typeof window !== 'undefined') {
+      const payload = readSessionPayload();
+      delete payload[documentId];
+      writeSessionPayload(payload);
+    }
+    return;
+  }
+  visitCache.clear();
+  if (typeof window !== 'undefined') {
+    try {
+      window.sessionStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
 }
