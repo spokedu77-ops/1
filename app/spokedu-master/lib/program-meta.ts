@@ -60,7 +60,6 @@ export function getProgramQualityReport(program: Program): ProgramQualityReport 
   const detail = program.lessonDetail;
   const missing: string[] = [];
   const hasTarget = !isPlaceholderMeta(detail?.recommendedAge || program.grade);
-  const hasDuration = Boolean(program.duration);
   const hasSpace = !isPlaceholderMeta(program.space);
   const hasEquipment = program.equipment.some((item) => !isPlaceholderMeta(item));
   const hasExecution = hasProgramExecutionDetail(program);
@@ -69,7 +68,6 @@ export function getProgramQualityReport(program: Program): ProgramQualityReport 
   const hasPreview = Boolean(resolveProgramHero(program) || programHasPlayableVideo(program));
 
   if (!hasTarget) missing.push('대상');
-  if (!hasDuration) missing.push('시간');
   if (!hasSpace) missing.push('공간');
   if (!hasEquipment) missing.push('준비물');
   if (!hasExecution) missing.push('진행');
@@ -91,7 +89,6 @@ export function getProgramHomeReadiness(program: Program): number {
     Boolean(resolveProgramHero(program)),
     !isPlaceholderMeta(program.grade),
     !isPlaceholderMeta(program.space),
-    Boolean(program.duration),
     program.equipment.some((item) => !isPlaceholderMeta(item)),
     hasProgramExecutionDetail(program),
     hasProgramTeachingSupport(program),
@@ -128,6 +125,7 @@ export function getPrimaryOfficialSpomovePreset(program: Program): OfficialSpomo
 }
 
 export function hasSpomoveConnectionEvidence(program: Program): boolean {
+  if (program.hasSpomoveConnection) return true;
   const haystack = [
     program.title,
     program.description,

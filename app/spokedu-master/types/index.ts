@@ -29,7 +29,6 @@ export interface SmProgramMeta {
   theme: string | null;
   grade: string | null;
   space: string | null;
-  duration: number | null;
   isPro: boolean;
   isNew: boolean;
   isHot: boolean;
@@ -134,7 +133,6 @@ export interface Program {
   title: string;
   category: string;
   grade: string;
-  duration: number;
   space: string;
   description: string;
   steps: string[];
@@ -148,6 +146,10 @@ export interface Program {
   homeSortOrder?: number;
   /** YouTube 썸네일 URL (hqdefault.jpg 기준) */
   thumbnailUrl?: string;
+  /** 참고 영상 존재 여부 (PRO redaction 후에도 필터·뱃지용) */
+  hasReferenceVideo?: boolean;
+  /** 공식 SPOMOVE 연결 여부 (PRO redaction 후에도 필터·뱃지용) */
+  hasSpomoveConnection?: boolean;
   /** curriculum_id: Supabase curriculum 테이블의 id (동적 로딩 시 추적용) */
   curriculumId?: number;
   lessonDetail?: {

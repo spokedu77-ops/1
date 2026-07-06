@@ -13,7 +13,7 @@ type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 
 
 const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'stopwatch', label: '스탑워치', icon: Timer },
-  { id: 'return-timer', label: '복귀 스탑워치', icon: Timer },
+  { id: 'return-timer', label: '복귀 타이머', icon: Timer },
   { id: 'scoreboard', label: '점수판', icon: LayoutList },
   { id: 'picker', label: '무작위 선택', icon: Shuffle },
   { id: 'teams', label: '팀 나누기', icon: Users },
@@ -27,11 +27,11 @@ const TOOL_STATUS = [
 ] as const;
 
 const TOOL_HELP: Record<TabId, string> = {
-  stopwatch: '운동 루틴, 스테이션, 미션 제한 시간을 화면에 크게 띄웁니다.',
-  'return-timer': '쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 10분 카운트다운 도구입니다.',
-  scoreboard: '팀 경쟁 활동에서 점수를 크게 보여주고 흐름을 끊지 않습니다.',
+  stopwatch: '활동 시작부터 흐른 시간을 크게 보여주고, 구간별 랩타임을 남길 수 있습니다.',
+  'return-timer': '쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 카운트다운 도구입니다.',
+  scoreboard: '팀 경기 활동에서 점수를 크게 보여주고 흐름을 끊지 않습니다.',
   picker: '발표, 시범, 시작 순서를 공정하게 뽑습니다.',
-  teams: '참여 수준을 고려해 팀을 빠르게 나눕니다.',
+  teams: '참여 인원을 고려해 팀을 빠르게 나눕니다.',
   order: '게임, 발표, 로테이션 순서를 한 번에 정합니다.',
 };
 
@@ -83,6 +83,7 @@ function StopwatchTab() {
   const timerStop = useMasterStore((state) => state.classTimerStop);
   const timerReset = useMasterStore((state) => state.classTimerReset);
   const [displayMs, setDisplayMs] = useState(timerMs);
+  const [laps, setLaps] = useState<number[]>([]);
 
   useEffect(() => {
     if (!timerRunning) {
@@ -111,9 +112,19 @@ function StopwatchTab() {
         </ActionButton>
         <button
           type="button"
+          onClick={() => setLaps((items) => [displayMs, ...items].slice(0, 12))}
+          disabled={displayMs <= 0}
+          className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black disabled:opacity-40"
+          style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.28)', color: 'var(--spm-grn)' }}
+        >
+          <Timer size={16} />랩타임
+        </button>
+        <button
+          type="button"
           onClick={() => {
             timerReset();
             setDisplayMs(0);
+            setLaps([]);
           }}
           className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black"
           style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
@@ -121,6 +132,24 @@ function StopwatchTab() {
           <RotateCcw size={16} />초기화
         </button>
       </div>
+      {laps.length > 0 ? (
+        <section className="w-full max-w-[520px] rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h2 className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>랩타임</h2>
+            <button type="button" onClick={() => setLaps([])} className="text-[12px] font-black" style={{ color: 'var(--spm-t3)' }}>
+              지우기
+            </button>
+          </div>
+          <ol className="max-h-[220px] space-y-2 overflow-y-auto">
+            {laps.map((lap, index) => (
+              <li key={`${lap}-${index}`} className="flex items-center justify-between rounded-[12px] px-3 py-2" style={{ background: 'var(--spm-s3)' }}>
+                <span className="text-[12px] font-black" style={{ color: 'var(--spm-t3)' }}>#{laps.length - index}</span>
+                <span className="font-mono text-[18px] font-black tabular-nums" style={{ color: 'var(--spm-t)' }}>{formatMs(lap)}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -361,15 +390,11 @@ function ReturnTimerTab() {
         </div>
 
         <div className="mt-5">
-          <h2 className="text-[24px] font-black sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
-            쉬는 시간 복귀 스탑워치
-          </h2>
-          <p className="mx-auto mt-2 max-w-[620px] text-[13px] font-semibold leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>
-            쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 10분 카운트다운 도구입니다.
-          </p>
+          <h2 className="text-[24px] font-black sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>복귀 타이머</h2>
+          <p className="mx-auto mt-2 max-w-[620px] text-[13px] font-semibold leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 카운트다운 도구입니다.</p>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="복귀 스탑워치 시간 선택">
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="복귀 타이머 시간 선택">
           {RETURN_TIMER_OPTIONS.map((option) => {
             const active = selectedDurationMs === option.value;
             return (
@@ -425,7 +450,7 @@ function ReturnTimerTab() {
         <div className="mt-4 flex w-full max-w-[760px] flex-wrap justify-center gap-3">
           {status === 'idle' ? (
             <ActionButton onClick={start}>
-              <Play size={18} fill="currentColor" />스탑워치 시작하기
+              <Play size={18} fill="currentColor" />타이머 시작하기
             </ActionButton>
           ) : null}
           {status === 'running' ? (

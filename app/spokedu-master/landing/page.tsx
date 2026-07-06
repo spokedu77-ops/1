@@ -79,23 +79,26 @@ const HERO_PROOF = [
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://spokedu.com';
 
+const LANDING_DESCRIPTION =
+  '수업 자료와 영상, 안내문을 제공하는 체육교육 월 구독 서비스입니다. 프리미엄에서는 SPOMOVE 큰 화면 반응 활동까지 이용할 수 있습니다.';
+
 export const metadata = {
   title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-  description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 월 구독 서비스입니다.',
+  description: LANDING_DESCRIPTION,
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website' as const,
     url: `${SITE_URL}/spokedu-master/landing`,
     siteName: 'SPOKEDU MASTER',
     title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 월 구독 서비스입니다.',
+    description: LANDING_DESCRIPTION,
     locale: 'ko_KR',
     images: [{ url: `${SITE_URL}/api/spokedu-master/og`, width: 1200, height: 630, alt: 'SPOKEDU MASTER — 체육 강사의 수업 준비 플랫폼' }],
   },
   twitter: {
     card: 'summary_large_image' as const,
     title: 'SPOKEDU MASTER — 체육교육 수업 운영 서비스',
-    description: '수업 자료와 영상, SPOMOVE 큰 화면 반응 활동, 안내문을 제공하는 체육교육 월 구독 서비스입니다.',
+    description: LANDING_DESCRIPTION,
     images: [`${SITE_URL}/api/spokedu-master/og`],
   },
 };
@@ -275,7 +278,7 @@ export default function LandingPage() {
             오늘 첫 수업을 골라보세요
           </h2>
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
-            라이브러리, SPOMOVE, 수업 도구를 월 구독으로 이용해 보세요.
+            라이브러리와 수업 도구는 라이트부터, SPOMOVE·PRO 자료는 프리미엄에서 이용해 보세요.
           </p>
           <Link href="/login?next=/spokedu-master/onboarding" className="mt-8 inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
             <Play size={16} fill="#fff" />

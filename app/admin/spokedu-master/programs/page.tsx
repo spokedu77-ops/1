@@ -44,7 +44,6 @@ import {
   MASTER_SPACE_TAGS,
   MASTER_TARGET_TAGS,
   getMasterParticipantFormat,
-  normalizeMasterDuration,
   parseMasterSpaces,
   parseMasterTargets,
   serializeMasterTags,
@@ -76,7 +75,6 @@ type MetaRow = {
   sm_theme: string | null;
   sm_grade: string | null;
   sm_space: string | null;
-  sm_duration: number | null;
   sm_is_pro: boolean;
   sm_is_new: boolean;
   sm_is_hot: boolean;
@@ -115,7 +113,6 @@ type ProgramItem = {
     videoUrl: string | null;
     target: string;
     space: string;
-    duration: string;
     equipment: string[];
     steps: string[];
     parentNote: string;
@@ -135,7 +132,6 @@ type EditForm = {
   coachScript: string;
   target: string;
   space: string;
-  duration: string;
   theme: string;
   tags: string;
   videoUrl: string;
@@ -455,7 +451,6 @@ function toForm(item: ProgramItem): EditForm {
     coachScript: meta?.sm_coach_script || '',
     target: serializeMasterTags(parseMasterTargets(meta?.sm_grade || '')),
     space: serializeMasterTags(parseMasterSpaces(meta?.sm_space || '')),
-    duration: normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '',
     theme: normalizeLessonTheme(meta?.sm_theme || overlay?.main_theme || ''),
     tags: listToCsv(meta?.sm_tags),
     videoUrl: overlay?.video_url || '',
@@ -476,7 +471,6 @@ function mergeSavedProgram(
   const meta = saved.meta;
   const target = serializeMasterTags(parseMasterTargets(meta.sm_grade || ''));
   const space = serializeMasterTags(parseMasterSpaces(meta.sm_space || ''));
-  const duration = normalizeMasterDuration(meta.sm_duration);
 
   return {
     ...current,
@@ -488,7 +482,6 @@ function mergeSavedProgram(
       videoUrl: overlay.video_url?.trim() || current.curriculum.url,
       target,
       space,
-      duration: duration ? String(duration) : '',
       equipment: overlay.equipment ? splitLines(overlay.equipment) : current.curriculum.equipment,
       steps: overlay.activity_method ? splitLines(overlay.activity_method) : current.curriculum.steps,
       parentNote: meta.sm_parent_note?.trim() || '',
@@ -1539,7 +1532,6 @@ export default function AdminSmProgramsPage() {
           target: serializeMasterTags(parseMasterTargets(form.target)),
           tags: csvToList(form.tags),
           space: serializeMasterTags(parseMasterSpaces(form.space)),
-          duration: normalizeMasterDuration(form.duration),
           setupImageUrl: form.setupImageUrl,
           coachScript: form.coachScript,
           briefingNotes: form.briefingNotes,
@@ -1600,7 +1592,6 @@ export default function AdminSmProgramsPage() {
           target: serializeMasterTags(parseMasterTargets(nextForm.target)),
           tags: csvToList(nextForm.tags),
           space: serializeMasterTags(parseMasterSpaces(nextForm.space)),
-          duration: normalizeMasterDuration(nextForm.duration),
           setupImageUrl: '',
           coachScript: nextForm.coachScript,
           briefingNotes: nextForm.briefingNotes,
@@ -1825,9 +1816,10 @@ export default function AdminSmProgramsPage() {
                     <h2 className="mt-1 text-[20px] font-black text-slate-950">{selected.curriculum.title}</h2>
                     <p className="mt-1 text-[12px] font-bold text-slate-500">MASTER 노출 제목: {form.title || selected.curriculum.title}</p>
                   </div>
-                  <StatusPill status={selected.effective.status} />
+                  <StatusPill status={getItemQuality(selected).status} />
                   <span className="inline-flex h-7 items-center rounded-full bg-slate-100 px-2.5 text-[11px] font-black text-slate-600">
                     {form.publicationStatus}
+                    {selected.overlay?.is_published === true ? '' : ' · MASTER 미노출'}
                   </span>
                 </div>
               </div>

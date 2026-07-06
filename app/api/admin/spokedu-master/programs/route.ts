@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import {
-  normalizeMasterDuration,
   normalizeMasterSpace,
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
@@ -35,7 +34,6 @@ type MetaRow = {
   sm_theme: string | null;
   sm_grade: string | null;
   sm_space: string | null;
-  sm_duration: number | null;
   sm_is_pro: boolean | null;
   sm_is_new: boolean | null;
   sm_is_hot: boolean | null;
@@ -107,10 +105,10 @@ function latestOverlay(rows: OverlayRow[]) {
   return map;
 }
 
-function publicationStatus(meta: MetaRow | null): PublicationStatus {
+function publicationStatus(meta: MetaRow | null, overlay: OverlayRow | null): PublicationStatus {
+  if (overlay?.is_published !== true) return 'hidden';
   if (!meta) return 'draft';
   if (meta.sm_is_hot && (meta.sm_display_order ?? 9999) < 100) return 'featured';
-  if (meta.sm_is_pro === false) return 'hidden';
   if (meta.sm_objective || meta.sm_parent_note || meta.sm_coach_script) return 'ready';
   return 'draft';
 }
@@ -118,13 +116,12 @@ function publicationStatus(meta: MetaRow | null): PublicationStatus {
 function completeness(input: {
   target: string;
   space: string;
-  duration: string;
   equipment: string[];
   steps: string[];
   videoUrl: string | null;
   setupImageUrl: string | null;
 }): MaterialStatus {
-  const coreReady = Boolean(input.target && input.space && input.duration && input.equipment.length > 0 && input.steps.length > 0);
+  const coreReady = Boolean(input.target && input.space && input.equipment.length > 0 && input.steps.length > 0);
   if (!coreReady) return 'incomplete';
   const homeReady = Boolean(input.videoUrl || input.setupImageUrl);
   return homeReady ? 'home-ready' : 'ready';
@@ -148,7 +145,7 @@ async function loadPrograms() {
   if (ids.length > 0) {
     const { data: metaRows, error: metaErr } = await supabase
       .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
+      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
       .in('curriculum_id', ids);
     if (metaErr) throw metaErr;
     for (const meta of (metaRows ?? []) as MetaRow[]) metaById.set(meta.curriculum_id, meta);
@@ -173,11 +170,9 @@ async function loadPrograms() {
     const steps = overlay?.activity_method ? splitLines(overlay.activity_method) : safeArray(row.steps);
     const target = normalizeMasterTarget(meta?.sm_grade ?? overlay?.group_size ?? '');
     const space = normalizeMasterSpace(meta?.sm_space ?? '');
-    const duration = normalizeMasterDuration(meta?.sm_duration) ? String(normalizeMasterDuration(meta?.sm_duration)) : '';
     const status = completeness({
       target,
       space,
-      duration,
       equipment,
       steps,
       videoUrl,
@@ -202,13 +197,12 @@ async function loadPrograms() {
         videoUrl,
         target,
         space,
-        duration,
         equipment,
         steps,
         parentNote: (meta?.sm_parent_note ?? '').trim(),
         relatedSpomoveIds: safeArray(meta?.sm_related_spomove_ids),
         status,
-        publicationStatus: publicationStatus(meta),
+        publicationStatus: publicationStatus(meta, overlay),
       },
     };
   });
@@ -334,7 +328,6 @@ export async function PATCH(request: Request) {
       sm_grade?: unknown;
       sm_tags?: unknown;
       sm_space?: unknown;
-      sm_duration?: unknown;
       sm_setup_image_url?: unknown;
       sm_coach_script?: unknown;
       sm_briefing_notes?: unknown;
@@ -371,7 +364,6 @@ export async function PATCH(request: Request) {
     if ('sm_grade' in metaInput) metaPatch.sm_grade = normalizeUnknownText(metaInput.sm_grade);
     if ('sm_tags' in metaInput) metaPatch.sm_tags = normalizeAdminTags(Array.isArray(metaInput.sm_tags) ? metaInput.sm_tags.filter(isString) : []);
     if ('sm_space' in metaInput) metaPatch.sm_space = normalizeUnknownText(metaInput.sm_space);
-    if ('sm_duration' in metaInput) metaPatch.sm_duration = normalizeUnknownDuration(metaInput.sm_duration);
     if ('sm_setup_image_url' in metaInput) metaPatch.sm_setup_image_url = normalizeUnknownText(metaInput.sm_setup_image_url);
     if ('sm_coach_script' in metaInput) metaPatch.sm_coach_script = normalizeUnknownTextarea(metaInput.sm_coach_script);
     if ('sm_briefing_notes' in metaInput) metaPatch.sm_briefing_notes = normalizeUnknownTextarea(metaInput.sm_briefing_notes);
@@ -432,7 +424,7 @@ export async function PATCH(request: Request) {
       readMeta: async (id) => {
         const result = await supabase
           .from('spokedu_master_program_meta')
-          .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
+          .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
           .eq('curriculum_id', id)
           .maybeSingle();
         return { data: result.data, error: result.error };
@@ -460,11 +452,6 @@ function normalizeUnknownText(value: unknown) {
 
 function normalizeUnknownTextarea(value: unknown) {
   return normalizeTextarea(isString(value) ? value : null);
-}
-
-function normalizeUnknownDuration(value: unknown) {
-  const duration = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(duration) && duration > 0 ? duration : null;
 }
 
 function errorMessage(error: unknown) {

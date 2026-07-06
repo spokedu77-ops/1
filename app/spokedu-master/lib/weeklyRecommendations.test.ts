@@ -12,7 +12,6 @@ function program(
     title,
     category: '',
     grade: '',
-    duration: 10,
     space: '',
     description: '',
     steps: [],

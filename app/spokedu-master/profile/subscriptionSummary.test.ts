@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  canStartPaidPlanCheckout,
   formatSubscriptionEndDate,
+  getPaymentPageMode,
   getSubscriptionDisplaySummary,
   getSubscriptionPlanLabel,
   getSubscriptionPrimaryHref,
@@ -69,6 +71,39 @@ describe('subscriptionSummary', () => {
       isDirectBillingPlan: true,
       canCancel: true,
       canUseSpomatMemberPrice: false,
+      canUpgradeToPremium: true,
+      upgradeHref: '/spokedu-master/payment?plan=premium',
+      upgradeLabel: '프리미엄으로 업그레이드',
+    });
+  });
+
+  it('exposes lite to premium upgrade checkout on payment page', () => {
+    const value = summary({
+      plan: 'lite',
+      status: 'active',
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+    });
+
+    expect(getPaymentPageMode(value)).toBe('liteUpgrade');
+    expect(canStartPaidPlanCheckout(value, 'premium')).toBe(true);
+    expect(canStartPaidPlanCheckout(value, 'lite')).toBe(false);
+  });
+
+  it('blocks new checkout for active premium subscriptions', () => {
+    const value = summary({
+      plan: 'premium',
+      status: 'active',
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+    });
+
+    expect(getPaymentPageMode(value)).toBe('blocked');
+    expect(canStartPaidPlanCheckout(value, 'premium')).toBe(false);
+    expect(canStartPaidPlanCheckout(value, 'lite')).toBe(false);
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      canUpgradeToPremium: false,
+      upgradeHref: null,
     });
   });
 

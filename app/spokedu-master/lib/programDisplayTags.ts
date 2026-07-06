@@ -1,8 +1,3 @@
-export const MASTER_DURATION_TAGS = [
-  { label: '5~10분', value: 10 },
-  { label: '10~15분', value: 15 },
-] as const;
-
 export const MASTER_SPACE_TAGS = ['체육관', '교실'] as const;
 export const MASTER_TARGET_TAGS = ['미취학', '초등학생 이상'] as const;
 export const MASTER_PARTICIPANT_FORMATS = ['개인전', '2인 1조', '팀전'] as const;
@@ -19,20 +14,6 @@ function splitStoredTags(value: string | null | undefined): string[] {
     .split(/[,|/·\n]+/)
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-export function normalizeMasterDuration(value: number | string | null | undefined): 10 | 15 | null {
-  if (value == null || value === '') return null;
-  const numeric = typeof value === 'number' ? value : Number(String(value).replace(/[^0-9.]/g, ''));
-  if (!Number.isFinite(numeric) || numeric <= 0) return null;
-  return numeric <= 10 ? 10 : 15;
-}
-
-export function displayMasterDuration(value: number | string | null | undefined): string {
-  const normalized = normalizeMasterDuration(value);
-  if (normalized === 10) return '5~10분';
-  if (normalized === 15) return '10~15분';
-  return '';
 }
 
 export function parseMasterSpaces(value: string | null | undefined): string[] {

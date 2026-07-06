@@ -111,8 +111,8 @@ The inspection script reports:
 Current code expectations to compare after the SQL result is available:
 
 - Identity/key column expected by code: `curriculum_id`.
-- Admin/program GET reads: `curriculum_id`, `sm_tags`, `sm_theme`, `sm_grade`, `sm_space`, `sm_duration`, `sm_is_pro`, `sm_is_new`, `sm_is_hot`, `sm_display_order`, `sm_objective`, `sm_development_focus`, `sm_coach_script`, `sm_parent_note`, `sm_related_spomove_ids`, `sm_thumbnail_url`, `sm_hero_image_url`, `sm_setup_image_url`, `sm_gallery_image_urls`, `sm_briefing_notes`, `sm_variation_method`.
-- Admin/program save writes: `curriculum_id`, `sm_theme`, `sm_grade`, `sm_tags`, `sm_space`, `sm_duration`, `sm_setup_image_url`, `sm_coach_script`, `sm_briefing_notes`, `sm_variation_method`.
+- Admin/program GET reads: `curriculum_id`, `sm_tags`, `sm_theme`, `sm_grade`, `sm_space`, `sm_is_pro`, `sm_is_new`, `sm_is_hot`, `sm_display_order`, `sm_objective`, `sm_development_focus`, `sm_coach_script`, `sm_parent_note`, `sm_related_spomove_ids`, `sm_thumbnail_url`, `sm_hero_image_url`, `sm_setup_image_url`, `sm_gallery_image_urls`, `sm_briefing_notes`, `sm_variation_method`.
+- Admin/program save writes: `curriculum_id`, `sm_theme`, `sm_grade`, `sm_tags`, `sm_space`, `sm_setup_image_url`, `sm_coach_script`, `sm_briefing_notes`, `sm_variation_method`.
 - Home featured route reads/writes: `curriculum_id`, `sm_is_hot`, `sm_display_order`.
 - Sync/seed helpers expect conflict handling on `curriculum_id` and may seed `sm_tags` and `sm_gallery_image_urls`.
 - Existing alter migrations add lesson-detail columns: `sm_objective`, `sm_development_focus`, `sm_coach_script`, `sm_parent_note`, `sm_related_spomove_ids`.

@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS spokedu_master_program_meta (
   sm_theme        TEXT    DEFAULT NULL,            -- 테마 분류 (공간 반응, 리듬 협응 등)
   sm_grade        TEXT    DEFAULT NULL,            -- 대상 연령 ('유아', '초등 저학년', '전학년' 등)
   sm_space        TEXT    DEFAULT NULL,            -- 공간 요건 ('좁은 공간', '넓은 공간', '실외 가능' 등)
-  sm_duration     INTEGER DEFAULT NULL,            -- 수업 시간(분) 오버라이드
   sm_is_pro       BOOLEAN DEFAULT FALSE,           -- PRO 전용 게이팅
   sm_is_new       BOOLEAN DEFAULT FALSE,           -- NEW 배지
   sm_is_hot       BOOLEAN DEFAULT FALSE,           -- HOT 배지

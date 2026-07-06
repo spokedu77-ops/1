@@ -18,7 +18,6 @@ import {
 } from '../officialSpomovePresets';
 import {
   SPOMOVE_KEY_ACTION_LABELS,
-  SPOMOVE_RESPONSE_TYPE_LABELS,
   SPOMOVE_TARGET_GROUP_LABELS,
   SPOMOVE_THINKING_LEVEL_LABELS,
   getOfficialSpomovePresetGuide,
@@ -156,8 +155,8 @@ function OfficialEngineBriefing({
             <p className="mt-2 text-sm font-black text-white">{SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">반응 유형</p>
-            <p className="mt-2 text-sm font-black text-white">{SPOMOVE_RESPONSE_TYPE_LABELS[guide.responseType]}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">반응 축</p>
+            <p className="mt-2 text-sm font-black text-white">{preset.axisTitle}</p>
           </div>
           <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:col-span-4">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">주요 동작</p>
@@ -189,7 +188,7 @@ function OfficialEngineBriefing({
             className="inline-flex h-14 items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5 fill-black" />
-            {startDisabled ? 'BGM 불러오는 중' : '큰 화면으로 실행'}
+            {startDisabled ? '준비 중…' : '큰 화면으로 실행'}
           </button>
         </div>
       </section>

@@ -15,6 +15,8 @@ import {
   type MasterProductCatalogItem,
 } from '../lib/productCatalog';
 import {
+  canStartPaidPlanCheckout,
+  getPaymentPageMode,
   getSubscriptionDisplaySummary,
   normalizeSubscriptionSummary,
   type SubscriptionSummaryData,
@@ -59,12 +61,16 @@ function PlanCard({
   selected,
   disabled,
   working,
+  actionLabel,
+  disabledHint,
   onSelect,
 }: {
   product: MasterProductCatalogItem;
   selected: boolean;
   disabled: boolean;
   working: boolean;
+  actionLabel?: string;
+  disabledHint?: string;
   onSelect: () => void;
 }) {
   const planId = product.serverPlanKey;
@@ -111,8 +117,13 @@ function PlanCard({
         style={{ background: 'var(--spm-acc)' }}
       >
         {working && selected ? <Loader2 size={15} className="animate-spin" /> : null}
-        {productShortName(product)} 이용권 선택
+        {actionLabel ?? `${productShortName(product)} 이용권 선택`}
       </button>
+      {disabled && disabledHint ? (
+        <p className="mt-3 text-center text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+          {disabledHint}
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -134,10 +145,14 @@ function PaymentContent() {
 
   const directProducts = useMemo(() => getDirectPurchaseMasterProducts(), []);
   const subscriptionDisplay = getSubscriptionDisplaySummary(subscription);
-  const blocksNewPayment =
-    subscriptionDisplay.state === 'active' ||
-    subscriptionDisplay.state === 'cancelScheduled' ||
-    subscriptionDisplay.state === 'managed';
+  const paymentPageMode = getPaymentPageMode(subscription);
+  const showPlanSelection = paymentPageMode === 'choosePlan' || paymentPageMode === 'liteUpgrade';
+
+  useEffect(() => {
+    if (paymentPageMode === 'liteUpgrade') {
+      setSelectedPlan('premium');
+    }
+  }, [paymentPageMode]);
 
   useEffect(() => {
     const script = document.querySelector<HTMLScriptElement>('script[data-toss-payments="true"]');
@@ -221,8 +236,12 @@ function PaymentContent() {
       setError('결제를 시작하려면 먼저 로그인해 주세요.');
       return;
     }
-    if (blocksNewPayment) {
-      setError('현재 이용권이 활성화되어 있어 새 결제를 시작할 수 없습니다.');
+    if (!canStartPaidPlanCheckout(subscription, plan)) {
+      if (paymentPageMode === 'liteUpgrade' && plan === 'lite') {
+        setError('라이트 이용 중에는 프리미엄으로 업그레이드할 수 있습니다.');
+      } else {
+        setError('현재 이용권 상태에서는 이 결제를 시작할 수 없습니다.');
+      }
       return;
     }
     const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY ?? '';
@@ -259,10 +278,14 @@ function PaymentContent() {
       <main className="mx-auto w-full max-w-[1080px] space-y-5 px-5 pb-16 sm:px-8">
         <section className="rounded-[20px] p-5 sm:p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="text-[28px] font-black leading-tight sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>
-            라이트와 프리미엄 중 필요한 이용권을 선택하세요.
+            {paymentPageMode === 'liteUpgrade'
+              ? '프리미엄으로 업그레이드하세요.'
+              : '라이트와 프리미엄 중 필요한 이용권을 선택하세요.'}
           </h2>
           <p className="mt-3 max-w-[720px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-            결제수단 인증 후 첫 결제가 성공한 경우에만 구독이 활성화됩니다.
+            {paymentPageMode === 'liteUpgrade'
+              ? 'SPOMOVE·PRO 자료를 포함한 전체 기능을 이용할 수 있습니다. 결제수단 인증 후 차액 결제로 즉시 업그레이드됩니다.'
+              : '결제수단 인증 후 첫 결제가 성공한 경우에만 구독이 활성화됩니다.'}
           </p>
         </section>
 
@@ -270,7 +293,7 @@ function PaymentContent() {
           <section className="flex h-28 items-center justify-center rounded-[18px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <Loader2 size={22} className="animate-spin" color="var(--spm-t3)" />
           </section>
-        ) : blocksNewPayment ? (
+        ) : !showPlanSelection ? (
           <section className="rounded-[18px] p-5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             <CheckCircle2 size={44} color="var(--spm-grn)" className="mx-auto" />
             <h2 className="mt-3 text-[20px] font-black">{subscriptionDisplay.planLabel} 이용 중</h2>
@@ -285,17 +308,38 @@ function PaymentContent() {
           </section>
         ) : (
           <>
+            {paymentPageMode === 'liteUpgrade' ? (
+              <section className="rounded-[18px] p-4" style={{ background: 'rgba(99,102,241,0.10)', border: '1px solid rgba(99,102,241,0.28)' }}>
+                <p className="text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
+                  현재 <strong>{subscriptionDisplay.planLabel}</strong> 이용 중입니다. 프리미엄으로 업그레이드하면 SPOMOVE와 PRO 자료를 바로 이용할 수 있습니다.
+                </p>
+              </section>
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2">
-              {directProducts.map((product) => (
-                <PlanCard
-                  key={product.id}
-                  product={product}
-                  selected={selectedPlan === product.id}
-                  disabled={blocksNewPayment}
-                  working={workingPlan === product.id}
-                  onSelect={() => startBillingAuth(product.serverPlanKey as PaidPlanId)}
-                />
-              ))}
+              {directProducts.map((product) => {
+                const planId = product.serverPlanKey as PaidPlanId;
+                const canCheckout = canStartPaidPlanCheckout(subscription, planId);
+                return (
+                  <PlanCard
+                    key={product.id}
+                    product={product}
+                    selected={selectedPlan === product.id}
+                    disabled={!canCheckout}
+                    working={workingPlan === product.id}
+                    actionLabel={
+                      paymentPageMode === 'liteUpgrade' && planId === 'premium'
+                        ? '프리미엄으로 업그레이드'
+                        : undefined
+                    }
+                    disabledHint={
+                      paymentPageMode === 'liteUpgrade' && planId === 'lite'
+                        ? '현재 라이트 이용 중입니다.'
+                        : undefined
+                    }
+                    onSelect={() => startBillingAuth(planId)}
+                  />
+                );
+              })}
             </div>
 
             <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>

@@ -11,6 +11,7 @@ import { BottomSheet } from '../ui/BottomSheet';
 import { LessonPreviewContent } from './LessonPreviewContent';
 
 function hasSpomoveLink(program: Program) {
+  if (program.hasSpomoveConnection) return true;
   return getSupportedOfficialSpomovePresets(program).length > 0;
 }
 

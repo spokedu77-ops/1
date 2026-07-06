@@ -14,7 +14,6 @@ function program(overrides: Partial<Program> = {}): Program {
     title: '관리자 제목',
     category: '협동',
     grade: '미취학',
-    duration: 15,
     space: '교실',
     description: '레거시 설명',
     steps: ['활동 방법 1'],

@@ -86,6 +86,9 @@ export function resolveProgramHero(program: Program): string | undefined {
 }
 
 export function programHasPlayableVideo(program: Program): boolean {
+  if (program.hasReferenceVideo && !program.lessonDetail?.videoUrl) {
+    return true;
+  }
   const videoUrl = trustedVideoUrl(program);
   return Boolean(
     getVideoEmbedUrl(videoUrl) || isDirectVideoUrl(videoUrl) || getExternalVideoUrl(videoUrl),

@@ -45,7 +45,6 @@ function validMeta(overrides: Record<string, unknown> = {}) {
     sm_theme: 'movement',
     sm_grade: 'ALL',
     sm_space: 'ALL',
-    sm_duration: 10,
     sm_is_pro: false,
     sm_is_new: false,
     sm_is_hot: false,
@@ -181,7 +180,7 @@ describe('SPOKEDU MASTER program GET validation', () => {
       spokedu_master_program_meta: {
         data: [
           validMeta({ curriculum_id: 101, sm_display_order: 20 }),
-          validMeta({ curriculum_id: 202, sm_display_order: 10, sm_duration: 0 }),
+          validMeta({ curriculum_id: 202, sm_display_order: 10 }),
         ],
         error: null,
       },
@@ -189,7 +188,7 @@ describe('SPOKEDU MASTER program GET validation', () => {
         data: [
           validOverlay({ source_center_curriculum_id: 101, updated_at: '2026-06-25T00:00:00.000Z', title: 'Old title' }),
           validOverlay({ source_center_curriculum_id: 101, updated_at: '2026-06-26T00:00:00.000Z', title: 'Newest title' }),
-          validOverlay({ source_center_curriculum_id: 202, title: 'Invalid duration' }),
+          validOverlay({ source_center_curriculum_id: 202, title: 'Second program' }),
         ],
         error: null,
       },
@@ -203,13 +202,11 @@ describe('SPOKEDU MASTER program GET validation', () => {
     expect(result.body.data[0]).toEqual(expect.objectContaining({
       id: '101',
       title: 'Newest title',
-      duration: 10,
       homeSortOrder: 20,
     }));
     expect(result.body.data[1]).toEqual(expect.objectContaining({
       id: '202',
-      title: 'Invalid duration',
-      duration: 0,
+      title: 'Second program',
       homeSortOrder: 10,
     }));
     expect(result.body.data[0].steps).toEqual(['Step one', 'Step two']);

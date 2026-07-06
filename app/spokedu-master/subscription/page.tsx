@@ -70,6 +70,16 @@ function SubscriptionStatusCard({
         </button>
       ) : null}
 
+      {display.canUpgradeToPremium && display.upgradeHref && display.upgradeLabel ? (
+        <Link
+          href={display.upgradeHref}
+          className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
+          style={{ background: 'var(--spm-acc)' }}
+        >
+          {display.upgradeLabel}
+        </Link>
+      ) : null}
+
       {display.primaryHref === '/spokedu-master/payment' && display.primaryLabel ? (
         <Link
           href="/spokedu-master/payment"

@@ -6,7 +6,6 @@ export const PROGRAMS: Program[] = [
     title: '펀스틱 펜싱 Funstick Fencing',
     category: '민첩·반응',
     grade: '초등 3학년 이상',
-    duration: 20,
     space: '실내 체육관 · 넓은 활동 공간',
     description:
       '부드러운 펀스틱과 풍선 목표물을 활용해 거리 판단, 반응 타이밍, 균형 조절, 공격·방어 전환을 안전하게 경험하는 대체 펜싱 프로그램입니다.',
@@ -80,7 +79,6 @@ export const PROGRAMS: Program[] = [
     title: '8자 드릴 민첩성 트레이닝',
     category: '민첩·반응',
     grade: '초등 3~6학년',
-    duration: 15,
     space: '좁은 실내 공간',
     description:
       '마커콘을 8자 패턴으로 통과하며 방향 전환, 가속, 감속, 재출발 리듬을 익히는 좁은 공간형 SPOMOVE 연계 수업입니다.',
@@ -152,7 +150,6 @@ export const PROGRAMS: Program[] = [
     title: '팀 릴레이 챌린지',
     category: '협동',
     grade: '전 학년',
-    duration: 20,
     space: '넓은 공간',
     description:
       '팀별 릴레이로 출발 반응, 역할 수행, 협동 커뮤니케이션을 함께 끌어올리는 수업입니다. 기록 경쟁보다 연결과 팀 피드백에 초점을 둡니다.',
@@ -224,7 +221,6 @@ export const PROGRAMS: Program[] = [
     title: '색깔 구역 발 도장',
     category: '반응·인지',
     grade: '유아~초등 2학년',
-    duration: 15,
     space: '실내 · 좁은 공간',
     description:
       '바닥에 깔린 색깔 원판을 보고, SPOMOVE 화면 신호에 맞는 색을 빠르게 찾아 발로 밟는 인지·반응 수업입니다. 준비물을 최소화해 어디서든 바로 운영할 수 있습니다.',
@@ -293,7 +289,6 @@ export const PROGRAMS: Program[] = [
     title: '짝 미러 반응 드릴',
     category: '협응·반응',
     grade: '초등 전 학년',
-    duration: 15,
     space: '좁은 공간',
     description:
       '마주 선 짝의 움직임을 0.5초 안에 그대로 따라 하며 시각 반응과 몸 협응을 동시에 끌어올리는 수업입니다. 준비물 없이 SPOMOVE 신호만으로 수업 전환에 바로 활용할 수 있습니다.',
@@ -362,7 +357,6 @@ export const PROGRAMS: Program[] = [
     title: '속도 사다리 스프린트',
     category: '민첩·스피드',
     grade: '초등 4~6학년',
-    duration: 20,
     space: '체육관 또는 복도',
     description:
       '속도 사다리를 활용해 발 빠른 스텝, 방향 전환, 출발 반응을 단계별로 훈련하는 수업입니다. SPOMOVE 출발 신호를 연결해 반응 출발과 스프린트를 하나의 흐름으로 경험합니다.',
@@ -434,7 +428,6 @@ export const PROGRAMS: Program[] = [
     title: '균형 목표 보행',
     category: '균형·자세 조절',
     grade: '유아~초등 2학년',
-    duration: 15,
     space: '실내 · 좁은 공간',
     description:
       '바닥 테이프 선 위를 걸으며 균형 감각, 시선 고정, 자세 인식을 단계별로 경험하는 수업입니다. 테이프 한 줄로 바로 시작할 수 있어 준비 시간이 거의 없습니다.',
@@ -503,7 +496,6 @@ export const PROGRAMS: Program[] = [
     title: '그림자 태그 게임',
     category: '민첩·사회성',
     grade: '초등 전 학년',
-    duration: 20,
     space: '넓은 공간',
     description:
       '술래가 도망자의 발 그림자를 밟으면 역할이 바뀌는 변형 태그 게임입니다. SPOMOVE 정지 신호를 추가해 멈춤·출발 판단과 반응 억제를 함께 경험합니다.',
@@ -575,7 +567,6 @@ export const PROGRAMS: Program[] = [
     title: '리듬 바디 퍼커션',
     category: '리듬·협응',
     grade: '유아~초등 3학년',
-    duration: 15,
     space: '실내 · 좁은 공간',
     description:
       '손뼉, 무릎 치기, 발 구르기로 리듬 패턴을 만들고 함께 맞추는 수업입니다. 준비물 없이 몸 하나로 진행하며, SPOMOVE 신호를 리듬 전환 트리거로 연결합니다.',

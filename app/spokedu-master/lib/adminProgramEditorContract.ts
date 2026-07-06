@@ -9,7 +9,6 @@ export type AdminProgramSaveInput = {
   target: string;
   tags: string[];
   space: string;
-  duration: number | null;
   setupImageUrl: string;
   coachScript: string;
   briefingNotes: string;
@@ -57,9 +56,6 @@ export function buildAdminProgramSavePayload(input: AdminProgramSaveInput) {
       sm_grade: normalizeNullableText(input.target),
       sm_tags: normalizeAdminTags(input.tags),
       sm_space: normalizeNullableText(input.space),
-      sm_duration: Number.isFinite(input.duration) && Number(input.duration) > 0
-        ? Number(input.duration)
-        : null,
       sm_setup_image_url: normalizeNullableText(input.setupImageUrl),
       sm_coach_script: normalizeTextarea(input.coachScript),
       sm_briefing_notes: normalizeTextarea(input.briefingNotes),

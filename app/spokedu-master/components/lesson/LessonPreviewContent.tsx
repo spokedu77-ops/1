@@ -39,7 +39,7 @@ export function LessonPreviewContent({
     (previewEquipment.length > 0 ||
       Boolean(previewScript) ||
       previewRules.length > 0);
-  const meta = [model.target, program.duration ? `${program.duration}분` : null, model.space].filter(Boolean).slice(0, 3);
+  const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 
   return (
     <div className="flex flex-col gap-3">

@@ -42,7 +42,57 @@ export type SubscriptionDisplaySummary = {
   isDirectBillingPlan: boolean;
   canCancel: boolean;
   canUseSpomatMemberPrice: boolean;
+  canUpgradeToPremium: boolean;
+  upgradeHref: '/spokedu-master/payment?plan=premium' | null;
+  upgradeLabel: string | null;
 };
+
+export type PaymentPageMode = 'choosePlan' | 'liteUpgrade' | 'blocked';
+
+const UPGRADE_PREMIUM_HREF = '/spokedu-master/payment?plan=premium' as const;
+
+function inactiveUpgradeFields(): Pick<SubscriptionDisplaySummary, 'canUpgradeToPremium' | 'upgradeHref' | 'upgradeLabel'> {
+  return {
+    canUpgradeToPremium: false,
+    upgradeHref: null,
+    upgradeLabel: null,
+  };
+}
+
+function liteUpgradeFields(summary: SubscriptionSummaryData): Pick<SubscriptionDisplaySummary, 'canUpgradeToPremium' | 'upgradeHref' | 'upgradeLabel'> {
+  const canUpgrade = summary.plan === 'lite' && summary.canCancelAutoBilling && !summary.cancelAtPeriodEnd;
+  return {
+    canUpgradeToPremium: canUpgrade,
+    upgradeHref: canUpgrade ? UPGRADE_PREMIUM_HREF : null,
+    upgradeLabel: canUpgrade ? '프리미엄으로 업그레이드' : null,
+  };
+}
+
+export function getPaymentPageMode(summary: SubscriptionSummaryData | null): PaymentPageMode {
+  const display = getSubscriptionDisplaySummary(summary);
+  if (display.state === 'managed' || display.state === 'cancelScheduled') return 'blocked';
+  if (display.state === 'none' || display.state === 'ended' || display.state === 'loading') return 'choosePlan';
+  if (
+    display.state === 'active' &&
+    summary?.plan === 'lite' &&
+    summary.canCancelAutoBilling &&
+    !summary.cancelAtPeriodEnd
+  ) {
+    return 'liteUpgrade';
+  }
+  if (display.state === 'active') return 'blocked';
+  return 'choosePlan';
+}
+
+export function canStartPaidPlanCheckout(
+  summary: SubscriptionSummaryData | null,
+  plan: 'lite' | 'premium',
+): boolean {
+  const mode = getPaymentPageMode(summary);
+  if (mode === 'choosePlan') return true;
+  if (mode === 'liteUpgrade') return plan === 'premium';
+  return false;
+}
 
 export function normalizeSubscriptionSummary(value: unknown): SubscriptionSummaryData {
   const input = value && typeof value === 'object' ? value as Record<string, unknown> : {};
@@ -132,6 +182,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
+      ...inactiveUpgradeFields(),
     };
   }
 
@@ -151,11 +202,13 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
+      ...inactiveUpgradeFields(),
     };
   }
 
   if (summary.status === 'active' && (summary.plan === 'lite' || summary.plan === 'premium' || summary.plan === 'pro')) {
     const endDate = formatSubscriptionEndDate(getPeriodEnd(summary));
+    const upgradeFields = liteUpgradeFields(summary);
 
     if (summary.cancelAtPeriodEnd) {
       return {
@@ -171,6 +224,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
         isDirectBillingPlan: true,
         canCancel: false,
         canUseSpomatMemberPrice: summary.plan === 'premium' || summary.plan === 'pro',
+        ...inactiveUpgradeFields(),
       };
     }
 
@@ -184,11 +238,14 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateText: formatSubscriptionEndDate(summary.nextBillingAt),
       amountText: getAmountText(summary.plan),
       description: summary.canCancelAutoBilling
-        ? '매월 결제일에 자동 결제됩니다.'
+        ? summary.plan === 'lite'
+          ? '라이트 이용 중입니다. SPOMOVE·PRO 자료는 프리미엄에서 이용할 수 있습니다.'
+          : '매월 결제일에 자동 결제됩니다.'
         : '수동 발급 또는 기관 관리 이용권입니다. 변경이 필요하면 고객센터로 문의해 주세요.',
       isDirectBillingPlan: summary.canCancelAutoBilling,
       canCancel: summary.canCancelAutoBilling,
       canUseSpomatMemberPrice: summary.plan === 'premium' || summary.plan === 'pro',
+      ...upgradeFields,
     };
   }
 
@@ -206,6 +263,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
+      ...inactiveUpgradeFields(),
     };
   }
 
@@ -222,5 +280,6 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     isDirectBillingPlan: false,
     canCancel: false,
     canUseSpomatMemberPrice: false,
+    ...inactiveUpgradeFields(),
   };
 }

@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { getSafeMasterErrorMessage } from '../lib/clientErrors';
 import { toClassRecord } from '../lib/operationalDataAdapter';
-import { displayMasterDuration, normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
+import { normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
@@ -141,11 +141,10 @@ function buildFocusText(focus: string): string {
   return `${parts.slice(0, 2).join(', ')} 등`;
 }
 
-function buildContextPhrase(target: string, space: string, duration: string): string {
+function buildContextPhrase(target: string, space: string): string {
   const parts: string[] = [];
   if (target) parts.push(`${addJosa(target, '을', '를')} 대상으로`);
   if (space) parts.push(`${space}에서`);
-  if (duration) parts.push(`${duration} 동안`);
   return parts.join(' ');
 }
 
@@ -201,11 +200,10 @@ function buildExplanation(input: {
     : clean(detail?.developmentFocus, program.tags.slice(0, 3).join(', '));
   const target = clean(normalizeMasterTarget(program.grade), '');
   const space = clean(normalizeMasterSpace(program.space), '');
-  const duration = displayMasterDuration(program.duration);
   const allSteps = getActivityFlow(program);
   const noteLine = note.trim() ? ` 특이사항: ${note.trim()}` : '';
   const focusText = buildFocusText(focus);
-  const contextPhrase = buildContextPhrase(target, space, duration);
+  const contextPhrase = buildContextPhrase(target, space);
   const reactionText = buildReactionSentence(reaction);
   const mood_ = moodPhrase(mood);
 
@@ -537,7 +535,7 @@ function ReportContent() {
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>수업 자료 기반 문구</p>
           <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program.title} 설명 만들기</h2>
           <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
-            {compactList([normalizeMasterTarget(program.grade), normalizeMasterSpace(program.space), displayMasterDuration(program.duration)])}
+            {compactList([normalizeMasterTarget(program.grade), normalizeMasterSpace(program.space)])}
           </p>
           {activityPreview.length ? (
             <p className="mt-3 line-clamp-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
@@ -598,7 +596,7 @@ function ReportContent() {
                     style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
                   >
                     <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
-                    <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space), displayMasterDuration(item.duration)]) || item.category}</span>
+                    <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space)]) || item.category}</span>
                   </button>
                 ))
               ) : (

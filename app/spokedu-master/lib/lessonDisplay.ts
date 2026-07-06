@@ -1,7 +1,6 @@
 import { cleanText } from './clean';
 import { normalizeLessonTheme } from './lessonTheme';
 import {
-  displayMasterDuration,
   normalizeMasterSpace,
   normalizeMasterTarget,
   parseMasterTargets,
@@ -94,10 +93,5 @@ export function getLessonMovement(program: Program) {
 
 export function getLessonSpace(program: Program) {
   const value = normalizeMasterSpace(program.space);
-  return isLessonPlaceholder(value) ? '' : value;
-}
-
-export function getLessonTime(program: Program) {
-  const value = displayMasterDuration(program.duration);
   return isLessonPlaceholder(value) ? '' : value;
 }

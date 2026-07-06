@@ -85,7 +85,13 @@ function tagDisplayLabel(group: FilterGroupKey, value: string): string {
 }
 
 function hasSpomoveLink(program: Program) {
+  if (program.hasSpomoveConnection) return true;
   return getSupportedOfficialSpomovePresets(program).length > 0;
+}
+
+function hasReferenceVideo(program: Program) {
+  if (program.hasReferenceVideo) return true;
+  return Boolean(program.lessonDetail?.videoUrl);
 }
 
 function normalizeTitle(title: string) {
@@ -120,7 +126,7 @@ function getStructuredValues(program: Program, group: FilterGroupKey): string[] 
     return (LESSON_THEME_OPTIONS as readonly string[]).includes(theme) ? [theme] : [];
   }
   return [
-    ...(program.lessonDetail?.videoUrl ? [MATERIAL_VIDEO_VALUE] : []),
+    ...(hasReferenceVideo(program) ? [MATERIAL_VIDEO_VALUE] : []),
     ...(hasSpomoveLink(program) ? [MATERIAL_SPOMOVE_VALUE] : []),
   ];
 }
@@ -174,18 +180,23 @@ function getCardMetaLine(program: Program): string {
   return [target, space, core].filter(Boolean).join(' · ');
 }
 
-function getCardDecisionItems(program: Program) {
+function getCardDecisionItems(program: Program, locked: boolean) {
   const target = parseMasterTargets(program.grade)[0];
   const space = parseMasterSpaces(program.space)[0];
   const bodyFn = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction)[0];
   const movement = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.movement)[0];
   const activityType = bodyFn ?? movement ?? getLessonTheme(program);
+  const equipmentLabel =
+    locked && program.isPro
+      ? '준비물 · 프리미엄'
+      : program.equipment.length
+        ? `준비물 ${program.equipment.length}개`
+        : '준비물 없음';
   return [
     target ? `대상 ${TARGET_LABEL[target] ?? target}` : null,
-    program.duration ? `${program.duration}분` : null,
     space && !isPlaceholderText(space) ? `공간 ${space}` : null,
     activityType ? `활동 ${MOVEMENT_LABEL[activityType] ?? activityType}` : null,
-    program.equipment.length ? `준비물 ${program.equipment.length}개` : '준비물 없음',
+    equipmentLabel,
   ].filter(Boolean);
 }
 
@@ -222,7 +233,7 @@ function ProgramCard({
   const heroImage = getHeroImage(program);
   const meta = getCardMetaLine(program);
   const hasVideo = programHasPlayableVideo(program);
-  const decisionItems = getCardDecisionItems(program);
+  const decisionItems = getCardDecisionItems(program, locked);
 
   return (
     <article className="group relative">

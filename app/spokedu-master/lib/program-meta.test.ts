@@ -15,7 +15,6 @@ function program(overrides: Partial<Program> = {}): Program {
     title: 'Balance lesson',
     category: 'movement',
     grade: 'grade 1',
-    duration: 15,
     space: 'classroom',
     description: 'Use this lesson before a weekly class.',
     steps: ['Set cones', 'Run the relay'],

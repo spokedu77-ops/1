@@ -29,7 +29,6 @@ describe('enrichProgramsWithStaticVisuals', () => {
       category: '관리자 테마',
       grade: '관리자 대상',
       space: '관리자 공간',
-      duration: 35,
       tags: ['관리자 태그'],
       equipment: ['관리자 준비물'],
       steps: ['관리자 활동 방법'],
@@ -46,7 +45,6 @@ describe('enrichProgramsWithStaticVisuals', () => {
     expect(result.category).toBe('관리자 테마');
     expect(result.grade).toBe('관리자 대상');
     expect(result.space).toBe('관리자 공간');
-    expect(result.duration).toBe(35);
     expect(result.tags).toEqual(['관리자 태그']);
     expect(result.equipment).toEqual(['관리자 준비물']);
     expect(result.steps).toEqual(['관리자 활동 방법']);

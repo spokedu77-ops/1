@@ -6,7 +6,6 @@ import type { Program } from '@/app/spokedu-master/types';
 import { pickBestHeroUrl } from '@/app/spokedu-master/lib/program-visual';
 import {
   getMasterParticipantFormat,
-  normalizeMasterDuration,
   normalizeMasterSpace,
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
@@ -172,7 +171,6 @@ type MetaRow = {
   sm_theme: string | null;
   sm_grade: string | null;
   sm_space: string | null;
-  sm_duration: number | null;
   sm_is_pro: boolean;
   sm_is_new: boolean;
   sm_is_hot: boolean;
@@ -247,7 +245,6 @@ function getMasterProgramValidationIssues(input: {
   categoryName: string;
   grade: string;
   space: string;
-  duration: number;
   steps: string[];
 }): ProgramValidationIssue[] {
   const issues: ProgramValidationIssue[] = [];
@@ -281,7 +278,6 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
   const setupNotes = extractAnySectionLines(meta?.sm_briefing_notes, ['세팅', '준비', '사전 준비']);
   const displayGrade = normalizeMasterTarget(meta?.sm_grade ?? '');
   const displaySpace = normalizeMasterSpace(meta?.sm_space ?? '');
-  const displayDuration = normalizeMasterDuration(meta?.sm_duration) ?? 0;
   const issues = getMasterProgramValidationIssues({
     row,
     meta,
@@ -291,7 +287,6 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
     categoryName,
     grade: displayGrade,
     space: displaySpace,
-    duration: displayDuration,
     steps,
   });
 
@@ -323,7 +318,6 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
     title,
     category: categoryName,
     grade: displayGrade,
-    duration: displayDuration,
     space: displaySpace,
     description: '',
     steps,
@@ -331,6 +325,8 @@ function buildMasterProgram(row: CurrRow, index: number, meta: MetaRow | undefin
     tags,
     colors,
     isPro: meta?.sm_is_pro ?? false,
+    hasReferenceVideo: Boolean(normalizeVideoUrl(videoUrl)),
+    hasSpomoveConnection: relatedSpomoveIds.length > 0,
     isNew: meta?.sm_is_new ?? false,
     isHot: meta?.sm_is_hot ?? false,
     homeSortOrder: meta?.sm_display_order ?? (typeof row.display_order === 'number' ? row.display_order : 5000 + index),
@@ -404,7 +400,7 @@ export async function GET() {
   if (curriculumIds.length > 0) {
     const { data: metaRows, error: metaErr } = await supabase
       .from('spokedu_master_program_meta')
-      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_duration,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
+      .select('curriculum_id,sm_tags,sm_theme,sm_grade,sm_space,sm_is_pro,sm_is_new,sm_is_hot,sm_display_order,sm_colors,sm_objective,sm_development_focus,sm_coach_script,sm_parent_note,sm_related_spomove_ids,sm_thumbnail_url,sm_hero_image_url,sm_setup_image_url,sm_gallery_image_urls,sm_briefing_notes,sm_variation_method')
       .in('curriculum_id', curriculumIds);
     if (metaErr || !metaRows) {
       await reportProgramSourceFailure(metaErr, 'spokedu_master_program_meta');
@@ -485,7 +481,7 @@ export async function PATCH(request: Request) {
     return privateNoStoreJson({ error: 'Invalid JSON' }, { status: 400 });
   }
 
-  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_duration', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids', 'sm_thumbnail_url', 'sm_hero_image_url', 'sm_setup_image_url', 'sm_gallery_image_urls', 'sm_briefing_notes', 'sm_variation_method'];
+  const allowed = ['sm_tags', 'sm_theme', 'sm_grade', 'sm_space', 'sm_is_pro', 'sm_is_new', 'sm_is_hot', 'sm_display_order', 'sm_colors', 'sm_objective', 'sm_development_focus', 'sm_coach_script', 'sm_parent_note', 'sm_related_spomove_ids', 'sm_thumbnail_url', 'sm_hero_image_url', 'sm_setup_image_url', 'sm_gallery_image_urls', 'sm_briefing_notes', 'sm_variation_method'];
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {
     if (key in body) patch[key] = body[key];
