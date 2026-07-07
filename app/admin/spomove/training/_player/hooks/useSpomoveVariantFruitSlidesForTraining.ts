@@ -181,7 +181,9 @@ export function useSpomoveAllVariantSlidesForTraining(enabled: boolean) {
 
       const merged: FruitSlide[] = [];
       for (const packId of ALL_VARIANT_PACK_IDS) {
-        const row = (data ?? []).find((r) => r.id === packId);
+        const row = (data ?? []).find(
+          (r: { id: string; assets_json: unknown; updated_at?: string | null }) => r.id === packId,
+        );
         if (!row) continue;
         merged.push(
           ...slidesFromPackRow(

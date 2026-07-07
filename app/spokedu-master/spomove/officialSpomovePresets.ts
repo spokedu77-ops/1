@@ -334,7 +334,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
     ],
-  }
+  },
   // 반응인지 7번 · 변형 사분할 1단계
   {
     id: 'reaction-cognition-mq1-32',
@@ -361,7 +361,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
     ],
-  }
+  },
   // 반응인지 8번 · 변형 사분할 2단계
   {
     id: 'reaction-cognition-mq2-33',
@@ -388,7 +388,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
     ],
-  }
+  },
   // 반응인지 9번 · 변형 사분할 3단계
   {
     id: 'reaction-cognition-mq3-34',
@@ -415,7 +415,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
     ],
-  }
+  },
   // 반응인지 10번 · 변형 사분할 4단계
   {
     id: 'reaction-cognition-mq4-35',
@@ -442,7 +442,7 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
     ],
-  }
+  },
   // sortOrder 27: FLOW ×1 (level 1, concurrent 1)
   {
     id: 'visual-reaction-flow-05',

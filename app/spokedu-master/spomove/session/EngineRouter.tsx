@@ -372,7 +372,7 @@ export function EngineRouter({
         <MemoryGame
           level={safeLevel}
           onExit={onExit}
-          onComplete={handleMemoryComplete}
+          onComplete={handleSpatialComplete}
           audioMode="beep"
           speedSec={speedSec ?? 1.2}
         />
