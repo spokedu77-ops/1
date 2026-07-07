@@ -27,9 +27,9 @@ function programWithRelatedIds(ids: string[]): Program {
 }
 
 describe('official SPOMOVE runtime contract', () => {
-  it('keeps exactly sixty runnable official preset IDs', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(60);
-    expect(new Set(OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.id)).size).toBe(60);
+  it(`keeps exactly ${46} runnable official preset IDs`, () => {
+    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(46);
+    expect(new Set(OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.id)).size).toBe(46);
     expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.isReady)).toBe(true);
   });
 

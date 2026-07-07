@@ -68,16 +68,15 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
-      { id: 1, name: '1단계', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
-      { id: 2, name: '2단계', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
-      { id: 3, name: '3단계', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 4, name: '카모플라쥬', enName: 'Camouflage', desc: '노이즈 속에 위장된 사물(사과·바나나·포도 등)이 서서히 드러날 때 해당 색을 찾습니다.' },
-      { id: 5, name: '5단계', enName: 'Sweep', desc: '좌우로 쓸고 지나가는 자극에 맞춰 반응합니다.' },
-      { id: 6, name: '6단계', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
-      { id: 7, name: '팝업 두더지', enName: 'Mole Simulator', desc: '화면 곳곳 구멍에서 튀어나오는 색 자극에 반응합니다.' },
-      { id: 8, name: '우주 몰입', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
-      { id: 9, name: '숫자 수레', enName: 'Number Cart', desc: '광산 수레의 목표 숫자(또는 식)를 보고, 같은 답이 붙은 색 문으로 수레가 들어갑니다. L1~L3 난이도 선택.' },
-      { id: 10, name: '컬러 트래커', enName: 'Color Tracker', desc: '시지각 10번. 흰 공을 눈으로 추적해 멈춘 뒤 빨·노·초·파 구역을 맞춰봅니다. L1~L3, 라운드마다 3-2-1.' },
+      { id: 6, name: '파도타기', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
+      { id: 1, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
+      { id: 2, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
+      { id: 3, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
+      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속에 위장된 사물(사과·바나나·포도 등)이 서서히 드러날 때 해당 색을 찾습니다.' },
+      { id: 7, name: '두더지 잡기', enName: 'Mole Simulator', desc: '화면 곳곳 구멍에서 튀어나오는 색 자극에 반응합니다.' },
+      { id: 8, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
+      { id: 9, name: '숫자 기차', enName: 'Number Cart', desc: '광산 수레의 목표 숫자(또는 식)를 보고, 같은 답이 붙은 색 문으로 수레가 들어갑니다. L1~L3 난이도 선택.' },
+      { id: 10, name: '흰 공을 찾아라', enName: 'Color Tracker', desc: '시지각 10번. 흰 공을 눈으로 추적해 멈춘 뒤 빨·노·초·파 구역을 맞춰봅니다. L1~L3, 라운드마다 3-2-1.' },
     ],
   },
   basic: {
@@ -120,6 +119,7 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '1단계', enName: 'Pole Shape', desc: '도형의 위치와 색을 분리해서 판단합니다.' },
       { id: 2, name: '2단계', enName: 'Pole Arrows', desc: '화살표가 가리키는 방향과 색 규칙을 구분합니다.' },
+      { id: 3, name: '믹스 갤러리', enName: 'Mixed Gallery', desc: '과일·동물·감정 등 모든 변형 색상 이미지가 섞여 극단 위치에 나타납니다. 이미지 색(패드) 위치로 이동합니다.' },
     ],
   },
   flanker: {

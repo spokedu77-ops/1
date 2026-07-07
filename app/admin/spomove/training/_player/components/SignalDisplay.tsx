@@ -371,13 +371,34 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     );
   }
 
-  if (type === 'arrow')
+  if (type === 'arrow') {
+    const arrowId = content?.id as string | undefined;
+    const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
     return (
-      <div key={animKey} className="signal-blink" style={{ ...C, flexDirection: 'column', gap: '0.5rem' }}>
-        <div style={{ fontSize: 'clamp(110px,26vw,280px)', color: '#fff', lineHeight: 1, fontWeight: 900, textShadow: '0 4px 50px rgba(0,0,0,0.4)' }}>{content?.icon as string}</div>
-        <div style={{ fontSize: 'clamp(28px,6vw,56px)', color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: '0.05em' }}>{content?.label as string}</div>
+      <div key={animKey} className="signal-blink" style={C}>
+        <svg
+          className="signal-arrow-reset-pulse"
+          viewBox="0 0 100 130"
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            width: 'clamp(9rem, 58vmin, min(98vw, 98vh))',
+            height: 'clamp(9rem, 58vmin, min(98vw, 98vh))',
+          }}
+          aria-hidden
+        >
+          <g transform={`rotate(${rot} 50 67)`}>
+            <path
+              d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+              fill="#FFFFFF"
+              stroke="rgba(255,255,255,0.26)"
+              strokeWidth={5}
+              strokeLinejoin="round"
+            />
+          </g>
+        </svg>
       </div>
     );
+  }
 
   if (type === 'basic_variant_color') {
     const panels = (content?.panels as VariantPanelContent[] | undefined) ?? [];
@@ -764,8 +785,11 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   }
 
   if (type === 'simon_shape') {
-    const shape = content?.shape as 'circle' | 'triangle' | 'square' | undefined;
+    const shape = content?.shape as 'circle' | 'triangle' | 'square' | null | undefined;
     const fillHex = (content?.fillHex as string) ?? '#EF4444';
+    const symbol = content?.symbol as string | undefined;
+    const textColor = (content?.textColor as string) ?? '#fff';
+    const imageUrl = (content?.imageUrl as string | null | undefined) ?? null;
     const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
     const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
     const size = 'min(25vw, 25vh)';
@@ -775,24 +799,29 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       background: fillHex,
       flexShrink: 0,
     };
+    const frameStyle: React.CSSProperties = {
+      position: 'absolute',
+      left: `${posX * 100}%`,
+      top: `${posY * 100}%`,
+      transform: 'translate(-50%, -50%)',
+      width: size,
+      height: size,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
+      borderRadius: shape === 'square' ? '12%' : '50%',
+      border: imageUrl ? `3px solid ${fillHex}` : undefined,
+      boxShadow: imageUrl ? '0 8px 36px rgba(0,0,0,0.45)' : undefined,
+      background: imageUrl ? '#000' : undefined,
+    };
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div
-          className="signal-blink"
-          style={{
-            position: 'absolute',
-            left: `${posX * 100}%`,
-            top: `${posY * 100}%`,
-            transform: 'translate(-50%, -50%)',
-            width: size,
-            height: size,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-          }}
-        >
-          {shape === 'circle' ? (
+        <div className="signal-blink" style={frameStyle}>
+          {imageUrl ? (
+            <VariantFruitImg slide={{ imageUrl, color: { id: '', name: '', bg: fillHex, text: textColor, symbol: symbol ?? '' } }} />
+          ) : shape === 'circle' ? (
             <div style={{ ...common, borderRadius: '50%' }} />
           ) : shape === 'square' ? (
             <div style={{ ...common, borderRadius: '6%' }} />

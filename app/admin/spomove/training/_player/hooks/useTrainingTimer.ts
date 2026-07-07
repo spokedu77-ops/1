@@ -80,7 +80,10 @@ export function useTrainingTimer({
         : undefined;
       genRef.current = createBasicSignalGenerator(level, colors, getSlidesRef, basicNumberOverlay);
     } else if (engineMode === 'simon') {
-      genRef.current = createSimonSignalGenerator(engineLevel, colors);
+      const getSlidesRef = fruitSlides !== undefined
+        ? () => fruitSlidesRef.current
+        : undefined;
+      genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef);
     } else if (engineMode === 'taskswitch') {
       const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
       genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);

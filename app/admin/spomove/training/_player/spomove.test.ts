@@ -21,7 +21,7 @@ import {
 } from './lib/assetRequirement';
 import { registerPresentedSignal, type RepsState } from './lib/repsLogic';
 import { getNextIntervalState } from './lib/intervalTimer';
-import { generateSignal, createBasicSignalGenerator, type FruitSlide } from './lib/signals';
+import { generateSignal, createBasicSignalGenerator, createSimonSignalGenerator, type FruitSlide } from './lib/signals';
 import { generateObstacleSchedule } from './flow/engine/modules/flowObstacleSchedule';
 import type { FlowModuleKey } from './flow/engine/modules/flowModules';
 
@@ -116,13 +116,11 @@ describe('getAssetRequirement', () => {
     expect(getAssetRequirement({ mode: 'basic', level: 1, theme: 'fruit' }).minimumCount).toBe(0);
   });
 
-  test('basic level 1 → simon_arrow at screen-edge pole', () => {
+  test('basic level 1 → centered arrow signal', () => {
     const sig = generateSignal('basic', 1, Object.values(COLORS_META));
-    expect(sig?.type).toBe('simon_arrow');
-    const content = sig?.content as { arrowId?: string; posX?: number; posY?: number };
-    expect(content.arrowId).toBeTruthy();
-    expect(typeof content.posX).toBe('number');
-    expect(typeof content.posY).toBe('number');
+    expect(sig?.type).toBe('arrow');
+    const content = sig?.content as { id?: string };
+    expect(['up', 'down', 'left', 'right']).toContain(content.id);
   });
 
   test('basic level 2 non-color: minimumCount=1 (think_quad 이미지 지원)', () => {
@@ -512,6 +510,33 @@ describe('테마 이미지 런타임 슬라이드', () => {
   });
 });
 
+describe('사이먼 3번 · 변형 색지각 이미지', () => {
+  const COLORS_ARR = Object.values(THEME_COLORS);
+
+  test('level 3 + 이미지 슬라이드 → simon_shape content에 imageUrl 포함', () => {
+    const gen = createSimonSignalGenerator(3, COLORS_ARR, SAMPLE_SLIDES);
+    const sig = gen.next();
+    expect(sig).not.toBeNull();
+    expect(sig?.type).toBe('simon_shape');
+    const url = (sig?.content as Record<string, unknown>)?.imageUrl;
+    expect(typeof url).toBe('string');
+    expect((url as string).length).toBeGreaterThan(0);
+  });
+
+  test('level 3 + slides 미전달(color 모드) → simon_shape imageUrl=null · 도형 폴백', () => {
+    const gen = createSimonSignalGenerator(3, COLORS_ARR, undefined);
+    const sig = gen.next();
+    expect(sig).not.toBeNull();
+    expect(sig?.type).toBe('simon_shape');
+    expect((sig?.content as Record<string, unknown>)?.imageUrl).toBeNull();
+    expect((sig?.content as Record<string, unknown>)?.shape).toBeTruthy();
+  });
+
+  test('simon level 3 → asset minimumCount 1 (전체 이미지 풀)', () => {
+    expect(getAssetRequirement({ mode: 'simon', level: 3, theme: 'color' }).minimumCount).toBe(1);
+  });
+});
+
 // ── 8. 다이브 장애물 스케줄 ────────────────────────────────────────────────────
 
 function makeModules(...keys: FlowModuleKey[]): Set<FlowModuleKey> {
@@ -645,5 +670,31 @@ describe('SPOMOVE variant slot pad colors', () => {
       ['red', 'yellow'],
       ['green', 'blue'],
     ]);
+  });
+});
+
+describe('training result summary', () => {
+  test('extractStimulusColorIds counts multi-cell quad body signals', async () => {
+    const { extractStimulusColorIds } = await import('./lib/signals');
+    const ids = extractStimulusColorIds({
+      type: 'think_quad_body',
+      content: {
+        cells: [{ colorId: 'red' }, { colorId: 'yellow' }],
+      },
+    });
+    expect(ids.sort()).toEqual(['red', 'yellow']);
+  });
+
+  test('laneCountToColorStimulusCounts maps reactTrain lanes', async () => {
+    const { laneCountToColorStimulusCounts, totalColorStimulusCount } = await import('./lib/trainingResultSummary');
+    const counts = laneCountToColorStimulusCounts([3, 2, 4, 1]);
+    expect(counts).toEqual({ red: 3, blue: 2, green: 4, yellow: 1 });
+    expect(totalColorStimulusCount(counts)).toBe(10);
+  });
+
+  test('describeSessionVolume prefers rounds for number cart and color tracker', async () => {
+    const { describeSessionVolume } = await import('./lib/trainingResultSummary');
+    expect(describeSessionVolume({ mode: 'reactTrain', level: 9, timeMode: 'time', duration: 60, targetReps: 7 })).toBe('7라운드');
+    expect(describeSessionVolume({ mode: 'basic', level: 2, timeMode: 'reps', duration: 60, targetReps: 20 })).toBe('20회');
   });
 });

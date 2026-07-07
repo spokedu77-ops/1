@@ -963,17 +963,35 @@ export function buildPoleArrowSignal(
   };
 }
 
-/** 사이먼 전용: 1번=도형+색 / 2번=↑↓←→ 화살표+방향 · 색(또는 방향) 중복 규칙 + 좌→우→상→하 극단 순환 */
-export function createSimonSignalGenerator(level: number, colors: ColorItem[]) {
+/** 사이먼 전용: 1번=도형+색 / 2번=↑↓←→ 화살표+방향 / 3번=믹스 갤러리(전체 변형 색상 이미지)+색 · 색(또는 방향) 중복 규칙 + 좌→우→상→하 극단 순환 */
+export function createSimonSignalGenerator(
+  level: number,
+  colors: ColorItem[],
+  fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
+) {
   const activeColors = colors.length >= 2 ? colors : COLORS;
   let edgeIdx = 0;
+  const readSlides = (): FruitSlide[] | undefined => {
+    const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
+    return slides;
+  };
   return createColorDupConstrainedGenerator(
     () => {
       const { posX, posY } = pickSimonPolePosition(edgeIdx % 4);
-      if (level === 1) {
+      if (level === 1 || level === 3) {
         const shapes = ['circle', 'triangle', 'square'] as const;
-        const shape = shapes[Math.floor(Math.random() * shapes.length)]!;
-        const c = r(activeColors);
+        let c = r(activeColors);
+        let imageUrl: string | null = null;
+        if (level === 3) {
+          const vSlides = readSlides() ?? [];
+          const themed =
+            vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
+          if (themed) {
+            c = themed.color;
+            imageUrl = themed.imageUrl;
+          }
+        }
+        const shape = imageUrl ? null : shapes[Math.floor(Math.random() * shapes.length)]!;
         return {
           type: 'simon_shape',
           bg: '#0F172A',
@@ -983,6 +1001,8 @@ export function createSimonSignalGenerator(level: number, colors: ColorItem[]) {
             colorId: c.id,
             name: c.name,
             textColor: c.text,
+            symbol: c.symbol,
+            imageUrl,
             posX,
             posY,
           },
@@ -999,7 +1019,7 @@ export function createSimonSignalGenerator(level: number, colors: ColorItem[]) {
     () => {
       edgeIdx = (edgeIdx + 1) % 4;
     },
-    level === 1 ? Math.max(1, activeColors.length || COLORS.length) : ARROWS.length
+    level === 2 ? ARROWS.length : Math.max(1, activeColors.length || COLORS.length)
   );
 }
 
@@ -1066,8 +1086,8 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     return `sta:${String(sig.bg ?? '')}:${c.arrowId}:${c.fillHex}:${c.stroopArrowTask}:${c.stroopArrowReverse}`;
   }
   if (t === 'simon_shape') {
-    const c = sig.content as { shape?: string; fillHex?: string; posX?: number; posY?: number };
-    return `simon:${c.shape}:${c.fillHex}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
+    const c = sig.content as { shape?: string; fillHex?: string; imageUrl?: string | null; posX?: number; posY?: number };
+    return `simon:${c.shape ?? ''}:${c.fillHex}:${c.imageUrl ?? ''}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
   }
   if (t === 'simon_arrow') {
     const c = sig.content as { arrowId?: string; posX?: number; posY?: number };
@@ -1126,12 +1146,16 @@ function uniqueColorKeys(keys: (string | null | undefined)[]): string[] {
   return Array.from(new Set(keys.filter((x): x is string => typeof x === 'string' && x.length > 0)));
 }
 
-function signalColorBalanceKeys(sig: Record<string, unknown>): string[] {
+/** 결과 화면·색 균형 등: 한 신호에서 집계할 패드 색 id 목록 (복수 칸이면 각각 1회) */
+export function extractStimulusColorIds(sig: Record<string, unknown>): string[] {
   const t = sig.type as string;
   const content = sig.content as Record<string, unknown> | undefined;
+
+  if (t === 'full_color' || t === 'gonogo_dual') {
+    return uniqueColorKeys([colorIdFromHex(sig.bg)]);
+  }
   if (!content) return [];
 
-  if (t === 'full_color') return uniqueColorKeys([colorIdFromHex(sig.bg)]);
   if (t === 'think_quad') return uniqueColorKeys([content.colorId as string | undefined]);
   if (t === 'think_quad_body') {
     const cells = (content.cells as { colorId?: string }[] | undefined) ?? [];
@@ -1156,9 +1180,12 @@ function signalColorBalanceKeys(sig: Record<string, unknown>): string[] {
   if (t === 'flanker_row') return uniqueColorKeys([content.targetColorId as string | undefined]);
   if (t === 'gonogo_color') return uniqueColorKeys([content.colorId as string | undefined]);
   if (t === 'gonogo_shape') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
-  if (t === 'gonogo_dual') return uniqueColorKeys([colorIdFromHex(sig.bg)]);
   if (t === 'task_switch') return uniqueColorKeys([content.colorId as string | undefined]);
   return [];
+}
+
+function signalColorBalanceKeys(sig: Record<string, unknown>): string[] {
+  return extractStimulusColorIds(sig);
 }
 
 function wouldExceedColorBalance(

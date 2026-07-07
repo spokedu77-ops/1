@@ -46,25 +46,25 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 1,
     label: '1주차',
-    summary: '반응 인지 · 시지각 반응 (FLOW)',
+    summary: '반응 인지 · 시지각 반응 (떨어지는 벽돌)',
     programs: [
       p('w1-rc-space', '반응 인지 · 공간 방향', 'basic', 1),
       p('w1-rc-quad', '반응 인지 · 사분할 색상', 'basic', 2, { variantColorTheme: 'color' }),
       p('w1-rc-full-color', '반응 인지 · 전면 색상 (색상)', 'basic', 3, { variantColorTheme: 'color' }),
-      p('w1-vr-flow', '시지각 반응 · FLOW', 'reactTrain', 1, { reactTrainConcurrent: 1 }),
+      p('w1-vr-flow', '시지각 반응 · 떨어지는 벽돌', 'reactTrain', 1, { reactTrainConcurrent: 1 }),
     ],
   },
   {
     week: 2,
     label: '2주차',
-    summary: '반응 인지 · 시지각 반응 (FLASH · 팝업 두더지)',
+    summary: '반응 인지 · 시지각 반응 (풍선 터뜨리기 · 두더지 잡기)',
     programs: [
       p('w2-rc-full-color', '반응 인지 · 전면 색상 (색상)', 'basic', 3, { variantColorTheme: 'color' }),
       p('w2-rc-full-animal', '반응 인지 · 전면 색상 (동물)', 'basic', 3, { variantColorTheme: 'animal' }),
       p('w2-rc-full-fruit', '반응 인지 · 전면 색상 (과일)', 'basic', 3, { variantColorTheme: 'fruit' }),
       p('w2-rc-full-vehicle', '반응 인지 · 전면 색상 (탈 것)', 'basic', 3, { variantColorTheme: 'vehicle' }),
-      p('w2-vr-flash', '시지각 반응 · FLASH', 'reactTrain', 2),
-      p('w2-vr-mole', '시지각 반응 · 팝업 두더지', 'reactTrain', 7),
+      p('w2-vr-flash', '시지각 반응 · 풍선 터뜨리기', 'reactTrain', 2),
+      p('w2-vr-mole', '시지각 반응 · 두더지 잡기', 'reactTrain', 7),
     ],
   },
   {

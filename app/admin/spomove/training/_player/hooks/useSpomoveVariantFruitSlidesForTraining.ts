@@ -9,7 +9,7 @@ import {
   SPOMOVE_VARIANT_PACK_ID,
   type SpomoveVariantAssetsJson,
 } from '../lib/variantFruitAssets';
-import { buildVariantSlidesFromThemedUrls, type FruitSlide } from '../lib/signals';
+import { buildVariantSlidesFromThemedUrls, uniqueSlidesByImageUrl, type FruitSlide } from '../lib/signals';
 import {
   SPOMOVE_THEMED_PACK_BY_THEME,
   SPOMOVE_THEMED_SLOT_COUNT,
@@ -116,6 +116,103 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
     document.addEventListener('visibilitychange', onVis);
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [reload]);
+
+  return { slides, status, reload };
+}
+
+const ALL_VARIANT_PACK_IDS = [
+  SPOMOVE_VARIANT_PACK_ID,
+  ...Object.values(SPOMOVE_THEMED_PACK_BY_THEME).map((def) => def.packId),
+] as const;
+
+function slidesFromPackRow(
+  packId: string,
+  assetsJson: unknown,
+  updatedAt: string | undefined,
+): FruitSlide[] {
+  if (packId === SPOMOVE_VARIANT_PACK_ID) {
+    const raw = assetsJson as SpomoveVariantAssetsJson | null;
+    const paths = raw?.paths;
+    const cacheBust = resolveSpomovePackCacheBust(
+      updatedAt,
+      Array.isArray(paths) ? paths : [],
+    );
+    return fruitSlidesForTrainingFromPaths(raw?.paths, cacheBust);
+  }
+
+  const paths = normalizeThemedPaths(assetsJson, SPOMOVE_THEMED_SLOT_COUNT);
+  const cacheBust = resolveSpomovePackCacheBust(updatedAt, paths);
+  const urls = paths.map((p) => {
+    if (p == null || !p.trim()) return '';
+    try {
+      return withPublicUrlCacheBust(getPublicUrl(p.trim()), cacheBust);
+    } catch {
+      return '';
+    }
+  });
+  return buildVariantSlidesFromThemedUrls(urls);
+}
+
+/**
+ * 사이먼 3번(Mixed Gallery): 과일 + 탈것·감정·동물·자연물·음식 등 업로드된 전체 변형 색상 이미지를 한 풀로 합칩니다.
+ */
+export function useSpomoveAllVariantSlidesForTraining(enabled: boolean) {
+  const [slides, setSlides] = useState<FruitSlide[]>([]);
+  const [status, setStatus] = useState<AssetLoadStatus>('idle');
+  const reqIdRef = useRef(0);
+
+  const reload = useCallback(async () => {
+    if (!enabled) {
+      setSlides([]);
+      setStatus('idle');
+      return;
+    }
+
+    const thisId = ++reqIdRef.current;
+    setStatus('loading');
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data } = await supabase
+        .from('think_asset_packs')
+        .select('id, assets_json, updated_at')
+        .in('id', [...ALL_VARIANT_PACK_IDS]);
+      if (reqIdRef.current !== thisId) return;
+
+      const merged: FruitSlide[] = [];
+      for (const packId of ALL_VARIANT_PACK_IDS) {
+        const row = (data ?? []).find((r) => r.id === packId);
+        if (!row) continue;
+        merged.push(
+          ...slidesFromPackRow(
+            packId,
+            row.assets_json,
+            row.updated_at as string | undefined,
+          ),
+        );
+      }
+
+      setSlides(uniqueSlidesByImageUrl(merged));
+      setStatus('ready');
+    } catch {
+      if (reqIdRef.current !== thisId) return;
+      setSlides([]);
+      setStatus('error');
+    }
+  }, [enabled]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const onVis = () => {
+      if (document.visibilityState === 'visible') void reload();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    return () => document.removeEventListener('visibilitychange', onVis);
+  }, [enabled, reload]);
 
   return { slides, status, reload };
 }

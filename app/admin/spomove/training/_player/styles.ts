@@ -50,6 +50,18 @@ export const CSS = `
   }
   .signal-blink { animation: signalBlink 0.18s ease-out forwards; }
 
+  @keyframes signalArrowResetPulse {
+    0%   { opacity: 0; transform: scale(0.82); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+    28%  { opacity: 0; transform: scale(0.82); filter: drop-shadow(0 0 0 rgba(255,255,255,0)); }
+    72%  { opacity: 1; transform: scale(1.055); filter: drop-shadow(0 0 38px rgba(255,255,255,0.5)); }
+    100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 10px 48px rgba(0,0,0,0.5)); }
+  }
+  .signal-arrow-reset-pulse {
+    animation: signalArrowResetPulse 0.19s cubic-bezier(0.18, 0.88, 0.2, 1) both;
+    transform-origin: center;
+    will-change: opacity, transform, filter;
+  }
+
   /** 연속 동일 색(전면·사분할): 한 번만 은은하게 덮어 “같은 자극”을 인지 (고휘도 다중 펄스는 눈부심) */
   @keyframes trainingDupSalienceOverlay {
     0%   { opacity: 0; background: transparent; }

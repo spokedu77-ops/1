@@ -10,6 +10,7 @@ function doc(id: string, title: string, deleted = false): NoteDocument {
     is_favorite: false,
     is_pinned: false,
     is_public: false,
+    share_token: null,
     parent_id: null,
     slug: null,
     properties: {},

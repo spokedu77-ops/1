@@ -9,7 +9,7 @@ describe('spomove preset display model', () => {
 
     const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
     expect(visual).toBeTruthy();
-    expect(getSpomovePresetDisplayModel(visual!).durationLabel).toBe('약 75초 · 20회');
+    expect(getSpomovePresetDisplayModel(visual!).durationLabel).toBe('3초 · 20회 · BGM 자동');
 
     const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.programGroup === 'bonus');
     expect(dive).toBeTruthy();

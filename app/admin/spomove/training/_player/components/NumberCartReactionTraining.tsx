@@ -1,21 +1,35 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
+export const NUMBER_CART_ROUND_OPTIONS = [7, 10, 15, 25] as const;
+
+export function normalizeNumberCartRounds(value: number): number {
+  const n = Math.round(Number.isFinite(value) ? value : 5);
+  if ((NUMBER_CART_ROUND_OPTIONS as readonly number[]).includes(n)) return n;
+  return NUMBER_CART_ROUND_OPTIONS.reduce((best, v) => (Math.abs(v - n) < Math.abs(best - n) ? v : best));
+}
+
 /** 원본 HTML 순서 그대로 유지: 빨(좌끝)·노·초·파(우끝) — 화면 양끝까지 퍼지도록 X 간격 확대 */
 const DOOR_COLORS = [
-  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -28 },
-  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -9 },
-  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 9 },
-  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 28 },
+  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -33 },
+  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -12 },
+  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 12 },
+  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 33 },
 ] as const;
 
 const DOOR_Z = -38;
-const DOOR_SIZE_SCALE = 1.9;
-const CAVE_RADIUS = 38;
-const CART_START = new THREE.Vector3(0, 0, 58);
+const DOOR_SIZE_SCALE = 2.6;
+/** 문이 커지고 더 바깥까지 벌어져도 터널 벽에 파묻히지 않도록 반지름 확대 */
+const CAVE_RADIUS = 46;
+/** 카메라(z=64, 아래로 기울어진 시야축) 기준 화면 하단 경계에 걸리는 지점 — "화면 맨 아래에서 출발" 연출 */
+const CART_START = new THREE.Vector3(0, 0, 51);
+/** 수레(z=58) 위에 레일이 붙고, 카메라(z=64) 쪽으로 조금 더 연장 */
+const RAIL_NEAR_Z = 62;
+const CAMERA_LOOK_Y = 0;
+const CAMERA_LOOK_Z = -14;
 const MAIN_JUNCTION_Z = 10;
 const CART_END_Z = DOOR_Z + 4;
 const TUNNEL_LENGTH = CART_START.z - DOOR_Z + 50;
@@ -72,7 +86,7 @@ type RoundPayload = {
 
 type CartGame = {
   running: boolean;
-  timeLeft: number;
+  targetRounds: number;
   phase: Phase;
   phaseStartMs: number;
   prepMs: number;
@@ -81,12 +95,11 @@ type CartGame = {
   rounds: number;
   laneCount: [number, number, number, number];
   roundTimer: ReturnType<typeof setTimeout> | null;
-  intervalTimer: ReturnType<typeof setInterval> | null;
   raf: number | null;
 };
 
 type Props = {
-  durationSec: number;
+  targetRounds: number;
   speedLevel: number;
   speedSec: number;
   /** L1=1~4 단일, L2=1~8 쌍, L3=사칙연산 */
@@ -101,18 +114,6 @@ function shuffle<T>(arr: T[]): T[] {
     [arr[i], arr[j]] = [arr[j]!, arr[i]!];
   }
   return arr;
-}
-
-/** 도착 버스트 오버레이 — 문 위치(화면 %) */
-const DOOR_BURST_ANCHOR = [
-  { x: '20%', y: '38%' },
-  { x: '39%', y: '38%' },
-  { x: '61%', y: '38%' },
-  { x: '80%', y: '38%' },
-] as const;
-
-function doorColorRgb(hex: number): [number, number, number] {
-  return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
 }
 
 function easeInOutCubic(t: number): number {
@@ -282,9 +283,6 @@ const css = `
 .ncart-play{position:relative;flex:1;min-height:0}
 .ncart-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(ellipse 85% 70% at 50% 42%,rgba(0,0,0,0) 0%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.78) 100%)}
-.ncart-door-burst{position:absolute;inset:0;z-index:17;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 52% 46% at var(--bx,50%) var(--by,38%),rgba(var(--dr,255),var(--dg,51),var(--db,51),.92) 0%,rgba(var(--dr,255),var(--dg,51),var(--db,51),.5) 24%,rgba(var(--dr,255),var(--dg,51),var(--db,51),.12) 48%,transparent 72%)}
-.ncart-door-burst.active{animation:ncartDoorBurst .85s ease-out forwards}
-@keyframes ncartDoorBurst{0%{opacity:0;transform:scale(.94)}12%{opacity:1;transform:scale(1.03)}100%{opacity:0;transform:scale(1)}}
 .ncart-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:5px 14px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#10b981;white-space:nowrap;max-width:min(92vw,560px);overflow:hidden;text-overflow:ellipsis}
 .ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:14px;background:rgba(6,10,18,.52);border:1px solid rgba(245,158,11,.2);backdrop-filter:blur(8px);box-shadow:0 6px 22px rgba(0,0,0,.32);transition:opacity .3s ease,transform .3s ease}
 .ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
@@ -294,19 +292,17 @@ const css = `
 .ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#f59e0b;margin-top:2px}
 `;
 
-export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, tier = 2, onExit, onComplete }: Props) {
+export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec, tier = 2, onExit, onComplete }: Props) {
   const cartTier: NumberCartTier = tier === 1 || tier === 3 ? tier : 2;
+  const totalRounds = normalizeNumberCartRounds(targetRounds);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
-  const hudTimeRef = useRef<HTMLDivElement>(null);
-  const hudRoundsRef = useRef<HTMLDivElement>(null);
+  const hudRoundRef = useRef<HTMLDivElement>(null);
   const hudTierRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
-  const doorBurstRef = useRef<HTMLDivElement>(null);
   const targetHudRef = useRef<HTMLDivElement>(null);
   const targetNumRef = useRef<HTMLDivElement>(null);
   const targetKeyRef = useRef<HTMLDivElement>(null);
-  const [warn, setWarn] = useState(false);
   const gRef = useRef<CartGame | null>(null);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
@@ -322,7 +318,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
   const prepMs = fallTimeSec * 1000;
   const lv = Math.max(1, Math.min(7, Math.round(Number.isFinite(speedLevel) ? speedLevel : 4)));
   /** 이동(주행) 시간: 난이도가 높을수록 살짝 빨라짐 */
-  const travelMs = Math.max(4000, 6800 - (lv - 1) * 320);
+  const travelMs = Math.max(3500, 5600 - (lv - 1) * 270);
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
@@ -330,7 +326,6 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.roundTimer) clearTimeout(g.roundTimer);
-    if (g.intervalTimer) clearInterval(g.intervalTimer);
     onExitRef.current();
   }, []);
 
@@ -340,7 +335,6 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.roundTimer) clearTimeout(g.roundTimer);
-    if (g.intervalTimer) clearInterval(g.intervalTimer);
     onCompleteRef.current({
       stims: g.rounds,
       maxCombo: g.rounds,
@@ -355,7 +349,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
     const g: CartGame = {
       running: true,
-      timeLeft: durationSec,
+      targetRounds: totalRounds,
       phase: 'PREP',
       phaseStartMs: 0,
       prepMs,
@@ -364,7 +358,6 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       rounds: 0,
       laneCount: [0, 0, 0, 0],
       roundTimer: null,
-      intervalTimer: null,
       raf: null,
     };
     gRef.current = g;
@@ -375,9 +368,9 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
     const w0 = play.clientWidth || window.innerWidth;
     const h0 = play.clientHeight || window.innerHeight;
-    const camera = new THREE.PerspectiveCamera(62, w0 / h0, 0.1, 220);
+    const camera = new THREE.PerspectiveCamera(66, w0 / h0, 0.1, 220);
     camera.position.set(0, 10, 64);
-    camera.lookAt(0, 0, -14);
+    camera.lookAt(0, CAMERA_LOOK_Y, CAMERA_LOOK_Z);
 
     const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
     renderer.setSize(w0, h0);
@@ -404,10 +397,10 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     cartLight.shadow.bias = -0.001;
     scene.add(cartLight);
 
-    // 수레 대기 위치(z=35)까지 닿도록 원본보다 아래·수레 쪽으로 당기고 폭을 넓힘
+    // 수레 대기 위치까지 닿도록 스포트 조준
     const spotLight = new THREE.SpotLight(0xffffff, 3);
-    spotLight.position.set(0, 22, 20);
-    spotLight.target.position.set(0, 0, 20);
+    spotLight.position.set(0, 22, CART_START.z + 8);
+    spotLight.target.position.set(0, 0, CART_START.z);
     spotLight.angle = Math.PI / 2.4;
     spotLight.penumbra = 0.6;
     spotLight.decay = 1;
@@ -464,7 +457,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     disposeGeos.push(railGeo, tieGeo);
 
     const mainZEnd = MAIN_JUNCTION_Z;
-    for (let z = CART_START.z + 4; z >= mainZEnd; z -= 1.5) {
+    for (let z = RAIL_NEAR_Z; z >= mainZEnd; z -= 1.5) {
       const tie = new THREE.Mesh(tieGeo, tieMaterial);
       tie.position.set(0, -1.9, z);
       tie.receiveShadow = true;
@@ -635,39 +628,18 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       });
     };
 
-    const triggerDoorBurst = (doorIdx: number) => {
-      const el = doorBurstRef.current;
-      if (!el) return;
-      const cfg = DOOR_COLORS[doorIdx]!;
-      const anchor = DOOR_BURST_ANCHOR[doorIdx]!;
-      const [r, g, b] = doorColorRgb(cfg.hex);
-      el.style.setProperty('--bx', anchor.x);
-      el.style.setProperty('--by', anchor.y);
-      el.style.setProperty('--dr', String(r));
-      el.style.setProperty('--dg', String(g));
-      el.style.setProperty('--db', String(b));
-      el.classList.remove('active');
-      void el.offsetWidth;
-      el.classList.add('active');
-    };
-
     const applyDoorBurstGlow = (doorIdx: number, strength: number) => {
       const s = Math.max(0, Math.min(1, strength));
       doors.forEach((door, idx) => {
         const hex = DOOR_COLORS[idx]!.hex;
         if (idx === doorIdx) {
-          door.doorMat.emissiveIntensity = 0.45 + s * 2.4;
+          door.doorMat.emissiveIntensity = 0.45 + s * 1.4;
           door.doorMat.color.setHex(hex);
           door.doorMat.emissive.setHex(hex);
-          door.doorLight.intensity = 4 + s * 32;
-          door.doorLight.distance = 18 + s * 48;
-          door.haloLight.intensity = s * 42;
-          door.group.scale.setScalar(DOOR_SIZE_SCALE * (1 + s * 0.06));
+          door.doorLight.intensity = 4 + s * 10;
         } else {
-          door.doorMat.emissiveIntensity = 0.1;
-          door.doorLight.intensity = 1.1;
-          door.haloLight.intensity = 0;
-          door.group.scale.setScalar(DOOR_SIZE_SCALE);
+          door.doorMat.emissiveIntensity = 0.25;
+          door.doorLight.intensity = 2;
         }
       });
     };
@@ -825,14 +797,10 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
-    const updateHudTime = () => {
-      const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
-      const s = String(g.timeLeft % 60).padStart(2, '0');
-      if (hudTimeRef.current) hudTimeRef.current.textContent = `${m}:${s}`;
-      setWarn(g.timeLeft <= 10);
+    const updateHudRound = () => {
+      if (hudRoundRef.current) hudRoundRef.current.textContent = `${g.rounds} / ${g.targetRounds}`;
     };
-    updateHudTime();
-    if (hudRoundsRef.current) hudRoundsRef.current.textContent = '0';
+    updateHudRound();
     if (hudTierRef.current) hudTierRef.current.textContent = tierBadge(cartTier);
     if (targetKeyRef.current) targetKeyRef.current.textContent = tierHudTitle(cartTier);
 
@@ -858,7 +826,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
       g.rounds++;
       g.laneCount[g.targetDoorIdx]++;
-      if (hudRoundsRef.current) hudRoundsRef.current.textContent = String(g.rounds);
+      updateHudRound();
 
       g.phase = 'PREP';
       g.phaseStartMs = performance.now();
@@ -928,23 +896,29 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
         cart.position.set(x, CART_START.y, z);
         if (t > 0.005 && t < 0.995) {
           const dir = new THREE.Vector3(x - prevX, 0, z - prevZ);
-          if (dir.lengthSq() > 1e-6) cart.rotation.y = Math.atan2(dir.x, dir.z);
+          // 수레 앞면(frontSide)이 로컬 -Z를 향해 만들어져 있어 atan2(dir.x, dir.z)를 그대로 쓰면
+          // 대기 중 rotation.y=0(뒤판=숫자판이 카메라 쪽)에서 출발과 동시에 180° 튐 → 부호 반전으로 보정
+          if (dir.lengthSq() > 1e-6) cart.rotation.y = Math.atan2(-dir.x, -dir.z);
         }
         if (t >= 1) {
           g.phase = 'ARRIVE';
           g.phaseStartMs = performance.now();
-          triggerDoorBurst(g.targetDoorIdx);
           applyDoorBurstGlow(g.targetDoorIdx, 1);
           setStatus(cartTier === 3 ? '정답 문 도착' : '도착', '#6b7280');
           g.roundTimer = setTimeout(() => {
-            if (gRef.current?.running) startRound();
+            if (!gRef.current?.running) return;
+            if (g.rounds >= g.targetRounds) {
+              endGame();
+              return;
+            }
+            startRound();
           }, 1400);
         }
       } else {
         const time = Date.now() * 0.001;
         camera.position.x = Math.sin(time * 0.5) * 0.2;
         camera.position.y = 10 + Math.cos(time * 0.3) * 0.1;
-        camera.lookAt(0, 0, -14);
+        camera.lookAt(0, CAMERA_LOOK_Y, CAMERA_LOOK_Z);
       }
 
       renderer.render(scene, camera);
@@ -964,25 +938,10 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     g.raf = requestAnimationFrame(animate);
     startRound();
 
-    const endsAtMs = performance.now() + durationSec * 1000;
-    g.intervalTimer = setInterval(() => {
-      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
-      if (g.timeLeft !== newLeft) {
-        g.timeLeft = newLeft;
-        updateHudTime();
-      }
-      if (g.timeLeft <= 0) {
-        if (g.intervalTimer) clearInterval(g.intervalTimer);
-        g.intervalTimer = null;
-        endGame();
-      }
-    }, 250);
-
     return () => {
       window.removeEventListener('resize', onWinResize);
       g.running = false;
       if (g.roundTimer) clearTimeout(g.roundTimer);
-      if (g.intervalTimer) clearInterval(g.intervalTimer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
 
       disposeGeos.forEach((geo) => geo.dispose());
@@ -990,19 +949,15 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       disposeTex.forEach((tex) => tex.dispose());
       renderer.dispose();
     };
-  }, [durationSec, endGame, prepMs, travelMs, cartTier]);
+  }, [endGame, prepMs, totalRounds, travelMs, cartTier]);
 
   return (
     <div className="ncart">
       <style>{css}</style>
       <div className="ncart-hud">
         <div className="ncart-hc">
-          <div className="ncart-hk">Time</div>
-          <div className={`ncart-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
-        </div>
-        <div className="ncart-hc">
-          <div className="ncart-hk">Rounds</div>
-          <div className="ncart-hv" ref={hudRoundsRef} />
+          <div className="ncart-hk">Round</div>
+          <div className="ncart-hv" ref={hudRoundRef} />
         </div>
         <div className="ncart-hc grow">
           <div className="ncart-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
@@ -1023,7 +978,6 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       <div ref={playRef} className="ncart-play">
         <canvas className="ncart-canvas" ref={cvRef} />
         <div className="ncart-vignette" />
-        <div className="ncart-door-burst" ref={doorBurstRef} aria-hidden />
         <div className="ncart-target hidden" ref={targetHudRef}>
           <div className="ncart-target-k" ref={targetKeyRef}>
             목표

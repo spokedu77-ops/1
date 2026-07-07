@@ -2,7 +2,13 @@
 
 import { lazy, Suspense, useCallback } from 'react';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
+import {
+  laneCountToColorStimulusCounts,
+  type ColorStimulusCounts,
+  type TrainingSessionResult,
+} from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import { normalizeColorTrackerRounds } from '@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining';
+import { normalizeNumberCartRounds } from '@/app/admin/spomove/training/_player/components/NumberCartReactionTraining';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 
@@ -83,9 +89,10 @@ const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/Me
 export type EngineCompletePayload = {
   engineMode: OfficialSpomoveEngineMode;
   engineLevel: number;
+  elapsedMs?: number;
+  colorCounts?: ColorStimulusCounts | null;
   stims?: number;
   maxCombo?: number;
-  durationMs?: number;
 };
 
 type Props = {
@@ -144,14 +151,28 @@ export function EngineRouter({
 }: Props) {
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
-      onComplete({ engineMode: mode, engineLevel: level, stims: stats.stims, maxCombo: stats.maxCombo });
+      onComplete({
+        engineMode: mode,
+        engineLevel: level,
+        stims: stats.stims,
+        maxCombo: stats.maxCombo,
+        colorCounts: laneCountToColorStimulusCounts(stats.laneCount),
+      });
     },
     [level, mode, onComplete],
   );
 
-  const handleMemoryComplete = useCallback(() => {
-    onComplete({ engineMode: mode, engineLevel: level });
-  }, [level, mode, onComplete]);
+  const handleMemoryComplete = useCallback(
+    (result: TrainingSessionResult) => {
+      onComplete({
+        engineMode: mode,
+        engineLevel: level,
+        elapsedMs: result.elapsedMs,
+        colorCounts: result.colorCounts,
+      });
+    },
+    [level, mode, onComplete],
+  );
 
   if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
     const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 5) : Math.max(level, 1);
@@ -179,7 +200,7 @@ export function EngineRouter({
 
   if (mode === 'reactTrain') {
     const reactSpeedLevel = mapReactSpeedLevel(speedSec ?? 3);
-    const dur = durationSec ?? 75;
+    const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
 
     if (level === 1) {
@@ -292,7 +313,7 @@ export function EngineRouter({
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <NumberCartReactionTraining
-            durationSec={dur}
+            targetRounds={normalizeNumberCartRounds(rounds ?? 5)}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             tier={numberCartTier ?? 2}
@@ -306,7 +327,7 @@ export function EngineRouter({
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <ColorTrackerReactionTraining
-          targetRounds={normalizeColorTrackerRounds(rounds ?? 5)}
+          targetRounds={normalizeColorTrackerRounds(rounds ?? 20)}
           tier={colorTrackerTier ?? 2}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
@@ -317,12 +338,15 @@ export function EngineRouter({
 
   if (mode === 'spatial') {
     const safeLevel = Math.min(Math.max(level, 1), 5);
+    const handleSpatialComplete = () => {
+      onComplete({ engineMode: mode, engineLevel: level, colorCounts: null });
+    };
     if (safeLevel === 5) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <MemoryGameLevel5
             onExit={onExit}
-            onComplete={handleMemoryComplete}
+            onComplete={handleSpatialComplete}
             audioMode="beep"
             speedSec={speedSec ?? 1.2}
             startDelayMs={0}
@@ -335,7 +359,7 @@ export function EngineRouter({
         <Suspense fallback={<LoadingOverlay />}>
           <MemoryGameLevel4
             onExit={onExit}
-            onComplete={handleMemoryComplete}
+            onComplete={handleSpatialComplete}
             audioMode="beep"
             speedSec={speedSec ?? 1.2}
             startDelayMs={0}

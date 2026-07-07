@@ -159,7 +159,7 @@ export function useNoteDocumentData(options: {
         setDocuments(docs);
 
         let targetDocId = urlDocId;
-        if (!targetDocId && docTab !== 'trash') {
+        if (!targetDocId) {
           const defaultDoc = findDefaultNoteEntryDocument(docs);
           if (defaultDoc) targetDocId = defaultDoc.id;
         }

@@ -39,6 +39,11 @@ export function getAssetRequirement(params: {
 }): AssetRequirement {
   const { mode, level, theme } = params;
 
+  // 사이먼 3번: 전 테마 이미지 풀 — 테마 선택 없음
+  if (mode === 'simon' && level === 3) {
+    return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
+  }
+
   // color 테마: 이미지 없이 색상 신호만 사용
   if (theme === 'color') return NO_REQUIREMENT;
   // basic 외 모드: 이미지 미사용

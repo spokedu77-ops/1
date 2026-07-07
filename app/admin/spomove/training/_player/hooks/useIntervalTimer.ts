@@ -76,7 +76,7 @@ export function useIntervalTimer({
     if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(level, colors, fruitSlides, basicNumberOverlay);
     } else if (engineMode === 'simon') {
-      genRef.current = createSimonSignalGenerator(engineLevel, colors);
+      genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides);
     } else if (engineMode === 'taskswitch') {
       genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
     } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {

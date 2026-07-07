@@ -39,9 +39,13 @@ function buildDurationLabel(preset: OfficialSpomovePreset): string {
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
     return `세션 ${preset.engine.flowDuration ?? 25}초`;
   }
-  const runtime = preset.executionFacts.find((fact) => fact.label === '실행 시간')?.value;
-  const runtimeText = runtime ?? '약 75초';
-  return `${runtimeText} · ${preset.rounds}회`;
+  if (preset.engine.mode === 'reactTrain') {
+    return preset.settingSummary;
+  }
+  if (preset.engine.mode === 'spatial') {
+    return `${preset.cueSeconds}초 · ${preset.rounds}라운드`;
+  }
+  return `${preset.cueSeconds}초 · ${preset.rounds}회`;
 }
 
 export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): SpomovePresetDisplayModel {

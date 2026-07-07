@@ -1,19 +1,23 @@
 'use client';
 
-import { Check, ClipboardList, Gauge, Maximize, Minimize, Music2, Play, RotateCcw, Users, Volume2, X } from 'lucide-react';
+import { ClipboardList, Gauge, Maximize, Minimize, Music2, Play, Users, Volume2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
+import { resultLevelLabel } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import { BgmPlayer } from '@/app/lib/admin/audio/bgmPlayer';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 
 import { useMasterStore } from '../../store';
-import { EngineRouter } from './EngineRouter';
+import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
+import { officialPresetToTrainingResultConfig } from './sessionResultModel';
 import {
   findOfficialSpomovePreset,
+  standardSpomoveDurationSec,
   type OfficialSpomovePreset,
 } from '../officialSpomovePresets';
 import {
@@ -241,7 +245,7 @@ function SpomoveSessionContent() {
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
-  const [actualDurationSec, setActualDurationSec] = useState(0);
+  const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
 
   const stopBgm = useCallback(() => {
     try {
@@ -276,6 +280,7 @@ function SpomoveSessionContent() {
       void player.play();
       player.fadeIn(180);
     }
+    setSessionResult(null);
     setState('running');
     sessionStartedAtRef.current = Date.now();
     const displayModel = getSpomovePresetDisplayModel(officialPreset);
@@ -290,12 +295,21 @@ function SpomoveSessionContent() {
     }, 400);
   }, [bgmLoading, launchMode, officialPreset, recordRecentProgramActivity, selectedBgmPath, soundEnabled, stopBgm]);
 
-  const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>) => {
+  const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>, payload?: EngineCompletePayload) => {
+    if (!officialPreset) return;
     stopBgm();
     const startedAt = sessionStartedAtRef.current;
-    setActualDurationSec(startedAt ? Math.max(1, Math.round((Date.now() - startedAt) / 1000)) : 0);
+    const fallbackElapsedMs = startedAt ? Math.max(1, Date.now() - startedAt) : 0;
+    setSessionResult({
+      engineMode: payload?.engineMode ?? officialPreset.engine.mode,
+      engineLevel: payload?.engineLevel ?? officialPreset.engine.level,
+      elapsedMs: payload?.elapsedMs ?? fallbackElapsedMs,
+      colorCounts: payload?.colorCounts ?? null,
+      stims: payload?.stims,
+      maxCombo: payload?.maxCombo,
+    });
     setState(nextState);
-  }, [stopBgm]);
+  }, [officialPreset, stopBgm]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -317,6 +331,11 @@ function SpomoveSessionContent() {
   if (state === 'running') {
     return (
       <EngineRouter
+        durationSec={
+          officialPreset.engine.mode === 'reactTrain'
+            ? standardSpomoveDurationSec(officialPreset.cueSeconds, officialPreset.rounds)
+            : undefined
+        }
         mode={officialPreset.engine.mode}
         level={officialPreset.engine.level}
         speedSec={officialPreset.cueSeconds}
@@ -332,8 +351,8 @@ function SpomoveSessionContent() {
         onExit={() => {
           finishSession('ended');
         }}
-        onComplete={() => {
-          finishSession('done');
+        onComplete={(payload) => {
+          finishSession('done', payload);
         }}
       />
     );
@@ -346,16 +365,18 @@ function SpomoveSessionContent() {
 
   return (
     <div className="relative h-dvh overflow-hidden select-none bg-[#050509] text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
-      <TopBar
-        drillName={displayModel?.displayTitle ?? officialPreset.title}
-        mode={launchMode}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={toggleFullscreen}
-        onExit={() => {
-          stopBgm();
-          router.push('/spokedu-master/spomove');
-        }}
-      />
+      {state === 'idle' ? (
+        <TopBar
+          drillName={displayModel?.displayTitle ?? officialPreset.title}
+          mode={launchMode}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
+          onExit={() => {
+            stopBgm();
+            router.push('/spokedu-master/spomove');
+          }}
+        />
+      ) : null}
 
       {state === 'idle' ? (
         <OfficialEngineBriefing
@@ -365,36 +386,38 @@ function SpomoveSessionContent() {
         />
       ) : null}
 
-      {(state === 'done' || state === 'ended') ? (
-        <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-          <div className="grid h-24 w-24 animate-[spmCuePop_0.28s_cubic-bezier(.34,1.56,.64,1)_both] place-items-center rounded-full bg-white/10">
-            <Check size={42} color="#34d399" />
-          </div>
-          <p className="mt-6 text-sm font-black text-indigo-200">{state === 'done' ? '완료' : '중도 종료'}</p>
-          <h1 className="mt-2 text-[36px] font-black">{state === 'done' ? 'SPOMOVE 실행 완료' : 'SPOMOVE 실행 종료됨'}</h1>
-          <p className="mt-2 text-xs font-black uppercase tracking-[0.12em] text-indigo-200/70">{program?.title ?? officialPreset.title}</p>
-          <div className="mt-4 grid w-full max-w-[520px] gap-2 rounded-2xl border border-white/10 bg-white/[0.06] p-4 text-left text-sm font-bold text-white/80 sm:grid-cols-2">
-            <p>실제 진행 시간: {actualDurationSec > 0 ? `${actualDurationSec}초` : '기록 없음'}</p>
-            <p>수행 횟수: {officialPreset.rounds}회 기준</p>
-          </div>
-          <div className="mt-7 grid w-full max-w-[680px] gap-2 sm:grid-cols-2">
-            {recordProgramHref ? (
-              <Link href={recordProgramHref} className="flex h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-black">
-                <ClipboardList size={14} className="mr-1.5" />
-                수업 기록 작성
-              </Link>
-            ) : null}
-            <button type="button" onClick={startOfficialSession} className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-indigo-500 text-sm font-bold text-white shadow-[0_16px_44px_rgba(79,70,229,0.26)]">
-              <RotateCcw size={16} />
-              같은 프로그램 다시 실행
-            </button>
-            <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
-              다른 프로그램 선택
-            </Link>
-            <Link href="/spokedu-master/activity" className="flex h-12 items-center justify-center rounded-2xl bg-white/[0.08] text-sm font-bold text-white">
-              수업 기록으로
-            </Link>
-          </div>
+      {(state === 'done' || state === 'ended') && sessionResult ? (
+        <div className="flex h-full flex-col bg-[#F1F5F9]">
+          <TrainingResultScreen
+            cfg={officialPresetToTrainingResultConfig(officialPreset)}
+            elapsedMs={sessionResult.elapsedMs ?? 0}
+            colorCounts={sessionResult.colorCounts ?? null}
+            levelLabel={resultLevelLabel(sessionResult.engineMode, sessionResult.engineLevel)}
+            title={state === 'done' ? '훈련 완료' : '훈련 종료'}
+            statusBadge={state === 'done' ? '완료' : '중도 종료'}
+            retryLabel="같은 프로그램 다시 실행"
+            onBack={() => {
+              stopBgm();
+              router.push('/spokedu-master/spomove');
+            }}
+            onRetry={startOfficialSession}
+            footer={(
+              <div className="grid gap-2 sm:grid-cols-2">
+                {recordProgramHref ? (
+                  <Link href={recordProgramHref} className="flex h-12 items-center justify-center rounded-2xl bg-[#1E293B] px-5 text-sm font-black text-white">
+                    <ClipboardList size={14} className="mr-1.5" />
+                    수업 기록 작성
+                  </Link>
+                ) : null}
+                <Link href="/spokedu-master/spomove" className="flex h-12 items-center justify-center rounded-2xl border border-[#E2E8F0] bg-white text-sm font-bold text-[#1E293B]">
+                  다른 프로그램 선택
+                </Link>
+                <Link href="/spokedu-master/activity" className="flex h-12 items-center justify-center rounded-2xl border border-[#E2E8F0] bg-white text-sm font-bold text-[#1E293B] sm:col-span-2">
+                  수업 기록으로
+                </Link>
+              </div>
+            )}
+          />
         </div>
       ) : null}
 

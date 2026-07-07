@@ -67,6 +67,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain("type SessionState = 'idle' | 'running' | 'done' | 'ended'");
     expect(session).toContain("finishSession('ended')");
     expect(session).toContain("finishSession('done')");
+    expect(session).toContain('TrainingResultScreen');
     expect(session).toContain('중도 종료');
     expect(session).toContain('완료');
   });

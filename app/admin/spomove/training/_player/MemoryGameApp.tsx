@@ -25,7 +25,7 @@ import { SweepReactionTraining } from './components/SweepReactionTraining';
 import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
 import { WormholeReactionTraining } from './components/WormholeReactionTraining';
-import { NumberCartReactionTraining } from './components/NumberCartReactionTraining';
+import { NumberCartReactionTraining, normalizeNumberCartRounds } from './components/NumberCartReactionTraining';
 import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
@@ -55,10 +55,21 @@ const DivePlusGameClient = dynamic(
     ),
   },
 );
+import { TrainingResultScreen } from './components/TrainingResultScreen';
 import type { DupStats, FruitSlide } from './lib/signals';
+import { extractStimulusColorIds } from './lib/signals';
+import {
+  addColorIdsToCounts,
+  emptyColorStimulusCounts,
+  laneCountToColorStimulusCounts,
+  resultLevelLabel,
+  settingsToTrainingResultConfig,
+  type ColorStimulusCounts,
+  type TrainingSessionResult,
+} from './lib/trainingResultSummary';
 import { preloadVariantFruitImages } from './lib/preloadVariantFruitImages';
 import { variantFruitUrlsForPreload } from './lib/variantFruitAssets';
-import { useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
+import { useSpomoveAllVariantSlidesForTraining, useSpomoveVariantSlidesForTraining } from './hooks/useSpomoveVariantFruitSlidesForTraining';
 import { evaluateAssetReadiness } from './lib/assetRequirement';
 import {
   SPOMOVE_COLOR_THEME_LABELS,
@@ -71,15 +82,6 @@ import { loadFlowPresets, saveFlowPresets, type FlowPreset, type FlowColorTheme 
 function modeLevelRangeLabel(modeId: string, levelCount: number): string {
   if (modeId === 'flow') return '1번';
   return levelCount <= 1 ? '1번' : `1~${levelCount}번`;
-}
-
-function resultLevelLabel(mode: string | undefined, level: number): string {
-  if (mode === 'basic') {
-    const m = MODES[mode];
-    const idx = m?.levels.findIndex((lv) => lv.id === level) ?? -1;
-    if (idx >= 0) return `${idx + 1}번`;
-  }
-  return `${level}번`;
 }
 
 type Screen =
@@ -127,11 +129,11 @@ type Settings = {
   flowVisualVariant: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
-  /** 시지각반응 두더지(7번) 2패널 양손 모드 */
+  /** 시지각반응 두더지 잡기(6번 표시, engine level 7) 2패널 양손 모드 */
   moleDualPanel: boolean;
-  /** 시지각반응 숫자 수레(9번) L1/L2/L3 */
+  /** 시지각반응 숫자 기차(8번 표시, engine level 9) L1/L2/L3 */
   numberCartTier: 1 | 2 | 3;
-  /** 시지각반응 컬러 트래커(10번) L1/L2/L3 */
+  /** 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
   memoryColorSlots: SpomoveMemoryColorId[];
@@ -197,11 +199,11 @@ export type MemoryGameAutoLaunch = {
   flowVisualVariant?: FlowVisualVariant;
   /** 시지각반응 플로우(1번) 동시 낙하 신호 수 */
   reactTrainConcurrent?: 1 | 2 | 3;
-  /** 시지각반응 두더지(7번) 2패널 양손 모드 */
+  /** 시지각반응 두더지 잡기(6번 표시, engine level 7) 2패널 양손 모드 */
   moleDualPanel?: boolean;
-  /** 시지각반응 숫자 수레(9번) L1/L2/L3 */
+  /** 시지각반응 숫자 기차(8번 표시, engine level 9) L1/L2/L3 */
   numberCartTier?: 1 | 2 | 3;
-  /** 시지각반응 컬러 트래커(10번) L1/L2/L3 */
+  /** 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) L1/L2/L3 */
   colorTrackerTier?: 1 | 2 | 3;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode?: 'easy' | 'hard';
@@ -263,8 +265,8 @@ export default function MemoryGameApp({
   autoLaunch?: MemoryGameAutoLaunch;
   /** autoLaunch 모드에서 포털을 닫을 때 — resume에 실제 실행 세션 설정을 전달 */
   onExit?: (resume?: TrainingExitResume) => void;
-  /** autoLaunch 훈련의 설정된 횟수가 끝났을 때 호출한다. */
-  onComplete?: () => void;
+  /** autoLaunch 훈련 종료 시 호출. embed면 결과 화면은 부모(MASTER)가 표시한다. */
+  onComplete?: (result: TrainingSessionResult) => void;
   /** initialMode가 MODES에 없을 때 (매핑 누락) 부모에 알림 */
   onUnavailable?: () => void;
 }) {
@@ -309,17 +311,13 @@ export default function MemoryGameApp({
   const [stats, setStats] = useState({ timeLeft: 30, repsLeft: 20, progress: 0 });
   const sessionStartMsRef = useRef<number>(0);
   const [result, setResult] = useState<{
-    /** 제시된 자극 수 (flow는 완료 스테이지 수, memory는 라운드 수) */
-    count: number;
     cfg: Settings;
-    /** 실제 훈련 경과 시간(ms) */
     elapsedMs: number;
-    dupStats?: DupStats | null;
-    nbackScore?: { hits: number; misses: number; falseAlarms: number; accuracy: number; level: number };
-    battleResult?: unknown;
+    colorCounts: ColorStimulusCounts | null;
   } | null>(null);
   /** 훈련 세션마다 증가 — 터치형 2-1 첫 신호 부트스트랩용 */
   const countRef = useRef(0);
+  const colorCountsRef = useRef<ColorStimulusCounts>(emptyColorStimulusCounts());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const trainingContainerRef = useRef<HTMLDivElement>(null);
   const visualReactionContainerRef = useRef<HTMLDivElement>(null);
@@ -380,9 +378,19 @@ export default function MemoryGameApp({
     };
   }, []);
 
+  const simonMixedVariantLevel = settings.mode === 'simon' && settings.level === 3;
+
+  const { slides: allVariantSlides, status: allAssetStatus, reload: reloadAllAssets } =
+    useSpomoveAllVariantSlidesForTraining(simonMixedVariantLevel);
   const { slides: variantFruitSlides, status: assetStatus, reload: reloadAssets } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
-  const variantFruitUrls = useMemo(() => variantFruitUrlsForPreload(variantFruitSlides), [variantFruitSlides]);
-  const variantSignalSlides = settings.variantColorTheme === 'color' ? undefined : variantFruitSlides;
+  const activeVariantSlides = simonMixedVariantLevel
+    ? allVariantSlides
+    : settings.variantColorTheme === 'color'
+      ? undefined
+      : variantFruitSlides;
+  const activeAssetStatus = simonMixedVariantLevel ? allAssetStatus : assetStatus;
+  const variantFruitUrls = useMemo(() => variantFruitUrlsForPreload(activeVariantSlides ?? []), [activeVariantSlides]);
+  const variantSignalSlides = activeVariantSlides;
 
   /**
    * 훈련 세션 중 asset 스냅샷. 시작 시점의 슬라이드를 고정해
@@ -403,10 +411,10 @@ export default function MemoryGameApp({
       mode: settings.mode,
       level: settings.level,
       theme: settings.variantColorTheme,
-      loadStatus: assetStatus,
+      loadStatus: activeAssetStatus,
       slides: variantSignalSlides ?? [],
     }),
-    [settings.mode, settings.level, settings.variantColorTheme, assetStatus, variantSignalSlides]
+    [settings.mode, settings.level, settings.variantColorTheme, activeAssetStatus, variantSignalSlides]
   );
 
   // autoLaunch: readiness가 처음 'ready'가 되면 usableAssets를 deep copy하여 스냅샷 한 번 확정.
@@ -427,11 +435,36 @@ export default function MemoryGameApp({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [variantFruitUrls]);
 
-  /** 변형 색지각(basic 3·4·5·6번): 설정·워밍업·훈련 중 이미지 프리로드 */
+  /** 변형 색지각(basic 2~6번): 설정·워밍업·훈련 중 이미지 프리로드 */
   const basicVariantLevel = useMemo(
     () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
     [settings.mode, settings.level]
   );
+
+  /** 사이먼 3번(Mixed Gallery): 전 테마 이미지 프리로드 */
+  const variantImagePreloadLevel = basicVariantLevel || simonMixedVariantLevel;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (screen !== 'setup') return;
+    if (!variantImagePreloadLevel) return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [screen, variantImagePreloadLevel, variantFruitUrls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (screen !== 'training') return;
+    if (countdown === null) return;
+    if (!variantImagePreloadLevel) return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [screen, countdown, variantImagePreloadLevel, variantFruitUrls]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!isTraining || screen !== 'training') return;
+    if (!variantImagePreloadLevel) return;
+    void preloadVariantFruitImages(variantFruitUrls);
+  }, [isTraining, screen, variantImagePreloadLevel, variantFruitUrls]);
 
   /** 변형 사분할(basic 7·8·9·10번): 신체 동작 이미지 표시 레벨 */
   const quadBodyLevel = useMemo(
@@ -439,27 +472,10 @@ export default function MemoryGameApp({
     [settings.mode, settings.level]
   );
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (screen !== 'setup') return;
-    if (!basicVariantLevel) return;
-    void preloadVariantFruitImages(variantFruitUrls);
-  }, [screen, basicVariantLevel, variantFruitUrls]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (screen !== 'training') return;
-    if (countdown === null) return;
-    if (!basicVariantLevel) return;
-    void preloadVariantFruitImages(variantFruitUrls);
-  }, [screen, countdown, basicVariantLevel, variantFruitUrls]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!isTraining || screen !== 'training') return;
-    if (!basicVariantLevel) return;
-    void preloadVariantFruitImages(variantFruitUrls);
-  }, [isTraining, screen, basicVariantLevel, variantFruitUrls]);
+  const reloadVariantAssets = useCallback(() => {
+    if (simonMixedVariantLevel) void reloadAllAssets();
+    else void reloadAssets();
+  }, [simonMixedVariantLevel, reloadAllAssets, reloadAssets]);
 
   /** initialMode가 MODES에 없으면 부모에게 즉시 알려 빈 화면을 피한다 */
   useEffect(() => {
@@ -528,6 +544,7 @@ export default function MemoryGameApp({
 
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
+    colorCountsRef.current = addColorIdsToCounts(colorCountsRef.current, extractStimulusColorIds(sig));
     const dupKey =
       (sig.type === 'think_quad' || sig.type === 'think_quad_body')
         ? String((sig.content as { colorId?: string })?.colorId ?? '')
@@ -556,19 +573,36 @@ export default function MemoryGameApp({
     [settings.mode, settings.level],
   );
 
-  const onFinish = useCallback((dupStats?: DupStats | null) => {
+  const deliverSessionResult = useCallback((
+    cfg: Settings,
+    elapsedMs: number,
+    colorCounts: ColorStimulusCounts | null,
+  ) => {
+    const payload: TrainingSessionResult = {
+      cfg: settingsToTrainingResultConfig(cfg),
+      elapsedMs,
+      colorCounts,
+    };
+    if (embed && onComplete) {
+      onComplete(payload);
+      return;
+    }
+    setResult({ cfg, elapsedMs, colorCounts });
+    setScreen('result');
+    onComplete?.(payload);
+  }, [embed, onComplete]);
+
+  const onFinish = useCallback((_dupStats?: DupStats | null) => {
     if (document.fullscreenElement) document.exitFullscreen();
     sessionSlidesRef.current = undefined;
     setIsTraining(false);
     const cfg = { ...settings };
-    const count = countRef.current;
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-    setResult({ count, cfg, elapsedMs, dupStats: cfg.mode === 'basic' ? dupStats ?? undefined : undefined });
-    setScreen('result');
+    void _dupStats;
+    deliverSessionResult(cfg, elapsedMs, { ...colorCountsRef.current });
     if (cfg.audioMode === 'beep') setTimeout(() => playBeep('chord', 300), 200);
     else if (cfg.audioMode !== 'off') setTimeout(() => tts('트레이닝 완료! 수고했어요!', true), 300);
-    onComplete?.();
-  }, [onComplete, settings]);
+  }, [deliverSessionResult, settings]);
 
   const { getProgress } = useTrainingTimer({
     active: isTraining && !settings.intervalMode,
@@ -694,6 +728,7 @@ export default function MemoryGameApp({
       setSettings(cfg);
       sessionStartMsRef.current = 0; // 실제 훈련 시작 시점에 설정됨 (카운트다운 완료 후)
       countRef.current = 0;
+      colorCountsRef.current = emptyColorStimulusCounts();
       setSignal(null);
       if (dupFlashClearRef.current != null) {
         clearTimeout(dupFlashClearRef.current);
@@ -898,21 +933,21 @@ export default function MemoryGameApp({
     flowCompleteGuardRef.current = true;
     if (document.fullscreenElement) document.exitFullscreen();
     const cfg = { ...settings, mode: 'flow', level: 1 };
-    const completedStages = 5;
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-    setResult({ count: completedStages, cfg, elapsedMs });
-    setScreen('result');
-    onComplete?.();
-  }, [onComplete, settings]);
+    deliverSessionResult(cfg, elapsedMs, null);
+  }, [deliverSessionResult, settings]);
 
   const handleReactTrainComplete = useCallback(
     (stats: ReactTrainCompleteStats) => {
       if (document.fullscreenElement) document.exitFullscreen();
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-      setResult({ count: stats.stims, cfg: { ...settings }, elapsedMs });
-      setScreen('result');
+      deliverSessionResult(
+        { ...settings },
+        elapsedMs,
+        laneCountToColorStimulusCounts(stats.laneCount),
+      );
     },
-    [settings]
+    [deliverSessionResult, settings],
   );
 
   useEffect(() => {
@@ -1140,7 +1175,7 @@ export default function MemoryGameApp({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                 {M.levels.map((lv, lvIdx) => (
                   <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : 'var(--border)'}`, background: settings.level === lv.id ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{settings.mode === 'basic' ? `${lvIdx + 1}번` : `${lv.id}번`}</div>
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: '0.45rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: '0.82rem', color: settings.level === lv.id ? '#fff' : 'var(--text)', background: settings.level === lv.id ? M.accent : 'var(--subtle-bg)', border: settings.level === lv.id ? `1px solid ${M.accent}` : `1px solid var(--border)`, flexShrink: 0, marginTop: '0.05rem' }}>{settings.mode === 'basic' || settings.mode === 'reactTrain' ? `${lvIdx + 1}번` : `${lv.id}번`}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
@@ -1165,11 +1200,19 @@ export default function MemoryGameApp({
                 )}
               </div>
               {settings.mode === 'basic' && showVariantAppendix && <VariantImageGallery />}
-              {basicVariantLevel && (
+              {settings.mode === 'simon' && settings.level === 3 ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>믹스 갤러리 이미지</div>
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: 0, lineHeight: 1.55 }}>
+                    Asset Hub에 업로드된 <strong style={{ color: 'var(--text)' }}>과일·탈 것·감정·동물·자연물·음식</strong> 변형 색상 이미지가 전부 섞여 나옵니다. 테마를 고를 필요는 없습니다.
+                  </p>
+                </div>
+              ) : null}
+              {basicVariantLevel ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 7·8·9·10번 신호에 반영됩니다.
+                    Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 2~6번 신호에 반영됩니다.
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
                     {SPOMOVE_COLOR_THEME_ORDER
@@ -1200,7 +1243,7 @@ export default function MemoryGameApp({
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
             {settings.mode === 'flow' && (
               <>
@@ -1453,8 +1496,64 @@ export default function MemoryGameApp({
                   </div>
                 ) : null}
 
-                {/* 시지각 반응: 훈련 시간 / 그 외(spatial 제외): 분량(횟수) */}
-                {settings.mode === 'reactTrain' && (
+                {/* 시지각 반응: 라운드(9·10번) / 그 외 시간 */}
+                {settings.mode === 'reactTrain' && settings.level === 9 ? (
+                  <div style={S.sec}>
+                    {stepNum(stepReps, '라운드를 선택하세요')}
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {[3, 5, 7, 10].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => {
+                            setSettings((s) => ({ ...s, timeMode: 'reps', targetReps: n }));
+                          }}
+                          style={{
+                            padding: '0.6rem 1rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`,
+                            background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            color: 'var(--text)',
+                          }}
+                        >
+                          {n}라운드
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {settings.mode === 'reactTrain' && settings.level === 10 ? (
+                  <div style={S.sec}>
+                    {stepNum(stepReps, '라운드를 선택하세요')}
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {[2, 3, 5, 10].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => {
+                            setSettings((s) => ({ ...s, timeMode: 'reps', targetReps: n }));
+                          }}
+                          style={{
+                            padding: '0.6rem 1rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${settings.targetReps === n ? '#F97316' : 'var(--border)'}`,
+                            background: settings.targetReps === n ? '#FFF7ED' : 'var(--card)',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            color: 'var(--text)',
+                          }}
+                        >
+                          {n}라운드
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                {settings.mode === 'reactTrain' && settings.level !== 9 && settings.level !== 10 ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, '훈련 시간을 선택하세요')}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1501,7 +1600,7 @@ export default function MemoryGameApp({
                       </button>
                     </div>
                   </div>
-                )}
+                ) : null}
                 {settings.mode !== 'spatial' && settings.mode !== 'reactTrain' && (
                   <div style={S.sec}>
                     {stepNum(stepReps, '분량을 선택하세요')}
@@ -1609,7 +1708,7 @@ export default function MemoryGameApp({
                   {needsImageAssets && readiness.status === 'error' && (
                     <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                       <span style={{ fontSize: '0.82rem', color: '#EF4444', flex: 1 }}>이미지를 불러오지 못했습니다</span>
-                      <button type="button" onClick={() => void reloadAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #EF4444', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit' }}>재시도</button>
+                      <button type="button" onClick={() => void reloadVariantAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #EF4444', background: 'transparent', color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit' }}>재시도</button>
                     </div>
                   )}
                   {needsImageAssets && readiness.status === 'insufficient' && (
@@ -1618,7 +1717,7 @@ export default function MemoryGameApp({
                         이 단계에는 서로 다른 이미지 {readiness.requirement.minimumCount}개가 필요합니다.
                         현재 사용 가능한 이미지는 {readiness.usableAssets.length}개입니다.
                       </span>
-                      <button type="button" onClick={() => void reloadAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #F59E0B', background: 'transparent', color: '#F59E0B', cursor: 'pointer', fontFamily: 'inherit' }}>새로고침</button>
+                      <button type="button" onClick={() => void reloadVariantAssets()} style={{ fontSize: '0.78rem', padding: '0.3rem 0.6rem', borderRadius: '0.4rem', border: '1px solid #F59E0B', background: 'transparent', color: '#F59E0B', cursor: 'pointer', fontFamily: 'inherit' }}>새로고침</button>
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1653,8 +1752,7 @@ export default function MemoryGameApp({
   const handleMemoryComplete = () => {
     if (document.fullscreenElement) document.exitFullscreen();
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-    setResult({ count: MEMORY_ROUNDS, cfg: { ...settings }, elapsedMs });
-    setScreen('result');
+    deliverSessionResult({ ...settings }, elapsedMs, null);
   };
 
   if (screen === 'memory') {
@@ -1707,7 +1805,7 @@ export default function MemoryGameApp({
           />
         ) : settings.level === 9 ? (
           <NumberCartReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
+            targetRounds={normalizeNumberCartRounds(settings.targetReps ?? 5)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
             tier={settings.numberCartTier}
@@ -1782,14 +1880,13 @@ export default function MemoryGameApp({
     const selectedModules = SELECTABLE_MODULE_KEYS.filter((k) => settings.flowFeatures.has(k as FlowFeatureKey));
     const stages = buildStages(selectedModules, settings.flowDuration);
 
-    const handleFlowDone = (stats: FlowStats) => {
+    const handleFlowDone = (_stats: FlowStats) => {
       if (flowCompleteGuardRef.current) return;
       flowCompleteGuardRef.current = true;
       if (document.fullscreenElement) document.exitFullscreen();
       const cfg = { ...settings, mode: 'flow', level: 1 };
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-      setResult({ count: stats.stagesCompleted, cfg, elapsedMs });
-      setScreen('result');
+      deliverSessionResult(cfg, elapsedMs, null);
     };
 
     // DIVE+: enhanced 브릿지+파노라마 / classic+space: legacy 브릿지+파노라마
@@ -1883,6 +1980,38 @@ export default function MemoryGameApp({
             {engineLevel === 2 && '📋 🎨색 · 📍위치 · ⇄반대(색/화살표는 화면 자극과 동일)'}
             {engineLevel === 3 &&
               '📋 흰 실선=색 규칙 · 흰 점선=위치 규칙 · 흰 이중선=반대로(자극은 색 또는 화살표)'}
+          </div>
+        )}
+        {simonMixedVariantLevel && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '1.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 20,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '0.45rem',
+              maxWidth: 'min(92vw, 28rem)',
+            }}
+          >
+            <div
+              style={{
+                textAlign: 'center',
+                background: 'rgba(0,0,0,0.55)',
+                backdropFilter: 'blur(10px)',
+                borderRadius: '2rem',
+                padding: '0.45rem 1rem',
+                color: 'rgba(255,255,255,0.85)',
+                fontSize: 'clamp(0.72rem,2vw,0.9rem)',
+                fontWeight: 600,
+                border: '1px solid rgba(255,255,255,0.12)',
+              }}
+            >
+              🎨 믹스 갤러리 · 전체 변형 색상
+            </div>
           </div>
         )}
         {basicVariantLevel && (
@@ -1992,29 +2121,7 @@ export default function MemoryGameApp({
   }
 
   if (screen === 'result' && result) {
-    const { count, cfg, dupStats, elapsedMs } = result;
-    const mo = MODES[cfg.mode];
-    const isMem = cfg.mode === 'spatial' || cfg.mode === 'flow';
-    // 실제 경과 시간 우선, 없으면 설정 기반 추정
-    const elapsedSec = elapsedMs > 0
-      ? elapsedMs / 1000
-      : isMem
-        ? 0
-        : cfg.timeMode === 'time'
-          ? (cfg.duration ?? 0)
-          : (cfg.targetReps ?? 0) * (cfg.speed ?? 1);
-    // 자극 제시 밀도: 실제로 제시된 자극을 시간으로 나눈 값 (반응 입력 없는 모드는 SPM이 아닌 "제시 밀도")
-    const spm = !isMem && elapsedSec > 0 ? Math.round((count / elapsedSec) * 60) : null;
-    const mainVal = spm != null ? `${spm}` : `${count}`;
-    const mainLabel = spm != null ? '자극 제시 밀도 (SPM)' : '총 제시 자극 수';
-    // 세션 진행률: reps 모드에서만 의미 있음
-    const completionRate = cfg.timeMode === 'reps' && (cfg.targetReps ?? 0) > 0
-      ? Math.min(100, Math.round((count / (cfg.targetReps ?? 1)) * 100))
-      : null;
-    const mainHint = spm != null
-      ? '이번 세션에서 1분 기준으로 제시된 자극 밀도입니다. 실제 반응 정확도와는 무관합니다.'
-      : '이번 세션에서 제시된 자극(신호)의 총 개수입니다.';
-    const mainColor = mo?.accent ?? '#F97316';
+    const { cfg, elapsedMs, colorCounts } = result;
     const student = students.find((s) => s.id === selectedStudentId);
     const goToList = () => {
       setSettings(cfg);
@@ -2024,161 +2131,23 @@ export default function MemoryGameApp({
       }
       setScreen('setup');
     };
-    const statBox: React.CSSProperties = {
-      border: '1px solid var(--border)',
-      borderRadius: '0.65rem',
-      padding: '0.55rem 0.7rem',
-      background: 'var(--subtle-bg)',
-    };
     return (
-      <div style={{ ...S.page, height: '100vh', minHeight: '100vh' }}>
-        <style>{CSS}</style>
-        <header
-          style={{
-            flexShrink: 0,
-            display: 'grid',
-            gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center',
-            gap: '0.5rem',
-            padding: '0.65rem clamp(0.75rem, 3vw, 1.25rem)',
-            borderBottom: '1px solid var(--border)',
-            background: 'var(--card)',
-          }}
-        >
-          <button
-            type="button"
-            style={{
-              ...S.btn,
-              ...S.bSecondary,
-              justifySelf: 'start',
-              padding: '0.55rem 0.9rem',
-              fontSize: '0.88rem',
-              borderRadius: '0.75rem',
-            }}
-            onClick={goToList}
-          >
-            ← 목록으로
-          </button>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.35rem',
-              fontSize: 'clamp(0.82rem, 2.4vw, 0.96rem)',
-              fontWeight: 800,
-              color: 'var(--text)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <span>{mo?.icon}</span>
-            <span>{mo?.title} · {resultLevelLabel(cfg.mode, cfg.level)}</span>
-          </div>
-          <button
-            type="button"
-            style={{
-              ...S.btn,
-              ...S.bPrimary,
-              justifySelf: 'end',
-              padding: '0.55rem 1rem',
-              fontSize: '0.88rem',
-              borderRadius: '0.75rem',
-            }}
-            onClick={() => {
-              if (document.fullscreenEnabled) {
-                document.documentElement.requestFullscreen().catch((err: Error) => {
-                  console.warn('[SPOMOVE] fullscreen request failed:', err.message);
-                });
-              }
-              startSession(cfg);
-            }}
-          >
-            다시 ▶
-          </button>
-        </header>
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 'clamp(0.75rem, 3vw, 1.5rem)',
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: 'clamp(20rem, 92vw, 32rem)',
-              textAlign: 'center',
-            }}
-          >
-            {student ? (
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  marginBottom: '0.65rem',
-                  padding: '0.25rem 0.65rem',
-                  borderRadius: '999px',
-                  background: 'var(--subtle-bg)',
-                  border: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ width: 20, height: 20, borderRadius: '50%', background: student.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 900, color: '#fff' }}>{student.name[0]}</div>
-                <span style={{ fontSize: '0.86rem', fontWeight: 700, color: student.color }}>{student.name}</span>
-              </div>
-            ) : null}
-            <div style={{ fontSize: 'clamp(4rem, 18vw, 6.5rem)', fontWeight: 900, lineHeight: 1, color: mainColor, letterSpacing: '-0.03em' }}>{mainVal}</div>
-            <div style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--text)', marginTop: '0.35rem' }}>{mainLabel}</div>
-            <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.5, maxWidth: '20rem', marginLeft: 'auto', marginRight: 'auto' }}>{mainHint}</div>
-            <div style={{ marginTop: '1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem', textAlign: 'left' }}>
-              <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>실제 진행 시간</div>
-                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{elapsedSec > 0 ? `${Math.round(elapsedSec)}초` : '-'}</div>
-              </div>
-              <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>자극 제시 밀도</div>
-                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{spm != null ? `${spm} SPM` : '-'}</div>
-              </div>
-              {completionRate != null ? (
-                <div style={statBox}>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>세션 진행률</div>
-                  <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{completionRate}%</div>
-                </div>
-              ) : null}
-              <div style={statBox}>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>총 제시 자극 수</div>
-                <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{count}회</div>
-              </div>
-            </div>
-            {cfg.mode === 'basic' && dupStats ? (
-              <div
-                style={{
-                  marginTop: '0.75rem',
-                  padding: '0.65rem 0.75rem',
-                  background: 'var(--subtle-bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '0.65rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 500,
-                  color: 'var(--text-muted)',
-                  lineHeight: 1.55,
-                  textAlign: 'left',
-                }}
-              >
-                <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>이번 세션 해석</div>
-                <p style={{ margin: '0 0 0.35rem' }}>
-                  연속 동일 신호 비율 <strong style={{ color: 'var(--text)' }}>{Math.round(dupStats.dupRatio * 100)}%</strong>
-                  · 최대 연속 <strong style={{ color: 'var(--text)' }}>{dupStats.maxConsecutiveSame}번</strong>
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </div>
+      <TrainingResultScreen
+        cfg={settingsToTrainingResultConfig(cfg)}
+        elapsedMs={elapsedMs}
+        colorCounts={colorCounts}
+        levelLabel={resultLevelLabel(cfg.mode, cfg.level)}
+        student={student ? { name: student.name, color: student.color } : null}
+        onBack={goToList}
+        onRetry={() => {
+          if (document.fullscreenEnabled) {
+            document.documentElement.requestFullscreen().catch((err: Error) => {
+              console.warn('[SPOMOVE] fullscreen request failed:', err.message);
+            });
+          }
+          startSession(cfg);
+        }}
+      />
     );
   }
 

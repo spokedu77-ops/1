@@ -96,7 +96,7 @@ type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = '/teacher/spomove';
 
 function levelLabel(modeId: string, levelId: number): string {
-  if (modeId === 'basic') {
+  if (modeId === 'basic' || modeId === 'reactTrain') {
     const m = MODES[modeId];
     const idx = m?.levels.findIndex((lv) => lv.id === levelId) ?? -1;
     if (idx >= 0) return `${idx + 1}번`;
@@ -148,11 +148,15 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Color & Arrow': '색상 & 화살표',
   'Flow Program': '플로우 프로그램',
   'Rhythm Program': '리듬 프로그램',
-  FLOW: '플로우',
-  FLASH: '플래시',
-  'Beat Wave': '비트 웨이브 반응',
-  Sweep: '스윕 반응',
-  Rush: '러시 반응',
+  FLOW: '떨어지는 벽돌',
+  FLASH: '풍선 터뜨리기',
+  'Beat Wave': '동그라미 파동',
+  Rush: '파도타기',
+  Camouflage: '매직 아이',
+  'Mole Simulator': '두더지 잡기',
+  Wormhole: '소행성을 피해라',
+  'Number Cart': '숫자 기차',
+  'Color Tracker': '흰 공을 찾아라',
 };
 
 function levelNameKo(modeId: string, levelId: number): string {
@@ -198,11 +202,11 @@ type LaunchSettings = {
   flowVisualVariant: FlowVisualVariant;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 두더지(7번) 전용: 2패널 양손 모드 */
+  /** 시지각반응(reactTrain) 두더지 잡기(6번 표시, engine level 7) 전용: 2패널 양손 모드 */
   moleDualPanel: boolean;
-  /** 시지각반응(reactTrain) 숫자 수레(9번) 전용: L1/L2/L3 */
+  /** 시지각반응(reactTrain) 숫자 기차(8번 표시, engine level 9) 전용: L1/L2/L3 */
   numberCartTier: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 컬러 트래커(10번) 전용: L1/L2/L3 */
+  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
@@ -560,7 +564,7 @@ function CatalogBottomPrograms({ onPick }: { onPick: (modeId: string) => void })
           4색 패드 훈련과 별도로, 화면 안에서 달리고 동작하는 몰입형 DIVE MODE입니다.
         </p>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14, maxWidth: 520 }}>
+      <div className="spmt-grid">
         {ids.map((modeId) => (
           <CatalogModeCard key={modeId} modeId={modeId} onPick={onPick} />
         ))}
@@ -750,6 +754,13 @@ function SettingsScreen({
                     type="button"
                     onClick={() => {
                       setLevelId(lv.id);
+                      if (isReactTrain && lv.id === 9) {
+                        setLaunch((s) => ({
+                          ...s,
+                          timeMode: 'reps',
+                          targetReps: [7, 10, 15, 25].includes(s.targetReps) ? s.targetReps : 10,
+                        }));
+                      }
                       if (isReactTrain && lv.id === 10) {
                         setLaunch((s) => ({
                           ...s,
@@ -850,7 +861,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 두더지(7번) 전용: 패널 모드 */}
+          {/* 시지각반응 두더지 잡기(6번 표시, engine level 7) 전용: 패널 모드 */}
           {isReactTrain && levelId === 7 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
@@ -895,7 +906,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 숫자 수레(9번) 전용: 난이도 */}
+          {/* 시지각반응 숫자 기차(8번 표시, engine level 9) 전용: 난이도 */}
           {isReactTrain && levelId === 9 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
@@ -941,7 +952,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 컬러 트래커(10번) 전용: 난이도 */}
+          {/* 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 전용: 난이도 */}
           {isReactTrain && levelId === 10 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
@@ -987,7 +998,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·컬러 트래커 10번은 내부 난이도로 동작하므로 숨김) */}
+          {/* 속도 (DIVE·흰 공을 찾아라 9번 표시는 내부 난이도로 동작하므로 숨김) */}
           {!isFlowOrChallenge && !(isReactTrain && levelId === 10) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -1300,11 +1311,38 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && levelId === 10 ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
+                  {isReactTrain && (levelId === 9 || levelId === 10) ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
                 </label>
               </div>
 
-              {isReactTrain && levelId === 10 ? (
+              {isReactTrain && levelId === 9 ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[7, 10, 15, 25].map((r) => {
+                    const active = launch.targetReps === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
+                        style={{
+                          flex: '1 1 90px',
+                          padding: '11px 10px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 13,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {r}라운드
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isReactTrain && levelId === 10 ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[2, 3, 5, 10].map((r) => {
                     const active = launch.targetReps === r;
@@ -1432,6 +1470,18 @@ function SettingsScreen({
                   );
                 })}
               </div>
+            </section>
+          ) : null}
+
+          {/* 사이먼 3번 · 믹스 갤러리 */}
+          {modeId === 'simon' && levelId === 3 ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>믹스 갤러리</label>
+              </div>
+              <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+                Asset Hub에 업로드된 <strong style={{ color: T.text }}>과일·탈 것·감정·동물·자연물·음식</strong> 변형 색상 이미지가 전부 섞여 나옵니다. 테마를 따로 고를 필요는 없습니다.
+              </p>
             </section>
           ) : null}
 

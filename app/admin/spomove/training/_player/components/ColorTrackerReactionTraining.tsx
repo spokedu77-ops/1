@@ -615,7 +615,7 @@ export function ColorTrackerReactionTraining({ targetRounds, tier = 2, onExit, o
         </div>
         <div className="ctrk-hc grow">
           <div className="ctrk-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
-            컬러 트래커
+            흰 공을 찾아라
           </div>
           <div className="ctrk-tier" ref={hudTierRef} />
         </div>

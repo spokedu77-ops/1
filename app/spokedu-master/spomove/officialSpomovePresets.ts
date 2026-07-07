@@ -62,8 +62,8 @@ export type OfficialSpomovePreset = {
   executionFacts: ExecutionFact[];
 };
 
-export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
-  // ─── 반응 인지 (sortOrder 1~25) ───────────────────────────────────────────
+export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[
+  // ─── OFFICIAL SPOMOVE LIBRARY (46 presets, sortOrder 1~46) ───
 
   // sortOrder 1: 공간 방향 (level 1)
   {
@@ -92,7 +92,6 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 2: 사분할 색상 (level 2, color)
   {
     id: 'reaction-cognition-quad-color-02',
@@ -120,7 +119,6 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
   // sortOrder 3: 사분할 과일 (level 2, fruit)
   {
     id: 'reaction-cognition-quad-fruit-10',
@@ -148,123 +146,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 4: 사분할 탈것 (level 2, vehicle)
-  {
-    id: 'reaction-cognition-quad-vehicle-11',
-    sortOrder: 4,
-    title: '반응인지 · 사분할 · 탈것',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 2, variantColorTheme: 'vehicle' },
-    description: '네 영역에 제시되는 탈것 이미지 신호를 보고 정해진 위치에 맞춰 반응하는 활동',
-    salesCopy: '탈것 이미지로 흥미를 더한 사분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '색상 인지, 위치 선택, 다양한 학습 소재',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '탈것 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '사분할 이미지' },
-      { label: '테마', value: '탈것' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 5: 사분할 감정 (level 2, emotion)
-  {
-    id: 'reaction-cognition-quad-emotion-12',
-    sortOrder: 5,
-    title: '반응인지 · 사분할 · 감정',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 2, variantColorTheme: 'emotion' },
-    description: '네 영역에 제시되는 감정 표현 이미지 신호를 보고 정해진 위치에 맞춰 반응하는 활동',
-    salesCopy: '감정 인식과 반응 속도를 함께 키우는 사분할 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '감정 인지, 위치 선택, 사회정서 연계',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '감정 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '사분할 이미지' },
-      { label: '테마', value: '감정' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 6: 사분할 동물 (level 2, animal)
-  {
-    id: 'reaction-cognition-quad-animal-13',
-    sortOrder: 6,
-    title: '반응인지 · 사분할 · 동물',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 2, variantColorTheme: 'animal' },
-    description: '네 영역에 제시되는 동물 이미지 신호를 보고 정해진 위치에 맞춰 반응하는 활동',
-    salesCopy: '동물 이미지로 친숙하게 즐기는 사분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '색상 인지, 위치 선택, 어린 학습자 친화',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '동물 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '사분할 이미지' },
-      { label: '테마', value: '동물' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 7: 사분할 자연 (level 2, nature)
-  {
-    id: 'reaction-cognition-quad-nature-14',
-    sortOrder: 7,
-    title: '반응인지 · 사분할 · 자연',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 2, variantColorTheme: 'nature' },
-    description: '네 영역에 제시되는 자연물 이미지 신호를 보고 정해진 위치에 맞춰 반응하는 활동',
-    salesCopy: '자연 소재로 차분하게 즐기는 사분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '색상 인지, 위치 선택, 자연 친화 수업',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '자연 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '사분할 이미지' },
-      { label: '테마', value: '자연' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
   // sortOrder 8: 전면 색상 (level 3, color)
   {
     id: 'reaction-cognition-full-color-03',
-    sortOrder: 8,
+    sortOrder: 4,
     title: '반응인지 3번 · 전면 색상 반응',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -288,67 +173,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 9: 전면 과일 (level 3, fruit)
-  {
-    id: 'reaction-cognition-full-fruit-15',
-    sortOrder: 9,
-    title: '반응인지 · 전면 · 과일',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 3, variantColorTheme: 'fruit' },
-    description: '전면에 제시되는 과일 이미지 신호를 보고 빠르게 판단하고 움직이는 활동',
-    salesCopy: '과일 이미지로 더 직관적인 전면 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '전신 반응, 이미지 판단, 어린 학습자',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '과일 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '전면 이미지' },
-      { label: '테마', value: '과일' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 10: 전면 탈것 (level 3, vehicle)
-  {
-    id: 'reaction-cognition-full-vehicle-16',
-    sortOrder: 10,
-    title: '반응인지 · 전면 · 탈것',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 3, variantColorTheme: 'vehicle' },
-    description: '전면에 제시되는 탈것 이미지 신호를 보고 빠르게 판단하고 움직이는 활동',
-    salesCopy: '탈것 이미지로 흥미를 더한 전면 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '전신 반응, 이미지 판단, 다양한 학습 소재',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '탈것 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '전면 이미지' },
-      { label: '테마', value: '탈것' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
   // sortOrder 11: 전면 감정 (level 3, emotion)
   {
     id: 'reaction-cognition-full-emotion-17',
-    sortOrder: 11,
+    sortOrder: 5,
     title: '반응인지 · 전면 · 감정',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -372,11 +200,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
   // sortOrder 12: 전면 동물 (level 3, animal)
   {
     id: 'reaction-cognition-full-animal-18',
-    sortOrder: 12,
+    sortOrder: 6,
     title: '반응인지 · 전면 · 동물',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -400,11 +227,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
   // sortOrder 13: 전면 자연 (level 3, nature)
   {
     id: 'reaction-cognition-full-nature-19',
-    sortOrder: 13,
+    sortOrder: 7,
     title: '반응인지 · 전면 · 자연',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -428,11 +254,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
   // sortOrder 14: 2분할 색상 (level 4, color)
   {
     id: 'reaction-cognition-split-color-04',
-    sortOrder: 14,
+    sortOrder: 8,
     title: '반응인지 4번 · 2분할 색상 반응',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -456,151 +281,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 15: 2분할 과일 (level 4, fruit)
-  {
-    id: 'reaction-cognition-split-fruit-20',
-    sortOrder: 15,
-    title: '반응인지 · 2분할 · 과일',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 4, variantColorTheme: 'fruit' },
-    description: '좌우로 나뉜 두 영역의 과일 이미지 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '과일 이미지로 더 직관적인 2분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '선택 반응, 양측 이동, 어린 학습자',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '과일 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '2분할 이미지' },
-      { label: '테마', value: '과일' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 16: 2분할 탈것 (level 4, vehicle)
-  {
-    id: 'reaction-cognition-split-vehicle-21',
-    sortOrder: 16,
-    title: '반응인지 · 2분할 · 탈것',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 4, variantColorTheme: 'vehicle' },
-    description: '좌우로 나뉜 두 영역의 탈것 이미지 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '탈것 이미지로 흥미를 더한 2분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '선택 반응, 양측 이동, 다양한 학습 소재',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '탈것 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '2분할 이미지' },
-      { label: '테마', value: '탈것' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 17: 2분할 감정 (level 4, emotion)
-  {
-    id: 'reaction-cognition-split-emotion-22',
-    sortOrder: 17,
-    title: '반응인지 · 2분할 · 감정',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 4, variantColorTheme: 'emotion' },
-    description: '좌우로 나뉜 두 영역의 감정 이미지 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '감정 인식과 반응 속도를 함께 키우는 2분할 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '선택 반응, 감정 인지, 사회정서 연계',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '감정 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '2분할 이미지' },
-      { label: '테마', value: '감정' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 18: 2분할 동물 (level 4, animal)
-  {
-    id: 'reaction-cognition-split-animal-23',
-    sortOrder: 18,
-    title: '반응인지 · 2분할 · 동물',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 4, variantColorTheme: 'animal' },
-    description: '좌우로 나뉜 두 영역의 동물 이미지 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '동물 이미지로 친숙하게 즐기는 2분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '선택 반응, 양측 이동, 어린 학습자 친화',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '동물 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '2분할 이미지' },
-      { label: '테마', value: '동물' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
-  // sortOrder 19: 2분할 자연 (level 4, nature)
-  {
-    id: 'reaction-cognition-split-nature-24',
-    sortOrder: 19,
-    title: '반응인지 · 2분할 · 자연',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'reaction-cognition',
-    programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 4, variantColorTheme: 'nature' },
-    description: '좌우로 나뉜 두 영역의 자연물 이미지 신호를 보고 빠르게 선택 반응하는 활동',
-    salesCopy: '자연 소재로 차분하게 즐기는 2분할 반응',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '선택 반응, 양측 이동, 자연 친화 수업',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '자연 테마', 'BGM 자동'],
-    executionFacts: [
-      { label: '신호 방식', value: '2분할 이미지' },
-      { label: '테마', value: '자연' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-
   // sortOrder 20: 3패널 색상 (level 5, color)
   {
     id: 'reaction-cognition-triple-color-25',
-    sortOrder: 20,
+    sortOrder: 9,
     title: '반응인지 · 3패널 · 색상',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -624,154 +308,146 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 21: 3패널 과일 (level 5, fruit)
+  // 반응인지 6번 · 3패널 다른색
   {
-    id: 'reaction-cognition-triple-fruit-26',
-    sortOrder: 21,
-    title: '반응인지 · 3패널 · 과일',
+    id: 'reaction-cognition-triple-diff-color-31',
+    sortOrder: 10,
+    title: '반응인지 6번 · 3패널 다른색',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 5, variantColorTheme: 'fruit' },
-    description: '세 패널에 제시되는 과일 이미지 신호를 보고 빠르게 선택 반응하는 고급 활동',
-    salesCopy: '3패널 과일 이미지로 선택 반응 심화',
+    engine: { mode: 'basic', level: 6, variantColorTheme: 'color' },
+    description: '세 패널에 서로 다른 색 신호가 제시될 때 빠르게 선택 반응하는 활동',
+    salesCopy: '3패널 서로 다른 색으로 선택 반응 심화',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '고급 선택 반응, 이미지 판단, 심화 훈련',
+    recommendedUse: '심화 반응, 집중력, 변형 사분할',
     isReady: true,
     settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '과일 테마', 'BGM 자동'],
+    settingChips: ['3초', '20회', '색상 테마', 'BGM 자동'],
     executionFacts: [
       { label: '신호 방식', value: '3패널 이미지' },
-      { label: '테마', value: '과일' },
+      { label: '테마', value: '색상' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
     ],
-  },
-
-  // sortOrder 22: 3패널 탈것 (level 5, vehicle)
+  }
+  // 반응인지 7번 · 변형 사분할 1단계
   {
-    id: 'reaction-cognition-triple-vehicle-27',
-    sortOrder: 22,
-    title: '반응인지 · 3패널 · 탈것',
+    id: 'reaction-cognition-mq1-32',
+    sortOrder: 11,
+    title: '반응인지 7번 · 변형 사분할 1단계',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 5, variantColorTheme: 'vehicle' },
-    description: '세 패널에 제시되는 탈것 이미지 신호를 보고 빠르게 선택 반응하는 고급 활동',
-    salesCopy: '3패널 탈것 이미지로 선택 반응 심화',
+    engine: { mode: 'basic', level: 7 },
+    description: '색상 자극과 신체 부위(발)가 함께 제시될 때 해당 패드에 발을 접촉하는 활동',
+    salesCopy: '발 중심 변형 사분할로 신체-색 연결',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '고급 선택 반응, 이미지 판단, 심화 훈련',
+    recommendedUse: '심화 반응, 집중력, 변형 사분할',
     isReady: true,
     settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '탈것 테마', 'BGM 자동'],
+    settingChips: ['3초', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '신호 방식', value: '3패널 이미지' },
-      { label: '테마', value: '탈것' },
+      { label: '신호 방식', value: '변형 사분할 · 발' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
+      { label: '효과음', value: '자동' },
     ],
-  },
-
-  // sortOrder 23: 3패널 감정 (level 5, emotion)
+  }
+  // 반응인지 8번 · 변형 사분할 2단계
   {
-    id: 'reaction-cognition-triple-emotion-28',
-    sortOrder: 23,
-    title: '반응인지 · 3패널 · 감정',
+    id: 'reaction-cognition-mq2-33',
+    sortOrder: 12,
+    title: '반응인지 8번 · 변형 사분할 2단계',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 5, variantColorTheme: 'emotion' },
-    description: '세 패널에 제시되는 감정 이미지 신호를 보고 빠르게 선택 반응하는 고급 활동',
-    salesCopy: '감정 인식과 선택 반응을 동시에 심화',
+    engine: { mode: 'basic', level: 8 },
+    description: '색상 1~2개와 신체 부위(발·손)가 함께 제시될 때 해당 패드로 이동하는 활동',
+    salesCopy: '손·발 혼합 변형 사분할 반응',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '고급 선택 반응, 감정 인지, 심화 훈련',
+    recommendedUse: '심화 반응, 집중력, 변형 사분할',
     isReady: true,
     settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '감정 테마', 'BGM 자동'],
+    settingChips: ['3초', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '신호 방식', value: '3패널 이미지' },
-      { label: '테마', value: '감정' },
+      { label: '신호 방식', value: '변형 사분할 · 손+발' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
+      { label: '효과음', value: '자동' },
     ],
-  },
-
-  // sortOrder 24: 3패널 동물 (level 5, animal)
+  }
+  // 반응인지 9번 · 변형 사분할 3단계
   {
-    id: 'reaction-cognition-triple-animal-29',
-    sortOrder: 24,
-    title: '반응인지 · 3패널 · 동물',
+    id: 'reaction-cognition-mq3-34',
+    sortOrder: 13,
+    title: '반응인지 9번 · 변형 사분할 3단계',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 5, variantColorTheme: 'animal' },
-    description: '세 패널에 제시되는 동물 이미지 신호를 보고 빠르게 선택 반응하는 고급 활동',
-    salesCopy: '동물 이미지로 즐기는 3패널 심화 반응',
+    engine: { mode: 'basic', level: 9 },
+    description: '색상 1~3개와 신체 부위가 배정될 때 각 패드에 맞게 반응하는 활동',
+    salesCopy: '3색 신체 배정 변형 사분할',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '고급 선택 반응, 이미지 판단, 심화 훈련',
+    recommendedUse: '심화 반응, 집중력, 변형 사분할',
     isReady: true,
     settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '동물 테마', 'BGM 자동'],
+    settingChips: ['3초', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '신호 방식', value: '3패널 이미지' },
-      { label: '테마', value: '동물' },
+      { label: '신호 방식', value: '변형 사분할 · 3색' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
+      { label: '효과음', value: '자동' },
     ],
-  },
-
-  // sortOrder 25: 3패널 자연 (level 5, nature)
+  }
+  // 반응인지 10번 · 변형 사분할 4단계
   {
-    id: 'reaction-cognition-triple-nature-30',
-    sortOrder: 25,
-    title: '반응인지 · 3패널 · 자연',
+    id: 'reaction-cognition-mq4-35',
+    sortOrder: 14,
+    title: '반응인지 10번 · 변형 사분할 4단계',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 5, variantColorTheme: 'nature' },
-    description: '세 패널에 제시되는 자연물 이미지 신호를 보고 빠르게 선택 반응하는 고급 활동',
-    salesCopy: '자연 소재로 즐기는 3패널 심화 반응',
+    engine: { mode: 'basic', level: 10 },
+    description: '3색에 손·발이 혼합 배정될 때 규칙에 맞게 패드로 이동하는 최고 난이도 활동',
+    salesCopy: '손·발 혼합 3색 변형 사분할 극한',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '고급 선택 반응, 이미지 판단, 자연 친화 심화',
+    recommendedUse: '심화 반응, 집중력, 변형 사분할',
     isReady: true,
     settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '자연 테마', 'BGM 자동'],
+    settingChips: ['3초', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '신호 방식', value: '3패널 이미지' },
-      { label: '테마', value: '자연' },
+      { label: '신호 방식', value: '변형 사분할 · 3색 혼합' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
+      { label: '효과음', value: '자동' },
     ],
-  },
-
-  // ─── 시지각 반응 (sortOrder 26~36) ────────────────────────────────────────
-
-  // sortOrder 26: FLOW ×1 (level 1, concurrent 1)
+  }
+  // sortOrder 27: FLOW ×1 (level 1, concurrent 1)
   {
     id: 'visual-reaction-flow-05',
-    sortOrder: 26,
-    title: '시지각 반응 1번 · FLOW',
+    sortOrder: 15,
+    title: '시지각 반응 · 떨어지는 벽돌',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -779,28 +455,27 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 1, reactTrainConcurrent: 1 },
-    description: '색 자극이 자연스럽게 흘러내릴 때 해당 색 위치로 이동하는 시지각 반응 활동',
+    description: '떨어지는 벽돌처럼 색 자극이 흘러내릴 때 해당 색 위치로 이동하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '수업 도입, 시선 집중, 기본 반응 깨우기',
     isReady: true,
-    settingSummary: '3초 간격 · 약 75초 · BGM 자동',
-    settingChips: ['3초 간격', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['3초', '20회', 'BGM 자동'],
     executionFacts: [
       { label: '동시 자극', value: '1개' },
-      { label: '진행 방식', value: 'FLOW' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '진행 방식', value: '떨어지는 벽돌' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 27: FLOW ×2 (level 1, concurrent 2)
+  // sortOrder 28: FLOW ×2 (level 1, concurrent 2)
   {
     id: 'visual-reaction-flow-2x-31',
-    sortOrder: 27,
-    title: '시지각 반응 · FLOW ×2',
+    sortOrder: 16,
+    title: '시지각 반응 · 떨어지는 벽돌 ×2',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -808,28 +483,27 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 1, reactTrainConcurrent: 2 },
-    description: '색 자극이 동시에 2개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동',
+    description: '떨어지는 벽돌처럼 색 자극이 동시에 2개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '시지각 분할, 동시 자극 처리, 반응력 강화',
     isReady: true,
-    settingSummary: '동시 2개 · 약 75초 · BGM 자동',
-    settingChips: ['동시 2개', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['동시 2개', '20회', 'BGM 자동'],
     executionFacts: [
       { label: '동시 자극', value: '2개' },
-      { label: '진행 방식', value: 'FLOW' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '진행 방식', value: '떨어지는 벽돌' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 28: FLOW ×3 (level 1, concurrent 3)
+  // sortOrder 29: FLOW ×3 (level 1, concurrent 3)
   {
     id: 'visual-reaction-flow-3x-32',
-    sortOrder: 28,
-    title: '시지각 반응 · FLOW ×3',
+    sortOrder: 17,
+    title: '시지각 반응 · 떨어지는 벽돌 ×3',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -837,28 +511,27 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 1, reactTrainConcurrent: 3 },
-    description: '색 자극이 동시에 3개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동',
+    description: '떨어지는 벽돌처럼 색 자극이 동시에 3개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '시지각 분산, 다중 자극 처리, 집중력 극대화',
     isReady: true,
-    settingSummary: '동시 3개 · 약 75초 · BGM 자동',
-    settingChips: ['동시 3개', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['동시 3개', '20회', 'BGM 자동'],
     executionFacts: [
       { label: '동시 자극', value: '3개' },
-      { label: '진행 방식', value: 'FLOW' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '진행 방식', value: '떨어지는 벽돌' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 29: FLASH (level 2)
+  // sortOrder 30: FLASH (level 2)
   {
     id: 'visual-reaction-flash-33',
-    sortOrder: 29,
-    title: '시지각 반응 · FLASH',
+    sortOrder: 18,
+    title: '시지각 반응 · 풍선 터뜨리기',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -866,28 +539,27 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 2 },
-    description: '순간적으로 번쩍이는 자극에 빠르게 반응하는 시지각 반응 활동',
+    description: '풍선 터뜨리기처럼 순간적으로 나타나는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '순간 집중, 빠른 반응, 시각 각성',
     isReady: true,
-    settingSummary: '플래시 자극 · 약 75초 · BGM 자동',
-    settingChips: ['플래시 자극', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['풍선 터뜨리기', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'FLASH' },
+      { label: '자극 방식', value: '풍선 터뜨리기' },
       { label: '진행 방식', value: '순간 반응' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 30: PULSE (level 3)
+  // sortOrder 31: PULSE (level 3)
   {
     id: 'visual-reaction-pulse-36',
-    sortOrder: 30,
-    title: '시지각 반응 · PULSE',
+    sortOrder: 19,
+    title: '시지각 반응 · 동그라미 파동',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -895,28 +567,27 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 3 },
-    description: '맥박처럼 리듬감 있게 제시되는 자극에 빠르게 반응하는 시지각 반응 활동',
+    description: '동그라미 파동처럼 리듬감 있게 제시되는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '리듬 반응, 박자 감각, 집중 유지',
     isReady: true,
-    settingSummary: '펄스 자극 · 약 75초 · BGM 자동',
-    settingChips: ['펄스 자극', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['동그라미 파동', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'PULSE' },
+      { label: '자극 방식', value: '동그라미 파동' },
       { label: '진행 방식', value: '리듬 반응' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 31: CAMOUFLAGE (level 4)
+  // sortOrder 32: CAMOUFLAGE (level 4)
   {
     id: 'visual-reaction-blackout-37',
-    sortOrder: 31,
-    title: '시지각 반응 · 카모플라쥬',
+    sortOrder: 20,
+    title: '시지각 반응 · 매직 아이',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -924,27 +595,26 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 4 },
-    description: '노이즈 속에 위장된 색 사물(과일 등)을 찾아내는 고난도 시지각 반응 활동',
+    description: '매직 아이처럼 노이즈 속에 위장된 색 사물(과일 등)을 찾아내는 고난도 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '고난도 집중, 색 변별, 위장 탐지',
     isReady: true,
-    settingSummary: '위장 도형 · 약 75초 · BGM 자동',
-    settingChips: ['위장 도형', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['매직 아이', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'CAMOUFLAGE' },
+      { label: '자극 방식', value: '매직 아이' },
       { label: '진행 방식', value: '위장 탐지' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 32: SWEEP (level 5)
+  // sortOrder: SWEEP (level 5)
   {
     id: 'visual-reaction-sweep-38',
-    sortOrder: 32,
+    sortOrder: 21,
     title: '시지각 반응 · SWEEP',
     en: 'Visual Reaction',
     axis: 'response',
@@ -953,28 +623,27 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 5 },
-    description: '화면을 쓸듯이 이동하는 자극에 빠르게 반응하는 시지각 반응 활동',
+    description: '화면을 가로지르는 스윕 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '시야 추적, 이동 자극 반응, 집중력 심화',
+    recommendedUse: '스윕 추적, 시선 이동, 반응 속도',
     isReady: true,
-    settingSummary: '스윕 자극 · 약 75초 · BGM 자동',
-    settingChips: ['스윕 자극', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['스윕 자극', '20회', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: 'SWEEP' },
-      { label: '진행 방식', value: '이동 추적' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '진행 방식', value: '스윕 반응' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 33: RUSH (level 6)
+  // sortOrder: RUSH (level 6)
   {
     id: 'visual-reaction-rush-39',
-    sortOrder: 33,
-    title: '시지각 반응 · RUSH',
+    sortOrder: 22,
+    title: '시지각 반응 · 파도타기',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -982,57 +651,55 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 6 },
-    description: '빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동',
+    description: '파도타기처럼 빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '초고속 반응, 연속 자극 처리, 극한 집중',
     isReady: true,
-    settingSummary: '러시 자극 · 약 75초 · BGM 자동',
-    settingChips: ['러시 자극', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['파도타기', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'RUSH' },
+      { label: '자극 방식', value: '파도타기' },
       { label: '진행 방식', value: '연속 반응' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 34: MOLE (level 7)
+  // sortOrder 33: MOLE (level 7)
   {
     id: 'visual-reaction-mole-40',
-    sortOrder: 34,
-    title: '시지각 반응 · MOLE',
+    sortOrder: 23,
+    title: '시지각 반응 · 두더지 잡기',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 7 },
-    description: '화면 곳곳 구멍에서 튀어나오는 자극에 빠르게 반응하는 시지각 반응 활동',
+    engine: { mode: 'reactTrain', level: 7, moleDualPanel: false },
+    description: '화면 곳곳 구멍에서 튀어나오는 두더지 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '순발력, 팝업 반응, 게임형 활동',
     isReady: true,
-    settingSummary: '팝업 두더지 · 약 75초 · BGM 자동',
-    settingChips: ['팝업 두더지', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['두더지 잡기', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'MOLE' },
+      { label: '자극 방식', value: '두더지 잡기' },
       { label: '진행 방식', value: '팝업 반응' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 35: WORMHOLE (level 8)
+  // sortOrder 34: WORMHOLE (level 8)
   {
     id: 'visual-reaction-wormhole-41',
-    sortOrder: 35,
-    title: '시지각 반응 · 우주 몰입',
+    sortOrder: 24,
+    title: '시지각 반응 · 소행성을 피해라',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
@@ -1040,87 +707,82 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 8 },
-    description: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피하는 고난도 시지각 반응 활동',
+    description: '무한 가속하는 웜홀 속에서 소행성이 없는 안전한 색 구역으로 회피하는 고난도 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '고난도 집중, 회피 반응, 몰입 훈련',
     isReady: true,
-    settingSummary: '웜홀 회피 · 약 75초 · BGM 자동',
-    settingChips: ['웜홀 회피', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['소행성 회피', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'WORMHOLE' },
+      { label: '자극 방식', value: '소행성을 피해라' },
       { label: '진행 방식', value: '회피 반응' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 36: NUMBER CART (level 9)
+  // sortOrder 35: NUMBER CART (level 9)
   {
     id: 'visual-reaction-number-cart-42',
-    sortOrder: 36,
-    title: '시지각 반응 · 숫자 수레',
+    sortOrder: 25,
+    title: '시지각 반응 · 숫자 기차',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 9 },
-    description: '광산 수레의 목표 숫자(또는 +-×÷ 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어가는 시지각 반응 활동',
+    engine: { mode: 'reactTrain', level: 9, numberCartTier: 2 },
+    description: '숫자 기차의 목표 숫자(또는 +-×÷ 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어가는 시지각 반응 활동',
     cueSeconds: 3,
-    rounds: 20,
+    rounds: 5,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '숫자·색 매칭, 사전 판단, 선택 반응',
     isReady: true,
-    settingSummary: '숫자 매칭 · 약 75초 · BGM 자동',
-    settingChips: ['숫자 매칭', '약 75초', 'BGM 자동'],
+    settingSummary: '3초 · 5라운드 · BGM 자동',
+    settingChips: ['숫자 기차', '5라운드', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'NUMBER CART' },
-      { label: '진행 방식', value: '숫자·색 매칭' },
-      { label: '실행 시간', value: '약 75초' },
+      { label: '자극 방식', value: '숫자 기차' },
+      { label: '진행 방식', value: '라운드 · 숫자·색 매칭' },
+      { label: '라운드', value: '5라운드' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // sortOrder 61: COLOR TRACKER (level 10)
+  // sortOrder 36: COLOR TRACKER (level 10)
   {
     id: 'visual-reaction-color-tracker-43',
-    sortOrder: 61,
-    title: '시지각 반응 · 컬러 트래커',
+    sortOrder: 26,
+    title: '시지각 반응 · 흰 공을 찾아라',
     en: 'Visual Reaction',
     axis: 'response',
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 10 },
-    description: '시지각 10번 컬러 트래커 — 흰 공 추적 후 빨·노·초·파 구역 맞추기(L1~L3)',
+    engine: { mode: 'reactTrain', level: 10, colorTrackerTier: 2 },
+    description: '흰 공을 끝까지 추적한 뒤 빨·노·초·파 구역 중 어디에 멈췄는지 맞추는 시지각 반응 활동(L1~L3)',
     cueSeconds: 3,
     rounds: 5,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '시각 추적, 지속 주의, 다중 물체 추적',
     isReady: true,
-    settingSummary: '시각 추적 · 5라운드 · BGM 자동',
-    settingChips: ['시각 추적', '5라운드', 'BGM 자동'],
+    settingSummary: '흰 공 추적 · 5라운드 · BGM 자동',
+    settingChips: ['흰 공 추적', '5라운드', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'COLOR TRACKER' },
+      { label: '자극 방식', value: '흰 공을 찾아라' },
       { label: '진행 방식', value: '라운드 · 정답 수동 공개' },
       { label: '라운드', value: '5라운드' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-
-  // ─── 사이먼 (sortOrder 37~38) ──────────────────────────────────────────────
-
   // sortOrder 37: Pole Shape (level 1)
   {
     id: 'simon-pole-shape-06',
-    sortOrder: 37,
+    sortOrder: 27,
     title: '사이먼 효과 1번 · Pole Shape',
     en: 'Simon Effect',
     axis: 'attention',
@@ -1145,11 +807,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 38: Pole Arrows (level 2)
   {
     id: 'simon-pole-arrows-41',
-    sortOrder: 38,
+    sortOrder: 28,
     title: '사이먼 효과 · Pole Arrows',
     en: 'Simon Effect',
     axis: 'attention',
@@ -1174,13 +835,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // ─── 플랭커 (sortOrder 39~44) ─────────────────────────────────────────────
-
   // sortOrder 39: Uniform (level 1)
   {
     id: 'flanker-uniform-07',
-    sortOrder: 39,
+    sortOrder: 29,
     title: '플랭커 1번 · Uniform Flankers',
     en: 'Flanker',
     axis: 'attention',
@@ -1205,11 +863,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 40: Grouped (level 2)
   {
     id: 'flanker-grouped-42',
-    sortOrder: 40,
+    sortOrder: 30,
     title: '플랭커 · Grouped Flankers',
     en: 'Flanker',
     axis: 'attention',
@@ -1234,11 +891,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 41: Random (level 3)
   {
     id: 'flanker-random-43',
-    sortOrder: 41,
+    sortOrder: 31,
     title: '플랭커 · Random Flankers',
     en: 'Flanker',
     axis: 'attention',
@@ -1263,69 +919,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // sortOrder 42: Mixed (level 4)
-  {
-    id: 'flanker-mixed-44',
-    sortOrder: 42,
-    title: '플랭커 · Mixed Flankers',
-    en: 'Flanker',
-    axis: 'attention',
-    axisTitle: SPOMOVE_AXIS_META.attention.title,
-    programGroup: 'flanker',
-    programTitle: '플랭커',
-    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
-    engine: { mode: 'flanker', level: 4 },
-    description: '혼합된 방해 자극 구성으로 더 복잡한 선택 반응을 요구하는 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '혼합 자극 처리, 고급 선택주의, 집중력 심화',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '혼합 자극', 'BGM 자동'],
-    executionFacts: [
-      { label: '자극 방식', value: 'Mixed' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
-    ],
-  },
-
-  // sortOrder 43: 3 Circle (level 5)
-  {
-    id: 'flanker-3circle-45',
-    sortOrder: 43,
-    title: '플랭커 · 3 Circle Flankers',
-    en: 'Flanker',
-    axis: 'attention',
-    axisTitle: SPOMOVE_AXIS_META.attention.title,
-    programGroup: 'flanker',
-    programTitle: '플랭커',
-    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
-    engine: { mode: 'flanker', level: 5 },
-    description: '세 개 원 구성에서 가운데 목표 신호를 선택하는 간결한 플랭커 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '간결한 자극 집중, 선택주의, 반응 정확도',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', '3원 자극', 'BGM 자동'],
-    executionFacts: [
-      { label: '자극 방식', value: '3 Circle' },
-      { label: '반복', value: '20회' },
-      { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
-    ],
-  },
-
   // sortOrder 44: 5 Circle (level 6)
   {
     id: 'flanker-5circle-46',
-    sortOrder: 44,
+    sortOrder: 32,
     title: '플랭커 · 5 Circle Flankers',
     en: 'Flanker',
     axis: 'attention',
@@ -1350,13 +947,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // ─── 스트룹 (sortOrder 45~49) ─────────────────────────────────────────────
-
   // sortOrder 45: Arrow Reverse (level 1)
   {
     id: 'stroop-arrow-reverse-08',
-    sortOrder: 45,
+    sortOrder: 33,
     title: '스트룹 과제 1번 · Arrow Reverse',
     en: 'Stroop Task',
     axis: 'executive',
@@ -1381,11 +975,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 46: Arrow BG (level 2)
   {
     id: 'stroop-arrow-bg-47',
-    sortOrder: 46,
+    sortOrder: 34,
     title: '스트룹 과제 · Arrow BG',
     en: 'Stroop Task',
     axis: 'executive',
@@ -1410,11 +1003,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 47: Word Reverse (level 3)
   {
     id: 'stroop-word-reverse-48',
-    sortOrder: 47,
+    sortOrder: 35,
     title: '스트룹 과제 · Word Reverse',
     en: 'Stroop Task',
     axis: 'executive',
@@ -1439,11 +1031,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 48: Word BG (level 4)
   {
     id: 'stroop-word-bg-49',
-    sortOrder: 48,
+    sortOrder: 36,
     title: '스트룹 과제 · Word BG',
     en: 'Stroop Task',
     axis: 'executive',
@@ -1468,11 +1059,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 49: Missing Color (level 5)
   {
     id: 'stroop-missing-color-50',
-    sortOrder: 49,
+    sortOrder: 37,
     title: '스트룹 과제 · Missing Color',
     en: 'Stroop Task',
     axis: 'executive',
@@ -1497,13 +1087,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // ─── 순차 기억 (sortOrder 50~54) ──────────────────────────────────────────
-
   // sortOrder 50: 3 Color Memory (level 1)
   {
     id: 'sequential-memory-3color-09',
-    sortOrder: 50,
+    sortOrder: 38,
     title: '순차 기억 1번 · 3 Color Memory',
     en: 'Sequential Memory',
     axis: 'executive',
@@ -1528,11 +1115,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 51: 5 Color Memory (level 2)
   {
     id: 'sequential-memory-5color-51',
-    sortOrder: 51,
+    sortOrder: 39,
     title: '순차 기억 · 5 Color Memory',
     en: 'Sequential Memory',
     axis: 'executive',
@@ -1557,11 +1143,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 52: 10 Color Memory (level 3)
   {
     id: 'sequential-memory-10color-52',
-    sortOrder: 52,
+    sortOrder: 40,
     title: '순차 기억 · 10 Color Memory',
     en: 'Sequential Memory',
     axis: 'executive',
@@ -1586,40 +1171,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // sortOrder 53: Color Number (level 4)
-  {
-    id: 'sequential-memory-color-number-53',
-    sortOrder: 53,
-    title: '순차 기억 · Color Number',
-    en: 'Sequential Memory',
-    axis: 'executive',
-    axisTitle: SPOMOVE_AXIS_META.executive.title,
-    programGroup: 'sequential-memory',
-    programTitle: '순차 기억',
-    salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
-    engine: { mode: 'spatial', level: 4 },
-    description: '색상과 숫자 정보를 함께 기억하고 순서에 맞게 재현하는 복합 기억 수행 활동',
-    cueSeconds: 3,
-    rounds: 10,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '복합 기억, 작업기억 극한 확장, 심화 마무리 활동',
-    isReady: true,
-    settingSummary: '색상+숫자 기억 · 10라운드 · BGM 자동',
-    settingChips: ['색상+숫자', '10라운드', 'BGM 자동'],
-    executionFacts: [
-      { label: '기억 방식', value: '색상+숫자' },
-      { label: '라운드', value: '10라운드' },
-      { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
-    ],
-  },
-
   // sortOrder 54: Full Reveal (level 5)
   {
     id: 'sequential-memory-full-reveal-54',
-    sortOrder: 54,
+    sortOrder: 41,
     title: '순차 기억 · Full Reveal',
     en: 'Sequential Memory',
     axis: 'executive',
@@ -1644,13 +1199,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // ─── 다이브 (sortOrder 55~59) ─────────────────────────────────────────────
-
   // sortOrder 55: 기본 점프
   {
     id: 'dive-jump-55',
-    sortOrder: 55,
+    sortOrder: 42,
     title: '다이브 · 기본 점프',
     en: 'Dive',
     axis: 'response',
@@ -1675,40 +1227,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // sortOrder 56: 가속
-  {
-    id: 'dive-jump-faster-56',
-    sortOrder: 56,
-    title: '다이브 · 가속',
-    en: 'Dive',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'dive',
-    programTitle: '다이브',
-    engine: { mode: 'flow', level: 1, flowFeatures: ['faster'] },
-    description: '점점 빨라지는 장애물 속도에 맞춰 점프하는 FLOW 기반 가속 반응 활동',
-    salesCopy: '속도가 빨라질수록 더 짜릿한 다이브 가속',
-    cueSeconds: 3,
-    rounds: 1,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '가속 반응, 동적 속도 적응, 집중력 유지',
-    isReady: true,
-    settingSummary: 'FLOW · 가속 · BGM 자동',
-    settingChips: ['가속', 'FLOW', 'BGM 자동'],
-    executionFacts: [
-      { label: '동작', value: '가속 점프' },
-      { label: '진행 방식', value: 'FLOW' },
-      { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
-    ],
-  },
-
   // sortOrder 57: 펀치
   {
     id: 'dive-jump-punch-57',
-    sortOrder: 57,
+    sortOrder: 43,
     title: '다이브 · 펀치',
     en: 'Dive',
     axis: 'response',
@@ -1733,11 +1255,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 58: 숙이기
   {
     id: 'dive-jump-duck-58',
-    sortOrder: 58,
+    sortOrder: 44,
     title: '다이브 · 숙이기',
     en: 'Dive',
     axis: 'response',
@@ -1762,11 +1283,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
   // sortOrder 59: 벽 닿기
   {
     id: 'dive-jump-reach-59',
-    sortOrder: 59,
+    sortOrder: 45,
     title: '다이브 · 벽 닿기',
     en: 'Dive',
     axis: 'response',
@@ -1791,13 +1311,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-
-  // ─── 보너스 (sortOrder 60) ────────────────────────────────────────────────
-
   // sortOrder 60: 1분 챌린지
   {
     id: 'bonus-dive-challenge-60',
-    sortOrder: 60,
+    sortOrder: 46,
     title: '다이브 보너스 · 1분 챌린지',
     en: 'Dive Bonus',
     axis: 'response',
@@ -1828,6 +1345,10 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
     ],
   },
 ];
+
+export function standardSpomoveDurationSec(cueSeconds: number, rounds: number): number {
+  return Math.max(1, cueSeconds) * Math.max(1, rounds);
+}
 
 export function findOfficialSpomovePreset(id: string | null | undefined) {
   return OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === id) ?? null;

@@ -21,7 +21,8 @@
       "Bash(node .tmp_pw/shot2.js)",
       "Bash(node .tmp_pw2/shot3.js)",
       "Bash(node .tmp_pw2/shot4.js)",
-      "Bash(sort -t: -k2 -n)"
+      "Bash(sort -t: -k2 -n)",
+      "Bash(grep -iE \"NumberCartReactionTraining|training[\\\\\\\\\\\\\\\\/]page.tsx\")"
     ]
   }
 }

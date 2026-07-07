@@ -37,15 +37,25 @@ type AsteroidData = {
   rotX: number;
   rotY: number;
   rotZ: number;
+  quadrantIndex: number;
 };
 
-/** lv1 약 19초, lv7 약 12초 (60fps) */
+type Burst = {
+  points: THREE.Points;
+  geometry: THREE.BufferGeometry;
+  material: THREE.PointsMaterial;
+  velocities: Float32Array;
+  age: number;
+  life: number;
+};
+
+/** lv1 약 9.5초, lv7 약 6.3초 (60fps) */
 function asteroidTravelFrames(lv: number): number {
-  return Math.max(720, Math.round((300 - lv * 16) * 4));
+  return Math.max(300, Math.round((300 - lv * 16) * 2));
 }
 
 const WARN_MS = 1800;
-const WAVE_GAP_MIN_MS = 22000;
+const WAVE_GAP_MIN_MS = 4000;
 
 function visibleWorldHeight(z: number, fovDeg: number): number {
   return 2 * z * Math.tan((fovDeg * Math.PI) / 180 / 2);
@@ -90,9 +100,12 @@ type WhGame = {
   running: boolean;
   timeLeft: number;
   warpSpeed: number;
+  /** 스피드라인 전용 고정 속도. warpSpeed의 가속·웨이브 변동과 분리된 신호(lv) 기준값 */
+  lineSpeed: number;
   maxWarpSpeed: number;
   accelerationRate: number;
   obstacles: THREE.Object3D[];
+  bursts: Burst[];
   waves: number;
   laneCount: [number, number, number, number];
   waveTimer: ReturnType<typeof setTimeout> | null;
@@ -113,10 +126,12 @@ function asteroidApproachProgress(t: number): number {
   return 0.05 + (1 - Math.pow(1 - late, 2.85)) * 0.95;
 }
 
-/** t(0~1) → 구역 코너로 퍼짐. Z보다 빨리 lateral 이동 */
+/** t(0~1) → 구역 코너로 퍼짐. 크기가 다 커질 때까지 중앙에 머물다가 막판에 코너로 퍼져 '중앙에서 터져나가는' 느낌을 줌 */
 function asteroidSpreadProgress(t: number): number {
   const clamped = Math.max(0, Math.min(1, t));
-  return Math.pow(clamped, 1.08);
+  if (clamped <= 0.45) return (clamped / 0.45) * 0.02;
+  const late = (clamped - 0.45) / 0.55;
+  return 0.02 + (1 - Math.pow(1 - late, 2.6)) * 0.98;
 }
 
 /** t(0~1) → 크기. 후반에 급격히 커져 정면 돌진감 */
@@ -232,9 +247,11 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       running: true,
       timeLeft: durationSec,
       warpSpeed: baseSpeed,
+      lineSpeed: baseSpeed,
       maxWarpSpeed,
       accelerationRate,
       obstacles: [],
+      bursts: [],
       waves: 0,
       laneCount: [0, 0, 0, 0],
       waveTimer: null,
@@ -336,15 +353,16 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       group.add(new THREE.Mesh(mainGeo, rockMat));
 
       const startZ = -3600;
-      const removeZ = passZ + 680;
+      // 카메라(z=0)를 넘어가면 화면 밖(-Z를 보는 카메라 기준 뒤쪽)이라 안 보임 → 그 직전에서 터뜨림
+      const removeZ = -25;
       const targetX = TARGET_OFFSETS[quadrantIndex].x;
       const targetY = TARGET_OFFSETS[quadrantIndex].y;
 
-      const spawnAge = Math.round(travelFrames * 0.035);
-      const spawnT = spawnAge / travelFrames;
-      const spawnRush = asteroidApproachProgress(spawnT);
-      const spawnSpread = asteroidSpreadProgress(spawnT);
-      const spawnScale = asteroidScaleProgress(spawnT);
+      // t=0에서 스폰: x/y가 정확히 화면 중앙(0,0)에서 시작해 구역 코너로 퍼져나감
+      const spawnAge = 0;
+      const spawnRush = asteroidApproachProgress(0);
+      const spawnSpread = asteroidSpreadProgress(0);
+      const spawnScale = asteroidScaleProgress(0);
       const startScale = 3 + Math.random() * 2.5;
       const endScale = visibleH * (0.58 + Math.random() * 0.14);
 
@@ -368,8 +386,41 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         rotX: (Math.random() - 0.5) * 0.038,
         rotY: (Math.random() - 0.5) * 0.038,
         rotZ: (Math.random() - 0.5) * 0.03,
+        quadrantIndex,
       } satisfies AsteroidData;
       return group;
+    };
+
+    const burstParticleCount = isLow ? 12 : 26;
+
+    const spawnBurst = (position: THREE.Vector3, quadrantIndex: number): Burst => {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(burstParticleCount * 3);
+      const velocities = new Float32Array(burstParticleCount * 3);
+      for (let i = 0; i < burstParticleCount; i++) {
+        positions[i * 3] = position.x;
+        positions[i * 3 + 1] = position.y;
+        positions[i * 3 + 2] = position.z;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(Math.random() * 2 - 1);
+        const speed = 7 + Math.random() * 12;
+        velocities[i * 3] = Math.sin(phi) * Math.cos(theta) * speed;
+        velocities[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
+        velocities[i * 3 + 2] = Math.cos(phi) * speed;
+      }
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const material = new THREE.PointsMaterial({
+        color: quadrantColorObjs[quadrantIndex],
+        size: 7,
+        sizeAttenuation: true,
+        transparent: true,
+        opacity: 1,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      });
+      const points = new THREE.Points(geometry, material);
+      scene.add(points);
+      return { points, geometry, material, velocities, age: 0, life: 24 };
     };
 
     const updateHudTime = () => {
@@ -435,7 +486,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         }, 1800);
       }, WARN_MS);
 
-      const nextWaveTime = Math.max(WAVE_GAP_MIN_MS, Math.random() * 3500 + (14000 - g.warpSpeed * 6));
+      const nextWaveTime = Math.max(WAVE_GAP_MIN_MS, Math.random() * 2500 + (9000 - g.warpSpeed * 35));
       g.nextWaveTimer = setTimeout(() => {
         if (gRef.current?.running) triggerObstacleWave();
       }, nextWaveTime);
@@ -449,8 +500,8 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
 
       const posArr = linesGeometry.attributes.position.array as Float32Array;
       for (let i = 0; i < lineCount; i++) {
-        posArr[i * 6 + 2] += g.warpSpeed;
-        posArr[i * 6 + 5] += g.warpSpeed;
+        posArr[i * 6 + 2] += g.lineSpeed;
+        posArr[i * 6 + 5] += g.lineSpeed;
         if (posArr[i * 6 + 2] > 200) {
           posArr[i * 6 + 2] -= 3200;
           posArr[i * 6 + 5] -= 3200;
@@ -478,15 +529,31 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         obs.rotation.y += data.rotY;
         obs.rotation.z += data.rotZ;
 
-        if (t >= 1) {
-          obs.position.z += 2.2;
-          obs.position.x += (data.targetX - obs.position.x) * 0.035;
-          obs.position.y += (data.targetY - obs.position.y) * 0.035;
-        }
-
+        // 카메라(z=0, -Z 방향을 봄) 근처, 아직 화면에 보이는 위치에서 터뜨림.
+        // removeZ(=passZ 훌쩍 지난 화면 밖)까지 기다리면 이미 안 보이는 지점이라 폭발이 보이지 않았음.
         if (obs.position.z > data.removeZ) {
+          g.bursts.push(spawnBurst(obs.position, data.quadrantIndex));
           scene.remove(obs);
           g.obstacles.splice(i, 1);
+        }
+      }
+
+      for (let i = g.bursts.length - 1; i >= 0; i--) {
+        const burst = g.bursts[i];
+        burst.age += 1;
+        const posArr2 = burst.geometry.attributes.position.array as Float32Array;
+        for (let p = 0; p < posArr2.length; p += 3) {
+          posArr2[p] += burst.velocities[p];
+          posArr2[p + 1] += burst.velocities[p + 1];
+          posArr2[p + 2] += burst.velocities[p + 2];
+        }
+        burst.geometry.attributes.position.needsUpdate = true;
+        burst.material.opacity = Math.max(0, 1 - burst.age / burst.life);
+        if (burst.age >= burst.life) {
+          scene.remove(burst.points);
+          burst.geometry.dispose();
+          burst.material.dispose();
+          g.bursts.splice(i, 1);
         }
       }
 
@@ -555,6 +622,11 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       if (g.raf != null) cancelAnimationFrame(g.raf);
 
       g.obstacles.forEach((obs) => scene.remove(obs));
+      g.bursts.forEach((burst) => {
+        scene.remove(burst.points);
+        burst.geometry.dispose();
+        burst.material.dispose();
+      });
       scene.remove(linesMesh);
       linesGeometry.dispose();
       linesMaterial.dispose();

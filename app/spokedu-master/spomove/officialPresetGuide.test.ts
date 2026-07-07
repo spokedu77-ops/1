@@ -15,8 +15,8 @@ function read(relativePath: string) {
 }
 
 describe('official SPOMOVE preset guide contract', () => {
-  it('keeps sixty official presets with complete guide data', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(60);
+  it('keeps 46 official presets with complete guide data', () => {
+    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(46);
 
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
       const guide = getOfficialSpomovePresetGuide(preset);
@@ -53,7 +53,7 @@ describe('official SPOMOVE preset guide contract', () => {
     const diveLike = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) =>
       preset.programGroup === 'dive' || preset.programGroup === 'bonus'
     );
-    expect(diveLike).toHaveLength(6);
+    expect(diveLike).toHaveLength(5);
 
     const source = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     const groupTabsSource = source.match(/const PROGRAM_GROUP_TABS[\s\S]*?\];/)?.[0] ?? '';
