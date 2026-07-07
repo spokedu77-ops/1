@@ -29,7 +29,7 @@ export function collectStudentGroupOptions(groups: Array<string | null | undefin
 
 export function buildStudentAgeOptions(existingMetaValues: Array<string | null | undefined>): string[] {
   const seen = new Set<string>(STUDENT_AGE_PRESETS);
-  const options = [...STUDENT_AGE_PRESETS];
+  const options: string[] = [...STUDENT_AGE_PRESETS];
   for (const meta of existingMetaValues) {
     const trimmed = meta?.trim();
     if (!trimmed || seen.has(trimmed)) continue;
