@@ -2,7 +2,16 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
+import { LongPressButton } from './LongPressButton';
 import { setupCanvas } from '../lib/canvasUtils';
+
+export const COLOR_TRACKER_ROUND_OPTIONS = [2, 3, 5, 10] as const;
+
+export function normalizeColorTrackerRounds(value: number): number {
+  const n = Math.round(Number.isFinite(value) ? value : 5);
+  if ((COLOR_TRACKER_ROUND_OPTIONS as readonly number[]).includes(n)) return n;
+  return COLOR_TRACKER_ROUND_OPTIONS.reduce((best, v) => (Math.abs(v - n) < Math.abs(best - n) ? v : best));
+}
 
 /** 4분할: 좌상 빨 · 우상 노 · 좌하 초 · 우하 파 */
 const QUADRANTS = [
@@ -122,29 +131,51 @@ type TierParams = {
   chaosAmp: number;
   revealMs: number;
   scrambleMs: number;
-  guessMs: number;
   answerMs: number;
-  speedMul: number;
+  speedFactor: number;
   wallChaos: number;
   collisionPasses: number;
   sepBoost: number;
 };
 
-function tierParams(tier: ColorTrackerTier, lv: number, fallTimeSec: number): TierParams {
-  const ballBase = tier === 1 ? 4 : tier === 2 ? 5 : 7;
-  const revealMul = tier === 1 ? 1.35 : tier === 2 ? 1 : 0.82;
-  const scrambleMul = tier === 1 ? 0.88 : tier === 2 ? 1 : 1.14;
+/** L1~L3에 추적 속도·공 개수·충돌 난이도를 모두 포함 */
+function tierParams(tier: ColorTrackerTier): TierParams {
+  if (tier === 1) {
+    return {
+      ballCount: 6,
+      chaosAmp: 0.5,
+      revealMs: 6400,
+      scrambleMs: 6200,
+      answerMs: 1600,
+      speedFactor: 1.0,
+      wallChaos: 0.1,
+      collisionPasses: 1,
+      sepBoost: 1.05,
+    };
+  }
+  if (tier === 3) {
+    return {
+      ballCount: 13,
+      chaosAmp: 1.45,
+      revealMs: 2350,
+      scrambleMs: 12600,
+      answerMs: 1600,
+      speedFactor: 2.35,
+      wallChaos: 0.42,
+      collisionPasses: 3,
+      sepBoost: 1.32,
+    };
+  }
   return {
-    ballCount: ballBase + lv,
-    chaosAmp: tier === 1 ? 0.5 : tier === 2 ? 0.95 : 1.45,
-    revealMs: Math.round((900 + fallTimeSec * 700) * revealMul),
-    scrambleMs: Math.round((5200 + (6 - fallTimeSec) * 1400 + lv * 250) * scrambleMul),
-    guessMs: tier === 1 ? 3200 : tier === 2 ? 2600 : 2200,
+    ballCount: 9,
+    chaosAmp: 0.95,
+    revealMs: 3700,
+    scrambleMs: 9000,
     answerMs: 1600,
-    speedMul: tier === 1 ? 0.94 : tier === 2 ? 1.14 : 1.42,
-    wallChaos: tier === 1 ? 0.1 : tier === 2 ? 0.24 : 0.42,
-    collisionPasses: tier === 1 ? 1 : tier === 2 ? 2 : 3,
-    sepBoost: tier === 1 ? 1.05 : tier === 2 ? 1.18 : 1.32,
+    speedFactor: 1.57,
+    wallChaos: 0.24,
+    collisionPasses: 2,
+    sepBoost: 1.18,
   };
 }
 
@@ -156,12 +187,11 @@ function tierBadge(tier: ColorTrackerTier): string {
 
 type TrackerGame = {
   running: boolean;
-  timeLeft: number;
+  targetRounds: number;
   phase: Phase;
   phaseStartMs: number;
   revealMs: number;
   scrambleMs: number;
-  guessMs: number;
   answerMs: number;
   chaosAmp: number;
   wallChaos: number;
@@ -177,15 +207,12 @@ type TrackerGame = {
   W: number;
   H: number;
   raf: number | null;
-  timer: ReturnType<typeof setInterval> | null;
   roundCdTimer: ReturnType<typeof setTimeout> | null;
   pendingRoundStart: (() => void) | null;
 };
 
 type Props = {
-  durationSec: number;
-  speedLevel: number;
-  speedSec: number;
+  targetRounds: number;
   tier?: ColorTrackerTier;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
@@ -219,18 +246,22 @@ const css = `
 .ctrk-cd{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);pointer-events:none}
 .ctrk-cd-n{font-size:clamp(100px,24vw,200px);font-weight:900;color:#f97316;line-height:1;animation:ctrkcd .45s ease-out}
 @keyframes ctrkcd{from{transform:scale(1.35);opacity:.2}to{transform:scale(1);opacity:1}}
+.ctrk-reveal{position:absolute;left:50%;bottom:clamp(14px,3.5vh,32px);transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;align-items:center;gap:8px}
+.ctrk-reveal-hint{font-size:11px;font-weight:700;color:rgba(255,255,255,.34);letter-spacing:.08em}
 `;
 
-export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec, tier = 2, onExit, onComplete }: Props) {
+export function ColorTrackerReactionTraining({ targetRounds, tier = 2, onExit, onComplete }: Props) {
   const trackerTier: ColorTrackerTier = tier === 1 || tier === 3 ? tier : 2;
+  const totalRounds = normalizeColorTrackerRounds(targetRounds);
+  const params = useMemo(() => tierParams(trackerTier), [trackerTier]);
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
-  const hudTimeRef = useRef<HTMLDivElement>(null);
-  const hudRoundsRef = useRef<HTMLDivElement>(null);
+  const hudRoundRef = useRef<HTMLDivElement>(null);
   const hudTierRef = useRef<HTMLDivElement>(null);
   const msgRef = useRef<HTMLDivElement>(null);
-  const [warn, setWarn] = useState(false);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
+  const [showRevealBtn, setShowRevealBtn] = useState(false);
+  const revealAnswerRef = useRef<(() => void) | null>(null);
   const gRef = useRef<TrackerGame | null>(null);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
@@ -241,18 +272,18 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
     onExitRef.current = onExit;
   }, [onExit]);
 
-  const fallTimeSec = Math.max(1, Math.min(6, Number.isFinite(speedSec) ? speedSec : 4));
-  const lv = Math.max(1, Math.min(7, Math.round(Number.isFinite(speedLevel) ? speedLevel : 4)));
-  const params = useMemo(() => tierParams(trackerTier, lv, fallTimeSec), [trackerTier, lv, fallTimeSec]);
+  const revealAnswer = useCallback(() => {
+    revealAnswerRef.current?.();
+  }, []);
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
     if (!g) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
     if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
     setRoundCountdown(null);
+    setShowRevealBtn(false);
     onExitRef.current();
   }, []);
 
@@ -261,9 +292,9 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
     if (!g) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
-    if (g.timer) clearInterval(g.timer);
     if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
     setRoundCountdown(null);
+    setShowRevealBtn(false);
     onCompleteRef.current({
       stims: g.rounds,
       maxCombo: g.rounds,
@@ -278,12 +309,11 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
 
     const g: TrackerGame = {
       running: true,
-      timeLeft: durationSec,
+      targetRounds: totalRounds,
       phase: 'COUNTDOWN',
       phaseStartMs: 0,
       revealMs: params.revealMs,
       scrambleMs: params.scrambleMs,
-      guessMs: params.guessMs,
       answerMs: params.answerMs,
       chaosAmp: params.chaosAmp,
       wallChaos: params.wallChaos,
@@ -299,7 +329,6 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
       W: 0,
       H: 0,
       raf: null,
-      timer: null,
       roundCdTimer: null,
       pendingRoundStart: null,
     };
@@ -314,21 +343,30 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
       g.H = r.cssH;
       const minDim = Math.min(g.W, g.H);
       g.ballRadius = Math.max(14, minDim * 0.028);
-      g.targetSpeed = Math.max(1.6, minDim * 0.0021) * (0.82 + lv * 0.14) * params.speedMul;
+      g.targetSpeed = Math.max(1.6, minDim * 0.0021) * params.speedFactor;
     };
 
-    const updateHudTime = () => {
-      const m = String(Math.floor(g.timeLeft / 60)).padStart(2, '0');
-      const s = String(g.timeLeft % 60).padStart(2, '0');
-      if (hudTimeRef.current) hudTimeRef.current.textContent = `${m}:${s}`;
-      setWarn(g.timeLeft <= 10);
+    const updateHudRound = () => {
+      const current =
+        g.phase === 'ANSWER' ? g.rounds : Math.min(g.rounds + 1, g.targetRounds);
+      if (hudRoundRef.current) hudRoundRef.current.textContent = `${current} / ${g.targetRounds}`;
     };
-    updateHudTime();
-    if (hudRoundsRef.current) hudRoundsRef.current.textContent = '0';
+    updateHudRound();
     if (hudTierRef.current) hudTierRef.current.textContent = tierBadge(trackerTier);
 
     const setMsg = (text: string) => {
       if (msgRef.current) msgRef.current.textContent = text;
+    };
+
+    revealAnswerRef.current = () => {
+      if (!g.running || g.phase !== 'GUESS') return;
+      g.phase = 'ANSWER';
+      g.phaseStartMs = performance.now();
+      g.rounds += 1;
+      g.laneCount[g.targetQuadrantIdx]++;
+      updateHudRound();
+      setMsg(`정답 · ${QUADRANTS[g.targetQuadrantIdx].name}(${QUADRANTS[g.targetQuadrantIdx].label}) 구역`);
+      setShowRevealBtn(false);
     };
 
     let scrambleSecShown = -1;
@@ -365,6 +403,8 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
       spawnBalls();
       g.phase = 'REVEAL';
       g.phaseStartMs = performance.now();
+      setShowRevealBtn(false);
+      updateHudRound();
       setMsg('흰 공 하나를 기억하세요');
     };
 
@@ -372,6 +412,7 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
       if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
       g.phase = 'COUNTDOWN';
       g.pendingRoundStart = onDone;
+      updateHudRound();
       let c = 3;
       setRoundCountdown(3);
       setMsg('다음 라운드 준비');
@@ -452,7 +493,7 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, r, 0, Math.PI * 2);
         ctx.fill();
-      } else if ((g.phase === 'GUESS' || g.phase === 'ANSWER') && isTarget) {
+      } else if (g.phase === 'ANSWER' && isTarget) {
         const pulse = Math.abs(Math.sin(performance.now() / 160)) * 0.35;
         ctx.shadowColor = '#ffffff';
         ctx.shadowBlur = 18 + pulse * 20;
@@ -505,14 +546,12 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
           g.phaseStartMs = now;
           g.targetQuadrantIdx = quadrantIndexOf(g.balls[g.targetIdx]!.x, g.balls[g.targetIdx]!.y, g.W, g.H);
           setMsg('빨·노·초·파 — 어디 구역인지 맞춰보세요!');
-        } else if (g.phase === 'GUESS' && elapsed >= g.guessMs) {
-          g.phase = 'ANSWER';
-          g.phaseStartMs = now;
-          g.rounds++;
-          g.laneCount[g.targetQuadrantIdx]++;
-          if (hudRoundsRef.current) hudRoundsRef.current.textContent = String(g.rounds);
-          setMsg(`정답 · ${QUADRANTS[g.targetQuadrantIdx].name}(${QUADRANTS[g.targetQuadrantIdx].label}) 구역`);
+          setShowRevealBtn(true);
         } else if (g.phase === 'ANSWER' && elapsed >= g.answerMs) {
+          if (g.rounds >= g.targetRounds) {
+            endGame();
+            return;
+          }
           scheduleRoundCountdown(beginRound);
         }
 
@@ -548,19 +587,6 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
     const startId = window.setTimeout(() => {
       calcLayout();
       beginRound();
-      const endsAtMs = performance.now() + durationSec * 1000;
-      g.timer = setInterval(() => {
-        const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
-        if (g.timeLeft !== newLeft) {
-          g.timeLeft = newLeft;
-          updateHudTime();
-        }
-        if (g.timeLeft <= 0) {
-          if (g.timer) clearInterval(g.timer);
-          g.timer = null;
-          endGame();
-        }
-      }, 250);
       g.raf = requestAnimationFrame(loop);
     }, 60);
 
@@ -571,24 +597,21 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
       clearTimeout(startId);
       window.removeEventListener('resize', onWinResize);
       g.running = false;
-      if (g.timer) clearInterval(g.timer);
       if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
       if (g.raf != null) cancelAnimationFrame(g.raf);
       setRoundCountdown(null);
+      setShowRevealBtn(false);
+      revealAnswerRef.current = null;
     };
-  }, [durationSec, endGame, lv, params, trackerTier]);
+  }, [endGame, params, totalRounds, trackerTier]);
 
   return (
     <div className="ctrk">
       <style>{css}</style>
       <div className="ctrk-hud">
         <div className="ctrk-hc">
-          <div className="ctrk-hk">Time</div>
-          <div className={`ctrk-hv${warn ? ' warn' : ''}`} ref={hudTimeRef} />
-        </div>
-        <div className="ctrk-hc">
-          <div className="ctrk-hk">Rounds</div>
-          <div className="ctrk-hv" ref={hudRoundsRef} />
+          <div className="ctrk-hk">Round</div>
+          <div className="ctrk-hv" ref={hudRoundRef} />
         </div>
         <div className="ctrk-hc grow">
           <div className="ctrk-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
@@ -609,6 +632,12 @@ export function ColorTrackerReactionTraining({ durationSec, speedLevel, speedSec
       <div ref={playRef} className="ctrk-play">
         <canvas className="ctrk-canvas" ref={cvRef} />
         <div className="ctrk-msg" ref={msgRef} />
+        {showRevealBtn ? (
+          <div className="ctrk-reveal">
+            <LongPressButton onTrigger={revealAnswer} label="정답 공개" />
+            <div className="ctrk-reveal-hint">학생이 구역을 말한 뒤 버튼을 누르세요</div>
+          </div>
+        ) : null}
         {roundCountdown !== null ? (
           <div className="ctrk-cd">
             <div key={roundCountdown} className="ctrk-cd-n">

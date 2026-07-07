@@ -20,8 +20,8 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(library).toContain('조건에 맞는 수업 찾기');
     expect(library).toContain('결과 {filteredPrograms.length}개');
     expect(library).toContain('placeholder="수업명, 교구, 태그 검색"');
-    expect(library).toContain('MATERIAL_VIDEO_VALUE');
-    expect(library).toContain('MATERIAL_SPOMOVE_VALUE');
+    expect(library).not.toContain('MATERIAL_VIDEO_VALUE');
+    expect(library).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(library).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
   });
 
@@ -34,9 +34,10 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).toContain('안내문 초안');
   });
 
-  it('keeps sticky actions limited to SPOMOVE execution when available', () => {
-    expect(detail).toContain('primarySpomovePreset ?');
-    expect(detail).toContain('SPOMOVE 실행');
+  it('does not expose SPOMOVE execution from library detail', () => {
+    expect(detail).not.toContain('primarySpomovePreset');
+    expect(detail).not.toContain('SPOMOVE 실행');
+    expect(detail).not.toContain('getSpomoveSessionHref');
     expect(detail).not.toContain('/spokedu-master/class-mode/${program.id}');
   });
 

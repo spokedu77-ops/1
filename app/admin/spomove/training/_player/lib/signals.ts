@@ -474,19 +474,23 @@ export function generateSignal(
       };
     }
 
-    // level 8: 변형 사분할 2단계 — 1~2개 색상, 2개 확률 85%
+    // level 8: 변형 사분할 2단계 — 1~2개 색상, 1색 30% / 2색 70%
+    // 2색: (양발+한손) | (양발+양손) 만 허용 — 반드시 양발 포함, 한 발씩·손끼리만 불가
     if (level === 8) {
-      const twoColors = Math.random() < 0.85 && activeColors.length >= 2;
+      const twoColors = Math.random() < 0.70 && activeColors.length >= 2;
       if (!twoColors) {
         const c = r(activeColors);
         return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(c, randomFoot())] }, voice: null };
       }
       const [c1, c2] = pickN(activeColors, 2) as [ColorItem, ColorItem];
-      const footFirst = Math.random() < 0.5;
+      const handAction: BodyActionId = Math.random() < 0.5 ? randomSingleHand() : 'bothHands';
+      const feetFirst = Math.random() < 0.5;
+      const a1 = feetFirst ? 'bothFeet' : handAction;
+      const a2 = feetFirst ? handAction : 'bothFeet';
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: [makeQuadCell(c1, footFirst ? randomFoot() : randomHand()), makeQuadCell(c2, footFirst ? randomHand() : randomFoot())] },
+        content: { cells: [makeQuadCell(c1, a1), makeQuadCell(c2, a2)] },
         voice: null,
       };
     }

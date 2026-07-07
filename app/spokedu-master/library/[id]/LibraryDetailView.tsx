@@ -7,7 +7,6 @@ import {
   Clipboard,
   ExternalLink,
   FileText,
-  MonitorPlay,
   Play,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -34,7 +33,6 @@ import {
   getVideoEmbedUrl,
   isDirectVideoUrl,
 } from '../../lib/program-media';
-import { getSpomoveSessionHref, getSupportedOfficialSpomovePresets } from '../../lib/program-meta';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -246,8 +244,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
     Boolean(model.coachScript) ||
     model.briefingNotes.length > 0;
   const galleryImages = model.galleryImageUrls;
-  const relatedSpomovePresets = getSupportedOfficialSpomovePresets(program);
-  const primarySpomovePreset = relatedSpomovePresets[0] ?? null;
   const copyParentNote = async () => {
     await navigator.clipboard.writeText(parentCopy);
     setCopied(true);
@@ -255,7 +251,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className={`min-h-dvh bg-[#f6f7f9] text-slate-950 ${primarySpomovePreset ? 'pb-44 lg:pb-14' : 'pb-10 lg:pb-12'}`}>
+    <main className="min-h-dvh bg-[#f6f7f9] pb-10 text-slate-950 lg:pb-12">
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href={libraryReturnHref} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />
@@ -434,41 +430,17 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </div>
         ) : null}
 
-        {(relatedSpomovePresets.length > 0 || galleryImages.length > 0) ? (
+        {galleryImages.length > 0 ? (
           <details className="rounded-[14px] border border-slate-200 bg-white p-5">
-            <summary className="cursor-pointer text-sm font-black text-slate-700">추가 자료 (SPOMOVE · 수업 장면)</summary>
-            <div className="mt-4 space-y-4">
-              {relatedSpomovePresets.length > 0 ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  {relatedSpomovePresets.map((preset) => (
-                    <Link
-                      key={preset.id}
-                      href={getSpomoveSessionHref(program, preset)}
-                      className="flex items-center gap-4 rounded-xl border border-indigo-100 bg-indigo-50 p-4"
-                    >
-                      <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600">
-                        <MonitorPlay className="h-5 w-5" />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <strong className="block truncate text-sm font-black text-slate-950">{preset.title}</strong>
-                        <span className="mt-1 block text-xs font-semibold text-indigo-700">TV·빔 실행</span>
-                      </span>
-                    </Link>
-                  ))}
+            <summary className="cursor-pointer text-sm font-black text-slate-700">수업 장면</summary>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {galleryImages.map((imageUrl, index) => (
+                <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
+                  <div className={THUMBNAIL_FRAME}>
+                    <Image src={imageUrl} alt={`${title} 수업 장면 ${index + 1}`} fill sizes="(min-width: 1024px) 600px, 100vw" className="object-cover" unoptimized />
+                  </div>
                 </div>
-              ) : null}
-
-              {galleryImages.length > 0 ? (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {galleryImages.map((imageUrl, index) => (
-                    <div key={`${imageUrl}-${index}`} className="overflow-hidden rounded-[12px] border border-slate-200 bg-slate-50">
-                      <div className={THUMBNAIL_FRAME}>
-                        <Image src={imageUrl} alt={`${title} 수업 장면 ${index + 1}`} fill sizes="(min-width: 1024px) 600px, 100vw" className="object-cover" unoptimized />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
+              ))}
             </div>
           </details>
         ) : null}
@@ -501,18 +473,6 @@ export default function LibraryDetailView({ id }: { id: string }) {
             </Link>
           ) : null}
         </section>
-
-        {primarySpomovePreset ? (
-          <div
-            className="sticky bottom-[78px] z-40 rounded-[14px] border border-slate-200 bg-white/95 p-1.5 shadow-[0_-14px_36px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:bottom-0"
-            style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
-          >
-            <Link href={getSpomoveSessionHref(program, primarySpomovePreset)} className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-2 text-[12px] font-black text-indigo-700">
-              <MonitorPlay className="h-4 w-4" />
-              SPOMOVE 실행
-            </Link>
-          </div>
-        ) : null}
       </div>
 
       <BottomSheet open={quickModalOpen} title="수업 기록" onClose={() => setQuickModalOpen(false)}>

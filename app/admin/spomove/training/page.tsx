@@ -748,7 +748,16 @@ function SettingsScreen({
                   <button
                     key={lv.id}
                     type="button"
-                    onClick={() => setLevelId(lv.id)}
+                    onClick={() => {
+                      setLevelId(lv.id);
+                      if (isReactTrain && lv.id === 10) {
+                        setLaunch((s) => ({
+                          ...s,
+                          timeMode: 'reps',
+                          targetReps: [2, 3, 5, 10].includes(s.targetReps) ? s.targetReps : 5,
+                        }));
+                      }
+                    }}
                     style={{
                       padding: '10px 12px',
                       borderRadius: 12,
@@ -938,14 +947,14 @@ function SettingsScreen({
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  시지각 10번 컬러 트래커. L1 입문 / L2 기본 / L3 집중. 첫 라운드는 훈련 시작 카운트다운 직후 바로 시작하고, 2라운드부터 3-2-1 후 시작합니다.
+                  추적 난이도(공 개수·속도·기억·추적 시간)와 라운드 수를 함께 정합니다. 정답은 선생님이 버튼으로 공개합니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 1 as const, label: 'L1', sub: '입문' },
+                  { id: 1 as const, label: 'L1', sub: '입문 · 느림' },
                   { id: 2 as const, label: 'L2', sub: '기본' },
-                  { id: 3 as const, label: 'L3', sub: '집중' },
+                  { id: 3 as const, label: 'L3', sub: '집중 · 빠름' },
                 ]).map((opt) => {
                   const active = launch.colorTrackerTier === opt.id;
                   return (
@@ -978,8 +987,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE MODE는 내부 타이밍으로 동작하므로 숨김) */}
-          {!isFlowOrChallenge ? (
+          {/* 속도 (DIVE·컬러 트래커 10번은 내부 난이도로 동작하므로 숨김) */}
+          {!isFlowOrChallenge && !(isReactTrain && levelId === 10) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
@@ -1291,11 +1300,38 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
+                  {isReactTrain && levelId === 10 ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
                 </label>
               </div>
 
-              {isReactTrain ? (
+              {isReactTrain && levelId === 10 ? (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {[2, 3, 5, 10].map((r) => {
+                    const active = launch.targetReps === r;
+                    return (
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() => setLaunch((s) => ({ ...s, timeMode: 'reps', targetReps: r }))}
+                        style={{
+                          flex: '1 1 90px',
+                          padding: '11px 10px',
+                          borderRadius: 12,
+                          border: `1.5px solid ${active ? accent : T.border}`,
+                          background: active ? `${accent}16` : T.card,
+                          color: active ? accent : T.textDim,
+                          fontFamily: 'inherit',
+                          fontSize: 13,
+                          fontWeight: active ? 900 : 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {r}라운드
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : isReactTrain ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[30, 60, 120, 180].map((sec) => {
                     const active = launch.duration === sec;

@@ -40,8 +40,10 @@ describe('SPOKEDU MASTER library detail layout contract', () => {
     }
   });
 
-  it('only reserves large bottom padding when a sticky SPOMOVE action exists', () => {
-    expect(detail).toContain("primarySpomovePreset ? 'pb-44 lg:pb-14' : 'pb-10 lg:pb-12'");
-    expect(detail).toContain('style={{ paddingBottom:');
+  it('uses stable bottom padding without sticky secondary actions', () => {
+    expect(detail).toContain('pb-10');
+    expect(detail).toContain('lg:pb-12');
+    expect(detail).not.toContain('primarySpomovePreset');
+    expect(detail).not.toContain('SPOMOVE 실행');
   });
 });

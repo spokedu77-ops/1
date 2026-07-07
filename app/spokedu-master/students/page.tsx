@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, Trash2, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { StudentFieldSelect } from '../components/ui/StudentFieldSelect';
+import { buildStudentAgeOptions, collectStudentGroupOptions } from '../lib/studentAddPresets';
 import {
   canRunLegacyOperationalImport,
   checkLegacyOperationalImportComplete,
@@ -88,6 +90,14 @@ export default function StudentsPage() {
   const [legacyDeleteMessage, setLegacyDeleteMessage] = useState<string | null>(null);
   const [legacyDeleteError, setLegacyDeleteError] = useState<string | null>(null);
   const selected = students.find((student) => student.id === selectedId) ?? students[0];
+  const groupOptions = useMemo(
+    () => collectStudentGroupOptions(students.map((student) => student.group)),
+    [students],
+  );
+  const ageOptions = useMemo(
+    () => buildStudentAgeOptions(students.map((student) => (typeof student.meta === 'string' ? student.meta : null))),
+    [students],
+  );
 
   useEffect(() => {
     if (selectedId && students.some((student) => student.id === selectedId)) return;
@@ -804,34 +814,30 @@ export default function StudentsPage() {
               style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
             />
           </label>
-          <label className="block">
-            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>반 / 그룹</span>
-            <input
-              data-testid="spm-student-add-group"
-              name="studentGroup"
-              type="text"
-              value={newGroup}
-              onChange={(event) => setNewGroup(event.target.value)}
-              placeholder="예: 초등 A반 / 유아반"
-              autoComplete="off"
-              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
-              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-            />
-          </label>
-          <label className="block">
-            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>나이 / 수강 기간</span>
-            <input
-              data-testid="spm-student-add-meta"
-              name="studentMeta"
-              type="text"
-              value={newMeta}
-              onChange={(event) => setNewMeta(event.target.value)}
-              placeholder="예: 8세 / 3개월차"
-              autoComplete="off"
-              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
-              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-            />
-          </label>
+          <StudentFieldSelect
+            key={`group-${addOpen ? 'open' : 'closed'}`}
+            label="반 / 그룹"
+            value={newGroup}
+            onChange={setNewGroup}
+            options={groupOptions}
+            emptyLabel={groupOptions.length ? '반 선택' : '등록된 반이 없습니다'}
+            customOptionLabel={groupOptions.length ? '새 반 직접 입력' : '반 이름 입력'}
+            placeholder="예: 초등 A반 / 유아반"
+            testId="spm-student-add-group"
+            name="studentGroup"
+          />
+          <StudentFieldSelect
+            key={`meta-${addOpen ? 'open' : 'closed'}`}
+            label="나이 / 학년"
+            value={newMeta}
+            onChange={setNewMeta}
+            options={ageOptions}
+            emptyLabel="나이·학년 선택"
+            customOptionLabel="직접 입력"
+            placeholder="예: 8세 / 3개월차"
+            testId="spm-student-add-meta"
+            name="studentMeta"
+          />
           {studentSaveError ? (
             <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
               {studentSaveError}

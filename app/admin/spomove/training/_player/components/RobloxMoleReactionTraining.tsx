@@ -59,15 +59,13 @@ const css = `
 .rmt-hole-wrap--active .rmt-hole-ring{opacity:1;border-color:rgba(255,255,255,.35)}
 .rmt-hole{width:100%;height:100%;background:#0a0a0a;border-radius:50%;position:relative;overflow:hidden;box-shadow:inset 0 14px 26px rgba(0,0,0,.95),0 3px 10px rgba(0,0,0,.4);border:2px solid rgba(0,0,0,.55);transition:border-color .12s,box-shadow .12s}
 .rmt-hole-wrap--active .rmt-hole{box-shadow:inset 0 10px 20px rgba(0,0,0,.85),0 0 24px rgba(255,255,255,.08)}
-.rmt-mole{width:78%;height:78%;border-radius:6px;position:absolute;left:50%;transform:translateX(-50%);bottom:-90%;transition:bottom .2s cubic-bezier(.175,.885,.32,1.275);display:flex;flex-direction:column;align-items:center;padding-top:10px;box-shadow:inset 3px 3px 0 rgba(255,255,255,.36),inset -3px -3px 0 rgba(0,0,0,.28);border:2px solid rgba(0,0,0,.78)}
-.rmt-mole.up{bottom:8%}
-.rmt-eyes{display:flex;gap:10px;margin-bottom:4px}
-.rmt-eye{width:9px;height:9px;background:#111;border-radius:2px}
-.rmt-snout{position:relative;width:24px;height:16px;background:rgba(0,0,0,.16);border-radius:4px;display:flex;justify-content:center;align-items:center}
-.rmt-nose{width:11px;height:7px;background:#ff8a80;border-radius:3px}
-.rmt-snout::before,.rmt-snout::after{content:'';position:absolute;width:10px;height:2px;background:#222;top:7px}
-.rmt-snout::before{left:-12px;transform:rotate(10deg)}
-.rmt-snout::after{right:-12px;transform:rotate(-10deg)}
+.rmt-mole{width:92%;height:100%;position:absolute;left:50%;transform:translateX(-50%);bottom:-100%;transition:bottom .2s cubic-bezier(.175,.885,.32,1.275);display:flex;justify-content:flex-end;overflow:visible}
+.rmt-mole.up{bottom:0}
+.rmt-mole-body{width:100%;height:100%;border-radius:48% 48% 44% 44%;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:22%;border:2.5px solid rgba(0,0,0,.52);box-shadow:inset -6px 0 12px rgba(0,0,0,.16),inset 6px 0 10px rgba(255,255,255,.1),0 3px 8px rgba(0,0,0,.35)}
+.rmt-eyes{display:flex;gap:clamp(10px,22%,18px);margin-bottom:clamp(5px,10%,9px)}
+.rmt-eye{width:clamp(5px,14%,8px);height:clamp(10px,24%,14px);background:#111;border-radius:50%;flex-shrink:0}
+.rmt-nose{width:clamp(22px,62%,34px);height:clamp(11px,22%,16px);background:#f48a9a;border-radius:999px;border:2px solid rgba(0,0,0,.45);position:relative;flex-shrink:0;box-shadow:inset -2px -2px 0 rgba(0,0,0,.1)}
+.rmt-nose::after{content:'';position:absolute;top:15%;right:18%;width:28%;height:32%;background:rgba(255,255,255,.5);border-radius:50%}
 .rmt-combo{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.7);z-index:40;text-align:center;pointer-events:none;opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1)}
 .rmt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .rmt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
@@ -105,12 +103,12 @@ function MoleHoleView({
         </>
       ) : null}
       <div className="rmt-hole">
-        <div className={`rmt-mole${active ? ' up' : ''}`} style={{ backgroundColor: hex }}>
-          <div className="rmt-eyes">
-            <div className="rmt-eye" />
-            <div className="rmt-eye" />
-          </div>
-          <div className="rmt-snout">
+        <div className={`rmt-mole${active ? ' up' : ''}`}>
+          <div className="rmt-mole-body" style={{ backgroundColor: hex }}>
+            <div className="rmt-eyes">
+              <div className="rmt-eye" />
+              <div className="rmt-eye" />
+            </div>
             <div className="rmt-nose" />
           </div>
         </div>

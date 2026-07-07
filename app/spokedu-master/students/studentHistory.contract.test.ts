@@ -66,6 +66,16 @@ describe('student history flow contract', () => {
     expect(studentsList).toContain('name="studentName"');
     expect(studentsList).toContain('value={newName}');
     expect(studentsList).toContain('onChange={(event) => setNewName(event.target.value)}');
+    expect(studentsList).toContain('StudentFieldSelect');
+    expect(studentsList).toContain('testId="spm-student-add-group"');
+    expect(studentsList).toContain('value={newGroup}');
+    expect(studentsList).toContain('onChange={setNewGroup}');
+    expect(studentsList).toContain('testId="spm-student-add-meta"');
+    expect(studentsList).toContain('value={newMeta}');
+    expect(studentsList).toContain('onChange={setNewMeta}');
+    expect(studentsList).toContain('collectStudentGroupOptions');
+    expect(studentsList).toContain('buildStudentAgeOptions');
+    expect(studentsList).toContain('customOptionLabel');
   });
 
   it('guards student deletion against accidental taps and duplicate requests', () => {

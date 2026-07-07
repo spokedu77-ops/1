@@ -26,7 +26,7 @@ import { RushReactionTraining } from './components/RushReactionTraining';
 import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTraining';
 import { WormholeReactionTraining } from './components/WormholeReactionTraining';
 import { NumberCartReactionTraining } from './components/NumberCartReactionTraining';
-import { ColorTrackerReactionTraining } from './components/ColorTrackerReactionTraining';
+import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -1700,9 +1700,7 @@ export default function MemoryGameApp({
           </div>
         ) : settings.level === 10 ? (
           <ColorTrackerReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
+            targetRounds={normalizeColorTrackerRounds(settings.targetReps ?? 5)}
             tier={settings.colorTrackerTier}
             onExit={stop}
             onComplete={handleReactTrainComplete}

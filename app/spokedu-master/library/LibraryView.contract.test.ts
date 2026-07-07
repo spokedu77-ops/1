@@ -37,8 +37,8 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain('조건에 맞는 수업 찾기');
     expect(source).toContain('결과 {filteredPrograms.length}개');
     expect(source).toContain('placeholder="수업명, 교구, 태그 검색"');
-    expect(source).toContain('MATERIAL_VIDEO_VALUE');
-    expect(source).toContain('MATERIAL_SPOMOVE_VALUE');
+    expect(source).not.toContain('MATERIAL_VIDEO_VALUE');
+    expect(source).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(source).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
     expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
   });

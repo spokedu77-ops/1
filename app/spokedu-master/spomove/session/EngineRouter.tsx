@@ -2,6 +2,7 @@
 
 import { lazy, Suspense, useCallback } from 'react';
 import type { ReactTrainCompleteStats } from '@/app/admin/spomove/training/_player/components/VisualReactionTraining';
+import { normalizeColorTrackerRounds } from '@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 
@@ -305,9 +306,7 @@ export function EngineRouter({
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <ColorTrackerReactionTraining
-          durationSec={dur}
-          speedLevel={reactSpeedLevel}
-          speedSec={sp}
+          targetRounds={normalizeColorTrackerRounds(rounds ?? 5)}
           tier={colorTrackerTier ?? 2}
           onExit={onExit}
           onComplete={handleReactTrainComplete}

@@ -30,7 +30,6 @@ import {
   parseMasterSpaces,
   parseMasterTargets,
 } from '../lib/programDisplayTags';
-import { getSupportedOfficialSpomovePresets } from '../lib/program-meta';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore } from '../store';
@@ -57,14 +56,8 @@ const MOVEMENT_LABEL: Record<string, string> = {
   '이동운동기술': '이동',
   '안정운동기술': '안정',
 };
-const MATERIAL_LABEL: Record<string, string> = {
-  '참고 영상': '영상',
-  'SPOMOVE 연결': 'SPOMOVE',
-};
-const MATERIAL_VIDEO_VALUE = '참고 영상';
-const MATERIAL_SPOMOVE_VALUE = 'SPOMOVE 연결';
 
-type FilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme' | 'material';
+type FilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme';
 
 type ActiveFilter = {
   group: FilterGroupKey;
@@ -80,18 +73,7 @@ type FilterGroup = {
 function tagDisplayLabel(group: FilterGroupKey, value: string): string {
   if (group === 'target') return TARGET_LABEL[value] ?? value;
   if (group === 'movement') return MOVEMENT_LABEL[value] ?? value;
-  if (group === 'material') return MATERIAL_LABEL[value] ?? value;
   return value;
-}
-
-function hasSpomoveLink(program: Program) {
-  if (program.hasSpomoveConnection) return true;
-  return getSupportedOfficialSpomovePresets(program).length > 0;
-}
-
-function hasReferenceVideo(program: Program) {
-  if (program.hasReferenceVideo) return true;
-  return Boolean(program.lessonDetail?.videoUrl);
 }
 
 function normalizeTitle(title: string) {
@@ -125,10 +107,7 @@ function getStructuredValues(program: Program, group: FilterGroupKey): string[] 
     const theme = getLessonTheme(program);
     return (LESSON_THEME_OPTIONS as readonly string[]).includes(theme) ? [theme] : [];
   }
-  return [
-    ...(hasReferenceVideo(program) ? [MATERIAL_VIDEO_VALUE] : []),
-    ...(hasSpomoveLink(program) ? [MATERIAL_SPOMOVE_VALUE] : []),
-  ];
+  return [];
 }
 
 function matchesFilter(program: Program, filter: ActiveFilter) {
@@ -262,16 +241,6 @@ function ProgramCard({
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/82 via-slate-950/20 to-transparent" />
 
         <div className="absolute left-3 top-3 flex gap-1">
-          {hasVideo ? (
-            <span className="rounded-full bg-indigo-600 px-2.5 py-1 text-[10px] font-black text-white shadow-md">
-              참고 영상
-            </span>
-          ) : null}
-          {hasSpomoveLink(program) ? (
-            <span className="rounded-full bg-white/92 px-2.5 py-1 text-[10px] font-black text-indigo-700 shadow-md backdrop-blur">
-              SPOMOVE
-            </span>
-          ) : null}
           {locked ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black text-white">
               <Lock className="h-3 w-3" />
@@ -413,7 +382,7 @@ export default function LibraryView() {
   const [filter, setFilter] = useState<ActiveFilter>(() => {
     const group = searchParams.get('filterGroup') as FilterGroupKey | null;
     const value = searchParams.get('filter');
-    const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme', 'material'];
+    const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme'];
     return group && value && allowedGroups.includes(group) ? { group, value } : null;
   });
   const view = parseLibraryView(searchParams.get('view'));
@@ -488,21 +457,10 @@ export default function LibraryView() {
     router.push(`/spokedu-master/library?${params.toString()}`, { scroll: false });
   };
 
-  const packageStats = useMemo(() => {
-    const videoCount = viewPool.filter((program) =>
-      getStructuredValues(program, 'material').includes(MATERIAL_VIDEO_VALUE),
-    ).length;
-    const spomoveCount = viewPool.filter((program) =>
-      getStructuredValues(program, 'material').includes(MATERIAL_SPOMOVE_VALUE),
-    ).length;
-    return { videoCount, spomoveCount };
-  }, [viewPool]);
-
   const filterGroups = useMemo<FilterGroup[]>(() => {
     const definitions: Array<{ key: FilterGroupKey; label: string }> = [
       { key: 'target', label: '대상' },
       { key: 'space', label: '공간' },
-      { key: 'material', label: '자료' },
       { key: 'function', label: '신체 기능' },
       { key: 'movement', label: '움직임' },
       { key: 'theme', label: '테마' },
@@ -523,7 +481,7 @@ export default function LibraryView() {
   }, [viewPool]);
 
   const basicGroups = useMemo(
-    () => filterGroups.filter((g) => (['target', 'space', 'material'] as FilterGroupKey[]).includes(g.key)),
+    () => filterGroups.filter((g) => (['target', 'space'] as FilterGroupKey[]).includes(g.key)),
     [filterGroups],
   );
   const advancedGroups = useMemo(
@@ -576,12 +534,6 @@ export default function LibraryView() {
                 <span className="rounded-full bg-slate-100 px-2.5 py-1">
                   결과 {filteredPrograms.length}개
                 </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                  영상 {packageStats.videoCount}
-                </span>
-                <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                  SPOMOVE {packageStats.spomoveCount}
-                </span>
               </div>
             </div>
 
@@ -626,30 +578,6 @@ export default function LibraryView() {
                   저장 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setFilter(filter?.group === 'material' && filter.value === MATERIAL_VIDEO_VALUE ? null : { group: 'material', value: MATERIAL_VIDEO_VALUE })}
-                className={`h-10 rounded-xl px-3 text-[12px] font-black transition ${
-                  filter?.group === 'material' && filter.value === MATERIAL_VIDEO_VALUE
-                    ? 'bg-slate-950 text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'
-                }`}
-                aria-pressed={filter?.group === 'material' && filter.value === MATERIAL_VIDEO_VALUE}
-              >
-                영상 {packageStats.videoCount}
-              </button>
-              <button
-                type="button"
-                onClick={() => setFilter(filter?.group === 'material' && filter.value === MATERIAL_SPOMOVE_VALUE ? null : { group: 'material', value: MATERIAL_SPOMOVE_VALUE })}
-                className={`h-10 rounded-xl px-3 text-[12px] font-black transition ${
-                  filter?.group === 'material' && filter.value === MATERIAL_SPOMOVE_VALUE
-                    ? 'bg-slate-950 text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-700'
-                }`}
-                aria-pressed={filter?.group === 'material' && filter.value === MATERIAL_SPOMOVE_VALUE}
-              >
-                SPOMOVE {packageStats.spomoveCount}
-              </button>
               {filter ? (
                 <button type="button" onClick={() => setFilter(null)} className="h-10 px-2 text-[12px] font-black text-indigo-600">
                   초기화

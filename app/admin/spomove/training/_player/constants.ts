@@ -95,7 +95,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 1, name: '1단계', enName: 'Spatial Orientation', desc: '화면 극단의 거대 기둥+화살표 방향을 보고 해당 방향 패드로 이동합니다.' },
       { id: 2, name: '2단계', enName: 'Quad Color', desc: '4분할 색 신호를 보고 해당 위치로 이동합니다. 변형 색지각 테마 이미지를 쓸 수 있습니다.' },
       { id: 7,  name: '변형 사분할 1단계', enName: 'Modified Quadrant L1', desc: '색상 자극 1개와 신체 부위(발만)가 나타납니다. 표시된 색상의 패드에 지정된 발(한 발 또는 두 발)을 접촉합니다.' },
-      { id: 8,  name: '변형 사분할 2단계', enName: 'Modified Quadrant L2', desc: '색상 자극 1~2개와 신체 부위가 나타납니다. 2개 색상이 나타날 확률이 높으며, 한 쪽은 발, 다른 쪽은 손입니다.' },
+      { id: 8,  name: '변형 사분할 2단계', enName: 'Modified Quadrant L2', desc: '색상 자극 1~2개와 신체 부위가 나타납니다. 2개 색상일 때는 (양발+한 손) 또는 (양발+양손)만, 1개일 때는 발(한 발 포함)만 나타납니다.' },
       { id: 9,  name: '변형 사분할 3단계', enName: 'Modified Quadrant L3', desc: '색상 자극 1~3개와 신체 부위가 나타납니다. 3개 색상에서는 각각 한 발 또는 한 손이 배정됩니다.' },
       { id: 10, name: '변형 사분할 4단계', enName: 'Modified Quadrant L4', desc: '3개 색상에 손·발이 혼합됩니다. 발 합계와 손 합계가 각각 2개 이하가 되도록 조합됩니다.' },
       { id: 3, name: '3단계', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다.' },

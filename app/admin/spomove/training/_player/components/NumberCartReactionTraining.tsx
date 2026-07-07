@@ -4,16 +4,48 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
-/** 원본 HTML 순서 그대로 유지: 빨(좌끝)·노·초·파(우끝) */
+/** 원본 HTML 순서 그대로 유지: 빨(좌끝)·노·초·파(우끝) — 화면 양끝까지 퍼지도록 X 간격 확대 */
 const DOOR_COLORS = [
-  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -12 },
-  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -4 },
-  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 4 },
-  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 12 },
+  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -28 },
+  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -9 },
+  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 9 },
+  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 28 },
 ] as const;
 
-const DOOR_Z = -15;
-const CART_START = new THREE.Vector3(0, 0, 35);
+const DOOR_Z = -38;
+const DOOR_SIZE_SCALE = 1.9;
+const CAVE_RADIUS = 38;
+const CART_START = new THREE.Vector3(0, 0, 58);
+const MAIN_JUNCTION_Z = 10;
+const CART_END_Z = DOOR_Z + 4;
+const TUNNEL_LENGTH = CART_START.z - DOOR_Z + 50;
+
+type RailPath = {
+  mainLen: number;
+  branchLen: number;
+  targetX: number;
+};
+
+function buildRailPath(targetX: number): RailPath {
+  const mainLen = CART_START.z - MAIN_JUNCTION_Z;
+  const branchLen = Math.hypot(targetX, MAIN_JUNCTION_Z - CART_END_Z);
+  return { mainLen, branchLen, targetX };
+}
+
+function positionOnRail(path: RailPath, u: number): { x: number; z: number } {
+  const clamped = Math.max(0, Math.min(1, u));
+  const totalLen = path.mainLen + path.branchLen;
+  const dist = clamped * totalLen;
+  if (dist <= path.mainLen || path.branchLen <= 0) {
+    const seg = path.mainLen <= 0 ? 0 : dist / path.mainLen;
+    return { x: 0, z: CART_START.z - seg * path.mainLen };
+  }
+  const seg = (dist - path.mainLen) / path.branchLen;
+  return {
+    x: path.targetX * seg,
+    z: MAIN_JUNCTION_Z + (CART_END_Z - MAIN_JUNCTION_Z) * seg,
+  };
+}
 
 export type NumberCartTier = 1 | 2 | 3;
 
@@ -28,6 +60,7 @@ type DoorObj = {
   signTex: THREE.CanvasTexture;
   doorMat: THREE.MeshStandardMaterial;
   doorLight: THREE.PointLight;
+  haloLight: THREE.PointLight;
   label: string;
 };
 
@@ -70,6 +103,18 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
+/** 도착 버스트 오버레이 — 문 위치(화면 %) */
+const DOOR_BURST_ANCHOR = [
+  { x: '20%', y: '38%' },
+  { x: '39%', y: '38%' },
+  { x: '61%', y: '38%' },
+  { x: '80%', y: '38%' },
+] as const;
+
+function doorColorRgb(hex: number): [number, number, number] {
+  return [(hex >> 16) & 255, (hex >> 8) & 255, hex & 255];
+}
+
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
@@ -85,45 +130,47 @@ function tierBadge(tier: NumberCartTier): string {
   return 'L3 · 사칙연산';
 }
 
-function pickUniqueDistractors(correct: number, count: number): number[] {
+function pickUniqueDistractors(correct: number, count: number, forbidden = new Set<number>()): number[] {
   const out = new Set<number>();
+  const blocked = new Set(forbidden);
+  blocked.add(correct);
   const deltas = [-10, -5, -3, -2, -1, 1, 2, 3, 5, 10, 7, -7];
   let guard = 0;
   while (out.size < count && guard < 80) {
     guard += 1;
     let cand = correct + deltas[Math.floor(Math.random() * deltas.length)]!;
     if (cand <= 0) cand = correct + 2 + Math.floor(Math.random() * 6);
-    if (cand !== correct) out.add(cand);
+    if (!blocked.has(cand)) out.add(cand);
   }
   while (out.size < count) {
     const cand = 2 + Math.floor(Math.random() * 98);
-    if (cand !== correct) out.add(cand);
+    if (!blocked.has(cand)) out.add(cand);
   }
   return [...out].slice(0, count);
 }
 
-function generateMathRound(): { cartLabel: string; answer: number } {
-  const ops = ['+', '−', '×', '÷'] as const;
+function generateMathRound(): { cartLabel: string; answer: number; forbidden: number[] } {
+  const ops = ['+', '-', '×', '÷'] as const;
   const op = ops[Math.floor(Math.random() * ops.length)]!;
   if (op === '+') {
     const a = 2 + Math.floor(Math.random() * 11);
     const b = 2 + Math.floor(Math.random() * 11);
-    return { cartLabel: `${a}+${b}`, answer: a + b };
+    return { cartLabel: `${a} + ${b}`, answer: a + b, forbidden: [a, b] };
   }
-  if (op === '−') {
+  if (op === '-') {
     const a = 6 + Math.floor(Math.random() * 15);
     const b = 1 + Math.floor(Math.random() * (a - 1));
-    return { cartLabel: `${a}−${b}`, answer: a - b };
+    return { cartLabel: `${a} - ${b}`, answer: a - b, forbidden: [a, b] };
   }
   if (op === '×') {
     const a = 2 + Math.floor(Math.random() * 8);
     const b = 2 + Math.floor(Math.random() * 8);
-    return { cartLabel: `${a}×${b}`, answer: a * b };
+    return { cartLabel: `${a} × ${b}`, answer: a * b, forbidden: [a, b] };
   }
   const b = 2 + Math.floor(Math.random() * 8);
   const answer = 2 + Math.floor(Math.random() * 8);
   const a = b * answer;
-  return { cartLabel: `${a}÷${b}`, answer };
+  return { cartLabel: `${a} ÷ ${b}`, answer, forbidden: [a, b] };
 }
 
 function buildRound(tier: NumberCartTier): RoundPayload {
@@ -154,8 +201,8 @@ function buildRound(tier: NumberCartTier): RoundPayload {
     }
     return { cartLabel: String(targetNumber), targetDoorIdx, doorLabels };
   }
-  const { cartLabel, answer } = generateMathRound();
-  const wrong = pickUniqueDistractors(answer, 3);
+  const { cartLabel, answer, forbidden } = generateMathRound();
+  const wrong = pickUniqueDistractors(answer, 3, new Set(forbidden));
   const options = shuffle([answer, ...wrong]);
   const targetDoorIdx = options.indexOf(answer);
   return {
@@ -235,12 +282,15 @@ const css = `
 .ncart-play{position:relative;flex:1;min-height:0}
 .ncart-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(ellipse 85% 70% at 50% 42%,rgba(0,0,0,0) 0%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.78) 100%)}
+.ncart-door-burst{position:absolute;inset:0;z-index:17;pointer-events:none;opacity:0;mix-blend-mode:screen;background:radial-gradient(ellipse 52% 46% at var(--bx,50%) var(--by,38%),rgba(var(--dr,255),var(--dg,51),var(--db,51),.92) 0%,rgba(var(--dr,255),var(--dg,51),var(--db,51),.5) 24%,rgba(var(--dr,255),var(--dg,51),var(--db,51),.12) 48%,transparent 72%)}
+.ncart-door-burst.active{animation:ncartDoorBurst .85s ease-out forwards}
+@keyframes ncartDoorBurst{0%{opacity:0;transform:scale(.94)}12%{opacity:1;transform:scale(1.03)}100%{opacity:0;transform:scale(1)}}
 .ncart-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:5px 14px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#10b981;white-space:nowrap;max-width:min(92vw,560px);overflow:hidden;text-overflow:ellipsis}
 .ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:14px;background:rgba(6,10,18,.52);border:1px solid rgba(245,158,11,.2);backdrop-filter:blur(8px);box-shadow:0 6px 22px rgba(0,0,0,.32);transition:opacity .3s ease,transform .3s ease}
 .ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
 .ncart-target-k{font-size:clamp(9px,1.15vw,11px);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.36);text-transform:uppercase;line-height:1}
 .ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#ffe8b8;text-shadow:0 0 14px rgba(245,158,11,.5);-webkit-text-stroke:1px rgba(245,158,11,.22);white-space:nowrap}
-.ncart-target-v.expr{font-size:clamp(34px,6.2vw,50px);letter-spacing:.05em}
+.ncart-target-v.expr{font-family:"Courier New",Courier,monospace;font-size:clamp(32px,5.8vw,48px);font-weight:700;letter-spacing:.12em;-webkit-text-stroke:0;text-shadow:0 0 12px rgba(245,158,11,.45),0 0 2px rgba(255,232,184,.8);font-variant-ligatures:none;font-feature-settings:"liga" 0}
 .ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#f59e0b;margin-top:2px}
 `;
 
@@ -252,6 +302,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
   const hudRoundsRef = useRef<HTMLDivElement>(null);
   const hudTierRef = useRef<HTMLDivElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  const doorBurstRef = useRef<HTMLDivElement>(null);
   const targetHudRef = useRef<HTMLDivElement>(null);
   const targetNumRef = useRef<HTMLDivElement>(null);
   const targetKeyRef = useRef<HTMLDivElement>(null);
@@ -271,7 +322,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
   const prepMs = fallTimeSec * 1000;
   const lv = Math.max(1, Math.min(7, Math.round(Number.isFinite(speedLevel) ? speedLevel : 4)));
   /** 이동(주행) 시간: 난이도가 높을수록 살짝 빨라짐 */
-  const travelMs = Math.max(2600, 4600 - (lv - 1) * 250);
+  const travelMs = Math.max(4000, 6800 - (lv - 1) * 320);
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
@@ -320,13 +371,13 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x000000, 0.014);
+    scene.fog = new THREE.FogExp2(0x000000, 0.009);
 
     const w0 = play.clientWidth || window.innerWidth;
     const h0 = play.clientHeight || window.innerHeight;
-    const camera = new THREE.PerspectiveCamera(60, w0 / h0, 0.1, 150);
-    camera.position.set(0, 8, 45);
-    camera.lookAt(0, 0, -10);
+    const camera = new THREE.PerspectiveCamera(62, w0 / h0, 0.1, 220);
+    camera.position.set(0, 10, 64);
+    camera.lookAt(0, 0, -14);
 
     const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true });
     renderer.setSize(w0, h0);
@@ -378,11 +429,11 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       side: THREE.BackSide,
     });
     disposeMats.push(caveMaterial);
-    const caveGeometry = new THREE.CylinderGeometry(25, 25, 150, 32);
+    const caveGeometry = new THREE.CylinderGeometry(CAVE_RADIUS, CAVE_RADIUS, TUNNEL_LENGTH, 32);
     caveGeometry.rotateX(Math.PI / 2);
     disposeGeos.push(caveGeometry);
     const cave = new THREE.Mesh(caveGeometry, caveMaterial);
-    cave.position.set(0, 5, -10);
+    cave.position.set(0, 5, (CART_START.z + DOOR_Z) / 2);
     cave.receiveShadow = true;
     scene.add(cave);
 
@@ -396,7 +447,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       roughness: 1.0,
     });
     disposeMats.push(groundMaterial);
-    const groundGeo = new THREE.PlaneGeometry(80, 150);
+    const groundGeo = new THREE.PlaneGeometry(100, TUNNEL_LENGTH + 20);
     disposeGeos.push(groundGeo);
     const ground = new THREE.Mesh(groundGeo, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -412,8 +463,8 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     const tieGeo = new THREE.BoxGeometry(3, 0.2, 0.5);
     disposeGeos.push(railGeo, tieGeo);
 
-    const mainZEnd = 5;
-    for (let z = 40; z >= mainZEnd; z -= 1.5) {
+    const mainZEnd = MAIN_JUNCTION_Z;
+    for (let z = CART_START.z + 4; z >= mainZEnd; z -= 1.5) {
       const tie = new THREE.Mesh(tieGeo, tieMaterial);
       tie.position.set(0, -1.9, z);
       tie.receiveShadow = true;
@@ -428,7 +479,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       scene.add(rightRail);
     }
 
-    const branchEndZ = -15;
+    const branchEndZ = DOOR_Z;
     DOOR_COLORS.forEach((d) => {
       const startX = 0;
       const startZ = mainZEnd;
@@ -470,14 +521,14 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
       const pillarGeo = new THREE.BoxGeometry(1.5, 8, 2);
       const leftPillar = new THREE.Mesh(pillarGeo, frameMat);
-      leftPillar.position.set(-2.6, 2, 0);
+      leftPillar.position.set(-3.0, 2, 0);
       frameGroup.add(leftPillar);
       const rightPillar = new THREE.Mesh(pillarGeo, frameMat);
-      rightPillar.position.set(2.6, 2, 0);
+      rightPillar.position.set(3.0, 2, 0);
       frameGroup.add(rightPillar);
       disposeGeos.push(pillarGeo);
 
-      const topBeamGeo = new THREE.BoxGeometry(6.7, 1.5, 2);
+      const topBeamGeo = new THREE.BoxGeometry(7.8, 1.5, 2);
       const topBeam = new THREE.Mesh(topBeamGeo, frameMat);
       topBeam.position.set(0, 6, 0);
       frameGroup.add(topBeam);
@@ -491,7 +542,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
         emissiveIntensity: 0.45,
       });
       disposeMats.push(doorMat);
-      const doorGeo = new THREE.BoxGeometry(3.7, 7, 0.5);
+      const doorGeo = new THREE.BoxGeometry(4.6, 7, 0.5);
       disposeGeos.push(doorGeo);
       const doorMesh = new THREE.Mesh(doorGeo, doorMat);
       doorMesh.position.set(0, 1.5, -0.5);
@@ -510,6 +561,10 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       doorLight.position.set(0, 7.5, 2.5);
       frameGroup.add(doorLight);
 
+      const haloLight = new THREE.PointLight(config.hex, 0, 55);
+      haloLight.position.set(0, 4, 4);
+      frameGroup.add(haloLight);
+
       // 사인판: 검정 대신 짙은 남색 배경 + 밝은 글로우로 가독성 강화
       const signCanvas = document.createElement('canvas');
       signCanvas.width = 512;
@@ -519,11 +574,13 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       disposeTex.push(signTex);
       const signMat = new THREE.MeshBasicMaterial({ map: signTex, transparent: true });
       disposeMats.push(signMat);
-      const signGeo = new THREE.BoxGeometry(6, 3, 0.2);
+      const signGeo = new THREE.BoxGeometry(6.8, 3, 0.2);
       disposeGeos.push(signGeo);
       const signMesh = new THREE.Mesh(signGeo, signMat);
       signMesh.position.set(0, 5.5, 1.1);
       frameGroup.add(signMesh);
+
+      frameGroup.scale.setScalar(DOOR_SIZE_SCALE);
 
       scene.add(frameGroup);
       doors.push({
@@ -535,6 +592,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
         signTex,
         doorMat,
         doorLight,
+        haloLight,
         label: '',
       });
     });
@@ -565,17 +623,52 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
     };
 
     const resetDoorGlow = () => {
-      doors.forEach((door) => {
+      doors.forEach((door, idx) => {
+        const hex = DOOR_COLORS[idx]!.hex;
+        door.doorMat.color.setHex(hex);
+        door.doorMat.emissive.setHex(hex);
         door.doorMat.emissiveIntensity = 0.45;
         door.doorLight.intensity = 4;
+        door.doorLight.distance = 18;
+        door.haloLight.intensity = 0;
+        door.group.scale.setScalar(DOOR_SIZE_SCALE);
       });
     };
 
-    const pulseDoorGlow = (doorIdx: number, strength: number) => {
+    const triggerDoorBurst = (doorIdx: number) => {
+      const el = doorBurstRef.current;
+      if (!el) return;
+      const cfg = DOOR_COLORS[doorIdx]!;
+      const anchor = DOOR_BURST_ANCHOR[doorIdx]!;
+      const [r, g, b] = doorColorRgb(cfg.hex);
+      el.style.setProperty('--bx', anchor.x);
+      el.style.setProperty('--by', anchor.y);
+      el.style.setProperty('--dr', String(r));
+      el.style.setProperty('--dg', String(g));
+      el.style.setProperty('--db', String(b));
+      el.classList.remove('active');
+      void el.offsetWidth;
+      el.classList.add('active');
+    };
+
+    const applyDoorBurstGlow = (doorIdx: number, strength: number) => {
+      const s = Math.max(0, Math.min(1, strength));
       doors.forEach((door, idx) => {
-        const active = idx === doorIdx;
-        door.doorMat.emissiveIntensity = active ? 0.45 + strength * 0.55 : 0.22 + strength * 0.08;
-        door.doorLight.intensity = active ? 4 + strength * 4 : 2.2;
+        const hex = DOOR_COLORS[idx]!.hex;
+        if (idx === doorIdx) {
+          door.doorMat.emissiveIntensity = 0.45 + s * 2.4;
+          door.doorMat.color.setHex(hex);
+          door.doorMat.emissive.setHex(hex);
+          door.doorLight.intensity = 4 + s * 32;
+          door.doorLight.distance = 18 + s * 48;
+          door.haloLight.intensity = s * 42;
+          door.group.scale.setScalar(DOOR_SIZE_SCALE * (1 + s * 0.06));
+        } else {
+          door.doorMat.emissiveIntensity = 0.1;
+          door.doorLight.intensity = 1.1;
+          door.haloLight.intensity = 0;
+          door.group.scale.setScalar(DOOR_SIZE_SCALE);
+        }
       });
     };
 
@@ -687,6 +780,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
     cart.position.copy(CART_START);
     scene.add(cart);
+    display.visible = true;
 
     const updateCartSign = (text: string) => {
       const ctx = cartSignCtx;
@@ -710,17 +804,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       ctx.fillText(text, w / 2, h / 2);
       ctx.shadowBlur = 0;
       cartSignTexture.needsUpdate = true;
-      if (targetNumRef.current) {
-        targetNumRef.current.textContent = text;
-        targetNumRef.current.classList.toggle('expr', compact.length > 2);
-      }
-      if (targetKeyRef.current) targetKeyRef.current.textContent = tierHudTitle(cartTier);
     };
-
-    const showTargetHud = (visible: boolean) => {
-      if (targetHudRef.current) targetHudRef.current.classList.toggle('hidden', !visible);
-    };
-    updateCartSign('?');
 
     // 6. 먼지 파티클
     const particleCount = 1600;
@@ -758,8 +842,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       statusRef.current.style.color = color;
     };
 
-    let controlPoint = new THREE.Vector3(0, 0, 8);
-    let endPos = new THREE.Vector3(0, 0, DOOR_Z + 4);
+    let activeRailPath: RailPath = buildRailPath(0);
 
     const startRound = () => {
       cart.position.copy(CART_START);
@@ -780,7 +863,6 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       g.phase = 'PREP';
       g.phaseStartMs = performance.now();
       display.visible = true;
-      showTargetHud(true);
       const prepHint = cartTier === 3 ? '식을 계산하고 맞는 문을 찾으세요' : '목표 숫자가 있는 문을 찾으세요';
       setStatus(`${prepHint} · ${Math.ceil(g.prepMs / 1000)}초 후 출발`, '#f59e0b');
 
@@ -799,11 +881,8 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
         if (!gRef.current?.running) return;
         g.phase = 'TRANSIT';
         g.phaseStartMs = performance.now();
-        display.visible = true;
-        showTargetHud(false);
         setStatus('이동 중 · 수레 뒤판 확인', '#10b981');
-        endPos = new THREE.Vector3(targetDoor.x, 0, targetDoor.z + 4);
-        controlPoint = new THREE.Vector3(0, 0, 8);
+        activeRailPath = buildRailPath(targetDoor.x);
       }, g.prepMs);
     };
 
@@ -825,35 +904,37 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
 
       const phaseElapsed = performance.now() - g.phaseStartMs;
       if (g.phase === 'PREP') {
-        const breathe = 0.35 + Math.sin(phaseElapsed * 0.005) * 0.18;
         doors.forEach((door) => {
-          door.doorMat.emissiveIntensity = 0.42 + breathe * 0.14;
-          door.doorLight.intensity = 3.4 + breathe * 1.2;
+          door.doorMat.emissiveIntensity = 0.45;
+          door.doorLight.intensity = 4;
         });
       } else if (g.phase === 'ARRIVE') {
-        const flash = 0.55 + Math.sin(phaseElapsed * 0.018) * 0.45;
-        pulseDoorGlow(g.targetDoorIdx, flash);
+        const elapsed = phaseElapsed;
+        let strength: number;
+        if (elapsed < 140) {
+          strength = elapsed / 140;
+        } else {
+          strength = Math.max(0, 1 - (elapsed - 140) / 520);
+        }
+        applyDoorBurstGlow(g.targetDoorIdx, strength);
       }
 
       if (g.phase === 'TRANSIT') {
         const t = Math.min(1, (performance.now() - g.phaseStartMs) / g.travelMs);
         const easedT = easeInOutCubic(t);
-        const startPos = CART_START;
-        const oneMinusT = 1 - easedT;
-        const x = oneMinusT * oneMinusT * startPos.x + 2 * oneMinusT * easedT * controlPoint.x + easedT * easedT * endPos.x;
-        const z = oneMinusT * oneMinusT * startPos.z + 2 * oneMinusT * easedT * controlPoint.z + easedT * easedT * endPos.z;
         const prevX = cart.position.x;
         const prevZ = cart.position.z;
-        cart.position.set(x, startPos.y, z);
-        if (t > 0.01 && t < 0.99) {
-          const dir = new THREE.Vector3(x - prevX, 0, z - prevZ).normalize();
-          if (dir.lengthSq() > 0) cart.rotation.y = Math.atan2(dir.x, dir.z);
+        const { x, z } = positionOnRail(activeRailPath, easedT);
+        cart.position.set(x, CART_START.y, z);
+        if (t > 0.005 && t < 0.995) {
+          const dir = new THREE.Vector3(x - prevX, 0, z - prevZ);
+          if (dir.lengthSq() > 1e-6) cart.rotation.y = Math.atan2(dir.x, dir.z);
         }
         if (t >= 1) {
           g.phase = 'ARRIVE';
           g.phaseStartMs = performance.now();
-          display.visible = false;
-          showTargetHud(false);
+          triggerDoorBurst(g.targetDoorIdx);
+          applyDoorBurstGlow(g.targetDoorIdx, 1);
           setStatus(cartTier === 3 ? '정답 문 도착' : '도착', '#6b7280');
           g.roundTimer = setTimeout(() => {
             if (gRef.current?.running) startRound();
@@ -862,8 +943,8 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       } else {
         const time = Date.now() * 0.001;
         camera.position.x = Math.sin(time * 0.5) * 0.2;
-        camera.position.y = 8 + Math.cos(time * 0.3) * 0.1;
-        camera.lookAt(0, 0, -10);
+        camera.position.y = 10 + Math.cos(time * 0.3) * 0.1;
+        camera.lookAt(0, 0, -14);
       }
 
       renderer.render(scene, camera);
@@ -878,30 +959,26 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       renderer.setSize(w, h);
     };
     window.addEventListener('resize', onWinResize);
-
+    onWinResize();
     renderer.render(scene, camera);
+    g.raf = requestAnimationFrame(animate);
+    startRound();
 
-    const startId = window.setTimeout(() => {
-      onWinResize();
-      startRound();
-      const endsAtMs = performance.now() + durationSec * 1000;
-      g.intervalTimer = setInterval(() => {
-        const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
-        if (g.timeLeft !== newLeft) {
-          g.timeLeft = newLeft;
-          updateHudTime();
-        }
-        if (g.timeLeft <= 0) {
-          if (g.intervalTimer) clearInterval(g.intervalTimer);
-          g.intervalTimer = null;
-          endGame();
-        }
-      }, 250);
-      g.raf = requestAnimationFrame(animate);
-    }, 60);
+    const endsAtMs = performance.now() + durationSec * 1000;
+    g.intervalTimer = setInterval(() => {
+      const newLeft = Math.max(0, Math.ceil((endsAtMs - performance.now()) / 1000));
+      if (g.timeLeft !== newLeft) {
+        g.timeLeft = newLeft;
+        updateHudTime();
+      }
+      if (g.timeLeft <= 0) {
+        if (g.intervalTimer) clearInterval(g.intervalTimer);
+        g.intervalTimer = null;
+        endGame();
+      }
+    }, 250);
 
     return () => {
-      clearTimeout(startId);
       window.removeEventListener('resize', onWinResize);
       g.running = false;
       if (g.roundTimer) clearTimeout(g.roundTimer);
@@ -946,6 +1023,7 @@ export function NumberCartReactionTraining({ durationSec, speedLevel, speedSec, 
       <div ref={playRef} className="ncart-play">
         <canvas className="ncart-canvas" ref={cvRef} />
         <div className="ncart-vignette" />
+        <div className="ncart-door-burst" ref={doorBurstRef} aria-hidden />
         <div className="ncart-target hidden" ref={targetHudRef}>
           <div className="ncart-target-k" ref={targetKeyRef}>
             목표
