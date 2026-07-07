@@ -1,7 +1,20 @@
 'use client';
 
 import { FileText } from 'lucide-react';
+import { DEFAULT_NOTE_ENTRY_DOCUMENT_TITLE } from './constants';
 import type { NoteDocument } from './types';
+
+function normalizeDocTitle(title: string): string {
+  return title.trim().replace(/\s+/g, '');
+}
+
+/** /admin/note 진입 시 기본으로 열 문서 (제목 일치, 공백 무시) */
+export function findDefaultNoteEntryDocument(documents: NoteDocument[]): NoteDocument | null {
+  const target = normalizeDocTitle(DEFAULT_NOTE_ENTRY_DOCUMENT_TITLE);
+  return documents.find(
+    (doc) => !doc.deleted_at && normalizeDocTitle(doc.title) === target,
+  ) ?? null;
+}
 
 export function relativeTime(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
