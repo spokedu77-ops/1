@@ -13,7 +13,7 @@ import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
-const CONTENT_DEBOUNCE_MS = 600;
+const CONTENT_DEBOUNCE_MS = 1500;
 
 export type NoteDocumentOpQueueDeps = {
   getBlock: (blockId: string) => NoteBlock | undefined;

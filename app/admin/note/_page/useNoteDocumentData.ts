@@ -1,10 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useDeferredNoteMeta } from '../_hooks/useDeferredNoteMeta';
-import { buildDocumentBreadcrumb, resolveDocIcon } from '../_lib/noteDocumentUi';
+import { buildDocumentBreadcrumb, findDefaultNoteEntryDocument, resolveDocIcon } from '../_lib/noteDocumentUi';
 import type { NoteCollaborator, NoteDocument, NoteBlock, SortKey } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
@@ -18,6 +18,7 @@ export function useNoteDocumentData(options: {
 }) {
   const { closeAll, setMobileTab, docTab, viewMode, setError, onBootstrapBlocks } = options;
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [documents, setDocuments] = useState<NoteDocument[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get('id'));
@@ -29,6 +30,7 @@ export function useNoteDocumentData(options: {
   const [collaborators, setCollaborators] = useState<NoteCollaborator[]>([]);
   const [backlinks, setBacklinks] = useState<NoteDocument[]>([]);
   const [backlinksExpanded, setBacklinksExpanded] = useState(false);
+  const [backlinksLoading, setBacklinksLoading] = useState(false);
 
   const sortMenuRef = useRef<HTMLDivElement>(null);
 
@@ -142,10 +144,7 @@ export function useNoteDocumentData(options: {
         }
 
         const urlDocId = searchParams.get('id');
-        const bootstrapUrl = urlDocId
-          ? `/api/admin/note/bootstrap?documentId=${encodeURIComponent(urlDocId)}`
-          : '/api/admin/note/bootstrap';
-        const res = await fetch(bootstrapUrl, { credentials: 'include' });
+        const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
         if (!res.ok) {
           const j = await res.json().catch(() => null);
           throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.');
@@ -156,17 +155,43 @@ export function useNoteDocumentData(options: {
           documentId?: string;
         };
         if (!alive) return;
-        setDocuments(json.documents ?? []);
-        if (urlDocId && json.documents?.some((d) => d.id === urlDocId)) {
-          setSelectedId(urlDocId);
-          setMobileTab('editor');
+        const docs = json.documents ?? [];
+        setDocuments(docs);
+
+        let targetDocId = urlDocId;
+        if (!targetDocId && docTab !== 'trash') {
+          const defaultDoc = findDefaultNoteEntryDocument(docs);
+          if (defaultDoc) targetDocId = defaultDoc.id;
         }
-        if (
-          urlDocId
-          && json.documentId === urlDocId
-          && Array.isArray(json.blocks)
-        ) {
-          onBootstrapBlocks?.({ documentId: urlDocId, blocks: json.blocks });
+
+        if (targetDocId && docs.some((d) => d.id === targetDocId)) {
+          setSelectedId(targetDocId);
+          setMobileTab('editor');
+          if (targetDocId !== urlDocId) {
+            router.replace(`/admin/note?id=${encodeURIComponent(targetDocId)}`);
+          }
+        }
+
+        if (targetDocId && docs.some((d) => d.id === targetDocId)) {
+          let blocks = json.documentId === targetDocId ? json.blocks : undefined;
+          if (!Array.isArray(blocks)) {
+            const blockRes = await fetch(
+              `/api/admin/note/bootstrap?documentId=${encodeURIComponent(targetDocId)}`,
+              { credentials: 'include' },
+            );
+            if (blockRes.ok) {
+              const blockJson = (await blockRes.json()) as {
+                blocks?: NoteBlock[];
+                documentId?: string;
+              };
+              if (blockJson.documentId === targetDocId && Array.isArray(blockJson.blocks)) {
+                blocks = blockJson.blocks;
+              }
+            }
+          }
+          if (Array.isArray(blocks)) {
+            onBootstrapBlocks?.({ documentId: targetDocId, blocks });
+          }
         }
       } catch (e) {
         devLogger.error('[Note] loadDocs', e);
@@ -183,7 +208,19 @@ export function useNoteDocumentData(options: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [docTab]);
 
-  useDeferredNoteMeta(selectedId, setCollaborators, setBacklinks);
+  useEffect(() => {
+    setBacklinks([]);
+    setBacklinksExpanded(false);
+    setBacklinksLoading(false);
+  }, [selectedId]);
+
+  useDeferredNoteMeta(
+    selectedId,
+    backlinksExpanded,
+    setCollaborators,
+    setBacklinks,
+    setBacklinksLoading,
+  );
 
   const reloadDocuments = useCallback(async () => {
     try {
@@ -247,6 +284,7 @@ export function useNoteDocumentData(options: {
     backlinks,
     backlinksExpanded,
     setBacklinksExpanded,
+    backlinksLoading,
     activeDocument,
     allDocumentsMap,
     documentBreadcrumb,

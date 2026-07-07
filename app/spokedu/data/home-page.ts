@@ -17,6 +17,7 @@ export type HomeCaseCard = {
   trackLabel: string;
   mediaKey: HomeMediaKey;
   blogImageIndex?: number;
+  thumbnailSrc?: string;
 };
 
 export type HomeAudienceGateItem = {
@@ -55,6 +56,7 @@ function buildHomeCaseCard(slug: FieldRecordSlug): HomeCaseCard {
     trackLabel: card.trackLabel,
     mediaKey: card.mediaKey,
     blogImageIndex: card.blogImageIndex,
+    thumbnailSrc: card.thumbnailSrc,
   };
 }
 

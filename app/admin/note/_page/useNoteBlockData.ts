@@ -21,10 +21,12 @@ import {
 } from '../_lib/noteBlockStateMerge';
 import {
   cancelNoteReconcileIdle,
+  isNoteLocalSaveSuppressed,
   registerNoteReconcileIdleHandler,
   scheduleNoteReconcileIdle,
   scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import {
   readRememberedNoteDocumentBlocks,
@@ -86,6 +88,17 @@ export function useNoteBlockData(options: {
   const bootstrapAppliedDocIdRef = useRef<string | null>(null);
   const reconcileDocumentIdRef = useRef<string | null>(null);
   const reconcileLoadGenRef = useRef(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    void getSupabaseBrowserClient().auth.getUser().then(({ data }) => {
+      if (alive) setCurrentUserId(data.user?.id ?? null);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const clearReconcileTimer = useCallback(() => {
     cancelNoteReconcileIdle();
@@ -137,6 +150,7 @@ export function useNoteBlockData(options: {
 
   useNoteBlocksRealtimeInvalidation({
     documentId: selectedId,
+    currentUserId,
     onInvalidate: handleRealtimeInvalidate,
   });
 
@@ -145,6 +159,7 @@ export function useNoteBlockData(options: {
     loadGen: number,
   ) => {
     if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
+    if (isNoteLocalSaveSuppressed(documentId)) return;
     if (
       isActiveNoteEditorFocused()
       || documentEngineRef.current.hasPendingContent()

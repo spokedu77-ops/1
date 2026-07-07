@@ -57,6 +57,7 @@ export interface NotePageContextValue {
   backlinks: NoteDocument[];
   backlinksExpanded: boolean;
   setBacklinksExpanded: React.Dispatch<React.SetStateAction<boolean>>;
+  backlinksLoading: boolean;
   activeDocument: NoteDocument | null;
   allDocumentsMap: Map<string, NoteDocument>;
   documentBreadcrumb: NoteDocument[];

@@ -12,6 +12,7 @@ import {
   type CreateBlockPersistArgs,
   type SoftDeletePersistArgs,
 } from '../_lib/noteDocumentOpQueue';
+import { markNoteLocalSave } from '../_lib/noteReconcileIdle';
 import { setNoteContentSavePending } from '../_lib/notePendingSave';
 import type { NoteBlockFieldPatch, PatchedNoteBlock } from '../_lib/noteBlocksApi';
 import { purgeNoteBlockFromTrash, restoreNoteBlockFromTrash } from '../_lib/noteBlocksApi';
@@ -127,7 +128,10 @@ export function useNoteDocumentEngine(options: {
       getActiveBlockId: () => useNoteBlockStore.getState().activeEditor?.blockId ?? null,
       triggerSave: () => triggerSaveRef.current(),
       onError: (error) => onErrorRef.current?.(error),
-      onServerPatches: (patched) => applyServerVersionsRef.current(patched),
+      onServerPatches: (patched) => {
+        markNoteLocalSave(documentId);
+        applyServerVersionsRef.current(patched);
+      },
       onServerConflicts: (conflicts) => applyServerConflictsRef.current(conflicts),
     });
 

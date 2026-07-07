@@ -129,6 +129,7 @@ export function NotePageShell() {
     backlinks,
     backlinksExpanded,
     setBacklinksExpanded,
+    backlinksLoading,
     showDocIconPicker,
     setShowDocIconPicker,
     docIconDraft,
@@ -311,6 +312,7 @@ export function NotePageShell() {
                   backlinks={backlinks}
                   backlinksExpanded={backlinksExpanded}
                   setBacklinksExpanded={setBacklinksExpanded}
+                  backlinksLoading={backlinksLoading}
                   showDocIconPicker={showDocIconPicker}
                   setShowDocIconPicker={setShowDocIconPicker}
                   docIconDraft={docIconDraft}

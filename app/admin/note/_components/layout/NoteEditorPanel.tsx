@@ -69,6 +69,7 @@ type NoteEditorPanelProps = Pick<
   | 'backlinks'
   | 'backlinksExpanded'
   | 'setBacklinksExpanded'
+  | 'backlinksLoading'
   | 'showDocIconPicker'
   | 'setShowDocIconPicker'
   | 'docIconDraft'
@@ -211,6 +212,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   backlinks,
   backlinksExpanded,
   setBacklinksExpanded,
+  backlinksLoading,
   showDocIconPicker,
   setShowDocIconPicker,
   docIconDraft,
@@ -555,40 +557,47 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
                 {relativeTime(activeDocument.updated_at)}
               </p>
             )}
-            {backlinks.length > 0 && (
-              <div className="mb-4 border-b border-neutral-100">
-                <button
-                  type="button"
-                  onClick={() => setBacklinksExpanded((v) => !v)}
-                  className="flex w-full items-center gap-2 py-2 text-[13px] text-neutral-500 transition-colors hover:text-neutral-700"
-                >
-                  <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${backlinksExpanded ? '' : '-rotate-90'}`} />
-                  백링크
-                  {' '}
-                  {backlinks.length}
-                </button>
-                {backlinksExpanded && (
-                  <div className="space-y-0.5 pb-3">
-                    {backlinks.map((doc) => (
-                      <button
-                        key={doc.id}
-                        type="button"
-                        className="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-neutral-50"
-                        onClick={() => handleSelectDocument(doc)}
-                        onMouseEnter={() => prefetchNoteDocumentBlocks(doc.id)}
-                      >
-                        <DocIconGlyph
-                          icon={resolveDocIcon(doc.properties)}
-                          fallbackClassName="h-3.5 w-3.5 shrink-0 text-neutral-400"
-                          emojiClassName="shrink-0 text-[14px] leading-none"
-                        />
-                        <span className="min-w-0 flex-1 truncate text-[13px] text-neutral-700">{doc.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+            <div className="mb-4 border-b border-neutral-100">
+              <button
+                type="button"
+                onClick={() => setBacklinksExpanded((v) => !v)}
+                className="flex w-full items-center gap-2 py-2 text-[13px] text-neutral-500 transition-colors hover:text-neutral-700"
+              >
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${backlinksExpanded ? '' : '-rotate-90'}`} />
+                백링크
+                {backlinksLoading ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-neutral-400" aria-hidden />
+                ) : backlinksExpanded ? (
+                  <>
+                    {' '}
+                    {backlinks.length}
+                  </>
+                ) : null}
+              </button>
+              {backlinksExpanded && !backlinksLoading && backlinks.length === 0 && (
+                <p className="pb-3 text-[12px] text-neutral-400">연결된 페이지가 없습니다.</p>
+              )}
+              {backlinksExpanded && backlinks.length > 0 && (
+                <div className="space-y-0.5 pb-3">
+                  {backlinks.map((doc) => (
+                    <button
+                      key={doc.id}
+                      type="button"
+                      className="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-neutral-50"
+                      onClick={() => handleSelectDocument(doc)}
+                      onMouseEnter={() => prefetchNoteDocumentBlocks(doc.id)}
+                    >
+                      <DocIconGlyph
+                        icon={resolveDocIcon(doc.properties)}
+                        fallbackClassName="h-3.5 w-3.5 shrink-0 text-neutral-400"
+                        emojiClassName="shrink-0 text-[14px] leading-none"
+                      />
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-neutral-700">{doc.title}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           </>
           ) : (
