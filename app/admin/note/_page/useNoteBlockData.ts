@@ -92,9 +92,10 @@ export function useNoteBlockData(options: {
 
   useEffect(() => {
     let alive = true;
-    void getSupabaseBrowserClient().auth.getUser().then(({ data }) => {
-      if (alive) setCurrentUserId(data.user?.id ?? null);
-    });
+    void (async () => {
+      const { data: { user } } = await getSupabaseBrowserClient().auth.getUser();
+      if (alive) setCurrentUserId(user?.id ?? null);
+    })();
     return () => {
       alive = false;
     };
