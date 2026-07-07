@@ -62,7 +62,7 @@ export type OfficialSpomovePreset = {
   executionFacts: ExecutionFact[];
 };
 
-export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[
+export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
   // ─── OFFICIAL SPOMOVE LIBRARY (46 presets, sortOrder 1~46) ───
 
   // sortOrder 1: 공간 방향 (level 1)
