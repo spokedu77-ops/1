@@ -24,6 +24,16 @@ import {
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
+import {
+  normalizeSpomoveGuideVideoMap,
+  normalizeSpomoveThumbnailMap,
+  SPOMOVE_GUIDE_VIDEO_PACK_ID,
+  SPOMOVE_GUIDE_VIDEO_PACK_NAME,
+  SPOMOVE_THUMBNAIL_PACK_ID,
+  SPOMOVE_THUMBNAIL_PACK_NAME,
+  type SpomoveGuideVideoAssetsJson,
+  type SpomoveThumbnailAssetsJson,
+} from '@/app/lib/spomove/spomoveOfficialAssets';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
@@ -52,11 +62,9 @@ import {
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
-type AdminTabKey = 'programs' | 'spomove-thumbnails';
+type AdminTabKey = 'programs' | 'spomove-thumbnails' | 'spomove-guide-videos';
 
-type SpomoveThumbnailAssetsJson = {
-  thumbnails?: Record<string, string | null | undefined>;
-};
+type SpomoveGuideVideoDraft = Record<string, string>;
 
 type CurriculumRow = {
   id: number;
@@ -177,20 +185,19 @@ const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 const ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'programs', label: '수업 자료' },
   { key: 'spomove-thumbnails', label: 'SPOMOVE 썸네일' },
+  { key: 'spomove-guide-videos', label: 'SPOMOVE 가이드 영상' },
 ];
-const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
-const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
 const SPOMOVE_GROUP_OPTIONS: Array<{
   key: OfficialSpomoveProgramGroup;
   label: string;
   expectedCount: number;
 }> = [
-  { key: 'visual-reaction', label: '시지각 반응', expectedCount: 11 },
-  { key: 'reaction-cognition', label: '반응 인지', expectedCount: 25 },
-  { key: 'simon', label: '사이먼 효과', expectedCount: 2 },
+  { key: 'visual-reaction', label: '시지각 반응', expectedCount: 17 },
+  { key: 'reaction-cognition', label: '반응 인지', expectedCount: 40 },
+  { key: 'simon', label: '사이먼 효과', expectedCount: 3 },
   { key: 'flanker', label: '플랭커', expectedCount: 6 },
   { key: 'stroop', label: '스트룹 과제', expectedCount: 5 },
-  { key: 'sequential-memory', label: '순차 기억', expectedCount: 5 },
+  { key: 'sequential-memory', label: '순차 기억', expectedCount: 6 },
   { key: 'dive', label: '다이브', expectedCount: 5 },
   { key: 'bonus', label: '보너스', expectedCount: 1 },
 ];
@@ -614,20 +621,6 @@ function SetupImageUpload({
   );
 }
 
-function normalizeSpomoveThumbnailMap(raw: unknown) {
-  const source = (raw as SpomoveThumbnailAssetsJson | null)?.thumbnails;
-  if (!source || typeof source !== 'object') return {};
-  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
-  const next: Record<string, string> = {};
-  for (const [presetId, path] of Object.entries(source)) {
-    if (!validPresetIds.has(presetId)) continue;
-    if (typeof path === 'string' && path.trim()) {
-      next[presetId] = path.trim();
-    }
-  }
-  return next;
-}
-
 function spomoveThumbnailPath(presetId: string, ext: string) {
   return `spokedu-master/spomove-thumbnails/${presetId}/thumbnail.${ext}`;
 }
@@ -777,7 +770,7 @@ function SpomoveThumbnailManager() {
               </p>
               <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 프리셋 썸네일</h2>
               <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-                공식 프리셋 60개의 썸네일만 관리합니다. SPOMAT 2×2 패드와 맞추려면 1:1 정사각형으로 업로드하세요.
+                공식 프리셋 {OFFICIAL_SPOMOVE_LIBRARY.length}개의 썸네일만 관리합니다. SPOMAT 2×2 패드와 맞추려면 1:1 정사각형으로 업로드하세요.
               </p>
             </div>
             <button
@@ -892,6 +885,225 @@ function SpomoveThumbnailManager() {
                               {deletingThis ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
                             </button>
                           </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })
+        )}
+      </div>
+    </main>
+  );
+}
+
+function SpomoveGuideVideoManager() {
+  const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
+  const urlsRef = useRef(guideVideoUrls);
+  urlsRef.current = guideVideoUrls;
+  const [draftUrls, setDraftUrls] = useState<SpomoveGuideVideoDraft>({});
+  const [loading, setLoading] = useState(true);
+  const [savingPresetId, setSavingPresetId] = useState<string | null>(null);
+  const [deletingPresetId, setDeletingPresetId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error: loadError } = await supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID)
+        .maybeSingle();
+
+      if (loadError && loadError.code !== 'PGRST116') {
+        throw loadError;
+      }
+
+      const next = normalizeSpomoveGuideVideoMap(data?.assets_json);
+      setGuideVideoUrls(next);
+      urlsRef.current = next;
+      setDraftUrls(next);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'SPOMOVE 가이드 영상을 불러오지 못했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const persist = useCallback(async (next: Record<string, string>) => {
+    const res = await fetch('/api/admin/think-asset-pack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        id: SPOMOVE_GUIDE_VIDEO_PACK_ID,
+        name: SPOMOVE_GUIDE_VIDEO_PACK_NAME,
+        theme: 'spomove',
+        assets_json: { guideVideos: next } satisfies SpomoveGuideVideoAssetsJson,
+      }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    if (!res.ok) throw new Error(body.error ?? 'SPOMOVE 가이드 영상 저장에 실패했습니다.');
+    setGuideVideoUrls(next);
+    urlsRef.current = next;
+    setDraftUrls(next);
+  }, []);
+
+  const saveGuideVideo = useCallback(async (presetId: string) => {
+    const nextUrl = (draftUrls[presetId] ?? '').trim();
+    setSavingPresetId(presetId);
+    setError(null);
+    try {
+      const next = { ...urlsRef.current };
+      if (nextUrl) next[presetId] = nextUrl;
+      else delete next[presetId];
+      await persist(next);
+      toast.success('SPOMOVE 가이드 영상 링크를 저장했습니다.');
+    } catch (saveError) {
+      const message = saveError instanceof Error ? saveError.message : 'SPOMOVE 가이드 영상 저장에 실패했습니다.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingPresetId(null);
+    }
+  }, [draftUrls, persist]);
+
+  const deleteGuideVideo = useCallback(async (presetId: string) => {
+    if (!urlsRef.current[presetId]) return;
+    setDeletingPresetId(presetId);
+    setError(null);
+    try {
+      const next = { ...urlsRef.current };
+      delete next[presetId];
+      await persist(next);
+      toast.success('SPOMOVE 가이드 영상 링크를 삭제했습니다.');
+    } catch (deleteError) {
+      const message = deleteError instanceof Error ? deleteError.message : 'SPOMOVE 가이드 영상 삭제에 실패했습니다.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setDeletingPresetId(null);
+    }
+  }, [persist]);
+
+  const savedCount = Object.keys(guideVideoUrls).length;
+
+  return (
+    <main className="min-h-[calc(100vh-73px)] bg-slate-50 p-4 sm:p-6">
+      <div className="mx-auto max-w-[1500px] space-y-5">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-indigo-600">
+                SPOMOVE guide videos
+              </p>
+              <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 가이드 영상</h2>
+              <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+                프리셋별 가이드라인 모달에 노출할 YouTube·Vimeo 링크를 등록합니다.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void load()}
+              disabled={loading}
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-[12px] font-black text-slate-700 disabled:opacity-50"
+            >
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              새로고침
+            </button>
+          </div>
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-lg bg-slate-50 p-3">
+              <p className="text-[10px] font-black text-slate-500">공식 프리셋</p>
+              <p className="mt-1 text-[18px] font-black text-slate-950">{OFFICIAL_SPOMOVE_LIBRARY.length}개</p>
+            </div>
+            <div className="rounded-lg bg-indigo-50 p-3">
+              <p className="text-[10px] font-black text-indigo-600">등록된 영상</p>
+              <p className="mt-1 text-[18px] font-black text-indigo-900">{savedCount}개</p>
+            </div>
+            <div className="rounded-lg bg-emerald-50 p-3">
+              <p className="text-[10px] font-black text-emerald-700">저장 위치</p>
+              <p className="mt-1 text-[12px] font-black text-emerald-900">think_asset_packs</p>
+            </div>
+          </div>
+          {error ? (
+            <p className="mt-3 rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[12px] font-bold text-rose-700">
+              {error}
+            </p>
+          ) : null}
+        </section>
+
+        {loading ? (
+          <div className="flex justify-center rounded-xl border border-slate-200 bg-white py-16">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+          </div>
+        ) : (
+          SPOMOVE_GROUP_OPTIONS.map((group) => {
+            const presets = OFFICIAL_SPOMOVE_LIBRARY
+              .filter((preset) => preset.programGroup === group.key)
+              .sort((a, b) => a.sortOrder - b.sortOrder);
+
+            return (
+              <section key={group.key} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-[15px] font-black text-slate-950">{group.label}</h3>
+                    <p className="mt-0.5 text-[11px] font-bold text-slate-500">
+                      {presets.length}개 / 기준 {group.expectedCount}개
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-3 lg:grid-cols-2">
+                  {presets.map((preset) => {
+                    const savedUrl = guideVideoUrls[preset.id] ?? '';
+                    const draftUrl = draftUrls[preset.id] ?? savedUrl;
+                    const savingThis = savingPresetId === preset.id;
+                    const deletingThis = deletingPresetId === preset.id;
+                    const dirty = draftUrl.trim() !== savedUrl;
+
+                    return (
+                      <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
+                        <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
+                        <input
+                          value={draftUrl}
+                          onChange={(event) => {
+                            const value = event.target.value;
+                            setDraftUrls((current) => ({ ...current, [preset.id]: value }));
+                          }}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          disabled={savingThis || deletingThis}
+                          className="mt-3 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
+                        />
+                        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => void saveGuideVideo(preset.id)}
+                            disabled={!dirty || savingThis || deletingThis}
+                            className="inline-flex h-8 items-center justify-center rounded-lg bg-indigo-600 px-3 text-[11px] font-black text-white disabled:opacity-40"
+                          >
+                            {savingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
+                            저장
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteGuideVideo(preset.id)}
+                            disabled={!savedUrl || savingThis || deletingThis}
+                            className="inline-flex h-8 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-[11px] font-black text-rose-600 disabled:opacity-40"
+                          >
+                            {deletingThis ? <Loader2 size={13} className="mr-1 animate-spin" /> : null}
+                            삭제
+                          </button>
                         </div>
                       </article>
                     );
@@ -1721,6 +1933,8 @@ export default function AdminSmProgramsPage() {
 
       {activeTab === 'spomove-thumbnails' ? (
         <SpomoveThumbnailManager />
+      ) : activeTab === 'spomove-guide-videos' ? (
+        <SpomoveGuideVideoManager />
       ) : (
       <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-white">

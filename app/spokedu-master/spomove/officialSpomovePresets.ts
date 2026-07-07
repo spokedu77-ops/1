@@ -1,5 +1,9 @@
 import { SPOMOVE_AXIS_META, type SpomoveAxis } from '@/app/lib/spomove/spomoveAxisMeta';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
+import {
+  buildOfficialSpomoveExpansionPresets,
+  OFFICIAL_SPOMOVE_EXPANSION_COUNT,
+} from './officialSpomovePresetExpansion';
 
 export type OfficialSpomoveAxis = SpomoveAxis;
 
@@ -62,8 +66,12 @@ export type OfficialSpomovePreset = {
   executionFacts: ExecutionFact[];
 };
 
-export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
-  // ─── OFFICIAL SPOMOVE LIBRARY (46 presets, sortOrder 1~46) ───
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 46;
+
+export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
+
+const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
+  // ─── OFFICIAL SPOMOVE CORE LIBRARY (46 presets) ───
 
   // sortOrder 1: 공간 방향 (level 1)
   {
@@ -1346,6 +1354,18 @@ export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = [
   },
 ];
 
+function assignSequentialSortOrders(presets: OfficialSpomovePreset[]): OfficialSpomovePreset[] {
+  return presets.map((preset, index) => ({ ...preset, sortOrder: index + 1 }));
+}
+
+export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = assignSequentialSortOrders([
+  ...OFFICIAL_SPOMOVE_CORE_LIBRARY,
+  ...buildOfficialSpomoveExpansionPresets(OFFICIAL_SPOMOVE_CORE_COUNT + 1),
+]);
+
+export const OFFICIAL_SPOMOVE_LIBRARY_SIZE =
+  OFFICIAL_SPOMOVE_CORE_COUNT + OFFICIAL_SPOMOVE_EXPANSION_COUNT;
+
 export function standardSpomoveDurationSec(cueSeconds: number, rounds: number): number {
   return Math.max(1, cueSeconds) * Math.max(1, rounds);
 }
@@ -1354,7 +1374,10 @@ export function findOfficialSpomovePreset(id: string | null | undefined) {
   return OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === id) ?? null;
 }
 
-export function officialPresetSessionHref(preset: OfficialSpomovePreset, bgmPath?: string) {
+export function officialPresetSessionHref(
+  preset: OfficialSpomovePreset,
+  options?: { bgmPath?: string; autostart?: boolean },
+) {
   const params = new URLSearchParams({
     preset: preset.id,
     cueSeconds: String(preset.cueSeconds),
@@ -1362,7 +1385,8 @@ export function officialPresetSessionHref(preset: OfficialSpomovePreset, bgmPath
     sound: 'on',
     mode: 'projector',
   });
-  if (bgmPath) params.set('bgm', bgmPath);
+  if (options?.bgmPath) params.set('bgm', options.bgmPath);
+  if (options?.autostart) params.set('autostart', '1');
   return `/spokedu-master/spomove/session?${params.toString()}`;
 }
 

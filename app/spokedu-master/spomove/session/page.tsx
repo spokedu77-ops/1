@@ -27,7 +27,8 @@ import {
   getOfficialSpomovePresetGuide,
 } from '../officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
-import { SPOMOVE_PAD_GRID_HEX, SPOMOVE_PAD_LAYOUT_LABELS } from '../spomovePadDisplay';
+import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
+import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 
 type SessionState = 'idle' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
@@ -130,16 +131,7 @@ function OfficialEngineBriefing({
             </div>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white p-4 text-slate-950">
-            <p className="text-sm font-black">기본 2×2 패드 배치</p>
-            <div className="mt-3">
-              <div className="grid grid-cols-2 gap-2" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
-                {SPOMOVE_PAD_LAYOUT_LABELS.map((label, index) => (
-                  <div key={label} className="flex min-h-14 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: SPOMOVE_PAD_GRID_HEX[index] }}>
-                    {label}
-                  </div>
-                ))}
-              </div>
-            </div>
+            <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} />
           </div>
         </div>
 
@@ -225,6 +217,7 @@ function SpomoveSessionContent() {
     [officialPreset],
   );
   const launchMode = normalizeMode(searchParams.get('mode'));
+  const autostart = searchParams.get('autostart') === '1';
   const requestedBgmPath = searchParams.get('bgm') ?? '';
   const soundEnabled = searchParams.get('sound') !== 'off';
   const programId = searchParams.get('program') ?? '';
@@ -312,6 +305,13 @@ function SpomoveSessionContent() {
   }, [officialPreset, stopBgm]);
 
   useEffect(() => {
+    if (!autostart || state !== 'idle' || !officialPreset || bgmLoading || !officialPreset.isReady) return;
+    startOfficialSession();
+  }, [autostart, bgmLoading, officialPreset, startOfficialSession, state]);
+
+  const showBriefing = state === 'idle' && !autostart;
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === 'Space' && (state === 'idle' || state === 'done')) {
         event.preventDefault();
@@ -365,7 +365,7 @@ function SpomoveSessionContent() {
 
   return (
     <div className="relative h-dvh overflow-hidden select-none bg-[#050509] text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
-      {state === 'idle' ? (
+      {showBriefing ? (
         <TopBar
           drillName={displayModel?.displayTitle ?? officialPreset.title}
           mode={launchMode}
@@ -378,7 +378,7 @@ function SpomoveSessionContent() {
         />
       ) : null}
 
-      {state === 'idle' ? (
+      {showBriefing ? (
         <OfficialEngineBriefing
           preset={officialPreset}
           startDisabled={bgmLoading}

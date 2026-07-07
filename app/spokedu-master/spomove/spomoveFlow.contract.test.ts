@@ -10,9 +10,9 @@ const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const session = read('app/spokedu-master/spomove/session/page.tsx');
 
 describe('SPOMOVE pilot flow contract', () => {
-  it('shows program decision information and preview actions on hub cards', () => {
-    expect(hub).toContain('function buildSpomoveDecisionItems');
-    expect(hub).toContain('프로그램 미리보기');
+  it('shows card tags and guideline actions on hub cards', () => {
+    expect(hub).toContain('buildSpomoveCardTags');
+    expect(hub).toContain('가이드라인');
     expect(hub).toContain('바로 실행');
     expect(hub).toContain('다시 실행');
     expect(hub).toContain('최근 실행');
@@ -40,16 +40,20 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('slice(0, 3)');
   });
 
-  it('keeps the official 2x2 pad order visible', () => {
-    expect(hub).toContain("const PAD_LAYOUT_LABELS = ['빨강', '노랑', '초록', '파랑'] as const");
-    expect(session).toContain("['빨강', '노랑', '초록', '파랑']");
-    expect(session).toContain('패드 배치: 빨강, 노랑, 초록, 파랑');
+  it('loads guideline videos and renders pad layout in the guideline sheet', () => {
+    expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
+    expect(hub).toContain('SpomoveGuidelineSheet');
+    expect(hub).toContain('SpomovePadLayoutView');
+    expect(hub).toContain('SpomoveGuideVideo');
+  });
+
+  it('starts sessions immediately from hub cards and guideline sheet', () => {
+    expect(hub).toContain("officialPresetSessionHref(preset, { autostart: true })");
+    expect(session).toContain("searchParams.get('autostart') === '1'");
   });
 
   it('shows a preparation checklist and only existing runtime settings', () => {
-    for (const label of ['1. 프로그램', '2. 준비물', '3. 패드 배치', '4. 진행 방식', '5. 실행 설정', '6. 시작']) {
-      expect(session).toContain(label);
-    }
+    expect(session).toContain('시작 전 확인');
     expect(session).toContain('반복 횟수');
     expect(session).toContain('자극 속도');
     expect(session).toContain('음향');

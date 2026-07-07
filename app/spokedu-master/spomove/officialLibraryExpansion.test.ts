@@ -1,86 +1,73 @@
 import { describe, expect, it } from 'vitest';
+
 import {
+  OFFICIAL_SPOMOVE_CORE_COUNT,
+  OFFICIAL_SPOMOVE_EXPANSION_COUNT,
   OFFICIAL_SPOMOVE_LIBRARY,
+  OFFICIAL_SPOMOVE_LIBRARY_SIZE,
   findOfficialSpomovePreset,
   type OfficialFlowFeatureKey,
 } from './officialSpomovePresets';
 
-const LIBRARY_SIZE = 46;
+describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 계약`, () => {
+  it(`OFFICIAL_SPOMOVE_LIBRARY.length === ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}`, () => {
+    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(OFFICIAL_SPOMOVE_LIBRARY_SIZE);
+    expect(OFFICIAL_SPOMOVE_CORE_COUNT + OFFICIAL_SPOMOVE_EXPANSION_COUNT).toBe(OFFICIAL_SPOMOVE_LIBRARY_SIZE);
+  });
 
-describe(`OFFICIAL_SPOMOVE_LIBRARY ${LIBRARY_SIZE}개 TOP50 curation 계약`, () => {
-  it(`OFFICIAL_SPOMOVE_LIBRARY.length === ${LIBRARY_SIZE}`, () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(LIBRARY_SIZE);
+  it('ID가 모두 고유하다', () => {
+    const ids = OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id);
+    expect(new Set(ids).size).toBe(OFFICIAL_SPOMOVE_LIBRARY_SIZE);
   });
-  it(`ID ${LIBRARY_SIZE}개 모두 고유`, () => {
-    const ids = OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.id);
-    expect(new Set(ids).size).toBe(LIBRARY_SIZE);
+
+  it('sortOrder가 1부터 연속이다', () => {
+    const orders = OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.sortOrder).sort((a, b) => a - b);
+    expect(orders).toEqual(Array.from({ length: OFFICIAL_SPOMOVE_LIBRARY_SIZE }, (_, index) => index + 1));
   });
-  it(`sortOrder ${LIBRARY_SIZE}개 모두 고유`, () => {
-    const orders = OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.sortOrder);
-    expect(new Set(orders).size).toBe(LIBRARY_SIZE);
-  });
-  it('sortOrder가 1~46 연속', () => {
-    const orders = OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.sortOrder).sort((a, b) => a - b);
-    expect(orders).toEqual(Array.from({ length: LIBRARY_SIZE }, (_, i) => i + 1));
-  });
+
   it('모든 preset isReady === true', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.isReady)).toBe(true);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.isReady)).toBe(true);
   });
 
-  const byGroup = (g: string) => OFFICIAL_SPOMOVE_LIBRARY.filter((p) => p.programGroup === g);
-  it('reaction-cognition === 14', () => { expect(byGroup('reaction-cognition')).toHaveLength(14); });
-  it('visual-reaction === 12', () => { expect(byGroup('visual-reaction')).toHaveLength(12); });
-  it('simon === 2', () => { expect(byGroup('simon')).toHaveLength(2); });
-  it('flanker === 4', () => { expect(byGroup('flanker')).toHaveLength(4); });
-  it('stroop === 5', () => { expect(byGroup('stroop')).toHaveLength(5); });
-  it('sequential-memory === 4', () => { expect(byGroup('sequential-memory')).toHaveLength(4); });
-  it('dive === 4', () => { expect(byGroup('dive')).toHaveLength(4); });
-  it('bonus === 1', () => { expect(byGroup('bonus')).toHaveLength(1); });
+  const byGroup = (group: string) => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group);
 
-  const rc = byGroup('reaction-cognition');
-  it('basic L1~L10 각 1개', () => {
-    for (let lv = 1; lv <= 10; lv += 1) {
-      expect(rc.filter((p) => p.engine.level === lv)).toHaveLength(1);
+  it('그룹별 개수가 확장 목표와 일치한다', () => {
+    expect(byGroup('reaction-cognition')).toHaveLength(40);
+    expect(byGroup('visual-reaction')).toHaveLength(17);
+    expect(byGroup('simon')).toHaveLength(3);
+    expect(byGroup('flanker')).toHaveLength(6);
+    expect(byGroup('stroop')).toHaveLength(5);
+    expect(byGroup('sequential-memory')).toHaveLength(6);
+    expect(byGroup('dive')).toHaveLength(5);
+    expect(byGroup('bonus')).toHaveLength(1);
+  });
+
+  it('반응 인지 L2~L6 테마 조합이 color/fruit/vehicle/emotion/animal/nature/food 7종을 모두 포함한다', () => {
+    const themed = byGroup('reaction-cognition').filter(
+      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 2 && preset.engine.level <= 6,
+    );
+    expect(themed).toHaveLength(35);
+    for (const level of [2, 3, 4, 5, 6]) {
+      const levelPresets = themed.filter((preset) => preset.engine.level === level);
+      expect(levelPresets).toHaveLength(7);
     }
   });
 
   const vr = byGroup('visual-reaction');
-  it('FLOW concurrent 1/2/3 존재', () => {
-    expect(vr.some((p) => p.engine.level === 1 && (p.engine.reactTrainConcurrent ?? 1) === 1)).toBe(true);
-    expect(vr.some((p) => p.engine.level === 1 && p.engine.reactTrainConcurrent === 2)).toBe(true);
-    expect(vr.some((p) => p.engine.level === 1 && p.engine.reactTrainConcurrent === 3)).toBe(true);
-  });
-  it('reactTrain level 2~10 각 1개', () => {
-    for (const lv of [2, 3, 4, 5, 6, 7, 8, 9, 10]) {
-      expect(vr.filter((p) => p.engine.level === lv)).toHaveLength(1);
-    }
-  });
-  it('숫자 기차 numberCartTier 2 · 5라운드', () => {
-    const cart = findOfficialSpomovePreset('visual-reaction-number-cart-42');
-    expect(cart?.engine.numberCartTier).toBe(2);
-    expect(cart?.rounds).toBe(5);
-  });
-  it('컬러 트래커 colorTrackerTier 2', () => {
-    const tracker = findOfficialSpomovePreset('visual-reaction-color-tracker-43');
-    expect(tracker?.engine.colorTrackerTier).toBe(2);
+  it('시지각 반응 FLOW concurrent 1/2/3 존재', () => {
+    expect(vr.some((preset) => preset.engine.level === 1 && (preset.engine.reactTrainConcurrent ?? 1) === 1)).toBe(true);
+    expect(vr.some((preset) => preset.engine.level === 1 && preset.engine.reactTrainConcurrent === 2)).toBe(true);
+    expect(vr.some((preset) => preset.engine.level === 1 && preset.engine.reactTrainConcurrent === 3)).toBe(true);
   });
 
-  const dive = byGroup('dive');
-  it('jump 존재 (features 없음)', () => {
-    expect(dive.some((p) => (p.engine.flowFeatures ?? []).length === 0)).toBe(true);
-  });
-  it('jump+faster 단독 없음 (보너스에 흡수)', () => {
-    expect(dive.some((p) => {
-      const f = p.engine.flowFeatures ?? [];
-      return f.includes('faster') && f.length === 1;
-    })).toBe(false);
-  });
-  it('rock 포함 프리셋 0개', () => {
-    expect(
-      OFFICIAL_SPOMOVE_LIBRARY.filter((p) =>
-        (p.engine.flowFeatures ?? []).includes('rock' as OfficialFlowFeatureKey),
-      ),
-    ).toHaveLength(0);
+  it('숫자 기차 tier 1/2/3 · 흰 공 tier 1/2/3 · 두더지 2패널이 존재한다', () => {
+    expect(vr.some((preset) => preset.engine.numberCartTier === 1)).toBe(true);
+    expect(vr.some((preset) => preset.engine.numberCartTier === 2)).toBe(true);
+    expect(vr.some((preset) => preset.engine.numberCartTier === 3)).toBe(true);
+    expect(vr.some((preset) => preset.engine.colorTrackerTier === 1)).toBe(true);
+    expect(vr.some((preset) => preset.engine.colorTrackerTier === 2)).toBe(true);
+    expect(vr.some((preset) => preset.engine.colorTrackerTier === 3)).toBe(true);
+    expect(vr.some((preset) => preset.engine.moleDualPanel === true)).toBe(true);
   });
 
   it('기존 9개 legacy ID 유지', () => {
@@ -100,10 +87,18 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${LIBRARY_SIZE}개 TOP50 curation 계약`, ()
     }
   });
 
+  it('rock 포함 프리셋 0개', () => {
+    expect(
+      OFFICIAL_SPOMOVE_LIBRARY.filter((preset) =>
+        (preset.engine.flowFeatures ?? []).includes('rock' as OfficialFlowFeatureKey),
+      ),
+    ).toHaveLength(0);
+  });
+
   it('모든 preset에 executionFacts·settingChips·title·description 존재', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.executionFacts.length > 0)).toBe(true);
-    expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.settingChips.length > 0)).toBe(true);
-    expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.title.trim().length > 0)).toBe(true);
-    expect(OFFICIAL_SPOMOVE_LIBRARY.every((p) => p.description.trim().length > 0)).toBe(true);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.executionFacts.length > 0)).toBe(true);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.settingChips.length > 0)).toBe(true);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.title.trim().length > 0)).toBe(true);
+    expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.description.trim().length > 0)).toBe(true);
   });
 });

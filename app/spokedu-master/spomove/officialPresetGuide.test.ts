@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
+import { OFFICIAL_SPOMOVE_LIBRARY, OFFICIAL_SPOMOVE_LIBRARY_SIZE } from './officialSpomovePresets';
 import {
+  SPOMOVE_BODY_FUNCTION_LABELS,
   SPOMOVE_KEY_ACTION_LABELS,
   SPOMOVE_RESPONSE_TYPE_LABELS,
   SPOMOVE_TARGET_GROUP_LABELS,
@@ -15,8 +16,8 @@ function read(relativePath: string) {
 }
 
 describe('official SPOMOVE preset guide contract', () => {
-  it('keeps 46 official presets with complete guide data', () => {
-    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(46);
+  it('keeps official preset count expanded from the 46-item core library', () => {
+    expect(OFFICIAL_SPOMOVE_LIBRARY).toHaveLength(OFFICIAL_SPOMOVE_LIBRARY_SIZE);
 
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
       const guide = getOfficialSpomovePresetGuide(preset);
@@ -27,6 +28,9 @@ describe('official SPOMOVE preset guide contract', () => {
       expect(guide.keyActions.length).toBeGreaterThanOrEqual(1);
       expect(guide.keyActions.length).toBeLessThanOrEqual(3);
       expect(guide.keyActions.every((action) => action in SPOMOVE_KEY_ACTION_LABELS)).toBe(true);
+      expect(guide.bodyFunctions.length).toBeGreaterThanOrEqual(1);
+      expect(guide.bodyFunctions.length).toBeLessThanOrEqual(3);
+      expect(guide.bodyFunctions.every((fn) => fn in SPOMOVE_BODY_FUNCTION_LABELS)).toBe(true);
     }
   });
 
@@ -67,16 +71,14 @@ describe('official SPOMOVE preset guide contract', () => {
     const session = read('app/spokedu-master/spomove/session/page.tsx');
 
     expect(hub).toContain('SPOMOVE_THUMBNAIL_PACK_ID');
+    expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
     expect(hub).toContain('thumbnailUrl');
     expect(hub).toContain('onImageError={() => setImageFailed(true)}');
     expect(hub).toContain('onError={onImageError}');
     expect(hub).toContain('getSpomovePresetDisplayModel');
-    expect(hub).toContain('displayModel.targetLabel');
-    expect(hub).toContain('displayModel.difficultyLabel');
-    expect(hub).toContain('displayModel.durationLabel');
+    expect(hub).toContain('buildSpomoveCardTags');
     expect(session).toContain('추천 대상');
     expect(session).toContain('생각 난이도');
-    expect(session).toContain('반응 유형');
     expect(session).toContain('주요 동작');
   });
 });

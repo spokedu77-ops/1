@@ -11,6 +11,13 @@ import {
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
+import {
+  normalizeSpomoveGuideVideoMap,
+  normalizeSpomoveThumbnailMap,
+  SPOMOVE_GUIDE_VIDEO_PACK_ID,
+  SPOMOVE_THUMBNAIL_PACK_ID,
+} from '@/app/lib/spomove/spomoveOfficialAssets';
+import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useMasterStore, useProfile } from '../store';
@@ -24,25 +31,22 @@ import {
   type OfficialSpomoveProgramGroup,
 } from './officialSpomovePresets';
 import {
-  SPOMOVE_KEY_ACTION_LABELS,
   SPOMOVE_THINKING_LEVEL_LABELS,
   getOfficialSpomovePresetGuide,
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
-import { getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { getSpomovePresetDisplayModel, buildSpomoveCardTags, buildSpomoveGuidelineNarrative } from './spomovePresetDisplayModel';
+import { SpomovePadLayoutView } from './SpomovePadLayoutView';
 import { SPOMOVE_PAD_GRID_HEX, SPOMOVE_PAD_LAYOUT_LABELS } from './spomovePadDisplay';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
-type SpomoveThumbnailAssetsJson = {
-  thumbnails?: Record<string, string | null | undefined>;
-};
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
   error: { code?: string } | null;
 };
 
-const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
+type SpomoveGuideVideoPackQueryResult = SpomoveThumbnailPackQueryResult;
 
 const THINKING_LEVEL_TABS: ThinkingLevelTab[] = ['all', 'easy', 'normal', 'hard'];
 
@@ -546,18 +550,6 @@ function filterOfficialPresets(programGroup: ProgramGroupTab, thinkingLevel: Thi
   );
 }
 
-function normalizeSpomoveThumbnailMap(raw: unknown) {
-  const source = (raw as SpomoveThumbnailAssetsJson | null)?.thumbnails;
-  if (!source || typeof source !== 'object') return {};
-  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
-  const next: Record<string, string> = {};
-  for (const [presetId, path] of Object.entries(source)) {
-    if (!validPresetIds.has(presetId)) continue;
-    if (typeof path === 'string' && path.trim()) next[presetId] = path.trim();
-  }
-  return next;
-}
-
 function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
   if (!path) return '';
   try {
@@ -567,75 +559,83 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
   }
 }
 
-function buildSpomoveDecisionItems(preset: OfficialSpomovePreset) {
-  const display = getSpomovePresetDisplayModel(preset);
-  const equipment = preset.settingChips?.find((chip) => /패드|pad|교구|준비/i.test(chip)) ?? '4색 패드';
-  return [
-    display.difficultyLabel ? `난이도 ${display.difficultyLabel}` : null,
-    display.targetLabel ? `대상 ${display.targetLabel}` : null,
-    display.durationLabel ? `시간 ${display.durationLabel}` : null,
-    equipment ? `교구 ${equipment}` : null,
-  ].filter(Boolean) as string[];
-}
 
-function SpomovePadLayout() {
+function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
+  const embed = parseVideoEmbedUrl(videoUrl);
+  if (!embed) {
+    return (
+      <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
+        <p className="text-sm font-bold text-slate-500">가이드 영상 준비 중입니다.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
-      {PAD_LAYOUT_LABELS.map((label, index) => (
-        <div
-          key={label}
-          className="flex min-h-14 items-center justify-center rounded-xl text-sm font-black text-white shadow-sm"
-          style={{ background: PAD_COLORS[index] }}
-        >
-          {label}
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black">
+      <div className="aspect-video">
+        <iframe
+          src={embed.embedUrl}
+          title="SPOMOVE 가이드 영상"
+          className="h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
     </div>
   );
 }
 
-function SpomovePreviewSheet({
+function SpomoveGuidelineSheet({
   preset,
+  guideVideoUrl,
   onClose,
 }: {
   preset: OfficialSpomovePreset | null;
+  guideVideoUrl: string;
   onClose: () => void;
 }) {
   if (!preset) return null;
   const display = getSpomovePresetDisplayModel(preset);
-  const guide = getOfficialSpomovePresetGuide(preset);
-  const href = officialPresetSessionHref(preset);
+  const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
+  const startHref = officialPresetSessionHref(preset, { autostart: true });
+
   return (
-    <BottomSheet open title="프로그램 미리보기" onClose={onClose} size="preview">
+    <BottomSheet open title="가이드라인" onClose={onClose} size="preview">
       <div className="space-y-5">
-        <div>
-          <p className="text-xs font-black text-indigo-600">SPOMOVE 미리보기</p>
-          <h2 className="mt-1 text-2xl font-black text-slate-950">{display.displayTitle}</h2>
-          <p className="mt-2 text-sm font-semibold leading-6 text-slate-600">{preset.description}</p>
+        <div className="text-center">
+          <h2 className="text-2xl font-black text-slate-950">{display.displayTitle}</h2>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InfoBlock title="화면 자극" value={preset.programTitle} />
-          <InfoBlock title="움직임" value={guide.keyActions.map((action) => SPOMOVE_KEY_ACTION_LABELS[action]).join(' · ')} />
-          <InfoBlock title="대상" value={display.targetLabel} />
-          <InfoBlock title="예상 시간" value={display.durationLabel} />
-          <InfoBlock title="필요한 패드·교구" value={preset.settingChips?.join(' · ') || '4색 패드'} />
-          <InfoBlock title="공간 조건" value={preset.recommendedUse} />
-          <InfoBlock title="난이도" value={display.difficultyLabel} />
-          <InfoBlock title="반응 축" value={preset.axisTitle} />
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-sm font-black text-slate-950">기본 패드 배치</p>
-          <div className="mt-3 max-w-sm">
-            <SpomovePadLayout />
-          </div>
-        </div>
+
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Link href={href} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white">
+          <Link
+            href={startHref}
+            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+          >
             바로 실행
           </Link>
-          <button type="button" onClick={onClose} className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700">
-            다른 프로그램 보기
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700"
+          >
+            닫기
           </button>
+        </div>
+
+        <SpomoveGuideVideo videoUrl={guideVideoUrl} />
+
+        <SpomovePadLayoutView variant={display.padLayoutVariant} />
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <InfoBlock title="대상" value={display.targetLabel} />
+          <InfoBlock title="설정" value={display.settingLabel} />
+          <InfoBlock title="난이도" value={display.difficultyLabel} />
+          <InfoBlock title="신체 기능" value={display.bodyFunctionLabel} />
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-[11px] font-black text-slate-500">활동 안내</p>
+          <p className="mt-2 text-sm font-semibold leading-7 text-slate-700">{guidelineNarrative}</p>
         </div>
       </div>
     </BottomSheet>
@@ -694,54 +694,60 @@ function CardVisual({
 
 function CardInfo({
   preset,
-  metaLine,
   displayTitle,
   isReady,
-  href,
+  startHref,
   wasRecent,
   onPreview,
 }: {
   preset: OfficialSpomovePreset;
-  metaLine: string;
   displayTitle: string;
   isReady: boolean;
-  href: string;
+  startHref: string;
   wasRecent: boolean;
   onPreview: () => void;
 }) {
-  const guide = getOfficialSpomovePresetGuide(preset);
-  const decisionItems = buildSpomoveDecisionItems(preset);
+  const display = getSpomovePresetDisplayModel(preset);
+  const cardTags = buildSpomoveCardTags(preset);
+
   return (
-    <div className="flex flex-1 flex-col p-4">
-      {/* 분류 태그 (최대 2개) */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
-          {SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}
+    <div className="flex flex-1 flex-col p-4 text-center">
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
+        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
+          {display.programLabel}
         </span>
-        <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-600">
-          {preset.programTitle}
+        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
+          {display.variantLabel}
         </span>
       </div>
-      {/* 제목 */}
-      <h2 className="mt-2 line-clamp-2 text-[15px] font-black leading-snug text-slate-950">
+
+      <h2 className="mt-3 line-clamp-2 text-[18px] font-black leading-snug text-slate-950 sm:text-[20px]">
         {displayTitle}
       </h2>
-      {/* 설명 */}
-      <p className="mt-1.5 line-clamp-2 text-[13px] font-medium leading-snug text-slate-500">
+      <p className="mt-2 line-clamp-3 text-[13px] font-medium leading-snug text-slate-500">
         {preset.description}
       </p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {decisionItems.map((item) => (
-          <span key={item} className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-            {item}
+
+      <div className="mt-3 grid grid-cols-2 gap-1.5">
+        {cardTags.map((tag) => (
+          <span
+            key={tag.key}
+            className="flex min-h-[34px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-snug text-slate-600"
+          >
+            {tag.value}
           </span>
         ))}
-        {wasRecent ? (
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">최근 실행</span>
-        ) : null}
       </div>
+      {wasRecent ? (
+        <div className="mt-2 flex justify-center">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
+            최근 실행
+          </span>
+        </div>
+      ) : null}
+
       {isReady ? (
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <button
             data-spm-spomove-card-action="preview"
             type="button"
@@ -753,10 +759,10 @@ function CardInfo({
             className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
           >
             <Eye className="h-3.5 w-3.5" />
-            프로그램 미리보기
+            가이드라인
           </button>
           <Link
-            href={href}
+            href={startHref}
             data-spm-spomove-card-action="start"
             className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
           >
@@ -764,37 +770,34 @@ function CardInfo({
           </Link>
         </div>
       ) : null}
-      <div className="mt-auto border-t border-slate-100 pt-3">
-        <p className="text-[11px] font-semibold text-slate-400">{metaLine}</p>
-        {!isReady ? (
-          <span className="inline-flex shrink-0 items-center gap-1 pl-2 text-[11px] font-bold text-slate-400">
+
+      {!isReady ? (
+        <div className="mt-auto border-t border-slate-100 pt-3">
+          <span className="inline-flex shrink-0 items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />
             제공 제외
           </span>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }
 
 function PresetCard({
   preset,
-  href,
+  startHref,
   thumbnailUrl,
   wasRecent,
   onPreview,
 }: {
   preset: OfficialSpomovePreset;
-  href: string;
+  startHref: string;
   thumbnailUrl: string;
   wasRecent: boolean;
   onPreview: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset);
-  const metaLine = [displayModel.targetLabel, displayModel.difficultyLabel, displayModel.durationLabel]
-    .filter(Boolean)
-    .join(' · ');
 
   const inner = (
     <>
@@ -807,10 +810,9 @@ function PresetCard({
       />
       <CardInfo
         preset={preset}
-        metaLine={metaLine}
         displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
-        href={href}
+        startHref={startHref}
         wasRecent={wasRecent}
         onPreview={onPreview}
       />
@@ -839,6 +841,7 @@ export default function SpomoveHubView() {
   const [activeThinkingLevel, setActiveThinkingLevel] = useState<ThinkingLevelTab>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
+  const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
   const [previewPreset, setPreviewPreset] = useState<OfficialSpomovePreset | null>(null);
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
@@ -856,30 +859,44 @@ export default function SpomoveHubView() {
   useEffect(() => {
     let alive = true;
     const supabase = getSupabaseBrowserClient();
-    supabase
-      .from('think_asset_packs')
-      .select('assets_json, updated_at')
-      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-      .maybeSingle()
-      .then((result: SpomoveThumbnailPackQueryResult) => {
-        if (!alive) return;
-        const { data, error } = result;
-        if (error && error.code !== 'PGRST116') {
-          setThumbnailPaths({});
-          setThumbnailCacheBust(undefined);
-          return;
-        }
-        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
-        setThumbnailPaths(next);
-        setThumbnailCacheBust(
-          resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)),
-        );
-      })
-      .catch(() => {
-        if (!alive) return;
+    void Promise.all([
+      supabase
+        .from('think_asset_packs')
+        .select('assets_json, updated_at')
+        .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+        .maybeSingle(),
+      supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID)
+        .maybeSingle(),
+    ]).then(([thumbnailResult, guideVideoResult]) => {
+      if (!alive) return;
+
+      const { data: thumbnailData, error: thumbnailError } = thumbnailResult as SpomoveThumbnailPackQueryResult;
+      if (thumbnailError && thumbnailError.code !== 'PGRST116') {
         setThumbnailPaths({});
         setThumbnailCacheBust(undefined);
-      });
+      } else {
+        const next = normalizeSpomoveThumbnailMap(thumbnailData?.assets_json);
+        setThumbnailPaths(next);
+        setThumbnailCacheBust(
+          resolveSpomovePackCacheBust(thumbnailData?.updated_at as string | undefined, Object.values(next)),
+        );
+      }
+
+      const { data: guideVideoData, error: guideVideoError } = guideVideoResult as SpomoveGuideVideoPackQueryResult;
+      if (guideVideoError && guideVideoError.code !== 'PGRST116') {
+        setGuideVideoUrls({});
+      } else {
+        setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
+      }
+    }).catch(() => {
+      if (!alive) return;
+      setThumbnailPaths({});
+      setThumbnailCacheBust(undefined);
+      setGuideVideoUrls({});
+    });
     return () => {
       alive = false;
     };
@@ -908,7 +925,7 @@ export default function SpomoveHubView() {
         <PresetCard
           key={preset.id}
           preset={preset}
-          href={officialPresetSessionHref(preset)}
+          startHref={officialPresetSessionHref(preset, { autostart: true })}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
           wasRecent={recentPresetIds.has(preset.id)}
           onPreview={() => setPreviewPreset(preset)}
@@ -958,7 +975,11 @@ export default function SpomoveHubView() {
                     <p className="mt-1 text-[11px] font-bold text-slate-500">최근 실행</p>
                     <div className="mt-3 grid gap-2">
                       <Link
-                        href={`/spokedu-master/spomove/session?preset=${activity.programId}`}
+                        href={
+                          preset
+                            ? officialPresetSessionHref(preset, { autostart: true })
+                            : `/spokedu-master/spomove/session?preset=${activity.programId}&autostart=1&mode=projector&sound=on`
+                        }
                         data-spm-spomove-recent-action="rerun"
                         className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
                       >
@@ -1080,7 +1101,11 @@ export default function SpomoveHubView() {
             </button>
           </div>
         )}
-        <SpomovePreviewSheet preset={previewPreset} onClose={() => setPreviewPreset(null)} />
+        <SpomoveGuidelineSheet
+          preset={previewPreset}
+          guideVideoUrl={previewPreset ? guideVideoUrls[previewPreset.id] ?? '' : ''}
+          onClose={() => setPreviewPreset(null)}
+        />
       </div>
     </main>
   );

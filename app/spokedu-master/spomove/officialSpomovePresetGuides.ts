@@ -21,11 +21,20 @@ export type SpomoveKeyAction =
   | 'sequenceMove'
   | 'continuousMove';
 
+export type SpomoveBodyFunction =
+  | 'agility'
+  | 'quickness'
+  | 'coordination'
+  | 'balance'
+  | 'flexibility'
+  | 'endurance';
+
 export type SpomovePresetGuide = {
   targetGroups: SpomoveTargetGroup[];
   thinkingLevel: SpomoveThinkingLevel;
   responseType: SpomoveResponseType;
   keyActions: SpomoveKeyAction[];
+  bodyFunctions: SpomoveBodyFunction[];
 };
 
 export const SPOMOVE_TARGET_GROUP_LABELS: Record<SpomoveTargetGroup, string> = {
@@ -58,6 +67,15 @@ export const SPOMOVE_KEY_ACTION_LABELS: Record<SpomoveKeyAction, string> = {
   handTouch: '손 터치',
   sequenceMove: '순서대로 이동',
   continuousMove: '연속 이동',
+};
+
+export const SPOMOVE_BODY_FUNCTION_LABELS: Record<SpomoveBodyFunction, string> = {
+  agility: '민첩성',
+  quickness: '순발력',
+  coordination: '협응력',
+  balance: '평형성',
+  flexibility: '유연성',
+  endurance: '심폐지구력',
 };
 
 function uniqueActions(actions: SpomoveKeyAction[]): SpomoveKeyAction[] {
@@ -166,11 +184,44 @@ function keyActionsForPreset(preset: OfficialSpomovePreset): SpomoveKeyAction[] 
   return ['padMove', 'directionChange'];
 }
 
+function uniqueBodyFunctions(functions: SpomoveBodyFunction[]): SpomoveBodyFunction[] {
+  return [...new Set(functions)].slice(0, 3);
+}
+
+function bodyFunctionsForPreset(preset: OfficialSpomovePreset): SpomoveBodyFunction[] {
+  if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
+    return uniqueBodyFunctions(['agility', 'quickness', 'coordination', 'balance']);
+  }
+
+  if (preset.engine.mode === 'flow') {
+    return uniqueBodyFunctions(['agility', 'endurance', 'coordination']);
+  }
+
+  if (preset.engine.mode === 'spatial' || (preset.engine.mode === 'basic' && preset.engine.level === 1)) {
+    return uniqueBodyFunctions(['agility', 'quickness', 'coordination']);
+  }
+
+  if (preset.engine.mode === 'simon') {
+    return uniqueBodyFunctions(['coordination', 'quickness']);
+  }
+
+  if (preset.engine.mode === 'reactTrain') {
+    return uniqueBodyFunctions(['agility', 'coordination', 'quickness']);
+  }
+
+  if (preset.engine.mode === 'flanker' || preset.engine.mode === 'stroop') {
+    return uniqueBodyFunctions(['quickness', 'coordination']);
+  }
+
+  return uniqueBodyFunctions(['agility', 'quickness']);
+}
+
 export function getOfficialSpomovePresetGuide(preset: OfficialSpomovePreset): SpomovePresetGuide {
   return {
     targetGroups: targetGroupsForPreset(preset),
     thinkingLevel: thinkingLevelForPreset(preset),
     responseType: responseTypeForPreset(preset),
     keyActions: keyActionsForPreset(preset),
+    bodyFunctions: bodyFunctionsForPreset(preset),
   };
 }

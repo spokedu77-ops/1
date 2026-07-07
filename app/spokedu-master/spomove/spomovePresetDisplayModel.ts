@@ -1,17 +1,24 @@
 import {
   getOfficialSpomovePresetGuide,
+  SPOMOVE_BODY_FUNCTION_LABELS,
+  SPOMOVE_KEY_ACTION_LABELS,
   SPOMOVE_THINKING_LEVEL_LABELS,
   type SpomoveTargetGroup,
 } from './officialSpomovePresetGuides';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
+import { getSpomovePadLayoutVariant } from './spomovePadLayout';
 
 export type SpomovePresetDisplayModel = {
   displayTitle: string;
   axisLabel: string;
   programLabel: string;
+  variantLabel: string;
   targetLabel: string;
   difficultyLabel: string;
+  settingLabel: string;
+  bodyFunctionLabel: string;
   durationLabel: string;
+  padLayoutVariant: ReturnType<typeof getSpomovePadLayoutVariant>;
   isAvailable: boolean;
 };
 
@@ -35,6 +42,27 @@ function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
   return groups.slice(0, 2).map((g) => TARGET_LABELS[g]).join(' · ');
 }
 
+function buildVariantLabel(preset: OfficialSpomovePreset): string {
+  const segments = preset.title.split('·').map((segment) => segment.trim()).filter(Boolean);
+  if (segments.length >= 2) return segments[segments.length - 1]!;
+  if (preset.programGroup === 'dive') return '다이브';
+  if (preset.programGroup === 'bonus') return '보너스';
+  return preset.programTitle;
+}
+
+function buildSettingLabel(preset: OfficialSpomovePreset): string {
+  if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
+    return `세션 ${preset.engine.flowDuration ?? 25}초`;
+  }
+  if (preset.engine.mode === 'reactTrain') {
+    return preset.settingSummary;
+  }
+  if (preset.engine.mode === 'spatial') {
+    return `${preset.cueSeconds}초 · ${preset.rounds}라운드`;
+  }
+  return `${preset.cueSeconds}초 · ${preset.rounds}회`;
+}
+
 function buildDurationLabel(preset: OfficialSpomovePreset): string {
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
     return `세션 ${preset.engine.flowDuration ?? 25}초`;
@@ -48,15 +76,58 @@ function buildDurationLabel(preset: OfficialSpomovePreset): string {
   return `${preset.cueSeconds}초 · ${preset.rounds}회`;
 }
 
+function buildBodyFunctionLabel(preset: OfficialSpomovePreset): string {
+  const guide = getOfficialSpomovePresetGuide(preset);
+  return guide.bodyFunctions.map((fn) => SPOMOVE_BODY_FUNCTION_LABELS[fn]).join(' · ');
+}
+
 export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): SpomovePresetDisplayModel {
   const guide = getOfficialSpomovePresetGuide(preset);
   return {
     displayTitle: preset.title,
     axisLabel: preset.axisTitle,
     programLabel: preset.programTitle,
+    variantLabel: buildVariantLabel(preset),
     targetLabel: buildTargetLabel(guide.targetGroups),
     difficultyLabel: SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel],
+    settingLabel: buildSettingLabel(preset),
+    bodyFunctionLabel: buildBodyFunctionLabel(preset),
     durationLabel: buildDurationLabel(preset),
+    padLayoutVariant: getSpomovePadLayoutVariant(preset),
     isAvailable: preset.isReady,
   };
+}
+
+export type SpomoveCardTag = {
+  key: 'difficulty' | 'target' | 'setting' | 'bodyFunction';
+  label: string;
+  value: string;
+};
+
+export function buildSpomoveCardTags(preset: OfficialSpomovePreset): SpomoveCardTag[] {
+  const display = getSpomovePresetDisplayModel(preset);
+  return [
+    { key: 'difficulty', label: '난이도', value: display.difficultyLabel || '—' },
+    { key: 'target', label: '대상', value: display.targetLabel || '—' },
+    { key: 'setting', label: '설정', value: display.settingLabel || '—' },
+    { key: 'bodyFunction', label: '신체기능', value: display.bodyFunctionLabel || '—' },
+  ];
+}
+
+export function buildSpomoveGuidelineNarrative(preset: OfficialSpomovePreset): string {
+  const guide = getOfficialSpomovePresetGuide(preset);
+  const display = getSpomovePresetDisplayModel(preset);
+  const actions = guide.keyActions
+    .map((action) => SPOMOVE_KEY_ACTION_LABELS[action])
+    .join(', ');
+
+  const parts = [
+    preset.description,
+    preset.salesCopy ? `${preset.salesCopy}.` : '',
+    actions ? `아이들은 ${actions}을(를) 중심으로 참여합니다.` : '',
+    display.targetLabel ? `추천 대상은 ${display.targetLabel}입니다.` : '',
+    preset.recommendedUse ? `수업에서는 ${preset.recommendedUse} 상황에 활용하면 효과적입니다.` : '',
+  ].filter(Boolean);
+
+  return parts.join(' ');
 }

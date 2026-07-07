@@ -25,7 +25,8 @@ describe('lesson discovery and execution flow contract', () => {
 
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
-    expect(detail).toContain('getSpomoveSessionHref(program, primarySpomovePreset)');
+    expect(detail).toContain('이 수업으로 진행하기');
+    expect(detail).not.toContain('getSpomoveSessionHref');
   });
 
   it('keeps dashboard discovery first and removes duplicate home favorite re-entry', () => {
