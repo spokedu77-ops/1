@@ -35,6 +35,7 @@ import {
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
+import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import type { NoteBlock } from '../_lib/types';
@@ -108,7 +109,9 @@ export function useNoteBlockData(options: {
   }, []);
 
   const handleEngineError = useCallback((error: Error) => {
-    setError(error.message);
+    const message = toNoteSyncUserMessage(error);
+    if (!message) return;
+    setError(message);
   }, [setError]);
 
   const documentEngine = useNoteDocumentEngine({

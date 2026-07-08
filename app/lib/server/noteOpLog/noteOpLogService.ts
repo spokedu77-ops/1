@@ -7,6 +7,7 @@ import type {
   NoteBlockSnapshot,
 } from '@/app/lib/note/noteBlockOpTypes';
 import { loadNoteDocumentBlocksRaw } from '@/app/lib/server/loadNoteDocumentBlocksRaw';
+import { commitNoteBlockOp } from '@/app/lib/server/noteOpLog/noteCommitBlockOp';
 
 const BLOCK_SELECT =
   'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
@@ -50,7 +51,31 @@ export async function getNoteDocumentSyncState(
     }
     return { lastSeq: 0 };
   }
-  return { lastSeq: typeof data.last_seq === 'number' ? data.last_seq : Number(data.last_seq) || 0 };
+
+  const syncLastSeq = typeof data.last_seq === 'number' ? data.last_seq : Number(data.last_seq) || 0;
+
+  // Self-heal: sync_state가 insert 실패 등으로 ops.max(seq)보다 앞서 있을 수 있다.
+  const { data: maxRow, error: maxError } = await supabase
+    .from('note_block_ops')
+    .select('seq')
+    .eq('document_id', documentId)
+    .order('seq', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (maxError) throw new Error(maxError.message);
+  const opsMaxSeq = maxRow?.seq == null
+    ? 0
+    : (typeof maxRow.seq === 'number' ? maxRow.seq : Number(maxRow.seq) || 0);
+
+  const effectiveLastSeq = Math.max(syncLastSeq, opsMaxSeq);
+  if (effectiveLastSeq !== syncLastSeq) {
+    await supabase
+      .from('note_document_sync_state')
+      .update({ last_seq: effectiveLastSeq, updated_at: new Date().toISOString() })
+      .eq('document_id', documentId);
+  }
+
+  return { lastSeq: effectiveLastSeq };
 }
 
 export async function pullNoteBlockOps(
@@ -264,62 +289,41 @@ export async function pushNoteBlockOps(
     return { ok: true, lastSeq, appliedClientOpIds: clientOpIds, blocks: [] };
   }
 
-  // 원자적 seq 예약: 동시 push는 서로 겹치지 않는 범위를 받거나 -1(충돌)을 받는다.
-  const { data: reserved, error: reserveError } = await supabase.rpc('note_reserve_op_seqs', {
-    p_document_id: documentId,
-    p_base_seq: baseSeq,
-    p_count: newOps.length,
-  });
-  if (reserveError) throw new Error(reserveError.message);
-  const base = typeof reserved === 'number' ? reserved : Number(reserved);
-
-  if (!Number.isFinite(base) || base < 0) {
-    const missed = await pullNoteBlockOps(supabase, documentId, baseSeq);
-    return {
-      ok: false,
-      error: 'seq_conflict',
-      lastSeq: missed.lastSeq,
-      ops: missed.ops,
-    };
-  }
-
+  // op마다: materialize(apply) → DB 원자 commit(insert+sync). insert 실패 시 sync drift 없음.
   const appliedClientOpIds: string[] = [...existingSet];
   const blocks: NoteBlockSnapshot[] = [];
-  let seq = base;
+  let runningBaseSeq = baseSeq;
 
   for (const op of newOps) {
-    seq += 1;
-
-    // 효과(note_blocks materialize)를 먼저 적용한 뒤 op을 기록한다.
-    // seq는 예약 범위라 유니크 충돌이 없고, insert 실패는 client_op_id 중복(다른 탭 선점)뿐이다.
     const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
 
-    const { error: insertError } = await supabase
-      .from('note_block_ops')
-      .insert({
-        document_id: documentId,
-        seq,
-        client_op_id: op.clientOpId,
-        actor_id: actorId,
-        op_type: op.opType,
-        payload: op.payload,
-      });
-    if (insertError) {
-      const duplicateClientOp =
-        insertError.code === '23505'
-        && insertError.message.includes('client_op');
-      if (duplicateClientOp) {
-        // 다른 탭이 같은 op을 먼저 기록함 — 효과는 멱등하므로 적용 결과만 반영.
-        blocks.push(...applied);
-        appliedClientOpIds.push(op.clientOpId);
-        continue;
-      }
-      devLogger.error('[noteOpLog] insert op failed', insertError);
-      throw new Error(insertError.message);
+    const commit = await commitNoteBlockOp(
+      supabase,
+      documentId,
+      runningBaseSeq,
+      op,
+      actorId,
+    );
+
+    if (commit.status === 'conflict') {
+      const missed = await pullNoteBlockOps(supabase, documentId, baseSeq);
+      return {
+        ok: false,
+        error: 'seq_conflict',
+        lastSeq: missed.lastSeq,
+        ops: missed.ops,
+      };
+    }
+
+    if (commit.status === 'duplicate') {
+      appliedClientOpIds.push(op.clientOpId);
+      runningBaseSeq = commit.assignedSeq;
+      continue;
     }
 
     blocks.push(...applied);
     appliedClientOpIds.push(op.clientOpId);
+    runningBaseSeq = commit.assignedSeq;
   }
 
   const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);

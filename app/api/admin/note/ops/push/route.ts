@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
-import { pushNoteBlockOps } from '@/app/lib/server/noteOpLog/noteOpLogService';
+import { pushNoteBlockOps, pullNoteBlockOps } from '@/app/lib/server/noteOpLog/noteOpLogService';
 import { devLogger } from '@/app/lib/logging/devLogger';
+
+function isSeqConflictMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return normalized.includes('seq_conflict')
+    || normalized.includes('duplicate key')
+    || normalized.includes('unique constraint')
+    || normalized.includes('note_block_ops_document_seq');
+}
 
 function parsePushOps(raw: unknown): NoteBlockOpPushItem[] {
   if (!Array.isArray(raw)) return [];
@@ -22,13 +30,15 @@ function parsePushOps(raw: unknown): NoteBlockOpPushItem[] {
 }
 
 export async function POST(request: NextRequest) {
+  let documentId = '';
+  let baseSeq = 0;
   try {
     const auth = await requireAdmin();
     if (!auth.ok) return auth.response;
 
     const body = await request.json().catch(() => ({}));
-    const documentId = typeof body.documentId === 'string' ? body.documentId : '';
-    const baseSeq = typeof body.baseSeq === 'number' ? body.baseSeq : Number(body.baseSeq) || 0;
+    documentId = typeof body.documentId === 'string' ? body.documentId : '';
+    baseSeq = typeof body.baseSeq === 'number' ? body.baseSeq : Number(body.baseSeq) || 0;
     const ops = parsePushOps(body.ops);
 
     if (!documentId) {
@@ -56,9 +66,19 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     devLogger.error('[admin/note/ops/push]', err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Server error' },
-      { status: 500 },
-    );
+    const message = err instanceof Error ? err.message : 'Server error';
+    if (isSeqConflictMessage(message) && documentId) {
+      try {
+        const supabase = getServiceSupabase();
+        const missed = await pullNoteBlockOps(supabase, documentId, baseSeq);
+        return NextResponse.json(
+          { error: 'seq_conflict', lastSeq: missed.lastSeq, ops: missed.ops },
+          { status: 409 },
+        );
+      } catch (pullErr) {
+        devLogger.error('[admin/note/ops/push] conflict pull fallback failed', pullErr);
+      }
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
