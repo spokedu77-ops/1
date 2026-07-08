@@ -11,6 +11,36 @@ import { CSS } from '../styles';
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 
 const TOTAL = MEMORY_ROUNDS;
+const MEMORY_BASIC_RANDOM_MIN_MS = 1000;
+const MEMORY_BASIC_RANDOM_MAX_MS = 2500;
+
+function randomBasicShowMs(): number {
+  return Math.round(
+    MEMORY_BASIC_RANDOM_MIN_MS +
+      Math.random() * (MEMORY_BASIC_RANDOM_MAX_MS - MEMORY_BASIC_RANDOM_MIN_MS),
+  );
+}
+
+/** 1·2번: 색마다 1~2.5초 랜덤 + 고정 조건(1번 2번째=1초, 2번 2·3·4번째 중 하나=1초) */
+function buildBasicShowSchedule(level: number, patternLength: number): number[] {
+  const schedule = Array.from({ length: patternLength }, () => randomBasicShowMs());
+
+  if (level === 1 && patternLength >= 2) {
+    schedule[1] = MEMORY_BASIC_RANDOM_MIN_MS;
+  } else if (level === 2 && patternLength >= 4) {
+    const midPool = [1, 2, 3].filter((i) => i < patternLength);
+    schedule[midPool[Math.floor(Math.random() * midPool.length)]!] = MEMORY_BASIC_RANDOM_MIN_MS;
+  }
+
+  return schedule;
+}
+
+function pickColorShowMs(level: number, speedSec: number, schedule: number[] | null, idx: number): number {
+  if (level === 1 || level === 2) {
+    return schedule?.[idx] ?? randomBasicShowMs();
+  }
+  return Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
+}
 
 export function MemoryGame({
   level,
@@ -45,8 +75,7 @@ export function MemoryGame({
   const [summaryReady, setSummaryReady] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevMemBgRef = useRef<string | null>(null);
-
-  const colorShowMs = Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
+  const showScheduleRef = useRef<number[]>([]);
 
   const clear = () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -74,15 +103,21 @@ export function MemoryGame({
         if (audioMode === 'beep') playBeep('mid');
         setColorIdx(idx);
         setPhase('showing');
-        timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), colorShowMs);
+        timerRef.current = setTimeout(
+          () => runSequence(pattern, idx + 1),
+          pickColorShowMs(level, speedSec, showScheduleRef.current, idx),
+        );
       }, 90);
     } else {
       if (audioMode === 'beep') playBeep('mid');
       setColorIdx(idx);
       setPhase('showing');
-      timerRef.current = setTimeout(() => runSequence(pattern, idx + 1), colorShowMs);
+      timerRef.current = setTimeout(
+        () => runSequence(pattern, idx + 1),
+        pickColorShowMs(level, speedSec, showScheduleRef.current, idx),
+      );
     }
-  }, [audioMode, colorShowMs]);
+  }, [audioMode, level, speedSec]);
 
   const startRound = useCallback(
     (r: number) => {
@@ -94,6 +129,8 @@ export function MemoryGame({
       setColorIdx(-1);
       setMemFlash(false);
       prevMemBgRef.current = null;
+      showScheduleRef.current =
+        level === 1 || level === 2 ? buildBasicShowSchedule(level, pattern.length) : [];
       const delay = Math.max(0, startDelayMs);
       if (delay === 0) {
         runSequence(pattern, 0);
@@ -101,7 +138,7 @@ export function MemoryGame({
         timerRef.current = setTimeout(() => runSequence(pattern, 0), delay);
       }
     },
-    [patterns, runSequence, startDelayMs]
+    [level, patterns, runSequence, startDelayMs],
   );
 
   // 초기 렌더에서 '준비' 화면 깜빡임을 막기 위해, startDelayMs=0이면 paint 이전에 시작

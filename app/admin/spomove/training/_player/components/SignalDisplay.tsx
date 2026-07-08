@@ -655,7 +655,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   }
 
   if (type === 'flanker_row') {
-    const circles = (content?.circles as { bg: string; id: string }[] | undefined) ?? [];
+    const circles = (content?.circles as { bg: string; id: string; text?: string; label?: string }[] | undefined) ?? [];
     const sizeMultsRaw = content?.sizeMults as number[] | undefined;
     const hasVariedSizes =
       Array.isArray(sizeMultsRaw) &&
@@ -727,8 +727,17 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                 background: cell.bg,
                 boxSizing: 'border-box',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: cell.text ?? '#0F172A',
+                fontWeight: 900,
+                fontSize: hasVariedSizes ? 'clamp(1.3rem, 9vmin, 8rem)' : 'clamp(2rem, 11vmin, 9rem)',
+                lineHeight: 1,
               }}
-            />
+            >
+              {cell.label ?? ''}
+            </div>
           ))}
         </div>
       </div>

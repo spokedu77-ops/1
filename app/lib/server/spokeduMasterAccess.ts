@@ -58,7 +58,7 @@ export type SpokeduMasterSubscriptionRow = {
   provider_billing_key_secret_id?: string | null;
 };
 
-function normalizeSpokeduMasterPlan(plan: string | null | undefined): 'free' | 'lite' | 'premium' | 'team' {
+export function normalizeSpokeduMasterPlan(plan: string | null | undefined): 'free' | 'lite' | 'premium' | 'team' {
   if (plan === 'lite' || plan === 'team') return plan;
   if (plan === 'premium' || plan === 'pro') return 'premium';
   return 'free';

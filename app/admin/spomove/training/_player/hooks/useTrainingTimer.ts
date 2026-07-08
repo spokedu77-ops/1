@@ -30,6 +30,7 @@ export function useTrainingTimer({
   colors,
   fruitSlides,
   basicNumberOverlay,
+  flankerStimulusType,
   onSignal,
   onFinish,
 }: {
@@ -46,6 +47,7 @@ export function useTrainingTimer({
   /** basic 변형 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
+  flankerStimulusType?: 'color' | 'number';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -75,20 +77,19 @@ export function useTrainingTimer({
     if (engineMode === 'basic') {
       // fruitSlides가 undefined이면 color 모드(이미지 없음) — getter를 undefined로 전달
       // defined이면 항상 최신 슬라이드를 읽는 getter 전달 → 타이머 재시작 없이 이미지 반영
-      const getSlidesRef = fruitSlides !== undefined
-        ? () => fruitSlidesRef.current
-        : undefined;
+      const getSlidesRef = () => fruitSlidesRef.current;
       genRef.current = createBasicSignalGenerator(level, colors, getSlidesRef, basicNumberOverlay);
     } else if (engineMode === 'simon') {
-      const getSlidesRef = fruitSlides !== undefined
-        ? () => fruitSlidesRef.current
-        : undefined;
+      const getSlidesRef = () => fruitSlidesRef.current;
       genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef);
     } else if (engineMode === 'taskswitch') {
       const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
       genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
     } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
-      const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
+      const fruitOpts = {
+        ...(fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : {}),
+        ...(engineMode === 'flanker' ? { flankerStimulusType } : {}),
+      };
       genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
       genRef.current = null;
@@ -184,8 +185,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, flankerStimulusType, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

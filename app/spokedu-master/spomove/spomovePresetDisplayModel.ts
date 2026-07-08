@@ -58,6 +58,9 @@ function buildSettingLabel(preset: OfficialSpomovePreset): string {
     return preset.settingSummary;
   }
   if (preset.engine.mode === 'spatial') {
+    if (preset.engine.level === 1 || preset.engine.level === 2) {
+      return `1~2.5초 랜덤 · ${preset.rounds}라운드`;
+    }
     return `${preset.cueSeconds}초 · ${preset.rounds}라운드`;
   }
   return `${preset.cueSeconds}초 · ${preset.rounds}회`;
@@ -71,6 +74,9 @@ function buildDurationLabel(preset: OfficialSpomovePreset): string {
     return preset.settingSummary;
   }
   if (preset.engine.mode === 'spatial') {
+    if (preset.engine.level === 1 || preset.engine.level === 2) {
+      return `1~2.5초 랜덤 · ${preset.rounds}라운드`;
+    }
     return `${preset.cueSeconds}초 · ${preset.rounds}라운드`;
   }
   return `${preset.cueSeconds}초 · ${preset.rounds}회`;

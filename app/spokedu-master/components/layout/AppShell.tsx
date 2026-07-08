@@ -193,8 +193,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const routeRequirement = getMasterRouteRequirement(pathname, basePath);
   const isAccessGuardPending =
     isProtectedRoute &&
-    (!subscriptionSynced ||
-      accessGuard.pathname !== pathname ||
+    (accessGuard.pathname !== pathname ||
       accessGuard.status === 'checking' ||
       accessGuard.status === 'redirecting');
   const isAccessGuardError =
@@ -211,7 +210,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       setSubscriptionSynced(true);
       return;
     }
-    void syncSubscription().then(setSubscriptionSynced);
+    void syncSubscription().finally(() => setSubscriptionSynced(true));
   }, [isLanding, isPublicDocument, syncSubscription]);
 
   useEffect(() => {

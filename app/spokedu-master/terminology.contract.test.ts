@@ -28,6 +28,22 @@ const USER_VISIBLE_FILES = [
 
 const userVisibleSource = () => USER_VISIBLE_FILES.map(read).join('\n');
 
+const SPOMOVE_COPY_SOURCE_FILES = [
+  'app/spokedu-master/spomove/SpomoveHubView.tsx',
+  'app/spokedu-master/components/ui/SubscriptionGateWall.tsx',
+  'app/spokedu-master/lib/productCatalog.ts',
+  'app/spokedu-master/dashboard/DashboardView.tsx',
+] as const;
+
+const SPOMOVE_USER_FACING_FILES = [
+  ...SPOMOVE_COPY_SOURCE_FILES,
+  'app/spokedu-master/spomove/page.tsx',
+  'app/spokedu-master/spomove/session/page.tsx',
+] as const;
+
+const spomoveCopySource = () => SPOMOVE_COPY_SOURCE_FILES.map(read).join('\n');
+const spomoveUserFacingSource = () => SPOMOVE_USER_FACING_FILES.map(read).join('\n');
+
 const unfinishedCopySource = () => [
   ...USER_VISIBLE_FILES,
   'app/spokedu-master/components/ui/ClassToolsView.tsx',
@@ -115,5 +131,18 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
       source.includes('MASTER_CUSTOMER_SERVICE_HREF') ||
       source.includes('MASTER_CENTER_INQUIRY_HREF');
     expect(usesApprovedContact).toBe(true);
+  });
+
+  it('uses SPOMOVE copy terms where explanation is needed and forbids misleading labels', () => {
+    const copySource = spomoveCopySource();
+    const userFacingSource = spomoveUserFacingSource();
+
+    expect(copySource).toContain('공식 활동');
+    expect(copySource).toContain('큰 화면');
+
+    expect(userFacingSource).not.toContain('공식 프로그램');
+    expect(userFacingSource).not.toContain('구독자 공식 라이브러리');
+    expect(userFacingSource).not.toContain('이름으로 찾기');
+    expect(userFacingSource).not.toContain('프로그램 이름');
   });
 });

@@ -12,6 +12,20 @@ import { mergeBlockContentWithStore } from './noteContentPatch';
 /** 서버 reconcile에 아직 없는 로컬 블록을 유지하는 최대 시간 (생성 직후만) */
 export const LOCAL_ONLY_BLOCK_GRACE_MS = 5000;
 
+/** 서버 스냅샷이 로컬보다 훨씬 많을 때 — regression guard를 건너뛰고 복구 */
+export function serverSnapshotRecoversMissingBlocks(
+  localBlocks: NoteBlock[],
+  serverBlocks: NoteBlock[],
+  documentId: string,
+): boolean {
+  const localCount = localBlocks.filter((block) => block.document_id === documentId).length;
+  const serverCount = serverBlocks.filter((block) => block.document_id === documentId).length;
+  if (serverCount === 0) return false;
+  if (localCount === 0) return serverCount > 0;
+  if (serverCount >= localCount + 2) return true;
+  return serverCount > localCount * 1.25;
+}
+
 /**
  * React blocks 갱신 전 스토어에만 반영된 최신 content를 병합한다.
  * (타이핑은 syncBlockContent → 스토어, 구조 변경은 setBlocks → React)

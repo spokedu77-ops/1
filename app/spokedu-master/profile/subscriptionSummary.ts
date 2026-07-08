@@ -211,6 +211,10 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     const upgradeFields = liteUpgradeFields(summary);
 
     if (summary.cancelAtPeriodEnd) {
+      const cancelDescription =
+        summary.plan === 'lite'
+          ? `${endDate}까지 이용할 수 있으며 이후 자동결제되지 않습니다. 해지 예약 중에는 이용권 변경이 제한됩니다. 프리미엄 이용을 원하시면 고객센터로 문의해 주세요.`
+          : `${endDate}까지 이용할 수 있으며 이후 자동결제되지 않습니다.`;
       return {
         state: 'cancelScheduled',
         planLabel,
@@ -220,7 +224,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
         dateLabel: '이용 종료일',
         dateText: endDate,
         amountText: getAmountText(summary.plan),
-        description: `${endDate}까지 이용할 수 있으며 이후 자동결제되지 않습니다.`,
+        description: cancelDescription,
         isDirectBillingPlan: true,
         canCancel: false,
         canUseSpomatMemberPrice: summary.plan === 'premium' || summary.plan === 'pro',

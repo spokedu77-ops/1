@@ -46,8 +46,9 @@ describe('local workspace persistence boundary', () => {
     expect(storeSource).toContain('localWorkspaceOwnerId: state.localWorkspaceOwnerId');
   });
 
-  it('does not render protected children before subscription identity sync completes', () => {
-    expect(shellSource).toContain('!subscriptionSynced ||');
+  it('does not block protected routes when subscription sync fails', () => {
+    expect(shellSource).not.toMatch(/!subscriptionSynced\s*\|\|/);
+    expect(shellSource).toContain('.finally(() => setSubscriptionSynced(true))');
     expect(shellSource).toContain('isAccessGuardPending');
   });
 });

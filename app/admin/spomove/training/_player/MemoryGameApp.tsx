@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { COLORS, MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS, MEMORY_ROUNDS } from './constants';
+import { COLORS, MODES, normalizeLegacyTrainingMode, resolveTrainingEngine, SPOMOVE_CATALOG_SLOT_IDS } from './constants';
 import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingBGM';
 import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
 import { getPublicUrl } from '@/app/lib/admin/assets/storageClient';
@@ -41,7 +41,6 @@ import {
 } from './lib/memoryColorSlots';
 import { MemoryColorSlotsPicker } from './components/MemoryColorSlotsPicker';
 import { SELECTABLE_MODULE_KEYS } from './flow/engine/modules/flowModules';
-import type { FlowStats } from './flow/engine/FlowEngine';
 import type { FlowVisualVariant } from './lib/flowPresets';
 
 const DivePlusGameClient = dynamic(
@@ -117,6 +116,7 @@ type Settings = {
   variantColorTheme: SpomoveColorThemeId;
   /** basic 3번 + 색상 테마: 전면 색상 위 숫자 오버레이 범위 */
   basicNumberOverlay: 'none' | '2' | '3';
+  flankerStimulusType: 'color' | 'number';
   /** 플로우 추가 동작 기능 플래그 */
   flowFeatures: Set<FlowFeatureKey>;
   /** 플로우 배경 색상 테마 */
@@ -135,6 +135,8 @@ type Settings = {
   numberCartTier: 1 | 2 | 3;
   /** 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
+  /** 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 2패널 양손 모드 */
+  colorTrackerDualPanel: boolean;
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
   memoryColorSlots: SpomoveMemoryColorId[];
 };
@@ -158,6 +160,7 @@ const defaultSettings: Settings = {
   kidsSafeMode: false,
   variantColorTheme: 'color',
   basicNumberOverlay: 'none',
+  flankerStimulusType: 'color',
   flowFeatures: new Set<FlowFeatureKey>(),
   flowColorTheme: 'default',
   flowDuration: 25,
@@ -167,8 +170,26 @@ const defaultSettings: Settings = {
   moleDualPanel: false,
   numberCartTier: 2,
   colorTrackerTier: 2,
+  colorTrackerDualPanel: false,
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
+
+const BASIC_DISPLAY_LEVELS = [
+  { displayNo: 1, levelId: 1, label: '공간 방향' },
+  { displayNo: 2, levelId: 2, label: '사분할 색상' },
+  { displayNo: 3, levelId: 7, label: '변형 사분할 1단계' },
+  { displayNo: 4, levelId: 8, label: '변형 사분할 2단계' },
+  { displayNo: 5, levelId: 9, label: '변형 사분할 3단계' },
+  { displayNo: 6, levelId: 10, label: '변형 사분할 4단계' },
+  { displayNo: 7, levelId: 3, label: '전면 색상' },
+  { displayNo: 8, levelId: 4, label: '전면 2패널' },
+  { displayNo: 9, levelId: 5, label: '전면 3패널 같은 색' },
+  { displayNo: 10, levelId: 6, label: '전면 3패널 서로 다른 색' },
+] as const;
+
+function getBasicDisplayNo(levelId: number): number | undefined {
+  return BASIC_DISPLAY_LEVELS.find((item) => item.levelId === levelId)?.displayNo;
+}
 
 export type MemoryGameAutoLaunch = {
   speed?: number;
@@ -187,6 +208,7 @@ export type MemoryGameAutoLaunch = {
   variantColorTheme?: SpomoveColorThemeId;
   /** basic 3번 + 색상 테마: 숫자 오버레이 범위 */
   basicNumberOverlay?: 'none' | '2' | '3';
+  flankerStimulusType?: 'color' | 'number';
   /** Flow 2.0: 선택된 추가 동작 키 배열 → 내부에서 Set<FlowFeatureKey>로 변환 */
   flowFeatures?: string[];
   /** Flow 2.0: 배경 색상 테마 */
@@ -205,8 +227,11 @@ export type MemoryGameAutoLaunch = {
   numberCartTier?: 1 | 2 | 3;
   /** 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) L1/L2/L3 */
   colorTrackerTier?: 1 | 2 | 3;
+  /** 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 2패널 양손 모드 */
+  colorTrackerDualPanel?: boolean;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode?: 'easy' | 'hard';
+  hideBodyLabelModeControls?: boolean;
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
   memoryColorSlots?: SpomoveMemoryColorId[];
 };
@@ -232,6 +257,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       kidsSafeMode: s.kidsSafeMode,
       numberRule: s.numberRule,
       variantColorTheme: s.variantColorTheme,
+      flankerStimulusType: s.flankerStimulusType,
       flowFeatures: [...s.flowFeatures],
       flowColorTheme: s.flowColorTheme,
       flowDuration: s.flowDuration,
@@ -240,6 +266,7 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       moleDualPanel: s.moleDualPanel,
       numberCartTier: s.numberCartTier,
       colorTrackerTier: s.colorTrackerTier,
+      colorTrackerDualPanel: s.colorTrackerDualPanel,
       memoryColorSlots: [...s.memoryColorSlots],
     },
   };
@@ -299,6 +326,8 @@ export default function MemoryGameApp({
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [showVariantAppendix, setShowVariantAppendix] = useState(false);
   const [bodyLabelMode, setBodyLabelMode] = useState<'easy' | 'hard'>(autoLaunch?.bodyLabelMode ?? 'hard');
+  const hideBodyLabelModeControls = autoLaunch?.hideBodyLabelModeControls === true;
+  const settingsRef = useRef(settings);
 
   const [isTraining, setIsTraining] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -367,6 +396,10 @@ export default function MemoryGameApp({
   }, [theme]);
 
   useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
+
+  useEffect(() => {
     if (typeof window === 'undefined') return;
     const onOffline = () => setIsOffline(true);
     const onOnline = () => setIsOffline(false);
@@ -382,12 +415,20 @@ export default function MemoryGameApp({
 
   const { slides: allVariantSlides, status: allAssetStatus, reload: reloadAllAssets } =
     useSpomoveAllVariantSlidesForTraining(simonMixedVariantLevel);
-  const { slides: variantFruitSlides, status: assetStatus, reload: reloadAssets } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
-  const activeVariantSlides = simonMixedVariantLevel
-    ? allVariantSlides
-    : settings.variantColorTheme === 'color'
-      ? undefined
-      : variantFruitSlides;
+  const {
+    slides: variantFruitSlides,
+    status: assetStatus,
+    reload: reloadAssets,
+    loadedTheme: variantSlidesTheme,
+  } = useSpomoveVariantSlidesForTraining(settings.variantColorTheme);
+  const activeVariantSlides = useMemo(
+    () => {
+      if (simonMixedVariantLevel) return allVariantSlides;
+      if (settings.variantColorTheme === 'color') return undefined;
+      return variantSlidesTheme === settings.variantColorTheme ? variantFruitSlides : [];
+    },
+    [allVariantSlides, simonMixedVariantLevel, settings.variantColorTheme, variantFruitSlides, variantSlidesTheme]
+  );
   const activeAssetStatus = simonMixedVariantLevel ? allAssetStatus : assetStatus;
   const variantFruitUrls = useMemo(() => variantFruitUrlsForPreload(activeVariantSlides ?? []), [activeVariantSlides]);
   const variantSignalSlides = activeVariantSlides;
@@ -436,9 +477,14 @@ export default function MemoryGameApp({
   }, [variantFruitUrls]);
 
   /** 변형 색지각(basic 2~6번): 설정·워밍업·훈련 중 이미지 프리로드 */
-  const basicVariantLevel = useMemo(
-    () => settings.mode === 'basic' && (settings.level === 2 || settings.level === 3 || settings.level === 4 || settings.level === 5 || settings.level === 6),
+  const basicDisplayNo = useMemo(
+    () => (settings.mode === 'basic' ? getBasicDisplayNo(settings.level) : undefined),
     [settings.mode, settings.level]
+  );
+
+  const basicVariantLevel = useMemo(
+    () => settings.mode === 'basic' && basicDisplayNo !== undefined && (basicDisplayNo === 2 || (basicDisplayNo >= 7 && basicDisplayNo <= 10)),
+    [settings.mode, basicDisplayNo]
   );
 
   /** 사이먼 3번(Mixed Gallery): 전 테마 이미지 프리로드 */
@@ -468,8 +514,17 @@ export default function MemoryGameApp({
 
   /** 변형 사분할(basic 7·8·9·10번): 신체 동작 이미지 표시 레벨 */
   const quadBodyLevel = useMemo(
-    () => settings.mode === 'basic' && (settings.level === 7 || settings.level === 8 || settings.level === 9 || settings.level === 10),
-    [settings.mode, settings.level]
+    () => settings.mode === 'basic' && basicDisplayNo !== undefined && basicDisplayNo >= 3 && basicDisplayNo <= 6,
+    [settings.mode, basicDisplayNo]
+  );
+
+  const fullScreenColorDisplayLevel = settings.mode === 'basic' && basicDisplayNo === 7;
+
+  const sortedColorThemeIds = useMemo(
+    () => SPOMOVE_COLOR_THEME_ORDER
+      .slice()
+      .sort((a, b) => SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')),
+    []
   );
 
   const reloadVariantAssets = useCallback(() => {
@@ -542,6 +597,11 @@ export default function MemoryGameApp({
     });
   }, []);
 
+  const switchVariantColorTheme = useCallback((themeId: SpomoveColorThemeId) => {
+    sessionSlidesRef.current = undefined;
+    set('variantColorTheme', themeId);
+  }, [set]);
+
   const onSignal = useCallback((sig: Record<string, unknown>) => {
     countRef.current++;
     colorCountsRef.current = addColorIdsToCounts(colorCountsRef.current, extractStimulusColorIds(sig));
@@ -596,13 +656,13 @@ export default function MemoryGameApp({
     if (document.fullscreenElement) document.exitFullscreen();
     sessionSlidesRef.current = undefined;
     setIsTraining(false);
-    const cfg = { ...settings };
+    const cfg = { ...settingsRef.current };
     const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
     void _dupStats;
     deliverSessionResult(cfg, elapsedMs, { ...colorCountsRef.current });
     if (cfg.audioMode === 'beep') setTimeout(() => playBeep('chord', 300), 200);
     else if (cfg.audioMode !== 'off') setTimeout(() => tts('트레이닝 완료! 수고했어요!', true), 300);
-  }, [deliverSessionResult, settings]);
+  }, [deliverSessionResult]);
 
   const { getProgress } = useTrainingTimer({
     active: isTraining && !settings.intervalMode,
@@ -617,6 +677,7 @@ export default function MemoryGameApp({
     colors: COLORS,
     fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
+    flankerStimulusType: settings.flankerStimulusType,
     onSignal,
     onFinish,
   });
@@ -633,6 +694,7 @@ export default function MemoryGameApp({
     colors: COLORS,
     fruitSlides: effectiveSlides,
     basicNumberOverlay: settings.basicNumberOverlay,
+    flankerStimulusType: settings.flankerStimulusType,
     onSignal,
     onFinish,
   });
@@ -1131,6 +1193,8 @@ export default function MemoryGameApp({
     );
     const stepSpeed = 3;
     const stepReps = 4;
+    const spatialBasicRandomSpeed =
+      settings.mode === 'spatial' && (settings.level === 1 || settings.level === 2);
     return (
       <div style={S.page}>
         <style>{CSS}</style>
@@ -1208,6 +1272,40 @@ export default function MemoryGameApp({
                   </p>
                 </div>
               ) : null}
+              {false ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.65rem' }}>자극 표시</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                    {([
+                      ['color', '색상 원'],
+                      ['number', '숫자 1~5'],
+                    ] as const).map(([value, label]) => {
+                      const active = settings.flankerStimulusType === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => set('flankerStimulusType', value)}
+                          style={{
+                            padding: '0.55rem 0.95rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                            background: active ? `${M.accent}12` : 'var(--card)',
+                            color: active ? M.accent : 'var(--text)',
+                            fontWeight: active ? 800 : 600,
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {active ? '✓ ' : ''}
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
               {basicVariantLevel ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>변형 색지각 이미지 테마</div>
@@ -1215,12 +1313,7 @@ export default function MemoryGameApp({
                     Asset Hub 색지각 <strong style={{ color: 'var(--text)' }}>1. 테마</strong> 섹션과 동일하게 저장됩니다. 고른 테마의 슬롯 이미지가 2~6번 신호에 반영됩니다.
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                    {SPOMOVE_COLOR_THEME_ORDER
-                      .slice()
-                      .sort((a, b) =>
-                        SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
-                      )
-                      .map((tid) => (
+                    {sortedColorThemeIds.map((tid) => (
                       <button
                         key={tid}
                         type="button"
@@ -1473,10 +1566,19 @@ export default function MemoryGameApp({
             )}
             {settings.mode !== 'flow' && (
               <>
-                <div style={S.sec}>
-                  {stepNum(stepSpeed, '신호 속도를 정하세요')}
-                  <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
-                </div>
+                {spatialBasicRandomSpeed ? (
+                  <div style={S.sec}>
+                    {stepNum(stepSpeed, '색 전환 간격')}
+                    <p style={{ margin: 0, fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.6, fontWeight: 600 }}>
+                      1.0~2.5초 사이에서 매 색마다 자동으로 바뀝니다.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={S.sec}>
+                    {stepNum(stepSpeed, '신호 속도를 정하세요')}
+                    <SpeedSelector value={settings.speed} onChange={(v) => set('speed', v)} showPresets={false} />
+                  </div>
+                )}
 
                 {settings.mode === 'spatial' && settings.level === 6 ? (
                   <div style={S.sec}>
@@ -1631,7 +1733,7 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 )}
-                {quadBodyLevel && (
+                {quadBodyLevel && !hideBodyLabelModeControls && (
                   <div style={S.sec}>
                     <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>라벨 표시</div>
                     <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
@@ -1800,6 +1902,7 @@ export default function MemoryGameApp({
           <ColorTrackerReactionTraining
             targetRounds={normalizeColorTrackerRounds(settings.targetReps ?? 5)}
             tier={settings.colorTrackerTier}
+            dualPanel={settings.colorTrackerDualPanel}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -1880,7 +1983,7 @@ export default function MemoryGameApp({
     const selectedModules = SELECTABLE_MODULE_KEYS.filter((k) => settings.flowFeatures.has(k as FlowFeatureKey));
     const stages = buildStages(selectedModules, settings.flowDuration);
 
-    const handleFlowDone = (_stats: FlowStats) => {
+    const handleFlowDone = () => {
       if (flowCompleteGuardRef.current) return;
       flowCompleteGuardRef.current = true;
       if (document.fullscreenElement) document.exitFullscreen();
@@ -2014,7 +2117,7 @@ export default function MemoryGameApp({
             </div>
           </div>
         )}
-        {basicVariantLevel && (
+        {basicVariantLevel && !fullScreenColorDisplayLevel && (
           <div
             style={{
               position: 'absolute',
@@ -2046,7 +2149,50 @@ export default function MemoryGameApp({
             </div>
           </div>
         )}
-        {quadBodyLevel && (
+        {fullScreenColorDisplayLevel && (
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '1.5rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 20,
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '0.45rem',
+              width: 'min(92vw, 42rem)',
+            }}
+          >
+            {sortedColorThemeIds.map((tid) => {
+              const active = settings.variantColorTheme === tid;
+              return (
+                <button
+                  key={tid}
+                  type="button"
+                  onClick={() => switchVariantColorTheme(tid)}
+                  style={{
+                    padding: '0.42rem 0.82rem',
+                    minHeight: '2.1rem',
+                    borderRadius: '2rem',
+                    border: `2px solid ${active ? '#fff' : 'rgba(255,255,255,0.28)'}`,
+                    background: active ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.48)',
+                    backdropFilter: 'blur(10px)',
+                    color: active ? '#fff' : 'rgba(255,255,255,0.72)',
+                    fontWeight: active ? 850 : 650,
+                    fontSize: 'clamp(0.72rem,2vw,0.88rem)',
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {SPOMOVE_COLOR_THEME_LABELS[tid]}
+                </button>
+              );
+            })}
+          </div>
+        )}
+        {quadBodyLevel && !hideBodyLabelModeControls && (
           <div
             style={{
               position: 'absolute',

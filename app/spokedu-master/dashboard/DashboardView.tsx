@@ -773,9 +773,9 @@ export default function DashboardView() {
 
       <section data-dashboard-section="spomove">
         <SectionHeader
-          eyebrow="Official screen activities"
+          eyebrow="공식 활동"
           title="SPOMOVE 공식 활동"
-          description="수업 도입, 집중 전환, 마무리에 활용할 수 있는 공식 화면 활동"
+          description="수업 도입·집중 전환·마무리에 바로 쓸 수 있는 큰 화면 반응 활동"
           href="/spokedu-master/spomove"
           action="전체 보기"
         />

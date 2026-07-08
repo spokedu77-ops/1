@@ -107,13 +107,46 @@ function readEntry(documentId: string): VisitCacheEntry | null {
   return null;
 }
 
+const CACHE_SHRINK_GUARD_MIN_BLOCKS = 5;
+const CACHE_SHRINK_GUARD_RATIO = 0.6;
+
+function shouldSkipSuspiciousCacheShrink(
+  previous: NoteBlock[],
+  incoming: NoteBlock[],
+): boolean {
+  if (incoming.length === 0 || previous.length < CACHE_SHRINK_GUARD_MIN_BLOCKS) return false;
+  if (incoming.length >= previous.length * CACHE_SHRINK_GUARD_RATIO) return false;
+  const previousIds = new Set(previous.map((block) => block.id));
+  const incomingFromPrevious = incoming.every((block) => previousIds.has(block.id));
+  return incomingFromPrevious;
+}
+
+export type RememberNoteDocumentBlocksOptions = {
+  /** 서버 load/reconcile 경로 — UI 글리치로 줄어든 스냅샷도 그대로 저장 */
+  trustServer?: boolean;
+};
+
 /** 문서 전환·새로고침 시 즉시 표시 — Notion stale-while-revalidate 스냅샷 */
-export function rememberNoteDocumentBlocks(documentId: string, blocks: NoteBlock[]): void {
+export function rememberNoteDocumentBlocks(
+  documentId: string,
+  blocks: NoteBlock[],
+  options?: RememberNoteDocumentBlocksOptions,
+): void {
   if (!documentId) return;
-  const incoming = blocks.filter((block) => block.document_id === documentId);
+  const incoming = dedupeNoteBlocksById(
+    blocks.filter((block) => block.document_id === documentId),
+  );
   if (blocks.length > 0 && incoming.length === 0) return;
+
+  if (!options?.trustServer) {
+    const existing = readEntry(documentId);
+    if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {
+      return;
+    }
+  }
+
   const entry: VisitCacheEntry = {
-    blocks: cloneBlocks(dedupeNoteBlocksById(incoming)),
+    blocks: cloneBlocks(incoming),
     savedAt: Date.now(),
   };
   pruneMemoryCache();

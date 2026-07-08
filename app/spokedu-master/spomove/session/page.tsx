@@ -346,6 +346,7 @@ function SpomoveSessionContent() {
         moleDualPanel={officialPreset.engine.moleDualPanel}
         numberCartTier={officialPreset.engine.numberCartTier}
         colorTrackerTier={officialPreset.engine.colorTrackerTier}
+        colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}
         flowFeatures={officialPreset.engine.flowFeatures}
         flowDuration={officialPreset.engine.flowDuration}
         onExit={() => {

@@ -340,54 +340,26 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
     const drawBase = (ctx: CanvasRenderingContext2D) => {
       const { W, H, cx, cy } = g;
       ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = C[0].dim; ctx.fillRect(0, 0, cx, cy);
-      ctx.fillStyle = C[1].dim; ctx.fillRect(cx, 0, W - cx, cy);
-      ctx.fillStyle = C[2].dim; ctx.fillRect(0, cy, cx, H - cy);
-      ctx.fillStyle = C[3].dim; ctx.fillRect(cx, cy, W - cx, H - cy);
+      ctx.fillStyle = '#020308';
+      ctx.fillRect(0, 0, W, H);
 
       if (g.flashQuad >= 0 && g.flashAlpha > 0.01) {
         ctx.save();
-        ctx.globalAlpha = g.flashAlpha;
+        ctx.globalAlpha = Math.min(0.72, g.flashAlpha * 0.72);
         ctx.fillStyle = C[g.flashQuad as 0|1|2|3].hex;
-        const q = g.flashQuad;
-        if (q === 0) ctx.fillRect(0, 0, cx, cy);
-        else if (q === 1) ctx.fillRect(cx, 0, W - cx, cy);
-        else if (q === 2) ctx.fillRect(0, cy, cx, H - cy);
-        else ctx.fillRect(cx, cy, W - cx, H - cy);
+        ctx.fillRect(0, 0, W, H);
         ctx.restore();
-        g.flashAlpha *= 0.84;
+        g.flashAlpha *= 0.82;
         if (g.flashAlpha < 0.01) { g.flashAlpha = 0; g.flashQuad = -1; }
       }
 
       if (!g.isLow) {
         const grad = ctx.createRadialGradient(cx, cy, g.targetR * 0.28, cx, cy, Math.max(W, H) * 0.72);
-        grad.addColorStop(0, 'rgba(255,255,255,.02)');
-        grad.addColorStop(0.45, 'rgba(0,0,0,.08)');
-        grad.addColorStop(1, 'rgba(0,0,0,.44)');
+        grad.addColorStop(0, 'rgba(255,255,255,.025)');
+        grad.addColorStop(0.52, 'rgba(0,0,0,.10)');
+        grad.addColorStop(1, 'rgba(0,0,0,.62)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, W, H);
-      }
-
-      const dw = Math.max(8, Math.min(W, H) * 0.014);
-      ctx.save();
-      ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.lineWidth = dw;
-      ctx.beginPath();
-      ctx.moveTo(cx, 0); ctx.lineTo(cx, H);
-      ctx.moveTo(0, cy); ctx.lineTo(W, cy);
-      ctx.stroke();
-      ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.restore();
-
-      if (!g.isLow) {
-        ctx.save();
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const fs = Math.max(44, Math.min(W, H) * 0.085);
-        ctx.font = `900 ${fs}px Barlow Condensed,sans-serif`;
-        ctx.globalAlpha = 0.13;
-        const qp: [number, number][] = [[cx * .5, cy * .55], [cx * 1.5, cy * .55], [cx * .5, cy * 1.45], [cx * 1.5, cy * 1.45]];
-        C.forEach((c, i) => { ctx.fillStyle = c.hex; ctx.fillText(c.name, qp[i]![0], qp[i]![1]); });
-        ctx.restore();
       }
     };
 

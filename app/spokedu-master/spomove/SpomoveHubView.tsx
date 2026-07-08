@@ -37,7 +37,7 @@ import {
 } from './officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel, buildSpomoveCardTags, buildSpomoveGuidelineNarrative } from './spomovePresetDisplayModel';
 import { SpomovePadLayoutView } from './SpomovePadLayoutView';
-import { SPOMOVE_PAD_GRID_HEX, SPOMOVE_PAD_LAYOUT_LABELS } from './spomovePadDisplay';
+import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
 type ProgramGroupTab = 'all' | Exclude<OfficialSpomoveProgramGroup, 'bonus'>;
@@ -95,7 +95,6 @@ const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
 
 // SPOMOVE 4색 — padGrid.ts 단일 출처
 const PAD_COLORS = SPOMOVE_PAD_GRID_HEX;
-const PAD_LAYOUT_LABELS = SPOMOVE_PAD_LAYOUT_LABELS;
 
 function PadSignature({ dim = false }: { dim?: boolean }) {
   return (
@@ -941,17 +940,17 @@ export default function SpomoveHubView() {
         <header className="overflow-hidden rounded-[28px] bg-slate-950 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-12">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[12px] font-black text-white/80">
             <MonitorPlay className="h-3.5 w-3.5" />
-            구독자 공식 라이브러리
+            공식 활동
           </span>
           <h1 className="mt-5 text-[34px] font-black leading-tight sm:text-[46px]">
-            SPOMOVE 공식 프로그램
+            SPOMOVE 공식 활동
           </h1>
           <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
-            프로그램 이름으로 바로 찾고, 생각 난이도로 세팅을 좁혀 보세요. 전체 보기에서는 단순·선택·복합
-            반응 축으로 묶어 두었습니다.
+            수업 도입·집중 전환·마무리에 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와 생각 난이도로
+            고르세요.
           </p>
           <p className="mt-3 text-[12px] font-semibold text-white/30">
-            각 프로그램은 사전 설정된 공식 조건으로 실행됩니다.
+            각 활동은 사전 설정된 공식 조건으로 실행됩니다.
           </p>
         </header>
 
@@ -960,9 +959,9 @@ export default function SpomoveHubView() {
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[12px] font-black text-indigo-600">최근 SPOMOVE 활동</p>
-              <h2 className="text-xl font-black text-slate-950">최근 실행한 프로그램</h2>
+              <h2 className="text-xl font-black text-slate-950">최근 실행한 활동</h2>
             </div>
-            <a href="#spomove-program-list" className="text-sm font-black text-indigo-600">프로그램 선택</a>
+            <a href="#spomove-program-list" className="text-sm font-black text-indigo-600">활동 선택</a>
           </div>
           {recentSpomoveActivities.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -992,9 +991,9 @@ export default function SpomoveHubView() {
             </div>
           ) : (
             <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 프로그램이 없습니다.</p>
-              <p className="mt-1 text-sm font-semibold text-slate-500">프로그램을 선택해 첫 활동을 시작해 보세요.</p>
-              <a href="#spomove-program-list" className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white">프로그램 선택</a>
+              <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 활동이 없습니다.</p>
+              <p className="mt-1 text-sm font-semibold text-slate-500">활동을 선택해 첫 실행을 시작해 보세요.</p>
+              <a href="#spomove-program-list" className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white">활동 선택</a>
             </div>
           )}
         </section>
@@ -1003,7 +1002,7 @@ export default function SpomoveHubView() {
         <div className="mt-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
-              프로그램
+              활동 종류
             </span>
             <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
               {PROGRAM_GROUP_TABS.map((tab) => {
@@ -1087,7 +1086,7 @@ export default function SpomoveHubView() {
         ) : (
           <div className="mt-12 flex flex-col items-center gap-4 text-center">
             <p className="text-[14px] font-semibold text-slate-500">
-              선택한 조건에 해당하는 프로그램이 없습니다.
+              선택한 조건에 해당하는 활동이 없습니다.
             </p>
             <button
               type="button"

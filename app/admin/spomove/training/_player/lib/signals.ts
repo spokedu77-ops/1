@@ -340,6 +340,7 @@ export type GenerateSignalOptions = {
   taskSwitchPrevRule?: 'color' | 'position' | 'reverse' | null;
   /** basic 3번 + 색상 테마: 전면 색상 위에 오버레이할 숫자 범위 */
   basicNumberOverlay?: 'none' | '2' | '3';
+  flankerStimulusType?: 'color' | 'number';
   /** basic 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 (0~3) */
   poleEdgeIndex?: number;
 };
@@ -389,6 +390,7 @@ export function generateSignal(
       const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
       const themed =
         vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
+      if (usesImageTheme && !themed) return null;
       const c = themed?.color ?? r(activeColors);
       const numMode = opts?.basicNumberOverlay;
       const overlayNumber =
@@ -687,8 +689,24 @@ export function generateSignal(
   }
 
   if (mode === 'flanker') {
+    const numberMode = opts?.flankerStimulusType === 'number';
+    const maybeNumberCircles = (circles: { id: string; bg: string; text: string }[]) =>
+      numberMode
+        ? (() => {
+            const labels = fisherYates(
+              Array.from({ length: circles.length }, (_, i) => String(i + 1))
+            );
+            return circles.map((c, i) => {
+              const label = labels[i]!;
+              return {
+                ...c,
+                label,
+              };
+            });
+          })()
+        : circles;
     const packRow = (
-      circles: { id: string; bg: string; text: string }[],
+      circles: { id: string; bg: string; text: string; label?: string; sourceColorId?: string }[],
       sizeMults?: number[]
     ) => ({
       type: 'flanker_row' as const,
@@ -697,6 +715,7 @@ export function generateSignal(
         circles,
         centerIndex: Math.floor((circles.length - 1) / 2),
         targetColorId: circles[Math.floor((circles.length - 1) / 2)]!.id,
+        ...(numberMode ? { targetNumber: circles[Math.floor((circles.length - 1) / 2)]!.label } : {}),
         ...(sizeMults && sizeMults.length === circles.length ? { sizeMults } : {}),
       },
       voice: null,
@@ -708,7 +727,7 @@ export function generateSignal(
         bg: c.bg,
         text: c.text,
       }));
-      return packRow(circles);
+      return packRow(maybeNumberCircles(circles));
     }
     if (level === 2) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
@@ -726,14 +745,14 @@ export function generateSignal(
       const cell = (c: ColorItem) => ({ id: c.id, bg: c.bg, text: c.text });
       /** 1번·5번 / 2·3·4번 / 서로 다른 색 그룹(가능 시 3색) */
       const circles = [cell(left), cell(mid), cell(mid), cell(mid), cell(right)];
-      return packRow(circles);
+      return packRow(maybeNumberCircles(circles));
     }
     if (level === 3) {
       const circles = Array.from({ length: 5 }, () => {
         const c = r(activeColors);
         return { id: c.id, bg: c.bg, text: c.text };
       });
-      return packRow(circles);
+      return packRow(maybeNumberCircles(circles));
     }
     if (level === 4) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
@@ -743,14 +762,14 @@ export function generateSignal(
       const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
       /** 원마다 다른 상대 크기(셔플) — 표시층에서 행 너비·30vmin 상한과 맞춤 */
       const sizeMults = fisherYates([0.68, 0.78, 0.9, 1.05, 1.22]);
-      return packRow(circles, sizeMults);
+      return packRow(maybeNumberCircles(circles), sizeMults);
     }
     if (level === 5) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
       const colorSeq = generateColorsWithPerMax(pool, 3, 2);
       const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
       const sizeMults = fisherYates([1.0, 0.62, 0.28]);
-      return packRow(circles, sizeMults);
+      return packRow(maybeNumberCircles(circles), sizeMults);
     }
     if (level === 6) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
@@ -758,7 +777,7 @@ export function generateSignal(
       const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
       const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
       const sizeMults = fisherYates([1.0, 0.62, 0.44, 0.28, 0.14]);
-      return packRow(circles, sizeMults);
+      return packRow(maybeNumberCircles(circles), sizeMults);
     }
     return null;
   }
@@ -1097,11 +1116,12 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     const c = sig.content as {
       circles?: { id: string }[];
       targetColorId?: string;
+      targetNumber?: string;
       sizeMults?: number[];
     };
     const ids = (c.circles ?? []).map((x) => x.id).join(',');
     const sm = (c.sizeMults ?? []).map((x) => (Math.round(x * 1000) / 1000).toString()).join(',');
-    return `fk:${c.targetColorId ?? ''}:${ids}:${sm}`;
+    return `fk:${c.targetColorId ?? ''}:${c.targetNumber ?? ''}:${ids}:${sm}`;
   }
   if (t === 'gonogo_color') {
     const c = sig.content as { colorId?: string; isGo?: boolean };
@@ -1357,8 +1377,8 @@ export function colorDupFingerprint(sig: Record<string, unknown>): string {
     return `cd:${c.arrowId ?? ''}`;
   }
   if (t === 'flanker_row') {
-    const c = sig.content as { targetColorId?: string };
-    return `cd:${c.targetColorId ?? ''}`;
+    const c = sig.content as { targetColorId?: string; targetNumber?: string };
+    return `cd:${c.targetColorId ?? ''}:${c.targetNumber ?? ''}`;
   }
   if (t === 'gonogo_color') {
     const c = sig.content as { colorId?: string; isGo?: boolean };

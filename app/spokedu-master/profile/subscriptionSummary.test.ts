@@ -155,6 +155,19 @@ describe('subscriptionSummary', () => {
     });
   });
 
+  it('explains lite upgrade restriction while cancel is scheduled', () => {
+    const value = summary({
+      plan: 'lite',
+      status: 'active',
+      currentPeriodEnd: future,
+      cancelAtPeriodEnd: true,
+      canCancelAutoBilling: true,
+    });
+
+    expect(getSubscriptionDisplaySummary(value).description).toContain('해지 예약 중에는 이용권 변경이 제한됩니다');
+    expect(getSubscriptionDisplaySummary(value).description).toContain('고객센터');
+  });
+
   it('shows expired paid subscriptions as ended', () => {
     const value = summary({ plan: 'premium', status: 'expired', periodEnd: past });
 

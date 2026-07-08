@@ -4,6 +4,7 @@ import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminA
 import {
   ensureSpokeduMasterEntitlement,
   isSpokeduMasterPaidPlanActive,
+  normalizeSpokeduMasterPlan,
 } from '@/app/lib/server/spokeduMasterAccess';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +43,7 @@ export async function GET() {
       if (!isAdmin) {
         const serviceSupabase = getServiceSupabase();
         const { row, error } = await ensureSpokeduMasterEntitlement(serviceSupabase, user.id);
-        if (!error && isSpokeduMasterPaidPlanActive(row) && row.plan === 'premium') {
+        if (!error && isSpokeduMasterPaidPlanActive(row) && normalizeSpokeduMasterPlan(row.plan) === 'premium') {
           isPremiumEligible = true;
         }
       }

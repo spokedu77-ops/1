@@ -299,7 +299,7 @@ function PaymentContent() {
             <h2 className="mt-3 text-[20px] font-black">{subscriptionDisplay.planLabel} 이용 중</h2>
             <p className="mt-2 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
               {subscriptionDisplay.state === 'cancelScheduled'
-                ? `${subscriptionDisplay.dateText ?? '이용 기간 종료일'}까지 현재 이용권을 사용할 수 있습니다.`
+                ? subscriptionDisplay.description
                 : '현재 이용권이 활성화되어 있습니다.'}
             </p>
             <Link href="/spokedu-master/subscription" className="mx-auto mt-4 flex h-11 max-w-[260px] items-center justify-center rounded-[12px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>

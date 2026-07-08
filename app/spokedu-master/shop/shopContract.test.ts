@@ -90,7 +90,7 @@ describe('SPOMAT purchase redirect route contract', () => {
     const route = read('app/api/spokedu-master/shop/spomat/purchase/route.ts');
 
     expect(route).toContain('isSpokeduMasterPaidPlanActive');
-    expect(route).toContain("row.plan === 'premium'");
+    expect(route).toContain("normalizeSpokeduMasterPlan(row.plan) === 'premium'");
     expect(route).toContain('isPlatformAdminUser');
     expect(route).not.toContain('searchParams');
     expect(route).not.toContain('request.nextUrl');

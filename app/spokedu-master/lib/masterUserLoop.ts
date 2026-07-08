@@ -84,7 +84,7 @@ export function selectMasterLoopAction(input: MasterLoopStateInput): MasterLoopA
       href: latestSpomove
         ? `/spokedu-master/spomove/session?preset=${latestSpomove.programId}`
         : '/spokedu-master/spomove',
-      summary: '단독 SPOMOVE는 일반 수업 기록으로 연결하지 않고 다시 실행합니다.',
+      summary: '최근 실행한 공식 활동을 큰 화면으로 다시 시작합니다.',
     };
   }
 

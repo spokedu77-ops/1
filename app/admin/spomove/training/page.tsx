@@ -195,6 +195,7 @@ type LaunchSettings = {
   numberRule: string;
   variantColorTheme: SpomoveColorThemeId;
   basicNumberOverlay: 'none' | '2' | '3';
+  flankerStimulusType: 'color' | 'number';
   flowFeatures: FlowFeatureKey[];
   flowColorTheme: 'default' | 'space' | 'neon' | 'ocean';
   flowDuration: number;
@@ -208,6 +209,8 @@ type LaunchSettings = {
   numberCartTier: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
+  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: 2패널 양손 모드 */
+  colorTrackerDualPanel: boolean;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
@@ -226,6 +229,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   numberRule: 'odd_left',
   variantColorTheme: 'color',
   basicNumberOverlay: 'none',
+  flankerStimulusType: 'color',
   flowFeatures: [],
   flowColorTheme: 'default',
   flowDuration: 25,
@@ -235,6 +239,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   moleDualPanel: false,
   numberCartTier: 2,
   colorTrackerTier: 2,
+  colorTrackerDualPanel: false,
   bodyLabelMode: 'hard',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -252,6 +257,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     numberRule: auto.numberRule ?? fallback.numberRule,
     variantColorTheme: auto.variantColorTheme ?? fallback.variantColorTheme,
     basicNumberOverlay: auto.basicNumberOverlay ?? fallback.basicNumberOverlay,
+    flankerStimulusType: auto.flankerStimulusType ?? fallback.flankerStimulusType,
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     flowColorTheme: auto.flowColorTheme ?? fallback.flowColorTheme,
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
@@ -261,6 +267,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     moleDualPanel: auto.moleDualPanel ?? fallback.moleDualPanel,
     numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
+    colorTrackerDualPanel: auto.colorTrackerDualPanel ?? fallback.colorTrackerDualPanel,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
   };
@@ -325,6 +332,7 @@ function TrainingPortal({
     numberRule: launch.numberRule,
     variantColorTheme: launch.variantColorTheme,
     basicNumberOverlay: launch.basicNumberOverlay,
+    flankerStimulusType: launch.flankerStimulusType,
     flowFeatures: launch.flowFeatures,
     flowColorTheme: launch.flowColorTheme,
     flowDuration: launch.flowDuration,
@@ -334,6 +342,7 @@ function TrainingPortal({
     moleDualPanel: launch.moleDualPanel,
     numberCartTier: launch.numberCartTier,
     colorTrackerTier: launch.colorTrackerTier,
+    colorTrackerDualPanel: launch.colorTrackerDualPanel,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
   };
@@ -345,7 +354,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.moleDualPanel}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flankerStimulusType}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.moleDualPanel}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -819,6 +828,47 @@ function SettingsScreen({
           </section>
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
+          {modeId === 'flanker' ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
+                <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
+                  {launch.flankerStimulusType === 'number' ? '색상 + 숫자' : '기본 색상'}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {([
+                  ['color', '기본 색상'],
+                  ['number', '색상 + 숫자 1~5'],
+                ] as const).map(([value, label]) => {
+                  const active = launch.flankerStimulusType === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, flankerStimulusType: value }))}
+                      style={{
+                        flex: '1 1 150px',
+                        padding: '11px 12px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 13,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {active ? '✓ ' : ''}{label}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
           {isReactTrain && levelId === 1 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
@@ -998,8 +1048,53 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·흰 공을 찾아라 9번 표시는 내부 난이도로 동작하므로 숨김) */}
-          {!isFlowOrChallenge && !(isReactTrain && levelId === 10) ? (
+          {/* 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 전용: 패널 모드 */}
+          {isReactTrain && levelId === 10 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>패널 모드</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  단일 화면은 한 필드에서 추적합니다. 2패널 양손은 좌·우 각각 독립 공을 동시에 추적합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: false, label: '단일 화면', sub: '기본' },
+                  { id: true, label: '2패널 양손', sub: '양손' },
+                ] as const).map((opt) => {
+                  const active = launch.colorTrackerDualPanel === opt.id;
+                  return (
+                    <button
+                      key={opt.label}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, colorTrackerDualPanel: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 속도 (DIVE·흰 공 9번·순차기억 1·2번은 내부 타이밍) */}
+          {!isFlowOrChallenge && !(isReactTrain && levelId === 10) && !(isSpatial && (levelId === 1 || levelId === 2)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
@@ -1012,6 +1107,15 @@ function SettingsScreen({
                 onChange={(v) => setLaunch((s) => ({ ...s, speed: v }))}
                 showPresets={false}
               />
+            </section>
+          ) : null}
+
+          {isSpatial && (levelId === 1 || levelId === 2) ? (
+            <section style={{ marginBottom: 26 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>색 전환 간격</label>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.55, fontWeight: 600 }}>
+                1.0~2.5초 사이에서 매 색마다 자동으로 바뀝니다.
+              </p>
             </section>
           ) : null}
 

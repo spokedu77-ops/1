@@ -47,7 +47,7 @@ export function prefetchNoteDocumentBlocks(documentId: string): void {
       entry.fetchedAt = Date.now();
       const activeDocId = useNoteBlockStore.getState().activeDocumentId;
       if (blocks && activeDocId !== documentId) {
-        rememberNoteDocumentBlocks(documentId, blocks);
+        rememberNoteDocumentBlocks(documentId, blocks, { trustServer: true });
       }
       return blocks;
     }),

@@ -5,16 +5,11 @@ import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
-type NoteBlockChangeRow = {
-  updated_by?: string | null;
-};
-
 export function useNoteBlocksRealtimeInvalidation(options: {
   documentId: string | null;
-  currentUserId: string | null;
   onInvalidate: (documentId: string) => void;
 }) {
-  const { documentId, currentUserId, onInvalidate } = options;
+  const { documentId, onInvalidate } = options;
 
   useEffect(() => {
     if (!documentId) return undefined;
@@ -31,14 +26,8 @@ export function useNoteBlocksRealtimeInvalidation(options: {
           table: 'note_blocks',
           filter: `document_id=eq.${documentId}`,
         },
-        (payload: RealtimePostgresChangesPayload<NoteBlockChangeRow>) => {
+        (_payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
           if (cancelled) return;
-          if (payload.eventType === 'DELETE') {
-            onInvalidate(documentId);
-            return;
-          }
-          const updatedBy = payload.new?.updated_by ?? null;
-          if (currentUserId && updatedBy === currentUserId) return;
           onInvalidate(documentId);
         },
       )
@@ -52,5 +41,5 @@ export function useNoteBlocksRealtimeInvalidation(options: {
       cancelled = true;
       void supabase.removeChannel(channel);
     };
-  }, [currentUserId, documentId, onInvalidate]);
+  }, [documentId, onInvalidate]);
 }

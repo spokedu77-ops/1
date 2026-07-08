@@ -51,6 +51,7 @@ export type OfficialSpomovePreset = {
     moleDualPanel?: boolean;
     numberCartTier?: 1 | 2 | 3;
     colorTrackerTier?: 1 | 2 | 3;
+    colorTrackerDualPanel?: boolean;
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
   };
@@ -771,7 +772,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 10, colorTrackerTier: 2 },
-    description: '흰 공을 끝까지 추적한 뒤 빨·노·초·파 구역 중 어디에 멈췄는지 맞추는 시지각 반응 활동(L1~L3)',
+    description: '흰 공을 끝까지 추적한 뒤 빨·노·초·파 구역 중 어디에 멈췄는지 맞추는 시지각 반응 활동(L1~L3, L3는 화면 간헐 플래시)',
     cueSeconds: 3,
     rounds: 5,
     bgmAutoPlay: true,
@@ -1114,10 +1115,11 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     bgmCategory: 'spomove-training',
     recommendedUse: '순서 기억, 작업기억, 차분한 마무리 활동',
     isReady: true,
-    settingSummary: '3색 기억 · 10라운드 · BGM 자동',
-    settingChips: ['3색 기억', '10라운드', 'BGM 자동'],
+    settingSummary: '3색 기억 · 1~2.5초 랜덤 · 10라운드 · BGM 자동',
+    settingChips: ['3색 기억', '1~2.5초 랜덤', '10라운드', 'BGM 자동'],
     executionFacts: [
       { label: '기억 방식', value: '3색 순서' },
+      { label: '색 전환', value: '1~2.5초 랜덤' },
       { label: '라운드', value: '10라운드' },
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
@@ -1142,10 +1144,11 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     bgmCategory: 'spomove-training',
     recommendedUse: '순서 기억, 작업기억 확장, 집중 마무리 활동',
     isReady: true,
-    settingSummary: '5색 기억 · 10라운드 · BGM 자동',
-    settingChips: ['5색 기억', '10라운드', 'BGM 자동'],
+    settingSummary: '5색 기억 · 1~2.5초 랜덤 · 10라운드 · BGM 자동',
+    settingChips: ['5색 기억', '1~2.5초 랜덤', '10라운드', 'BGM 자동'],
     executionFacts: [
       { label: '기억 방식', value: '5색 순서' },
+      { label: '색 전환', value: '1~2.5초 랜덤' },
       { label: '라운드', value: '10라운드' },
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },

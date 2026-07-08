@@ -34,7 +34,9 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('shows recent SPOMOVE re-entry without exposing other owners', () => {
     expect(hub).toContain('최근 SPOMOVE 활동');
-    expect(hub).toContain('아직 실행한 SPOMOVE 프로그램이 없습니다.');
+    expect(hub).toContain('최근 실행한 활동');
+    expect(hub).toContain('활동 선택');
+    expect(hub).toContain('아직 실행한 SPOMOVE 활동이 없습니다.');
     expect(hub).toContain('activity.ownerId === ownerId');
     expect(hub).toContain("activity.action === 'spomove_started'");
     expect(hub).toContain('slice(0, 3)');

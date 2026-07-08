@@ -146,7 +146,7 @@ export function getMasterProductPaymentFeatureLabels(product: MasterProductCatal
     return ['라이브러리', '수업 도구', '수업 기록', '안내문'];
   }
   if (product.id === 'premium') {
-    return ['라이트의 모든 기능', 'SPOMOVE', 'SPOMAT 회원가 구매 대상'];
+    return ['라이트의 모든 기능', 'SPOMOVE 공식 활동', '큰 화면 바로 실행', 'SPOMAT 회원가 구매'];
   }
   return ['별도 문의', '직접 결제 없음'];
 }
@@ -156,7 +156,7 @@ export function getMasterProductPaymentDescription(product: MasterProductCatalog
     return 'SPOMOVE를 제외한 수업 준비·운영 기능을 이용할 수 있습니다.';
   }
   if (product.id === 'premium') {
-    return 'SPOMOVE를 포함한 SPOKEDU MASTER의 모든 기능을 이용할 수 있습니다.';
+    return '라이트 전체 + SPOMOVE 공식 활동을 큰 화면으로 실행할 수 있습니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }

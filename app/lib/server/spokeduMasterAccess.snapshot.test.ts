@@ -92,6 +92,24 @@ describe('SPOKEDU MASTER server access snapshot', () => {
     });
   });
 
+  it('denies access for non-active statuses such as past_due even before period_end', () => {
+    expect(buildSpokeduMasterAccessSnapshot({
+      row: row({
+        plan: 'premium',
+        status: 'past_due',
+        period_end: '2099-01-01T00:00:00.000Z',
+      }),
+      isAdmin: false,
+    })).toMatchObject({
+      plan: 'premium',
+      subscriptionStatus: 'expired',
+      canUseLibrary: false,
+      canUseClassTools: false,
+      canUseRecords: false,
+      canUseSpomove: false,
+    });
+  });
+
   it('allows admin without forcing payment treatment', () => {
     expect(buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: true })).toMatchObject({
       plan: 'team',

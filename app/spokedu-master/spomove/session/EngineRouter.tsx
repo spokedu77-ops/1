@@ -107,6 +107,7 @@ type Props = {
   moleDualPanel?: boolean;
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
+  colorTrackerDualPanel?: boolean;
   flowFeatures?: string[];
   flowDuration?: number;
   onComplete: (payload: EngineCompletePayload) => void;
@@ -144,6 +145,7 @@ export function EngineRouter({
   moleDualPanel,
   numberCartTier,
   colorTrackerTier,
+  colorTrackerDualPanel,
   flowFeatures,
   flowDuration,
   onComplete,
@@ -329,6 +331,7 @@ export function EngineRouter({
         <ColorTrackerReactionTraining
           targetRounds={normalizeColorTrackerRounds(rounds ?? 20)}
           tier={colorTrackerTier ?? 2}
+          dualPanel={colorTrackerDualPanel ?? false}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />

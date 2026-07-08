@@ -31,6 +31,11 @@ function getPackId(theme: AppendixTheme): string {
   return SPOMOVE_THEMED_PACK_BY_THEME[theme].packId;
 }
 
+function getPackName(theme: AppendixTheme): string {
+  if (theme === 'fruit') return 'SPOMOVE 변형 색지각 과일';
+  return SPOMOVE_THEMED_PACK_BY_THEME[theme].packName;
+}
+
 async function loadStoredLabels(theme: AppendixTheme): Promise<string[] | null> {
   const supabase = getSupabaseBrowserClient();
   const { data } = await supabase
@@ -47,19 +52,29 @@ async function loadStoredLabels(theme: AppendixTheme): Promise<string[] | null> 
 }
 
 async function saveStoredLabels(theme: AppendixTheme, labels: string[]): Promise<string | null> {
-  const supabase = getSupabaseBrowserClient();
   const packId = getPackId(theme);
+  const supabase = getSupabaseBrowserClient();
   const { data: existing } = await supabase
     .from('think_asset_packs')
     .select('assets_json')
     .eq('id', packId)
     .maybeSingle();
   const existingJson = (existing?.assets_json ?? {}) as Record<string, unknown>;
-  const { error } = await supabase
-    .from('think_asset_packs')
-    .update({ assets_json: { ...existingJson, slotLabels: labels } })
-    .eq('id', packId);
-  return error?.message ?? null;
+
+  const res = await fetch('/api/admin/think-asset-pack', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'same-origin',
+    body: JSON.stringify({
+      id: packId,
+      name: getPackName(theme),
+      theme: 'iiwarmup',
+      assets_json: { ...existingJson, slotLabels: labels },
+    }),
+  });
+  const body = (await res.json().catch(() => ({}))) as { error?: string };
+  if (!res.ok) return body.error ?? res.statusText;
+  return null;
 }
 
 function CategoryContent({ theme }: { theme: AppendixTheme }) {
@@ -70,15 +85,17 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const userEditedRef = useRef(false);
+  const loadGenRef = useRef(0);
 
   useEffect(() => {
-    const defaults = getDefaultLabels(theme);
-    setLabels(defaults);
+    const gen = ++loadGenRef.current;
+    userEditedRef.current = false;
     setEditingIdx(null);
+    const defaults = getDefaultLabels(theme);
     void loadStoredLabels(theme).then((stored) => {
-      if (stored) {
-        setLabels(defaults.map((def, i) => stored[i] ?? def));
-      }
+      if (loadGenRef.current !== gen || userEditedRef.current) return;
+      setLabels(stored ? defaults.map((def, i) => stored[i] ?? def) : defaults);
     });
   }, [theme]);
 
@@ -92,6 +109,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
     if (editingIdx === null) return;
     const next = [...labels];
     next[editingIdx] = editValue.trim() || (getDefaultLabels(theme)[editingIdx] ?? '');
+    userEditedRef.current = true;
     setLabels(next);
     setEditingIdx(null);
   };
@@ -249,6 +267,7 @@ function CategoryContent({ theme }: { theme: AppendixTheme }) {
         </span>
         <button
           type="button"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={handleSave}
           disabled={saving}
           style={{

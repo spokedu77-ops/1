@@ -66,4 +66,24 @@ describe('noteDocumentBlocksCache', () => {
     rememberNoteDocumentBlocks('doc-empty', []);
     expect(readRememberedNoteDocumentBlocks('doc-empty')).toEqual([]);
   });
+
+  it('ignores suspicious local shrink that would poison session cache', () => {
+    const many = Array.from({ length: 8 }, (_, index) => ({
+      ...block(`b${index}`),
+      order_index: index,
+    }));
+    rememberNoteDocumentBlocks('doc-1', many, { trustServer: true });
+    rememberNoteDocumentBlocks('doc-1', [many[0]]);
+    expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(8);
+  });
+
+  it('allows intentional shrink when trustServer is set', () => {
+    const many = Array.from({ length: 8 }, (_, index) => ({
+      ...block(`b${index}`),
+      order_index: index,
+    }));
+    rememberNoteDocumentBlocks('doc-1', many, { trustServer: true });
+    rememberNoteDocumentBlocks('doc-1', [many[0]], { trustServer: true });
+    expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(1);
+  });
 });

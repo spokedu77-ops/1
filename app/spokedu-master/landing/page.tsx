@@ -16,7 +16,7 @@ const FEATURES = [
     color: 'rgba(16,185,129,0.15)',
     ic: 'var(--spm-grn)',
     title: 'SPOMOVE',
-    desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다. 프리미엄 이용권에서 60개 공식 활동을 실행할 수 있습니다.',
+    desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다. 프리미엄 이용권에서 SPOMOVE 공식 활동을 큰 화면으로 실행할 수 있습니다.',
     items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '화면 신호 반응 활동 (프리미엄)'],
   },
   {
@@ -60,7 +60,7 @@ const PRICING = [
 
 const STATS = [
   { label: '수업 프로그램', value: '100+', Icon: BookOpen },
-  { label: 'SPOMOVE 공식 활동', value: '60개', Icon: Zap },
+  { label: 'SPOMOVE 공식 활동', value: '큰 화면', Icon: Zap },
   { label: '연령 대상', value: '유아~중등', Icon: Users },
   { label: '수업 공간', value: '실내 · 실외', Icon: MapPin },
 ];

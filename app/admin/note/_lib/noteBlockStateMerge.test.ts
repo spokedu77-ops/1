@@ -5,6 +5,7 @@ import {
   LOCAL_ONLY_BLOCK_GRACE_MS,
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
+  serverSnapshotRecoversMissingBlocks,
   unionReconciledWithLocalBlocks,
   wouldReconcileRegressActiveText,
 } from './noteBlockStateMerge';
@@ -179,5 +180,17 @@ describe('wouldReconcileRegressActiveText', () => {
     useNoteBlockStore.getState().patchContent('a', { text: 'hello world!' });
     const merged = [block('a', 'hello', { document_id: 'child-doc', type: 'todo' })];
     expect(wouldReconcileRegressActiveText(merged)).toBe(true);
+  });
+});
+
+describe('serverSnapshotRecoversMissingBlocks', () => {
+  it('detects when server has substantially more blocks than local UI', () => {
+    const local = [block('a', 'one', { document_id: 'doc-1' })];
+    const server = [
+      block('a', 'one', { document_id: 'doc-1' }),
+      block('b', 'two', { document_id: 'doc-1', order_index: 1 }),
+      block('c', 'three', { document_id: 'doc-1', order_index: 2 }),
+    ];
+    expect(serverSnapshotRecoversMissingBlocks(local, server, 'doc-1')).toBe(true);
   });
 });

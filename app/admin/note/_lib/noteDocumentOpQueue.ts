@@ -22,6 +22,11 @@ export type NoteDocumentOpQueueDeps = {
   onError?: (error: Error) => void;
   onServerPatches?: (blocks: PatchedNoteBlock[]) => void;
   onServerConflicts?: (blocks: NoteBlock[]) => void;
+  /** op-log sync 활성 시 HTTP persist 대신 coordinator에 위임 */
+  persistViaOpLog?: (
+    op: NotePersistOp,
+    options?: { immediate?: boolean },
+  ) => Promise<void>;
 };
 
 function contentRecordsEqual(
@@ -203,6 +208,28 @@ export class NoteDocumentOpQueue {
   private async runCreateBlock(
     op: Extract<NotePersistOp, { type: 'createBlock' }>,
   ): Promise<NoteBlock> {
+    if (this.deps.persistViaOpLog) {
+      await this.deps.persistViaOpLog(op, { immediate: true });
+      const existing = op.id ? this.deps.getBlock(op.id) : undefined;
+      if (existing) {
+        this.deps.triggerSave();
+        return existing;
+      }
+      const fallback: NoteBlock = {
+        id: op.id ?? crypto.randomUUID(),
+        document_id: op.documentId,
+        parent_block_id: op.parent_block_id,
+        type: op.blockType,
+        order_index: op.order_index ?? 0,
+        content: op.content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        version: 1,
+      };
+      this.deps.triggerSave();
+      return fallback;
+    }
+
     if (op.normalizeOrders !== undefined || op.transactionUpdates !== undefined) {
       const result = await postNoteBlockCreateTransaction(
         {
@@ -285,6 +312,12 @@ export class NoteDocumentOpQueue {
   private async runPersistOp(op: NotePersistOp): Promise<void> {
     this.persistInFlight = true;
     try {
+      if (this.deps.persistViaOpLog) {
+        await this.deps.persistViaOpLog(op, { immediate: op.type !== 'patchContent' });
+        this.deps.triggerSave();
+        return;
+      }
+
       switch (op.type) {
       case 'patchContent': {
         if (op.updates.length === 0) return;

@@ -12,10 +12,23 @@ import {
   type CreateBlockPersistArgs,
   type SoftDeletePersistArgs,
 } from '../_lib/noteDocumentOpQueue';
-import { markNoteLocalSave } from '../_lib/noteReconcileIdle';
+import {
+  markNoteLocalSave,
+} from '../_lib/noteReconcileIdle';
+import {
+  broadcastNoteBlockVersions,
+  subscribeNoteCrossTabBlockSync,
+} from '../_lib/noteCrossTabBlockSync';
 import { setNoteContentSavePending } from '../_lib/notePendingSave';
 import type { NoteBlockFieldPatch, PatchedNoteBlock } from '../_lib/noteBlocksApi';
 import { purgeNoteBlockFromTrash, restoreNoteBlockFromTrash } from '../_lib/noteBlocksApi';
+import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
+import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
+import {
+  disposeNoteSyncCoordinator,
+  getNoteSyncCoordinator,
+  type NoteSyncCoordinator,
+} from '../_lib/noteSyncCoordinator';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from '../_lib/types';
 
@@ -30,6 +43,9 @@ export type NoteDocumentEngineApi = {
   clearContentPatch: (blockId: string) => void;
   flushContentPatches: () => Promise<void>;
   flushPersistQueue: () => Promise<void>;
+  hydrateFromLocal: () => Promise<NoteBlock[] | null>;
+  syncWithServer: (initialBlocks: NoteBlock[]) => Promise<void>;
+  scheduleOplogPull: () => void;
   persistSoftDelete: (args: SoftDeletePersistArgs) => Promise<void>;
   persistFieldPatches: (patches: NoteBlockFieldPatch[]) => Promise<void>;
   persistCreateBlock: (args: CreateBlockPersistArgs) => Promise<NoteBlock>;
@@ -42,8 +58,8 @@ export type NoteDocumentEngineApi = {
   getBlocks: () => NoteBlock[];
   hasPendingContent: () => boolean;
   hasPendingPersist: () => boolean;
+  isOplogSyncEnabled: () => boolean;
 };
-
 export function useNoteDocumentEngine(options: {
   documentId: string | null;
   blocksRef: React.MutableRefObject<NoteBlock[]>;
@@ -53,9 +69,10 @@ export function useNoteDocumentEngine(options: {
 }): NoteDocumentEngineApi {
   const { documentId, blocksRef, setBlocks, triggerSave, onError } = options;
   const queueRef = useRef<NoteDocumentOpQueue | null>(null);
+  const coordinatorRef = useRef<NoteSyncCoordinator | null>(null);
   const triggerSaveRef = useRef(triggerSave);
   const onErrorRef = useRef(onError);
-
+  const oplogEnabled = isNoteOplogSyncEnabled();
   useLayoutEffect(() => {
     triggerSaveRef.current = triggerSave;
     onErrorRef.current = onError;
@@ -74,7 +91,9 @@ export function useNoteDocumentEngine(options: {
     setBlocks(next);
   }, [documentId, setBlocks]);
 
-  const applyServerVersions = useCallback((patched: PatchedNoteBlock[]) => {
+  const applyServerVersions = useCallback((
+    patched: Array<Pick<NoteBlock, 'id' | 'version' | 'updated_at'>>,
+  ) => {
     if (!documentId || patched.length === 0) return;
     const nextFromRef = applyServerBlockVersions(blocksRef.current, patched);
     blocksRef.current = nextFromRef;
@@ -115,12 +134,40 @@ export function useNoteDocumentEngine(options: {
     applyServerConflictsRef.current = applyServerConflicts;
   }, [applyServerConflicts]);
 
-  useEffect(() => {
+  const applyCoordinatorBlocks = useCallback((updatedBlocks: NoteBlock[]) => {
+    if (!documentId) return;
+    const merged = mergeBlocksWithStoreContent(
+      updatedBlocks.filter((block) => block.document_id === documentId),
+    );
+    applyLocal({ type: 'replaceBlocks', blocks: merged });
+    coordinatorRef.current?.setBlocks(merged);
+  }, [applyLocal, documentId]);
+
+  const applyCoordinatorBlocksRef = useRef(applyCoordinatorBlocks);
+  useLayoutEffect(() => {
+    applyCoordinatorBlocksRef.current = applyCoordinatorBlocks;
+  }, [applyCoordinatorBlocks]);
+
+  useLayoutEffect(() => {
     queueRef.current?.dispose();
     queueRef.current = null;
     if (!documentId) {
+      coordinatorRef.current = null;
       setNoteContentSavePending(false);
       return;
+    }
+
+    let coordinator: NoteSyncCoordinator | null = null;
+    if (oplogEnabled) {
+      coordinator = getNoteSyncCoordinator(documentId, {
+        onBlocksUpdated: (blocks) => {
+          applyCoordinatorBlocksRef.current(blocks);
+        },
+        onError: (error) => onErrorRef.current?.(error),
+      });
+      coordinatorRef.current = coordinator;
+    } else {
+      coordinatorRef.current = null;
     }
 
     queueRef.current = new NoteDocumentOpQueue({
@@ -129,19 +176,49 @@ export function useNoteDocumentEngine(options: {
       triggerSave: () => triggerSaveRef.current(),
       onError: (error) => onErrorRef.current?.(error),
       onServerPatches: (patched) => {
+        if (oplogEnabled) return;
         markNoteLocalSave(documentId);
         applyServerVersionsRef.current(patched);
+        broadcastNoteBlockVersions(documentId, patched);
       },
-      onServerConflicts: (conflicts) => applyServerConflictsRef.current(conflicts),
+      onServerConflicts: (conflicts) => {
+        if (oplogEnabled) return;
+        applyServerConflictsRef.current(conflicts);
+        const versionPatches = conflicts.map((block) => ({
+          id: block.id,
+          version: block.version,
+          updated_at: block.updated_at,
+        }));
+        broadcastNoteBlockVersions(documentId, versionPatches);
+      },
+      persistViaOpLog: coordinator
+        ? (op, options) => coordinator!.enqueuePersistOp(op, options)
+        : undefined,
     });
 
     return () => {
+      const leavingDocumentId = documentId;
+      const leavingCoordinator = coordinator;
+      void queueRef.current?.drain().finally(() => {
+        void leavingCoordinator?.drain().finally(() => {
+          if (oplogEnabled) {
+            disposeNoteSyncCoordinator(leavingDocumentId);
+          }
+        });
+      });
       queueRef.current?.dispose();
       queueRef.current = null;
+      coordinatorRef.current = null;
       setNoteContentSavePending(false);
     };
-  }, [documentId, blocksRef]);
-
+  }, [documentId, blocksRef, oplogEnabled]);
+  useEffect(() => {
+    if (!documentId || oplogEnabled) return undefined;
+    return subscribeNoteCrossTabBlockSync((message) => {
+      if (message.documentId !== documentId) return;
+      applyServerVersionsRef.current(message.blocks);
+    });
+  }, [documentId, oplogEnabled]);
   const replaceBlocks = useCallback((blocks: NoteBlock[]) => {
     applyLocal({ type: 'replaceBlocks', blocks });
   }, [applyLocal]);
@@ -172,9 +249,25 @@ export function useNoteDocumentEngine(options: {
 
   const flushPersistQueue = useCallback(async () => {
     await queueRef.current?.drain();
+    await coordinatorRef.current?.drain();
     syncPendingFlag();
   }, [syncPendingFlag]);
 
+  const hydrateFromLocal = useCallback(async () => {
+    if (!coordinatorRef.current) return null;
+    return coordinatorRef.current.hydrateFromLocal();
+  }, []);
+
+  const syncWithServer = useCallback(async (initialBlocks: NoteBlock[]) => {
+    if (!coordinatorRef.current) return;
+    await coordinatorRef.current.syncWithServer(initialBlocks);
+  }, []);
+
+  const scheduleOplogPull = useCallback(() => {
+    coordinatorRef.current?.schedulePull();
+  }, []);
+
+  const isOplogSyncEnabledFn = useCallback(() => oplogEnabled, [oplogEnabled]);
   const hasPendingPersist = useCallback(
     () => queueRef.current?.hasPendingPersist() ?? false,
     [],
@@ -257,6 +350,9 @@ export function useNoteDocumentEngine(options: {
     clearContentPatch,
     flushContentPatches,
     flushPersistQueue,
+    hydrateFromLocal,
+    syncWithServer,
+    scheduleOplogPull,
     persistSoftDelete,
     persistFieldPatches,
     persistCreateBlock,
@@ -266,6 +362,7 @@ export function useNoteDocumentEngine(options: {
     getBlocks,
     hasPendingContent,
     hasPendingPersist,
+    isOplogSyncEnabled: isOplogSyncEnabledFn,
   }), [
     replaceBlocks,
     updateContent,
@@ -273,6 +370,9 @@ export function useNoteDocumentEngine(options: {
     clearContentPatch,
     flushContentPatches,
     flushPersistQueue,
+    hydrateFromLocal,
+    syncWithServer,
+    scheduleOplogPull,
     persistSoftDelete,
     persistFieldPatches,
     persistCreateBlock,
@@ -282,5 +382,6 @@ export function useNoteDocumentEngine(options: {
     getBlocks,
     hasPendingContent,
     hasPendingPersist,
+    isOplogSyncEnabledFn,
   ]);
 }

@@ -42,8 +42,8 @@ const FEATURE_COPY = {
   },
   spomove: {
     icon: MonitorPlay,
-    title: 'SPOMOVE는 프리미엄 이용권에서 사용할 수 있습니다',
-    desc: 'SPOMOVE 허브와 세션은 프리미엄 권한이 필요합니다.',
+    title: 'SPOMOVE는 프리미엄에서 이용할 수 있습니다',
+    desc: '수업 중 프로젝터·TV·태블릿에 연결해 SPOMOVE 공식 활동을 큰 화면으로 바로 실행하려면 프리미엄이 필요합니다.',
   },
 } as const;
 
@@ -84,7 +84,7 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
                     ? '수업 도구'
                     : requirement === 'library'
                       ? '라이브러리 · 전체 수업 자료'
-                      : 'SPOMOVE 허브와 세션'}
+                      : 'SPOMOVE 공식 활동 · 큰 화면 실행'}
               </p>
             </div>
           </div>

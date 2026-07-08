@@ -43,16 +43,20 @@ function normalizeThemedPaths(raw: unknown, slotCount: number): (string | null)[
 export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveColorThemeId) {
   const [slides, setSlides] = useState<FruitSlide[]>([]);
   const [status, setStatus] = useState<AssetLoadStatus>('idle');
+  const [loadedTheme, setLoadedTheme] = useState<SpomoveColorThemeId | null>(null);
   const reqIdRef = useRef(0);
 
   const reload = useCallback(async () => {
     const thisId = ++reqIdRef.current;
+    setSlides([]);
+    setLoadedTheme(null);
     setStatus('loading');
 
     try {
       if (variantColorTheme === 'color') {
         if (reqIdRef.current !== thisId) return;
         setSlides([]);
+        setLoadedTheme(variantColorTheme);
         setStatus('ready');
         return;
       }
@@ -73,6 +77,7 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
         );
         const built = fruitSlidesForTrainingFromPaths(raw?.paths, cacheBust);
         setSlides(built);
+        setLoadedTheme(variantColorTheme);
         setStatus('ready');
         return;
       }
@@ -97,10 +102,12 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
       });
       const built = buildVariantSlidesFromThemedUrls(urls);
       setSlides(built.length > 0 ? built : []);
+      setLoadedTheme(variantColorTheme);
       setStatus('ready');
     } catch {
       if (reqIdRef.current !== thisId) return;
       setSlides([]);
+      setLoadedTheme(variantColorTheme);
       setStatus('error');
     }
   }, [variantColorTheme]);
@@ -117,7 +124,7 @@ export function useSpomoveVariantSlidesForTraining(variantColorTheme: SpomoveCol
     return () => document.removeEventListener('visibilitychange', onVis);
   }, [reload]);
 
-  return { slides, status, reload };
+  return { slides, status, reload, loadedTheme };
 }
 
 const ALL_VARIANT_PACK_IDS = [
