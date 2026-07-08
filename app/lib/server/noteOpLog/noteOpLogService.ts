@@ -241,8 +241,39 @@ export async function pushNoteBlockOps(
   | { ok: true; lastSeq: number; appliedClientOpIds: string[]; blocks: NoteBlockSnapshot[] }
   | { ok: false; error: 'seq_conflict'; lastSeq: number; ops: NoteBlockOpRecord[] }
 > {
-  const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
-  if (baseSeq !== lastSeq) {
+  if (ops.length === 0) {
+    const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
+    return { ok: true, lastSeq, appliedClientOpIds: [], blocks: [] };
+  }
+
+  // client_op_id 기준 멱등 처리: 이미 기록된 op은 재적용하지 않는다(재시도/다중 탭 안전).
+  const clientOpIds = ops.map((op) => op.clientOpId);
+  const { data: existingRows, error: existingError } = await supabase
+    .from('note_block_ops')
+    .select('client_op_id')
+    .eq('document_id', documentId)
+    .in('client_op_id', clientOpIds);
+  if (existingError) throw new Error(existingError.message);
+  const existingSet = new Set((existingRows ?? []).map((row) => String(row.client_op_id)));
+
+  const newOps = ops.filter((op) => !existingSet.has(op.clientOpId));
+
+  if (newOps.length === 0) {
+    // 전부 이미 적용됨(순수 재시도) — 충돌 아님.
+    const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
+    return { ok: true, lastSeq, appliedClientOpIds: clientOpIds, blocks: [] };
+  }
+
+  // 원자적 seq 예약: 동시 push는 서로 겹치지 않는 범위를 받거나 -1(충돌)을 받는다.
+  const { data: reserved, error: reserveError } = await supabase.rpc('note_reserve_op_seqs', {
+    p_document_id: documentId,
+    p_base_seq: baseSeq,
+    p_count: newOps.length,
+  });
+  if (reserveError) throw new Error(reserveError.message);
+  const base = typeof reserved === 'number' ? reserved : Number(reserved);
+
+  if (!Number.isFinite(base) || base < 0) {
     const missed = await pullNoteBlockOps(supabase, documentId, baseSeq);
     return {
       ok: false,
@@ -252,55 +283,47 @@ export async function pushNoteBlockOps(
     };
   }
 
-  if (ops.length === 0) {
-    return { ok: true, lastSeq, appliedClientOpIds: [], blocks: [] };
-  }
-
-  let seq = lastSeq;
-  const appliedClientOpIds: string[] = [];
+  const appliedClientOpIds: string[] = [...existingSet];
   const blocks: NoteBlockSnapshot[] = [];
+  let seq = base;
 
-  for (const op of ops) {
-    const { data: existing } = await supabase
-      .from('note_block_ops')
-      .select('seq')
-      .eq('document_id', documentId)
-      .eq('client_op_id', op.clientOpId)
-      .maybeSingle();
-    if (existing) {
-      appliedClientOpIds.push(op.clientOpId);
-      continue;
-    }
-
+  for (const op of newOps) {
     seq += 1;
-    const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
-    blocks.push(...applied);
 
-    const { error: insertError } = await supabase.from('note_block_ops').insert({
-      document_id: documentId,
-      seq,
-      client_op_id: op.clientOpId,
-      actor_id: actorId,
-      op_type: op.opType,
-      payload: op.payload,
-    });
+    // 효과(note_blocks materialize)를 먼저 적용한 뒤 op을 기록한다.
+    // seq는 예약 범위라 유니크 충돌이 없고, insert 실패는 client_op_id 중복(다른 탭 선점)뿐이다.
+    const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
+
+    const { error: insertError } = await supabase
+      .from('note_block_ops')
+      .insert({
+        document_id: documentId,
+        seq,
+        client_op_id: op.clientOpId,
+        actor_id: actorId,
+        op_type: op.opType,
+        payload: op.payload,
+      });
     if (insertError) {
+      const duplicateClientOp =
+        insertError.code === '23505'
+        && insertError.message.includes('client_op');
+      if (duplicateClientOp) {
+        // 다른 탭이 같은 op을 먼저 기록함 — 효과는 멱등하므로 적용 결과만 반영.
+        blocks.push(...applied);
+        appliedClientOpIds.push(op.clientOpId);
+        continue;
+      }
       devLogger.error('[noteOpLog] insert op failed', insertError);
       throw new Error(insertError.message);
     }
+
+    blocks.push(...applied);
     appliedClientOpIds.push(op.clientOpId);
   }
 
-  const { error: stateError } = await supabase
-    .from('note_document_sync_state')
-    .upsert({
-      document_id: documentId,
-      last_seq: seq,
-      updated_at: new Date().toISOString(),
-    });
-  if (stateError) throw new Error(stateError.message);
-
-  return { ok: true, lastSeq: seq, appliedClientOpIds, blocks };
+  const { lastSeq } = await getNoteDocumentSyncState(supabase, documentId);
+  return { ok: true, lastSeq, appliedClientOpIds, blocks };
 }
 
 export async function loadNoteDocumentSnapshot(

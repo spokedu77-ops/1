@@ -18,7 +18,7 @@ import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
 const LEADER_CHANNEL = 'spm-note-sync-leader-v1';
-const LEADER_LEASE_MS = 4000;
+const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 
 export type NoteSyncCoordinatorCallbacks = {
   onBlocksUpdated: (blocks: NoteBlock[], lastAppliedSeq: number) => void;
@@ -96,11 +96,17 @@ export class NoteSyncCoordinator {
 
   private isLeader = false;
 
-  private leaderTimer: ReturnType<typeof setInterval> | null = null;
+  private isPushing = false;
+
+  private pushRequested = false;
+
+  private disposed = false;
 
   private leaderChannel: BroadcastChannel | null = null;
 
   private leaderListener: ((event: MessageEvent) => void) | null = null;
+
+  private leaderLockRelease: (() => void) | null = null;
 
   private blocks: NoteBlock[] = [];
 
@@ -167,11 +173,16 @@ export class NoteSyncCoordinator {
     const items = persistOpToPushItems(op);
     if (items.length === 0) return;
     await appendOutboundOps(this.documentId, items);
-    if (options?.immediate || op.type !== 'patchContent') {
-      this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);
-      return;
+    const delay = options?.immediate || op.type !== 'patchContent'
+      ? STRUCTURE_PUSH_DEBOUNCE_MS
+      : CONTENT_PUSH_DEBOUNCE_MS;
+    // outbound(IndexedDB)는 탭 간 공유되므로, 리더 탭이 실제 push를 담당한다.
+    // 비리더 탭에서의 편집은 리더에게 flush를 요청한다.
+    if (this.isLeader) {
+      this.schedulePush(delay);
+    } else {
+      this.requestLeaderFlush();
     }
-    this.schedulePush(CONTENT_PUSH_DEBOUNCE_MS);
   }
 
   schedulePull(): void {
@@ -190,8 +201,8 @@ export class NoteSyncCoordinator {
   }
 
   dispose(): void {
+    this.disposed = true;
     if (this.pushTimer) clearTimeout(this.pushTimer);
-    if (this.leaderTimer) clearInterval(this.leaderTimer);
     if (this.leaderChannel && this.leaderListener) {
       this.leaderChannel.removeEventListener('message', this.leaderListener);
       this.leaderChannel.close();
@@ -199,6 +210,18 @@ export class NoteSyncCoordinator {
     this.leaderChannel = null;
     this.leaderListener = null;
     this.isLeader = false;
+    // Web Lock 해제 → 다른 탭이 리더 승계.
+    this.leaderLockRelease?.();
+    this.leaderLockRelease = null;
+  }
+
+  private requestLeaderFlush(): void {
+    if (!this.leaderChannel) return;
+    this.leaderChannel.postMessage({
+      type: 'flush_request',
+      documentId: this.documentId,
+      tabId: getTabInstanceId(),
+    });
   }
 
   private schedulePush(delayMs: number): void {
@@ -209,42 +232,65 @@ export class NoteSyncCoordinator {
     }, delayMs);
   }
 
+  /** 재진입 방지 + outbound가 빌 때까지 드레인. 리더 탭에서만 동작. */
   private async flushPush(): Promise<void> {
-    if (!this.isLeader) return;
-    try {
-      const outbound = await listOutboundOps(this.documentId);
-      if (outbound.length === 0) return;
-
-      // 이번 flush 스냅샷의 모든 op은 push되거나(coalesce 유지) 후속 op에 흡수(coalesce 탈락)되므로
-      // 모두 "소비된" 것으로 간주해 성공 시 통째로 제거한다. flush 이후 새로 append된 op은
-      // 이 스냅샷에 없으므로 안전하게 남는다.
-      const consumedClientOpIds = outbound.map((op) => op.clientOpId);
-      const ops = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
-      let baseSeq = this.lastAppliedSeq;
-      let result = await pushOps(this.documentId, baseSeq, ops);
-
-      if (!result.ok) {
-        await this.applyRemoteOps(result.ops, result.lastSeq);
-        baseSeq = this.lastAppliedSeq;
-        result = await pushOps(this.documentId, baseSeq, ops);
-        if (!result.ok) {
-          throw new Error('seq_conflict after replay');
-        }
-      }
-
-      if (result.ok) {
-        this.blocks = mergeSnapshotPatches(this.blocks, result.blocks);
-        this.lastAppliedSeq = result.lastSeq;
-        await removeOutboundOps(consumedClientOpIds);
-        await this.persistLocal();
-        this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
-        this.broadcastState();
-      }
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      this.callbacks.onError?.(err);
-      devLogger.error('[NoteSyncCoordinator] push failed', err);
+    if (!this.isLeader || this.disposed) return;
+    if (this.isPushing) {
+      this.pushRequested = true;
+      return;
     }
+    this.isPushing = true;
+    try {
+      do {
+        this.pushRequested = false;
+        try {
+          // eslint-disable-next-line no-await-in-loop
+          while (await this.pushBatchOnce()) {
+            if (this.disposed) break;
+          }
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error));
+          this.callbacks.onError?.(err);
+          devLogger.error('[NoteSyncCoordinator] push failed', err);
+          this.schedulePush(1000);
+          break;
+        }
+      } while (this.pushRequested && !this.disposed);
+    } finally {
+      this.isPushing = false;
+    }
+  }
+
+  /** outbound 1배치 push. 진행이 있었으면 true(더 있을 수 있음), 없으면 false. */
+  private async pushBatchOnce(): Promise<boolean> {
+    const outbound = await listOutboundOps(this.documentId);
+    if (outbound.length === 0) return false;
+
+    // 이번 스냅샷의 모든 op은 push되거나(coalesce 유지) 후속 op에 흡수(coalesce 탈락)되므로
+    // 성공 시 통째로 제거한다. 이후 새로 append된 op은 이 스냅샷에 없어 안전하게 남는다.
+    const consumedClientOpIds = outbound.map((op) => op.clientOpId);
+    const ops = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
+
+    let result = await pushOps(this.documentId, this.lastAppliedSeq, ops);
+    if (!result.ok) {
+      // 서버 seq가 앞섰음 → 원격 op 반영(rebase) 후 1회 재시도.
+      await this.applyRemoteOps(result.ops, result.lastSeq);
+      result = await pushOps(this.documentId, this.lastAppliedSeq, ops);
+      if (!result.ok) {
+        // 여전히 충돌(또 다른 동시 push) → 반영만 하고 잠시 후 재시도.
+        await this.applyRemoteOps(result.ops, result.lastSeq);
+        this.schedulePush(500);
+        return false;
+      }
+    }
+
+    this.blocks = mergeSnapshotPatches(this.blocks, result.blocks);
+    this.lastAppliedSeq = result.lastSeq;
+    await removeOutboundOps(consumedClientOpIds);
+    await this.persistLocal();
+    this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+    this.broadcastState();
+    return true;
   }
 
   private async pullRemote(): Promise<void> {
@@ -276,43 +322,65 @@ export class NoteSyncCoordinator {
     });
   }
 
-  private startLeaderElection(): void {
-    if (typeof BroadcastChannel === 'undefined') {
-      this.isLeader = true;
-      return;
-    }
-    this.leaderChannel = new BroadcastChannel(LEADER_CHANNEL);
-    this.leaderListener = (event: MessageEvent) => {
-      const data = event.data as {
-        type?: string;
-        documentId?: string;
-        tabId?: string;
-        blocks?: NoteBlock[];
-        lastSeq?: number;
-      };
-      if (data?.documentId !== this.documentId) return;
-      if (data.type === 'state' && Array.isArray(data.blocks)) {
-        this.blocks = data.blocks;
-        this.lastAppliedSeq = typeof data.lastSeq === 'number' ? data.lastSeq : this.lastAppliedSeq;
-        void this.persistLocal();
-        this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
-      }
-      if (data.type === 'leader_ping' && data.tabId !== getTabInstanceId()) {
-        this.isLeader = false;
-      }
-    };
-    this.leaderChannel.addEventListener('message', this.leaderListener);
+  private leaderElectionStarted = false;
 
-    const claim = () => {
-      this.isLeader = true;
-      this.leaderChannel?.postMessage({
-        type: 'leader_ping',
-        documentId: this.documentId,
-        tabId: getTabInstanceId(),
+  private startLeaderElection(): void {
+    if (this.leaderElectionStarted) return;
+    this.leaderElectionStarted = true;
+
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.leaderChannel = new BroadcastChannel(LEADER_CHANNEL);
+      this.leaderListener = (event: MessageEvent) => {
+        const data = event.data as {
+          type?: string;
+          documentId?: string;
+          tabId?: string;
+          blocks?: NoteBlock[];
+          lastSeq?: number;
+        };
+        if (data?.documentId !== this.documentId) return;
+        if (data.tabId === getTabInstanceId()) return;
+
+        if (data.type === 'state' && Array.isArray(data.blocks)) {
+          this.blocks = data.blocks;
+          this.lastAppliedSeq = typeof data.lastSeq === 'number'
+            ? data.lastSeq
+            : this.lastAppliedSeq;
+          void this.persistLocal();
+          this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+        }
+        if (data.type === 'flush_request' && this.isLeader) {
+          // 다른 탭의 편집을 리더가 대신 push한다.
+          this.schedulePush(CONTENT_PUSH_DEBOUNCE_MS);
+        }
+      };
+      this.leaderChannel.addEventListener('message', this.leaderListener);
+    }
+
+    // Web Locks: exclusive lock을 잡은 단일 탭만 리더. 리더 탭이 닫히면 잠금이 풀려
+    // 대기 중인 다음 탭이 승계한다.
+    const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+    if (locks && typeof locks.request === 'function') {
+      void locks.request(
+        `${LEADER_LOCK_PREFIX}:${this.documentId}`,
+        { mode: 'exclusive' },
+        () => new Promise<void>((resolve) => {
+          if (this.disposed) {
+            resolve();
+            return;
+          }
+          this.isLeader = true;
+          this.leaderLockRelease = resolve;
+          // 리더가 되는 순간, 공유 outbound(다른 탭이 쌓아둔 것 포함)를 즉시 드레인.
+          this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);
+        }),
+      ).catch(() => {
+        // 잠금 획득 실패(경합/미지원) — 폴백으로 리더 처리.
+        this.isLeader = true;
       });
-    };
-    claim();
-    this.leaderTimer = setInterval(claim, LEADER_LEASE_MS);
+    } else {
+      this.isLeader = true;
+    }
   }
 
   private broadcastState(): void {

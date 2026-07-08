@@ -173,7 +173,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, colorTheme, motionScale, bgImageUrl, visualMode, initKey]); // bgmPath·panoramaHighUrl·panoramaLowUrl 제외 — 마운트 시 캡처, initKey로 강제 재시작
+  }, [stages.length, colorTheme, motionScale, bgImageUrl, visualMode, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 

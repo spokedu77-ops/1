@@ -564,7 +564,7 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
   if (!embed) {
     return (
       <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
-        <p className="text-sm font-bold text-slate-500">가이드 영상 준비 중입니다.</p>
+        <p className="text-sm font-bold text-slate-500">등록된 가이드 영상이 없습니다.</p>
       </div>
     );
   }

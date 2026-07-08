@@ -36,6 +36,7 @@ import {
 } from './_player/lib/memoryColorSlots';
 import { loadFlowPresets, saveFlowPresets, type FlowPreset, type FlowVisualVariant } from './_player/lib/flowPresets';
 import { VariantAppendixFullscreen } from './_player/components/VariantAppendixFullscreen';
+import { useSpomoveDiveEnvironments } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
 
 /* ─── MemoryGameApp (Training 전용): SSR 비활성, 클라이언트 전용 ─── */
 const MemoryGameApp = dynamic(
@@ -616,6 +617,11 @@ function SettingsScreen({
   // ── Flow 즐겨찾기 ──────────────────────────────────────────────────────────
   const [flowPresets, setFlowPresets] = useState<FlowPreset[]>(() => loadFlowPresets());
   const [flowPresetError, setFlowPresetError] = useState<string | null>(null);
+  const { data: diveEnvData, getPreviewUrl: getDivePreviewUrl } = useSpomoveDiveEnvironments();
+  const diveSpaceEntry = diveEnvData.themes.space ?? null;
+  const diveAssetHubBgUrl = diveSpaceEntry
+    ? getDivePreviewUrl(diveSpaceEntry.hasHighRes ? diveSpaceEntry.panoramaPath : diveSpaceEntry.panoramaLowPath)
+    : null;
 
   const saveFlowPreset = () => {
     const name = window.prompt('즐겨찾기 이름', `세팅 ${flowPresets.length + 1}`);
@@ -1303,6 +1309,58 @@ function SettingsScreen({
                   fontFamily: 'inherit',
                 }}
               />
+            </section>
+          ) : null}
+
+          {isFlowOrChallenge && launch.flowVisualVariant !== 'plus' ? (
+            <section style={{ marginTop: -14, marginBottom: 22 }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button
+                  type="button"
+                  disabled={!diveAssetHubBgUrl}
+                  onClick={() => {
+                    if (!diveAssetHubBgUrl) return;
+                    setLaunch((s) => ({ ...s, flowBgImageUrl: diveAssetHubBgUrl }));
+                  }}
+                  style={{
+                    flex: '1 1 170px',
+                    padding: '9px 10px',
+                    borderRadius: 10,
+                    border: `1.5px solid ${diveAssetHubBgUrl ? '#22d3ee' : T.border}`,
+                    background: diveAssetHubBgUrl ? 'rgba(34,211,238,0.10)' : T.card,
+                    color: diveAssetHubBgUrl ? '#22d3ee' : T.muted,
+                    fontFamily: 'inherit',
+                    fontSize: 12,
+                    fontWeight: 850,
+                    cursor: diveAssetHubBgUrl ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  Asset Hub 배경 불러오기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLaunch((s) => ({ ...s, flowBgImageUrl: '' }))}
+                  style={{
+                    flex: '1 1 120px',
+                    padding: '9px 10px',
+                    borderRadius: 10,
+                    border: `1.5px solid ${T.border}`,
+                    background: T.card,
+                    color: T.textDim,
+                    fontFamily: 'inherit',
+                    fontSize: 12,
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  배경 지우기
+                </button>
+              </div>
+              {!diveAssetHubBgUrl ? (
+                <p style={{ margin: '7px 0 0', fontSize: 10, color: T.muted, lineHeight: 1.5 }}>
+                  Asset Hub DIVE 환경 파노라마가 없으면 불러오기 버튼은 비활성화됩니다.
+                </p>
+              ) : null}
             </section>
           ) : null}
 
