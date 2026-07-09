@@ -110,8 +110,14 @@ export function useNoteDocumentEngine(options: {
   }, [getPipeline]);
 
   const replaceBlocks = useCallback((blocks: NoteBlock[]) => {
-    getPipeline().dispatch({ type: 'replaceBlocks', blocks });
-  }, [getPipeline]);
+    const pipeline = pipelineRef.current;
+    if (!pipeline) {
+      useNoteBlockStore.getState().applyBlocks(() => blocks);
+      onBlocksChangedRef.current(blocks);
+      return;
+    }
+    pipeline.dispatch({ type: 'replaceBlocks', blocks });
+  }, []);
 
   const updateContent = useCallback((blockId: string, content: Record<string, unknown>) => {
     getPipeline().dispatch({ type: 'patchContent', blockId, content });
