@@ -242,9 +242,9 @@ export class NoteDocumentPipeline {
     if (this.queue) {
       return this.queue.enqueueRestoreBlock({ id: blockId });
     }
-    const block = await restoreNoteBlockFromTrash(blockId);
+    const blocks = await restoreNoteBlockFromTrash(blockId);
     this.callbacks.triggerSave();
-    return [block];
+    return blocks;
   }
 
   async persistPurgeBlock(blockId: string): Promise<void> {
