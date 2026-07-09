@@ -109,7 +109,7 @@ function MyClassesContent() {
   const [uploading, setUploading] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [fileUrls, setFileUrls] = useState<string[]>([]);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState<Date | null>(null);
   const [isLessonPlanModalOpen, setIsLessonPlanModalOpen] = useState(false);
   const [lessonPlanContent, setLessonPlanContent] = useState(LESSON_PLAN_DEFAULT_TEMPLATE);
   const [lessonPlanSaving, setLessonPlanSaving] = useState(false);
@@ -188,6 +188,7 @@ function MyClassesContent() {
       if (!session?.user) return;
       setScheduleUserId(session.user.id);
 
+      if (!currentDate) return;
       const { monday, sunday } = getWeekRange(new Date(currentDate));
 
       const res = await fetch(
@@ -203,6 +204,10 @@ function MyClassesContent() {
       setLoading(false);
     }
   }, [supabase, currentDate]);
+
+  useEffect(() => {
+    setCurrentDate((prev) => prev ?? new Date());
+  }, []);
 
   useEffect(() => { getMySchedule(); }, [getMySchedule]);
 
@@ -518,6 +523,14 @@ function MyClassesContent() {
     setLessonPlanContent(content);
     if (previousPlansExpandedId) setPreviousPlansExpandedId(null);
   };
+
+  if (!currentDate) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F8FAFC] pb-20">
+        <div className="text-sm font-black uppercase tracking-widest text-slate-300">Syncing...</div>
+      </div>
+    );
+  }
 
   const { monday, sunday } = getWeekRange(new Date(currentDate));
 
