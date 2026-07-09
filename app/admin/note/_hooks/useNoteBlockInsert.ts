@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
+import { devLogger } from '@/app/lib/logging/devLogger';
 import { newNoteBlockClientId } from '../_lib/noteSyncGuards';
 import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
