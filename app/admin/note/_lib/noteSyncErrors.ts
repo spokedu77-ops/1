@@ -6,6 +6,7 @@ export function isNoteSyncRecoverableError(message: string): boolean {
     || normalized.includes('unique constraint')
     || normalized.includes('note_block_ops_document_seq')
     || normalized.includes('note_block_ops_document_client_op')
+    || normalized.includes('block not found')
     || normalized.includes('sync state fetch failed')
     || normalized.includes('op pull failed')
     || normalized.includes('op push failed');

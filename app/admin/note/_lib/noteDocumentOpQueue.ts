@@ -114,13 +114,17 @@ export class NoteDocumentOpQueue {
     this.pendingContent.clear();
     this.contentFlushPending = false;
 
-    const updates = [...snapshot.entries()].map(([id, pending]) => {
-      return {
-        id,
-        content: pending.content,
-        baseContent: pending.baseContent,
-      };
-    });
+    const updates = [...snapshot.entries()]
+      .filter(([id]) => !!this.deps.getBlock(id))
+      .map(([id, pending]) => {
+        return {
+          id,
+          content: pending.content,
+          baseContent: pending.baseContent,
+        };
+      });
+
+    if (updates.length === 0) return;
 
     await this.enqueue({ type: 'patchContent', updates });
   }

@@ -14,7 +14,11 @@ describe('noteSyncErrors', () => {
     ))).toBeNull();
   });
 
+  it('does not surface stale block patches to users', () => {
+    expect(toNoteSyncUserMessage(new Error('block not found: abc'))).toBeNull();
+  });
+
   it('surfaces non-sync errors', () => {
-    expect(toNoteSyncUserMessage(new Error('block not found: abc'))).toBe('block not found: abc');
+    expect(toNoteSyncUserMessage(new Error('permission denied'))).toBe('permission denied');
   });
 });
