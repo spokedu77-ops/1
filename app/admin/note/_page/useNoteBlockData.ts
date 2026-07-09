@@ -95,35 +95,50 @@ export function useNoteBlockData(options: {
     cancelNoteReconcileIdle();
   }, []);
 
-  /** 모든 블록 변경은 canonical store에 먼저 적용하고 React는 그 결과를 투영한다. */
-  const setBlocks = useCallback((
-    value: NoteBlock[] | ((prev: NoteBlock[]) => NoteBlock[]),
-  ) => {
-    const store = useNoteBlockStore.getState();
-    const next = store.applyBlocks((current) => {
-      const raw = typeof value === 'function' ? value(current) : value;
-      return dedupeNoteBlocksById(raw);
-    });
-    blocksRef.current = next;
-    _setBlocks(next);
-  }, []);
-
   const handleEngineError = useCallback((error: Error) => {
     const message = toNoteSyncUserMessage(error);
     if (!message) return;
     setError(message);
   }, [setError]);
 
+  /** pipeline → React 투영. blocksRef는 store 구독으로 동기화 */
+  const handleBlocksChanged = useCallback((next: NoteBlock[]) => {
+    _setBlocks(next);
+  }, []);
+
   const documentEngine = useNoteDocumentEngine({
     documentId: selectedId,
-    blocksRef,
-    setBlocks,
+    onBlocksChanged: handleBlocksChanged,
     triggerSave: () => triggerSaveRef.current(),
     onError: handleEngineError,
   });
 
   const documentEngineRef = useRef(documentEngine);
   documentEngineRef.current = documentEngine;
+
+  /** blocksRef는 Zustand SSOT의 읽기 전용 미러 — 직접 쓰기 금지 */
+  useEffect(() => {
+    const syncRef = () => {
+      blocksRef.current = useNoteBlockStore.getState().getBlocksArray();
+    };
+    syncRef();
+    return useNoteBlockStore.subscribe(syncRef);
+  }, []);
+
+  /** 구조 변경 — 반드시 pipeline 경유 */
+  const setBlocks = useCallback((
+    value: NoteBlock[] | ((prev: NoteBlock[]) => NoteBlock[]),
+  ) => {
+    const current = useNoteBlockStore.getState().getBlocksArray();
+    const raw = typeof value === 'function' ? value(current) : value;
+    const next = dedupeNoteBlocksById(raw);
+    if (documentEngineRef.current) {
+      documentEngineRef.current.replaceBlocks(next);
+      return;
+    }
+    useNoteBlockStore.getState().applyBlocks(() => next);
+    _setBlocks(next);
+  }, []);
 
   const scheduleIdleReconcile = useCallback((
     documentId: string,
@@ -137,6 +152,17 @@ export function useNoteBlockData(options: {
   const handleRealtimeInvalidate = useCallback((documentId: string) => {
     if (selectedId !== documentId) return;
     if (documentEngineRef.current.isOplogSyncEnabled()) {
+      // legacy reconcile과 동일: 편집·pending 중이면 idle 뒤로 미룬다.
+      if (
+        isActiveNoteEditorFocused()
+        || documentEngineRef.current.hasPendingContent()
+        || documentEngineRef.current.hasPendingPersist()
+      ) {
+        reconcileDocumentIdRef.current = documentId;
+        reconcileLoadGenRef.current = blockLoadGenRef.current;
+        scheduleNoteReconcileIdle(documentId);
+        return;
+      }
       documentEngineRef.current.scheduleOplogPull();
       return;
     }
@@ -154,7 +180,19 @@ export function useNoteBlockData(options: {
     documentId: string,
     loadGen: number,
   ) => {
-    if (isNoteOplogSyncEnabled()) return;
+    if (isNoteOplogSyncEnabled()) {
+      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
+      if (
+        isActiveNoteEditorFocused()
+        || documentEngineRef.current.hasPendingContent()
+        || documentEngineRef.current.hasPendingPersist()
+      ) {
+        scheduleIdleReconcile(documentId, loadGen);
+        return;
+      }
+      documentEngineRef.current.scheduleOplogPull();
+      return;
+    }
     if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
     if (isNoteLocalSaveSuppressed(documentId)) return;
     if (
@@ -205,9 +243,9 @@ export function useNoteBlockData(options: {
         onAfterIdleReconcile?.();
         return;
       }
-      documentEngineRef.current.replaceBlocks(merged);
+      documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: json.blocks ?? [] });
       rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
-        merged.filter((block) => block.document_id === documentId),
+        useNoteBlockStore.getState().getBlocksArray().filter((block) => block.document_id === documentId),
       ), { trustServer: true });
       onAfterIdleReconcile?.();
     } catch (e) {
@@ -338,7 +376,6 @@ export function useNoteBlockData(options: {
   useEffect(() => {
     if (!selectedId) {
       setBlocks([]);
-      blocksRef.current = [];
       setLoadingBlocks(false);
       setBlocksSyncing(false);
       return;
@@ -354,22 +391,44 @@ export function useNoteBlockData(options: {
       const loadGen = blockLoadGenRef.current + 1;
       blockLoadGenRef.current = loadGen;
 
+      const finishOplogLoad = (
+        loaded: NoteBlock[],
+        mergeWithCurrent: boolean,
+      ) => {
+        const store = useNoteBlockStore.getState();
+        store.setActiveDocumentId(documentId);
+        if (mergeWithCurrent && blocksRef.current.length > 0) {
+          documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: loaded });
+        }
+        const current = documentEngineRef.current.getBlocks().filter(
+          (block) => block.document_id === documentId,
+        );
+        const { toggleMigration } = prepareLoadedNoteBlocks(loaded);
+        rememberNoteDocumentBlocks(
+          documentId,
+          mergeBlocksWithStoreContent(current),
+          { trustServer: true },
+        );
+        if (toggleMigration.created.length > 0) {
+          void persistToggleBodyMigration(
+            current.length > 0 ? current : loaded,
+            toggleMigration,
+          ).catch((e) => {
+            devLogger.error('[Note] persistToggleBodyMigration', e);
+          });
+        }
+      };
+
       const finishFromNetwork = async (loaded: NoteBlock[], mergeWithCurrent: boolean) => {
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
         if (documentEngineRef.current.isOplogSyncEnabled()) {
           try {
             await documentEngineRef.current.syncWithServer(loaded);
-            const synced = documentEngineRef.current.getBlocks().filter(
-              (block) => block.document_id === documentId,
-            );
-            if (synced.length > 0) {
-              applyFetchedBlocks(synced, documentId, { mergeWithCurrent });
-            } else {
-              applyFetchedBlocks(loaded, documentId, { mergeWithCurrent });
-            }
+            finishOplogLoad(loaded, mergeWithCurrent);
           } catch (e) {
             devLogger.error('[Note] oplog syncWithServer', e);
-            applyFetchedBlocks(loaded, documentId, { mergeWithCurrent });
+            documentEngineRef.current.dispatch({ type: 'hydrate', blocks: loaded });
+            finishOplogLoad(loaded, mergeWithCurrent);
           }
         } else {
           applyFetchedBlocks(loaded, documentId, { mergeWithCurrent });
@@ -388,16 +447,14 @@ export function useNoteBlockData(options: {
         if (documentEngineRef.current.isOplogSyncEnabled()) {
           void documentEngineRef.current.syncWithServer(bootstrapBlocks.blocks).then(() => {
             if (cancelled || blockLoadGenRef.current !== loadGen) return;
-            const synced = documentEngineRef.current.getBlocks().filter(
-              (block) => block.document_id === documentId,
-            );
-            replaceBlocks(synced.length > 0 ? synced : bootstrapBlocks.blocks, documentId);
+            finishOplogLoad(bootstrapBlocks.blocks, false);
             setLoadingBlocks(false);
             setBlocksSyncing(false);
             setError(null);
           }).catch((e) => {
             devLogger.error('[Note] oplog bootstrap sync', e);
-            replaceBlocks(bootstrapBlocks.blocks, documentId);
+            documentEngineRef.current.dispatch({ type: 'hydrate', blocks: bootstrapBlocks.blocks });
+            finishOplogLoad(bootstrapBlocks.blocks, false);
             setLoadingBlocks(false);
             setBlocksSyncing(false);
             setError(null);
@@ -418,7 +475,7 @@ export function useNoteBlockData(options: {
           const localBlocks = await documentEngineRef.current.hydrateFromLocal();
           if (cancelled || blockLoadGenRef.current !== loadGen) return;
           if (localBlocks && localBlocks.length > 0) {
-            replaceBlocks(localBlocks, documentId);
+            useNoteBlockStore.getState().setActiveDocumentId(documentId);
             setLoadingBlocks(false);
             setBlocksSyncing(true);
           }
@@ -510,7 +567,6 @@ export function useNoteBlockData(options: {
   }, [selectedId, setPendingDeleteUndo]);
 
   useEffect(() => {
-    blocksRef.current = blocks;
     if (!selectedId || blocksSyncing) return;
     const docBlocks = blocks.filter((block) => block.document_id === selectedId);
     rememberNoteDocumentBlocks(selectedId, docBlocks);

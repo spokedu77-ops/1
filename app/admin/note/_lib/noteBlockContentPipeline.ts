@@ -64,10 +64,6 @@ export function applyBlockContentChange({
 
   store.patchContent(block.id, nextRecord);
 
-  blocksRef.current = blocksRef.current.map((item) =>
-    item.id === block.id ? { ...item, content: nextRecord } : item,
-  );
-
   scheduleBlockContentSave(block.id, nextRecord, prevRecord);
   onAfterChange?.();
 

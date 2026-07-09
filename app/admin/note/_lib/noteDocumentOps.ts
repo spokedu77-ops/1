@@ -22,7 +22,7 @@ export type NotePersistOp =
   | { type: 'softDelete'; ids: string[] }
   | {
     type: 'createBlock';
-    id?: string;
+    id: string;
     documentId: string;
     blockType: NoteBlock['type'];
     content: Record<string, unknown>;

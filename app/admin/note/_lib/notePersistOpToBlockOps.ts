@@ -51,6 +51,9 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
     }];
   }
   case 'createBlock': {
+    if (!op.id) {
+      throw new Error('[Note] createBlock requires client id before op-log push');
+    }
     return [{
       clientOpId: newClientOpId(),
       opType: 'create_block',
@@ -109,19 +112,26 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
   }
 }
 
+/**
+ * 같은 블록의 patch_content만 최신으로 합친다.
+ * create → patch 등 상대 순서는 유지한다 (content를 앞으로 끌어올리면 block not found 발생).
+ */
 export function coalescePushItems(items: NoteBlockOpPushItem[]): NoteBlockOpPushItem[] {
-  const contentByBlock = new Map<string, NoteBlockOpPushItem>();
-  const rest: NoteBlockOpPushItem[] = [];
-
-  for (const item of items) {
+  const latestContentIndexByBlock = new Map<string, number>();
+  items.forEach((item, index) => {
     if (item.payload.opType === 'patch_content') {
-      contentByBlock.set(item.payload.blockId, item);
-      continue;
+      latestContentIndexByBlock.set(item.payload.blockId, index);
     }
-    rest.push(item);
-  }
+  });
 
-  return [...contentByBlock.values(), ...rest];
+  const result: NoteBlockOpPushItem[] = [];
+  items.forEach((item, index) => {
+    if (item.payload.opType === 'patch_content') {
+      if (latestContentIndexByBlock.get(item.payload.blockId) !== index) return;
+    }
+    result.push(item);
+  });
+  return result;
 }
 
 export function pushItemOpType(item: NoteBlockOpPushItem): string {

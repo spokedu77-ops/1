@@ -40,7 +40,7 @@ describe('applyBlockContentChange', () => {
     });
 
     expect(useNoteBlockStore.getState().getBlock('t')?.content?.title).toBe('섹션 제목');
-    expect(blocksRef.current[0].content?.title).toBe('섹션 제목');
+    // blocksRef는 store 구독 미러 — pipeline이 직접 갱신하지 않음
     expect(setBlocks).toHaveBeenCalled();
   });
 

@@ -110,52 +110,62 @@ export async function clearCrossSelectState(page) {
 }
 
 export async function crossDragBetweenRows(page, anchorId, hoverId) {
-  const anchor = await page.evaluate(
-    ({ blockId, edge }) => {
-      const esc = CSS.escape(blockId);
-      const row = document.querySelector(`[data-note-block-row][data-block-id="${esc}"]`);
-      if (!row) return null;
-      const targets = [
-        row.querySelector('[data-toggle-title]'),
-        row.querySelector('[data-note-list-text]'),
-        row.querySelector('[data-note-preview-text]'),
-        row.querySelector('.ProseMirror'),
-        row,
-      ].filter(Boolean);
-      const target = targets[0];
-      const rect = target.getBoundingClientRect();
-      const y = edge === 'start' ? rect.top + Math.min(12, rect.height / 2) : rect.bottom - Math.min(8, rect.height / 2);
-      const x = rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
-      return { x, y };
-    },
-    { blockId: anchorId, edge: 'start' },
-  );
-  const hover = await page.evaluate(
-    ({ blockId, edge }) => {
-      const esc = CSS.escape(blockId);
-      const row = document.querySelector(`[data-note-block-row][data-block-id="${esc}"]`);
-      if (!row) return null;
-      const targets = [
-        row.querySelector('[data-toggle-title]'),
-        row.querySelector('[data-note-list-text]'),
-        row.querySelector('[data-note-preview-text]'),
-        row.querySelector('.ProseMirror'),
-        row,
-      ].filter(Boolean);
-      const target = targets[0];
-      const rect = target.getBoundingClientRect();
-      const y = edge === 'end' ? rect.bottom - Math.min(8, rect.height / 2) : rect.top + Math.min(12, rect.height / 2);
-      const x = rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
-      return { x, y };
-    },
-    { blockId: hoverId, edge: 'end' },
-  );
-  if (!anchor || !hover) throw new Error(`drag points missing: ${anchorId} → ${hoverId}`);
+  await page.evaluate(
+    async ({ anchorId: aId, hoverId: hId }) => {
+      function dragPoint(blockId, edge) {
+        const esc = CSS.escape(blockId);
+        const row = document.querySelector(`[data-note-block-row][data-block-id="${esc}"]`);
+        if (!row) return null;
+        row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        const targets = [
+          row.querySelector('[data-toggle-title]'),
+          row.querySelector('[data-note-list-text]'),
+          row.querySelector('[data-note-preview-text]'),
+          row.querySelector('.ProseMirror'),
+          row,
+        ].filter(Boolean);
+        const target = targets[0];
+        const rect = target.getBoundingClientRect();
+        const y = edge === 'start'
+          ? rect.top + Math.min(12, rect.height / 2)
+          : rect.bottom - Math.min(8, rect.height / 2);
+        const x = rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
+        return { x, y, target };
+      }
 
-  await page.mouse.move(anchor.x, anchor.y);
-  await page.mouse.down();
-  await page.mouse.move(hover.x, hover.y, { steps: 18 });
+      const anchor = dragPoint(aId, 'start');
+      const hover = dragPoint(hId, 'end');
+      if (!anchor || !hover) {
+        throw new Error(`drag points missing: ${aId} → ${hId}`);
+      }
+
+      const pe = (type, x, y, buttons = 1) => new PointerEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        composed: true,
+        clientX: x,
+        clientY: y,
+        button: 0,
+        buttons,
+        pointerId: 1,
+        pointerType: 'mouse',
+        isPrimary: true,
+      });
+
+      anchor.target.dispatchEvent(pe('pointerdown', anchor.x, anchor.y, 1));
+
+      const steps = 24;
+      for (let i = 1; i <= steps; i += 1) {
+        const t = i / steps;
+        const x = anchor.x + (hover.x - anchor.x) * t;
+        const y = anchor.y + (hover.y - anchor.y) * t;
+        document.dispatchEvent(pe('pointermove', x, y, 1));
+        await new Promise((resolve) => setTimeout(resolve, 12));
+      }
+
+      document.dispatchEvent(pe('pointerup', hover.x, hover.y, 0));
+    },
+    { anchorId, hoverId },
+  );
   await page.waitForTimeout(400);
-  await page.mouse.up();
-  await page.waitForTimeout(300);
 }

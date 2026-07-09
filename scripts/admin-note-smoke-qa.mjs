@@ -1,6 +1,9 @@
 import nextEnv from '@next/env';
-import { createClient } from '@supabase/supabase-js';
-import { createServerClient } from '@supabase/ssr';
+import {
+  NOTE_QA_DOCUMENTS,
+  createNoteQaContext,
+  loadPlaywrightChromium,
+} from './note-qa/shared.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -16,85 +19,19 @@ loadEnvConfig(process.cwd());
  *   2) SPM_QA_PASSWORD + ADMIN_NOTE_QA_ID → 로그인 폼
  */
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
-const QA_ID = process.env.ADMIN_NOTE_QA_ID || process.env.SPM_QA_ADMIN_EMAIL || 'spm.qa.admin@spokedu.test';
 const QA_PASSWORD = process.env.ADMIN_NOTE_QA_PASSWORD || process.env.SPM_QA_PASSWORD || '';
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const SUPABASE_SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const RECONCILE_WAIT_MS = 3500;
-
-async function loadPlaywright() {
-  try {
-    const mod = await import('playwright');
-    return mod.chromium;
-  } catch {
-    console.warn('SKIP: playwright is not installed. Run: npm install -D playwright && npx playwright install chromium');
-    process.exit(0);
-  }
-}
-
-async function resolveAdminEmail() {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE) return QA_ID;
-  const service = createClient(SUPABASE_URL, SUPABASE_SERVICE, { auth: { persistSession: false } });
-  const { data, error } = await service.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (error) return QA_ID;
-  const preferred = [QA_ID, 'spm.qa.admin@spokedu.test', 'choijihoon@spokedu.com'];
-  for (const email of preferred) {
-    const found = data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (found?.email) return found.email;
-  }
-  return QA_ID;
-}
+/** CI·로컬 invariant QA와 동일한 고정 문서 */
+const FALLBACK_QA_DOC_ID = NOTE_QA_DOCUMENTS[0]?.id ?? '7c095438-335b-4318-a3fb-09145f01d24a';
 
 async function createAuthenticatedContext(browser) {
-  if (SUPABASE_URL && SUPABASE_ANON && SUPABASE_SERVICE) {
-    const adminEmail = await resolveAdminEmail();
-    const service = createClient(SUPABASE_URL, SUPABASE_SERVICE, { auth: { persistSession: false } });
-    const { data, error } = await service.auth.admin.generateLink({
-      type: 'magiclink',
-      email: adminEmail,
-      options: { redirectTo: `${BASE}/admin/note` },
-    });
-    if (!error && data?.properties?.action_link) {
-      const actionUrl = new URL(data.properties.action_link);
-      const tokenHash = actionUrl.searchParams.get('token');
-      const verificationType = actionUrl.searchParams.get('type') ?? 'magiclink';
-      if (tokenHash) {
-        const cookies = [];
-        const ssr = createServerClient(SUPABASE_URL, SUPABASE_ANON, {
-          cookies: {
-            getAll: () => cookies,
-            setAll: (nextCookies) => cookies.splice(0, cookies.length, ...nextCookies),
-          },
-        });
-        const { error: verifyError } = await ssr.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: verificationType,
-        });
-        if (!verifyError) {
-          const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
-          await context.addCookies(cookies.map((cookie) => ({
-            name: cookie.name,
-            value: cookie.value,
-            url: BASE,
-            httpOnly: cookie.options?.httpOnly,
-            secure: cookie.options?.secure,
-            sameSite: cookie.options?.sameSite === 'strict'
-              ? 'Strict'
-              : cookie.options?.sameSite === 'none'
-                ? 'None'
-                : 'Lax',
-          })));
-          return context;
-        }
-      }
-    }
+  try {
+    return await createNoteQaContext(browser, BASE);
+  } catch (authError) {
+    if (!QA_PASSWORD) throw authError;
   }
 
-  if (!QA_PASSWORD) {
-    throw new Error('No auth: set SUPABASE_SERVICE_ROLE_KEY or SPM_QA_PASSWORD.');
-  }
-
+  const QA_ID = process.env.ADMIN_NOTE_QA_ID || process.env.SPM_QA_ADMIN_EMAIL || 'spm.qa.admin@spokedu.test';
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   const page = await context.newPage();
   await page.goto(`${BASE}/login?type=admin&next=${encodeURIComponent('/admin/note')}`, {
@@ -108,15 +45,70 @@ async function createAuthenticatedContext(browser) {
   return context;
 }
 
-async function openNotePage(context) {
-  const page = await context.newPage();
-  await page.goto(`${BASE}/admin/note`, { waitUntil: 'domcontentloaded' });
-  await page.waitForLoadState('networkidle').catch(() => undefined);
-  return page;
-}
-
 function documentIdFromPage(page) {
   return new URL(page.url()).searchParams.get('id');
+}
+
+async function openDocument(page, documentId) {
+  await page.goto(
+    `${BASE}/admin/note?id=${encodeURIComponent(documentId)}`,
+    { waitUntil: 'domcontentloaded' },
+  );
+  await page.waitForLoadState('networkidle').catch(() => undefined);
+  await page.getByRole('status', { name: '페이지 불러오는 중' }).waitFor({ state: 'detached', timeout: 30000 }).catch(() => undefined);
+  await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
+  const currentId = documentIdFromPage(page);
+  if (currentId !== documentId) {
+    throw new Error(`openDocument expected ${documentId}, got ${currentId ?? 'none'}`);
+  }
+  await page.waitForTimeout(1500);
+}
+
+async function resolveLastPageChildDocumentId(page, parentDocumentId) {
+  return page.evaluate(async (parentId) => {
+    const res = await fetch(
+      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(parentId)}&skipReconcile=true`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) throw new Error(`blocks load failed (${res.status})`);
+    const json = await res.json();
+    const pageBlocks = (json.blocks ?? []).filter((block) => block.type === 'page');
+    const last = pageBlocks[pageBlocks.length - 1];
+    const childId = last?.content?.page_document_id;
+    return typeof childId === 'string' && childId.length > 0 ? childId : null;
+  }, parentDocumentId);
+}
+
+async function resolveDocumentId(page) {
+  const fromUrl = documentIdFromPage(page);
+  if (fromUrl) return fromUrl;
+
+  await page.goto(
+    `${BASE}/admin/note?id=${encodeURIComponent(FALLBACK_QA_DOC_ID)}`,
+    { waitUntil: 'domcontentloaded' },
+  );
+  await page.waitForTimeout(1500);
+  const afterNav = documentIdFromPage(page);
+  if (afterNav) return afterNav;
+
+  return page.evaluate(async (fallbackId) => {
+    const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
+    if (!res.ok) throw new Error(`bootstrap failed (${res.status})`);
+    const json = await res.json();
+    const docs = json.documents ?? [];
+    const existing = docs.find((doc) => doc.id === fallbackId);
+    if (existing) return existing.id;
+    if (docs.length > 0) return docs[0].id;
+    const createRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: 'Smoke QA' }),
+    });
+    if (!createRes.ok) throw new Error(`document create failed (${createRes.status})`);
+    const { document } = await createRes.json();
+    return document.id;
+  }, FALLBACK_QA_DOC_ID);
 }
 
 async function fetchBlocksInPage(page, documentId) {
@@ -172,25 +164,45 @@ async function clickDocumentBody(page) {
 }
 
 async function ensureDocumentWithBlocks(page) {
-  if (!/id=/.test(page.url())) {
-    const plusBtn = page.locator('button[title="새 페이지"]').first();
-    if (await plusBtn.isVisible().catch(() => false)) {
-      await plusBtn.click();
-    } else {
-      await page.getByRole('button', { name: /새 페이지/i }).first().click();
-    }
-    await page.waitForURL(/id=/, { timeout: 30000 });
-  }
-  await page.waitForTimeout(800);
-  await seedTextBlockIfEmpty(page, documentIdFromPage(page));
+  let documentId = await resolveDocumentId(page);
+  await openDocument(page, documentId);
+  documentId = await resolveDocumentId(page);
+  await seedTextBlockIfEmpty(page, documentId);
   await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
 }
 
 async function createFreshNote(page) {
-  const plusBtn = page.locator('button[title="새 페이지"]').first();
-  await plusBtn.click();
-  await page.waitForURL(/id=/, { timeout: 30000 });
-  const docId = documentIdFromPage(page);
+  const docId = await page.evaluate(async () => {
+    const docRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: `Smoke ${Date.now()}` }),
+    });
+    if (!docRes.ok) {
+      const j = await docRes.json().catch(() => null);
+      throw new Error(j?.error || `document create failed (${docRes.status})`);
+    }
+    const { document } = await docRes.json();
+    const blockRes = await fetch('/api/admin/note/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        documentId: document.id,
+        type: 'text',
+        content: { text: '', html: '' },
+        order_index: 0,
+        parent_block_id: null,
+      }),
+    });
+    if (!blockRes.ok) {
+      const j = await blockRes.json().catch(() => null);
+      throw new Error(j?.error || `block seed failed (${blockRes.status})`);
+    }
+    return document.id;
+  });
+  await openDocument(page, docId);
   await seedTextBlockIfEmpty(page, docId);
   await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
   return docId;
@@ -259,9 +271,24 @@ async function focusBlockAt(page, index) {
 }
 
 async function focusLastEditor(page) {
-  const count = await page.locator('[data-note-block-row]').count();
-  if (count < 1) throw new Error('no block rows');
-  return focusBlockAt(page, count - 1);
+  const editable = page.locator(
+    '[data-note-block-row] [data-note-editor-host], [data-note-block-row] [data-note-list-text]',
+  );
+  const count = await editable.count();
+  if (count > 0) {
+    const host = editable.last();
+    await host.scrollIntoViewIfNeeded();
+    await host.click({ position: { x: 40, y: 10 } });
+    await page.waitForTimeout(400);
+    const editor = host.locator('.ProseMirror').first();
+    if (await editor.count()) {
+      await editor.click();
+      return editor;
+    }
+  }
+  const rowCount = await page.locator('[data-note-block-row]').count();
+  if (rowCount < 1) throw new Error('no block rows');
+  return focusBlockAt(page, rowCount - 1);
 }
 
 async function clickEditorWhitespace(page) {
@@ -294,19 +321,122 @@ async function typeListTrigger(page, trigger) {
   await page.waitForTimeout(700);
 }
 
-async function blockParentIdFromApi(page, blockIndex, type = 'bulletList') {
-  return page.evaluate(async ({ index, blockType }) => {
-    const docId = new URL(location.href).searchParams.get('id');
-    const res = await fetch(
-      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(docId)}&skipReconcile=true`,
-      { credentials: 'include' },
-    );
-    const json = await res.json();
-    const blocks = (json.blocks ?? [])
-      .filter((b) => b.type === blockType)
-      .sort((a, b) => a.order_index - b.order_index);
-    return blocks[index]?.parent_block_id ?? null;
-  }, { index: blockIndex, blockType: type });
+async function createEmptyDocument(page) {
+  const docId = await page.evaluate(async () => {
+    const docRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: `Smoke ${Date.now()}` }),
+    });
+    if (!docRes.ok) {
+      const j = await docRes.json().catch(() => null);
+      throw new Error(j?.error || `document create failed (${docRes.status})`);
+    }
+    const { document } = await docRes.json();
+    return document.id;
+  });
+  await openDocument(page, docId);
+  return docId;
+}
+
+async function listSiblingMetaFromDom(page, index) {
+  const row = page.locator('[data-note-block-row][data-list-sibling="true"]').nth(index);
+  const blockId = await row.getAttribute('data-block-id');
+  const parentId = await row.getAttribute('data-parent-block-id');
+  return {
+    blockId: blockId ?? null,
+    parentId: parentId && parentId.length > 0 ? parentId : null,
+  };
+}
+
+async function blockTextFromDom(page, index = 0) {
+  const row = page.locator('[data-note-block-row]').nth(index);
+  const preview = row.locator('[data-note-preview-text]');
+  if (await preview.count()) {
+    return (await preview.innerText()).trim();
+  }
+  const listEditor = row.locator('[data-note-list-text] .ProseMirror');
+  if (await listEditor.count()) {
+    return (await listEditor.innerText()).trim();
+  }
+  const editor = row.locator('.ProseMirror');
+  if (await editor.count()) {
+    return (await editor.innerText()).trim();
+  }
+  return (await row.innerText()).trim();
+}
+
+async function waitForEditorSurface(page, index = 0) {
+  const row = page.locator('[data-note-block-row]').nth(index);
+  await row.waitFor({ state: 'visible', timeout: 30000 });
+  await page.waitForFunction(
+    (idx) => {
+      const target = document.querySelectorAll('[data-note-block-row]')[idx];
+      if (!target) return false;
+      return !!(
+        target.querySelector('[data-note-preview-text]')
+        || target.querySelector('[data-note-editor-host]')
+        || target.querySelector('[data-note-list-text]')
+        || target.querySelector('.ProseMirror')
+      );
+    },
+    index,
+    { timeout: 30000 },
+  );
+}
+
+async function typeInFirstBlock(page, text, index = 0) {
+  await waitForEditorSurface(page, index);
+  await focusBlockAt(page, index);
+  await page.waitForTimeout(400);
+  const prose = page.locator('[data-note-block-row]').nth(index).locator('.ProseMirror').first();
+  if (await prose.count()) {
+    await prose.click({ force: true });
+    await page.waitForTimeout(200);
+    await page.keyboard.insertText(text);
+  } else {
+    await page.keyboard.insertText(text);
+  }
+  await clickDocumentBody(page);
+  await page.waitForTimeout(900);
+}
+
+async function openChildDocumentFromLastPageBlock(page) {
+  const parentDocId = documentIdFromPage(page);
+  if (!parentDocId) throw new Error('parent document id missing');
+  const pageOpenBtn = page.locator('button[title="클릭하여 페이지 열기"]').last();
+  await pageOpenBtn.waitFor({ state: 'visible', timeout: 15000 });
+  await pageOpenBtn.click();
+  await page.waitForURL((url) => {
+    const id = url.searchParams.get('id');
+    return Boolean(id && id !== parentDocId);
+  }, { timeout: 20000 });
+  const childDocId = documentIdFromPage(page);
+  if (!childDocId) throw new Error('child document id missing after page open');
+  await waitForEditorSurface(page, 0);
+  return { parentDocId, childDocId };
+}
+
+async function waitForBlockText(page, expectedSubstring, index = 0, timeoutMs = 20000) {
+  const deadline = Date.now() + timeoutMs;
+  let last = '';
+  while (Date.now() < deadline) {
+    await clickDocumentBody(page);
+    await page.waitForTimeout(400);
+    last = await blockTextFromDom(page, index);
+    if (last.includes(expectedSubstring)) return last;
+    await page.waitForTimeout(500);
+  }
+  const apiText = await blockTextFromApi(page, index);
+  if (apiText.includes(expectedSubstring)) return apiText;
+  throw new Error(`timeout waiting for "${expectedSubstring}", dom="${last}" api="${apiText}"`);
+}
+
+async function blockTextFromPage(page, blockIndex, type = 'text', explicitDocumentId) {
+  const domText = await blockTextFromDom(page, blockIndex);
+  if (domText.length > 0) return domText;
+  return blockTextFromApi(page, blockIndex, type, explicitDocumentId);
 }
 
 async function blockTextFromApi(page, blockIndex, type = 'text', explicitDocumentId) {
@@ -343,7 +473,7 @@ async function runCheck(name, fn) {
 }
 
 async function main() {
-  const chromium = await loadPlaywright();
+  const chromium = await loadPlaywrightChromium();
   const browser = await chromium.launch({ headless: true });
 
   let failed = 0;
@@ -352,7 +482,8 @@ async function main() {
 
   try {
     context = await createAuthenticatedContext(browser);
-    page = await openNotePage(context);
+    page = await context.newPage();
+    await openDocument(page, FALLBACK_QA_DOC_ID);
     const consoleErrors = [];
     page.on('console', (msg) => {
       if (msg.type() !== 'error') return;
@@ -366,26 +497,23 @@ async function main() {
       if (rowCount < 1) throw new Error('note blocks not found');
     }) ? 0 : 1;
 
-    await ensureDocumentWithBlocks(page);
-    await focusLastEditor(page);
-
     failed += await runCheck('"- " creates bullet without "-" in body', async () => {
+      await createFreshNote(page);
+      await focusBlockAt(page, 0);
       await typeListTrigger(page, '-');
       await assertLatestListBodyClean(page, 'dash');
     }) ? 0 : 1;
 
-    await clickEditorWhitespace(page);
-    await focusLastEditor(page);
-
     failed += await runCheck('"* " creates bullet without "*" in body', async () => {
+      await createFreshNote(page);
+      await focusBlockAt(page, 0);
       await typeListTrigger(page, '*');
       await assertLatestListBodyClean(page, 'star');
     }) ? 0 : 1;
 
-    await clickEditorWhitespace(page);
-    await focusLastEditor(page);
-
     failed += await runCheck('"1." + space creates numbered list without "1." in body', async () => {
+      await createFreshNote(page);
+      await focusBlockAt(page, 0);
       await page.keyboard.type('1.', { delay: 40 });
       await page.keyboard.press('Space');
       await page.waitForTimeout(700);
@@ -393,6 +521,9 @@ async function main() {
     }) ? 0 : 1;
 
     failed += await runCheck('typing persists in list item', async () => {
+      await createFreshNote(page);
+      await focusBlockAt(page, 0);
+      await typeListTrigger(page, '-');
       const listEditor = page.locator('[data-note-list-text] .ProseMirror').last();
       await listEditor.click();
       await page.keyboard.type('스모크텍스트', { delay: 20 });
@@ -404,15 +535,20 @@ async function main() {
 
     // --- structure / doc tests (각각 새 문서) ---
     failed += await runCheck('Tab indent nests bullet under previous sibling', async () => {
-      await createFreshNote(page);
+      await createEmptyDocument(page);
       await seedSiblingBulletBlocks(page);
+      const first = await listSiblingMetaFromDom(page, 0);
       await focusBulletBlockAt(page, 1);
-      const depthBefore = await blockParentIdFromApi(page, 1);
+      const before = await listSiblingMetaFromDom(page, 1);
+      if (!before.blockId) throw new Error('second bullet row missing block id');
       await page.keyboard.press('Tab');
-      await page.waitForTimeout(1200);
-      const depthIndented = await blockParentIdFromApi(page, 1);
-      if (!depthIndented || depthIndented === depthBefore) {
-        throw new Error(`Tab did not reparent bullet (${depthBefore} -> ${depthIndented})`);
+      await page.waitForTimeout(1500);
+      const after = await listSiblingMetaFromDom(page, 1);
+      if (!first.blockId) throw new Error('first bullet row missing block id');
+      if (after.parentId !== first.blockId) {
+        throw new Error(
+          `Tab did not reparent bullet (${before.parentId ?? 'null'} -> ${after.parentId ?? 'null'}, expected parent ${first.blockId})`,
+        );
       }
     }) ? 0 : 1;
 
@@ -438,36 +574,24 @@ async function main() {
     }) ? 0 : 1;
 
     failed += await runCheck('parent <-> child document switch keeps content', async () => {
-      await createFreshNote(page);
-      await seedTextBlockIfEmpty(page);
-      const parentEditor = await focusBlockAt(page, 0);
-      await page.keyboard.type('부모본문', { delay: 15 });
-      await page.waitForTimeout(400);
+      const parentDocId = await createFreshNote(page);
+      await typeInFirstBlock(page, '부모본문', 0);
+      await waitForBlockText(page, '부모본문', 0);
       const subPageBtn = await openPageMenu(page);
       await subPageBtn.click();
-      await page.waitForTimeout(1500);
-      const pageOpenBtn = page.locator('button[title="클릭하여 페이지 열기"]').last();
-      await pageOpenBtn.waitFor({ state: 'visible', timeout: 15000 });
-      await pageOpenBtn.click();
-      await page.waitForTimeout(1200);
-      await seedTextBlockIfEmpty(page);
-      const childEditor = await focusBlockAt(page, 0);
-      await childEditor.click();
-      await page.waitForTimeout(300);
-      await page.keyboard.type('하위고유문구', { delay: 15 });
-      await page.waitForTimeout(1200);
-      const parentCrumb = page.locator('nav').filter({ hasText: '관리자 노트' }).locator('button').nth(1);
-      await parentCrumb.click();
-      await page.waitForTimeout(1200);
-      await seedTextBlockIfEmpty(page);
-      const parentText = await blockTextFromApi(page, 0);
+      await page.waitForTimeout(2000);
+      const childDocId = await resolveLastPageChildDocumentId(page, parentDocId);
+      if (!childDocId) throw new Error('subpage child document id not found');
+      await openDocument(page, childDocId);
+      await typeInFirstBlock(page, '하위고유문구', 0);
+      await waitForBlockText(page, '하위고유문구', 0);
+      await openDocument(page, parentDocId);
+      const parentText = await waitForBlockText(page, '부모본문', 0);
       if (!parentText.includes('부모본문')) {
         throw new Error(`parent content missing after switch: "${parentText}"`);
       }
-      await page.locator('button[title="클릭하여 페이지 열기"]').last().click();
-      await page.waitForTimeout(1200);
-      await seedTextBlockIfEmpty(page);
-      const childText = await blockTextFromApi(page, 0);
+      await openDocument(page, childDocId);
+      const childText = await waitForBlockText(page, '하위고유문구', 0);
       if (!childText.includes('하위고유문구')) {
         throw new Error(`child content missing after return: "${childText}"`);
       }
@@ -512,14 +636,10 @@ async function main() {
         });
         return document.id;
       }, parentDocId);
-      await page.goto(`${BASE}/admin/note?id=${encodeURIComponent(childDocId)}`, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(1200);
-      await seedTextBlockIfEmpty(page, childDocId);
-      await focusBlockAt(page, 0);
-      await page.keyboard.type('페이지블록진입', { delay: 15 });
-      await clickDocumentBody(page);
-      await page.waitForTimeout(800);
-      const text = await blockTextFromApi(page, 0, 'text', childDocId);
+      await openDocument(page, childDocId);
+      await waitForEditorSurface(page, 0);
+      await typeInFirstBlock(page, '페이지블록진입', 0);
+      const text = await waitForBlockText(page, '페이지블록진입', 0);
       if (!text.includes('페이지블록진입')) {
         throw new Error(`could not type in child doc ${childDocId}: "${text}"`);
       }

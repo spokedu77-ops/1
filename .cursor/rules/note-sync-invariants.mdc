@@ -1,0 +1,43 @@
+---
+description: admin/note 동기화 불변식 — 단일 파이프라인 강제
+globs: app/admin/note/**/*
+alwaysApply: false
+---
+
+# admin/note 동기화 불변식
+
+## 아키텍처 (단일 파이프라인)
+
+```
+UI → NoteCommand → applyNoteCommand (reducer) → Zustand (SSOT) → React 투영
+                              ↓
+                    NoteDocumentOpQueue → NoteSyncCoordinator → 서버 op-log
+```
+
+## 절대 규칙
+
+1. **블록 상태 mutation은 `NoteDocumentPipeline.dispatch()` 또는 engine API만** 허용
+2. **`blocksRef.current =` 직접 쓰기 금지** — store 구독 미러만
+3. **`setBlocks`는 pipeline `replaceBlocks` 경유** (useNoteBlockData)
+4. **create는 항상 client UUID** (`newNoteBlockClientId`)
+5. **outbound pending 중 pull 금지** (coordinator)
+6. **새 merge/union/regression guard 추가 금지** — reducer `syncSnapshot`/`applyRemoteOps`로 흡수
+7. **legacy HTTP PATCH 새 분기 추가 금지** — op-log만
+
+## 파일 역할
+
+| 파일 | 역할 |
+|------|------|
+| `noteCommand.ts` | mutation union 타입 |
+| `noteCommandReducer.ts` | 순수 상태 전이 (유일) |
+| `noteDocumentPipeline.ts` | dispatch + persist + coordinator |
+| `noteSyncGuards.ts` | push 전 순서/ID 검증 |
+| `noteSyncCoordinator.ts` | transport only (push/pull/IDB) |
+| `noteBlockStore.ts` | UI SSOT |
+
+## 버그 수정 시
+
+1. 어떤 **불변식**이 깨졌는지 먼저 특정
+2. reducer 또는 pipeline에 **최소 수정**
+3. `noteCommandReducer.test.ts`에 재현 케이스 추가
+4. hook별 ad-hoc guard **추가하지 않음**

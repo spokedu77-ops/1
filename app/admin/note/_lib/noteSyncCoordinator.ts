@@ -13,6 +13,7 @@ import {
 } from './noteLocalDb';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
 import { coalescePushItems, persistOpToPushItems } from './notePersistOpToBlockOps';
+import { partitionOutboundForSafePush } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 
@@ -139,11 +140,12 @@ export class NoteSyncCoordinator {
     this.blocks = local.blocks;
     this.lastAppliedSeq = local.lastAppliedSeq;
     try {
-      await this.rebaseFromServer();
+      const outbound = await listOutboundOps(this.documentId);
+      await this.rebaseFromServer({ allowRemotePull: outbound.length === 0 });
     } catch (error) {
       devLogger.error('[NoteSyncCoordinator] hydrate rebase failed', error);
     }
-    this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+    // onBlocksUpdated 호출 안 함 — pipeline이 단일 dispatch로 적용
     return this.blocks;
   }
 
@@ -160,7 +162,6 @@ export class NoteSyncCoordinator {
     this.lastAppliedSeq = lastSeq;
 
     await this.persistLocal();
-    this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
     this.startLeaderElection();
     if (outbound.length > 0) {
       void this.flushPush();
@@ -183,6 +184,7 @@ export class NoteSyncCoordinator {
   async enqueuePersistOp(op: NotePersistOp, options?: { immediate?: boolean }): Promise<void> {
     const items = persistOpToPushItems(op);
     if (items.length === 0) return;
+    // 로컬 optimistic 상태는 pipeline.dispatch가 담당 — coordinator는 outbound만 적재
     await appendOutboundOps(this.documentId, items);
     const delay = options?.immediate || op.type !== 'patchContent'
       ? STRUCTURE_PUSH_DEBOUNCE_MS
@@ -197,6 +199,12 @@ export class NoteSyncCoordinator {
   schedulePull(): void {
     if (!this.isLeader) return;
     void this.pullRemote();
+  }
+
+  /** outbound에 아직 push되지 않은 op가 있으면 pull을 미뤄야 한다. */
+  async hasPendingOutbound(): Promise<boolean> {
+    const outbound = await listOutboundOps(this.documentId);
+    return outbound.length > 0;
   }
 
   async drain(): Promise<void> {
@@ -270,16 +278,27 @@ export class NoteSyncCoordinator {
 
   private async pushBatchOnce(): Promise<boolean> {
     for (let attempt = 0; attempt < MAX_PUSH_ATTEMPTS; attempt += 1) {
-      await this.rebaseFromServer();
+      const outboundAll = await listOutboundOps(this.documentId);
+      const allowRemotePull = outboundAll.length === 0;
+      // eslint-disable-next-line no-await-in-loop
+      await this.rebaseFromServer({ allowRemotePull });
 
       const outbound = await listOutboundOps(this.documentId);
       if (outbound.length === 0) return false;
 
-      const consumedClientOpIds = outbound.map((op) => op.clientOpId);
-      const ops = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
+      const coalesced = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
+      const knownIds = new Set(this.blocks.map((block) => block.id));
+      const { ready, deferred } = partitionOutboundForSafePush(coalesced, knownIds);
+
+      if (ready.length === 0) {
+        if (deferred.length > 0) this.schedulePush(500);
+        return deferred.length > 0;
+      }
+
+      const consumedClientOpIds = ready.map((op) => op.clientOpId);
 
       // eslint-disable-next-line no-await-in-loop
-      const result = await pushOps(this.documentId, this.lastAppliedSeq, ops);
+      const result = await pushOps(this.documentId, this.lastAppliedSeq, ready);
       if (!result.ok) {
         await this.applyRemoteOps(result.ops, result.lastSeq);
         continue;
@@ -291,6 +310,7 @@ export class NoteSyncCoordinator {
       await this.persistLocal();
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
       this.broadcastState();
+      if (deferred.length > 0) return true;
       return true;
     }
 
@@ -299,7 +319,7 @@ export class NoteSyncCoordinator {
     return false;
   }
 
-  private async rebaseFromServer(): Promise<void> {
+  private async rebaseFromServer(options?: { allowRemotePull?: boolean }): Promise<void> {
     const serverSeq = await fetchSyncState(this.documentId);
 
     if (this.lastAppliedSeq > serverSeq) {
@@ -308,16 +328,22 @@ export class NoteSyncCoordinator {
       return;
     }
 
-    if (this.lastAppliedSeq < serverSeq) {
+      if (this.lastAppliedSeq < serverSeq) {
+      if (options?.allowRemotePull === false) return;
       const pulled = await pullOps(this.documentId, this.lastAppliedSeq);
       if (pulled.ops.length > 0 || pulled.lastSeq !== this.lastAppliedSeq) {
-        await this.applyRemoteOps(pulled.ops, pulled.lastSeq);
+        await this.applyRemoteOps(pulled.ops, pulled.lastSeq, { notify: false });
       }
     }
   }
 
   private async pullRemote(): Promise<void> {
     try {
+      if (this.isPushing || await this.hasPendingOutbound()) {
+        // create/patch가 아직 서버에 없으면 pull 스냅샷이 로컬 블록을 지울 수 있다.
+        this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);
+        return;
+      }
       await this.rebaseFromServer();
       this.broadcastState();
     } catch (error) {
@@ -325,13 +351,19 @@ export class NoteSyncCoordinator {
     }
   }
 
-  private async applyRemoteOps(ops: NoteBlockOpRecord[], lastSeq: number): Promise<void> {
+  private async applyRemoteOps(
+    ops: NoteBlockOpRecord[],
+    lastSeq: number,
+    options?: { notify?: boolean },
+  ): Promise<void> {
     if (ops.length > 0) {
       this.blocks = applyRemoteOpRecords(this.blocks, ops);
     }
     this.lastAppliedSeq = lastSeq;
     await this.persistLocal();
-    this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+    if (options?.notify !== false) {
+      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+    }
   }
 
   private async persistLocal(): Promise<void> {

@@ -10,6 +10,7 @@ import {
   type PatchedNoteBlock,
 } from './noteBlocksApi';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
+import { newNoteBlockClientId } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -209,14 +210,19 @@ export class NoteDocumentOpQueue {
     op: Extract<NotePersistOp, { type: 'createBlock' }>,
   ): Promise<NoteBlock> {
     if (this.deps.persistViaOpLog) {
-      await this.deps.persistViaOpLog(op, { immediate: true });
-      const existing = op.id ? this.deps.getBlock(op.id) : undefined;
+      // op-log 경로에서는 클라이언트 UUID가 서버 create id와 반드시 같아야 한다.
+      // id 없이 push하면 DB는 gen_random_uuid()를 쓰고 UI는 다른 UUID를 쓰게 되어
+      // 이후 patch_content가 "block not found"로 실패한다.
+      const blockId = op.id || newNoteBlockClientId();
+      const opWithId = op.id ? op : { ...op, id: blockId };
+      await this.deps.persistViaOpLog(opWithId, { immediate: true });
+      const existing = this.deps.getBlock(blockId);
       if (existing) {
         this.deps.triggerSave();
         return existing;
       }
       const fallback: NoteBlock = {
-        id: op.id ?? crypto.randomUUID(),
+        id: blockId,
         document_id: op.documentId,
         parent_block_id: op.parent_block_id,
         type: op.blockType,

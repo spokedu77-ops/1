@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { devLogger } from '@/app/lib/logging/devLogger';
+import { newNoteBlockClientId } from '../_lib/noteSyncGuards';
 import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
 import {
@@ -100,7 +100,9 @@ export function useNoteBlockInsert(options: {
         id: sibling.id,
         order_index: index >= clampedIndex ? index + 1 : index,
       }));
+      const createdBlockId = newNoteBlockClientId();
       const createdBlock = await documentEngine.persistCreateBlock({
+        id: createdBlockId,
         documentId: selectedId,
         blockType: type,
         content: blockContent as Record<string, unknown>,
@@ -120,6 +122,7 @@ export function useNoteBlockInsert(options: {
       if (type === COLUMN_LIST_TYPE) {
         for (const spec of buildDefaultColumnChildren(createdBlock)) {
           const columnBlock = await documentEngine.persistCreateBlock({
+            id: newNoteBlockClientId(),
             documentId: selectedId,
             blockType: COLUMN_TYPE,
             content: spec.content as Record<string, unknown>,
@@ -295,7 +298,7 @@ export function useNoteBlockInsert(options: {
         id: sibling.id,
         order_index: index >= insertIndex ? index + 1 : index,
       }));
-      const createdBlockId = crypto.randomUUID();
+      const createdBlockId = newNoteBlockClientId();
       const childPatches = directChildren.map((child, orderIndex) => ({
         id: child.id,
         parent_block_id: createdBlockId,

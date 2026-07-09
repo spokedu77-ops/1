@@ -2,37 +2,24 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
-  applyNoteDocumentOp,
-  applyServerBlockVersions,
-  createNoteDocumentEngineState,
-} from '../_lib/noteDocumentEngine';
-import type { NoteDocumentOp } from '../_lib/noteDocumentOps';
-import {
-  NoteDocumentOpQueue,
-  type CreateBlockPersistArgs,
-  type SoftDeletePersistArgs,
-} from '../_lib/noteDocumentOpQueue';
-import {
-  markNoteLocalSave,
-} from '../_lib/noteReconcileIdle';
-import {
-  broadcastNoteBlockVersions,
-  subscribeNoteCrossTabBlockSync,
-} from '../_lib/noteCrossTabBlockSync';
-import { setNoteContentSavePending } from '../_lib/notePendingSave';
-import type { NoteBlockFieldPatch, PatchedNoteBlock } from '../_lib/noteBlocksApi';
-import { purgeNoteBlockFromTrash, restoreNoteBlockFromTrash } from '../_lib/noteBlocksApi';
-import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
+  disposeNoteDocumentPipeline,
+  getNoteDocumentPipeline,
+  type NoteDocumentPipeline,
+} from '../_lib/noteDocumentPipeline';
+import { subscribeNoteCrossTabBlockSync } from '../_lib/noteCrossTabBlockSync';
+import { applyServerBlockVersions } from '../_lib/noteDocumentEngine';
 import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
-import {
-  disposeNoteSyncCoordinator,
-  getNoteSyncCoordinator,
-  type NoteSyncCoordinator,
-} from '../_lib/noteSyncCoordinator';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
+import type {
+  CreateBlockPersistArgs,
+  SoftDeletePersistArgs,
+} from '../_lib/noteDocumentOpQueue';
+import type { NoteBlockFieldPatch } from '../_lib/noteBlocksApi';
 import type { NoteBlock } from '../_lib/types';
+import type { NoteCommand } from '../_lib/noteCommand';
 
 export type NoteDocumentEngineApi = {
+  dispatch: (command: NoteCommand) => NoteBlock[];
   replaceBlocks: (blocks: NoteBlock[]) => void;
   updateContent: (blockId: string, content: Record<string, unknown>) => void;
   scheduleContentPatch: (
@@ -60,290 +47,160 @@ export type NoteDocumentEngineApi = {
   hasPendingPersist: () => boolean;
   isOplogSyncEnabled: () => boolean;
 };
+
 export function useNoteDocumentEngine(options: {
   documentId: string | null;
-  blocksRef: React.MutableRefObject<NoteBlock[]>;
-  setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
+  onBlocksChanged: (blocks: NoteBlock[]) => void;
   triggerSave: () => void;
   onError?: (error: Error) => void;
 }): NoteDocumentEngineApi {
-  const { documentId, blocksRef, setBlocks, triggerSave, onError } = options;
-  const queueRef = useRef<NoteDocumentOpQueue | null>(null);
-  const coordinatorRef = useRef<NoteSyncCoordinator | null>(null);
+  const { documentId, onBlocksChanged, triggerSave, onError } = options;
+  const pipelineRef = useRef<NoteDocumentPipeline | null>(null);
+  const onBlocksChangedRef = useRef(onBlocksChanged);
   const triggerSaveRef = useRef(triggerSave);
   const onErrorRef = useRef(onError);
-  const oplogEnabled = isNoteOplogSyncEnabled();
+
   useLayoutEffect(() => {
+    onBlocksChangedRef.current = onBlocksChanged;
     triggerSaveRef.current = triggerSave;
     onErrorRef.current = onError;
-  }, [triggerSave, onError]);
-
-  const syncPendingFlag = useCallback(() => {
-    setNoteContentSavePending(queueRef.current?.hasPendingContent ?? false);
-  }, []);
-
-  const applyLocal = useCallback((op: NoteDocumentOp) => {
-    if (!documentId) return;
-    const store = useNoteBlockStore.getState();
-    const activeBlockId = useNoteBlockStore.getState().activeEditor?.blockId ?? null;
-    const current = createNoteDocumentEngineState(documentId, store.getBlocksArray());
-    const next = applyNoteDocumentOp(current, op, { activeBlockId }).blocks;
-    setBlocks(next);
-  }, [documentId, setBlocks]);
-
-  const applyServerVersions = useCallback((
-    patched: Array<Pick<NoteBlock, 'id' | 'version' | 'updated_at'>>,
-  ) => {
-    if (!documentId || patched.length === 0) return;
-    const nextFromRef = applyServerBlockVersions(blocksRef.current, patched);
-    blocksRef.current = nextFromRef;
-    const store = useNoteBlockStore.getState();
-    store.replaceBlocks(applyServerBlockVersions(store.getBlocksArray(), patched));
-    // version만 갱신 — 본문 타이핑 경로와 같이 React 전체 리렌더 생략.
-    // store에는 blocksRef보다 최신 타이핑 content가 있을 수 있으므로
-    // stale ref snapshot으로 store 전체를 덮지 않는다.
-  }, [blocksRef, documentId]);
-
-  const applyServerVersionsRef = useRef(applyServerVersions);
-  useLayoutEffect(() => {
-    applyServerVersionsRef.current = applyServerVersions;
-  }, [applyServerVersions]);
-
-  const applyServerConflicts = useCallback((conflicts: NoteBlock[]) => {
-    if (!documentId || conflicts.length === 0) return;
-    const activeBlockId = useNoteBlockStore.getState().activeEditor?.blockId ?? null;
-    const nextFromRef = applyNoteDocumentOp(
-      createNoteDocumentEngineState(documentId, blocksRef.current),
-      { type: 'syncFromServer', blocks: conflicts },
-      { activeBlockId },
-    ).blocks;
-    blocksRef.current = nextFromRef;
-    setBlocks(nextFromRef);
-
-    const store = useNoteBlockStore.getState();
-    const nextStoreBlocks = applyNoteDocumentOp(
-      createNoteDocumentEngineState(documentId, store.getBlocksArray()),
-      { type: 'syncFromServer', blocks: conflicts },
-      { activeBlockId },
-    ).blocks;
-    store.syncBlocksStructure(nextStoreBlocks);
-  }, [blocksRef, documentId, setBlocks]);
-
-  const applyServerConflictsRef = useRef(applyServerConflicts);
-  useLayoutEffect(() => {
-    applyServerConflictsRef.current = applyServerConflicts;
-  }, [applyServerConflicts]);
-
-  const applyCoordinatorBlocks = useCallback((updatedBlocks: NoteBlock[]) => {
-    if (!documentId) return;
-    const merged = mergeBlocksWithStoreContent(
-      updatedBlocks.filter((block) => block.document_id === documentId),
-    );
-    applyLocal({ type: 'replaceBlocks', blocks: merged });
-    coordinatorRef.current?.setBlocks(merged);
-  }, [applyLocal, documentId]);
-
-  const applyCoordinatorBlocksRef = useRef(applyCoordinatorBlocks);
-  useLayoutEffect(() => {
-    applyCoordinatorBlocksRef.current = applyCoordinatorBlocks;
-  }, [applyCoordinatorBlocks]);
+  }, [onBlocksChanged, triggerSave, onError]);
 
   useLayoutEffect(() => {
-    queueRef.current?.dispose();
-    queueRef.current = null;
     if (!documentId) {
-      coordinatorRef.current = null;
-      setNoteContentSavePending(false);
-      return;
+      pipelineRef.current = null;
+      return undefined;
     }
 
-    let coordinator: NoteSyncCoordinator | null = null;
-    if (oplogEnabled) {
-      coordinator = getNoteSyncCoordinator(documentId, {
-        onBlocksUpdated: (blocks) => {
-          applyCoordinatorBlocksRef.current(blocks);
-        },
-        onError: (error) => onErrorRef.current?.(error),
-      });
-      coordinatorRef.current = coordinator;
-    } else {
-      coordinatorRef.current = null;
-    }
-
-    queueRef.current = new NoteDocumentOpQueue({
-      getBlock: (blockId) => useNoteBlockStore.getState().getBlock(blockId),
-      getActiveBlockId: () => useNoteBlockStore.getState().activeEditor?.blockId ?? null,
+    const pipeline = getNoteDocumentPipeline(documentId, {
+      onBlocksChanged: (blocks) => onBlocksChangedRef.current(blocks),
       triggerSave: () => triggerSaveRef.current(),
       onError: (error) => onErrorRef.current?.(error),
-      onServerPatches: (patched) => {
-        if (oplogEnabled) return;
-        markNoteLocalSave(documentId);
-        applyServerVersionsRef.current(patched);
-        broadcastNoteBlockVersions(documentId, patched);
-      },
-      onServerConflicts: (conflicts) => {
-        if (oplogEnabled) return;
-        applyServerConflictsRef.current(conflicts);
-        const versionPatches = conflicts.map((block) => ({
-          id: block.id,
-          version: block.version,
-          updated_at: block.updated_at,
-        }));
-        broadcastNoteBlockVersions(documentId, versionPatches);
-      },
-      persistViaOpLog: coordinator
-        ? (op, options) => coordinator!.enqueuePersistOp(op, options)
-        : undefined,
     });
+    pipelineRef.current = pipeline;
 
     return () => {
-      const leavingDocumentId = documentId;
-      const leavingCoordinator = coordinator;
-      void queueRef.current?.drain().finally(() => {
-        void leavingCoordinator?.drain().finally(() => {
-          if (oplogEnabled) {
-            disposeNoteSyncCoordinator(leavingDocumentId);
-          }
-        });
-      });
-      queueRef.current?.dispose();
-      queueRef.current = null;
-      coordinatorRef.current = null;
-      setNoteContentSavePending(false);
+      const leavingId = documentId;
+      void disposeNoteDocumentPipeline(leavingId);
+      pipelineRef.current = null;
     };
-  }, [documentId, blocksRef, oplogEnabled]);
+  }, [documentId]);
+
   useEffect(() => {
-    if (!documentId || oplogEnabled) return undefined;
+    if (!documentId || isNoteOplogSyncEnabled()) return undefined;
     return subscribeNoteCrossTabBlockSync((message) => {
-      if (message.documentId !== documentId) return;
-      applyServerVersionsRef.current(message.blocks);
+      if (message.documentId !== documentId || !pipelineRef.current) return;
+      const next = applyServerBlockVersions(
+        useNoteBlockStore.getState().getBlocksArray(),
+        message.blocks,
+      );
+      pipelineRef.current.dispatch({ type: 'replaceBlocks', blocks: next });
     });
-  }, [documentId, oplogEnabled]);
+  }, [documentId]);
+
+  const getPipeline = useCallback(() => {
+    if (!pipelineRef.current) {
+      throw new Error('문서 파이프라인이 준비되지 않았습니다');
+    }
+    return pipelineRef.current;
+  }, []);
+
+  const dispatch = useCallback((command: NoteCommand) => {
+    return getPipeline().dispatch(command);
+  }, [getPipeline]);
+
   const replaceBlocks = useCallback((blocks: NoteBlock[]) => {
-    applyLocal({ type: 'replaceBlocks', blocks });
-  }, [applyLocal]);
+    getPipeline().dispatch({ type: 'replaceBlocks', blocks });
+  }, [getPipeline]);
 
   const updateContent = useCallback((blockId: string, content: Record<string, unknown>) => {
-    applyLocal({ type: 'updateContent', blockId, content });
-  }, [applyLocal]);
+    getPipeline().dispatch({ type: 'patchContent', blockId, content });
+  }, [getPipeline]);
 
   const scheduleContentPatch = useCallback((
     blockId: string,
     content: Record<string, unknown>,
     baseContent?: Record<string, unknown>,
   ) => {
-    useNoteBlockStore.getState().patchContent(blockId, content);
-    queueRef.current?.scheduleContentPatch(blockId, content, baseContent);
-    syncPendingFlag();
-  }, [syncPendingFlag]);
+    getPipeline().scheduleContentPatch(blockId, content, baseContent);
+  }, [getPipeline]);
 
   const clearContentPatch = useCallback((blockId: string) => {
-    queueRef.current?.clearContentPatch(blockId);
-    syncPendingFlag();
-  }, [syncPendingFlag]);
+    getPipeline().clearContentPatch(blockId);
+  }, [getPipeline]);
 
   const flushContentPatches = useCallback(async () => {
-    await queueRef.current?.flushContentPatches();
-    syncPendingFlag();
-  }, [syncPendingFlag]);
+    await getPipeline().flushContentPatches();
+  }, [getPipeline]);
 
   const flushPersistQueue = useCallback(async () => {
-    await queueRef.current?.drain();
-    await coordinatorRef.current?.drain();
-    syncPendingFlag();
-  }, [syncPendingFlag]);
+    await getPipeline().flushPersistQueue();
+  }, [getPipeline]);
 
   const hydrateFromLocal = useCallback(async () => {
-    if (!coordinatorRef.current) return null;
-    return coordinatorRef.current.hydrateFromLocal();
+    if (!pipelineRef.current) return null;
+    return pipelineRef.current.hydrateFromLocal();
   }, []);
 
   const syncWithServer = useCallback(async (initialBlocks: NoteBlock[]) => {
-    if (!coordinatorRef.current) return;
-    await coordinatorRef.current.syncWithServer(initialBlocks);
+    if (!pipelineRef.current) return;
+    await pipelineRef.current.syncWithServer(initialBlocks);
   }, []);
 
   const scheduleOplogPull = useCallback(() => {
-    coordinatorRef.current?.schedulePull();
+    pipelineRef.current?.schedulePull();
   }, []);
-
-  const isOplogSyncEnabledFn = useCallback(() => oplogEnabled, [oplogEnabled]);
-  const hasPendingPersist = useCallback(
-    () => queueRef.current?.hasPendingPersist() ?? false,
-    [],
-  );
 
   const persistSoftDelete = useCallback(async (args: SoftDeletePersistArgs) => {
-    await queueRef.current?.enqueue({
-      type: 'softDelete',
-      ids: args.ids,
-    });
-  }, []);
+    await getPipeline().persistSoftDelete(args);
+  }, [getPipeline]);
 
   const persistFieldPatches = useCallback(async (patches: NoteBlockFieldPatch[]) => {
-    applyLocal({ type: 'applyPatches', patches });
-    await queueRef.current?.enqueue({ type: 'patchFields', patches });
-  }, [applyLocal]);
+    await getPipeline().persistFieldPatches(patches);
+  }, [getPipeline]);
 
   const persistCreateBlock = useCallback(async (args: CreateBlockPersistArgs) => {
-    if (!documentId) {
-      throw new Error('문서가 선택되지 않았습니다');
-    }
-    return queueRef.current?.enqueueCreateBlock({
-      type: 'createBlock',
-      id: args.id,
-      documentId: args.documentId,
-      blockType: args.blockType,
-      content: args.content,
-      order_index: args.order_index,
-      parent_block_id: args.parent_block_id,
-      normalizeOrders: args.normalizeOrders,
-      transactionUpdates: args.transactionUpdates,
-    }) ?? Promise.reject(new Error('문서 엔진이 준비되지 않았습니다'));
-  }, [documentId]);
-
-    // 문서 밖으로 나가는 블록 — 로컬 reducer는 건드리지 않는다(호출 측이 UI에서 제거).
+    return getPipeline().persistCreateBlock(args);
+  }, [getPipeline]);
 
   const persistBlockTransaction = useCallback(async (
     patches: NoteBlockFieldPatch[],
     deleteIds: string[] = [],
   ) => {
-    await queueRef.current?.enqueue({
-      type: 'blockTransaction',
-      patches,
-      deleteIds,
-    });
-  }, []);
+    await getPipeline().persistBlockTransaction(patches, deleteIds);
+  }, [getPipeline]);
 
   const persistRestoreBlock = useCallback(async (blockId: string) => {
-    if (queueRef.current) {
-      return queueRef.current.enqueueRestoreBlock({ id: blockId });
+    if (!pipelineRef.current) {
+      throw new Error('문서 파이프라인이 준비되지 않았습니다');
     }
-    const block = await restoreNoteBlockFromTrash(blockId);
-    triggerSaveRef.current();
-    return block;
+    return pipelineRef.current.persistRestoreBlock(blockId);
   }, []);
 
   const persistPurgeBlock = useCallback(async (blockId: string) => {
-    if (queueRef.current) {
-      await queueRef.current.enqueue({ type: 'purgeBlock', id: blockId });
-      return;
-    }
-    await purgeNoteBlockFromTrash(blockId);
-    triggerSaveRef.current();
+    if (!pipelineRef.current) return;
+    await pipelineRef.current.persistPurgeBlock(blockId);
   }, []);
 
-  const getBlocks = useCallback(
-    () => useNoteBlockStore.getState().getBlocksArray(),
-    [],
-  );
+  const getBlocks = useCallback(() => {
+    return pipelineRef.current?.getBlocks() ?? [];
+  }, []);
 
-  const hasPendingContent = useCallback(
-    () => queueRef.current?.hasPendingContent ?? false,
+  const hasPendingContent = useCallback(() => {
+    return pipelineRef.current?.hasPendingContent() ?? false;
+  }, []);
+
+  const hasPendingPersist = useCallback(() => {
+    return pipelineRef.current?.hasPendingPersist() ?? false;
+  }, []);
+
+  const isOplogSyncEnabledFn = useCallback(
+    () => pipelineRef.current?.isOplogEnabled() ?? false,
     [],
   );
 
   return useMemo(() => ({
+    dispatch,
     replaceBlocks,
     updateContent,
     scheduleContentPatch,
@@ -364,6 +221,7 @@ export function useNoteDocumentEngine(options: {
     hasPendingPersist,
     isOplogSyncEnabled: isOplogSyncEnabledFn,
   }), [
+    dispatch,
     replaceBlocks,
     updateContent,
     scheduleContentPatch,

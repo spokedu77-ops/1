@@ -63,7 +63,6 @@ export function useNoteEditorFocus(options: {
     const current = blocksRef.current.find((b) => b.id === blockId);
     const latest = fromStore ?? current;
     if (!latest) return;
-    blocksRef.current = blocksRef.current.map((b) => (b.id === blockId ? latest : b));
     if (
       current
       && !contentChangeNeedsReactBlocks(
@@ -78,7 +77,7 @@ export function useNoteEditorFocus(options: {
       if (!reactBlock || reactBlock.content === latest.content) return prev;
       return prev.map((b) => (b.id === blockId ? latest : b));
     });
-  }, [blocksRef, setBlocks]);
+  }, [setBlocks]);
 
   const trackActiveBlock = useCallback((blockId: string | null, part: 'title' | 'editor' = 'editor') => {
     if (!blockId) return;
