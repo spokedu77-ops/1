@@ -10,16 +10,17 @@ import { LongPressButton } from './LongPressButton';
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 type Phase = 'idle' | 'showing' | 'waiting' | 'reveal' | 'summaryIntro' | 'summary' | 'done';
 
-const TOTAL = MEMORY_ROUNDS;
 const BASIC_RANDOM_MIN_MS = 1000;
-const BASIC_RANDOM_MAX_MS = 2500;
+const BASIC_RANDOM_MAX_MS_L1 = 2500;
+const BASIC_RANDOM_MAX_MS_L2 = 3000;
 
-function randomBasicShowMs() {
-  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (BASIC_RANDOM_MAX_MS - BASIC_RANDOM_MIN_MS));
+function randomBasicShowMs(level: number) {
+  const maxMs = level === 2 ? BASIC_RANDOM_MAX_MS_L2 : BASIC_RANDOM_MAX_MS_L1;
+  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (maxMs - BASIC_RANDOM_MIN_MS));
 }
 
 function buildBasicShowSchedule(level: number, patternLength: number): number[] {
-  const schedule = Array.from({ length: patternLength }, () => randomBasicShowMs());
+  const schedule = Array.from({ length: patternLength }, () => randomBasicShowMs(level));
   if (level === 1 && patternLength >= 2) {
     schedule[1] = BASIC_RANDOM_MIN_MS;
   } else if (level === 2 && patternLength >= 4) {
@@ -30,7 +31,7 @@ function buildBasicShowSchedule(level: number, patternLength: number): number[] 
 }
 
 function colorShowMs(level: number, speedSec: number, schedule: number[], index: number) {
-  if (level === 1 || level === 2) return schedule[index] ?? randomBasicShowMs();
+  if (level === 1 || level === 2) return schedule[index] ?? randomBasicShowMs(level);
   return Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 }
 
@@ -48,6 +49,7 @@ export function MemoryGame({
   speedSec,
   startDelayMs = 500,
   slotColorIds,
+  roundCount = MEMORY_ROUNDS,
 }: {
   level: number;
   onExit: () => void;
@@ -56,15 +58,17 @@ export function MemoryGame({
   speedSec: number;
   startDelayMs?: number;
   slotColorIds?: string[];
+  roundCount?: number;
 }) {
+  const total = Math.max(1, roundCount);
   const patterns = useMemo<ColorItem[][]>(() => {
     if (level === 6) {
       const ids = slotColorIds?.length ? slotColorIds : DEFAULT_MEMORY_COLOR_SLOTS;
       const fixed = buildMemoryPatternFromSlots(ids);
-      return Array.from({ length: TOTAL }, () => fixed);
+      return Array.from({ length: total }, () => fixed);
     }
-    return Array.from({ length: TOTAL }, () => generateMemoryPattern(level));
-  }, [level, slotColorIds]);
+    return Array.from({ length: total }, () => generateMemoryPattern(level));
+  }, [level, slotColorIds, total]);
 
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -155,7 +159,7 @@ export function MemoryGame({
       return;
     }
     if (activePhase === 'reveal') {
-      const last = activeRound + 1 >= TOTAL;
+      const last = activeRound + 1 >= total;
       if (last && isTenItemLevel) setPhase('summaryIntro');
       else if (last) setPhase('done');
       else startRound(activeRound + 1);
@@ -168,7 +172,7 @@ export function MemoryGame({
     if (activePhase === 'summary' || activePhase === 'done') {
       onComplete(patterns);
     }
-  }, [isTenItemLevel, onComplete, patterns, startRound]);
+  }, [isTenItemLevel, onComplete, patterns, startRound, total]);
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -188,7 +192,7 @@ export function MemoryGame({
     <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', zIndex: 20, display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', background: 'rgba(0,0,0,0.55)', padding: '0.6rem 1.2rem', color: '#fff', fontSize: '1rem', fontWeight: 800, backdropFilter: 'blur(14px)' }}>
         <span style={{ color: '#86EFAC' }}>기억</span>
-        <span>{round + 1} / {TOTAL}</span>
+        <span>{round + 1} / {total}</span>
         <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ color: '#FCD34D' }}>{level}번</span>
         <span style={{ opacity: 0.35 }}>|</span>
@@ -202,7 +206,7 @@ export function MemoryGame({
 
   const progress = (
     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, height: 5, background: 'rgba(255,255,255,0.08)' }}>
-      <div style={{ height: '100%', width: `${(round / TOTAL) * 100}%`, borderRadius: '0 3px 3px 0', background: '#22C55E', transition: 'width 0.5s ease' }} />
+      <div style={{ height: '100%', width: `${(round / total) * 100}%`, borderRadius: '0 3px 3px 0', background: '#22C55E', transition: 'width 0.5s ease' }} />
     </div>
   );
 
@@ -271,8 +275,8 @@ export function MemoryGame({
   }
 
   if (phase === 'reveal') {
-    const isLast = round + 1 >= TOTAL;
-    const nextLabel = isLast ? (isTenItemLevel ? '전체 정답 목록' : '훈련 완료') : `다음 (${round + 2} / ${TOTAL})`;
+    const isLast = round + 1 >= total;
+    const nextLabel = isLast ? (isTenItemLevel ? '전체 정답 목록' : '훈련 완료') : `다음 (${round + 2} / ${total})`;
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         {hud}
@@ -320,7 +324,7 @@ export function MemoryGame({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
                 <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 900 }}>전체 정답 목록</div>
-                <div style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', fontWeight: 700 }}>{level}번 · {TOTAL}라운드 · {patternLengthLabel(level)}</div>
+                <div style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', fontWeight: 700 }}>{level}번 · {total}라운드 · {patternLengthLabel(level)}</div>
               </div>
               <button type="button" onClick={onExit} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.07)', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', fontWeight: 800, cursor: 'pointer' }}>
                 처음으로

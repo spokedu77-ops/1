@@ -233,31 +233,6 @@ function buildEngineGapPresets(startSortOrder: number): OfficialSpomovePreset[] 
       ],
     }),
     next({
-      id: 'visual-reaction-mole-dual-exp',
-      title: '시지각 반응 · 두더지 잡기 2패널',
-      axis: 'response',
-      axisTitle: SPOMOVE_AXIS_META.response.title,
-      programGroup: 'visual-reaction',
-      programTitle: '시지각 반응',
-      salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-      engine: { mode: 'reactTrain', level: 7, moleDualPanel: true },
-      description: '좌우 2패널 구멍에서 동시에 튀어나오는 두더지 자극에 빠르게 반응하는 시지각 반응 활동',
-      cueSeconds: 3,
-      rounds: 20,
-      bgmAutoPlay: true,
-      bgmCategory: 'spomove-training',
-      recommendedUse: '순발력, 양측 팝업 반응, 게임형 활동',
-      isReady: true,
-      settingSummary: '3초 · 20회 · 2패널 · BGM 자동',
-      settingChips: ['두더지 2패널', '20회', 'BGM 자동'],
-      executionFacts: [
-        { label: '자극 방식', value: '두더지 2패널' },
-        { label: '진행 방식', value: '팝업 반응' },
-        { label: '실행 시간', value: '약 60초' },
-        { label: 'BGM', value: '자동 재생' },
-      ],
-    }),
-    next({
       id: 'simon-mixed-gallery-exp',
       title: '사이먼 효과 · 믹스 갤러리',
       en: 'Simon Effect',
@@ -422,4 +397,4 @@ export function buildOfficialSpomoveExpansionPresets(startSortOrder: number): Of
   return [...themePresets, ...engineGapPresets];
 }
 
-export const OFFICIAL_SPOMOVE_EXPANSION_COUNT = 37;
+export const OFFICIAL_SPOMOVE_EXPANSION_COUNT = 36;

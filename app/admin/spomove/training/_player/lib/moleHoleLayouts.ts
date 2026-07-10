@@ -6,7 +6,7 @@ export type MoleHole = {
   rotateDeg?: number;
 };
 
-/** 단일 화면: 15개 구멍 (% 좌표, play field 기준) */
+/** 단일 화면: 20개 구멍 (% 좌표, play field 기준) */
 export const MOLE_HOLES_SINGLE: MoleHole[] = [
   { id: 0, xPct: 12, yPct: 18, scale: 0.92, rotateDeg: -4 },
   { id: 1, xPct: 28, yPct: 12, scale: 1.05 },
@@ -30,41 +30,13 @@ export const MOLE_HOLES_SINGLE: MoleHole[] = [
   { id: 19, xPct: 82, yPct: 84, scale: 1.0 },
 ];
 
-/** 2패널 — 왼쪽 (패널 내부 % 좌표) */
-export const MOLE_HOLES_LEFT: MoleHole[] = [
-  { id: 100, xPct: 14, yPct: 14, scale: 0.95 },
-  { id: 101, xPct: 38, yPct: 10, scale: 1.05, rotateDeg: 3 },
-  { id: 102, xPct: 62, yPct: 16, scale: 0.98 },
-  { id: 103, xPct: 82, yPct: 24, scale: 1.02, rotateDeg: -4 },
-  { id: 104, xPct: 10, yPct: 38, scale: 1.0 },
-  { id: 105, xPct: 32, yPct: 34, scale: 0.96 },
-  { id: 106, xPct: 56, yPct: 40, scale: 1.08 },
-  { id: 107, xPct: 78, yPct: 44, scale: 0.94, rotateDeg: 5 },
-  { id: 108, xPct: 18, yPct: 58, scale: 1.04 },
-  { id: 109, xPct: 42, yPct: 54, scale: 0.97 },
-  { id: 110, xPct: 66, yPct: 60, scale: 1.06 },
-  { id: 111, xPct: 24, yPct: 76, scale: 0.95, rotateDeg: -3 },
-  { id: 112, xPct: 50, yPct: 72, scale: 1.02 },
-  { id: 113, xPct: 74, yPct: 78, scale: 0.98 },
-];
+const MIN_HOLE_PAIR_DISTANCE_PCT = 18;
 
-/** 2패널 — 오른쪽 (패널 내부 % 좌표) */
-export const MOLE_HOLES_RIGHT: MoleHole[] = [
-  { id: 200, xPct: 16, yPct: 12, scale: 1.0, rotateDeg: 4 },
-  { id: 201, xPct: 40, yPct: 18, scale: 0.96 },
-  { id: 202, xPct: 64, yPct: 10, scale: 1.04 },
-  { id: 203, xPct: 84, yPct: 20, scale: 0.98 },
-  { id: 204, xPct: 12, yPct: 36, scale: 1.06, rotateDeg: -5 },
-  { id: 205, xPct: 36, yPct: 42, scale: 0.94 },
-  { id: 206, xPct: 58, yPct: 36, scale: 1.02 },
-  { id: 207, xPct: 80, yPct: 40, scale: 0.97 },
-  { id: 208, xPct: 20, yPct: 56, scale: 1.05 },
-  { id: 209, xPct: 44, yPct: 62, scale: 0.95, rotateDeg: 3 },
-  { id: 210, xPct: 68, yPct: 58, scale: 1.08 },
-  { id: 211, xPct: 28, yPct: 74, scale: 0.96 },
-  { id: 212, xPct: 52, yPct: 78, scale: 1.0 },
-  { id: 213, xPct: 76, yPct: 74, scale: 1.03, rotateDeg: -4 },
-];
+function holeDistancePct(a: MoleHole, b: MoleHole): number {
+  const dx = a.xPct - b.xPct;
+  const dy = a.yPct - b.yPct;
+  return Math.hypot(dx, dy);
+}
 
 export function pickRandomHole(
   holes: MoleHole[],
@@ -79,6 +51,41 @@ export function pickRandomHole(
     pick = holes.find((h) => h.id !== excludeId) ?? pick;
   }
   return pick;
+}
+
+export function pickTwoDifferentHoles(
+  holes: MoleHole[],
+  excludeA = -1,
+  excludeB = -1,
+): [MoleHole, MoleHole] {
+  if (holes.length < 2) {
+    const only = holes[0]!;
+    return [only, only];
+  }
+
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const a = pickRandomHole(holes, excludeA);
+    const b = pickRandomHole(holes, a.id === excludeB ? excludeA : excludeB);
+    if (a.id === b.id) continue;
+    if (holeDistancePct(a, b) < MIN_HOLE_PAIR_DISTANCE_PCT) continue;
+    return [a, b];
+  }
+
+  const shuffled = [...holes].sort(() => Math.random() - 0.5);
+  let bestA = shuffled[0]!;
+  let bestB = shuffled[1]!;
+  let bestDist = holeDistancePct(bestA, bestB);
+  for (let i = 0; i < shuffled.length; i += 1) {
+    for (let j = i + 1; j < shuffled.length; j += 1) {
+      const dist = holeDistancePct(shuffled[i]!, shuffled[j]!);
+      if (dist > bestDist) {
+        bestA = shuffled[i]!;
+        bestB = shuffled[j]!;
+        bestDist = dist;
+      }
+    }
+  }
+  return [bestA, bestB];
 }
 
 export function pickTwoDifferentColors<T extends { lane: number }>(pool: readonly T[]): [T, T] {

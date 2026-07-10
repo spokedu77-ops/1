@@ -12,7 +12,6 @@ export type TeacherSpomoveProgram = {
   duration?: number;
   variantColorTheme?: SpomoveColorThemeId;
   reactTrainConcurrent?: 1 | 2 | 3;
-  moleDualPanel?: boolean;
   bodyLabelMode?: 'easy' | 'hard';
   displayChips?: string[];
 };
@@ -80,9 +79,9 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
     label: '1주차',
     summary: '반응인지와 스트룹으로 방향, 색상, 간섭 반응을 시작합니다.',
     programs: [
-      basic('w1-rc-space', '반응인지 - 공간 방향', 1, 2.5),
-      basic('w1-rc-quad-color', '반응인지 - 사분할 색상', 2, 2.5, 'color'),
-      basic('w1-rc-full-color', '반응인지 - 전면색상: 색상', 3, 2.5, 'color'),
+      basic('w1-rc-space', '반응인지 - 공간 방향', 1, 2),
+      basic('w1-rc-quad-color', '반응인지 - 사분할 색상', 2, 2, 'color'),
+      basic('w1-rc-full-color', '반응인지 - 전면색상: 색상', 3, 2, 'color'),
       stroop('w1-stroop-arrow', '스트룹 - 화살표 스트룹/역스트룹', 1),
       stroop('w1-stroop-arrow-bg', '스트룹 - 화살표/배경 간섭', 2),
     ],
@@ -92,9 +91,9 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
     label: '2주차',
     summary: '전면색상 테마와 시지각 반응 게임으로 반응 폭을 넓힙니다.',
     programs: [
-      basic('w2-rc-full-animal', '반응인지 - 전면색상: 동물', 3, 2.5, 'animal'),
-      basic('w2-rc-full-fruit', '반응인지 - 전면색상: 과일', 3, 2.5, 'fruit'),
-      basic('w2-rc-full-food', '반응인지 - 전면색상: 음식', 3, 2.5, 'food'),
+      basic('w2-rc-full-animal', '반응인지 - 전면색상: 동물', 3, 2, 'animal'),
+      basic('w2-rc-full-fruit', '반응인지 - 전면색상: 과일', 3, 2, 'fruit'),
+      basic('w2-rc-full-food', '반응인지 - 전면색상: 음식', 3, 2, 'food'),
       reactTrain('w2-vr-balloon', '시지각 반응 - 풍선 터뜨리기 1개', 2, 2, 30),
       reactTrain('w2-vr-bricks', '시지각 반응 - 떨어지는 벽돌 2개', 1, 2.5, 60, {
         reactTrainConcurrent: 2,
@@ -106,8 +105,8 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
     label: '3주차',
     summary: '변형 사분할과 단어 스트룹으로 간섭 반응을 확장합니다.',
     programs: [
-      basic('w3-rc-mod-quad-1', '반응인지 - 변형 사분할 1단계', 7, 3),
-      basic('w3-rc-mod-quad-2', '반응인지 - 변형 사분할 2단계', 8, 3),
+      basic('w3-rc-mod-quad-1', '반응인지 - 변형 사분할 1단계', 7, 2),
+      basic('w3-rc-mod-quad-2', '반응인지 - 변형 사분할 2단계', 8, 4),
       stroop('w3-stroop-word', '스트룹 - 단어 스트룹/역스트룹', 3),
       stroop('w3-stroop-word-bg', '스트룹 - 단어+배경', 4),
     ],
@@ -120,10 +119,7 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
       basic('w4-rc-full-vehicle', '반응인지 - 전면색상: 탈 것', 3, 2, 'vehicle'),
       basic('w4-rc-full-nature', '반응인지 - 전면색상: 자연물', 3, 2, 'nature'),
       basic('w4-rc-full-emotion', '반응인지 - 전면색상: 감정', 3, 2, 'emotion'),
-      reactTrain('w4-vr-mole-1', '시지각 반응 - 두더지 1개', 7, 2, 30),
-      reactTrain('w4-vr-mole-2', '시지각 반응 - 두더지 2개', 7, 2, 30, {
-        moleDualPanel: true,
-      }),
+      reactTrain('w4-vr-mole', '시지각 반응 - 두더지 잡기', 7, 2, 30),
     ],
   },
   {
@@ -144,13 +140,13 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
     label: '6주차',
     summary: '변형 사분할 3,4단계와 카모플라쥬 밸런스 무빙을 진행합니다.',
     programs: [
-      p('w6-rc-mod-quad-3-easy', '반응인지 - 변형 사분할 3단계 이지', 'basic', 9, {
-        speed: 3.5,
+      p('w6-rc-mod-quad-3-easy', '반응인지 - 변형 사분할 3단계', 'basic', 9, {
+        speed: 4,
         targetReps: 15,
         bodyLabelMode: 'easy',
       }),
-      p('w6-rc-mod-quad-4-easy', '반응인지 - 변형 사분할 4단계 이지', 'basic', 10, {
-        speed: 3.5,
+      p('w6-rc-mod-quad-4-easy', '반응인지 - 변형 사분할 4단계', 'basic', 10, {
+        speed: 4,
         targetReps: 15,
         bodyLabelMode: 'easy',
       }),
@@ -160,13 +156,17 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 7,
     label: '7주차',
-    summary: '사이먼 효과와 플랭커 협동 점프로 선택·억제 반응을 연습합니다.',
+    summary: '사이먼 효과와 랜덤·크기/색 혼합 플랭커로 선택·억제 반응을 연습합니다.',
     programs: [
       p('w7-simon-effect', '사이먼 효과', 'simon', 2, {
         speed: 2.5,
         targetReps: 15,
       }),
-      p('w7-flanker-coop-jump', '플랭커 - 협동 점프', 'flanker', 1, {
+      p('w7-flanker-random', '플랭커 - 랜덤 플랭커', 'flanker', 3, {
+        speed: 2.5,
+        targetReps: 15,
+      }),
+      p('w7-flanker-mixed', '플랭커 - 크기/색 혼합', 'flanker', 4, {
         speed: 2.5,
         targetReps: 15,
       }),
@@ -175,17 +175,17 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 8,
     label: '8주차',
-    summary: '오징어 게임 콘셉트의 순차기억으로 마무리합니다.',
+    summary: '순차기억 5항·색-번호 과제로 작업기억을 마무리합니다.',
     programs: [
-      p('w8-memory-squid-1', '순차기억 - 1단계: 오징어 게임 활용', 'spatial', 1, {
+      p('w8-memory-5items', '순차기억 5항 기억', 'spatial', 2, {
+        targetReps: 4,
+        displayChips: ['1~3초 랜덤', '4라운드', 'BGM 자동'],
+      }),
+      p('w8-memory-color-number-quiz', '순차기억 색-번호 맞추기', 'spatial', 4, {
         speed: STANDARD_SPEED,
         targetReps: MEMORY_ROUNDS,
       }),
-      p('w8-memory-squid-2', '순차기억 - 2단계: 오징어 게임 활용', 'spatial', 2, {
-        speed: STANDARD_SPEED,
-        targetReps: MEMORY_ROUNDS,
-      }),
-      p('w8-memory-squid-3', '순차기억 - 3단계: 오징어 게임 활용', 'spatial', 3, {
+      p('w8-memory-color-number-full', '순차기억 색-번호 전체보기', 'spatial', 5, {
         speed: STANDARD_SPEED,
         targetReps: MEMORY_ROUNDS,
       }),
@@ -220,7 +220,6 @@ export function buildTeacherAutoLaunch(program: TeacherSpomoveProgram): MemoryGa
       timeMode: 'time',
       duration: program.duration ?? REACT_TRAIN_DURATION_SEC,
       reactTrainConcurrent: program.reactTrainConcurrent ?? 1,
-      moleDualPanel: program.moleDualPanel,
     };
   }
 

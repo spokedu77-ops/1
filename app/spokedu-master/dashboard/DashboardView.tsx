@@ -457,6 +457,7 @@ function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; 
       <div className="flex items-start justify-between gap-3">
         {showThumbnail ? (
           <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/15 bg-black/20">
+            {/* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */}
             <img
               src={thumbnailUrl}
               alt=""

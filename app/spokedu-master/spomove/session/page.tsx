@@ -355,7 +355,7 @@ function SpomoveSessionContent() {
         bodyLabelMode={officialPreset.engine.bodyLabelMode}
         hideBodyLabelModeControls={officialPreset.engine.hideBodyLabelModeControls}
         reactTrainConcurrent={officialPreset.engine.reactTrainConcurrent}
-        moleDualPanel={officialPreset.engine.moleDualPanel}
+        moleLookMode={officialPreset.engine.moleLookMode}
         numberCartTier={officialPreset.engine.numberCartTier}
         colorTrackerTier={officialPreset.engine.colorTrackerTier}
         colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}

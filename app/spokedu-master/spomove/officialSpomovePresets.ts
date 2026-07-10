@@ -50,7 +50,7 @@ export type OfficialSpomovePreset = {
     bodyLabelMode?: 'easy' | 'hard';
     hideBodyLabelModeControls?: boolean;
     reactTrainConcurrent?: 1 | 2 | 3;
-    moleDualPanel?: boolean;
+    moleLookMode?: 'classic' | 'variant';
     numberCartTier?: 1 | 2 | 3;
     colorTrackerTier?: 1 | 2 | 3;
     colorTrackerDualPanel?: boolean;
@@ -689,7 +689,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 7, moleDualPanel: false },
+    engine: { mode: 'reactTrain', level: 7 },
     description: '화면 곳곳 구멍에서 튀어나오는 두더지 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,

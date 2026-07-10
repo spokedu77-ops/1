@@ -698,3 +698,101 @@ describe('training result summary', () => {
     expect(describeSessionVolume({ mode: 'basic', level: 2, timeMode: 'reps', duration: 60, targetReps: 20 })).toBe('20회');
   });
 });
+
+describe('camouflage placement', () => {
+  test('center mode always places at canvas center', async () => {
+    const { resolveCamouflagePosition, camoShapeSize } = await import('./lib/camouflagePlacement');
+    const w = 800;
+    const h = 600;
+    const size = camoShapeSize(w, h);
+    const { cx, cy } = resolveCamouflagePosition('center', w, h, 0, size);
+    expect(cx).toBe(w / 2);
+    expect(cy).toBe(h / 2);
+  });
+
+  test('variant mode keeps shape inside canvas bounds', async () => {
+    const {
+      resolveCamouflagePosition,
+      camoShapeSize,
+      camoShapeRadius,
+    } = await import('./lib/camouflagePlacement');
+    const w = 1280;
+    const h = 720;
+    const size = camoShapeSize(w, h);
+    const radius = camoShapeRadius(size);
+
+    for (let edge = 0; edge < 4; edge += 1) {
+      const { cx, cy } = resolveCamouflagePosition('variant', w, h, edge, size);
+      expect(cx).toBeGreaterThanOrEqual(radius);
+      expect(cx).toBeLessThanOrEqual(w - radius);
+      expect(cy).toBeGreaterThanOrEqual(radius);
+      expect(cy).toBeLessThanOrEqual(h - radius);
+    }
+  });
+
+  test('variant mode uses pole edges in sequence', async () => {
+    const { pickCamouflageVariantPosition, camoShapeSize } = await import('./lib/camouflagePlacement');
+    const w = 1000;
+    const h = 800;
+    const size = camoShapeSize(w, h);
+    const margin = 0.2;
+
+    const left = pickCamouflageVariantPosition(w, h, 0, size);
+    const right = pickCamouflageVariantPosition(w, h, 1, size);
+    const top = pickCamouflageVariantPosition(w, h, 2, size);
+    const bottom = pickCamouflageVariantPosition(w, h, 3, size);
+
+    expect(left.cx / w).toBeLessThan(margin);
+    expect(right.cx / w).toBeGreaterThan(1 - margin);
+    expect(top.cy / h).toBeLessThan(margin);
+    expect(bottom.cy / h).toBeGreaterThan(1 - margin);
+  });
+});
+
+describe('camouflage shapes', () => {
+  test('offers twelve geometric silhouettes', async () => {
+    const { CAMO_SHAPE_BUILDERS } = await import('./lib/camouflageShapes');
+    expect(CAMO_SHAPE_BUILDERS).toHaveLength(12);
+    for (const builder of CAMO_SHAPE_BUILDERS) {
+      expect(builder(400, 300, 120)).toBeTruthy();
+    }
+  });
+});
+
+describe('mole hole layouts', () => {
+  test('pickTwoDifferentHoles returns distinct ids', async () => {
+    const { MOLE_HOLES_SINGLE, pickTwoDifferentHoles } = await import('./lib/moleHoleLayouts');
+    for (let i = 0; i < 20; i += 1) {
+      const [a, b] = pickTwoDifferentHoles(MOLE_HOLES_SINGLE);
+      expect(a.id).not.toBe(b.id);
+    }
+  });
+
+  test('pickTwoDifferentHoles avoids excluded ids when possible', async () => {
+    const { MOLE_HOLES_SINGLE, pickTwoDifferentHoles } = await import('./lib/moleHoleLayouts');
+    const excludeA = MOLE_HOLES_SINGLE[0]!.id;
+    const excludeB = MOLE_HOLES_SINGLE[1]!.id;
+    for (let i = 0; i < 20; i += 1) {
+      const [a, b] = pickTwoDifferentHoles(MOLE_HOLES_SINGLE, excludeA, excludeB);
+      expect(a.id).not.toBe(b.id);
+      expect(a.id === excludeA && b.id === excludeB).toBe(false);
+      expect(a.id === excludeB && b.id === excludeA).toBe(false);
+    }
+  });
+});
+
+describe('mole looks', () => {
+  test('classic mode always returns default look', async () => {
+    const { pickRandomMoleLook } = await import('./lib/moleLooks');
+    for (let i = 0; i < 20; i += 1) {
+      expect(pickRandomMoleLook('classic')).toBe('default');
+    }
+  });
+
+  test('variant mode returns accessory looks only', async () => {
+    const { MOLE_LOOKS_VARIANT, pickRandomMoleLook } = await import('./lib/moleLooks');
+    for (let i = 0; i < 30; i += 1) {
+      expect(MOLE_LOOKS_VARIANT).toContain(pickRandomMoleLook('variant'));
+    }
+  });
+});

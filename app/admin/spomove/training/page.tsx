@@ -204,14 +204,16 @@ type LaunchSettings = {
   flowVisualVariant: FlowVisualVariant;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 두더지 잡기(6번 표시, engine level 7) 전용: 2패널 양손 모드 */
-  moleDualPanel: boolean;
   /** 시지각반응(reactTrain) 숫자 기차(8번 표시, engine level 9) 전용: L1/L2/L3 */
   numberCartTier: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: 2패널 양손 모드 */
   colorTrackerDualPanel: boolean;
+  /** 시지각반응(reactTrain) 두더지 잡기(6번 표시, engine level 7) 전용: 기존(눈·코) / 변형(모자·선글라스 등) */
+  moleLookMode: 'classic' | 'variant';
+  /** 시지각반응(reactTrain) 매직 아이(5번 표시, engine level 4) 전용: 기존(중앙) / 변형(Simon식 극단 순환) */
+  camouflagePlacement: 'center' | 'variant';
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
@@ -237,10 +239,11 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   flowBgImageUrl: '',
   flowVisualVariant: 'classic',
   reactTrainConcurrent: 1,
-  moleDualPanel: false,
   numberCartTier: 2,
   colorTrackerTier: 2,
   colorTrackerDualPanel: false,
+  moleLookMode: 'classic',
+  camouflagePlacement: 'center',
   bodyLabelMode: 'hard',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -265,10 +268,11 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     flowBgImageUrl: fallback.flowBgImageUrl,
     flowVisualVariant: auto.flowVisualVariant === 'plus' ? 'plus' : fallback.flowVisualVariant ?? 'classic',
     reactTrainConcurrent: (auto.reactTrainConcurrent as 1 | 2 | 3 | undefined) ?? fallback.reactTrainConcurrent,
-    moleDualPanel: auto.moleDualPanel ?? fallback.moleDualPanel,
     numberCartTier: (auto.numberCartTier as 1 | 2 | 3 | undefined) ?? fallback.numberCartTier,
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
     colorTrackerDualPanel: auto.colorTrackerDualPanel ?? fallback.colorTrackerDualPanel,
+    moleLookMode: auto.moleLookMode === 'variant' ? 'variant' : fallback.moleLookMode,
+    camouflagePlacement: auto.camouflagePlacement === 'variant' ? 'variant' : fallback.camouflagePlacement,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
   };
@@ -340,10 +344,11 @@ function TrainingPortal({
     flowBgImageUrl: launch.flowBgImageUrl || undefined,
     flowVisualVariant: launch.flowVisualVariant,
     reactTrainConcurrent: launch.reactTrainConcurrent,
-    moleDualPanel: launch.moleDualPanel,
     numberCartTier: launch.numberCartTier,
     colorTrackerTier: launch.colorTrackerTier,
     colorTrackerDualPanel: launch.colorTrackerDualPanel,
+    moleLookMode: launch.moleLookMode,
+    camouflagePlacement: launch.camouflagePlacement,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
   };
@@ -355,7 +360,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flankerStimulusType}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.moleDualPanel}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.flankerStimulusType}-${launch.flowColorTheme}-${launch.flowDuration}-${launch.flowVisualVariant}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -917,26 +922,69 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 두더지 잡기(6번 표시, engine level 7) 전용: 패널 모드 */}
-          {isReactTrain && levelId === 7 ? (
+          {isReactTrain && levelId === 4 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>패널 모드</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배치 모드</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  단일 화면은 넓은 필드에서 구멍을 추적합니다. 2패널 양손은 좌·우에서 동시에 뜨는 경우 각각 왼손·오른손으로 반응합니다.
+                  기존은 화면 중앙에 도형이 나타납니다. 변형은 사이먼 효과처럼 좌·우·상·하 극단을 번갈아 배치하며, 도형 전체가 잘리지 않도록 여백을 둡니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: false, label: '단일 화면', sub: '기본' },
-                  { id: true, label: '2패널 양손', sub: '양손' },
-                ] as const).map((opt) => {
-                  const active = launch.moleDualPanel === opt.id;
+                  { id: 'center' as const, label: '기존', sub: '중앙 고정' },
+                  { id: 'variant' as const, label: '변형', sub: '극단 순환' },
+                ]).map((opt) => {
+                  const active = launch.camouflagePlacement === opt.id;
                   return (
                     <button
-                      key={opt.label}
+                      key={opt.id}
                       type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, moleDualPanel: opt.id }))}
+                      onClick={() => setLaunch((s) => ({ ...s, camouflagePlacement: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {isReactTrain && levelId === 7 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>외형 모드</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  기존은 눈·코만 있는 기본 두더지가 항상 1마리씩 나타납니다. 변형은 액세서리가 붙으며, 처음 4회 후 약 절반은 2마리가 동시에 나타납니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'classic' as const, label: '기존', sub: '1마리' },
+                  { id: 'variant' as const, label: '변형', sub: '1·2마리 혼합' },
+                ]).map((opt) => {
+                  const active = launch.moleLookMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, moleLookMode: opt.id }))}
                       style={{
                         flex: 1,
                         padding: '11px 8px',
@@ -1116,11 +1164,20 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {isSpatial && (levelId === 1 || levelId === 2) ? (
+          {isSpatial && levelId === 1 ? (
             <section style={{ marginBottom: 26 }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>색 전환 간격</label>
               <p style={{ margin: '8px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.55, fontWeight: 600 }}>
                 1.0~2.5초 사이에서 매 색마다 자동으로 바뀝니다.
+              </p>
+            </section>
+          ) : null}
+
+          {isSpatial && levelId === 2 ? (
+            <section style={{ marginBottom: 26 }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>색 전환 간격</label>
+              <p style={{ margin: '8px 0 0', fontSize: 12, color: T.textDim, lineHeight: 1.55, fontWeight: 600 }}>
+                1.0~3.0초 사이에서 매 색마다 자동으로 바뀝니다.
               </p>
             </section>
           ) : null}

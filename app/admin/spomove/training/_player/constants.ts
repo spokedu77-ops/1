@@ -72,7 +72,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 1, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
       { id: 2, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
       { id: 3, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속에 위장된 사물(사과·바나나·포도 등)이 서서히 드러날 때 해당 색을 찾습니다.' },
+      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속에 위장된 다양한 도형이 서서히 드러날 때 해당 색을 찾습니다.' },
       { id: 7, name: '두더지 잡기', enName: 'Mole Simulator', desc: '화면 곳곳 구멍에서 튀어나오는 색 자극에 반응합니다.' },
       { id: 8, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
       { id: 9, name: '숫자 기차', enName: 'Number Cart', desc: '광산 수레의 목표 숫자(또는 식)를 보고, 같은 답이 붙은 색 문으로 수레가 들어갑니다. L1~L3 난이도 선택.' },

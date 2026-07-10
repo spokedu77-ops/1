@@ -106,7 +106,7 @@ type Props = {
   bodyLabelMode?: 'easy' | 'hard';
   hideBodyLabelModeControls?: boolean;
   reactTrainConcurrent?: 1 | 2 | 3;
-  moleDualPanel?: boolean;
+  moleLookMode?: 'classic' | 'variant';
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
   colorTrackerDualPanel?: boolean;
@@ -146,7 +146,7 @@ export function EngineRouter({
   bodyLabelMode,
   hideBodyLabelModeControls,
   reactTrainConcurrent,
-  moleDualPanel,
+  moleLookMode,
   numberCartTier,
   colorTrackerTier,
   colorTrackerDualPanel,
@@ -297,7 +297,7 @@ export function EngineRouter({
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
-            dualPanel={moleDualPanel ?? false}
+            lookMode={moleLookMode ?? 'classic'}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />

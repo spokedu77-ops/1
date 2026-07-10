@@ -4,32 +4,32 @@ import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import {
-  MOLE_HOLES_LEFT,
-  MOLE_HOLES_RIGHT,
   MOLE_HOLES_SINGLE,
   pickRandomHole,
   pickTwoDifferentColors,
+  pickTwoDifferentHoles,
   type MoleHole,
 } from '../lib/moleHoleLayouts';
+import { pickRandomMoleLook, type MoleLook, type MoleLookMode } from '../lib/moleLooks';
 import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
 
 type Props = {
   durationSec: number;
   speedLevel: number;
   speedSec: number;
-  dualPanel?: boolean;
+  lookMode?: MoleLookMode;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
 const MOLE_COLORS = [
-  { hex: '#e12835', lane: 0 as const }, // RED
-  { hex: '#0074bd', lane: 1 as const }, // BLUE
-  { hex: '#27b758', lane: 2 as const }, // GREEN
-  { hex: '#f5cd30', lane: 3 as const }, // YELLOW
+  { hex: '#e12835', lane: 0 as const },
+  { hex: '#0074bd', lane: 1 as const },
+  { hex: '#27b758', lane: 2 as const },
+  { hex: '#f5cd30', lane: 3 as const },
 ] as const;
 
-type ActiveMole = { holeId: number; hex: string; lane: number };
+type ActiveMole = { holeId: number; hex: string; lane: number; look: MoleLook };
 
 const css = `
 .rmt{--bg:#1a2e14;--hud-h:72px;position:fixed;inset:0;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
@@ -44,14 +44,8 @@ const css = `
 .rmt-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(255,255,255,.45);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer}
 .rmt-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .rmt-play{position:relative;flex:1;min-height:0;display:flex;padding:0}
-.rmt-play--dual{gap:0}
 .rmt-field{position:relative;flex:1;min-height:0;overflow:hidden;background:radial-gradient(ellipse 120% 80% at 50% 100%,#2d4a22 0%,#1a2e14 55%,#0f1a0c 100%)}
 .rmt-field::before{content:'';position:absolute;inset:0;background-image:radial-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:18px 18px;pointer-events:none;opacity:.6}
-.rmt-panel{position:relative;flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
-.rmt-panel-label{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:5;font-size:10px;font-weight:800;letter-spacing:.28em;color:rgba(255,255,255,.28);pointer-events:none}
-.rmt-panel--left .rmt-field{border-right:1px solid rgba(255,255,255,.08)}
-.rmt-panel--right .rmt-field{border-left:1px solid rgba(255,255,255,.04)}
-.rmt-divider{width:2px;flex-shrink:0;background:linear-gradient(to bottom,transparent,rgba(255,255,255,.12) 20%,rgba(255,255,255,.12) 80%,transparent)}
 .rmt-hole-wrap{position:absolute;width:clamp(76px,13vw,128px);height:clamp(76px,13vw,128px);transform:translate(-50%,-50%);z-index:2}
 .rmt-hole-glow{position:absolute;inset:-22%;border-radius:50%;opacity:0;transition:opacity .12s ease-out,transform .12s ease-out;pointer-events:none;filter:blur(8px)}
 .rmt-hole-wrap--active .rmt-hole-glow{opacity:.72;transform:scale(1.05)}
@@ -62,24 +56,55 @@ const css = `
 .rmt-mole{width:92%;height:100%;position:absolute;left:50%;transform:translateX(-50%);bottom:-100%;transition:bottom .2s cubic-bezier(.175,.885,.32,1.275);display:flex;justify-content:flex-end;overflow:visible}
 .rmt-mole.up{bottom:0}
 .rmt-mole-body{width:100%;height:100%;border-radius:48% 48% 44% 44%;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:22%;border:2.5px solid rgba(0,0,0,.52);box-shadow:inset -6px 0 12px rgba(0,0,0,.16),inset 6px 0 10px rgba(255,255,255,.1),0 3px 8px rgba(0,0,0,.35)}
-.rmt-eyes{display:flex;gap:clamp(10px,22%,18px);margin-bottom:clamp(5px,10%,9px)}
+.rmt-eyes{display:flex;gap:clamp(10px,22%,18px);margin-bottom:clamp(5px,10%,9px);position:relative;z-index:2}
 .rmt-eye{width:clamp(5px,14%,8px);height:clamp(10px,24%,14px);background:#111;border-radius:50%;flex-shrink:0}
-.rmt-nose{width:clamp(22px,62%,34px);height:clamp(11px,22%,16px);background:#f48a9a;border-radius:999px;border:2px solid rgba(0,0,0,.45);position:relative;flex-shrink:0;box-shadow:inset -2px -2px 0 rgba(0,0,0,.1)}
+.rmt-nose{width:clamp(22px,62%,34px);height:clamp(11px,22%,16px);background:#f48a9a;border-radius:999px;border:2px solid rgba(0,0,0,.45);position:relative;flex-shrink:0;box-shadow:inset -2px -2px 0 rgba(0,0,0,.1);z-index:2}
 .rmt-nose::after{content:'';position:absolute;top:15%;right:18%;width:28%;height:32%;background:rgba(255,255,255,.5);border-radius:50%}
+.rmt-acc{position:absolute;pointer-events:none;z-index:3}
+.rmt-acc--sunglasses{left:50%;top:24%;transform:translateX(-50%);width:72%;height:18%;display:flex;align-items:center;justify-content:center;gap:14%}
+.rmt-acc--sunglasses-bar{position:absolute;left:8%;right:8%;top:42%;height:18%;background:#111;border-radius:999px;border:2px solid rgba(255,255,255,.15)}
+.rmt-acc--lens{width:28%;height:100%;background:#111;border-radius:999px;border:2.5px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.rmt-acc--cap{left:8%;right:8%;top:-8%;height:34%;background:#1e3a8a;border-radius:999px 999px 12% 12%;border:2px solid rgba(0,0,0,.45);box-shadow:inset 0 4px 0 rgba(255,255,255,.12)}
+.rmt-acc--cap::after{content:'';position:absolute;left:-8%;right:-8%;top:58%;height:22%;background:#1e40af;border-radius:999px;border:2px solid rgba(0,0,0,.4)}
+.rmt-acc--topHat{left:18%;right:18%;top:-28%;height:42%;background:#111827;border:2px solid rgba(0,0,0,.5);border-radius:4px 4px 0 0;box-shadow:inset 0 3px 0 rgba(255,255,255,.08)}
+.rmt-acc--topHat::after{content:'';position:absolute;left:-22%;right:-22%;bottom:-18%;height:18%;background:#111827;border-radius:999px;border:2px solid rgba(0,0,0,.45)}
+.rmt-acc--bow{left:50%;top:58%;transform:translateX(-50%);width:42%;height:16%;background:#ec4899;border-radius:4px;border:2px solid rgba(0,0,0,.35)}
+.rmt-acc--bow::before,.rmt-acc--bow::after{content:'';position:absolute;top:10%;width:38%;height:120%;background:#db2777;border-radius:50% 50% 40% 40%;border:2px solid rgba(0,0,0,.3)}
+.rmt-acc--bow::before{left:-28%;transform:rotate(-18deg)}
+.rmt-acc--bow::after{right:-28%;transform:rotate(18deg)}
 .rmt-combo{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.7);z-index:40;text-align:center;pointer-events:none;opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1)}
 .rmt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .rmt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 .rmt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
 `;
 
+function MoleAccessories({ look }: { look: MoleLook }) {
+  if (look === 'default') return null;
+  if (look === 'sunglasses') {
+    return (
+      <div className="rmt-acc rmt-acc--sunglasses" aria-hidden>
+        <div className="rmt-acc--sunglasses-bar" />
+        <div className="rmt-acc--lens" />
+        <div className="rmt-acc--lens" />
+      </div>
+    );
+  }
+  if (look === 'cap') return <div className="rmt-acc rmt-acc--cap" aria-hidden />;
+  if (look === 'topHat') return <div className="rmt-acc rmt-acc--topHat" aria-hidden />;
+  if (look === 'bow') return <div className="rmt-acc rmt-acc--bow" aria-hidden />;
+  return null;
+}
+
 function MoleHoleView({
   hole,
   active,
   hex,
+  look = 'default',
 }: {
   hole: MoleHole;
   active: boolean;
   hex: string;
+  look?: MoleLook;
 }) {
   const scale = hole.scale ?? 1;
   const rot = hole.rotateDeg ?? 0;
@@ -105,6 +130,7 @@ function MoleHoleView({
       <div className="rmt-hole">
         <div className={`rmt-mole${active ? ' up' : ''}`}>
           <div className="rmt-mole-body" style={{ backgroundColor: hex }}>
+            <MoleAccessories look={active ? look : 'default'} />
             <div className="rmt-eyes">
               <div className="rmt-eye" />
               <div className="rmt-eye" />
@@ -136,6 +162,7 @@ function MoleField({
             hole={hole}
             active={Boolean(active)}
             hex={active?.hex ?? '#3d2817'}
+            look={active?.look ?? 'default'}
           />
         );
       })}
@@ -143,11 +170,25 @@ function MoleField({
   );
 }
 
+function addActiveMole(
+  next: Map<number, ActiveMole>,
+  hole: MoleHole,
+  color: (typeof MOLE_COLORS)[number],
+  lookMode: MoleLookMode,
+) {
+  next.set(hole.id, {
+    holeId: hole.id,
+    hex: color.hex,
+    lane: color.lane,
+    look: pickRandomMoleLook(lookMode),
+  });
+}
+
 export function RobloxMoleReactionTraining({
   durationSec,
   speedLevel,
   speedSec,
-  dualPanel = false,
+  lookMode = 'classic',
   onExit,
   onComplete,
 }: Props) {
@@ -161,9 +202,9 @@ export function RobloxMoleReactionTraining({
     combo: number;
     maxCombo: number;
     laneCount: [number, number, number, number];
-    lastHoleLeft: number;
-    lastHoleRight: number;
     lastHoleSingle: number;
+    lastHolePairA: number;
+    lastHolePairB: number;
     spawnCount: number;
     lastSpawnDualBoth: boolean;
     timer: ReturnType<typeof setInterval> | null;
@@ -248,9 +289,9 @@ export function RobloxMoleReactionTraining({
       combo: 0,
       maxCombo: 0,
       laneCount: [0, 0, 0, 0] as [number, number, number, number],
-      lastHoleLeft: -1,
-      lastHoleRight: -1,
       lastHoleSingle: -1,
+      lastHolePairA: -1,
+      lastHolePairB: -1,
       spawnCount: 0,
       lastSpawnDualBoth: false,
       timer: null as ReturnType<typeof setInterval> | null,
@@ -277,43 +318,34 @@ export function RobloxMoleReactionTraining({
       showCombo(g.combo);
     };
 
-    const triggerSingle = () => {
-      g.lastSpawnDualBoth = false;
-      const hole = pickRandomHole(MOLE_HOLES_SINGLE, g.lastHoleSingle);
-      g.lastHoleSingle = hole.id;
-      const color = MOLE_COLORS[Math.floor(Math.random() * MOLE_COLORS.length)]!;
-      registerStim(color.lane);
-      const next = new Map<number, ActiveMole>();
-      next.set(hole.id, { holeId: hole.id, hex: color.hex, lane: color.lane });
-      setActiveMap(next);
-    };
-
-    const triggerDual = () => {
+    const triggerMixed = () => {
       g.spawnCount += 1;
       const warmupSingleOnly = g.spawnCount <= 4;
-      const bothSides = !warmupSingleOnly && Math.random() < 0.5;
-      g.lastSpawnDualBoth = bothSides;
+      const spawnPair =
+        lookMode === 'variant' && !warmupSingleOnly && Math.random() < 0.5;
+      g.lastSpawnDualBoth = spawnPair;
       const next = new Map<number, ActiveMole>();
 
-      if (bothSides) {
-        const leftHole = pickRandomHole(MOLE_HOLES_LEFT, g.lastHoleLeft);
-        const rightHole = pickRandomHole(MOLE_HOLES_RIGHT, g.lastHoleRight);
-        g.lastHoleLeft = leftHole.id;
-        g.lastHoleRight = rightHole.id;
-        const [leftColor, rightColor] = pickTwoDifferentColors(MOLE_COLORS);
-        registerStim(leftColor.lane);
-        registerStim(rightColor.lane);
-        next.set(leftHole.id, { holeId: leftHole.id, hex: leftColor.hex, lane: leftColor.lane });
-        next.set(rightHole.id, { holeId: rightHole.id, hex: rightColor.hex, lane: rightColor.lane });
+      if (spawnPair) {
+        const [holeA, holeB] = pickTwoDifferentHoles(
+          MOLE_HOLES_SINGLE,
+          g.lastHolePairA,
+          g.lastHolePairB,
+        );
+        g.lastHolePairA = holeA.id;
+        g.lastHolePairB = holeB.id;
+        g.lastHoleSingle = holeA.id;
+        const [colorA, colorB] = pickTwoDifferentColors(MOLE_COLORS);
+        registerStim(colorA.lane);
+        registerStim(colorB.lane);
+        addActiveMole(next, holeA, colorA, lookMode);
+        addActiveMole(next, holeB, colorB, lookMode);
       } else {
-        const leftSide = Math.random() < 0.5;
-        const holes = leftSide ? MOLE_HOLES_LEFT : MOLE_HOLES_RIGHT;
-        const lastKey = leftSide ? 'lastHoleLeft' : 'lastHoleRight';
-        const hole = pickRandomHole(holes, g[lastKey]);
-        g[lastKey] = hole.id;
+        const hole = pickRandomHole(MOLE_HOLES_SINGLE, g.lastHoleSingle);
+        g.lastHoleSingle = hole.id;
         const color = MOLE_COLORS[Math.floor(Math.random() * MOLE_COLORS.length)]!;
         registerStim(color.lane);
-        next.set(hole.id, { holeId: hole.id, hex: color.hex, lane: color.lane });
+        addActiveMole(next, hole, color, lookMode);
       }
 
       setActiveMap(next);
@@ -321,8 +353,7 @@ export function RobloxMoleReactionTraining({
 
     const triggerMole = () => {
       if (!g.running) return;
-      if (dualPanel) triggerDual();
-      else triggerSingle();
+      triggerMixed();
       g.hideTimer = setTimeout(() => setActiveMap(new Map()), g.exposeMs);
     };
 
@@ -358,7 +389,7 @@ export function RobloxMoleReactionTraining({
       if (g.timer) clearInterval(g.timer);
       clearSpawnTimers();
     };
-  }, [clearSpawnTimers, dualPanel, durationSec, endGame, showCombo, speedLevel, speedSec]);
+  }, [clearSpawnTimers, durationSec, endGame, lookMode, showCombo, speedLevel, speedSec]);
 
   return (
     <div className="rmt">
@@ -390,22 +421,8 @@ export function RobloxMoleReactionTraining({
         </div>
       </div>
 
-      <div className={`rmt-play${dualPanel ? ' rmt-play--dual' : ''}`}>
-        {dualPanel ? (
-          <>
-            <div className="rmt-panel rmt-panel--left">
-              <div className="rmt-panel-label">LEFT</div>
-              <MoleField uid={uid} holes={MOLE_HOLES_LEFT} activeMap={activeMap} />
-            </div>
-            <div className="rmt-divider" aria-hidden />
-            <div className="rmt-panel rmt-panel--right">
-              <div className="rmt-panel-label">RIGHT</div>
-              <MoleField uid={uid} holes={MOLE_HOLES_RIGHT} activeMap={activeMap} />
-            </div>
-          </>
-        ) : (
-          <MoleField uid={uid} holes={MOLE_HOLES_SINGLE} activeMap={activeMap} />
-        )}
+      <div className="rmt-play">
+        <MoleField uid={uid} holes={MOLE_HOLES_SINGLE} activeMap={activeMap} />
         <div className="rmt-combo" ref={comboRef}>
           <div className="rmt-combo-n" ref={comboNRef}>
             0
