@@ -251,7 +251,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   };
 
   return (
-    <main className="min-h-dvh bg-[#f6f7f9] pb-10 text-slate-950 lg:pb-12">
+    <main className="min-h-dvh bg-[#f6f7f9] pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-slate-950 lg:pb-12">
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
         <Link href={libraryReturnHref} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-1 text-sm font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" aria-label="라이브러리로 돌아가기">
           <ArrowLeft className="h-4 w-4" />

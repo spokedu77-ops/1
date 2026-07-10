@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { LongPressButton } from './LongPressButton';
 import { setupCanvas } from '../lib/canvasUtils';
@@ -275,9 +276,9 @@ function quadrantIndexOf(x: number, y: number, w: number, h: number): number {
 }
 
 const css = `
-.ctrk{position:fixed;inset:0;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.ctrk{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .ctrk,.ctrk *{box-sizing:border-box}
-.ctrk-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:30;flex-shrink:0}
+.ctrk-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .ctrk-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .ctrk-hc.grow{flex:1;align-items:center;border-right:none}
 .ctrk-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -298,8 +299,9 @@ const css = `
 .ctrk-cd{position:absolute;inset:0;z-index:25;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.72);pointer-events:none}
 .ctrk-cd-n{font-size:clamp(100px,24vw,200px);font-weight:900;color:#f97316;line-height:1;animation:ctrkcd .45s ease-out}
 @keyframes ctrkcd{from{transform:scale(1.35);opacity:.2}to{transform:scale(1);opacity:1}}
-.ctrk-reveal{position:absolute;left:50%;bottom:clamp(14px,3.5vh,32px);transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto}
+.ctrk-reveal{position:absolute;left:50%;bottom:max(clamp(14px,3.5vh,32px),env(safe-area-inset-bottom));transform:translateX(-50%);z-index:30;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:auto}
 .ctrk-reveal-hint{font-size:11px;font-weight:700;color:rgba(255,255,255,.34);letter-spacing:.08em}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 export function ColorTrackerReactionTraining({

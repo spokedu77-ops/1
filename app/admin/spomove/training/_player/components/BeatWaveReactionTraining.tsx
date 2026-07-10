@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec, speedSecToMs } from '../lib/reactTrainTiming';
@@ -70,9 +71,9 @@ type Props = {
 };
 
 const css = `
-.bwt{position:fixed;inset:0;background:#020308;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.bwt{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#020308;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .bwt,.bwt *{box-sizing:border-box}
-.bwt-hud{height:72px;display:flex;align-items:stretch;background:rgba(2,3,8,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:30;flex-shrink:0}
+.bwt-hud{height:72px;display:flex;align-items:stretch;background:rgba(2,3,8,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .bwt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .bwt-hc.grow{flex:1;align-items:center;border-right:none}
 .bwt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -94,10 +95,11 @@ const css = `
 .bwt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .bwt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 .bwt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.4)}
-.bwt-cue{position:absolute;bottom:clamp(10px,2.2vw,20px);left:50%;transform:translateX(-50%);z-index:15;display:flex;align-items:center;gap:clamp(6px,1.1vw,10px);padding:9px clamp(12px,2vw,18px);border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(4,7,17,.68);backdrop-filter:blur(20px);pointer-events:none;white-space:nowrap}
+.bwt-cue{position:absolute;bottom:max(clamp(10px,2.2vw,20px),env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:15;display:flex;align-items:center;gap:clamp(6px,1.1vw,10px);padding:9px clamp(12px,2vw,18px);border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(4,7,17,.68);backdrop-filter:blur(20px);pointer-events:none;white-space:nowrap}
 .bwt-cue-label{color:rgba(255,255,255,.6);font-weight:800;letter-spacing:.1em;font-size:clamp(9px,1.1vw,12px)}
 .bwt-chip{width:clamp(30px,5vw,52px);aspect-ratio:1;border-radius:12px;border:2px solid rgba(255,255,255,.26);display:grid;place-items:center;font-weight:900;font-size:clamp(10px,1.6vw,16px);letter-spacing:.04em;transition:transform .12s}
 .bwt-chip.main{transform:scale(1.16);border-color:#fff}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, onExit, onComplete }: Props) {

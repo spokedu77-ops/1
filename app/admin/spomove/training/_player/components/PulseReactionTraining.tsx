@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import { speedSecToMs } from '../lib/reactTrainTiming';
@@ -92,9 +93,9 @@ class PulseParticle {
 }
 
 const css = `
-.prt{--bg:#07070F;position:fixed;inset:0;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.prt{--bg:#07070F;position:fixed;inset:0;height:100dvh;max-height:100dvh;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .prt,.prt *{box-sizing:border-box}
-.prt-hud{height:72px;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:20}
+.prt-hud{height:72px;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:20}
 .prt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .prt-hc.grow{flex:1;align-items:center;border-right:none}
 .prt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -116,12 +117,13 @@ const css = `
 .prt-label.lit{opacity:1}
 .prt-label.l0{top:16px;left:16px;color:#FF1744}
 .prt-label.l1{top:16px;right:16px;color:#FFD600}
-.prt-label.l2{bottom:16px;left:16px;color:#2979FF}
-.prt-label.l3{bottom:16px;right:16px;color:#00E676}
+.prt-label.l2{bottom:max(16px,env(safe-area-inset-bottom));left:16px;color:#2979FF}
+.prt-label.l3{bottom:max(16px,env(safe-area-inset-bottom));right:16px;color:#00E676}
 .prt-combo{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%) scale(.7);opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1);pointer-events:none;z-index:15;text-align:center}
 .prt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .prt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(72px,14vw,132px);line-height:1;color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5)}
 .prt-combo-w{font-size:clamp(10px,1.8vw,15px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 type Props = {

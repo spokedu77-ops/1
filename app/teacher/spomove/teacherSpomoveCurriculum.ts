@@ -82,7 +82,7 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
       basic('w1-rc-space', '반응인지 - 공간 방향', 1, 2),
       basic('w1-rc-quad-color', '반응인지 - 사분할 색상', 2, 2, 'color'),
       basic('w1-rc-full-color', '반응인지 - 전면색상: 색상', 3, 2, 'color'),
-      stroop('w1-stroop-arrow', '스트룹 - 화살표 스트룹/역스트룹', 1),
+      stroop('w1-stroop-arrow', '스트룹 - 공간 방향 · 색상', 1),
       stroop('w1-stroop-arrow-bg', '스트룹 - 화살표/배경 간섭', 2),
     ],
   },
@@ -156,10 +156,10 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 7,
     label: '7주차',
-    summary: '사이먼 효과와 랜덤·크기/색 혼합 플랭커로 선택·억제 반응을 연습합니다.',
+    summary: '사이먼 믹스 갤러리와 랜덤·크기/색 혼합 플랭커로 선택·억제 반응을 연습합니다.',
     programs: [
-      p('w7-simon-effect', '사이먼 효과', 'simon', 2, {
-        speed: 2.5,
+      p('w7-simon-effect', '사이먼 효과 - 믹스 갤러리', 'simon', 3, {
+        speed: 2,
         targetReps: 15,
       }),
       p('w7-flanker-random', '플랭커 - 랜덤 플랭커', 'flanker', 3, {
@@ -201,6 +201,7 @@ export function buildTeacherAutoLaunch(program: TeacherSpomoveProgram): MemoryGa
   const base = {
     audioMode: 'beep' as const,
     warmup: STANDARD_WARMUP,
+    programTitle: program.title,
   };
 
   if (program.mode === 'spatial') {

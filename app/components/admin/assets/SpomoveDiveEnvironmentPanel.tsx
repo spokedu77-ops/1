@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   useSpomoveDiveEnvironments,
-  type DiveThemeId,
 } from '@/app/lib/admin/hooks/useSpomoveDiveEnvironments';
+import { DIVE_THEME_UI, type DiveThemeId } from '@/app/lib/spomove/diveThemes';
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
@@ -21,7 +21,7 @@ function formatDate(ts: number): string {
   });
 }
 
-const DIVE_THEMES: { id: DiveThemeId; label: string }[] = [{ id: 'space', label: 'SPACE' }];
+const DIVE_THEMES = DIVE_THEME_UI;
 
 export function SpomoveDiveEnvironmentPanel() {
   const { data, loading, saving, error, upload, remove, saveYaw, getPreviewUrl, setError } =

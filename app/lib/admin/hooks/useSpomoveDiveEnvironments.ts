@@ -9,6 +9,14 @@ import {
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
 import { spomoveDivePanoPath, spomoveDivePanoLowPath } from '@/app/lib/admin/assets/storagePaths';
+import {
+  type DiveThemeId,
+  type DiveThemeEntry,
+  DIVE_THEME_IDS,
+  isDiveThemeId,
+} from '@/app/lib/spomove/diveThemes';
+
+export type { DiveThemeId, DiveThemeEntry };
 
 const PACK_ID   = 'spomove_dive_environment_settings';
 const PACK_NAME = 'SPOMOVE DIVE 환경 설정';
@@ -21,28 +29,22 @@ const HIGH_H = 2048;
 const LOW_W  = 2048;
 const LOW_H  = 1024;
 
-export type DiveThemeId = 'space';
-
-export type DiveThemeEntry = {
-  panoramaPath:    string;
-  panoramaLowPath: string;
-  width:           number;
-  height:          number;
-  fileSize:        number;
-  updatedAt:       number;
-  /** true = panoramaPath가 실제 4096×2048 고해상도 파일 */
-  hasHighRes:      boolean;
-  /** 파노라마 정면 방향 오프셋 (°, -180 ~ +180, 기본 0) */
-  yawDeg?:         number;
-};
-
 type DiveAssetsJson = {
   themes: Partial<Record<DiveThemeId, DiveThemeEntry>>;
 };
 
 function normalizeDiveJson(raw: unknown): DiveAssetsJson {
-  const d = raw as DiveAssetsJson | null;
-  return { themes: d?.themes ?? {} };
+  const d = raw as { themes?: Record<string, DiveThemeEntry> } | null;
+  const themes: Partial<Record<DiveThemeId, DiveThemeEntry>> = {};
+  if (d?.themes) {
+    for (const id of DIVE_THEME_IDS) {
+      const entry = d.themes[id];
+      if (entry && typeof entry.panoramaLowPath === 'string') {
+        themes[id] = entry;
+      }
+    }
+  }
+  return { themes };
 }
 
 function loadImageEl(file: File): Promise<HTMLImageElement> {
@@ -116,7 +118,7 @@ export function useSpomoveDiveEnvironments() {
         body: JSON.stringify({
           id: PACK_ID,
           name: PACK_NAME,
-          theme: 'iiwarmup',
+          theme: 'spomove',
           assets_json: next,
         }),
       });
@@ -134,6 +136,9 @@ export function useSpomoveDiveEnvironments() {
   }, []);
 
   const upload = useCallback(async (themeId: DiveThemeId, file: File) => {
+    if (!isDiveThemeId(themeId)) {
+      throw new Error(`알 수 없는 DIVE 테마: ${String(themeId)}`);
+    }
     const allowed = ['image/png', 'image/jpeg', 'image/webp'];
     if (!allowed.includes(file.type)) {
       throw new Error(`PNG, JPG, WebP만 업로드 가능합니다. (현재: ${file.type || '알 수 없음'})`);

@@ -2,7 +2,7 @@
  * 신호 생성: 메모리 패턴, 일반 신호 (basic/stroop/dual)
  */
 
-import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS } from '../constants';
+import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection } from '../constants';
 import {
   SPOMOVE_VARIANT_SLOT_COLOR_IDS,
   SPOMOVE_VARIANT_SLOT_COUNT,
@@ -343,6 +343,8 @@ export type GenerateSignalOptions = {
   flankerStimulusType?: 'color' | 'number';
   /** basic 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 (0~3) */
   poleEdgeIndex?: number;
+  /** basic 1번 · 공간 방향: 기본(흰 화살표) | 색상(방향별 고정 색: 위 빨·좌 초·우 노·아래 파) */
+  spatialArrowColorMode?: 'basic' | 'color';
 };
 
 export function generateSignal(
@@ -364,6 +366,15 @@ export function generateSignal(
   if (mode === 'basic') {
     if (level === 1) {
       const a = r(ARROWS);
+      if (opts?.spatialArrowColorMode === 'color') {
+        const fillHex = spatialArrowFillForDirection(a.id, activeColors);
+        return {
+          type: 'arrow',
+          bg: '#0F172A',
+          content: { ...a, fillHex },
+          voice: null,
+        };
+      }
       return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
     }
     if (level === 2) {
@@ -1084,8 +1095,8 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     return `bvc:${tier}:${part}`;
   }
   if (t === 'arrow') {
-    const c = sig.content as { id?: string };
-    return `ar:${c?.id ?? ''}`;
+    const c = sig.content as { id?: string; fillHex?: string };
+    return `ar:${c?.id ?? ''}${c?.fillHex ? `:${c.fillHex}` : ''}`;
   }
   if (t === 'number') {
     const c = sig.content as { label?: string };
@@ -1109,8 +1120,8 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     return `simon:${c.shape ?? ''}:${c.fillHex}:${c.imageUrl ?? ''}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
   }
   if (t === 'simon_arrow') {
-    const c = sig.content as { arrowId?: string; posX?: number; posY?: number };
-    return `simon_ar:${c.arrowId}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
+    const c = sig.content as { arrowId?: string; fillHex?: string; posX?: number; posY?: number };
+    return `simon_ar:${c.arrowId}:${c.fillHex ?? ''}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
   }
   if (t === 'flanker_row') {
     const c = sig.content as {
@@ -1190,6 +1201,9 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
       })
     );
   }
+  if (t === 'arrow' || t === 'simon_arrow') {
+    return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
+  }
   if (t === 'stroop_arrow') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
   if (t === 'stroop') return uniqueColorKeys([colorIdFromHex(content.textHex)]);
   if (t === 'dual_num' || t === 'dual_color_arrow') {
@@ -1229,7 +1243,8 @@ export function createBasicSignalGenerator(
   level: number,
   colors: ColorItem[],
   fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
-  basicNumberOverlay?: 'none' | '2' | '3'
+  basicNumberOverlay?: 'none' | '2' | '3',
+  spatialArrowColorMode: 'basic' | 'color' = 'basic',
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1256,7 +1271,10 @@ export function createBasicSignalGenerator(
     const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
     if (slides !== undefined) o.fruitSlides = slides;
     if (basicNumberOverlay && basicNumberOverlay !== 'none') o.basicNumberOverlay = basicNumberOverlay;
-    if (level === 1) o.poleEdgeIndex = poleEdgeIdx;
+    if (level === 1) {
+      o.poleEdgeIndex = poleEdgeIdx;
+      o.spatialArrowColorMode = spatialArrowColorMode;
+    }
     if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;
     else if (level === 6) o.excludeVariantPanelImageUrls = lastVariantPanelImageUrls;

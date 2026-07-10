@@ -1,7 +1,6 @@
 'use client';
 
 import FlowGameClientPlus from '../flow-lab/FlowGameClient';
-import type { VisualMode } from '../flow-lab/engine/renderers/EnvironmentThemeConfig';
 import type { FlowStageConfig } from '../flow-lab/engine/modules/stageBuilder';
 import type { FlowStats } from '../flow-lab/engine/FlowEngine';
 
@@ -9,7 +8,6 @@ type Props = {
   stages: FlowStageConfig[];
   motionScale: number;
   bgmPath?: string;
-  visualMode?: VisualMode;
   panoramaHighUrl?: string;
   panoramaLowUrl?: string;
   panoramaYawDeg?: number;
@@ -18,12 +16,11 @@ type Props = {
   onEngineReady?: (api: { loadBgmLate: (path: string) => Promise<void> }) => void;
 };
 
+/** @deprecated flow-lab FlowGameClient 직접 사용 권장 */
 export default function DivePlusGameClient(props: Props) {
   return (
     <FlowGameClientPlus
       stages={props.stages}
-      colorTheme="space"
-      visualMode={props.visualMode ?? 'enhanced'}
       motionScale={props.motionScale}
       bgmPath={props.bgmPath}
       panoramaHighUrl={props.panoramaHighUrl}

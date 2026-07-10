@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
 
@@ -151,9 +152,9 @@ type Props = {
 };
 
 const css = `
-.wh{position:fixed;inset:0;background:#000;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.wh{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#000;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .wh,.wh *{box-sizing:border-box}
-.wh-hud{height:72px;display:flex;align-items:stretch;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:30;flex-shrink:0}
+.wh-hud{height:72px;display:flex;align-items:stretch;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .wh-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .wh-hc.grow{flex:1;align-items:center;border-right:none}
 .wh-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -181,6 +182,7 @@ const css = `
 @keyframes whflash{0%{opacity:0}100%{opacity:1}}
 .wh-warn-text{font-size:clamp(20px,5vw,52px);font-weight:900;color:#fff;text-shadow:0 0 40px #ff0000,0 0 16px #ff0000;text-align:center;padding:0 24px;transform:scale(.5);opacity:0;transition:all .2s cubic-bezier(.175,.885,.32,1.275)}
 .wh-warn-text.show{transform:scale(1);opacity:1}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {

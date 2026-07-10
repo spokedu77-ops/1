@@ -2,7 +2,7 @@
  * Flow 2.0 — 모듈 정의 SSOT
  */
 
-export type FlowModuleKey = 'jump' | 'faster' | 'punch' | 'duck' | 'reach';
+export type FlowModuleKey = 'jump' | 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
 
 export interface FlowModule {
   key: FlowModuleKey;
@@ -57,8 +57,8 @@ export const FLOW_MODULES: Record<FlowModuleKey, FlowModule> = {
     colorBg: 'rgba(249,115,22,0.12)',
     colorBorder: 'rgba(249,115,22,0.7)',
     cueWord: '펀치!',
-    shortInstruction: '박스가 오면 주먹으로 치세요',
-    description: '다리 위에 박스 등장 — 주먹으로 파괴',
+    shortInstruction: '레인 위 박스가 오면 주먹으로 치세요',
+    description: '다리 바닥에 낮은 박스 — 주먹으로 파괴',
     isBase: false,
     hasObstacle: true,
   },
@@ -90,9 +90,37 @@ export const FLOW_MODULES: Record<FlowModuleKey, FlowModule> = {
     isBase: false,
     hasObstacle: true,
   },
+  kick: {
+    key: 'kick',
+    label: '롤링 배럴 킥',
+    tag: 'KICK',
+    icon: '🦵',
+    color: '#34d399',
+    colorBg: 'rgba(52,211,153,0.12)',
+    colorBorder: 'rgba(52,211,153,0.7)',
+    cueWord: '킥!',
+    shortInstruction: '가슴 높이 배럴이 오면 발로 차세요',
+    description: '가슴 높이 롤링 배럴 — 발을 들어 차서 날려버리기',
+    isBase: false,
+    hasObstacle: true,
+  },
+  colorGate: {
+    key: 'colorGate',
+    label: '색 포즈 관문',
+    tag: 'GATE',
+    icon: '🎯',
+    color: '#f472b6',
+    colorBg: 'rgba(244,114,182,0.12)',
+    colorBorder: 'rgba(244,114,182,0.7)',
+    cueWord: '이동!',
+    shortInstruction: '색에 맞는 패드로 이동해 자세를 취하세요',
+    description: '빨·노·초·파 배경 — 해당 색 패드로 이동 후 5가지 동작 순차 연습',
+    isBase: false,
+    hasObstacle: false,
+  },
 };
 
-/** 사용자가 선택 가능한 장애물 모듈 (faster는 각 스테이지 후반 자동 적용) */
+/** 사용자가 선택 가능한 장애물·관문 모듈 (faster는 각 스테이지 후반 자동 적용) */
 export const SELECTABLE_MODULE_KEYS: FlowModuleKey[] = [
-  'punch', 'duck', 'reach',
+  'punch', 'kick', 'duck', 'reach', 'colorGate',
 ];

@@ -85,7 +85,7 @@ export function LessonPreviewContent({
           <aside
             data-preview-column="content"
             data-preview-summary
-            className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 [scrollbar-width:thin] lg:max-h-[min(620px,calc(100vh-260px))] lg:overflow-y-auto"
+            className="min-w-0 rounded-[14px] border border-slate-200 bg-white p-4 [scrollbar-width:thin] lg:max-h-[min(620px,calc(100dvh-260px))] lg:overflow-y-auto"
             tabIndex={0}
           >
             <div className="space-y-5">

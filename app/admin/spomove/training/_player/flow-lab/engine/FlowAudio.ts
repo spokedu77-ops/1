@@ -184,6 +184,31 @@ export class FlowAudio {
     src.start(t); src.stop(t + 0.09);
   }
 
+  sfxKick(): void {
+    if (!this.ctx || !this.sfxGain || !this.noiseBuffer) return;
+    const t = this.ctx.currentTime;
+    const sub = this.ctx.createOscillator();
+    const subG = this.ctx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(48, t);
+    sub.frequency.exponentialRampToValueAtTime(22, t + 0.08);
+    subG.gain.setValueAtTime(0.0001, t);
+    subG.gain.exponentialRampToValueAtTime(0.62, t + 0.006);
+    subG.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    sub.connect(subG); subG.connect(this.sfxGain);
+    sub.start(t); sub.stop(t + 0.1);
+    const src = this.ctx.createBufferSource();
+    src.buffer = this.noiseBuffer;
+    const filt = this.ctx.createBiquadFilter();
+    filt.type = 'bandpass'; filt.frequency.value = 420; filt.Q.value = 0.8;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.55, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+    src.connect(filt); filt.connect(g); g.connect(this.sfxGain);
+    src.start(t); src.stop(t + 0.08);
+  }
+
   sfxCoin(): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;

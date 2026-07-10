@@ -2,9 +2,11 @@ import type { OfficialSpomovePreset } from './officialSpomovePresets';
 
 export type SpomovePadLayoutVariant = 'grid2x2' | 'compass';
 
-/** 반응인지 1번, 다이브·보너스, 사이먼 2번은 compass(다이아) 배치 */
+/** 반응인지 1번, 색상 공간 방향, 다이브·보너스, 사이먼 2번은 compass(다이아) 배치 */
 export function getSpomovePadLayoutVariant(preset: OfficialSpomovePreset): SpomovePadLayoutVariant {
   if (preset.id === 'reaction-cognition-space-direction-01') return 'compass';
+  if (preset.id === 'reaction-cognition-space-direction-color-01b') return 'compass';
+  if (preset.id === 'stroop-arrow-reverse-08') return 'compass';
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return 'compass';
   if (preset.engine.mode === 'simon' && preset.engine.level === 2) return 'compass';
   return 'grid2x2';

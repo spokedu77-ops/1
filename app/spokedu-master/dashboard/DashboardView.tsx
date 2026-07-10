@@ -477,13 +477,21 @@ function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; 
       <div>
         <h3 className="line-clamp-2 text-[17px] font-black leading-5">{preset.title}</h3>
         <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-300">{preset.salesCopy || preset.recommendedUse}</p>
-        <Link
-          href={officialPresetSessionHref(preset, { autostart: true })}
-          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[13px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-        >
-          <MonitorPlay size={15} />
-          바로 실행
-        </Link>
+        <div className="mt-3 space-y-1.5">
+          <Link
+            href={officialPresetSessionHref(preset, { autostart: true })}
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-white text-[12px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            <MonitorPlay size={14} />
+            큰 화면 실행
+          </Link>
+          <Link
+            href={officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' })}
+            className="inline-flex min-h-9 w-full items-center justify-center rounded-xl border border-white/20 bg-white/10 text-[11px] font-black text-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            이 기기에서 실행
+          </Link>
+        </div>
       </div>
     </article>
   );

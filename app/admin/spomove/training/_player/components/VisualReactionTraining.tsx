@@ -313,7 +313,7 @@ function randomTriple(): [number, number, number] {
 const css = `
 .vrt{--red:#FF1744;--yellow:#FFD600;--green:#00E676;--blue:#2979FF;--bg:#07070F;--hud-h:72px;--pad-h:76px}
 .vrt, .vrt *{box-sizing:border-box}
-.vrt{position:fixed;inset:0;background:var(--bg);color:#fff;font-family:Barlow Condensed,Noto Sans KR,sans-serif;z-index:300;display:flex;flex-direction:column;overflow:hidden}
+.vrt{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:var(--bg);color:#fff;font-family:Barlow Condensed,Noto Sans KR,sans-serif;z-index:300;display:flex;flex-direction:column;overflow:hidden}
 #vrt #vrt-cv{flex:1;min-height:0;width:100%;display:block;position:relative;z-index:20}
 #vrt #vrt-lane{position:absolute;inset:0;z-index:30;pointer-events:none;display:flex}
 #vrt .vrt-laneExpl{flex:1;opacity:0}
@@ -321,7 +321,7 @@ const css = `
 #vrt .vrt-laneExpl[data-l="1"]{background:linear-gradient(to top,rgba(41,121,255,1) 0%,rgba(41,121,255,.7) 15%,rgba(41,121,255,.2) 50%,transparent 100%)}
 #vrt .vrt-laneExpl[data-l="2"]{background:linear-gradient(to top,rgba(0,230,118,1) 0%,rgba(0,230,118,.7) 15%,rgba(0,230,118,.2) 50%,transparent 100%)}
 #vrt .vrt-laneExpl[data-l="3"]{background:linear-gradient(to top,rgba(255,214,0,1) 0%,rgba(255,214,0,.7) 15%,rgba(255,214,0,.2) 50%,transparent 100%)}
-#vrt #vrt-pads{height:var(--pad-h);flex-shrink:0;z-index:40;display:flex;pointer-events:none;border-top:1px solid rgba(255,255,255,.04)}
+#vrt #vrt-pads{height:var(--pad-h);flex-shrink:0;z-index:40;display:flex;pointer-events:none;border-top:1px solid rgba(255,255,255,.04);padding-bottom:max(0px,env(safe-area-inset-bottom))}
 #vrt .vrt-pad{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-right:1px solid rgba(255,255,255,.04);transition:background .06s}
 #vrt .vrt-pad:last-child{border-right:none}
 #vrt .vrt-pad-dot{width:clamp(7px,1.4vw,13px);height:clamp(7px,1.4vw,13px);border-radius:50%;opacity:.15;transition:all .08s}
@@ -336,7 +336,7 @@ const css = `
 #vrt .vrt-pad[data-l="3"].lit{background:linear-gradient(to top,rgba(255,214,0,.18),transparent)}
 #vrt .vrt-pad.lit .vrt-pad-dot{opacity:1;box-shadow:0 0 18px 4px currentColor;transform:scale(1.5)}
 #vrt .vrt-pad.lit .vrt-pad-lbl{opacity:1}
-#vrt #vrt-hud{height:var(--hud-h);flex-shrink:0;z-index:50;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px)}
+#vrt #vrt-hud{height:var(--hud-h);flex-shrink:0;z-index:50;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0}
 #vrt .vrt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 #vrt .vrt-hc.vrt-cen{flex:1;align-items:center;border-right:none}
 #vrt .vrt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -352,6 +352,14 @@ const css = `
 #vrt .vrt-cw{font-size:clamp(10px,1.8vw,15px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
 @keyframes vrtms{0%{opacity:0;transform:translateX(-50%) scale(.5)}20%{opacity:1;transform:translateX(-50%) scale(1.12)}70%{opacity:1;transform:translateX(-50%) scale(1) translateY(-8px)}100%{opacity:0;transform:translateX(-50%) scale(.9) translateY(-48px)}}
 #vrt .vrt-ms{position:absolute;left:50%;z-index:65;pointer-events:none;font-family:Bebas Neue,sans-serif;font-size:clamp(26px,5.5vw,52px);letter-spacing:.1em;white-space:nowrap;text-shadow:0 0 24px currentColor;animation:vrtms .85s ease-out forwards}
+@media (max-height:600px){
+  .vrt{--hud-h:56px;--pad-h:58px}
+}
+@media (max-width:380px){
+  #vrt .vrt-hc{padding:0 6px}
+  #vrt .vrt-hc.vrt-cen{display:none}
+  #vrt .vrt-stop{padding:6px 10px;font-size:11px}
+}
 `;
 
 type Props = {

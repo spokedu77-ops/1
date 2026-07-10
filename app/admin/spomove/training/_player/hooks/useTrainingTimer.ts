@@ -30,6 +30,7 @@ export function useTrainingTimer({
   colors,
   fruitSlides,
   basicNumberOverlay,
+  spatialArrowColorMode = 'basic',
   flankerStimulusType,
   onSignal,
   onFinish,
@@ -47,6 +48,7 @@ export function useTrainingTimer({
   /** basic 변형 색지각(3~5번) 슬롯; 미전달 시 signals 기본값 */
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
+  spatialArrowColorMode?: 'basic' | 'color';
   flankerStimulusType?: 'color' | 'number';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
@@ -74,11 +76,13 @@ export function useTrainingTimer({
   useEffect(() => {
     if (!active) return;
     const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
+    const effectiveArrowColorMode: 'basic' | 'color' =
+      mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
     if (engineMode === 'basic') {
       // fruitSlides가 undefined이면 color 모드(이미지 없음) — getter를 undefined로 전달
       // defined이면 항상 최신 슬라이드를 읽는 getter 전달 → 타이머 재시작 없이 이미지 반영
       const getSlidesRef = () => fruitSlidesRef.current;
-      genRef.current = createBasicSignalGenerator(level, colors, getSlidesRef, basicNumberOverlay);
+      genRef.current = createBasicSignalGenerator(engineLevel, colors, getSlidesRef, basicNumberOverlay, effectiveArrowColorMode);
     } else if (engineMode === 'simon') {
       const getSlidesRef = () => fruitSlidesRef.current;
       genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef);
@@ -185,7 +189,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, flankerStimulusType, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, flankerStimulusType, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

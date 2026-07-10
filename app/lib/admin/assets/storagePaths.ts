@@ -37,11 +37,6 @@ export function thinkBgmPath(fileName: string): string {
   return `audio/think/bgm/${fileName}`;
 }
 
-/** Flow Phase BGM 경로 */
-export function flowBgmPath(fileName: string): string {
-  return `audio/flow/bgm/${fileName}`;
-}
-
 /** SPOMOVE 훈련(반응 인지·순차 기억·스트룹 등) 공통 BGM 풀 — Asset Hub BGM 탭 */
 export function spomoveTrainingBgmPath(fileName: string): string {
   return `audio/spomove/bgm/${fileName}`;
@@ -69,11 +64,6 @@ export function spomoveVariantThemedPath(
   const n = Math.max(0, Math.min(7, slotIndex));
   const num = String(n + 1).padStart(2, '0');
   return `themes/iiwarmup/${subfolder}/slot_${num}.${safe}`;
-}
-
-/** Flow Phase Equirect 배경 (2:1 파노라마) 경로 */
-export function flowPanoPath(fileName: string): string {
-  return `flow_backgrounds/pano/${fileName}`;
 }
 
 /**
@@ -207,13 +197,15 @@ export function playAssetBgmPath(weekKey: string, fileName: string): string {
   return `play_assets/${weekKey}/bgm/${fileName}`;
 }
 
+import type { DiveThemeId } from '@/app/lib/spomove/diveThemes';
+
 /** DIVE 환경 파노라마 — 고해상도 (4096×2048 또는 원본 2048×1024) */
-export function spomoveDivePanoPath(theme: 'space'): string {
+export function spomoveDivePanoPath(theme: DiveThemeId): string {
   return `themes/iiwarmup/spomove_dive/${theme}/panorama.webp`;
 }
 
 /** DIVE 환경 파노라마 — 저해상도 (2048×1024) */
-export function spomoveDivePanoLowPath(theme: 'space'): string {
+export function spomoveDivePanoLowPath(theme: DiveThemeId): string {
   return `themes/iiwarmup/spomove_dive/${theme}/panorama-low.webp`;
 }
 

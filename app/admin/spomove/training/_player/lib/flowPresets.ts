@@ -5,37 +5,60 @@
  * - 잘못된 저장 데이터는 기본값 복구 (isValidPreset 필터)
  */
 
+import {
+  type DiveThemeId,
+  normalizeDiveThemeId,
+} from '@/app/lib/spomove/diveThemes';
+
 export const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
 const FLOW_PRESETS_KEY_LEGACY = 'spomove_flow_presets';
 
-export type FlowColorTheme = 'default' | 'space' | 'neon' | 'ocean';
-export type FlowVisualVariant = 'classic' | 'plus';
+/** @deprecated flowColorTheme 대체 — preset 마이그레이션용 */
+type LegacyFlowColorTheme = 'default' | 'space' | 'neon' | 'ocean';
 
 export interface FlowPreset {
   id: string;
   name: string;
   features: string[];
-  colorTheme: FlowColorTheme;
+  /** Hub 파노라마 환경 테마 */
+  environmentTheme: DiveThemeId;
   duration: number;
-  visualVariant?: FlowVisualVariant;
+  /** @deprecated v2 preset — environmentTheme으로 마이그레이션 */
+  colorTheme?: LegacyFlowColorTheme;
+  /** @deprecated DIVE/DIVE+ 통합 후 무시 */
+  visualVariant?: 'classic' | 'plus';
+}
+
+function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
+  const id = raw.id;
+  const name = raw.name;
+  const features = raw.features;
+  const duration = raw.duration;
+  if (typeof id !== 'string' || !id.trim()) return null;
+  if (typeof name !== 'string') return null;
+  if (!Array.isArray(features) || !features.every((f) => typeof f === 'string')) return null;
+  if (typeof duration !== 'number' || duration <= 0) return null;
+
+  let environmentTheme: DiveThemeId = 'space';
+  if (raw.environmentTheme !== undefined) {
+    environmentTheme = normalizeDiveThemeId(raw.environmentTheme);
+  } else if (raw.colorTheme === 'space') {
+    environmentTheme = 'space';
+  }
+
+  return {
+    id,
+    name,
+    features: features as string[],
+    environmentTheme,
+    duration,
+  };
 }
 
 function isValidPreset(x: unknown): x is FlowPreset {
   if (!x || typeof x !== 'object') return false;
   const p = x as Record<string, unknown>;
-  return (
-    typeof p.id === 'string' &&
-    p.id.trim().length > 0 &&
-    typeof p.name === 'string' &&
-    Array.isArray(p.features) &&
-    (p.features as unknown[]).every((f) => typeof f === 'string') &&
-    (p.colorTheme === 'default' ||
-      p.colorTheme === 'space' ||
-      p.colorTheme === 'neon' ||
-      p.colorTheme === 'ocean') &&
-    typeof p.duration === 'number' &&
-    p.duration > 0
-  );
+  return migratePreset(p) !== null;
 }
 
 function parsePresets(raw: string | null): FlowPreset[] {
@@ -43,7 +66,9 @@ function parsePresets(raw: string | null): FlowPreset[] {
     if (!raw) return [];
     const arr: unknown = JSON.parse(raw);
     if (!Array.isArray(arr)) return [];
-    return arr.filter(isValidPreset);
+    return arr
+      .map((item) => (item && typeof item === 'object' ? migratePreset(item as Record<string, unknown>) : null))
+      .filter((p): p is FlowPreset => p !== null);
   } catch {
     return [];
   }
@@ -52,11 +77,9 @@ function parsePresets(raw: string | null): FlowPreset[] {
 export function loadFlowPresets(): FlowPreset[] {
   if (typeof window === 'undefined') return [];
 
-  // v2 key 우선
   const v2Raw = localStorage.getItem(FLOW_PRESETS_KEY);
   if (v2Raw !== null) return parsePresets(v2Raw);
 
-  // 구 key → 마이그레이션
   const legacyRaw = localStorage.getItem(FLOW_PRESETS_KEY_LEGACY);
   if (legacyRaw) {
     const migrated = parsePresets(legacyRaw);

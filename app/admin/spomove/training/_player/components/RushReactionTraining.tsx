@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import { normalizeReactSpeedSec } from '../lib/reactTrainTiming';
@@ -60,9 +61,9 @@ type RushState = {
 };
 
 const css = `
-.rrt{--bg:#04030A;position:fixed;inset:0;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.rrt{--bg:#04030A;position:fixed;inset:0;height:100dvh;max-height:100dvh;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .rrt,.rrt *{box-sizing:border-box}
-.rrt-hud{height:72px;display:flex;align-items:stretch;background:rgba(4,3,10,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:30}
+.rrt-hud{height:72px;display:flex;align-items:stretch;background:rgba(4,3,10,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30}
 .rrt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .rrt-hc.grow{flex:1;align-items:center;border-right:none}
 .rrt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -73,7 +74,7 @@ const css = `
 .rrt-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .rrt-play{position:relative;flex:1;min-height:0}
 .rrt-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:10}
-.rrt-pads{position:absolute;bottom:0;left:0;right:0;height:clamp(70px,10vh,88px);z-index:20;display:flex;border-top:2px solid rgba(255,255,255,.05)}
+.rrt-pads{position:absolute;bottom:0;left:0;right:0;height:clamp(70px,10vh,88px);z-index:20;display:flex;border-top:2px solid rgba(255,255,255,.05);padding-bottom:max(0px,env(safe-area-inset-bottom))}
 .rrt-pad{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;border-right:1px solid rgba(255,255,255,.04);transition:background .08s}
 .rrt-pad:last-child{border-right:none}
 .rrt-pad-dot{width:clamp(6px,1.2vw,10px);height:clamp(6px,1.2vw,10px);border-radius:50%;opacity:.18;transition:all .08s}
@@ -88,6 +89,7 @@ const css = `
 .rrt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .rrt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 .rrt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.4)}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 type Props = {

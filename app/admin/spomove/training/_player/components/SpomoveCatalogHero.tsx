@@ -210,9 +210,9 @@ export function SpomoveCatalogHero() {
                 padding: 0,
                 boxSizing: 'border-box',
                 width: '100vw',
-                height: '100vh',
+                height: '100dvh',
                 maxWidth: '100vw',
-                maxHeight: '100vh',
+                maxHeight: '100dvh',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -228,9 +228,9 @@ export function SpomoveCatalogHero() {
                 height={900}
                 style={{
                   width: '100vw',
-                  height: '100vh',
+                  height: '100dvh',
                   maxWidth: '100vw',
-                  maxHeight: '100vh',
+                  maxHeight: '100dvh',
                   objectFit: 'contain',
                   objectPosition: 'center',
                   display: 'block',

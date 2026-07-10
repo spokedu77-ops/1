@@ -98,7 +98,7 @@ function StopwatchTab() {
   }, [timerMs, timerRunning, timerStartedAt]);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-10 p-8">
+    <div className="flex h-full min-h-min flex-col items-center gap-8 p-6 py-8 sm:gap-10 sm:p-8">
       <p className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-t3)' }}>수업 진행 스탑워치</p>
       <div
         className="font-mono text-[clamp(4rem,20vw,9rem)] font-black tabular-nums leading-none"
@@ -511,7 +511,7 @@ function ScoreboardTab() {
   const [blue, setBlue] = useState(0);
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 p-6">
+    <div className="flex h-full min-h-min flex-col items-center gap-4 p-6 py-8">
       <div className="grid w-full max-w-[560px] grid-cols-2 gap-4">
         <ScorePanel label="A팀" score={red} tone="red" onPlus={() => setRed((score) => score + 1)} onMinus={() => setRed((score) => Math.max(0, score - 1))} />
         <ScorePanel label="B팀" score={blue} tone="blue" onPlus={() => setBlue((score) => score + 1)} onMinus={() => setBlue((score) => Math.max(0, score - 1))} />
@@ -752,7 +752,7 @@ export default function ClassToolsView() {
             {TOOL_STATUS.map((item) => (
               <div key={item.label} className="rounded-[14px] px-4 py-3" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
                 <p className="text-[10px] font-black" style={{ color: 'var(--spm-t3)' }}>{item.label}</p>
-                <p className="mt-1 whitespace-nowrap text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
+                <p className="mt-1 truncate text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>{item.value}</p>
               </div>
             ))}
           </div>
@@ -809,7 +809,7 @@ export default function ClassToolsView() {
         })}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain">
         {tab === 'stopwatch' && <StopwatchTab />}
         {tab === 'return-timer' && <ReturnTimerTab />}
         {tab === 'scoreboard' && <ScoreboardTab />}

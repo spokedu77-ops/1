@@ -24,7 +24,7 @@ export function StatusBar() {
 
   return (
     <header
-      className="sticky top-0 z-40 flex h-16 shrink-0 items-center border-b px-4 sm:px-6 lg:px-8"
+      className="sticky top-0 z-40 flex min-h-16 shrink-0 items-center border-b px-4 pt-[env(safe-area-inset-top)] sm:px-6 lg:px-8"
       style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(22px)', borderColor: '#e2e8f0' }}
     >
       <div className="mx-auto flex w-full max-w-[1376px] items-center justify-between gap-4">

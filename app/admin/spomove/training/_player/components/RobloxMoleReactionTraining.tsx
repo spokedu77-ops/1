@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import {
   MOLE_HOLES_SINGLE,
@@ -32,9 +33,9 @@ const MOLE_COLORS = [
 type ActiveMole = { holeId: number; hex: string; lane: number; look: MoleLook };
 
 const css = `
-.rmt{--bg:#1a2e14;--hud-h:72px;position:fixed;inset:0;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.rmt{--bg:#1a2e14;--hud-h:72px;position:fixed;inset:0;height:100dvh;max-height:100dvh;background:var(--bg);color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .rmt,.rmt *{box-sizing:border-box}
-.rmt-hud{height:var(--hud-h);display:flex;align-items:stretch;background:rgba(12,22,10,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);padding:0 clamp(12px,2.5vw,30px);z-index:30;flex-shrink:0}
+.rmt-hud{height:var(--hud-h);display:flex;align-items:stretch;background:rgba(12,22,10,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .rmt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.06)}
 .rmt-hc.grow{flex:1;align-items:center;border-right:none}
 .rmt-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.32);text-transform:uppercase}
@@ -76,6 +77,7 @@ const css = `
 .rmt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .rmt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
 .rmt-combo-w{font-size:clamp(10px,1.8vw,14px);font-weight:700;letter-spacing:.35em;color:rgba(255,255,255,.45)}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 function MoleAccessories({ look }: { look: MoleLook }) {

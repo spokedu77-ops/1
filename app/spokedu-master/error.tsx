@@ -37,7 +37,7 @@ export default function SpokeduMasterError({ error, reset }: SpokeduMasterErrorP
   }, [error]);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
+    <main className="min-h-dvh bg-slate-50 px-4 py-10 text-slate-900">
       <section className="mx-auto max-w-lg rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-bold text-indigo-600">SPOKEDU MASTER</p>
         <h1 className="mt-3 text-2xl font-black text-slate-950">

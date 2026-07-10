@@ -90,6 +90,7 @@ const STAGE_CASES: [string, AnyModuleKey[], number][] = [
   ['전체 모듈',        ['faster', 'punch', 'duck', 'reach'], 15],
   ['15초',             ['punch'],       15],
   ['60초',             ['punch', 'duck'], 60],
+  ['colorGate 단독',   ['colorGate'],      25],
 ];
 
 describe('buildStages 동일성', () => {
@@ -119,6 +120,14 @@ describe('buildStages 동일성', () => {
     const stages = labBuildStages(['punch', 'duck'], 25);
     expect(stages).toHaveLength(4);
     expect(stages[3]!.isBonus).toBe(true);
+  });
+
+  test('colorGate 단독 — 런지 펀치 포즈 1단계', () => {
+    const stages = labBuildStages(['colorGate'], 25);
+    expect(stages).toHaveLength(1);
+    expect(stages.every((s) => s.isColorGate)).toBe(true);
+    expect(stages[0]!.colorGateAction).toBe('reach');
+    expect(stages[0]!.colorGateTotal).toBe(1);
   });
 
   test('보너스 스테이지는 항상 60초', () => {
@@ -159,11 +168,12 @@ const OBS_CASES: [string, AnyModuleKey[], number, boolean, number][] = [
   ['duck',               ['duck'],                25,  false, 0],
   ['reach (잔여 있음)',  ['reach'],               25,  false, 0],
   ['reach (예산 소진)',  ['reach'],               25,  false, 6],
-  ['보너스 전체 모듈',   ['punch', 'duck', 'reach'], 60, true, 0],
+  ['kick',               ['kick'],                25,  false, 0],
+  ['보너스 전체 모듈',   ['punch', 'duck', 'reach', 'kick'], 60, true, 0],
 ];
 
 function scheduleStats(schedule: (string | null)[]) {
-  const counts: Record<string, number> = { box: 0, ufo: 0, reach: 0, null: 0 };
+  const counts: Record<string, number> = { box: 0, ufo: 0, reach: 0, kick: 0, null: 0 };
   for (const s of schedule) {
     const k = s ?? 'null';
     counts[k] = (counts[k] ?? 0) + 1;
@@ -210,6 +220,8 @@ describe('generateObstacleSchedule 속성 동일성', () => {
       const prodHasUfo: boolean[]  = [];
       const labHasReach: boolean[] = [];
       const prodHasReach: boolean[]= [];
+      const labHasKick: boolean[]  = [];
+      const prodHasKick: boolean[] = [];
 
       for (let t = 0; t < TRIALS; t++) {
         const ls = scheduleStats(labGenerateObstacleSchedule(opts));
@@ -220,6 +232,8 @@ describe('generateObstacleSchedule 속성 동일성', () => {
         prodHasUfo.push(ps['ufo']! > 0);
         labHasReach.push(ls['reach']! > 0);
         prodHasReach.push(ps['reach']! > 0);
+        labHasKick.push(ls['kick']! > 0);
+        prodHasKick.push(ps['kick']! > 0);
       }
 
       // box: punch 모듈 있을 때만 등장 — lab·prod 동일
@@ -258,6 +272,17 @@ describe('generateObstacleSchedule 속성 동일성', () => {
       if (!isBonus && sessionReach >= 6) {
         expect(labReachRate).toBe(0);
         expect(prodReachRate).toBe(0);
+      }
+
+      // kick: kick 모듈 있을 때만 등장
+      const labKickRate  = labHasKick.filter(Boolean).length;
+      const prodKickRate = prodHasKick.filter(Boolean).length;
+      if (mods.includes('kick' as AnyModuleKey) || isBonus) {
+        expect(labKickRate).toBeGreaterThan(0);
+        expect(prodKickRate).toBeGreaterThan(0);
+      } else {
+        expect(labKickRate).toBe(0);
+        expect(prodKickRate).toBe(0);
       }
     });
   }
@@ -397,6 +422,7 @@ describe('FlowCamera', () => {
 describe('buildStages 불변 속성', () => {
   test('stage1 activeModules = {jump}', () => {
     for (const [, mods, dur] of STAGE_CASES) {
+      if (mods.length === 1 && mods[0] === 'colorGate') continue;
       const s = labBuildStages(mods, dur);
       expect([...s[0]!.activeModules]).toEqual(['jump']);
     }

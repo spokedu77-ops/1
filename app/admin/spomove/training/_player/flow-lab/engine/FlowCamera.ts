@@ -97,6 +97,9 @@ export class FlowCamera {
   private duckPitchX       = 0;
   private duckHold         = false;
 
+  // 킥 (짧은 하향 시선)
+  private kickPitchX = 0;
+
   constructor(cam: THREE.PerspectiveCamera, groundBaseY: number) {
     this.cam         = cam;
     this.groundBaseY = groundBaseY;
@@ -128,17 +131,19 @@ export class FlowCamera {
     this.duckBounceOffset = 0;
     this.duckPitchX       = 0;
     this.duckHold         = false;
+    this.kickPitchX       = 0;
 
     this.cam.position.set(0, CAMERA_BASE_HEIGHT + this.groundBaseY, CAMERA_BASE_Z);
     this.cam.lookAt(0, this.groundBaseY + 45, -1500);
   }
 
-  /** 덕 애니메이션 상태만 초기화 (스테이지 전환 시) */
+  /** 덕·킥 애니메이션 상태만 초기화 (스테이지 전환 시) */
   resetAnimState(): void {
     this.duckHold         = false;
     this.duckDipOffset    = 0;
     this.duckPitchX       = 0;
     this.duckBounceOffset = 0;
+    this.kickPitchX       = 0;
   }
 
   resize(w: number, h: number): void {
@@ -158,6 +163,10 @@ export class FlowCamera {
     this.duckHold         = false;
     this.duckBounceOffset = 90;
     this.duckPitchX       = -0.18;
+  }
+
+  onKickStart(): void {
+    this.kickPitchX = 0.42;
   }
 
   addMicroJolt(amount: number): void {
@@ -203,6 +212,7 @@ export class FlowCamera {
         this.duckPitchX    += (0 - this.duckPitchX)    * 0.042 * dt60Wall;
       }
       this.duckBounceOffset *= Math.pow(0.985, dt60Wall);
+      this.kickPitchX       += (0 - this.kickPitchX) * 0.07 * dt60Wall;
 
       // 착지 임팩트 스프링 (Y)
       if (this.landingStabilityTimer > 0) this.landingStabilityTimer -= dtM;
@@ -317,7 +327,7 @@ export class FlowCamera {
     }
     this.cameraTiltZ += (targetTilt - this.cameraTiltZ) * (1 - Math.exp(-10 * dtM));
     this.cam.rotation.z = this.cameraTiltZ;
-    this.cam.rotation.x = this.duckPitchX;
+    this.cam.rotation.x = this.duckPitchX + this.kickPitchX;
 
     this.cam.lookAt(this.cameraLagX, groundY + 45, -1500);
   }

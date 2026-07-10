@@ -14,6 +14,7 @@ export type ObstacleSlot =
   | 'box'   // punch 박스
   | 'reach' // 펀치 벽 (reach 모듈)
   | 'ufo'   // UFO 숙이기 (duck 모듈)
+  | 'kick'  // 롤링 배럴 (kick 모듈)
   | null;
 
 // ─── 상수 ────────────────────────────────────────────────────────────────────
@@ -47,6 +48,25 @@ function estimateBridgeCount(durationSec: number, speedMult: number): number {
   return Math.max(4, Math.ceil(durationSec / bridgePeriodSec));
 }
 
+function buildObstaclePool(
+  hasDuck: boolean,
+  hasPunch: boolean,
+  hasKick: boolean,
+  canReach: boolean,
+): NonNullable<ObstacleSlot>[] {
+  const pool: NonNullable<ObstacleSlot>[] = [];
+  if (hasPunch) pool.push('box');
+  if (hasKick) pool.push('kick');
+  if (hasDuck) pool.push('ufo');
+  if (canReach) pool.push('reach');
+  return pool;
+}
+
+function pickRandomObstacle(pool: NonNullable<ObstacleSlot>[]): ObstacleSlot {
+  if (pool.length === 0) return null;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
 // ─── 공개 API ────────────────────────────────────────────────────────────────
 
 export interface ObstacleScheduleOptions {
@@ -68,9 +88,10 @@ export function generateObstacleSchedule(opts: ObstacleScheduleOptions): Obstacl
   const hasPunch = activeModules.has('punch');
   const hasReach = activeModules.has('reach');
   const hasDuck  = activeModules.has('duck');
+  const hasKick  = activeModules.has('kick');
 
   // 장애물 모듈 없음
-  if (!hasPunch && !hasReach && !hasDuck) return [];
+  if (!hasPunch && !hasReach && !hasDuck && !hasKick) return [];
 
   // reach 예산: 보너스는 세션 한도 무관하게 REACH_CAP_BONUS, 일반은 세션 잔여량
   const reachBudget = isBonus
@@ -82,25 +103,28 @@ export function generateObstacleSchedule(opts: ObstacleScheduleOptions): Obstacl
   // ── 1. 필수 이벤트 목록 ────────────────────────────────────────────────────
   const required: ObstacleSlot[] = [];
 
-  const activeCount = [hasDuck, hasPunch, hasReach].filter(Boolean).length;
+  const activeCount = [hasDuck, hasPunch, hasReach, hasKick].filter(Boolean).length;
 
   if (isBonus) {
-    if (hasDuck)  required.push('ufo');
     if (hasPunch) required.push('box');
+    if (hasKick)  required.push('kick');
+    if (hasDuck)  required.push('ufo');
     if (hasReach && reachBudget > 0) required.push('reach');
   } else {
     if (activeCount === 1) {
       // 단일 특기: 최소 2회 보장
-      if (hasDuck)  { required.push('ufo', 'ufo'); }
       if (hasPunch) { required.push('box', 'box'); }
+      if (hasKick)  { required.push('kick', 'kick'); }
+      if (hasDuck)  { required.push('ufo', 'ufo'); }
       if (hasReach) {
         const n = Math.min(2, reachBudget);
         for (let k = 0; k < n; k++) required.push('reach');
       }
     } else {
       // 복수 특기: 각 타입 최소 1회
-      if (hasDuck)  { required.push('ufo'); }
       if (hasPunch) { required.push('box'); }
+      if (hasKick)  { required.push('kick'); }
+      if (hasDuck)  { required.push('ufo'); }
       if (hasReach && reachBudget > 0) required.push('reach');
     }
   }
@@ -108,8 +132,6 @@ export function generateObstacleSchedule(opts: ObstacleScheduleOptions): Obstacl
   shuffleInPlace(required);
 
   // ── 2. 스케줄 조립 (엄격한 교대 패턴: 나오고-안나오고-나오고-안나오고) ───
-  // required 항목: 0, 2, 4, ... 짝수 위치에 배치
-  // 빈 짝수 위치: 확정 채움 (타입만 랜덤) → 밀도 2브릿지당 1개 유지
   const schedule: ObstacleSlot[] = new Array(bridgeCount).fill(null) as ObstacleSlot[];
   let reachInSchedule = 0;
 
@@ -124,31 +146,13 @@ export function generateObstacleSchedule(opts: ObstacleScheduleOptions): Obstacl
 
   // 빈 슬롯 채움 (연속 방지 + 타입 랜덤, 밀도는 확정적)
   for (let i = 0; i < bridgeCount; i++) {
-    if (schedule[i] !== null) continue;           // required 이미 배치됨
+    if (schedule[i] !== null) continue;
     const prev = i > 0 ? schedule[i - 1] : null;
-    if (prev !== null) continue;                  // 연속 방지
+    if (prev !== null) continue;
 
     const canReach = hasReach && reachInSchedule < reachBudget;
-    let type: ObstacleSlot = null;
-
-    if (isBonus) {
-      // 보너스: 1/N 균등 분배 (duck/punch/reach 각 1/3)
-      const pool: NonNullable<ObstacleSlot>[] = [];
-      if (hasDuck) pool.push('ufo');
-      if (hasPunch) pool.push('box');
-      if (canReach) pool.push('reach');
-      if (pool.length > 0) type = pool[Math.floor(Math.random() * pool.length)]!;
-    } else {
-      if (hasDuck && hasPunch) {
-        type = Math.random() < 0.5 ? 'ufo' : 'box';
-      } else if (hasDuck) {
-        type = 'ufo';
-      } else if (hasPunch) {
-        type = 'box';
-      } else if (canReach) {
-        type = 'reach';
-      }
-    }
+    const pool = buildObstaclePool(hasDuck, hasPunch, hasKick, canReach);
+    const type = pickRandomObstacle(pool);
 
     if (type === null) continue;
     if (type === 'reach') reachInSchedule++;

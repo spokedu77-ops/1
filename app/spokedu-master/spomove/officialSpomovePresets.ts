@@ -9,7 +9,7 @@ export type OfficialSpomoveAxis = SpomoveAxis;
 
 export type SpomoveAxisTitle = (typeof SPOMOVE_AXIS_META)[OfficialSpomoveAxis]['title'];
 
-export type OfficialFlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach';
+export type OfficialFlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick';
 
 export type OfficialSpomoveProgramGroup =
   | 'reaction-cognition'
@@ -49,6 +49,7 @@ export type OfficialSpomovePreset = {
     variantColorTheme?: SpomoveColorThemeId;
     bodyLabelMode?: 'easy' | 'hard';
     hideBodyLabelModeControls?: boolean;
+    spatialArrowColorMode?: 'basic' | 'color';
     reactTrainConcurrent?: 1 | 2 | 3;
     moleLookMode?: 'classic' | 'variant';
     numberCartTier?: 1 | 2 | 3;
@@ -69,7 +70,7 @@ export type OfficialSpomovePreset = {
   executionFacts: ExecutionFact[];
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 50;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 51;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -101,6 +102,33 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },
+    ],
+  },
+  // sortOrder 1b: 공간 방향 · 색상 모드 (level 1, color fill)
+  {
+    id: 'reaction-cognition-space-direction-color-01b',
+    sortOrder: 2,
+    title: '반응인지 1번 · 공간 방향 · 색상',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'reaction-cognition',
+    programTitle: '반응 인지',
+    engine: { mode: 'basic', level: 1, spatialArrowColorMode: 'color' },
+    description: '화면 극단의 거대 기둥+화살표 방향을 보고 해당 색 패드로 빠르게 이동하는 활동. 색상 모드에서는 위 빨·좌 초·우 노·아래 파로 화살표가 채워집니다.',
+    salesCopy: '색이 채워진 화살표로 방향 반응을 확장하는 변형',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '수업 도입, 방향 인지, 색 자극 변형',
+    isReady: true,
+    settingSummary: '3초 · 20회 · 색상 모드 · BGM 자동',
+    settingChips: ['3초', '20회', '색상 모드', 'BGM 자동'],
+    executionFacts: [
+      { label: '신호 방식', value: '극단 기둥+색 화살표' },
+      { label: '색 매핑', value: '위빨·좌초·우노·하파' },
+      { label: '반복', value: '20회' },
+      { label: 'BGM', value: '자동 재생' },
     ],
   },
   // sortOrder 2: 사분할 색상 (level 2, color)
@@ -958,32 +986,32 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-  // sortOrder 45: Arrow Reverse (level 1)
+  // sortOrder 45: 공간 방향 · 색상 (구 화살표 스트룹/역스트룹 1번 대체)
   {
     id: 'stroop-arrow-reverse-08',
     sortOrder: 33,
-    title: '스트룹 과제 1번 · Arrow Reverse',
+    title: '스트룹 과제 1번 · 공간 방향 · 색상',
     en: 'Stroop Task',
     axis: 'executive',
     axisTitle: SPOMOVE_AXIS_META.executive.title,
     programGroup: 'stroop',
     programTitle: '스트룹 과제',
     salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
-    engine: { mode: 'stroop', level: 1 },
-    description: '화살표 방향을 그대로 따라가지 않고, 반대 규칙에 맞춰 반응하는 복합 반응 활동',
+    engine: { mode: 'basic', level: 1, spatialArrowColorMode: 'color' },
+    description: '방향별 색이 채워진 화살표를 보고 해당 방향 패드로 빠르게 이동하는 활동. 위 빨·좌 초·우 노·아래 파로 고정됩니다.',
     cueSeconds: 3,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
-    recommendedUse: '규칙 조절, 충돌 정보 처리, 실행력',
+    recommendedUse: '방향 인지, 색-방향 연계, 수업 도입',
     isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['3초', '20회', 'BGM 자동'],
+    settingSummary: '3초 · 20회 · 색상 모드 · BGM 자동',
+    settingChips: ['3초', '20회', '색상 모드', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'Arrow Reverse' },
+      { label: '신호 방식', value: '방향별 색 화살표' },
+      { label: '색 매핑', value: '위빨·좌초·우노·하파' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
-      { label: '효과음', value: '자동' },
     ],
   },
   // sortOrder 46: Arrow BG (level 2)
@@ -1422,14 +1450,14 @@ export function findOfficialSpomovePreset(id: string | null | undefined) {
 
 export function officialPresetSessionHref(
   preset: OfficialSpomovePreset,
-  options?: { bgmPath?: string; autostart?: boolean },
+  options?: { bgmPath?: string; autostart?: boolean; mode?: 'projector' | 'mobile' },
 ) {
   const params = new URLSearchParams({
     preset: preset.id,
     cueSeconds: String(preset.cueSeconds),
     rounds: String(preset.rounds),
     sound: 'on',
-    mode: 'projector',
+    mode: options?.mode ?? 'projector',
   });
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');

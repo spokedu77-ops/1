@@ -8,17 +8,20 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FlowEngine, type FlowGamePhase, type FlowStats, type VisualMode } from './engine/FlowEngine';
+import { FlowEngine, type FlowGamePhase, type FlowStats } from './engine/FlowEngine';
 import { FLOW_MODULES } from './engine/modules/flowModules';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
+import ColorGateHud from './components/ColorGateHud';
+import {
+  buildColorGateCue,
+  buildColorGateInstruction,
+  type GateColorId,
+} from './engine/modules/colorGateGuides';
 
 interface FlowGameClientProps {
   stages:            FlowStageConfig[];
-  colorTheme?:       'default' | 'space' | 'neon' | 'ocean';
   motionScale?:      number;
   bgmPath?:          string;
-  bgImageUrl?:       string;
-  visualMode?:       VisualMode;
   panoramaHighUrl?:  string;
   panoramaLowUrl?:   string;
   panoramaYawDeg?:   number;
@@ -51,11 +54,8 @@ const S = {
 
 export default function FlowGameClient({
   stages,
-  colorTheme = 'default',
   motionScale = 1,
   bgmPath,
-  bgImageUrl,
-  visualMode,
   panoramaHighUrl,
   panoramaLowUrl,
   panoramaYawDeg,
@@ -66,6 +66,7 @@ export default function FlowGameClient({
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const flashRef     = useRef<HTMLDivElement>(null);
   const engineRef    = useRef<FlowEngine | null>(null);
+  const initGenRef   = useRef(0);
 
   const [phase,         setPhase]        = useState<FlowGamePhase>('idle');
   const [countdown,     setCountdown]    = useState<number | null>(null);
@@ -76,6 +77,7 @@ export default function FlowGameClient({
   const [initError,     setInitError]    = useState<string | null>(null);
   /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
   const [initKey,       setInitKey]      = useState(0);
+  const [gateColorId,   setGateColorId]  = useState<GateColorId | null>(null);
   const mountedRef   = useRef(true);
   /** 현재 엔진 init 시점의 bgmPath 캡처 — 이후 변경 시 loadBgmLate만 호출 (더블스타트 방지) */
   const engineBgmRef = useRef<string | undefined>(undefined);
@@ -98,8 +100,9 @@ export default function FlowGameClient({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || stages.length === 0) return;
+    const initGen = ++initGenRef.current;
     setInitError(null);
-    engineBgmRef.current = bgmPath; // 이 엔진 인스턴스의 초기 bgmPath 캡처
+    engineBgmRef.current = bgmPath;
 
     const classifyError = (msg: string): string => {
       const m = msg.toLowerCase();
@@ -122,6 +125,14 @@ export default function FlowGameClient({
             if (!mountedRef.current) return;
             setStageIdx(idx);
             setTimerSec(stages[idx]?.durationSec ?? 25);
+            const st = stages[idx];
+            if (!st?.isColorGate) {
+              setGateColorId(null);
+            }
+          },
+          onColorGateStage: (info) => {
+            if (!mountedRef.current) return;
+            setGateColorId(info.gateColorId);
           },
           onTimerUpdate:  (rem, prog) => {
             if (!mountedRef.current) return;
@@ -133,7 +144,7 @@ export default function FlowGameClient({
           onCameraShake:  () => {},
           onFlash:        () => {},
         },
-        { stages, colorTheme, motionScale, bgmPath, bgImageUrl, visualMode, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg },
+        { stages, motionScale, bgmPath, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg },
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -154,13 +165,13 @@ export default function FlowGameClient({
     canvas.addEventListener('webglcontextlost', handleContextLost);
 
     engine.init(flashRef.current).then(() => {
-      if (!mountedRef.current) { engine.dispose(); return; }
+      if (!mountedRef.current || initGen !== initGenRef.current) { engine.dispose(); return; }
       onEngineReady?.({ loadBgmLate: (p) => engine.loadBgmLate(p) });
       // async init 완료 후 실제 뷰포트 크기로 재조정 (iOS Safari 초기화 타이밍 보정)
       engine.resize(window.innerWidth, window.innerHeight);
       engine.start();
     }).catch((err: unknown) => {
-      if (!mountedRef.current) { engine.dispose(); return; }
+      if (!mountedRef.current || initGen !== initGenRef.current) { engine.dispose(); return; }
       const msg = err instanceof Error ? err.message : String(err);
       setInitError(classifyError(msg));
       engine.dispose();
@@ -173,7 +184,7 @@ export default function FlowGameClient({
       engineRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stages.length, colorTheme, motionScale, bgImageUrl, visualMode, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
+  }, [stages.length, motionScale, panoramaHighUrl, panoramaLowUrl, panoramaYawDeg, initKey]); // bgmPath는 late-load로 처리하고, 파노라마 URL은 Asset Hub 로드 후 재초기화한다.
 
   // ── 리사이즈 ────────────────────────────────────────────────────────────────
 
@@ -196,6 +207,22 @@ export default function FlowGameClient({
   // ── 현재 스테이지 ───────────────────────────────────────────────────────────
 
   const currentStage = stages[stageIdx];
+
+  const colorGateHud = currentStage?.isColorGate
+    && currentStage.colorGateAction
+    && gateColorId
+    && (phase === 'playing' || phase === 'stage-intro')
+    ? (
+      <ColorGateHud
+        gateColorId={gateColorId}
+        step={currentStage.colorGateStep ?? 1}
+        totalSteps={currentStage.colorGateTotal ?? 1}
+        cueWord={buildColorGateCue(gateColorId, currentStage.cueWord)}
+        shortInstruction={buildColorGateInstruction(gateColorId)}
+        remainingSec={phase === 'playing' ? timerSec : undefined}
+      />
+    )
+    : null;
 
   // ── 오류 UI ─────────────────────────────────────────────────────────────────
 
@@ -240,7 +267,7 @@ export default function FlowGameClient({
       />
 
       {/* ─── HUD (playing) ────────────────────────────────────────────────── */}
-      {phase === 'playing' && currentStage && (
+      {phase === 'playing' && currentStage && !currentStage.isColorGate && (
         <>
           {/* 스테이지 진행 도트 */}
           <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7 }}>
@@ -275,8 +302,10 @@ export default function FlowGameClient({
         </>
       )}
 
-      {/* ─── 스테이지 인트로 — 중앙 팝업 (3D씬은 계속 달림) ─────────── */}
-      {phase === 'stage-intro' && currentStage && (
+      {colorGateHud}
+
+      {/* ─── 스테이지 인트로 — 색 관문은 ColorGateHud, 그 외 중앙 팝업 ─ */}
+      {phase === 'stage-intro' && currentStage && !currentStage.isColorGate && (
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -9,7 +9,7 @@
  *   · 화살표(ARROW_*): 레인 색 네온, position.y+0.8, renderOrder=3
  *   · 트랙 바디: bodyMat (SF 네이비 메탈)
  *   · PAD: 숨김
- *   · 추가 procedural 화살표 (chevron ×5) + cyan 베이스라인
+ *   · 추가 procedural 화살표 (chevron ×10) + cyan 베이스라인
  *
  * removeBridge — GLB 모드에서 pad + 오버레이(userData.ownGeo) geometry 개별 dispose
  */
@@ -103,6 +103,9 @@ export class BridgeRenderer {
   }
 
   createBridge(input: BridgeCreateInput): BridgeVisual {
+    if (!this.scene) {
+      throw new Error('BridgeRenderer: scene is not available');
+    }
     const { lane, x, z } = input;
     const g = new THREE.Group();
 
@@ -151,7 +154,7 @@ export class BridgeRenderer {
       baseNeon.userData['ownGeo'] = true;
       g.add(baseNeon);
 
-      // 레인 색 filled 화살표 ×5 — ShapeGeometry (두께 0, 사이드 없음 → T 현상 완전 제거)
+      // 레인 색 filled 화살표 ×10 — ShapeGeometry (두께 0, 사이드 없음 → T 현상 완전 제거)
       // tip +Y → rotation.x=-π/2 후 -Z (씬 안쪽), shaft +Z (카메라 방향)
       // AH=SL=50 이므로 Z 중심=0 → offset 불필요
       {
@@ -165,7 +168,7 @@ export class BridgeRenderer {
         arrowShape.lineTo( A_SW / 2,  0);
         arrowShape.lineTo( A_SW / 2, -A_SL);
         arrowShape.closePath();
-        const numArrows = 5;
+        const numArrows = 10;
         const aStep = BRIDGE_LENGTH / numArrows;
         for (let i = 0; i < numArrows; i++) {
           const az = -BRIDGE_LENGTH / 2 + aStep * (i + 0.5);
@@ -260,7 +263,7 @@ export class BridgeRenderer {
         g.add(div);
       }
 
-      // 레인 색 filled 화살표 ×4 — ShapeGeometry (BoxGeometry 폴백 경로)
+      // 레인 색 filled 화살표 ×8 — ShapeGeometry (BoxGeometry 폴백 경로)
       {
         const A_AW = 68, A_AH = 50, A_SW = 24, A_SL = 50;
         const arrowShape = new THREE.Shape();
@@ -272,7 +275,7 @@ export class BridgeRenderer {
         arrowShape.lineTo( A_SW / 2,  0);
         arrowShape.lineTo( A_SW / 2, -A_SL);
         arrowShape.closePath();
-        const numArrows = 4;
+        const numArrows = 8;
         const aStep = BRIDGE_LENGTH / (numArrows + 1);
         for (let i = 0; i < numArrows; i++) {
           const az = -BRIDGE_LENGTH / 2 + aStep * (i + 1);

@@ -566,6 +566,11 @@ describe('generateObstacleSchedule', () => {
     expect(schedule.filter(s => s === 'reach').length).toBeGreaterThanOrEqual(1);
   });
 
+  test('kick 단일 — kick가 2회 이상 등장', () => {
+    const schedule = generateObstacleSchedule({ ...BASE_OPTS, activeModules: makeModules('kick') });
+    expect(schedule.filter(s => s === 'kick').length).toBeGreaterThanOrEqual(2);
+  });
+
   test('reach 단일 — 세션 reach 이미 2회 사용 시 reach 0회 (예산 소진)', () => {
     const schedule = generateObstacleSchedule({
       ...BASE_OPTS,
@@ -696,6 +701,48 @@ describe('training result summary', () => {
     const { describeSessionVolume } = await import('./lib/trainingResultSummary');
     expect(describeSessionVolume({ mode: 'reactTrain', level: 9, timeMode: 'time', duration: 60, targetReps: 7 })).toBe('7라운드');
     expect(describeSessionVolume({ mode: 'basic', level: 2, timeMode: 'reps', duration: 60, targetReps: 20 })).toBe('20회');
+  });
+
+  test('resolveTrainingResultRichContent builds positive copy and self-check items', async () => {
+    const { resolveTrainingResultRichContent } = await import('./lib/trainingResultRichContent');
+    const rich = resolveTrainingResultRichContent(
+      { mode: 'simon', level: 3, timeMode: 'reps', duration: 0, targetReps: 15 },
+      45_000,
+      { red: 4, yellow: 3, green: 4, blue: 4 },
+      { programTitle: '사이먼 효과 - 믹스 갤러리' },
+    );
+    expect(rich.praise).toContain('멋지게');
+    expect(rich.programTitle).toBe('사이먼 효과 - 믹스 갤러리');
+    expect(rich.programSummary).not.toContain('…');
+    expect(rich.selfCheckItems.length).toBeGreaterThanOrEqual(3);
+    expect(rich.selfCheckItems.some((item) => item.id === 'move')).toBe(true);
+    expect(rich.benefitTags.length).toBeGreaterThan(0);
+  });
+
+  test('resolveTrainingResultRichContent uses voice checklist for stroop level 2+', async () => {
+    const { resolveTrainingResultRichContent } = await import('./lib/trainingResultRichContent');
+    const rich = resolveTrainingResultRichContent(
+      { mode: 'stroop', level: 3, timeMode: 'reps', duration: 0, targetReps: 15 },
+      30_000,
+      null,
+    );
+    expect(rich.selfCheckItems.some((item) => item.id === 'voice')).toBe(true);
+    expect(rich.activityFeel).toContain('입과 머리');
+    expect(rich.benefitLine).not.toContain('히트 라인');
+    expect(rich.benefitLine).not.toMatch(/^["“]/);
+  });
+
+  test('resolveTrainingResultRichContent uses screen copy and correct particle for basic', async () => {
+    const { resolveTrainingResultRichContent } = await import('./lib/trainingResultRichContent');
+    const rich = resolveTrainingResultRichContent(
+      { mode: 'basic', level: 2, timeMode: 'reps', duration: 0, targetReps: 10 },
+      18_000,
+      { red: 2, yellow: 3, green: 1, blue: 4 },
+    );
+    expect(rich.praiseSub).toContain('반응 인지를');
+    expect(rich.praiseSub).not.toContain('반응 인지을');
+    expect(rich.programSummary).toContain('2×2');
+    expect(rich.benefitLine).toBe('눈이 색을 잡는 순간 발이 출발합니다');
   });
 });
 

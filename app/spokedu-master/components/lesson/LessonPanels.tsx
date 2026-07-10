@@ -55,7 +55,7 @@ export function LessonQuadGrid({ cells, compact = false }: { cells: Array<{ labe
 
 export function LessonMetaGrid({ cells }: { cells: Array<{ label: string; value: string }> }) {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-2 gap-2 min-[400px]:grid-cols-3">
       {cells.map((cell) => (
         <LessonFactCell key={cell.label} label={cell.label} value={cell.value} compact />
       ))}

@@ -90,7 +90,7 @@ export default function OnboardingPage() {
             <p className="mt-3 max-w-[620px] text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>기본 정보를 저장하면 수업 전 준비, 수업 중 진행, 수업 후 기록 흐름으로 바로 들어갈 수 있습니다.</p>
           </div>
 
-          <div className="mb-6 grid grid-cols-4 gap-2">
+          <div className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
             {[0, 1, 2, 3].map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <StepDot active={step === item} done={step > item} />

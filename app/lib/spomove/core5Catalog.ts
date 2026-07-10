@@ -173,7 +173,7 @@ const catalogSeed: Core5Catalog = [
         stages: [
           { stage: 1, label: '색-단어',         engine: { mode: 'stroop', level: 3 } },
           { stage: 2, label: '역규칙 단어',     engine: { mode: 'stroop', level: 3 } },
-          { stage: 3, label: '화살표 갈등',     engine: { mode: 'stroop', level: 1 } },
+          { stage: 3, label: '공간 방향 색상',     engine: { mode: 'stroop', level: 1 } },
           { stage: 4, label: '배경 간섭',       engine: { mode: 'stroop', level: 2 } },
           { stage: 5, label: '없는 색 말하기',  engine: { mode: 'stroop', level: 5 } },
         ],

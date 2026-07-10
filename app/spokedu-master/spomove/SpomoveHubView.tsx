@@ -302,8 +302,10 @@ function ThreePanelVisual({ theme }: { theme?: string }) {
   );
 }
 
-/** 반응 인지 1번·공간 방향 — 플레이어 simon_arrow와 동일한 기둥+화살표 루트 거리 */
-function SpatialDirectionVisual() {
+/** 반응인지 1번·공간 방향 — 플레이어 simon_arrow와 동일한 기둥+화살표 루트 거리 */
+function SpatialDirectionVisual({ colorMode = false }: { colorMode?: boolean }) {
+  const [red] = SPOMOVE_PAD_GRID_HEX;
+  const arrowFill = colorMode ? red : '#FFFFFF';
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#0F172A]">
       <div
@@ -326,7 +328,7 @@ function SpatialDirectionVisual() {
           <g transform="rotate(0 50 67)">
             <path
               d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-              fill="#FFFFFF"
+              fill={arrowFill}
               stroke="rgba(255,255,255,0.22)"
               strokeWidth={6}
               strokeLinejoin="round"
@@ -336,7 +338,7 @@ function SpatialDirectionVisual() {
       </div>
       <div className="absolute bottom-3 left-3">
         <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-black tracking-widest text-white/60">
-          공간 방향
+          {colorMode ? '공간 방향 · 색상' : '공간 방향'}
         </span>
       </div>
       <div className="absolute bottom-3 right-3">
@@ -376,7 +378,7 @@ function SimonVisual() {
   const [red, yellow, green, blue] = SPOMOVE_PAD_GRID_HEX;
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
-      {/* Simon 4-pad compass — ↑빨 / →노 / ↓초 / ←파 (PAD_GRID) */}
+      {/* Simon 4-pad compass — ↑빨 / ←초 / →노 / ↓파 */}
       <div className="relative h-[60px] w-[60px]">
         <div className="absolute left-[18px] top-0 h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: red }} />
         <div className="absolute right-0 top-[18px] h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: yellow }} />
@@ -504,10 +506,15 @@ function SpomoveProgramVisual({ preset }: { preset: OfficialSpomovePreset }) {
   if (programGroup === 'visual-reaction') return <VisualReactionVisual />;
   if (programGroup === 'simon') return <SimonVisual />;
   if (programGroup === 'flanker') return <FlankerVisual />;
+  if (engine.mode === 'basic' && engine.level === 1 && engine.spatialArrowColorMode === 'color') {
+    return <SpatialDirectionVisual colorMode />;
+  }
   if (programGroup === 'stroop') return <StroopVisual />;
   // reaction-cognition: level × theme 조합으로 시각 결정
   const theme = engine.variantColorTheme;
-  if (engine.level === 1) return <SpatialDirectionVisual />;
+  if (engine.level === 1) {
+    return <SpatialDirectionVisual colorMode={engine.spatialArrowColorMode === 'color'} />;
+  }
   if (engine.level === 3) return <FullVisual theme={theme} />;
   if (engine.level === 4) return <TwoPanelVisual theme={theme} />;
   if (engine.level === 5) return <ThreePanelVisual theme={theme} />;
@@ -610,6 +617,7 @@ function CardInfo({
 }) {
   const display = getSpomovePresetDisplayModel(preset);
   const cardTags = buildSpomoveCardTags(preset);
+  const mobileStartHref = officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' });
 
   return (
     <div className="flex flex-1 flex-col p-4 text-center">
@@ -630,31 +638,40 @@ function CardInfo({
       </p>
 
       {isReady ? (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          <button
-            data-spm-spomove-card-action="preview"
-            type="button"
-            onClick={(event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onPreview();
-            }}
-            className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
-          >
-            <Eye className="h-3.5 w-3.5" />
-            가이드라인
-          </button>
+        <div className="mt-4 space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              data-spm-spomove-card-action="preview"
+              type="button"
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onPreview();
+              }}
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
+            >
+              <Eye className="h-3.5 w-3.5" />
+              가이드라인
+            </button>
+            <Link
+              href={startHref}
+              data-spm-spomove-card-action="start"
+              className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
+            >
+              큰 화면 실행
+            </Link>
+          </div>
           <Link
-            href={startHref}
-            data-spm-spomove-card-action="start"
-            className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
+            href={mobileStartHref}
+            data-spm-spomove-card-action="start-mobile"
+            className="inline-flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[11px] font-black text-indigo-700"
           >
-            바로 실행
+            이 기기에서 실행
           </Link>
         </div>
       ) : null}
 
-      <div className="mt-2 grid grid-cols-2 gap-1.5">
+      <div className="mt-2 grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
         {cardTags.map((tag) => (
           <span
             key={tag.key}
@@ -810,7 +827,7 @@ export default function SpomoveHubView() {
   const renderPresetGrid = (presets: OfficialSpomovePreset[], gridId?: string) => (
     <div
       id={gridId}
-      className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4"
+      className="grid grid-cols-1 gap-4 min-[380px]:grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
     >
       {presets.map((preset) => (
         <PresetCard

@@ -105,6 +105,7 @@ type Props = {
   variantColorTheme?: string;
   bodyLabelMode?: 'easy' | 'hard';
   hideBodyLabelModeControls?: boolean;
+  spatialArrowColorMode?: 'basic' | 'color';
   reactTrainConcurrent?: 1 | 2 | 3;
   moleLookMode?: 'classic' | 'variant';
   numberCartTier?: 1 | 2 | 3;
@@ -118,7 +119,7 @@ type Props = {
 
 function LoadingOverlay() {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black">
+    <div className="fixed inset-0 z-50 flex h-dvh max-h-dvh items-center justify-center bg-black">
       <div className="h-10 w-10 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
     </div>
   );
@@ -145,6 +146,7 @@ export function EngineRouter({
   variantColorTheme,
   bodyLabelMode,
   hideBodyLabelModeControls,
+  spatialArrowColorMode,
   reactTrainConcurrent,
   moleLookMode,
   numberCartTier,
@@ -196,6 +198,7 @@ export function EngineRouter({
             variantColorTheme: variantColorTheme as SpomoveColorThemeId | undefined,
             bodyLabelMode,
             hideBodyLabelModeControls,
+            spatialArrowColorMode,
           }}
           embed
           disableBgm

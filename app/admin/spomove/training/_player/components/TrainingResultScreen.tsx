@@ -1,14 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MODES } from '../constants';
 import { CSS, S } from '../styles';
+import { useViewportScrollLock } from '../lib/lockViewportScroll';
+import { resolveTrainingResultRichContent } from '../lib/trainingResultRichContent';
 import {
   RESULT_COLOR_ORDER,
   colorMeta,
-  describeSessionVolume,
-  formatElapsedSeconds,
-  getTrainingEffectCopy,
   totalColorStimulusCount,
   type ColorStimulusCounts,
   type TrainingResultConfig,
@@ -23,12 +22,73 @@ type Props = {
   levelLabel: string;
   title?: string;
   statusBadge?: string | null;
+  programTitle?: string;
   student?: StudentBadge | null;
   footer?: React.ReactNode;
   onBack: () => void;
   onRetry: () => void;
   retryLabel?: string;
 };
+
+const RESULT_CSS = `
+  .tr-result-root {
+    --tr-label: clamp(0.72rem, 2.1vmin, 0.92rem);
+    --tr-body: clamp(0.86rem, 2.5vmin, 1.05rem);
+    --tr-title: clamp(1.05rem, 3.2vmin, 1.4rem);
+    --tr-hero: clamp(1.35rem, 4.2vmin, 1.9rem);
+    --tr-stat: clamp(1.05rem, 3.4vmin, 1.45rem);
+    --tr-color: clamp(1.15rem, 3.8vmin, 1.65rem);
+    --tr-quote: clamp(0.88rem, 2.45vmin, 1.08rem);
+    --tr-gap: clamp(0.45rem, 1.4vmin, 0.75rem);
+    --tr-pad: clamp(0.55rem, 1.6vmin, 0.9rem);
+    --tr-effect-gap: clamp(0.42rem, 1.25vmin, 0.62rem);
+  }
+  .tr-result-root, .tr-result-root * {
+    box-sizing: border-box;
+  }
+  @media (max-width: 420px) {
+    .tr-result-header {
+      grid-template-columns: auto 1fr auto !important;
+      gap: 0.25rem !important;
+    }
+    .tr-result-header-center {
+      font-size: clamp(0.68rem, 2vmin, 0.82rem) !important;
+      white-space: normal !important;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .tr-result-header .tr-btn-back,
+    .tr-result-header .tr-btn-retry {
+      padding: 0.4rem 0.55rem !important;
+      font-size: clamp(0.65rem, 1.9vmin, 0.78rem) !important;
+    }
+    .tr-result-check-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .tr-result-stats {
+      grid-template-columns: 1fr !important;
+    }
+  }
+  @media (max-height: 820px) {
+    .tr-result-root {
+      --tr-hero: clamp(1.1rem, 3.4vmin, 1.5rem);
+      --tr-stat: clamp(0.95rem, 2.8vmin, 1.2rem);
+      --tr-gap: clamp(0.35rem, 1.1vmin, 0.55rem);
+      --tr-pad: clamp(0.45rem, 1.3vmin, 0.7rem);
+    }
+    .tr-result-main {
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+      grid-template-rows: auto !important;
+    }
+  }
+  .tr-result-header {
+    padding-top: max(clamp(0.45rem, 1.4vmin, 0.65rem), env(safe-area-inset-top));
+  }
+  .tr-result-footer-wrap {
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+  }
+`;
 
 export function TrainingResultScreen({
   cfg,
@@ -37,6 +97,7 @@ export function TrainingResultScreen({
   levelLabel,
   title = '훈련 완료',
   statusBadge = null,
+  programTitle,
   student,
   footer,
   onBack,
@@ -45,58 +106,84 @@ export function TrainingResultScreen({
 }: Props) {
   const mo = MODES[cfg.mode];
   const accent = mo?.accent ?? '#F97316';
-  const volume = describeSessionVolume(cfg);
-  const elapsed = formatElapsedSeconds(elapsedMs);
-  const effect = getTrainingEffectCopy(cfg.mode, cfg.level);
+  const rich = useMemo(
+    () => resolveTrainingResultRichContent(cfg, elapsedMs, colorCounts, { programTitle }),
+    [cfg, elapsedMs, colorCounts, programTitle],
+  );
+
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
   const showColorBreakdown = colorCounts != null && colorTotal > 0;
 
-  const statBox: React.CSSProperties = {
+  useViewportScrollLock(true);
+
+  const card: React.CSSProperties = {
     border: '1px solid var(--border)',
-    borderRadius: '0.65rem',
-    padding: '0.55rem 0.7rem',
-    background: 'var(--subtle-bg)',
+    borderRadius: 'clamp(0.65rem, 2vmin, 0.9rem)',
+    background: 'var(--card)',
+    padding: 'var(--tr-pad)',
+    minHeight: 0,
+    overflow: 'hidden',
   };
 
   return (
-    <div style={{ ...S.page, height: '100vh', minHeight: '100vh' }}>
+    <div
+      className="tr-result-root"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        width: '100vw',
+        height: '100dvh',
+        maxHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        overflow: 'hidden',
+        overscrollBehavior: 'none',
+        background: 'var(--bg)',
+        fontFamily: S.page.fontFamily,
+        color: 'var(--text)',
+        zIndex: 1,
+      }}
+    >
       <style>{CSS}</style>
+      <style>{RESULT_CSS}</style>
+
       <header
+        className="tr-result-header"
         style={{
           flexShrink: 0,
           display: 'grid',
           gridTemplateColumns: '1fr auto 1fr',
           alignItems: 'center',
-          gap: '0.5rem',
-          padding: '0.65rem clamp(0.75rem, 3vw, 1.25rem)',
+          gap: '0.4rem',
+          padding: 'clamp(0.45rem, 1.4vmin, 0.65rem) clamp(0.65rem, 2vmin, 1rem)',
           borderBottom: '1px solid var(--border)',
           background: 'var(--card)',
         }}
       >
         <button
           type="button"
+          className="tr-btn-back"
           style={{
             ...S.btn,
             ...S.bSecondary,
             justifySelf: 'start',
-            padding: '0.55rem 0.9rem',
-            fontSize: '0.88rem',
-            borderRadius: '0.75rem',
+            padding: '0.5rem 0.85rem',
+            fontSize: 'var(--tr-label)',
+            borderRadius: '0.7rem',
           }}
           onClick={onBack}
         >
-          ← 목록으로
+          ← 목록
         </button>
         <div
+          className="tr-result-header-center"
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '0.35rem',
-            fontSize: 'clamp(0.82rem, 2.4vw, 0.96rem)',
+            fontSize: 'var(--tr-label)',
             fontWeight: 800,
-            color: 'var(--text)',
-            whiteSpace: 'nowrap',
           }}
         >
           <span>{mo?.icon}</span>
@@ -104,48 +191,64 @@ export function TrainingResultScreen({
         </div>
         <button
           type="button"
+          className="tr-btn-retry"
           style={{
             ...S.btn,
             ...S.bPrimary,
             justifySelf: 'end',
-            padding: '0.55rem 1rem',
-            fontSize: '0.88rem',
-            borderRadius: '0.75rem',
+            padding: '0.5rem 0.9rem',
+            fontSize: 'var(--tr-label)',
+            borderRadius: '0.7rem',
           }}
-            onClick={onRetry}
-          >
-            {retryLabel}
-          </button>
+          onClick={onRetry}
+        >
+          {retryLabel}
+        </button>
       </header>
 
-      <div
+      <main
+        className="tr-result-main"
         style={{
           flex: 1,
           minHeight: 0,
-          overflowY: 'auto',
-          display: 'flex',
-          justifyContent: 'center',
-          padding: 'clamp(0.75rem, 3vw, 1.5rem)',
+          overflow: 'hidden',
+          display: 'grid',
+          gridTemplateRows: footer
+            ? 'minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.45fr) minmax(0, 1.35fr) minmax(0, 1fr) auto'
+            : 'minmax(0, 1.05fr) minmax(0, 0.85fr) minmax(0, 1.5fr) minmax(0, 1.4fr) minmax(0, 1.05fr)',
+          gap: 'var(--tr-gap)',
+          padding: 'var(--tr-gap) clamp(0.65rem, 2vmin, 1rem)',
         }}
       >
-        <div style={{ width: '100%', maxWidth: 'clamp(20rem, 92vw, 32rem)' }}>
+        <section
+          style={{
+            ...card,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            background: `${accent}0c`,
+            borderColor: `${accent}35`,
+          }}
+        >
           {student ? (
             <div
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                marginBottom: '0.65rem',
-                padding: '0.25rem 0.65rem',
+                marginBottom: '0.35rem',
+                padding: '0.2rem 0.6rem',
                 borderRadius: '999px',
-                background: 'var(--subtle-bg)',
+                background: 'var(--card)',
                 border: '1px solid var(--border)',
               }}
             >
               <div
                 style={{
-                  width: 20,
-                  height: 20,
+                  width: 22,
+                  height: 22,
                   borderRadius: '50%',
                   background: student.color,
                   display: 'flex',
@@ -158,45 +261,79 @@ export function TrainingResultScreen({
               >
                 {student.name[0]}
               </div>
-              <span style={{ fontSize: '0.86rem', fontWeight: 700, color: student.color }}>{student.name}</span>
+              <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
             </div>
           ) : null}
+          <div style={{ fontSize: 'clamp(1.8rem, 6vmin, 2.6rem)', lineHeight: 1, marginBottom: '0.25rem' }}>✓</div>
+          <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
+          <p style={{ margin: '0.3rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.4 }}>
+            {rich.praiseSub}
+          </p>
+          {statusBadge ? (
+            <span
+              style={{
+                marginTop: '0.35rem',
+                fontSize: 'var(--tr-label)',
+                fontWeight: 800,
+                padding: '0.15rem 0.55rem',
+                borderRadius: '999px',
+                background: 'var(--card)',
+                color: accent,
+                border: `1px solid ${accent}44`,
+              }}
+            >
+              {statusBadge}
+            </span>
+          ) : null}
+        </section>
 
-          <div style={{ textAlign: 'center', marginBottom: '1.1rem' }}>
-            {statusBadge ? (
-              <p style={{ margin: '0 0 0.35rem', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                {statusBadge}
-              </p>
-            ) : null}
-            <div style={{ fontSize: '2rem', lineHeight: 1, marginBottom: '0.35rem' }}>✓</div>
-            <div style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--text)' }}>{title}</div>
+        <section
+          className="tr-result-stats"
+          style={{
+            minHeight: 0,
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr 1fr',
+            gap: 'var(--tr-gap)',
+          }}
+        >
+          {[
+            { label: '진행 시간', value: rich.elapsedLabel },
+            { label: '설정 분량', value: rich.volumeLabel },
+            { label: '오늘 느낌', value: rich.activityFeel },
+          ].map((stat) => (
+            <div
+              key={stat.label}
+              style={{
+                ...card,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                textAlign: 'center',
+                background: 'var(--subtle-bg)',
+              }}
+            >
+              <div style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</div>
+              <div style={{ fontSize: 'var(--tr-stat)', fontWeight: 900, marginTop: '0.15rem', lineHeight: 1.2 }}>{stat.value}</div>
+            </div>
+          ))}
+        </section>
+
+        <section style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+            색 자극 분포
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem', marginBottom: '1rem' }}>
-            <div style={statBox}>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>진행 시간</div>
-              <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{elapsed}</div>
-            </div>
-            <div style={statBox}>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 800 }}>설정 분량</div>
-              <div style={{ fontSize: '0.98rem', color: 'var(--text)', fontWeight: 900, marginTop: '0.15rem' }}>{volume}</div>
-            </div>
-          </div>
-
-          <div
-            style={{
-              border: '1px solid var(--border)',
-              borderRadius: '0.85rem',
-              padding: '0.85rem 0.9rem',
-              background: 'var(--card)',
-              marginBottom: '0.85rem',
-            }}
-          >
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.55rem' }}>
-              색 자극 분포
-            </div>
-            {showColorBreakdown ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem' }}>
+          {showColorBreakdown ? (
+            <>
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 'var(--tr-gap)',
+                }}
+              >
                 {RESULT_COLOR_ORDER.map((id) => {
                   const meta = colorMeta(id);
                   const count = colorCounts![id];
@@ -206,58 +343,207 @@ export function TrainingResultScreen({
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '0.55rem',
-                        padding: '0.5rem 0.6rem',
-                        borderRadius: '0.6rem',
+                        gap: 'clamp(0.45rem, 1.5vmin, 0.7rem)',
+                        padding: 'clamp(0.45rem, 1.4vmin, 0.7rem)',
+                        borderRadius: '0.65rem',
                         background: 'var(--subtle-bg)',
                         border: '1px solid var(--border)',
+                        minHeight: 0,
                       }}
                     >
                       <span
                         aria-hidden
                         style={{
-                          width: 14,
-                          height: 14,
+                          width: 'clamp(16px, 4vmin, 22px)',
+                          height: 'clamp(16px, 4vmin, 22px)',
                           borderRadius: '50%',
                           background: meta.bg,
                           flexShrink: 0,
-                          boxShadow: `0 0 0 2px ${meta.bg}33`,
+                          boxShadow: `0 0 0 3px ${meta.bg}33`,
                         }}
                       />
-                      <span style={{ flex: 1, fontSize: '0.86rem', fontWeight: 700, color: 'var(--text)' }}>{meta.name}</span>
-                      <span style={{ fontSize: '1.05rem', fontWeight: 900, color: accent }}>{count}회</span>
+                      <span style={{ flex: 1, fontSize: 'var(--tr-body)', fontWeight: 800 }}>{meta.name}</span>
+                      <span style={{ fontSize: 'var(--tr-color)', fontWeight: 900, color: accent }}>{count}회</span>
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.55, color: 'var(--text-muted)', fontWeight: 500 }}>
-                이번 프로그램은 색 자극 횟수를 따로 집계하지 않거나, 방향·기억·말하기 위주 과제입니다.
-              </p>
-            )}
-            {showColorBreakdown ? (
-              <div style={{ marginTop: '0.55rem', fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600, textAlign: 'right' }}>
+              <div
+                style={{
+                  marginTop: '0.35rem',
+                  fontSize: 'var(--tr-label)',
+                  color: 'var(--text-muted)',
+                  fontWeight: 700,
+                  textAlign: 'right',
+                }}
+              >
                 합계 {colorTotal}회
               </div>
-            ) : null}
-          </div>
+            </>
+          ) : (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0.5rem',
+                borderRadius: '0.65rem',
+                background: 'var(--subtle-bg)',
+                border: '1px solid var(--border)',
+              }}
+            >
+              <p style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center' }}>
+                이번 과제는 방향·기억·말하기 위주라 색 횟수는 따로 세지 않아요.
+              </p>
+            </div>
+          )}
+        </section>
 
-          <div
+        <section
+          style={{
+            ...card,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center',
+            gap: 'var(--tr-effect-gap)',
+            borderColor: `${accent}44`,
+            background: `${accent}0a`,
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ fontSize: 'var(--tr-title)', fontWeight: 900, color: 'var(--text)', lineHeight: 1.25 }}>
+            {rich.programTitle}
+          </div>
+          <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: accent, letterSpacing: '0.02em' }}>
+            {mo?.tag ?? '이번 운동 효과'}
+          </div>
+          <p
             style={{
-              border: `1px solid ${accent}44`,
-              borderRadius: '0.85rem',
-              padding: '0.85rem 0.9rem',
-              background: `${accent}0d`,
+              margin: 0,
+              width: 'min(42ch, 100%)',
+              fontSize: 'var(--tr-body)',
+              lineHeight: 1.55,
+              color: 'var(--text)',
+              fontWeight: 600,
             }}
           >
-            <div style={{ fontSize: '0.72rem', fontWeight: 800, color: accent, marginBottom: '0.35rem' }}>이번 운동 효과</div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.35rem' }}>{effect.tag}</div>
-            <p style={{ margin: 0, fontSize: '0.82rem', lineHeight: 1.6, color: 'var(--text-muted)', fontWeight: 500 }}>{effect.summary}</p>
+            {rich.programSummary}
+          </p>
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '0.35rem',
+              width: '100%',
+            }}
+          >
+            {rich.benefitTags.map((tag) => (
+              <span
+                key={tag}
+                style={{
+                  fontSize: 'var(--tr-label)',
+                  fontWeight: 800,
+                  padding: '0.2rem 0.55rem',
+                  borderRadius: '999px',
+                  background: 'var(--card)',
+                  color: accent,
+                  border: `1px solid ${accent}33`,
+                }}
+              >
+                {tag}
+              </span>
+            ))}
           </div>
+          <p
+            style={{
+              margin: 0,
+              width: 'min(36ch, 100%)',
+              fontSize: 'var(--tr-quote)',
+              lineHeight: 1.5,
+              color: accent,
+              fontWeight: 700,
+              borderLeft: `3px solid ${accent}55`,
+              paddingLeft: '0.55rem',
+            }}
+          >
+            {rich.benefitLine}
+          </p>
+        </section>
 
-          {footer ? <div style={{ marginTop: '1rem' }}>{footer}</div> : null}
-        </div>
-      </div>
+        <section style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <div
+            style={{
+              fontSize: 'var(--tr-label)',
+              fontWeight: 800,
+              color: 'var(--text)',
+              marginBottom: '0.35rem',
+              textAlign: 'center',
+            }}
+          >
+            스스로 점검해 볼까요?
+          </div>
+          <div
+            className="tr-result-check-grid"
+            style={{
+              flex: 1,
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr',
+              gridTemplateRows: 'repeat(2, minmax(0, auto))',
+              gap: 'var(--tr-gap)',
+              alignContent: 'start',
+            }}
+          >
+            {rich.selfCheckItems.map((item, index) => (
+              <div
+                key={item.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  padding: 'clamp(0.4rem, 1.2vmin, 0.65rem)',
+                  borderRadius: '0.65rem',
+                  background: 'var(--subtle-bg)',
+                  border: '1px solid var(--border)',
+                  minHeight: 0,
+                }}
+              >
+                <span
+                  style={{
+                    width: 'clamp(1.4rem, 4vmin, 1.8rem)',
+                    height: 'clamp(1.4rem, 4vmin, 1.8rem)',
+                    borderRadius: '50%',
+                    background: `${accent}18`,
+                    color: accent,
+                    fontSize: 'var(--tr-label)',
+                    fontWeight: 900,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {index + 1}
+                </span>
+                <span style={{ fontSize: 'var(--tr-body)', fontWeight: 700, lineHeight: 1.35, color: 'var(--text)', textAlign: 'left' }}>
+                  {item.label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {footer ? (
+          <div className="tr-result-footer-wrap" style={{ flexShrink: 0, overflow: 'hidden' }}>
+            {footer}
+          </div>
+        ) : null}
+      </main>
     </div>
   );
 }

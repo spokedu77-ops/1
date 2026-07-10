@@ -21,7 +21,7 @@ export function SpomovePadLayoutView({ variant, compact = false, dark = false }:
         <div className="mt-4 flex justify-center">
           <div
             className={`${size} rotate-45 overflow-hidden rounded-md shadow-sm`}
-            aria-label="패드 배치: 상 빨강, 우 노랑, 하 초록, 좌 파랑"
+            aria-label="패드 배치: 상 빨강, 좌 초록, 우 노랑, 하 파랑"
           >
             <div className="grid h-full w-full grid-cols-2 grid-rows-2">
               <div style={{ background: red }} />

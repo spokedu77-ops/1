@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
 import { playBeep } from '../lib/audio';
+import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { CSS } from '../styles';
 
 const TOTAL = 10;
@@ -164,7 +165,7 @@ export function MemoryGameLevel4({
   // ── idle (준비 or 동일 색 플래시) ──
   if (phase === 'idle')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: memFlash ? '#ffffff' : '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: memFlash ? '#ffffff' : '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -180,7 +181,7 @@ export function MemoryGameLevel4({
     const isYellow = currentItem?.color.bg === '#FACC15';
     const textColor = isYellow ? '#111' : '#fff';
     return (
-      <div style={{ position: 'fixed', inset: 0, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -208,7 +209,7 @@ export function MemoryGameLevel4({
   // ── qa_ready (Q&A 시작 전 안내) ──
   if (phase === 'qa_ready')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem' }}>
@@ -228,7 +229,7 @@ export function MemoryGameLevel4({
   // ── qa_question (질문 화면) ──
   if (phase === 'qa_question' && currentQA)
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2.5rem', padding: '6rem 2rem 4rem' }}>
@@ -258,7 +259,7 @@ export function MemoryGameLevel4({
     const nextBg = isLast ? '#22C55E' : '#F97316';
     const nextShadow = isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '6rem 2rem 4rem' }}>
@@ -287,7 +288,7 @@ export function MemoryGameLevel4({
   // ── done ──
   if (phase === 'done')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎉</div>

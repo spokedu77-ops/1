@@ -25,6 +25,22 @@ export const ARROWS = [
   { id: 'right', label: '오른쪽', icon: '→', voice: '오른쪽으로' },
 ];
 
+/** 공간 방향(compass): 화살표 방향 → 패드 색 (위 빨 / 좌 초 / 우 노 / 아래 파) */
+export const SPATIAL_ARROW_COLOR_BY_DIRECTION = {
+  up: 'red',
+  left: 'green',
+  right: 'yellow',
+  down: 'blue',
+} as const;
+
+export function spatialArrowFillForDirection(
+  arrowId: string,
+  colors: typeof COLORS = COLORS,
+): string {
+  const colorId = SPATIAL_ARROW_COLOR_BY_DIRECTION[arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION];
+  return colors.find((c) => c.id === colorId)?.bg ?? '#FFFFFF';
+}
+
 export const DUAL_TWO_COLORS = COLORS.filter((c) => c.id === 'red' || c.id === 'blue');
 export const DUAL_LR_ARROWS = ARROWS.filter((a) => a.id === 'left' || a.id === 'right');
 
@@ -156,7 +172,7 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '통제 제어 · 인지 지연',
     desc: '배경은 기본 흰색입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
     levels: [
-      { id: 1, name: '1단계', enName: 'Arrow Stroop / Reverse', desc: '화살표와 반대 규칙을 처리합니다.' },
+      { id: 1, name: '1단계', enName: 'Spatial Orientation (Color)', desc: '방향별 색이 채워진 화살표를 보고 해당 방향 패드로 이동합니다.' },
       { id: 2, name: '2단계', enName: 'Arrow + BG Interference', desc: '화살표와 배경 간섭을 함께 처리합니다.' },
       { id: 3, name: '3단계', enName: 'Word Stroop / Reverse', desc: '글자 의미와 반대 규칙을 처리합니다.' },
       { id: 4, name: '4단계', enName: 'Word + BG', desc: '글자와 배경색 간섭을 함께 처리합니다.' },
@@ -232,6 +248,9 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
   if (mode === 'taskswitch') {
     const lv = Math.min(3, Math.max(1, Math.floor(level)));
     return { engineMode: 'taskswitch', engineLevel: lv };
+  }
+  if (mode === 'stroop' && level === 1) {
+    return { engineMode: 'basic', engineLevel: 1 };
   }
   return { engineMode: mode, engineLevel: level };
 }

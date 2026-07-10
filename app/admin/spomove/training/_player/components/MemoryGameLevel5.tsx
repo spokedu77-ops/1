@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 import { generateLevel4Pattern, Level4Item } from '../lib/signals';
 import { playBeep } from '../lib/audio';
+import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { CSS } from '../styles';
 
 const TOTAL = 10;
@@ -152,7 +153,7 @@ export function MemoryGameLevel5({
   // ── idle ──
   if (phase === 'idle')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: memFlash ? '#ffffff' : '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: memFlash ? '#ffffff' : '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -168,7 +169,7 @@ export function MemoryGameLevel5({
     const isYellow = currentItem?.color.bg === '#FACC15';
     const textColor = isYellow ? '#111' : '#fff';
     return (
-      <div style={{ position: 'fixed', inset: 0, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
         <style>{CSS}</style>
         {hud}
         {progressBar}
@@ -204,6 +205,8 @@ export function MemoryGameLevel5({
         style={{
           position: 'fixed',
           inset: 0,
+          height: '100dvh',
+          maxHeight: '100dvh',
           background: '#0F172A',
           overflow: 'hidden',
           zIndex: 300,
@@ -248,7 +251,7 @@ export function MemoryGameLevel5({
     // items를 번호 순서(1~10)로 정렬해서 표시
     const sorted = [...items].sort((a, b) => a.num - b.num);
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         {hud}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '5rem 1.5rem 5rem' }}>
@@ -311,7 +314,7 @@ export function MemoryGameLevel5({
   // ── done ──
   if (phase === 'done')
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
         <style>{CSS}</style>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
           <div style={{ fontSize: '4rem' }}>🎉</div>

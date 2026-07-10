@@ -373,6 +373,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
 
   if (type === 'arrow') {
     const arrowId = content?.id as string | undefined;
+    const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
     const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
     return (
       <div key={animKey} className="signal-blink" style={C}>
@@ -389,7 +390,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
           <g transform={`rotate(${rot} 50 67)`}>
             <path
               d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-              fill="#FFFFFF"
+              fill={fillHex}
               stroke="rgba(255,255,255,0.26)"
               strokeWidth={5}
               strokeLinejoin="round"
@@ -751,6 +752,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
     const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
     const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
     const arrowId = content?.arrowId as string | undefined;
+    const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
     const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
@@ -784,7 +786,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             <g transform={`rotate(${rot} 50 67)`}>
               <path
                 d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-                fill="#FFFFFF"
+                fill={fillHex}
                 stroke="rgba(255,255,255,0.24)"
                 strokeWidth={6}
                 strokeLinejoin="round"

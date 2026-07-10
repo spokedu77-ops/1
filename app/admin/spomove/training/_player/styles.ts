@@ -5,8 +5,8 @@
 import type { CSSProperties } from 'react';
 
 export const S: Record<string, CSSProperties> = {
-  page: { height: '100%', minHeight: '100vh', background: 'var(--bg)', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: 'var(--text)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  homeWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '2rem 1.5rem', gap: '2rem' },
+  page: { height: '100%', minHeight: '100dvh', background: 'var(--bg)', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: 'var(--text)', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  homeWrap: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', padding: '2rem 1.5rem', gap: '2rem' },
   h1: { fontSize: 'clamp(2.8rem,11vw,5rem)', fontWeight: 900, letterSpacing: '-0.04em', color: 'var(--text)', lineHeight: 1, margin: 0, textAlign: 'center' },
   tag: { fontSize: 'clamp(1.05rem,3.5vw,1.45rem)', fontWeight: 700, color: '#F97316', letterSpacing: '0.1em', marginTop: '0.5rem', textAlign: 'center' },
   desc: { fontSize: 'clamp(0.95rem,2.3vw,1.12rem)', color: 'var(--text-muted)', marginTop: '1rem', lineHeight: 1.8, fontWeight: 500, textAlign: 'center' },
@@ -117,7 +117,7 @@ export const CSS = `
     .home-desktop { flex-direction: row !important; align-items: center !important; max-width: 1100px !important; gap: 5rem !important; }
     .home-left { flex: 1; }
     .home-right { width: 380px; flex-shrink: 0; }
-    .home-wrap { max-width: 1100px !important; justify-content: center !important; min-height: 100vh !important; }
+    .home-wrap { max-width: 1100px !important; justify-content: center !important; min-height: 100dvh !important; }
     .card-wide { max-width: 48rem !important; }
   }
   @media (orientation: landscape) and (max-height: 600px) {

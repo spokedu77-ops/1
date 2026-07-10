@@ -10,7 +10,7 @@
 | 항목 | 상태 |
 |------|------|
 | 운영 원본 | `../flow/` — 절대 변경하지 않음 |
-| 테스트 전용 URL | `/admin/spomove/training/flow-lab` |
+| 테스트 전용 URL | 비활성화됨 (`/admin/spomove/training/flow-lab`는 404) |
 | MemoryGameApp 연결 | 없음 |
 | EngineRouter 연결 | 없음 |
 | officialSpomovePresets 연결 | 없음 |

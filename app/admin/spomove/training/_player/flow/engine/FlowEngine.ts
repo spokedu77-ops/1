@@ -327,6 +327,12 @@ export class FlowEngine {
           this.hitShakeDuration  = 220;
         }
       },
+      onKickWarn:         () => {},
+      onKickAutoHit:      () => {
+        if (!this.activeModules.has('kick')) return;
+        this.microJolt += 0.55;
+        this.audio.sfxPunch();
+      },
       onCameraShake:      (int, ms) => {
         this.hitShakeRemaining = ms;
         this.hitShakeIntensity = int;
@@ -554,6 +560,8 @@ export class FlowEngine {
         this.obstacles.attachBox(bridgeObj, this.activeModules, true);
       } else if (slot === 'box') {
         this.obstacles.attachBox(bridgeObj, this.activeModules, false);
+      } else if (slot === 'kick') {
+        this.obstacles.attachKick(bridgeObj);
       }
     }
   }

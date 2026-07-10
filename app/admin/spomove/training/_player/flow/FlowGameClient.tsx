@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { EMBED_FIXED_VIEWPORT, EMBED_SAFE_BOTTOM, EMBED_SAFE_TOP } from '../lib/embedViewport';
 import { FlowEngine, type FlowGamePhase, type FlowStats } from './engine/FlowEngine';
 import { FLOW_MODULES } from './engine/modules/flowModules';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
@@ -25,8 +26,7 @@ interface FlowGameClientProps {
 
 const S = {
   root: {
-    position: 'fixed' as const,
-    inset: 0,
+    ...EMBED_FIXED_VIEWPORT,
     background: '#000',
     overflow: 'hidden',
     userSelect: 'none' as const,
@@ -235,7 +235,7 @@ export default function FlowGameClient({
       {phase === 'playing' && currentStage && (
         <>
           {/* 스테이지 진행 도트 */}
-          <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7 }}>
+          <div style={{ position: 'absolute', top: EMBED_SAFE_TOP, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 7 }}>
             {stages.map((s, i) => (
               <div
                 key={i}
@@ -250,7 +250,7 @@ export default function FlowGameClient({
           </div>
 
           {/* 스테이지 라벨 + 타이머 */}
-          <div style={{ position: 'absolute', bottom: 18, left: 16, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div style={{ position: 'absolute', bottom: EMBED_SAFE_BOTTOM, left: 16, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span style={{ fontSize: '0.65rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.2em', padding: '0.15rem 0.6rem', borderRadius: '9999px', border: `1px solid ${currentStage.colorBorder}`, background: currentStage.colorBg }}>
               STAGE {currentStage.stageNum}
             </span>
@@ -433,7 +433,7 @@ export default function FlowGameClient({
       {phase !== 'complete' && (
         <button
           onClick={handleExit}
-          style={{ position: 'absolute', top: 10, right: 14, background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', borderRadius: '0.5rem', padding: '0.25rem 0.65rem', fontSize: '0.72rem', cursor: 'pointer' }}
+          style={{ position: 'absolute', top: EMBED_SAFE_TOP, right: 14, background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.18)', color: 'rgba(255,255,255,0.45)', borderRadius: '0.5rem', padding: '0.25rem 0.65rem', fontSize: '0.72rem', cursor: 'pointer' }}
         >
           ✕ 나가기
         </button>

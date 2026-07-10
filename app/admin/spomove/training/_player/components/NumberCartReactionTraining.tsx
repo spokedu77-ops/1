@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
 export const NUMBER_CART_ROUND_OPTIONS = [7, 10, 15, 25] as const;
@@ -269,9 +270,9 @@ function generateMetalTexture(): THREE.CanvasTexture {
 }
 
 const css = `
-.ncart{position:fixed;inset:0;background:#000;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.ncart{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#000;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .ncart,.ncart *{box-sizing:border-box}
-.ncart-hud{height:72px;display:flex;align-items:stretch;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:30;flex-shrink:0}
+.ncart-hud{height:72px;display:flex;align-items:stretch;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .ncart-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .ncart-hc.grow{flex:1;align-items:center;border-right:none}
 .ncart-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -290,6 +291,7 @@ const css = `
 .ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#ffe8b8;text-shadow:0 0 14px rgba(245,158,11,.5);-webkit-text-stroke:1px rgba(245,158,11,.22);white-space:nowrap}
 .ncart-target-v.expr{font-family:"Courier New",Courier,monospace;font-size:clamp(32px,5.8vw,48px);font-weight:700;letter-spacing:.12em;-webkit-text-stroke:0;text-shadow:0 0 12px rgba(245,158,11,.45),0 0 2px rgba(255,232,184,.8);font-variant-ligatures:none;font-feature-settings:"liga" 0}
 .ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#f59e0b;margin-top:2px}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec, tier = 2, onExit, onComplete }: Props) {

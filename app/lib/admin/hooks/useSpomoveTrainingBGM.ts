@@ -58,7 +58,7 @@ export function useSpomoveTrainingBGM() {
         {
           id: SPOMOVE_TRAINING_BGM_PACK_ID,
           name: 'SPOMOVE 훈련 BGM 풀',
-          theme: 'iiwarmup',
+          theme: 'spomove',
           assets_json: { bgmList: nextList } satisfies SpomoveTrainingBgmAssetsJson,
         },
         { onConflict: 'id' }

@@ -1,7 +1,7 @@
 /**
  * Flow 2.0 — ObstacleManager
  * 지원 장애물:
- *   box (punch) / punchWall (reach) / ufo (duck) / shard·coin
+ *   box (punch) / punchWall (reach) / ufo (duck) / kickBarrel (kick) / shard·coin
  */
 
 import * as THREE from 'three';
@@ -15,7 +15,13 @@ const BOX_DESTROY_Z   = 450;
 const BOX_RATE        = 0.55;
 const UFO_RATE        = 0.45;
 const UFO_HEIGHT      = 180;
-const STANDARD_BOX_Y  = 40;
+const BRIDGE_DECK_Y   = 40;
+const PUNCH_CRATE_H   = 32;
+const PUNCH_ANCHOR_Y  = BRIDGE_DECK_Y;
+const KICK_BARREL_R   = 20;
+const KICK_BARREL_LEN = 72;
+const KICK_CENTER_ABOVE_DECK = 62;
+const KICK_ANCHOR_Y   = BRIDGE_DECK_Y + KICK_CENTER_ABOVE_DECK - KICK_BARREL_R;
 const PUNCH_WALL_HP   = 5;    // 펀치 벽 총 타격 횟수
 const WALL_W          = 110;  // 더 넓게
 const WALL_H          = 230;  // 더 높게
@@ -35,12 +41,14 @@ export interface FlowBridge {
 interface BoxEntity {
   mesh: THREE.Group;
   isReach: boolean;
+  isKick: boolean;
   reward: boolean;
   warnedReach: boolean;
   warnFired: boolean;
   bridgeRef: FlowBridge;
   autoHitDone: boolean;
   hitCount: number;
+  rollAngle: number;
 }
 
 interface UfoEntity {
@@ -70,6 +78,8 @@ export interface ObstacleCallbacks {
   onBoxHit?: (reward: boolean) => void;
   onBoxWarn?: (isReach: boolean) => void;
   onBoxAutoHit?: (isReach: boolean) => void;
+  onKickWarn?: () => void;
+  onKickAutoHit?: () => void;
   onPunchWallEnter?: () => void;
   onUfoDuckStart?: () => void;
   onUfoPassed?: () => void;
@@ -137,15 +147,83 @@ export class ObstacleManager {
     if (reward) this.goldSpawned++;
 
     const group = this.makeBox(isReach, reward);
-    const yPos = isReach ? 0 : STANDARD_BOX_Y;
+    const yPos = isReach ? 0 : PUNCH_ANCHOR_Y;
     const localZ = isReach ? -(this.bridgeLength * 0.25) : -(this.bridgeLength * 0.1);
     group.position.set(0, yPos, localZ);
     bridge.mesh.add(group);
     this.boxes.push({
-      mesh: group, isReach, reward,
+      mesh: group, isReach, isKick: false, reward,
       warnedReach: false, warnFired: false,
-      bridgeRef: bridge, autoHitDone: false, hitCount: 0,
+      bridgeRef: bridge, autoHitDone: false, hitCount: 0, rollAngle: 0,
     });
+  }
+
+  attachKick(bridge: FlowBridge): void {
+    if (bridge.hasBox) return;
+    bridge.hasBox = true;
+
+    const group = this.makeKickBarrel();
+    const localZ = -(this.bridgeLength * 0.12);
+    group.position.set(0, KICK_ANCHOR_Y, localZ);
+    bridge.mesh.add(group);
+    this.boxes.push({
+      mesh: group, isReach: false, isKick: true, reward: false,
+      warnedReach: false, warnFired: false,
+      bridgeRef: bridge, autoHitDone: false, hitCount: 0, rollAngle: 0,
+    });
+  }
+
+  private makeKickBarrel(): THREE.Group {
+    const g = new THREE.Group();
+    const barrel = new THREE.Group();
+    barrel.userData['isKickRoll'] = true;
+    barrel.position.y = KICK_BARREL_R;
+
+    const body = new THREE.Mesh(
+      new THREE.CylinderGeometry(KICK_BARREL_R, KICK_BARREL_R, KICK_BARREL_LEN, 20),
+      new THREE.MeshPhongMaterial({
+        color: 0x374151,
+        emissive: 0x111827,
+        emissiveIntensity: 0.2,
+        shininess: 40,
+      }),
+    );
+    body.rotation.z = Math.PI / 2;
+    barrel.add(body);
+
+    for (let s = 0; s < 5; s++) {
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(KICK_BARREL_R * 0.96, 3.5, 8, 18),
+        new THREE.MeshBasicMaterial({ color: s % 2 === 0 ? 0xfbbf24 : 0x111827 }),
+      );
+      ring.rotation.y = Math.PI / 2;
+      ring.position.x = -KICK_BARREL_LEN / 2 + (s + 0.5) * (KICK_BARREL_LEN / 5);
+      barrel.add(ring);
+    }
+
+    const endCapMat = new THREE.MeshPhongMaterial({ color: 0x6b7280, shininess: 60 });
+    for (const sx of [-1, 1]) {
+      const cap = new THREE.Mesh(
+        new THREE.CylinderGeometry(KICK_BARREL_R * 0.88, KICK_BARREL_R * 0.88, 5, 14),
+        endCapMat,
+      );
+      cap.rotation.z = Math.PI / 2;
+      cap.position.x = sx * (KICK_BARREL_LEN / 2 + 2);
+      barrel.add(cap);
+    }
+
+    const glow = new THREE.Mesh(
+      new THREE.SphereGeometry(38, 8, 6),
+      new THREE.MeshBasicMaterial({
+        color: 0x34d399, transparent: true, opacity: 0.18,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      }),
+    );
+    glow.scale.set(1.5, 0.72, 0.72);
+    barrel.add(glow);
+
+    g.add(barrel);
+    return g;
   }
 
   private makeBox(isReach: boolean, reward: boolean): THREE.Group {
@@ -265,7 +343,7 @@ export class ObstacleManager {
 
     } else {
       // ── 나무 크레이트 (펀치 박스) ─────────────────────────────────────────
-      const CW = 72, CH = 56, CD = 64;
+      const CW = 76, CH = PUNCH_CRATE_H, CD = 60;
       const cy = CH / 2;
 
       // 메인 몸체 — 나무 갈색
@@ -324,7 +402,7 @@ export class ObstacleManager {
       // 글로우
       const glowColor = reward ? 0xfacc15 : 0xff6600;
       const glow = new THREE.Mesh(
-        new THREE.SphereGeometry(60, 8, 6),
+        new THREE.SphereGeometry(42, 8, 6),
         new THREE.MeshBasicMaterial({
           color: glowColor, transparent: true, opacity: 0.28,
           blending: THREE.AdditiveBlending, depthWrite: false,
@@ -553,9 +631,17 @@ export class ObstacleManager {
   update(dt: number, playerWorldZ: number): void {
     const dt60 = dt * 60;
 
-    // 박스
+    // 박스·킥 배럴
     for (let i = this.boxes.length - 1; i >= 0; i--) {
       const box = this.boxes[i];
+
+      if (box.isKick) {
+        box.rollAngle += dt60 * 0.18;
+        box.mesh.traverse((child) => {
+          if (child.userData['isKickRoll']) child.rotation.x = box.rollAngle;
+        });
+      }
+
       const wz = box.mesh.getWorldPosition(this._tmpVec).z;
 
       // 펀치 벽: 더 가까이(100 units 앞)에서 타격 시작
@@ -566,12 +652,31 @@ export class ObstacleManager {
         continue;
       }
 
-      if (!box.isReach && !box.warnFired && wz > BOX_WARN_Z) {
+      if (box.isKick && !box.warnFired && wz > BOX_WARN_Z) {
+        box.warnFired = true;
+        this.cb.onKickWarn?.();
+      }
+
+      if (!box.isReach && !box.isKick && !box.warnFired && wz > BOX_WARN_Z) {
         box.warnFired = true;
         this.cb.onBoxWarn?.(false);
       }
 
-      if (!box.isReach && !box.autoHitDone && wz > BOX_AUTO_HIT_Z) {
+      if (box.isKick && !box.autoHitDone && wz > BOX_AUTO_HIT_Z) {
+        box.autoHitDone = true;
+        box.mesh.getWorldPosition(this._tmpVec);
+        this._tmpVec.y += KICK_CENTER_ABOVE_DECK;
+        this.spawnShards(this._tmpVec, 120, false);
+        this.cb.onKickAutoHit?.();
+        this.cb.onCameraShake?.(0.9, 140);
+        this.cb.onFlash?.();
+        box.bridgeRef.hasBox = false;
+        box.mesh.parent?.remove(box.mesh);
+        this.boxes.splice(i, 1);
+        continue;
+      }
+
+      if (!box.isReach && !box.isKick && !box.autoHitDone && wz > BOX_AUTO_HIT_Z) {
         box.autoHitDone = true;
         box.mesh.getWorldPosition(this._tmpVec);
         this.spawnShards(this._tmpVec, 140, box.reward); // 파편 대폭 증가

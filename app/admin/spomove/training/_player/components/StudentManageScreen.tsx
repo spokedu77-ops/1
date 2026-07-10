@@ -30,7 +30,7 @@ export function StudentManageScreen({
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: '#080C14', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: '#fff' }}>
+    <div style={{ minHeight: '100dvh', background: '#080C14', fontFamily: "'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif", color: '#fff' }}>
       <style>{CSS}</style>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '1.5rem 1.5rem 5rem' }}>
         <button onClick={onBack} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: '0.88rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0, marginBottom: '1.2rem' }}>← 돌아가기</button>

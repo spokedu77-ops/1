@@ -17,6 +17,7 @@ export type SpomoveKeyAction =
   | 'jump'
   | 'duck'
   | 'punch'
+  | 'kick'
   | 'handTouch'
   | 'sequenceMove'
   | 'continuousMove';
@@ -64,6 +65,7 @@ export const SPOMOVE_KEY_ACTION_LABELS: Record<SpomoveKeyAction, string> = {
   jump: '점프',
   duck: '숙이기',
   punch: '터치',
+  kick: '킥',
   handTouch: '손 터치',
   sequenceMove: '순서대로 이동',
   continuousMove: '연속 이동',
@@ -167,6 +169,7 @@ function flowFeatureActions(features: OfficialFlowFeatureKey[] | undefined): Spo
     if (feature === 'punch') actions.push('punch');
     if (feature === 'duck') actions.push('duck');
     if (feature === 'reach') actions.push('handTouch');
+    if (feature === 'kick') actions.push('kick');
   }
   return actions;
 }

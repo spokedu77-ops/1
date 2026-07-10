@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { ListOrdered, X } from 'lucide-react';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
 
@@ -11,6 +12,7 @@ export type CenterEquipmentGuideActivity = {
   image_url?: string | null;
   detail_text?: string | null;
   activity_image_url?: string | null;
+  activity_video_url?: string | null;
   activity_text?: string | null;
 };
 
@@ -32,9 +34,12 @@ export default function CenterEquipmentActivityDetailModal({
   equipmentDisplayName,
   onClose,
 }: Props) {
-  const mediaUrl = (item.activity_image_url ?? '').trim();
-  const youtubeId = mediaUrl ? getYouTubeId(mediaUrl) : null;
+  const imageUrl = (item.activity_image_url ?? '').trim();
+  const videoUrl = (item.activity_video_url ?? '').trim();
+  const mediaUrl = videoUrl || imageUrl;
+  const youtubeId = videoUrl ? getYouTubeId(videoUrl) : null;
   const lines = parseActivityLines(item.activity_text);
+  const weekLabel = `${item.step}주차`;
   const title =
     lines.length > 1 ? lines[0] : lines.length === 1 ? `${equipmentDisplayName} 활동` : `${equipmentDisplayName} 활동`;
   const bodyLines = lines.length > 1 ? lines.slice(1) : [];
@@ -63,8 +68,10 @@ export default function CenterEquipmentActivityDetailModal({
                 allowFullScreen
                 title={title}
               />
+            ) : videoUrl ? (
+              <video src={videoUrl} className="w-full h-full object-contain" controls playsInline />
             ) : (
-              <img src={mediaUrl} alt="" className="w-full h-full object-cover" />
+              <Image src={mediaUrl} alt="" fill sizes="(max-width: 768px) 100vw, 672px" className="object-cover" unoptimized />
             )}
             <button
               type="button"
@@ -92,7 +99,7 @@ export default function CenterEquipmentActivityDetailModal({
           <div>
             <h2 className="text-2xl font-black mb-2">{title}</h2>
             <p className="text-slate-400 text-sm font-bold">
-              {equipmentDisplayName} · 단계 {item.step} · 교구 가이드라인
+              {equipmentDisplayName} · {weekLabel} · 교구 가이드라인
             </p>
           </div>
 
@@ -101,18 +108,15 @@ export default function CenterEquipmentActivityDetailModal({
               <ListOrdered size={16} /> 활동 방법
             </div>
             {bodyLines.length > 0 ? (
-              <ol className="space-y-4 text-left">
+              <div className="space-y-4 text-left">
                 {bodyLines.map((step, i) => (
-                  <li key={`${item.id}-step-${i}`} className="flex gap-4 items-start text-left">
-                    <span className="w-6 h-6 bg-slate-700 text-slate-300 rounded flex items-center justify-center text-xs font-black flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
+                  <div key={`${item.id}-step-${i}`} className="text-left">
                     <p className="text-sm font-bold text-slate-200 leading-relaxed text-left whitespace-pre-wrap">
                       {step}
                     </p>
-                  </li>
+                  </div>
                 ))}
-              </ol>
+              </div>
             ) : singleBody ? (
               <p className="text-sm font-bold text-slate-200 leading-relaxed whitespace-pre-wrap">
                 {singleBody}

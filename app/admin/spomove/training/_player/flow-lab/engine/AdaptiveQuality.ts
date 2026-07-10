@@ -21,8 +21,12 @@ const TARGET_FPS: Record<QualityTier, number> = {
 };
 
 export class AdaptiveQuality {
-  private tier: QualityTier = 'HIGH';
+  private tier: QualityTier;
   private fpsBuf: number[] = [];
+
+  constructor(initialTier?: QualityTier) {
+    this.tier = initialTier ?? 'HIGH';
+  }
 
   // shouldTick 축적기
   private tickAccum = 0;
@@ -116,6 +120,21 @@ export class AdaptiveQuality {
     if (this.tier === 'LOW') return 4;
     if (this.tier === 'MED') return 2;
     return 1;
+  }
+
+  /** UnrealBloomPass 사용 여부 (HIGH만) */
+  getUseBloom(): boolean {
+    return this.tier === 'HIGH';
+  }
+
+  /** Instanced SpeedVFX (MED/HIGH) */
+  getUseSpeedVFX(): boolean {
+    return this.tier !== 'LOW';
+  }
+
+  /** GLB 네온 브릿지 (MED/HIGH) — LOW는 BoxGeometry */
+  getUseEnhancedBridge(): boolean {
+    return this.tier !== 'LOW';
   }
 
   /** 파티클 링 세그먼트 수 */

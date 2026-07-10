@@ -57,6 +57,7 @@ export function SpomoveGuidelineSheet({
   const display = getSpomovePresetDisplayModel(preset);
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
   const startHref = officialPresetSessionHref(preset, { autostart: true });
+  const mobileStartHref = officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' });
 
   return (
     <BottomSheet open title="가이드라인" onClose={onClose} size="preview">
@@ -65,13 +66,21 @@ export function SpomoveGuidelineSheet({
           <h2 className="text-2xl font-black text-slate-950">{display.displayTitle}</h2>
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Link
-            href={startHref}
-            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
-          >
-            바로 실행
-          </Link>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Link
+              href={startHref}
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+            >
+              큰 화면 실행
+            </Link>
+            <Link
+              href={mobileStartHref}
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-black text-indigo-700"
+            >
+              이 기기에서 실행
+            </Link>
+          </div>
           <button
             type="button"
             onClick={onClose}

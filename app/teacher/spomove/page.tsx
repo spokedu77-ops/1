@@ -11,6 +11,12 @@ import {
   getTeacherWeek,
   type TeacherSpomoveProgram,
 } from './teacherSpomoveCurriculum';
+import { TrainingResultScreen } from '@/app/admin/spomove/training/_player/components/TrainingResultScreen';
+import {
+  resultLevelLabel,
+  type TrainingSessionResult,
+} from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
+import { lockViewportScroll, useViewportScrollLock } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 
 const MemoryGameApp = lazy(() => import('@/app/admin/spomove/training/_player/MemoryGameApp'));
 
@@ -2498,9 +2504,10 @@ function PresetRunnerScreen({
   program: TeacherSpomoveProgram;
   runKey: number;
   onExit: () => void;
-  onComplete: () => void;
+  onComplete: (result: TrainingSessionResult) => void;
 }) {
   const autoLaunch = buildTeacherAutoLaunch(program);
+  useViewportScrollLock(true);
 
   if (typeof document === 'undefined') return null;
 
@@ -2513,6 +2520,7 @@ function PresetRunnerScreen({
         display: 'flex',
         flexDirection: 'column',
         background: '#020617',
+        overflow: 'hidden',
       }}
     >
       <style>{CSS}</style>
@@ -2677,6 +2685,7 @@ export default function SpomovePage() {
   const [tab, setTab] = useState('basic');
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [selectedProgram, setSelectedProgram] = useState<TeacherSpomoveProgram | null>(null);
+  const [presetResult, setPresetResult] = useState<TrainingSessionResult | null>(null);
   const [runKey, setRunKey] = useState(0);
 
   // 저장 모달
@@ -3046,6 +3055,7 @@ export default function SpomovePage() {
         onBack={() => setScreen('weekList')}
         onSelect={(program) => {
           setSelectedProgram(program);
+          setPresetResult(null);
           setRunKey((k) => k + 1);
           setScreen('presetRunner');
         }}
@@ -3059,20 +3069,35 @@ export default function SpomovePage() {
         program={selectedProgram}
         runKey={runKey}
         onExit={() => setScreen('weekPrograms')}
-        onComplete={() => setScreen('presetComplete')}
+        onComplete={(result) => {
+          setPresetResult(result);
+          setScreen('presetComplete');
+        }}
       />
     );
   }
 
-  if (screen === 'presetComplete' && selectedProgram) {
-    return (
-      <PresetCompleteScreen
+  if (screen === 'presetComplete' && selectedProgram && presetResult) {
+    if (typeof document === 'undefined') return null;
+    return createPortal(
+      <TrainingResultScreen
+        cfg={presetResult.cfg}
+        elapsedMs={presetResult.elapsedMs}
+        colorCounts={presetResult.colorCounts}
+        levelLabel={resultLevelLabel(selectedProgram.mode, selectedProgram.level)}
+        programTitle={selectedProgram.title}
+        onBack={() => {
+          setPresetResult(null);
+          setScreen('weekPrograms');
+        }}
         onRetry={() => {
+          lockViewportScroll();
           setRunKey((k) => k + 1);
+          setPresetResult(null);
           setScreen('presetRunner');
         }}
-        onBack={() => setScreen('weekPrograms')}
-      />
+      />,
+      document.body,
     );
   }
 

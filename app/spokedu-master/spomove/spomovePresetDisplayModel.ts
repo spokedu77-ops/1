@@ -52,6 +52,7 @@ function stripBgmCopy(value: string): string {
 
 function buildVariantLabel(preset: OfficialSpomovePreset): string {
   if (preset.engine.bodyLabelMode) return preset.engine.bodyLabelMode;
+  if (preset.engine.spatialArrowColorMode === 'color') return '색상 모드';
   const segments = preset.title.split(/[·쨌]/).map((segment) => segment.trim()).filter(Boolean);
   if (segments.length >= 2) return segments[segments.length - 1]!;
   if (preset.programGroup === 'dive') return 'DIVE';

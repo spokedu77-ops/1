@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MEMORY_ROUNDS } from '../constants';
+import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { playBeep } from '../lib/audio';
 import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';
 import { generateMemoryPattern } from '../lib/signals';
@@ -235,7 +235,7 @@ export function MemoryGame({
 
   if (phase === 'showing') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: bgColor, transition: flashWhite ? 'none' : 'background 0.05s' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: bgColor, transition: flashWhite ? 'none' : 'background 0.05s' }}>
         {hud}
         {dots}
         {progress}
@@ -260,7 +260,7 @@ export function MemoryGame({
 
   if (phase === 'waiting') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         {hud}
         {progress}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '6rem 2rem 4rem' }}>
@@ -278,7 +278,7 @@ export function MemoryGame({
     const isLast = round + 1 >= total;
     const nextLabel = isLast ? (isTenItemLevel ? '전체 정답 목록' : '훈련 완료') : `다음 (${round + 2} / ${total})`;
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         {hud}
         {progress}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.8rem', padding: '6rem 2rem 4rem' }}>
@@ -304,7 +304,7 @@ export function MemoryGame({
 
   if (phase === 'summaryIntro') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem', textAlign: 'center' }}>
           <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.4rem)', fontWeight: 900 }}>모든 라운드를 마쳤습니다.</div>
           <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '1rem', fontWeight: 600, lineHeight: 1.7 }}>전체 정답 목록을 확인한 뒤 훈련을 완료하세요.</div>
@@ -318,8 +318,8 @@ export function MemoryGame({
 
   if (phase === 'summary') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'auto', background: '#0F172A' }}>
-        <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 1.25rem 5rem' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'auto', background: '#0F172A' }}>
+        <div style={{ display: 'flex', minHeight: '100dvh', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 1.25rem 5rem' }}>
           <div style={{ width: '100%', maxWidth: 620 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
@@ -363,7 +363,7 @@ export function MemoryGame({
 
   if (phase === 'done') {
     return (
-      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+      <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem', textAlign: 'center' }}>
           <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900 }}>모두 마쳤습니다.</div>
           <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '1rem', lineHeight: 1.7 }}>색상 기억 훈련이 완료되었습니다.</div>
@@ -376,7 +376,7 @@ export function MemoryGame({
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+    <div style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
       {hud}
       {progress}
       <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>

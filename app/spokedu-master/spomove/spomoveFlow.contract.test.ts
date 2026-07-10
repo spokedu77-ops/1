@@ -13,7 +13,8 @@ describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and guideline actions on hub cards', () => {
     expect(hub).toContain('buildSpomoveCardTags');
     expect(hub).toContain('가이드라인');
-    expect(hub).toContain('바로 실행');
+    expect(hub).toContain('큰 화면 실행');
+    expect(hub).toContain('이 기기에서 실행');
     expect(hub).not.toContain('최근 실행');
     expect(hub).not.toContain('최근 실행한 활동');
   });
@@ -21,6 +22,7 @@ describe('SPOMOVE pilot flow contract', () => {
   it('keeps normal program cards separate from recent rerun actions', () => {
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).toContain('data-spm-spomove-card-action="start-mobile"');
     expect(hub).toContain('data-spm-spomove-recent-action="rerun"');
 
     const cardInfoBlock = hub.slice(
@@ -51,6 +53,7 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('starts sessions immediately from hub cards and guideline sheet', () => {
     expect(hub).toContain("officialPresetSessionHref(preset, { autostart: true })");
+    expect(hub).toContain("mode: 'mobile'");
     expect(session).toContain("searchParams.get('autostart') === '1'");
   });
 

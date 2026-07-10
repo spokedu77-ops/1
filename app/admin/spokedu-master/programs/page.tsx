@@ -760,7 +760,7 @@ function SpomoveThumbnailManager() {
   const savedCount = Object.keys(thumbnailPaths).length;
 
   return (
-    <main className="min-h-[calc(100vh-73px)] bg-slate-50 p-4 sm:p-6">
+    <main className="min-h-[calc(100dvh-73px)] bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-[1500px] space-y-5">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -998,7 +998,7 @@ function SpomoveGuideVideoManager() {
   const savedCount = Object.keys(guideVideoUrls).length;
 
   return (
-    <main className="min-h-[calc(100vh-73px)] bg-slate-50 p-4 sm:p-6">
+    <main className="min-h-[calc(100dvh-73px)] bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-[1500px] space-y-5">
         <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -1193,7 +1193,7 @@ function CreateProgramModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 py-6">
-      <div className="max-h-[calc(100vh-48px)] w-full max-w-3xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl">
+      <div className="max-h-[calc(100dvh-48px)] w-full max-w-3xl overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-2xl">
         <div className="sticky top-0 z-10 flex items-start gap-3 border-b border-slate-200 bg-white px-5 py-4">
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-black uppercase text-indigo-600">MASTER program</p>
@@ -1850,7 +1850,7 @@ export default function AdminSmProgramsPage() {
   const selectedQualitySummary = selectedQuality ? qualitySummary(selectedQuality) : '';
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-950">
+    <div className="min-h-dvh bg-slate-50 text-slate-950">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white px-5 py-4">
         <div className="flex flex-wrap items-center gap-3">
           <Link href="/admin/spokedu-master" className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-500" aria-label="이전">
@@ -1936,7 +1936,7 @@ export default function AdminSmProgramsPage() {
       ) : activeTab === 'spomove-guide-videos' ? (
         <SpomoveGuideVideoManager />
       ) : (
-      <main className="grid min-h-[calc(100vh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
+      <main className="grid min-h-[calc(100dvh-73px)] grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[380px_minmax(0,1fr)]">
         <aside className="border-r border-slate-200 bg-white">
           <div className="space-y-3 border-b border-slate-200 p-4">
             <div className="grid grid-cols-3 gap-2">
@@ -1981,7 +1981,7 @@ export default function AdminSmProgramsPage() {
             </div>
           </div>
 
-          <div className="max-h-[calc(100vh-238px)] overflow-y-auto p-3">
+          <div className="max-h-[calc(100dvh-238px)] overflow-y-auto p-3">
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="h-7 w-7 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />

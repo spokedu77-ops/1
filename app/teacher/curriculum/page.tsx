@@ -84,6 +84,7 @@ interface CenterEquipmentGuideItem {
   image_url?: string | null;
   detail_text?: string | null;
   activity_image_url?: string | null;
+  activity_video_url?: string | null;
   activity_text?: string | null;
 }
 
@@ -564,7 +565,11 @@ useEffect(() => {
                           {filteredEquipmentItems.map((act) => (
                             <div key={act.id} role="button" tabIndex={0} className="bg-white rounded-2xl border border-slate-100 overflow-hidden hover:shadow-xl transition-all cursor-pointer" onClick={() => { setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); }} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedEquipmentItem(act); setIsEquipmentDetailOpen(true); } }}>
                               <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
-                                {act.activity_image_url ? (
+                                {act.activity_video_url && getYouTubeId(act.activity_video_url) ? (
+                                  <img src={`https://img.youtube.com/vi/${getYouTubeId(act.activity_video_url)}/hqdefault.jpg`} alt="" className="w-full h-full object-cover" />
+                                ) : act.activity_video_url ? (
+                                  <video src={act.activity_video_url} className="w-full h-full object-cover" muted playsInline />
+                                ) : act.activity_image_url ? (
                                   <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
                                 ) : (
                                   <div className="p-4 text-center">
@@ -580,7 +585,7 @@ useEffect(() => {
                         </div>
                       ) : (
                         <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
-                          {selectedEquipmentDisplayName} · 단계 {selectedEquipmentStep}에 등록된 활동이 없습니다.
+                          {selectedEquipmentDisplayName} · {selectedEquipmentStep}주차에 등록된 활동이 없습니다.
                         </div>
                       )}
                     </div>

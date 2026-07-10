@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
 import {
@@ -52,9 +53,9 @@ type Props = {
 };
 
 const css = `
-.camo{position:fixed;inset:0;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.camo{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#111;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .camo,.camo *{box-sizing:border-box}
-.camo-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:0 clamp(12px,2.5vw,30px);z-index:30;flex-shrink:0}
+.camo-hud{height:72px;display:flex;align-items:stretch;background:rgba(10,10,14,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .camo-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .camo-hc.grow{flex:1;align-items:center;border-right:none}
 .camo-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
@@ -67,6 +68,7 @@ const css = `
 .camo-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .camo-msg{position:absolute;left:50%;top:9%;transform:translateX(-50%);z-index:20;font-size:clamp(18px,3.4vw,32px);font-weight:900;color:#fff;text-shadow:0 0 20px rgba(0,0,0,.8);background:rgba(0,0,0,.5);padding:10px 28px;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .3s ease;white-space:nowrap}
 .camo-msg.show{opacity:1}
+${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
 export function CamouflageReactionTraining({

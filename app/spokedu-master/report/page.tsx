@@ -676,7 +676,7 @@ function ReportContent() {
 
               <div>
                 <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>부가 설정</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-3">
                   {AUDIENCES.map(({ id, label, description, Icon }) => {
                     const active = audience === id;
                     return (

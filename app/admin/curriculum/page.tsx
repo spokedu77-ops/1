@@ -18,11 +18,11 @@ import {
   EQUIPMENT_GUIDE_NUMBERS,
   EQUIPMENT_GUIDE_STEPS,
 } from '@/app/lib/curriculum/constants';
-import CurriculumCategoryPicker from '@/app/components/curriculum/CurriculumCategoryPicker';
 import CurriculumMonthWeekPicker from '@/app/components/curriculum/CurriculumMonthWeekPicker';
 import CenterEquipmentActivityDetailModal from '@/app/components/curriculum/CenterEquipmentActivityDetailModal';
 import { sortCenterCurriculumByDisplayOrder } from '@/app/lib/curriculum/sortCenterCurriculum';
 import { getYouTubeVideoId as getYouTubeId } from '@/app/lib/curriculum/youtubeVideoId';
+import { getPublicUrl, uploadToStorage, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { LESSON_THEME_OPTIONS, normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import { mergeStrengthBodyFunctions } from '@/app/spokedu-master/lib/lessonDisplay';
 import {
@@ -53,7 +53,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import {
   Instagram, Plus, Sparkles, X, Calendar, MoreHorizontal, Edit2, Trash2,
-  CheckSquare, Box, ListOrdered, Play, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight, GripVertical, Search
+  CheckSquare, Box, ListOrdered, Play, ArrowLeft, ChevronLeft, ChevronRight, GripVertical, Search
 } from 'lucide-react';
 
 export type MainCurriculumTab = 'personal' | 'center';
@@ -162,6 +162,7 @@ interface CenterEquipmentGuideItem {
   image_url?: string | null;
   detail_text?: string | null;
   activity_image_url?: string | null;
+  activity_video_url?: string | null;
   activity_text?: string | null;
 }
 
@@ -450,7 +451,8 @@ export default function AdminCurriculumPage() {
   const [selectedEquipmentItem, setSelectedEquipmentItem] = useState<CenterEquipmentGuideItem | null>(null);
   const [isEquipmentEditOpen, setIsEquipmentEditOpen] = useState(false);
   const [editingEquipmentId, setEditingEquipmentId] = useState<number | null>(null);
-  const [equipmentForm, setEquipmentForm] = useState({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
+  const [equipmentForm, setEquipmentForm] = useState({ number: 1, step: 1, activity_image_url: '', activity_video_url: '', activity_text: '' });
+  const [equipmentUploadBusy, setEquipmentUploadBusy] = useState<'master-image' | null>(null);
   const [isEquipmentMasterEditOpen, setIsEquipmentMasterEditOpen] = useState(false);
   const [equipmentMasterForm, setEquipmentMasterForm] = useState({ name: '', image_url: '' });
 
@@ -1217,12 +1219,6 @@ export default function AdminCurriculumPage() {
     toast.success('삭제되었습니다.');
   };
 
-  const closePersonalModal = () => {
-    setIsPersonalModalOpen(false);
-    setPersonalEditingId(null);
-    setPersonalPost({ category: categoryTab, sub_tab: subTab, title: '', url: '', url2: '', url3: '', url4: '', expertTip: '', checkListText: '', equipmentText: '', stepsText: '' });
-  };
-
   const open8huiEdit = (subTabLabel: string, item: PersonalCurriculumItem | null) => {
     setEditing8huiSubTab(subTabLabel);
     setEditing8huiId(item?.id ?? null);
@@ -1325,10 +1321,10 @@ export default function AdminCurriculumPage() {
   const openEquipmentEdit = (item: CenterEquipmentGuideItem | null) => {
     if (item) {
       setEditingEquipmentId(item.id);
-      setEquipmentForm({ number: item.number, step: item.step, activity_image_url: item.activity_image_url ?? '', activity_text: item.activity_text ?? '' });
+      setEquipmentForm({ number: item.number, step: item.step, activity_image_url: item.activity_image_url ?? '', activity_video_url: item.activity_video_url ?? '', activity_text: item.activity_text ?? '' });
     } else {
       setEditingEquipmentId(null);
-      setEquipmentForm({ number: selectedEquipmentNumber, step: selectedEquipmentStep, activity_image_url: '', activity_text: '' });
+      setEquipmentForm({ number: selectedEquipmentNumber, step: selectedEquipmentStep, activity_image_url: '', activity_video_url: '', activity_text: '' });
     }
     setIsEquipmentEditOpen(true);
   };
@@ -1336,7 +1332,42 @@ export default function AdminCurriculumPage() {
   const closeEquipmentEdit = () => {
     setIsEquipmentEditOpen(false);
     setEditingEquipmentId(null);
-    setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
+    setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_video_url: '', activity_text: '' });
+  };
+
+  const getEquipmentUploadExtension = (file: File, fallback: string) => {
+    const fromName = file.name.split('.').pop()?.toLowerCase();
+    if (fromName && /^[a-z0-9]+$/.test(fromName) && fromName.length <= 8) return fromName;
+    return fallback;
+  };
+
+  const handleEquipmentMasterImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('이미지 파일만 업로드할 수 있습니다.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('이미지는 10MB 이하만 업로드할 수 있습니다.');
+      return;
+    }
+
+    setEquipmentUploadBusy('master-image');
+    try {
+      const ext = getEquipmentUploadExtension(file, 'jpg');
+      const path = `curriculum/center-equipment/${selectedEquipmentNumber}/image-${Date.now()}.${ext}`;
+      await uploadToStorage(path, file, file.type || 'image/jpeg');
+      const publicUrl = withPublicUrlCacheBust(getPublicUrl(path), Date.now());
+      setEquipmentMasterForm((form) => ({
+        ...form,
+        image_url: publicUrl,
+      }));
+      toast.success('교구 이미지가 업로드되었습니다.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '파일 업로드에 실패했습니다.');
+    } finally {
+      setEquipmentUploadBusy(null);
+    }
   };
 
   const closeAllCurriculumOverlays = useCallback(() => {
@@ -1388,7 +1419,7 @@ export default function AdminCurriculumPage() {
     setSelectedEquipmentItem(null);
     setIsEquipmentEditOpen(false);
     setEditingEquipmentId(null);
-    setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_text: '' });
+    setEquipmentForm({ number: 1, step: 1, activity_image_url: '', activity_video_url: '', activity_text: '' });
     setIsEquipmentMasterEditOpen(false);
     setEquipmentMasterForm({ name: '', image_url: '' });
   }, [selectedMonth, selectedWeek, categoryTab, subTab]);
@@ -1421,6 +1452,7 @@ export default function AdminCurriculumPage() {
       image_url: null,
       detail_text: null,
       activity_image_url: equipmentForm.activity_image_url.trim() || null,
+      activity_video_url: equipmentForm.activity_video_url.trim() || null,
       activity_text: equipmentForm.activity_text.trim() || null,
     };
     try {
@@ -1761,9 +1793,13 @@ export default function AdminCurriculumPage() {
                                  <button type="button" onClick={(e) => deleteEquipmentItem(act.id, e)} className="p-2 bg-white/95 backdrop-blur rounded-xl shadow-md text-slate-600 hover:text-red-600"><Trash2 size={16}/></button>
                                </div>
                                <div className="aspect-video bg-slate-100 flex items-center justify-center overflow-hidden">
-                                 {act.activity_image_url ? (
-                                   <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
-                                 ) : (
+                                {act.activity_video_url && getYouTubeId(act.activity_video_url) ? (
+                                  <img src={`https://img.youtube.com/vi/${getYouTubeId(act.activity_video_url)}/hqdefault.jpg`} alt="" className="w-full h-full object-cover" />
+                                ) : act.activity_video_url ? (
+                                  <video src={act.activity_video_url} className="w-full h-full object-cover" muted playsInline />
+                                ) : act.activity_image_url ? (
+                                  <img src={act.activity_image_url} alt="" className="w-full h-full object-cover" />
+                                ) : (
                                    <div className="p-4 text-center">
                                      <p className="text-sm font-bold text-slate-500 line-clamp-3">{act.activity_text || '활동 내용 없음'}</p>
                                    </div>
@@ -1777,7 +1813,7 @@ export default function AdminCurriculumPage() {
                          </div>
                        ) : (
                          <div className="w-full py-24 text-center bg-white border-2 border-dashed border-slate-200 rounded-[32px] text-slate-400 font-bold">
-                           {selectedEquipmentDisplayName} · 단계 {selectedEquipmentStep}에 등록된 활동이 없습니다.
+                           {selectedEquipmentDisplayName} · {selectedEquipmentStep}주차에 등록된 활동이 없습니다.
                          </div>
                        )}
                      </div>
@@ -2703,6 +2739,10 @@ export default function AdminCurriculumPage() {
                 <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={equipmentForm.activity_image_url} onChange={e => setEquipmentForm(f => ({ ...f, activity_image_url: e.target.value }))} />
               </div>
               <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase">활동 동영상 링크 (선택)</label>
+                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="YouTube 또는 동영상 링크" value={equipmentForm.activity_video_url} onChange={e => setEquipmentForm(f => ({ ...f, activity_video_url: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
                 <label className="text-xs font-black text-slate-400 uppercase">활동 내용 (선택)</label>
                 <textarea className="w-full bg-slate-100 p-4 rounded-2xl outline-none h-24 resize-none text-sm" placeholder="활동 설명 또는 텍스트" value={equipmentForm.activity_text} onChange={e => setEquipmentForm(f => ({ ...f, activity_text: e.target.value }))} />
               </div>
@@ -2728,8 +2768,30 @@ export default function AdminCurriculumPage() {
                 <input required className="w-full bg-slate-100 p-4 rounded-2xl outline-none" placeholder="교구 이름" value={equipmentMasterForm.name} onChange={e => setEquipmentMasterForm(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase">이미지 URL (선택)</label>
-                <input className="w-full bg-slate-100 p-4 rounded-2xl outline-none text-sm" placeholder="https://..." value={equipmentMasterForm.image_url} onChange={e => setEquipmentMasterForm(f => ({ ...f, image_url: e.target.value }))} />
+                <label className="text-xs font-black text-slate-400 uppercase">교구 이미지 파일 (선택)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={equipmentUploadBusy !== null}
+                  className="block w-full text-sm font-bold text-slate-600 file:mr-3 file:rounded-xl file:border-0 file:bg-indigo-50 file:px-4 file:py-3 file:text-sm file:font-black file:text-indigo-700"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) await handleEquipmentMasterImageUpload(file);
+                    e.target.value = '';
+                  }}
+                />
+                {equipmentUploadBusy === 'master-image' ? (
+                  <p className="text-xs font-bold text-slate-500">업로드 중입니다...</p>
+                ) : null}
+                {equipmentMasterForm.image_url ? (
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                    <img src={equipmentMasterForm.image_url} alt="" className="max-h-56 w-full object-contain" />
+                    <div className="flex items-center justify-between gap-2 border-t border-slate-200 px-3 py-2">
+                      <p className="truncate text-xs font-bold text-slate-500">{equipmentMasterForm.image_url}</p>
+                      <button type="button" className="shrink-0 text-xs font-black text-rose-600" onClick={() => setEquipmentMasterForm((f) => ({ ...f, image_url: '' }))}>삭제</button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
             <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all text-center">저장</button>

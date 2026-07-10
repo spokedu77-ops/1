@@ -29,6 +29,7 @@ export function useIntervalTimer({
   colors,
   fruitSlides,
   basicNumberOverlay,
+  spatialArrowColorMode = 'basic',
   flankerStimulusType,
   onSignal,
   onFinish,
@@ -44,6 +45,7 @@ export function useIntervalTimer({
   colors: ColorItem[];
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
+  spatialArrowColorMode?: 'basic' | 'color';
   flankerStimulusType?: 'color' | 'number';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
@@ -74,12 +76,14 @@ export function useIntervalTimer({
       return;
     }
     const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
+    const effectiveArrowColorMode: 'basic' | 'color' =
+      mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
     const fruitOpts = {
       ...(fruitSlides ? { fruitSlides } : {}),
       ...(engineMode === 'flanker' ? { flankerStimulusType } : {}),
     };
     if (engineMode === 'basic') {
-      genRef.current = createBasicSignalGenerator(level, colors, fruitSlides, basicNumberOverlay);
+      genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode);
     } else if (engineMode === 'simon') {
       genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides);
     } else if (engineMode === 'taskswitch') {
@@ -166,7 +170,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, flankerStimulusType, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, flankerStimulusType, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

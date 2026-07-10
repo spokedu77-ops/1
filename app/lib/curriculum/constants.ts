@@ -75,8 +75,8 @@ export const EIGHTH_SESSION_LABELS = [
 /** 센터 스포츠 교구 가이드라인: 번호 1~12, 단계 1~4 */
 export const EQUIPMENT_GUIDE_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 export const EQUIPMENT_GUIDE_STEPS = [
-  { value: 1, label: '단계 1' },
-  { value: 2, label: '단계 2' },
-  { value: 3, label: '단계 3' },
-  { value: 4, label: '단계 4' },
+  { value: 1, label: '1주차' },
+  { value: 2, label: '2주차' },
+  { value: 3, label: '3주차' },
+  { value: 4, label: '4주차' },
 ] as const;
