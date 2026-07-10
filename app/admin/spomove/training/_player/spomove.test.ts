@@ -629,12 +629,26 @@ describe('FlowPreset', () => {
   });
 
   test('저장 후 동일하게 복원', () => {
-    const preset: FlowPreset = { id: '1', name: '테스트', features: ['faster'], colorTheme: 'neon', duration: 30 };
+    const preset: FlowPreset = {
+      id: '1',
+      name: '테스트',
+      features: ['faster'],
+      environmentTheme: 'space',
+      colorTheme: 'neon',
+      duration: 30,
+    };
     saveFlowPresets([preset]);
     expect(loadFlowPresets()[0]).toEqual(preset);
   });
 
-  const VALID: FlowPreset = { id: '1', name: 'ok', features: [], colorTheme: 'default', duration: 20 };
+  const VALID: FlowPreset = {
+    id: '1',
+    name: 'ok',
+    features: [],
+    environmentTheme: 'space',
+    colorTheme: 'default',
+    duration: 20,
+  };
 
   test('정상 저장 → SavePresetResult success:true', () => {
     const r: SavePresetResult = saveFlowPresets([VALID]);

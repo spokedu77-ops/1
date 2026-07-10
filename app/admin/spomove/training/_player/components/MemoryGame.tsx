@@ -6,6 +6,7 @@ import { playBeep } from '../lib/audio';
 import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';
 import { generateMemoryPattern } from '../lib/signals';
 import { LongPressButton } from './LongPressButton';
+import { MEMORY_ROUNDS } from '../constants';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 type Phase = 'idle' | 'showing' | 'waiting' | 'reveal' | 'summaryIntro' | 'summary' | 'done';
