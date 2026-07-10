@@ -29,10 +29,25 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     expect(OFFICIAL_SPOMOVE_LIBRARY.every((preset) => preset.isReady)).toBe(true);
   });
 
+  it('변형 사분할은 1~4단계가 easy/hard로 분리된다', () => {
+    const variantQuadrants = OFFICIAL_SPOMOVE_LIBRARY.filter(
+      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10,
+    );
+    expect(variantQuadrants).toHaveLength(8);
+    for (const level of [7, 8, 9, 10]) {
+      const byLevel = variantQuadrants.filter((preset) => preset.engine.level === level);
+      expect(byLevel.map((preset) => preset.engine.bodyLabelMode).sort()).toEqual(['easy', 'hard']);
+      expect(byLevel.every((preset) => preset.engine.hideBodyLabelModeControls)).toBe(true);
+      expect(byLevel.every((preset) => preset.engine.variantColorTheme === 'color')).toBe(true);
+      expect(byLevel.find((preset) => preset.engine.bodyLabelMode === 'easy')?.cueSeconds).toBe(5);
+      expect(byLevel.find((preset) => preset.engine.bodyLabelMode === 'hard')?.cueSeconds).toBe(6);
+    }
+  });
+
   const byGroup = (group: string) => OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.programGroup === group);
 
   it('그룹별 개수가 확장 목표와 일치한다', () => {
-    expect(byGroup('reaction-cognition')).toHaveLength(40);
+    expect(byGroup('reaction-cognition')).toHaveLength(44);
     expect(byGroup('visual-reaction')).toHaveLength(17);
     expect(byGroup('simon')).toHaveLength(3);
     expect(byGroup('flanker')).toHaveLength(6);

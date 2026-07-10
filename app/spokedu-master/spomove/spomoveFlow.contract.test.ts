@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+﻿import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -14,8 +14,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('buildSpomoveCardTags');
     expect(hub).toContain('가이드라인');
     expect(hub).toContain('바로 실행');
-    expect(hub).toContain('다시 실행');
-    expect(hub).toContain('최근 실행');
+    expect(hub).not.toContain('최근 실행');
+    expect(hub).not.toContain('최근 실행한 활동');
   });
 
   it('keeps normal program cards separate from recent rerun actions', () => {
@@ -34,7 +34,7 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('shows recent SPOMOVE re-entry without exposing other owners', () => {
     expect(hub).toContain('최근 SPOMOVE 활동');
-    expect(hub).toContain('최근 실행한 활동');
+    expect(hub).toContain('최근 활동');
     expect(hub).toContain('활동 선택');
     expect(hub).toContain('아직 실행한 SPOMOVE 활동이 없습니다.');
     expect(hub).toContain('activity.ownerId === ownerId');
@@ -84,5 +84,11 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('/spokedu-master/activity');
     expect(session).toContain('같은 프로그램 다시 실행');
     expect(session).toContain('다른 프로그램 선택');
+  });
+
+  it('keeps user-facing hub copy in valid UTF-8 Korean', () => {
+    expect(hub).not.toMatch(/[\u0080-\u009f]/);
+    expect(hub).not.toContain('\ufffd');
+    expect(hub).not.toMatch(/[怨諛鍮異醫珥]/);
   });
 });

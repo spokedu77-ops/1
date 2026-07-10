@@ -14,6 +14,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
+import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
+import {
+  normalizeSpomoveThumbnailMap,
+  SPOMOVE_THUMBNAIL_PACK_ID,
+} from '@/app/lib/spomove/spomoveOfficialAssets';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
@@ -63,6 +70,11 @@ type ContinueItem = {
   action: string;
   time?: string;
   href: string;
+};
+
+type SpomoveThumbnailPackQueryResult = {
+  data: { assets_json?: unknown; updated_at?: string | null } | null;
+  error: { code?: string } | null;
 };
 
 function getFirstStartSteps(profile: UserProfile | null) {
@@ -157,6 +169,15 @@ function selectFeaturedSpomove() {
     if (!selected.some((item) => item.id === preset.id)) selected.push(preset);
   }
   return selected;
+}
+
+function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
+  if (!path) return '';
+  try {
+    return withPublicUrlCacheBust(getPublicUrl(path), cacheBust);
+  } catch {
+    return '';
+  }
 }
 
 type ContextProgramTab = 'classroom' | 'preschool';
@@ -428,23 +449,39 @@ function FirstStartGuide({ profile }: { profile: UserProfile | null }) {
   );
 }
 
-function SpomoveCard({ preset }: { preset: OfficialSpomovePreset }) {
+function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; thumbnailUrl: string }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   return (
     <article data-spomove-preset={preset.id} className="flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-700 bg-[radial-gradient(circle_at_82%_12%,rgba(99,102,241,0.48),transparent_34%),linear-gradient(145deg,#111827,#0f172a_62%,#020617)] p-4 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
       <div className="flex items-start justify-between gap-3">
-        <div className="grid grid-cols-2 gap-1.5" aria-hidden="true">
-          {SPOMOVE_PAD_GRID_HEX.map((color) => (
-            <span key={color} className="h-3 w-3 rounded-[4px]" style={{ background: color }} />
-          ))}
-        </div>
+        {showThumbnail ? (
+          <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/15 bg-black/20">
+            <img
+              src={thumbnailUrl}
+              alt=""
+              className="h-full w-full object-cover"
+              onError={() => setImageFailed(true)}
+            />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-1.5" aria-hidden="true">
+            {SPOMOVE_PAD_GRID_HEX.map((color) => (
+              <span key={color} className="h-3 w-3 rounded-[4px]" style={{ background: color }} />
+            ))}
+          </div>
+        )}
         <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/85">{preset.axisTitle}</span>
       </div>
       <div>
         <h3 className="line-clamp-2 text-[17px] font-black leading-5">{preset.title}</h3>
         <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-300">{preset.salesCopy || preset.recommendedUse}</p>
-        <Link href={officialPresetSessionHref(preset)} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[13px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">
+        <Link
+          href={officialPresetSessionHref(preset, { autostart: true })}
+          className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-white text-[13px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
           <MonitorPlay size={15} />
-          프로그램 보기
+          바로 실행
         </Link>
       </div>
     </article>
@@ -614,10 +651,42 @@ export default function DashboardView() {
   const [mounted, setMounted] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
+  const [spomoveThumbnailPaths, setSpomoveThumbnailPaths] = useState<Record<string, string>>({});
+  const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
   const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const supabase = getSupabaseBrowserClient();
+    void supabase
+      .from('think_asset_packs')
+      .select('assets_json, updated_at')
+      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+      .maybeSingle()
+      .then((result: SpomoveThumbnailPackQueryResult) => {
+        if (!alive) return;
+        const { data, error } = result;
+        if (error && error.code !== 'PGRST116') {
+          setSpomoveThumbnailPaths({});
+          setSpomoveThumbnailCacheBust(undefined);
+          return;
+        }
+        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+        setSpomoveThumbnailPaths(next);
+        setSpomoveThumbnailCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+      })
+      .catch(() => {
+        if (!alive) return;
+        setSpomoveThumbnailPaths({});
+        setSpomoveThumbnailCacheBust(undefined);
+      });
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const weeklySelection = useMemo(
@@ -782,7 +851,10 @@ export default function DashboardView() {
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
           {featuredSpomove.map((preset) => (
             <div key={preset.id} className="w-[76vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
-              <SpomoveCard preset={preset} />
+              <SpomoveCard
+                preset={preset}
+                thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
+              />
             </div>
           ))}
         </div>
@@ -866,6 +938,7 @@ export default function DashboardView() {
           }}
         />
       ) : null}
+
     </main>
   );
 }

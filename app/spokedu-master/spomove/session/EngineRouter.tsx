@@ -103,6 +103,8 @@ type Props = {
   rounds?: number;
   soundEnabled?: boolean;
   variantColorTheme?: string;
+  bodyLabelMode?: 'easy' | 'hard';
+  hideBodyLabelModeControls?: boolean;
   reactTrainConcurrent?: 1 | 2 | 3;
   moleDualPanel?: boolean;
   numberCartTier?: 1 | 2 | 3;
@@ -141,6 +143,8 @@ export function EngineRouter({
   rounds,
   soundEnabled = true,
   variantColorTheme,
+  bodyLabelMode,
+  hideBodyLabelModeControls,
   reactTrainConcurrent,
   moleDualPanel,
   numberCartTier,
@@ -177,7 +181,7 @@ export function EngineRouter({
   );
 
   if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
-    const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 5) : Math.max(level, 1);
+    const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 10) : Math.max(level, 1);
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <MemoryGameApp
@@ -190,6 +194,8 @@ export function EngineRouter({
             warmup: 3,
             audioMode: soundEnabled ? 'beep' : 'off',
             variantColorTheme: variantColorTheme as SpomoveColorThemeId | undefined,
+            bodyLabelMode,
+            hideBodyLabelModeControls,
           }}
           embed
           disableBgm
@@ -340,7 +346,7 @@ export function EngineRouter({
   }
 
   if (mode === 'spatial') {
-    const safeLevel = Math.min(Math.max(level, 1), 5);
+    const safeLevel = Math.min(Math.max(level, 1), 6);
     const handleSpatialComplete = () => {
       onComplete({ engineMode: mode, engineLevel: level, colorCounts: null });
     };

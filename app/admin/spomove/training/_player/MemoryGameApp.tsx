@@ -2083,7 +2083,7 @@ export default function MemoryGameApp({
             </div>
           </div>
         )}
-        {basicVariantLevel && !fullScreenColorDisplayLevel && (
+        {!embed && basicVariantLevel && !fullScreenColorDisplayLevel && (
           <div
             style={{
               position: 'absolute',
@@ -2111,11 +2111,11 @@ export default function MemoryGameApp({
                 border: '1px solid rgba(255,255,255,0.12)',
               }}
             >
-              ???????? {SPOMOVE_COLOR_THEME_LABELS[settings.variantColorTheme]}
+              변형 사분할 · {SPOMOVE_COLOR_THEME_LABELS[settings.variantColorTheme]}
             </div>
           </div>
         )}
-        {fullScreenColorDisplayLevel && (
+        {!embed && fullScreenColorDisplayLevel && (
           <div
             style={{
               position: 'absolute',
@@ -2158,7 +2158,7 @@ export default function MemoryGameApp({
             })}
           </div>
         )}
-        {quadBodyLevel && !hideBodyLabelModeControls && (
+        {!embed && quadBodyLevel && !hideBodyLabelModeControls && (
           <div
             style={{
               position: 'absolute',

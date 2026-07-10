@@ -5,10 +5,10 @@ export type SpomoveMemoryColorId = 'red' | 'yellow' | 'green' | 'blue';
 export const SPOMOVE_MEMORY_COLOR_ORDER: SpomoveMemoryColorId[] = ['red', 'yellow', 'green', 'blue'];
 
 export const SPOMOVE_MEMORY_COLOR_SHORT: Record<SpomoveMemoryColorId, string> = {
-  red: '빨',
-  yellow: '노',
-  green: '초',
-  blue: '파',
+  red: '빨강',
+  yellow: '노랑',
+  green: '초록',
+  blue: '파랑',
 };
 
 export const SPOMOVE_MEMORY_SLOT_COUNT = 10;
@@ -46,7 +46,6 @@ export function memoryColorItemById(id: string): ColorItem {
   return COLORS.find((c) => c.id === id) ?? COLORS[0]!;
 }
 
-/** 선생님이 지정한 1~10번 슬롯 색상 → 순차 기억 패턴 */
 export function buildMemoryPatternFromSlots(slotIds: readonly string[]): ColorItem[] {
   return slotIds.slice(0, SPOMOVE_MEMORY_SLOT_COUNT).map((id) => memoryColorItemById(id));
 }

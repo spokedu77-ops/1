@@ -257,6 +257,11 @@ function SpomoveSessionContent() {
     return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
+  const exitFullscreenAfterSession = useCallback(() => {
+    if (typeof document === 'undefined' || !document.fullscreenElement) return;
+    void document.exitFullscreen?.().catch(() => undefined);
+  }, []);
+
   const startOfficialSession = useCallback(() => {
     if (!officialPreset || bgmLoading || !officialPreset.isReady || startLockedRef.current) return;
     startLockedRef.current = true;
@@ -291,6 +296,7 @@ function SpomoveSessionContent() {
   const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>, payload?: EngineCompletePayload) => {
     if (!officialPreset) return;
     stopBgm();
+    exitFullscreenAfterSession();
     const startedAt = sessionStartedAtRef.current;
     const fallbackElapsedMs = startedAt ? Math.max(1, Date.now() - startedAt) : 0;
     setSessionResult({
@@ -302,7 +308,11 @@ function SpomoveSessionContent() {
       maxCombo: payload?.maxCombo,
     });
     setState(nextState);
-  }, [officialPreset, stopBgm]);
+  }, [exitFullscreenAfterSession, officialPreset, stopBgm]);
+
+  useEffect(() => {
+    if (state === 'done' || state === 'ended') exitFullscreenAfterSession();
+  }, [exitFullscreenAfterSession, state]);
 
   useEffect(() => {
     if (!autostart || state !== 'idle' || !officialPreset || bgmLoading || !officialPreset.isReady) return;
@@ -318,8 +328,8 @@ function SpomoveSessionContent() {
         startOfficialSession();
       }
       if (event.key.toLowerCase() === 'f') {
-        if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.();
-        else void document.exitFullscreen?.();
+        if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+        else void document.exitFullscreen?.().catch(() => undefined);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -342,6 +352,8 @@ function SpomoveSessionContent() {
         rounds={officialPreset.rounds}
         soundEnabled={soundEnabled}
         variantColorTheme={officialPreset.engine.variantColorTheme}
+        bodyLabelMode={officialPreset.engine.bodyLabelMode}
+        hideBodyLabelModeControls={officialPreset.engine.hideBodyLabelModeControls}
         reactTrainConcurrent={officialPreset.engine.reactTrainConcurrent}
         moleDualPanel={officialPreset.engine.moleDualPanel}
         numberCartTier={officialPreset.engine.numberCartTier}
@@ -360,8 +372,8 @@ function SpomoveSessionContent() {
   }
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.();
-    else void document.exitFullscreen?.();
+    if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    else void document.exitFullscreen?.().catch(() => undefined);
   };
 
   return (
@@ -374,6 +386,7 @@ function SpomoveSessionContent() {
           onToggleFullscreen={toggleFullscreen}
           onExit={() => {
             stopBgm();
+            exitFullscreenAfterSession();
             router.push('/spokedu-master/spomove');
           }}
         />
@@ -399,6 +412,7 @@ function SpomoveSessionContent() {
             retryLabel="같은 프로그램 다시 실행"
             onBack={() => {
               stopBgm();
+              exitFullscreenAfterSession();
               router.push('/spokedu-master/spomove');
             }}
             onRetry={startOfficialSession}

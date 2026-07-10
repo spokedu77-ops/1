@@ -402,17 +402,19 @@ export const SignalDisplay = React.memo(function SignalDisplay({
 
   if (type === 'basic_variant_color') {
     const panels = (content?.panels as VariantPanelContent[] | undefined) ?? [];
+    const variantTier = Number(content?.variantTier ?? 0);
+    const columns = variantTier === 4 ? 3 : panels.length === 2 ? 2 : 3;
     const pad = 'clamp(12px, 2.5vw, 40px)';
     const outer: React.CSSProperties = {
       position: 'absolute',
       inset: 0,
-      display: 'flex',
-      flexDirection: 'row',
+      display: 'grid',
+      gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
       alignItems: 'stretch',
       justifyContent: 'stretch',
       background: '#0F172A',
       padding: pad,
-      gap: 3,
+      gap: 'clamp(6px, 1.2vw, 14px)',
       boxSizing: 'border-box',
     };
 
@@ -426,13 +428,14 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             <div
               key={idx}
               style={{
-                flex: 1,
                 minWidth: 0,
                 minHeight: 0,
                 height: '100%',
+                borderRadius: 12,
+                border: '1px solid rgba(148,163,184,0.55)',
                 background: slide
                   ? ((slide.imageUrl ?? '').trim() ? '#000' : slide.color.bg)
-                  : '#fff',
+                  : 'rgba(255,255,255,0.14)',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',

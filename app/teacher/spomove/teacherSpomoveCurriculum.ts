@@ -2,8 +2,6 @@ import type { MemoryGameAutoLaunch } from '@/app/admin/spomove/training/_player/
 import { MEMORY_ROUNDS } from '@/app/admin/spomove/training/_player/constants';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 
-export type TeacherSpomoveFlowFeature = 'faster' | 'punch' | 'duck' | 'reach';
-
 export type TeacherSpomoveProgram = {
   id: string;
   title: string;
@@ -12,12 +10,10 @@ export type TeacherSpomoveProgram = {
   speed?: number;
   targetReps?: number;
   duration?: number;
-  flowDuration?: number;
   variantColorTheme?: SpomoveColorThemeId;
   reactTrainConcurrent?: 1 | 2 | 3;
   moleDualPanel?: boolean;
   bodyLabelMode?: 'easy' | 'hard';
-  flowFeatures?: TeacherSpomoveFlowFeature[];
   displayChips?: string[];
 };
 
@@ -32,7 +28,6 @@ const STANDARD_SPEED = 3;
 const STANDARD_REPS = 15;
 const STANDARD_WARMUP = 3;
 const REACT_TRAIN_DURATION_SEC = 30;
-const FLOW_DURATION_SEC = 25;
 
 function isModifiedQuadDisplayProgram(mode: string, level: number): boolean {
   return mode === 'basic' && level >= 7 && level <= 10;
@@ -79,20 +74,6 @@ function reactTrain(
   });
 }
 
-function dive(
-  id: string,
-  title: string,
-  flowDuration: number,
-  flowFeatures: TeacherSpomoveFlowFeature[] = [],
-  displayChips?: string[],
-) {
-  return p(id, title, 'flow', 1, {
-    flowDuration,
-    flowFeatures,
-    displayChips,
-  });
-}
-
 export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 1,
@@ -123,21 +104,18 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 3,
     label: '3주차',
-    summary: '변형 사분할, 단어 스트룹, DIVE 기본 동작을 연결합니다.',
+    summary: '변형 사분할과 단어 스트룹으로 간섭 반응을 확장합니다.',
     programs: [
       basic('w3-rc-mod-quad-1', '반응인지 - 변형 사분할 1단계', 7, 3),
       basic('w3-rc-mod-quad-2', '반응인지 - 변형 사분할 2단계', 8, 3),
       stroop('w3-stroop-word', '스트룹 - 단어 스트룹/역스트룹', 3),
       stroop('w3-stroop-word-bg', '스트룹 - 단어+배경', 4),
-      dive('w3-dive-basic', 'DIVE - 기본', 10, []),
-      dive('w3-dive-speed', 'DIVE - 속도업', 15, ['faster']),
-      dive('w3-dive-punch', 'DIVE - 펀치', 25, ['punch']),
     ],
   },
   {
     week: 4,
     label: '4주차',
-    summary: '새 전면색상 테마, 두더지 반응, DIVE 복합 회피를 진행합니다.',
+    summary: '새 전면색상 테마와 두더지 반응으로 선택 반응을 확장합니다.',
     programs: [
       basic('w4-rc-full-vehicle', '반응인지 - 전면색상: 탈 것', 3, 2, 'vehicle'),
       basic('w4-rc-full-nature', '반응인지 - 전면색상: 자연물', 3, 2, 'nature'),
@@ -146,17 +124,12 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
       reactTrain('w4-vr-mole-2', '시지각 반응 - 두더지 2개', 7, 2, 30, {
         moleDualPanel: true,
       }),
-      dive('w4-dive-basic', 'DIVE - 기본', 10, []),
-      dive('w4-dive-speed', 'DIVE - 속도업', 15, ['faster']),
-      dive('w4-dive-punch', 'DIVE - 펀치', 15, ['punch']),
-      dive('w4-dive-duck', 'DIVE - 덕', 25, ['duck']),
-      dive('w4-dive-all', 'DIVE - 전부 다', 25, ['faster', 'punch', 'duck', 'reach']),
     ],
   },
   {
     week: 5,
     label: '5주차',
-    summary: '2패널과 3패널 반응인지에 DIVE 벽 반응을 더합니다.',
+    summary: '2패널과 3패널 반응인지로 선택 폭을 넓힙니다.',
     programs: [
       basic('w5-rc-2panel-animal', '반응인지 - 2패널: 동물', 4, 3, 'animal'),
       basic('w5-rc-2panel-fruit', '반응인지 - 2패널: 과일', 4, 3, 'fruit'),
@@ -164,12 +137,6 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
       basic('w5-rc-3panel-vehicle', '반응인지 - 3패널: 탈 것', 6, 3, 'vehicle'),
       basic('w5-rc-3panel-nature', '반응인지 - 3패널: 자연물', 6, 3, 'nature'),
       basic('w5-rc-3panel-emotion', '반응인지 - 3패널: 감정', 6, 3, 'emotion'),
-      dive('w5-dive-basic', 'DIVE - 기본', 10, []),
-      dive('w5-dive-speed', 'DIVE - 속도업', 15, ['faster']),
-      dive('w5-dive-punch', 'DIVE - 펀치', 15, ['punch']),
-      dive('w5-dive-duck', 'DIVE - 덕', 15, ['duck']),
-      dive('w5-dive-wall', 'DIVE - 벽', 25, ['reach']),
-      dive('w5-dive-all', 'DIVE - 전부 다', 30, ['faster', 'punch', 'duck', 'reach']),
     ],
   },
   {
@@ -188,18 +155,12 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
         bodyLabelMode: 'easy',
       }),
       reactTrain('w6-vr-camouflage-balance', '시지각 반응 - 카모플라쥬: 밸런스 무빙', 4, 3, 30),
-      dive('w6-dive-basic', 'DIVE - 기본', 10, []),
-      dive('w6-dive-speed', 'DIVE - 속도업', 15, ['faster']),
-      dive('w6-dive-duck', 'DIVE - 덕', 15, ['duck']),
-      dive('w6-dive-wall', 'DIVE - 벽', 15, ['reach']),
-      dive('w6-dive-shake', 'DIVE - 쉐이크', 25, ['faster', 'duck'], ['DIVE', '쉐이크', '25초']),
-      dive('w6-dive-all', 'DIVE - 전부 다', 30, ['faster', 'punch', 'duck', 'reach']),
     ],
   },
   {
     week: 7,
     label: '7주차',
-    summary: '사이먼 효과와 플랭커 협동 점프를 DIVE 반복 세트와 결합합니다.',
+    summary: '사이먼 효과와 플랭커 협동 점프로 선택·억제 반응을 연습합니다.',
     programs: [
       p('w7-simon-effect', '사이먼 효과', 'simon', 2, {
         speed: 2.5,
@@ -209,18 +170,12 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
         speed: 2.5,
         targetReps: 15,
       }),
-      dive('w7-dive-basic', 'DIVE - 기본', 10, []),
-      dive('w7-dive-speed', 'DIVE - 속도업', 15, ['faster']),
-      dive('w7-dive-duck', 'DIVE - 덕', 15, ['duck']),
-      dive('w7-dive-wall', 'DIVE - 벽', 15, ['reach']),
-      dive('w7-dive-shake', 'DIVE - 쉐이크', 25, ['faster', 'duck'], ['DIVE', '쉐이크', '25초']),
-      dive('w7-dive-all', 'DIVE - 전부 다', 30, ['faster', 'punch', 'duck', 'reach']),
     ],
   },
   {
     week: 8,
     label: '8주차',
-    summary: '오징어 게임 콘셉트의 순차기억과 DIVE 종합 루틴으로 마무리합니다.',
+    summary: '오징어 게임 콘셉트의 순차기억으로 마무리합니다.',
     programs: [
       p('w8-memory-squid-1', '순차기억 - 1단계: 오징어 게임 활용', 'spatial', 1, {
         speed: STANDARD_SPEED,
@@ -234,12 +189,6 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
         speed: STANDARD_SPEED,
         targetReps: MEMORY_ROUNDS,
       }),
-      dive('w8-dive-basic', 'DIVE - 기본', 10, []),
-      dive('w8-dive-speed', 'DIVE - 속도업', 15, ['faster']),
-      dive('w8-dive-duck', 'DIVE - 덕', 15, ['duck']),
-      dive('w8-dive-wall', 'DIVE - 벽', 15, ['reach']),
-      dive('w8-dive-shake', 'DIVE - 쉐이크', 25, ['faster', 'duck'], ['DIVE', '쉐이크', '25초']),
-      dive('w8-dive-all', 'DIVE - 전부 다', 30, ['faster', 'punch', 'duck', 'reach']),
     ],
   },
 ];
@@ -261,16 +210,6 @@ export function buildTeacherAutoLaunch(program: TeacherSpomoveProgram): MemoryGa
       timeMode: 'reps',
       targetReps: program.targetReps ?? MEMORY_ROUNDS,
       variantColorTheme: program.variantColorTheme,
-    };
-  }
-
-  if (program.mode === 'flow') {
-    return {
-      ...base,
-      timeMode: 'time',
-      flowFeatures: program.flowFeatures ?? [],
-      flowDuration: program.flowDuration ?? FLOW_DURATION_SEC,
-      flowVisualVariant: 'plus',
     };
   }
 
@@ -307,10 +246,6 @@ export function getProgramSettingChips(program: TeacherSpomoveProgram): string[]
 
   if (program.mode === 'spatial') {
     return [formatSeconds(program.speed ?? STANDARD_SPEED), `${program.targetReps ?? MEMORY_ROUNDS}라운드`, 'BGM 자동'];
-  }
-
-  if (program.mode === 'flow') {
-    return ['DIVE', `${program.flowDuration ?? FLOW_DURATION_SEC}초`, 'BGM 자동'];
   }
 
   if (program.mode === 'reactTrain') {

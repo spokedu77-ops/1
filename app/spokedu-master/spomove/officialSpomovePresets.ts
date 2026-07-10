@@ -47,6 +47,8 @@ export type OfficialSpomovePreset = {
     mode: OfficialSpomoveEngineMode;
     level: number;
     variantColorTheme?: SpomoveColorThemeId;
+    bodyLabelMode?: 'easy' | 'hard';
+    hideBodyLabelModeControls?: boolean;
     reactTrainConcurrent?: 1 | 2 | 3;
     moleDualPanel?: boolean;
     numberCartTier?: 1 | 2 | 3;
@@ -55,7 +57,7 @@ export type OfficialSpomovePreset = {
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
   };
-  cueSeconds: 3;
+  cueSeconds: number;
   rounds: number;
   bgmAutoPlay: true;
   bgmCategory: 'spomove-training';
@@ -67,7 +69,7 @@ export type OfficialSpomovePreset = {
   executionFacts: ExecutionFact[];
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 46;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 50;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -353,7 +355,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 7 },
+    engine: { mode: 'basic', level: 7, variantColorTheme: 'color' },
     description: '색상 자극과 신체 부위(발)가 함께 제시될 때 해당 패드에 발을 접촉하는 활동',
     salesCopy: '발 중심 변형 사분할로 신체-색 연결',
     cueSeconds: 3,
@@ -434,7 +436,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 10 },
+    engine: { mode: 'basic', level: 10, variantColorTheme: 'color' },
     description: '3색에 손·발이 혼합 배정될 때 규칙에 맞게 패드로 이동하는 최고 난이도 활동',
     salesCopy: '손·발 혼합 3색 변형 사분할 극한',
     cueSeconds: 3,
@@ -1361,8 +1363,49 @@ function assignSequentialSortOrders(presets: OfficialSpomovePreset[]): OfficialS
   return presets.map((preset, index) => ({ ...preset, sortOrder: index + 1 }));
 }
 
+const VARIANT_QUADRANT_LABELS: Record<string, string> = {
+  'reaction-cognition-mq1-32': '변형 사분할 1단계',
+  'reaction-cognition-mq2-33': '변형 사분할 2단계',
+  'reaction-cognition-mq3-34': '변형 사분할 3단계',
+  'reaction-cognition-mq4-35': '변형 사분할 4단계',
+};
+
+function isVariantQuadrantPreset(preset: OfficialSpomovePreset) {
+  return Object.prototype.hasOwnProperty.call(VARIANT_QUADRANT_LABELS, preset.id);
+}
+
+function withVariantQuadrantDifficultyPresets(presets: OfficialSpomovePreset[]): OfficialSpomovePreset[] {
+  return presets.flatMap((preset) => {
+    if (!isVariantQuadrantPreset(preset)) return [preset];
+    const label = VARIANT_QUADRANT_LABELS[preset.id]!;
+    const baseEngine = {
+      ...preset.engine,
+      variantColorTheme: 'color' as SpomoveColorThemeId,
+      hideBodyLabelModeControls: true,
+    };
+    const easy: OfficialSpomovePreset = {
+      ...preset,
+      title: `${label} easy`,
+      cueSeconds: 5,
+      engine: { ...baseEngine, bodyLabelMode: 'easy' },
+      settingSummary: '5초 · 20회 · easy',
+      settingChips: ['easy', '5초', '20회'],
+    };
+    const hard: OfficialSpomovePreset = {
+      ...preset,
+      id: `${preset.id}-hard`,
+      title: `${label} hard`,
+      cueSeconds: 6,
+      engine: { ...baseEngine, bodyLabelMode: 'hard' },
+      settingSummary: '6초 · 20회 · hard',
+      settingChips: ['hard', '6초', '20회'],
+    };
+    return [easy, hard];
+  });
+}
+
 export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = assignSequentialSortOrders([
-  ...OFFICIAL_SPOMOVE_CORE_LIBRARY,
+  ...withVariantQuadrantDifficultyPresets(OFFICIAL_SPOMOVE_CORE_LIBRARY),
   ...buildOfficialSpomoveExpansionPresets(OFFICIAL_SPOMOVE_CORE_COUNT + 1),
 ]);
 

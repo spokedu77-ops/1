@@ -39,9 +39,9 @@ export type SpomovePresetGuide = {
 
 export const SPOMOVE_TARGET_GROUP_LABELS: Record<SpomoveTargetGroup, string> = {
   preschool: '미취학',
-  elementaryLower: '초등 저학년',
-  elementaryUpper: '초등 고학년',
-  specialSupport: '특수·느린학습자',
+  elementaryLower: '초저',
+  elementaryUpper: '초고',
+  specialSupport: '특수',
 };
 
 export const SPOMOVE_THINKING_LEVEL_LABELS: Record<SpomoveThinkingLevel, string> = {
@@ -58,12 +58,12 @@ export const SPOMOVE_RESPONSE_TYPE_LABELS: Record<SpomoveResponseType, string> =
 };
 
 export const SPOMOVE_KEY_ACTION_LABELS: Record<SpomoveKeyAction, string> = {
-  padMove: '색 패드 이동',
+  padMove: '패드 이동',
   directionChange: '방향 전환',
   inPlaceStep: '제자리 스텝',
   jump: '점프',
   duck: '숙이기',
-  punch: '펀치',
+  punch: '터치',
   handTouch: '손 터치',
   sequenceMove: '순서대로 이동',
   continuousMove: '연속 이동',
@@ -73,9 +73,9 @@ export const SPOMOVE_BODY_FUNCTION_LABELS: Record<SpomoveBodyFunction, string> =
   agility: '민첩성',
   quickness: '순발력',
   coordination: '협응력',
-  balance: '평형성',
+  balance: '균형감',
   flexibility: '유연성',
-  endurance: '심폐지구력',
+  endurance: '지구력',
 };
 
 function uniqueActions(actions: SpomoveKeyAction[]): SpomoveKeyAction[] {
@@ -83,6 +83,13 @@ function uniqueActions(actions: SpomoveKeyAction[]): SpomoveKeyAction[] {
 }
 
 function targetGroupsForPreset(preset: OfficialSpomovePreset): SpomoveTargetGroup[] {
+  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10 && preset.engine.bodyLabelMode === 'easy') {
+    return ['preschool', 'elementaryLower', 'specialSupport'];
+  }
+  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10 && preset.engine.bodyLabelMode === 'hard') {
+    return ['elementaryLower', 'elementaryUpper', 'specialSupport'];
+  }
+
   if (preset.engine.mode === 'flow') {
     return preset.engine.flowDuration === 60
       ? ['elementaryLower', 'elementaryUpper']
@@ -111,6 +118,10 @@ function targetGroupsForPreset(preset: OfficialSpomovePreset): SpomoveTargetGrou
 }
 
 function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingLevel {
+  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10 && preset.engine.bodyLabelMode) {
+    return preset.engine.bodyLabelMode;
+  }
+
   if (preset.engine.mode === 'flow') {
     return preset.engine.flowDuration === 60 || (preset.engine.flowFeatures ?? []).length >= 2
       ? 'hard'

@@ -1,45 +1,43 @@
 'use client';
 
-import React, { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MEMORY_ROUNDS } from '../constants';
-import { generateMemoryPattern } from '../lib/signals';
-import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';
 import { playBeep } from '../lib/audio';
+import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';
+import { generateMemoryPattern } from '../lib/signals';
 import { LongPressButton } from './LongPressButton';
-import { CSS } from '../styles';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
+type Phase = 'idle' | 'showing' | 'waiting' | 'reveal' | 'summaryIntro' | 'summary' | 'done';
 
 const TOTAL = MEMORY_ROUNDS;
-const MEMORY_BASIC_RANDOM_MIN_MS = 1000;
-const MEMORY_BASIC_RANDOM_MAX_MS = 2500;
+const BASIC_RANDOM_MIN_MS = 1000;
+const BASIC_RANDOM_MAX_MS = 2500;
 
-function randomBasicShowMs(): number {
-  return Math.round(
-    MEMORY_BASIC_RANDOM_MIN_MS +
-      Math.random() * (MEMORY_BASIC_RANDOM_MAX_MS - MEMORY_BASIC_RANDOM_MIN_MS),
-  );
+function randomBasicShowMs() {
+  return Math.round(BASIC_RANDOM_MIN_MS + Math.random() * (BASIC_RANDOM_MAX_MS - BASIC_RANDOM_MIN_MS));
 }
 
-/** 1·2번: 색마다 1~2.5초 랜덤 + 고정 조건(1번 2번째=1초, 2번 2·3·4번째 중 하나=1초) */
 function buildBasicShowSchedule(level: number, patternLength: number): number[] {
   const schedule = Array.from({ length: patternLength }, () => randomBasicShowMs());
-
   if (level === 1 && patternLength >= 2) {
-    schedule[1] = MEMORY_BASIC_RANDOM_MIN_MS;
+    schedule[1] = BASIC_RANDOM_MIN_MS;
   } else if (level === 2 && patternLength >= 4) {
     const midPool = [1, 2, 3].filter((i) => i < patternLength);
-    schedule[midPool[Math.floor(Math.random() * midPool.length)]!] = MEMORY_BASIC_RANDOM_MIN_MS;
+    schedule[midPool[Math.floor(Math.random() * midPool.length)]!] = BASIC_RANDOM_MIN_MS;
   }
-
   return schedule;
 }
 
-function pickColorShowMs(level: number, speedSec: number, schedule: number[] | null, idx: number): number {
-  if (level === 1 || level === 2) {
-    return schedule?.[idx] ?? randomBasicShowMs();
-  }
+function colorShowMs(level: number, speedSec: number, schedule: number[], index: number) {
+  if (level === 1 || level === 2) return schedule[index] ?? randomBasicShowMs();
   return Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
+}
+
+function patternLengthLabel(level: number) {
+  if (level === 1) return '3색';
+  if (level === 2) return '5색';
+  return '10색';
 }
 
 export function MemoryGame({
@@ -57,191 +55,172 @@ export function MemoryGame({
   audioMode: string;
   speedSec: number;
   startDelayMs?: number;
-  /** 6단계: 선생님이 지정한 1~10번 슬롯 색상 */
   slotColorIds?: string[];
 }) {
-  const [patterns] = useState<ColorItem[][]>(() => {
+  const patterns = useMemo<ColorItem[][]>(() => {
     if (level === 6) {
       const ids = slotColorIds?.length ? slotColorIds : DEFAULT_MEMORY_COLOR_SLOTS;
       const fixed = buildMemoryPatternFromSlots(ids);
       return Array.from({ length: TOTAL }, () => fixed);
     }
     return Array.from({ length: TOTAL }, () => generateMemoryPattern(level));
-  });
-  const [round, setRound] = useState(0);
-  const [phase, setPhase] = useState<'idle' | 'showing' | 'waiting' | 'reveal' | 'summary' | 'done'>('idle');
-  const [colorIdx, setColorIdx] = useState(-1);
-  const [memFlash, setMemFlash] = useState(false);
-  const [summaryReady, setSummaryReady] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const prevMemBgRef = useRef<string | null>(null);
-  const showScheduleRef = useRef<number[]>([]);
+  }, [level, slotColorIds]);
 
-  const clear = () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = null;
-  };
+  const [round, setRound] = useState(0);
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [colorIndex, setColorIndex] = useState(-1);
+  const [flashWhite, setFlashWhite] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const phaseRef = useRef<Phase>('idle');
+  const roundRef = useRef(0);
+  const scheduleRef = useRef<number[]>([]);
+  const previousBgRef = useRef<string | null>(null);
+
   const currentPattern = patterns[round] ?? [];
+  const showingColor = phase === 'showing' && colorIndex >= 0 ? currentPattern[colorIndex] ?? null : null;
   const isTenItemLevel = level === 3 || level === 6;
 
-  const runSequence = useCallback((pattern: ColorItem[], idx: number) => {
-    if (idx >= pattern.length) {
-      prevMemBgRef.current = null;
-      setColorIdx(-1);
-      setPhase('waiting');
-      return;
-    }
-    const currentBg = pattern[idx]!.bg;
-    const isSameColor = currentBg === prevMemBgRef.current;
-    prevMemBgRef.current = currentBg;
-
-    if (isSameColor) {
-      setMemFlash(true);
-      setColorIdx(-1);
-      timerRef.current = setTimeout(() => {
-        setMemFlash(false);
-        if (audioMode === 'beep') playBeep('mid');
-        setColorIdx(idx);
-        setPhase('showing');
-        timerRef.current = setTimeout(
-          () => runSequence(pattern, idx + 1),
-          pickColorShowMs(level, speedSec, showScheduleRef.current, idx),
-        );
-      }, 90);
-    } else {
-      if (audioMode === 'beep') playBeep('mid');
-      setColorIdx(idx);
-      setPhase('showing');
-      timerRef.current = setTimeout(
-        () => runSequence(pattern, idx + 1),
-        pickColorShowMs(level, speedSec, showScheduleRef.current, idx),
-      );
-    }
-  }, [audioMode, level, speedSec]);
-
-  const startRound = useCallback(
-    (r: number) => {
-      clear();
-      const pattern = patterns[r];
-      if (!pattern || r < 0 || r >= TOTAL) return;
-      setRound(r);
-      setPhase('idle');
-      setColorIdx(-1);
-      setMemFlash(false);
-      prevMemBgRef.current = null;
-      showScheduleRef.current =
-        level === 1 || level === 2 ? buildBasicShowSchedule(level, pattern.length) : [];
-      const delay = Math.max(0, startDelayMs);
-      if (delay === 0) {
-        runSequence(pattern, 0);
-      } else {
-        timerRef.current = setTimeout(() => runSequence(pattern, 0), delay);
-      }
-    },
-    [level, patterns, runSequence, startDelayMs],
-  );
-
-  // 초기 렌더에서 '준비' 화면 깜빡임을 막기 위해, startDelayMs=0이면 paint 이전에 시작
-  useLayoutEffect(() => {
-    if (startDelayMs !== 0) return;
-    startRound(0);
-    return clear;
-  }, [startRound, startDelayMs]);
-
-  useEffect(() => {
-    if (startDelayMs === 0) return;
-    startRound(0);
-    return clear;
-  }, [startRound, startDelayMs]);
-
-  const phaseRef = useRef(phase);
   useEffect(() => {
     phaseRef.current = phase;
   }, [phase]);
-  const summaryReadyRef = useRef(summaryReady);
-  useEffect(() => {
-    summaryReadyRef.current = summaryReady;
-  }, [summaryReady]);
-  const roundRef = useRef(round);
+
   useEffect(() => {
     roundRef.current = round;
   }, [round]);
 
-  const handleAction = useCallback(() => {
-    const p = phaseRef.current;
-    const r = roundRef.current;
-    if (p === 'waiting') {
-      setPhase('reveal');
-    } else if (p === 'reveal') {
-      const isLast = r + 1 >= TOTAL;
-      if (isLast && isTenItemLevel) {
-        setSummaryReady(false);
-        setPhase('summary');
-      } else if (isLast) {
-        setPhase('done');
-      } else {
-        startRound(r + 1);
+  const clearTimer = useCallback(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }, []);
+
+  const runSequence = useCallback(
+    (pattern: ColorItem[], index: number) => {
+      if (index >= pattern.length) {
+        previousBgRef.current = null;
+        setColorIndex(-1);
+        setPhase('waiting');
+        return;
       }
-    } else if (p === 'summary') {
-      if (!summaryReadyRef.current) {
-        setSummaryReady(true);
+
+      const item = pattern[index]!;
+      const showCurrent = () => {
+        if (audioMode === 'beep') playBeep('mid');
+        setFlashWhite(false);
+        setColorIndex(index);
+        setPhase('showing');
+        timerRef.current = setTimeout(
+          () => runSequence(pattern, index + 1),
+          colorShowMs(level, speedSec, scheduleRef.current, index),
+        );
+      };
+
+      if (item.bg === previousBgRef.current) {
+        setFlashWhite(true);
+        setColorIndex(-1);
+        timerRef.current = setTimeout(showCurrent, 90);
       } else {
-        onComplete(patterns);
+        showCurrent();
       }
-    } else if (p === 'done') {
-      onComplete(patterns);
-    }
-  }, [isTenItemLevel, patterns, startRound, onComplete]);
+      previousBgRef.current = item.bg;
+    },
+    [audioMode, level, speedSec],
+  );
+
+  const startRound = useCallback(
+    (nextRound: number) => {
+      clearTimer();
+      const pattern = patterns[nextRound];
+      if (!pattern) return;
+      setRound(nextRound);
+      setColorIndex(-1);
+      setFlashWhite(false);
+      setPhase('idle');
+      previousBgRef.current = null;
+      scheduleRef.current = level === 1 || level === 2 ? buildBasicShowSchedule(level, pattern.length) : [];
+      timerRef.current = setTimeout(() => runSequence(pattern, 0), Math.max(0, startDelayMs));
+    },
+    [clearTimer, level, patterns, runSequence, startDelayMs],
+  );
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'Enter') {
-        e.preventDefault();
-        handleAction();
+    startRound(0);
+    return clearTimer;
+  }, [clearTimer, startRound]);
+
+  const advance = useCallback(() => {
+    const activePhase = phaseRef.current;
+    const activeRound = roundRef.current;
+    if (activePhase === 'waiting') {
+      setPhase('reveal');
+      return;
+    }
+    if (activePhase === 'reveal') {
+      const last = activeRound + 1 >= TOTAL;
+      if (last && isTenItemLevel) setPhase('summaryIntro');
+      else if (last) setPhase('done');
+      else startRound(activeRound + 1);
+      return;
+    }
+    if (activePhase === 'summaryIntro') {
+      setPhase('summary');
+      return;
+    }
+    if (activePhase === 'summary' || activePhase === 'done') {
+      onComplete(patterns);
+    }
+  }, [isTenItemLevel, onComplete, patterns, startRound]);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (event.code === 'Space' || event.code === 'Enter') {
+        event.preventDefault();
+        advance();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [handleAction]);
+  }, [advance]);
 
-  const showingColor = phase === 'showing' && colorIdx >= 0 ? currentPattern[colorIdx] ?? null : null;
-  const bgColor = memFlash ? '#ffffff' : (showingColor ? showingColor.bg : '#0F172A');
+  const bgColor = flashWhite ? '#FFFFFF' : showingColor ? showingColor.bg : '#0F172A';
+  const textOnColor = showingColor?.bg === '#FACC15' ? '#111827' : '#FFFFFF';
 
   const hud = (
-    <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
-      <div style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-        <span style={{ color: '#86EFAC' }}>🎨</span>
+    <div style={{ position: 'absolute', top: '1.25rem', left: '1.25rem', right: '1.25rem', zIndex: 20, display: 'flex', justifyContent: 'space-between', gap: '1rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', background: 'rgba(0,0,0,0.55)', padding: '0.6rem 1.2rem', color: '#fff', fontSize: '1rem', fontWeight: 800, backdropFilter: 'blur(14px)' }}>
+        <span style={{ color: '#86EFAC' }}>기억</span>
         <span>{round + 1} / {TOTAL}</span>
-        <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
+        <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ color: '#FCD34D' }}>{level}번</span>
-        <span style={{ opacity: 0.35, margin: '0 0.1rem' }}>|</span>
-        <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{level === 1 ? '3항' : level === 2 ? '5항' : '10항'}</span>
+        <span style={{ opacity: 0.35 }}>|</span>
+        <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{patternLengthLabel(level)}</span>
       </div>
-      <button onClick={onExit} style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(14px)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', cursor: 'pointer', fontWeight: 800, letterSpacing: '0.08em' }}>STOP</button>
+      <button type="button" onClick={onExit} style={{ border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', background: 'rgba(0,0,0,0.55)', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '0.08em' }}>
+        STOP
+      </button>
     </div>
   );
 
-  const progressBar = (
-    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 5, background: 'rgba(255,255,255,0.08)', zIndex: 20 }}>
-      <div style={{ height: '100%', width: `${(round / TOTAL) * 100}%`, background: '#22C55E', transition: 'width 0.5s ease', borderRadius: '0 3px 3px 0' }} />
+  const progress = (
+    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 20, height: 5, background: 'rgba(255,255,255,0.08)' }}>
+      <div style={{ height: '100%', width: `${(round / TOTAL) * 100}%`, borderRadius: '0 3px 3px 0', background: '#22C55E', transition: 'width 0.5s ease' }} />
     </div>
   );
 
-  const dotIndicator = (
-    <div style={{ position: 'absolute', bottom: '2.5rem', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '0.7rem', zIndex: 10 }}>
-      {currentPattern.map((_, i) => {
-        const isActive = phase === 'showing' && i === colorIdx;
-        const isPast = (phase === 'showing' && i < colorIdx) || phase === 'waiting' || phase === 'reveal';
+  const dots = (
+    <div style={{ position: 'absolute', bottom: '2.5rem', left: 0, right: 0, zIndex: 10, display: 'flex', justifyContent: 'center', gap: '0.7rem' }}>
+      {currentPattern.map((_, index) => {
+        const active = phase === 'showing' && index === colorIndex;
+        const past = (phase === 'showing' && index < colorIndex) || phase === 'waiting' || phase === 'reveal';
         return (
           <div
-            key={i}
+            key={index}
             style={{
-              width: isActive ? 20 : 10,
-              height: isActive ? 20 : 10,
+              width: active ? 20 : 10,
+              height: active ? 20 : 10,
               borderRadius: '50%',
-              background: isActive ? '#fff' : isPast ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.15)',
-              border: isActive ? '2px solid rgba(255,255,255,0.6)' : 'none',
-              boxShadow: isActive ? '0 0 12px rgba(255,255,255,0.6)' : 'none',
+              background: active ? '#fff' : past ? 'rgba(255,255,255,0.55)' : 'rgba(255,255,255,0.15)',
+              border: active ? '2px solid rgba(255,255,255,0.6)' : 'none',
+              boxShadow: active ? '0 0 12px rgba(255,255,255,0.6)' : 'none',
               transition: 'all 0.15s cubic-bezier(0.34,1.56,0.64,1)',
             }}
           />
@@ -250,164 +229,160 @@ export function MemoryGame({
     </div>
   );
 
-  if (phase === 'idle')
+  if (phase === 'showing') {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
-        <style>{CSS}</style>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: bgColor, transition: flashWhite ? 'none' : 'background 0.05s' }}>
         {hud}
-        {progressBar}
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.1em' }}>준비</div>
-          <div style={{ display: 'flex', gap: '0.6rem' }}>
-            {currentPattern.map((_, i) => (
-              <div key={i} style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-
-  if (phase === 'showing')
-    return (
-      <div style={{ position: 'fixed', inset: 0, background: bgColor, overflow: 'hidden', zIndex: 300, transition: memFlash ? 'none' : 'background 0.05s' }}>
-        <style>{CSS}</style>
-        {hud}
-        {dotIndicator}
-        {progressBar}
-        {showingColor && (
-          <div style={{ position: 'absolute', top: '5.5rem', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)', borderRadius: '2rem', padding: '0.35rem 1rem', color: 'rgba(255,255,255,0.7)', fontWeight: 700, fontSize: '0.85rem', zIndex: 15 }}>{colorIdx + 1} / {currentPattern.length}번째 색</div>
-        )}
-        {showingColor && (
-          <div key={`color-${round}-${colorIdx}`} className="mem-color-enter" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-              <div style={{ fontSize: 'clamp(130px,30vw,320px)', fontWeight: 900, color: showingColor.bg === '#FACC15' ? '#111' : '#fff', letterSpacing: '-0.03em', textShadow: '0 4px 60px rgba(0,0,0,0.25)', userSelect: 'none', lineHeight: 1 }}>{showingColor.name}</div>
-              <div style={{ fontSize: 'clamp(32px,7vw,64px)', color: showingColor.bg === '#FACC15' ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.3)', userSelect: 'none' }}>{showingColor.symbol}</div>
+        {dots}
+        {progress}
+        {showingColor ? (
+          <>
+            <div style={{ position: 'absolute', top: '5.5rem', left: '50%', zIndex: 15, transform: 'translateX(-50%)', borderRadius: '2rem', background: 'rgba(0,0,0,0.35)', padding: '0.35rem 1rem', color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem', fontWeight: 800, backdropFilter: 'blur(8px)' }}>
+              {colorIndex + 1} / {currentPattern.length}번째
             </div>
-          </div>
-        )}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                <div style={{ color: textOnColor, fontSize: 'clamp(130px,30vw,320px)', fontWeight: 900, lineHeight: 1, textShadow: '0 4px 60px rgba(0,0,0,0.25)', userSelect: 'none' }}>
+                  {showingColor.name}
+                </div>
+                <div style={{ color: textOnColor, fontSize: 'clamp(32px,7vw,64px)', opacity: 0.35, userSelect: 'none' }}>{showingColor.symbol}</div>
+              </div>
+            </div>
+          </>
+        ) : null}
       </div>
     );
+  }
 
-  if (phase === 'waiting')
+  if (phase === 'waiting') {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
-        <style>{CSS}</style>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         {hud}
-        {progressBar}
+        {progress}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '6rem 2rem 4rem' }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(1.35rem,4vw,2rem)', fontWeight: 900, color: '#fff', marginBottom: '0.5rem' }}>선생님 버튼을 누르면 정답이 공개됩니다</div>
-            <div style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500, lineHeight: 1.6 }}>학생이 순서를 말한 뒤<br />버튼을 눌러 정답을 확인하세요</div>
+            <div style={{ marginBottom: '0.5rem', color: '#fff', fontSize: 'clamp(1.35rem,4vw,2rem)', fontWeight: 900 }}>학생이 순서를 말한 뒤 정답을 공개하세요.</div>
+            <div style={{ color: 'rgba(255,255,255,0.46)', fontSize: '0.95rem', fontWeight: 600, lineHeight: 1.6 }}>버튼을 길게 누르거나 Space/Enter로 정답을 확인합니다.</div>
           </div>
-          <LongPressButton onTrigger={handleAction} label="정답 공개" />
-          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)' }}>클릭 · 스페이스바 · 엔터</div>
+          <LongPressButton onTrigger={advance} label="정답 공개" />
         </div>
       </div>
     );
+  }
 
   if (phase === 'reveal') {
     const isLast = round + 1 >= TOTAL;
-    const displayPattern = currentPattern;
-    const nextLabel = isLast ? (isTenItemLevel ? '📋 전체 정답 목록' : '🎉 완료') : `▶ 다음 (${round + 2} / ${TOTAL})`;
-    const nextBg = isLast && isTenItemLevel ? '#A855F7' : isLast ? '#22C55E' : '#F97316';
-    const nextShadow = isLast && isTenItemLevel ? '0 8px 28px rgba(168,85,247,0.4)' : isLast ? '0 8px 28px rgba(34,197,94,0.4)' : '0 8px 28px rgba(249,115,22,0.35)';
+    const nextLabel = isLast ? (isTenItemLevel ? '전체 정답 목록' : '훈련 완료') : `다음 (${round + 2} / ${TOTAL})`;
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
-        <style>{CSS}</style>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
         {hud}
-        {progressBar}
+        {progress}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.8rem', padding: '6rem 2rem 4rem' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>{round + 1}번 정답</div>
-          </div>
-          <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '32rem' }}>
-            {displayPattern.map((c, i) => (
-              <div key={i} className="answer-pop" style={{ animationDelay: `${i * 0.09}s`, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
-                <div style={{ width: 'clamp(64px,13vw,96px)', height: 'clamp(64px,13vw,96px)', borderRadius: '1.1rem', background: c.bg, boxShadow: `0 6px 24px ${c.bg}66`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(1.1rem,2.5vw,1.4rem)', fontWeight: 900, color: c.text, border: '2px solid rgba(255,255,255,0.15)', flexDirection: 'column', gap: '0.1rem' }}>
-                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{c.symbol}</span>
-                  <span>{i + 1}</span>
+          <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{round + 1}번 정답</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.8rem', maxWidth: '32rem' }}>
+            {currentPattern.map((color, index) => (
+              <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
+                <div style={{ display: 'flex', width: 'clamp(64px,13vw,96px)', height: 'clamp(64px,13vw,96px)', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.1rem', border: '2px solid rgba(255,255,255,0.15)', borderRadius: '1.1rem', background: color.bg, color: color.text, fontSize: 'clamp(1.1rem,2.5vw,1.4rem)', fontWeight: 900, boxShadow: `0 6px 24px ${color.bg}66` }}>
+                  <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{color.symbol}</span>
+                  <span>{index + 1}</span>
                 </div>
-                <div style={{ fontSize: 'clamp(0.8rem,2vw,1rem)', fontWeight: 700, color: '#fff' }}>{c.name}</div>
+                <div style={{ color: '#fff', fontSize: 'clamp(0.8rem,2vw,1rem)', fontWeight: 800 }}>{color.name}</div>
               </div>
             ))}
           </div>
-          <button onClick={handleAction} style={{ background: nextBg, color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.1rem 2.8rem', fontSize: 'clamp(1rem,3vw,1.3rem)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: nextShadow, marginTop: '0.5rem' }}>{nextLabel}</button>
-          <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)' }}>스페이스바 · 엔터도 가능</div>
+          <button type="button" onClick={advance} style={{ marginTop: '0.5rem', border: 'none', borderRadius: '1.25rem', background: isLast ? '#22C55E' : '#F97316', padding: '1.1rem 2.8rem', color: '#fff', fontSize: 'clamp(1rem,3vw,1.3rem)', fontWeight: 900, cursor: 'pointer' }}>
+            {nextLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === 'summaryIntro') {
+    return (
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.4rem)', fontWeight: 900 }}>모든 라운드를 마쳤습니다.</div>
+          <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '1rem', fontWeight: 600, lineHeight: 1.7 }}>전체 정답 목록을 확인한 뒤 훈련을 완료하세요.</div>
+          <button type="button" onClick={advance} style={{ border: 'none', borderRadius: '1.25rem', background: '#A855F7', padding: '1.2rem 3rem', color: '#fff', fontSize: 'clamp(1.1rem,3vw,1.4rem)', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 32px rgba(168,85,247,0.45)' }}>
+            정답 목록 보기
+          </button>
         </div>
       </div>
     );
   }
 
   if (phase === 'summary') {
-    if (!summaryReady)
-      return (
-        <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
-          <style>{CSS}</style>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '2rem' }}>
-            <div style={{ fontSize: '4rem' }}>🎯</div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 'clamp(1.6rem,5vw,2.4rem)', fontWeight: 900, color: '#fff', marginBottom: '0.6rem' }}>모두 마쳤어요!</div>
-              <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', fontWeight: 500, lineHeight: 1.7 }}>전체 정답 목록을 확인할 준비가 됐나요?<br />버튼을 눌러 1~10라운드 정답을 확인하세요</div>
-            </div>
-            <button onClick={handleAction} style={{ background: '#A855F7', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.2rem 3rem', fontSize: 'clamp(1.1rem,3vw,1.4rem)', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 32px rgba(168,85,247,0.45)', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>📋 정답 모두 보기</button>
-            <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.2)' }}>스페이스바 · 엔터도 가능</div>
-          </div>
-        </div>
-      );
-
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'auto', zIndex: 300 }}>
-        <style>{CSS}</style>
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 1.25rem 5rem' }}>
-          <div style={{ width: '100%', maxWidth: 560 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'auto', background: '#0F172A' }}>
+        <div style={{ display: 'flex', minHeight: '100vh', flexDirection: 'column', alignItems: 'center', padding: '1.5rem 1.25rem 5rem' }}>
+          <div style={{ width: '100%', maxWidth: 620 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 900, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>📋 <span>전체 정답 목록</span></div>
-                <div style={{ fontSize: '0.82rem', color: 'rgba(255,255,255,0.35)', marginTop: '0.25rem', fontWeight: 500 }}>{level}번 · {TOTAL}번 진행 · 4가지 색</div>
+                <div style={{ color: '#fff', fontSize: '1.4rem', fontWeight: 900 }}>전체 정답 목록</div>
+                <div style={{ marginTop: '0.25rem', color: 'rgba(255,255,255,0.35)', fontSize: '0.82rem', fontWeight: 700 }}>{level}번 · {TOTAL}라운드 · {patternLengthLabel(level)}</div>
               </div>
-              <button onClick={onExit} style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', cursor: 'pointer', fontWeight: 700, fontFamily: 'inherit' }}>🏠 처음으로</button>
+              <button type="button" onClick={onExit} style={{ border: '1px solid rgba(255,255,255,0.12)', borderRadius: '0.75rem', background: 'rgba(255,255,255,0.07)', padding: '0.5rem 0.9rem', color: '#fff', fontSize: '0.88rem', fontWeight: 800, cursor: 'pointer' }}>
+                처음으로
+              </button>
             </div>
-            <div style={{ width: '100%', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem', overflow: 'hidden', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '2.5rem 1fr', background: 'rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0.5rem 0.9rem' }}>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em' }}>#</span>
-                <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.08em' }}>색상 순서</span>
+            <div style={{ marginBottom: '1.5rem', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2.5rem 1fr', borderBottom: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.06)', padding: '0.5rem 0.9rem' }}>
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', fontWeight: 800 }}>#</span>
+                <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem', fontWeight: 800 }}>색상 순서</span>
               </div>
-              {patterns.map((pattern, ri) => (
-                <div key={ri} className="answer-pop" style={{ animationDelay: `${ri * 0.03}s`, display: 'grid', gridTemplateColumns: '2.5rem 1fr', alignItems: 'center', padding: '0.55rem 0.9rem', borderBottom: ri < patterns.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
-                  <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'rgba(255,255,255,0.3)' }}>{ri + 1}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                    {pattern.map((c, ci) => (
-                      <React.Fragment key={ci}>
+              {patterns.map((pattern, rowIndex) => (
+                <div key={rowIndex} style={{ display: 'grid', gridTemplateColumns: '2.5rem 1fr', alignItems: 'center', borderBottom: rowIndex < patterns.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', background: rowIndex % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)', padding: '0.55rem 0.9rem' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.82rem', fontWeight: 900 }}>{rowIndex + 1}</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.35rem' }}>
+                    {pattern.map((color, colorIndex) => (
+                      <React.Fragment key={colorIndex}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                          <div style={{ width: 14, height: 14, borderRadius: '0.25rem', background: c.bg, flexShrink: 0 }} />
-                          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#fff' }}>{c.name}</span>
+                          <div style={{ width: 14, height: 14, borderRadius: '0.25rem', background: color.bg, flexShrink: 0 }} />
+                          <span style={{ color: '#fff', fontSize: '0.82rem', fontWeight: 800 }}>{color.name}</span>
                         </div>
-                        {ci < pattern.length - 1 && <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.65rem' }}>▶</span>}
+                        {colorIndex < pattern.length - 1 ? <span style={{ color: 'rgba(255,255,255,0.22)', fontSize: '0.65rem' }}>→</span> : null}
                       </React.Fragment>
                     ))}
                   </div>
                 </div>
               ))}
             </div>
-            <button onClick={handleAction} style={{ width: '100%', background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.1rem', fontSize: '1.1rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 24px rgba(34,197,94,0.35)' }}>🎉 오늘 훈련 완료!</button>
+            <button type="button" onClick={advance} style={{ width: '100%', border: 'none', borderRadius: '1.25rem', background: '#22C55E', padding: '1.1rem', color: '#fff', fontSize: '1.1rem', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.35)' }}>
+              훈련 완료
+            </button>
           </div>
         </div>
       </div>
     );
   }
 
-  if (phase === 'done')
+  if (phase === 'done') {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#0F172A', overflow: 'hidden', zIndex: 300 }}>
-        <style>{CSS}</style>
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem' }}>
-          <div style={{ fontSize: '4rem' }}>🎉</div>
-          <div style={{ fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900, color: '#fff', textAlign: 'center' }}>모두 마쳤어요!</div>
-          <div style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 1.7 }}>색깔 기억 훈련을 마쳤습니다.</div>
-          <button onClick={handleAction} style={{ background: '#22C55E', color: '#fff', border: 'none', borderRadius: '1.25rem', padding: '1.2rem 3rem', fontSize: '1.2rem', fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}>결과 보기</button>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', padding: '2rem', textAlign: 'center' }}>
+          <div style={{ color: '#fff', fontSize: 'clamp(1.6rem,5vw,2.2rem)', fontWeight: 900 }}>모두 마쳤습니다.</div>
+          <div style={{ color: 'rgba(255,255,255,0.48)', fontSize: '1rem', lineHeight: 1.7 }}>색상 기억 훈련이 완료되었습니다.</div>
+          <button type="button" onClick={advance} style={{ border: 'none', borderRadius: '1.25rem', background: '#22C55E', padding: '1.2rem 3rem', color: '#fff', fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', boxShadow: '0 8px 32px rgba(34,197,94,0.4)' }}>
+            결과 보기
+          </button>
         </div>
       </div>
     );
+  }
 
-  return null;
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 300, overflow: 'hidden', background: '#0F172A' }}>
+      {hud}
+      {progress}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+        <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '1.3rem', fontWeight: 800, letterSpacing: '0.1em' }}>준비</div>
+        <div style={{ display: 'flex', gap: '0.6rem' }}>
+          {currentPattern.map((_, index) => (
+            <div key={index} style={{ width: 12, height: 12, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }

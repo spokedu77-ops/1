@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { Eye, Lock, MonitorPlay } from 'lucide-react';
 import Image from 'next/image';
@@ -17,9 +17,7 @@ import {
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
-import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
-import { BottomSheet } from '../components/ui/BottomSheet';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 
@@ -35,8 +33,8 @@ import {
   getOfficialSpomovePresetGuide,
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
-import { getSpomovePresetDisplayModel, buildSpomoveCardTags, buildSpomoveGuidelineNarrative } from './spomovePresetDisplayModel';
-import { SpomovePadLayoutView } from './SpomovePadLayoutView';
+import { getSpomovePresetDisplayModel, buildSpomoveCardTags } from './spomovePresetDisplayModel';
+import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 
 type ThinkingLevelTab = 'all' | SpomoveThinkingLevel;
@@ -71,12 +69,12 @@ const PROGRAM_GROUP_TABS: ProgramGroupTab[] = [
 const PROGRAM_GROUP_LABELS: Record<ProgramGroupTab, string> = {
   all: '전체',
   'reaction-cognition': '반응 인지',
-  'visual-reaction': '시지각 반응',
+  'visual-reaction': '시각 반응',
   simon: '사이먼 효과',
   flanker: '플랭커',
   stroop: '스트룹 과제',
   'sequential-memory': '순차 기억',
-  dive: '다이브',
+  dive: 'DIVE',
 };
 
 // 축별 accent bar 색상
@@ -93,7 +91,7 @@ const AXIS_BADGE: Record<OfficialSpomovePreset['axis'], string> = {
   executive: 'bg-slate-100 text-slate-600',
 };
 
-// SPOMOVE 4색 — padGrid.ts 단일 출처
+// SPOMOVE 4색은 padGrid.ts 단일 출처
 const PAD_COLORS = SPOMOVE_PAD_GRID_HEX;
 
 function PadSignature({ dim = false }: { dim?: boolean }) {
@@ -110,7 +108,7 @@ function PadSignature({ dim = false }: { dim?: boolean }) {
   );
 }
 
-// ── 프로그램별 시각 컴포넌트 ─────────────────────────────────────────────────
+// ── 프로그램별 시각 컴포넌트 ──
 
 const THEME_LABELS: Record<string, string> = {
   fruit: '과일',
@@ -195,7 +193,7 @@ function ThemeLabelBadge({ theme }: { theme?: string }) {
   );
 }
 
-// level 2: 사분할 2×2 — PAD_GRID: 위 빨·노 / 아래 초·파
+// level 2: 사분면 2×2 — PAD_GRID: ↑ 빨·노 / ↓ 초·파
 function QuadVisual({ theme }: { theme?: string }) {
   const isColorTheme = !theme || theme === 'color';
   if (isColorTheme) {
@@ -304,7 +302,7 @@ function ThreePanelVisual({ theme }: { theme?: string }) {
   );
 }
 
-/** 반응 인지 1번 · 공간 방향 — 플레이어 simon_arrow와 동일한 기둥+화살표 실루엣(거대) */
+/** 반응 인지 1번·공간 방향 — 플레이어 simon_arrow와 동일한 기둥+화살표 루트 거리 */
 function SpatialDirectionVisual() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-[#0F172A]">
@@ -378,7 +376,7 @@ function SimonVisual() {
   const [red, yellow, green, blue] = SPOMOVE_PAD_GRID_HEX;
   return (
     <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
-      {/* Simon 4-pad compass — 상 빨 / 우 노 / 하 초 / 좌 파 (PAD_GRID) */}
+      {/* Simon 4-pad compass — ↑빨 / →노 / ↓초 / ←파 (PAD_GRID) */}
       <div className="relative h-[60px] w-[60px]">
         <div className="absolute left-[18px] top-0 h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: red }} />
         <div className="absolute right-0 top-[18px] h-[22px] w-[22px] rounded-lg opacity-90" style={{ background: yellow }} />
@@ -400,8 +398,8 @@ function SimonVisual() {
 
 function FlankerVisual() {
   const rows = [
-    ['←', '←', '→', '←', '←'],
-    ['→', '→', '→', '→', '→'],
+    ['<', '<', '>', '<', '<'],
+    ['>', '>', '<', '>', '>'],
   ];
   return (
     <div className="relative flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-amber-50 to-slate-50">
@@ -433,7 +431,7 @@ function StroopVisual() {
     <div className="relative flex h-full w-full flex-col items-center justify-center gap-2.5 bg-gradient-to-br from-violet-50 to-slate-50">
       <span className="text-[26px] font-black leading-none text-blue-600">빨강</span>
       <div className="h-px w-10 bg-slate-200" />
-      <span className="text-[26px] font-black leading-none text-red-500">파랑</span>
+      <span className="text-[26px] font-black leading-none text-red-500">초록</span>
       <div className="absolute bottom-3 left-3">
         <span className="text-[9px] font-black tracking-widest text-slate-300">STROOP</span>
       </div>
@@ -516,9 +514,9 @@ function SpomoveProgramVisual({ preset }: { preset: OfficialSpomovePreset }) {
   return <QuadVisual theme={theme} />;
 }
 
-// ── 대상 정규화 ──────────────────────────────────────────────────────────────
+// ── 타입 정규화 ──
 
-// ── 데이터 helpers ───────────────────────────────────────────────────────────
+// ── 데이터 helpers ──
 
 function matchesProgramGroup(preset: OfficialSpomovePreset, tab: ProgramGroupTab) {
   if (tab === 'all') return true;
@@ -559,100 +557,6 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
 }
 
 
-function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
-  const embed = parseVideoEmbedUrl(videoUrl);
-  if (!embed) {
-    return (
-      <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
-        <p className="text-sm font-bold text-slate-500">등록된 가이드 영상이 없습니다.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black">
-      <div className="aspect-video">
-        <iframe
-          src={embed.embedUrl}
-          title="SPOMOVE 가이드 영상"
-          className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    </div>
-  );
-}
-
-function SpomoveGuidelineSheet({
-  preset,
-  guideVideoUrl,
-  onClose,
-}: {
-  preset: OfficialSpomovePreset | null;
-  guideVideoUrl: string;
-  onClose: () => void;
-}) {
-  if (!preset) return null;
-  const display = getSpomovePresetDisplayModel(preset);
-  const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
-  const startHref = officialPresetSessionHref(preset, { autostart: true });
-
-  return (
-    <BottomSheet open title="가이드라인" onClose={onClose} size="preview">
-      <div className="space-y-5">
-        <div className="text-center">
-          <h2 className="text-2xl font-black text-slate-950">{display.displayTitle}</h2>
-        </div>
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Link
-            href={startHref}
-            className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
-          >
-            바로 실행
-          </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700"
-          >
-            닫기
-          </button>
-        </div>
-
-        <SpomoveGuideVideo videoUrl={guideVideoUrl} />
-
-        <SpomovePadLayoutView variant={display.padLayoutVariant} />
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InfoBlock title="대상" value={display.targetLabel} />
-          <InfoBlock title="설정" value={display.settingLabel} />
-          <InfoBlock title="난이도" value={display.difficultyLabel} />
-          <InfoBlock title="신체 기능" value={display.bodyFunctionLabel} />
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-[11px] font-black text-slate-500">활동 안내</p>
-          <p className="mt-2 text-sm font-semibold leading-7 text-slate-700">{guidelineNarrative}</p>
-        </div>
-      </div>
-    </BottomSheet>
-  );
-}
-
-function InfoBlock({ title, value }: { title: string; value: string }) {
-  if (!value) return null;
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-[11px] font-black text-slate-500">{title}</p>
-      <p className="mt-2 whitespace-pre-wrap break-words text-sm font-bold leading-6 text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-// ── 프리셋 카드 ───────────────────────────────────────────────────────────────
-
 function CardVisual({
   preset,
   thumbnailUrl,
@@ -683,7 +587,7 @@ function CardVisual({
       {!preset.isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-[1px]">
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-black text-white">
-            {preset.readyLabel ?? '제공 제외'}
+            {preset.readyLabel ?? '제공 예정'}
           </span>
         </div>
       )}
@@ -696,14 +600,12 @@ function CardInfo({
   displayTitle,
   isReady,
   startHref,
-  wasRecent,
   onPreview,
 }: {
   preset: OfficialSpomovePreset;
   displayTitle: string;
   isReady: boolean;
   startHref: string;
-  wasRecent: boolean;
   onPreview: () => void;
 }) {
   const display = getSpomovePresetDisplayModel(preset);
@@ -726,24 +628,6 @@ function CardInfo({
       <p className="mt-2 line-clamp-3 text-[13px] font-medium leading-snug text-slate-500">
         {preset.description}
       </p>
-
-      <div className="mt-3 grid grid-cols-2 gap-1.5">
-        {cardTags.map((tag) => (
-          <span
-            key={tag.key}
-            className="flex min-h-[34px] items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-center text-[10px] font-bold leading-snug text-slate-600"
-          >
-            {tag.value}
-          </span>
-        ))}
-      </div>
-      {wasRecent ? (
-        <div className="mt-2 flex justify-center">
-          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-700">
-            최근 실행
-          </span>
-        </div>
-      ) : null}
 
       {isReady ? (
         <div className="mt-4 grid gap-2 sm:grid-cols-2">
@@ -770,11 +654,23 @@ function CardInfo({
         </div>
       ) : null}
 
+      <div className="mt-2 grid grid-cols-2 gap-1.5">
+        {cardTags.map((tag) => (
+          <span
+            key={tag.key}
+            title={`${tag.label}: ${tag.value}`}
+            className="flex min-h-[24px] items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-center text-[10px] font-extrabold leading-tight text-slate-600"
+          >
+            {tag.value}
+          </span>
+        ))}
+      </div>
+
       {!isReady ? (
         <div className="mt-auto border-t border-slate-100 pt-3">
           <span className="inline-flex shrink-0 items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />
-            제공 제외
+            제공 예정
           </span>
         </div>
       ) : null}
@@ -786,13 +682,11 @@ function PresetCard({
   preset,
   startHref,
   thumbnailUrl,
-  wasRecent,
   onPreview,
 }: {
   preset: OfficialSpomovePreset;
   startHref: string;
   thumbnailUrl: string;
-  wasRecent: boolean;
   onPreview: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
@@ -812,7 +706,6 @@ function PresetCard({
         displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
         startHref={startHref}
-        wasRecent={wasRecent}
         onPreview={onPreview}
       />
     </>
@@ -833,7 +726,7 @@ function PresetCard({
   );
 }
 
-// ── 메인 뷰 ──────────────────────────────────────────────────────────────────
+// ── 메인 뷰 ──
 
 export default function SpomoveHubView() {
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
@@ -853,7 +746,6 @@ export default function SpomoveHubView() {
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
       .slice(0, 3);
   }, [ownerId, recentProgramActivities]);
-  const recentPresetIds = useMemo(() => new Set(recentSpomoveActivities.map((activity) => activity.programId)), [recentSpomoveActivities]);
 
   useEffect(() => {
     let alive = true;
@@ -926,7 +818,6 @@ export default function SpomoveHubView() {
           preset={preset}
           startHref={officialPresetSessionHref(preset, { autostart: true })}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
-          wasRecent={recentPresetIds.has(preset.id)}
           onPreview={() => setPreviewPreset(preset)}
         />
       ))}
@@ -946,8 +837,8 @@ export default function SpomoveHubView() {
             SPOMOVE 공식 활동
           </h1>
           <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
-            수업 도입·집중 전환·마무리에 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와 생각 난이도로
-            고르세요.
+            수업 도입·집중 전환·마무리에 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와 인지 난이도로
+            골라보세요.
           </p>
           <p className="mt-3 text-[12px] font-semibold text-white/30">
             각 활동은 사전 설정된 공식 조건으로 실행됩니다.
@@ -959,7 +850,7 @@ export default function SpomoveHubView() {
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[12px] font-black text-indigo-600">최근 SPOMOVE 활동</p>
-              <h2 className="text-xl font-black text-slate-950">최근 실행한 활동</h2>
+              <h2 className="text-xl font-black text-slate-950">최근 활동</h2>
             </div>
             <a href="#spomove-program-list" className="text-sm font-black text-indigo-600">활동 선택</a>
           </div>
@@ -971,7 +862,6 @@ export default function SpomoveHubView() {
                 return (
                   <article key={`${activity.ownerId}-${activity.programId}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="line-clamp-2 text-sm font-black text-slate-950">{title}</p>
-                    <p className="mt-1 text-[11px] font-bold text-slate-500">최근 실행</p>
                     <div className="mt-3 grid gap-2">
                       <Link
                         href={
@@ -1028,11 +918,11 @@ export default function SpomoveHubView() {
           </div>
         </div>
 
-        {/* 생각 난이도 필터 (2차) */}
+        {/* 인지 난이도 필터 (2차) */}
         <div className="mt-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
-              생각 난이도
+              인지 난이도
             </span>
             <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
               {THINKING_LEVEL_TABS.map((tab) => {
@@ -1057,8 +947,7 @@ export default function SpomoveHubView() {
             </div>
           </div>
         </div>
-
-        {/* 카드 그리드 — 1:1 썸네일 · 2열(모바일) / 3열 / 4열 */}
+        {/* 카드 그리드 — 1:1 썸네일 · 2열 모바일 / 3열 / 4열 */}
         {filteredPresets.length > 0 ? (
           showAxisSections ? (
             <div id="spomove-program-list" className="mt-6 space-y-10">
@@ -1072,7 +961,7 @@ export default function SpomoveHubView() {
                       <h2 className="mt-1 text-xl font-black text-slate-950">{section.meta.title}</h2>
                       <p className="mt-1 text-[13px] font-medium text-slate-500">{section.meta.tabSub}</p>
                     </div>
-                    <p className="text-[12px] font-bold text-slate-400">{section.presets.length}개 세팅</p>
+                    <p className="text-[12px] font-bold text-slate-400">{section.presets.length}개 프리셋</p>
                   </header>
                   <div className="mt-5">
                     {renderPresetGrid(section.presets)}
@@ -1100,7 +989,7 @@ export default function SpomoveHubView() {
             </button>
           </div>
         )}
-        <SpomoveGuidelineSheet
+        <SharedSpomoveGuidelineSheet
           preset={previewPreset}
           guideVideoUrl={previewPreset ? guideVideoUrls[previewPreset.id] ?? '' : ''}
           onClose={() => setPreviewPreset(null)}
