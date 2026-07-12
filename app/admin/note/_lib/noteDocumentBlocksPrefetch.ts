@@ -1,6 +1,7 @@
 import type { NoteBlock } from './types';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
+import { noteBlocksLoadPath } from './noteBlocksLoad';
 
 type PrefetchEntry = {
   promise: Promise<NoteBlock[] | null>;
@@ -26,7 +27,7 @@ function pruneCache() {
 async function fetchBlocks(documentId: string): Promise<NoteBlock[] | null> {
   try {
     const res = await fetch(
-      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(documentId)}&skipReconcile=true`,
+      noteBlocksLoadPath(documentId),
       { credentials: 'include' },
     );
     if (!res.ok) return null;

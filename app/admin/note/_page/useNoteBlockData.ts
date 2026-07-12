@@ -28,6 +28,8 @@ import {
   scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import { noteBlocksLoadPath } from '../_lib/noteBlocksLoad';
+import { isNoteLegacyReconcileEnabled } from '../_lib/noteLegacyReconcile';
 import {
   readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
@@ -166,6 +168,7 @@ export function useNoteBlockData(options: {
       documentEngineRef.current.scheduleOplogPull();
       return;
     }
+    if (!isNoteLegacyReconcileEnabled()) return;
     reconcileDocumentIdRef.current = documentId;
     reconcileLoadGenRef.current = blockLoadGenRef.current;
     scheduleNoteReconcileRemote(documentId);
@@ -193,6 +196,7 @@ export function useNoteBlockData(options: {
       documentEngineRef.current.scheduleOplogPull();
       return;
     }
+    if (!isNoteLegacyReconcileEnabled()) return;
     if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
     if (isNoteLocalSaveSuppressed(documentId)) return;
     if (
@@ -215,7 +219,7 @@ export function useNoteBlockData(options: {
         return;
       }
       const res = await fetch(
-        `/api/admin/note/blocks/load?documentId=${encodeURIComponent(documentId)}`,
+        noteBlocksLoadPath(documentId),
         { credentials: 'include' },
       );
       if (!res.ok) return;
@@ -331,6 +335,24 @@ export function useNoteBlockData(options: {
     const normalized = dedupeNoteBlocksById(prepared);
 
     if (options?.mergeWithCurrent && blocksRef.current.length > 0) {
+      if (!isNoteLegacyReconcileEnabled()) {
+        if (documentEngineRef.current.isOplogSyncEnabled()) {
+          documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: normalized });
+          const store = useNoteBlockStore.getState();
+          store.setActiveDocumentId(documentId);
+          rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
+            useNoteBlockStore.getState().getBlocksArray().filter((block) => block.document_id === documentId),
+          ), { trustServer: true });
+        } else {
+          installPreparedBlocks(normalized, documentId, toggleMigration);
+        }
+        if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
+          void persistToggleBodyMigration(normalized, toggleMigration).catch((e) => {
+            devLogger.error('[Note] persistToggleBodyMigration', e);
+          });
+        }
+        return;
+      }
       const merged = unionReconciledWithLocalBlocks(
         blocksRef.current,
         normalized,
@@ -437,7 +459,9 @@ export function useNoteBlockData(options: {
           }
         } else {
           applyFetchedBlocks(loaded, documentId, { mergeWithCurrent });
-          scheduleIdleReconcile(documentId, loadGen);
+          if (isNoteLegacyReconcileEnabled()) {
+            scheduleIdleReconcile(documentId, loadGen);
+          }
         }
         setLoadingBlocks(false);
         setBlocksSyncing(false);
@@ -469,7 +493,9 @@ export function useNoteBlockData(options: {
           setLoadingBlocks(false);
           setBlocksSyncing(false);
           setError(null);
-          scheduleIdleReconcile(documentId, loadGen);
+          if (isNoteLegacyReconcileEnabled()) {
+            scheduleIdleReconcile(documentId, loadGen);
+          }
         }
         return;
       }
@@ -517,7 +543,7 @@ export function useNoteBlockData(options: {
         }
 
         const res = await fetch(
-          `/api/admin/note/blocks/load?documentId=${encodeURIComponent(documentId)}&skipReconcile=true`,
+          noteBlocksLoadPath(documentId),
           { credentials: 'include' },
         );
         if (!res.ok) {

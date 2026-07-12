@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reconcileDocumentParents } from '@/app/lib/note/documentParentSync';
-import { loadNoteDocumentBlocksRaw } from '@/app/lib/server/loadNoteDocumentBlocksRaw';
+import { loadNoteDocumentBlocks } from '@/app/lib/server/loadNoteDocumentBlocks';
 
 const DOCUMENT_SELECT =
   'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, properties, created_at, updated_at';
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const [documentsResult, blocks] = await Promise.all([
       documentsQuery,
-      documentId ? loadNoteDocumentBlocksRaw(documentId, auth.userId) : Promise.resolve(null),
+      documentId ? loadNoteDocumentBlocks(documentId, auth.userId) : Promise.resolve(null),
     ]);
 
     if (documentsResult.error) {
