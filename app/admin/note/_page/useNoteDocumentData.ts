@@ -34,10 +34,25 @@ export function useNoteDocumentData(options: {
 
   const sortMenuRef = useRef<HTMLDivElement>(null);
 
-  const activeDocument = useMemo(
-    () => documents.find((d) => d.id === selectedId) ?? null,
-    [documents, selectedId],
-  );
+  const activeDocument = useMemo(() => {
+    const found = documents.find((d) => d.id === selectedId);
+    if (found) return found;
+    if (!selectedId || loadingDocuments) return null;
+    const now = new Date().toISOString();
+    return {
+      id: selectedId,
+      title: '제목 없음',
+      is_archived: false,
+      is_favorite: false,
+      is_pinned: false,
+      is_public: false,
+      share_token: null,
+      parent_id: null,
+      slug: null,
+      created_at: now,
+      updated_at: now,
+    } satisfies NoteDocument;
+  }, [documents, selectedId, loadingDocuments]);
   const allDocumentsMap = useMemo(
     () => new Map(documents.map((doc) => [doc.id, doc])),
     [documents],

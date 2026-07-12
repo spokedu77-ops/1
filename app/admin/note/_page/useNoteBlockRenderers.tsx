@@ -18,60 +18,17 @@ import type { BlockDropTarget } from '../_components/noteContexts';
 import { useCallback, useRef, type ReactNode } from 'react';
 import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import {
-  createNotionEmptyBackspaceHandler,
-  isFirstChildAmongSiblings,
-  readToggleTitleText,
-  resolveToggleChildBackspaceAtStartAction,
-  resolveToggleChildEmptyBackspaceAction,
-} from '../_lib/noteNotionBlockBehavior';
+  getStableToggleBackspaceAtStartHandler,
+  getStableToggleEmptyBackspaceHandler,
+} from '../_lib/noteToggleBackspaceRuntime';
 
 function buildNotionBackspaceProps(block: NoteBlock, deps: NoteBlockRendererDeps) {
   const canMergeWithPrevious = () => !!planMergeWithPreviousBlock(deps.blocksRef.current, block.id);
-  const parentBlock = block.parent_block_id
-    ? deps.blocksRef.current.find((item) => item.id === block.parent_block_id)
-    : null;
-  const parentBlockType = parentBlock?.type ?? null;
-  const isFirstChildInToggle = parentBlockType === 'toggle'
-    && block.parent_block_id != null
-    && isFirstChildAmongSiblings(deps.blocksRef.current, block.id, block.parent_block_id);
-
-  const focusParentToggleTitle = () => {
-    if (!parentBlock || parentBlock.type !== 'toggle') return;
-    const title = readToggleTitleText(parentBlock.content as Record<string, unknown>);
-    deps.focusBlockEditor(parentBlock.id, 'title', title.length);
-  };
 
   return {
     canMergeWithPrevious,
-    onBackspaceAtBlockStart: () => {
-      const action = resolveToggleChildBackspaceAtStartAction({
-        parentBlockType,
-        isFirstChildInToggle,
-      });
-      if (action.kind === 'focus-toggle-title') {
-        requestAnimationFrame(() => focusParentToggleTitle());
-        return true;
-      }
-      return false;
-    },
-    onEmptyBackspace: () => {
-      const action = resolveToggleChildEmptyBackspaceAction({
-        parentBlockType,
-        isFirstChildInToggle,
-        canMergeWithPrevious: canMergeWithPrevious(),
-      });
-      if (action.kind === 'delete-and-focus-toggle-title') {
-        void deps.handleDeleteBlock(block, false).then(() => {
-          requestAnimationFrame(() => focusParentToggleTitle());
-        });
-        return;
-      }
-      createNotionEmptyBackspaceHandler({
-        canMergeWithPrevious,
-        onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
-        onDeleteEmptyBlock: () => deps.handleDeleteBlock(block, true),
-      })();
-    },
+    onBackspaceAtBlockStart: getStableToggleBackspaceAtStartHandler(block.id),
+    onEmptyBackspace: getStableToggleEmptyBackspaceHandler(block.id),
     onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
   };
 }

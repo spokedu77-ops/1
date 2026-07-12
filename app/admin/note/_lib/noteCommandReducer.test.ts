@@ -61,17 +61,20 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('new');
   });
 
-  it('preserves store content for active editor on syncSnapshot', () => {
-    const previous = [block('a', { content: { text: 'server' } })];
+  it('syncSnapshot recovers server blocks missing from stale local snapshot', () => {
+    const serverBlocks = [
+      block('toggle', { type: 'toggle', content: { title: 'Gym' } }),
+      block('text-child', { parent_block_id: 'toggle', content: { text: 'content' } }),
+      block('img-child', { type: 'image', parent_block_id: 'toggle' }),
+    ];
+    const staleLocal = [block('toggle', { type: 'toggle', content: { title: 'Gym', bodyMigrated: true } })];
     const { blocks } = applyNoteCommand(
-      previous,
-      { type: 'syncSnapshot', blocks: [block('a', { content: { text: 'stale' } })] },
-      {
-        documentId: 'doc-1',
-        activeBlockId: 'a',
-        storeContentById: { a: { text: 'typing' } },
-      },
+      staleLocal,
+      { type: 'syncSnapshot', blocks: serverBlocks },
+      ctx,
     );
-    expect((blocks[0].content as { text: string }).text).toBe('typing');
+    expect(blocks.map((b) => b.id).sort()).toEqual(
+      ['img-child', 'text-child', 'toggle'].sort(),
+    );
   });
 });

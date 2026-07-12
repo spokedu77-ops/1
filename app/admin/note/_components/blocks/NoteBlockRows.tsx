@@ -1475,6 +1475,10 @@ function areSortableBlockRowPropsEqual(
   if (prev.bulletListNestLevel !== next.bulletListNestLevel) return false;
   if (prev.childBlocks !== next.childBlocks) return false;
   if (prev.focusedToggleId !== next.focusedToggleId) return false;
+  if (prev.onEmptyBackspace !== next.onEmptyBackspace) return false;
+  if (prev.onBackspaceAtBlockStart !== next.onBackspaceAtBlockStart) return false;
+  if (prev.onMergeWithPrevious !== next.onMergeWithPrevious) return false;
+  if (prev.canMergeWithPrevious !== next.canMergeWithPrevious) return false;
   return true;
 }
 

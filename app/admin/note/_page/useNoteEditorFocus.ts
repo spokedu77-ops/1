@@ -88,6 +88,22 @@ export function useNoteEditorFocus(options: {
     syncFocusedToggleFromBlock(blockId);
   }, [syncFocusedToggleFromBlock]);
 
+  const focusToggleTitleInDom = useCallback((blockId: string, caretOffset?: number) => {
+    const esc = typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(blockId)
+      : blockId;
+    const input = document.querySelector(
+      `[data-note-block-row][data-block-id="${esc}"] [data-toggle-title]`,
+    ) as HTMLInputElement | null;
+    if (!input) return false;
+    focusWithoutScroll(input);
+    if (caretOffset !== undefined) {
+      const end = Math.min(caretOffset, input.value.length);
+      input.setSelectionRange(end, end);
+    }
+    return true;
+  }, []);
+
   const focusBlockEditor = useCallback((
     blockId: string | null,
     part: 'title' | 'editor' = 'editor',
@@ -134,7 +150,16 @@ export function useNoteEditorFocus(options: {
       }
     }
     syncFocusedToggleFromBlock(blockId);
-  }, [commitBlockToState, selectedBlockIdsRef, setSelectedBlockIds, syncFocusedToggleFromBlock]);
+    if (part === 'title') {
+      requestAnimationFrame(() => {
+        if (!focusToggleTitleInDom(blockId, caretOffset)) {
+          requestAnimationFrame(() => {
+            focusToggleTitleInDom(blockId, caretOffset);
+          });
+        }
+      });
+    }
+  }, [commitBlockToState, focusToggleTitleInDom, selectedBlockIdsRef, setSelectedBlockIds, syncFocusedToggleFromBlock]);
 
   useEffect(() => {
     const el = titleInputRef.current;

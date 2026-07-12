@@ -27,6 +27,7 @@ import {
 } from '../_lib/noteBlockCommands';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { applyBlockContentChange } from '../_lib/noteBlockContentPipeline';
+import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
 import {
   commitActiveNoteEditorToStore,
   mergeBlocksWithStoreContent,

@@ -16,7 +16,6 @@ import {
   koreanText,
   siteContainer,
 } from '../../lib/ui-classes';
-import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
@@ -37,6 +36,17 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
         <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
           {homePage.cases.lead}
         </p>
+        <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {homePage.cases.proofStats.map((stat, index) => {
+            const accentClass = ['border-[#1D4ED8]', 'border-[#10B981]', 'border-[#F59E0B]'][index] ?? 'border-[#1D4ED8]';
+            return (
+            <li key={stat.value} className={`min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 ${accentClass} border-l-4`}>
+              <p className={`text-base font-extrabold text-[#0B1220] ${koreanText}`}>{stat.value}</p>
+              <p className={`mt-1 text-sm leading-snug text-slate-600 ${koreanText}`}>{stat.label}</p>
+            </li>
+            );
+          })}
+        </ul>
 
         <div className="mt-8 grid grid-cols-1 gap-5 min-[720px]:mt-10 min-[720px]:grid-cols-2 min-[1180px]:grid-cols-[58%_1fr] min-[1180px]:items-start min-[1180px]:gap-6">
           {featured ? (
@@ -66,7 +76,7 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
 function FeaturedCaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block ${homeFocusRing}`}>
-      <article className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-slate-200">
+      <article className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-slate-200 shadow-sm shadow-slate-900/[0.04]">
         <div className="relative aspect-[4/5] w-full sm:aspect-[3/4] lg:aspect-[5/6]">
           <CaseMedia card={card} priority={priority} />
           <div
@@ -76,6 +86,7 @@ function FeaturedCaseCard({ card, priority }: { card: CaseCardWithThumb; priorit
           <div className={`absolute inset-x-0 bottom-0 border-t border-white/20 bg-white/95 backdrop-blur-sm ${homeCardPanelPad}`}>
             <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
             <h3 className={`${homeCardTitle} mt-5`}>{card.programName}</h3>
+            <p className={`mt-2 text-sm font-semibold text-slate-700 sm:text-[15px] ${koreanText}`}>{card.venue}</p>
             <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanText}`}>
               {card.description}
             </p>
@@ -100,6 +111,7 @@ function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority
         <div className={homeCardPanelPad}>
           <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
           <h3 className={`${homeCardTitle} mt-5`}>{card.programName}</h3>
+          <p className={`mt-2 text-sm font-semibold text-slate-700 sm:text-[15px] ${koreanText}`}>{card.venue}</p>
           <p className={`mt-2 text-sm text-slate-600 line-clamp-1 sm:text-[15px] ${koreanText}`}>
             {card.audience}
           </p>
@@ -117,22 +129,10 @@ function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority
 }
 
 function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
-  if (card.thumbnailSrc) {
-    return (
-      <ExternalPhoto
-        src={card.thumbnailSrc}
-        alt={`${card.programName} 운영 사례`}
-        className={`absolute inset-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
-        fit="cover"
-        priority={priority}
-      />
-    );
-  }
-
   return (
     <MediaPanel
       media={HOME_MEDIA[card.mediaKey]}
-      className={`absolute inset-0 h-full w-full border-0 ${homePhotoGrade}`}
+      className={`absolute inset-0 h-full w-full border-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
       sizes="gateCard"
       photoPriority={priority}
       priority={priority}

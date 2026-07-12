@@ -41,6 +41,8 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
+      - name: TypeScript (noEmit)
+        run: npx tsc --noEmit --pretty false
       - run: npm run verify:admin-note
       - name: Production build (Vercel parity)
         run: npm run build

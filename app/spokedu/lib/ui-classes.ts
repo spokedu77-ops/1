@@ -194,15 +194,15 @@ export const homeHeroSection = 'relative bg-[#FAFAF8] pt-24 sm:pt-28 lg:pt-32';
 
 export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-slate-600 sm:text-[17px] lg:text-lg ${koreanText}`;
 
-export const homeHeroImage = 'overflow-hidden rounded-[20px] border border-slate-200/80 bg-slate-200';
+export const homeHeroImage = 'overflow-hidden rounded-xl border border-slate-200/80 bg-slate-200 shadow-sm shadow-slate-900/[0.04]';
 
 export const homeFocusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]';
 
 export const homeGateCard =
-  `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition ${fineHover}hover:border-slate-300`;
+  `group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.03] transition ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-slate-300 ${fineHover}hover:shadow-md`;
 
 export const homeCaseCard =
-  `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white transition ${fineHover}hover:border-slate-300`;
+  `group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.03] transition ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-slate-300 ${fineHover}hover:shadow-md`;
 
 export const homeDarkSection = 'relative overflow-hidden bg-[#0B1220] text-white';

@@ -19,6 +19,7 @@ import {
   coalescePushItems,
   excludeBlocksPendingSoftDelete,
   persistOpToPushItems,
+  serverSnapshotHasBlocksMissingFrom,
 } from './notePersistOpToBlockOps';
 import { partitionOutboundForSafePush } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
@@ -163,17 +164,17 @@ export class NoteSyncCoordinator {
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
     const pendingDeletes = collectPendingSoftDeleteIds(outbound);
-    if (outbound.length > 0 && local) {
-      if (local.blocks.length > 0) {
+    if (outbound.length > 0) {
+      if (local && local.blocks.length > 0 && !serverSnapshotHasBlocksMissingFrom(local.blocks, serverBlocks)) {
         this.blocks = mergeServerBlocksIntoLocalSnapshot(
           local.blocks,
           serverBlocks,
           pendingDeletes,
         );
       } else if (shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
-        this.blocks = [];
+        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, pendingDeletes);
       } else {
-        this.blocks = serverBlocks;
+        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, pendingDeletes);
       }
     } else {
       this.blocks = serverBlocks;

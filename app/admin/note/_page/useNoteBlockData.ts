@@ -11,62 +11,27 @@ import {
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   commitAndResetNoteDocumentBeforeSwitch,
-  commitNoteDocumentBeforeLeave,
   isActiveNoteEditorFocused,
   mergeBlocksWithStoreContent,
   resetNoteDocumentEditorState,
-  serverSnapshotRecoversMissingBlocks,
-  unionReconciledWithLocalBlocks,
-  wouldReconcileRegressLocalStructure,
-  wouldReconcileRegressActiveText,
 } from '../_lib/noteBlockStateMerge';
 import {
   cancelNoteReconcileIdle,
-  isNoteLocalSaveSuppressed,
   registerNoteReconcileIdleHandler,
   scheduleNoteReconcileIdle,
-  scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
-import { noteBlocksLoadPath } from '../_lib/noteBlocksLoad';
-import { isNoteLegacyReconcileEnabled } from '../_lib/noteLegacyReconcile';
 import {
-  readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
+import { openNoteDocument } from '../_lib/noteDocumentOpen';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
-import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import type { NoteBlock } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
-
-function noteBlocksStructureChanged(prev: NoteBlock[], next: NoteBlock[]): boolean {
-  if (prev.length !== next.length) return true;
-  const prevById = new Map(prev.map((block) => [block.id, block]));
-  return next.some((block) => {
-    const previous = prevById.get(block.id);
-    if (!previous) return true;
-    return previous.parent_block_id !== block.parent_block_id
-      || previous.order_index !== block.order_index
-      || previous.type !== block.type;
-  });
-}
-
-function noteBlocksServerStateChanged(prev: NoteBlock[], next: NoteBlock[]): boolean {
-  if (noteBlocksStructureChanged(prev, next)) return true;
-  const prevById = new Map(prev.map((block) => [block.id, block]));
-  return next.some((block) => {
-    const previous = prevById.get(block.id);
-    if (!previous) return true;
-    return previous.version !== block.version
-      || previous.updated_at !== block.updated_at
-      || previous.deleted_at !== block.deleted_at
-      || previous.deleted_by !== block.deleted_by;
-  });
-}
 
 export function useNoteBlockData(options: {
   selectedId: string | null;
@@ -93,8 +58,9 @@ export function useNoteBlockData(options: {
   const blocksRef = useRef<NoteBlock[]>([]);
   const blockLoadGenRef = useRef(0);
   const bootstrapAppliedDocIdRef = useRef<string | null>(null);
+  const bootstrapBlocksRef = useRef(bootstrapBlocks);
+  bootstrapBlocksRef.current = bootstrapBlocks;
   const reconcileDocumentIdRef = useRef<string | null>(null);
-  const reconcileLoadGenRef = useRef(0);
   const previousDocumentIdRef = useRef<string | null>(null);
 
   const clearReconcileTimer = useCallback(() => {
@@ -122,6 +88,52 @@ export function useNoteBlockData(options: {
   const documentEngineRef = useRef(documentEngine);
   documentEngineRef.current = documentEngine;
 
+  const shouldDeferRemoteSync = useCallback(() => (
+    isActiveNoteEditorFocused()
+    || documentEngineRef.current.hasPendingContent()
+    || documentEngineRef.current.hasPendingPersist()
+  ), []);
+
+  const scheduleDeferredOplogPull = useCallback((documentId: string) => {
+    reconcileDocumentIdRef.current = documentId;
+    scheduleNoteReconcileIdle(documentId);
+  }, []);
+
+  const runDeferredOplogPull = useCallback(async (documentId: string) => {
+    if (selectedId !== documentId) return;
+    if (shouldDeferRemoteSync()) {
+      scheduleDeferredOplogPull(documentId);
+      return;
+    }
+    documentEngineRef.current.scheduleOplogPull();
+    onAfterIdleReconcile?.();
+  }, [onAfterIdleReconcile, scheduleDeferredOplogPull, selectedId, shouldDeferRemoteSync]);
+
+  const handleRealtimeInvalidate = useCallback((documentId: string) => {
+    if (selectedId !== documentId) return;
+    if (shouldDeferRemoteSync()) {
+      scheduleDeferredOplogPull(documentId);
+      return;
+    }
+    documentEngineRef.current.scheduleOplogPull();
+  }, [scheduleDeferredOplogPull, selectedId, shouldDeferRemoteSync]);
+
+  useNoteBlocksRealtimeInvalidation({
+    documentId: selectedId,
+    onInvalidate: handleRealtimeInvalidate,
+  });
+
+  useEffect(() => {
+    registerNoteReconcileIdleHandler((documentId) => {
+      if (reconcileDocumentIdRef.current !== documentId) return;
+      void runDeferredOplogPull(documentId);
+    });
+    return () => {
+      registerNoteReconcileIdleHandler(null);
+      cancelNoteReconcileIdle();
+    };
+  }, [runDeferredOplogPull]);
+
   /** blocksRef는 Zustand SSOT의 읽기 전용 미러 — 직접 쓰기 금지 */
   useEffect(() => {
     const syncRef = () => {
@@ -145,132 +157,6 @@ export function useNoteBlockData(options: {
     useNoteBlockStore.getState().applyBlocks(() => next);
     _setBlocks(next);
   }, []);
-
-  const scheduleIdleReconcile = useCallback((
-    documentId: string,
-    loadGen: number,
-  ) => {
-    reconcileDocumentIdRef.current = documentId;
-    reconcileLoadGenRef.current = loadGen;
-    scheduleNoteReconcileIdle(documentId);
-  }, []);
-
-  const handleRealtimeInvalidate = useCallback((documentId: string) => {
-    if (selectedId !== documentId) return;
-    if (documentEngineRef.current.isOplogSyncEnabled()) {
-      // legacy reconcile과 동일: 편집·pending 중이면 idle 뒤로 미룬다.
-      if (
-        isActiveNoteEditorFocused()
-        || documentEngineRef.current.hasPendingContent()
-        || documentEngineRef.current.hasPendingPersist()
-      ) {
-        reconcileDocumentIdRef.current = documentId;
-        reconcileLoadGenRef.current = blockLoadGenRef.current;
-        scheduleNoteReconcileIdle(documentId);
-        return;
-      }
-      documentEngineRef.current.scheduleOplogPull();
-      return;
-    }
-    if (!isNoteLegacyReconcileEnabled()) return;
-    reconcileDocumentIdRef.current = documentId;
-    reconcileLoadGenRef.current = blockLoadGenRef.current;
-    scheduleNoteReconcileRemote(documentId);
-  }, [selectedId]);
-
-  useNoteBlocksRealtimeInvalidation({
-    documentId: selectedId,
-    onInvalidate: handleRealtimeInvalidate,
-  });
-
-  const runReconcileFetch = useCallback(async (
-    documentId: string,
-    loadGen: number,
-  ) => {
-    if (isNoteOplogSyncEnabled()) {
-      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-      if (
-        isActiveNoteEditorFocused()
-        || documentEngineRef.current.hasPendingContent()
-        || documentEngineRef.current.hasPendingPersist()
-      ) {
-        scheduleIdleReconcile(documentId, loadGen);
-        return;
-      }
-      documentEngineRef.current.scheduleOplogPull();
-      return;
-    }
-    if (!isNoteLegacyReconcileEnabled()) return;
-    if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-    if (isNoteLocalSaveSuppressed(documentId)) return;
-    if (
-      isActiveNoteEditorFocused()
-      || documentEngineRef.current.hasPendingContent()
-      || documentEngineRef.current.hasPendingPersist()
-    ) {
-      scheduleIdleReconcile(documentId, loadGen);
-      return;
-    }
-    try {
-      await commitNoteDocumentBeforeLeave();
-      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-      if (
-      isActiveNoteEditorFocused()
-      || documentEngineRef.current.hasPendingContent()
-      || documentEngineRef.current.hasPendingPersist()
-    ) {
-        scheduleIdleReconcile(documentId, loadGen);
-        return;
-      }
-      const res = await fetch(
-        noteBlocksLoadPath(documentId),
-        { credentials: 'include' },
-      );
-      if (!res.ok) return;
-      const json = (await res.json()) as { blocks: NoteBlock[] };
-      if (blockLoadGenRef.current !== loadGen || selectedId !== documentId) return;
-      const merged = unionReconciledWithLocalBlocks(
-        blocksRef.current,
-        json.blocks ?? [],
-        documentId,
-      );
-      const recoversMissing = serverSnapshotRecoversMissingBlocks(
-        blocksRef.current,
-        json.blocks ?? [],
-        documentId,
-      );
-      if (!recoversMissing && wouldReconcileRegressActiveText(merged)) {
-        scheduleIdleReconcile(documentId, loadGen);
-        return;
-      }
-      if (!recoversMissing && wouldReconcileRegressLocalStructure(blocksRef.current, merged)) {
-        scheduleIdleReconcile(documentId, loadGen);
-        return;
-      }
-      if (!noteBlocksServerStateChanged(blocksRef.current, merged)) {
-        onAfterIdleReconcile?.();
-        return;
-      }
-      documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: json.blocks ?? [] });
-      rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
-        useNoteBlockStore.getState().getBlocksArray().filter((block) => block.document_id === documentId),
-      ), { trustServer: true });
-      onAfterIdleReconcile?.();
-    } catch (e) {
-      devLogger.error('[Note] idle reconcile', e);
-    }
-  }, [onAfterIdleReconcile, scheduleIdleReconcile, selectedId]);
-
-  useEffect(() => {
-    registerNoteReconcileIdleHandler((documentId) => {
-      if (reconcileDocumentIdRef.current !== documentId) return;
-      void runReconcileFetch(documentId, reconcileLoadGenRef.current);
-    });
-    return () => {
-      registerNoteReconcileIdleHandler(null);
-      cancelNoteReconcileIdle();
-    };
-  }, [runReconcileFetch]);
 
   const persistToggleBodyMigration = useCallback(async (
     normalized: NoteBlock[],
@@ -306,95 +192,6 @@ export function useNoteBlockData(options: {
       await documentEngineRef.current.persistFieldPatches(toggleMigration.updatedChildPatches);
     }
   }, []);
-
-  const installPreparedBlocks = useCallback((
-    normalized: NoteBlock[],
-    documentId: string,
-    toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
-  ) => {
-    documentEngineRef.current.replaceBlocks(normalized);
-    rememberNoteDocumentBlocks(documentId, normalized, {
-      trustServer: true,
-      serverConfirmedEmpty: normalized.length === 0,
-    });
-    const store = useNoteBlockStore.getState();
-    store.setActiveDocumentId(documentId);
-
-    if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
-      void persistToggleBodyMigration(normalized, toggleMigration).catch((e) => {
-        devLogger.error('[Note] persistToggleBodyMigration', e);
-      });
-    }
-  }, [persistToggleBodyMigration]);
-
-  const replaceBlocks = useCallback((loaded: NoteBlock[], documentId: string) => {
-    const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(loaded);
-    const normalized = dedupeNoteBlocksById(prepared);
-    installPreparedBlocks(normalized, documentId, toggleMigration);
-  }, [installPreparedBlocks]);
-
-  const applyFetchedBlocks = useCallback((
-    loaded: NoteBlock[],
-    documentId: string,
-    options?: { mergeWithCurrent?: boolean },
-  ) => {
-    const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(loaded);
-    const normalized = dedupeNoteBlocksById(prepared);
-
-    if (options?.mergeWithCurrent && blocksRef.current.length > 0) {
-      if (!isNoteLegacyReconcileEnabled()) {
-        if (documentEngineRef.current.isOplogSyncEnabled()) {
-          documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: normalized });
-          const store = useNoteBlockStore.getState();
-          store.setActiveDocumentId(documentId);
-          rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
-            useNoteBlockStore.getState().getBlocksArray().filter((block) => block.document_id === documentId),
-          ), { trustServer: true });
-        } else {
-          installPreparedBlocks(normalized, documentId, toggleMigration);
-        }
-        if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
-          void persistToggleBodyMigration(normalized, toggleMigration).catch((e) => {
-            devLogger.error('[Note] persistToggleBodyMigration', e);
-          });
-        }
-        return;
-      }
-      const merged = unionReconciledWithLocalBlocks(
-        blocksRef.current,
-        normalized,
-        documentId,
-      );
-      const recoversMissing = serverSnapshotRecoversMissingBlocks(
-        blocksRef.current,
-        normalized,
-        documentId,
-      );
-      if (!recoversMissing && wouldReconcileRegressActiveText(merged)) {
-        return;
-      }
-      if (!recoversMissing && wouldReconcileRegressLocalStructure(blocksRef.current, merged)) {
-        return;
-      }
-      if (!noteBlocksServerStateChanged(blocksRef.current, merged)) {
-        return;
-      }
-      documentEngineRef.current.replaceBlocks(merged);
-      const store = useNoteBlockStore.getState();
-      store.setActiveDocumentId(documentId);
-      rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
-        merged.filter((block) => block.document_id === documentId),
-      ), { trustServer: true });
-      if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
-        void persistToggleBodyMigration(merged, toggleMigration).catch((e) => {
-          devLogger.error('[Note] persistToggleBodyMigration', e);
-        });
-      }
-      return;
-    }
-
-    installPreparedBlocks(normalized, documentId, toggleMigration);
-  }, [installPreparedBlocks, persistToggleBodyMigration]);
 
   useEffect(() => {
     return () => {
@@ -434,11 +231,9 @@ export function useNoteBlockData(options: {
     setBlocksSyncing(false);
 
     const documentId = selectedId;
-
     let cancelled = false;
 
     const run = async () => {
-      await commitAndResetNoteDocumentBeforeSwitch();
       if (cancelled) return;
 
       const loadGen = blockLoadGenRef.current + 1;
@@ -451,162 +246,62 @@ export function useNoteBlockData(options: {
         setBlocksSyncing(false);
       };
 
-      const finishOplogLoadFallback = (
-        loaded: NoteBlock[],
-        mergeWithCurrent: boolean,
-      ) => {
-        const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(loaded);
-        let normalized = dedupeNoteBlocksById(prepared);
-        const remembered = readRememberedNoteDocumentBlocks(documentId);
-        if (remembered && remembered.length > 0) {
-          if (normalized.length === 0) {
-            const fallback = prepareLoadedNoteBlocks(remembered);
-            normalized = dedupeNoteBlocksById(fallback.blocks);
-          } else {
-            const merged = unionReconciledWithLocalBlocks(
-              remembered,
-              normalized,
-              documentId,
-            );
-            if (!wouldReconcileRegressActiveText(merged)) {
-              normalized = merged;
-            }
+      setBlocksSyncing(true);
+
+      let bootstrapForOpen: NoteBlock[] | null = null;
+      const bootstrapPayload = bootstrapBlocksRef.current;
+      if (
+        bootstrapPayload?.documentId === documentId
+        && bootstrapAppliedDocIdRef.current !== documentId
+      ) {
+        bootstrapAppliedDocIdRef.current = documentId;
+        bootstrapForOpen = bootstrapPayload.blocks;
+      } else if (bootstrapAppliedDocIdRef.current !== documentId) {
+        for (let attempt = 0; attempt < 40; attempt += 1) {
+          if (cancelled || blockLoadGenRef.current !== loadGen) return;
+          const lateBootstrap = bootstrapBlocksRef.current;
+          if (lateBootstrap?.documentId === documentId) {
+            bootstrapAppliedDocIdRef.current = documentId;
+            bootstrapForOpen = lateBootstrap.blocks;
+            break;
           }
+          await new Promise((resolve) => setTimeout(resolve, 50));
         }
-        const store = useNoteBlockStore.getState();
-        store.setActiveDocumentId(documentId);
-        if (mergeWithCurrent && blocksRef.current.length > 0) {
-          documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: normalized });
-        } else {
-          documentEngineRef.current.replaceBlocks(normalized);
-        }
-        const current = documentEngineRef.current.getBlocks().filter(
-          (block) => block.document_id === documentId,
-        );
-        const serverForDoc = normalized.filter((block) => block.document_id === documentId);
-        rememberNoteDocumentBlocks(
+      }
+
+      try {
+        const prefetched = bootstrapForOpen
+          ? null
+          : await consumePrefetchedNoteBlocks(documentId);
+        if (cancelled || blockLoadGenRef.current !== loadGen) return;
+
+        const result = await openNoteDocument({
           documentId,
-          mergeBlocksWithStoreContent(current),
-          {
-            trustServer: true,
-            serverConfirmedEmpty: current.length === 0 && serverForDoc.length === 0,
-          },
-        );
-        setBlocksEmptyConfirmed(current.length === 0 && serverForDoc.length === 0);
-        if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
+          engine: documentEngineRef.current,
+          bootstrapBlocks: bootstrapForOpen,
+          prefetchedBlocks: prefetched,
+        });
+
+        if (cancelled || blockLoadGenRef.current !== loadGen) return;
+
+        setBlocksEmptyConfirmed(result.emptyConfirmed);
+        if (
+          result.toggleMigration.created.length > 0
+          || result.toggleMigration.updatedChildPatches.length > 0
+        ) {
           void persistToggleBodyMigration(
-            current.length > 0 ? current : normalized,
-            toggleMigration,
+            result.blocks,
+            result.toggleMigration,
           ).catch((e) => {
             devLogger.error('[Note] persistToggleBodyMigration', e);
           });
         }
-      };
-
-      const finishFromNetwork = async (loaded: NoteBlock[], mergeWithCurrent: boolean) => {
-        if (cancelled || blockLoadGenRef.current !== loadGen) return;
-        if (documentEngineRef.current.isOplogSyncEnabled()) {
-          try {
-            await documentEngineRef.current.syncWithServer(loaded, { skipDispatch: true });
-            finishOplogLoadFallback(loaded, mergeWithCurrent);
-          } catch (e) {
-            devLogger.error('[Note] oplog syncWithServer', e);
-            documentEngineRef.current.dispatch({ type: 'hydrate', blocks: loaded });
-            finishOplogLoadFallback(loaded, mergeWithCurrent);
-          }
-        } else {
-          applyFetchedBlocks(loaded, documentId, { mergeWithCurrent });
-          if (isNoteLegacyReconcileEnabled()) {
-            scheduleIdleReconcile(documentId, loadGen);
-          }
-        }
         markLoadSettled();
         setError(null);
-      };
-
-      if (bootstrapBlocks?.documentId === selectedId) {
-        if (bootstrapAppliedDocIdRef.current === selectedId) {
-          return;
-        }
-        bootstrapAppliedDocIdRef.current = selectedId;
-        if (documentEngineRef.current.isOplogSyncEnabled()) {
-          void documentEngineRef.current.syncWithServer(bootstrapBlocks.blocks, { skipDispatch: true }).then(() => {
-            if (cancelled || blockLoadGenRef.current !== loadGen) return;
-            finishOplogLoadFallback(bootstrapBlocks.blocks, false);
-            markLoadSettled();
-            setError(null);
-          }).catch((e) => {
-            devLogger.error('[Note] oplog bootstrap sync', e);
-            documentEngineRef.current.dispatch({ type: 'hydrate', blocks: bootstrapBlocks.blocks });
-            finishOplogLoadFallback(bootstrapBlocks.blocks, false);
-            markLoadSettled();
-            setError(null);
-          });
-        } else {
-          replaceBlocks(bootstrapBlocks.blocks, documentId);
-          markLoadSettled();
-          setError(null);
-          if (isNoteLegacyReconcileEnabled()) {
-            scheduleIdleReconcile(documentId, loadGen);
-          }
-        }
-        return;
-      }
-
-      const oplogEnabled = isNoteOplogSyncEnabled();
-      if (oplogEnabled) {
-        try {
-          const localBlocks = await documentEngineRef.current.hydrateFromLocal();
-          if (cancelled || blockLoadGenRef.current !== loadGen) return;
-          if (localBlocks && localBlocks.length > 0) {
-            useNoteBlockStore.getState().setActiveDocumentId(documentId);
-            setBlocksSyncing(true);
-          }
-        } catch (e) {
-          devLogger.error('[Note] oplog hydrateFromLocal', e);
-        }
-      }
-
-      const remembered = readRememberedNoteDocumentBlocks(documentId);
-      const hasInstantSnapshot = remembered !== null;
-      const currentDocBlockCount = blocksRef.current.filter(
-        (block) => block.document_id === documentId,
-      ).length;
-      if (hasInstantSnapshot && currentDocBlockCount === 0) {
-        replaceBlocks(remembered, documentId);
-        setBlocksSyncing(true);
-      } else if (currentDocBlockCount > 0) {
-        setBlocksSyncing(true);
-      }
-
-      try {
-        const prefetched = await consumePrefetchedNoteBlocks(documentId);
-        if (cancelled || blockLoadGenRef.current !== loadGen) return;
-
-        if (prefetched && prefetched.length > 0) {
-          await finishFromNetwork(prefetched, false);
-          return;
-        }
-
-        const res = await fetch(
-          noteBlocksLoadPath(documentId),
-          { credentials: 'include' },
-        );
-        if (!res.ok) {
-          const j = await res.json().catch(() => null);
-          throw new Error(j?.error || '블록 로드 실패');
-        }
-        const json = (await res.json()) as { blocks: NoteBlock[] };
-        await finishFromNetwork(
-          json.blocks ?? [],
-          false,
-        );
       } catch (e) {
-        devLogger.error('[Note] loadBlocks', e);
+        devLogger.error('[Note] openNoteDocument', e);
         if (!cancelled && blockLoadGenRef.current === loadGen) {
-          if (!hasInstantSnapshot) {
-            setError(e instanceof Error ? e.message : '로드 실패');
-          }
+          setError(e instanceof Error ? e.message : '로드 실패');
           markLoadSettled();
         }
       }
@@ -619,12 +314,7 @@ export function useNoteBlockData(options: {
   }, [
     selectedId,
     setError,
-    bootstrapBlocks,
-    replaceBlocks,
-    applyFetchedBlocks,
-    setBlocks,
-    scheduleIdleReconcile,
-    clearReconcileTimer,
+    persistToggleBodyMigration,
   ]);
 
   useEffect(() => {

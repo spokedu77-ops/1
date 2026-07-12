@@ -1,38 +1,38 @@
-# SPOKEDU Home — 사진 요청 (1차 우선)
+# SPOKEDU Home — 사진 요청 (현재 홈 개선 기준)
 
-> **지금 화면:** Pexels 임시 스톡이 들어가 있습니다. 아래 파일명으로 덮어쓰면 Home에 바로 반영됩니다.  
-> 재다운로드: `node scripts/fetch-spokedu-images.mjs`
+> 지금은 파일 자체는 대부분 채워져 있습니다. 다음 단계에서 필요한 건 “대체 이미지”가 아니라
+> **첫 화면·SPOMOVE·기관 신뢰를 강하게 만드는 대표 컷**입니다.
 
 
 **넣는 위치:** 이 폴더 아래 경로에 **파일명 그대로** 저장하면 Home에 자동 반영됩니다.
 
-## 🔴 1차 (먼저 부탁 — Hero·현장 체감 70%)
+## 🔴 최우선 4컷
 
 | 저장 경로 | 촬영 내용 |
 |-----------|-----------|
-| `home/home-hero-movement.jpg` | 스포키듀 대표 수업 — 아이들이 움직이는 장면 (가로, 에너지 있는 1장) |
-| `records/yangcheon.jpg` | 양천거점형키움센터 SPOMOVE 정규수업 |
-| `records/dongjak.jpg` | 동작거점형키움센터 SPOMOVE·리듬 수업 |
-| `records/dasarang.jpg` | 다사랑영등포지역아동센터 원데이 체육행사 |
-| `records/playz.jpg` | PLAYZ Lounge 방학캠프 |
+| `home/home-hero-spomove-class.png` | **홈 Hero 대표 컷** — SPOMOVE 화면, 아이들, 지도자가 한 장에 보이는 가로 사진. 지금 사진은 실제성은 좋지만 천장 비중이 커서 첫인상 힘이 약합니다. |
+| `dispatch/dispatch-group-class.jpg` | **SPOMOVE 활동 컷** — 아이들이 화면 신호를 보고 실제로 움직이는 순간. 뒷모습만 있어도 좋지만 움직임이 보여야 합니다. |
+| `records/yangcheon.jpg` | **기관 정규수업 증거 컷** — 기관 공간, 아이들 참여, 교구/패드가 함께 보이는 사진. 사례 카드용입니다. |
+| `private/private-coaching.jpg` | **개인수업 대표 컷** — 현재 인라인스케이트 사진은 좋지만 스포키듀의 “맞춤 체육수업” 전체를 대표하기엔 종목색이 강합니다. 실내/야외 상관없이 지도자와 아이의 상호작용이 분명한 컷이 필요합니다. |
 
-## 🟡 2차 (3축 카드)
-
-| 저장 경로 | 촬영 내용 |
-|-----------|-----------|
-| `private/private-coaching.jpg` | 1:1 또는 2명 소규모 개인수업 |
-| `dispatch/dispatch-group-class.jpg` | 기관·키움 다인 수업 |
-| `curriculum/curriculum-instructor-training.jpg` | 강사교육·LAB·커리큘럼 개발 |
-
-## 🟢 3차 (프로그램 그리드)
+## 🟡 있으면 점수가 크게 오르는 컷
 
 | 저장 경로 | 촬영 내용 |
 |-----------|-----------|
-| `programs/program-spomove.jpg` | SPOMOVE (빔·화면·아이 반응) |
-| `programs/program-paps-running.jpg` | PAPS·체력 놀이 |
-| `programs/program-oneday.jpg` | 원데이 행사 |
-| `programs/program-camp.jpg` | 방학캠프 |
-| `programs/program-curriculum-content.jpg` | 수업안·교구·자료 |
+| `curriculum/curriculum-instructor-training.jpg` | 강사교육·커리큘럼 도입 컷. 지금 사진은 현장감은 있으나 “교육/표준화” 느낌이 더 드러나면 좋습니다. |
+| `programs/program-spomove.jpg` | 프로그램 상세/카탈로그용 SPOMOVE 컷. 빔 화면과 4색 패드가 명확해야 합니다. |
+| `records/dasarang.png` | 원데이 행사 컷. 아이들이 동시에 참여하고 있는 에너지 있는 장면이 좋습니다. |
+| `records/playz.jpg` | 방학캠프 컷. 하루 프로그램/캠프 느낌이 보이는 단체 활동 장면이 좋습니다. |
+
+## 촬영 가이드
+
+- 가로 1600px 이상 권장
+- 아이 얼굴 노출이 부담되면 뒷모습/측면 위주도 좋습니다.
+- Hero는 세로 사진보다 **가로 사진**이 훨씬 좋습니다.
+- 천장, 빈 바닥, 벽 비중은 줄이고 “아이들이 무엇을 하는지”가 보여야 합니다.
+- SPOMOVE 컷은 **빔 화면 + 패드 + 아이 반응** 세 요소가 같이 보이면 가장 좋습니다.
+- 기관 신뢰 컷은 기관명보다 “운영 환경과 참여 규모”가 보이는 게 중요합니다.
+- 개인수업 컷은 종목보다 “지도자가 아이를 관찰/피드백하는 관계”가 보이면 좋습니다.
 
 ## 형식
 
@@ -40,5 +40,7 @@
 - 밝기·색감은 비슷하게 맞춰 주시면 Hero~섹션 통일감이 좋아집니다
 - ZIP으로 보내 주셔도 됩니다 (폴더 구조 유지)
 
-**사진 넣은 후 100%:** `app/spokedu/docs/PHOTO_DROPIN_100.md`  
-로드맵: `app/spokedu/docs/HOME_GLOBAL_100.md`
+## 지금 기준 결론
+
+가장 급한 건 `home/home-hero-spomove-class.png` 교체입니다.  
+이 한 장이 좋아지면 홈페이지 점수가 가장 크게 오릅니다.

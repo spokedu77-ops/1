@@ -93,9 +93,9 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
 
 export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
   home: {
-    title: '스포키듀 | 아동·청소년 체육교육의 경험과 기준',
+    title: '스포키듀 | 기관·개인 맞춤 아동 체육수업',
     description:
-      '움직임의 경험을 설계하고 현장에서 검증하는 아동·청소년 체육교육. 개인·기관 프로그램, SPOMOVE, 커리큘럼·지도자 교육.',
+      '키움센터·학교·복지관 기관 체육수업부터 1:1 개인수업, SPOMOVE 도입까지 현장 조건에 맞춰 설계하는 아동·청소년 체육교육.',
   },
   about: {
     title: '스포키듀 소개 | 현장 체육교육 운영 브랜드',

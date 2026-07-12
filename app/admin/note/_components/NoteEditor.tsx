@@ -59,6 +59,10 @@ import { NoteTextDragSelectExtension } from './noteTextDragSelect';
 import { NOTE_EDITOR_STABILITY } from '../_lib/noteEditorStability';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 import { beginNoteLinkEdit } from '../_lib/noteEditorLink';
+import {
+  invokeToggleChildBackspaceAtStart,
+  invokeToggleChildEmptyBackspace,
+} from '../_lib/noteToggleBackspaceRuntime';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -78,6 +82,19 @@ const HeadingWithShortcuts = Heading.extend({
     };
   },
 }).configure({ levels: [1, 2, 3] });
+
+function selectionAtBlockStart(view: EditorView): boolean {
+  const { selection } = view.state;
+  if (!selection.empty) return false;
+  if (selection.from <= 1) return true;
+  return selection.$from.parentOffset === 0;
+}
+
+function editorIsEffectivelyEmpty(editor: Editor | null | undefined): boolean {
+  if (!editor || (editor as { isDestroyed?: boolean }).isDestroyed) return false;
+  if (editor.isEmpty) return true;
+  return editor.getText().trim().length === 0;
+}
 
 type RichField = 'text';
 
@@ -725,12 +742,26 @@ export function NoteEditor({
           return true;
         }
         if (event.key === 'Backspace') {
+          const atStart = selectionAtBlockStart(view);
+          const editor = editorRef.current;
           const { selection } = view.state;
-          if (selection.empty && selection.from <= 1) {
-            if (editorRef.current?.isEmpty && currentOnEmptyBackspace) {
+          if (
+            selection.empty
+            && editorIsEffectivelyEmpty(editor)
+          ) {
+            event.preventDefault();
+            flush();
+            if (editorBlockId) {
+              invokeToggleChildEmptyBackspace(editorBlockId);
+            } else if (currentOnEmptyBackspace) {
+              currentOnEmptyBackspace();
+            }
+            return true;
+          }
+          if (atStart) {
+            if (editorBlockId && invokeToggleChildBackspaceAtStart(editorBlockId)) {
               event.preventDefault();
               flush();
-              currentOnEmptyBackspace();
               return true;
             }
             if (currentOnBackspaceAtBlockStart?.()) {

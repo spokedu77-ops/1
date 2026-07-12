@@ -1,0 +1,80 @@
+import { describe, expect, it, vi } from 'vitest';
+import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
+import {
+  applyOpenServerSnapshot,
+  fetchServerBlocksForOpen,
+  paintInstantSnapshotFromCache,
+} from './noteDocumentOpen';
+import type { NoteBlock } from './types';
+
+function block(id: string, overrides: Partial<NoteBlock> = {}): NoteBlock {
+  return {
+    id,
+    document_id: 'doc-1',
+    parent_block_id: null,
+    type: 'text',
+    order_index: 0,
+    content: { text: 'hello', html: '<p>hello</p>' },
+    created_at: '2026-07-09T00:00:00Z',
+    updated_at: '2026-07-09T00:00:00Z',
+    version: 1,
+    ...overrides,
+  };
+}
+
+describe('noteDocumentOpen', () => {
+  it('paintInstantSnapshotFromCache paints when store is empty', () => {
+    const remembered = [block('cached')];
+    const engine = {
+      replaceBlocks: vi.fn(),
+      isOplogSyncEnabled: () => true,
+      syncWithServer: vi.fn(),
+      getBlocks: () => remembered,
+    };
+
+    rememberNoteDocumentBlocks('doc-1', remembered, { trustServer: true });
+
+    const painted = paintInstantSnapshotFromCache('doc-1', engine, 0);
+    expect(painted).toBe(true);
+    expect(engine.replaceBlocks).toHaveBeenCalledWith(remembered);
+  });
+
+  it('fetchServerBlocksForOpen prefers bootstrap over network', async () => {
+    const bootstrap = [block('from-bootstrap')];
+    const result = await fetchServerBlocksForOpen('doc-1', {
+      bootstrapBlocks: bootstrap,
+    });
+    expect(result).toEqual(bootstrap);
+  });
+
+  it('applyOpenServerSnapshot dispatches via syncWithServer when oplog enabled', async () => {
+    const server = [block('server')];
+    const syncWithServer = vi.fn().mockResolvedValue(undefined);
+    const engine = {
+      isOplogSyncEnabled: () => true,
+      syncWithServer,
+      replaceBlocks: vi.fn(),
+      getBlocks: () => server,
+    };
+
+    const result = await applyOpenServerSnapshot('doc-1', server, engine);
+    expect(syncWithServer).toHaveBeenCalledTimes(1);
+    expect(syncWithServer.mock.calls[0][1]).toBeUndefined();
+    expect(result.blocks).toEqual(server);
+    expect(result.emptyConfirmed).toBe(false);
+  });
+
+  it('applyOpenServerSnapshot uses replaceBlocks when oplog disabled', async () => {
+    const server = [block('server')];
+    const replaceBlocks = vi.fn();
+    const engine = {
+      isOplogSyncEnabled: () => false,
+      syncWithServer: vi.fn(),
+      replaceBlocks,
+      getBlocks: () => server,
+    };
+
+    await applyOpenServerSnapshot('doc-1', server, engine);
+    expect(replaceBlocks).toHaveBeenCalledTimes(1);
+  });
+});

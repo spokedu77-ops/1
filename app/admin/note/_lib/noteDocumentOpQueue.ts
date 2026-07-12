@@ -1,15 +1,10 @@
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   NoteBlockVersionConflictError,
-  patchNoteBlocksResolvingConflicts,
-  postNoteBlockTransaction,
-  postNoteBlockCreateTransaction,
-  postNoteBlock,
-  purgeNoteBlockFromTrash,
   restoreNoteBlockFromTrash,
+  type NoteBlockFieldPatch,
   type PatchedNoteBlock,
 } from './noteBlocksApi';
-import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { newNoteBlockClientId } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
@@ -29,13 +24,6 @@ export type NoteDocumentOpQueueDeps = {
     options?: { immediate?: boolean },
   ) => Promise<void>;
 };
-
-function contentRecordsEqual(
-  left: Record<string, unknown> | undefined,
-  right: Record<string, unknown> | undefined,
-): boolean {
-  return JSON.stringify(left ?? {}) === JSON.stringify(right ?? {});
-}
 
 /** 서버 반영 큐 — 연산을 순차 실행해 race를 줄인다 */
 export class NoteDocumentOpQueue {
@@ -213,206 +201,40 @@ export class NoteDocumentOpQueue {
   private async runCreateBlock(
     op: Extract<NotePersistOp, { type: 'createBlock' }>,
   ): Promise<NoteBlock> {
-    if (this.deps.persistViaOpLog) {
-      // op-log 경로에서는 클라이언트 UUID가 서버 create id와 반드시 같아야 한다.
-      // id 없이 push하면 DB는 gen_random_uuid()를 쓰고 UI는 다른 UUID를 쓰게 되어
-      // 이후 patch_content가 "block not found"로 실패한다.
-      const blockId = op.id || newNoteBlockClientId();
-      const opWithId = op.id ? op : { ...op, id: blockId };
-      await this.deps.persistViaOpLog(opWithId, { immediate: true });
-      const existing = this.deps.getBlock(blockId);
-      if (existing) {
-        this.deps.triggerSave();
-        return existing;
-      }
-      const fallback: NoteBlock = {
-        id: blockId,
-        document_id: op.documentId,
-        parent_block_id: op.parent_block_id,
-        type: op.blockType,
-        order_index: op.order_index ?? 0,
-        content: op.content,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        version: 1,
-      };
-      this.deps.triggerSave();
-      return fallback;
+    if (!this.deps.persistViaOpLog) {
+      throw new Error('[Note] op-log persist is required; legacy HTTP create is disabled');
     }
-
-    if (op.normalizeOrders !== undefined || op.transactionUpdates !== undefined) {
-      const result = await postNoteBlockCreateTransaction(
-        {
-          id: op.id,
-          documentId: op.documentId,
-          blockType: op.blockType,
-          content: op.content,
-          order_index: op.order_index,
-          parent_block_id: op.parent_block_id,
-        },
-        [
-          ...(op.normalizeOrders ?? []),
-          ...(op.transactionUpdates ?? []),
-        ],
-        (id) => this.deps.getBlock(id),
-      );
-      if (result.patchedBlocks.length > 0) {
-        this.deps.onServerPatches?.(result.patchedBlocks);
-      }
+    const blockId = op.id || newNoteBlockClientId();
+    const opWithId = op.id ? op : { ...op, id: blockId };
+    await this.deps.persistViaOpLog(opWithId, { immediate: true });
+    const existing = this.deps.getBlock(blockId);
+    if (existing) {
       this.deps.triggerSave();
-      return result.createdBlock;
+      return existing;
     }
-
-    const block = await postNoteBlock({
-      documentId: op.documentId,
-      blockType: op.blockType,
-      content: op.content,
-      order_index: op.order_index,
+    const fallback: NoteBlock = {
+      id: blockId,
+      document_id: op.documentId,
       parent_block_id: op.parent_block_id,
-    });
-
+      type: op.blockType,
+      order_index: op.order_index ?? 0,
+      content: op.content,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      version: 1,
+    };
     this.deps.triggerSave();
-    return block;
-  }
-
-  private async patchWithVersionRetry(
-    patches: NoteBlockFieldPatch[],
-  ): Promise<void> {
-    const patched = await patchNoteBlocksResolvingConflicts(
-      patches,
-      (id) => this.deps.getBlock(id),
-    );
-    if (patched.length > 0) {
-      this.deps.onServerPatches?.(patched);
-    }
-    this.deps.triggerSave();
-  }
-
-  private async handleContentConflict(
-    op: Extract<NotePersistOp, { type: 'patchContent' }>,
-    conflicts: PatchedNoteBlock[],
-  ): Promise<void> {
-    this.deps.onServerConflicts?.(conflicts as NoteBlock[]);
-
-    const retries: NoteBlockFieldPatch[] = [];
-    for (const update of op.updates) {
-      const local = this.deps.getBlock(update.id);
-      const server = conflicts.find((block) => block.id === update.id);
-      if (!local || !server) continue;
-
-      const localContent = (local.content ?? {}) as Record<string, unknown>;
-      const sentContent = update.content;
-      if (contentRecordsEqual(localContent, sentContent)) continue;
-      if (contentRecordsEqual(localContent, (server.content ?? {}) as Record<string, unknown>)) {
-        continue;
-      }
-
-      retries.push({
-        id: update.id,
-        content: localContent,
-        baseContent: update.baseContent,
-        expected_version: server.version,
-      });
-    }
-
-    if (retries.length === 0) return;
-    await this.patchWithVersionRetry(retries);
+    return fallback;
   }
 
   private async runPersistOp(op: NotePersistOp): Promise<void> {
     this.persistInFlight = true;
     try {
-      if (this.deps.persistViaOpLog) {
-        await this.deps.persistViaOpLog(op, { immediate: op.type !== 'patchContent' });
-        this.deps.triggerSave();
-        return;
+      if (!this.deps.persistViaOpLog) {
+        throw new Error('[Note] op-log persist is required; legacy HTTP persist is disabled');
       }
-
-      switch (op.type) {
-      case 'patchContent': {
-        if (op.updates.length === 0) return;
-        const patches = op.updates.map((update) => ({
-          id: update.id,
-          content: update.content,
-          baseContent: update.baseContent,
-        }));
-        try {
-          await this.patchWithVersionRetry(patches);
-        } catch (error) {
-          if (error instanceof NoteBlockVersionConflictError) {
-            await this.handleContentConflict(op, error.conflicts);
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
-      case 'patchFields': {
-        if (op.patches.length === 0) return;
-        try {
-          const patched = await postNoteBlockTransaction(
-            op.patches,
-            [],
-            (id) => this.deps.getBlock(id),
-          );
-          if (patched.length > 0) this.deps.onServerPatches?.(patched);
-          this.deps.triggerSave();
-        } catch (error) {
-          if (error instanceof NoteBlockVersionConflictError) {
-            this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
-      case 'blockTransaction': {
-        try {
-          const patched = await postNoteBlockTransaction(
-            op.patches,
-            op.deleteIds,
-            (id) => this.deps.getBlock(id),
-          );
-          if (patched.length > 0) this.deps.onServerPatches?.(patched);
-          this.deps.triggerSave();
-        } catch (error) {
-          if (error instanceof NoteBlockVersionConflictError) {
-            this.deps.onServerConflicts?.(error.conflicts as NoteBlock[]);
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
-      case 'softDelete': {
-        if (op.ids.length === 0) return;
-        const res = await fetch('/api/admin/note/blocks', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ ids: op.ids }),
-        });
-        if (!res.ok) {
-          const j = await res.json().catch(() => null);
-          throw new Error((j as { error?: string } | null)?.error || '삭제 실패');
-        }
-        this.deps.triggerSave();
-        return;
-      }
-      case 'purgeBlock': {
-        await purgeNoteBlockFromTrash(op.id);
-        this.deps.triggerSave();
-        return;
-      }
-      case 'createBlock': {
-        await this.runCreateBlock(op);
-        return;
-      }
-      default: {
-        const _exhaustive: never = op;
-        return _exhaustive;
-      }
-      }
+      await this.deps.persistViaOpLog(op, { immediate: op.type !== 'patchContent' });
+      this.deps.triggerSave();
     } finally {
       this.persistInFlight = false;
     }

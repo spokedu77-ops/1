@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getChildDocumentIdFromPageContent } from '@/app/lib/note/documentParentSync';
@@ -23,6 +23,7 @@ import {
   applyParentPatchesToDocuments,
   planParentPatchesForDocumentBlocks,
 } from '../_lib/noteDocumentParentClient';
+import { setNoteToggleBackspaceRuntime } from '../_lib/noteToggleBackspaceRuntime';
 
 /** NotePageContext value 조립 — 문서·블록·선택·DnD 훅 wiring */
 export function useNotePageOrchestration(): NotePageContextValue {
@@ -409,6 +410,16 @@ export function useNotePageOrchestration(): NotePageContextValue {
     handleCopyBlockLink,
     uploadNoteImage,
   } = blockActions;
+
+  useLayoutEffect(() => {
+    setNoteToggleBackspaceRuntime({
+      blocksRef,
+      focusBlockEditor,
+      handleDeleteBlock,
+      handleMergeWithPreviousBlock,
+    });
+    return () => setNoteToggleBackspaceRuntime(null);
+  });
 
   const { marqueeOverlayRef, handleBlockSelect, handleBlockListPointerDown } = selection;
 

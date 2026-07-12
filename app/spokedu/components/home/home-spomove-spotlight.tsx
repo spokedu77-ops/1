@@ -34,37 +34,60 @@ export function HomeSpomoveSpotlight() {
             </h2>
             <p className={homeBodyLeadOnDark}>{homePage.spomove.lead}</p>
 
+            <ul className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3 min-[1100px]:grid-cols-1">
+              {homePage.spomove.proofs.map((proof) => (
+                <li key={proof.value} className="min-w-0 rounded-lg border border-white/12 bg-white/[0.06] px-3.5 py-2.5 sm:px-4 sm:py-3">
+                  <p className={`text-sm font-bold text-white ${koreanText}`}>{proof.value}</p>
+                  <p className={`mt-0.5 text-sm leading-snug text-white/65 sm:mt-1 ${koreanText}`}>{proof.label}</p>
+                </li>
+              ))}
+            </ul>
+
+            <SpomoveActions className="mt-6 flex flex-col gap-3 sm:hidden" />
+
             <SpomoveFlow className="mt-8" />
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <TrackedLink
-                href={homePage.spomove.primaryCta.href}
-                trackLabel={homePage.spomove.primaryCta.trackLabel}
-                className={`${btnPrimaryOnDark} ${homeFocusRing}`}
-              >
-                {homePage.spomove.primaryCta.label}
-              </TrackedLink>
-              <TrackedLink
-                href={homePage.spomove.secondaryCta.href}
-                trackLabel={homePage.spomove.secondaryCta.trackLabel}
-                className={`${siteBtnSecondaryOnDark} ${homeFocusRing}`}
-              >
-                {homePage.spomove.secondaryCta.label}
-              </TrackedLink>
-            </div>
+            <SpomoveActions className="mt-8 hidden flex-col gap-3 sm:flex sm:flex-row sm:flex-wrap" />
           </div>
 
-          <div className={`min-w-0 ${homeHeroImage} border-white/10 bg-slate-800`}>
+          <div className={`min-w-0 ${homeHeroImage} relative border-white/10 bg-slate-800`}>
             <MediaPanel
               media={media}
               className={`aspect-[3/2] w-full border-0 rounded-none ${homePhotoGrade}`}
               sizes="heroEditorialMain"
               photoPriority
             />
+            <div className="absolute bottom-4 left-4 right-4 rounded-lg border border-white/20 bg-[#0B1220]/75 px-4 py-3 backdrop-blur">
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-white/60">SPOMOVE 적용 장면</p>
+              <p className={`mt-1 text-sm font-semibold text-white sm:text-base ${koreanText}`}>
+                화면 신호를 보고 선택한 뒤 몸으로 반응하는 수업 흐름
+              </p>
+            </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+function SpomoveActions({ className = '' }: { className?: string }) {
+  return (
+    <div className={className}>
+      <TrackedLink
+        href={homePage.spomove.primaryCta.href}
+        trackLabel={homePage.spomove.primaryCta.trackLabel}
+        className={`${btnPrimaryOnDark} ${homeFocusRing}`}
+      >
+        {homePage.spomove.primaryCta.label}
+      </TrackedLink>
+      <TrackedLink
+        href={homePage.spomove.secondaryCta.href}
+        trackLabel={homePage.spomove.secondaryCta.trackLabel}
+        className={`${siteBtnSecondaryOnDark} ${homeFocusRing}`}
+      >
+        {homePage.spomove.secondaryCta.label}
+      </TrackedLink>
+    </div>
   );
 }
 

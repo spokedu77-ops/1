@@ -6,10 +6,7 @@ import {
   getNoteDocumentPipeline,
   type NoteDocumentPipeline,
 } from '../_lib/noteDocumentPipeline';
-import { subscribeNoteCrossTabBlockSync } from '../_lib/noteCrossTabBlockSync';
-import { applyServerBlockVersions } from '../_lib/noteDocumentEngine';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
-import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type {
   CreateBlockPersistArgs,
@@ -104,18 +101,6 @@ export function useNoteDocumentEngine(options: {
         await disposeNoteDocumentPipeline(leavingId);
       })();
     };
-  }, [documentId]);
-
-  useEffect(() => {
-    if (!documentId || isNoteOplogSyncEnabled()) return undefined;
-    return subscribeNoteCrossTabBlockSync((message) => {
-      if (message.documentId !== documentId || !pipelineRef.current) return;
-      const next = applyServerBlockVersions(
-        useNoteBlockStore.getState().getBlocksArray(),
-        message.blocks,
-      );
-      pipelineRef.current.dispatch({ type: 'replaceBlocks', blocks: next });
-    });
   }, [documentId]);
 
   const getPipeline = useCallback(() => {

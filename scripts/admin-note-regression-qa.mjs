@@ -18,6 +18,7 @@ loadEnvConfig(process.cwd());
 
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const COMMON_BOARD_ID = NOTE_QA_DOCUMENTS[0]?.id ?? '7c095438-335b-4318-a3fb-09145f01d24a';
+const JIHOON_NOTE_ID = '630e1104-84f9-41a2-b25b-7c4faa6a1300';
 const GYM_TOGGLE_TITLE = '체육관 이용방법';
 const RECONCILE_WAIT_MS = 3500;
 const ZOMBIE_MARKER = '좀비회귀QA마커';
@@ -85,9 +86,11 @@ async function expandGymToggleInDom(page) {
     input.scrollIntoView({ block: 'center' });
     const toggleRoot = input.closest('.relative.overflow-visible.py-0\\.5')
       ?? input.parentElement?.parentElement;
-    const button = toggleRoot?.querySelector('button');
-    button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    const button = toggleRoot?.querySelector('button[aria-label]');
+    if (button?.getAttribute('aria-label') === '펼치기') {
+      button.click();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
     const childrenContainer = toggleRoot?.querySelector('.note-block-children');
     const visibleText = childrenContainer?.innerText?.trim() ?? '';
     const childRowCount = childrenContainer
@@ -130,6 +133,114 @@ async function createFreshDocumentWithToggleBody(page) {
     const { block } = await blockRes.json();
     return { documentId: document.id, toggleId: block.id };
   }, ZOMBIE_MARKER);
+}
+
+const TOGGLE_KB_TITLE = 'KB QA Toggle';
+
+async function createFreshDocumentWithToggleAndChild(page, { childText = '' } = {}) {
+  return page.evaluate(async ({ title, text }) => {
+    const docRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: `Toggle KB QA ${Date.now()}` }),
+    });
+    if (!docRes.ok) throw new Error(`document create ${docRes.status}`);
+    const { document } = await docRes.json();
+    const toggleRes = await fetch('/api/admin/note/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        documentId: document.id,
+        type: 'toggle',
+        content: { title, collapsed: false },
+        order_index: 0,
+        parent_block_id: null,
+      }),
+    });
+    if (!toggleRes.ok) throw new Error(`toggle create ${toggleRes.status}`);
+    const { block: toggle } = await toggleRes.json();
+    const childRes = await fetch('/api/admin/note/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        documentId: document.id,
+        type: 'text',
+        content: { text, html: text ? `<p>${text}</p>` : '<p></p>' },
+        order_index: 0,
+        parent_block_id: toggle.id,
+      }),
+    });
+    if (!childRes.ok) throw new Error(`child create ${childRes.status}`);
+    const { block: child } = await childRes.json();
+    return { documentId: document.id, toggleId: toggle.id, childId: child.id, title };
+  }, { title: TOGGLE_KB_TITLE, text: childText });
+}
+
+async function waitForBootstrapDocument(page, documentId) {
+  await page.waitForFunction(async (id) => {
+    const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
+    if (!res.ok) return false;
+    const json = await res.json();
+    return (json.documents ?? []).some((doc) => doc.id === id);
+  }, documentId, { timeout: 20000 });
+}
+
+async function expandToggleByTitleInDom(page, titleNeedle) {
+  await page.evaluate(async (needle) => {
+    const inputs = [...document.querySelectorAll('[data-toggle-title]')];
+    const input = inputs.find((el) => (el.value || '').includes(needle));
+    if (!input) throw new Error(`toggle title "${needle}" not found`);
+    input.scrollIntoView({ block: 'center' });
+    const toggleRoot = input.closest('.relative.overflow-visible.py-0\\.5')
+      ?? input.parentElement?.parentElement;
+    const button = toggleRoot?.querySelector('button[aria-label]');
+    if (button?.getAttribute('aria-label') === '펼치기') {
+      button.click();
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+  }, titleNeedle);
+}
+
+async function focusToggleChildEditor(page) {
+  await page.waitForFunction(() => {
+    const container = document.querySelector('.note-block-children');
+    if (!container) return false;
+    return container.querySelectorAll(
+      '[data-note-block-row], [data-note-preview-text], .ProseMirror, [data-note-editor-host]',
+    ).length > 0;
+  }, { timeout: 20000 });
+
+  const childArea = page.locator('.note-block-children').first();
+  const preview = childArea.locator('[data-note-preview-text]').first();
+  if (await preview.count()) {
+    await preview.click();
+    await page.waitForTimeout(400);
+  }
+  const editor = childArea.locator('.ProseMirror').first();
+  if (await editor.count()) {
+    await editor.waitFor({ state: 'visible', timeout: 10000 });
+    await editor.click();
+  } else if (await preview.count()) {
+    await preview.click();
+  } else {
+    const row = childArea.locator('[data-note-block-row]').first();
+    await row.click({ position: { x: 48, y: 12 } });
+  }
+  await page.waitForTimeout(200);
+  return childArea.locator('.ProseMirror').first();
+}
+
+async function assertToggleTitleFocused(page, titleNeedle) {
+  await page.waitForTimeout(500);
+  await page.waitForFunction((needle) => {
+    const active = document.activeElement;
+    if (!active || active.tagName !== 'INPUT') return false;
+    if (!active.hasAttribute('data-toggle-title')) return false;
+    return (active.value || '').includes(needle);
+  }, titleNeedle, { timeout: 12000 });
 }
 
 async function createFreshDocumentWithTextBlock(page) {
@@ -189,6 +300,48 @@ async function main() {
       if (urlId !== COMMON_BOARD_ID) throw new Error(`expected ${COMMON_BOARD_ID}, got ${urlId}`);
       const rows = await page.locator('[data-note-block-row]').count();
       if (rows < 1) throw new Error('no block rows');
+    });
+
+    failed += await runCheck('최지훈 업무노트 빈 껍데기 없음', async () => {
+      await openDocument(page, JIHOON_NOTE_ID);
+      const blocks = await fetchBlocks(page, JIHOON_NOTE_ID);
+      if (blocks.length < 5) {
+        throw new Error(`expected many active blocks, got ${blocks.length}`);
+      }
+      const rows = await page.locator('[data-note-block-row]').count();
+      if (rows < 1) throw new Error('no visible block rows after load settled');
+    });
+
+    failed += await runCheck('문서 전환 시 빈 껍데기 프레임 없음', async () => {
+      await openDocument(page, COMMON_BOARD_ID);
+      await page.goto(
+        `${BASE}/admin/note?id=${encodeURIComponent(JIHOON_NOTE_ID)}`,
+        { waitUntil: 'domcontentloaded' },
+      );
+      const skeleton = page.getByRole('status', { name: '페이지 불러오는 중' });
+      const rows = page.locator('[data-note-block-row]');
+      const firstPaint = await Promise.race([
+        skeleton.waitFor({ state: 'visible', timeout: 2500 }).then(() => 'skeleton'),
+        rows.first().waitFor({ state: 'visible', timeout: 2500 }).then(() => 'rows'),
+      ]).catch(() => 'empty');
+      if (firstPaint === 'empty') {
+        throw new Error('document switch showed neither skeleton nor cached rows');
+      }
+      await skeleton.waitFor({ state: 'detached', timeout: 45000 }).catch(() => undefined);
+      await rows.first().waitFor({ state: 'visible', timeout: 45000 });
+    });
+
+    failed += await runCheck('hard refresh 후 공통 보드 블록 유지', async () => {
+      await openDocument(page, COMMON_BOARD_ID);
+      const before = await fetchBlocks(page, COMMON_BOARD_ID);
+      if (before.length < 1) throw new Error('no blocks before reload');
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.getByRole('status', { name: '페이지 불러오는 중' }).waitFor({ state: 'detached', timeout: 45000 }).catch(() => undefined);
+      await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 45000 });
+      const after = await fetchBlocks(page, COMMON_BOARD_ID);
+      if (after.length < before.length * 0.5) {
+        throw new Error(`block count dropped after reload: ${before.length} -> ${after.length}`);
+      }
     });
 
     failed += await runCheck('blocks/load 기본 경로에 skipReconcile 없음 (앱)', async () => {
@@ -274,30 +427,57 @@ async function main() {
       }
     });
 
+    failed += await runCheck('토글 첫 자식 빈 Backspace → 제목 포커스', async () => {
+      const { documentId } = await createFreshDocumentWithToggleAndChild(page);
+      await waitForBootstrapDocument(page, documentId);
+      await openDocument(page, documentId);
+      await page.waitForFunction(async (id) => {
+        const res = await fetch(`/api/admin/note/blocks/load?documentId=${encodeURIComponent(id)}`, {
+          credentials: 'include',
+        });
+        if (!res.ok) return false;
+        const json = await res.json();
+        return (json.blocks ?? []).some((b) => b.parent_block_id);
+      }, documentId, { timeout: 20000 });
+      await expandToggleByTitleInDom(page, TOGGLE_KB_TITLE);
+      await focusToggleChildEditor(page);
+      await page.keyboard.press('Backspace');
+      await assertToggleTitleFocused(page, TOGGLE_KB_TITLE);
+    });
+
+    failed += await runCheck('토글 첫 자식 맨 앞 Backspace → 제목 포커스', async () => {
+      const { documentId } = await createFreshDocumentWithToggleAndChild(page, { childText: 'x' });
+      await waitForBootstrapDocument(page, documentId);
+      await openDocument(page, documentId);
+      await page.waitForFunction(async (id) => {
+        const res = await fetch(`/api/admin/note/blocks/load?documentId=${encodeURIComponent(id)}`, {
+          credentials: 'include',
+        });
+        if (!res.ok) return false;
+        const json = await res.json();
+        return (json.blocks ?? []).some((b) => b.parent_block_id);
+      }, documentId, { timeout: 20000 });
+      await expandToggleByTitleInDom(page, TOGGLE_KB_TITLE);
+      const childEditor = await focusToggleChildEditor(page);
+      if (await childEditor.count()) {
+        await childEditor.click();
+      }
+      await page.keyboard.press('Home');
+      await page.keyboard.press('Backspace');
+      await assertToggleTitleFocused(page, TOGGLE_KB_TITLE);
+    });
+
     failed += await runCheck('타이핑 후 idle — 본문 유지 (smoke parity)', async () => {
-      const docId = await page.evaluate(async () => {
-        const docRes = await fetch('/api/admin/note/documents', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ title: `Typing QA ${Date.now()}` }),
-        });
-        const { document } = await docRes.json();
-        await fetch('/api/admin/note/blocks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            documentId: document.id,
-            type: 'text',
-            content: { text: '', html: '' },
-            order_index: 0,
-          }),
-        });
-        return document.id;
-      });
+      const { documentId: docId } = await createFreshDocumentWithTextBlock(page);
+      await page.waitForFunction(async (id) => {
+        const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
+        if (!res.ok) return false;
+        const json = await res.json();
+        return (json.documents ?? []).some((doc) => doc.id === id);
+      }, docId, { timeout: 20000 });
       await openDocument(page, docId);
       const row = page.locator('[data-note-block-row]').first();
+      await row.waitFor({ state: 'visible', timeout: 45000 });
       const preview = row.locator('[data-note-preview-text]');
       if (await preview.count()) {
         await preview.click();
@@ -308,24 +488,20 @@ async function main() {
       const editor = page.locator('[data-note-block-row]').first().locator('.ProseMirror').first();
       await editor.waitFor({ state: 'visible', timeout: 15000 });
       await editor.click();
+      await page.keyboard.press('Control+A');
       await page.keyboard.type('타이핑유지QA', { delay: 10 });
       await page.locator('div.cursor-text').first().click({ position: { x: 100, y: 200 }, force: true });
       await page.waitForTimeout(800);
-      await page.waitForTimeout(3500);
-      const text = await page.evaluate(async (id) => {
+      await page.waitForFunction(async (id) => {
         const res = await fetch(`/api/admin/note/blocks/load?documentId=${encodeURIComponent(id)}`, {
           credentials: 'include',
         });
+        if (!res.ok) return false;
         const json = await res.json();
         const blocks = (json.blocks ?? []).filter((b) => b.type === 'text').sort((a, b) => a.order_index - b.order_index);
-        return blocks[0]?.content?.text ?? '';
-      }, docId);
-      if (!text.includes('타이핑유지QA')) {
-        const rowText = await page.locator('[data-note-block-row]').first().innerText();
-        if (!rowText.includes('타이핑유지QA')) {
-          throw new Error(`text lost after idle: api="${text}" row="${rowText}"`);
-        }
-      }
+        const text = blocks[0]?.content?.text ?? '';
+        return text.includes('타이핑유지QA');
+      }, docId, { timeout: 45000 });
     });
 
   } finally {

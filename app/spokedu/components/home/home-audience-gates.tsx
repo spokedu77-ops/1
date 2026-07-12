@@ -29,6 +29,7 @@ export function HomeAudienceGates() {
           {homePage.audienceGate.items.map((item, index) => {
             const media = HOME_MEDIA[item.mediaKey];
             const spanThird = index === 2 ? 'min-[720px]:col-span-2 min-[1180px]:col-span-1' : '';
+            const accentClass = ['bg-[#1D4ED8]', 'bg-[#10B981]', 'bg-[#F59E0B]'][index] ?? 'bg-[#1D4ED8]';
             return (
               <li key={item.id} className={`min-w-0 ${spanThird}`}>
                 <TrackedLink
@@ -36,6 +37,7 @@ export function HomeAudienceGates() {
                   trackLabel={item.trackLabel}
                   className={`${homeGateCard} ${homeFocusRing} block h-full`}
                 >
+                  <span className={`block h-1.5 w-full ${accentClass}`} aria-hidden />
                   <div className="overflow-hidden">
                     <MediaPanel
                       media={media}
@@ -44,13 +46,14 @@ export function HomeAudienceGates() {
                     />
                   </div>
                   <div className={`flex min-w-0 flex-col ${homeCardPanelPad}`}>
+                    <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">{item.badge}</p>
                     <h3 className={homeCardTitle}>{item.title}</h3>
                     <p className={`${homeBody} mt-2 line-clamp-2`}>{item.description}</p>
                     <p className={`mt-3 text-sm text-slate-600 sm:text-[15px] ${koreanText}`}>
                       {item.bullets.join(' · ')}
                     </p>
                     <span className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8] sm:text-base">
-                      자세히 보기
+                      {item.ctaLabel}
                       <HomeChevron />
                     </span>
                   </div>

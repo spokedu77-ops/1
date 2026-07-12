@@ -140,6 +140,8 @@ export function NotePageShell() {
     setSelectedBlockIds,
     loadingBlocks,
     blocksSyncing,
+    blocksEmptyConfirmed,
+    loadSettledDocId,
     blocks,
     selectedBlockIds,
     handleBlockSelect,
@@ -324,6 +326,8 @@ export function NotePageShell() {
                   setSelectedBlockIds={setSelectedBlockIds}
                   loadingBlocks={loadingBlocks}
                   blocksSyncing={blocksSyncing}
+                  blocksEmptyConfirmed={blocksEmptyConfirmed}
+                  loadSettledDocId={loadSettledDocId}
                   blocks={blocks}
                   selectedBlockIds={selectedBlockIds}
                   handleBlockSelect={handleBlockSelect}

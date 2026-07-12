@@ -4,10 +4,8 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import type { NoteBlockOpRecord } from '@/app/lib/note/noteBlockOpTypes';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
-import { purgeNoteBlockFromTrash, restoreNoteBlockFromTrash } from './noteBlocksApi';
 import type { NoteCommand } from './noteCommand';
 import { applyNoteCommand } from './noteCommandReducer';
-import { applyServerBlockVersions } from './noteDocumentEngine';
 import {
   NoteDocumentOpQueue,
   type CreateBlockPersistArgs,
@@ -15,8 +13,6 @@ import {
 } from './noteDocumentOpQueue';
 import { setNoteContentSavePending } from './notePendingSave';
 import { contentChangeNeedsReactBlocks } from './noteContentPatch';
-import { markNoteLocalSave } from './noteReconcileIdle';
-import { broadcastNoteBlockVersions } from './noteCrossTabBlockSync';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import {
   disposeNoteSyncCoordinator,
@@ -94,28 +90,6 @@ export class NoteDocumentPipeline {
       getActiveBlockId: () => useNoteBlockStore.getState().activeEditor?.blockId ?? null,
       triggerSave: () => this.callbacks.triggerSave(),
       onError: (error) => this.callbacks.onError?.(error),
-      onServerPatches: (patched) => {
-        if (this.oplogEnabled) return;
-        markNoteLocalSave(this.documentId);
-        const next = applyServerBlockVersions(
-          useNoteBlockStore.getState().getBlocksArray(),
-          patched,
-        );
-        this.dispatch({ type: 'replaceBlocks', blocks: next });
-        broadcastNoteBlockVersions(this.documentId, patched);
-      },
-      onServerConflicts: (conflicts) => {
-        if (this.oplogEnabled) return;
-        this.dispatch({ type: 'syncSnapshot', blocks: conflicts });
-        broadcastNoteBlockVersions(
-          this.documentId,
-          conflicts.map((block) => ({
-            id: block.id,
-            version: block.version,
-            updated_at: block.updated_at,
-          })),
-        );
-      },
       persistViaOpLog: this.coordinator
         ? (op, options) => this.coordinator!.enqueuePersistOp(op, options)
         : undefined,
@@ -257,21 +231,17 @@ export class NoteDocumentPipeline {
   }
 
   async persistRestoreBlock(blockId: string): Promise<NoteBlock[]> {
-    if (this.queue) {
-      return this.queue.enqueueRestoreBlock({ id: blockId });
+    if (!this.queue) {
+      throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
     }
-    const blocks = await restoreNoteBlockFromTrash(blockId);
-    this.callbacks.triggerSave();
-    return blocks;
+    return this.queue.enqueueRestoreBlock({ id: blockId });
   }
 
   async persistPurgeBlock(blockId: string): Promise<void> {
-    if (this.queue) {
-      await this.queue.enqueue({ type: 'purgeBlock', id: blockId });
-      return;
+    if (!this.queue) {
+      throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
     }
-    await purgeNoteBlockFromTrash(blockId);
-    this.callbacks.triggerSave();
+    await this.queue.enqueue({ type: 'purgeBlock', id: blockId });
   }
 
   getBlocks(): NoteBlock[] {

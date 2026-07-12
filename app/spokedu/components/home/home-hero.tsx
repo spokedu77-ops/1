@@ -10,6 +10,7 @@ import {
   homeHeroSection,
   homePhotoGrade,
   homeSectionScrollMt,
+  koreanText,
   siteBtnPrimary,
   siteBtnSecondary,
   siteContainer,
@@ -48,9 +49,22 @@ export function HomeHero() {
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>
             </div>
+            <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="방문 목적별 바로가기">
+              <span className={`mr-1 text-sm font-semibold text-slate-500 ${koreanText}`}>바로 찾기</span>
+              {homePage.hero.quickLinks.map((link) => (
+                <TrackedLink
+                  key={link.label}
+                  href={link.href}
+                  trackLabel={link.trackLabel}
+                  className={`rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#1D4ED8]/40 hover:text-[#1D4ED8] ${homeFocusRing}`}
+                >
+                  {link.label}
+                </TrackedLink>
+              ))}
+            </div>
           </div>
 
-          <div className={`order-2 min-w-0 ${homeHeroImage}`}>
+          <div className={`order-2 min-w-0 ${homeHeroImage} relative`}>
             <MediaPanel
               media={media}
               className={`aspect-[3/2] w-full border-0 rounded-none ${homePhotoGrade}`}
@@ -59,6 +73,14 @@ export function HomeHero() {
               priority
               objectFit="cover"
             />
+            <div className="absolute inset-x-4 bottom-4 rounded-xl border border-white/35 bg-white/90 px-4 py-3 shadow-lg shadow-slate-900/10 backdrop-blur sm:inset-x-5 sm:bottom-5">
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#1D4ED8]">
+                {homePage.hero.mediaCaption.label}
+              </p>
+              <p className={`mt-1 text-sm font-bold text-[#0B1220] sm:text-base ${koreanText}`}>
+                {homePage.hero.mediaCaption.title}
+              </p>
+            </div>
           </div>
         </div>
       </div>
