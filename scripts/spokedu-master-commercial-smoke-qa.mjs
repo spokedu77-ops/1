@@ -1012,7 +1012,6 @@ async function runStudentCreationSmoke(browser) {
     throw new Error(`student add dialog did not open from add=1. URL: ${page.url()}. Body: ${body.slice(0, 900).replace(/\s+/g, ' ')}. ${safeErrorMessage(error)}`);
   }
   const nameInput = dialog.getByTestId('spm-student-add-name');
-  const metaInput = dialog.getByTestId('spm-student-add-meta');
   await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
   assert(await nameInput.evaluate((node) => document.activeElement === node), 'add=1 did not focus the student name input');
   await nameInput.pressSequentially(newStudentName, { delay: 5 });

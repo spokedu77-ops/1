@@ -14,8 +14,11 @@ const OUTPUT_DIR = process.argv.includes('--stdout-only')
 
 const VITEST_BIN = join(process.cwd(), 'node_modules', 'vitest', 'vitest.mjs');
 const ENTRY_COPY_CONTRACT_TEST = 'app/spokedu-master/masterEntryCopy.contract.test.ts';
+const API_ROUTE_IMPORTS_CONTRACT_TEST = 'app/api/spokedu-master/apiRouteImports.contract.test.ts';
 
 const CHECKS = [
+  { id: 'api_route_imports', kind: 'vitest', target: API_ROUTE_IMPORTS_CONTRACT_TEST },
+  { id: 'production_build', kind: 'npm', script: 'build' },
   { id: 'entry_copy_contract', kind: 'vitest', target: ENTRY_COPY_CONTRACT_TEST },
   { id: 'staging_payment_preflight', kind: 'node', script: 'scripts/spokedu-master-staging-payment-e2e.mjs', args: [] },
   { id: 'payment_no_toss', kind: 'node', script: 'scripts/spokedu-master-staging-payment-e2e.mjs', args: ['--mock-activation'] },
@@ -62,7 +65,32 @@ function runCheck(check) {
       ok: exitCode === 0,
       exitCode,
       durationMs: Date.now() - startedAt,
-      detail: { phase: 'entry-copy-contract', target: check.target },
+      detail: { phase: 'contract-test', target: check.target },
+      stderrTail: result.stderr?.trim() ? result.stderr.trim().slice(-400) : undefined,
+    };
+  }
+
+  if (check.kind === 'npm') {
+    const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+    const result = spawnSync(npmCmd, ['run', check.script], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co',
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-anon-key',
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'ci-service-role-key',
+      },
+    });
+    const exitCode = result.status ?? 1;
+    return {
+      id: check.id,
+      script: `npm run ${check.script}`,
+      ok: exitCode === 0,
+      exitCode,
+      durationMs: Date.now() - startedAt,
+      detail: { phase: 'production-build' },
       stderrTail: result.stderr?.trim() ? result.stderr.trim().slice(-400) : undefined,
     };
   }
@@ -96,6 +124,8 @@ function buildScore(results) {
   const passed = results.filter((item) => item.ok).length;
   const base = 76;
   const weights = {
+    api_route_imports: 0,
+    production_build: 2,
     entry_copy_contract: 1,
     staging_payment_preflight: 1,
     payment_no_toss: 1,

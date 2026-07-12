@@ -227,7 +227,6 @@ function StudentRow({ student, attendance, focused, onAttendance, onFocus, onOpe
 
 function RecordEntryView() {
   const searchParams = useSearchParams();
-  const profile = useMasterStore((state) => state.profile);
   const lessons = useMasterStore((state) => state.lessons);
   const operationalData = useOperationalData();
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);

@@ -18,6 +18,29 @@ const SMOKE_FLOWS = [
   'deletion',
 ].join(',');
 
+function runNpm(script, args = []) {
+  const startedAt = Date.now();
+  const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  const result = spawnSync(npmCmd, ['run', script, ...args], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co',
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-anon-key',
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'ci-service-role-key',
+    },
+  });
+  return {
+    ok: (result.status ?? 1) === 0,
+    exitCode: result.status ?? 1,
+    durationMs: Date.now() - startedAt,
+    stdout: result.stdout ?? '',
+    stderr: result.stderr ?? '',
+  };
+}
+
 function runNode(script, args = []) {
   const startedAt = Date.now();
   const result = spawnSync(process.execPath, [script, ...args], {
@@ -62,6 +85,16 @@ function extractSmokeFlows(stdout) {
 function main() {
   console.log(`[release-automated] base=${BASE}`);
   const steps = [];
+
+  console.log('[release-automated] running production build...');
+  const productionBuild = runNpm('build');
+  steps.push({
+    id: 'production_build',
+    ok: productionBuild.ok,
+    exitCode: productionBuild.exitCode,
+    durationMs: productionBuild.durationMs,
+    stderrTail: productionBuild.stderr.trim() ? productionBuild.stderr.trim().slice(-500) : undefined,
+  });
 
   console.log('[release-automated] running verification-report...');
   const verification = runNode('scripts/spokedu-master-commercial-verification-report.mjs', [BASE]);

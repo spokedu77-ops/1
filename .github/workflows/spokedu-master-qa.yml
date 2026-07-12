@@ -105,6 +105,7 @@ jobs:
           app/api/spokedu-master/class-records/createClassRecord.contract.test.ts
           app/api/spokedu-master/class-records/replaceClassRecord.contract.test.ts
           app/api/spokedu-master/operational-data/route.test.ts
+          app/api/spokedu-master/apiRouteImports.contract.test.ts
           app/spokedu-master/navigation.contract.test.ts
           app/spokedu-master/lessonFlow.contract.test.ts
           app/spokedu-master/terminology.contract.test.ts

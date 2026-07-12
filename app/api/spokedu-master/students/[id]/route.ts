@@ -7,7 +7,7 @@ import {
   studentUpdatePayload,
   toStudentDto,
   type MasterStudentRow,
-} from '../operational-data';
+} from '@/app/api/spokedu-master/operational-data';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;

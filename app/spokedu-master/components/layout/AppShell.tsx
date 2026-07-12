@@ -300,6 +300,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     };
     if (profile.onboardingDone === serverFields.onboardingDone) return;
     setProfile(serverFields);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onboardingDone만 서버와 동기화
   }, [accessGuard.snapshot?.onboardingDone, profile, setProfile]);
 
   useEffect(() => {
@@ -328,7 +329,9 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
 
         if (response.ok) {
           const payload = await response.json() as MasterAccessApiResponse;
-          const { ok: _ok, allowed: _allowed, spomatShopAvailable, ...snapshot } = payload;
+          const { ok, allowed, spomatShopAvailable, ...snapshot } = payload;
+          void ok;
+          void allowed;
           setAccessGuard({
             pathname,
             status: 'allowed',

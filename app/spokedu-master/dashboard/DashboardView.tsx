@@ -62,7 +62,7 @@ import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
-import type { ClassRecord, Program, UserProfile } from '../types';
+import type { ClassRecord, Program } from '../types';
 
 type ContinueItem = {
   id: string;
