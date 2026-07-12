@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   buildChildrenByParentBlock,
@@ -10,7 +10,7 @@ import {
 } from '@/app/lib/note/noteBlockTree';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
-  commitAndResetNoteDocumentBeforeSwitch,
+  commitNoteDocumentBeforeLeave,
   isActiveNoteEditorFocused,
   mergeBlocksWithStoreContent,
   resetNoteDocumentEditorState,
@@ -24,7 +24,7 @@ import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch'
 import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
-import { openNoteDocument } from '../_lib/noteDocumentOpen';
+import { openNoteDocument, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
@@ -73,9 +73,17 @@ export function useNoteBlockData(options: {
     setError(message);
   }, [setError]);
 
-  /** pipeline → React 투영. blocksRef는 store 구독으로 동기화 */
+  /** pipeline + store → React 투영 (단일 구독) */
   const handleBlocksChanged = useCallback((next: NoteBlock[]) => {
     _setBlocks(next);
+  }, []);
+
+  useEffect(() => {
+    const projectStore = () => {
+      _setBlocks(useNoteBlockStore.getState().getBlocksArray());
+    };
+    projectStore();
+    return useNoteBlockStore.subscribe(projectStore);
   }, []);
 
   const documentEngine = useNoteDocumentEngine({
@@ -195,7 +203,7 @@ export function useNoteBlockData(options: {
 
   useEffect(() => {
     return () => {
-      void commitAndResetNoteDocumentBeforeSwitch();
+      void commitNoteDocumentBeforeLeave();
       clearReconcileTimer();
     };
   }, [selectedId, clearReconcileTimer]);
@@ -204,7 +212,7 @@ export function useNoteBlockData(options: {
     bootstrapAppliedDocIdRef.current = null;
   }, [selectedId]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!selectedId) {
       previousDocumentIdRef.current = null;
       setBlocks([]);
@@ -225,10 +233,23 @@ export function useNoteBlockData(options: {
       }
     }
     previousDocumentIdRef.current = selectedId;
-    setBlocksEmptyConfirmed(false);
-    setLoadSettledDocId(null);
-    setLoadingBlocks(true);
+
+    const documentId = selectedId;
+    const prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
+    if (prep.hasCache) {
+      setLoadSettledDocId(documentId);
+      setLoadingBlocks(false);
+      setBlocksEmptyConfirmed(prep.emptyConfirmed);
+    } else {
+      setBlocksEmptyConfirmed(false);
+      setLoadSettledDocId(null);
+      setLoadingBlocks(true);
+    }
     setBlocksSyncing(false);
+  }, [selectedId, setBlocks]);
+
+  useEffect(() => {
+    if (!selectedId) return;
 
     const documentId = selectedId;
     let cancelled = false;
@@ -245,8 +266,6 @@ export function useNoteBlockData(options: {
         setLoadingBlocks(false);
         setBlocksSyncing(false);
       };
-
-      setBlocksSyncing(true);
 
       let bootstrapForOpen: NoteBlock[] | null = null;
       const bootstrapPayload = bootstrapBlocksRef.current;

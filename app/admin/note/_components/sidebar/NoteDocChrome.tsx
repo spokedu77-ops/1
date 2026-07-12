@@ -227,16 +227,21 @@ export function DocItem({
           emojiClassName="shrink-0 text-[14px] leading-none"
         />
       </button>
-      <p
-        className="min-w-0 flex-1 truncate text-[14px] leading-5 text-neutral-700"
-        title={doc.title}
-      >
-        {doc.title}
-      </p>
-      <div
-        className={`flex shrink-0 items-center gap-0.5 ${isActive ? 'visible' : 'invisible group-hover:visible'}`}
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative min-w-0 flex-1 overflow-hidden">
+        <p
+          className="truncate text-[14px] leading-5 text-neutral-700"
+          title={doc.title}
+        >
+          {doc.title}
+        </p>
+        <div
+          className={`absolute inset-y-0 right-0 flex items-center gap-0.5 pl-10 ${
+            isActive
+              ? 'bg-gradient-to-l from-neutral-200/95 via-neutral-200/75 to-transparent'
+              : 'bg-gradient-to-l from-[#f7f7f5] via-[#f7f7f5]/85 to-transparent opacity-0 transition-opacity group-hover:opacity-100'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
         <button type="button" title={doc.is_pinned ? '고정 해제' : '맨 위에 고정'}
           className={`rounded p-1 transition-colors ${
             doc.is_pinned ? 'text-violet-500 hover:bg-neutral-200' : 'text-neutral-400 hover:bg-neutral-200 hover:text-violet-500'
@@ -269,6 +274,7 @@ export function DocItem({
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
+        </div>
       </div>
       </div>
     </div>

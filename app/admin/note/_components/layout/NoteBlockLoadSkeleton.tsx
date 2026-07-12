@@ -12,8 +12,8 @@ export function NoteBlockLoadSkeleton() {
       {widths.map((width, index) => (
         <div
           key={index}
-          className="h-4 animate-pulse rounded-md bg-neutral-100/90"
-          style={{ width, animationDelay: `${index * 70}ms` }}
+          className="h-4 rounded-md bg-neutral-100"
+          style={{ width }}
         />
       ))}
     </div>

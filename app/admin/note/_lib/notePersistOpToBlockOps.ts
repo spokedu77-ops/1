@@ -60,6 +60,46 @@ export function excludeBlocksPendingSoftDelete(
 }
 
 /**
+ * 서버 load에 블록이 다시 포함되면(관리자/DB 복구) 클라이언트 pending soft delete는 stale.
+ * 그대로 두면 복구된 본문·이미지가 화면에서 빠진다.
+ */
+export function filterStalePendingSoftDeletes(
+  serverBlocks: NoteBlock[],
+  pendingDeleteIds: Set<string>,
+): Set<string> {
+  if (pendingDeleteIds.size === 0) return pendingDeleteIds;
+  const serverIds = new Set(serverBlocks.map((block) => block.id));
+  const next = new Set<string>();
+  for (const id of pendingDeleteIds) {
+    if (!serverIds.has(id)) next.add(id);
+  }
+  return next;
+}
+
+export function findOutboundOpsSupersededByServerRestore(
+  outbound: NoteLocalOutboundOp[],
+  serverBlocks: NoteBlock[],
+): string[] {
+  const serverIds = new Set(serverBlocks.map((block) => block.id));
+  const clientOpIds: string[] = [];
+  for (const op of outbound) {
+    const payload = op.payload;
+    if (payload.opType === 'soft_delete') {
+      if (payload.ids.length > 0 && payload.ids.every((id) => serverIds.has(id))) {
+        clientOpIds.push(op.clientOpId);
+      }
+      continue;
+    }
+    if (payload.opType === 'block_transaction') {
+      if (payload.deleteIds.length > 0 && payload.deleteIds.every((id) => serverIds.has(id))) {
+        clientOpIds.push(op.clientOpId);
+      }
+    }
+  }
+  return clientOpIds;
+}
+
+/**
  * IndexedDB local.blocks가 []일 때 outbound만으로 빈 로컬을 신뢰할지.
  * pending soft delete가 서버 블록 전부를 설명할 때만 true — 그 외는 오염된 로컬로 보고 서버 rebase.
  */

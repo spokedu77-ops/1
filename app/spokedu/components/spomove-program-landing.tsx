@@ -18,6 +18,9 @@ const valueCardShell =
 const activityCardShell =
   'flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white';
 
+const darkCardShell =
+  'flex h-full flex-col rounded-xl border border-white/12 bg-white/[0.06] p-4 text-white sm:p-5';
+
 export default function SpomoveProgramLanding() {
   const relatedCases = spomoveProgramPage.cases.slugs
     .map((slug) => getCaseBySlug(slug))
@@ -58,6 +61,94 @@ export default function SpomoveProgramLanding() {
             </li>
           ))}
         </ol>
+      </LandingSection>
+
+      <LandingSection className="grid gap-5 rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7 lg:grid-cols-[0.42fr_0.58fr] lg:items-center lg:gap-8">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-700">
+            {spomoveProgramPage.padSystem.eyebrow}
+          </p>
+          <h2 className={`${landingSectionTitle} mt-3`}>{spomoveProgramPage.padSystem.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+            {spomoveProgramPage.padSystem.body}
+          </p>
+        </div>
+        <ol className="grid gap-3 sm:grid-cols-2">
+          {spomoveProgramPage.padSystem.points.map((point, index) => (
+            <li key={point.title} className="rounded-xl border border-violet-100 bg-violet-50/40 p-4">
+              <p className="text-xs font-bold tabular-nums text-violet-700">{String(index + 1).padStart(2, '0')}</p>
+              <h3 className="mt-1 text-base font-bold text-slate-950">{point.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{point.body}</p>
+            </li>
+          ))}
+        </ol>
+      </LandingSection>
+
+      <LandingSection className="rounded-2xl bg-[#0B1220] px-5 py-7 text-white sm:px-7 sm:py-8">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-300">
+          {spomoveProgramPage.reactionLevels.eyebrow}
+        </p>
+        <div className="mt-3 grid gap-4 lg:grid-cols-[0.38fr_0.62fr] lg:items-start lg:gap-8">
+          <div className="min-w-0">
+            <h2 className="text-2xl font-black leading-tight tracking-tight sm:text-3xl lg:text-4xl [word-break:keep-all]">
+              {spomoveProgramPage.reactionLevels.title}
+            </h2>
+            <p className="mt-4 text-sm leading-relaxed text-white/70 sm:text-[15px] [word-break:keep-all]">
+              {spomoveProgramPage.reactionLevels.lead}
+            </p>
+          </div>
+          <ol className="grid gap-3 sm:grid-cols-2">
+            {spomoveProgramPage.reactionLevels.items.map((item) => (
+              <li key={item.title} className={darkCardShell}>
+                <p className="text-xs font-bold text-blue-300">{item.level}</p>
+                <h3 className="mt-2 text-lg font-bold">{item.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-white/70 [word-break:keep-all]">{item.body}</p>
+                <p className="mt-4 text-xs font-semibold text-white/55 [word-break:keep-all]">{item.tags.join(' · ')}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </LandingSection>
+
+      <LandingSection className="space-y-4 sm:space-y-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-700">
+            {spomoveProgramPage.cognitiveTasks.eyebrow}
+          </p>
+          <h2 className={`${landingSectionTitle} mt-3`}>{spomoveProgramPage.cognitiveTasks.title}</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+            {spomoveProgramPage.cognitiveTasks.lead}
+          </p>
+        </div>
+        <ul className="grid gap-3 lg:grid-cols-3">
+          {spomoveProgramPage.cognitiveTasks.items.map((item) => (
+            <li key={item.title} className={valueCardShell}>
+              <h3 className="text-base font-bold text-slate-950">{item.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{item.body}</p>
+              <p className="mt-4 text-xs font-semibold text-violet-700 [word-break:keep-all]">{item.tags.join(' · ')}</p>
+            </li>
+          ))}
+        </ul>
+      </LandingSection>
+
+      <LandingSection className="grid gap-5 rounded-2xl border border-slate-200/80 bg-white px-5 py-6 sm:px-7 sm:py-7 lg:grid-cols-[0.55fr_0.45fr] lg:items-center">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-violet-700">
+            {spomoveProgramPage.movementExpansion.eyebrow}
+          </p>
+          <h2 className={`${landingSectionTitle} mt-3`}>{spomoveProgramPage.movementExpansion.title}</h2>
+          <p className="mt-3 text-sm leading-relaxed text-slate-600 [word-break:keep-all] sm:text-[15px]">
+            {spomoveProgramPage.movementExpansion.lead}
+          </p>
+        </div>
+        <ul className="grid gap-3">
+          {spomoveProgramPage.movementExpansion.items.map((item) => (
+            <li key={item.title} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <h3 className="text-base font-bold text-slate-950">{item.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{item.body}</p>
+            </li>
+          ))}
+        </ul>
       </LandingSection>
 
       <LandingSection className="space-y-4 sm:space-y-5">

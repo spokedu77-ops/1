@@ -102,7 +102,7 @@ export const NoteSidebarPanel = memo(function NoteSidebarPanel({
   return (
     <div className={`flex flex-col border-r border-neutral-200/80 bg-[#f7f7f5] ${
       mobileTab === 'list' ? 'flex w-full' : 'hidden'
-    } md:flex md:w-[280px] md:shrink-0`}
+    } md:flex md:w-[300px] md:shrink-0`}
     >
       <div className="shrink-0 px-2 pb-2 pt-3">
         <div className="flex items-center justify-between gap-1 px-1 py-0.5">

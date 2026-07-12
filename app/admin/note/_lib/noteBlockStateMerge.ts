@@ -222,7 +222,12 @@ export async function commitNoteDocumentBeforeLeave(): Promise<void> {
   }
 }
 
-/** 부모↔하위 문서 전환 시 에디터·스토어 격리 */
+/** 부모↔하위 문서 전환 시 에디터 포커스만 해제 — 블록은 다음 open paint가 원자 교체 */
+export function clearNoteDocumentEditorFocus(): void {
+  useNoteBlockStore.getState().setActiveEditor(null);
+}
+
+/** 노트 이탈·문서 없음 — 스토어 전체 초기화 */
 export function resetNoteDocumentEditorState(): void {
   const store = useNoteBlockStore.getState();
   store.setActiveEditor(null);
@@ -230,8 +235,8 @@ export function resetNoteDocumentEditorState(): void {
   store.hydrate([]);
 }
 
-/** 이탈 커밋 후 스토어 초기화 — 하위 문서 로드 전 부모 content 혼입 방지 */
+/** 이탈 커밋 — 블록 스냅샷은 유지(SWR). 다음 open이 교체한다. */
 export async function commitAndResetNoteDocumentBeforeSwitch(): Promise<void> {
   await commitNoteDocumentBeforeLeave();
-  resetNoteDocumentEditorState();
+  clearNoteDocumentEditorFocus();
 }

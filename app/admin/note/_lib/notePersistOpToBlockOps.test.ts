@@ -3,6 +3,7 @@ import {
   coalescePushItems,
   collectPendingSoftDeleteIds,
   excludeBlocksPendingSoftDelete,
+  filterStalePendingSoftDeletes,
   mergeServerBlocksIntoLocalSnapshot,
   persistOpToPushItems,
   serverSnapshotHasBlocksMissingFrom,
@@ -208,6 +209,13 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     const server = [serverBlock('child-1', 'gone')];
     const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set(['child-1']));
     expect(merged).toHaveLength(0);
+  });
+
+  it('filterStalePendingSoftDeletes drops ids present on server restore', () => {
+    const server = [serverBlock('child-1', '복구 본문')];
+    const pending = new Set(['child-1', 'gone-forever']);
+    const effective = filterStalePendingSoftDeletes(server, pending);
+    expect([...effective]).toEqual(['gone-forever']);
   });
 });
 

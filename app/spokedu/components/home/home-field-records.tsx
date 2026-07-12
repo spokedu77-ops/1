@@ -48,7 +48,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           })}
         </ul>
 
-        <div className="mt-8 grid grid-cols-1 gap-5 min-[720px]:mt-10 min-[720px]:grid-cols-2 min-[1180px]:grid-cols-[58%_1fr] min-[1180px]:items-start min-[1180px]:gap-6">
+        <div className="mt-8 grid grid-cols-1 gap-5 min-[720px]:mt-10 min-[720px]:grid-cols-2 min-[1180px]:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)] min-[1180px]:items-start min-[1180px]:gap-6">
           {featured ? (
             <div className="min-w-0 min-[720px]:col-span-2 min-[1180px]:col-span-1">
               <FeaturedCaseCard card={featured} priority />
@@ -77,15 +77,17 @@ function FeaturedCaseCard({ card, priority }: { card: CaseCardWithThumb; priorit
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block ${homeFocusRing}`}>
       <article className="relative overflow-hidden rounded-xl border border-slate-200/90 bg-slate-200 shadow-sm shadow-slate-900/[0.04]">
-        <div className="relative aspect-[4/5] w-full sm:aspect-[3/4] lg:aspect-[5/6]">
-          <CaseMedia card={card} priority={priority} />
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/70 via-[#0B1220]/15 to-transparent"
-            aria-hidden
-          />
-          <div className={`absolute inset-x-0 bottom-0 border-t border-white/20 bg-white/95 backdrop-blur-sm ${homeCardPanelPad}`}>
+        <div className="relative w-full">
+          <div className="relative aspect-[16/11] w-full sm:aspect-[16/10] lg:aspect-[4/3]">
+            <CaseMedia card={card} priority={priority} />
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/55 via-[#0B1220]/5 to-transparent"
+              aria-hidden
+            />
+          </div>
+          <div className={`border-t border-slate-200/80 bg-white ${homeCardPanelPad}`}>
             <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-            <h3 className={`${homeCardTitle} mt-5`}>{card.programName}</h3>
+            <h3 className={`${homeCardTitle} mt-4`}>{card.programName}</h3>
             <p className={`mt-2 text-sm font-semibold text-slate-700 sm:text-[15px] ${koreanText}`}>{card.venue}</p>
             <p className={`mt-2 text-[15px] leading-relaxed text-slate-600 line-clamp-2 ${koreanText}`}>
               {card.description}
@@ -105,7 +107,7 @@ function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority
   return (
     <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block ${homeFocusRing}`}>
       <article className={`${homeCaseCard} flex flex-col`}>
-        <div className="relative aspect-[16/10] overflow-hidden">
+        <div className="relative aspect-[16/9] overflow-hidden sm:aspect-[16/10]">
           <CaseMedia card={card} priority={priority} />
         </div>
         <div className={homeCardPanelPad}>

@@ -177,8 +177,8 @@ describe('sub-document navigation (parent ↔ child)', () => {
     const { commitAndResetNoteDocumentBeforeSwitch } = await import('./noteBlockStateMerge');
     await commitAndResetNoteDocumentBeforeSwitch();
 
-    expect(useNoteBlockStore.getState().getBlocksArray()).toHaveLength(0);
-    expect(useNoteBlockStore.getState().activeDocumentId).toBeNull();
+    expect(useNoteBlockStore.getState().activeEditor).toBeNull();
+    expect(useNoteBlockStore.getState().getBlocksArray()).toHaveLength(1);
 
     const childBlocks = [block('c1', 'child body', { document_id: 'child-doc' })];
     useNoteBlockStore.getState().setActiveDocumentId('child-doc');

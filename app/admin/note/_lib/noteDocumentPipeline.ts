@@ -20,6 +20,7 @@ import {
   type NoteSyncCoordinator,
 } from './noteSyncCoordinator';
 import { newNoteBlockClientId } from './noteSyncGuards';
+import { documentSnapshotsEquivalent } from './noteSnapshotEquivalence';
 import type { NoteBlock } from './types';
 
 const CONTENT_DEBOUNCE_MS = 1500;
@@ -180,6 +181,10 @@ export class NoteDocumentPipeline {
     await this.coordinator.syncWithServer(initialBlocks);
     if (options?.skipDispatch) return;
     const blocks = this.coordinator.getBlocks();
+    const current = useNoteBlockStore.getState().getBlocksArray();
+    if (documentSnapshotsEquivalent(current, blocks, this.documentId)) {
+      return;
+    }
     this.dispatch({ type: 'syncSnapshot', blocks });
   }
 

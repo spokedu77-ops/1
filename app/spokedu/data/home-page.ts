@@ -69,7 +69,12 @@ function buildHomeCaseCard(slug: FieldRecordSlug): HomeCaseCard {
     href: card.href,
     ctaLabel: '자세히 보기',
     trackLabel: card.trackLabel,
-    mediaKey: item.slug === 'dongjak-spomove' ? 'homeHero' : card.mediaKey,
+    mediaKey:
+      item.slug === 'dongjak-spomove'
+        ? 'homeHero'
+        : item.slug === 'dasarang-oneday'
+          ? 'proofDasarang'
+          : card.mediaKey,
     blogImageIndex: card.blogImageIndex,
     thumbnailSrc: card.thumbnailSrc,
   };

@@ -102,7 +102,6 @@ type NoteEditorPanelProps = Pick<
 type NoteBlockCanvasProps = Pick<
   NotePageContextValue,
   | 'loadingBlocks'
-  | 'blocksSyncing'
   | 'blocksEmptyConfirmed'
   | 'loadSettledDocId'
   | 'selectedId'
@@ -121,7 +120,6 @@ type NoteBlockCanvasProps = Pick<
 
 const NoteBlockCanvas = memo(function NoteBlockCanvas({
   loadingBlocks,
-  blocksSyncing,
   blocksEmptyConfirmed,
   loadSettledDocId,
   selectedId,
@@ -140,20 +138,19 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
   const textDragActive = useNoteTextDragActive();
   const awaitingInitialLoad = Boolean(selectedId) && loadSettledDocId !== selectedId;
 
-  if (rootBlocks.length === 0 && (awaitingInitialLoad || loadingBlocks) && !blocksEmptyConfirmed) {
-    return <NoteBlockLoadSkeleton />;
-  }
+  const showSkeletonOverlay = rootBlocks.length === 0
+    && (awaitingInitialLoad || loadingBlocks)
+    && !blocksEmptyConfirmed;
+  const showBlockList = !showSkeletonOverlay;
 
   return (
     <div className="relative">
-      {blocksSyncing && (
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 z-10 h-0.5 overflow-hidden bg-neutral-100"
-          aria-hidden
-        >
-          <div className="h-full w-1/4 animate-pulse bg-blue-400/70" />
+      {showSkeletonOverlay && (
+        <div className="relative" role="status" aria-label="페이지 불러오는 중">
+          <NoteBlockLoadSkeleton />
         </div>
       )}
+      {showBlockList && (
     <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
       <OnBlockSelectContext.Provider value={handleBlockSelect}>
         <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
@@ -188,6 +185,7 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
         </SuppressGripMenuRefContext.Provider>
       </OnBlockSelectContext.Provider>
     </SelectedBlockIdsContext.Provider>
+      )}
     </div>
   );
 });
@@ -620,7 +618,6 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
 
           <NoteBlockCanvas
             loadingBlocks={loadingBlocks}
-            blocksSyncing={blocksSyncing}
             blocksEmptyConfirmed={blocksEmptyConfirmed}
             loadSettledDocId={loadSettledDocId}
             selectedId={selectedId}

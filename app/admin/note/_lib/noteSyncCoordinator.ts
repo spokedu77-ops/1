@@ -18,6 +18,8 @@ import {
   shouldTrustEmptyLocalWithOutbound,
   coalescePushItems,
   excludeBlocksPendingSoftDelete,
+  filterStalePendingSoftDeletes,
+  findOutboundOpsSupersededByServerRestore,
   persistOpToPushItems,
   serverSnapshotHasBlocksMissingFrom,
 } from './notePersistOpToBlockOps';
@@ -163,7 +165,14 @@ export class NoteSyncCoordinator {
     const lastSeq = await fetchSyncState(this.documentId);
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
-    const pendingDeletes = collectPendingSoftDeleteIds(outbound);
+    const pendingDeletes = filterStalePendingSoftDeletes(
+      serverBlocks,
+      collectPendingSoftDeleteIds(outbound),
+    );
+    const supersededOpIds = findOutboundOpsSupersededByServerRestore(outbound, serverBlocks);
+    if (supersededOpIds.length > 0) {
+      await removeOutboundOps(supersededOpIds);
+    }
     if (outbound.length > 0) {
       if (local && local.blocks.length > 0 && !serverSnapshotHasBlocksMissingFrom(local.blocks, serverBlocks)) {
         this.blocks = mergeServerBlocksIntoLocalSnapshot(

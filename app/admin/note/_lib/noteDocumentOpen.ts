@@ -9,6 +9,7 @@ import {
   rememberNoteDocumentBlocks,
 } from './noteDocumentBlocksCache';
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
+import { readLocalDocument } from './noteLocalDb';
 import type { NoteBlock } from './types';
 
 /** 문서 open 시 engine이 제공해야 하는 최소 API */
@@ -108,6 +109,46 @@ export async function applyOpenServerSnapshot(
   };
 }
 
+/**
+ * 문서 전환 직후 첫 paint 전에 세션 캐시를 동기 적용 (스켈레톤 깜빡임 방지).
+ * hook은 openNoteDocument와 함께만 호출 — merge/load 분기는 이 파일에만 둔다.
+ */
+export function prepareNoteDocumentOpenSync(
+  documentId: string,
+  engine: NoteDocumentOpenEngine,
+): { hasCache: boolean; emptyConfirmed: boolean } {
+  const remembered = readRememberedNoteDocumentBlocks(documentId);
+  if (remembered === null) {
+    return { hasCache: false, emptyConfirmed: false };
+  }
+  if (remembered.length > 0) {
+    paintInstantSnapshotFromCache(documentId, engine, 0);
+    return { hasCache: true, emptyConfirmed: false };
+  }
+  engine.replaceBlocks([]);
+  useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  return { hasCache: true, emptyConfirmed: true };
+}
+
+/** session 캐시가 없을 때 IDB 스냅샷을 network 전에 paint */
+export async function paintInstantSnapshotFromLocalDb(
+  documentId: string,
+  engine: NoteDocumentOpenEngine,
+): Promise<boolean> {
+  const currentForDoc = engine.getBlocks().filter((block) => block.document_id === documentId);
+  if (currentForDoc.length > 0) return false;
+
+  const local = await readLocalDocument(documentId);
+  if (!local || local.blocks.length === 0) return false;
+
+  const forDoc = local.blocks.filter((block) => block.document_id === documentId);
+  if (forDoc.length === 0) return false;
+
+  engine.replaceBlocks(forDoc);
+  useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  return true;
+}
+
 export type OpenNoteDocumentOptions = {
   documentId: string;
   engine: NoteDocumentOpenEngine;
@@ -117,8 +158,8 @@ export type OpenNoteDocumentOptions = {
 
 /**
  * 문서 open 단일 경로.
- * 1) fetch blocks/load 2) applyOpenServerSnapshot 1회
- * (SWR 캐시 즉시 paint는 서버 load 전 stale 토글·빈 껍데기를 유발하므로 사용하지 않음)
+ * 1) (동기) prepareNoteDocumentOpenSync — 세션 캐시 즉시 paint
+ * 2) fetch blocks/load 3) applyOpenServerSnapshot 1회
  */
 export async function openNoteDocument(
   options: OpenNoteDocumentOptions,
@@ -129,6 +170,10 @@ export async function openNoteDocument(
     bootstrapBlocks,
     prefetchedBlocks,
   } = options;
+
+  if (!bootstrapBlocks) {
+    await paintInstantSnapshotFromLocalDb(documentId, engine);
+  }
 
   const serverBlocks = await fetchServerBlocksForOpen(documentId, {
     bootstrapBlocks,

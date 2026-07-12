@@ -20,6 +20,9 @@ export function isEphemeralQaDocumentTitle(title) {
   if (trimmed === 'Smoke QA' || trimmed.startsWith('Smoke ')) return true;
   if (trimmed.startsWith('Typing QA ')) return true;
   if (trimmed.startsWith('Regression QA ')) return true;
+  if (trimmed.startsWith('Toggle KB QA ')) return true;
+  if (trimmed.startsWith('Toggle Zombie QA ')) return true;
+  if (trimmed.startsWith('dbg ')) return true;
   if (trimmed === '스모크 하위') return true;
   return false;
 }
