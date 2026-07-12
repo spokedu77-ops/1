@@ -1,155 +1,260 @@
 /**
- * 색 포즈 관문 — 브릿지 위 3레인 폭 문(게이트) + 포즈 패널
+ * 색 포즈 관문 — 브릿지 위 단색 벽 + 검정 포즈 실루엣.
  */
 
 import * as THREE from 'three';
 import type { FlowBridge } from './ObstacleManager';
 import { LANE_WIDTH, BRIDGE_LENGTH } from '../renderers/BridgeRenderer';
-import type { FlowModuleKey } from '../modules/flowModules';
 import {
-  GATE_COLOR_IDS,
-  buildColorGatePanelCanvas,
-  COLOR_GATE_ACTION_SEQUENCE,
+  GATE_COLORS,
+  buildColorGateSilhouetteCanvas,
   type GateColorId,
 } from '../modules/colorGateGuides';
 
-const GATE_SPAN_W     = LANE_WIDTH * 3;
-const GATE_H          = 210;
-const GATE_FRAME_D    = 10;
-const GATE_PANEL_D    = 4;
-const BRIDGE_DECK_Y   = 40;
-const GATE_LOCAL_Z    = -(BRIDGE_LENGTH * 0.22);
+const GATE_SPAN_W   = LANE_WIDTH * 3;
+const GATE_H        = 200;
+const SILHOUETTE_W  = 152;
+const SILHOUETTE_H  = 190;
+const BRIDGE_DECK_Y = 44;
+export const COLOR_GATE_LOCAL_Z = BRIDGE_LENGTH * 0.32;
+const GATE_LOCAL_Z  = COLOR_GATE_LOCAL_Z;
+const GATE_CENTER_Y = BRIDGE_DECK_Y + GATE_H / 2;
+
+const APPROACH_Z = -480;
+const PASS_Z     = 320;
+const PASS_NEAR_DISTANCE = 180;
+const PASS_EXIT_DISTANCE = 320;
+const SCALE_LERP = 8;
+const HUD_VISIBLE_DISTANCE = 2600;
 
 interface ColorGateEntity {
-  mesh: THREE.Group;
+  group: THREE.Group;
+  panel: THREE.Mesh;
+  silhouette: THREE.Mesh;
   bridgeRef: FlowBridge;
-}
-
-const textureCache = new Map<string, THREE.CanvasTexture>();
-
-function getPanelTexture(
-  action: FlowModuleKey,
-  gateColorId: GateColorId,
-  poseImage: HTMLImageElement | null,
-  lowRes: boolean,
-): THREE.CanvasTexture {
-  const key = `${action}:${gateColorId}:${lowRes ? 'lo' : 'hi'}`;
-  const cached = textureCache.get(key);
-  if (cached) return cached;
-
-  const canvas = buildColorGatePanelCanvas(gateColorId, action, poseImage, lowRes);
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.minFilter = THREE.LinearFilter;
-  tex.magFilter = THREE.LinearFilter;
-  tex.generateMipmaps = false;
-  tex.needsUpdate = true;
-  textureCache.set(key, tex);
-  return tex;
-}
-
-const panelMaterialCache = new Map<string, THREE.MeshBasicMaterial>();
-
-function getPanelMaterial(
-  action: FlowModuleKey,
-  gateColorId: GateColorId,
-  poseImage: HTMLImageElement | null,
-  lowRes: boolean,
-): THREE.MeshBasicMaterial {
-  const key = `${action}:${gateColorId}:${lowRes ? 'lo' : 'hi'}`;
-  const cached = panelMaterialCache.get(key);
-  if (cached) return cached;
-  const mat = new THREE.MeshBasicMaterial({
-    map: getPanelTexture(action, gateColorId, poseImage, lowRes),
-    toneMapped: false,
-  });
-  panelMaterialCache.set(key, mat);
-  return mat;
-}
-
-/** 초기화 시 4색 텍스처 선생성 — 브릿지 스폰 중 getImageData 렉 방지 */
-export function prewarmColorGateTextures(
-  poseImage: HTMLImageElement | null,
-  lowRes: boolean,
-): void {
-  const action = COLOR_GATE_ACTION_SEQUENCE[0] ?? 'reach';
-  for (const gateColorId of GATE_COLOR_IDS) {
-    getPanelMaterial(action, gateColorId, poseImage, lowRes);
-  }
-}
-
-export interface ColorGateAttachConfig {
   gateColorId: GateColorId;
-  action: FlowModuleKey;
+  scaleSmoothed: number;
+  wasNearPlayer: boolean;
+  prevAbsDist: number;
+  passed: boolean;
+}
+
+function targetScaleFromDelta(delta: number): number {
+  if (delta <= 0 && delta >= APPROACH_Z) {
+    const t = (delta - APPROACH_Z) / -APPROACH_Z;
+    const eased = t * t * (3 - 2 * t);
+    return 1 + eased * 0.12;
+  }
+  if (delta > 0 && delta < PASS_Z) {
+    const t = delta / PASS_Z;
+    const eased = t * t * (3 - 2 * t);
+    return 1.12 + eased * 0.28;
+  }
+  if (delta >= PASS_Z) return 1.4;
+  return 1;
+}
+
+function disposeMeshMaterial(mesh: THREE.Mesh): void {
+  const mat = mesh.material;
+  if (Array.isArray(mat)) {
+    for (const m of mat) m.dispose();
+  } else {
+    mat.dispose();
+  }
 }
 
 export class ColorGateManager {
   private gates: ColorGateEntity[] = [];
   private lowRes: boolean;
-  private poseImage: HTMLImageElement | null;
+  private poseImages: HTMLImageElement[] = [];
+  private silhouetteTextures: THREE.CanvasTexture[] = [];
+  private readonly _worldPos = new THREE.Vector3();
+  private lastNearestGate: ColorGateEntity | null = null;
 
-  constructor(lowRes = false, poseImage: HTMLImageElement | null = null) {
+  constructor(lowRes = false) {
     this.lowRes = lowRes;
-    this.poseImage = poseImage;
   }
 
-  attach(bridge: FlowBridge, bridgeX: number, config: ColorGateAttachConfig): void {
-    if (bridge.hasBox) return;
-    bridge.hasBox = true;
+  isReady(): boolean {
+    return this.silhouetteTextures.length > 0;
+  }
+
+  setPoseImage(img: HTMLImageElement | null): void {
+    this.setPoseImages(img ? [img] : []);
+  }
+
+  setPoseImages(images: HTMLImageElement[]): void {
+    this.poseImages = images;
+    this.clearTextureCache();
+    if (this.poseImages.length > 0) {
+      this.silhouetteTextures = this.poseImages.map((img) => this.buildSilhouetteTexture(img));
+    }
+    for (const gate of this.gates) {
+      this.swapSilhouetteMaterial(gate);
+    }
+  }
+
+  private clearTextureCache(): void {
+    for (const tex of this.silhouetteTextures) tex.dispose();
+    this.silhouetteTextures = [];
+  }
+
+  private buildSilhouetteTexture(poseImage: HTMLImageElement): THREE.CanvasTexture {
+    const canvas = buildColorGateSilhouetteCanvas(poseImage, this.lowRes);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  private makePanelMaterial(gateColorId: GateColorId): THREE.MeshBasicMaterial {
+    return new THREE.MeshBasicMaterial({
+      color: GATE_COLORS[gateColorId].hex,
+      toneMapped: false,
+      fog: false,
+      transparent: false,
+      depthWrite: true,
+      depthTest: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -4,
+    });
+  }
+
+  private makeSilhouetteMaterial(): THREE.MeshBasicMaterial {
+    const texture = this.silhouetteTextures.length > 0
+      ? this.silhouetteTextures[Math.floor(Math.random() * this.silhouetteTextures.length)]
+      : undefined;
+    return new THREE.MeshBasicMaterial({
+      map: texture,
+      color: 0xffffff,
+      toneMapped: false,
+      fog: false,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -3,
+      polygonOffsetUnits: -6,
+    });
+  }
+
+  private swapSilhouetteMaterial(gate: ColorGateEntity): void {
+    disposeMeshMaterial(gate.silhouette);
+    gate.silhouette.material = this.makeSilhouetteMaterial();
+  }
+
+  attach(
+    bridge: FlowBridge,
+    bridgeX: number,
+    gateColorId: GateColorId,
+  ): boolean {
+    if (bridge.hasColorGate) return false;
+    if (!this.isReady()) return false;
+    bridge.hasColorGate = true;
 
     const group = new THREE.Group();
-    group.position.set(-bridgeX, 0, GATE_LOCAL_Z);
+    group.position.set(-bridgeX, GATE_CENTER_Y, GATE_LOCAL_Z);
 
-    const frameMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      metalness: 0.55,
-      roughness: 0.35,
-    });
-    const postW = 14;
-    const postGeo = new THREE.BoxGeometry(postW, GATE_H, GATE_FRAME_D);
-    postGeo.userData['ownGeo'] = true;
-
-    const leftPost = new THREE.Mesh(postGeo, frameMat);
-    leftPost.position.set(-GATE_SPAN_W / 2 + postW / 2, BRIDGE_DECK_Y + GATE_H / 2, 0);
-    group.add(leftPost);
-
-    const rightPost = new THREE.Mesh(postGeo, frameMat);
-    rightPost.position.set(GATE_SPAN_W / 2 - postW / 2, BRIDGE_DECK_Y + GATE_H / 2, 0);
-    group.add(rightPost);
-
-    const beamGeo = new THREE.BoxGeometry(GATE_SPAN_W, 12, GATE_FRAME_D);
-    beamGeo.userData['ownGeo'] = true;
-    const topBeam = new THREE.Mesh(beamGeo, frameMat);
-    topBeam.position.set(0, BRIDGE_DECK_Y + GATE_H + 6, 0);
-    group.add(topBeam);
-
-    const panelW = GATE_SPAN_W - postW * 2 - 8;
-    const panelH = GATE_H - 16;
-    const panelMat = getPanelMaterial(
-      config.action,
-      config.gateColorId,
-      this.poseImage,
-      this.lowRes,
-    );
-    const panelGeo = new THREE.BoxGeometry(panelW, panelH, GATE_PANEL_D);
+    const panelGeo = new THREE.PlaneGeometry(GATE_SPAN_W, GATE_H);
     panelGeo.userData['ownGeo'] = true;
-    const panel = new THREE.Mesh(panelGeo, panelMat);
-    panel.position.set(0, BRIDGE_DECK_Y + GATE_H / 2, GATE_FRAME_D / 2 + 2);
-    panel.rotation.y = Math.PI;
+    const panel = new THREE.Mesh(panelGeo, this.makePanelMaterial(gateColorId));
+    panel.renderOrder = 4;
+    panel.frustumCulled = false;
     group.add(panel);
 
+    const silhouetteGeo = new THREE.PlaneGeometry(SILHOUETTE_W, SILHOUETTE_H);
+    silhouetteGeo.userData['ownGeo'] = true;
+    const silhouette = new THREE.Mesh(silhouetteGeo, this.makeSilhouetteMaterial());
+    silhouette.position.z = 1;
+    silhouette.renderOrder = 5;
+    silhouette.frustumCulled = false;
+    group.add(silhouette);
+
     bridge.mesh.add(group);
-    this.gates.push({ mesh: group, bridgeRef: bridge });
+
+    this.gates.push({
+      group,
+      panel,
+      silhouette,
+      bridgeRef: bridge,
+      gateColorId,
+      scaleSmoothed: 1,
+      wasNearPlayer: false,
+      prevAbsDist: Infinity,
+      passed: false,
+    });
+    return true;
+  }
+
+  update(
+    playerZ: number,
+    dt: number,
+    onHudColor?: (gateColorId: GateColorId | null) => void,
+    onGatePassed?: (gateColorId: GateColorId, bridge: FlowBridge) => void,
+  ): void {
+    const lerpK = Math.min(1, dt * SCALE_LERP);
+    let nearest: ColorGateEntity | null = null;
+    let nearestDist = Infinity;
+
+    for (const gate of this.gates) {
+      const gateZ = gate.panel.getWorldPosition(this._worldPos).z;
+      const delta = gateZ - playerZ;
+      const absDist = Math.abs(delta);
+
+      if (delta <= 0 && absDist < HUD_VISIBLE_DISTANCE && absDist < nearestDist) {
+        nearestDist = absDist;
+        nearest = gate;
+      }
+
+      const target = targetScaleFromDelta(delta);
+      gate.scaleSmoothed += (target - gate.scaleSmoothed) * lerpK;
+      gate.silhouette.scale.set(gate.scaleSmoothed, gate.scaleSmoothed, 1);
+
+      if (absDist < PASS_NEAR_DISTANCE) {
+        gate.wasNearPlayer = true;
+      }
+
+      if (
+        !gate.passed
+        && gate.wasNearPlayer
+        && absDist > PASS_EXIT_DISTANCE
+        && absDist > gate.prevAbsDist
+      ) {
+        gate.passed = true;
+        onGatePassed?.(gate.gateColorId, gate.bridgeRef);
+      }
+      gate.prevAbsDist = absDist;
+    }
+
+    if (nearest && onHudColor && nearest !== this.lastNearestGate) {
+      this.lastNearestGate = nearest;
+      onHudColor(nearest.gateColorId);
+    } else if (!nearest && this.lastNearestGate) {
+      this.lastNearestGate = null;
+      onHudColor?.(null);
+    }
   }
 
   clearAll(): void {
     for (const g of this.gates) {
-      g.mesh.parent?.remove(g.mesh);
-      g.mesh.traverse((obj) => {
-        const m = obj as THREE.Mesh;
-        if (m.geometry?.userData['ownGeo']) m.geometry.dispose();
-      });
+      g.bridgeRef.hasColorGate = false;
+      g.group.parent?.remove(g.group);
+      g.panel.geometry.dispose();
+      g.silhouette.geometry.dispose();
+      disposeMeshMaterial(g.panel);
+      disposeMeshMaterial(g.silhouette);
     }
     this.gates = [];
+    this.lastNearestGate = null;
+  }
+
+  dispose(): void {
+    this.clearAll();
+    this.clearTextureCache();
+    this.poseImages = [];
   }
 }

@@ -27,10 +27,11 @@ describe('SPOMAT shop UI contract', () => {
     expect(shop).not.toContain('5000');
   });
 
-  it('shop page uses canBuySpomatAtMemberPrice for premium check', () => {
+  it('shop page uses useMasterCanBuySpomat for premium check', () => {
     const shop = read('app/spokedu-master/shop/page.tsx');
 
-    expect(shop).toContain('canBuySpomatAtMemberPrice');
+    expect(shop).toContain('useMasterCanBuySpomat');
+    expect(shop).not.toContain('canBuySpomatAtMemberPrice');
     expect(shop).not.toContain("plan === 'premium'");
   });
 

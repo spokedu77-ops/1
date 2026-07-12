@@ -8,7 +8,7 @@ const FEATURES = [
     color: 'rgba(99,102,241,0.18)',
     ic: 'var(--spm-acc)',
     title: '라이브러리',
-    desc: '유아부터 초등까지, 실내외 환경에 맞는 100여 개 수업 자료가 즉시 사용 가능한 형태로 정리되어 있습니다. 태그와 검색으로 오늘 쓸 수업을 30초 안에 찾습니다.',
+    desc: '유아부터 초등까지, 실내외 환경에 맞는 수업 자료가 태그와 검색으로 정리되어 있습니다. 연령·환경·준비물 기준으로 오늘 쓸 수업을 빠르게 고를 수 있습니다.',
     items: ['연령·환경·준비물 필터', '즐겨찾기와 최근 사용', '수업 준비 키트 연결'],
   },
   {
@@ -31,13 +31,26 @@ const FEATURES = [
 
 const PRICING = [
   {
+    id: 'lite',
+    title: 'Lite',
+    badge: '수업 운영 기본',
+    price: MASTER_PRODUCT_CATALOG.lite.priceLabel.replace(/원$/, ''),
+    period: MASTER_PRODUCT_CATALOG.lite.billingCycleLabel,
+    desc: '라이브러리·수업 도구·기록·안내문까지 수업 운영의 기본',
+    includes: ['라이브러리 전체', '수업 도구 전체', '수업 기록·학생 명단', '안내문 작성·복사'],
+    accent: 'var(--spm-s2)',
+    border: 'var(--spm-br2)',
+    badgeColor: 'var(--spm-t3)',
+    recommended: false,
+  },
+  {
     id: 'premium',
     title: 'Premium',
     badge: '가장 인기',
     price: MASTER_PRODUCT_CATALOG.premium.priceLabel.replace(/원$/, ''),
     period: MASTER_PRODUCT_CATALOG.premium.billingCycleLabel,
     desc: '전문 강사가 매주 쓰는 수업 준비 환경',
-    includes: ['라이브러리 무제한', 'SPOMOVE 큰 화면 실행', '수업 도구 전체', '안내문 (학부모·기관·학교용)'],
+    includes: ['라이트의 모든 기능', 'SPOMOVE 큰 화면 실행', 'Pro 수업 상세 자료', 'SPOMAT 회원가 (연결 시)'],
     accent: 'rgba(99,102,241,0.18)',
     border: 'rgba(99,102,241,0.42)',
     badgeColor: 'var(--spm-acc)',
@@ -59,14 +72,14 @@ const PRICING = [
 ] as const;
 
 const STATS = [
-  { label: '수업 프로그램', value: '100+', Icon: BookOpen },
-  { label: 'SPOMOVE 공식 활동', value: '큰 화면', Icon: Zap },
-  { label: '연령 대상', value: '유아~중등', Icon: Users },
-  { label: '수업 공간', value: '실내 · 실외', Icon: MapPin },
+  { label: '수업 프로그램', value: '라이브러리', caption: '연령·환경별 수업 자료', Icon: BookOpen },
+  { label: 'SPOMOVE 공식 활동', value: '51+', caption: '큰 화면 반응 활동', Icon: Zap },
+  { label: '연령 대상', value: '유아~중등', caption: '현장 수업 기준', Icon: Users },
+  { label: '수업 공간', value: '실내 · 실외', caption: '환경별 자료 구분', Icon: MapPin },
 ];
 
 const FLOW = [
-  { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업 자료를 30초 안에 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
+  { num: '1', label: '라이브러리에서 수업 고르기', caption: '태그와 검색으로 오늘 쓸 수업 자료를 빠르게 찾습니다', color: 'rgba(99,102,241,0.14)', accent: 'var(--spm-acc)' },
   { num: '2', label: 'SPOMOVE 큰 화면 실행 (프리미엄)', caption: '프로젝터·TV에 연결해 아이들이 화면 신호를 보고 움직입니다', color: 'rgba(16,185,129,0.12)', accent: 'var(--spm-grn)' },
   { num: '3', label: '수업 도구 활용', caption: '타이머, 팀 나누기, 학생 뽑기를 수업 중에 바로 씁니다', color: 'rgba(245,158,11,0.12)', accent: 'var(--spm-amb)' },
 ] as const;
@@ -171,11 +184,12 @@ export default function LandingPage() {
       {/* Stats strip */}
       <section className="border-y px-[22px] py-8 sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
         <div className="mx-auto grid max-w-[960px] grid-cols-2 gap-6 sm:grid-cols-4">
-          {STATS.map(({ label, value, Icon }) => (
+          {STATS.map(({ label, value, caption, Icon }) => (
             <div key={label} className="text-center">
               <Icon size={20} color="var(--spm-acc)" className="mx-auto mb-2" />
               <p className="text-[24px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{value}</p>
               <p className="mt-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{label}</p>
+              <p className="mt-1 text-[10px] font-medium" style={{ color: 'var(--spm-t3)' }}>{caption}</p>
             </div>
           ))}
         </div>
@@ -226,11 +240,11 @@ export default function LandingPage() {
 
       {/* Pricing */}
       <section id="pricing" className="border-t px-[22px] py-[80px] sm:px-10" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s2)' }}>
-        <div className="mx-auto max-w-[760px]">
+        <div className="mx-auto max-w-[960px]">
           <p className="mb-2 text-center text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--spm-acc)' }}>플랜과 가격</p>
           <h2 className="mb-4 text-center text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 품질에 맞는 플랜</h2>
-          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>프리미엄 월 자동결제 · 라이트는 결제 화면에서 선택</p>
-          <div className="grid gap-5 md:grid-cols-2">
+          <p className="mb-12 text-center text-[14px] font-medium" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제 · 센터는 별도 문의</p>
+          <div className="grid gap-5 lg:grid-cols-3">
             {PRICING.map((p) => (
               <div key={p.id} className="rounded-[22px] p-6" style={{ background: p.accent, border: `1.5px solid ${p.border}` }}>
                 {p.recommended ? (
@@ -241,8 +255,10 @@ export default function LandingPage() {
                 <div className="flex items-end justify-between">
                   <h3 className="text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>{p.title}</h3>
                   <div className="text-right">
-                    <span className="text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>{p.price}원</span>
-                    <span className="ml-1 text-[12px]" style={{ color: 'var(--spm-t3)' }}>/{p.period}</span>
+                    <span className="text-[24px] font-black" style={{ color: 'var(--spm-t)' }}>
+                      {p.id === 'center' ? p.price : `${p.price}원`}
+                    </span>
+                    {p.id !== 'center' ? <span className="ml-1 text-[12px]" style={{ color: 'var(--spm-t3)' }}>/{p.period}</span> : null}
                   </div>
                 </div>
                 <p className="mt-2 text-[13px] font-medium" style={{ color: 'var(--spm-t2)' }}>{p.desc}</p>
@@ -253,8 +269,8 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={p.id === 'center' ? MASTER_CENTER_INQUIRY_HREF : '/spokedu-master/payment'} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : 'rgba(16,185,129,0.8)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
-                  {p.id === 'center' ? 'Center 도입 상담' : `${p.title} 플랜 보기`}
+                <Link href={p.id === 'center' ? MASTER_CENTER_INQUIRY_HREF : `/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : p.id === 'lite' ? '?plan=lite' : ''}`} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : p.id === 'center' ? 'rgba(16,185,129,0.8)' : 'var(--spm-t)', boxShadow: p.recommended ? '0 8px 24px rgba(99,102,241,0.32)' : 'none' }}>
+                  {p.id === 'center' ? 'Center 도입 상담' : `${p.title} 시작하기`}
                 </Link>
               </div>
             ))}

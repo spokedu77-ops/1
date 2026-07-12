@@ -4,7 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { RetryQueueItem } from '../lib/serviceContracts';
-import { hasPremiumMasterAccess } from '../lib/subscription';
+import { useHasPremiumEntitlement } from '../access/MasterAccessProvider';
 import {
   claimPendingLegacyFavorites,
   getFavoritesByOwner,
@@ -53,6 +53,7 @@ interface MasterState {
   setProfile: (profile: Partial<UserProfile>) => void;
   resetProfile: () => void;
   syncSubscription: () => Promise<boolean>;
+  syncMasterProfile: () => Promise<boolean>;
   localWorkspaceOwnerId: string | null;
   clearLocalWorkspace: () => void;
   clearCurrentOwnerLocalData: () => void;
@@ -454,6 +455,40 @@ export const useMasterStore = create<MasterState>()(
           return false;
         }
       },
+      syncMasterProfile: async () => {
+        try {
+          const res = await fetch('/api/spokedu-master/profile', { cache: 'no-store' });
+          if (!res.ok) return false;
+          const json = await res.json() as {
+            data?: {
+              name: string;
+              school: string;
+              role: 'teacher' | 'director';
+              ageGroups: string[];
+              programTypes: string[];
+              onboardingDone: boolean;
+            } | null;
+          };
+          if (!json.data) return true;
+          const data = json.data;
+          set((state) => ({
+            profile: state.profile
+              ? {
+                  ...state.profile,
+                  name: data.name,
+                  school: data.school,
+                  role: data.role,
+                  ageGroups: data.ageGroups,
+                  programTypes: data.programTypes,
+                  onboardingDone: data.onboardingDone,
+                }
+              : state.profile,
+          }));
+          return true;
+        } catch {
+          return false;
+        }
+      },
       operational: defaultOperational,
       setOnline: (online) => set((state) => ({ operational: { ...state.operational, online } })),
       enqueueRetry: (item) => set((state) => state.localWorkspaceOwnerId ? ({ operational: { ...state.operational, retryQueue: [item, ...state.operational.retryQueue.filter((queued) => queued.id !== item.id)].slice(0, 30) } }) : {}),
@@ -574,7 +609,8 @@ export const useMasterStore = create<MasterState>()(
 
 export const useProfile = () => useMasterStore((state) => state.profile);
 export const useOperationalStatus = () => useMasterStore((state) => state.operational);
-export const useIsPremium = () => useMasterStore((state) => hasPremiumMasterAccess(state.profile));
+export const useIsPremium = () => useHasPremiumEntitlement();
+
 export const useUnreadCount = () => useMasterStore((state) => state.notifications.filter((notification) => !notification.read).length);
 export const useClassTimerState = () =>
   useMasterStore(

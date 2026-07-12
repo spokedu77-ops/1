@@ -45,15 +45,12 @@ export interface FlowStagePreview {
   color: string;
 }
 
-const COLOR_GATE_DURATION_CAP = 22;
-
 function buildColorGateStages(
   startIndex: number,
   startNum: number,
   durationSec: number,
 ): FlowStageConfig[] {
   const gateMod = FLOW_MODULES.colorGate;
-  const dur = Math.min(durationSec, COLOR_GATE_DURATION_CAP);
   const total = COLOR_GATE_ACTION_SEQUENCE.length;
 
   return COLOR_GATE_ACTION_SEQUENCE.map((actionKey, j) => {
@@ -63,7 +60,7 @@ function buildColorGateStages(
       stageIndex: startIndex + j,
       stageNum: startNum + j,
       label: isPoseOnly ? 'GATE' : `GATE ${j + 1}`,
-      durationSec: dur,
+      durationSec,
       activeModules: new Set<FlowModuleKey>(['jump', actionKey, 'colorGate']),
       newModule: actionKey,
       isBonus: false,

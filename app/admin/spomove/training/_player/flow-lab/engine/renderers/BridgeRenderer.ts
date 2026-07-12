@@ -36,16 +36,28 @@ const BASE_NEON_Y      = TRACK_SEG_Y - 8; // 브릿지 하부 분위기 베이�
 
 // ─── 타입 ────────────────────────────────────────────────────────────────────
 
+const ENHANCED_DECK_W  = LANE_WIDTH - 5;
+const ENHANCED_RAIL_X  = ENHANCED_DECK_W / 2 - 3;
+const ENHANCED_BEAM_W  = 4;
+const ENHANCED_BEAM_X  = ENHANCED_DECK_W / 2 - ENHANCED_BEAM_W / 2;
+const END_PLATE_DEPTH  = 90;
+const END_PLATE_Z      = BRIDGE_LENGTH / 2 - END_PLATE_DEPTH / 2;
+
 export interface BridgeCreateInput {
   lane: 0 | 1 | 2;
   x:    number;
   z:    number;
+  colorGateDeck?: {
+    gateLocalZ: number;
+    color: number;
+  };
 }
 
 export interface BridgeVisual {
-  mesh:     THREE.Group;
-  padMesh:  THREE.Mesh;
-  padDepth: number;
+  mesh:               THREE.Group;
+  padMesh:            THREE.Mesh;
+  padDepth:           number;
+  colorGateDeckMesh?: THREE.Mesh;
 }
 
 // ─── BridgeRenderer ──────────────────────────────────────────────────────────
@@ -100,6 +112,31 @@ export class BridgeRenderer {
       // cyan 베이스라인 — 분위기 네온
       this.baseCyanMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22d3ee, emissiveIntensity: 1.4, roughness: 1, metalness: 0, toneMapped: false });
     }
+  }
+
+  private addColorGateDeck(
+    group: THREE.Group,
+    gateLocalZ: number,
+    color: number,
+    width: number,
+    y: number,
+  ): THREE.Mesh | undefined {
+    const startZ = -BRIDGE_LENGTH / 2;
+    const endZ = Math.min(gateLocalZ - 8, BRIDGE_LENGTH / 2);
+    const depth = endZ - startZ;
+    if (depth <= 1) return undefined;
+
+    const mat = new THREE.MeshBasicMaterial({ color, toneMapped: false, fog: false });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 2, depth), mat);
+    mesh.position.set(0, y, startZ + depth / 2);
+    mesh.visible = false;
+    mesh.renderOrder = 2;
+    mesh.frustumCulled = false;
+    mesh.userData['ownGeo'] = true;
+    mesh.userData['ownMat'] = true;
+    mesh.userData['colorGateDeck'] = true;
+    group.add(mesh);
+    return mesh;
   }
 
   createBridge(input: BridgeCreateInput): BridgeVisual {
@@ -184,9 +221,9 @@ export class BridgeRenderer {
 
       // 시작/끝 발판
       for (const side of [1, -1] as const) {
-        const pg = new THREE.BoxGeometry(LANE_WIDTH, 16, 100);
+        const pg = new THREE.BoxGeometry(ENHANCED_DECK_W, 16, END_PLATE_DEPTH);
         const pm = new THREE.Mesh(pg, bMat);
-        pm.position.set(0, TRACK_SEG_Y, side * (BRIDGE_LENGTH / 2 + 50));
+        pm.position.set(0, TRACK_SEG_Y, side * END_PLATE_Z);
         pm.userData['ownGeo'] = true;
         g.add(pm);
       }
@@ -200,9 +237,19 @@ export class BridgeRenderer {
       pad.visible = false;
       g.add(pad);
 
+      const colorGateDeckMesh = input.colorGateDeck
+        ? this.addColorGateDeck(
+          g,
+          input.colorGateDeck.gateLocalZ,
+          input.colorGateDeck.color,
+          ENHANCED_DECK_W,
+          DECK_SURFACE_Y + 0.8,
+        )
+        : undefined;
+
       g.position.set(x, 0, z);
       this.scene.add(g);
-      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH };
+      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH, colorGateDeckMesh };
     }
 
     // ── enhanced BoxGeometry (GLB 없을 때 폴백) ──────────────────────────────
@@ -211,7 +258,7 @@ export class BridgeRenderer {
 
       // 상판 (SF 네이비)
       const base = new THREE.Mesh(
-        new THREE.BoxGeometry(LANE_WIDTH - 5, 8, BRIDGE_LENGTH),
+        new THREE.BoxGeometry(ENHANCED_DECK_W, 8, BRIDGE_LENGTH),
         this.bodyMat,
       );
       base.position.y = 40;
@@ -219,10 +266,10 @@ export class BridgeRenderer {
 
       // 좌우 레인 색 네온 레일
       const leftRail = new THREE.Mesh(new THREE.BoxGeometry(3, 4, BRIDGE_LENGTH), neonMat);
-      leftRail.position.set(-37, 45, 0);
+      leftRail.position.set(-ENHANCED_RAIL_X, 45, 0);
       g.add(leftRail);
       const rightRail = new THREE.Mesh(new THREE.BoxGeometry(3, 4, BRIDGE_LENGTH), neonMat);
-      rightRail.position.set(37, 45, 0);
+      rightRail.position.set(ENHANCED_RAIL_X, 45, 0);
       g.add(rightRail);
 
       // cyan 베이스라인 — 상판 하부 분위기 네온
@@ -235,14 +282,14 @@ export class BridgeRenderer {
 
       // 좌우 구조 빔
       const leftBeam = new THREE.Mesh(
-        new THREE.BoxGeometry(7, 26, BRIDGE_LENGTH + PAD_DEPTH), this.sideMat,
+        new THREE.BoxGeometry(ENHANCED_BEAM_W, 26, BRIDGE_LENGTH), this.sideMat,
       );
-      leftBeam.position.set(-40, 28, -PAD_DEPTH / 2);
+      leftBeam.position.set(-ENHANCED_BEAM_X, 28, 0);
       g.add(leftBeam);
       const rightBeam = new THREE.Mesh(
-        new THREE.BoxGeometry(7, 26, BRIDGE_LENGTH + PAD_DEPTH), this.sideMat,
+        new THREE.BoxGeometry(ENHANCED_BEAM_W, 26, BRIDGE_LENGTH), this.sideMat,
       );
-      rightBeam.position.set(40, 28, -PAD_DEPTH / 2);
+      rightBeam.position.set(ENHANCED_BEAM_X, 28, 0);
       g.add(rightBeam);
 
       // 점프 패드 (판정 전용)
@@ -290,15 +337,25 @@ export class BridgeRenderer {
 
       // 시작/끝 발판
       for (const side of [1, -1] as const) {
-        const pg = new THREE.BoxGeometry(LANE_WIDTH - 5, 16, 100);
+        const pg = new THREE.BoxGeometry(ENHANCED_DECK_W, 16, END_PLATE_DEPTH);
         const pm = new THREE.Mesh(pg, this.bodyMat);
-        pm.position.set(0, 36, side * (BRIDGE_LENGTH / 2 + 50));
+        pm.position.set(0, 36, side * END_PLATE_Z);
         g.add(pm);
       }
 
+      const colorGateDeckMesh = input.colorGateDeck
+        ? this.addColorGateDeck(
+          g,
+          input.colorGateDeck.gateLocalZ,
+          input.colorGateDeck.color,
+          ENHANCED_DECK_W,
+          45.8,
+        )
+        : undefined;
+
       g.position.set(x, 0, z);
       this.scene.add(g);
-      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH };
+      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH, colorGateDeckMesh };
     }
 
     // ── legacy 브릿지 (원본 동일) ────────────────────────────────────────────
@@ -317,17 +374,33 @@ export class BridgeRenderer {
     legacyPad.position.set(0, 44, -(BRIDGE_LENGTH / 2 + PAD_DEPTH / 2));
     g.add(legacyPad);
 
-    const sideGeo  = new THREE.BoxGeometry(6, 25, BRIDGE_LENGTH + PAD_DEPTH);
+    const sideGeo  = new THREE.BoxGeometry(6, 25, BRIDGE_LENGTH);
     const sMat     = new THREE.MeshPhongMaterial({ color: 0x222222, emissive: 0x111111 });
     const leftB    = new THREE.Mesh(sideGeo, sMat);
     const rightB   = new THREE.Mesh(sideGeo, sMat);
-    leftB.position.set(-(LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
-    rightB.position.set( (LANE_WIDTH / 2 - 4), 30, -PAD_DEPTH / 2);
+    leftB.position.set(-(LANE_WIDTH / 2 - 4), 30, 0);
+    rightB.position.set( (LANE_WIDTH / 2 - 4), 30, 0);
     g.add(leftB, rightB);
+
+    const colorGateDeckMesh = input.colorGateDeck
+      ? this.addColorGateDeck(
+        g,
+        input.colorGateDeck.gateLocalZ,
+        input.colorGateDeck.color,
+        LANE_WIDTH - 5,
+        45.2,
+      )
+      : undefined;
 
     g.position.set(x, 0, z);
     this.scene.add(g);
-    return { mesh: g, padMesh: legacyPad, padDepth: PAD_DEPTH };
+    return { mesh: g, padMesh: legacyPad, padDepth: PAD_DEPTH, colorGateDeckMesh };
+  }
+
+  revealColorGateDeck(visual: BridgeVisual): void {
+    if (visual.colorGateDeckMesh) {
+      visual.colorGateDeckMesh.visible = true;
+    }
   }
 
   removeBridge(visual: BridgeVisual): void {
@@ -341,12 +414,16 @@ export class BridgeRenderer {
         if (m.geometry && (m.userData['ownGeo'] as boolean)) {
           m.geometry.dispose();
         }
+        if (m.material && (m.userData['ownMat'] as boolean)) {
+          (Array.isArray(m.material) ? m.material : [m.material])
+            .forEach((mat) => (mat as THREE.Material).dispose());
+        }
       });
     } else {
       mesh.traverse((obj) => {
         const m = obj as THREE.Mesh;
         if (m.geometry) m.geometry.dispose();
-        if (!this.enhanced && m.material) {
+        if (m.material && (!this.enhanced || (m.userData['ownMat'] as boolean))) {
           (Array.isArray(m.material) ? m.material : [m.material])
             .forEach((mat) => (mat as THREE.Material).dispose());
         }

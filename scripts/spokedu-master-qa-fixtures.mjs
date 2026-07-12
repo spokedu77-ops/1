@@ -74,13 +74,14 @@ function planForFixtures(now = new Date()) {
       key: 'pro',
       email: env.SPM_QA_PRO_EMAIL || DEFAULT_EMAILS.pro,
       subscription: {
-        plan: 'pro',
+        plan: 'premium',
+        plan_id: 'premium',
         status: 'active',
         pg_provider: 'manual_qa',
         period_start: iso(now),
         period_end: iso(new Date(now.getTime() + 30 * DAY_MS)),
       },
-      expected: 'subscription=pro active, programs/drills=200, create-checkout=409',
+      expected: 'subscription=premium active, programs/drills=200, create-checkout=409',
     },
     {
       key: 'team',
@@ -98,7 +99,8 @@ function planForFixtures(now = new Date()) {
       key: 'expired',
       email: env.SPM_QA_EXPIRED_EMAIL || DEFAULT_EMAILS.expired,
       subscription: {
-        plan: 'pro',
+        plan: 'premium',
+        plan_id: 'premium',
         status: 'active',
         pg_provider: 'manual_qa',
         period_start: iso(new Date(now.getTime() - 60 * DAY_MS)),
@@ -270,6 +272,10 @@ async function applyFixtures(supabase, fixtures, existingByEmail) {
       toss_payment_key: null,
       toss_order_id: null,
     };
+    if (fixture.key === 'team') {
+      console.log(`SKIP subscription upsert for team legacy plan: ${fixture.email}`);
+      continue;
+    }
     const { error } = await supabase
       .from('spokedu_master_subscriptions')
       .upsert(row, { onConflict: 'user_id' });

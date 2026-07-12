@@ -9,7 +9,12 @@ import { useSearchParams } from 'next/navigation';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { classRecordToCreateInput, toClassRecord, toStudentProfile } from '../lib/operationalDataAdapter';
-import { canCreateClassRecord, getUpgradeHref, getUpgradeLabel } from '../lib/subscription';
+import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
+import {
+  canCreateClassRecordFromSnapshot,
+  getUpgradeHrefFromSnapshot,
+  getUpgradeLabelFromSnapshot,
+} from '../lib/masterAccessModel';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
@@ -272,9 +277,10 @@ function RecordEntryView() {
   const focusCount = selectedStudents.filter((student) => focused[student.id]).length;
   const recordedSkills = selectedStudents.reduce((sum, student) => sum + (checkedSkills[student.id]?.length ?? 0), 0);
   const progress = useMemo(() => Math.round(((present + absent) / Math.max(selectedStudentCount, 1)) * 100), [absent, present, selectedStudentCount]);
-  const recordStatus = canCreateClassRecord(profile);
-  const upgradeHref = getUpgradeHref(profile);
-  const upgradeLabel = getUpgradeLabel(profile);
+  const accessSnapshot = useMasterAccessSnapshot();
+  const recordStatus = canCreateClassRecordFromSnapshot(accessSnapshot);
+  const upgradeHref = getUpgradeHrefFromSnapshot(accessSnapshot);
+  const upgradeLabel = getUpgradeLabelFromSnapshot(accessSnapshot);
   const hasStudents = students.length > 0;
   const hasAttendance = present + absent > 0;
   const canSaveRecord = recordStatus.allowed && hasStudents && selectedStudentCount > 0 && hasAttendance && Boolean(recordDate.trim()) && Boolean(program);

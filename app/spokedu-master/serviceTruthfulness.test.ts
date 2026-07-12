@@ -16,7 +16,11 @@ describe('SPOKEDU MASTER service truthfulness contracts', () => {
     expect(onboarding).toContain('centerId: null');
     expect(onboarding).toContain('centerName: null');
     expect(onboarding).toContain('onboardingDone: true');
+    expect(onboarding).toContain('/api/spokedu-master/profile');
     expect(onboarding).not.toContain('Date.now() + 14 * 24 * 60 * 60 * 1000');
+
+    const profilePage = read('app/spokedu-master/profile/page.tsx');
+    expect(profilePage).toContain('/api/spokedu-master/profile');
   });
 
   it('does not present local timestamp changes or deletion as synchronization', () => {
@@ -38,7 +42,7 @@ describe('SPOKEDU MASTER service truthfulness contracts', () => {
 
     expect(shop).toContain('SPOMAT');
     expect(shop).toContain('SPOMAT_PRODUCT_CONTRACT');
-    expect(shop).toContain('canBuySpomatAtMemberPrice');
+    expect(shop).toContain('useMasterCanBuySpomat');
     expect(shop).toContain('/api/spokedu-master/shop/spomat/purchase');
     expect(shop).toContain('SPOMAT_BULK_INQUIRY_HREF');
     expect(shop).not.toContain('createOrderRequest');

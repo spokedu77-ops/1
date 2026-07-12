@@ -1,8 +1,7 @@
 'use client';
 
 import { Package, ShoppingBag } from 'lucide-react';
-import { useProfile } from '../store';
-import { canBuySpomatAtMemberPrice } from '../lib/subscription';
+import { useMasterCanBuySpomat } from '../access/MasterAccessProvider';
 import { SPOMAT_PRODUCT_CONTRACT } from '../lib/productCatalog';
 import { SPOMAT_BULK_INQUIRY_HREF } from '../lib/businessInfo';
 
@@ -18,8 +17,7 @@ const SPOMAT_SPECS = [
 const PURCHASE_HREF = '/api/spokedu-master/shop/spomat/purchase';
 
 export default function SpokeduMasterShopPage() {
-  const profile = useProfile();
-  const isPremiumMember = canBuySpomatAtMemberPrice(profile);
+  const isPremiumMember = useMasterCanBuySpomat();
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>

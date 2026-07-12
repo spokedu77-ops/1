@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useMasterCanUseRecords } from '../access/MasterAccessProvider';
 import { toMasterClientError, toNetworkMasterClientError, type MasterClientError } from '../lib/clientErrors';
 import { useProfile } from '../store';
 import type {
@@ -9,6 +10,7 @@ import type {
   MasterClassRecordDto,
   MasterStudentDto,
   UpdateClassRecordInput,
+  UpdateStudentInput,
 } from '../types/operational';
 
 export type OperationalDataStatus = 'error' | 'idle' | 'loading' | 'ready';
@@ -17,6 +19,7 @@ type OperationalDataContextValue = {
   classRecords: MasterClassRecordDto[];
   createStudent: (input: CreateStudentInput) => Promise<MasterStudentDto>;
   deleteStudent: (studentId: string) => Promise<void>;
+  updateStudent: (studentId: string, input: UpdateStudentInput) => Promise<MasterStudentDto>;
   error: string | null;
   ownerId: string | null;
   reload: () => Promise<void>;
@@ -84,6 +87,7 @@ async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
 
 export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const profile = useProfile();
+  const canUseRecords = useMasterCanUseRecords();
   const ownerId = getProfileOwnerId(profile);
   const activeOwnerRef = useRef<string | null>(null);
   const [status, setStatus] = useState<OperationalDataStatus>('idle');
@@ -97,7 +101,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const reload = useCallback(async () => {
-    if (!ownerId) {
+    if (!ownerId || !canUseRecords) {
       activeOwnerRef.current = null;
       clearData();
       setError(null);
@@ -125,7 +129,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       setError(getProviderErrorMessage(caught));
       setStatus('error');
     }
-  }, [clearData, ownerId]);
+  }, [canUseRecords, clearData, ownerId]);
 
   useEffect(() => {
     void reload();
@@ -143,6 +147,15 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   const deleteStudent = useCallback(async (studentId: string) => {
     await requestJson<{ ok: true }>(`/api/spokedu-master/students/${studentId}`, { method: 'DELETE' });
     setStudents((current) => current.filter((student) => student.id !== studentId));
+  }, []);
+
+  const updateStudent = useCallback(async (studentId: string, input: UpdateStudentInput) => {
+    const json = await requestJson<{ data: MasterStudentDto }>(`/api/spokedu-master/students/${studentId}`, {
+      body: JSON.stringify(input),
+      method: 'PATCH',
+    });
+    setStudents((current) => current.map((student) => (student.id === studentId ? json.data : student)));
+    return json.data;
   }, []);
 
   const saveClassRecord = useCallback(async (input: CreateClassRecordInput) => {
@@ -171,6 +184,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       classRecords,
       createStudent,
       deleteStudent,
+      updateStudent,
       error,
       ownerId,
       reload,
@@ -179,7 +193,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
       students,
       updateClassRecord,
     }),
-    [classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, status, students, updateClassRecord],
+    [classRecords, createStudent, deleteStudent, error, ownerId, reload, saveClassRecord, status, students, updateClassRecord, updateStudent],
   );
 
   return <OperationalDataContext.Provider value={value}>{children}</OperationalDataContext.Provider>;

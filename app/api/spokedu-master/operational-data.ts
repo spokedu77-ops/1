@@ -262,6 +262,14 @@ export function studentInsertPayload(input: NormalizedStudentInput, ownerId: str
   };
 }
 
+export function studentUpdatePayload(input: NormalizedStudentInput) {
+  return {
+    name: input.name,
+    group_name: input.group,
+    meta: input.meta,
+  };
+}
+
 export function classRecordInsertPayload(input: NormalizedClassRecordInput, ownerId: string) {
   return {
     owner_id: ownerId,

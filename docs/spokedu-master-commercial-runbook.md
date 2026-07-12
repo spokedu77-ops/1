@@ -14,6 +14,7 @@ This runbook is the release checklist for SPOKEDU MASTER. It documents the curre
    - `SPM_STAGING_WRITE_GUARD=ALLOW_STAGING_WRITES`
    - approved staging Supabase project ref
 2. Apply staging migrations before production migrations.
+   - `spokedu_master_profiles`
    - `spokedu_master_replace_class_record`
    - `spokedu_master_delete_operational_data`
    - `spokedu_master_apply_payment`
@@ -49,6 +50,71 @@ This runbook is the release checklist for SPOKEDU MASTER. It documents the curre
 ## Payment
 
 Use Toss sandbox and staging DB for release verification. Never use production Toss keys or production DB for this checklist.
+
+### Staging payment E2E (Lite / Premium)
+
+Run against a disposable QA account with Toss **test** keys only.
+
+**Without Toss payment (do this first):**
+
+1. API + page preflight:
+   - `npm run qa:spokedu-master:staging-payment -- http://localhost:3000`
+2. Mock activation UI (no Toss, no DB charge):
+   - `npm run qa:spokedu-master:payment-no-toss -- http://localhost:3000`
+   - Mocks `billing/issue` + delayed `access`, verifies success screen and library navigation.
+3. Mocked commercial smoke (full payment activation regression):
+   - `SPOKEDU_MASTER_QA_BYPASS_AUTH=1 npm run qa:spokedu-master -- --flow=payment`
+   - Uses real QA login by default; set `SPOKEDU_MASTER_QA_USE_MOCK_AUTH=1` only for isolated mock-auth runs.
+4. Profile/onboarding persist (no payment):
+   - `npm run qa:spokedu-master:profile-persist -- http://localhost:3000`
+   - PATCH profile in session A, fresh login in session B, confirm `onboardingDone` via profile + access APIs.
+5. Ops readiness (no payment):
+   - `npm run qa:spokedu-master:ops-readiness -- http://localhost:3000`
+   - Webhook/client-error/billing-renew guards, payment tables, read-only payment reconcile.
+   - Optional monitoring delivery probe: add `--send-monitoring-probe` when `SPOKEDU_MONITORING_WEBHOOK_URL` is configured.
+6. Library content readiness (no payment):
+   - `npm run qa:spokedu-master:library-content -- http://localhost:3000`
+   - Audits live `/api/spokedu-master/programs` quality tiers and weekly HOT slot eligibility.
+   - Dedicated `[안전 포인트]` sections are advisory warnings only, not READY blockers.
+7. Consolidated no-payment gate:
+   - `npm run qa:spokedu-master:verification-report -- http://localhost:3000`
+   - Runs steps 1–6 above plus production-prep advisory and writes `commercial-verification/commercial-verification-report.json`.
+
+## Payment deferred
+
+When Toss sandbox real payment is intentionally deferred, treat the no-payment gate as complete once `verification-report` passes. Continue with production-prep and release checklist items that do not require a charge.
+
+1. Production env advisory (no payment):
+   - `npm run qa:spokedu-master:production-prep`
+   - Local mode reports missing `CRON_SECRET`, monitoring webhook, and restore DB URL as warnings.
+   - Re-run with `--production` before enabling live Toss keys.
+2. Production manual checklist:
+   - `docs/spokedu-master-release-checklist.md`
+   - Backup/restore rehearsal: `docs/spokedu-master-backup-restore-runbook.md`
+3. Release automated bundle (no payment):
+   - `npm run qa:spokedu-master:release-automated -- http://localhost:3000`
+   - Runs `verification-report` plus operational commercial smoke (excludes payment activation).
+   - Writes `commercial-verification/release-automated-report.json`.
+4. Production cron (before live billing renew):
+   - Set `CRON_SECRET` in Vercel/host env.
+   - Schedule daily `POST /api/spokedu-master/payment/billing/renew` with `Authorization: Bearer <CRON_SECRET>`.
+5. When ready for payment verification later:
+   - Toss sandbox once per environment
+   - `GET /api/spokedu-master/access`, subscription row, webhook event, reconcile
+
+**With Toss sandbox (after the above pass):**
+
+1. Manual Toss sandbox (required once per environment):
+   - Open `/spokedu-master/payment?plan=lite` (or `premium`).
+   - Complete Toss test billing auth and land on `/spokedu-master/payment/success`.
+   - Confirm dashboard CTA and `/spokedu-master/library` entry without entitlement wall.
+3. Optional API replay (same session, after manual auth):
+   - Set `SPOKEDU_MASTER_PAYMENT_E2E_PLAN`, `SPOKEDU_MASTER_PAYMENT_E2E_AUTH_KEY`, `SPOKEDU_MASTER_PAYMENT_E2E_CUSTOMER_KEY` from the success URL.
+   - `node scripts/spokedu-master-staging-payment-e2e.mjs <base-url> --complete-billing`
+4. Post-check:
+   - `GET /api/spokedu-master/access` → `allowed: true`, matching `plan`, `canUseLibrary: true`, `onboardingDone: true`
+   - `spokedu_master_subscriptions` row active for QA `user_id`
+   - `spokedu_master_payment_orders` row exists for the order
 
 - Successful payment but entitlement missing:
   1. Check order status.

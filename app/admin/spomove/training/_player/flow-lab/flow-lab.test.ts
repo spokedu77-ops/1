@@ -41,6 +41,11 @@ import {
 import { FLOW_MODULES as LAB_FLOW_MODULES } from './engine/modules/flowModules';
 import { generateObstacleSchedule as labGenerateObstacleSchedule } from './engine/modules/flowObstacleSchedule';
 import type { FlowModuleKey as LabFlowModuleKey } from './engine/modules/flowModules';
+import {
+  PLAYABLE_GATE_COLOR_IDS,
+  laneForGateColor,
+  shouldSpawnColorGateOnBridgeAttempt,
+} from './engine/modules/colorGateGuides';
 
 // ── 공통 헬퍼 ─────────────────────────────────────────────────────────────────
 
@@ -130,6 +135,12 @@ describe('buildStages 동일성', () => {
     expect(stages[0]!.colorGateTotal).toBe(1);
   });
 
+  test('colorGate 단독 — 지정한 진행 시간을 그대로 사용', () => {
+    const stages = labBuildStages(['colorGate'], 60);
+    expect(stages).toHaveLength(1);
+    expect(stages[0]!.durationSec).toBe(60);
+  });
+
   test('보너스 스테이지는 항상 60초', () => {
     const stages = labBuildStages(['punch', 'duck'], 25);
     const bonus = stages.find((s) => s.isBonus);
@@ -155,6 +166,24 @@ describe('buildStagePreview 동일성', () => {
       expect(serialize(lab)).toEqual(serialize(prod));
     });
   }
+});
+
+describe('colorGate spawn policy', () => {
+  test('skips the first two bridge attempts', () => {
+    expect(shouldSpawnColorGateOnBridgeAttempt(1, 0)).toBe(false);
+    expect(shouldSpawnColorGateOnBridgeAttempt(2, 0)).toBe(false);
+  });
+
+  test('spawns every bridge from the third bridge attempt', () => {
+    expect(shouldSpawnColorGateOnBridgeAttempt(3, 0)).toBe(true);
+    expect(shouldSpawnColorGateOnBridgeAttempt(3, 0.99)).toBe(true);
+  });
+
+  test('uses the fixed blue colorGate runway color', () => {
+    expect(PLAYABLE_GATE_COLOR_IDS).toEqual(['blue']);
+    expect(laneForGateColor('blue')).toBe(1);
+  });
+
 });
 
 // ── 4. generateObstacleSchedule 동일성 ───────────────────────────────────────
@@ -767,14 +796,14 @@ describe('BridgeRenderer (enhanced)', () => {
   test('1. enhanced 브릿지 — 자식 9개 (기반·좌레일·우레일·좌빔·우빔·패드·구분×3)', () => {
     const { br } = makeEnhancedBr();
     const v = br.createBridge({ lane: 1, x: 0, z: 0 });
-    expect(v.mesh.children).toHaveLength(9);
+    expect(v.mesh.children).toHaveLength(20);
   });
 
   test('2. 기반 상판 material이 MeshPhongMaterial', () => {
     const { br } = makeEnhancedBr();
     const v   = br.createBridge({ lane: 1, x: 0, z: 0 });
     const top = v.mesh.children[0] as THREE.Mesh;
-    expect(top.material).toBeInstanceOf(THREE.MeshPhongMaterial);
+    expect(top.material).toBeInstanceOf(THREE.MeshStandardMaterial);
   });
 
   test('3. 좌측 네온 레일 — 같은 lane은 동일 material 참조 (공유)', () => {
@@ -792,7 +821,7 @@ describe('BridgeRenderer (enhanced)', () => {
     const v1 = br.createBridge({ lane: 1, x:   0, z: 0 });
     const v2 = br.createBridge({ lane: 2, x:  80, z: 0 });
     const hex = (v: typeof v0) =>
-      ((v.mesh.children[1] as THREE.Mesh).material as THREE.MeshPhongMaterial).color.getHex();
+      ((v.mesh.children[1] as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive.getHex();
     expect(hex(v0)).not.toBe(hex(v1));
     expect(hex(v1)).not.toBe(hex(v2));
   });
@@ -821,7 +850,7 @@ describe('BridgeRenderer (enhanced)', () => {
   test('7. dispose — 공유 material dispose 호출', () => {
     const { br } = makeEnhancedBr();
     const v   = br.createBridge({ lane: 0, x: 0, z: 0 });
-    const mat = (v.mesh.children[0] as THREE.Mesh).material as THREE.MeshPhongMaterial;
+    const mat = (v.mesh.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
     let disposed = false;
     const orig = mat.dispose.bind(mat);
     mat.dispose = () => { disposed = true; orig(); };
@@ -835,6 +864,51 @@ describe('BridgeRenderer (enhanced)', () => {
 });
 
 // ── 11. PunchVFX 단위 테스트 ─────────────────────────────────────────────────
+
+describe('BridgeRenderer enhanced deck bounds', () => {
+  test('visible fallback parts stay within the deck width', () => {
+    const scene = new THREE.Scene();
+    const br = new BridgeRenderer(scene, true);
+    const v = br.createBridge({ lane: 1, x: 0, z: 0 });
+    const deckHalf = (LANE_WIDTH - 5) / 2;
+    for (const child of v.mesh.children) {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.visible) continue;
+      const box = new THREE.Box3().setFromObject(mesh);
+      expect(box.min.x).toBeGreaterThanOrEqual(-deckHalf - 0.001);
+      expect(box.max.x).toBeLessThanOrEqual(deckHalf + 0.001);
+      expect(box.min.z).toBeGreaterThanOrEqual(-BRIDGE_LENGTH / 2 - 0.001);
+      expect(box.max.z).toBeLessThanOrEqual(BRIDGE_LENGTH / 2 + 0.001);
+    }
+    br.dispose();
+  });
+
+  test('colorGate post-wall deck is bridge-owned and hidden until reveal', () => {
+    const scene = new THREE.Scene();
+    const br = new BridgeRenderer(scene, true);
+    const v = br.createBridge({
+      lane: 1,
+      x: 0,
+      z: 0,
+      colorGateDeck: { gateLocalZ: BRIDGE_LENGTH * 0.32, color: 0x1d4ed8 },
+    });
+    expect(v.colorGateDeckMesh).toBeDefined();
+    expect(v.colorGateDeckMesh!.visible).toBe(false);
+    expect(v.colorGateDeckMesh!.userData['colorGateDeck']).toBe(true);
+
+    br.revealColorGateDeck(v);
+    expect(v.colorGateDeckMesh!.visible).toBe(true);
+
+    const box = new THREE.Box3().setFromObject(v.colorGateDeckMesh!);
+    const deckHalf = (LANE_WIDTH - 5) / 2;
+    expect(box.min.x).toBeGreaterThanOrEqual(-deckHalf - 0.001);
+    expect(box.max.x).toBeLessThanOrEqual(deckHalf + 0.001);
+    expect(box.min.z).toBeGreaterThanOrEqual(-BRIDGE_LENGTH / 2 - 0.001);
+    expect(box.max.z).toBeLessThanOrEqual(BRIDGE_LENGTH / 2 + 0.001);
+    br.dispose();
+  });
+
+});
 
 describe('PunchVFX', () => {
   const makeVFX = () => {

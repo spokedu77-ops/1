@@ -10,6 +10,10 @@ function accessErrorCode(status: number) {
   return 'ACCESS_CHECK_FAILED';
 }
 
+function isSpomatShopAvailable() {
+  return Boolean(process.env.SPOMAT_PUBLIC_PURCHASE_URL?.trim());
+}
+
 export async function GET() {
   const access = await getSpokeduMasterAccessSnapshot();
 
@@ -17,6 +21,7 @@ export async function GET() {
     return privateNoStoreJson({
       ok: true,
       allowed: true,
+      spomatShopAvailable: isSpomatShopAvailable(),
       ...access.snapshot,
     });
   }

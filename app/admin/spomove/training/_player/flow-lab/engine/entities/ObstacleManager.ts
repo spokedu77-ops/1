@@ -37,6 +37,7 @@ export interface FlowBridge {
   bridgeId: number;
   x: number;
   hasBox: boolean;
+  hasColorGate?: boolean;
   padMesh: THREE.Mesh;
 }
 

@@ -3,6 +3,7 @@
 import { ArrowRight, BookOpen, Check, Clipboard, MonitorPlay, Sparkles, UserRound, UsersRound, type LucideIcon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useOptionalMasterAccessContext } from '../access/MasterAccessProvider';
 import { useMasterStore, useProfile } from '../store';
 import type { UserRole } from '../types';
 
@@ -40,8 +41,12 @@ function ToggleChip({ label, active, onClick }: { label: string; active: boolean
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const accessContext = useOptionalMasterAccessContext();
+  const serverOnboardingDone = accessContext?.snapshot.onboardingDone ?? false;
   const profile = useProfile();
   const setProfile = useMasterStore((state) => state.setProfile);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [step, setStep] = useState(0);
   const [role, setRole] = useState<UserRole>(profile?.role ?? 'teacher');
   const [name, setName] = useState(profile?.name ?? '선생님');
@@ -50,10 +55,10 @@ export default function OnboardingPage() {
   const [programTypes, setProgramTypes] = useState<string[]>(profile?.programTypes ?? []);
 
   useEffect(() => {
-    if (profile?.onboardingDone) {
+    if (serverOnboardingDone || profile?.onboardingDone) {
       router.replace('/spokedu-master/dashboard');
     }
-  }, [profile?.onboardingDone, router]);
+  }, [profile?.onboardingDone, router, serverOnboardingDone]);
 
   const profileValid = name.trim().length > 0 && name.trim().length <= 20;
   const canNext = useMemo(() => {
@@ -67,17 +72,45 @@ export default function OnboardingPage() {
   };
 
   const finish = () => {
-    setProfile({
+    if (saving) return;
+    const payload = {
       name: name.trim() || '선생님',
       school: school.trim(),
       role,
-      centerId: null,
-      centerName: null,
       ageGroups,
       programTypes,
       onboardingDone: true,
-    });
-    router.replace('/spokedu-master/dashboard');
+    };
+    setSaving(true);
+    setSaveError(null);
+    void fetch('/api/spokedu-master/profile', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const json = await response.json().catch(() => ({})) as { error?: string };
+          throw new Error(json.error ?? 'profile save failed');
+        }
+        setProfile({
+          name: payload.name,
+          school: payload.school,
+          role,
+          centerId: null,
+          centerName: null,
+          ageGroups,
+          programTypes,
+          onboardingDone: true,
+        });
+        router.replace('/spokedu-master/dashboard');
+      })
+      .catch(() => {
+        setSaveError('시작 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      })
+      .finally(() => {
+        setSaving(false);
+      });
   };
 
   return (
@@ -157,8 +190,13 @@ export default function OnboardingPage() {
                   </div>
                 </div>
                 <p className="text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>이제 홈에서 수업 자료, 수업 도구, 기록 흐름을 확인할 수 있습니다. 이용권이 필요한 기능은 해당 화면에서 안내됩니다.</p>
-                <button type="button" onClick={finish} className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px rgba(99,102,241,0.32)' }}>
-                  시작하기
+                {saveError ? (
+                  <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
+                    {saveError}
+                  </p>
+                ) : null}
+                <button type="button" onClick={finish} disabled={saving} className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px rgba(99,102,241,0.32)' }}>
+                  {saving ? '저장 중...' : '시작하기'}
                 </button>
               </div>
             ) : null}

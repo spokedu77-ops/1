@@ -7,6 +7,7 @@ import {
   normalizeClassRecordInput,
   normalizeStudentInput,
   studentInsertPayload,
+  studentUpdatePayload,
   toClassRecordDto,
   toStudentDto,
   type MasterClassRecordRow,
@@ -43,6 +44,22 @@ describe('SPOKEDU MASTER operational data contract', () => {
       group_name: 'A반',
       meta: { note: '8세' },
     });
+  });
+
+  it('updates mutable student fields without owner or legacy identifiers', () => {
+    const input = normalizeStudentInput({
+      name: '학생 B',
+      group: 'B반',
+      meta: '9세',
+    });
+
+    expect(studentUpdatePayload(input)).toEqual({
+      name: '학생 B',
+      group_name: 'B반',
+      meta: '9세',
+    });
+    expect(studentUpdatePayload(input)).not.toHaveProperty('owner_id');
+    expect(studentUpdatePayload(input)).not.toHaveProperty('legacy_id');
   });
 
   it('keeps string student meta through normalize, insert payload, and DTO mapping', () => {

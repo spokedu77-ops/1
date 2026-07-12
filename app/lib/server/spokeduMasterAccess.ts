@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase, isPlatformAdminUser } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { reportError } from '@/app/lib/monitoring/errorReporter';
+import { getSpokeduMasterProfile } from '@/app/lib/server/spokeduMasterProfile';
 
 const EXPIRED_ACCESS_MESSAGE =
   '이용 기간이 종료되어 수업 자료를 불러올 수 없습니다. 이용권을 다시 선택해 주세요.';
@@ -363,17 +364,17 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
     }
 
     const serviceSupabase = getServiceSupabase();
-    const { row: subscription, error } = await ensureSpokeduMasterEntitlement(
-      serviceSupabase,
-      user.id,
-    );
+    const [{ row: subscription, error }, { row: profile, error: profileError }] = await Promise.all([
+      ensureSpokeduMasterEntitlement(serviceSupabase, user.id),
+      getSpokeduMasterProfile(serviceSupabase, user.id),
+    ]);
 
-    if (error) {
-      devLogger.error('[getSpokeduMasterAccessSnapshot] subscription lookup failed', error);
-      await reportError(error, {
+    if (error || profileError) {
+      devLogger.error('[getSpokeduMasterAccessSnapshot] lookup failed', error ?? profileError);
+      await reportError(error ?? profileError, {
         context: 'spokedu_master.access_snapshot',
         tags: {
-          stage: 'subscription_lookup',
+          stage: error ? 'subscription_lookup' : 'profile_lookup',
           status: 500,
         },
       });
@@ -383,10 +384,18 @@ export async function getSpokeduMasterAccessSnapshot(): Promise<MasterAccessSnap
       };
     }
 
+    const onboardingDone = Boolean(
+      profile?.onboarding_done || isSpokeduMasterPaidPlanActive(subscription),
+    );
+
     return {
       ok: true,
       userId: user.id,
-      snapshot: buildSpokeduMasterAccessSnapshot({ row: subscription, isAdmin: false }),
+      snapshot: buildSpokeduMasterAccessSnapshot({
+        row: subscription,
+        isAdmin: false,
+        onboardingDone,
+      }),
     };
   } catch (err) {
     devLogger.error('[getSpokeduMasterAccessSnapshot]', err);

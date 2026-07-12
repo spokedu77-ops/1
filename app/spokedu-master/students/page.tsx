@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Plus, Trash2, Users } from 'lucide-react';
+import { BookOpen, CalendarDays, ChevronRight, ClipboardList, FileText, Pencil, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
@@ -77,6 +77,12 @@ export default function StudentsPage() {
   const [studentSaveError, setStudentSaveError] = useState<string | null>(null);
   const [studentDeletingId, setStudentDeletingId] = useState<string | null>(null);
   const [studentDeleteError, setStudentDeleteError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editName, setEditName] = useState('');
+  const [editGroup, setEditGroup] = useState('');
+  const [editMeta, setEditMeta] = useState('');
+  const [studentEditing, setStudentEditing] = useState(false);
+  const [studentEditError, setStudentEditError] = useState<string | null>(null);
   const [legacyPreviewAvailable, setLegacyPreviewAvailable] = useState(false);
   const [legacyPreview, setLegacyPreview] = useState<LegacyOperationalImportPreview | null>(null);
   const [legacyOwnerConfirmed, setLegacyOwnerConfirmed] = useState(false);
@@ -165,6 +171,33 @@ export default function StudentsPage() {
       })
       .finally(() => {
         setStudentDeletingId(null);
+      });
+  };
+  const openEditStudent = (student: { id: string; name: string; group: string; meta: string | Record<string, unknown> }) => {
+    setEditName(student.name);
+    setEditGroup(student.group);
+    setEditMeta(typeof student.meta === 'string' ? student.meta : '');
+    setStudentEditError(null);
+    setEditOpen(true);
+  };
+  const handleEditStudent = () => {
+    if (!selected || !editName.trim() || studentEditing) return;
+    setStudentEditing(true);
+    setStudentEditError(null);
+    void operationalData
+      .updateStudent(selected.id, {
+        name: editName.trim(),
+        group: editGroup.trim() || '미분류',
+        meta: editMeta,
+      })
+      .then(() => {
+        setEditOpen(false);
+      })
+      .catch(() => {
+        setStudentEditError('학생 정보를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      })
+      .finally(() => {
+        setStudentEditing(false);
       });
   };
   const selectedFacts = selected ? getStudentRecordFacts(records, selected.id) : null;
@@ -602,6 +635,9 @@ export default function StudentsPage() {
                   </span>
                   <ChevronRight size={16} color="var(--spm-t3)" className="shrink-0" />
                 </button>
+                <button type="button" onClick={() => openEditStudent(student)} className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ color: 'var(--spm-t3)' }} aria-label={`${student.name} 수정`}>
+                  <Pencil size={14} />
+                </button>
                 <button type="button" onClick={() => handleDeleteStudent(student)} disabled={studentDeletingId === student.id} className="mr-2 grid h-8 w-8 shrink-0 place-items-center rounded-[10px] disabled:opacity-50" style={{ color: 'var(--spm-t3)' }} aria-label={`${student.name} 삭제`}>
                   <Trash2 size={14} />
                 </button>
@@ -628,6 +664,10 @@ export default function StudentsPage() {
                 <RecordProgramPicker label="수업 결과 기록" studentId={selected.id} />
               </div>
               <Link href={`/spokedu-master/students/${selected.id}`} className="mt-3 inline-block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>학생 기록 보기</Link>
+              <button type="button" onClick={() => openEditStudent(selected)} className="mt-3 ml-3 inline-flex items-center gap-1 text-[12px] font-bold" style={{ color: 'var(--spm-acc)' }}>
+                <Pencil size={13} />
+                학생 정보 수정
+              </button>
             </div>
 
             {selectedFacts && selectedFacts.recordCount > 0 ? (
@@ -845,6 +885,59 @@ export default function StudentsPage() {
           ) : null}
           <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
             {studentSaving ? '추가 중...' : '추가'}
+          </button>
+        </div>
+      </BottomSheet>
+
+      <BottomSheet
+        open={editOpen}
+        title="학생 정보 수정"
+        onClose={() => setEditOpen(false)}
+        initialFocusSelector="[data-spm-student-edit-name]"
+      >
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-2 block text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>이름 *</span>
+            <input
+              data-spm-student-edit-name
+              name="editStudentName"
+              type="text"
+              value={editName}
+              onChange={(event) => setEditName(event.target.value)}
+              autoComplete="off"
+              className="h-11 w-full rounded-[12px] border px-3 text-[14px] font-bold outline-none"
+              style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+            />
+          </label>
+          <StudentFieldSelect
+            key={`edit-group-${editOpen ? 'open' : 'closed'}`}
+            label="반 / 그룹"
+            value={editGroup}
+            onChange={setEditGroup}
+            options={groupOptions}
+            emptyLabel={groupOptions.length ? '반 선택' : '등록된 반이 없습니다'}
+            customOptionLabel={groupOptions.length ? '새 반 직접 입력' : '반 이름 입력'}
+            placeholder="예: 초등 A반 / 유아반"
+            name="editStudentGroup"
+          />
+          <StudentFieldSelect
+            key={`edit-meta-${editOpen ? 'open' : 'closed'}`}
+            label="나이 / 학년"
+            value={editMeta}
+            onChange={setEditMeta}
+            options={ageOptions}
+            emptyLabel="나이·학년 선택"
+            customOptionLabel="직접 입력"
+            placeholder="예: 8세 / 3개월차"
+            name="editStudentMeta"
+          />
+          {studentEditError ? (
+            <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
+              {studentEditError}
+            </p>
+          ) : null}
+          <button type="button" onClick={handleEditStudent} disabled={!editName.trim() || studentEditing} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+            {studentEditing ? '저장 중...' : '저장'}
           </button>
         </div>
       </BottomSheet>

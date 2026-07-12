@@ -1,0 +1,325 @@
+{
+  "ok": true,
+  "generatedAt": "2026-07-12T07:53:29.213Z",
+  "baseUrl": "http://localhost:3000",
+  "phase": "no-payment-commercial-gate",
+  "checks": [
+    {
+      "id": "entry_copy_contract",
+      "script": "vitest run app/spokedu-master/masterEntryCopy.contract.test.ts",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 455,
+      "detail": {
+        "phase": "entry-copy-contract",
+        "target": "app/spokedu-master/masterEntryCopy.contract.test.ts"
+      }
+    },
+    {
+      "id": "staging_payment_preflight",
+      "script": "scripts/spokedu-master-staging-payment-e2e.mjs",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 2755,
+      "detail": {
+        "ok": true,
+        "phase": "preflight",
+        "plan": "lite",
+        "profileOk": true,
+        "tossSdkOk": true,
+        "accessBefore": true,
+        "next": "complete Toss sandbox manually, then rerun with --complete-billing and authKey/customerKey env vars"
+      }
+    },
+    {
+      "id": "payment_no_toss",
+      "script": "scripts/spokedu-master-staging-payment-e2e.mjs",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 3726,
+      "detail": {
+        "ok": true,
+        "phase": "mock-activation",
+        "plan": "lite",
+        "tossRequired": false,
+        "verified": [
+          "billing-issue-mock",
+          "access-retry-mock",
+          "success-ui",
+          "library-navigation"
+        ]
+      }
+    },
+    {
+      "id": "profile_persist",
+      "script": "scripts/spokedu-master-profile-persist-e2e.mjs",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 5039,
+      "detail": {
+        "ok": true,
+        "verified": [
+          "profile-patch",
+          "access-after-patch",
+          "profile-cross-session",
+          "access-cross-session"
+        ],
+        "marker": "QA3842801655"
+      }
+    },
+    {
+      "id": "ops_readiness",
+      "script": "scripts/spokedu-master-ops-readiness.mjs",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 1377,
+      "detail": {
+        "ok": true,
+        "phase": "ops-readiness",
+        "failed": [],
+        "warnings": [],
+        "checks": [
+          {
+            "name": "supabase_url_loaded",
+            "ok": true,
+            "detail": ""
+          },
+          {
+            "name": "service_role_loaded",
+            "ok": true,
+            "detail": ""
+          },
+          {
+            "name": "toss_client_test_key",
+            "ok": true,
+            "detail": "loaded"
+          },
+          {
+            "name": "toss_secret_test_key",
+            "ok": true,
+            "detail": "loaded"
+          },
+          {
+            "name": "cron_secret_loaded",
+            "ok": true,
+            "detail": "loaded"
+          },
+          {
+            "name": "monitoring_webhook_configured",
+            "ok": true,
+            "detail": "configured"
+          },
+          {
+            "name": "dev_server_reachable",
+            "ok": true,
+            "detail": "status=200"
+          },
+          {
+            "name": "client_error_route",
+            "ok": true,
+            "detail": "status=204"
+          },
+          {
+            "name": "webhook_route_fail_closed",
+            "ok": true,
+            "detail": "status=400"
+          },
+          {
+            "name": "billing_renew_requires_cron_secret",
+            "ok": true,
+            "detail": "status=401"
+          },
+          {
+            "name": "profiles_table_reachable",
+            "ok": true,
+            "detail": "ok"
+          },
+          {
+            "name": "webhook_events_table_reachable",
+            "ok": true,
+            "detail": "ok"
+          },
+          {
+            "name": "payment_orders_table_reachable",
+            "ok": true,
+            "detail": "ok"
+          },
+          {
+            "name": "payment_reconcile_read_only",
+            "ok": true,
+            "detail": "issueCount=0"
+          }
+        ],
+        "next": [
+          "User completes Toss sandbox real payment once",
+          "Run payment reconcile again after real payment",
+          "Optionally rerun with --send-monitoring-probe when monitoring URL is configured"
+        ]
+      }
+    },
+    {
+      "id": "library_content",
+      "script": "scripts/spokedu-master-library-content-readiness.mjs",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 1136,
+      "detail": {
+        "ok": true,
+        "phase": "library-content-readiness",
+        "auth": {
+          "mode": "admin-magiclink",
+          "email": "spm.qa.admin@spokedu.test"
+        },
+        "total": 144,
+        "ready": 140,
+        "limited": 0,
+        "incomplete": 4,
+        "homeEligible": 140,
+        "hotEligibleCount": 4,
+        "hotSlots": [
+          {
+            "slot": 1,
+            "programId": "52",
+            "title": "밴드 씨름 (Band Tug Showdown)",
+            "status": "READY",
+            "eligible": true
+          },
+          {
+            "slot": 2,
+            "programId": "67",
+            "title": "밸런스 스태킹 (Balance Stacking)",
+            "status": "READY",
+            "eligible": true
+          },
+          {
+            "slot": 3,
+            "programId": "194",
+            "title": "스텝레더 풋 후프 (Seated Foot-Hoop Ladder)",
+            "status": "READY",
+            "eligible": true
+          },
+          {
+            "slot": 4,
+            "programId": "50",
+            "title": "지그재그 러닝 (Zigzag Running)",
+            "status": "READY",
+            "eligible": true
+          }
+        ],
+        "withoutDedicatedSafety": 144,
+        "warnings": [
+          "dedicated_safety_section_missing:144/144"
+        ],
+        "sampleIncomplete": [
+          {
+            "id": "113",
+            "title": "Semo 드릴 (Semo-Agility Drill)",
+            "missing": [
+              "진행"
+            ]
+          },
+          {
+            "id": "74",
+            "title": "콘 업다운 러닝",
+            "missing": [
+              "진행"
+            ]
+          },
+          {
+            "id": "210",
+            "title": "펜싱 아따끄 챌린지",
+            "missing": [
+              "진행"
+            ]
+          },
+          {
+            "id": "96",
+            "title": "타겟, 스카프",
+            "missing": [
+              "진행"
+            ]
+          }
+        ],
+        "next": "Improve INCOMPLETE programs in admin/spokedu-master before paid launch"
+      }
+    },
+    {
+      "id": "production_prep",
+      "script": "scripts/spokedu-master-production-prep.mjs",
+      "ok": true,
+      "exitCode": 0,
+      "durationMs": 38,
+      "detail": {
+        "ok": true,
+        "phase": "production-prep",
+        "mode": "local-advisory",
+        "paymentDeferred": true,
+        "blockers": [],
+        "warnings": [],
+        "checks": [
+          {
+            "name": "supabase_url_loaded",
+            "ok": true,
+            "severity": "blocker",
+            "detail": ""
+          },
+          {
+            "name": "service_role_loaded",
+            "ok": true,
+            "severity": "blocker",
+            "detail": ""
+          },
+          {
+            "name": "site_url_loaded",
+            "ok": true,
+            "severity": "warning",
+            "detail": "loaded"
+          },
+          {
+            "name": "cron_secret_loaded",
+            "ok": true,
+            "severity": "warning",
+            "detail": "loaded"
+          },
+          {
+            "name": "monitoring_webhook_configured",
+            "ok": true,
+            "severity": "warning",
+            "detail": "configured"
+          },
+          {
+            "name": "database_url_for_integrity",
+            "ok": true,
+            "severity": "warning",
+            "detail": "loaded"
+          },
+          {
+            "name": "toss_client_key_mode",
+            "ok": true,
+            "severity": "warning",
+            "detail": "test key loaded"
+          },
+          {
+            "name": "toss_secret_key_mode",
+            "ok": true,
+            "severity": "warning",
+            "detail": "test key loaded"
+          }
+        ],
+        "next": "Production env prep looks complete; defer only Toss sandbox verification"
+      }
+    }
+  ],
+  "score": {
+    "strictCommercialScore": 82,
+    "maxWithoutTossSandbox": 82,
+    "passed": 7,
+    "total": 7,
+    "nextMilestone": "Toss sandbox real payment + webhook/subscription verification (+2~3)"
+  },
+  "blockers": [],
+  "warnings": [
+    "dedicated_safety_section_missing:144/144"
+  ],
+  "next": "Payment deferred: complete production env (CRON_SECRET, monitoring webhook, restore DB URL), release checklist manual items, then Toss sandbox when ready"
+}

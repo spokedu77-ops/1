@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Loader2, Mail } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { MASTER_CUSTOMER_SERVICE_HREF, MASTER_PRODUCT_CATALOG } from '../../lib/productCatalog';
+import { hasMasterEntitlement, type MasterAccessSnapshot } from '../../lib/masterAccessModel';
 import { useMasterStore } from '../../store';
 
 type PaidPlanId = 'lite' | 'premium';
@@ -24,13 +25,17 @@ type BillingIssueResponse = {
   nextBillingAt?: string | null;
 };
 
-type AccessResponse = {
+type AccessResponse = Partial<MasterAccessSnapshot> & {
   allowed?: boolean;
-  plan?: string;
 };
 
 const ACCESS_POLL_ATTEMPTS = 6;
 const ACCESS_POLL_INTERVAL_MS = 800;
+
+function isPaidAccessActive(access: AccessResponse | null, plan: PaidPlanId) {
+  if (!access || access.allowed !== true || access.plan !== plan) return false;
+  return hasMasterEntitlement(access as MasterAccessSnapshot);
+}
 
 function sleep(ms: number) {
   return new Promise((resolve) => {
@@ -68,10 +73,29 @@ function SuccessContent() {
   const customerKey = params.get('customerKey')?.trim() ?? '';
   const hasValidParams = isPaidPlanId(plan) && authKey.length > 0 && customerKey.length > 0;
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
+  const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
+  const profile = useMasterStore((state) => state.profile);
   const confirmationStarted = useRef(false);
   const [status, setStatus] = useState<ConfirmationStatus>(hasValidParams ? 'checking' : 'invalid');
   const [accessAttempt, setAccessAttempt] = useState(0);
   const [result, setResult] = useState<BillingIssueResponse | null>(null);
+
+  const persistPaidOnboarding = useCallback(async () => {
+    if (!profile) return;
+    await fetch('/api/spokedu-master/profile', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        name: profile.name,
+        school: profile.school,
+        role: profile.role,
+        ageGroups: profile.ageGroups,
+        programTypes: profile.programTypes,
+        onboardingDone: true,
+      }),
+    }).catch(() => undefined);
+    await syncMasterProfile().catch(() => undefined);
+  }, [profile, syncMasterProfile]);
 
   const checkAccessActivation = useCallback(async () => {
     setStatus('checking-access');
@@ -94,7 +118,8 @@ function SuccessContent() {
       }
 
       const access = await response.json().catch(() => null) as AccessResponse | null;
-      if (response.ok && access?.allowed === true && access.plan === plan) {
+      if (isPaidPlanId(plan) && isPaidAccessActive(access, plan)) {
+        await persistPaidOnboarding();
         setStatus('success');
         return;
       }
@@ -105,7 +130,7 @@ function SuccessContent() {
     }
 
     setStatus('delayed');
-  }, [plan, syncSubscription]);
+  }, [persistPaidOnboarding, plan, syncSubscription]);
 
   useEffect(() => {
     if (!hasValidParams || confirmationStarted.current || !isPaidPlanId(plan)) return;
@@ -184,11 +209,14 @@ function SuccessContent() {
           </div>
         </dl>
         <div className="grid gap-3">
-          <Link href="/spokedu-master/dashboard" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-            홈으로
+          <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            첫 수업 고르기
           </Link>
           <Link href="/spokedu-master/subscription" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             구독 관리
+          </Link>
+          <Link href="/spokedu-master/dashboard" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+            홈으로
           </Link>
         </div>
       </PaymentStatusShell>

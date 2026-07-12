@@ -5,6 +5,8 @@
 - [ ] `npx.cmd eslint app/spokedu-master app/api/spokedu-master scripts/spokedu-master-commercial-smoke-qa.mjs`
 - [ ] `npx.cmd tsc --noEmit --incremental false`
 - [ ] `npx.cmd vitest run app/api/spokedu-master/access/route.test.ts app/api/spokedu-master/operational-routes.test.ts app/api/spokedu-master/explanations/route.test.ts app/api/spokedu-master/operational-data.test.ts`
+- [ ] `npm.cmd run qa:spokedu-master:release-automated -- http://localhost:3000`
+- [ ] `npm.cmd run qa:spokedu-master:production-prep`
 - [ ] `npm.cmd run qa:spokedu-master:data-integrity`
 - [ ] `npm.cmd run qa:spokedu-master`
 - [ ] `npm.cmd run build`

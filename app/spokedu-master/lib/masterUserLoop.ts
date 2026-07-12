@@ -1,6 +1,9 @@
 import type { ClassRecord, UserProfile } from '../types';
 import type { RecentProgramActivity } from './recentProgramActivity';
-import { isPaidMasterPlan } from './subscription';
+
+export type MasterLoopEntitlement = {
+  hasEntitlement: boolean;
+};
 
 export type MasterLoopActionKey =
   | 'choose_lesson'
@@ -19,11 +22,17 @@ export type MasterLoopAction = {
 
 export type MasterLoopStateInput = {
   profile: UserProfile | null;
+  entitlement?: MasterLoopEntitlement | null;
   recentLessonActivities: RecentProgramActivity[];
   recentSpomoveActivities: RecentProgramActivity[];
   classRecords: ClassRecord[];
   explanationCount: number;
 };
+
+function resolveHasEntitlement(input: MasterLoopStateInput): boolean {
+  if (input.entitlement) return input.entitlement.hasEntitlement;
+  return false;
+}
 
 export function isMasterFirstUser(input: {
   studentCount: number;
@@ -45,7 +54,7 @@ export function selectMasterLoopAction(input: MasterLoopStateInput): MasterLoopA
   const hasUseExperience =
     hasLessonUseExperience || hasSpomoveUseExperience || input.classRecords.length > 0;
   const hasRecords = input.classRecords.length > 0;
-  const isPaid = isPaidMasterPlan(input.profile);
+  const isPaid = resolveHasEntitlement(input);
 
   if (isPaid && hasRecords) {
     return {

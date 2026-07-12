@@ -7,7 +7,10 @@ import { usePathname, useRouter } from 'next/navigation';
 import { TabBar } from './TabBar';
 import { StatusBar } from './StatusBar';
 import { ErrorBoundary } from '../ui/ErrorBoundary';
-import { SubscriptionGateWall, type MasterAccessSnapshot } from '../ui/SubscriptionGateWall';
+import { SubscriptionGateWall } from '../ui/SubscriptionGateWall';
+import { MasterAccessProvider } from '../../access/MasterAccessProvider';
+import type { MasterAccessApiResponse, MasterAccessSnapshot } from '../../lib/masterAccessModel';
+import { hasMasterEntitlement } from '../../lib/masterAccessModel';
 import { ExplanationDataProvider } from '../../explanations/ExplanationDataProvider';
 import { OperationalDataProvider } from '../../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../../store';
@@ -19,6 +22,7 @@ type MasterAccessGuard = {
   pathname: string;
   status: MasterAccessGuardStatus;
   snapshot: MasterAccessSnapshot | null;
+  spomatShopAvailable: boolean;
 };
 
 function currentLoginRedirectHref() {
@@ -166,16 +170,19 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   const pathname = usePathname();
   const router = useRouter();
   const profile = useProfile();
+  const setProfile = useMasterStore((state) => state.setProfile);
   const setOnline = useMasterStore((state) => state.setOnline);
   const loadPrograms = useMasterStore((state) => state.loadPrograms);
   const reloadPrograms = useMasterStore((state) => state.reloadPrograms);
   const syncSubscription = useMasterStore((state) => state.syncSubscription);
+  const syncMasterProfile = useMasterStore((state) => state.syncMasterProfile);
   const [storeHydrated, setStoreHydrated] = useState(false);
   const [subscriptionSynced, setSubscriptionSynced] = useState(false);
   const [accessGuard, setAccessGuard] = useState<MasterAccessGuard>({
     pathname: '',
     status: 'checking',
     snapshot: null,
+    spomatShopAvailable: false,
   });
   const [accessRetryKey, setAccessRetryKey] = useState(0);
 
@@ -210,14 +217,18 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       setSubscriptionSynced(true);
       return;
     }
-    void syncSubscription().finally(() => setSubscriptionSynced(true));
-  }, [isLanding, isPublicDocument, syncSubscription]);
+    void Promise.all([syncSubscription(), syncMasterProfile()]).finally(() => setSubscriptionSynced(true));
+  }, [isLanding, isPublicDocument, syncMasterProfile, syncSubscription]);
+
+  const canLoadEntitledContent =
+    accessGuard.snapshot != null && hasMasterEntitlement(accessGuard.snapshot);
 
   useEffect(() => {
     if (isLanding || isPublicDocument) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
+    if (!canLoadEntitledContent) return;
     void loadPrograms();
-  }, [accessGuard.status, isLanding, isProtectedRoute, isPublicDocument, loadPrograms]);
+  }, [accessGuard.status, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, loadPrograms]);
 
   useEffect(() => {
     setStoreHydrated(useMasterStore.persist.hasHydrated());
@@ -229,6 +240,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     const refreshProgramsOnFocus = () => {
       if (isLanding || isPublicDocument || document.visibilityState !== 'visible') return;
       if (isProtectedRoute && accessGuard.status !== 'allowed') return;
+      if (!canLoadEntitledContent) return;
       void reloadPrograms();
     };
     window.addEventListener('focus', refreshProgramsOnFocus);
@@ -237,7 +249,7 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       window.removeEventListener('focus', refreshProgramsOnFocus);
       document.removeEventListener('visibilitychange', refreshProgramsOnFocus);
     };
-  }, [accessGuard.status, isLanding, isProtectedRoute, isPublicDocument, reloadPrograms]);
+  }, [accessGuard.status, canLoadEntitledContent, isLanding, isProtectedRoute, isPublicDocument, reloadPrograms]);
 
   useEffect(() => {
     const updateOnline = () => setOnline(window.navigator.onLine);
@@ -279,22 +291,33 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
       });
   }, []);
 
+  const onboardingDone = accessGuard.snapshot?.onboardingDone ?? profile?.onboardingDone ?? false;
+
+  useEffect(() => {
+    if (!accessGuard.snapshot || !profile) return;
+    const serverFields = {
+      onboardingDone: accessGuard.snapshot.onboardingDone,
+    };
+    if (profile.onboardingDone === serverFields.onboardingDone) return;
+    setProfile(serverFields);
+  }, [accessGuard.snapshot?.onboardingDone, profile, setProfile]);
+
   useEffect(() => {
     if (isAdmin || isLanding || isPublicDocument || !storeHydrated || !subscriptionSynced) return;
     if (isProtectedRoute && accessGuard.status !== 'allowed') return;
-    if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !profile.onboardingDone) {
+    if (!isSession && !isOnboarding && !isParentView && !isPayment && profile && !onboardingDone) {
       router.replace(`${basePath}/onboarding`);
     }
-  }, [accessGuard.status, basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, profile, router, storeHydrated, subscriptionSynced]);
+  }, [accessGuard.status, accessGuard.snapshot?.onboardingDone, basePath, isAdmin, isLanding, isOnboarding, isParentView, isPayment, isProtectedRoute, isPublicDocument, isSession, onboardingDone, profile, router, storeHydrated, subscriptionSynced]);
 
   useEffect(() => {
     if (!isProtectedRoute) {
-      setAccessGuard({ pathname, status: 'allowed', snapshot: null });
+      setAccessGuard({ pathname, status: 'allowed', snapshot: null, spomatShopAvailable: false });
       return;
     }
 
     let cancelled = false;
-    setAccessGuard({ pathname, status: 'checking', snapshot: null });
+    setAccessGuard({ pathname, status: 'checking', snapshot: null, spomatShopAvailable: false });
 
     fetch('/api/spokedu-master/access', {
       cache: 'no-store',
@@ -304,27 +327,33 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
         if (cancelled) return;
 
         if (response.ok) {
-          const snapshot = await response.json() as MasterAccessSnapshot;
-          setAccessGuard({ pathname, status: 'allowed', snapshot });
+          const payload = await response.json() as MasterAccessApiResponse;
+          const { ok: _ok, allowed: _allowed, spomatShopAvailable, ...snapshot } = payload;
+          setAccessGuard({
+            pathname,
+            status: 'allowed',
+            snapshot: snapshot as MasterAccessSnapshot,
+            spomatShopAvailable: spomatShopAvailable === true,
+          });
           return;
         }
 
         if (response.status === 401) {
-          setAccessGuard({ pathname, status: 'redirecting', snapshot: null });
+          setAccessGuard({ pathname, status: 'redirecting', snapshot: null, spomatShopAvailable: false });
           router.replace(currentLoginRedirectHref());
           return;
         }
 
         if (response.status === 403) {
-          setAccessGuard({ pathname, status: 'denied', snapshot: null });
+          setAccessGuard({ pathname, status: 'denied', snapshot: null, spomatShopAvailable: false });
           return;
         }
 
-        setAccessGuard({ pathname, status: 'error', snapshot: null });
+        setAccessGuard({ pathname, status: 'error', snapshot: null, spomatShopAvailable: false });
       })
       .catch(() => {
         if (!cancelled) {
-          setAccessGuard({ pathname, status: 'error', snapshot: null });
+          setAccessGuard({ pathname, status: 'error', snapshot: null, spomatShopAvailable: false });
         }
       });
 
@@ -344,6 +373,13 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
           <MasterAccessDeniedState onRetry={() => setAccessRetryKey((key) => key + 1)} />
         ) : isAccessGuardError ? (
           <MasterAccessCheckingState error onRetry={() => setAccessRetryKey((key) => key + 1)} />
+        ) : accessGuard.snapshot ? (
+          <MasterAccessProvider
+            snapshot={accessGuard.snapshot}
+            spomatShopAvailable={accessGuard.spomatShopAvailable}
+          >
+            {children}
+          </MasterAccessProvider>
         ) : (
           children
         )}
@@ -371,9 +407,18 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
               <MasterAccessCheckingState error onRetry={() => setAccessRetryKey((key) => key + 1)} />
             ) : (
               <ErrorBoundary>
-                <OperationalDataProvider>
-                  <ExplanationDataProvider>{children}</ExplanationDataProvider>
-                </OperationalDataProvider>
+                {accessGuard.snapshot ? (
+                  <MasterAccessProvider
+                    snapshot={accessGuard.snapshot}
+                    spomatShopAvailable={accessGuard.spomatShopAvailable}
+                  >
+                    <OperationalDataProvider>
+                      <ExplanationDataProvider>{children}</ExplanationDataProvider>
+                    </OperationalDataProvider>
+                  </MasterAccessProvider>
+                ) : (
+                  children
+                )}
               </ErrorBoundary>
             )}
           </main>

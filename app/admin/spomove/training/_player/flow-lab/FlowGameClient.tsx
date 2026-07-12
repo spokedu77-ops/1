@@ -15,6 +15,7 @@ import ColorGateHud from './components/ColorGateHud';
 import {
   buildColorGateCue,
   buildColorGateInstruction,
+  preloadColorGatePoseImages,
   type GateColorId,
 } from './engine/modules/colorGateGuides';
 
@@ -100,6 +101,9 @@ export default function FlowGameClient({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || stages.length === 0) return;
+    if (stages.some((s) => s.isColorGate)) {
+      void preloadColorGatePoseImages();
+    }
     const initGen = ++initGenRef.current;
     setInitError(null);
     engineBgmRef.current = bgmPath;
@@ -130,9 +134,13 @@ export default function FlowGameClient({
               setGateColorId(null);
             }
           },
-          onColorGateStage: (info) => {
+          onColorGateStage: () => {
             if (!mountedRef.current) return;
-            setGateColorId(info.gateColorId);
+            setGateColorId(null);
+          },
+          onColorGateColor: (gateColorId) => {
+            if (!mountedRef.current) return;
+            setGateColorId(gateColorId);
           },
           onTimerUpdate:  (rem, prog) => {
             if (!mountedRef.current) return;
@@ -217,7 +225,7 @@ export default function FlowGameClient({
         gateColorId={gateColorId}
         step={currentStage.colorGateStep ?? 1}
         totalSteps={currentStage.colorGateTotal ?? 1}
-        cueWord={buildColorGateCue(gateColorId, currentStage.cueWord)}
+        cueWord={buildColorGateCue(gateColorId)}
         shortInstruction={buildColorGateInstruction(gateColorId)}
         remainingSec={phase === 'playing' ? timerSec : undefined}
       />

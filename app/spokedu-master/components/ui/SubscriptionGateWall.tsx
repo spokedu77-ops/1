@@ -3,21 +3,9 @@
 import Link from 'next/link';
 import { ArrowLeft, BookOpen, ClipboardList, FileText, Lock, MonitorPlay, Timer } from 'lucide-react';
 import type { MasterCapability } from '../layout/masterRouteAccess';
+import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
 
-export type MasterAccessSnapshot = {
-  authenticated: true;
-  onboardingDone: boolean;
-  plan: 'free' | 'lite' | 'premium' | 'team';
-  subscriptionStatus: 'none' | 'active' | 'expired' | 'cancelled';
-  currentPeriodEnd: string | null;
-  cancelAtPeriodEnd: boolean;
-  isAdmin: boolean;
-  isCenterOrTeam: boolean;
-  canUseLibrary: boolean;
-  canUseClassTools: boolean;
-  canUseRecords: boolean;
-  canUseSpomove: boolean;
-};
+export type { MasterAccessSnapshot };
 
 type SubscriptionGateWallProps = {
   requirement: Exclude<MasterCapability, 'authenticated'>;

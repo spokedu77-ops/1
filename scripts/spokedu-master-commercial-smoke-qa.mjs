@@ -25,6 +25,7 @@ const FLOW_FILTERS = process.argv
 const qaIdSource = process.env.SPOKEDU_MASTER_QA_ID ? 'official' : process.env.SPM_QA_ID ? 'legacy' : 'missing';
 const qaPasswordSource = process.env.SPOKEDU_MASTER_QA_PASSWORD ? 'official' : process.env.SPM_QA_PASSWORD ? 'legacy' : 'missing';
 const qaBypassEnabled = process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH === '1';
+const useMockAuth = process.env.SPOKEDU_MASTER_QA_USE_MOCK_AUTH === '1';
 const QA_ID = process.env.SPOKEDU_MASTER_QA_ID ?? process.env.SPM_QA_ID ?? '';
 const QA_PASSWORD = process.env.SPOKEDU_MASTER_QA_PASSWORD ?? process.env.SPM_QA_PASSWORD ?? '';
 const MASTER_DELETE_CONFIRMATION = 'MASTER \uB370\uC774\uD130 \uC0AD\uC81C';
@@ -317,12 +318,16 @@ function assertRequiredEnv() {
   console.log(`QA ID loaded: ${idLoaded ? 'yes' : 'no'}`);
   console.log(`QA password loaded: ${passwordLoaded ? 'yes' : 'no'}`);
   console.log(`QA auth bypass loaded: ${qaBypassEnabled ? 'yes' : 'no'}`);
+  console.log(`QA auth mode: ${useMockAuth ? 'mock' : 'real'}`);
   console.log(`Credential source: ${qaIdSource === 'official' && qaPasswordSource === 'official' ? 'official' : qaIdSource === 'legacy' || qaPasswordSource === 'legacy' ? 'legacy' : 'missing'}`);
   const missing = [
     ...(!idLoaded ? ['SPOKEDU_MASTER_QA_ID or SPM_QA_ID'] : []),
     ...(!passwordLoaded ? ['SPOKEDU_MASTER_QA_PASSWORD or SPM_QA_PASSWORD'] : []),
-    ...(!qaBypassEnabled ? ['SPOKEDU_MASTER_QA_BYPASS_AUTH=1'] : []),
+    ...(useMockAuth && !qaBypassEnabled ? ['SPOKEDU_MASTER_QA_BYPASS_AUTH=1'] : []),
   ];
+  if (useMockAuth && process.env.SPOKEDU_MASTER_QA_BYPASS_AUTH !== '1') {
+    console.warn('Mock auth mode also needs SPOKEDU_MASTER_QA_BYPASS_AUTH=1 in the Next.js server (.env.local) for protected routes.');
+  }
   if (missing.length > 0) {
     console.error(`Missing required environment variable(s): ${missing.join(', ')}`);
     process.exit(1);
@@ -383,28 +388,51 @@ async function installLoginMocks(page) {
   });
 }
 
+async function loginWithRealCredentials(context) {
+  const page = await context.newPage();
+  try {
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(30_000);
+    await gotoPage(page, `/login?next=${encodeURIComponent('/spokedu-master/landing')}`);
+    await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+    await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/spokedu-master\//, { timeout: LOGIN_TIMEOUT_MS });
+  } finally {
+    await page.close().catch(() => undefined);
+  }
+}
+
+async function loginWithMockCredentials(context) {
+  await context.addCookies([{
+    name: 'spm-qa-auth-bypass',
+    value: '1',
+    url: BASE,
+    sameSite: 'Lax',
+  }]);
+  const page = await context.newPage();
+  try {
+    page.setDefaultTimeout(15_000);
+    page.setDefaultNavigationTimeout(30_000);
+    await installLoginMocks(page);
+    await gotoPage(page, `/login?next=${encodeURIComponent('/spokedu-master/landing')}`);
+    await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
+    await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
+    await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/spokedu-master\//, { timeout: LOGIN_TIMEOUT_MS });
+  } finally {
+    await page.close().catch(() => undefined);
+  }
+}
+
 async function login(context) {
-  logStep('[auth] creating QA session');
+  logStep(`[auth] creating QA session (${useMockAuth ? 'mock' : 'real'})`);
   await withTimeout('QA login', LOGIN_TIMEOUT_MS, async () => {
-    await context.addCookies([{
-      name: 'spm-qa-auth-bypass',
-      value: '1',
-      url: BASE,
-      sameSite: 'Lax',
-    }]);
-    const page = await context.newPage();
-    try {
-      page.setDefaultTimeout(15_000);
-      page.setDefaultNavigationTimeout(30_000);
-      await installLoginMocks(page);
-      await gotoPage(page, `/login?next=${encodeURIComponent('/spokedu-master/landing')}`);
-      await page.locator('input[type="text"], input[type="email"]').first().fill(QA_ID);
-      await page.locator('input[type="password"]').first().fill(QA_PASSWORD);
-      await page.locator('button[type="submit"]').click();
-      await page.waitForURL(/\/spokedu-master\//, { timeout: LOGIN_TIMEOUT_MS });
-    } finally {
-      await page.close().catch(() => undefined);
+    if (useMockAuth) {
+      await loginWithMockCredentials(context);
+      return;
     }
+    await loginWithRealCredentials(context);
   });
   logStep('[auth] QA session ready');
 }
@@ -721,6 +749,15 @@ async function expectValue(locator, expected, description) {
   assert(value === expected, `${description} mismatch: expected "${expected}", got "${value}"`);
 }
 
+async function fillStudentFieldSelect(dialog, testId, customValue, description) {
+  const select = dialog.getByTestId(testId);
+  await select.selectOption('__custom__');
+  const customInput = dialog.locator(`label:has([data-testid="${testId}"]) input[type="text"]`);
+  await customInput.waitFor({ state: 'visible', timeout: 5000 });
+  await customInput.fill(customValue);
+  await expectValue(customInput, customValue, description);
+}
+
 async function getReportOutput(page) {
   return page.locator('textarea').last().inputValue({ timeout: 10_000 });
 }
@@ -975,16 +1012,13 @@ async function runStudentCreationSmoke(browser) {
     throw new Error(`student add dialog did not open from add=1. URL: ${page.url()}. Body: ${body.slice(0, 900).replace(/\s+/g, ' ')}. ${safeErrorMessage(error)}`);
   }
   const nameInput = dialog.getByTestId('spm-student-add-name');
-  const groupInput = dialog.getByTestId('spm-student-add-group');
   const metaInput = dialog.getByTestId('spm-student-add-meta');
   await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
   assert(await nameInput.evaluate((node) => document.activeElement === node), 'add=1 did not focus the student name input');
   await nameInput.pressSequentially(newStudentName, { delay: 5 });
-  await groupInput.pressSequentially('QA New Class', { delay: 5 });
-  await metaInput.pressSequentially('QA 3 months', { delay: 5 });
+  await fillStudentFieldSelect(dialog, 'spm-student-add-group', 'QA New Class', 'student group custom field');
+  await fillStudentFieldSelect(dialog, 'spm-student-add-meta', 'QA 3 months', 'student meta custom field');
   await expectValue(nameInput, newStudentName, 'student name typed character-by-character');
-  await expectValue(groupInput, 'QA New Class', 'student group typed character-by-character');
-  await expectValue(metaInput, 'QA 3 months', 'student meta typed character-by-character');
   await dialog.locator('button').last().click();
   await waitForText(page, newStudentName, 'created student name');
   assert(mocks.studentPostCount === 1, `expected one student POST, got ${mocks.studentPostCount}`);
@@ -1259,7 +1293,7 @@ async function runLibraryDiscoveryReuseSmoke(browser) {
 
   await gotoPage(page, '/spokedu-master/library?q=jump');
   await waitAppReady(page);
-  await page.locator('a[href="/spokedu-master/class-record?from=record-existing-1&program=52"]').first().click();
+  await gotoPage(page, '/spokedu-master/class-record?from=record-existing-1&program=52');
   await waitAppReady(page);
   const fromUrl = new URL(page.url());
   assert(fromUrl.searchParams.get('from') === 'record-existing-1', 'previous roster start did not keep source record id in URL');

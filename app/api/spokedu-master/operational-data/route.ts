@@ -1,7 +1,7 @@
 import { reportError } from '@/app/lib/monitoring/errorReporter';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { privateNoStoreJson, withPrivateNoStore } from '@/app/lib/server/privateNoStore';
-import { requireSpokeduMasterAccess } from '@/app/lib/server/spokeduMasterAccess';
+import { requireSpokeduMasterSession } from '@/app/lib/server/spokeduMasterAccess';
 import { MASTER_DATA_DELETE_CONFIRMATION } from '@/app/spokedu-master/profile/masterDataDeletion';
 
 export const dynamic = 'force-dynamic';
@@ -52,8 +52,8 @@ async function deleteOwnerOperationalData(ownerId: string) {
 }
 
 export async function DELETE(request: Request) {
-  const access = await requireSpokeduMasterAccess();
-  if (!access.ok) return withPrivateNoStore(access.response);
+  const session = await requireSpokeduMasterSession();
+  if (!session.ok) return withPrivateNoStore(session.response);
 
   const confirmation = await readConfirmation(request);
   if (confirmation !== MASTER_DATA_DELETE_CONFIRMATION) {
@@ -63,7 +63,7 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const result = await deleteOwnerOperationalData(access.userId);
+  const result = await deleteOwnerOperationalData(session.userId);
   if (!result.ok) {
     return privateNoStoreJson(
       { error: result.status === 400 ? INVALID_DELETE_REQUEST_MESSAGE : DELETE_FAILURE_MESSAGE },

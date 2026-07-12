@@ -22,6 +22,7 @@ import {
 } from '../lib/productCatalog';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore, useProfile } from '../store';
+import { useSpomatShopAvailable } from '../access/MasterAccessProvider';
 import {
   MASTER_DATA_DELETE_CONFIRMATION,
   canSubmitMasterDataDeletion,
@@ -131,6 +132,8 @@ function ProfileSheet({
   setName,
   setSchool,
   onSave,
+  saving,
+  saveError,
 }: {
   open: boolean;
   onClose: () => void;
@@ -139,6 +142,8 @@ function ProfileSheet({
   setName: (value: string) => void;
   setSchool: (value: string) => void;
   onSave: () => void;
+  saving: boolean;
+  saveError: string | null;
 }) {
   return (
     <BottomSheet open={open} title="프로필 편집" onClose={onClose}>
@@ -162,8 +167,13 @@ function ProfileSheet({
             style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
           />
         </label>
-        <button type="button" onClick={onSave} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-          저장
+        {saveError ? (
+          <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
+            {saveError}
+          </p>
+        ) : null}
+        <button type="button" onClick={onSave} disabled={saving} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+          {saving ? '저장 중...' : '저장'}
         </button>
       </div>
     </BottomSheet>
@@ -172,6 +182,7 @@ function ProfileSheet({
 
 function SpokeduMasterProfileContent() {
   const profile = useProfile();
+  const spomatShopAvailable = useSpomatShopAvailable();
   const setProfile = useMasterStore((state) => state.setProfile);
   const resetProfile = useMasterStore((state) => state.resetProfile);
   const clearCurrentOwnerLocalData = useMasterStore((state) => state.clearCurrentOwnerLocalData);
@@ -181,6 +192,8 @@ function SpokeduMasterProfileContent() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [name, setName] = useState(profile?.name ?? '선생님');
   const [school, setSchool] = useState(profile?.school ?? '');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState<string | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteStatus, setDeleteStatus] = useState<MasterDataDeletionStatus>('idle');
@@ -211,8 +224,36 @@ function SpokeduMasterProfileContent() {
   }, [loadSubscriptionSummary]);
 
   const saveProfile = () => {
-    setProfile({ name: name.trim() || '선생님', school: school.trim() });
-    setProfileOpen(false);
+    if (profileSaving) return;
+    const payload = {
+      name: name.trim() || '선생님',
+      school: school.trim(),
+      role: profile?.role ?? 'teacher',
+      ageGroups: profile?.ageGroups ?? [],
+      programTypes: profile?.programTypes ?? [],
+      onboardingDone: profile?.onboardingDone ?? false,
+    };
+    setProfileSaving(true);
+    setProfileSaveError(null);
+    void fetch('/api/spokedu-master/profile', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          const json = await response.json().catch(() => ({})) as { error?: string };
+          throw new Error(json.error ?? 'profile save failed');
+        }
+        setProfile({ name: payload.name, school: payload.school });
+        setProfileOpen(false);
+      })
+      .catch(() => {
+        setProfileSaveError('프로필을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      })
+      .finally(() => {
+        setProfileSaving(false);
+      });
   };
 
   const handleLogout = async () => {
@@ -337,7 +378,9 @@ function SpokeduMasterProfileContent() {
 
         <aside className="space-y-3">
           <MenuRow icon={CreditCard} label="구독 관리" caption="현재 이용권과 해지 상태 확인" href="/spokedu-master/subscription" />
-          <MenuRow icon={Package} label="SPOMAT 스토어" caption="SPOMAT 구매 화면으로 이동" href="/spokedu-master/shop" />
+          {spomatShopAvailable ? (
+            <MenuRow icon={Package} label="SPOMAT 스토어" caption="SPOMAT 구매 화면으로 이동" href="/spokedu-master/shop" />
+          ) : null}
           <MenuRow icon={HelpCircle} label="고객센터" caption={MASTER_BUSINESS_INFO.customerServiceEmail} href={MASTER_CUSTOMER_SERVICE_HREF} />
           <MenuRow icon={FileText} label="이용약관" caption="SPOKEDU MASTER 이용 기준" href="/spokedu-master/terms" />
           <MenuRow icon={Mail} label="개인정보처리방침" caption="개인정보 처리 기준" href="/spokedu-master/privacy" />
@@ -362,6 +405,8 @@ function SpokeduMasterProfileContent() {
         setName={setName}
         setSchool={setSchool}
         onSave={saveProfile}
+        saving={profileSaving}
+        saveError={profileSaveError}
       />
     </div>
   );

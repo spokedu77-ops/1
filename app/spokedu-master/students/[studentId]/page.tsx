@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CalendarDays, FileText, Pencil, Users } from 'lucide-react';
+import { CalendarDays, FileText, Users } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { useMemo } from 'react';
 import { RecordProgramPicker } from '../../components/record/RecordProgramPicker';
@@ -84,15 +84,14 @@ export default function StudentDetailPage() {
 
         <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>2. 빠른 행동</h2>
-          <div className="mt-4 grid gap-2 sm:grid-cols-4">
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
             <RecordProgramPicker label="수업 골라 기록" studentId={student.id} />
             {latest ? (
               <Link href={`/spokedu-master/report?record=${latest.record.id}`} className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={15} />안내문 작성</Link>
             ) : (
               <span className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={15} />기록 후 안내문</span>
             )}
-            <Link href="/spokedu-master/students" className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Pencil size={15} />학생 정보 수정</Link>
-            <Link href="/spokedu-master/students" className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Users size={15} />학생 목록으로</Link>
+            <Link href="/spokedu-master/students" className="flex min-h-11 items-center justify-center gap-2 rounded-[12px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Users size={15} />학생 목록 관리</Link>
           </div>
         </section>
 

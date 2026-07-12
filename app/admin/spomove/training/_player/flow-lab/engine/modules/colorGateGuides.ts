@@ -1,41 +1,64 @@
 /**
- * 색 포즈 관문 — 4색 배경 + 포즈 실루엣 SSOT
+ * ColorGate shared definitions.
+ *
+ * This module intentionally does not decide bridge lanes. ColorGate is rendered
+ * like the other obstacles: the FlowEngine creates bridges, then the gate
+ * attaches to the bridge.
  */
 
 import type { FlowModuleKey } from './flowModules';
 
 export const GATE_COLOR_IDS = ['red', 'yellow', 'green', 'blue'] as const;
 export type GateColorId = (typeof GATE_COLOR_IDS)[number];
+export const COLOR_GATE_FIXED_COLOR_ID: GateColorId = 'blue';
+export const PLAYABLE_GATE_COLOR_IDS = [COLOR_GATE_FIXED_COLOR_ID] as const satisfies readonly GateColorId[];
 
 export interface GateColorDef {
   bg: string;
   label: string;
   text: string;
+  hex: number;
 }
 
 export const GATE_COLORS: Record<GateColorId, GateColorDef> = {
-  red:    { bg: '#b91c1c', label: '빨강', text: '#ffffff' },
-  yellow: { bg: '#ca8a04', label: '노랑', text: '#111827' },
-  green:  { bg: '#15803d', label: '초록', text: '#ffffff' },
-  blue:   { bg: '#1d4ed8', label: '파랑', text: '#ffffff' },
+  red:    { bg: '#b91c1c', label: '빨강', text: '#ffffff', hex: 0xb91c1c },
+  yellow: { bg: '#ca8a04', label: '노랑', text: '#111827', hex: 0xca8a04 },
+  green:  { bg: '#15803d', label: '초록', text: '#ffffff', hex: 0x15803d },
+  blue:   { bg: '#1d4ed8', label: '파랑', text: '#ffffff', hex: 0x1d4ed8 },
 };
 
-/** 3레인 합쳐 문 너비 (BridgeRenderer.LANE_WIDTH × 3) */
 export const COLOR_GATE_SPAN_LANES = 3;
-
-/** 제공 포즈 PNG (배경 사진 → 실루엣 추출) */
 export const COLOR_GATE_POSE_IMAGE_URL = '/spomove/dive/color-gate/lunge-reach.png';
-
-/** Phase 1: 런지+앞팔 뻗기 포즈 1종만 */
+export const COLOR_GATE_POSE_IMAGE_URLS = [
+  '/spomove/dive/color-gate/lunge-reach.png',
+  '/spomove/dive/color-gate/2d6432ee-9de6-4fa1-b688-57a1cfd63474.png',
+  '/spomove/dive/color-gate/e265bc34-9722-408c-8235-29a64fc2254c.png',
+  '/spomove/dive/color-gate/f00b1d2b-1251-4b6f-9567-b3ffedb2b27e.png',
+] as const;
 export const COLOR_GATE_POSE_LABEL = '런지 펀치';
 export const COLOR_GATE_POSE_INSTRUCTION =
   '한쪽 다리를 앞으로 굽히고 팔을 앞으로 뻗으세요';
 
-/** 관문 동작 순서 (추후 5종 확장) */
 export const COLOR_GATE_ACTION_SEQUENCE: FlowModuleKey[] = ['reach'];
+export const COLOR_GATE_SPAWN_SKIP_BRIDGES = 2;
+export const COLOR_GATE_SPAWN_RATE = 1;
+
+const SILHOUETTE_ALPHA_MIN = 16;
+const SILHOUETTE_LUMA_MAX = 150;
+const SILHOUETTE_RGB = { r: 10, g: 10, b: 12 };
 
 let poseImageCache: HTMLImageElement | null = null;
 let poseImageLoadPromise: Promise<HTMLImageElement | null> | null = null;
+let poseImagesCache: HTMLImageElement[] | null = null;
+let poseImagesLoadPromise: Promise<HTMLImageElement[]> | null = null;
+
+export function shouldSpawnColorGateOnBridgeAttempt(
+  bridgeAttempt: number,
+  randomValue: number,
+): boolean {
+  if (bridgeAttempt <= COLOR_GATE_SPAWN_SKIP_BRIDGES) return false;
+  return randomValue < COLOR_GATE_SPAWN_RATE;
+}
 
 export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
   if (poseImageCache) return Promise.resolve(poseImageCache);
@@ -47,7 +70,7 @@ export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
       return;
     }
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    img.decoding = 'async';
     img.onload = () => {
       poseImageCache = img;
       resolve(img);
@@ -58,11 +81,42 @@ export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
   return poseImageLoadPromise;
 }
 
-export function pickRandomGateColor(): GateColorId {
-  return GATE_COLOR_IDS[Math.floor(Math.random() * GATE_COLOR_IDS.length)]!;
+export function preloadColorGatePoseImages(): Promise<HTMLImageElement[]> {
+  if (poseImagesCache) return Promise.resolve(poseImagesCache);
+  if (poseImagesLoadPromise) return poseImagesLoadPromise;
+
+  poseImagesLoadPromise = Promise.all(
+    COLOR_GATE_POSE_IMAGE_URLS.map((url) => new Promise<HTMLImageElement | null>((resolve) => {
+      if (typeof window === 'undefined') {
+        resolve(null);
+        return;
+      }
+      const img = new Image();
+      img.decoding = 'async';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    })),
+  ).then((images) => {
+    const loaded = images.filter((img): img is HTMLImageElement => img !== null);
+    poseImagesCache = loaded;
+    if (!poseImageCache && loaded[0]) poseImageCache = loaded[0];
+    return loaded;
+  });
+  return poseImagesLoadPromise;
 }
 
-export function buildColorGateCue(gateColorId: GateColorId, _actionCue?: string): string {
+export function pickRandomGateColor(): GateColorId {
+  return COLOR_GATE_FIXED_COLOR_ID;
+}
+
+export function laneForGateColor(gateColorId: GateColorId): 0 | 1 | 2 {
+  if (gateColorId === 'green') return 0;
+  if (gateColorId === 'yellow') return 2;
+  return 1;
+}
+
+export function buildColorGateCue(gateColorId: GateColorId): string {
   return `${GATE_COLORS[gateColorId].label}으로!`;
 }
 
@@ -71,76 +125,46 @@ export function buildColorGateInstruction(gateColorId: GateColorId): string {
   return `${color.label} 패드로 이동한 뒤 「${COLOR_GATE_POSE_LABEL}」 자세를 취하세요`;
 }
 
-const SILHOUETTE_LUM_THRESHOLD = 105;
-
-/** 게이트 패널 캔버스 — 배경색 + 포즈 실루엣 (4색 × 1회만 생성) */
-export function buildColorGatePanelCanvas(
-  gateColorId: GateColorId,
-  action: FlowModuleKey,
-  poseImage: HTMLImageElement | null,
+export function buildColorGateSilhouetteCanvas(
+  poseImage: HTMLImageElement,
   lowRes: boolean,
 ): HTMLCanvasElement {
-  const w = lowRes ? 256 : 768;
-  const h = lowRes ? 384 : 1152;
+  const w = lowRes ? 128 : 192;
+  const h = lowRes ? 192 : 288;
   const canvas = document.createElement('canvas');
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
   if (!ctx) return canvas;
 
-  ctx.fillStyle = GATE_COLORS[gateColorId].bg;
-  ctx.fillRect(0, 0, w, h);
+  const sample = document.createElement('canvas');
+  sample.width = w;
+  sample.height = h;
+  const sampleCtx = sample.getContext('2d');
+  if (!sampleCtx) return canvas;
 
-  if (poseImage) {
-    const scale = Math.min(w / poseImage.width, h / poseImage.height) * 0.88;
-    const dw = poseImage.width * scale;
-    const dh = poseImage.height * scale;
-    const dx = (w - dw) / 2;
-    const dy = (h - dh) / 2;
+  const scale = Math.min(w / poseImage.width, h / poseImage.height) * 0.9;
+  const dw = poseImage.width * scale;
+  const dh = poseImage.height * scale;
+  const dx = (w - dw) / 2;
+  const dy = (h - dh) / 2;
+  sampleCtx.drawImage(poseImage, dx, dy, dw, dh);
 
-    const sample = document.createElement('canvas');
-    sample.width = w;
-    sample.height = h;
-    const sctx = sample.getContext('2d');
-    if (sctx) {
-      sctx.drawImage(poseImage, dx, dy, dw, dh);
-      const src = sctx.getImageData(0, 0, w, h);
-      const out = ctx.getImageData(0, 0, w, h);
-      for (let i = 0; i < src.data.length; i += 4) {
-        const lum =
-          0.299 * src.data[i]!
-          + 0.587 * src.data[i + 1]!
-          + 0.114 * src.data[i + 2]!;
-        if (lum < SILHOUETTE_LUM_THRESHOLD) {
-          out.data[i] = 20;
-          out.data[i + 1] = 24;
-          out.data[i + 2] = 32;
-          out.data[i + 3] = 255;
-        }
-      }
-      ctx.putImageData(out, 0, 0);
-      return canvas;
+  const sampleData = sampleCtx.getImageData(0, 0, w, h);
+  const out = ctx.createImageData(w, h);
+  for (let i = 0; i < out.data.length; i += 4) {
+    const alpha = sampleData.data[i + 3]!;
+    const luma =
+      0.2126 * sampleData.data[i]!
+      + 0.7152 * sampleData.data[i + 1]!
+      + 0.0722 * sampleData.data[i + 2]!;
+    if (alpha >= SILHOUETTE_ALPHA_MIN && luma <= SILHOUETTE_LUMA_MAX) {
+      out.data[i] = SILHOUETTE_RGB.r;
+      out.data[i + 1] = SILHOUETTE_RGB.g;
+      out.data[i + 2] = SILHOUETTE_RGB.b;
+      out.data[i + 3] = 255;
     }
   }
-
-  ctx.fillStyle = 'rgba(17, 24, 39, 0.92)';
-  ctx.save();
-  ctx.scale(w / 120, h / 200);
-  for (const d of getPoseSilhouettePaths(action)) {
-    ctx.fill(new Path2D(d));
-  }
-  ctx.restore();
+  ctx.putImageData(out, 0, 0);
   return canvas;
-}
-
-/** SVG 폴백 (이미지 로드 실패 시) */
-export function getPoseSilhouettePaths(action: FlowModuleKey): string[] {
-  const lungeReach = [
-    'M72 52 C64 52 58 58 56 66 L52 98 C50 108 54 118 62 122 L58 152 L52 182 L62 182 L66 154 L70 154 L74 182 L84 182 L78 152 L74 122 C82 118 86 108 84 98 L80 66 C78 58 72 52 64 52 Z',
-    'M56 78 L18 72 L14 80 L52 88 Z',
-    'M62 122 L48 168 L38 178 L44 186 L58 158 L68 130 Z',
-    'M74 122 L88 168 L98 178 L92 186 L78 158 L68 130 Z',
-  ];
-  if (action === 'reach') return lungeReach;
-  return lungeReach;
 }

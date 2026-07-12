@@ -1,9 +1,35 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+function loadEnvFile(path) {
+  try {
+    const text = readFileSync(path, 'utf8');
+    for (const line of text.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) continue;
+      const eq = trimmed.indexOf('=');
+      if (eq <= 0) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let value = trimmed.slice(eq + 1).trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[key]) process.env[key] = value;
+    }
+  } catch {
+    // optional
+  }
+}
+
+loadEnvFile(join(ROOT, '.env.local'));
+loadEnvFile(join(ROOT, '.env'));
 
 const DATABASE_URL =
   process.env.SPOKEDU_MASTER_DATABASE_URL ||
@@ -18,6 +44,7 @@ const REQUIRED_TABLES = [
   'spokedu_master_subscriptions',
   'spokedu_master_payment_orders',
   'spokedu_master_payment_webhook_events',
+  'spokedu_master_profiles',
   'spokedu_master_program_meta',
 ];
 
@@ -37,17 +64,56 @@ function maskDatabaseUrl(url) {
   }
 }
 
-function assertPsqlAvailable() {
+function isPsqlAvailable() {
   const result = spawnSync('psql', ['--version'], {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  if (result.status !== 0) {
-    fail('psql is required for read-only integrity checks but was not available.');
+  return result.status === 0;
+}
+
+function printQueryRows(rows) {
+  if (!rows?.length) return;
+  const columns = Object.keys(rows[0]);
+  console.log(columns.join(' | '));
+  for (const row of rows) {
+    console.log(columns.map((column) => String(row[column] ?? '')).join(' | '));
   }
 }
 
-function runSql(sql) {
+async function runSqlWithPg(sql) {
+  const { Client } = await import('pg');
+  const client = new Client({
+    connectionString: DATABASE_URL,
+    ssl: DATABASE_URL.includes('supabase') ? { rejectUnauthorized: false } : undefined,
+  });
+
+  await client.connect();
+  try {
+    const statements = sql
+      .replace(/^set default_transaction_read_only = on;\s*/i, '')
+      .replace(/^begin read only;\s*/i, '')
+      .replace(/\ncommit;\s*$/i, '')
+      .split(';')
+      .map((statement) => statement.trim())
+      .filter(Boolean);
+
+    await client.query('set default_transaction_read_only = on');
+    await client.query('begin read only');
+    for (const statement of statements) {
+      const result = await client.query(statement);
+      printQueryRows(result.rows);
+    }
+    await client.query('commit');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    fail(`read-only integrity SQL failed: ${message}`);
+  } finally {
+    await client.end();
+  }
+}
+
+function runSqlWithPsql(sql) {
   const directory = mkdtempSync(join(tmpdir(), 'spm-integrity-'));
   const filePath = join(directory, 'check.sql');
   writeFileSync(filePath, sql, 'utf8');
@@ -68,18 +134,25 @@ function runSql(sql) {
   }
 }
 
+async function runSql(sql) {
+  if (isPsqlAvailable()) {
+    runSqlWithPsql(sql);
+    return;
+  }
+  console.log('[spokedu-master:data-integrity] psql not found; using node pg client.');
+  await runSqlWithPg(sql);
+}
+
 if (!DATABASE_URL) {
   fail('set SPOKEDU_MASTER_DATABASE_URL, SUPABASE_DB_URL, or DATABASE_URL for the target read-only database.');
 }
-
-assertPsqlAvailable();
 
 console.log('[spokedu-master:data-integrity] target:', maskDatabaseUrl(DATABASE_URL));
 console.log('[spokedu-master:data-integrity] running read-only checks only.');
 
 const tableValues = REQUIRED_TABLES.map((table) => `('${table}')`).join(',');
 
-runSql(`
+await runSql(`
 set default_transaction_read_only = on;
 begin read only;
 
@@ -125,6 +198,8 @@ with required(table_name, column_name) as (
     ('spokedu_master_payment_orders', 'payment_key'),
     ('spokedu_master_payment_webhook_events', 'event_key'),
     ('spokedu_master_payment_webhook_events', 'event_type'),
+    ('spokedu_master_profiles', 'user_id'),
+    ('spokedu_master_profiles', 'onboarding_done'),
     ('spokedu_master_program_meta', 'curriculum_id')
 ),
 missing_columns as (

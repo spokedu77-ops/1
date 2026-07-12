@@ -50,7 +50,7 @@ describe('program home recommendation readiness', () => {
     expect(getProgramHomeReadiness(item)).toBeGreaterThanOrEqual(7);
   });
 
-  it('keeps limited content searchable and available for home recommendations', () => {
+  it('does not require a dedicated safety section for READY when other lesson fields are present', () => {
     const item = program({
       lessonDetail: {
         ...program().lessonDetail!,
@@ -58,7 +58,8 @@ describe('program home recommendation readiness', () => {
       },
     });
 
-    expect(getProgramQualityReport(item).status).toBe('LIMITED');
+    expect(getProgramQualityReport(item).status).toBe('READY');
+    expect(getProgramQualityReport(item).missing).not.toContain('안전');
     expect(isProgramHomeRecommendationEligible(item)).toBe(true);
   });
 

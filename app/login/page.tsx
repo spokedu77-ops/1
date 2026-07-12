@@ -125,7 +125,7 @@ function LoginContent() {
   const sendTrialOtp = async () => {
     const email = trialEmail.trim().toLowerCase();
     if (!email.includes('@')) {
-      setLoginError('무료 체험을 이어갈 이메일 주소를 입력해 주세요.');
+      setLoginError('이메일 주소를 입력해 주세요.');
       return;
     }
     setIsLoading(true);
@@ -189,7 +189,7 @@ function LoginContent() {
           <h1 className="text-4xl font-black italic text-blue-900 tracking-tighter uppercase leading-none">SPOKEDU</h1>
           <div className="h-1 w-12 bg-blue-600 mx-auto mt-4 rounded-full"></div>
           <p className="text-[11px] font-bold text-blue-600 uppercase tracking-[0.3em] mt-4">
-            {showTrialLogin ? 'SPOKEDU MASTER Trial' : type === 'admin' ? 'System Administrator' : 'Physical Education Expert'}
+            {showTrialLogin ? 'SPOKEDU MASTER' : type === 'admin' ? 'System Administrator' : 'Physical Education Expert'}
           </p>
           {type === 'admin' && (
             <p className="mt-4 text-xs font-medium text-slate-500 leading-relaxed">
@@ -204,9 +204,9 @@ function LoginContent() {
         {showTrialLogin && (
           <div className="space-y-4 rounded-3xl border border-blue-100 bg-blue-50/80 p-4">
             <div>
-              <p className="text-lg font-black text-blue-950">SPOKEDU MASTER 무료 체험 시작</p>
+              <p className="text-lg font-black text-blue-950">SPOKEDU MASTER 시작하기</p>
               <p className="mt-1 text-xs font-semibold leading-5 text-blue-900/80">
-                이메일 인증 후 14일 무료 체험 설정을 이어갑니다. 기존 계정이 있다면 같은 이메일로 로그인됩니다.
+                이메일 인증 후 계정 설정(온보딩)으로 이어집니다. 기존 계정이 있다면 같은 이메일로 로그인됩니다. 수업 기능은 이용권 선택 후 사용할 수 있습니다.
               </p>
             </div>
             <div className="relative">
@@ -237,7 +237,7 @@ function LoginContent() {
               disabled={isLoading}
               className="w-full min-h-[48px] rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-lg shadow-blue-100 disabled:opacity-70"
             >
-              {isLoading ? '인증 처리 중...' : trialOtpSent ? '무료 체험 계속하기' : '인증 코드 받기'}
+              {isLoading ? '인증 처리 중...' : trialOtpSent ? '시작하기' : '인증 코드 받기'}
             </button>
             <button
               type="button"
@@ -311,7 +311,7 @@ function LoginContent() {
             onClick={() => setShowPasswordLogin(false)}
             className="w-full text-center text-xs font-bold text-blue-600 hover:text-blue-900"
           >
-            이메일 인증으로 무료 체험 시작
+            이메일 인증으로 시작하기
           </button>
         )}
 

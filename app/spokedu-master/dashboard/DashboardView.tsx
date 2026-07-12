@@ -55,7 +55,9 @@ import {
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
-import { canUseSpomove } from '../lib/subscription';
+import { useHasMasterEntitlement, useHasPremiumEntitlement, useMasterAccessSnapshot } from '../access/MasterAccessProvider';
+import { hasMasterEntitlement } from '../lib/masterAccessModel';
+import { EntitlementPreviewHome } from './EntitlementPreviewHome';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -77,8 +79,7 @@ type SpomoveThumbnailPackQueryResult = {
   error: { code?: string } | null;
 };
 
-function getFirstStartSteps(profile: UserProfile | null) {
-  const spomoveAvailable = canUseSpomove(profile);
+function getFirstStartSteps(spomoveAvailable: boolean) {
   return [
   {
     title: '오늘 수업 고르기',
@@ -411,9 +412,8 @@ function ContinueSection({ item }: { item: ContinueItem }) {
   );
 }
 
-function FirstStartGuide({ profile }: { profile: UserProfile | null }) {
-  const firstStartSteps = getFirstStartSteps(profile);
-  const spomoveAvailable = canUseSpomove(profile);
+function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
+  const firstStartSteps = getFirstStartSteps(spomoveAvailable);
   return (
     <section
       data-dashboard-section="first-start"
@@ -501,18 +501,17 @@ function ActivityPanel({
   reportCount,
   recordCount,
   studentMemoCount,
-  profile,
 }: {
   reportCount: number | null;
   recordCount: number;
   studentMemoCount: number;
-  profile: UserProfile | null;
 }) {
-  const status = profile?.isAdmin
+  const accessSnapshot = useMasterAccessSnapshot();
+  const status = accessSnapshot.isAdmin
     ? 'Admin'
-    : profile?.plan === 'team'
+    : accessSnapshot.isCenterOrTeam
       ? 'Team 이용 중'
-      : profile?.plan === 'pro'
+      : accessSnapshot.canUseSpomove
         ? '프리미엄 이용 중'
         : '이용권 확인';
 
@@ -617,6 +616,16 @@ function buildContinueItem(
 
 
 export default function DashboardView() {
+  const accessSnapshot = useMasterAccessSnapshot();
+  if (!hasMasterEntitlement(accessSnapshot)) {
+    return <EntitlementPreviewHome snapshot={accessSnapshot} />;
+  }
+  return <EntitledDashboardView />;
+}
+
+function EntitledDashboardView() {
+  const spomoveAvailable = useHasPremiumEntitlement();
+  const hasEntitlement = useHasMasterEntitlement();
   const {
     programs,
     programsLoaded,
@@ -757,22 +766,23 @@ export default function DashboardView() {
   const loopAction = useMemo(
     () => selectMasterLoopAction({
       profile,
+      entitlement: { hasEntitlement },
       recentLessonActivities: validLessonActivities,
       recentSpomoveActivities: validSpomoveActivities,
       classRecords,
       explanationCount: explanationData.status === 'loading' ? 0 : explanationData.total,
     }),
-    [classRecords, explanationData.status, explanationData.total, profile, validLessonActivities, validSpomoveActivities],
+    [classRecords, explanationData.status, explanationData.total, hasEntitlement, profile, validLessonActivities, validSpomoveActivities],
   );
 
   useEffect(() => {
-    if (programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
+    if (process.env.NODE_ENV !== 'production' && programsLoaded && programPool.length >= 4 && weeklyPrograms.length < 4) {
       console.error('[SPOKEDU MASTER] Weekly recommendations could not be filled to four items.');
     }
-    if (weeklySelection.slotConflicts.length > 0) {
+    if (process.env.NODE_ENV !== 'production' && weeklySelection.slotConflicts.length > 0) {
       console.error('[SPOKEDU MASTER] Conflicting explicit weekly slots.', weeklySelection.slotConflicts);
     }
-    if (weeklySelection.slotDiagnostics.length > 0) {
+    if (process.env.NODE_ENV !== 'production' && weeklySelection.slotDiagnostics.length > 0) {
       console.error('[SPOKEDU MASTER] Weekly recommendation slot diagnostics.', weeklySelection.slotDiagnostics);
     }
   }, [programPool.length, programsLoaded, weeklyPrograms.length, weeklySelection.slotConflicts, weeklySelection.slotDiagnostics]);
@@ -823,16 +833,23 @@ export default function DashboardView() {
         </div>
       </header>
 
-      {isFirstUser ? <FirstStartGuide profile={profile} /> : null}
+      {isFirstUser ? <FirstStartGuide spomoveAvailable={spomoveAvailable} /> : null}
 
       <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-indigo-600"><Sparkles size={13} />Weekly selection</p>
             <h2 id="weekly-heading" className="text-[22px] font-black tracking-[-0.03em] text-slate-950 sm:text-[26px]">이번 주 추천 프로그램</h2>
-            <p className="mt-1 text-[13px] font-semibold text-slate-500">이번 주 현장에서 바로 활용하기 좋은 수업 4개를 골랐습니다.</p>
+            <p className="mt-1 text-[13px] font-semibold text-slate-500">
+              {weeklyPrograms.length === 4
+                ? '이번 주 현장에서 바로 활용하기 좋은 수업 4개를 골랐습니다.'
+                : weeklyPrograms.length > 0
+                  ? `이번 주 추천 가능한 수업 ${weeklyPrograms.length}개를 표시합니다.`
+                  : '지금은 추천 가능한 수업이 없습니다. 라이브러리에서 오늘 수업을 고르세요.'}
+            </p>
           </div>
         </div>
+        {weeklyPrograms.length > 0 ? (
         <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
           {weeklyPrograms.map((program, index) => (
             <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
@@ -845,6 +862,14 @@ export default function DashboardView() {
             </div>
           ))}
         </div>
+        ) : (
+          <div className="rounded-[18px] border border-slate-200 bg-white p-5 text-center">
+            <p className="text-[14px] font-semibold text-slate-600">라이브러리에서 수업을 선택해 오늘 수업을 시작하세요.</p>
+            <Link href="/spokedu-master/library" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-[13px] font-black text-white">
+              라이브러리 열기
+            </Link>
+          </div>
+        )}
       </section>
 
       {showRecentUse && continueItem ? <ContinueSection item={continueItem} /> : null}
@@ -925,7 +950,6 @@ export default function DashboardView() {
         reportCount={explanationData.status === 'loading' ? null : explanationData.total}
         recordCount={classRecords.length}
         studentMemoCount={studentMemoCount}
-        profile={profile}
       />
 
       {selectedProgram ? (

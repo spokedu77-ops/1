@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, ClipboardList, FileText, UserPlus, UsersRound } from 'lucide-react';
+import { BookOpen, ClipboardList, FileText, Loader2, UserPlus, UsersRound } from 'lucide-react';
 import { useMemo } from 'react';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -13,8 +13,30 @@ function formatDate(value?: string | null) {
   return new Intl.DateTimeFormat('ko-KR', { month: 'long', day: 'numeric' }).format(date);
 }
 
+function ActivityLoadingState() {
+  return (
+    <div className="mt-4 flex items-center justify-center gap-2 rounded-[15px] p-8" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+      <Loader2 size={18} className="animate-spin" color="var(--spm-acc)" />
+      <p className="text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>수업 기록을 불러오는 중입니다.</p>
+    </div>
+  );
+}
+
+function ActivityErrorState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="mt-4 rounded-[15px] p-5" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)' }}>
+      <p className="text-[13px] font-bold" style={{ color: 'var(--spm-red)' }}>수업 기록을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+      <button type="button" onClick={onRetry} className="mt-3 h-11 rounded-[10px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
+        다시 시도
+      </button>
+    </div>
+  );
+}
+
 export default function ActivityPage() {
   const operationalData = useOperationalData();
+  const operationalLoading = operationalData.status === 'idle' || operationalData.status === 'loading';
+  const operationalError = operationalData.status === 'error';
   const records = useMemo(
     () =>
       operationalData.classRecords
@@ -51,7 +73,11 @@ export default function ActivityPage() {
             <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>최근 수업 기록</h2>
           </div>
 
-          {records.length ? (
+          {operationalLoading ? (
+            <ActivityLoadingState />
+          ) : operationalError ? (
+            <ActivityErrorState onRetry={() => void operationalData.reload()} />
+          ) : records.length ? (
             <div className="mt-4 grid gap-3">
               {records.slice(0, 8).map((record) => {
                 const hasMemo = Boolean(record.memo?.trim() || record.parentNoteSnapshot?.trim());

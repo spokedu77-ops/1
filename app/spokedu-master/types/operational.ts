@@ -52,6 +52,12 @@ export type CreateStudentInput = {
   meta: MasterStudentMeta;
 };
 
+export type UpdateStudentInput = {
+  name: string;
+  group: string | null;
+  meta: MasterStudentMeta;
+};
+
 export type CreateClassRecordStudentInput = {
   studentId: string | null;
   studentLegacyId: string | null;

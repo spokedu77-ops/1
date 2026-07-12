@@ -21,13 +21,13 @@ export default function ParentStudentViewPage() {
           className="text-[22px] font-black"
           style={{ fontFamily: 'var(--spm-font-display)' }}
         >
-          현재 공유 링크는 사용할 수 없습니다.
+          보호자 공개 링크는 현재 제공하지 않습니다.
         </h1>
         <p
           className="mt-2 text-[13px] leading-6"
           style={{ color: 'var(--spm-t2)' }}
         >
-          학생 정보 보호를 위해 안전한 공유 기능을 준비하고 있습니다.
+          학생 정보 보호를 위해 자동 공유 링크 기능은 아직 운영하지 않습니다. 안내문은 강사가 직접 복사해 전달해 주세요.
         </p>
       </section>
     </main>

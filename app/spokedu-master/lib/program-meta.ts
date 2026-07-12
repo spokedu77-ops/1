@@ -63,7 +63,6 @@ export function getProgramQualityReport(program: Program): ProgramQualityReport 
   const hasSpace = !isPlaceholderMeta(program.space);
   const hasEquipment = program.equipment.some((item) => !isPlaceholderMeta(item));
   const hasExecution = hasProgramExecutionDetail(program);
-  const hasSafety = Boolean(detail?.safetyNotes?.some((item) => !isPlaceholderMeta(item)));
   const hasTeaching = hasProgramTeachingSupport(program);
   const hasPreview = Boolean(resolveProgramHero(program) || programHasPlayableVideo(program));
 
@@ -71,7 +70,6 @@ export function getProgramQualityReport(program: Program): ProgramQualityReport 
   if (!hasSpace) missing.push('공간');
   if (!hasEquipment) missing.push('준비물');
   if (!hasExecution) missing.push('진행');
-  if (!hasSafety) missing.push('안전');
   if (!hasTeaching) missing.push('지도/변형');
   if (!hasPreview) missing.push('미리보기 자료');
   if (hasSpecialSupportTag(program) && !hasSpecialSupportEvidence(program)) missing.push('특수 대상 지원 근거');

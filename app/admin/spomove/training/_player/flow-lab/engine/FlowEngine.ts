@@ -13,10 +13,11 @@ import { FlowCamera, type FlowCameraUpdateInput } from './FlowCamera';
 import { FlowAudio } from './FlowAudio';
 import { AdaptiveQuality } from './AdaptiveQuality';
 import { ObstacleManager } from './entities/ObstacleManager';
-import { ColorGateManager, prewarmColorGateTextures, type ColorGateAttachConfig } from './entities/ColorGateManager';
+import { ColorGateManager, COLOR_GATE_LOCAL_Z } from './entities/ColorGateManager';
 import type { FlowBridge } from './entities/ObstacleManager';
 import {
   BridgeRenderer,
+  type BridgeVisual,
   LANE_WIDTH,
   BRIDGE_LENGTH,
   PAD_DEPTH,
@@ -37,7 +38,12 @@ import { PunchVFX } from './renderers/PunchVFX';
 import { ArenaRenderer } from './renderers/ArenaRenderer';
 import { PostProcessingRenderer } from './renderers/PostProcessingRenderer';
 import { staticPerfTier } from '../../lib/reactTrainPerf';
-import { pickRandomGateColor, preloadColorGatePoseImage, type GateColorId } from './modules/colorGateGuides';
+import {
+  pickRandomGateColor,
+  preloadColorGatePoseImages,
+  shouldSpawnColorGateOnBridgeAttempt,
+  type GateColorId,
+} from './modules/colorGateGuides';
 
 // ─── 상수 (원본 coordContract 완전 동일) ────────────────────────────────────
 
@@ -70,8 +76,6 @@ const KICK_VFX_Y        = 102;  // 가슴~어깨 높이 킥
 
 // 스피드라인
 const SPEEDLINE_COUNT      = 250;
-const SPEEDLINE_BASE_SPEED = 260;
-const SPEEDLINE_LEVEL_MULT = 38;
 
 // 브릿지 프룬
 const BRIDGE_PRUNE_Z = 5000;
@@ -105,13 +109,14 @@ export interface FlowEngineCallbacks {
   onBalanceCue:   (foot: 'left' | 'right') => void;
   onCameraShake:  (intensity: number, ms: number) => void;
   onFlash:        () => void;
-  /** 색 관문 스테이지 시작 — HUD 동기화용 */
+  /** 색 관문 스테이지 시작 (색은 onColorGateColor로 문과 동기화) */
   onColorGateStage?: (info: {
-    gateColorId: GateColorId;
     action: FlowModuleKey;
     step: number;
     total: number;
   }) => void;
+  /** 가장 가까운 관문 색 — 문마다 갱신 (null이면 HUD 숨김) */
+  onColorGateColor?: (gateColorId: GateColorId | null) => void;
 }
 
 export interface FlowStats {
@@ -129,6 +134,7 @@ export interface FlowEngineOptions {
 }
 
 interface BridgeObj extends FlowBridge {
+  visual:           BridgeVisual;
   padDepth:         number;
   instructionFired: boolean;
   preJumpFired:     boolean;
@@ -169,7 +175,9 @@ export class FlowEngine {
   );
   private obstacles:      ObstacleManager | null = null;
   private colorGates:     ColorGateManager | null = null;
-  private currentColorGate: ColorGateAttachConfig | null = null;
+  private currentColorGateAction: FlowModuleKey | null = null;
+  private colorGateSpawnIdx = 0;
+  private colorGateLaneOverrideX: number | null = null;
   private flowCam:        FlowCamera | null = null;
   private bridgeRenderer: BridgeRenderer | null = null;
   private spaceEnv:       SpaceEnvironment | null = null;
@@ -376,17 +384,22 @@ export class FlowEngine {
       getShardScale:      () => this.aq.getShardScale(),
     }, glbTemplates);
 
-    const poseImage = await preloadColorGatePoseImage();
-    const lowRes = staticPerfTier === 'low';
-    prewarmColorGateTextures(poseImage, lowRes);
-    this.colorGates = new ColorGateManager(lowRes, poseImage);
-
     for (let i = 0; i < 3; i++) this.spawnBridge(i === 0);
+
+    if (this.stageList.some((s) => s.isColorGate)) {
+      this.ensureColorGateManager();
+    }
   }
 
   // ── GLB 자산 로딩 ────────────────────────────────────────────────────────
 
   private async loadGlbScenes(): Promise<THREE.Object3D | null> {
+    const nonGateStages = this.stageList.filter((stage) => !stage.isColorGate);
+    const needsCrate = nonGateStages.some((stage) => stage.activeModules.has('jump'));
+    const needsSpaceship = nonGateStages.some((stage) => stage.activeModules.has('duck'));
+    const needsWall = nonGateStages.some((stage) => stage.activeModules.has('reach'));
+    if (!needsCrate && !needsSpaceship && !needsWall) return null;
+
     const loader = new GLTFLoader();
 
     const loadOne = (path: string): Promise<THREE.Object3D | null> =>
@@ -405,17 +418,16 @@ export class FlowEngine {
         );
       });
 
-    const [track, crate, spaceship, wall] = await Promise.all([
-      loadOne('/spomove/dive/models/dive_track_segment.glb'),
-      loadOne('/spomove/dive/models/dive_obstacle_crate_a.glb'),
-      loadOne('/spomove/dive/models/dive_duck_spaceship.glb'),
-      loadOne('/spomove/dive/models/dive_punch_wall.glb'),
+    const [crate, spaceship, wall] = await Promise.all([
+      needsCrate ? loadOne('/spomove/dive/models/dive_obstacle_crate_a.glb') : Promise.resolve(null),
+      needsSpaceship ? loadOne('/spomove/dive/models/dive_duck_spaceship.glb') : Promise.resolve(null),
+      needsWall ? loadOne('/spomove/dive/models/dive_punch_wall.glb') : Promise.resolve(null),
     ]);
 
     this.crateGlbScene     = crate ?? null;
     this.spaceshipGlbScene = spaceship ?? null;
     this.wallGlbScene      = wall ?? null;
-    return track ?? null;
+    return null;
   }
 
   // ── 파란 바닥 레인 (원본과 완전 동일) ─────────────────────────────────────
@@ -584,16 +596,25 @@ export class FlowEngine {
       spawnZ = -8000;
     }
 
+    const gateColorId = !isFirst ? this.planColorGateForNextBridge() : null;
     const randLane = FlowEngine.BRIDGE_LANE_SEQ[this.bridgeLaneIdx % 3]!;
     this.bridgeLaneIdx++;
     const bridgeX  = (randLane - 1) * LANE_WIDTH;
 
-    const visual = this.bridgeRenderer.createBridge({ lane: randLane, x: bridgeX, z: spawnZ });
+    const visual = this.bridgeRenderer.createBridge({
+      lane: randLane,
+      x: bridgeX,
+      z: spawnZ,
+      colorGateDeck: gateColorId
+        ? { gateLocalZ: COLOR_GATE_LOCAL_Z, color: 0x1d4ed8 }
+        : undefined,
+    });
 
     const bridgeObj: BridgeObj = {
       mesh: visual.mesh, lane: randLane, bridgeId: this.bridgeIdCnt++,
       x: bridgeX,
-      hasBox: false, padMesh: visual.padMesh, padDepth: visual.padDepth,
+      visual,
+      hasBox: false, hasColorGate: false, padMesh: visual.padMesh, padDepth: visual.padDepth,
       instructionFired: false,
       preJumpFired: false,
     };
@@ -616,19 +637,40 @@ export class FlowEngine {
       }
     }
 
-    if (
-      !isFirst
-      && this.currentColorGate
-      && this.colorGates
-      && this.stageList[this.stageIdx]?.isColorGate
-    ) {
-      this.colorGates.attach(bridgeObj, bridgeX, this.currentColorGate);
+    if (gateColorId && this.colorGates) {
+      this.colorGates.attach(bridgeObj, bridgeX, gateColorId);
     }
+  }
+
+  /** 색 관문: 시작 후 2브릿지는 비우고, 이후 브릿지마다 게이트 색 lane으로 생성 */
+  private planColorGateForNextBridge(): GateColorId | null {
+    if (!this.currentColorGateAction || !this.colorGates) return null;
+    if (!this.stageList[this.stageIdx]?.isColorGate) return null;
+    if (!this.colorGates.isReady()) return null;
+
+    this.colorGateSpawnIdx += 1;
+    if (!shouldSpawnColorGateOnBridgeAttempt(this.colorGateSpawnIdx, Math.random())) return null;
+
+    return pickRandomGateColor();
+  }
+
+  /** 카운트다운·init3D에서 미리 준비 */
+  private ensureColorGateManager(): void {
+    if (this.colorGates) return;
+    this.colorGates = new ColorGateManager(staticPerfTier === 'low');
+    void preloadColorGatePoseImages().then((images) => {
+      if (this.disposed || !this.colorGates) return;
+      this.colorGates.setPoseImages(images);
+    });
   }
 
   // ── 카운트다운 ───────────────────────────────────────────────────────────
 
   private startCountdown(): void {
+    if (this.stageList.some((s) => s.isColorGate)) {
+      void preloadColorGatePoseImages();
+      this.ensureColorGateManager();
+    }
     this.setPhase('countdown');
     let n = 3;
     const tick = () => {
@@ -661,9 +703,15 @@ export class FlowEngine {
     this.resetSpecialTimers();
     this.obstacles?.clearAll();
     this.colorGates?.clearAll();
-    for (const b of this.bridges) { b.hasBox = false; b.instructionFired = false; b.preJumpFired = false; }
+    for (const b of this.bridges) {
+      b.hasBox = false;
+      b.hasColorGate = false;
+      b.instructionFired = false;
+      b.preJumpFired = false;
+    }
     this.bridgeLaneIdx = 0; // 스테이지마다 빨강부터 다시 시작
     this.activeBridge = null;
+    this.colorGateLaneOverrideX = null;
 
     // 장애물 스케줄 생성 (색 관문: 장애물 없음)
     const speedMult = SPEED_MULTS[Math.min(idx, SPEED_MULTS.length - 1)]!;
@@ -682,32 +730,27 @@ export class FlowEngine {
     this.stageScheduleIdx = 0;
 
     if (stage.isColorGate && stage.colorGateAction) {
-      this.currentColorGate = {
-        gateColorId: pickRandomGateColor(),
-        action: stage.colorGateAction,
-      };
+      this.currentColorGateAction = stage.colorGateAction;
+      this.colorGateSpawnIdx = 0;
+      this.ensureColorGateManager();
+      this.colorGates?.clearAll();
+      for (const b of this.bridges) {
+        b.hasColorGate = false;
+      }
+      this.colorGateLaneOverrideX = null;
       this.cb.onColorGateStage?.({
-        gateColorId: this.currentColorGate.gateColorId,
         action: stage.colorGateAction,
         step: stage.colorGateStep ?? 1,
         total: stage.colorGateTotal ?? 5,
       });
     } else {
-      this.currentColorGate = null;
+      this.currentColorGateAction = null;
+      this.colorGateLaneOverrideX = null;
     }
 
-    if (stage.isColorGate && this.currentColorGate && this.colorGates) {
-      for (const b of this.bridges) {
-        if (!b.hasBox) {
-          this.colorGates.attach(b, b.x, this.currentColorGate);
-        }
-      }
-    }
-
-    // lastJumpBridgeId 유지 → phantom jump 방지
     this.cb.onStageChange?.(idx);
     // 스테이지 0은 카운트다운 후 already-playing. 1+ 또는 색 관문은 2초 인트로
-    if (idx > 0 || stage.isColorGate) {
+    if (idx > 0) {
       this.setPhase('stage-intro');
       this.countdownTimer = setTimeout(() => this.setPhase('playing'), 2000);
     }
@@ -727,7 +770,10 @@ export class FlowEngine {
   private endStage(): void {
     this.stats.stagesCompleted++;
     this.audio.sfxStageUp();
-    this.flashPulseValue = 1.0;
+    const leavingColorGate = this.stageList[this.stageIdx]?.isColorGate;
+    if (!leavingColorGate) {
+      this.flashPulseValue = 1.0;
+    }
     this.flowCam?.addHitShake(0.9, 250);
     const next = this.stageIdx + 1;
     if (next < this.stageList.length) this.startStage(next);
@@ -781,7 +827,8 @@ export class FlowEngine {
       this.lastTickMs = now;
       this.update(Math.min(rawDt, 0.1));
       if (this.renderer && this.scene && this.camera) {
-        if (this.postFX) {
+        const skipBloom = this.stageList[this.stageIdx]?.isColorGate === true;
+        if (this.postFX && !skipBloom) {
           this.postFX.render();
         } else {
           this.renderer.render(this.scene, this.camera);
@@ -860,7 +907,9 @@ export class FlowEngine {
         phase: this.phase, gameTime: this.gameTime,
         isJumping: this.isJumping, jumpProgress: this.jumpProgress, playerJumpY: this.playerJumpY,
         isOnBridge: this.isOnBridge, isOnPad: this.isOnPad, isChangingLane: this.isChangingLane,
-        targetX: this.targetX, activeBridgeX: this.activeBridge?.x ?? null, groundY: this.groundY,
+        targetX: this.targetX,
+        activeBridgeX: this.colorGateLaneOverrideX ?? this.activeBridge?.x ?? null,
+        groundY: this.groundY,
       } satisfies FlowCameraUpdateInput);
       return;
     }
@@ -896,8 +945,7 @@ export class FlowEngine {
     // 1단계: 전반 1.0x / 후반 1.15x, 나머지 스테이지: 처음부터 1.15x
     const fasterMult  = (this.stageIdx === 0 && this.stageTimer < stage.durationSec / 2) ? 1.0 : 1.15;
     let speedScalar = this.wallBreakActive ? 0.0 : 1.0;
-    const colorGateMult = stage.isColorGate ? 0.42 : 1.0;
-    this.currentSpeed = BASE_SPEED * stageMult * fasterMult * speedScalar * colorGateMult;
+    this.currentSpeed = BASE_SPEED * stageMult * fasterMult * speedScalar;
     const bridgeMove  = this.currentSpeed * 50 * dt60M;
 
     // ── 브릿지 이동·프룬 ────────────────────────────────────────────────────
@@ -957,6 +1005,21 @@ export class FlowEngine {
     this.isOnBridge = foundActive;
     this.groundY    = foundActive ? GROUND_Y : 0;
 
+    // ── 색 관문: 통과 연출 + HUD 색 동기화 ─────────────────────────────────
+    if (stage.isColorGate && this.colorGates) {
+      this.colorGates.update(
+        PLAYER_Z,
+        dt,
+        (gateColorId) => {
+          this.cb.onColorGateColor?.(gateColorId);
+        },
+        (_gateColorId, bridge) => {
+          this.bridgeRenderer?.revealColorGateDeck((bridge as BridgeObj).visual);
+          this.colorGateLaneOverrideX = null;
+        },
+      );
+    }
+
     // ── 장애물 업데이트 ────────────────────────────────────────────────────
     this.obstacles?.update(dt, PLAYER_Z);
     this.checkObstacleInstructions();
@@ -981,7 +1044,7 @@ export class FlowEngine {
         this.jumpProgress   = 0;
         this.isChangingLane = false;
         this.flowCam?.onLanding(isMini);
-        if (isMini) {
+        if (!stage.isColorGate && isMini) {
           this.flashPulseValue = Math.min(1, this.flashPulseValue + 0.45);
         }
         this.audio.sfxLand();
@@ -1027,16 +1090,23 @@ export class FlowEngine {
     // ── PunchVFX 업데이트 ─────────────────────────────────────────────────
     this.punchVFX?.update(dt);
 
-    // flash 감쇠
-    this.flashPulseValue *= Math.pow(0.80, dt60);
-    if (this.flashOverlay) this.flashOverlay.style.opacity = String(Math.max(0, this.flashPulseValue));
+    // flash 감쇠 — 색 관문 중 흰 화면 플래시 금지
+    if (stage.isColorGate) {
+      this.flashPulseValue = 0;
+      if (this.flashOverlay) this.flashOverlay.style.opacity = '0';
+    } else {
+      this.flashPulseValue *= Math.pow(0.80, dt60);
+      if (this.flashOverlay) this.flashOverlay.style.opacity = String(Math.max(0, this.flashPulseValue));
+    }
 
     this.flowCam?.update({
       dtM, dt60M, dtWall: dt, speed: this.currentSpeed,
       phase: this.phase, gameTime: this.gameTime,
       isJumping: this.isJumping, jumpProgress: this.jumpProgress, playerJumpY: this.playerJumpY,
       isOnBridge: this.isOnBridge, isOnPad: this.isOnPad, isChangingLane: this.isChangingLane,
-      targetX: this.targetX, activeBridgeX: this.activeBridge?.x ?? null, groundY: this.groundY,
+      targetX: this.targetX,
+      activeBridgeX: this.colorGateLaneOverrideX ?? this.activeBridge?.x ?? null,
+      groundY: this.groundY,
     } satisfies FlowCameraUpdateInput);
   }
 
@@ -1092,7 +1162,7 @@ export class FlowEngine {
   dispose(): void {
     this.disposed = true;
     this.stop();
-    this.colorGates?.clearAll();
+    this.colorGates?.dispose();
     this.colorGates = null;
     this.audio.dispose();
     this.flowCam?.dispose();

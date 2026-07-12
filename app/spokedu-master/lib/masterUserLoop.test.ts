@@ -120,7 +120,23 @@ describe('selectMasterLoopAction', () => {
   it('keeps active Premium users focused on operation when they have records', () => {
     expect(selectMasterLoopAction({
       ...base,
+      entitlement: { hasEntitlement: true },
       profile: profile({ plan: 'premium', subscriptionStatus: 'active' }),
+      classRecords: [record()],
+    })).toMatchObject({ key: 'operate' });
+  });
+
+  it('prefers entitlement snapshot over stale profile when deciding paid loop', () => {
+    expect(selectMasterLoopAction({
+      ...base,
+      entitlement: { hasEntitlement: false },
+      profile: profile({ plan: 'premium', subscriptionStatus: 'active' }),
+      classRecords: [record()],
+    })).toMatchObject({ key: 'prepare_next' });
+    expect(selectMasterLoopAction({
+      ...base,
+      entitlement: { hasEntitlement: true },
+      profile: profile({ plan: 'free', subscriptionStatus: 'none' }),
       classRecords: [record()],
     })).toMatchObject({ key: 'operate' });
   });
@@ -128,6 +144,7 @@ describe('selectMasterLoopAction', () => {
   it('keeps active Center users on the same operation loop', () => {
     expect(selectMasterLoopAction({
       ...base,
+      entitlement: { hasEntitlement: true },
       profile: profile({ plan: 'team', subscriptionStatus: 'active' }),
       classRecords: [record()],
     })).toMatchObject({ key: 'operate' });

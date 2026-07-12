@@ -89,8 +89,8 @@ export const curriculumPage = {
         date: '2026',
         venue: 'SPOKEDU MASTER',
         description:
-          '강사용 수업 운영 플랫폼 — 프로그램 라이브러리, 스크린 실행 도구, 수업 기록을 한 곳에서 제공합니다. 오픈 예정.',
-        status: '오픈 예정',
+          '강사용 수업 운영 플랫폼 — 프로그램 라이브러리, 스크린 실행 도구, 수업 기록을 한 곳에서 제공합니다. 이용권 선택 후 바로 이용할 수 있습니다.',
+        status: '서비스 중',
         mediaKey: 'trackCurriculum' as HomeMediaKey,
         href: '/spokedu-master/landing',
       },
@@ -100,16 +100,16 @@ export const curriculumPage = {
     eyebrow: '강사용 구독 도구',
     title: '수업안·SPOMOVE·설명 문구를 매주 쓸 수 있는 도구',
     lead: 'SPOKEDU MASTER는 프로그램 라이브러리, 큰 화면 실행 도구, 수업 기록, 보호자·기관 설명 문구를 한 곳에서 제공하는 강사용 수업 운영 플랫폼입니다. 커리큘럼 콘텐츠를 실제 수업에서 반복 활용하고 싶은 강사와 기관에 적합합니다.',
-    tags: ['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구 자동 생성', '7일 무료 체험'] as const,
+    tags: ['프로그램 라이브러리', 'SPOMOVE 큰 화면 실행', '수업 기록', '설명 문구 자동 생성', '월 자동결제'] as const,
     primary: {
       label: 'SPOKEDU MASTER 살펴보기',
       href: '/spokedu-master/landing',
       trackLabel: 'curriculum-master-cta-primary',
     },
     secondary: {
-      label: '7일 무료 체험',
-      href: '/spokedu-master/landing',
-      trackLabel: 'curriculum-master-cta-trial',
+      label: '이용권 보기',
+      href: '/spokedu-master/landing#pricing',
+      trackLabel: 'curriculum-master-cta-pricing',
     },
   },
   finalCta: {

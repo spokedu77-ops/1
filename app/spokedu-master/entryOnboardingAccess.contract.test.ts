@@ -20,6 +20,7 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
 
     expect(source).toContain("router.replace('/spokedu-master/dashboard')");
     expect(source).toContain('시작하기');
+    expect(source).toContain('/api/spokedu-master/profile');
     expect(source).not.toContain('trialEndsAt');
     expect(source).not.toContain('무료 체험');
     expect(source).not.toContain('plans=1');
@@ -58,6 +59,7 @@ describe('SPOKEDU MASTER entry, onboarding, and access gate contracts', () => {
     expect(shell).toContain('hasRouteCapability');
     expect(shell).toContain('<SubscriptionGateWall requirement={routeRequirement.capability} snapshot={accessGuard.snapshot} />');
     expect(shell).toContain('getSafeMasterReturnPath');
+    expect(shell).toContain('accessGuard.snapshot?.onboardingDone');
     expect(shell).not.toContain('isTrialExpired');
     expect(shell).not.toContain('MASTER_CENTER_INQUIRY_HREF');
     expect(shell).not.toContain("plan === 'lite'");

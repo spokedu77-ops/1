@@ -13,6 +13,7 @@ import { useSpomoveTrainingBGM } from '@/app/lib/admin/hooks/useSpomoveTrainingB
 import { getAudioCtx } from '@/app/admin/spomove/training/_player/lib/audio';
 
 import { useMasterStore } from '../../store';
+import { ErrorBoundary } from '../../components/ui/ErrorBoundary';
 import { EngineRouter, type EngineCompletePayload } from './EngineRouter';
 import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/lockViewportScroll';
 import { officialPresetToTrainingResultConfig } from './sessionResultModel';
@@ -477,8 +478,10 @@ function SpomoveSessionContent() {
 
 export default function SpomoveSessionPage() {
   return (
-    <Suspense fallback={<div className="relative h-dvh overflow-hidden select-none bg-black text-white" />}>
-      <SpomoveSessionContent />
-    </Suspense>
+    <ErrorBoundary fallbackHref="/spokedu-master/spomove" fallbackLabel="SPOMOVE 목록">
+      <Suspense fallback={<div className="relative h-dvh overflow-hidden select-none bg-black text-white" />}>
+        <SpomoveSessionContent />
+      </Suspense>
+    </ErrorBoundary>
   );
 }

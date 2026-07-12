@@ -3,9 +3,9 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MASTER_DATA_DELETE_CONFIRMATION } from '@/app/spokedu-master/profile/masterDataDeletion';
 
-const { getServiceSupabase, requireSpokeduMasterAccess, reportError } = vi.hoisted(() => ({
+const { getServiceSupabase, requireSpokeduMasterSession, reportError } = vi.hoisted(() => ({
   getServiceSupabase: vi.fn(),
-  requireSpokeduMasterAccess: vi.fn(),
+  requireSpokeduMasterSession: vi.fn(),
   reportError: vi.fn(),
 }));
 
@@ -14,7 +14,7 @@ vi.mock('@/app/lib/server/adminAuth', () => ({
 }));
 
 vi.mock('@/app/lib/server/spokeduMasterAccess', () => ({
-  requireSpokeduMasterAccess,
+  requireSpokeduMasterSession,
 }));
 
 vi.mock('@/app/lib/monitoring/errorReporter', () => ({
@@ -77,21 +77,20 @@ function createSupabaseRpcMock(options: {
 describe('SPOKEDU MASTER operational data deletion route', () => {
   beforeEach(() => {
     getServiceSupabase.mockReset();
-    requireSpokeduMasterAccess.mockReset();
+    requireSpokeduMasterSession.mockReset();
     reportError.mockReset();
     reportError.mockResolvedValue(undefined);
-    requireSpokeduMasterAccess.mockResolvedValue({
+    requireSpokeduMasterSession.mockResolvedValue({
       ok: true,
       userId: 'owner-a',
       isAdmin: false,
-      plan: 'pro',
     });
   });
 
   it('returns 401 for unauthenticated requests and does not call the RPC', async () => {
     const { calls, supabase } = createSupabaseRpcMock();
     getServiceSupabase.mockReturnValue(supabase);
-    requireSpokeduMasterAccess.mockResolvedValue({
+    requireSpokeduMasterSession.mockResolvedValue({
       ok: false,
       response: new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 }),
     });

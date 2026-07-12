@@ -5,6 +5,8 @@ on:
     paths:
       - 'app/spokedu-master/**'
       - 'app/api/spokedu-master/**'
+      - 'app/login/page.tsx'
+      - 'app/spokedu/data/curriculum-page.ts'
       - 'app/lib/server/spokeduMaster*'
       - 'proxy.ts'
       - 'scripts/spokedu-master-*.mjs'
@@ -17,6 +19,8 @@ on:
     paths:
       - 'app/spokedu-master/**'
       - 'app/api/spokedu-master/**'
+      - 'app/login/page.tsx'
+      - 'app/spokedu/data/curriculum-page.ts'
       - 'app/lib/server/spokeduMaster*'
       - 'proxy.ts'
       - 'scripts/spokedu-master-*.mjs'
@@ -105,6 +109,9 @@ jobs:
           app/spokedu-master/lessonFlow.contract.test.ts
           app/spokedu-master/terminology.contract.test.ts
           app/spokedu-master/serviceTruthfulness.test.ts
+          app/spokedu-master/masterEntryCopy.contract.test.ts
+          app/spokedu-master/entryOnboardingAccess.contract.test.ts
+          app/spokedu-master/landing/landingBillingCopy.contract.test.ts
 
       - name: Migration contract tests
         run: >
@@ -223,6 +230,11 @@ jobs:
       SPOKEDU_MASTER_QA_SECONDARY_ID: ${{ secrets.SPOKEDU_MASTER_QA_SECONDARY_ID }}
       SPOKEDU_MASTER_QA_SECONDARY_PASSWORD: ${{ secrets.SPOKEDU_MASTER_QA_SECONDARY_PASSWORD }}
       SPM_DISPOSABLE_QA_ALLOWLIST: ${{ secrets.SPM_DISPOSABLE_QA_ALLOWLIST }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.STAGING_NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.STAGING_NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.STAGING_SUPABASE_SERVICE_ROLE_KEY }}
+      NEXT_PUBLIC_TOSS_CLIENT_KEY: ${{ secrets.STAGING_NEXT_PUBLIC_TOSS_CLIENT_KEY }}
+      TOSS_SECRET_KEY: ${{ secrets.STAGING_TOSS_SECRET_KEY }}
       CI_RELEASE_BRANCH: ${{ startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'commercial/') }}
     steps:
       - uses: actions/checkout@v4
@@ -260,6 +272,10 @@ jobs:
         if: steps.preflight.outputs.passed == 'true'
         run: npm run qa:spokedu-master -- --base-url "$STAGING_BASE_URL"
 
+      - name: Remote staging no-payment verification report
+        if: steps.preflight.outputs.passed == 'true'
+        run: node scripts/spokedu-master-commercial-verification-report.mjs "$STAGING_BASE_URL"
+
       - name: Toss sandbox status
         if: steps.preflight.outputs.passed == 'true'
         run: |
@@ -267,7 +283,7 @@ jobs:
             echo "Toss sandbox: NOT RUN — workflow input disabled"
             exit 0
           fi
-          echo "Toss sandbox: guard passed; execute the dedicated sandbox scenario script when available"
+          npm run qa:spokedu-master:staging-payment -- "$STAGING_BASE_URL"
 
       - name: Destructive flow status
         if: steps.preflight.outputs.passed == 'true'
