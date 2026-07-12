@@ -18,6 +18,7 @@ import {
   consumeMarkdownBlockTrigger,
   continueBulletOnEnter,
   indentPlainTextBlock,
+  isSlashMenuActiveText,
   tryConvertMarkdownBulletTrigger,
   type MarkdownBlockTrigger,
 } from './noteBulletInput';
@@ -679,6 +680,13 @@ export function NoteEditor({
           }
         }
         if (event.key === 'Escape') {
+          const ed = editorRef.current;
+          if (ed && isSlashMenuActiveText(ed.getText())) {
+            event.preventDefault();
+            ed.commands.setContent('');
+            currentOnSlashChange?.(false, '');
+            return true;
+          }
           currentOnSlashChange?.(false, '');
           return false;
         }
@@ -817,6 +825,10 @@ export function NoteEditor({
           return true;
         }
         if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+          const ed = editorRef.current;
+          if (ed && isSlashMenuActiveText(ed.getText())) {
+            return false;
+          }
           event.preventDefault();
           currentOnSlashChange?.(false, '');
           flush();
@@ -966,6 +978,9 @@ export function NoteEditor({
     }
     storage.handler = (currentEditor, shiftKey) => {
       const cbs = callbacksRef.current;
+      if (!shiftKey && isSlashMenuActiveText(currentEditor.getText())) {
+        return false;
+      }
       if (resolveEditorShiftEnterAction(shiftKey, { tabBehavior: cbs.tabBehavior })) {
         return currentEditor.commands.setHardBreak();
       }

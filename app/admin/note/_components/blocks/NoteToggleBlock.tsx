@@ -163,6 +163,7 @@ export function NoteToggleBlock({
               }
             }
             if (e.key === 'Enter' && !e.shiftKey) {
+              if (toggleTitleSlashActive) return;
               e.preventDefault();
               const action = resolveToggleTitleEnterAction(collapsed);
               if (action.kind === 'add-sibling') {

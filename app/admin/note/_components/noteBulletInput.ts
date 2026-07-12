@@ -218,6 +218,16 @@ export function consumeMarkdownBlockTrigger(view: EditorView): MarkdownBlockTrig
   return trigger;
 }
 
+/** `/` 슬래시 메뉴가 열린 상태인지 — 본문 전체가 `/` + query 형태일 때 */
+export function isSlashMenuActiveText(text: string): boolean {
+  return /^\/([^\n]*)$/.test(text);
+}
+
+/** 슬래시 메뉴로 타입 전환할 때 본문에 남은 `/query` 제거 */
+export function stripSlashTriggerForTypeChange(text: string): string {
+  return isSlashMenuActiveText(text) ? '' : text;
+}
+
 /** 마크다운 트리거(+ Space)만으로 타입 변환할 때 본문에 남은 트리거 문자 제거 */
 export function stripMarkdownTriggerForTypeChange(
   text: string,

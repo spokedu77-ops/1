@@ -6,7 +6,9 @@ import {
   resolveMarkdownBlockTriggerFromTextBeforeCursor,
   stripListItemMarkerFromHtml,
   stripListItemMarkerPrefix,
+  isSlashMenuActiveText,
   stripMarkdownTriggerForTypeChange,
+  stripSlashTriggerForTypeChange,
 } from './noteBulletInput';
 import type { NoteBlock } from '../_lib/types';
 
@@ -185,5 +187,19 @@ describe('markdown block shortcuts', () => {
     expect(stripMarkdownTriggerForTypeChange('--- ', 'divider')).toBe('');
     expect(stripMarkdownTriggerForTypeChange('!! ', 'callout')).toBe('');
     expect(stripMarkdownTriggerForTypeChange('``` ', 'code')).toBe('');
+  });
+
+  it('detects slash menu active text', () => {
+    expect(isSlashMenuActiveText('/')).toBe(true);
+    expect(isSlashMenuActiveText('/todo')).toBe(true);
+    expect(isSlashMenuActiveText('/heading 1')).toBe(true);
+    expect(isSlashMenuActiveText('hello')).toBe(false);
+    expect(isSlashMenuActiveText('text /todo')).toBe(false);
+  });
+
+  it('strips slash query on type change', () => {
+    expect(stripSlashTriggerForTypeChange('/todo')).toBe('');
+    expect(stripSlashTriggerForTypeChange('/')).toBe('');
+    expect(stripSlashTriggerForTypeChange('keep me')).toBe('keep me');
   });
 });

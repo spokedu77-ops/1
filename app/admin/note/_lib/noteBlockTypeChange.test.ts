@@ -95,6 +95,18 @@ describe('buildContentForTypeChange turn-into parity', () => {
     expect(next.text).toBe('Item');
     expect(next.html).toBe(richHtml);
   });
+
+  it('strips slash query when converting via slash menu', () => {
+    expect(buildContentForTypeChange({ text: '/todo' }, 'text', 'todo').text).toBe('');
+    expect(buildContentForTypeChange({ text: '/heading' }, 'text', 'heading').text).toBe('');
+    expect(buildContentForTypeChange({ text: '/quote' }, 'text', 'quote').text).toBe('');
+    expect(buildContentForTypeChange({ title: '/toggle' }, 'toggle', 'text').text).toBe('');
+  });
+
+  it('keeps non-slash text when converting types', () => {
+    const next = buildContentForTypeChange({ text: 'Hello /world' }, 'text', 'quote');
+    expect(next.text).toBe('Hello /world');
+  });
 });
 
 describe('filterTurnIntoCommands', () => {

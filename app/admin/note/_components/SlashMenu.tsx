@@ -67,8 +67,8 @@ export function SlashMenu<T extends string>({
         if (cmd) { onSelect(cmd.type); onClose(); }
       }
     };
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    document.addEventListener('keydown', handler, true);
+    return () => document.removeEventListener('keydown', handler, true);
   }, [activeIndex, filtered, onClose, onSelect]);
 
   return (

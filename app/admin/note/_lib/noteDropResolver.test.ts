@@ -42,12 +42,20 @@ describe('resolveDropPositionForBlock', () => {
     expect(resolveDropPositionForBlock('bulletList', rect, 20)).toBe('inside');
     expect(resolveDropPositionForBlock('numberedList', rect, 35)).toBe('after');
   });
+
+  it('allows inside for column blocks in the center band', () => {
+    const rect = { top: 0, height: 80 };
+    expect(resolveDropPositionForBlock('column', rect, 10)).toBe('before');
+    expect(resolveDropPositionForBlock('column', rect, 40)).toBe('inside');
+    expect(resolveDropPositionForBlock('column', rect, 70)).toBe('after');
+  });
 });
 
 describe('blockSupportsInsideDrop', () => {
   it('matches container block types only', () => {
     expect(blockSupportsInsideDrop('toggle')).toBe(true);
     expect(blockSupportsInsideDrop('page')).toBe(true);
+    expect(blockSupportsInsideDrop('column')).toBe(true);
     expect(blockSupportsInsideDrop('bulletList')).toBe(true);
     expect(blockSupportsInsideDrop('text')).toBe(false);
     expect(blockSupportsInsideDrop('heading1')).toBe(false);

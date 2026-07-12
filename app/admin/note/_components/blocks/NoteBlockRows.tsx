@@ -5,6 +5,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -63,6 +64,7 @@ import {
   toggleMenuAnchorOffset,
   toggleNestPaddingPx,
 } from '../../_lib/constants';
+import { filterTurnIntoCommands } from '../../_lib/noteBlockTypeChange';
 import {
   blockExternalizesChildren,
   blockRowBgClass,
@@ -208,11 +210,16 @@ function BlockContent({
     };
   }, [showSlash, slashQuery, updateSlashAnchor]);
 
+  const slashCommands = useMemo(
+    () => filterTurnIntoCommands(block.type, BLOCK_TYPES, liveContent),
+    [block.type, liveContent],
+  );
+
   const renderSlashMenuPortal = () => (
     <SlashMenuFixed
       show={showSlash}
       anchor={slashAnchor}
-      commands={BLOCK_TYPES}
+      commands={slashCommands}
       query={slashQuery}
       onSelect={(type) => { onChangeType(type); }}
       onClose={() => { setShowSlash(false); setSlashQuery(''); }}

@@ -1,6 +1,10 @@
 import { TEXT_CARRYING_BLOCK_TYPES } from './noteBlockTypes';
 import type { MarkdownBlockTrigger } from '../_components/noteBulletInput';
-import { stripListItemMarkerPrefix, stripMarkdownTriggerForTypeChange } from '../_components/noteBulletInput';
+import {
+  stripListItemMarkerPrefix,
+  stripMarkdownTriggerForTypeChange,
+  stripSlashTriggerForTypeChange,
+} from '../_components/noteBulletInput';
 import { defaultBlockContent } from './constants';
 import { normalizeTodoBlockContentRecord } from './noteTodoContent';
 import type { NoteBlock } from './types';
@@ -68,11 +72,14 @@ function readCarriedTextForTypeChange(
 ): string {
   const prev = prevContent ?? {};
   if (prevType === 'toggle') {
-    if (typeof prev.title === 'string' && prev.title.length > 0) return prev.title;
-    if (typeof prev.text === 'string') return prev.text;
+    if (typeof prev.title === 'string' && prev.title.length > 0) {
+      return stripSlashTriggerForTypeChange(prev.title);
+    }
+    if (typeof prev.text === 'string') return stripSlashTriggerForTypeChange(prev.text);
     return '';
   }
-  return typeof prev.text === 'string' ? prev.text : '';
+  const text = typeof prev.text === 'string' ? prev.text : '';
+  return stripSlashTriggerForTypeChange(text);
 }
 
 /** 블록 타입 변환 시 본문(text/html)을 가능한 한 유지한다. */
@@ -113,7 +120,7 @@ export function buildContentForTypeChange(
   if (!TEXT_CARRYING_TYPES.has(prevType) || !TEXT_CARRYING_TYPES.has(nextType)) {
     return base;
   }
-  const rawText = typeof prev.text === 'string' ? prev.text : '';
+  const rawText = readCarriedTextForTypeChange(prevContent, prevType);
   const textAfterMarkdown = TEXT_CARRYING_TYPES.has(nextType)
     ? stripMarkdownTriggerForTypeChange(rawText, nextType as MarkdownBlockTrigger)
     : rawText;
