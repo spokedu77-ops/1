@@ -32,7 +32,10 @@ export type NoteDocumentEngineApi = {
   flushContentPatches: () => Promise<void>;
   flushPersistQueue: () => Promise<void>;
   hydrateFromLocal: () => Promise<NoteBlock[] | null>;
-  syncWithServer: (initialBlocks: NoteBlock[]) => Promise<void>;
+  syncWithServer: (
+    initialBlocks: NoteBlock[],
+    options?: { skipDispatch?: boolean },
+  ) => Promise<void>;
   scheduleOplogPull: () => void;
   persistSoftDelete: (args: SoftDeletePersistArgs) => Promise<void>;
   persistFieldPatches: (patches: NoteBlockFieldPatch[]) => Promise<void>;
@@ -165,13 +168,18 @@ export function useNoteDocumentEngine(options: {
     return pipelineRef.current.hydrateFromLocal();
   }, []);
 
-  const syncWithServer = useCallback(async (initialBlocks: NoteBlock[]) => {
+  const syncWithServer = useCallback(async (
+    initialBlocks: NoteBlock[],
+    options?: { skipDispatch?: boolean },
+  ) => {
     if (!pipelineRef.current) {
-      useNoteBlockStore.getState().hydrate(initialBlocks);
-      onBlocksChangedRef.current(initialBlocks);
+      if (!options?.skipDispatch) {
+        useNoteBlockStore.getState().hydrate(initialBlocks);
+        onBlocksChangedRef.current(initialBlocks);
+      }
       return;
     }
-    await pipelineRef.current.syncWithServer(initialBlocks);
+    await pipelineRef.current.syncWithServer(initialBlocks, options);
   }, []);
 
   const scheduleOplogPull = useCallback(() => {

@@ -193,12 +193,18 @@ export class NoteDocumentPipeline {
     return this.dispatch({ type: 'hydrate', blocks });
   }
 
-  async syncWithServer(initialBlocks: NoteBlock[]): Promise<void> {
+  async syncWithServer(
+    initialBlocks: NoteBlock[],
+    options?: { skipDispatch?: boolean },
+  ): Promise<void> {
     if (!this.coordinator) {
-      this.dispatch({ type: 'hydrate', blocks: initialBlocks });
+      if (!options?.skipDispatch) {
+        this.dispatch({ type: 'hydrate', blocks: initialBlocks });
+      }
       return;
     }
     await this.coordinator.syncWithServer(initialBlocks);
+    if (options?.skipDispatch) return;
     const blocks = this.coordinator.getBlocks();
     this.dispatch({ type: 'syncSnapshot', blocks });
   }

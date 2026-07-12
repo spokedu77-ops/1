@@ -81,7 +81,8 @@ type NoteEditorPanelProps = Pick<
   | 'setSelectedBlockIds'
   | 'loadingBlocks'
   | 'blocksSyncing'
-  | 'blocksEmptyConfirmed'
+  | 'loadSettledDocId'
+  | 'selectedId'
   | 'blocks'
   | 'selectedBlockIds'
   | 'handleBlockSelect'
@@ -101,7 +102,8 @@ type NoteBlockCanvasProps = Pick<
   NotePageContextValue,
   | 'loadingBlocks'
   | 'blocksSyncing'
-  | 'blocksEmptyConfirmed'
+  | 'loadSettledDocId'
+  | 'selectedId'
   | 'rootBlocks'
   | 'selectedBlockIds'
   | 'handleBlockSelect'
@@ -118,7 +120,8 @@ type NoteBlockCanvasProps = Pick<
 const NoteBlockCanvas = memo(function NoteBlockCanvas({
   loadingBlocks,
   blocksSyncing,
-  blocksEmptyConfirmed,
+  loadSettledDocId,
+  selectedId,
   rootBlocks,
   selectedBlockIds,
   handleBlockSelect,
@@ -132,8 +135,9 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
   editorScrollRef,
 }: NoteBlockCanvasProps) {
   const textDragActive = useNoteTextDragActive();
+  const awaitingInitialLoad = Boolean(selectedId) && loadSettledDocId !== selectedId;
 
-  if (rootBlocks.length === 0 && (loadingBlocks || blocksSyncing || !blocksEmptyConfirmed)) {
+  if (rootBlocks.length === 0 && (awaitingInitialLoad || loadingBlocks)) {
     return <NoteBlockLoadSkeleton />;
   }
 
@@ -228,6 +232,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   loadingBlocks,
   blocksSyncing,
   blocksEmptyConfirmed,
+  loadSettledDocId,
   blocks,
   selectedBlockIds,
   handleBlockSelect,
@@ -613,7 +618,8 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
           <NoteBlockCanvas
             loadingBlocks={loadingBlocks}
             blocksSyncing={blocksSyncing}
-            blocksEmptyConfirmed={blocksEmptyConfirmed}
+            loadSettledDocId={loadSettledDocId}
+            selectedId={selectedId}
             rootBlocks={rootBlocks}
             selectedBlockIds={selectedBlockIds}
             handleBlockSelect={handleBlockSelect}

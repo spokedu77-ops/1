@@ -78,6 +78,8 @@ export interface NotePageContextValue {
   loadingBlocks: boolean;
   blocksSyncing: boolean;
   blocksEmptyConfirmed: boolean;
+  /** 최초 서버 load가 완료된 문서 id (전환 직후 빈 화면 방지) */
+  loadSettledDocId: string | null;
   trashedBlocks: NoteBlock[];
   loadingTrashedBlocks: boolean;
   loadTrashedBlocks: () => Promise<void>;

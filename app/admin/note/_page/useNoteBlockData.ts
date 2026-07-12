@@ -36,7 +36,6 @@ import {
 } from '../_lib/noteDocumentBlocksCache';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
-import { serverSnapshotHasBlocksMissingFrom } from '../_lib/notePersistOpToBlockOps';
 import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
@@ -84,6 +83,8 @@ export function useNoteBlockData(options: {
   const [loadingBlocks, setLoadingBlocks] = useState(false);
   const [blocksSyncing, setBlocksSyncing] = useState(false);
   const [blocksEmptyConfirmed, setBlocksEmptyConfirmed] = useState(false);
+  /** 현재 selectedId에 대해 최초 서버 load가 끝난 문서 id — 전환 직후 빈 껍데기 방지 */
+  const [loadSettledDocId, setLoadSettledDocId] = useState<string | null>(null);
   const [trashedBlocks, setTrashedBlocks] = useState<NoteBlock[]>([]);
   const [loadingTrashedBlocks, setLoadingTrashedBlocks] = useState(false);
   const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
@@ -413,6 +414,7 @@ export function useNoteBlockData(options: {
       setLoadingBlocks(false);
       setBlocksSyncing(false);
       setBlocksEmptyConfirmed(false);
+      setLoadSettledDocId(null);
       return;
     }
 
@@ -427,18 +429,11 @@ export function useNoteBlockData(options: {
     }
     previousDocumentIdRef.current = selectedId;
     setBlocksEmptyConfirmed(false);
+    setLoadSettledDocId(null);
+    setLoadingBlocks(true);
+    setBlocksSyncing(false);
 
     const documentId = selectedId;
-    const instantSnapshot = readRememberedNoteDocumentBlocks(documentId);
-    if (instantSnapshot !== null) {
-      replaceBlocks(instantSnapshot, documentId);
-      setLoadingBlocks(false);
-      setBlocksSyncing(true);
-    } else {
-      _setBlocks([]);
-      setLoadingBlocks(true);
-      setBlocksSyncing(false);
-    }
 
     let cancelled = false;
 
@@ -449,39 +444,11 @@ export function useNoteBlockData(options: {
       const loadGen = blockLoadGenRef.current + 1;
       blockLoadGenRef.current = loadGen;
 
-      const finishOplogPostSync = (serverLoaded: NoteBlock[]) => {
-        const { toggleMigration } = prepareLoadedNoteBlocks(serverLoaded);
-        const store = useNoteBlockStore.getState();
-        store.setActiveDocumentId(documentId);
-        const serverForDoc = serverLoaded.filter((block) => block.document_id === documentId);
-        const current = documentEngineRef.current.getBlocks().filter(
-          (block) => block.document_id === documentId,
-        );
-        if (
-          (current.length === 0 && serverForDoc.length > 0)
-          || serverSnapshotHasBlocksMissingFrom(current, serverForDoc)
-        ) {
-          finishOplogLoadFallback(serverLoaded, false);
-          setBlocksEmptyConfirmed(false);
-          return;
-        }
-        rememberNoteDocumentBlocks(
-          documentId,
-          mergeBlocksWithStoreContent(current),
-          {
-            trustServer: true,
-            serverConfirmedEmpty: current.length === 0 && serverForDoc.length === 0,
-          },
-        );
-        setBlocksEmptyConfirmed(current.length === 0 && serverForDoc.length === 0);
-        if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
-          void persistToggleBodyMigration(
-            current.length > 0 ? current : serverLoaded,
-            toggleMigration,
-          ).catch((e) => {
-            devLogger.error('[Note] persistToggleBodyMigration', e);
-          });
-        }
+      const markLoadSettled = () => {
+        if (cancelled || blockLoadGenRef.current !== loadGen) return;
+        setLoadSettledDocId(documentId);
+        setLoadingBlocks(false);
+        setBlocksSyncing(false);
       };
 
       const finishOplogLoadFallback = (
@@ -540,8 +507,8 @@ export function useNoteBlockData(options: {
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
         if (documentEngineRef.current.isOplogSyncEnabled()) {
           try {
-            await documentEngineRef.current.syncWithServer(loaded);
-            finishOplogPostSync(loaded);
+            await documentEngineRef.current.syncWithServer(loaded, { skipDispatch: true });
+            finishOplogLoadFallback(loaded, mergeWithCurrent);
           } catch (e) {
             devLogger.error('[Note] oplog syncWithServer', e);
             documentEngineRef.current.dispatch({ type: 'hydrate', blocks: loaded });
@@ -553,8 +520,7 @@ export function useNoteBlockData(options: {
             scheduleIdleReconcile(documentId, loadGen);
           }
         }
-        setLoadingBlocks(false);
-        setBlocksSyncing(false);
+        markLoadSettled();
         setError(null);
       };
 
@@ -564,24 +530,21 @@ export function useNoteBlockData(options: {
         }
         bootstrapAppliedDocIdRef.current = selectedId;
         if (documentEngineRef.current.isOplogSyncEnabled()) {
-          void documentEngineRef.current.syncWithServer(bootstrapBlocks.blocks).then(() => {
+          void documentEngineRef.current.syncWithServer(bootstrapBlocks.blocks, { skipDispatch: true }).then(() => {
             if (cancelled || blockLoadGenRef.current !== loadGen) return;
-            finishOplogPostSync(bootstrapBlocks.blocks);
-            setLoadingBlocks(false);
-            setBlocksSyncing(false);
+            finishOplogLoadFallback(bootstrapBlocks.blocks, false);
+            markLoadSettled();
             setError(null);
           }).catch((e) => {
             devLogger.error('[Note] oplog bootstrap sync', e);
             documentEngineRef.current.dispatch({ type: 'hydrate', blocks: bootstrapBlocks.blocks });
             finishOplogLoadFallback(bootstrapBlocks.blocks, false);
-            setLoadingBlocks(false);
-            setBlocksSyncing(false);
+            markLoadSettled();
             setError(null);
           });
         } else {
           replaceBlocks(bootstrapBlocks.blocks, documentId);
-          setLoadingBlocks(false);
-          setBlocksSyncing(false);
+          markLoadSettled();
           setError(null);
           if (isNoteLegacyReconcileEnabled()) {
             scheduleIdleReconcile(documentId, loadGen);
@@ -597,7 +560,6 @@ export function useNoteBlockData(options: {
           if (cancelled || blockLoadGenRef.current !== loadGen) return;
           if (localBlocks && localBlocks.length > 0) {
             useNoteBlockStore.getState().setActiveDocumentId(documentId);
-            setLoadingBlocks(false);
             setBlocksSyncing(true);
           }
         } catch (e) {
@@ -610,19 +572,10 @@ export function useNoteBlockData(options: {
       const currentDocBlockCount = blocksRef.current.filter(
         (block) => block.document_id === documentId,
       ).length;
-      if (hasInstantSnapshot && !oplogEnabled) {
+      if (hasInstantSnapshot && currentDocBlockCount === 0) {
         replaceBlocks(remembered, documentId);
-        setLoadingBlocks(false);
         setBlocksSyncing(true);
-      } else if (hasInstantSnapshot && oplogEnabled && currentDocBlockCount === 0) {
-        replaceBlocks(remembered, documentId);
-        setLoadingBlocks(false);
-        setBlocksSyncing(true);
-      } else if (currentDocBlockCount === 0) {
-        setLoadingBlocks(true);
-        setBlocksSyncing(false);
-      } else {
-        setLoadingBlocks(false);
+      } else if (currentDocBlockCount > 0) {
         setBlocksSyncing(true);
       }
 
@@ -654,8 +607,7 @@ export function useNoteBlockData(options: {
           if (!hasInstantSnapshot) {
             setError(e instanceof Error ? e.message : '로드 실패');
           }
-          setLoadingBlocks(false);
-          setBlocksSyncing(false);
+          markLoadSettled();
         }
       }
     };
@@ -733,6 +685,7 @@ export function useNoteBlockData(options: {
     loadingBlocks,
     blocksSyncing,
     blocksEmptyConfirmed,
+    loadSettledDocId,
     trashedBlocks,
     setTrashedBlocks,
     loadingTrashedBlocks,
