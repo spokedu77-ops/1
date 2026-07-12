@@ -63,7 +63,12 @@ describe('SPOKEDU MASTER access endpoint', () => {
     expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0');
     expect(response.headers.get('Pragma')).toBe('no-cache');
     expect(response.headers.get('Vary')).toBe('Cookie, Authorization');
-    await expect(response.json()).resolves.toEqual({ ok: true, allowed: true, ...access.snapshot });
+    await expect(response.json()).resolves.toEqual({
+      ok: true,
+      allowed: true,
+      spomatShopAvailable: false,
+      ...access.snapshot,
+    });
   });
 
   it.each([
