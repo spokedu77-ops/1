@@ -17,17 +17,60 @@ import type { NoteBlock, NoteDocument } from '../_lib/types';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { useCallback, useRef, type ReactNode } from 'react';
 import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
-import { createNotionEmptyBackspaceHandler } from '../_lib/noteNotionBlockBehavior';
+import {
+  createNotionEmptyBackspaceHandler,
+  readToggleTitleText,
+  resolveToggleChildBackspaceAtStartAction,
+  resolveToggleChildEmptyBackspaceAction,
+} from '../_lib/noteNotionBlockBehavior';
 
 function buildNotionBackspaceProps(block: NoteBlock, deps: NoteBlockRendererDeps) {
   const canMergeWithPrevious = () => !!planMergeWithPreviousBlock(deps.blocksRef.current, block.id);
+  const parentBlock = block.parent_block_id
+    ? deps.blocksRef.current.find((item) => item.id === block.parent_block_id)
+    : null;
+  const parentBlockType = parentBlock?.type ?? null;
+  const isFirstChildInToggle = parentBlockType === 'toggle'
+    && block.parent_block_id != null
+    && !canMergeWithPrevious();
+
+  const focusParentToggleTitle = () => {
+    if (!parentBlock || parentBlock.type !== 'toggle') return;
+    const title = readToggleTitleText(parentBlock.content as Record<string, unknown>);
+    deps.focusBlockEditor(parentBlock.id, 'title', title.length);
+  };
+
   return {
     canMergeWithPrevious,
-    onEmptyBackspace: createNotionEmptyBackspaceHandler({
-      canMergeWithPrevious,
-      onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
-      onDeleteEmptyBlock: () => deps.handleDeleteBlock(block, true),
-    }),
+    onBackspaceAtBlockStart: () => {
+      const action = resolveToggleChildBackspaceAtStartAction({
+        parentBlockType,
+        isFirstChildInToggle,
+      });
+      if (action.kind === 'focus-toggle-title') {
+        focusParentToggleTitle();
+        return true;
+      }
+      return false;
+    },
+    onEmptyBackspace: () => {
+      const action = resolveToggleChildEmptyBackspaceAction({
+        parentBlockType,
+        isFirstChildInToggle,
+        canMergeWithPrevious: canMergeWithPrevious(),
+      });
+      if (action.kind === 'delete-and-focus-toggle-title') {
+        void deps.handleDeleteBlock(block, false).then(() => {
+          focusParentToggleTitle();
+        });
+        return;
+      }
+      createNotionEmptyBackspaceHandler({
+        canMergeWithPrevious,
+        onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
+        onDeleteEmptyBlock: () => deps.handleDeleteBlock(block, true),
+      })();
+    },
     onMergeWithPrevious: () => { void deps.handleMergeWithPreviousBlock(block); },
   };
 }
@@ -58,7 +101,7 @@ export type NoteBlockRendererDeps = {
   resolvePageIcon: (documentId: string) => string | null | undefined;
   handleUpdateBlock: (block: NoteBlock, content: NoteBlock['content']) => void;
   syncBlockContent: (blockId: string, content: NoteBlock['content']) => void;
-  handleDeleteBlock: (block: NoteBlock, fromEmptyBackspace?: boolean) => void;
+  handleDeleteBlock: (block: NoteBlock, fromEmptyBackspace?: boolean) => void | Promise<void>;
   handleChangeBlockType: (block: NoteBlock, type: NoteBlock['type']) => void;
   handleInsertBlockAfter: (block: NoteBlock, type?: NoteBlock['type'], content?: NoteBlock['content']) => void;
   handleSplitListBlockAfterWithChildren: (
@@ -171,6 +214,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart === 'title' ? deps.focusTitleSignal : 0
         }
         onEmptyBackspace={backspaceProps.onEmptyBackspace}
+        onBackspaceAtBlockStart={backspaceProps.onBackspaceAtBlockStart}
         onMergeWithPrevious={backspaceProps.onMergeWithPrevious}
         canMergeWithPrevious={backspaceProps.canMergeWithPrevious}
         onDuplicate={() => { void deps.handleDuplicateBlock(block); }}
@@ -239,6 +283,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
           deps.focusedEditorBlockId === block.id && deps.focusedEditorPart === 'title' ? deps.focusTitleSignal : 0
         }
         onEmptyBackspace={backspaceProps.onEmptyBackspace}
+        onBackspaceAtBlockStart={backspaceProps.onBackspaceAtBlockStart}
         onMergeWithPrevious={backspaceProps.onMergeWithPrevious}
         canMergeWithPrevious={backspaceProps.canMergeWithPrevious}
         onDuplicate={() => { void deps.handleDuplicateBlock(block); }}

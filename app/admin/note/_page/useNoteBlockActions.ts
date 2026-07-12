@@ -32,7 +32,7 @@ import {
   mergeBlocksWithStoreContent,
   resolveBlockTextCaretOffset,
 } from '../_lib/noteBlockStateMerge';
-import { bumpNoteReconcileIdle } from '../_lib/noteReconcileIdle';
+import { readToggleTitleText } from '../_lib/noteNotionBlockBehavior';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { preserveEditorScrollPosition } from '../_lib/noteEditorScrollGuard';
 import { notePointerTargetElement } from '../_lib/notePointerTarget';
@@ -277,7 +277,7 @@ export function useNoteBlockActions(options: {
     const target = resolveVisualNavigateTarget(snapshot, block.id, direction);
     if (!target) return;
     if (target.type === 'toggle' && direction === 'previous') {
-      const title = typeof target.content?.title === 'string' ? target.content.title : '';
+      const title = readToggleTitleText(target.content as Record<string, unknown>);
       focusBlockEditor(target.id, 'title', title.length);
       return;
     }

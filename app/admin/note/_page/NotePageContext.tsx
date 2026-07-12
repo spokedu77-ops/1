@@ -77,6 +77,7 @@ export interface NotePageContextValue {
   blocksRef: RefObject<NoteBlock[]>;
   loadingBlocks: boolean;
   blocksSyncing: boolean;
+  blocksEmptyConfirmed: boolean;
   trashedBlocks: NoteBlock[];
   loadingTrashedBlocks: boolean;
   loadTrashedBlocks: () => Promise<void>;

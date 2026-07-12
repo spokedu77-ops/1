@@ -4,6 +4,7 @@ import {
   collectPendingSoftDeleteIds,
   excludeBlocksPendingSoftDelete,
   persistOpToPushItems,
+  shouldTrustEmptyLocalWithOutbound,
 } from './notePersistOpToBlockOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
@@ -119,5 +120,45 @@ describe('collectPendingSoftDeleteIds', () => {
     ];
     const next = excludeBlocksPendingSoftDelete(blocks, new Set(['b']));
     expect(next.map((block) => block.id)).toEqual(['a']);
+  });
+});
+
+describe('shouldTrustEmptyLocalWithOutbound', () => {
+  const serverBlock = (id: string): NoteBlock => ({
+    id,
+    document_id: 'doc-1',
+    type: 'text',
+    content: { text: id },
+    order_index: 0,
+    parent_block_id: null,
+    created_at: '',
+    updated_at: '',
+  });
+
+  const outbound = (
+    items: NoteBlockOpPushItem[],
+  ): NoteLocalOutboundOp[] => items.map((item, index) => ({
+    ...item,
+    documentId: 'doc-1',
+    createdAt: index,
+  }));
+
+  it('trusts empty local when all server blocks are pending soft delete', () => {
+    const items = persistOpToPushItems({ type: 'softDelete', ids: ['a', 'b'] });
+    expect(shouldTrustEmptyLocalWithOutbound(
+      outbound(items),
+      [serverBlock('a'), serverBlock('b')],
+    )).toBe(true);
+  });
+
+  it('does not trust empty local when outbound cannot explain server blocks', () => {
+    const items = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{ id: 'a', content: { text: 'x' } }],
+    });
+    expect(shouldTrustEmptyLocalWithOutbound(
+      outbound(items),
+      [serverBlock('a')],
+    )).toBe(false);
   });
 });

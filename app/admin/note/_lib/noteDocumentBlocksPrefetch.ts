@@ -47,11 +47,8 @@ export function prefetchNoteDocumentBlocks(documentId: string): void {
       entry.blocks = blocks;
       entry.fetchedAt = Date.now();
       const activeDocId = useNoteBlockStore.getState().activeDocumentId;
-      if (blocks && activeDocId !== documentId) {
-        rememberNoteDocumentBlocks(documentId, blocks, {
-          trustServer: true,
-          serverConfirmedEmpty: blocks.length === 0,
-        });
+      if (blocks && blocks.length > 0 && activeDocId !== documentId) {
+        rememberNoteDocumentBlocks(documentId, blocks, { trustServer: true });
       }
       return blocks;
     }),
@@ -69,13 +66,10 @@ export async function consumePrefetchedNoteBlocks(
   if (!entry) return null;
   cache.delete(documentId);
   const blocks = entry.blocks ? entry.blocks : await entry.promise;
-  if (blocks) {
+  if (blocks && blocks.length > 0) {
     const activeDocId = useNoteBlockStore.getState().activeDocumentId;
     if (activeDocId !== documentId) {
-      rememberNoteDocumentBlocks(documentId, blocks, {
-        trustServer: true,
-        serverConfirmedEmpty: blocks.length === 0,
-      });
+      rememberNoteDocumentBlocks(documentId, blocks, { trustServer: true });
     }
   }
   return blocks;

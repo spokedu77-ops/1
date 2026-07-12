@@ -82,6 +82,7 @@ export function useNoteBlockData(options: {
   const [blocks, _setBlocks] = useState<NoteBlock[]>([]);
   const [loadingBlocks, setLoadingBlocks] = useState(false);
   const [blocksSyncing, setBlocksSyncing] = useState(false);
+  const [blocksEmptyConfirmed, setBlocksEmptyConfirmed] = useState(false);
   const [trashedBlocks, setTrashedBlocks] = useState<NoteBlock[]>([]);
   const [loadingTrashedBlocks, setLoadingTrashedBlocks] = useState(false);
   const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
@@ -410,6 +411,7 @@ export function useNoteBlockData(options: {
       setBlocks([]);
       setLoadingBlocks(false);
       setBlocksSyncing(false);
+      setBlocksEmptyConfirmed(false);
       return;
     }
 
@@ -423,6 +425,7 @@ export function useNoteBlockData(options: {
       }
     }
     previousDocumentIdRef.current = selectedId;
+    setBlocksEmptyConfirmed(false);
 
     const documentId = selectedId;
     const instantSnapshot = readRememberedNoteDocumentBlocks(documentId);
@@ -449,17 +452,24 @@ export function useNoteBlockData(options: {
         const { toggleMigration } = prepareLoadedNoteBlocks(serverLoaded);
         const store = useNoteBlockStore.getState();
         store.setActiveDocumentId(documentId);
+        const serverForDoc = serverLoaded.filter((block) => block.document_id === documentId);
         const current = documentEngineRef.current.getBlocks().filter(
           (block) => block.document_id === documentId,
         );
+        if (current.length === 0 && serverForDoc.length > 0) {
+          finishOplogLoadFallback(serverLoaded, false);
+          setBlocksEmptyConfirmed(false);
+          return;
+        }
         rememberNoteDocumentBlocks(
           documentId,
           mergeBlocksWithStoreContent(current),
           {
             trustServer: true,
-            serverConfirmedEmpty: current.length === 0,
+            serverConfirmedEmpty: current.length === 0 && serverForDoc.length === 0,
           },
         );
+        setBlocksEmptyConfirmed(current.length === 0 && serverForDoc.length === 0);
         if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
           void persistToggleBodyMigration(
             current.length > 0 ? current : serverLoaded,
@@ -502,14 +512,16 @@ export function useNoteBlockData(options: {
         const current = documentEngineRef.current.getBlocks().filter(
           (block) => block.document_id === documentId,
         );
+        const serverForDoc = normalized.filter((block) => block.document_id === documentId);
         rememberNoteDocumentBlocks(
           documentId,
           mergeBlocksWithStoreContent(current),
           {
             trustServer: true,
-            serverConfirmedEmpty: current.length === 0,
+            serverConfirmedEmpty: current.length === 0 && serverForDoc.length === 0,
           },
         );
+        setBlocksEmptyConfirmed(current.length === 0 && serverForDoc.length === 0);
         if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
           void persistToggleBodyMigration(
             current.length > 0 ? current : normalized,
@@ -716,6 +728,7 @@ export function useNoteBlockData(options: {
     blocksRef,
     loadingBlocks,
     blocksSyncing,
+    blocksEmptyConfirmed,
     trashedBlocks,
     setTrashedBlocks,
     loadingTrashedBlocks,

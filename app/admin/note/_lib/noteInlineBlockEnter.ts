@@ -11,6 +11,7 @@ type InlineEnterHandlerOptions = {
   block: NoteBlock;
   followType: NoteBlock['type'];
   text: string;
+  parentBlockType?: NoteBlock['type'] | null;
   isEmpty?: (rawText: string, enterCtx?: NoteEditorEnterContext) => boolean;
   onAddBelow: (type?: NoteBlock['type'], content?: Record<string, unknown>) => void;
   onChangeType?: (type: NoteBlock['type']) => void;
@@ -74,6 +75,7 @@ export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions
       followType: options.followType,
       text: liveTextForBlock(options.block, options.text ?? ''),
       parentBlockId: options.block.parent_block_id ?? null,
+      parentBlockType: options.parentBlockType ?? null,
       enterCtx,
       isEmpty: options.isEmpty,
     });

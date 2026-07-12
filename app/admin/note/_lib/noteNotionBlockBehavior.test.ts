@@ -8,6 +8,7 @@ import {
   resolveCodeEnterAction,
   resolveEditorShiftEnterAction,
   resolveEmptyBackspaceAction,
+  readToggleTitleText,
   resolveHeadingEnterAction,
   resolveInlineBackspaceAtStartAction,
   resolveInlineBlockEnterAction,
@@ -15,6 +16,8 @@ import {
   resolveListEmptyBackspaceAction,
   resolvePageBlockEnterAction,
   resolveTableCellEnterAction,
+  resolveToggleChildBackspaceAtStartAction,
+  resolveToggleChildEmptyBackspaceAction,
   resolveToggleTitleBackspaceAction,
   resolveToggleTitleEnterAction,
   shouldEditorShiftEnterHardBreak,
@@ -115,6 +118,46 @@ describe('resolveEmptyBackspaceAction', () => {
   });
 });
 
+describe('toggle child keyboard parity', () => {
+  it('empty toggle child text Enter adds sibling below (not outdent)', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'text',
+      text: '',
+      parentBlockId: 'toggle-1',
+      parentBlockType: 'toggle',
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'add-below', followType: 'text' });
+  });
+
+  it('first toggle child empty backspace deletes and focuses title', () => {
+    expect(resolveToggleChildEmptyBackspaceAction({
+      parentBlockType: 'toggle',
+      isFirstChildInToggle: true,
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'delete-and-focus-toggle-title' });
+  });
+
+  it('second toggle child empty backspace merges with previous', () => {
+    expect(resolveToggleChildEmptyBackspaceAction({
+      parentBlockType: 'toggle',
+      isFirstChildInToggle: false,
+      canMergeWithPrevious: true,
+    })).toEqual({ kind: 'merge-with-previous' });
+  });
+
+  it('first toggle child at start backspace focuses title', () => {
+    expect(resolveToggleChildBackspaceAtStartAction({
+      parentBlockType: 'toggle',
+      isFirstChildInToggle: true,
+    })).toEqual({ kind: 'focus-toggle-title' });
+  });
+
+  it('readToggleTitleText falls back to legacy text field', () => {
+    expect(readToggleTitleText({ text: 'legacy title' })).toBe('legacy title');
+    expect(readToggleTitleText({ title: 'new title' })).toBe('new title');
+  });
+});
+
 describe('resolveToggleTitleBackspaceAction', () => {
   it('empty toggle title at start converts to text', () => {
     expect(resolveToggleTitleBackspaceAction({
@@ -124,14 +167,17 @@ describe('resolveToggleTitleBackspaceAction', () => {
     })).toEqual({ kind: 'convert-to-text' });
   });
 
-  it('keeps default behavior when title has text or caret is not at start', () => {
+  it('non-empty toggle title at start navigates to previous block', () => {
     expect(resolveToggleTitleBackspaceAction({
-      title: 'Toggle',
+      title: '78907890789',
       selectionStart: 0,
       selectionEnd: 0,
-    })).toEqual({ kind: 'default' });
+    })).toEqual({ kind: 'navigate-previous' });
+  });
+
+  it('keeps default behavior when caret is not at start', () => {
     expect(resolveToggleTitleBackspaceAction({
-      title: '',
+      title: 'Toggle',
       selectionStart: 1,
       selectionEnd: 1,
     })).toEqual({ kind: 'default' });

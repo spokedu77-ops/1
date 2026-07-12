@@ -1,6 +1,56 @@
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
+import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
 import { INLINE_DECORATED_BLOCK_TYPES } from './noteBlockTypes';
 import type { NoteBlock } from './types';
+export function readToggleTitleText(
+  content: Record<string, unknown> | null | undefined,
+): string {
+  if (!content) return '';
+  if (typeof content.title === 'string') return content.title;
+  if (typeof content.text === 'string') return content.text;
+  return '';
+}
+
+export function isFirstChildAmongSiblings(
+  blocks: NoteBlock[],
+  blockId: string,
+  parentId: string,
+): boolean {
+  const siblings = getBlocksInParent(blocks, parentId);
+  return siblings[0]?.id === blockId;
+}
+
+export type NotionToggleChildBackspaceAtStartAction =
+  | { kind: 'focus-toggle-title' }
+  | { kind: 'default' };
+
+/** 토글 첫 자식 맨 앞 Backspace — Notion: 제목 끝으로 커서 */
+export function resolveToggleChildBackspaceAtStartAction(options: {
+  parentBlockType: NoteBlock['type'] | null;
+  isFirstChildInToggle: boolean;
+}): NotionToggleChildBackspaceAtStartAction {
+  if (options.parentBlockType === 'toggle' && options.isFirstChildInToggle) {
+    return { kind: 'focus-toggle-title' };
+  }
+  return { kind: 'default' };
+}
+
+export type NotionToggleChildEmptyBackspaceAction =
+  | { kind: 'delete-and-focus-toggle-title' }
+  | { kind: 'delete-block' }
+  | { kind: 'merge-with-previous' };
+
+/** 토글 자식 빈 블록 Backspace — Notion: 자식 제거 후 제목으로 */
+export function resolveToggleChildEmptyBackspaceAction(options: {
+  parentBlockType: NoteBlock['type'] | null;
+  isFirstChildInToggle: boolean;
+  canMergeWithPrevious: boolean;
+}): NotionToggleChildEmptyBackspaceAction {
+  if (options.parentBlockType === 'toggle' && options.isFirstChildInToggle) {
+    return { kind: 'delete-and-focus-toggle-title' };
+  }
+  return resolveEmptyBackspaceAction(options.canMergeWithPrevious);
+}
 
 /** Notion 스타일 인라인 블록(todo·bullet 등) Enter 결과 */
 export type NotionInlineEnterAction =
@@ -15,6 +65,7 @@ export type NotionToggleTitleEnterAction =
 
 export type NotionToggleTitleBackspaceAction =
   | { kind: 'convert-to-text' }
+  | { kind: 'navigate-previous' }
   | { kind: 'default' };
 
 /** 페이지 블록 키보드 결과 */
@@ -54,6 +105,7 @@ export function resolveInlineBlockEnterAction(options: {
   followType: NoteBlock['type'];
   text: string;
   parentBlockId: string | null;
+  parentBlockType?: NoteBlock['type'] | null;
   enterCtx?: NoteEditorEnterContext;
   isEmpty?: (rawText: string, enterCtx?: NoteEditorEnterContext) => boolean;
   emptyRootTextBehavior?: 'add-below' | 'convert-to-text';
@@ -79,6 +131,9 @@ export function resolveInlineBlockEnterAction(options: {
   }
 
   if (options.parentBlockId) {
+    if (options.parentBlockType === 'toggle') {
+      return { kind: 'add-below', followType: 'text' };
+    }
     return { kind: 'outdent' };
   }
 
@@ -104,9 +159,10 @@ export function resolveToggleTitleBackspaceAction(options: {
   if (options.selectionStart !== 0 || options.selectionEnd !== 0) {
     return { kind: 'default' };
   }
-  return options.title.trim().length === 0
-    ? { kind: 'convert-to-text' }
-    : { kind: 'default' };
+  if (options.title.trim().length === 0) {
+    return { kind: 'convert-to-text' };
+  }
+  return { kind: 'navigate-previous' };
 }
 
 /** 제목(heading) Enter — 항상 아래 text 블록, 빈 줄이면 text로 전환 */

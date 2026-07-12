@@ -19,6 +19,9 @@ import {
   resolveTableCellEnterAction,
   resolveInlineBlockEnterAction,
   resolveHeadingEnterAction,
+  resolveToggleChildBackspaceAtStartAction,
+  resolveToggleChildEmptyBackspaceAction,
+  resolveToggleTitleBackspaceAction,
   resolveToggleTitleEnterAction,
 } from './noteNotionBlockBehavior';
 import { readImageWidthPercent, buildImageWidthPatch, snapImageWidthPercent } from './noteImageBlock';
@@ -114,6 +117,41 @@ describe('Admin Note editing DoD — Phase B keyboard & turn into', () => {
   it('toggle title Enter adds child when expanded', () => {
     expect(resolveToggleTitleEnterAction(false)).toEqual({ kind: 'add-child', blockType: 'text' });
     expect(resolveToggleTitleEnterAction(true)).toEqual({ kind: 'add-sibling', blockType: 'toggle' });
+  });
+
+  it('toggle title Backspace at start navigates up when title is non-empty', () => {
+    expect(resolveToggleTitleBackspaceAction({
+      title: '제목',
+      selectionStart: 0,
+      selectionEnd: 0,
+    })).toEqual({ kind: 'navigate-previous' });
+    expect(resolveToggleTitleBackspaceAction({
+      title: '',
+      selectionStart: 0,
+      selectionEnd: 0,
+    })).toEqual({ kind: 'convert-to-text' });
+  });
+
+  it('toggle child empty backspace and at-start backspace focus parent title', () => {
+    expect(resolveToggleChildEmptyBackspaceAction({
+      parentBlockType: 'toggle',
+      isFirstChildInToggle: true,
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'delete-and-focus-toggle-title' });
+    expect(resolveToggleChildBackspaceAtStartAction({
+      parentBlockType: 'toggle',
+      isFirstChildInToggle: true,
+    })).toEqual({ kind: 'focus-toggle-title' });
+  });
+
+  it('empty text inside toggle Enter adds sibling (not outdent)', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'text',
+      text: '',
+      parentBlockId: 'toggle-1',
+      parentBlockType: 'toggle',
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'add-below', followType: 'text' });
   });
 
   it('turn into preserves html and excludes current type', () => {

@@ -94,6 +94,7 @@ function BlockContent({
   onMultilinePaste,
   autoFocusSignal,
   onEmptyBackspace,
+  onBackspaceAtBlockStart,
   onMergeWithPrevious,
   canMergeWithPrevious,
   onIndentChange,
@@ -143,6 +144,7 @@ function BlockContent({
   onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
+  onBackspaceAtBlockStart?: () => boolean;
   onMergeWithPrevious?: () => void;
   canMergeWithPrevious?: () => boolean;
   onIndentChange?: (direction: 'in' | 'out') => void;
@@ -777,6 +779,7 @@ function BlockContent({
     block,
     followType: 'text',
     text,
+    parentBlockType: isInsideToggle ? 'toggle' : null,
     onAddBelow,
     onChangeType,
     onIndentChange,
@@ -793,6 +796,7 @@ function BlockContent({
         enterCreatesBlock: enterCreatesBlockBelow,
         enterSplitOnMidBlock: enterCreatesBlockBelow,
         onEditorEnter: enterCreatesBlockBelow ? handleTextEnter : undefined,
+        onEditorBackspaceAtBlockStart: onBackspaceAtBlockStart,
       })}
       {renderSlashMenuPortal()}
     </div>
@@ -922,6 +926,7 @@ function SortableBlockRow({
   onMultilinePaste,
   autoFocusSignal,
   onEmptyBackspace,
+  onBackspaceAtBlockStart,
   onMergeWithPrevious,
   canMergeWithPrevious,
   onIndentChange,
@@ -970,6 +975,7 @@ function SortableBlockRow({
   onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
+  onBackspaceAtBlockStart?: () => boolean;
   onMergeWithPrevious?: () => void;
   canMergeWithPrevious?: () => boolean;
   onIndentChange?: (direction: 'in' | 'out') => void;
@@ -1043,6 +1049,7 @@ function SortableBlockRow({
     onMultilinePaste,
     autoFocusSignal,
     onEmptyBackspace,
+    onBackspaceAtBlockStart,
     onMergeWithPrevious,
     canMergeWithPrevious,
     onIndentChange,
@@ -1188,6 +1195,7 @@ function ToggleInlineRow({
   onMultilinePaste,
   autoFocusSignal,
   onEmptyBackspace,
+  onBackspaceAtBlockStart,
   onMergeWithPrevious,
   canMergeWithPrevious,
   onIndentChange,
@@ -1237,6 +1245,7 @@ function ToggleInlineRow({
   onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   autoFocusSignal?: number;
   onEmptyBackspace?: () => void;
+  onBackspaceAtBlockStart?: () => boolean;
   onMergeWithPrevious?: () => void;
   canMergeWithPrevious?: () => boolean;
   onIndentChange?: (direction: 'in' | 'out') => void;
@@ -1332,6 +1341,7 @@ function ToggleInlineRow({
     onMultilinePaste,
     autoFocusSignal,
     onEmptyBackspace,
+    onBackspaceAtBlockStart,
     onMergeWithPrevious,
     canMergeWithPrevious,
     onIndentChange,

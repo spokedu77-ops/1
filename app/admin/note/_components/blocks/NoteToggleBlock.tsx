@@ -153,6 +153,11 @@ export function NoteToggleBlock({
                 onFocusBlockById(firstChild.id, part, 0);
                 return;
               }
+              if (!collapsed && !firstChild && onAddChildBelow) {
+                e.preventDefault();
+                onAddChildBelow('text');
+                return;
+              }
             }
             if (e.key === 'ArrowUp' && !e.shiftKey && onNavigatePrevious) {
               const input = toggleTitleInputRef.current;
@@ -182,6 +187,11 @@ export function NoteToggleBlock({
               if (action.kind === 'convert-to-text') {
                 e.preventDefault();
                 onChangeType('text');
+                return;
+              }
+              if (action.kind === 'navigate-previous') {
+                e.preventDefault();
+                onNavigatePrevious?.();
                 return;
               }
             }

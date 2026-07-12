@@ -38,6 +38,19 @@ export function excludeBlocksPendingSoftDelete(
   return blocks.filter((block) => !pendingDeleteIds.has(block.id));
 }
 
+/**
+ * IndexedDB local.blocks가 []일 때 outbound만으로 빈 로컬을 신뢰할지.
+ * pending soft delete가 서버 블록 전부를 설명할 때만 true — 그 외는 오염된 로컬로 보고 서버 rebase.
+ */
+export function shouldTrustEmptyLocalWithOutbound(
+  outbound: NoteLocalOutboundOp[],
+  serverBlocks: NoteBlock[],
+): boolean {
+  if (serverBlocks.length === 0) return true;
+  const pendingDeletes = collectPendingSoftDeleteIds(outbound);
+  return serverBlocks.every((block) => pendingDeletes.has(block.id));
+}
+
 /** NotePersistOp → 서버 push 항목 (1 persist op = 1~N push items) */
 export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
   switch (op.type) {
