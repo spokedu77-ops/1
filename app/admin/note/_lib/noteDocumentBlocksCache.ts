@@ -139,6 +139,13 @@ export function rememberNoteDocumentBlocks(
   );
   if (blocks.length > 0 && incoming.length === 0) return;
 
+  if (!options?.trustServer && incoming.length === 0) {
+    const existing = readEntry(documentId);
+    if (existing && existing.blocks.length > 0) {
+      return;
+    }
+  }
+
   if (!options?.trustServer && !hasRecentBlockDeletes(documentId)) {
     const existing = readEntry(documentId);
     if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {

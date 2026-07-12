@@ -92,6 +92,7 @@ export function useNoteBlockData(options: {
   const bootstrapAppliedDocIdRef = useRef<string | null>(null);
   const reconcileDocumentIdRef = useRef<string | null>(null);
   const reconcileLoadGenRef = useRef(0);
+  const previousDocumentIdRef = useRef<string | null>(null);
 
   const clearReconcileTimer = useCallback(() => {
     cancelNoteReconcileIdle();
@@ -402,11 +403,27 @@ export function useNoteBlockData(options: {
 
   useEffect(() => {
     if (!selectedId) {
+      previousDocumentIdRef.current = null;
       setBlocks([]);
       setLoadingBlocks(false);
       setBlocksSyncing(false);
       return;
     }
+
+    const previousId = previousDocumentIdRef.current;
+    if (previousId && previousId !== selectedId) {
+      const leavingSnapshot = mergeBlocksWithStoreContent(
+        blocksRef.current.filter((block) => block.document_id === previousId),
+      );
+      if (leavingSnapshot.length > 0) {
+        rememberNoteDocumentBlocks(previousId, leavingSnapshot);
+      }
+    }
+    previousDocumentIdRef.current = selectedId;
+
+    _setBlocks([]);
+    setLoadingBlocks(true);
+    setBlocksSyncing(false);
 
     let cancelled = false;
     const documentId = selectedId;
@@ -422,15 +439,34 @@ export function useNoteBlockData(options: {
         loaded: NoteBlock[],
         mergeWithCurrent: boolean,
       ) => {
+        const { blocks: prepared, toggleMigration } = prepareLoadedNoteBlocks(loaded);
+        let normalized = dedupeNoteBlocksById(prepared);
+        const remembered = readRememberedNoteDocumentBlocks(documentId);
+        if (remembered && remembered.length > 0) {
+          if (normalized.length === 0) {
+            const fallback = prepareLoadedNoteBlocks(remembered);
+            normalized = dedupeNoteBlocksById(fallback.blocks);
+          } else {
+            const merged = unionReconciledWithLocalBlocks(
+              remembered,
+              normalized,
+              documentId,
+            );
+            if (!wouldReconcileRegressActiveText(merged)) {
+              normalized = merged;
+            }
+          }
+        }
         const store = useNoteBlockStore.getState();
         store.setActiveDocumentId(documentId);
         if (mergeWithCurrent && blocksRef.current.length > 0) {
-          documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: loaded });
+          documentEngineRef.current.dispatch({ type: 'syncSnapshot', blocks: normalized });
+        } else {
+          documentEngineRef.current.replaceBlocks(normalized);
         }
         const current = documentEngineRef.current.getBlocks().filter(
           (block) => block.document_id === documentId,
         );
-        const { toggleMigration } = prepareLoadedNoteBlocks(loaded);
         rememberNoteDocumentBlocks(
           documentId,
           mergeBlocksWithStoreContent(current),
@@ -438,7 +474,7 @@ export function useNoteBlockData(options: {
         );
         if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
           void persistToggleBodyMigration(
-            current.length > 0 ? current : loaded,
+            current.length > 0 ? current : normalized,
             toggleMigration,
           ).catch((e) => {
             devLogger.error('[Note] persistToggleBodyMigration', e);
@@ -538,7 +574,7 @@ export function useNoteBlockData(options: {
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
 
         if (prefetched) {
-          await finishFromNetwork(prefetched, hasInstantSnapshot || blocksRef.current.length > 0);
+          await finishFromNetwork(prefetched, false);
           return;
         }
 
@@ -553,7 +589,7 @@ export function useNoteBlockData(options: {
         const json = (await res.json()) as { blocks: NoteBlock[] };
         await finishFromNetwork(
           json.blocks ?? [],
-          hasInstantSnapshot || blocksRef.current.length > 0,
+          false,
         );
       } catch (e) {
         devLogger.error('[Note] loadBlocks', e);
@@ -570,13 +606,6 @@ export function useNoteBlockData(options: {
     void run();
     return () => {
       cancelled = true;
-      const leavingDocId = documentId;
-      const snapshot = mergeBlocksWithStoreContent(
-        blocksRef.current.filter((block) => block.document_id === leavingDocId),
-      );
-      if (snapshot.length > 0) {
-        rememberNoteDocumentBlocks(leavingDocId, snapshot);
-      }
     };
   }, [
     selectedId,
@@ -600,6 +629,7 @@ export function useNoteBlockData(options: {
   useEffect(() => {
     if (!selectedId || blocksSyncing) return;
     const docBlocks = blocks.filter((block) => block.document_id === selectedId);
+    if (docBlocks.length === 0) return;
     rememberNoteDocumentBlocks(selectedId, docBlocks);
   }, [blocks, blocksSyncing, selectedId]);
 

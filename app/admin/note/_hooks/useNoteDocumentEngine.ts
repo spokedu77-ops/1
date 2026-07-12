@@ -8,6 +8,7 @@ import {
 } from '../_lib/noteDocumentPipeline';
 import { subscribeNoteCrossTabBlockSync } from '../_lib/noteCrossTabBlockSync';
 import { applyServerBlockVersions } from '../_lib/noteDocumentEngine';
+import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type {
@@ -81,8 +82,24 @@ export function useNoteDocumentEngine(options: {
 
     return () => {
       const leavingId = documentId;
-      void disposeNoteDocumentPipeline(leavingId);
+      const leaving = pipelineRef.current;
       pipelineRef.current = null;
+      void (async () => {
+        if (leaving) {
+          try {
+            commitActiveNoteEditorToStore();
+            if (leaving.hasPendingContent()) {
+              await leaving.flushContentPatches();
+            }
+            if (leaving.hasPendingPersist()) {
+              await leaving.flushPersistQueue();
+            }
+          } catch (error) {
+            onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
+          }
+        }
+        await disposeNoteDocumentPipeline(leavingId);
+      })();
     };
   }, [documentId]);
 
@@ -149,7 +166,11 @@ export function useNoteDocumentEngine(options: {
   }, []);
 
   const syncWithServer = useCallback(async (initialBlocks: NoteBlock[]) => {
-    if (!pipelineRef.current) return;
+    if (!pipelineRef.current) {
+      useNoteBlockStore.getState().hydrate(initialBlocks);
+      onBlocksChangedRef.current(initialBlocks);
+      return;
+    }
     await pipelineRef.current.syncWithServer(initialBlocks);
   }, []);
 
@@ -166,8 +187,17 @@ export function useNoteDocumentEngine(options: {
   }, [getPipeline]);
 
   const persistCreateBlock = useCallback(async (args: CreateBlockPersistArgs) => {
-    return getPipeline().persistCreateBlock(args);
-  }, [getPipeline]);
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const pipeline = pipelineRef.current;
+      if (pipeline && !pipeline.isDisposed()) {
+        return pipeline.persistCreateBlock(args);
+      }
+      await new Promise((resolve) => {
+        setTimeout(resolve, 16);
+      });
+    }
+    throw new Error('문서 파이프라인이 준비되지 않았습니다');
+  }, []);
 
   const persistBlockTransaction = useCallback(async (
     patches: NoteBlockFieldPatch[],

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useDeferredNoteMeta } from '../_hooks/useDeferredNoteMeta';
@@ -115,14 +115,14 @@ export function useNoteDocumentData(options: {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const initialId = searchParams.get('id');
-    if (initialId) {
+    if (initialId && initialId !== selectedId) {
       setSelectedId(initialId);
       setMobileTab('editor');
       closeAll();
     }
-  }, [searchParams, closeAll, setMobileTab]);
+  }, [searchParams, selectedId, closeAll, setMobileTab]);
 
   useEffect(() => {
     let alive = true;

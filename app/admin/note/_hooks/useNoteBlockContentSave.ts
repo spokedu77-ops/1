@@ -22,7 +22,12 @@ export function useNoteBlockContentSave(options: {
   }, [documentEngine]);
 
   const flushPersistQueue = useCallback(async () => {
-    await documentEngine.flushPersistQueue();
+    if (documentEngine.hasPendingContent()) {
+      await documentEngine.flushContentPatches();
+    }
+    if (documentEngine.hasPendingPersist()) {
+      await documentEngine.flushPersistQueue();
+    }
   }, [documentEngine]);
 
   const clearPendingContentPatch = useCallback((blockId: string) => {

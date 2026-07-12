@@ -200,10 +200,11 @@ export class NoteDocumentPipeline {
     }
     await this.coordinator.syncWithServer(initialBlocks);
     const blocks = this.coordinator.getBlocks();
-    if (blocks.length > 0) {
-      this.dispatch({ type: 'syncSnapshot', blocks });
+    const snapshot = blocks.length > 0 ? blocks : initialBlocks;
+    if (snapshot.length > 0) {
+      this.dispatch({ type: 'syncSnapshot', blocks: snapshot });
     } else {
-      this.dispatch({ type: 'hydrate', blocks: initialBlocks });
+      this.dispatch({ type: 'hydrate', blocks: [] });
     }
   }
 
@@ -233,10 +234,18 @@ export class NoteDocumentPipeline {
       normalizeOrders: args.normalizeOrders,
       transactionUpdates: args.transactionUpdates,
     };
-    if (!this.queue) {
-      throw new Error('문서 파이프라인이 준비되지 않았습니다');
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      if (this.disposed) {
+        throw new Error('문서 파이프라인이 준비되지 않았습니다');
+      }
+      if (this.queue) {
+        return this.queue.enqueueCreateBlock(op);
+      }
+      await new Promise((resolve) => {
+        setTimeout(resolve, 16);
+      });
     }
-    return this.queue.enqueueCreateBlock(op);
+    throw new Error('문서 파이프라인이 준비되지 않았습니다');
   }
 
   async persistBlockTransaction(
@@ -280,6 +289,10 @@ export class NoteDocumentPipeline {
     return this.oplogEnabled;
   }
 
+  isDisposed(): boolean {
+    return this.disposed;
+  }
+
   private syncPendingFlag(): void {
     setNoteContentSavePending(this.queue?.hasPendingContent ?? false);
   }
@@ -310,8 +323,12 @@ export function getNoteDocumentPipeline(
 ): NoteDocumentPipeline {
   const existing = pipelines.get(documentId);
   if (existing) {
-    existing.updateCallbacks(callbacks);
-    return existing;
+    if (existing.isDisposed()) {
+      pipelines.delete(documentId);
+    } else {
+      existing.updateCallbacks(callbacks);
+      return existing;
+    }
   }
   const pipeline = new NoteDocumentPipeline(documentId, callbacks);
   pipelines.set(documentId, pipeline);
@@ -321,6 +338,6 @@ export function getNoteDocumentPipeline(
 export async function disposeNoteDocumentPipeline(documentId: string): Promise<void> {
   const existing = pipelines.get(documentId);
   if (!existing) return;
-  await existing.dispose();
   pipelines.delete(documentId);
+  await existing.dispose();
 }

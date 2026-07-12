@@ -49,14 +49,33 @@ function documentIdFromPage(page) {
   return new URL(page.url()).searchParams.get('id');
 }
 
-async function openDocument(page, documentId) {
+async function waitForDocumentBlocksHydrated(page, documentId) {
+  await page.waitForFunction(async (expectedId) => {
+    const urlId = new URL(location.href).searchParams.get('id');
+    if (urlId !== expectedId) return false;
+    const res = await fetch(
+      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(expectedId)}&skipReconcile=true`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) return false;
+    const json = await res.json();
+    return Array.isArray(json.blocks);
+  }, documentId, { timeout: 30000 });
+  await page.getByRole('status', { name: '페이지 불러오는 중' }).waitFor({ state: 'detached', timeout: 30000 }).catch(() => undefined);
+  await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
+  await page.waitForTimeout(800);
+}
+
+async function openDocument(page, documentId, { requireBlocks = true } = {}) {
   await page.goto(
     `${BASE}/admin/note?id=${encodeURIComponent(documentId)}`,
     { waitUntil: 'domcontentloaded' },
   );
   await page.waitForLoadState('networkidle').catch(() => undefined);
   await page.getByRole('status', { name: '페이지 불러오는 중' }).waitFor({ state: 'detached', timeout: 30000 }).catch(() => undefined);
-  await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
+  if (requireBlocks) {
+    await waitForDocumentBlocksHydrated(page, documentId);
+  }
   const currentId = documentIdFromPage(page);
   if (currentId !== documentId) {
     throw new Error(`openDocument expected ${documentId}, got ${currentId ?? 'none'}`);
@@ -231,7 +250,9 @@ async function seedSiblingBulletBlocks(page) {
     await create(1);
   }, documentId);
   await page.goto(`${BASE}/admin/note?id=${encodeURIComponent(documentId)}`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('status', { name: '페이지 불러오는 중' }).waitFor({ state: 'detached', timeout: 30000 }).catch(() => undefined);
   await page.waitForTimeout(1500);
+  await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
   const count = await page.locator('[data-note-block-row][data-list-sibling="true"]').count();
   if (count < 2) throw new Error(`expected 2 bullet rows, got ${count}`);
 }
@@ -336,7 +357,7 @@ async function createEmptyDocument(page) {
     const { document } = await docRes.json();
     return document.id;
   });
-  await openDocument(page, docId);
+  await openDocument(page, docId, { requireBlocks: false });
   return docId;
 }
 
@@ -386,6 +407,34 @@ async function waitForEditorSurface(page, index = 0) {
   );
 }
 
+async function blurActiveEditor(page) {
+  const titleInput = page.locator('input[type="text"]').first();
+  if (await titleInput.isVisible().catch(() => false)) {
+    await titleInput.click();
+  } else {
+    await page.keyboard.press('Tab');
+  }
+  await page.waitForTimeout(2200);
+}
+
+async function waitForApiBlockText(page, expectedSubstring, index = 0, documentId) {
+  await page.waitForFunction(async ({ text, blockIndex, docId }) => {
+    const activeDocId = docId || new URL(location.href).searchParams.get('id');
+    if (!activeDocId) return false;
+    const res = await fetch(
+      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(activeDocId)}&skipReconcile=true`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) return false;
+    const json = await res.json();
+    const blocks = (json.blocks ?? [])
+      .filter((b) => b.type === 'text')
+      .sort((a, b) => a.order_index - b.order_index);
+    const value = blocks[blockIndex]?.content?.text;
+    return typeof value === 'string' && value.includes(text);
+  }, { text: expectedSubstring, blockIndex: index, docId: documentId ?? null }, { timeout: 30000 });
+}
+
 async function typeInFirstBlock(page, text, index = 0) {
   await waitForEditorSurface(page, index);
   await focusBlockAt(page, index);
@@ -398,8 +447,7 @@ async function typeInFirstBlock(page, text, index = 0) {
   } else {
     await page.keyboard.insertText(text);
   }
-  await clickDocumentBody(page);
-  await page.waitForTimeout(900);
+  await blurActiveEditor(page);
 }
 
 async function openChildDocumentFromLastPageBlock(page) {
@@ -419,11 +467,10 @@ async function openChildDocumentFromLastPageBlock(page) {
 }
 
 async function waitForBlockText(page, expectedSubstring, index = 0, timeoutMs = 20000) {
+  await blurActiveEditor(page);
   const deadline = Date.now() + timeoutMs;
   let last = '';
   while (Date.now() < deadline) {
-    await clickDocumentBody(page);
-    await page.waitForTimeout(400);
     last = await blockTextFromDom(page, index);
     if (last.includes(expectedSubstring)) return last;
     await page.waitForTimeout(500);
@@ -577,20 +624,28 @@ async function main() {
       const parentDocId = await createFreshNote(page);
       await typeInFirstBlock(page, '부모본문', 0);
       await waitForBlockText(page, '부모본문', 0);
+      await waitForApiBlockText(page, '부모본문', 0, parentDocId);
       const subPageBtn = await openPageMenu(page);
       await subPageBtn.click();
       await page.waitForTimeout(2000);
-      const childDocId = await resolveLastPageChildDocumentId(page, parentDocId);
-      if (!childDocId) throw new Error('subpage child document id not found');
-      await openDocument(page, childDocId);
+      const { childDocId } = await openChildDocumentFromLastPageBlock(page);
+      await waitForDocumentBlocksHydrated(page, childDocId);
       await typeInFirstBlock(page, '하위고유문구', 0);
       await waitForBlockText(page, '하위고유문구', 0);
-      await openDocument(page, parentDocId);
+      const parentTitle = await page.evaluate(async (parentId) => {
+        const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
+        const json = await res.json();
+        return (json.documents ?? []).find((doc) => doc.id === parentId)?.title ?? '';
+      }, parentDocId);
+      if (!parentTitle) throw new Error('parent title not found for breadcrumb navigation');
+      await page.locator('button.mb-4.inline-flex').filter({ hasText: parentTitle }).click();
+      await page.waitForURL((url) => url.searchParams.get('id') === parentDocId, { timeout: 20000 });
+      await waitForDocumentBlocksHydrated(page, parentDocId);
       const parentText = await waitForBlockText(page, '부모본문', 0);
       if (!parentText.includes('부모본문')) {
         throw new Error(`parent content missing after switch: "${parentText}"`);
       }
-      await openDocument(page, childDocId);
+      await openChildDocumentFromLastPageBlock(page);
       const childText = await waitForBlockText(page, '하위고유문구', 0);
       if (!childText.includes('하위고유문구')) {
         throw new Error(`child content missing after return: "${childText}"`);
@@ -637,6 +692,7 @@ async function main() {
         return document.id;
       }, parentDocId);
       await openDocument(page, childDocId);
+      await waitForDocumentBlocksHydrated(page, childDocId);
       await waitForEditorSurface(page, 0);
       await typeInFirstBlock(page, '페이지블록진입', 0);
       const text = await waitForBlockText(page, '페이지블록진입', 0);
