@@ -14,6 +14,7 @@ import {
   type SoftDeletePersistArgs,
 } from './noteDocumentOpQueue';
 import { setNoteContentSavePending } from './notePendingSave';
+import { contentChangeNeedsReactBlocks } from './noteContentPatch';
 import { markNoteLocalSave } from './noteReconcileIdle';
 import { broadcastNoteBlockVersions } from './noteCrossTabBlockSync';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
@@ -156,10 +157,17 @@ export class NoteDocumentPipeline {
     content: Record<string, unknown>,
     baseContent?: Record<string, unknown>,
   ): void {
+    const storeBlock = useNoteBlockStore.getState().byId[blockId];
+    const prevContent = (baseContent
+      ?? (storeBlock?.content as Record<string, unknown> | null | undefined)
+      ?? {}) as Record<string, unknown>;
+    const nextContent = { ...prevContent, ...content };
     useNoteBlockStore.getState().patchContent(blockId, content);
     this.queue?.scheduleContentPatch(blockId, content, baseContent);
     this.syncPendingFlag();
-    this.callbacks.onBlocksChanged(useNoteBlockStore.getState().getBlocksArray());
+    if (contentChangeNeedsReactBlocks(prevContent, nextContent)) {
+      this.callbacks.onBlocksChanged(useNoteBlockStore.getState().getBlocksArray());
+    }
   }
 
   clearContentPatch(blockId: string): void {

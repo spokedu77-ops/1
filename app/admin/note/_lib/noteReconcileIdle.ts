@@ -11,6 +11,32 @@ let pendingDocumentId: string | null = null;
 
 const localSaveSuppressUntil = new Map<string, number>();
 
+const PENDING_BLOCK_DELETE_MS = 15_000;
+const pendingBlockDeletes = new Map<string, { until: number; ids: Set<string> }>();
+
+/** soft delete 직후 reconcile·캐시 shrink guard·서버 복구 우회 억제 */
+export function markPendingBlockDeletes(
+  documentId: string,
+  ids: string[],
+  ms = PENDING_BLOCK_DELETE_MS,
+): void {
+  if (!documentId || ids.length === 0) return;
+  const existing = pendingBlockDeletes.get(documentId);
+  const idSet = existing?.ids ?? new Set<string>();
+  for (const id of ids) idSet.add(id);
+  pendingBlockDeletes.set(documentId, { until: Date.now() + ms, ids: idSet });
+}
+
+export function hasRecentBlockDeletes(documentId: string): boolean {
+  const entry = pendingBlockDeletes.get(documentId);
+  if (!entry) return false;
+  if (Date.now() > entry.until) {
+    pendingBlockDeletes.delete(documentId);
+    return false;
+  }
+  return entry.ids.size > 0;
+}
+
 export function registerNoteReconcileIdleHandler(handler: NoteReconcileIdleHandler | null): void {
   idleHandler = handler;
 }

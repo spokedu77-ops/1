@@ -4,6 +4,7 @@ import {
   readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
 } from './noteDocumentBlocksCache';
+import { markPendingBlockDeletes } from './noteReconcileIdle';
 import type { NoteBlock } from './types';
 
 function block(id: string, documentId = 'doc-1'): NoteBlock {
@@ -84,6 +85,17 @@ describe('noteDocumentBlocksCache', () => {
     }));
     rememberNoteDocumentBlocks('doc-1', many, { trustServer: true });
     rememberNoteDocumentBlocks('doc-1', [many[0]], { trustServer: true });
+    expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(1);
+  });
+
+  it('allows shrink while block delete is pending even without trustServer', () => {
+    const many = Array.from({ length: 8 }, (_, index) => ({
+      ...block(`b${index}`),
+      order_index: index,
+    }));
+    rememberNoteDocumentBlocks('doc-1', many, { trustServer: true });
+    markPendingBlockDeletes('doc-1', ['b1', 'b2', 'b3', 'b4', 'b5', 'b6', 'b7']);
+    rememberNoteDocumentBlocks('doc-1', [many[0]]);
     expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(1);
   });
 });

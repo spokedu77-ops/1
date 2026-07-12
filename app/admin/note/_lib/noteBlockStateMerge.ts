@@ -8,6 +8,7 @@ import {
 } from '../_components/noteBulletInput';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { mergeBlockContentWithStore } from './noteContentPatch';
+import { hasRecentBlockDeletes } from './noteReconcileIdle';
 
 /** 서버 reconcile에 아직 없는 로컬 블록을 유지하는 최대 시간 (생성 직후만) */
 export const LOCAL_ONLY_BLOCK_GRACE_MS = 5000;
@@ -18,6 +19,7 @@ export function serverSnapshotRecoversMissingBlocks(
   serverBlocks: NoteBlock[],
   documentId: string,
 ): boolean {
+  if (hasRecentBlockDeletes(documentId)) return false;
   const localCount = localBlocks.filter((block) => block.document_id === documentId).length;
   const serverCount = serverBlocks.filter((block) => block.document_id === documentId).length;
   if (serverCount === 0) return false;

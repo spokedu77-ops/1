@@ -1,4 +1,5 @@
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import { hasRecentBlockDeletes } from './noteReconcileIdle';
 import type { NoteBlock } from './types';
 
 type VisitCacheEntry = {
@@ -138,7 +139,7 @@ export function rememberNoteDocumentBlocks(
   );
   if (blocks.length > 0 && incoming.length === 0) return;
 
-  if (!options?.trustServer) {
+  if (!options?.trustServer && !hasRecentBlockDeletes(documentId)) {
     const existing = readEntry(documentId);
     if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {
       return;

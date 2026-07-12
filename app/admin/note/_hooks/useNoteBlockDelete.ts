@@ -16,10 +16,36 @@ import {
   commitActiveNoteEditorToStore,
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
+import {
+  rememberNoteDocumentBlocks,
+} from '../_lib/noteDocumentBlocksCache';
+import { invalidatePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import {
+  markNoteLocalSave,
+  markPendingBlockDeletes,
+} from '../_lib/noteReconcileIdle';
 import { setNoteMergeSplitHint } from '../_lib/noteMergeSplitHint';
 import type { NoteBlock } from '../_lib/types';
 
 type MergeWithPreviousCommand = NonNullable<ReturnType<typeof buildMergeWithPreviousBlockCommand>>;
+
+function applyPostBlockRemovalCache(
+  documentId: string | null | undefined,
+  nextBlocks: NoteBlock[],
+  removedIds: string[],
+): void {
+  if (!documentId) return;
+  markNoteLocalSave(documentId);
+  markPendingBlockDeletes(documentId, removedIds);
+  invalidatePrefetchedNoteBlocks(documentId);
+  rememberNoteDocumentBlocks(
+    documentId,
+    mergeBlocksWithStoreContent(
+      nextBlocks.filter((block) => block.document_id === documentId),
+    ),
+    { trustServer: true },
+  );
+}
 
 export function useNoteBlockDelete(options: {
   blocksRef: React.MutableRefObject<NoteBlock[]>;
@@ -102,6 +128,11 @@ export function useNoteBlockDelete(options: {
 
     if (!skipDeleteUndo) recordBlockCommandUndo(prevBlocks, command);
     documentEngine.replaceBlocks(command.nextBlocks);
+    const documentId = command.removedBlocks[0]?.document_id
+      ?? deletedBlock?.document_id
+      ?? command.nextBlocks.find((block) => block.document_id)?.document_id
+      ?? null;
+    applyPostBlockRemovalCache(documentId, command.nextBlocks, command.affectedIds);
 
     try {
       await documentEngine.persistSoftDelete({
@@ -143,6 +174,13 @@ export function useNoteBlockDelete(options: {
   ) => {
     recordBlockCommandUndo(prevBlocks, command);
     documentEngine.replaceBlocks(command.nextBlocks);
+    const removedIds = command.removedBlocks.map((removed) => removed.id);
+    const documentId = command.removedBlocks[0]?.document_id
+      ?? command.nextBlocks.find((block) => block.document_id)?.document_id
+      ?? null;
+    if (removedIds.length > 0) {
+      applyPostBlockRemovalCache(documentId, command.nextBlocks, removedIds);
+    }
     if (command.splitHint) {
       setNoteMergeSplitHint({
         blockId: command.focusBlockId,

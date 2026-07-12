@@ -9,6 +9,7 @@ import {
   unionReconciledWithLocalBlocks,
   wouldReconcileRegressActiveText,
 } from './noteBlockStateMerge';
+import { markPendingBlockDeletes } from './noteReconcileIdle';
 import type { NoteBlock } from './types';
 
 const block = (
@@ -192,5 +193,16 @@ describe('serverSnapshotRecoversMissingBlocks', () => {
       block('c', 'three', { document_id: 'doc-1', order_index: 2 }),
     ];
     expect(serverSnapshotRecoversMissingBlocks(local, server, 'doc-1')).toBe(true);
+  });
+
+  it('does not recover when a block delete is still pending', () => {
+    const local = [block('a', 'one', { document_id: 'doc-1' })];
+    const server = [
+      block('a', 'one', { document_id: 'doc-1' }),
+      block('b', 'two', { document_id: 'doc-1', order_index: 1 }),
+      block('c', 'three', { document_id: 'doc-1', order_index: 2 }),
+    ];
+    markPendingBlockDeletes('doc-1', ['b', 'c']);
+    expect(serverSnapshotRecoversMissingBlocks(local, server, 'doc-1')).toBe(false);
   });
 });
