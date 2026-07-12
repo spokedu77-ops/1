@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import { useNoteFlickerRenderCount } from '../../_hooks/useNoteFlickerRenderCount';
 import { useNoteBlockStore, type NoteActiveEditorField } from '../../_store/noteBlockStore';
 import {
   appendTableColumn,
@@ -48,10 +49,10 @@ export function NoteTableBlock({
   uploadImage,
   onOpenDocument,
 }: NoteTableBlockProps) {
+  useNoteFlickerRenderCount('NoteTableBlock', block.id);
   const storeContent = useNoteBlockStore((state) => state.byId[block.id]?.content);
   const content = storeContent ?? block.content;
   const table = useMemo(() => normalizeTableContent(content), [content]);
-  const activeEditor = useNoteBlockStore((state) => state.activeEditor);
 
   const patchTable = useBlockContentPatch(block, onContentPatch);
 
@@ -92,8 +93,11 @@ export function NoteTableBlock({
     focusCell(nextRow, nextCol);
   }, [content, focusCell, patchTable, table.rows]);
 
-  const activeCell = activeEditor?.blockId === block.id
-    ? parseTableCellField(String(activeEditor.field))
+  const activeEditorField = useNoteBlockStore((state) => (
+    state.activeEditor?.blockId === block.id ? state.activeEditor.field : null
+  ));
+  const activeCell = activeEditorField
+    ? parseTableCellField(String(activeEditorField))
     : null;
 
   const handleRemoveRow = useCallback(() => {
@@ -162,9 +166,7 @@ export function NoteTableBlock({
   const renderCell = (rowIndex: number, colIndex: number, isHeader: boolean) => {
     const cell = table.rows[rowIndex]?.[colIndex] ?? { text: '', html: '' };
     const field = tableCellField(rowIndex, colIndex) as NoteActiveEditorField;
-    const isActive =
-      activeEditor?.blockId === block.id
-      && activeEditor.field === field;
+    const isActive = activeEditorField === field;
 
     return (
       <td

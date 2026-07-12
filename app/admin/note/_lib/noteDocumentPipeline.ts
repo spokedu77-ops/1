@@ -20,7 +20,11 @@ import {
   type NoteSyncCoordinator,
 } from './noteSyncCoordinator';
 import { newNoteBlockClientId } from './noteSyncGuards';
-import { documentSnapshotsEquivalent } from './noteSnapshotEquivalence';
+import { describeSnapshotDiff } from './noteSnapshotEquivalence';
+import {
+  traceSnapshotDecision,
+  type SnapshotTraceOrigin,
+} from './noteFlickerTrace';
 import type { NoteBlock } from './types';
 
 const CONTENT_DEBOUNCE_MS = 1500;
@@ -76,11 +80,22 @@ export class NoteDocumentPipeline {
     this.initQueue();
   }
 
+  private dispatchSnapshotIfChanged(blocks: NoteBlock[], origin: SnapshotTraceOrigin): void {
+    const current = useNoteBlockStore.getState().getBlocksArray();
+    const reason = describeSnapshotDiff(current, blocks, this.documentId);
+    if (reason === 'equivalent') {
+      traceSnapshotDecision(origin, 'skip', reason, this.documentId);
+      return;
+    }
+    traceSnapshotDecision(origin, 'dispatch', reason, this.documentId);
+    this.dispatch({ type: 'syncSnapshot', blocks });
+  }
+
   private initQueue(): void {
     if (this.oplogEnabled) {
       this.coordinator = getNoteSyncCoordinator(this.documentId, {
-        onBlocksUpdated: (blocks) => {
-          this.dispatch({ type: 'syncSnapshot', blocks });
+        onBlocksUpdated: (blocks, _lastSeq, origin) => {
+          this.dispatchSnapshotIfChanged(blocks, origin);
         },
         onError: (error) => this.callbacks.onError?.(error),
       });
@@ -101,8 +116,8 @@ export class NoteDocumentPipeline {
     this.callbacks = callbacks;
     if (this.coordinator) {
       this.coordinator.updateCallbacks({
-        onBlocksUpdated: (blocks) => {
-          this.dispatch({ type: 'syncSnapshot', blocks });
+        onBlocksUpdated: (blocks, _lastSeq, origin) => {
+          this.dispatchSnapshotIfChanged(blocks, origin);
         },
         onError: (error) => callbacks.onError?.(error),
       });
@@ -180,12 +195,7 @@ export class NoteDocumentPipeline {
     }
     await this.coordinator.syncWithServer(initialBlocks);
     if (options?.skipDispatch) return;
-    const blocks = this.coordinator.getBlocks();
-    const current = useNoteBlockStore.getState().getBlocksArray();
-    if (documentSnapshotsEquivalent(current, blocks, this.documentId)) {
-      return;
-    }
-    this.dispatch({ type: 'syncSnapshot', blocks });
+    this.dispatchSnapshotIfChanged(this.coordinator.getBlocks(), 'syncWithServer');
   }
 
   schedulePull(): void {

@@ -26,6 +26,8 @@ import {
 import { partitionOutboundForSafePush } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import { traceApiEgress, type SnapshotTraceOrigin } from './noteFlickerTrace';
+import { markNoteLocalSave } from './noteReconcileIdle';
 
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
@@ -34,7 +36,11 @@ const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 const MAX_PUSH_ATTEMPTS = 8;
 
 export type NoteSyncCoordinatorCallbacks = {
-  onBlocksUpdated: (blocks: NoteBlock[], lastAppliedSeq: number) => void;
+  onBlocksUpdated: (
+    blocks: NoteBlock[],
+    lastAppliedSeq: number,
+    origin: SnapshotTraceOrigin,
+  ) => void;
   onError?: (error: Error) => void;
 };
 
@@ -54,6 +60,7 @@ type PushResponse =
   | { ok: false; error: 'seq_conflict'; lastSeq: number; ops: NoteBlockOpRecord[] };
 
 async function fetchSyncState(documentId: string): Promise<number> {
+  traceApiEgress('fetchSyncState', documentId);
   const res = await fetch(
     `/api/admin/note/ops/state?documentId=${encodeURIComponent(documentId)}`,
     { credentials: 'include' },
@@ -64,6 +71,7 @@ async function fetchSyncState(documentId: string): Promise<number> {
 }
 
 async function pullOps(documentId: string, since: number): Promise<{ lastSeq: number; ops: NoteBlockOpRecord[] }> {
+  traceApiEgress('pullOps', documentId);
   const res = await fetch(
     `/api/admin/note/ops/pull?documentId=${encodeURIComponent(documentId)}&since=${since}`,
     { credentials: 'include' },
@@ -77,6 +85,7 @@ async function pushOps(
   baseSeq: number,
   ops: NoteBlockOpPushItem[],
 ): Promise<PushResponse> {
+  traceApiEgress('pushOps', documentId);
   const res = await fetch('/api/admin/note/ops/push', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -343,7 +352,8 @@ export class NoteSyncCoordinator {
       this.lastAppliedSeq = result.lastSeq;
       await removeOutboundOps(consumedClientOpIds);
       await this.persistLocal();
-      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+      markNoteLocalSave(this.documentId);
+      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:push');
       this.broadcastState();
       if (deferred.length > 0) return true;
       return true;
@@ -380,6 +390,7 @@ export class NoteSyncCoordinator {
         return;
       }
       await this.rebaseFromServer();
+      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:pull');
       this.broadcastState();
     } catch (error) {
       devLogger.error('[NoteSyncCoordinator] pull failed', error);
@@ -402,7 +413,7 @@ export class NoteSyncCoordinator {
     this.lastAppliedSeq = lastSeq;
     await this.persistLocal();
     if (options?.notify !== false) {
-      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+      this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:applyRemote');
     }
   }
 
@@ -440,7 +451,7 @@ export class NoteSyncCoordinator {
             ? data.lastSeq
             : this.lastAppliedSeq;
           void this.persistLocal();
-          this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq);
+          this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:leader');
         }
         if (data.type === 'flush_request' && this.isLeader) {
           this.schedulePush(CONTENT_PUSH_DEBOUNCE_MS);

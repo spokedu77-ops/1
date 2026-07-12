@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ComponentProps } from 'react';
+import { useNoteFlickerRenderCount } from '../_hooks/useNoteFlickerRenderCount';
 import type { InlineMark } from '@/app/lib/note/inlineMarkup';
 import type { PastedBlockSpec } from '../_lib/notePasteBlocks';
 import {
@@ -125,6 +126,7 @@ export function NoteEditableField({
   onMultilinePaste,
   slashHostRef: externalSlashHostRef,
 }: NoteEditableFieldProps) {
+  useNoteFlickerRenderCount('NoteEditableField', `${blockId}:${field}`);
   const internalSlashHostRef = useRef<HTMLDivElement>(null);
   const slashHostRef = externalSlashHostRef ?? internalSlashHostRef;
   const slotRef = useRef<HTMLDivElement>(null);

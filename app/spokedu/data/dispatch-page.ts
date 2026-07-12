@@ -181,7 +181,7 @@ export const dispatchPage = {
     items: [
       {
         id: 'spomove',
-        image: 'https://i.postimg.cc/8CCvkfs1/seupomubeu.jpg',
+        image: '/images/spokedu/programs/program-spomove.jpg',
         imageAlt: '스포무브 시지각 브레인 놀이체육',
         audience: '초중고 방과후 · 지역아동센터 · 기관 클래스',
         name: '스포무브',
@@ -198,7 +198,7 @@ export const dispatchPage = {
       },
       {
         id: 'monthly-sports',
-        image: 'https://i.postimg.cc/VvXrZjZF/wolganseupocheu.jpg',
+        image: '/images/spokedu/programs/program-monthly-newsports.png',
         imageAlt: '월간 스포츠 매달 바뀌는 종목·뉴스포츠 체험',
         audience: '초중고 방과후 · 지역아동센터 · 기관 클래스',
         name: '월간 스포츠',
@@ -215,7 +215,7 @@ export const dispatchPage = {
       },
       {
         id: 'slow-sports',
-        image: 'https://i.postimg.cc/X73p7BD2/Kakao-Talk-20260407-164353816.jpg',
+        image: '/images/spokedu/dispatch/dispatch-institution-class.jpg',
         imageAlt: '슬로우 스포츠 속도에 맞춘 포용형 체육',
         audience: '발달센터 · 복지관 · 특수학급 · 포용형 클래스',
         name: '슬로우 스포츠',
@@ -230,7 +230,7 @@ export const dispatchPage = {
       },
       {
         id: 'mini-olympics',
-        image: 'https://i.postimg.cc/J0pswpW4/20260417-115503.png',
+        image: '/images/spokedu/programs/program-camp.jpg',
         imageAlt: '미니 올림픽 팀 활동 스페셜 클래스',
         audience: '유치원 · 학교 · 복지관 · 기관 클래스',
         name: '미니 올림픽',
@@ -245,7 +245,7 @@ export const dispatchPage = {
       },
       {
         id: 'sports-booth',
-        image: 'https://i.postimg.cc/ZKk6Pqs3/IMG-7940.jpg',
+        image: '/images/spokedu/dispatch/dispatch-oneday-event.jpg',
         imageAlt: '체험형 스포츠 부스 현장 체험',
         audience: '학교 · 축제 · 박람회 · 기관 행사',
         name: '체험형 스포츠 부스',

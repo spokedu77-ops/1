@@ -1,6 +1,7 @@
 'use client';
 
 import { memo } from 'react';
+import { useNoteFlickerRenderCount } from '../../_hooks/useNoteFlickerRenderCount';
 import {
   ArrowLeft,
   Check,
@@ -135,6 +136,7 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
   renderSortableBlock,
   editorScrollRef,
 }: NoteBlockCanvasProps) {
+  useNoteFlickerRenderCount('NoteBlockCanvas', selectedId ?? 'none');
   const textDragActive = useNoteTextDragActive();
   const awaitingInitialLoad = Boolean(selectedId) && loadSettledDocId !== selectedId;
 

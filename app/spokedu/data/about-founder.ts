@@ -1,6 +1,6 @@
 /** 간단 소개서 — 대표 소개 (PDF p.3) */
 
-export const ABOUT_FOUNDER_IMAGE = 'https://i.postimg.cc/ZKTxwT5w/ilyeogseo-sajin.jpg';
+export const ABOUT_FOUNDER_IMAGE = '/images/spokedu/about/founder.png';
 
 export const aboutFounder = {
   id: 'founder',

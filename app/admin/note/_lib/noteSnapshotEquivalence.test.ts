@@ -33,4 +33,10 @@ describe('documentSnapshotsEquivalent', () => {
     const server = [block('a', 'changed')];
     expect(documentSnapshotsEquivalent(local, server, 'doc-1')).toBe(false);
   });
+
+  it('returns true when only content key order differs', () => {
+    const left = [block('a', 'hi', { content: { text: 'hi', html: '<p>hi</p>' } })];
+    const right = [block('a', 'hi', { content: { html: '<p>hi</p>', text: 'hi' } })];
+    expect(documentSnapshotsEquivalent(left, right, 'doc-1')).toBe(true);
+  });
 });

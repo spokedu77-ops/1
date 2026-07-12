@@ -4,6 +4,7 @@ import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { noteBlocksLoadPath } from './noteBlocksLoad';
+import { traceApiEgress } from './noteFlickerTrace';
 import {
   readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
@@ -60,6 +61,7 @@ export async function fetchServerBlocksForOpen(
   if (options?.prefetchedBlocks && options.prefetchedBlocks.length > 0) {
     return options.prefetchedBlocks;
   }
+  traceApiEgress('blocksLoad', documentId);
   const res = await fetch(noteBlocksLoadPath(documentId), { credentials: 'include' });
   if (!res.ok) {
     const j = await res.json().catch(() => null);

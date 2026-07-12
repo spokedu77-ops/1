@@ -17,19 +17,25 @@ import {
 } from '../_lib/noteBlockStateMerge';
 import {
   cancelNoteReconcileIdle,
+  isNoteLocalSaveSuppressed,
   registerNoteReconcileIdleHandler,
   scheduleNoteReconcileIdle,
+  scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
-import { openNoteDocument, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
+import { openNoteDocument, paintInstantSnapshotFromLocalDb, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
+import {
+  traceLoadingState,
+  traceRealtime,
+} from '../_lib/noteFlickerTrace';
 import type { NoteBlock } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
@@ -45,11 +51,11 @@ export function useNoteBlockData(options: {
   const { selectedId, docTab, setError, setPendingDeleteUndo, bootstrapBlocks, triggerSaveRef, onAfterIdleReconcile } = options;
 
   const [blocks, _setBlocks] = useState<NoteBlock[]>([]);
-  const [loadingBlocks, setLoadingBlocks] = useState(false);
-  const [blocksSyncing, setBlocksSyncing] = useState(false);
-  const [blocksEmptyConfirmed, setBlocksEmptyConfirmed] = useState(false);
+  const [loadingBlocks, _setLoadingBlocks] = useState(false);
+  const [blocksSyncing, _setBlocksSyncing] = useState(false);
+  const [blocksEmptyConfirmed, _setBlocksEmptyConfirmed] = useState(false);
   /** 현재 selectedId에 대해 최초 서버 load가 끝난 문서 id — 전환 직후 빈 껍데기 방지 */
-  const [loadSettledDocId, setLoadSettledDocId] = useState<string | null>(null);
+  const [loadSettledDocId, _setLoadSettledDocId] = useState<string | null>(null);
   const [trashedBlocks, setTrashedBlocks] = useState<NoteBlock[]>([]);
   const [loadingTrashedBlocks, setLoadingTrashedBlocks] = useState(false);
   const [restoringBlockId, setRestoringBlockId] = useState<string | null>(null);
@@ -62,6 +68,56 @@ export function useNoteBlockData(options: {
   bootstrapBlocksRef.current = bootstrapBlocks;
   const reconcileDocumentIdRef = useRef<string | null>(null);
   const previousDocumentIdRef = useRef<string | null>(null);
+  const openLayoutSyncKeyRef = useRef<string | null>(null);
+  const loadSettledGenRef = useRef(0);
+
+  const setLoadingBlocks = useCallback((
+    value: boolean | ((prev: boolean) => boolean),
+    tag: string,
+  ) => {
+    _setLoadingBlocks((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (prev === next) return prev;
+      traceLoadingState('loadingBlocks', prev, next, tag, selectedId);
+      return next;
+    });
+  }, [selectedId]);
+
+  const setBlocksSyncing = useCallback((
+    value: boolean | ((prev: boolean) => boolean),
+    tag: string,
+  ) => {
+    _setBlocksSyncing((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (prev === next) return prev;
+      traceLoadingState('blocksSyncing', prev, next, tag, selectedId);
+      return next;
+    });
+  }, [selectedId]);
+
+  const setBlocksEmptyConfirmed = useCallback((
+    value: boolean | ((prev: boolean) => boolean),
+    tag: string,
+  ) => {
+    _setBlocksEmptyConfirmed((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (prev === next) return prev;
+      traceLoadingState('blocksEmptyConfirmed', prev, next, tag, selectedId);
+      return next;
+    });
+  }, [selectedId]);
+
+  const setLoadSettledDocId = useCallback((
+    value: string | null | ((prev: string | null) => string | null),
+    tag: string,
+  ) => {
+    _setLoadSettledDocId((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      if (prev === next) return prev;
+      traceLoadingState('loadSettledDocId', prev, next, tag, selectedId);
+      return next;
+    });
+  }, [selectedId]);
 
   const clearReconcileTimer = useCallback(() => {
     cancelNoteReconcileIdle();
@@ -76,14 +132,6 @@ export function useNoteBlockData(options: {
   /** pipeline + store → React 투영 (단일 구독) */
   const handleBlocksChanged = useCallback((next: NoteBlock[]) => {
     _setBlocks(next);
-  }, []);
-
-  useEffect(() => {
-    const projectStore = () => {
-      _setBlocks(useNoteBlockStore.getState().getBlocksArray());
-    };
-    projectStore();
-    return useNoteBlockStore.subscribe(projectStore);
   }, []);
 
   const documentEngine = useNoteDocumentEngine({
@@ -110,20 +158,33 @@ export function useNoteBlockData(options: {
   const runDeferredOplogPull = useCallback(async (documentId: string) => {
     if (selectedId !== documentId) return;
     if (shouldDeferRemoteSync()) {
+      traceRealtime('pull_deferred_again', documentId);
       scheduleDeferredOplogPull(documentId);
       return;
     }
+    traceRealtime('pull_executed', documentId);
     documentEngineRef.current.scheduleOplogPull();
     onAfterIdleReconcile?.();
   }, [onAfterIdleReconcile, scheduleDeferredOplogPull, selectedId, shouldDeferRemoteSync]);
 
   const handleRealtimeInvalidate = useCallback((documentId: string) => {
-    if (selectedId !== documentId) return;
+    traceRealtime('received', documentId);
+    if (selectedId !== documentId) {
+      traceRealtime('ignored_wrong_doc', documentId);
+      return;
+    }
+    if (isNoteLocalSaveSuppressed(documentId)) {
+      traceRealtime('suppressed', documentId);
+      return;
+    }
+    reconcileDocumentIdRef.current = documentId;
     if (shouldDeferRemoteSync()) {
+      traceRealtime('deferred', documentId);
       scheduleDeferredOplogPull(documentId);
       return;
     }
-    documentEngineRef.current.scheduleOplogPull();
+    traceRealtime('remote_scheduled', documentId);
+    scheduleNoteReconcileRemote(documentId);
   }, [scheduleDeferredOplogPull, selectedId, shouldDeferRemoteSync]);
 
   useNoteBlocksRealtimeInvalidation({
@@ -214,14 +275,18 @@ export function useNoteBlockData(options: {
 
   useLayoutEffect(() => {
     if (!selectedId) {
+      openLayoutSyncKeyRef.current = null;
       previousDocumentIdRef.current = null;
       setBlocks([]);
-      setLoadingBlocks(false);
-      setBlocksSyncing(false);
-      setBlocksEmptyConfirmed(false);
-      setLoadSettledDocId(null);
+      setLoadingBlocks(false, 'selectedId:null');
+      setBlocksSyncing(false, 'selectedId:null');
+      setBlocksEmptyConfirmed(false, 'selectedId:null');
+      setLoadSettledDocId(null, 'selectedId:null');
       return;
     }
+
+    if (openLayoutSyncKeyRef.current === selectedId) return;
+    openLayoutSyncKeyRef.current = selectedId;
 
     const previousId = previousDocumentIdRef.current;
     if (previousId && previousId !== selectedId) {
@@ -237,15 +302,15 @@ export function useNoteBlockData(options: {
     const documentId = selectedId;
     const prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
     if (prep.hasCache) {
-      setLoadSettledDocId(documentId);
-      setLoadingBlocks(false);
-      setBlocksEmptyConfirmed(prep.emptyConfirmed);
+      setLoadSettledDocId(documentId, 'openSync:cache');
+      setLoadingBlocks(false, 'openSync:cache');
+      setBlocksEmptyConfirmed(prep.emptyConfirmed, 'openSync:cache');
     } else {
-      setBlocksEmptyConfirmed(false);
-      setLoadSettledDocId(null);
-      setLoadingBlocks(true);
+      setBlocksEmptyConfirmed(false, 'openSync:noCache');
+      setLoadSettledDocId(null, 'openSync:noCache');
+      setLoadingBlocks(false, 'openSync:noCache');
     }
-    setBlocksSyncing(false);
+    setBlocksSyncing(false, 'openSync');
   }, [selectedId, setBlocks]);
 
   useEffect(() => {
@@ -262,9 +327,11 @@ export function useNoteBlockData(options: {
 
       const markLoadSettled = () => {
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
-        setLoadSettledDocId(documentId);
-        setLoadingBlocks(false);
-        setBlocksSyncing(false);
+        if (loadSettledGenRef.current === loadGen) return;
+        loadSettledGenRef.current = loadGen;
+        setLoadSettledDocId(documentId, 'open:loadSettled');
+        setLoadingBlocks(false, 'open:loadSettled');
+        setBlocksSyncing(false, 'open:loadSettled');
       };
 
       let bootstrapForOpen: NoteBlock[] | null = null;
@@ -288,6 +355,11 @@ export function useNoteBlockData(options: {
         }
       }
 
+      if (!bootstrapForOpen) {
+        await paintInstantSnapshotFromLocalDb(documentId, documentEngineRef.current);
+        if (cancelled || blockLoadGenRef.current !== loadGen) return;
+      }
+
       try {
         const prefetched = bootstrapForOpen
           ? null
@@ -303,7 +375,7 @@ export function useNoteBlockData(options: {
 
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
 
-        setBlocksEmptyConfirmed(result.emptyConfirmed);
+        setBlocksEmptyConfirmed(result.emptyConfirmed, 'open:result');
         if (
           result.toggleMigration.created.length > 0
           || result.toggleMigration.updatedChildPatches.length > 0

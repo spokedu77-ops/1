@@ -1,5 +1,6 @@
 'use client';
 
+import '../_lib/noteFlickerTrace';
 import { useCallback, useEffect, useMemo } from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { NoteImageLightboxProvider } from '../_components/NoteImageLightbox';

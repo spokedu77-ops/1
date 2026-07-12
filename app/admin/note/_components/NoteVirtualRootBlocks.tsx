@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment, useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useNoteFlickerRenderCount } from '../_hooks/useNoteFlickerRenderCount';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from '../_lib/types';
 
@@ -28,9 +29,10 @@ type NoteVirtualRootBlocksProps = {
 };
 
 function DeferredRootBlock({ children }: { children: ReactNode }) {
+  useNoteFlickerRenderCount('DeferredRootBlock');
   const [interactive, setInteractive] = useState(false);
-  const activeEditor = useNoteBlockStore((state) => state.activeEditor);
-  const suspendOffscreenRender = interactive || !!activeEditor;
+  const hasActiveEditor = useNoteBlockStore((state) => state.activeEditor != null);
+  const suspendOffscreenRender = interactive || hasActiveEditor;
 
   return (
     <div
@@ -53,8 +55,9 @@ export function NoteVirtualRootBlocks({
   renderBlock,
   forceRenderAll = false,
   estimatedRowHeight = DEFAULT_ROW_HEIGHT,
-  deferOffscreenRender = true,
+  deferOffscreenRender = false,
 }: NoteVirtualRootBlocksProps) {
+  useNoteFlickerRenderCount('NoteVirtualRootBlocks', `roots:${rootBlocks.length}`);
   const [range, setRange] = useState(() => ({
     start: 0,
     end: Math.min(rootBlocks.length, 32),

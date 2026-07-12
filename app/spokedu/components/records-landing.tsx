@@ -28,6 +28,13 @@ function matchesFilter(record: FieldRecordWithThumbnail, filter: RecordFilterId)
   return record.filters.includes(filter);
 }
 
+function splitMeta(meta: string): string[] {
+  return meta
+    .split(/[·•]/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function RecordCard({
   record,
   photoPriority = false,
@@ -36,6 +43,7 @@ function RecordCard({
   photoPriority?: boolean;
 }) {
   const external = isExternalHref(record.href);
+  const metaItems = splitMeta(record.meta);
   const className = `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`;
   const inner = (
     <>
@@ -57,13 +65,19 @@ function RecordCard({
         />
       )}
       <div className="flex flex-1 flex-col p-4 sm:p-5">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
-          {record.operationType}
-        </span>
-        <h3 className="mt-1 line-clamp-2 text-base font-bold leading-snug text-slate-950 [word-break:keep-all]">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-indigo-700">
+            {record.operationType}
+          </span>
+          {metaItems.map((item) => (
+            <span key={item} className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
+              {item}
+            </span>
+          ))}
+        </div>
+        <h3 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-slate-950 [word-break:keep-all]">
           {record.venue}
         </h3>
-        <p className="mt-1 text-xs font-medium text-slate-500 [word-break:keep-all]">{record.meta}</p>
         <p className="mt-2 line-clamp-3 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
           {record.description}
         </p>
@@ -122,6 +136,18 @@ function RecordsPageHeader() {
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] [word-break:keep-all]">
         {recordsPage.hero.subtitle}
       </p>
+      <dl className="mt-5 grid gap-2 sm:grid-cols-3">
+        {[
+          ['5', '공개 운영 사례'],
+          ['4', '기관 유형'],
+          ['3', '운영 방식'],
+        ].map(([value, label]) => (
+          <div key={label} className="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
+            <dt className="text-xs font-medium text-slate-500">{label}</dt>
+            <dd className="mt-1 text-xl font-black text-slate-950">{value}</dd>
+          </div>
+        ))}
+      </dl>
       <ul className="mt-4 flex flex-wrap gap-2" aria-label="운영 현장 유형">
         {recordsPage.hero.venueTypes.map((venue) => (
           <li

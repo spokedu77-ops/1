@@ -105,19 +105,19 @@ export const privatePage = {
     title: '검증된 체육교육 전문가 운영진',
     items: [
       {
-        photo: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png',
+        photo: '/images/spokedu/private/private-coaching.jpg',
         name: '총괄팀장 최지훈',
         degree: '연세대학교 체육교육학 학사',
         badges: ['지도 경력 10년 차', '교원자격증', '시스템 구축 및 강사 교육'],
       },
       {
-        photo: 'https://i.postimg.cc/RZ73P8f2/IMG-7176.jpg',
+        photo: '/images/spokedu/private/private-small-group.jpg',
         name: '운영팀장 김윤기',
         degree: '연세대학교 체육교육학 학사',
         badges: ['지도 경력 8년 차', '교원자격증', '강사 관리 및 프로그램 기획'],
       },
       {
-        photo: 'https://i.postimg.cc/5yW4kbxr/20260403-134412.png',
+        photo: '/images/spokedu/private/private-tool-activity.jpg',
         name: '수업팀장 김구민',
         degree: '강원대학교 체육교육학 학사',
         badges: ['지도 경력 5년 차', '생활체육 지도자 자격증', '프로그램 개발 및 수업 총괄'],
@@ -147,14 +147,14 @@ export const privatePage = {
     title: '전문 커리큘럼',
     lead: '아이의 연령과 기초 체력을 분석하여 가장 적합한 프로그램을 개별 설계합니다.',
     items: [
-      { img: 'https://i.postimg.cc/8Cjz4T9Y/Kakao-Talk-20260415-155838324.png', alt: '줄넘기', title: '줄넘기', description: '리듬감 및 전신 협응력 강화' },
-      { img: 'https://i.postimg.cc/QMHdmjwP/Kakao-Talk-20260415-155838324-01.png', alt: '육상', title: '육상(달리기)', description: '바른 자세 교정과 반응 속도 향상' },
-      { img: 'https://i.postimg.cc/3wVJbPQZ/Kakao-Talk-20260415-155838324-02.png', alt: '자전거', title: '자전거', description: '균형 감각 및 두려움 극복' },
-      { img: 'https://i.postimg.cc/wBZTbSYW/Kakao-Talk-20260415-155838324-03.png', alt: '인라인', title: '인라인', description: '안전한 라이딩과 중심 이동 훈련' },
-      { img: 'https://i.postimg.cc/JhGzxRvn/Kakao-Talk-20260415-155337917.png', alt: '유아체육', title: '유아체육', description: '놀이 기반 기초 운동 발달' },
-      { img: 'https://i.postimg.cc/R0yVbjz5/Kakao-Talk-20260415-155848168.png', alt: '축구', title: '축구', description: '민첩성, 팀워크, 기초 구기 능력 향상' },
-      { img: 'https://i.postimg.cc/ZqC5HJ2n/Kakao-Talk-20260415-155848168-01.png', alt: '농구', title: '농구', description: '드리블과 공간 인지 능력 강화' },
-      { img: 'https://i.postimg.cc/vBcLmNQ2/Kakao-Talk-20260416-153848501.png', alt: '팝스', title: '팝스', description: '팝스 수행평가 대비 및 체력향상' },
+      { img: '/images/spokedu/private/private-tool-activity.jpg', alt: '줄넘기', title: '줄넘기', description: '리듬감 및 전신 협응력 강화' },
+      { img: '/images/spokedu/programs/program-paps-running.jpg', alt: '육상', title: '육상(달리기)', description: '바른 자세 교정과 반응 속도 향상' },
+      { img: '/images/spokedu/private/private-coaching.jpg', alt: '자전거', title: '자전거', description: '균형 감각 및 두려움 극복' },
+      { img: '/images/spokedu/private/private-coaching.jpg', alt: '인라인', title: '인라인', description: '안전한 라이딩과 중심 이동 훈련' },
+      { img: '/images/spokedu/private/private-small-group.jpg', alt: '유아체육', title: '유아체육', description: '놀이 기반 기초 운동 발달' },
+      { img: '/images/spokedu/programs/newsports/modified-ball.jpg', alt: '축구', title: '축구', description: '민첩성, 팀워크, 기초 구기 능력 향상' },
+      { img: '/images/spokedu/programs/newsports/modified-ball.jpg', alt: '농구', title: '농구', description: '드리블과 공간 인지 능력 강화' },
+      { img: '/images/spokedu/programs/program-paps-running.jpg', alt: '팝스', title: '팝스', description: '팝스 수행평가 대비 및 체력향상' },
     ] satisfies PrivateCurriculumItem[],
   },
   classFlow: {
@@ -182,9 +182,9 @@ export const privatePage = {
       },
     ] satisfies PrivateClassFlowStep[],
     images: [
-      { src: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg', alt: '스포키듀 수업 스케치 1', large: true },
-      { src: 'https://i.postimg.cc/FHTMT3QX/IMG-1392.jpg', alt: '스포키듀 수업 스케치 2' },
-      { src: 'https://i.postimg.cc/VkKxKnPV/DSC06500.jpg', alt: '스포키듀 수업 스케치 3' },
+      { src: '/images/spokedu/private/private-coaching.jpg', alt: '스포키듀 수업 스케치 1', large: true },
+      { src: '/images/spokedu/private/private-small-group.jpg', alt: '스포키듀 수업 스케치 2' },
+      { src: '/images/spokedu/private/private-tool-activity.jpg', alt: '스포키듀 수업 스케치 3' },
     ] satisfies PrivateClassFlowImage[],
   },
   classFormat: {
