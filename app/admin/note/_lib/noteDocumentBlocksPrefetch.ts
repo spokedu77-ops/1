@@ -38,6 +38,32 @@ async function fetchBlocks(documentId: string): Promise<NoteBlock[] | null> {
   }
 }
 
+/** prefetch 완료·진행 중 엔트리 (consume 전) */
+export function getReadyPrefetchedBlocks(documentId: string): NoteBlock[] | null {
+  const entry = cache.get(documentId);
+  if (!entry?.blocks || entry.blocks.length === 0) return null;
+  return entry.blocks;
+}
+
+/** 클릭 직전 — 완료될 때까지 대기 (이미 remember 되어 있으면 생략) */
+export async function awaitPrefetchedNoteBlocks(
+  documentId: string,
+  timeoutMs = 12_000,
+): Promise<NoteBlock[] | null> {
+  const ready = getReadyPrefetchedBlocks(documentId);
+  if (ready) return ready;
+  prefetchNoteDocumentBlocks(documentId);
+  const entry = cache.get(documentId);
+  if (!entry) return null;
+  const raced = await Promise.race([
+    entry.promise,
+    new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), timeoutMs);
+    }),
+  ]);
+  return raced && raced.length > 0 ? raced : null;
+}
+
 /** 사이드바 hover — 문서 클릭 전 블록 로드 선행 */
 export function prefetchNoteDocumentBlocks(documentId: string): void {
   if (!documentId || cache.has(documentId)) return;

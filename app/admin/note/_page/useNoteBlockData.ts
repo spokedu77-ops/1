@@ -26,7 +26,7 @@ import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch'
 import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
-import { openNoteDocument, paintInstantSnapshotFromLocalDb, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
+import { openNoteDocument, paintBootstrapBlocksSync, paintInstantSnapshotFromLocalDb, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
@@ -300,9 +300,21 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
-    const prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
+    let prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
+    let paintedFromBootstrap = false;
+    const bootstrapPayload = bootstrapBlocksRef.current;
+    if (
+      !prep.hasCache
+      && bootstrapPayload?.documentId === documentId
+      && bootstrapPayload.blocks.length > 0
+    ) {
+      if (paintBootstrapBlocksSync(documentId, bootstrapPayload.blocks, documentEngineRef.current)) {
+        prep = { hasCache: true, emptyConfirmed: false };
+        paintedFromBootstrap = true;
+      }
+    }
     if (prep.hasCache) {
-      setLoadSettledDocId(documentId, 'openSync:cache');
+      setLoadSettledDocId(documentId, paintedFromBootstrap ? 'openSync:bootstrap' : 'openSync:cache');
       setLoadingBlocks(false, 'openSync:cache');
       setBlocksEmptyConfirmed(prep.emptyConfirmed, 'openSync:cache');
     } else {
@@ -312,6 +324,21 @@ export function useNoteBlockData(options: {
     }
     setBlocksSyncing(false, 'openSync');
   }, [selectedId, setBlocks]);
+
+  useEffect(() => {
+    if (!selectedId || !bootstrapBlocks) return;
+    if (bootstrapBlocks.documentId !== selectedId) return;
+    if (loadSettledDocId === selectedId) return;
+    const painted = paintBootstrapBlocksSync(
+      selectedId,
+      bootstrapBlocks.blocks,
+      documentEngineRef.current,
+    );
+    if (!painted) return;
+    setLoadSettledDocId(selectedId, 'openSync:bootstrap');
+    setLoadingBlocks(false, 'openSync:bootstrap');
+    setBlocksEmptyConfirmed(false, 'openSync:bootstrap');
+  }, [bootstrapBlocks, selectedId, loadSettledDocId, setLoadSettledDocId, setLoadingBlocks, setBlocksEmptyConfirmed]);
 
   useEffect(() => {
     if (!selectedId) return;

@@ -178,6 +178,7 @@ export function DocItem({
         tabIndex={0}
         onClick={onSelect}
         onMouseEnter={onPrefetchHover}
+        onMouseDown={onPrefetchHover}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
         className={`flex cursor-pointer select-none items-center gap-0.5 rounded-md py-[6px] pr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
           isActive ? 'bg-neutral-200/80 text-neutral-900' : 'text-neutral-700 hover:bg-neutral-100'

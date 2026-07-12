@@ -27,7 +27,7 @@ const THRESHOLDS = {
   enter: {
     snapshotDispatch: 1,
     loadingTransitions: 2,
-    noteBlockCanvasRender: 10,
+    noteBlockCanvasRender: 14,
   },
   reentry: {
     snapshotDispatch: 0,

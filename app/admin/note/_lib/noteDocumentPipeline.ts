@@ -195,7 +195,20 @@ export class NoteDocumentPipeline {
     }
     await this.coordinator.syncWithServer(initialBlocks);
     if (options?.skipDispatch) return;
-    this.dispatchSnapshotIfChanged(this.coordinator.getBlocks(), 'syncWithServer');
+    const blocks = this.coordinator.getBlocks();
+    const currentForDoc = useNoteBlockStore.getState().getBlocksArray()
+      .filter((block) => block.document_id === this.documentId);
+    if (currentForDoc.length === 0) {
+      const reason = describeSnapshotDiff([], blocks, this.documentId);
+      if (reason !== 'equivalent') {
+        traceSnapshotDecision('syncWithServer', 'dispatch', reason, this.documentId);
+        this.dispatch({ type: 'hydrate', blocks });
+      } else {
+        traceSnapshotDecision('syncWithServer', 'skip', 'equivalent', this.documentId);
+      }
+      return;
+    }
+    this.dispatchSnapshotIfChanged(blocks, 'syncWithServer');
   }
 
   schedulePull(): void {

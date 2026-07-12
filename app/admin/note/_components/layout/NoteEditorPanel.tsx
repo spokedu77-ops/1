@@ -141,24 +141,18 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
   const awaitingInitialLoad = Boolean(selectedId) && loadSettledDocId !== selectedId;
 
   const showSkeletonOverlay = rootBlocks.length === 0
-    && (awaitingInitialLoad || loadingBlocks)
+    && awaitingInitialLoad
     && !blocksEmptyConfirmed;
-  const showBlockList = !showSkeletonOverlay;
 
   return (
-    <div className="relative">
-      {showSkeletonOverlay && (
-        <div className="relative" role="status" aria-label="페이지 불러오는 중">
-          <NoteBlockLoadSkeleton />
-        </div>
-      )}
-      {showBlockList && (
+    <div className="relative min-h-[8rem]">
+      {Boolean(selectedId) && (
     <SelectedBlockIdsContext.Provider value={selectedBlockIds}>
       <OnBlockSelectContext.Provider value={handleBlockSelect}>
         <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
           <div
             data-note-marquee-zone
-            className={NOTE_MARQUEE_ZONE}
+            className={`${NOTE_MARQUEE_ZONE} ${showSkeletonOverlay ? 'pointer-events-none select-none' : ''}`}
             onPointerDown={handleBlockListPointerDown}
           >
             <div
@@ -187,6 +181,15 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
         </SuppressGripMenuRefContext.Provider>
       </OnBlockSelectContext.Provider>
     </SelectedBlockIdsContext.Provider>
+      )}
+      {showSkeletonOverlay && (
+        <div
+          className="absolute inset-0 z-[1] bg-white"
+          role="status"
+          aria-label="페이지 불러오는 중"
+        >
+          <NoteBlockLoadSkeleton />
+        </div>
       )}
     </div>
   );

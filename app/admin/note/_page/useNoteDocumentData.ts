@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useDeferredNoteMeta } from '../_hooks/useDeferredNoteMeta';
 import { buildDocumentBreadcrumb, findDefaultNoteEntryDocument, resolveDocIcon } from '../_lib/noteDocumentUi';
+import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import type { NoteCollaborator, NoteDocument, NoteBlock, SortKey } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
@@ -132,6 +133,9 @@ export function useNoteDocumentData(options: {
 
   useLayoutEffect(() => {
     const initialId = searchParams.get('id');
+    if (initialId) {
+      prefetchNoteDocumentBlocks(initialId);
+    }
     if (initialId && initialId !== selectedId) {
       setSelectedId(initialId);
       setMobileTab('editor');
@@ -180,6 +184,7 @@ export function useNoteDocumentData(options: {
         }
 
         if (targetDocId && docs.some((d) => d.id === targetDocId)) {
+          prefetchNoteDocumentBlocks(targetDocId);
           setSelectedId(targetDocId);
           setMobileTab('editor');
           if (targetDocId !== urlDocId) {

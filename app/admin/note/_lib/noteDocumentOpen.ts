@@ -4,6 +4,7 @@ import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { noteBlocksLoadPath } from './noteBlocksLoad';
+import { getReadyPrefetchedBlocks } from './noteDocumentBlocksPrefetch';
 import { traceApiEgress } from './noteFlickerTrace';
 import {
   readRememberedNoteDocumentBlocks,
@@ -115,12 +116,46 @@ export async function applyOpenServerSnapshot(
  * 문서 전환 직후 첫 paint 전에 세션 캐시를 동기 적용 (스켈레톤 깜빡임 방지).
  * hook은 openNoteDocument와 함께만 호출 — merge/load 분기는 이 파일에만 둔다.
  */
+function paintInstantBlocks(
+  documentId: string,
+  blocks: NoteBlock[],
+  engine: NoteDocumentOpenEngine,
+): void {
+  const { blocks: prepared } = prepareLoadedNoteBlocks(blocks);
+  const normalized = dedupeNoteBlocksById(prepared);
+  engine.replaceBlocks(normalized);
+  useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  rememberNoteDocumentBlocks(
+    documentId,
+    mergeBlocksWithStoreContent(normalized.filter((block) => block.document_id === documentId)),
+    { trustServer: true },
+  );
+}
+
+/** bootstrap API가 layout 전에 도착했을 때 동기 paint */
+export function paintBootstrapBlocksSync(
+  documentId: string,
+  blocks: NoteBlock[],
+  engine: NoteDocumentOpenEngine,
+): boolean {
+  const currentForDoc = engine.getBlocks().filter((block) => block.document_id === documentId);
+  if (currentForDoc.length > 0) return false;
+  if (blocks.length === 0) return false;
+  paintInstantBlocks(documentId, blocks, engine);
+  return true;
+}
+
 export function prepareNoteDocumentOpenSync(
   documentId: string,
   engine: NoteDocumentOpenEngine,
 ): { hasCache: boolean; emptyConfirmed: boolean } {
   const remembered = readRememberedNoteDocumentBlocks(documentId);
   if (remembered === null) {
+    const prefetched = getReadyPrefetchedBlocks(documentId);
+    if (prefetched && prefetched.length > 0) {
+      paintInstantBlocks(documentId, prefetched, engine);
+      return { hasCache: true, emptyConfirmed: false };
+    }
     return { hasCache: false, emptyConfirmed: false };
   }
   if (remembered.length > 0) {
