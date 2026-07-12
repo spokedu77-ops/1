@@ -85,4 +85,22 @@ describe('mergeSnapshotPatches', () => {
     expect((next[0].content as { text?: string }).text).toBe('local typing');
     expect(next[0].version).toBe(2);
   });
+
+  it('does not resurrect blocks excluded as pending soft deletes', () => {
+    const blocks = [baseBlock('a', 'keep')];
+    const snapshots: NoteBlockSnapshot[] = [{
+      id: 'b',
+      document_id: 'doc-1',
+      parent_block_id: null,
+      type: 'text',
+      order_index: 1,
+      content: { text: 'zombie' },
+      version: 1,
+      updated_at: '2026-01-03T00:00:00.000Z',
+    }];
+    const next = mergeSnapshotPatches(blocks, snapshots, {
+      excludeBlockIds: new Set(['b']),
+    });
+    expect(next.map((block) => block.id)).toEqual(['a']);
+  });
 });

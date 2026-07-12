@@ -10,6 +10,7 @@ import {
   buildDeleteBlockForestCommand,
   buildMergeWithPreviousBlockCommand,
 } from '../_lib/noteBlockCommands';
+import { buildToggleLegacyCleanupPatches } from '../_lib/noteToggleContent';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import {
@@ -127,26 +128,41 @@ export function useNoteBlockDelete(options: {
     } = params;
 
     if (!skipDeleteUndo) recordBlockCommandUndo(prevBlocks, command);
-    documentEngine.replaceBlocks(command.nextBlocks);
+    const toggleCleanupPatches = buildToggleLegacyCleanupPatches(
+      command.removedBlocks,
+      command.nextBlocks,
+    );
+    let nextBlocks = command.nextBlocks;
+    if (toggleCleanupPatches.length > 0) {
+      const patchById = new Map(toggleCleanupPatches.map((patch) => [patch.id, patch.content]));
+      nextBlocks = nextBlocks.map((block) => {
+        const patch = patchById.get(block.id);
+        return patch ? { ...block, content: patch } : block;
+      });
+    }
+    documentEngine.replaceBlocks(nextBlocks);
     const documentId = command.removedBlocks[0]?.document_id
       ?? deletedBlock?.document_id
-      ?? command.nextBlocks.find((block) => block.document_id)?.document_id
+      ?? nextBlocks.find((block) => block.document_id)?.document_id
       ?? null;
-    applyPostBlockRemovalCache(documentId, command.nextBlocks, command.affectedIds);
+    applyPostBlockRemovalCache(documentId, nextBlocks, command.affectedIds);
 
     try {
       await documentEngine.persistSoftDelete({
         ids: command.affectedIds,
       });
+      if (toggleCleanupPatches.length > 0) {
+        await documentEngine.persistFieldPatches(toggleCleanupPatches);
+      }
       await finalizeBlockDelete({
         skipDeleteUndo,
         deletedBlock,
       });
-      onAfterBlocksRemoved?.(command.removedBlocks, command.nextBlocks);
+      onAfterBlocksRemoved?.(command.removedBlocks, nextBlocks);
 
       if (emptyRootDocumentId) {
         const rootsAfterDelete = sortRootBlocks(
-          command.nextBlocks.filter(
+          nextBlocks.filter(
             (b) => b.document_id === emptyRootDocumentId && (b.parent_block_id ?? null) === null,
           ),
         );

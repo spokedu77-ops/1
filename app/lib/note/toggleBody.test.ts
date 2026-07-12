@@ -78,7 +78,7 @@ describe('planToggleBodyForwardMigrations', () => {
     expect(plans[0].newToggleContent.title).toContain('체육관 이용방법');
   });
 
-  it('bodyMigrated but orphaned legacyBody → recreates child from legacy', () => {
+  it('bodyMigrated with orphaned legacyBody does not recreate child — user delete wins', () => {
     const blocks = [
       block('t1', 'toggle', {
         title: '체육관 이용방법',
@@ -88,13 +88,7 @@ describe('planToggleBodyForwardMigrations', () => {
       }),
     ];
 
-    const plans = planToggleBodyForwardMigrations(blocks);
-    expect(plans).toHaveLength(1);
-    expect(plans[0].createChild?.content).toMatchObject({
-      text: '과거 본문',
-      migratedFromToggleBody: true,
-    });
-    expect(plans[0].newToggleContent.legacyBody).toBe('');
+    expect(planToggleBodyForwardMigrations(blocks)).toHaveLength(0);
   });
 
   it('bodyMigrated with existing migrated child keeps legacy archived', () => {

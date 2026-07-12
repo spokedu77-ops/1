@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { coalescePushItems, persistOpToPushItems } from './notePersistOpToBlockOps';
+import {
+  coalescePushItems,
+  collectPendingSoftDeleteIds,
+  excludeBlocksPendingSoftDelete,
+  persistOpToPushItems,
+} from './notePersistOpToBlockOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
+import type { NoteLocalOutboundOp } from './noteLocalDb';
+import type { NoteBlock } from './types';
 
 describe('coalescePushItems', () => {
   it('keeps create_block before later patch_content for the same block', () => {
@@ -59,5 +66,58 @@ describe('coalescePushItems', () => {
       blockId: 'a',
       content: { text: '2' },
     });
+  });
+});
+
+describe('collectPendingSoftDeleteIds', () => {
+  const outbound = (
+    items: NoteBlockOpPushItem[],
+  ): NoteLocalOutboundOp[] => items.map((item, index) => ({
+    ...item,
+    documentId: 'doc-1',
+    createdAt: index,
+  }));
+
+  it('collects soft_delete ids from outbound queue', () => {
+    const items = persistOpToPushItems({ type: 'softDelete', ids: ['a', 'b'] });
+    const pending = collectPendingSoftDeleteIds(outbound(items));
+    expect([...pending]).toEqual(['a', 'b']);
+  });
+
+  it('collects deleteIds from block_transaction outbound', () => {
+    const items = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [],
+      deleteIds: ['child-1'],
+    });
+    const pending = collectPendingSoftDeleteIds(outbound(items));
+    expect([...pending]).toEqual(['child-1']);
+  });
+
+  it('excludeBlocksPendingSoftDelete removes pending ids', () => {
+    const blocks: NoteBlock[] = [
+      {
+        id: 'a',
+        document_id: 'doc-1',
+        type: 'text',
+        content: { text: 'a' },
+        order_index: 0,
+        parent_block_id: null,
+        created_at: '',
+        updated_at: '',
+      },
+      {
+        id: 'b',
+        document_id: 'doc-1',
+        type: 'text',
+        content: { text: 'b' },
+        order_index: 1,
+        parent_block_id: null,
+        created_at: '',
+        updated_at: '',
+      },
+    ];
+    const next = excludeBlocksPendingSoftDelete(blocks, new Set(['b']));
+    expect(next.map((block) => block.id)).toEqual(['a']);
   });
 });

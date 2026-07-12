@@ -3,7 +3,7 @@ import { getNoteEditor } from '../_components/noteEditorRegistry';
 import { useNoteBlockStore, type NoteActiveEditorField } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 import {
-  normalizeLoadedNoteBlocks,
+  normalizeListBlocksOnly,
   stripListItemMarkerPrefix,
 } from '../_components/noteBulletInput';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
@@ -20,8 +20,10 @@ export function serverSnapshotRecoversMissingBlocks(
   documentId: string,
 ): boolean {
   if (hasRecentBlockDeletes(documentId)) return false;
-  const localCount = localBlocks.filter((block) => block.document_id === documentId).length;
-  const serverCount = serverBlocks.filter((block) => block.document_id === documentId).length;
+  const localDocBlocks = localBlocks.filter((block) => block.document_id === documentId);
+  const serverDocBlocks = serverBlocks.filter((block) => block.document_id === documentId);
+  const localCount = localDocBlocks.length;
+  const serverCount = serverDocBlocks.length;
   if (serverCount === 0) return false;
   if (localCount === 0) return serverCount > 0;
   if (serverCount >= localCount + 2) return true;
@@ -113,7 +115,7 @@ export function mergeReconciledBlocks(
     return block;
   });
 
-  return dedupeNoteBlocksById(normalizeLoadedNoteBlocks(merged));
+  return dedupeNoteBlocksById(normalizeListBlocksOnly(merged));
 }
 
 /** 서버 reconcile에 아직 없는 로컬 블록(생성 직후 등)을 유지 */

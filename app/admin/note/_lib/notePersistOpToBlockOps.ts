@@ -1,12 +1,41 @@
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
+import type { NoteLocalOutboundOp } from './noteLocalDb';
+import type { NoteBlock } from './types';
 
 function newClientOpId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
     return crypto.randomUUID();
   }
   return `op-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** IndexedDB outbound 큐에 아직 push되지 않은 soft delete id */
+export function collectPendingSoftDeleteIds(
+  outbound: NoteLocalOutboundOp[],
+): Set<string> {
+  const ids = new Set<string>();
+  for (const op of outbound) {
+    const payload = op.payload;
+    if (payload.opType === 'soft_delete') {
+      for (const id of payload.ids) ids.add(id);
+      continue;
+    }
+    if (payload.opType === 'block_transaction') {
+      for (const id of payload.deleteIds) ids.add(id);
+    }
+  }
+  return ids;
+}
+
+/** outbound soft delete가 확정되기 전 서버 스냅샷·op replay가 블록을 되살리지 않도록 제거 */
+export function excludeBlocksPendingSoftDelete(
+  blocks: NoteBlock[],
+  pendingDeleteIds: Set<string>,
+): NoteBlock[] {
+  if (pendingDeleteIds.size === 0) return blocks;
+  return blocks.filter((block) => !pendingDeleteIds.has(block.id));
 }
 
 /** NotePersistOp → 서버 push 항목 (1 persist op = 1~N push items) */

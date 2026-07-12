@@ -5,6 +5,8 @@ import type { NoteBlock } from './types';
 type VisitCacheEntry = {
   blocks: NoteBlock[];
   savedAt: number;
+  /** 서버 load가 빈 문서임을 확인한 경우만 true — 오염된 [] 스냅샷 방지 */
+  emptyConfirmed?: boolean;
 };
 
 const visitCache = new Map<string, VisitCacheEntry>();
@@ -38,7 +40,7 @@ function pruneMemoryCache() {
   }
 }
 
-type SessionPayload = Record<string, { b: NoteBlock[]; t: number }>;
+type SessionPayload = Record<string, { b: NoteBlock[]; t: number; e?: boolean }>;
 
 function readSessionPayload(): SessionPayload {
   if (typeof window === 'undefined') return {};
@@ -84,25 +86,41 @@ function readSessionEntry(documentId: string): VisitCacheEntry | null {
   const entry = payload[documentId];
   if (!entry) return null;
   if (Date.now() - entry.t > SESSION_MAX_AGE_MS) return null;
-  return { blocks: cloneBlocks(entry.b), savedAt: entry.t };
+  return {
+    blocks: cloneBlocks(entry.b),
+    savedAt: entry.t,
+    emptyConfirmed: entry.e === true,
+  };
 }
 
 function writeSessionEntry(documentId: string, entry: VisitCacheEntry) {
   const payload = pruneSessionPayload(readSessionPayload());
-  payload[documentId] = { b: cloneBlocks(entry.blocks), t: entry.savedAt };
+  payload[documentId] = {
+    b: cloneBlocks(entry.blocks),
+    t: entry.savedAt,
+    ...(entry.emptyConfirmed ? { e: true } : {}),
+  };
   writeSessionPayload(pruneSessionPayload(payload));
 }
 
 function readEntry(documentId: string): VisitCacheEntry | null {
   const memory = visitCache.get(documentId);
   if (memory && Date.now() - memory.savedAt <= MEMORY_MAX_AGE_MS) {
-    return { blocks: cloneBlocks(memory.blocks), savedAt: memory.savedAt };
+    return {
+      blocks: cloneBlocks(memory.blocks),
+      savedAt: memory.savedAt,
+      emptyConfirmed: memory.emptyConfirmed,
+    };
   }
   if (memory) visitCache.delete(documentId);
 
   const session = readSessionEntry(documentId);
   if (session) {
-    visitCache.set(documentId, { blocks: cloneBlocks(session.blocks), savedAt: session.savedAt });
+    visitCache.set(documentId, {
+      blocks: cloneBlocks(session.blocks),
+      savedAt: session.savedAt,
+      emptyConfirmed: session.emptyConfirmed,
+    });
     return session;
   }
   return null;
@@ -125,6 +143,8 @@ function shouldSkipSuspiciousCacheShrink(
 export type RememberNoteDocumentBlocksOptions = {
   /** 서버 load/reconcile 경로 — UI 글리치로 줄어든 스냅샷도 그대로 저장 */
   trustServer?: boolean;
+  /** 서버가 빈 문서임을 확인한 load/reconcile — instant empty 표시 허용 */
+  serverConfirmedEmpty?: boolean;
 };
 
 /** 문서 전환·새로고침 시 즉시 표시 — Notion stale-while-revalidate 스냅샷 */
@@ -146,6 +166,13 @@ export function rememberNoteDocumentBlocks(
     }
   }
 
+  if (options?.trustServer && incoming.length === 0) {
+    const existing = readEntry(documentId);
+    if (existing && existing.blocks.length > 0) {
+      return;
+    }
+  }
+
   if (!options?.trustServer && !hasRecentBlockDeletes(documentId)) {
     const existing = readEntry(documentId);
     if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {
@@ -156,6 +183,7 @@ export function rememberNoteDocumentBlocks(
   const entry: VisitCacheEntry = {
     blocks: cloneBlocks(incoming),
     savedAt: Date.now(),
+    emptyConfirmed: incoming.length === 0 && options?.serverConfirmedEmpty === true,
   };
   pruneMemoryCache();
   visitCache.set(documentId, entry);
@@ -163,12 +191,13 @@ export function rememberNoteDocumentBlocks(
 }
 
 /**
- * null = 한 번도 본 적 없음(스켈레톤)
- * []   = 빈 문서를 이미 로드함(빈 편집기)
+ * null = 스냅샷 없음 또는 미확인 빈 스냅샷(스켈레톤 → 서버 load)
+ * []   = 서버가 확인한 빈 문서
  */
 export function readRememberedNoteDocumentBlocks(documentId: string): NoteBlock[] | null {
   const entry = readEntry(documentId);
   if (!entry) return null;
+  if (entry.blocks.length === 0 && !entry.emptyConfirmed) return null;
   return cloneBlocks(entry.blocks);
 }
 

@@ -7,7 +7,6 @@ import {
   registerNoteReconcileIdleHandler,
   scheduleNoteReconcileRemote,
 } from './noteReconcileIdle';
-
 describe('noteReconcileIdle', () => {
   beforeEach(() => {
     vi.useFakeTimers();

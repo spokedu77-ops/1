@@ -148,13 +148,16 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
 export function mergeSnapshotPatches(
   blocks: NoteBlock[],
   snapshots: NoteBlockSnapshot[],
+  options?: { excludeBlockIds?: Set<string> },
 ): NoteBlock[] {
   if (snapshots.length === 0) return blocks;
+  const exclude = options?.excludeBlockIds;
   const map = new Map(snapshots.map((snapshot) => [snapshot.id, snapshot]));
   const seen = new Set<string>();
   const next = blocks.map((block) => {
     const snapshot = map.get(block.id);
     if (!snapshot) return block;
+    if (exclude?.has(block.id)) return block;
     seen.add(block.id);
     if (snapshot.deleted_at) {
       return ensureNoteBlockVersion({
@@ -170,6 +173,7 @@ export function mergeSnapshotPatches(
   for (const snapshot of snapshots) {
     if (seen.has(snapshot.id)) continue;
     if (snapshot.deleted_at) continue;
+    if (exclude?.has(snapshot.id)) continue;
     next.push(snapshotToNoteBlock(snapshot));
   }
   return dedupeNoteBlocksById(next);

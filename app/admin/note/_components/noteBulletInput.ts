@@ -170,12 +170,9 @@ export function resolveMarkdownBlockTriggerFromTextBeforeCursor(
   return null;
 }
 
-/** 서버·bootstrap 로드 직후 목록·토글 content 정리 (부모·하위 문서 공통) */
-export function prepareLoadedNoteBlocks(blocks: NoteBlock[]): {
-  blocks: NoteBlock[];
-  toggleMigration: ReturnType<typeof migrateToggleBodyToChildBlocks>;
-} {
-  const listNormalized = blocks.map((block) => {
+/** reconcile 병합용 — 목록 마커만 정리, 토글 legacy 마이그레이션은 생략(좀비 재생성 방지) */
+export function normalizeListBlocksOnly(blocks: NoteBlock[]): NoteBlock[] {
+  return blocks.map((block) => {
     const withVersion = ensureNoteBlockVersion(block);
     if (withVersion.type !== 'bulletList' && withVersion.type !== 'numberedList') {
       return withVersion;
@@ -184,6 +181,14 @@ export function prepareLoadedNoteBlocks(blocks: NoteBlock[]): {
     if (content === withVersion.content) return withVersion;
     return { ...withVersion, content };
   });
+}
+
+/** 서버·bootstrap 로드 직후 목록·토글 content 정리 (부모·하위 문서 공통) */
+export function prepareLoadedNoteBlocks(blocks: NoteBlock[]): {
+  blocks: NoteBlock[];
+  toggleMigration: ReturnType<typeof migrateToggleBodyToChildBlocks>;
+} {
+  const listNormalized = normalizeListBlocksOnly(blocks);
   const toggleMigration = migrateToggleBodyToChildBlocks(listNormalized);
   return { blocks: toggleMigration.blocks, toggleMigration };
 }

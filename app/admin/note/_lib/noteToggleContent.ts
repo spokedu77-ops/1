@@ -55,6 +55,34 @@ function hasDisplayableToggleChildren(children: NoteBlock[]): boolean {
   });
 }
 
+/** 토글 자식 삭제 후 legacy archive가 좀비 자식을 재생성하지 않도록 부모 content 정리 */
+export function buildToggleLegacyCleanupPatches(
+  removedBlocks: NoteBlock[],
+  nextBlocks: NoteBlock[],
+): Array<{ id: string; content: Record<string, unknown> }> {
+  const nextById = new Map(nextBlocks.map((block) => [block.id, block]));
+  const childrenByParent = buildChildrenByParentBlock(nextBlocks);
+  const patches = new Map<string, Record<string, unknown>>();
+
+  for (const removed of removedBlocks) {
+    const parentId = removed.parent_block_id ?? null;
+    if (!parentId) continue;
+    const parent = nextById.get(parentId);
+    if (!parent || parent.type !== 'toggle') continue;
+
+    const remainingChildren = childrenByParent.get(parentId) ?? [];
+    if (hasDisplayableToggleChildren(remainingChildren)) continue;
+
+    const parentContent = (parent.content ?? {}) as Record<string, unknown>;
+    patches.set(parentId, {
+      ...stripToggleLegacyContentFields(parentContent),
+      bodyMigrated: true,
+    });
+  }
+
+  return [...patches.entries()].map(([id, content]) => ({ id, content }));
+}
+
 function readToggleLegacyBody(content: Record<string, unknown>): { text: string; html?: string } {
   const { text, html } = resolveToggleBodyForDisplay(content);
   return {
@@ -79,6 +107,21 @@ export function migrateToggleLegacyToChildBlocks(blocks: NoteBlock[]): ToggleLeg
     let orderIndex = nextChildOrderIndex(existingChildren);
     let workingContent = { ...content };
     let mutated = false;
+
+    /** 이미 마이그레이션된 토글 — legacy archive로 자식 좀비 재생성 금지, 잔여 키만 정리 */
+    if (content.bodyMigrated === true) {
+      if (toggleBodyHasLegacyContent(content)) {
+        updatedToggleIds.push(block.id);
+        return {
+          ...block,
+          content: {
+            ...stripToggleLegacyContentFields(content),
+            bodyMigrated: true,
+          },
+        };
+      }
+      return block;
+    }
 
     const shouldMigrateLegacyBody = toggleBodyHasLegacyContent(content)
       && !hasDisplayableToggleChildren(existingChildren);

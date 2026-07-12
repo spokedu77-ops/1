@@ -4,6 +4,7 @@ import {
   createNoteQaContext,
   loadPlaywrightChromium,
 } from './note-qa/shared.mjs';
+import { cleanupEphemeralQaDocumentsViaPage } from './note-qa/cleanupEphemeralDocs.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -371,6 +372,77 @@ async function listSiblingMetaFromDom(page, index) {
   };
 }
 
+async function rootBlockFromApi(page, orderIndex = 0) {
+  const documentId = documentIdFromPage(page);
+  if (!documentId) throw new Error('document id missing in URL');
+  const loaded = await fetchBlocksInPage(page, documentId);
+  const roots = loaded.blocks
+    .filter((block) => !block.parent_block_id)
+    .sort((a, b) => a.order_index - b.order_index);
+  const block = roots[orderIndex];
+  if (!block) throw new Error(`root block missing at index ${orderIndex}`);
+  const text = typeof block.content?.text === 'string' ? block.content.text : '';
+  return { type: block.type, text, id: block.id };
+}
+
+async function waitForSlashMenu(page) {
+  const menu = page.locator('[data-note-overlay-menu]').first();
+  await menu.waitFor({ state: 'visible', timeout: 8000 });
+  return menu;
+}
+
+function assertNoSlashTrigger(text, label) {
+  if (text.includes('/')) {
+    throw new Error(`slash trigger leaked in body (${label}): "${text}"`);
+  }
+}
+
+async function assertFirstRowBlockKind(page, kind) {
+  const row = page.locator('[data-note-block-row]').first();
+  if (kind === 'todo') {
+    const checkbox = row.locator('div.flex.items-start.gap-2 > button[type="button"]').first();
+    await checkbox.waitFor({ state: 'visible', timeout: 8000 });
+    return;
+  }
+  if (kind === 'heading') {
+    const heading = row.locator('.text-\\[30px\\].font-bold').first();
+    await heading.waitFor({ state: 'visible', timeout: 8000 });
+    return;
+  }
+  throw new Error(`unknown block kind assertion: ${kind}`);
+}
+
+async function slashTurnInto(page, query, expectedType, menuLabel, domKind) {
+  await createFreshNote(page);
+  const editor = await focusBlockAt(page, 0);
+  await editor.click();
+  await page.keyboard.type('/', { delay: 35 });
+  await waitForSlashMenu(page);
+  if (query.length > 0) {
+    await page.keyboard.type(query, { delay: 35 });
+    await page.waitForTimeout(500);
+  }
+  const item = page.locator('[data-note-overlay-menu] button').filter({ hasText: menuLabel });
+  await item.first().waitFor({ state: 'visible', timeout: 8000 });
+  await item.first().click();
+  await page.waitForTimeout(1200);
+  await assertFirstRowBlockKind(page, domKind);
+  const domText = await blockEditorTextFromDom(page, 0);
+  assertNoSlashTrigger(domText, `type=${expectedType}`);
+  return { type: expectedType, text: domText };
+}
+
+async function blockEditorTextFromDom(page, index = 0) {
+  const row = page.locator('[data-note-block-row]').nth(index);
+  const editor = row.locator(
+    '[data-note-editor-host] .ProseMirror:visible, [data-note-list-text] .ProseMirror:visible',
+  ).first();
+  if (await editor.count()) {
+    return (await editor.innerText()).trim();
+  }
+  return blockTextFromDom(page, index);
+}
+
 async function blockTextFromDom(page, index = 0) {
   const row = page.locator('[data-note-block-row]').nth(index);
   const preview = row.locator('[data-note-preview-text]');
@@ -599,6 +671,69 @@ async function main() {
       }
     }) ? 0 : 1;
 
+    failed += await runCheck('Shift+Tab outdents nested bullet back to root', async () => {
+      await createEmptyDocument(page);
+      await seedSiblingBulletBlocks(page);
+      const first = await listSiblingMetaFromDom(page, 0);
+      await focusBulletBlockAt(page, 1);
+      await page.keyboard.press('Tab');
+      await page.waitForTimeout(1500);
+      const nested = await listSiblingMetaFromDom(page, 1);
+      if (nested.parentId !== first.blockId) {
+        throw new Error(`Tab indent failed before outdent (parent=${nested.parentId ?? 'null'})`);
+      }
+      await focusBulletBlockAt(page, 1);
+      await page.keyboard.press('Shift+Tab');
+      await page.waitForTimeout(1500);
+      const outdented = await listSiblingMetaFromDom(page, 1);
+      if (outdented.parentId !== null) {
+        throw new Error(`Shift+Tab did not outdent (parent=${outdented.parentId ?? 'null'})`);
+      }
+    }) ? 0 : 1;
+
+    failed += await runCheck('slash /체크 turns block into todo without slash in body', async () => {
+      await slashTurnInto(page, '체크', 'todo', '체크리스트', 'todo');
+    }) ? 0 : 1;
+
+    failed += await runCheck('slash /제목 turns block into heading without slash in body', async () => {
+      await slashTurnInto(page, '제목', 'heading', '제목 1', 'heading');
+    }) ? 0 : 1;
+
+    failed += await runCheck('slash Escape dismisses menu and clears trigger', async () => {
+      await createFreshNote(page);
+      const editor = await focusBlockAt(page, 0);
+      await editor.click();
+      await page.keyboard.type('/', { delay: 35 });
+      await waitForSlashMenu(page);
+      await page.keyboard.type('체크', { delay: 35 });
+      await page.keyboard.press('Escape');
+      await page.waitForTimeout(1500);
+      const menuVisible = await page.locator('[data-note-overlay-menu]').first().isVisible().catch(() => false);
+      if (menuVisible) throw new Error('slash menu still visible after Escape');
+      const block = await rootBlockFromApi(page, 0);
+      if (block.type !== 'text') {
+        throw new Error(`Escape should keep text block, got ${block.type}`);
+      }
+      assertNoSlashTrigger(block.text, 'after Escape');
+      const domText = await blockTextFromDom(page, 0);
+      assertNoSlashTrigger(domText, 'dom after Escape');
+    }) ? 0 : 1;
+
+    failed += await runCheck('slash Enter selects highlighted command', async () => {
+      await createFreshNote(page);
+      const editor = await focusBlockAt(page, 0);
+      await editor.click();
+      await page.keyboard.type('/', { delay: 35 });
+      await waitForSlashMenu(page);
+      await page.keyboard.type('체크', { delay: 35 });
+      await page.waitForTimeout(500);
+      await page.keyboard.press('Enter');
+      await page.waitForTimeout(1200);
+      await assertFirstRowBlockKind(page, 'todo');
+      const domText = await blockEditorTextFromDom(page, 0);
+      assertNoSlashTrigger(domText, 'after Enter');
+    }) ? 0 : 1;
+
     failed += await runCheck('typing survives reconcile idle window', async () => {
       try {
         await createFreshNote(page);
@@ -705,6 +840,20 @@ async function main() {
       console.warn('WARN console errors:', consoleErrors.slice(0, 3).join(' | '));
     }
   } finally {
+    if (page) {
+      try {
+        const cleaned = await cleanupEphemeralQaDocumentsViaPage(page);
+        if (cleaned.deleted > 0) {
+          console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s).`);
+        }
+      } catch (cleanupError) {
+        console.warn(
+          'WARN QA doc cleanup:',
+          cleanupError instanceof Error ? cleanupError.message : cleanupError,
+        );
+      }
+    }
+    if (context) await context.close().catch(() => undefined);
     await browser.close();
   }
 

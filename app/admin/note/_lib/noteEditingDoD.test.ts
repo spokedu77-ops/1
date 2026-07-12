@@ -12,6 +12,8 @@ import {
   serializeBlockClipboardPayload,
 } from './noteBlockClipboard';
 import { buildContentForTypeChange, filterTurnIntoCommands } from './noteBlockTypeChange';
+import { isSlashMenuActiveText, stripSlashTriggerForTypeChange } from '../_components/noteBulletInput';
+import { planMoveSiblingBlockGroup } from '@/app/lib/note/noteBlockTree';
 import {
   resolveEditorShiftEnterAction,
   resolveTableCellEnterAction,
@@ -125,6 +127,22 @@ describe('Admin Note editing DoD — Phase B keyboard & turn into', () => {
     expect(filterTurnIntoCommands('quote', TURN_INTO_COMMANDS, { text: 'x' }).map((c) => c.type))
       .not.toContain('quote');
   });
+
+  it('slash menu trigger is line-start only and strips on type change', () => {
+    expect(isSlashMenuActiveText('/todo')).toBe(true);
+    expect(isSlashMenuActiveText('/체크')).toBe(true);
+    expect(isSlashMenuActiveText('hello /todo')).toBe(false);
+    expect(stripSlashTriggerForTypeChange('/todo')).toBe('');
+    const next = buildContentForTypeChange({ text: '/todo', html: '<p>/todo</p>' }, 'text', 'todo');
+    expect(next.text).toBe('');
+    expect(next.html).toBe('');
+  });
+
+  it('slash-filtered turn into excludes current block type', () => {
+    const filtered = filterTurnIntoCommands('text', TURN_INTO_COMMANDS, { text: '/제목' });
+    expect(filtered.map((c) => c.type)).not.toContain('text');
+    expect(filtered.length).toBeGreaterThan(0);
+  });
 });
 
 describe('Admin Note editing DoD — Phase C1/C2 media', () => {
@@ -166,6 +184,20 @@ describe('Admin Note editing DoD — selection, drag, marquee', () => {
     const cmd = buildBlockForestTransferCommand(blocks, ['root', 'child'], 'doc-2');
     expect(cmd.rootIds).toEqual(['root']);
     expect(cmd.movedIds).toContain('child');
+  });
+
+  it('sibling group reorder plan moves contiguous nested siblings', () => {
+    const blocks: NoteBlock[] = [
+      { ...block('toggle', 'toggle'), order_index: 0 },
+      { ...block('a', 'text'), order_index: 0, parent_block_id: 'toggle' },
+      { ...block('b', 'text'), order_index: 1, parent_block_id: 'toggle' },
+      { ...block('c', 'text'), order_index: 2, parent_block_id: 'toggle' },
+    ];
+    const next = planMoveSiblingBlockGroup(blocks, ['a', 'b'], 'c', 'after');
+    const children = next!
+      .filter((item) => item.parent_block_id === 'toggle')
+      .sort((x, y) => x.order_index - y.order_index);
+    expect(children.map((item) => item.id)).toEqual(['c', 'a', 'b']);
   });
 });
 

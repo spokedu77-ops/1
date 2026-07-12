@@ -152,7 +152,8 @@ export function planToggleBodyForwardMigrations<T extends BlockLike>(
     const content = (block.content ?? {}) as Record<string, unknown>;
     const hasLegacyBody = hasToggleBodyContent(content);
     if (!hasLegacyBody) continue;
-    if (content.bodyMigrated === true && hasDisplayableToggleChildren(block.id, blocks)) continue;
+    /** 이미 마이그레이션됨 — 사용자 삭제가 우선, legacy archive로 자식 재생성 금지 */
+    if (content.bodyMigrated === true) continue;
 
     const childContent = buildToggleBodyTextBlockContent(content);
     const clearedContent = {

@@ -133,6 +133,31 @@ describe('mergeReconciledBlocks', () => {
     const merged = mergeReconciledBlocks(current, reconciled);
     expect(merged[0].content?.text).toBe('from server');
   });
+
+  it('does not resurrect deleted toggle children from legacyBody during reconcile', () => {
+    const current: NoteBlock[] = [{
+      id: 't1',
+      document_id: 'doc',
+      type: 'toggle',
+      content: { title: 'Section', bodyMigrated: true },
+      order_index: 0,
+      parent_block_id: null,
+      created_at: '',
+      updated_at: '',
+    }];
+    const reconciled: NoteBlock[] = [{
+      ...current[0],
+      content: {
+        title: 'Section',
+        body: '',
+        legacyBody: 'zombie archive',
+        bodyMigrated: true,
+      },
+    }];
+    const merged = mergeReconciledBlocks(current, reconciled);
+    expect(merged.filter((block) => block.parent_block_id === 't1')).toHaveLength(0);
+    expect(merged.find((block) => block.id === 't1')?.content?.legacyBody).toBe('zombie archive');
+  });
 });
 
 describe('unionReconciledWithLocalBlocks', () => {
@@ -195,12 +220,12 @@ describe('serverSnapshotRecoversMissingBlocks', () => {
     expect(serverSnapshotRecoversMissingBlocks(local, server, 'doc-1')).toBe(true);
   });
 
-  it('does not recover when a block delete is still pending', () => {
+  it('does not recover when recent block deletes are pending (legacy HTTP)', () => {
     const local = [block('a', 'one', { document_id: 'doc-1' })];
     const server = [
       block('a', 'one', { document_id: 'doc-1' }),
-      block('b', 'two', { document_id: 'doc-1', order_index: 1 }),
-      block('c', 'three', { document_id: 'doc-1', order_index: 2 }),
+      block('b', 'deleted', { document_id: 'doc-1', order_index: 1 }),
+      block('c', 'deleted2', { document_id: 'doc-1', order_index: 2 }),
     ];
     markPendingBlockDeletes('doc-1', ['b', 'c']);
     expect(serverSnapshotRecoversMissingBlocks(local, server, 'doc-1')).toBe(false);

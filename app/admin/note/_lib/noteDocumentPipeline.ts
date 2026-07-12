@@ -189,7 +189,7 @@ export class NoteDocumentPipeline {
   async hydrateFromLocal(): Promise<NoteBlock[] | null> {
     if (!this.coordinator) return null;
     const blocks = await this.coordinator.hydrateFromLocal();
-    if (!blocks) return null;
+    if (!blocks || blocks.length === 0) return null;
     return this.dispatch({ type: 'hydrate', blocks });
   }
 
@@ -200,12 +200,7 @@ export class NoteDocumentPipeline {
     }
     await this.coordinator.syncWithServer(initialBlocks);
     const blocks = this.coordinator.getBlocks();
-    const snapshot = blocks.length > 0 ? blocks : initialBlocks;
-    if (snapshot.length > 0) {
-      this.dispatch({ type: 'syncSnapshot', blocks: snapshot });
-    } else {
-      this.dispatch({ type: 'hydrate', blocks: [] });
-    }
+    this.dispatch({ type: 'syncSnapshot', blocks });
   }
 
   schedulePull(): void {

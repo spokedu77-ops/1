@@ -326,25 +326,14 @@ export function useNoteBlockActions(options: {
 
     commitActiveNoteEditorToStore();
     const latestBlock = blocksRef.current.find((b) => b.id === block.id) ?? block;
+    const storeSnapshot = useNoteBlockStore.getState().getBlock(block.id);
+    const sourceContent = (storeSnapshot?.content ?? latestBlock.content ?? {}) as Record<string, unknown>;
     recordBlockUndo([block.id]);
-    let nextContent = buildContentForTypeChange(latestBlock.content, latestBlock.type, type);
+    let nextContent = buildContentForTypeChange(sourceContent, latestBlock.type, type);
     if (type === 'bulletList' || type === 'numberedList') {
       nextContent = normalizeListBlockContentRecord(nextContent);
     }
     clearPendingContentPatch(block.id);
-
-    applyBlockContentChange({
-      block: { ...latestBlock, type },
-      content: nextContent,
-      blocksRef,
-      setBlocks,
-      recordContentUndoBeforeChange: () => {},
-      scheduleBlockContentSave,
-      onAfterChange: () => bumpNoteReconcileIdle(selectedId),
-    });
-    const patchedContent = (
-      useNoteBlockStore.getState().getBlock(block.id)?.content ?? nextContent
-    ) as Record<string, unknown>;
 
     const wasOnThisBlock = focusedEditorBlockIdRef.current === block.id;
     const nextFocusPart: 'title' | 'editor' =
@@ -356,8 +345,9 @@ export function useNoteBlockActions(options: {
       await documentEngine.persistFieldPatches([{
         id: block.id,
         type,
-        content: patchedContent,
+        content: nextContent,
       }]);
+      bumpNoteReconcileIdle(selectedId);
       triggerSave();
       preserveEditorScrollPosition(editorScrollRef.current, () => {});
       if (wasOnThisBlock) {

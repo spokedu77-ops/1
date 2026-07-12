@@ -221,7 +221,11 @@ function BlockContent({
       anchor={slashAnchor}
       commands={slashCommands}
       query={slashQuery}
-      onSelect={(type) => { onChangeType(type); }}
+      onSelect={(type) => {
+        onChangeType(type);
+        setShowSlash(false);
+        setSlashQuery('');
+      }}
       onClose={() => { setShowSlash(false); setSlashQuery(''); }}
     />
   );

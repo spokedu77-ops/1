@@ -14,7 +14,7 @@ const localSaveSuppressUntil = new Map<string, number>();
 const PENDING_BLOCK_DELETE_MS = 15_000;
 const pendingBlockDeletes = new Map<string, { until: number; ids: Set<string> }>();
 
-/** soft delete 직후 reconcile·캐시 shrink guard·서버 복구 우회 억제 */
+/** soft delete 직후 legacy HTTP reconcile이 블록을 되살리지 않도록 억제 */
 export function markPendingBlockDeletes(
   documentId: string,
   ids: string[],

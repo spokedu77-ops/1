@@ -64,8 +64,22 @@ describe('noteDocumentBlocksCache', () => {
   });
 
   it('remembers empty documents so revisits skip skeleton flash', () => {
-    rememberNoteDocumentBlocks('doc-empty', []);
+    rememberNoteDocumentBlocks('doc-empty', [], {
+      trustServer: true,
+      serverConfirmedEmpty: true,
+    });
     expect(readRememberedNoteDocumentBlocks('doc-empty')).toEqual([]);
+  });
+
+  it('ignores unconfirmed empty snapshots so poisoned cache does not blank the page', () => {
+    rememberNoteDocumentBlocks('doc-1', [block('b1')], { trustServer: true });
+    rememberNoteDocumentBlocks('doc-1', [], { trustServer: true });
+    expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(1);
+  });
+
+  it('treats legacy empty session snapshots as unconfirmed', () => {
+    rememberNoteDocumentBlocks('doc-legacy-empty', []);
+    expect(readRememberedNoteDocumentBlocks('doc-legacy-empty')).toBeNull();
   });
 
   it('ignores suspicious local shrink that would poison session cache', () => {

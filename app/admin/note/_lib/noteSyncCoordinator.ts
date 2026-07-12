@@ -12,7 +12,12 @@ import {
   writeLocalDocument,
 } from './noteLocalDb';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
-import { coalescePushItems, persistOpToPushItems } from './notePersistOpToBlockOps';
+import {
+  collectPendingSoftDeleteIds,
+  coalescePushItems,
+  excludeBlocksPendingSoftDelete,
+  persistOpToPushItems,
+} from './notePersistOpToBlockOps';
 import { partitionOutboundForSafePush } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
@@ -154,7 +159,7 @@ export class NoteSyncCoordinator {
     const outbound = await listOutboundOps(this.documentId);
     const lastSeq = await fetchSyncState(this.documentId);
 
-    if (outbound.length > 0 && local && local.blocks.length > 0) {
+    if (outbound.length > 0 && local) {
       this.blocks = local.blocks;
     } else {
       this.blocks = dedupeNoteBlocksById(initialBlocks);
@@ -304,7 +309,13 @@ export class NoteSyncCoordinator {
         continue;
       }
 
-      this.blocks = mergeSnapshotPatches(this.blocks, result.blocks);
+      const pendingDeletes = collectPendingSoftDeleteIds(outbound);
+      this.blocks = excludeBlocksPendingSoftDelete(
+        mergeSnapshotPatches(this.blocks, result.blocks, {
+          excludeBlockIds: pendingDeletes,
+        }),
+        pendingDeletes,
+      );
       this.lastAppliedSeq = result.lastSeq;
       await removeOutboundOps(consumedClientOpIds);
       await this.persistLocal();
@@ -356,8 +367,13 @@ export class NoteSyncCoordinator {
     lastSeq: number,
     options?: { notify?: boolean },
   ): Promise<void> {
+    const outbound = await listOutboundOps(this.documentId);
+    const pendingDeletes = collectPendingSoftDeleteIds(outbound);
     if (ops.length > 0) {
       this.blocks = applyRemoteOpRecords(this.blocks, ops);
+    }
+    if (pendingDeletes.size > 0) {
+      this.blocks = excludeBlocksPendingSoftDelete(this.blocks, pendingDeletes);
     }
     this.lastAppliedSeq = lastSeq;
     await this.persistLocal();

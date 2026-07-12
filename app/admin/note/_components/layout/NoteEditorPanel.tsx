@@ -130,7 +130,7 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
 }: NoteBlockCanvasProps) {
   const textDragActive = useNoteTextDragActive();
 
-  if (loadingBlocks && rootBlocks.length === 0) {
+  if (rootBlocks.length === 0 && (loadingBlocks || blocksSyncing)) {
     return <NoteBlockLoadSkeleton />;
   }
 

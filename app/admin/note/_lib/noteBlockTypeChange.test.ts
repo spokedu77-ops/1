@@ -98,7 +98,7 @@ describe('buildContentForTypeChange turn-into parity', () => {
 
   it('strips slash query when converting via slash menu', () => {
     expect(buildContentForTypeChange({ text: '/todo' }, 'text', 'todo').text).toBe('');
-    expect(buildContentForTypeChange({ text: '/heading' }, 'text', 'heading').text).toBe('');
+    expect(buildContentForTypeChange({ text: '/heading', html: '<p>/heading</p>' }, 'text', 'heading').html).toBe('');
     expect(buildContentForTypeChange({ text: '/quote' }, 'text', 'quote').text).toBe('');
     expect(buildContentForTypeChange({ title: '/toggle' }, 'toggle', 'text').text).toBe('');
   });

@@ -57,12 +57,13 @@ export function SlashMenu<T extends string>({
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { e.preventDefault(); onClose(); return; }
+      if (e.key === 'Escape') return;
       if (filtered.length === 0) return;
       if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, filtered.length - 1)); }
       if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); }
       if (e.key === 'Enter') {
         e.preventDefault();
+        e.stopPropagation();
         const cmd = filtered[activeIndex];
         if (cmd) { onSelect(cmd.type); onClose(); }
       }
@@ -75,7 +76,10 @@ export function SlashMenu<T extends string>({
     <div
       ref={ref}
       className="w-[280px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl shadow-neutral-900/10"
-      onMouseDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     >
       {title ? (
         <div className="border-b border-neutral-100 px-3 py-2">
@@ -128,7 +132,15 @@ export function SlashMenuFixed<T extends string>({
 }) {
   if (!show || !anchor) return null;
   return (
-    <div className="fixed z-[9999]" data-note-overlay-menu style={{ top: anchor.top, left: anchor.left }}>
+    <div
+      className="fixed z-[9999]"
+      data-note-overlay-menu
+      style={{ top: anchor.top, left: anchor.left }}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
+    >
       <SlashMenu
         commands={commands}
         query={query}

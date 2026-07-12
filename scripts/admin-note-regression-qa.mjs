@@ -11,6 +11,7 @@ import {
   loadPlaywrightChromium,
   runCheck,
 } from './note-qa/shared.mjs';
+import { cleanupEphemeralQaDocumentsViaPage } from './note-qa/cleanupEphemeralDocs.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -18,6 +19,8 @@ loadEnvConfig(process.cwd());
 const BASE = (process.argv[2] || 'http://localhost:3000').replace(/\/$/, '');
 const COMMON_BOARD_ID = NOTE_QA_DOCUMENTS[0]?.id ?? '7c095438-335b-4318-a3fb-09145f01d24a';
 const GYM_TOGGLE_TITLE = '체육관 이용방법';
+const RECONCILE_WAIT_MS = 3500;
+const ZOMBIE_MARKER = '좀비회귀QA마커';
 
 function matchesGymToggleTitle(value) {
   return typeof value === 'string' && value.includes(GYM_TOGGLE_TITLE);
@@ -101,6 +104,34 @@ async function expandGymToggleInDom(page) {
   return result;
 }
 
+async function createFreshDocumentWithToggleBody(page) {
+  return page.evaluate(async (marker) => {
+    const docRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: `Toggle Zombie QA ${Date.now()}` }),
+    });
+    if (!docRes.ok) throw new Error(`document create ${docRes.status}`);
+    const { document } = await docRes.json();
+    const blockRes = await fetch('/api/admin/note/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        documentId: document.id,
+        type: 'toggle',
+        content: { title: 'QA Toggle', body: marker, collapsed: false },
+        order_index: 0,
+        parent_block_id: null,
+      }),
+    });
+    if (!blockRes.ok) throw new Error(`toggle create ${blockRes.status}`);
+    const { block } = await blockRes.json();
+    return { documentId: document.id, toggleId: block.id };
+  }, ZOMBIE_MARKER);
+}
+
 async function createFreshDocumentWithTextBlock(page) {
   return page.evaluate(async () => {
     const docRes = await fetch('/api/admin/note/documents', {
@@ -145,10 +176,12 @@ async function main() {
   const chromium = await loadPlaywrightChromium();
   const browser = await chromium.launch({ headless: true });
   let failed = 0;
+  let context;
+  let page;
 
   try {
-    const context = await createNoteQaContext(browser, BASE);
-    const page = await context.newPage();
+    context = await createNoteQaContext(browser, BASE);
+    page = await context.newPage();
 
     failed += await runCheck('공통 보드 문서 로드', async () => {
       await openDocument(page, COMMON_BOARD_ID);
@@ -205,6 +238,42 @@ async function main() {
       if (marker) throw new Error('deleted marker text still visible in another block');
     });
 
+    failed += await runCheck('토글 자식 삭제 + idle 후 legacyBody 좀비 재생성 없음', async () => {
+      const { documentId, toggleId } = await createFreshDocumentWithToggleBody(page);
+      await openDocument(page, documentId);
+      let blocks = await fetchBlocks(page, documentId);
+      let children = blocks.filter((b) => b.parent_block_id === toggleId);
+      if (children.length === 0) {
+        await page.waitForTimeout(2000);
+        blocks = await fetchBlocks(page, documentId);
+        children = blocks.filter((b) => b.parent_block_id === toggleId);
+      }
+      if (children.length === 0) {
+        throw new Error('toggle migration did not create child before delete test');
+      }
+      const childId = children[0].id;
+      await softDeleteBlock(page, childId);
+      await page.waitForTimeout(RECONCILE_WAIT_MS);
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.waitForTimeout(2000);
+      blocks = await fetchBlocks(page, documentId);
+      const zombieChild = blocks.find((b) => b.id === childId);
+      if (zombieChild) throw new Error(`deleted toggle child ${childId} still in load`);
+      const respawned = blocks.filter((b) => b.parent_block_id === toggleId);
+      const markerInChild = respawned.some((b) => (b.content?.text ?? '').includes(ZOMBIE_MARKER));
+      if (markerInChild) {
+        throw new Error(`legacyBody resurrected child with marker "${ZOMBIE_MARKER}"`);
+      }
+      const toggle = blocks.find((b) => b.id === toggleId);
+      const legacy = [
+        toggle?.content?.legacyBody,
+        toggle?.content?.body,
+      ].filter((v) => typeof v === 'string' && v.includes(ZOMBIE_MARKER));
+      if (legacy.length > 0) {
+        throw new Error('toggle still archives zombie marker in content after child delete');
+      }
+    });
+
     failed += await runCheck('타이핑 후 idle — 본문 유지 (smoke parity)', async () => {
       const docId = await page.evaluate(async () => {
         const docRes = await fetch('/api/admin/note/documents', {
@@ -259,8 +328,21 @@ async function main() {
       }
     });
 
-    await context.close();
   } finally {
+    if (page) {
+      try {
+        const cleaned = await cleanupEphemeralQaDocumentsViaPage(page);
+        if (cleaned.deleted > 0) {
+          console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s).`);
+        }
+      } catch (cleanupError) {
+        console.warn(
+          'WARN QA doc cleanup:',
+          cleanupError instanceof Error ? cleanupError.message : cleanupError,
+        );
+      }
+    }
+    if (context) await context.close().catch(() => undefined);
     await browser.close();
   }
 

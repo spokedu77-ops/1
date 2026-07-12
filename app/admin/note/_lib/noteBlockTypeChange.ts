@@ -4,6 +4,7 @@ import {
   stripListItemMarkerPrefix,
   stripMarkdownTriggerForTypeChange,
   stripSlashTriggerForTypeChange,
+  isSlashMenuActiveText,
 } from '../_components/noteBulletInput';
 import { defaultBlockContent } from './constants';
 import { normalizeTodoBlockContentRecord } from './noteTodoContent';
@@ -132,11 +133,19 @@ export function buildContentForTypeChange(
     text = stripListItemMarkerPrefix(text);
   }
   const didStripMarkdownTrigger = textAfterMarkdown !== rawText;
+  const prevText = typeof prev.text === 'string' ? prev.text : '';
+  const prevTitle = typeof prev.title === 'string' ? prev.title : '';
+  const slashStripped = (
+    (prevText.length > 0 && isSlashMenuActiveText(prevText))
+    || (prevTitle.length > 0 && isSlashMenuActiveText(prevTitle))
+  ) && text.length === 0;
   const html = typeof prev.html === 'string' ? prev.html : undefined;
   const next = {
     ...base,
     text,
-    ...(!didStripMarkdownTrigger && html !== undefined ? { html } : {}),
+    ...(slashStripped
+      ? { html: '' }
+      : (!didStripMarkdownTrigger && html !== undefined ? { html } : {})),
     ...(typeof prev.checked === 'boolean' && nextType === 'todo' ? { checked: prev.checked } : {}),
   };
   if (nextType === 'todo') {

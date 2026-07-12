@@ -310,7 +310,10 @@ export function useNoteBlockData(options: {
     toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
   ) => {
     documentEngineRef.current.replaceBlocks(normalized);
-    rememberNoteDocumentBlocks(documentId, normalized, { trustServer: true });
+    rememberNoteDocumentBlocks(documentId, normalized, {
+      trustServer: true,
+      serverConfirmedEmpty: normalized.length === 0,
+    });
     const store = useNoteBlockStore.getState();
     store.setActiveDocumentId(documentId);
 
@@ -421,12 +424,19 @@ export function useNoteBlockData(options: {
     }
     previousDocumentIdRef.current = selectedId;
 
-    _setBlocks([]);
-    setLoadingBlocks(true);
-    setBlocksSyncing(false);
+    const documentId = selectedId;
+    const instantSnapshot = readRememberedNoteDocumentBlocks(documentId);
+    if (instantSnapshot !== null) {
+      replaceBlocks(instantSnapshot, documentId);
+      setLoadingBlocks(false);
+      setBlocksSyncing(true);
+    } else {
+      _setBlocks([]);
+      setLoadingBlocks(true);
+      setBlocksSyncing(false);
+    }
 
     let cancelled = false;
-    const documentId = selectedId;
 
     const run = async () => {
       await commitAndResetNoteDocumentBeforeSwitch();
@@ -435,7 +445,32 @@ export function useNoteBlockData(options: {
       const loadGen = blockLoadGenRef.current + 1;
       blockLoadGenRef.current = loadGen;
 
-      const finishOplogLoad = (
+      const finishOplogPostSync = (serverLoaded: NoteBlock[]) => {
+        const { toggleMigration } = prepareLoadedNoteBlocks(serverLoaded);
+        const store = useNoteBlockStore.getState();
+        store.setActiveDocumentId(documentId);
+        const current = documentEngineRef.current.getBlocks().filter(
+          (block) => block.document_id === documentId,
+        );
+        rememberNoteDocumentBlocks(
+          documentId,
+          mergeBlocksWithStoreContent(current),
+          {
+            trustServer: true,
+            serverConfirmedEmpty: current.length === 0,
+          },
+        );
+        if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
+          void persistToggleBodyMigration(
+            current.length > 0 ? current : serverLoaded,
+            toggleMigration,
+          ).catch((e) => {
+            devLogger.error('[Note] persistToggleBodyMigration', e);
+          });
+        }
+      };
+
+      const finishOplogLoadFallback = (
         loaded: NoteBlock[],
         mergeWithCurrent: boolean,
       ) => {
@@ -470,7 +505,10 @@ export function useNoteBlockData(options: {
         rememberNoteDocumentBlocks(
           documentId,
           mergeBlocksWithStoreContent(current),
-          { trustServer: true },
+          {
+            trustServer: true,
+            serverConfirmedEmpty: current.length === 0,
+          },
         );
         if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
           void persistToggleBodyMigration(
@@ -487,11 +525,11 @@ export function useNoteBlockData(options: {
         if (documentEngineRef.current.isOplogSyncEnabled()) {
           try {
             await documentEngineRef.current.syncWithServer(loaded);
-            finishOplogLoad(loaded, mergeWithCurrent);
+            finishOplogPostSync(loaded);
           } catch (e) {
             devLogger.error('[Note] oplog syncWithServer', e);
             documentEngineRef.current.dispatch({ type: 'hydrate', blocks: loaded });
-            finishOplogLoad(loaded, mergeWithCurrent);
+            finishOplogLoadFallback(loaded, mergeWithCurrent);
           }
         } else {
           applyFetchedBlocks(loaded, documentId, { mergeWithCurrent });
@@ -512,14 +550,14 @@ export function useNoteBlockData(options: {
         if (documentEngineRef.current.isOplogSyncEnabled()) {
           void documentEngineRef.current.syncWithServer(bootstrapBlocks.blocks).then(() => {
             if (cancelled || blockLoadGenRef.current !== loadGen) return;
-            finishOplogLoad(bootstrapBlocks.blocks, false);
+            finishOplogPostSync(bootstrapBlocks.blocks);
             setLoadingBlocks(false);
             setBlocksSyncing(false);
             setError(null);
           }).catch((e) => {
             devLogger.error('[Note] oplog bootstrap sync', e);
             documentEngineRef.current.dispatch({ type: 'hydrate', blocks: bootstrapBlocks.blocks });
-            finishOplogLoad(bootstrapBlocks.blocks, false);
+            finishOplogLoadFallback(bootstrapBlocks.blocks, false);
             setLoadingBlocks(false);
             setBlocksSyncing(false);
             setError(null);
@@ -553,15 +591,18 @@ export function useNoteBlockData(options: {
 
       const remembered = readRememberedNoteDocumentBlocks(documentId);
       const hasInstantSnapshot = remembered !== null;
+      const currentDocBlockCount = blocksRef.current.filter(
+        (block) => block.document_id === documentId,
+      ).length;
       if (hasInstantSnapshot && !oplogEnabled) {
         replaceBlocks(remembered, documentId);
         setLoadingBlocks(false);
         setBlocksSyncing(true);
-      } else if (hasInstantSnapshot && oplogEnabled && blocksRef.current.length === 0) {
+      } else if (hasInstantSnapshot && oplogEnabled && currentDocBlockCount === 0) {
         replaceBlocks(remembered, documentId);
         setLoadingBlocks(false);
         setBlocksSyncing(true);
-      } else if (blocksRef.current.length === 0) {
+      } else if (currentDocBlockCount === 0) {
         setLoadingBlocks(true);
         setBlocksSyncing(false);
       } else {
@@ -573,7 +614,7 @@ export function useNoteBlockData(options: {
         const prefetched = await consumePrefetchedNoteBlocks(documentId);
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
 
-        if (prefetched) {
+        if (prefetched && prefetched.length > 0) {
           await finishFromNetwork(prefetched, false);
           return;
         }

@@ -960,6 +960,12 @@ export function NoteEditor({
     },
     onBlur: () => {
       isEditingRef.current = false;
+      const ed = editorRef.current;
+      if (ed && isSlashMenuActiveText(ed.getText())) {
+        callbacksRef.current.onHideFormatToolbar?.();
+        callbacksRef.current.onSlashChange?.(false, '');
+        return;
+      }
       callbacksRef.current.flushPendingChange();
       commitActiveNoteEditorToStore();
       callbacksRef.current.onHideFormatToolbar?.();

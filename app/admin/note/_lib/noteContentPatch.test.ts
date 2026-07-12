@@ -55,4 +55,11 @@ describe('mergeContentPatchWithActiveStore', () => {
       { text: 'keep me', checked: false },
     )).toEqual({ text: 'keep me', checked: true });
   });
+
+  it('clears store text/html when slash type change sends empty body', () => {
+    expect(mergeContentPatchWithActiveStore(
+      { text: '', html: '' },
+      { text: '/todo', html: '<p>/todo</p>' },
+    )).toEqual({ text: '', html: '' });
+  });
 });

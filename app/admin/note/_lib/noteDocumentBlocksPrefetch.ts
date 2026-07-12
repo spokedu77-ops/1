@@ -48,7 +48,10 @@ export function prefetchNoteDocumentBlocks(documentId: string): void {
       entry.fetchedAt = Date.now();
       const activeDocId = useNoteBlockStore.getState().activeDocumentId;
       if (blocks && activeDocId !== documentId) {
-        rememberNoteDocumentBlocks(documentId, blocks, { trustServer: true });
+        rememberNoteDocumentBlocks(documentId, blocks, {
+          trustServer: true,
+          serverConfirmedEmpty: blocks.length === 0,
+        });
       }
       return blocks;
     }),
@@ -69,7 +72,10 @@ export async function consumePrefetchedNoteBlocks(
   if (blocks) {
     const activeDocId = useNoteBlockStore.getState().activeDocumentId;
     if (activeDocId !== documentId) {
-      rememberNoteDocumentBlocks(documentId, blocks);
+      rememberNoteDocumentBlocks(documentId, blocks, {
+        trustServer: true,
+        serverConfirmedEmpty: blocks.length === 0,
+      });
     }
   }
   return blocks;

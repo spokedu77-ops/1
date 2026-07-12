@@ -61,6 +61,13 @@ export function mergeContentPatchWithActiveStore(
 ): Record<string, unknown> {
   if (!store) return incoming;
   const merged = { ...store, ...incoming };
+  const incomingClearsBody = 'text' in incoming
+    && incoming.text === ''
+    && 'html' in incoming
+    && (incoming.html === ''
+      || incoming.html === '<p></p>'
+      || incoming.html === '<p><br></p>'
+      || incoming.html === '<p><br class="ProseMirror-trailingBreak"></p>');
   for (const key of STORE_ONLY_CONTENT_KEYS) {
     const inVal = incoming[key];
     const storeVal = store[key];
@@ -73,7 +80,9 @@ export function mergeContentPatchWithActiveStore(
             || incomingHtml === '<p></p>'
             || incomingHtml === '<p><br></p>'
             || incomingHtml === '<p><br class="ProseMirror-trailingBreak"></p>');
-        merged[key] = editorSignaledEmpty ? inVal : storeVal;
+        const authoritativeBodyClear = incomingClearsBody
+          && (key === 'text' || key === 'html');
+        merged[key] = (editorSignaledEmpty || authoritativeBodyClear) ? inVal : storeVal;
       } else if (inVal !== storeVal) {
         merged[key] = inVal;
       } else {
