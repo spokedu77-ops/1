@@ -64,7 +64,26 @@ describe('planToggleBodyForwardMigrations', () => {
     expect(planToggleBodyForwardMigrations(blocks)).toHaveLength(0);
   });
 
-  it('이미 이전 완료된 legacyBody를 다시 자식 블록으로 만들지 않는다', () => {
+  it('bodyMigrated but orphaned legacyBody → recreates child from legacy', () => {
+    const blocks = [
+      block('t1', 'toggle', {
+        title: '체육관 이용방법',
+        body: '',
+        legacyBody: '과거 본문',
+        bodyMigrated: true,
+      }),
+    ];
+
+    const plans = planToggleBodyForwardMigrations(blocks);
+    expect(plans).toHaveLength(1);
+    expect(plans[0].createChild?.content).toMatchObject({
+      text: '과거 본문',
+      migratedFromToggleBody: true,
+    });
+    expect(plans[0].newToggleContent.legacyBody).toBe('');
+  });
+
+  it('bodyMigrated with existing migrated child keeps legacy archived', () => {
     const blocks = [
       block('t1', 'toggle', {
         title: '제목',
@@ -72,6 +91,7 @@ describe('planToggleBodyForwardMigrations', () => {
         legacyBody: '과거 본문',
         bodyMigrated: true,
       }),
+      block('c1', 'text', { text: '자식', migratedFromToggleBody: true }, 't1'),
     ];
 
     expect(planToggleBodyForwardMigrations(blocks)).toHaveLength(0);

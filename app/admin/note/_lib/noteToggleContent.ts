@@ -5,6 +5,7 @@ import type { NoteBlock } from './types';
 export type ToggleLegacyMigrationResult = {
   blocks: NoteBlock[];
   created: NoteBlock[];
+  updatedChildPatches: Array<{ id: string; content: Record<string, unknown> }>;
   updatedToggleIds: string[];
 };
 
@@ -13,7 +14,8 @@ export function toggleBodyHasLegacyContent(content: Record<string, unknown> | nu
   const body = typeof content.body === 'string' ? content.body.trim() : '';
   const bodyHtml = typeof content.bodyHtml === 'string' ? content.bodyHtml.trim() : '';
   const legacyBody = typeof content.legacyBody === 'string' ? content.legacyBody.trim() : '';
-  return body.length > 0 || bodyHtml.length > 0 || legacyBody.length > 0;
+  const legacyBodyHtml = typeof content.legacyBodyHtml === 'string' ? content.legacyBodyHtml.trim() : '';
+  return body.length > 0 || bodyHtml.length > 0 || legacyBody.length > 0 || legacyBodyHtml.length > 0;
 }
 
 function readToggleLegacyImageUrls(content: Record<string, unknown>): string[] {
@@ -42,10 +44,45 @@ function nextChildOrderIndex(children: NoteBlock[]): number {
   return Math.max(...children.map((child) => child.order_index)) + 1;
 }
 
+function isEmptyToggleTextChild(block: NoteBlock): boolean {
+  if (block.type !== 'text') return false;
+  const content = (block.content ?? {}) as Record<string, unknown>;
+  const text = typeof content.text === 'string' ? content.text.trim() : '';
+  const html = typeof content.html === 'string' ? content.html.trim() : '';
+  return !text && !html;
+}
+
+function hasDisplayableToggleChildren(children: NoteBlock[]): boolean {
+  return children.some((child) => {
+    if (child.type === 'text') return !isEmptyToggleTextChild(child);
+    return true;
+  });
+}
+
+function readToggleLegacyBody(content: Record<string, unknown>): { text: string; html?: string } {
+  const bodyText =
+    typeof content.body === 'string' && content.body.trim()
+      ? content.body
+      : typeof content.legacyBody === 'string'
+        ? content.legacyBody
+        : '';
+  const bodyHtml =
+    typeof content.bodyHtml === 'string'
+      ? content.bodyHtml
+      : typeof content.legacyBodyHtml === 'string'
+        ? content.legacyBodyHtml
+        : undefined;
+  return {
+    text: bodyText,
+    ...(bodyHtml ? { html: bodyHtml } : {}),
+  };
+}
+
 /** 토글 content.body·images → 자식 블록 (Notion-style 단일 모델) */
 export function migrateToggleLegacyToChildBlocks(blocks: NoteBlock[]): ToggleLegacyMigrationResult {
   const childrenByParent = buildChildrenByParentBlock(blocks);
   const created: NoteBlock[] = [];
+  const updatedChildPatches: Array<{ id: string; content: Record<string, unknown> }> = [];
   const updatedToggleIds: string[] = [];
 
   const nextBlocks = blocks.map((block) => {
@@ -58,39 +95,75 @@ export function migrateToggleLegacyToChildBlocks(blocks: NoteBlock[]): ToggleLeg
     let workingContent = { ...content };
     let mutated = false;
 
-    if (existingChildren.length === 0 && toggleBodyHasLegacyContent(content)) {
-      const bodyText =
-        typeof content.body === 'string' && content.body.trim()
-          ? content.body
-          : typeof content.legacyBody === 'string'
-            ? content.legacyBody
-            : '';
-      const bodyHtml =
-        typeof content.bodyHtml === 'string'
-          ? content.bodyHtml
-          : typeof content.legacyBodyHtml === 'string'
-            ? content.legacyBodyHtml
-            : undefined;
+    const shouldMigrateLegacyBody = toggleBodyHasLegacyContent(content)
+      && !hasDisplayableToggleChildren(existingChildren);
 
-      pendingCreated.push({
-        id: crypto.randomUUID(),
-        document_id: block.document_id,
-        type: 'text',
-        parent_block_id: block.id,
-        order_index: orderIndex,
-        content: {
-          text: bodyText,
-          ...(bodyHtml ? { html: bodyHtml } : {}),
-          placedInToggle: true,
-          createdInsideToggle: true,
-          migratedFromToggleBody: true,
-        },
-        created_at: block.created_at,
-        updated_at: block.updated_at,
-      });
-      orderIndex += 1;
-      workingContent = stripToggleLegacyContentFields(workingContent);
-      mutated = true;
+    if (shouldMigrateLegacyBody) {
+      const { text: bodyText, html: bodyHtml } = readToggleLegacyBody(content);
+      const emptyTextChild = existingChildren.find(
+        (child) => child.type === 'text' && isEmptyToggleTextChild(child),
+      );
+      const migratedChild = existingChildren.find(
+        (child) =>
+          child.type === 'text'
+          && (child.content as Record<string, unknown> | undefined)?.migratedFromToggleBody === true,
+      );
+
+      if (migratedChild) {
+        const prev = (migratedChild.content ?? {}) as Record<string, unknown>;
+        const prevText = typeof prev.text === 'string' ? prev.text : '';
+        const mergedText = prevText.trim() && bodyText.trim()
+          ? `${prevText.trim()}\n${bodyText.trim()}`
+          : (bodyText.trim() || prevText);
+        updatedChildPatches.push({
+          id: migratedChild.id,
+          content: {
+            ...prev,
+            text: mergedText,
+            ...(bodyHtml ? { html: bodyHtml } : {}),
+            migratedFromToggleBody: true,
+            placedInToggle: true,
+          },
+        });
+        mutated = true;
+      } else if (emptyTextChild) {
+        updatedChildPatches.push({
+          id: emptyTextChild.id,
+          content: {
+            text: bodyText,
+            ...(bodyHtml ? { html: bodyHtml } : {}),
+            placedInToggle: true,
+            migratedFromToggleBody: true,
+          },
+        });
+        mutated = true;
+      } else if (existingChildren.length === 0) {
+        pendingCreated.push({
+          id: crypto.randomUUID(),
+          document_id: block.document_id,
+          type: 'text',
+          parent_block_id: block.id,
+          order_index: orderIndex,
+          content: {
+            text: bodyText,
+            ...(bodyHtml ? { html: bodyHtml } : {}),
+            placedInToggle: true,
+            createdInsideToggle: true,
+            migratedFromToggleBody: true,
+          },
+          created_at: block.created_at,
+          updated_at: block.updated_at,
+        });
+        orderIndex += 1;
+        mutated = true;
+      }
+
+      if (mutated) {
+        workingContent = stripToggleLegacyContentFields(workingContent);
+        delete workingContent.legacyBody;
+        delete workingContent.legacyBodyHtml;
+        delete workingContent.bodyMigrated;
+      }
     }
 
     for (const url of readToggleLegacyImageUrls(content)) {
@@ -132,13 +205,23 @@ export function migrateToggleLegacyToChildBlocks(blocks: NoteBlock[]): ToggleLeg
     };
   });
 
-  if (created.length === 0) {
-    return { blocks, created, updatedToggleIds };
+  let mergedBlocks = created.length > 0 ? [...nextBlocks, ...created] : nextBlocks;
+  if (updatedChildPatches.length > 0) {
+    const patchById = new Map(updatedChildPatches.map((patch) => [patch.id, patch.content]));
+    mergedBlocks = mergedBlocks.map((block) => {
+      const patch = patchById.get(block.id);
+      return patch ? { ...block, content: patch } : block;
+    });
+  }
+
+  if (created.length === 0 && updatedChildPatches.length === 0 && updatedToggleIds.length === 0) {
+    return { blocks, created, updatedChildPatches, updatedToggleIds };
   }
 
   return {
-    blocks: [...nextBlocks, ...created],
+    blocks: mergedBlocks,
     created,
+    updatedChildPatches,
     updatedToggleIds,
   };
 }

@@ -80,6 +80,19 @@ function isEmptyTextBlock(block: BlockLike): boolean {
   return !text.trim() && !html.trim();
 }
 
+function toggleChildren<T extends BlockLike>(toggleId: string, blocks: T[]): T[] {
+  return blocks
+    .filter((entry) => entry.parent_block_id === toggleId)
+    .sort((a, b) => a.order_index - b.order_index);
+}
+
+function hasDisplayableToggleChildren<T extends BlockLike>(toggleId: string, blocks: T[]): boolean {
+  return toggleChildren(toggleId, blocks).some((child) => {
+    if (child.type === 'text') return !isEmptyTextBlock(child);
+    return true;
+  });
+}
+
 function mergeTextBlockContent(
   existing: Record<string, unknown> | null | undefined,
   incoming: Record<string, unknown>,
@@ -115,14 +128,17 @@ export function planToggleBodyForwardMigrations<T extends BlockLike>(
   for (const block of blocks) {
     if (block.type !== 'toggle') continue;
     const content = (block.content ?? {}) as Record<string, unknown>;
-    if (content.bodyMigrated === true) continue;
-    if (!hasToggleBodyContent(content)) continue;
+    const hasLegacyBody = hasToggleBodyContent(content);
+    if (!hasLegacyBody) continue;
+    if (content.bodyMigrated === true && hasDisplayableToggleChildren(block.id, blocks)) continue;
 
     const childContent = buildToggleBodyTextBlockContent(content);
-    const clearedContent = clearToggleBodyContent(content);
-    const children = blocks
-      .filter((entry) => entry.parent_block_id === block.id)
-      .sort((a, b) => a.order_index - b.order_index);
+    const clearedContent = {
+      ...clearToggleBodyContent(content),
+      legacyBody: '',
+      legacyBodyHtml: '',
+    };
+    const children = toggleChildren(block.id, blocks);
 
     const migratedChild = findMigratedToggleBodyChild(block.id, blocks);
     const firstTextChild = children.find((entry) => entry.type === 'text');

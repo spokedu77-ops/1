@@ -268,7 +268,9 @@ export function useNoteBlockData(options: {
     normalized: NoteBlock[],
     toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
   ) => {
-    if (toggleMigration.created.length === 0) return;
+    if (toggleMigration.created.length === 0 && toggleMigration.updatedChildPatches.length === 0) {
+      if (toggleMigration.updatedToggleIds.length === 0) return;
+    }
     for (const child of toggleMigration.created) {
       const parentBlockId: string | null = child.parent_block_id ?? null;
       await documentEngineRef.current.persistCreateBlock({
@@ -292,6 +294,9 @@ export function useNoteBlockData(options: {
     if (togglePatches.length > 0) {
       await documentEngineRef.current.persistFieldPatches(togglePatches);
     }
+    if (toggleMigration.updatedChildPatches.length > 0) {
+      await documentEngineRef.current.persistFieldPatches(toggleMigration.updatedChildPatches);
+    }
   }, []);
 
   const installPreparedBlocks = useCallback((
@@ -304,7 +309,7 @@ export function useNoteBlockData(options: {
     const store = useNoteBlockStore.getState();
     store.setActiveDocumentId(documentId);
 
-    if (toggleMigration.created.length > 0) {
+    if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
       void persistToggleBodyMigration(normalized, toggleMigration).catch((e) => {
         devLogger.error('[Note] persistToggleBodyMigration', e);
       });
@@ -351,7 +356,7 @@ export function useNoteBlockData(options: {
       rememberNoteDocumentBlocks(documentId, mergeBlocksWithStoreContent(
         merged.filter((block) => block.document_id === documentId),
       ), { trustServer: true });
-      if (toggleMigration.created.length > 0) {
+      if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
         void persistToggleBodyMigration(merged, toggleMigration).catch((e) => {
           devLogger.error('[Note] persistToggleBodyMigration', e);
         });
@@ -409,7 +414,7 @@ export function useNoteBlockData(options: {
           mergeBlocksWithStoreContent(current),
           { trustServer: true },
         );
-        if (toggleMigration.created.length > 0) {
+        if (toggleMigration.created.length > 0 || toggleMigration.updatedChildPatches.length > 0) {
           void persistToggleBodyMigration(
             current.length > 0 ? current : loaded,
             toggleMigration,

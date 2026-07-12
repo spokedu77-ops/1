@@ -44,6 +44,28 @@ describe('toggle body migration', () => {
     expect(result.updatedToggleIds).toEqual(['t1']);
   });
 
+  it('migrates orphaned legacyBody when bodyMigrated but child is missing', () => {
+    const blocks = [toggle('t1', {
+      title: '체육관 이용방법',
+      body: '',
+      legacyBody: '이용 안내 본문',
+      bodyMigrated: true,
+    })];
+    const result = migrateToggleLegacyToChildBlocks(blocks);
+
+    expect(result.created).toHaveLength(1);
+    expect(result.created[0]).toMatchObject({
+      type: 'text',
+      parent_block_id: 't1',
+      content: expect.objectContaining({
+        text: '이용 안내 본문',
+        migratedFromToggleBody: true,
+      }),
+    });
+    const migratedToggle = result.blocks.find((block) => block.id === 't1');
+    expect(migratedToggle?.content?.legacyBody).toBeUndefined();
+  });
+
   it('skips migration when toggle already has children', () => {
     const blocks = [
       toggle('t1', { title: 'T', body: 'legacy' }),
