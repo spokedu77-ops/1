@@ -22,7 +22,21 @@ export function resolveToggleBodyForDisplay(content: Record<string, unknown> | n
   }
   const legacyBody = typeof content?.legacyBody === 'string' ? content.legacyBody : '';
   const legacyBodyHtml = typeof content?.legacyBodyHtml === 'string' ? content.legacyBodyHtml : '';
-  return { text: legacyBody, html: legacyBodyHtml };
+  if (legacyBody.trim() || legacyBodyHtml.trim()) {
+    return { text: legacyBody, html: legacyBodyHtml };
+  }
+  const title = typeof content?.title === 'string' ? content.title.trim() : '';
+  const inlineText = typeof content?.text === 'string' ? content.text.trim() : '';
+  const inlineHtml = typeof content?.html === 'string' ? content.html : '';
+  const legacyText = typeof content?.legacyText === 'string' ? content.legacyText.trim() : '';
+  const inlineBody = inlineText || legacyText;
+  if (inlineBody && inlineBody !== title) {
+    return { text: inlineBody, html: inlineHtml };
+  }
+  if (inlineHtml.trim() && inlineHtml !== `<p>${title}</p>`) {
+    return { text: inlineBody, html: inlineHtml };
+  }
+  return { text: '', html: '' };
 }
 
 export function buildToggleBodyTextBlockContent(content: Record<string, unknown>) {
@@ -46,6 +60,14 @@ export function clearToggleBodyContent(content: Record<string, unknown>) {
   }
   if (typeof content.bodyHtml === 'string' && content.bodyHtml.trim()) {
     next.legacyBodyHtml = content.bodyHtml;
+  }
+  const { text: inlineBody, html: inlineHtml } = resolveToggleBodyForDisplay(content);
+  if (inlineBody.trim()) {
+    delete next.text;
+    delete next.legacyText;
+  }
+  if (inlineHtml.trim()) {
+    delete next.html;
   }
   return next;
 }

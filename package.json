@@ -17,6 +17,7 @@
     "test:spomove": "vitest run app/admin/spomove/training/_player/spomove.test.ts",
     "lint:spomove": "eslint app/admin/spomove app/api/spokedu-master --max-warnings 0",
     "qa:admin-note": "node scripts/admin-note-smoke-qa.mjs",
+    "qa:admin-note-regression": "node scripts/admin-note-regression-qa.mjs",
     "qa:note-invariants": "node scripts/note-invariant-qa.mjs",
     "qa:note-invariants:quick": "node scripts/note-invariant-qa.mjs --quick",
     "qa:note-cross-select": "node scripts/verify-note-cross-select-qa.mjs",

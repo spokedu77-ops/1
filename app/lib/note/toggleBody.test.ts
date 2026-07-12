@@ -64,6 +64,20 @@ describe('planToggleBodyForwardMigrations', () => {
     expect(planToggleBodyForwardMigrations(blocks)).toHaveLength(0);
   });
 
+  it('migrates inline text/html on toggle when distinct from title', () => {
+    const blocks = [block('t1', 'toggle', {
+      title: '체육관 이용방법 (선생님/학부모 version 각각)',
+      text: '체크 리스트',
+      html: '<p>체크 리스트</p>',
+      collapsed: true,
+    })];
+    const plans = planToggleBodyForwardMigrations(blocks);
+    expect(plans).toHaveLength(1);
+    expect(plans[0].createChild?.content).toMatchObject({ text: '체크 리스트' });
+    expect(plans[0].newToggleContent.text).toBeUndefined();
+    expect(plans[0].newToggleContent.title).toContain('체육관 이용방법');
+  });
+
   it('bodyMigrated but orphaned legacyBody → recreates child from legacy', () => {
     const blocks = [
       block('t1', 'toggle', {

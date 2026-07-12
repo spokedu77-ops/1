@@ -1,4 +1,5 @@
 import { buildChildrenByParentBlock } from '@/app/lib/note/noteBlockTree';
+import { hasToggleBodyContent, resolveToggleBodyForDisplay } from '@/app/lib/note/toggleBody';
 import { TOGGLE_LEGACY_CONTENT_KEYS } from './noteBlockTypes';
 import type { NoteBlock } from './types';
 
@@ -10,12 +11,7 @@ export type ToggleLegacyMigrationResult = {
 };
 
 export function toggleBodyHasLegacyContent(content: Record<string, unknown> | null | undefined): boolean {
-  if (!content) return false;
-  const body = typeof content.body === 'string' ? content.body.trim() : '';
-  const bodyHtml = typeof content.bodyHtml === 'string' ? content.bodyHtml.trim() : '';
-  const legacyBody = typeof content.legacyBody === 'string' ? content.legacyBody.trim() : '';
-  const legacyBodyHtml = typeof content.legacyBodyHtml === 'string' ? content.legacyBodyHtml.trim() : '';
-  return body.length > 0 || bodyHtml.length > 0 || legacyBody.length > 0 || legacyBodyHtml.length > 0;
+  return hasToggleBodyContent(content);
 }
 
 function readToggleLegacyImageUrls(content: Record<string, unknown>): string[] {
@@ -60,21 +56,10 @@ function hasDisplayableToggleChildren(children: NoteBlock[]): boolean {
 }
 
 function readToggleLegacyBody(content: Record<string, unknown>): { text: string; html?: string } {
-  const bodyText =
-    typeof content.body === 'string' && content.body.trim()
-      ? content.body
-      : typeof content.legacyBody === 'string'
-        ? content.legacyBody
-        : '';
-  const bodyHtml =
-    typeof content.bodyHtml === 'string'
-      ? content.bodyHtml
-      : typeof content.legacyBodyHtml === 'string'
-        ? content.legacyBodyHtml
-        : undefined;
+  const { text, html } = resolveToggleBodyForDisplay(content);
   return {
-    text: bodyText,
-    ...(bodyHtml ? { html: bodyHtml } : {}),
+    text,
+    ...(html.trim() ? { html } : {}),
   };
 }
 
@@ -163,6 +148,11 @@ export function migrateToggleLegacyToChildBlocks(blocks: NoteBlock[]): ToggleLeg
         delete workingContent.legacyBody;
         delete workingContent.legacyBodyHtml;
         delete workingContent.bodyMigrated;
+        if (typeof workingContent.title === 'string' && workingContent.title.trim()) {
+          delete workingContent.text;
+          delete workingContent.html;
+          delete workingContent.legacyText;
+        }
       }
     }
 
