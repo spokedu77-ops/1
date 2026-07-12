@@ -13,17 +13,57 @@ const sb = createClient(
 const DOC_ID = '7c095438-335b-4318-a3fb-09145f01d24a';
 const TOGGLE_ID = 'c1cc08f4-e3dc-4aed-970d-009f0e46cdaa';
 const TEXT_CHILD_ID = '0e1113e8-2ddb-4a20-b893-9b3f8669485b';
+const TEXT_SOURCE_ID = '495d0d92-4aff-42e3-b159-83638d433b9c';
 const PARKING_SUPABASE_IMAGE_ID = 'a66f6697-ce75-4917-bddc-3f920cdc1420';
 const PARKING_POSTIMG_URL = 'https://i.postimg.cc/gjd9ZKqY/seupokidyu-LAB-kijeujim-juchagong-gan.jpg';
 
+function textToHtml(raw) {
+  return raw
+    .split(/\n\n+/)
+    .filter((p) => p.trim())
+    .map((p) => `<p>${p.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>')}</p>`)
+    .join('');
+}
+
 const now = new Date().toISOString();
 
-const { data: textChild } = await sb
+// 0) Restore text body from soft-deleted source
+const { data: src, error: srcErr } = await sb
   .from('note_blocks')
-  .select('id,order_index')
+  .select('content')
+  .eq('id', TEXT_SOURCE_ID)
+  .single();
+if (srcErr) throw srcErr;
+const text = (src.content?.text || '').trim();
+if (!text) throw new Error('source text empty');
+
+const { data: textChild, error: textChildErr } = await sb
+  .from('note_blocks')
+  .select('id,order_index,version')
   .eq('id', TEXT_CHILD_ID)
   .single();
-if (!textChild) throw new Error('text child missing');
+if (textChildErr) throw textChildErr;
+
+const { error: textUpdErr } = await sb
+  .from('note_blocks')
+  .update({
+    parent_block_id: TOGGLE_ID,
+    deleted_at: null,
+    deleted_by: null,
+    order_index: 0,
+    updated_at: now,
+    version: (textChild.version ?? 1) + 1,
+    content: {
+      text,
+      html: textToHtml(text),
+      placedInToggle: true,
+      migratedFromToggleBody: true,
+      restoredFromDeletedBlockId: TEXT_SOURCE_ID,
+    },
+  })
+  .eq('id', TEXT_CHILD_ID);
+if (textUpdErr) throw textUpdErr;
+console.log('restored text child', TEXT_CHILD_ID, 'len', text.length);
 
 let order = textChild.order_index + 1;
 
@@ -43,6 +83,7 @@ const { error: restoreImgErr } = await sb
     deleted_at: null,
     deleted_by: null,
     updated_at: now,
+    version: (parkingImg.version ?? 1) + 1,
     content: {
       ...(parkingImg.content ?? {}),
       placedInToggle: true,

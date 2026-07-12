@@ -3,7 +3,9 @@ import {
   coalescePushItems,
   collectPendingSoftDeleteIds,
   excludeBlocksPendingSoftDelete,
+  mergeServerBlocksIntoLocalSnapshot,
   persistOpToPushItems,
+  serverSnapshotHasBlocksMissingFrom,
   shouldTrustEmptyLocalWithOutbound,
 } from './notePersistOpToBlockOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
@@ -160,5 +162,72 @@ describe('shouldTrustEmptyLocalWithOutbound', () => {
       outbound(items),
       [serverBlock('a')],
     )).toBe(false);
+  });
+});
+
+describe('mergeServerBlocksIntoLocalSnapshot', () => {
+  const serverBlock = (id: string, text: string): NoteBlock => ({
+    id,
+    document_id: 'doc-1',
+    type: 'text',
+    content: { text },
+    order_index: 0,
+    parent_block_id: 'toggle-1',
+    created_at: '',
+    updated_at: '',
+  });
+
+  it('adds server-only blocks missing from stale local IDB', () => {
+    const local: NoteBlock[] = [{
+      id: 'toggle-1',
+      document_id: 'doc-1',
+      type: 'toggle',
+      content: { title: '체육관' },
+      order_index: 0,
+      parent_block_id: null,
+      created_at: '',
+      updated_at: '',
+    }];
+    const server = [
+      ...local,
+      serverBlock('child-1', '복구 본문'),
+    ];
+    const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set());
+    expect(merged.map((block) => block.id)).toEqual(['toggle-1', 'child-1']);
+  });
+
+  it('replaces empty local text with server content for same id', () => {
+    const local: NoteBlock[] = [serverBlock('child-1', '')];
+    const server = [serverBlock('child-1', '복구 본문')];
+    const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set());
+    expect(merged[0].content?.text).toBe('복구 본문');
+  });
+
+  it('skips ids pending soft delete', () => {
+    const local: NoteBlock[] = [];
+    const server = [serverBlock('child-1', 'gone')];
+    const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set(['child-1']));
+    expect(merged).toHaveLength(0);
+  });
+});
+
+describe('serverSnapshotHasBlocksMissingFrom', () => {
+  const block = (id: string, text: string): NoteBlock => ({
+    id,
+    document_id: 'd',
+    type: 'text',
+    content: { text },
+    order_index: 0,
+    parent_block_id: null,
+    created_at: '',
+    updated_at: '',
+  });
+
+  it('detects server-only block ids', () => {
+    expect(serverSnapshotHasBlocksMissingFrom([block('a', '')], [block('a', ''), block('b', '')])).toBe(true);
+  });
+
+  it('detects empty local placeholder replaced on server', () => {
+    expect(serverSnapshotHasBlocksMissingFrom([block('a', '')], [block('a', '복구')])).toBe(true);
   });
 });

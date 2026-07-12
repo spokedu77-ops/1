@@ -36,6 +36,7 @@ import {
 } from '../_lib/noteDocumentBlocksCache';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
+import { serverSnapshotHasBlocksMissingFrom } from '../_lib/notePersistOpToBlockOps';
 import { isNoteOplogSyncEnabled } from '../_lib/noteOplogSync';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
@@ -456,7 +457,10 @@ export function useNoteBlockData(options: {
         const current = documentEngineRef.current.getBlocks().filter(
           (block) => block.document_id === documentId,
         );
-        if (current.length === 0 && serverForDoc.length > 0) {
+        if (
+          (current.length === 0 && serverForDoc.length > 0)
+          || serverSnapshotHasBlocksMissingFrom(current, serverForDoc)
+        ) {
           finishOplogLoadFallback(serverLoaded, false);
           setBlocksEmptyConfirmed(false);
           return;

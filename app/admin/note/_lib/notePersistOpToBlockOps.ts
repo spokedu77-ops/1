@@ -1,8 +1,29 @@
+import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
 import type { NoteBlock } from './types';
+
+function readBlockText(block: NoteBlock): string {
+  const text = block.content?.text;
+  return typeof text === 'string' ? text.trim() : '';
+}
+
+function readBlockImageUrl(block: NoteBlock): string {
+  const url = block.content?.url;
+  return typeof url === 'string' ? url.trim() : '';
+}
+
+function shouldPreferServerBlockOverLocal(local: NoteBlock, server: NoteBlock): boolean {
+  if (local.type === 'text' && server.type === 'text') {
+    return !readBlockText(local) && !!readBlockText(server);
+  }
+  if (local.type === 'image' && server.type === 'image') {
+    return !readBlockImageUrl(local) && !!readBlockImageUrl(server);
+  }
+  return false;
+}
 
 function newClientOpId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -49,6 +70,43 @@ export function shouldTrustEmptyLocalWithOutbound(
   if (serverBlocks.length === 0) return true;
   const pendingDeletes = collectPendingSoftDeleteIds(outbound);
   return serverBlocks.every((block) => pendingDeletes.has(block.id));
+}
+
+/** 서버 load에만 있는 블록·빈 로컬 placeholder를 서버로 보강 — DB 직접 복구 후 IDB stale 방지 */
+export function mergeServerBlocksIntoLocalSnapshot(
+  localBlocks: NoteBlock[],
+  serverBlocks: NoteBlock[],
+  pendingDeleteIds: Set<string>,
+): NoteBlock[] {
+  const localById = new Map(localBlocks.map((block) => [block.id, block]));
+  let merged = [...localBlocks];
+
+  for (const serverBlock of serverBlocks) {
+    if (pendingDeleteIds.has(serverBlock.id)) continue;
+    const local = localById.get(serverBlock.id);
+    if (!local) {
+      merged.push(serverBlock);
+      continue;
+    }
+    if (!shouldPreferServerBlockOverLocal(local, serverBlock)) continue;
+    merged = merged.map((block) => (block.id === serverBlock.id ? serverBlock : block));
+  }
+
+  return dedupeNoteBlocksById(merged);
+}
+
+export function serverSnapshotHasBlocksMissingFrom(
+  current: NoteBlock[],
+  server: NoteBlock[],
+): boolean {
+  if (server.length > current.length) return true;
+  const currentById = new Map(current.map((block) => [block.id, block]));
+  for (const serverBlock of server) {
+    const local = currentById.get(serverBlock.id);
+    if (!local) return true;
+    if (shouldPreferServerBlockOverLocal(local, serverBlock)) return true;
+  }
+  return false;
 }
 
 /** NotePersistOp → 서버 push 항목 (1 persist op = 1~N push items) */

@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   filterSiblingBlocks,
+  getBlocksInParent,
   sortRootBlocks,
 } from '@/app/lib/note/noteBlockTree';
 import {
@@ -26,6 +27,7 @@ import {
   markPendingBlockDeletes,
 } from '../_lib/noteReconcileIdle';
 import { setNoteMergeSplitHint } from '../_lib/noteMergeSplitHint';
+import { readToggleTitleText } from '../_lib/noteNotionBlockBehavior';
 import type { NoteBlock } from '../_lib/types';
 
 type MergeWithPreviousCommand = NonNullable<ReturnType<typeof buildMergeWithPreviousBlockCommand>>;
@@ -110,6 +112,26 @@ export function useNoteBlockDelete(options: {
     triggerSave();
   }, [docTab, loadTrashedBlocks, setMobileTab, setPendingDeleteUndo, triggerSave]);
 
+  const focusToggleTitleIfChildForestEmptied = useCallback((
+    prevBlocks: NoteBlock[],
+    nextBlocks: NoteBlock[],
+    removed: NoteBlock[],
+  ) => {
+    for (const block of removed) {
+      const parentId = block.parent_block_id ?? null;
+      if (!parentId) continue;
+      const parent = prevBlocks.find((item) => item.id === parentId);
+      if (!parent || parent.type !== 'toggle') continue;
+      const remaining = getBlocksInParent(nextBlocks, parentId);
+      if (remaining.length > 0) continue;
+      const title = readToggleTitleText(parent.content as Record<string, unknown>);
+      requestAnimationFrame(() => {
+        focusBlockEditor(parent.id, 'title', title.length);
+      });
+      return;
+    }
+  }, [focusBlockEditor]);
+
   const runDeleteForestCommand = useCallback(async (params: {
     prevBlocks: NoteBlock[];
     command: NoteBlockCommandResult;
@@ -158,6 +180,7 @@ export function useNoteBlockDelete(options: {
         skipDeleteUndo,
         deletedBlock,
       });
+      focusToggleTitleIfChildForestEmptied(prevBlocks, nextBlocks, command.removedBlocks);
       onAfterBlocksRemoved?.(command.removedBlocks, nextBlocks);
 
       if (emptyRootDocumentId) {
@@ -179,6 +202,7 @@ export function useNoteBlockDelete(options: {
     documentEngine,
     ensureMinimumRootTextBlock,
     finalizeBlockDelete,
+    focusToggleTitleIfChildForestEmptied,
     onAfterBlocksRemoved,
     recordBlockCommandUndo,
     setError,

@@ -14,6 +14,7 @@ import {
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
 import {
   collectPendingSoftDeleteIds,
+  mergeServerBlocksIntoLocalSnapshot,
   shouldTrustEmptyLocalWithOutbound,
   coalescePushItems,
   excludeBlocksPendingSoftDelete,
@@ -161,9 +162,14 @@ export class NoteSyncCoordinator {
     const lastSeq = await fetchSyncState(this.documentId);
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
+    const pendingDeletes = collectPendingSoftDeleteIds(outbound);
     if (outbound.length > 0 && local) {
       if (local.blocks.length > 0) {
-        this.blocks = local.blocks;
+        this.blocks = mergeServerBlocksIntoLocalSnapshot(
+          local.blocks,
+          serverBlocks,
+          pendingDeletes,
+        );
       } else if (shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
         this.blocks = [];
       } else {

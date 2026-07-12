@@ -19,6 +19,7 @@ import { useCallback, useRef, type ReactNode } from 'react';
 import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import {
   createNotionEmptyBackspaceHandler,
+  isFirstChildAmongSiblings,
   readToggleTitleText,
   resolveToggleChildBackspaceAtStartAction,
   resolveToggleChildEmptyBackspaceAction,
@@ -32,7 +33,7 @@ function buildNotionBackspaceProps(block: NoteBlock, deps: NoteBlockRendererDeps
   const parentBlockType = parentBlock?.type ?? null;
   const isFirstChildInToggle = parentBlockType === 'toggle'
     && block.parent_block_id != null
-    && !canMergeWithPrevious();
+    && isFirstChildAmongSiblings(deps.blocksRef.current, block.id, block.parent_block_id);
 
   const focusParentToggleTitle = () => {
     if (!parentBlock || parentBlock.type !== 'toggle') return;
@@ -48,7 +49,7 @@ function buildNotionBackspaceProps(block: NoteBlock, deps: NoteBlockRendererDeps
         isFirstChildInToggle,
       });
       if (action.kind === 'focus-toggle-title') {
-        focusParentToggleTitle();
+        requestAnimationFrame(() => focusParentToggleTitle());
         return true;
       }
       return false;
@@ -61,7 +62,7 @@ function buildNotionBackspaceProps(block: NoteBlock, deps: NoteBlockRendererDeps
       });
       if (action.kind === 'delete-and-focus-toggle-title') {
         void deps.handleDeleteBlock(block, false).then(() => {
-          focusParentToggleTitle();
+          requestAnimationFrame(() => focusParentToggleTitle());
         });
         return;
       }
