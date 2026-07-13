@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 
 const MAX_FAVORITES = 10;
 
@@ -27,12 +27,9 @@ function isValidPayload(p: unknown): boolean {
 }
 
 async function requireUserId(): Promise<{ userId: string } | { response: NextResponse }> {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user?.id) {
-    return { response: NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 }) };
-  }
-  return { userId: user.id };
+  const auth = await requireTeacherMaterialsAccess();
+  if (!auth.ok) return { response: auth.response };
+  return { userId: auth.userId };
 }
 
 export async function GET(_req: NextRequest) {

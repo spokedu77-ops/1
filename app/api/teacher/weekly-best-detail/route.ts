@@ -6,8 +6,8 @@
  * 모든 로그인 teacher는 동일 weekly_best 글의 연결 콘텐츠를 볼 수 있음.
  */
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { formatWeeklyBestFeedbackText } from '@/app/lib/weeklyBestFeedback';
 
@@ -26,11 +26,8 @@ type FeedbackRow = {
 
 export async function POST(req: Request) {
   try {
-    const supabase = await createServerSupabaseClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const auth = await requireTeacherMaterialsAccess();
+    if (!auth.ok) return auth.response;
 
     const body = (await req.json().catch(() => ({}))) as ReqBody;
     const weeklyBestId =

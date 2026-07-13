@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/app/lib/supabase/server';
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
+import { requireTeacherMaterialsAccess } from '@/app/lib/server/teacherAuth';
 
 export async function DELETE(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabaseAuth = await createServerSupabaseClient();
-  const { data: { user } } = await supabaseAuth.auth.getUser();
-  if (!user?.id) {
-    return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await requireTeacherMaterialsAccess();
+  if (!auth.ok) return auth.response;
 
   const { id } = await params;
   if (!id) {
@@ -23,7 +20,7 @@ export async function DELETE(
     .from('spomove_favorites')
     .delete()
     .eq('id', id)
-    .eq('user_id', user.id);
+    .eq('user_id', auth.userId);
 
   if (error) {
     return NextResponse.json({ ok: false, error: error.message }, { status: 500 });

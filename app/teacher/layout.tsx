@@ -6,11 +6,17 @@ import React, { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Home, BookOpen, Calendar, Package, MoreHorizontal, Receipt, X, LogOut, Zap } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { isTeacherMaterialsGatedPath } from '@/app/lib/teacher/teacherMaterialsPaths';
+import { useTeacherMaterialsAccess } from '@/app/hooks/useTeacherMaterialsAccess';
+import TeacherMaterialsDenied from '@/app/components/teacher/TeacherMaterialsDenied';
 
 export default function TeacherLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const materialsAccess = useTeacherMaterialsAccess();
+  const isMaterialsGatedRoute = isTeacherMaterialsGatedPath(pathname);
+  const blockMaterialsRoute = isMaterialsGatedRoute && materialsAccess === 'denied';
 
   const isActive = (path: string) => pathname === path;
 
@@ -48,7 +54,16 @@ export default function TeacherLayout({ children }: { children: React.ReactNode 
 
       <div className="w-full flex justify-center">
         <main className="w-full max-w-2xl px-6 pt-8 pb-40 min-h-[calc(100vh-64px)]">
-          {children}
+          {blockMaterialsRoute ? (
+            <TeacherMaterialsDenied />
+          ) : isMaterialsGatedRoute && materialsAccess === 'loading' ? (
+            <div className="flex min-h-[50vh] flex-col items-center justify-center py-16 text-center">
+              <div className="mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-indigo-600" />
+              <p className="text-xs font-bold text-slate-400">접근 권한 확인 중...</p>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
 
