@@ -42,6 +42,13 @@ const THRESHOLDS = {
     loadingTransitions: 0,
     noteBlockCanvasRender: 3,
   },
+  bodyClick: {
+    snapshotDispatch: 0,
+    blocksLoad: 0,
+    loadingTransitions: 0,
+    noteBlockCanvasRender: 8,
+    noteEditableFieldRender: 80,
+  },
 };
 
 async function resetTrace(page) {
@@ -145,6 +152,44 @@ function evaluateIdleScenario(dump) {
   return issues;
 }
 
+function evaluateBodyClickScenario(dump) {
+  const c = dump.counters;
+  const issues = [];
+  if ((c.snapshotDispatch ?? 0) > THRESHOLDS.bodyClick.snapshotDispatch) {
+    issues.push(`snapshotDispatch=${c.snapshotDispatch} > ${THRESHOLDS.bodyClick.snapshotDispatch}`);
+  }
+  if ((c.api?.blocksLoad ?? 0) > THRESHOLDS.bodyClick.blocksLoad) {
+    issues.push(`blocksLoad=${c.api.blocksLoad} > ${THRESHOLDS.bodyClick.blocksLoad}`);
+  }
+  const loadingN = countLoadingTransitions(c);
+  if (loadingN > THRESHOLDS.bodyClick.loadingTransitions) {
+    issues.push(`loadingTransitions=${loadingN} > ${THRESHOLDS.bodyClick.loadingTransitions}`);
+  }
+  const canvasRenders = sumRenderPrefix(c, 'NoteBlockCanvas');
+  if (canvasRenders > THRESHOLDS.bodyClick.noteBlockCanvasRender) {
+    issues.push(`NoteBlockCanvas renders=${canvasRenders} > ${THRESHOLDS.bodyClick.noteBlockCanvasRender}`);
+  }
+  const fieldRenders = sumRenderPrefix(c, 'NoteEditableField');
+  if (fieldRenders > THRESHOLDS.bodyClick.noteEditableFieldRender) {
+    issues.push(`NoteEditableField renders=${fieldRenders} > ${THRESHOLDS.bodyClick.noteEditableFieldRender}`);
+  }
+  return issues;
+}
+
+async function runBodyClickScenario(page, ms) {
+  const previews = page.locator('[data-note-preview-text]');
+  const count = await previews.count();
+  if (count === 0) return;
+  const start = Date.now();
+  let index = 0;
+  while (Date.now() - start < ms) {
+    const target = previews.nth(index % count);
+    await target.click({ timeout: 5000 }).catch(() => {});
+    index += 1;
+    await page.waitForTimeout(450);
+  }
+}
+
 function printDump(label, dump) {
   const c = dump.counters;
   console.log(`\n=== ${label} (${dump.elapsedMs}ms) ===`);
@@ -207,6 +252,12 @@ async function main() {
     const idleDump = await dumpTrace(page);
     printDump('C: idle (30s)', idleDump);
 
+    // --- Scenario E: body click (블록 본문 반복 클릭) ---
+    await resetTrace(page);
+    await runBodyClickScenario(page, SCENARIO_MS);
+    const bodyClickDump = await dumpTrace(page);
+    printDump('E: body click (30s)', bodyClickDump);
+
     // --- Scenario D: re-entry (session cache warm) ---
     const altDocId = NOTE_QA_DOCUMENTS.find((d) => d.id !== DOC_ID)?.id ?? DOC_ID;
     await page.goto(
@@ -225,6 +276,7 @@ async function main() {
     const enterIssues = evaluateEnterScenario(enterDump);
     const reentryIssues = evaluateReentryScenario(reentryDump);
     const idleIssues = evaluateIdleScenario(idleDump);
+    const bodyClickIssues = evaluateBodyClickScenario(bodyClickDump);
     if (enterIssues.length > 0) {
       console.error('\nFAIL enter thresholds:');
       for (const issue of enterIssues) console.error(`  - ${issue}`);
@@ -246,6 +298,13 @@ async function main() {
     } else {
       console.log('\nOK idle thresholds passed');
     }
+    if (bodyClickIssues.length > 0) {
+      console.error('\nFAIL body-click thresholds:');
+      for (const issue of bodyClickIssues) console.error(`  - ${issue}`);
+      exitCode = 1;
+    } else {
+      console.log('OK body-click thresholds passed');
+    }
 
     const report = {
       documentId: DOC_ID,
@@ -254,11 +313,13 @@ async function main() {
         enter: enterDump,
         scroll: scrollDump,
         idle: idleDump,
+        bodyClick: bodyClickDump,
         reentry: reentryDump,
       },
       enterIssues,
       reentryIssues,
       idleIssues,
+      bodyClickIssues,
       pageErrors,
     };
     console.log('\n--- JSON report ---');

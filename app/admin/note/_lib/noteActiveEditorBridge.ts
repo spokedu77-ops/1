@@ -11,9 +11,20 @@ export type NoteEditorBridgeConfig = {
 
 let activeConfig: NoteEditorBridgeConfig | null = null;
 const listeners = new Set<() => void>();
+let deferredNotifyQueued = false;
 
 function emit() {
   listeners.forEach((listener) => listener());
+}
+
+/** 같은 layout 틱에 다른 블록이 bridge를 이어받을 때 null 깜빡임 방지 */
+function scheduleDeferredNotify() {
+  if (deferredNotifyQueued) return;
+  deferredNotifyQueued = true;
+  queueMicrotask(() => {
+    deferredNotifyQueued = false;
+    emit();
+  });
 }
 
 export function subscribeActiveEditorBridge(listener: () => void) {
@@ -27,7 +38,7 @@ export function getActiveEditorBridgeSnapshot(): NoteEditorBridgeConfig | null {
   return activeConfig;
 }
 
-export function setActiveEditorBridge(config: NoteEditorBridgeConfig | null) {
+export function setActiveEditorBridge(config: NoteEditorBridgeConfig) {
   activeConfig = config;
   emit();
 }
@@ -36,6 +47,6 @@ export function setActiveEditorBridge(config: NoteEditorBridgeConfig | null) {
 export function clearActiveEditorBridge(blockId: string, field: NoteActiveEditorField) {
   if (activeConfig?.blockId === blockId && activeConfig?.field === field) {
     activeConfig = null;
-    emit();
+    scheduleDeferredNotify();
   }
 }

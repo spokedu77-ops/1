@@ -34,6 +34,7 @@ import {
 } from '../_lib/noteTableBlock';
 import { canSplitMultilinePasteToBlocks } from '../_lib/noteMultilinePaste';
 import {
+  getActiveNoteEditor,
   getNoteEditor,
   scheduleFocusNoteEditorAtClick,
   setPendingEditorClick,
@@ -162,13 +163,13 @@ export function NoteEditableField({
 
   const markEditorSurfaceReady = useCallback(() => {
     cancelEditorReadyFrame();
-    editorReadyRafRef.current = requestAnimationFrame(() => {
-      editorReadyRafRef.current = requestAnimationFrame(() => {
-        editorReadyRafRef.current = null;
-        setEditorSurfaceReady(true);
-      });
-    });
+    setEditorSurfaceReady(true);
   }, [cancelEditorReadyFrame]);
+
+  const isEditorDomConnected = useCallback((targetBlockId: string) => {
+    const editor = getNoteEditor(targetBlockId) ?? getActiveNoteEditor(targetBlockId);
+    return Boolean(editor?.view?.dom?.isConnected);
+  }, []);
 
   const activateEditor = () => {
     setActiveEditor({ blockId, field });
@@ -288,33 +289,30 @@ export function NoteEditableField({
       setEditorSurfaceReady(false);
       return;
     }
-    const isConnected = () => {
-      const editor = getNoteEditor(blockId);
-      return Boolean(editor?.view?.dom?.isConnected);
-    };
-    if (isConnected()) {
+    if (isEditorDomConnected(blockId)) {
       markEditorSurfaceReady();
       return;
     }
     cancelEditorReadyFrame();
     setEditorSurfaceReady(false);
     let cancelled = false;
-    let framesLeft = 48;
+    let framesLeft = 12;
     const waitForEditor = () => {
       if (cancelled) return;
-      if (isConnected()) {
+      if (isEditorDomConnected(blockId)) {
         markEditorSurfaceReady();
         return;
       }
       if (framesLeft <= 0) return;
       framesLeft -= 1;
-      requestAnimationFrame(waitForEditor);
+      editorReadyRafRef.current = requestAnimationFrame(waitForEditor);
     };
-    requestAnimationFrame(waitForEditor);
+    editorReadyRafRef.current = requestAnimationFrame(waitForEditor);
     return () => {
       cancelled = true;
+      cancelEditorReadyFrame();
     };
-  }, [shouldMountEditor, blockId, autoFocusSignal, cancelEditorReadyFrame, markEditorSurfaceReady]);
+  }, [shouldMountEditor, blockId, autoFocusSignal, cancelEditorReadyFrame, isEditorDomConnected, markEditorSurfaceReady]);
 
   useEffect(() => () => {
     cancelEditorReadyFrame();
@@ -367,10 +365,7 @@ export function NoteEditableField({
         {shouldMountEditor ? (
           <div
             ref={slotRef}
-            className={`note-rich-editor-slot min-w-0 w-full ${textClassName} ${
-              hidePreview ? '' : 'opacity-0'
-            }`}
-            aria-hidden={!hidePreview}
+            className={`note-rich-editor-slot min-w-0 w-full ${textClassName}`}
           />
         ) : null}
         <div
