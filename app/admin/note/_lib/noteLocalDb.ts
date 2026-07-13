@@ -18,6 +18,35 @@ export type NoteLocalOutboundOp = NoteBlockOpPushItem & {
   createdAt: number;
 };
 
+const localDocumentMemory = new Map<string, NoteLocalDocumentRecord>();
+
+/** IDB 비동기 read 전 첫 paint용 — writeLocalDocument·readLocalDocument가 갱신 */
+export function readLocalDocumentMemory(documentId: string): NoteLocalDocumentRecord | null {
+  const hit = localDocumentMemory.get(documentId);
+  if (!hit) return null;
+  return {
+    ...hit,
+    blocks: hit.blocks.map((block) => ({
+      ...block,
+      content: block.content && typeof block.content === 'object'
+        ? { ...(block.content as Record<string, unknown>) }
+        : block.content,
+    })),
+  };
+}
+
+function rememberLocalDocumentMemory(record: NoteLocalDocumentRecord): void {
+  localDocumentMemory.set(record.documentId, {
+    ...record,
+    blocks: record.blocks.map((block) => ({
+      ...block,
+      content: block.content && typeof block.content === 'object'
+        ? { ...(block.content as Record<string, unknown>) }
+        : block.content,
+    })),
+  });
+}
+
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
@@ -70,14 +99,17 @@ function runTx<T>(
 }
 
 export async function readLocalDocument(documentId: string): Promise<NoteLocalDocumentRecord | null> {
-  return runTx('readonly', 'documents', async (stores) => new Promise((resolve, reject) => {
+  const result = await runTx('readonly', 'documents', async (stores) => new Promise((resolve, reject) => {
     const request = stores.documents.get(documentId);
     request.onsuccess = () => resolve((request.result as NoteLocalDocumentRecord | undefined) ?? null);
     request.onerror = () => reject(request.error);
   }));
+  if (result) rememberLocalDocumentMemory(result);
+  return result;
 }
 
 export async function writeLocalDocument(record: NoteLocalDocumentRecord): Promise<void> {
+  rememberLocalDocumentMemory(record);
   await runTx('readwrite', 'documents', async (stores) => new Promise<void>((resolve, reject) => {
     const request = stores.documents.put(record);
     request.onsuccess = () => resolve();

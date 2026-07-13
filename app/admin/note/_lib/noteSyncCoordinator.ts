@@ -21,7 +21,6 @@ import {
   filterStalePendingSoftDeletes,
   findOutboundOpsSupersededByServerRestore,
   persistOpToPushItems,
-  serverSnapshotHasBlocksMissingFrom,
 } from './notePersistOpToBlockOps';
 import { partitionOutboundForSafePush } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
@@ -183,7 +182,7 @@ export class NoteSyncCoordinator {
       await removeOutboundOps(supersededOpIds);
     }
     if (outbound.length > 0) {
-      if (local && local.blocks.length > 0 && !serverSnapshotHasBlocksMissingFrom(local.blocks, serverBlocks)) {
+      if (local && local.blocks.length > 0) {
         this.blocks = mergeServerBlocksIntoLocalSnapshot(
           local.blocks,
           serverBlocks,

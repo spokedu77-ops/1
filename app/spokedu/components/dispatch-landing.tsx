@@ -27,6 +27,7 @@ const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
 
 const institutionCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
+const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
 
 const reviewAccentBorder = {
   violet: 'border-l-teal-500',
@@ -55,6 +56,18 @@ export default function DispatchLanding() {
       <LandingHero
         kicker={dispatchPage.hero.kicker}
         kickerClassName="text-stone-500"
+        leading={
+          <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 sm:max-w-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">For Institutions</p>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="기관 프로그램 제안 기준">
+              {dispatchHeroChecks.map((item) => (
+                <li key={item} className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-700">
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        }
         lines={dispatchPage.hero.lines}
         subtitle={dispatchPage.hero.subtitle}
         media={HOME_MEDIA[dispatchPage.hero.mediaKey]}

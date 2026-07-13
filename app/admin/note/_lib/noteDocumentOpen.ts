@@ -11,7 +11,7 @@ import {
   rememberNoteDocumentBlocks,
 } from './noteDocumentBlocksCache';
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
-import { readLocalDocument } from './noteLocalDb';
+import { readLocalDocument, readLocalDocumentMemory } from './noteLocalDb';
 import type { NoteBlock } from './types';
 
 /** 문서 open 시 engine이 제공해야 하는 최소 API */
@@ -154,6 +154,11 @@ export function prepareNoteDocumentOpenSync(
     const prefetched = getReadyPrefetchedBlocks(documentId);
     if (prefetched && prefetched.length > 0) {
       paintInstantBlocks(documentId, prefetched, engine);
+      return { hasCache: true, emptyConfirmed: false };
+    }
+    const localMemory = readLocalDocumentMemory(documentId);
+    if (localMemory && localMemory.blocks.length > 0) {
+      paintInstantBlocks(documentId, localMemory.blocks, engine);
       return { hasCache: true, emptyConfirmed: false };
     }
     return { hasCache: false, emptyConfirmed: false };

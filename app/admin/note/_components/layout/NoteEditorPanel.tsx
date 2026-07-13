@@ -32,7 +32,6 @@ import {
 } from '../noteContexts';
 import { EditorDocDropZone } from '../sidebar/NoteDocChrome';
 import { NoteVirtualRootBlocks } from '../NoteVirtualRootBlocks';
-import { NoteBlockLoadSkeleton } from './NoteBlockLoadSkeleton';
 import { prefetchNoteDocumentBlocks } from '../../_lib/noteDocumentBlocksPrefetch';
 import { useNoteTextDragActive } from '../../_hooks/useNoteTextDragActive';
 import type { NotePageContextValue } from '../../_page/NotePageContext';
@@ -102,9 +101,6 @@ type NoteEditorPanelProps = Pick<
 
 type NoteBlockCanvasProps = Pick<
   NotePageContextValue,
-  | 'loadingBlocks'
-  | 'blocksEmptyConfirmed'
-  | 'loadSettledDocId'
   | 'selectedId'
   | 'rootBlocks'
   | 'selectedBlockIds'
@@ -120,9 +116,6 @@ type NoteBlockCanvasProps = Pick<
 >;
 
 const NoteBlockCanvas = memo(function NoteBlockCanvas({
-  loadingBlocks,
-  blocksEmptyConfirmed,
-  loadSettledDocId,
   selectedId,
   rootBlocks,
   selectedBlockIds,
@@ -138,11 +131,6 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
 }: NoteBlockCanvasProps) {
   useNoteFlickerRenderCount('NoteBlockCanvas', selectedId ?? 'none');
   const textDragActive = useNoteTextDragActive();
-  const awaitingInitialLoad = Boolean(selectedId) && loadSettledDocId !== selectedId;
-
-  const showSkeletonOverlay = rootBlocks.length === 0
-    && awaitingInitialLoad
-    && !blocksEmptyConfirmed;
 
   return (
     <div className="relative min-h-[8rem]">
@@ -152,7 +140,7 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
         <SuppressGripMenuRefContext.Provider value={suppressGripMenuRef}>
           <div
             data-note-marquee-zone
-            className={`${NOTE_MARQUEE_ZONE} ${showSkeletonOverlay ? 'pointer-events-none select-none' : ''}`}
+            className={NOTE_MARQUEE_ZONE}
             onPointerDown={handleBlockListPointerDown}
           >
             <div
@@ -181,15 +169,6 @@ const NoteBlockCanvas = memo(function NoteBlockCanvas({
         </SuppressGripMenuRefContext.Provider>
       </OnBlockSelectContext.Provider>
     </SelectedBlockIdsContext.Provider>
-      )}
-      {showSkeletonOverlay && (
-        <div
-          className="absolute inset-0 z-[1] bg-white"
-          role="status"
-          aria-label="페이지 불러오는 중"
-        >
-          <NoteBlockLoadSkeleton />
-        </div>
       )}
     </div>
   );
@@ -567,8 +546,13 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
             {collaborators.length > 0 && (
               <p className="mb-6 text-[12px] text-neutral-400">
                 <Users className="mr-1 inline h-3 w-3" />
-                {collaborators.length}
-                명이 최근 열람 ·
+                {collaborators
+                  .map((c) => c.display_name)
+                  .filter((name): name is string => Boolean(name))
+                  .join(', ')
+                  || `${collaborators.length}명`}
+                {collaborators.some((c) => c.display_name) ? ' 최근 열람' : '명이 최근 열람'}
+                {' · '}
                 {relativeTime(activeDocument.updated_at)}
               </p>
             )}
@@ -622,9 +606,6 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
           )}
 
           <NoteBlockCanvas
-            loadingBlocks={loadingBlocks}
-            blocksEmptyConfirmed={blocksEmptyConfirmed}
-            loadSettledDocId={loadSettledDocId}
             selectedId={selectedId}
             rootBlocks={rootBlocks}
             selectedBlockIds={selectedBlockIds}

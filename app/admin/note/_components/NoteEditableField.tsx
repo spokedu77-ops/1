@@ -294,7 +294,6 @@ export function NoteEditableField({
       return;
     }
     cancelEditorReadyFrame();
-    setEditorSurfaceReady(false);
     let cancelled = false;
     let framesLeft = 12;
     const waitForEditor = () => {
@@ -370,11 +369,9 @@ export function NoteEditableField({
         ) : null}
         <div
           className={
-            hidePreview
-              ? 'hidden'
-              : shouldMountEditor
-                ? 'pointer-events-none absolute inset-0 overflow-visible'
-                : undefined
+            shouldMountEditor
+              ? `overflow-visible ${hidePreview ? 'hidden' : 'pointer-events-none absolute inset-0'}`
+              : undefined
           }
           aria-hidden={hidePreview}
         >

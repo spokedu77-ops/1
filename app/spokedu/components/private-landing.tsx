@@ -21,6 +21,7 @@ import { MediaPanel } from './visual';
 const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const locationCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const reviewCardShell = `flex h-full flex-col border-l-4 border-l-teal-600 p-4 sm:p-5 ${landingCardShell}`;
+const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
 
 function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
   const reducedMotion = useReducedMotion();
@@ -43,6 +44,21 @@ export default function PrivateLanding() {
       <LandingHero
         kicker={privatePage.hero.kicker}
         kickerClassName="text-stone-500"
+        leading={
+          <div className="space-y-3">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">For Parents</p>
+            <div className="flex flex-wrap gap-2" aria-label="개인수업 상담 주제">
+              {privateHeroNeeds.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-teal-100 bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-900"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        }
         lines={privatePage.hero.lines}
         subtitle={privatePage.hero.subtitle}
         media={HOME_MEDIA[privatePage.hero.mediaKey]}

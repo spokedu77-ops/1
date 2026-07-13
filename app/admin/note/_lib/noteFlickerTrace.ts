@@ -80,6 +80,20 @@ export type NoteFlickerTraceDump = {
   recent: TraceEvent[];
 };
 
+export type NoteFlickerTraceWindowApi = {
+  enabled: () => boolean;
+  reset: () => void;
+  dump: () => NoteFlickerTraceDump;
+  enable: () => void;
+  disable: () => void;
+};
+
+declare global {
+  interface Window {
+    __noteFlickerTrace?: NoteFlickerTraceWindowApi;
+  }
+}
+
 const MAX_RECENT = 120;
 const TRACE_STORAGE_KEY = 'NOTE_FLICKER_TRACE';
 
@@ -188,7 +202,7 @@ function installWindowApi(): void {
       devLogger.info('[NoteFlickerTrace] disabled');
     },
   };
-  (window as Window & { __noteFlickerTrace?: typeof api }).__noteFlickerTrace = api;
+  window.__noteFlickerTrace = api;
 }
 
 /** URL ?noteTrace=1 또는 localStorage NOTE_FLICKER_TRACE=1 */

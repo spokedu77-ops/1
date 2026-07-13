@@ -46,6 +46,7 @@ export type NoteCollaborator = {
   user_id: string;
   last_active_at: string;
   last_cursor: any;
+  display_name?: string | null;
 };
 
 export type FormatToolbarState = {

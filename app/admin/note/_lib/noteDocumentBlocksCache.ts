@@ -166,7 +166,7 @@ export function rememberNoteDocumentBlocks(
     }
   }
 
-  if (options?.trustServer && incoming.length === 0) {
+  if (options?.trustServer && incoming.length === 0 && options?.serverConfirmedEmpty !== true) {
     const existing = readEntry(documentId);
     if (existing && existing.blocks.length > 0) {
       return;

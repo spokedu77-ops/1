@@ -23,10 +23,12 @@ import {
   scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import { readLocalDocument } from '../_lib/noteLocalDb';
 import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
 import { openNoteDocument, paintBootstrapBlocksSync, paintInstantSnapshotFromLocalDb, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
+import { resolveInstantDisplayBlocks } from '../_lib/noteDisplayBlocks';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
@@ -300,6 +302,7 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
+    void readLocalDocument(documentId);
     let prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
     let paintedFromBootstrap = false;
     const bootstrapPayload = bootstrapBlocksRef.current;
@@ -383,8 +386,14 @@ export function useNoteBlockData(options: {
       }
 
       if (!bootstrapForOpen) {
-        await paintInstantSnapshotFromLocalDb(documentId, documentEngineRef.current);
+        const paintedFromIdb = await paintInstantSnapshotFromLocalDb(
+          documentId,
+          documentEngineRef.current,
+        );
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
+        if (paintedFromIdb) {
+          markLoadSettled();
+        }
       }
 
       try {
@@ -451,7 +460,7 @@ export function useNoteBlockData(options: {
   }, [blocks, blocksSyncing, selectedId]);
 
   const documentBlocks = useMemo(
-    () => (selectedId ? blocks.filter((block) => block.document_id === selectedId) : blocks),
+    () => (selectedId ? resolveInstantDisplayBlocks(selectedId, blocks) : blocks),
     [blocks, selectedId],
   );
   const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(documentBlocks), [documentBlocks]);

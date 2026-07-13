@@ -1,3 +1,6 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   initNoteFlickerTrace,
@@ -26,6 +29,7 @@ describe('noteFlickerTrace', () => {
   beforeEach(() => {
     window.localStorage.setItem('NOTE_FLICKER_TRACE', '1');
     initNoteFlickerTrace();
+    window.__noteFlickerTrace?.enable();
     window.__noteFlickerTrace?.reset();
   });
 

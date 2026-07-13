@@ -25,6 +25,7 @@ import {
   traceSnapshotDecision,
   type SnapshotTraceOrigin,
 } from './noteFlickerTrace';
+import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
 import type { NoteBlock } from './types';
 
 const CONTENT_DEBOUNCE_MS = 1500;
@@ -155,8 +156,11 @@ export class NoteDocumentPipeline {
     useNoteBlockStore.getState().patchContent(blockId, content);
     this.queue?.scheduleContentPatch(blockId, content, baseContent);
     this.syncPendingFlag();
+    const next = useNoteBlockStore.getState().getBlocksArray();
+    this.coordinator?.setBlocks(next);
+    rememberNoteDocumentBlocks(this.documentId, next);
     if (contentChangeNeedsReactBlocks(prevContent, nextContent)) {
-      this.callbacks.onBlocksChanged(useNoteBlockStore.getState().getBlocksArray());
+      this.callbacks.onBlocksChanged(next);
     }
   }
 
