@@ -99,7 +99,7 @@ function runTx<T>(
 }
 
 export async function readLocalDocument(documentId: string): Promise<NoteLocalDocumentRecord | null> {
-  const result = await runTx('readonly', 'documents', async (stores) => new Promise((resolve, reject) => {
+  const result = await runTx<NoteLocalDocumentRecord | null>('readonly', 'documents', async (stores) => new Promise<NoteLocalDocumentRecord | null>((resolve, reject) => {
     const request = stores.documents.get(documentId);
     request.onsuccess = () => resolve((request.result as NoteLocalDocumentRecord | undefined) ?? null);
     request.onerror = () => reject(request.error);
