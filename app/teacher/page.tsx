@@ -7,6 +7,8 @@ import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Ca
 import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { useTeacherMaterialsAccess } from '@/app/hooks/useTeacherMaterialsAccess';
+import TeacherMaterialsDenied from '@/app/components/teacher/TeacherMaterialsDenied';
 
 interface WeeklyBest {
   id: string;
@@ -186,6 +188,8 @@ function TeacherWeeklyBestCard({
 
 export default function TeacherMainPage() {
   const router = useRouter();
+  const materialsAccess = useTeacherMaterialsAccess();
+  const canViewNotices = materialsAccess === 'allowed';
   const [supabase] = useState(() => (typeof window !== 'undefined' ? getSupabaseBrowserClient() : null));
   const [notices, setNotices] = useState<Notice[]>([]);
   const [weeklyBestList, setWeeklyBestList] = useState<WeeklyBest[]>([]);
@@ -199,7 +203,7 @@ export default function TeacherMainPage() {
   const [todayFetchError, setTodayFetchError] = useState<string | null>(null);
 
   const fetchNotices = useCallback(async () => {
-    if (!supabase) return;
+    if (!supabase || !canViewNotices) return;
     try {
       setLoading(true);
       setNoticeFetchError(null);
@@ -215,7 +219,7 @@ export default function TeacherMainPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, canViewNotices]);
 
   const unifiedList = useMemo(() => {
     const a = notices.map((n) => ({ type: 'notice' as const, id: String(n.id), created_at: n.created_at, data: n }));
@@ -265,8 +269,13 @@ export default function TeacherMainPage() {
   }, [supabase]);
 
   useEffect(() => {
-    fetchNotices();
-  }, [fetchNotices]);
+    if (canViewNotices) fetchNotices();
+    else {
+      setNotices([]);
+      setWeeklyBestList([]);
+      setLoading(false);
+    }
+  }, [fetchNotices, canViewNotices]);
 
   useEffect(() => {
     fetchTodaySessions();
@@ -389,17 +398,29 @@ export default function TeacherMainPage() {
       <section className="flex flex-col h-full">
         <div className="flex items-center justify-between mb-6 px-1">
           <h3 className="text-xl font-black text-slate-900">공지사항</h3>
-          <button 
-            onClick={fetchNotices} 
-            className={`p-2 cursor-pointer hover:bg-slate-100 rounded-full transition-all ${loading ? 'animate-spin' : ''}`}
-          >
-            <RefreshCw size={18} className="text-slate-400" />
-          </button>
+          {canViewNotices ? (
+            <button
+              onClick={fetchNotices}
+              className={`p-2 cursor-pointer hover:bg-slate-100 rounded-full transition-all ${loading ? 'animate-spin' : ''}`}
+            >
+              <RefreshCw size={18} className="text-slate-400" />
+            </button>
+          ) : null}
         </div>
 
         {/* 공지사항 스크롤 영역: 한 화면에 가득 차지 않게 조정 */}
         <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-1">
-          {noticeFetchError ? (
+          {materialsAccess === 'loading' ? (
+            <div className="py-20 text-center flex flex-col items-center bg-white rounded-[32px] border border-slate-50">
+              <div className="w-8 h-8 border-2 border-slate-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+              <p className="text-slate-400 text-xs font-bold">접근 권한 확인 중...</p>
+            </div>
+          ) : !canViewNotices ? (
+            <TeacherMaterialsDenied
+              title="공지사항 열람 권한이 없습니다"
+              description="종료 처리된 강사 계정은 공지사항·주간베스트를 열람할 수 없습니다."
+            />
+          ) : noticeFetchError ? (
             <div className="py-20 text-center flex flex-col items-center bg-white rounded-[32px] border border-slate-50">
               <p className="text-slate-500 text-sm font-bold mb-3">{noticeFetchError}</p>
               <button type="button" onClick={fetchNotices} className="text-indigo-600 text-xs font-black hover:underline">
