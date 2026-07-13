@@ -43,11 +43,11 @@ export function HomeSpomoveSpotlight() {
               ))}
             </ul>
 
-            <SpomoveActions className="mt-6 flex flex-col gap-3 sm:hidden" />
-
             <SpomoveFlow className="mt-8" />
 
-            <SpomoveActions className="mt-8 hidden flex-col gap-3 sm:flex sm:flex-row sm:flex-wrap" />
+            <SpomoveUseCases className="mt-7" />
+
+            <SpomoveActions className="mt-7 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap" />
           </div>
 
           <div className={`min-w-0 ${homeHeroImage} relative border-white/10 bg-slate-800`}>
@@ -111,6 +111,24 @@ function SpomoveFlow({ className = '' }: { className?: string }) {
           </li>
         ))}
       </ol>
+    </div>
+  );
+}
+
+function SpomoveUseCases({ className = '' }: { className?: string }) {
+  const useCases = homePage.spomove.useCases;
+
+  return (
+    <div className={className}>
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/55">적용 장면</p>
+      <ul className="mt-3 grid gap-2.5 sm:grid-cols-3 min-[1100px]:grid-cols-1">
+        {useCases.map((item) => (
+          <li key={item.title} className="rounded-lg border border-white/12 bg-white/[0.045] px-3.5 py-3">
+            <p className={`text-sm font-bold text-white ${koreanText}`}>{item.title}</p>
+            <p className={`mt-1 text-sm leading-relaxed text-white/65 ${koreanText}`}>{item.body}</p>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

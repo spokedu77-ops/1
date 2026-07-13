@@ -158,7 +158,6 @@ export function useNotePageOrchestration(): NotePageContextValue {
   });
   const editorFocus = useNoteEditorFocus({
     blocksRef: blockData.blocksRef,
-    setBlocks: blockData.setBlocks,
     selectedBlockIdsRef,
     setSelectedBlockIds,
     selectedId: docData.selectedId,
@@ -417,6 +416,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
       focusBlockEditor,
       handleDeleteBlock,
       handleMergeWithPreviousBlock,
+      handleChangeBlockType,
     });
     return () => setNoteToggleBackspaceRuntime(null);
   });

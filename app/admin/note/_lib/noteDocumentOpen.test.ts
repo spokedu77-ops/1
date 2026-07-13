@@ -77,4 +77,24 @@ describe('noteDocumentOpen', () => {
     await applyOpenServerSnapshot('doc-1', server, engine);
     expect(replaceBlocks).toHaveBeenCalledTimes(1);
   });
+
+  it('applyOpenServerSnapshot keeps local when store text is ahead of stale server', async () => {
+    const server = [block('server', { content: { text: '', html: '<p></p>' } })];
+    const local = [block('server', { content: { text: '하위타이핑유지', html: '<p>하위타이핑유지</p>' } })];
+    const syncWithServer = vi.fn();
+    const engine = {
+      isOplogSyncEnabled: () => true,
+      syncWithServer,
+      replaceBlocks: vi.fn(),
+      getBlocks: () => local,
+    };
+
+    const { useNoteBlockStore } = await import('../_store/noteBlockStore');
+    useNoteBlockStore.getState().setActiveDocumentId('doc-1');
+    useNoteBlockStore.getState().hydrate(local);
+
+    const result = await applyOpenServerSnapshot('doc-1', server, engine);
+    expect(syncWithServer).not.toHaveBeenCalled();
+    expect(result.blocks[0]?.content?.text).toBe('하위타이핑유지');
+  });
 });

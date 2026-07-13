@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
-import { contentChangeNeedsReactBlocks } from '../_lib/noteContentPatch';
 import { focusWithoutScroll, suppressNoteEditorScrollBriefly } from '../_lib/noteEditorScrollGuard';
 import type { NoteBlock } from '../_lib/types';
 
 export function useNoteEditorFocus(options: {
   blocksRef: React.MutableRefObject<NoteBlock[]>;
-  setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
   selectedBlockIdsRef: React.MutableRefObject<Set<string>>;
   setSelectedBlockIds: React.Dispatch<React.SetStateAction<Set<string>>>;
   selectedId: string | null;
@@ -17,7 +16,6 @@ export function useNoteEditorFocus(options: {
 }) {
   const {
     blocksRef,
-    setBlocks,
     selectedBlockIdsRef,
     setSelectedBlockIds,
     selectedId,
@@ -58,26 +56,9 @@ export function useNoteEditorFocus(options: {
     }
   }, [blocksRef]);
 
-  const commitBlockToState = useCallback((blockId: string) => {
-    const fromStore = useNoteBlockStore.getState().getBlock(blockId);
-    const current = blocksRef.current.find((b) => b.id === blockId);
-    const latest = fromStore ?? current;
-    if (!latest) return;
-    if (
-      current
-      && !contentChangeNeedsReactBlocks(
-        current.content as Record<string, unknown>,
-        (latest.content ?? {}) as Record<string, unknown>,
-      )
-    ) {
-      return;
-    }
-    setBlocks((prev) => {
-      const reactBlock = prev.find((b) => b.id === blockId);
-      if (!reactBlock || reactBlock.content === latest.content) return prev;
-      return prev.map((b) => (b.id === blockId ? latest : b));
-    });
-  }, [setBlocks]);
+  const commitBlockToState = useCallback((_blockId: string) => {
+    commitActiveNoteEditorToStore();
+  }, []);
 
   const trackActiveBlock = useCallback((blockId: string | null, part: 'title' | 'editor' = 'editor') => {
     if (!blockId) return;

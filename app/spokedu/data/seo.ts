@@ -87,7 +87,7 @@ const OG_BY_PAGE: Record<SpokeduSeoPageKey, SeoOgImage> = {
   },
   contact: {
     url: SPOKEDU_IMAGES.home.hero.src,
-    alt: 'SPOKEDU 문의 — 개인수업·기관수업·커리큘럼 상담',
+    alt: 'SPOKEDU 상담 — 개인수업·기관 프로그램·커리큘럼',
   },
 };
 
@@ -108,7 +108,7 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '아이의 연령과 성향에 맞춘 1:1·소그룹 체육수업. 기본 움직임과 운동 습관을 놀이 중심으로 설계하는 어린이 체육수업 상담을 받아보세요.',
   },
   dispatch: {
-    title: '기관 파견 체육교육 | SPOKEDU',
+    title: '기관 프로그램 체육교육 | SPOKEDU',
     description:
       '키움센터·지역아동센터·학교에 맞춘 기관 체육수업과 원데이·정규 프로그램. 공간·인원·일정에 맞는 SPOMOVE·PAPS 운영안을 제안합니다.',
   },
@@ -143,9 +143,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '현장 수업에서 관찰한 움직임·참여·반응을 바탕으로 수업 설계 기준과 체육교육 관점을 정리합니다. 학부모·기관·강사용.',
   },
   contact: {
-    title: 'SPOKEDU 문의 | 개인수업·기관수업·커리큘럼 문의',
+    title: 'SPOKEDU 상담 | 개인수업·기관 프로그램·커리큘럼',
     description:
-      '개인·소그룹 수업, 기관 파견, 커리큘럼·콘텐츠 문의를 유형별로 접수합니다. 목적에 맞는 상담으로 연결해 드립니다.',
+      '개인·소그룹 수업, 기관 프로그램, SPOMOVE 도입, 커리큘럼·콘텐츠 상담을 목적에 맞게 연결해 드립니다.',
   },
 };
 

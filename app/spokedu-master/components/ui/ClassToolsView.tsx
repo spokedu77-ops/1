@@ -13,7 +13,7 @@ type TabId = 'stopwatch' | 'return-timer' | 'scoreboard' | 'picker' | 'teams' | 
 
 const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
   { id: 'stopwatch', label: '스탑워치', icon: Timer },
-  { id: 'return-timer', label: '복귀 타이머', icon: Timer },
+  { id: 'return-timer', label: '타이머', icon: Timer },
   { id: 'scoreboard', label: '점수판', icon: LayoutList },
   { id: 'picker', label: '무작위 선택', icon: Shuffle },
   { id: 'teams', label: '팀 나누기', icon: Users },
@@ -21,14 +21,14 @@ const TABS: { id: TabId; label: string; icon: typeof Timer }[] = [
 ];
 
 const TOOL_STATUS = [
-  { label: '화면 도구', value: '스탑워치·복귀·점수판' },
+  { label: '화면 도구', value: '스탑워치·타이머·점수판' },
   { label: '명단 도구', value: '선택·팀·순서' },
   { label: '운영 방식', value: '수업 중 즉시 실행' },
 ] as const;
 
 const TOOL_HELP: Record<TabId, string> = {
   stopwatch: '활동 시작부터 흐른 시간을 크게 보여주고, 구간별 랩타임을 남길 수 있습니다.',
-  'return-timer': '쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 카운트다운 도구입니다.',
+  'return-timer': '분/초를 직접 맞추거나 3·5·10분 버튼으로 바로 시작하는 수업용 카운트다운입니다.',
   scoreboard: '팀 경기 활동에서 점수를 크게 보여주고 흐름을 끊지 않습니다.',
   picker: '발표, 시범, 시작 순서를 공정하게 뽑습니다.',
   teams: '참여 인원을 고려해 팀을 빠르게 나눕니다.',
@@ -161,6 +161,7 @@ const RETURN_TIMER_OPTIONS = [
 ] as const;
 
 const DEFAULT_RETURN_TIMER_DURATION_MS = 10 * 60 * 1000;
+const MAX_RETURN_TIMER_MINUTES = 99;
 
 type ReturnTimerStatus = 'idle' | 'running' | 'paused' | 'expired' | 'completed';
 
@@ -179,9 +180,30 @@ function formatElapsed(ms: number) {
   return `${mins}분 ${secs}초`;
 }
 
+function clampTimerNumber(value: number, max: number) {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.min(max, Math.trunc(value)));
+}
+
+function durationPartsFromMs(durationMs: number) {
+  const totalSeconds = Math.max(1, Math.round(durationMs / 1000));
+  return {
+    minutes: Math.floor(totalSeconds / 60),
+    seconds: totalSeconds % 60,
+  };
+}
+
+function durationMsFromParts(minutes: number, seconds: number) {
+  const normalizedMinutes = clampTimerNumber(minutes, MAX_RETURN_TIMER_MINUTES);
+  const normalizedSeconds = clampTimerNumber(seconds, 59);
+  return Math.max(1000, (normalizedMinutes * 60 + normalizedSeconds) * 1000);
+}
+
 function ReturnTimerTab() {
   const [selectedDurationMs, setSelectedDurationMs] = useState(DEFAULT_RETURN_TIMER_DURATION_MS);
   const [remainingMs, setRemainingMs] = useState(DEFAULT_RETURN_TIMER_DURATION_MS);
+  const [customMinutes, setCustomMinutes] = useState(() => String(durationPartsFromMs(DEFAULT_RETURN_TIMER_DURATION_MS).minutes));
+  const [customSeconds, setCustomSeconds] = useState(() => String(durationPartsFromMs(DEFAULT_RETURN_TIMER_DURATION_MS).seconds));
   const [status, setStatus] = useState<ReturnTimerStatus>('idle');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [completedMs, setCompletedMs] = useState<number | null>(null);
@@ -326,13 +348,42 @@ function ReturnTimerTab() {
 
   const selectDuration = useCallback((durationMs: number) => {
     if (status === 'running' || status === 'paused') return;
+    const parts = durationPartsFromMs(durationMs);
     setSelectedDurationMs(durationMs);
     setRemainingMs(durationMs);
+    setCustomMinutes(String(parts.minutes));
+    setCustomSeconds(String(parts.seconds));
     setCompletedMs(null);
     endAtRef.current = null;
     lastBeepSecondRef.current = null;
     setStatus('idle');
   }, [status]);
+
+  const applyCustomDuration = useCallback((nextMinutes: number, nextSeconds: number) => {
+    if (status === 'running' || status === 'paused') return;
+    const nextDurationMs = durationMsFromParts(nextMinutes, nextSeconds);
+    const parts = durationPartsFromMs(nextDurationMs);
+    setCustomMinutes(String(parts.minutes));
+    setCustomSeconds(String(parts.seconds));
+    setSelectedDurationMs(nextDurationMs);
+    setRemainingMs(nextDurationMs);
+    setCompletedMs(null);
+    endAtRef.current = null;
+    lastBeepSecondRef.current = null;
+    setStatus('idle');
+  }, [status]);
+
+  const updateCustomMinutes = useCallback((value: string) => {
+    const minutes = clampTimerNumber(Number(value), MAX_RETURN_TIMER_MINUTES);
+    const seconds = clampTimerNumber(Number(customSeconds), 59);
+    applyCustomDuration(minutes, seconds);
+  }, [applyCustomDuration, customSeconds]);
+
+  const updateCustomSeconds = useCallback((value: string) => {
+    const minutes = clampTimerNumber(Number(customMinutes), MAX_RETURN_TIMER_MINUTES);
+    const seconds = clampTimerNumber(Number(value), 59);
+    applyCustomDuration(minutes, seconds);
+  }, [applyCustomDuration, customMinutes]);
 
   const toggleSound = useCallback(async () => {
     if (soundEnabledRef.current) {
@@ -369,19 +420,22 @@ function ReturnTimerTab() {
         : { accent: 'var(--spm-acc)', soft: 'rgba(99,102,241,0.09)', border: 'rgba(99,102,241,0.22)' };
 
   return (
-    <div className="h-full overflow-y-auto px-4 py-6 sm:px-8 sm:py-8">
+    <div className="h-full px-3 py-3 pb-4 sm:px-5 sm:py-4">
       <div
-        className="mx-auto flex min-h-full w-full max-w-[1100px] flex-col items-center justify-center rounded-[22px] px-4 py-8 text-center sm:px-8 lg:py-10"
+        className="mx-auto flex h-full w-full max-w-[1100px] flex-col items-center justify-between gap-2 overflow-hidden rounded-[22px] px-4 py-4 text-center sm:px-6 sm:py-5"
         style={{ background: tone.soft, border: `1px solid ${tone.border}` }}
       >
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <span className="rounded-full px-3 py-1.5 text-[12px] font-black" style={{ background: tone.border, color: tone.accent }}>
-            {statusLabel}
-          </span>
+        <div className="flex w-full items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="shrink-0 text-[20px] font-black sm:text-[24px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>타이머</h2>
+            <span className="rounded-full px-3 py-1.5 text-[12px] font-black" style={{ background: tone.border, color: tone.accent }}>
+              {statusLabel}
+            </span>
+          </div>
           <button
             type="button"
             onClick={toggleSound}
-            className="inline-flex h-9 items-center gap-2 rounded-full px-3 text-[12px] font-black"
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3 text-[12px] font-black"
             style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
           >
             {soundEnabled ? <Volume2 size={15} /> : <VolumeX size={15} />}
@@ -389,36 +443,8 @@ function ReturnTimerTab() {
           </button>
         </div>
 
-        <div className="mt-5">
-          <h2 className="text-[24px] font-black sm:text-[32px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>복귀 타이머</h2>
-          <p className="mx-auto mt-2 max-w-[620px] text-[13px] font-semibold leading-6 sm:text-[14px]" style={{ color: 'var(--spm-t2)' }}>쉬는 시간 후 아이들이 정해진 시간 안에 다시 모이도록 돕는 카운트다운 도구입니다.</p>
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center justify-center gap-2" role="group" aria-label="복귀 타이머 시간 선택">
-          {RETURN_TIMER_OPTIONS.map((option) => {
-            const active = selectedDurationMs === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => selectDuration(option.value)}
-                disabled={durationSelectDisabled}
-                className="h-11 min-w-[72px] rounded-[12px] px-4 text-[13px] font-black transition-opacity disabled:opacity-45"
-                style={{
-                  background: active ? tone.accent : 'var(--spm-s2)',
-                  border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
-                  color: active ? '#fff' : 'var(--spm-t2)',
-                }}
-                aria-pressed={active}
-              >
-                {option.label}
-              </button>
-            );
-          })}
-        </div>
-
         <div
-          className="my-7 font-mono text-[clamp(5rem,22vw,13rem)] font-black tabular-nums leading-[0.85]"
+          className="font-mono text-[clamp(3.75rem,18vmin,11rem)] font-black tabular-nums leading-[0.85]"
           style={{ fontFamily: 'var(--spm-font-display)', color: tone.accent, letterSpacing: 0 }}
           aria-live="polite"
           aria-label={`${Math.floor(remainingSeconds / 60)}분 ${remainingSeconds % 60}초 남음`}
@@ -426,63 +452,118 @@ function ReturnTimerTab() {
           {formatCountdown(remainingMs)}
         </div>
 
-        <div className="h-3 w-full max-w-[760px] overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
+        <div className="h-2.5 w-full max-w-[760px] overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
           <div className="h-full rounded-full transition-[width] duration-100" style={{ width: `${progress}%`, background: tone.accent }} />
         </div>
 
-        <div className="mt-5 min-h-[52px]">
+        <div className="flex min-h-8 items-center justify-center">
           {status === 'expired' ? (
-            <p className="text-[16px] font-black sm:text-[19px]" style={{ color: tone.accent }}>
-              시간이 종료되었습니다. 모두 제자리로 모여주세요.
+            <p className="text-[14px] font-black sm:text-[16px]" style={{ color: tone.accent }}>
+              설정한 시간이 종료되었습니다.
             </p>
           ) : null}
           {status === 'completed' && completedMs !== null ? (
-            <div className="flex items-center justify-center gap-2 text-[16px] font-black sm:text-[19px]" style={{ color: tone.accent }}>
+            <div className="flex items-center justify-center gap-2 text-[14px] font-black sm:text-[16px]" style={{ color: tone.accent }}>
               <CheckCircle2 size={21} />
-              모두 모였습니다. {formatElapsed(completedMs)} 만에 모였습니다.
+              {formatElapsed(completedMs)} 진행 후 완료했습니다.
             </div>
           ) : null}
           {isFinalThirty ? (
-            <p className="text-[15px] font-black sm:text-[18px]" style={{ color: tone.accent }}>마지막 30초입니다. 제자리로 모여주세요.</p>
+            <p className="text-[14px] font-black sm:text-[16px]" style={{ color: tone.accent }}>마지막 30초입니다.</p>
           ) : null}
         </div>
 
-        <div className="mt-4 flex w-full max-w-[760px] flex-wrap justify-center gap-3">
-          {status === 'idle' ? (
-            <ActionButton onClick={start}>
-              <Play size={18} fill="currentColor" />타이머 시작하기
-            </ActionButton>
-          ) : null}
-          {status === 'running' ? (
-            <>
-              <ActionButton onClick={pause} accent="#f59e0b">
-                <Pause size={18} fill="currentColor" />일시정지
+        <div className="flex w-full max-w-[760px] flex-col items-center gap-3">
+          <div className="flex flex-wrap items-end justify-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="타이머 빠른 시간 선택">
+              {RETURN_TIMER_OPTIONS.map((option) => {
+                const active = selectedDurationMs === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => selectDuration(option.value)}
+                    disabled={durationSelectDisabled}
+                    className="h-10 min-w-[64px] rounded-[12px] px-3 text-[12px] font-black transition-opacity disabled:opacity-45"
+                    style={{
+                      background: active ? tone.accent : 'var(--spm-s2)',
+                      border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
+                      color: active ? '#fff' : 'var(--spm-t2)',
+                    }}
+                    aria-pressed={active}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <label className="flex items-center gap-1">
+              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>분</span>
+              <input
+                type="number"
+                min={0}
+                max={MAX_RETURN_TIMER_MINUTES}
+                inputMode="numeric"
+                value={customMinutes}
+                onChange={(event) => updateCustomMinutes(event.target.value)}
+                disabled={durationSelectDisabled}
+                className="h-10 w-16 rounded-[12px] border px-2 text-center text-[16px] font-black tabular-nums disabled:opacity-45"
+                style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+              />
+            </label>
+            <label className="flex items-center gap-1">
+              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>초</span>
+              <input
+                type="number"
+                min={0}
+                max={59}
+                inputMode="numeric"
+                value={customSeconds}
+                onChange={(event) => updateCustomSeconds(event.target.value)}
+                disabled={durationSelectDisabled}
+                className="h-10 w-16 rounded-[12px] border px-2 text-center text-[16px] font-black tabular-nums disabled:opacity-45"
+                style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+              />
+            </label>
+          </div>
+
+          <div className="flex w-full flex-wrap justify-center gap-2">
+            {status === 'idle' ? (
+              <ActionButton onClick={start}>
+                <Play size={18} fill="currentColor" />시작
               </ActionButton>
-              <ActionButton onClick={complete} accent="#10b981">
-                <CheckCircle2 size={19} />모두 모였어요
-              </ActionButton>
-            </>
-          ) : null}
-          {status === 'paused' ? (
-            <>
-              <ActionButton onClick={resume}>
-                <Play size={18} fill="currentColor" />계속하기
-              </ActionButton>
-              <ActionButton onClick={complete} accent="#10b981">
-                <CheckCircle2 size={19} />모두 모였어요
-              </ActionButton>
-            </>
-          ) : null}
-          {status !== 'idle' ? (
-            <button
-              type="button"
-              onClick={reset}
-              className="flex h-14 min-w-[132px] items-center justify-center gap-2 rounded-[14px] px-6 text-[14px] font-black"
-              style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
-            >
-              <RotateCcw size={16} />다시 시작
-            </button>
-          ) : null}
+            ) : null}
+            {status === 'running' ? (
+              <>
+                <ActionButton onClick={pause} accent="#f59e0b">
+                  <Pause size={18} fill="currentColor" />일시정지
+                </ActionButton>
+                <ActionButton onClick={complete} accent="#10b981">
+                  <CheckCircle2 size={19} />완료
+                </ActionButton>
+              </>
+            ) : null}
+            {status === 'paused' ? (
+              <>
+                <ActionButton onClick={resume}>
+                  <Play size={18} fill="currentColor" />계속
+                </ActionButton>
+                <ActionButton onClick={complete} accent="#10b981">
+                  <CheckCircle2 size={19} />완료
+                </ActionButton>
+              </>
+            ) : null}
+            {status !== 'idle' ? (
+              <button
+                type="button"
+                onClick={reset}
+                className="flex h-14 min-w-[132px] items-center justify-center gap-2 rounded-[14px] px-6 text-[14px] font-black"
+                style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}
+              >
+                <RotateCcw size={16} />초기화
+              </button>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>
@@ -736,7 +817,7 @@ export default function ClassToolsView() {
   const ActiveIcon = TABS.find((item) => item.id === tab)?.icon ?? Timer;
 
   return (
-    <div className="flex h-full min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
+    <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col pb-[86px] lg:pb-0" style={{ background: 'var(--spm-bg)' }}>
       <section className="shrink-0 border-b px-5 py-5 sm:px-7" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[640px]">
@@ -745,7 +826,7 @@ export default function ClassToolsView() {
               수업 중 바로 꺼내 쓰는 진행 콘솔
             </h1>
             <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
-              스탑워치, 쉬는 시간 복귀, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
+              스탑워치, 타이머, 점수판, 학생 선택, 팀 배분, 진행 순서를 수업 중 바로 처리합니다.
             </p>
           </div>
           <div className="grid gap-2 sm:grid-cols-3 lg:w-[520px]">

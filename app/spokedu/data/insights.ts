@@ -129,7 +129,7 @@ export const insightArticles: InsightArticle[] = [
       interpretation:
         '같은 프로그램도 동선이 겹치면 참여가 끊기고, 공간이 맞으면 반복 참여가 이어집니다.',
       designCriteria: '구역 분리, 동선 단방향, 인원 상한을 먼저 정한 뒤 활동을 배치합니다.',
-      spokeduApplication: '기관 파견 전 현장 확인 후 스테이션 수와 룰을 조정합니다.',
+      spokeduApplication: '기관 프로그램 운영 전 현장 확인 후 스테이션 수와 룰을 조정합니다.',
     },
   },
   {

@@ -13,6 +13,7 @@ import {
 import { TrackedLink } from './tracked-link';
 
 const HOME_REVIEW_ITEMS = dispatchPage.partnerReviews.items.slice(0, 2);
+const HOME_REVIEW_CHECKS = ['공간·인원 맞춤', '결강·대체 대응', '수업 흐름 설계'] as const;
 
 export function HomePartnerReviews() {
   return (
@@ -27,12 +28,22 @@ export function HomePartnerReviews() {
             <p className={`mt-4 max-w-md text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               공간, 인원, 대상이 달라도 수업 흐름이 무너지지 않도록 운영한 경험이 쌓여 있습니다.
             </p>
+            <ul className="mt-5 grid gap-2 sm:max-w-md">
+              {HOME_REVIEW_CHECKS.map((item) => (
+                <li
+                  key={item}
+                  className={`rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 ${koreanText}`}
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
             <TrackedLink
               href={`${SPOKEDU_BASE_PATH}/dispatch`}
               trackLabel="cta-home-review-dispatch"
               className={`${siteBtnSecondary} mt-6 ${homeFocusRing}`}
             >
-              기관 출강 자세히 보기
+              기관 프로그램 자세히 보기
             </TrackedLink>
           </div>
 

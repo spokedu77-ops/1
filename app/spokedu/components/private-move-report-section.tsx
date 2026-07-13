@@ -91,7 +91,7 @@ export function PrivateMoveReportSection() {
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             rows={6}
-            placeholder="Move report 결과 핵심 내용을 붙여넣어 주세요."
+            placeholder="간단 진단 결과의 핵심 내용을 붙여넣어 주세요."
             className="mt-3 w-full resize-y rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-3 text-sm leading-relaxed text-slate-800 outline-none transition focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-100"
           />
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">

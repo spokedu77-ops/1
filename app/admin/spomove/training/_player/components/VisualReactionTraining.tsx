@@ -436,6 +436,14 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       if (el) el.style.opacity = '0';
     });
     padRefs.current.forEach((p) => p?.classList.remove('lit'));
+    if (g.stims > 0) {
+      onCompleteRef.current({
+        stims: g.stims,
+        maxCombo: g.maxCombo,
+        laneCount: [...g.laneCount] as [number, number, number, number],
+      });
+      return;
+    }
     onExit();
   }, [onExit]);
 

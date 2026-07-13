@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import {
   buildNoteHistoryInverse,
   type NoteHistoryEntry,
@@ -13,6 +13,8 @@ import { buildContentForTypeChange, getBlockedTypeChangeReason, filterTurnIntoCo
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 import { buildMoveBlockCommand } from './noteBlockCommands';
+import { applyBlockContentChange } from './noteBlockContentPipeline';
+import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
 import {
   getBlocksInParent,
   planBlockTabIndent,
@@ -187,6 +189,52 @@ describe('sub-document navigation (parent ↔ child)', () => {
     const merged = mergeBlocksWithStoreContent(childBlocks);
     expect(merged[0].content?.text).toBe('child body');
     expect(merged.find((b) => b.id === 'p1')).toBeUndefined();
+  });
+
+  it('todo checked patch applies on child doc when activeDocumentId is set before hydrate', () => {
+    const childTodo = block('c-todo', '할 일', {
+      document_id: 'child-doc',
+      type: 'todo',
+      content: { text: '할 일', checked: false },
+    });
+    useNoteBlockStore.getState().setActiveDocumentId('child-doc');
+    useNoteBlockStore.getState().hydrate([childTodo]);
+
+    const blocksRef = { current: [] as NoteBlock[] };
+
+    applyBlockContentChange({
+      block: childTodo,
+      content: { text: '할 일', checked: true },
+      blocksRef,
+      recordContentUndoBeforeChange: vi.fn(),
+      scheduleBlockContentSave: vi.fn(),
+    });
+
+    expect(useNoteBlockStore.getState().getBlock('c-todo')?.content?.checked).toBe(true);
+  });
+
+  it('todo checked patch upserts block when missing from store', () => {
+    const parentBlock = block('p1', 'parent', { document_id: 'parent-doc' });
+    const childTodo = block('c-todo', '할 일', {
+      document_id: 'child-doc',
+      type: 'todo',
+      content: { text: '할 일', checked: false },
+    });
+    rememberNoteDocumentBlocks('child-doc', [childTodo], { trustServer: true });
+    useNoteBlockStore.getState().setActiveDocumentId('child-doc');
+    useNoteBlockStore.getState().hydrate([parentBlock]);
+
+    const blocksRef = { current: [parentBlock] };
+
+    applyBlockContentChange({
+      block: childTodo,
+      content: { text: '할 일', checked: true },
+      blocksRef,
+      recordContentUndoBeforeChange: vi.fn(),
+      scheduleBlockContentSave: vi.fn(),
+    });
+
+    expect(useNoteBlockStore.getState().getBlock('c-todo')?.content?.checked).toBe(true);
   });
 });
 

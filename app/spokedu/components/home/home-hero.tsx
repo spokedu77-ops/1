@@ -49,7 +49,7 @@ export function HomeHero() {
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>
             </div>
-            <div className="mt-6 flex flex-wrap items-center gap-2" aria-label="방문 목적별 바로가기">
+            <div className="mt-6 hidden flex-wrap items-center gap-2 sm:flex" aria-label="방문 목적별 바로가기">
               <span className={`mr-1 text-sm font-semibold text-slate-500 ${koreanText}`}>바로 찾기</span>
               {homePage.hero.quickLinks.map((link) => (
                 <TrackedLink

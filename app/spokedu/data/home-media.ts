@@ -86,7 +86,7 @@ export const HOME_MEDIA = {
   }),
   trackDispatch: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
     id: 'track-dispatch',
-    label: '기관 파견',
+    label: '기관 프로그램',
     fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
     tone: 'sky',
     objectPosition: '50% 65%',

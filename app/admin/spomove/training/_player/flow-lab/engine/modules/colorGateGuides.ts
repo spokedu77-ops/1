@@ -1,9 +1,8 @@
 /**
  * ColorGate shared definitions.
  *
- * This module intentionally does not decide bridge lanes. ColorGate is rendered
- * like the other obstacles: the FlowEngine creates bridges, then the gate
- * attaches to the bridge.
+ * This module intentionally does not decide bridge lanes. ColorGate is its own
+ * stage mode; the lab engine renders gates directly in the shared background.
  */
 
 import type { FlowModuleKey } from './flowModules';
@@ -27,7 +26,6 @@ export const GATE_COLORS: Record<GateColorId, GateColorDef> = {
   blue:   { bg: '#1d4ed8', label: '파랑', text: '#ffffff', hex: 0x1d4ed8 },
 };
 
-export const COLOR_GATE_SPAN_LANES = 3;
 export const COLOR_GATE_POSE_IMAGE_URL = '/spomove/dive/color-gate/lunge-reach.png';
 export const COLOR_GATE_POSE_IMAGE_URLS = [
   '/spomove/dive/color-gate/lunge-reach.png',
@@ -40,8 +38,6 @@ export const COLOR_GATE_POSE_INSTRUCTION =
   '한쪽 다리를 앞으로 굽히고 팔을 앞으로 뻗으세요';
 
 export const COLOR_GATE_ACTION_SEQUENCE: FlowModuleKey[] = ['reach'];
-export const COLOR_GATE_SPAWN_SKIP_BRIDGES = 2;
-export const COLOR_GATE_SPAWN_RATE = 1;
 
 const SILHOUETTE_ALPHA_MIN = 16;
 const SILHOUETTE_LUMA_MAX = 150;
@@ -51,14 +47,6 @@ let poseImageCache: HTMLImageElement | null = null;
 let poseImageLoadPromise: Promise<HTMLImageElement | null> | null = null;
 let poseImagesCache: HTMLImageElement[] | null = null;
 let poseImagesLoadPromise: Promise<HTMLImageElement[]> | null = null;
-
-export function shouldSpawnColorGateOnBridgeAttempt(
-  bridgeAttempt: number,
-  randomValue: number,
-): boolean {
-  if (bridgeAttempt <= COLOR_GATE_SPAWN_SKIP_BRIDGES) return false;
-  return randomValue < COLOR_GATE_SPAWN_RATE;
-}
 
 export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
   if (poseImageCache) return Promise.resolve(poseImageCache);
@@ -104,16 +92,6 @@ export function preloadColorGatePoseImages(): Promise<HTMLImageElement[]> {
     return loaded;
   });
   return poseImagesLoadPromise;
-}
-
-export function pickRandomGateColor(): GateColorId {
-  return COLOR_GATE_FIXED_COLOR_ID;
-}
-
-export function laneForGateColor(gateColorId: GateColorId): 0 | 1 | 2 {
-  if (gateColorId === 'green') return 0;
-  if (gateColorId === 'yellow') return 2;
-  return 1;
 }
 
 export function buildColorGateCue(gateColorId: GateColorId): string {

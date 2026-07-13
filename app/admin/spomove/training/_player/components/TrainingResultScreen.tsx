@@ -32,19 +32,31 @@ type Props = {
 
 const RESULT_CSS = `
   .tr-result-root {
-    --tr-label: clamp(0.72rem, 2.1vmin, 0.92rem);
-    --tr-body: clamp(0.86rem, 2.5vmin, 1.05rem);
-    --tr-title: clamp(1.05rem, 3.2vmin, 1.4rem);
-    --tr-hero: clamp(1.35rem, 4.2vmin, 1.9rem);
-    --tr-stat: clamp(1.05rem, 3.4vmin, 1.45rem);
-    --tr-color: clamp(1.15rem, 3.8vmin, 1.65rem);
-    --tr-quote: clamp(0.88rem, 2.45vmin, 1.08rem);
-    --tr-gap: clamp(0.45rem, 1.4vmin, 0.75rem);
-    --tr-pad: clamp(0.55rem, 1.6vmin, 0.9rem);
-    --tr-effect-gap: clamp(0.42rem, 1.25vmin, 0.62rem);
+    --tr-label: clamp(0.72rem, 1.7vmin, 0.9rem);
+    --tr-body: clamp(0.86rem, 1.9vmin, 1.02rem);
+    --tr-title: clamp(1.08rem, 2.5vmin, 1.38rem);
+    --tr-hero: clamp(1.35rem, 3.2vmin, 1.9rem);
+    --tr-stat: clamp(1.08rem, 2.8vmin, 1.5rem);
+    --tr-color: clamp(1.12rem, 2.9vmin, 1.55rem);
+    --tr-gap: clamp(0.55rem, 1.5vmin, 0.9rem);
+    --tr-pad: clamp(0.72rem, 1.8vmin, 1rem);
   }
-  .tr-result-root, .tr-result-root * {
-    box-sizing: border-box;
+  .tr-result-root, .tr-result-root * { box-sizing: border-box; }
+  .tr-result-header {
+    padding-top: max(clamp(0.45rem, 1.4vmin, 0.65rem), env(safe-area-inset-top));
+  }
+  .tr-result-main {
+    grid-template-columns: minmax(230px, 0.9fr) minmax(260px, 1fr) minmax(280px, 1.15fr);
+  }
+  .tr-result-footer-wrap {
+    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+  }
+  @media (max-width: 920px), (max-height: 760px) {
+    .tr-result-main {
+      grid-template-columns: 1fr !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
   }
   @media (max-width: 420px) {
     .tr-result-header {
@@ -62,31 +74,6 @@ const RESULT_CSS = `
       padding: 0.4rem 0.55rem !important;
       font-size: clamp(0.65rem, 1.9vmin, 0.78rem) !important;
     }
-    .tr-result-check-grid {
-      grid-template-columns: 1fr !important;
-    }
-    .tr-result-stats {
-      grid-template-columns: 1fr !important;
-    }
-  }
-  @media (max-height: 820px) {
-    .tr-result-root {
-      --tr-hero: clamp(1.1rem, 3.4vmin, 1.5rem);
-      --tr-stat: clamp(0.95rem, 2.8vmin, 1.2rem);
-      --tr-gap: clamp(0.35rem, 1.1vmin, 0.55rem);
-      --tr-pad: clamp(0.45rem, 1.3vmin, 0.7rem);
-    }
-    .tr-result-main {
-      overflow-y: auto !important;
-      -webkit-overflow-scrolling: touch;
-      grid-template-rows: auto !important;
-    }
-  }
-  .tr-result-header {
-    padding-top: max(clamp(0.45rem, 1.4vmin, 0.65rem), env(safe-area-inset-top));
-  }
-  .tr-result-footer-wrap {
-    padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
   }
 `;
 
@@ -102,7 +89,7 @@ export function TrainingResultScreen({
   footer,
   onBack,
   onRetry,
-  retryLabel = '다시 ▶',
+  retryLabel = '다시 실행',
 }: Props) {
   const mo = MODES[cfg.mode];
   const accent = mo?.accent ?? '#F97316';
@@ -123,6 +110,14 @@ export function TrainingResultScreen({
     padding: 'var(--tr-pad)',
     minHeight: 0,
     overflow: 'hidden',
+  };
+
+  const sectionTitle: React.CSSProperties = {
+    margin: 0,
+    fontSize: 'var(--tr-label)',
+    fontWeight: 900,
+    color: 'var(--text-muted)',
+    letterSpacing: '0.02em',
   };
 
   return (
@@ -173,7 +168,7 @@ export function TrainingResultScreen({
           }}
           onClick={onBack}
         >
-          ← 목록
+          목록
         </button>
         <div
           className="tr-result-header-center"
@@ -213,244 +208,206 @@ export function TrainingResultScreen({
           minHeight: 0,
           overflow: 'hidden',
           display: 'grid',
-          gridTemplateRows: footer
-            ? 'minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.45fr) minmax(0, 1.35fr) minmax(0, 1fr) auto'
-            : 'minmax(0, 1.05fr) minmax(0, 0.85fr) minmax(0, 1.5fr) minmax(0, 1.4fr) minmax(0, 1.05fr)',
           gap: 'var(--tr-gap)',
           padding: 'var(--tr-gap) clamp(0.65rem, 2vmin, 1rem)',
         }}
       >
-        <section
-          style={{
-            ...card,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            background: `${accent}0c`,
-            borderColor: `${accent}35`,
-          }}
-        >
-          {student ? (
-            <div
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem',
-                marginBottom: '0.35rem',
-                padding: '0.2rem 0.6rem',
-                borderRadius: '999px',
-                background: 'var(--card)',
-                border: '1px solid var(--border)',
-              }}
-            >
+        <section style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--tr-gap)' }}>
+          <div
+            style={{
+              borderRadius: '0.8rem',
+              padding: 'clamp(0.85rem, 2.2vmin, 1.15rem)',
+              textAlign: 'center',
+              background: `${accent}0c`,
+              border: `1px solid ${accent}35`,
+            }}
+          >
+            {student ? (
               <div
                 style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: '50%',
-                  background: student.color,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  marginBottom: '0.45rem',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: '999px',
+                  background: 'var(--card)',
+                  border: '1px solid var(--border)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: '50%',
+                    background: student.color,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.72rem',
+                    fontWeight: 900,
+                    color: '#fff',
+                  }}
+                >
+                  {student.name[0]}
+                </div>
+                <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
+              </div>
+            ) : null}
+            <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
+            <p style={{ margin: '0.35rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650, lineHeight: 1.45 }}>
+              {rich.praiseSub}
+            </p>
+            {statusBadge ? (
+              <span
+                style={{
+                  display: 'inline-flex',
+                  marginTop: '0.45rem',
+                  fontSize: 'var(--tr-label)',
+                  fontWeight: 800,
+                  padding: '0.15rem 0.55rem',
+                  borderRadius: '999px',
+                  background: 'var(--card)',
+                  color: accent,
+                  border: `1px solid ${accent}44`,
+                }}
+              >
+                {statusBadge}
+              </span>
+            ) : null}
+          </div>
+
+          <div style={{ display: 'grid', gap: '0.55rem' }}>
+            {[
+              { label: '진행 시간', value: rich.elapsedLabel },
+              { label: '설정 분량', value: rich.volumeLabel },
+              { label: '오늘 느낌', value: rich.activityFeel },
+            ].map((stat) => (
+              <div
+                key={stat.label}
+                style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '0.72rem',
-                  fontWeight: 900,
-                  color: '#fff',
+                  justifyContent: 'space-between',
+                  gap: '0.8rem',
+                  borderRadius: '0.7rem',
+                  background: 'var(--subtle-bg)',
+                  border: '1px solid var(--border)',
+                  padding: '0.65rem 0.75rem',
                 }}
               >
-                {student.name[0]}
+                <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</span>
+                <span style={{ fontSize: 'var(--tr-stat)', fontWeight: 900, lineHeight: 1.1, textAlign: 'right' }}>{stat.value}</span>
               </div>
-              <span style={{ fontSize: 'var(--tr-label)', fontWeight: 700, color: student.color }}>{student.name}</span>
-            </div>
-          ) : null}
-          <div style={{ fontSize: 'clamp(1.8rem, 6vmin, 2.6rem)', lineHeight: 1, marginBottom: '0.25rem' }}>✓</div>
-          <div style={{ fontSize: 'var(--tr-hero)', fontWeight: 900, lineHeight: 1.2 }}>{title}</div>
-          <p style={{ margin: '0.3rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 600, lineHeight: 1.4 }}>
-            {rich.praiseSub}
-          </p>
-          {statusBadge ? (
-            <span
-              style={{
-                marginTop: '0.35rem',
-                fontSize: 'var(--tr-label)',
-                fontWeight: 800,
-                padding: '0.15rem 0.55rem',
-                borderRadius: '999px',
-                background: 'var(--card)',
-                color: accent,
-                border: `1px solid ${accent}44`,
-              }}
-            >
-              {statusBadge}
-            </span>
-          ) : null}
-        </section>
-
-        <section
-          className="tr-result-stats"
-          style={{
-            minHeight: 0,
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr 1fr',
-            gap: 'var(--tr-gap)',
-          }}
-        >
-          {[
-            { label: '진행 시간', value: rich.elapsedLabel },
-            { label: '설정 분량', value: rich.volumeLabel },
-            { label: '오늘 느낌', value: rich.activityFeel },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                ...card,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                textAlign: 'center',
-                background: 'var(--subtle-bg)',
-              }}
-            >
-              <div style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{stat.label}</div>
-              <div style={{ fontSize: 'var(--tr-stat)', fontWeight: 900, marginTop: '0.15rem', lineHeight: 1.2 }}>{stat.value}</div>
-            </div>
-          ))}
-        </section>
-
-        <section style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
-            색 자극 분포
+            ))}
           </div>
+        </section>
+
+        <section style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--tr-gap)' }}>
+          <div>
+            <h2 style={sectionTitle}>색상 결과</h2>
+            <p style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650 }}>
+              {showColorBreakdown ? `총 ${colorTotal}회 색상 신호가 기록되었습니다.` : '이번 과제에는 집계 가능한 색상 신호가 없습니다.'}
+            </p>
+          </div>
+
           {showColorBreakdown ? (
-            <>
-              <div
-                style={{
-                  flex: 1,
-                  minHeight: 0,
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: 'var(--tr-gap)',
-                }}
-              >
-                {RESULT_COLOR_ORDER.map((id) => {
-                  const meta = colorMeta(id);
-                  const count = colorCounts![id];
-                  return (
-                    <div
-                      key={id}
+            <div style={{ display: 'grid', gap: '0.55rem' }}>
+              {RESULT_COLOR_ORDER.map((id) => {
+                const meta = colorMeta(id);
+                const count = colorCounts![id];
+                const percent = colorTotal > 0 ? Math.round((count / colorTotal) * 100) : 0;
+                return (
+                  <div
+                    key={id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr auto',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                      padding: '0.65rem',
+                      borderRadius: '0.75rem',
+                      background: 'var(--subtle-bg)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <span
+                      aria-hidden
                       style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'clamp(0.45rem, 1.5vmin, 0.7rem)',
-                        padding: 'clamp(0.45rem, 1.4vmin, 0.7rem)',
-                        borderRadius: '0.65rem',
-                        background: 'var(--subtle-bg)',
-                        border: '1px solid var(--border)',
-                        minHeight: 0,
+                        width: 'clamp(18px, 4vmin, 24px)',
+                        height: 'clamp(18px, 4vmin, 24px)',
+                        borderRadius: '50%',
+                        background: meta.bg,
+                        boxShadow: `0 0 0 3px ${meta.bg}33`,
                       }}
-                    >
-                      <span
-                        aria-hidden
-                        style={{
-                          width: 'clamp(16px, 4vmin, 22px)',
-                          height: 'clamp(16px, 4vmin, 22px)',
-                          borderRadius: '50%',
-                          background: meta.bg,
-                          flexShrink: 0,
-                          boxShadow: `0 0 0 3px ${meta.bg}33`,
-                        }}
-                      />
-                      <span style={{ flex: 1, fontSize: 'var(--tr-body)', fontWeight: 800 }}>{meta.name}</span>
-                      <span style={{ fontSize: 'var(--tr-color)', fontWeight: 900, color: accent }}>{count}회</span>
+                    />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                        <span style={{ fontSize: 'var(--tr-body)', fontWeight: 900 }}>{meta.name}</span>
+                        <span style={{ fontSize: 'var(--tr-label)', color: 'var(--text-muted)', fontWeight: 800 }}>{percent}%</span>
+                      </div>
+                      <div style={{ marginTop: '0.35rem', height: 7, borderRadius: 999, background: 'var(--card)', overflow: 'hidden' }}>
+                        <div style={{ width: `${percent}%`, height: '100%', background: meta.bg, borderRadius: 999 }} />
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-              <div
-                style={{
-                  marginTop: '0.35rem',
-                  fontSize: 'var(--tr-label)',
-                  color: 'var(--text-muted)',
-                  fontWeight: 700,
-                  textAlign: 'right',
-                }}
-              >
-                합계 {colorTotal}회
-              </div>
-            </>
+                    <span style={{ fontSize: 'var(--tr-color)', fontWeight: 900, color: accent }}>{count}회</span>
+                  </div>
+                );
+              })}
+            </div>
           ) : (
             <div
               style={{
                 flex: 1,
+                minHeight: 120,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '0.5rem',
-                borderRadius: '0.65rem',
+                padding: '1rem',
+                borderRadius: '0.75rem',
                 background: 'var(--subtle-bg)',
                 border: '1px solid var(--border)',
               }}
             >
-              <p style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text-muted)', fontWeight: 600, textAlign: 'center' }}>
-                이번 과제는 방향·기억·말하기 위주라 색 횟수는 따로 세지 않아요.
+              <p style={{ margin: 0, fontSize: 'var(--tr-body)', lineHeight: 1.5, color: 'var(--text-muted)', fontWeight: 650, textAlign: 'center' }}>
+                방향, 기억, 말하기 중심 과제처럼 색상 빈도를 따로 기록하지 않는 활동입니다.
               </p>
             </div>
           )}
         </section>
 
-        <section
-          style={{
-            ...card,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            textAlign: 'center',
-            gap: 'var(--tr-effect-gap)',
-            borderColor: `${accent}44`,
-            background: `${accent}0a`,
-            minHeight: 0,
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ fontSize: 'var(--tr-title)', fontWeight: 900, color: 'var(--text)', lineHeight: 1.25 }}>
-            {rich.programTitle}
+        <section style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--tr-gap)' }}>
+          <div>
+            <h2 style={sectionTitle}>훈련 정리</h2>
+            <h3 style={{ margin: '0.35rem 0 0', fontSize: 'var(--tr-title)', fontWeight: 900, lineHeight: 1.25 }}>
+              {rich.programTitle}
+            </h3>
           </div>
-          <div style={{ fontSize: 'var(--tr-label)', fontWeight: 800, color: accent, letterSpacing: '0.02em' }}>
-            {mo?.tag ?? '이번 운동 효과'}
-          </div>
-          <p
-            style={{
-              margin: 0,
-              width: 'min(42ch, 100%)',
-              fontSize: 'var(--tr-body)',
-              lineHeight: 1.55,
-              color: 'var(--text)',
-              fontWeight: 600,
-            }}
-          >
-            {rich.programSummary}
-          </p>
+
           <div
             style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'center',
-              gap: '0.35rem',
-              width: '100%',
+              borderRadius: '0.8rem',
+              border: `1px solid ${accent}33`,
+              background: `${accent}0a`,
+              padding: '0.85rem',
             }}
           >
+            <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>{mo?.tag ?? 'SPOMOVE 훈련'}</div>
+            <p style={{ margin: '0.45rem 0 0', fontSize: 'var(--tr-body)', lineHeight: 1.55, color: 'var(--text)', fontWeight: 650 }}>
+              {rich.programSummary}
+            </p>
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
             {rich.benefitTags.map((tag) => (
               <span
                 key={tag}
                 style={{
                   fontSize: 'var(--tr-label)',
-                  fontWeight: 800,
-                  padding: '0.2rem 0.55rem',
+                  fontWeight: 850,
+                  padding: '0.25rem 0.6rem',
                   borderRadius: '999px',
-                  background: 'var(--card)',
+                  background: 'var(--subtle-bg)',
                   color: accent,
                   border: `1px solid ${accent}33`,
                 }}
@@ -459,90 +416,68 @@ export function TrainingResultScreen({
               </span>
             ))}
           </div>
+
           <p
             style={{
               margin: 0,
-              width: 'min(36ch, 100%)',
-              fontSize: 'var(--tr-quote)',
-              lineHeight: 1.5,
+              fontSize: 'var(--tr-body)',
+              lineHeight: 1.55,
               color: accent,
-              fontWeight: 700,
+              fontWeight: 750,
               borderLeft: `3px solid ${accent}55`,
-              paddingLeft: '0.55rem',
+              paddingLeft: '0.65rem',
             }}
           >
             {rich.benefitLine}
           </p>
-        </section>
 
-        <section style={{ ...card, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
-          <div
-            style={{
-              fontSize: 'var(--tr-label)',
-              fontWeight: 800,
-              color: 'var(--text)',
-              marginBottom: '0.35rem',
-              textAlign: 'center',
-            }}
-          >
-            스스로 점검해 볼까요?
-          </div>
-          <div
-            className="tr-result-check-grid"
-            style={{
-              flex: 1,
-              minHeight: 0,
-              display: 'grid',
-              gridTemplateColumns: '1fr 1fr',
-              gridTemplateRows: 'repeat(2, minmax(0, auto))',
-              gap: 'var(--tr-gap)',
-              alignContent: 'start',
-            }}
-          >
-            {rich.selfCheckItems.map((item, index) => (
-              <div
-                key={item.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  padding: 'clamp(0.4rem, 1.2vmin, 0.65rem)',
-                  borderRadius: '0.65rem',
-                  background: 'var(--subtle-bg)',
-                  border: '1px solid var(--border)',
-                  minHeight: 0,
-                }}
-              >
-                <span
+          <div>
+            <h2 style={sectionTitle}>스스로 점검</h2>
+            <div style={{ display: 'grid', gap: '0.5rem', marginTop: '0.55rem' }}>
+              {rich.selfCheckItems.map((item, index) => (
+                <div
+                  key={item.id}
                   style={{
-                    width: 'clamp(1.4rem, 4vmin, 1.8rem)',
-                    height: 'clamp(1.4rem, 4vmin, 1.8rem)',
-                    borderRadius: '50%',
-                    background: `${accent}18`,
-                    color: accent,
-                    fontSize: 'var(--tr-label)',
-                    fontWeight: 900,
-                    display: 'inline-flex',
+                    display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
+                    gap: '0.55rem',
+                    padding: '0.55rem 0.65rem',
+                    borderRadius: '0.7rem',
+                    background: 'var(--subtle-bg)',
+                    border: '1px solid var(--border)',
                   }}
                 >
-                  {index + 1}
-                </span>
-                <span style={{ fontSize: 'var(--tr-body)', fontWeight: 700, lineHeight: 1.35, color: 'var(--text)', textAlign: 'left' }}>
-                  {item.label}
-                </span>
-              </div>
-            ))}
+                  <span
+                    style={{
+                      width: '1.65rem',
+                      height: '1.65rem',
+                      borderRadius: '50%',
+                      background: `${accent}18`,
+                      color: accent,
+                      fontSize: 'var(--tr-label)',
+                      fontWeight: 900,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {index + 1}
+                  </span>
+                  <span style={{ fontSize: 'var(--tr-body)', fontWeight: 750, lineHeight: 1.35, color: 'var(--text)' }}>
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
 
-        {footer ? (
-          <div className="tr-result-footer-wrap" style={{ flexShrink: 0, overflow: 'hidden' }}>
-            {footer}
-          </div>
-        ) : null}
+          {footer ? (
+            <div className="tr-result-footer-wrap" style={{ flexShrink: 0 }}>
+              {footer}
+            </div>
+          ) : null}
+        </section>
       </main>
     </div>
   );

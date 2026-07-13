@@ -99,18 +99,27 @@ function runTx<T>(
 }
 
 export async function readLocalDocument(documentId: string): Promise<NoteLocalDocumentRecord | null> {
-  const result = await runTx<NoteLocalDocumentRecord | null>('readonly', 'documents', async (stores) => new Promise<NoteLocalDocumentRecord | null>((resolve, reject) => {
-    const request = stores.documents.get(documentId);
-    request.onsuccess = () => resolve((request.result as NoteLocalDocumentRecord | undefined) ?? null);
-    request.onerror = () => reject(request.error);
-  }));
-  if (result) rememberLocalDocumentMemory(result);
+  const result: NoteLocalDocumentRecord | null = await runTx(
+    'readonly',
+    'documents',
+    (stores) => new Promise<NoteLocalDocumentRecord | null>((resolve, reject) => {
+      const request = stores.documents.get(documentId);
+      request.onsuccess = () => {
+        const raw = request.result as NoteLocalDocumentRecord | undefined;
+        resolve(raw ?? null);
+      };
+      request.onerror = () => reject(request.error ?? new Error('IndexedDB read failed'));
+    }),
+  );
+  if (result !== null) {
+    rememberLocalDocumentMemory(result);
+  }
   return result;
 }
 
 export async function writeLocalDocument(record: NoteLocalDocumentRecord): Promise<void> {
   rememberLocalDocumentMemory(record);
-  await runTx('readwrite', 'documents', async (stores) => new Promise<void>((resolve, reject) => {
+  await runTx<void>('readwrite', 'documents', (stores) => new Promise<void>((resolve, reject) => {
     const request = stores.documents.put(record);
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
@@ -123,7 +132,7 @@ export async function appendOutboundOps(
 ): Promise<void> {
   if (ops.length === 0) return;
   const now = Date.now();
-  await runTx('readwrite', 'outbound', async (stores) => {
+  await runTx<void>('readwrite', 'outbound', async (stores) => {
     for (const op of ops) {
       await new Promise<void>((resolve, reject) => {
         const request = stores.outbound.put({
@@ -139,7 +148,7 @@ export async function appendOutboundOps(
 }
 
 export async function listOutboundOps(documentId: string): Promise<NoteLocalOutboundOp[]> {
-  return runTx('readonly', 'outbound', async (stores) => new Promise((resolve, reject) => {
+  return runTx<NoteLocalOutboundOp[]>('readonly', 'outbound', (stores) => new Promise<NoteLocalOutboundOp[]>((resolve, reject) => {
     const index = stores.outbound.index('byDocument');
     const request = index.getAll(documentId);
     request.onsuccess = () => {
@@ -152,7 +161,7 @@ export async function listOutboundOps(documentId: string): Promise<NoteLocalOutb
 
 export async function removeOutboundOps(clientOpIds: string[]): Promise<void> {
   if (clientOpIds.length === 0) return;
-  await runTx('readwrite', 'outbound', async (stores) => {
+  await runTx<void>('readwrite', 'outbound', async (stores) => {
     for (const id of clientOpIds) {
       await new Promise<void>((resolve, reject) => {
         const request = stores.outbound.delete(id);
@@ -164,7 +173,7 @@ export async function removeOutboundOps(clientOpIds: string[]): Promise<void> {
 }
 
 export async function clearDocumentLocal(documentId: string): Promise<void> {
-  await runTx('readwrite', ['documents', 'outbound'], async (stores) => {
+  await runTx<void>('readwrite', ['documents', 'outbound'], async (stores) => {
     await new Promise<void>((resolve, reject) => {
       const request = stores.documents.delete(documentId);
       request.onsuccess = () => resolve();

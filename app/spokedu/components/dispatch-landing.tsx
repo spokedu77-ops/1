@@ -28,6 +28,26 @@ const focusRing =
 
 const institutionCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
+const dispatchPromiseCards = [
+  {
+    title: '전공자 기반 커리큘럼',
+    body: '체육교육 전공 운영진이 현장 조건과 대상 연령에 맞춰 수업 흐름을 설계합니다.',
+  },
+  {
+    title: '검증 강사 파견',
+    body: '단기 인력 매칭이 아니라 스포키듀 수업 기준을 이해한 강사가 투입됩니다.',
+  },
+  {
+    title: '운영 리스크 대응',
+    body: '공간, 인원, 결강, 대체 수업까지 기관 담당자가 걱정하는 운영 변수를 같이 봅니다.',
+  },
+] as const;
+const dispatchDecisionChecks = [
+  '대상 연령과 참여 인원',
+  '수업 공간과 이동 동선',
+  '정기·원데이·방학 운영 방식',
+  '특수 아동 포함 여부',
+] as const;
 
 const reviewAccentBorder = {
   violet: 'border-l-teal-500',
@@ -35,10 +55,21 @@ const reviewAccentBorder = {
   lime: 'border-l-teal-400',
 } as const;
 
-function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+function Section({
+  children,
+  className = '',
+  delay = 0,
+  id,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  id?: string;
+}) {
   const reducedMotion = useReducedMotion();
   return (
     <motion.section
+      id={id}
       initial={reducedMotion ? false : { opacity: 0, y: 12 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.12 }}
@@ -92,6 +123,47 @@ export default function DispatchLanding() {
             </div>
           ))}
         </dl>
+      </Section>
+
+      <Section className="rounded-2xl bg-[#0B1220] px-5 py-7 text-white sm:px-7 sm:py-8">
+        <div className="grid gap-5 lg:grid-cols-[0.38fr_0.62fr] lg:items-start lg:gap-8">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">Institution Program</p>
+            <h2 className="mt-3 text-2xl font-black leading-tight tracking-tight sm:text-3xl [word-break:keep-all]">
+              시키는 수업이 아니라, 움직이게 만드는 운영안을 제안합니다.
+            </h2>
+            <p className={`mt-4 text-sm leading-relaxed text-white/70 ${koreanLineBreak}`}>
+              기관 담당자가 비교하는 기준은 강사, 커리큘럼, 결강 대응, 운영 안정성입니다.
+              SPOKEDU는 이 기준을 먼저 확인하고 현장에 맞는 운영안을 제안합니다.
+            </p>
+            <a
+              href="#dispatch-process"
+              className={`mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 text-sm font-bold text-slate-950 ${fineHover}hover:bg-teal-50 ${focusRing}`}
+            >
+              도입 절차 보기
+            </a>
+          </div>
+          <div className="space-y-3">
+            <ul className="grid gap-3 sm:grid-cols-3">
+              {dispatchPromiseCards.map((item) => (
+                <li key={item.title} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                  <h3 className="text-sm font-bold text-white">{item.title}</h3>
+                  <p className={`mt-2 text-xs leading-relaxed text-white/65 ${koreanLineBreak}`}>{item.body}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-200">Before Proposal</p>
+              <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                {dispatchDecisionChecks.map((item) => (
+                  <li key={item} className="rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/80">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
       </Section>
 
       <HomeSectionRule />
@@ -253,7 +325,7 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section>
+      <Section id="dispatch-process" className="scroll-mt-24">
         <LandingStepPanel steps={dispatchPage.processSteps.steps} accent="teal" columns="5">
           <LandingSectionHeading
             eyebrow={dispatchPage.processSteps.eyebrow}

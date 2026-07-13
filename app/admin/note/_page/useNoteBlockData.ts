@@ -8,9 +8,14 @@ import {
   flattenVisualBlockIds,
   sortRootBlocks,
 } from '@/app/lib/note/noteBlockTree';
-import { useNoteBlockStore } from '../_store/noteBlockStore';
+import {
+  selectDocumentBlocks,
+  useActiveDocumentBlocks,
+  useNoteBlockStore,
+} from '../_store/noteBlockStore';
 import {
   commitNoteDocumentBeforeLeave,
+  documentContentAheadOfSnapshot,
   isActiveNoteEditorFocused,
   mergeBlocksWithStoreContent,
   resetNoteDocumentEditorState,
@@ -28,7 +33,7 @@ import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
 import { openNoteDocument, paintBootstrapBlocksSync, paintInstantSnapshotFromLocalDb, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
-import { resolveInstantDisplayBlocks } from '../_lib/noteDisplayBlocks';
+import type { NoteBlock } from '../_lib/types';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
@@ -38,7 +43,6 @@ import {
   traceLoadingState,
   traceRealtime,
 } from '../_lib/noteFlickerTrace';
-import type { NoteBlock } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
 
 export function useNoteBlockData(options: {
@@ -52,7 +56,8 @@ export function useNoteBlockData(options: {
 }) {
   const { selectedId, docTab, setError, setPendingDeleteUndo, bootstrapBlocks, triggerSaveRef, onAfterIdleReconcile } = options;
 
-  const [blocks, _setBlocks] = useState<NoteBlock[]>([]);
+  const blocks = useActiveDocumentBlocks(selectedId);
+
   const [loadingBlocks, _setLoadingBlocks] = useState(false);
   const [blocksSyncing, _setBlocksSyncing] = useState(false);
   const [blocksEmptyConfirmed, _setBlocksEmptyConfirmed] = useState(false);
@@ -131,14 +136,8 @@ export function useNoteBlockData(options: {
     setError(message);
   }, [setError]);
 
-  /** pipeline + store → React 투영 (단일 구독) */
-  const handleBlocksChanged = useCallback((next: NoteBlock[]) => {
-    _setBlocks(next);
-  }, []);
-
   const documentEngine = useNoteDocumentEngine({
     documentId: selectedId,
-    onBlocksChanged: handleBlocksChanged,
     triggerSave: () => triggerSaveRef.current(),
     onError: handleEngineError,
   });
@@ -146,7 +145,20 @@ export function useNoteBlockData(options: {
   const documentEngineRef = useRef(documentEngine);
   documentEngineRef.current = documentEngine;
 
-  const shouldDeferRemoteSync = useCallback(() => (
+  const shouldDeferRemoteSync = useCallback(async () => {
+    if (isActiveNoteEditorFocused()) return true;
+    const engine = documentEngineRef.current;
+    if (engine.hasPendingContent()) return true;
+    if (engine.hasPendingPersist()) return true;
+    if (await engine.hasPendingOutbound()) return true;
+    const storeForDoc = selectDocumentBlocks(useNoteBlockStore.getState(), selectedId);
+    const coordinatorForDoc = engine.getCoordinatorBlocks()
+      .filter((block) => block.document_id === selectedId);
+    if (documentContentAheadOfSnapshot(storeForDoc, coordinatorForDoc)) return true;
+    return false;
+  }, [selectedId]);
+
+  const shouldDeferRemoteSyncSync = useCallback(() => (
     isActiveNoteEditorFocused()
     || documentEngineRef.current.hasPendingContent()
     || documentEngineRef.current.hasPendingPersist()
@@ -159,7 +171,7 @@ export function useNoteBlockData(options: {
 
   const runDeferredOplogPull = useCallback(async (documentId: string) => {
     if (selectedId !== documentId) return;
-    if (shouldDeferRemoteSync()) {
+    if (await shouldDeferRemoteSync()) {
       traceRealtime('pull_deferred_again', documentId);
       scheduleDeferredOplogPull(documentId);
       return;
@@ -180,14 +192,22 @@ export function useNoteBlockData(options: {
       return;
     }
     reconcileDocumentIdRef.current = documentId;
-    if (shouldDeferRemoteSync()) {
+    if (shouldDeferRemoteSyncSync()) {
       traceRealtime('deferred', documentId);
       scheduleDeferredOplogPull(documentId);
       return;
     }
-    traceRealtime('remote_scheduled', documentId);
-    scheduleNoteReconcileRemote(documentId);
-  }, [scheduleDeferredOplogPull, selectedId, shouldDeferRemoteSync]);
+    void shouldDeferRemoteSync().then((defer) => {
+      if (selectedId !== documentId) return;
+      if (defer) {
+        traceRealtime('deferred', documentId);
+        scheduleDeferredOplogPull(documentId);
+        return;
+      }
+      traceRealtime('remote_scheduled', documentId);
+      scheduleNoteReconcileRemote(documentId);
+    });
+  }, [scheduleDeferredOplogPull, selectedId, shouldDeferRemoteSync, shouldDeferRemoteSyncSync]);
 
   useNoteBlocksRealtimeInvalidation({
     documentId: selectedId,
@@ -208,26 +228,27 @@ export function useNoteBlockData(options: {
   /** blocksRef는 Zustand SSOT의 읽기 전용 미러 — 직접 쓰기 금지 */
   useEffect(() => {
     const syncRef = () => {
-      blocksRef.current = useNoteBlockStore.getState().getBlocksArray();
+      const state = useNoteBlockStore.getState();
+      blocksRef.current = selectDocumentBlocks(state, selectedId);
     };
     syncRef();
     return useNoteBlockStore.subscribe(syncRef);
-  }, []);
+  }, [selectedId]);
 
   /** 구조 변경 — 반드시 pipeline 경유 */
   const setBlocks = useCallback((
     value: NoteBlock[] | ((prev: NoteBlock[]) => NoteBlock[]),
   ) => {
-    const current = useNoteBlockStore.getState().getBlocksArray();
+    const state = useNoteBlockStore.getState();
+    const current = selectDocumentBlocks(state, selectedId);
     const raw = typeof value === 'function' ? value(current) : value;
     const next = dedupeNoteBlocksById(raw);
-    if (documentEngineRef.current) {
+    if (documentEngineRef.current && selectedId) {
       documentEngineRef.current.replaceBlocks(next);
       return;
     }
-    useNoteBlockStore.getState().applyBlocks(() => next);
-    _setBlocks(next);
-  }, []);
+    useNoteBlockStore.getState().replaceBlocks(next);
+  }, [selectedId]);
 
   const persistToggleBodyMigration = useCallback(async (
     normalized: NoteBlock[],
@@ -279,7 +300,8 @@ export function useNoteBlockData(options: {
     if (!selectedId) {
       openLayoutSyncKeyRef.current = null;
       previousDocumentIdRef.current = null;
-      setBlocks([]);
+      useNoteBlockStore.getState().setActiveDocumentId(null);
+      useNoteBlockStore.getState().replaceBlocks([]);
       setLoadingBlocks(false, 'selectedId:null');
       setBlocksSyncing(false, 'selectedId:null');
       setBlocksEmptyConfirmed(false, 'selectedId:null');
@@ -293,7 +315,7 @@ export function useNoteBlockData(options: {
     const previousId = previousDocumentIdRef.current;
     if (previousId && previousId !== selectedId) {
       const leavingSnapshot = mergeBlocksWithStoreContent(
-        blocksRef.current.filter((block) => block.document_id === previousId),
+        selectDocumentBlocks(useNoteBlockStore.getState(), previousId),
       );
       if (leavingSnapshot.length > 0) {
         rememberNoteDocumentBlocks(previousId, leavingSnapshot);
@@ -302,6 +324,7 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
+    useNoteBlockStore.getState().setActiveDocumentId(documentId);
     void readLocalDocument(documentId);
     let prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
     let paintedFromBootstrap = false;
@@ -323,10 +346,10 @@ export function useNoteBlockData(options: {
     } else {
       setBlocksEmptyConfirmed(false, 'openSync:noCache');
       setLoadSettledDocId(null, 'openSync:noCache');
-      setLoadingBlocks(false, 'openSync:noCache');
+      setLoadingBlocks(true, 'openSync:noCache');
     }
     setBlocksSyncing(false, 'openSync');
-  }, [selectedId, setBlocks]);
+  }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
   useEffect(() => {
     if (!selectedId || !bootstrapBlocks) return;
@@ -407,6 +430,7 @@ export function useNoteBlockData(options: {
           engine: documentEngineRef.current,
           bootstrapBlocks: bootstrapForOpen,
           prefetchedBlocks: prefetched,
+          shouldAbort: () => cancelled || blockLoadGenRef.current !== loadGen,
         });
 
         if (cancelled || blockLoadGenRef.current !== loadGen) return;
@@ -454,18 +478,13 @@ export function useNoteBlockData(options: {
 
   useEffect(() => {
     if (!selectedId || blocksSyncing) return;
-    const docBlocks = blocks.filter((block) => block.document_id === selectedId);
-    if (docBlocks.length === 0) return;
-    rememberNoteDocumentBlocks(selectedId, docBlocks);
+    if (blocks.length === 0) return;
+    rememberNoteDocumentBlocks(selectedId, mergeBlocksWithStoreContent(blocks));
   }, [blocks, blocksSyncing, selectedId]);
 
-  const documentBlocks = useMemo(
-    () => (selectedId ? resolveInstantDisplayBlocks(selectedId, blocks) : blocks),
-    [blocks, selectedId],
-  );
-  const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(documentBlocks), [documentBlocks]);
-  const rootBlocks = useMemo(() => sortRootBlocks(documentBlocks), [documentBlocks]);
-  const allSortableBlockIds = useMemo(() => flattenVisualBlockIds(documentBlocks), [documentBlocks]);
+  const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
+  const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);
+  const allSortableBlockIds = useMemo(() => flattenVisualBlockIds(blocks), [blocks]);
 
   const loadTrashedBlocks = useCallback(async () => {
     if (!selectedId) {

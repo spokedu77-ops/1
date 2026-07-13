@@ -29,7 +29,7 @@ function formatPrivateContent(payload: PrivateInquiryPayload): string {
 
 function formatDispatchInquiry(payload: DispatchInquiryPayload): string {
   return [
-    '[기관 출강 문의]',
+    '[기관 프로그램 문의]',
     `이름: ${payload.name}`,
     `연락처: ${payload.phone}`,
     `이메일: ${payload.email}`,

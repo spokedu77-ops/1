@@ -181,6 +181,10 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   }
 }
 
+function shouldFitSpomoveThumbnailInsideFrame(preset: OfficialSpomovePreset) {
+  return preset.engine.mode === 'basic' && [4, 5, 6].includes(preset.engine.level);
+}
+
 type ContextProgramTab = 'classroom' | 'preschool';
 
 const CONTEXT_PROGRAM_TABS: Array<{ key: ContextProgramTab; label: string }> = [
@@ -452,46 +456,40 @@ function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
 function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; thumbnailUrl: string }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
+  const fitInsideFrame = shouldFitSpomoveThumbnailInsideFrame(preset);
   return (
-    <article data-spomove-preset={preset.id} className="flex aspect-[4/3] flex-col justify-between overflow-hidden rounded-[18px] border border-slate-700 bg-[radial-gradient(circle_at_82%_12%,rgba(99,102,241,0.48),transparent_34%),linear-gradient(145deg,#111827,#0f172a_62%,#020617)] p-4 text-white shadow-[0_14px_32px_rgba(15,23,42,0.18)]">
-      <div className="flex items-start justify-between gap-3">
+    <article data-spomove-preset={preset.id} className="flex h-full min-h-[360px] flex-col overflow-hidden rounded-[18px] border border-slate-200 bg-white text-slate-950 shadow-[0_16px_34px_rgba(15,23,42,0.12)] transition duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_20px_42px_rgba(79,70,229,0.18)]">
+      <div className="relative aspect-square overflow-hidden border-b border-slate-100 bg-white">
         {showThumbnail ? (
-          <div className="relative h-10 w-10 overflow-hidden rounded-xl border border-white/15 bg-black/20">
-            {/* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */}
-            <img
-              src={thumbnailUrl}
-              alt=""
-              className="h-full w-full object-cover"
-              onError={() => setImageFailed(true)}
-            />
-          </div>
+          /* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */
+          <img
+            src={thumbnailUrl}
+            alt=""
+            className={`h-full w-full ${fitInsideFrame ? 'object-contain' : 'object-cover'}`}
+            onError={() => setImageFailed(true)}
+          />
         ) : (
-          <div className="grid grid-cols-2 gap-1.5" aria-hidden="true">
+          <div className="grid h-full w-full grid-cols-2 gap-1.5 bg-slate-950 p-5" aria-hidden="true">
             {SPOMOVE_PAD_GRID_HEX.map((color) => (
-              <span key={color} className="h-3 w-3 rounded-[4px]" style={{ background: color }} />
+              <span key={color} className="rounded-[10px] shadow-inner" style={{ background: color }} />
             ))}
           </div>
         )}
-        <span className="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/85">{preset.axisTitle}</span>
+        <span className="absolute right-3 top-3 rounded-full border border-white/80 bg-white/90 px-2.5 py-1 text-[11px] font-black text-slate-700 shadow-sm backdrop-blur">
+          {preset.axisTitle}
+        </span>
       </div>
-      <div>
-        <h3 className="line-clamp-2 text-[17px] font-black leading-5">{preset.title}</h3>
-        <p className="mt-1 line-clamp-2 text-[12px] font-semibold leading-4 text-slate-300">{preset.salesCopy || preset.recommendedUse}</p>
-        <div className="mt-3 space-y-1.5">
-          <Link
-            href={officialPresetSessionHref(preset, { autostart: true })}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl bg-white text-[12px] font-black text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            <MonitorPlay size={14} />
-            큰 화면 실행
-          </Link>
-          <Link
-            href={officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' })}
-            className="inline-flex min-h-9 w-full items-center justify-center rounded-xl border border-white/20 bg-white/10 text-[11px] font-black text-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            이 기기에서 실행
-          </Link>
-        </div>
+      <div className="flex flex-1 flex-col p-4">
+        <p className="text-[11px] font-black text-indigo-600">{preset.programTitle}</p>
+        <h3 className="mt-1 line-clamp-2 min-h-10 text-[17px] font-black leading-5 text-slate-950">{preset.title}</h3>
+        <p className="mt-2 line-clamp-2 min-h-10 text-[12px] font-semibold leading-5 text-slate-500">{preset.salesCopy || preset.recommendedUse}</p>
+        <Link
+          href={officialPresetSessionHref(preset, { autostart: true })}
+          className="mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 text-[13px] font-black text-white transition-colors hover:bg-indigo-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+        >
+          <MonitorPlay size={15} />
+          실행
+        </Link>
       </div>
     </article>
   );
@@ -882,9 +880,9 @@ function EntitledDashboardView() {
           href="/spokedu-master/spomove"
           action="전체 보기"
         />
-        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x items-stretch gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
           {featuredSpomove.map((preset) => (
-            <div key={preset.id} className="w-[76vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
+            <div key={preset.id} className="h-full w-[76vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
               <SpomoveCard
                 preset={preset}
                 thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}

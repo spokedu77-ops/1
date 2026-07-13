@@ -2,7 +2,7 @@
 
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
-import { useNoteBlockStore } from '../_store/noteBlockStore';
+import { useNoteBlockStore, selectDocumentBlocks } from '../_store/noteBlockStore';
 import { noteBlocksLoadPath } from './noteBlocksLoad';
 import { getReadyPrefetchedBlocks } from './noteDocumentBlocksPrefetch';
 import { traceApiEgress } from './noteFlickerTrace';
@@ -10,8 +10,12 @@ import {
   readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
 } from './noteDocumentBlocksCache';
-import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
+import {
+  documentContentAheadOfSnapshot,
+  mergeBlocksWithStoreContent,
+} from './noteBlockStateMerge';
 import { readLocalDocument, readLocalDocumentMemory } from './noteLocalDb';
+import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import type { NoteBlock } from './types';
 
 /** 문서 open 시 engine이 제공해야 하는 최소 API */
@@ -43,8 +47,8 @@ export function paintInstantSnapshotFromCache(
   if (currentDocBlockCount > 0) return false;
   const remembered = readRememberedNoteDocumentBlocks(documentId);
   if (!remembered || remembered.length === 0) return false;
-  engine.replaceBlocks(remembered);
   useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  engine.replaceBlocks(remembered);
   return true;
 }
 
@@ -63,13 +67,52 @@ export async function fetchServerBlocksForOpen(
     return options.prefetchedBlocks;
   }
   traceApiEgress('blocksLoad', documentId);
-  const res = await fetch(noteBlocksLoadPath(documentId), { credentials: 'include' });
+  const res = await fetch(
+    noteBlocksLoadPath(documentId, {
+      skipServerMigration: isNoteOplogSyncEnabled(),
+    }),
+    { credentials: 'include', cache: 'no-store' },
+  );
   if (!res.ok) {
     const j = await res.json().catch(() => null);
     throw new Error((j as { error?: string } | null)?.error || '블록 로드 실패');
   }
   const json = (await res.json()) as { blocks: NoteBlock[] };
   return json.blocks ?? [];
+}
+
+function documentHasNonEmptyBodyText(blocks: NoteBlock[]): boolean {
+  return blocks.some((block) => {
+    const text = (block.content as Record<string, unknown> | null)?.text;
+    return typeof text === 'string' && text.trim().length > 0;
+  });
+}
+
+function readLocalBlocksForOpen(documentId: string): NoteBlock[] {
+  return mergeBlocksWithStoreContent(
+    selectDocumentBlocks(useNoteBlockStore.getState(), documentId),
+  );
+}
+
+function shouldKeepLocalOverEmptyServer(
+  localBlocks: NoteBlock[],
+  serverBlocks: NoteBlock[],
+): boolean {
+  return documentHasNonEmptyBodyText(localBlocks)
+    && !documentHasNonEmptyBodyText(serverBlocks);
+}
+
+function finishOpenWithLocalBlocks(
+  documentId: string,
+  localBlocks: NoteBlock[],
+  toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
+): OpenNoteDocumentResult {
+  rememberNoteDocumentBlocks(documentId, localBlocks, { trustServer: false });
+  return {
+    blocks: localBlocks,
+    emptyConfirmed: false,
+    toggleMigration,
+  };
 }
 
 /**
@@ -87,10 +130,34 @@ export async function applyOpenServerSnapshot(
 
   useNoteBlockStore.getState().setActiveDocumentId(documentId);
 
+  const localBeforeSync = readLocalBlocksForOpen(documentId);
+  if (shouldKeepLocalOverEmptyServer(localBeforeSync, serverForDoc)) {
+    return finishOpenWithLocalBlocks(
+      documentId,
+      localBeforeSync,
+      toggleMigration,
+    );
+  }
+  if (documentContentAheadOfSnapshot(localBeforeSync, serverForDoc)) {
+    return finishOpenWithLocalBlocks(
+      documentId,
+      localBeforeSync,
+      toggleMigration,
+    );
+  }
+
   if (engine.isOplogSyncEnabled()) {
     await engine.syncWithServer(normalized);
   } else {
     engine.replaceBlocks(normalized);
+  }
+
+  if (shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc)) {
+    return finishOpenWithLocalBlocks(
+      documentId,
+      readLocalBlocksForOpen(documentId),
+      toggleMigration,
+    );
   }
 
   const current = engine.getBlocks().filter((block) => block.document_id === documentId);
@@ -123,8 +190,9 @@ function paintInstantBlocks(
 ): void {
   const { blocks: prepared } = prepareLoadedNoteBlocks(blocks);
   const normalized = dedupeNoteBlocksById(prepared);
-  engine.replaceBlocks(normalized);
+  // patchContent는 activeDocumentId와 block.document_id 일치를 요구 — replace 전에 설정
   useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  engine.replaceBlocks(normalized);
   rememberNoteDocumentBlocks(
     documentId,
     mergeBlocksWithStoreContent(normalized.filter((block) => block.document_id === documentId)),
@@ -167,6 +235,11 @@ export function prepareNoteDocumentOpenSync(
     paintInstantSnapshotFromCache(documentId, engine, 0);
     return { hasCache: true, emptyConfirmed: false };
   }
+  const liveForDoc = selectDocumentBlocks(useNoteBlockStore.getState(), documentId);
+  if (liveForDoc.length > 0) {
+    useNoteBlockStore.getState().setActiveDocumentId(documentId);
+    return { hasCache: true, emptyConfirmed: false };
+  }
   engine.replaceBlocks([]);
   useNoteBlockStore.getState().setActiveDocumentId(documentId);
   return { hasCache: true, emptyConfirmed: true };
@@ -186,8 +259,8 @@ export async function paintInstantSnapshotFromLocalDb(
   const forDoc = local.blocks.filter((block) => block.document_id === documentId);
   if (forDoc.length === 0) return false;
 
-  engine.replaceBlocks(forDoc);
   useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  engine.replaceBlocks(forDoc);
   return true;
 }
 
@@ -196,6 +269,8 @@ export type OpenNoteDocumentOptions = {
   engine: NoteDocumentOpenEngine;
   bootstrapBlocks?: NoteBlock[] | null;
   prefetchedBlocks?: NoteBlock[] | null;
+  /** fetch 완료 직전 — Strict Mode·문서 전환 레이스 시 stale apply 차단 */
+  shouldAbort?: () => boolean;
 };
 
 /**
@@ -211,6 +286,7 @@ export async function openNoteDocument(
     engine,
     bootstrapBlocks,
     prefetchedBlocks,
+    shouldAbort,
   } = options;
 
   if (!bootstrapBlocks) {
@@ -221,6 +297,21 @@ export async function openNoteDocument(
     bootstrapBlocks,
     prefetchedBlocks,
   });
+
+  if (shouldAbort?.()) {
+    const local = readLocalBlocksForOpen(documentId);
+    const { toggleMigration } = prepareLoadedNoteBlocks(serverBlocks);
+    return finishOpenWithLocalBlocks(documentId, local, toggleMigration);
+  }
+
+  const localBeforeApply = readLocalBlocksForOpen(documentId);
+  const serverForDoc = dedupeNoteBlocksById(
+    prepareLoadedNoteBlocks(serverBlocks).blocks,
+  ).filter((block) => block.document_id === documentId);
+  if (documentContentAheadOfSnapshot(localBeforeApply, serverForDoc)) {
+    const { toggleMigration } = prepareLoadedNoteBlocks(serverBlocks);
+    return finishOpenWithLocalBlocks(documentId, localBeforeApply, toggleMigration);
+  }
 
   return applyOpenServerSnapshot(documentId, serverBlocks, engine);
 }

@@ -43,8 +43,6 @@ import { generateObstacleSchedule as labGenerateObstacleSchedule } from './engin
 import type { FlowModuleKey as LabFlowModuleKey } from './engine/modules/flowModules';
 import {
   PLAYABLE_GATE_COLOR_IDS,
-  laneForGateColor,
-  shouldSpawnColorGateOnBridgeAttempt,
 } from './engine/modules/colorGateGuides';
 
 // ── 공통 헬퍼 ─────────────────────────────────────────────────────────────────
@@ -129,16 +127,20 @@ describe('buildStages 동일성', () => {
 
   test('colorGate 단독 — 런지 펀치 포즈 1단계', () => {
     const stages = labBuildStages(['colorGate'], 25);
-    expect(stages).toHaveLength(1);
-    expect(stages.every((s) => s.isColorGate)).toBe(true);
-    expect(stages[0]!.colorGateAction).toBe('reach');
-    expect(stages[0]!.colorGateTotal).toBe(1);
+    expect(stages).toHaveLength(2);
+    expect(stages[0]!.isColorGate).toBeUndefined();
+    expect(stages[0]!.activeModules).toEqual(new Set(['jump']));
+    expect(stages[1]!.isColorGate).toBe(true);
+    expect(stages[1]!.activeModules).toEqual(new Set(['reach', 'colorGate']));
+    expect(stages[1]!.colorGateAction).toBe('reach');
+    expect(stages[1]!.colorGateTotal).toBe(1);
   });
 
   test('colorGate 단독 — 지정한 진행 시간을 그대로 사용', () => {
     const stages = labBuildStages(['colorGate'], 60);
-    expect(stages).toHaveLength(1);
-    expect(stages[0]!.durationSec).toBe(60);
+    expect(stages).toHaveLength(2);
+    expect(stages[0]!.durationSec).toBe(8);
+    expect(stages[1]!.durationSec).toBe(60);
   });
 
   test('보너스 스테이지는 항상 60초', () => {
@@ -169,19 +171,8 @@ describe('buildStagePreview 동일성', () => {
 });
 
 describe('colorGate spawn policy', () => {
-  test('skips the first two bridge attempts', () => {
-    expect(shouldSpawnColorGateOnBridgeAttempt(1, 0)).toBe(false);
-    expect(shouldSpawnColorGateOnBridgeAttempt(2, 0)).toBe(false);
-  });
-
-  test('spawns every bridge from the third bridge attempt', () => {
-    expect(shouldSpawnColorGateOnBridgeAttempt(3, 0)).toBe(true);
-    expect(shouldSpawnColorGateOnBridgeAttempt(3, 0.99)).toBe(true);
-  });
-
-  test('uses the fixed blue colorGate runway color', () => {
+  test('uses the fixed blue colorGate color', () => {
     expect(PLAYABLE_GATE_COLOR_IDS).toEqual(['blue']);
-    expect(laneForGateColor('blue')).toBe(1);
   });
 
 });
@@ -451,7 +442,6 @@ describe('FlowCamera', () => {
 describe('buildStages 불변 속성', () => {
   test('stage1 activeModules = {jump}', () => {
     for (const [, mods, dur] of STAGE_CASES) {
-      if (mods.length === 1 && mods[0] === 'colorGate') continue;
       const s = labBuildStages(mods, dur);
       expect([...s[0]!.activeModules]).toEqual(['jump']);
     }
@@ -880,31 +870,6 @@ describe('BridgeRenderer enhanced deck bounds', () => {
       expect(box.min.z).toBeGreaterThanOrEqual(-BRIDGE_LENGTH / 2 - 0.001);
       expect(box.max.z).toBeLessThanOrEqual(BRIDGE_LENGTH / 2 + 0.001);
     }
-    br.dispose();
-  });
-
-  test('colorGate post-wall deck is bridge-owned and hidden until reveal', () => {
-    const scene = new THREE.Scene();
-    const br = new BridgeRenderer(scene, true);
-    const v = br.createBridge({
-      lane: 1,
-      x: 0,
-      z: 0,
-      colorGateDeck: { gateLocalZ: BRIDGE_LENGTH * 0.32, color: 0x1d4ed8 },
-    });
-    expect(v.colorGateDeckMesh).toBeDefined();
-    expect(v.colorGateDeckMesh!.visible).toBe(false);
-    expect(v.colorGateDeckMesh!.userData['colorGateDeck']).toBe(true);
-
-    br.revealColorGateDeck(v);
-    expect(v.colorGateDeckMesh!.visible).toBe(true);
-
-    const box = new THREE.Box3().setFromObject(v.colorGateDeckMesh!);
-    const deckHalf = (LANE_WIDTH - 5) / 2;
-    expect(box.min.x).toBeGreaterThanOrEqual(-deckHalf - 0.001);
-    expect(box.max.x).toBeLessThanOrEqual(deckHalf + 0.001);
-    expect(box.min.z).toBeGreaterThanOrEqual(-BRIDGE_LENGTH / 2 - 0.001);
-    expect(box.max.z).toBeLessThanOrEqual(BRIDGE_LENGTH / 2 + 0.001);
     br.dispose();
   });
 

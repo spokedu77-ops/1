@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Eye, Lock, MonitorPlay } from 'lucide-react';
+import { Bookmark, Eye, Lock, MonitorPlay } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -563,6 +563,13 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
   }
 }
 
+function shouldFitThumbnailInsideSquare(preset: OfficialSpomovePreset) {
+  return (
+    preset.programGroup === 'reaction-cognition' &&
+    preset.engine.mode === 'basic' &&
+    [4, 5, 6].includes(preset.engine.level)
+  );
+}
 
 function CardVisual({
   preset,
@@ -576,8 +583,10 @@ function CardVisual({
   onImageError: () => void;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
+  const fitInsideSquare = shouldFitThumbnailInsideSquare(preset);
+
   return (
-    <div className="relative aspect-square overflow-hidden">
+    <div className="relative aspect-square overflow-hidden bg-white">
       {showThumbnail ? (
         <Image
           src={thumbnailUrl}
@@ -585,7 +594,11 @@ function CardVisual({
           fill
           unoptimized
           sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
-          className="object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          className={
+            fitInsideSquare
+              ? 'object-contain'
+              : 'object-cover transition-transform duration-300 group-hover:scale-[1.03]'
+          }
           onError={onImageError}
         />
       ) : (
@@ -617,7 +630,6 @@ function CardInfo({
 }) {
   const display = getSpomovePresetDisplayModel(preset);
   const cardTags = buildSpomoveCardTags(preset);
-  const mobileStartHref = officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' });
 
   return (
     <div className="flex flex-1 flex-col p-4 text-center">
@@ -638,7 +650,7 @@ function CardInfo({
       </p>
 
       {isReady ? (
-        <div className="mt-4 space-y-2">
+        <div className="mt-4">
           <div className="grid gap-2 sm:grid-cols-2">
             <button
               data-spm-spomove-card-action="preview"
@@ -648,7 +660,7 @@ function CardInfo({
                 event.stopPropagation();
                 onPreview();
               }}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100"
             >
               <Eye className="h-3.5 w-3.5" />
               가이드라인
@@ -656,18 +668,12 @@ function CardInfo({
             <Link
               href={startHref}
               data-spm-spomove-card-action="start"
-              className="inline-flex min-h-10 items-center justify-center whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white shadow-sm transition hover:bg-indigo-700 active:scale-[0.98] active:bg-indigo-800"
             >
-              큰 화면 실행
+              <MonitorPlay className="h-3.5 w-3.5" />
+              실행
             </Link>
           </div>
-          <Link
-            href={mobileStartHref}
-            data-spm-spomove-card-action="start-mobile"
-            className="inline-flex min-h-9 w-full items-center justify-center whitespace-nowrap rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[11px] font-black text-indigo-700"
-          >
-            이 기기에서 실행
-          </Link>
         </div>
       ) : null}
 
@@ -699,12 +705,18 @@ function PresetCard({
   preset,
   startHref,
   thumbnailUrl,
+  favorite,
+  favoriteEnabled,
   onPreview,
+  onFavorite,
 }: {
   preset: OfficialSpomovePreset;
   startHref: string;
   thumbnailUrl: string;
+  favorite: boolean;
+  favoriteEnabled: boolean;
   onPreview: () => void;
+  onFavorite: () => void;
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const displayModel = getSpomovePresetDisplayModel(preset);
@@ -712,6 +724,25 @@ function PresetCard({
   const inner = (
     <>
       <div className={`h-[3px] shrink-0 ${AXIS_ACCENT[preset.axis]}`} />
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onFavorite();
+        }}
+        disabled={!favoriteEnabled}
+        aria-pressed={favorite}
+        aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+        title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+        className={`absolute right-3 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70 ${
+          favorite
+            ? 'bg-amber-50 text-amber-600'
+            : 'bg-white/90 text-slate-500 hover:bg-white hover:text-slate-900'
+        }`}
+      >
+        <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
+      </button>
       <CardVisual
         preset={preset}
         thumbnailUrl={thumbnailUrl}
@@ -730,14 +761,14 @@ function PresetCard({
 
   if (!preset.isReady) {
     return (
-      <article className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white opacity-75 shadow-sm">
+      <article className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white opacity-75 shadow-sm">
         {inner}
       </article>
     );
   }
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2">
       {inner}
     </article>
   );
@@ -748,6 +779,7 @@ function PresetCard({
 export default function SpomoveHubView() {
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
   const [activeThinkingLevel, setActiveThinkingLevel] = useState<ThinkingLevelTab>('all');
+  const [showSavedOnly, setShowSavedOnly] = useState(false);
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
@@ -755,6 +787,15 @@ export default function SpomoveHubView() {
   const profile = useProfile();
   const ownerId = getRecentActivityOwnerId(profile);
   const recentProgramActivities = useMasterStore((state) => state.recentProgramActivities);
+  const storedFavoriteIds = useMasterStore((state) =>
+    ownerId ? state.favoriteProgramIdsByOwner[ownerId] : undefined,
+  );
+  const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
+  const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
+  const favoriteSpomoveIds = useMemo(
+    () => new Set((storedFavoriteIds ?? []).filter((id) => OFFICIAL_SPOMOVE_LIBRARY.some((preset) => preset.id === id))),
+    [storedFavoriteIds],
+  );
   const recentSpomoveActivities = useMemo(() => {
     if (!ownerId) return [];
     const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((preset) => preset.id));
@@ -810,10 +851,11 @@ export default function SpomoveHubView() {
     };
   }, []);
 
-  const filteredPresets = useMemo(
-    () => filterOfficialPresets(activeProgramGroup, activeThinkingLevel),
-    [activeProgramGroup, activeThinkingLevel],
-  );
+  const filteredPresets = useMemo(() => {
+    const presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
+    if (!showSavedOnly) return presets;
+    return presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
+  }, [activeProgramGroup, activeThinkingLevel, favoriteSpomoveIds, showSavedOnly]);
   const showAxisSections = activeProgramGroup === 'all' && activeThinkingLevel === 'all';
   const axisSections = useMemo(() => {
     if (!showAxisSections) return [];
@@ -835,7 +877,10 @@ export default function SpomoveHubView() {
           preset={preset}
           startHref={officialPresetSessionHref(preset, { autostart: true })}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
+          favorite={isFavoriteProgram(ownerId, preset.id)}
+          favoriteEnabled={ownerId != null && preset.isReady}
           onPreview={() => setPreviewPreset(preset)}
+          onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
         />
       ))}
     </div>
@@ -904,6 +949,24 @@ export default function SpomoveHubView() {
             </div>
           )}
         </section>
+
+        {/* 저장한 활동 */}
+        <div className="mt-6 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSavedOnly((current) => !current)}
+            aria-pressed={showSavedOnly}
+            className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-[13px] font-black transition ${
+              showSavedOnly
+                ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
+                : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950'
+            }`}
+          >
+            <Bookmark className={`h-4 w-4 ${showSavedOnly ? 'fill-current' : ''}`} />
+            저장한 활동
+            <span className="text-[11px] font-black opacity-60">{favoriteSpomoveIds.size}</span>
+          </button>
+        </div>
 
         {/* 프로그램 필터 (1차) */}
         <div className="mt-6">
@@ -992,13 +1055,14 @@ export default function SpomoveHubView() {
         ) : (
           <div className="mt-12 flex flex-col items-center gap-4 text-center">
             <p className="text-[14px] font-semibold text-slate-500">
-              선택한 조건에 해당하는 활동이 없습니다.
+              {showSavedOnly ? '저장한 조건에 해당하는 활동이 없습니다.' : '선택한 조건에 해당하는 활동이 없습니다.'}
             </p>
             <button
               type="button"
               onClick={() => {
                 setActiveProgramGroup('all');
                 setActiveThinkingLevel('all');
+                setShowSavedOnly(false);
               }}
               className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
             >

@@ -307,7 +307,7 @@ export function SiteHeader() {
             }`}
             style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
           >
-            문의하기
+            상담하기
           </NavAnchor>
 
           <button
@@ -353,7 +353,7 @@ export function SiteHeader() {
               style={{ backgroundColor: ATHLETIC_BLUE }}
               onNavigate={closeMenus}
             >
-              문의하기
+              상담하기
             </NavAnchor>
           </nav>
         </div>
@@ -368,7 +368,7 @@ export function SiteFooter() {
 
   const programLinks = [
     { label: '개인·소그룹 수업', href: `${SPOKEDU_BASE_PATH}/private`, trackLabel: 'footer-program-private' },
-    { label: '기관 출강', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-program-dispatch' },
+    { label: '기관 프로그램', href: `${SPOKEDU_BASE_PATH}/dispatch`, trackLabel: 'footer-program-dispatch' },
     { label: '특수체육', href: `${SPOKEDU_BASE_PATH}/dispatch#special`, trackLabel: 'footer-program-special' },
     { label: '커리큘럼·지도자 교육', href: `${SPOKEDU_BASE_PATH}/curriculum`, trackLabel: 'footer-program-curriculum' },
     { label: 'SPOMOVE', href: `${SPOKEDU_BASE_PATH}/programs/spomove`, trackLabel: 'footer-program-spomove' },

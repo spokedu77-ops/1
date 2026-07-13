@@ -99,7 +99,16 @@ export function applyNoteCommand(
   const docBlocks = filterDocumentBlocks(previous, ctx.documentId);
 
   switch (command.type) {
-  case 'hydrate':
+  case 'hydrate': {
+    const incoming = filterDocumentBlocks(command.blocks, ctx.documentId);
+    if (incoming.length === 0 && docBlocks.length > 0) {
+      return { blocks: docBlocks, structural: false };
+    }
+    let next = mergeReconciledBlocks(docBlocks, incoming);
+    next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
+    next = preserveStoreContent(next, ctx);
+    return { blocks: next, structural: true };
+  }
   case 'replaceBlocks': {
     const blocks = filterDocumentBlocks(command.blocks, ctx.documentId);
     return { blocks, structural: true };
@@ -135,6 +144,9 @@ export function applyNoteCommand(
   }
   case 'syncSnapshot': {
     const incoming = filterDocumentBlocks(command.blocks, ctx.documentId);
+    if (incoming.length === 0 && docBlocks.length > 0) {
+      return { blocks: docBlocks, structural: false };
+    }
     let next = mergeReconciledBlocks(docBlocks, incoming);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);

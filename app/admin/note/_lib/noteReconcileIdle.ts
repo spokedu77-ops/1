@@ -28,13 +28,18 @@ export function markPendingBlockDeletes(
 }
 
 export function hasRecentBlockDeletes(documentId: string): boolean {
+  return getPendingBlockDeleteIds(documentId).size > 0;
+}
+
+/** soft delete 확정 전 hydrate/reconcile이 해당 id를 되살리지 않도록 */
+export function getPendingBlockDeleteIds(documentId: string): Set<string> {
   const entry = pendingBlockDeletes.get(documentId);
-  if (!entry) return false;
+  if (!entry) return new Set();
   if (Date.now() > entry.until) {
     pendingBlockDeletes.delete(documentId);
-    return false;
+    return new Set();
   }
-  return entry.ids.size > 0;
+  return new Set(entry.ids);
 }
 
 export function registerNoteReconcileIdleHandler(handler: NoteReconcileIdleHandler | null): void {

@@ -167,30 +167,31 @@ export function useNoteBlockActions(options: {
   });
 
   const syncBlockContent = useCallback((blockId: string, content: unknown) => {
-    const block = blocksRef.current.find((b) => b.id === blockId);
+    let block = useNoteBlockStore.getState().getBlock(blockId);
+    if (!block) {
+      block = blocksRef.current.find((b) => b.id === blockId);
+    }
     if (!block) return;
     applyBlockContentChange({
       block,
       content,
       blocksRef,
-      setBlocks,
       recordContentUndoBeforeChange,
       scheduleBlockContentSave,
       onAfterChange: () => bumpNoteReconcileIdle(selectedId),
     });
-  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId, setBlocks]);
+  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
 
   const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
     applyBlockContentChange({
       block,
       content,
       blocksRef,
-      setBlocks,
       recordContentUndoBeforeChange,
       scheduleBlockContentSave,
       onAfterChange: () => bumpNoteReconcileIdle(selectedId),
     });
-  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId, setBlocks]);
+  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
 
   const {
     insertBlockAmongSiblings,
@@ -318,19 +319,34 @@ export function useNoteBlockActions(options: {
     handleClickEditorWhitespace();
   }, [handleClickEditorWhitespace]);
 
-  const handleChangeBlockType = useCallback(async (block: NoteBlock, type: NoteBlock['type']) => {
+  const handleChangeBlockType = useCallback(async (
+    block: NoteBlock,
+    type: NoteBlock['type'],
+    options?: { contentOverride?: Record<string, unknown> },
+  ) => {
     const blockedReason = getBlockedTypeChangeReason(block.type, type, block.content);
     if (blockedReason) {
       setError(blockedReason);
       return;
     }
 
-    commitActiveNoteEditorToStore();
+    // empty-backspace unwrap: TipTap/debounce 잔여 본문이 commit으로 되살아나지 않게 override
+    if (!options?.contentOverride) {
+      commitActiveNoteEditorToStore();
+    } else {
+      clearPendingContentPatch(block.id);
+      useNoteBlockStore.getState().patchContent(block.id, options.contentOverride);
+    }
     const latestBlock = blocksRef.current.find((b) => b.id === block.id) ?? block;
     const storeSnapshot = useNoteBlockStore.getState().getBlock(block.id);
-    const sourceContent = (storeSnapshot?.content ?? latestBlock.content ?? {}) as Record<string, unknown>;
+    const sourceContent = (options?.contentOverride
+      ?? storeSnapshot?.content
+      ?? latestBlock.content
+      ?? {}) as Record<string, unknown>;
     recordBlockUndo([block.id]);
-    let nextContent = buildContentForTypeChange(sourceContent, latestBlock.type, type);
+    let nextContent = options?.contentOverride
+      ? { ...options.contentOverride }
+      : buildContentForTypeChange(sourceContent, latestBlock.type, type);
     if (type === 'bulletList' || type === 'numberedList') {
       nextContent = normalizeListBlockContentRecord(nextContent);
     }

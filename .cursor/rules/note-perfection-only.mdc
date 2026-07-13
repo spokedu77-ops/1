@@ -1,0 +1,38 @@
+---
+description: admin/note — 기능 추가 금지, 기존 구현 완벽화만
+globs: app/admin/note/**/*
+alwaysApply: false
+---
+
+# admin/note — 완벽화 전용 모드
+
+## 목표
+
+**새 기능·블록 타입·UI 확장 금지.** 이미 구현된 편집·동기화·DnD·하위페이지만 **버그 0·회귀 0**에 집중한다.
+
+## 허용
+
+- 기존 기능 버그 수정 (최소 diff)
+- `note-sync-invariants.mdc` 불변식 준수 수정 (reducer/pipeline/open)
+- 단위·스모크·회귀 테스트 추가
+- CI `verify:admin-note` + `build` 통과
+
+## 금지
+
+- 새 블록 타입, column 3열, paste 확장, 미디어 신규 등 **기능 로드맵 항목**
+- hook별 ad-hoc guard·캐시 분기 추가 (open/pipeline/reducer로 흡수)
+- 증상만 가리는 UI 땜빵 (표시≠스토어 이중 진실 유지)
+
+## 완료 정의 (기존 범위)
+
+1. `scripts/admin-note-smoke-qa.mjs` 전체 통과
+2. `scripts/admin-note-regression-qa.mjs` 전체 통과
+3. `npm run verify:admin-note` 통과
+4. 수동: 하위페이지 todo 체크, DnD 삽입선, 2인 타이핑 되돌림 없음, 삭제 좀비 없음, 문서 전환 깜빡임 없음
+
+## 수정 순서 (고정)
+
+1. **SSOT** — 표시 = store = blocksRef (`noteDisplayBlocks`, `noteDocumentOpen`, `patchContent`)
+2. **동기화** — op-log 단일 경로, 캐시/reconcile 부작용 제거
+3. **편집 동작** — 키보드·DnD·cross-select 스모크 기준
+4. **동시 편집** — 되돌림·좀비 (서버 비원자성 문서화·완화만)

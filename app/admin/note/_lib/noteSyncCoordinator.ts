@@ -22,17 +22,47 @@ import {
   findOutboundOpsSupersededByServerRestore,
   persistOpToPushItems,
 } from './notePersistOpToBlockOps';
-import { partitionOutboundForSafePush } from './noteSyncGuards';
+import { buildKnownBlockIdsForPush, partitionOutboundForSafePush } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { traceApiEgress, type SnapshotTraceOrigin } from './noteFlickerTrace';
-import { markNoteLocalSave } from './noteReconcileIdle';
+import {
+  markNoteLocalSave,
+  getPendingBlockDeleteIds,
+} from './noteReconcileIdle';
 
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
 const LEADER_CHANNEL = 'spm-note-sync-leader-v1';
 const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 const MAX_PUSH_ATTEMPTS = 8;
+
+function readBlockBodyText(content: unknown): string {
+  if (!content || typeof content !== 'object') return '';
+  const text = (content as Record<string, unknown>).text;
+  return typeof text === 'string' ? text : '';
+}
+
+/** 스토어/로컬에 본문이 있는데 patch가 비우려 할 때 push 차단 — reconcile 레이스 서버 wipe 방지 */
+function filterRegressivePatchContentOps(
+  ops: NoteBlockOpPushItem[],
+  blocks: NoteBlock[],
+): NoteBlockOpPushItem[] {
+  const blocksById = new Map(blocks.map((block) => [block.id, block]));
+  return ops.filter((op) => {
+    if (op.opType !== 'patch_content') return true;
+    const payload = op.payload;
+    if (payload.opType !== 'patch_content') return true;
+    const block = blocksById.get(payload.blockId);
+    if (!block) return true;
+    const currentText = readBlockBodyText(block.content);
+    const patchText = readBlockBodyText(payload.content);
+    if (currentText.length > 0 && patchText.length === 0) return false;
+    return true;
+  });
+}
 
 export type NoteSyncCoordinatorCallbacks = {
   onBlocksUpdated: (
@@ -102,6 +132,10 @@ async function pushOps(
   }
   if (!res.ok) {
     const message = (json as { error?: string }).error || 'op push failed';
+    const normalized = message.toLowerCase();
+    if (normalized.includes('block not found')) {
+      throw new Error(message);
+    }
     if (res.status === 500 && isNoteSyncRecoverableError(message)) {
       const state = await fetchSyncState(documentId);
       return {
@@ -314,34 +348,63 @@ export class NoteSyncCoordinator {
   }
 
   private async pushBatchOnce(): Promise<boolean> {
+    if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
+      this.schedulePush(2000);
+      return false;
+    }
+
+    const storeMerged = useNoteBlockStore.getState().getBlocksArray()
+      .filter((block) => block.document_id === this.documentId);
+    if (storeMerged.length > 0) {
+      this.blocks = dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeMerged));
+    }
+
     for (let attempt = 0; attempt < MAX_PUSH_ATTEMPTS; attempt += 1) {
-      const outboundAll = await listOutboundOps(this.documentId);
-      const allowRemotePull = outboundAll.length === 0;
+      // outbound이 있어도 seq를 맞춰야 push baseSeq가 서버와 일치한다.
       // eslint-disable-next-line no-await-in-loop
-      await this.rebaseFromServer({ allowRemotePull });
+      await this.rebaseFromServer({ allowRemotePull: true });
 
       const outbound = await listOutboundOps(this.documentId);
       if (outbound.length === 0) return false;
 
       const coalesced = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
-      const knownIds = new Set(this.blocks.map((block) => block.id));
+      const knownIds = buildKnownBlockIdsForPush(this.blocks, coalesced);
       const { ready, deferred } = partitionOutboundForSafePush(coalesced, knownIds);
-
-      if (ready.length === 0) {
-        if (deferred.length > 0) this.schedulePush(500);
-        return deferred.length > 0;
+      const safeReady = filterRegressivePatchContentOps(ready, this.blocks);
+      const blockedRegressiveIds = ready
+        .filter((op) => !safeReady.some((safe) => safe.clientOpId === op.clientOpId))
+        .map((op) => op.clientOpId);
+      if (blockedRegressiveIds.length > 0) {
+        // 서버 wipe 방지용으로 차단된 patch는 outbound에서 제거 — 무한 재시도 방지
+        // eslint-disable-next-line no-await-in-loop
+        await removeOutboundOps(blockedRegressiveIds);
       }
 
-      const consumedClientOpIds = ready.map((op) => op.clientOpId);
+      if (safeReady.length === 0) {
+        // ready가 없으면 while을 즉시 돌리지 않는다 — schedulePush로만 재시도.
+        // true를 반환하면 flushPush의 while이 ops/state만 폭주한다.
+        if (deferred.length > 0) this.schedulePush(500);
+        return false;
+      }
+
+      const consumedClientOpIds = safeReady.map((op) => op.clientOpId);
 
       // eslint-disable-next-line no-await-in-loop
-      const result = await pushOps(this.documentId, this.lastAppliedSeq, ready);
+      const result = await pushOps(this.documentId, this.lastAppliedSeq, safeReady);
       if (!result.ok) {
         await this.applyRemoteOps(result.ops, result.lastSeq);
+        const freshSeq = await fetchSyncState(this.documentId);
+        if (freshSeq > this.lastAppliedSeq) {
+          this.lastAppliedSeq = freshSeq;
+          await this.persistLocal();
+        }
         continue;
       }
 
-      const pendingDeletes = collectPendingSoftDeleteIds(outbound);
+      const pendingDeletes = new Set([
+        ...collectPendingSoftDeleteIds(outbound),
+        ...getPendingBlockDeleteIds(this.documentId),
+      ]);
       this.blocks = excludeBlocksPendingSoftDelete(
         mergeSnapshotPatches(this.blocks, result.blocks, {
           excludeBlockIds: pendingDeletes,
@@ -354,12 +417,12 @@ export class NoteSyncCoordinator {
       markNoteLocalSave(this.documentId);
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:push');
       this.broadcastState();
-      if (deferred.length > 0) return true;
-      return true;
+      // deferred가 남아 있을 때만 while 계속 — 없으면 한 번 더 state 폴링하지 않음
+      return deferred.length > 0;
     }
 
-    devLogger.error('[NoteSyncCoordinator] push exhausted retries');
-    this.schedulePush(2000);
+    devLogger.warn('[NoteSyncCoordinator] push exhausted retries; scheduling recovery');
+    this.schedulePush(3000);
     return false;
   }
 
@@ -383,6 +446,14 @@ export class NoteSyncCoordinator {
 
   private async pullRemote(): Promise<void> {
     try {
+      if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
+        return;
+      }
+      const storeMerged = useNoteBlockStore.getState().getBlocksArray()
+        .filter((block) => block.document_id === this.documentId);
+      if (storeMerged.length > 0) {
+        this.blocks = dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeMerged));
+      }
       if (this.isPushing || await this.hasPendingOutbound()) {
         // create/patch가 아직 서버에 없으면 pull 스냅샷이 로컬 블록을 지울 수 있다.
         this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);

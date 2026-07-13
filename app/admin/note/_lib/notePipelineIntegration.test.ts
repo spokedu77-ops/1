@@ -97,9 +97,33 @@ describe('syncSnapshot during active typing', () => {
   });
 });
 
+describe('document switch store replace', () => {
+  it('hydrate replaces parent blocks when opening child document', () => {
+    const parent = block('p1', { document_id: 'parent-doc', content: { text: 'parent' } });
+    const child = block('c1', { document_id: 'child-doc', content: { text: 'child' } });
+    useNoteBlockStore.getState().setActiveDocumentId('parent-doc');
+    useNoteBlockStore.getState().hydrate([parent]);
+
+    const ctx = {
+      documentId: 'child-doc',
+      activeBlockId: null,
+      storeContentById: {},
+    };
+    const { blocks } = applyNoteCommand(
+      useNoteBlockStore.getState().getBlocksArray(),
+      { type: 'hydrate', blocks: [child] },
+      ctx,
+    );
+    useNoteBlockStore.getState().replaceBlocks(blocks);
+
+    expect(useNoteBlockStore.getState().getBlock('p1')).toBeUndefined();
+    expect(useNoteBlockStore.getState().getBlock('c1')?.document_id).toBe('child-doc');
+  });
+});
+
 describe('double dispatch prevention', () => {
   it('hydrate replaces without requiring second replaceBlocks', () => {
-    const previous = [block('old')];
+    const previous = [block('old', { created_at: '2020-01-01T00:00:00Z' })];
     const { blocks } = applyNoteCommand(
       previous,
       { type: 'hydrate', blocks: [block('new')] },

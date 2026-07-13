@@ -899,12 +899,12 @@ function DropInsertLine({ position }: { position: 'top' | 'bottom' }) {
   const top = position === 'top';
   return (
     <div
-      className={`pointer-events-none absolute left-[-2px] right-0 z-30 flex items-center ${
-        top ? 'top-0' : 'bottom-0'
+      className={`pointer-events-none absolute left-0 right-0 z-40 flex items-center ${
+        top ? '-top-[1px]' : '-bottom-[1px]'
       }`}
     >
-      <div className="h-[6px] w-[6px] shrink-0 rounded-full border-2 border-blue-500 bg-white" />
-      <div className="h-[2px] flex-1 bg-blue-500" />
+      <div className="h-[8px] w-[8px] shrink-0 rounded-full border-[2.5px] border-blue-500 bg-white shadow-sm" />
+      <div className="h-[3px] flex-1 rounded-full bg-blue-500" />
     </div>
   );
 }
@@ -1087,7 +1087,7 @@ function SortableBlockRow({
     && blockExternalizesChildren(block.type);
 
   const style: React.CSSProperties | undefined = isDragging
-    ? { opacity: 0, zIndex: 10 }
+    ? { opacity: 0.28, zIndex: 10 }
     : isSelected && isDragActive && selectedBlockIds.size > 1
       ? { opacity: 0.4 }
       : undefined;
@@ -1313,7 +1313,7 @@ function ToggleInlineRow({
 
   const style: React.CSSProperties = {
     ...(isDragging
-      ? { opacity: 0, zIndex: 10 + nestDepth }
+      ? { opacity: 0.28, zIndex: 10 + nestDepth }
       : isSelected && isDragActive && selectedBlockIds.size > 1
         ? { opacity: 0.4 }
         : {}),

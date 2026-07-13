@@ -61,6 +61,31 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('new');
   });
 
+  it('syncSnapshot does not wipe local blocks when server snapshot is empty', () => {
+    const previous = [block('a', { content: { text: '하위타이핑유지', html: '<p>하위타이핑유지</p>' } })];
+    const { blocks, structural } = applyNoteCommand(
+      previous,
+      { type: 'syncSnapshot', blocks: [] },
+      {
+        ...ctx,
+        storeContentById: { a: { text: '하위타이핑유지', html: '<p>하위타이핑유지</p>' } },
+      },
+    );
+    expect(structural).toBe(false);
+    expect((blocks[0].content as { text: string }).text).toBe('하위타이핑유지');
+  });
+
+  it('hydrate preserves store typing over empty server block', () => {
+    const previous = [block('a', { content: { text: 'typed', html: '<p>typed</p>' } })];
+    const incoming = [block('a', { content: { text: '', html: '<p></p>' } })];
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'hydrate', blocks: incoming },
+      { ...ctx, storeContentById: { a: { text: 'typed', html: '<p>typed</p>' } } },
+    );
+    expect((blocks[0].content as { text: string }).text).toBe('typed');
+  });
+
   it('syncSnapshot recovers server blocks missing from stale local snapshot', () => {
     const serverBlocks = [
       block('toggle', { type: 'toggle', content: { title: 'Gym' } }),

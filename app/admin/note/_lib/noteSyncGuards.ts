@@ -53,6 +53,18 @@ function registerCreatesFromPush(
  * push 배치에서 서버에 아직 없는 블록을 건드리는 op는 뒤로 미룬다.
  * create → patch 순서가 깨져도 block not found가 나지 않게 한다.
  */
+/** coordinator.blocks + outbound create id — patch가 create보다 먼저 ready 되는 것을 방지 */
+export function buildKnownBlockIdsForPush(
+  blocks: ReadonlyArray<{ id: string }>,
+  outbound: ReadonlyArray<NoteBlockOpPushItem>,
+): Set<string> {
+  const known = new Set(blocks.map((block) => block.id));
+  for (const item of outbound) {
+    registerCreatesFromPush(item, known);
+  }
+  return known;
+}
+
 export function partitionOutboundForSafePush(
   items: NoteBlockOpPushItem[],
   knownBlockIds: ReadonlySet<string>,

@@ -105,12 +105,24 @@ export class NoteDocumentOpQueue {
     const updates = [...snapshot.entries()]
       .filter(([id]) => !!this.deps.getBlock(id))
       .map(([id, pending]) => {
+        const storeBlock = this.deps.getBlock(id)!;
+        const storeContent = storeBlock.content as Record<string, unknown> | null | undefined;
+        const storeText = typeof storeContent?.text === 'string' ? storeContent.text : '';
+        const pendingText = typeof pending.content.text === 'string' ? pending.content.text : '';
+        const baseText = typeof pending.baseContent?.text === 'string' ? pending.baseContent.text : '';
+        if (pendingText.length === 0 && (storeText.length > 0 || baseText.length > 0)) {
+          return null;
+        }
+        const content = storeText.length > pendingText.length
+          ? { ...(storeContent ?? {}), ...pending.content, text: storeText }
+          : pending.content;
         return {
           id,
-          content: pending.content,
+          content,
           baseContent: pending.baseContent,
         };
-      });
+      })
+      .filter((update): update is NonNullable<typeof update> => update !== null);
 
     if (updates.length === 0) return;
 

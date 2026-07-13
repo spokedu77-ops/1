@@ -428,6 +428,7 @@ export function NoteEditor({
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
+    editorBlockId,
     flushPendingChange: () => {},
   });
 
@@ -455,6 +456,7 @@ export function NoteEditor({
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
+    editorBlockId,
     flushPendingChange: callbacksRef.current.flushPendingChange,
   };
 
@@ -630,6 +632,27 @@ export function NoteEditor({
             callbacksRef.current.onMarkdownBlockTrigger,
             callbacksRef.current.flushPendingChange,
           )) return true;
+          // PM keymap보다 먼저: 빈 블록 Backspace (singleton remount 후에도 동작)
+          if (event.key === 'Backspace') {
+            const { selection } = view.state;
+            const ed = editorRef.current;
+            const viewDocEmpty = view.state.doc.textContent.trim().length === 0;
+            if (selection.empty && (viewDocEmpty || editorIsEffectivelyEmpty(ed))) {
+              event.preventDefault();
+              const {
+                flushPendingChange: flush,
+                onEmptyBackspace: currentOnEmptyBackspace,
+                editorBlockId: currentEditorBlockId,
+              } = callbacksRef.current;
+              flush();
+              if (currentEditorBlockId) {
+                invokeToggleChildEmptyBackspace(currentEditorBlockId);
+              } else if (currentOnEmptyBackspace) {
+                currentOnEmptyBackspace();
+              }
+              return true;
+            }
+          }
           if (event.key !== 'Tab') return false;
           const {
             tabBehavior: currentTabBehavior,
@@ -745,12 +768,15 @@ export function NoteEditor({
           const atStart = selectionAtBlockStart(view);
           const editor = editorRef.current;
           const { selection } = view.state;
+          // remount 직후 editorRef가 destroyed여도 view 기준으로 빈 블록 판정
+          const viewDocEmpty = view.state.doc.textContent.trim().length === 0;
           if (
             selection.empty
-            && editorIsEffectivelyEmpty(editor)
+            && (viewDocEmpty || editorIsEffectivelyEmpty(editor))
           ) {
             event.preventDefault();
             flush();
+            // 부모·하위 공통: store 최신 type 기준 SSOT (stale React prop의 convert 반복 금지)
             if (editorBlockId) {
               invokeToggleChildEmptyBackspace(editorBlockId);
             } else if (currentOnEmptyBackspace) {
@@ -759,12 +785,12 @@ export function NoteEditor({
             return true;
           }
           if (atStart) {
-            if (editorBlockId && invokeToggleChildBackspaceAtStart(editorBlockId)) {
+            if (currentOnBackspaceAtBlockStart?.()) {
               event.preventDefault();
               flush();
               return true;
             }
-            if (currentOnBackspaceAtBlockStart?.()) {
+            if (editorBlockId && invokeToggleChildBackspaceAtStart(editorBlockId)) {
               event.preventDefault();
               flush();
               return true;

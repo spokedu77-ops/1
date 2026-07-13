@@ -18,6 +18,7 @@ import {
   commitActiveNoteEditorToStore,
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   rememberNoteDocumentBlocks,
 } from '../_lib/noteDocumentBlocksCache';
@@ -162,12 +163,13 @@ export function useNoteBlockDelete(options: {
         return patch ? { ...block, content: patch } : block;
       });
     }
-    documentEngine.replaceBlocks(nextBlocks);
     const documentId = command.removedBlocks[0]?.document_id
       ?? deletedBlock?.document_id
       ?? nextBlocks.find((block) => block.document_id)?.document_id
       ?? null;
+    // replace 전에 pending mark — 직후 patchFields/reconcile 레이스가 되살리지 않게
     applyPostBlockRemovalCache(documentId, nextBlocks, command.affectedIds);
+    documentEngine.replaceBlocks(nextBlocks);
 
     try {
       await documentEngine.persistSoftDelete({
@@ -255,7 +257,11 @@ export function useNoteBlockDelete(options: {
     focusPrevious = false,
     skipDeleteUndo = false,
   ) => {
-    const prevBlocks = blocksRef.current;
+    const storeBlocks = useNoteBlockStore.getState().getBlocksArray()
+      .filter((item) => item.document_id === block.document_id);
+    const prevBlocks = mergeBlocksWithStoreContent(
+      storeBlocks.length > 0 ? storeBlocks : blocksRef.current,
+    );
     const command = buildDeleteBlockForestCommand(prevBlocks, [block.id]);
     if (command.affectedIds.length === 0) return;
     if (focusPrevious) {

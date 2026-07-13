@@ -12,18 +12,21 @@ import {
 
 const PROTECTED_IDS = new Set(NOTE_QA_DOCUMENTS.map((doc) => doc.id));
 
-/** QA 스크립트가 만드는 일회성 문서 제목 패턴 */
+/** QA 스크립트·디버그 세션이 만드는 일회성 문서 제목 패턴 */
 export function isEphemeralQaDocumentTitle(title) {
   if (typeof title !== 'string') return false;
   const trimmed = title.trim();
   if (!trimmed) return false;
   if (trimmed === 'Smoke QA' || trimmed.startsWith('Smoke ')) return true;
+  if (trimmed.startsWith('SmokeTodoChain')) return true;
   if (trimmed.startsWith('Typing QA ')) return true;
   if (trimmed.startsWith('Regression QA ')) return true;
   if (trimmed.startsWith('Toggle KB QA ')) return true;
   if (trimmed.startsWith('Toggle Zombie QA ')) return true;
   if (trimmed.startsWith('dbg ')) return true;
   if (trimmed === '스모크 하위') return true;
+  // 임시 프로브/디버그 문서 (에이전트·수동 점검 잔여)
+  if (/^(BS|UIProbe|ChainProbe|SeedProbe|Debug|Probe)\b/i.test(trimmed)) return true;
   return false;
 }
 

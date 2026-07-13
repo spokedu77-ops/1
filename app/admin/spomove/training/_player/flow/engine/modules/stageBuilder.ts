@@ -16,6 +16,8 @@ import {
   COLOR_GATE_POSE_LABEL,
 } from './colorGateGuides';
 
+const COLOR_GATE_WARMUP_DURATION_SEC = 8;
+
 export interface FlowStageConfig {
   stageIndex: number;
   stageNum: number;
@@ -61,7 +63,7 @@ function buildColorGateStages(
       stageNum: startNum + j,
       label: isPoseOnly ? 'GATE' : `GATE ${j + 1}`,
       durationSec,
-      activeModules: new Set<FlowModuleKey>(['jump', actionKey, 'colorGate']),
+      activeModules: new Set<FlowModuleKey>([actionKey, 'colorGate']),
       newModule: actionKey,
       isBonus: false,
       isColorGate: true,
@@ -83,10 +85,7 @@ export function buildStages(
 ): FlowStageConfig[] {
   const obstacleModules = selectedModules.filter((k) => k !== 'colorGate');
   const hasColorGate = selectedModules.includes('colorGate');
-
-  if (obstacleModules.length === 0 && hasColorGate) {
-    return buildColorGateStages(0, 1, durationSec);
-  }
+  const isColorGateOnly = hasColorGate && obstacleModules.length === 0;
 
   const stages: FlowStageConfig[] = [];
   const baseMod = FLOW_MODULES.jump;
@@ -95,7 +94,7 @@ export function buildStages(
     stageIndex: 0,
     stageNum: 1,
     label: 'STAGE 1',
-    durationSec,
+    durationSec: isColorGateOnly ? Math.min(COLOR_GATE_WARMUP_DURATION_SEC, durationSec) : durationSec,
     activeModules: new Set<FlowModuleKey>(['jump']),
     newModule: 'jump',
     isBonus: false,

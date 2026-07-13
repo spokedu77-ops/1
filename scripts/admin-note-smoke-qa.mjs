@@ -174,11 +174,13 @@ async function seedTextBlockIfEmpty(page, explicitDocumentId) {
 }
 
 async function clickDocumentBody(page) {
-  const body = page.locator('div.cursor-text').filter({ has: page.locator('nav') }).first();
-  if (await body.isVisible().catch(() => false)) {
-    await body.click({ position: { x: 120, y: 220 }, force: true });
+  const body = page.locator('[data-note-document-body="true"]').first();
+  await body.waitFor({ state: 'visible', timeout: 15000 });
+  const box = await body.boundingBox();
+  if (box) {
+    await page.mouse.click(box.x + Math.min(200, box.width * 0.5), box.y + Math.min(box.height - 24, 420));
   } else {
-    await page.locator('div.cursor-text').first().click({ position: { x: 120, y: 220 }, force: true });
+    await body.click({ force: true });
   }
   await page.waitForTimeout(1200);
 }
@@ -273,22 +275,29 @@ async function focusBulletBlockAt(page, index) {
 async function focusBlockAt(page, index) {
   const row = page.locator('[data-note-block-row]').nth(index);
   await row.scrollIntoViewIfNeeded();
+  // 활성 TipTap이면 preview가 숨겨져 있다 — visible 대기 대신 force/ProseMirror 직접 클릭
+  const existingProse = row.locator('.ProseMirror').first();
+  if (await existingProse.count()) {
+    await existingProse.click({ force: true });
+    await page.waitForTimeout(300);
+    return existingProse;
+  }
   const preview = row.locator('[data-note-preview-text]').first();
   if (await preview.count()) {
-    await preview.click();
+    await preview.click({ force: true });
   } else {
-    await row.click({ position: { x: 96, y: 14 } });
+    await row.click({ position: { x: 96, y: 14 }, force: true });
   }
   await page.waitForTimeout(500);
   const inRow = row.locator('.ProseMirror').first();
   if (await inRow.count()) {
-    await inRow.click();
+    await inRow.click({ force: true });
     return inRow;
   }
-  await row.locator('[data-note-editor-host]').first().click();
+  await row.locator('[data-note-editor-host]').first().click({ force: true });
   const editor = page.locator('.ProseMirror:visible').last();
   await editor.waitFor({ state: 'visible', timeout: 15000 });
-  await editor.click();
+  await editor.click({ force: true });
   return editor;
 }
 
@@ -412,6 +421,141 @@ async function assertFirstRowBlockKind(page, kind) {
   throw new Error(`unknown block kind assertion: ${kind}`);
 }
 
+function todoCheckboxLocator(page, rowIndex) {
+  return page.locator('[data-note-block-row]').nth(rowIndex)
+    .locator('div.flex.items-start.gap-2 > button[type="button"]');
+}
+
+/**
+ * 이미 text(위칸)+todo 가 열린 문서에서 Backspace 체인 검증.
+ */
+async function runTodoBackspaceChainOnOpenDoc(page, label, anchor) {
+  const todoBody = `할일본문-${label}`;
+  await todoCheckboxLocator(page, 1).first().waitFor({ state: 'visible', timeout: 8000 });
+  await waitForBlockText(page, anchor, 0);
+
+  const todoFocused = await focusBlockAt(page, 1);
+  await todoFocused.click({ force: true });
+  await page.keyboard.type(todoBody, { delay: 35 });
+  await page.waitForFunction(
+    ({ idx, expected }) => {
+      const row = document.querySelectorAll('[data-note-block-row]')[idx];
+      return row && (row.innerText || '').includes(expected);
+    },
+    { idx: 1, expected: todoBody },
+    { timeout: 20000 },
+  );
+
+  await focusBlockAt(page, 1);
+  await page.keyboard.press('Control+A');
+  await page.keyboard.press('Backspace');
+  await page.waitForTimeout(400);
+  const afterClear = (await blockEditorTextFromDom(page, 1)).replace(/\s/g, '');
+  if (afterClear.includes(todoBody)) {
+    throw new Error(`${label}: todo body should be cleared, got "${afterClear}"`);
+  }
+  if ((await todoCheckboxLocator(page, 1).count()) < 1) {
+    throw new Error(`${label}: checkbox should remain after clearing text only`);
+  }
+
+  await page.keyboard.press('Backspace');
+  await page.waitForTimeout(700);
+  if ((await todoCheckboxLocator(page, 1).count()) > 0) {
+    throw new Error(`${label}: empty todo Backspace should unwrap checklist (checkbox still present)`);
+  }
+  if ((await page.locator('[data-note-block-row]').count()) < 2) {
+    throw new Error(`${label}: unwrap should keep empty text block`);
+  }
+  const afterUnwrap = (await blockEditorTextFromDom(page, 1)).replace(/\s/g, '');
+  if (afterUnwrap.length > 0) {
+    throw new Error(`${label}: unwrap should leave empty text, got "${afterUnwrap}"`);
+  }
+
+  // type 전환 후 TipTap remount — 빈 text에 포커스 재확보 후 삭제
+  await focusBlockAt(page, 1);
+  await page.locator('[data-note-block-row]').nth(1).locator('.ProseMirror:visible').first()
+    .waitFor({ state: 'visible', timeout: 8000 });
+  await page.keyboard.press('Backspace');
+  await page.waitForTimeout(900);
+  if ((await page.locator('[data-note-block-row]').count()) !== 1) {
+    const rowCount = await page.locator('[data-note-block-row]').count();
+    const kinds = await page.evaluate(() => Array.from(document.querySelectorAll('[data-note-block-row]')).map((row) => {
+      const hasTodo = Boolean(row.querySelector('div.flex.items-start.gap-2 > button[type="button"]'));
+      const text = (row.querySelector('.ProseMirror')?.textContent || row.textContent || '').trim();
+      return { hasTodo, text: text.slice(0, 40) };
+    }));
+    throw new Error(`${label}: second Backspace should delete empty block (rows=${rowCount}, ${JSON.stringify(kinds)})`);
+  }
+  const remaining = await waitForBlockText(page, anchor, 0);
+  if (!remaining.includes(anchor)) {
+    throw new Error(`${label}: previous anchor missing after delete: "${remaining}"`);
+  }
+  if ((await page.locator('[data-note-block-row]').first().locator('.ProseMirror:visible').count()) < 1) {
+    throw new Error(`${label}: focus should land on previous block after empty-block delete`);
+  }
+}
+
+/**
+ * Notion식 체크리스트 Backspace 체인 (부모·하위 공통):
+ * 텍스트 지우기 → 체크 해제(text) → 빈 블록 삭제 → 위 칸 포커스
+ */
+async function assertTodoBackspaceChain(page, label) {
+  const anchor = `위칸앵커-${label}`;
+
+  // 문서+text+todo를 API로 먼저 심고 연다 (열린 탭에서 HTTP create는 로컬 캐시에 안 잡혀 UI 1행이 됨)
+  const documentId = await page.evaluate(async ({ anchorText }) => {
+    const docRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: `Smoke TodoChain ${Date.now()}` }),
+    });
+    if (!docRes.ok) throw new Error(`document create failed (${docRes.status})`);
+    const { document } = await docRes.json();
+    const create = async (type, content, orderIndex) => {
+      const res = await fetch('/api/admin/note/blocks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          documentId: document.id,
+          type,
+          content,
+          order_index: orderIndex,
+          parent_block_id: null,
+        }),
+      });
+      if (!res.ok) throw new Error(`seed ${type} failed (${res.status})`);
+    };
+    await create('text', { text: anchorText, html: `<p>${anchorText}</p>` }, 0);
+    await create('todo', { text: '', checked: false, html: '<p></p>' }, 1);
+    return document.id;
+  }, { anchorText: anchor });
+
+  await page.goto(
+    `${BASE}/admin/note?id=${encodeURIComponent(documentId)}`,
+    { waitUntil: 'domcontentloaded' },
+  );
+  await page.getByRole('status', { name: '페이지 불러오는 중' }).waitFor({ state: 'detached', timeout: 30000 }).catch(() => undefined);
+  try {
+    await page.waitForFunction(() => document.querySelectorAll('[data-note-block-row]').length >= 2, null, {
+      timeout: 20000,
+    });
+  } catch {
+    const rowCount = await page.locator('[data-note-block-row]').count();
+    const apiCount = await page.evaluate(async (docId) => {
+      const res = await fetch(
+        `/api/admin/note/blocks/load?documentId=${encodeURIComponent(docId)}&skipReconcile=true`,
+        { credentials: 'include' },
+      );
+      const json = await res.json();
+      return (json.blocks ?? []).length;
+    }, documentId);
+    throw new Error(`${label}: expected 2 seeded rows, dom=${rowCount} api=${apiCount} doc=${documentId}`);
+  }
+  await runTodoBackspaceChainOnOpenDoc(page, label, anchor);
+}
+
 async function slashTurnInto(page, query, expectedType, menuLabel, domKind) {
   await createFreshNote(page);
   const editor = await focusBlockAt(page, 0);
@@ -515,9 +659,9 @@ async function typeInFirstBlock(page, text, index = 0) {
   if (await prose.count()) {
     await prose.click({ force: true });
     await page.waitForTimeout(200);
-    await page.keyboard.insertText(text);
+    await page.keyboard.type(text, { delay: 10 });
   } else {
-    await page.keyboard.insertText(text);
+    await page.keyboard.type(text, { delay: 10 });
   }
   await blurActiveEditor(page);
 }
@@ -581,6 +725,11 @@ async function openPageMenu(page) {
 }
 
 async function runCheck(name, fn) {
+  const only = process.argv.find((arg) => arg.startsWith('--only='))?.slice('--only='.length);
+  if (only && !name.includes(only)) {
+    console.log(`SKIP ${name}`);
+    return true;
+  }
   try {
     await fn();
     console.log(`OK  ${name}`);
@@ -695,6 +844,10 @@ async function main() {
       await slashTurnInto(page, '체크', 'todo', '체크리스트', 'todo');
     }) ? 0 : 1;
 
+    failed += await runCheck('parent todo backspace chain: clear → unwrap → delete → focus previous', async () => {
+      await assertTodoBackspaceChain(page, 'parent');
+    }) ? 0 : 1;
+
     failed += await runCheck('slash /제목 turns block into heading without slash in body', async () => {
       await slashTurnInto(page, '제목', 'heading', '제목 1', 'heading');
     }) ? 0 : 1;
@@ -785,6 +938,34 @@ async function main() {
       if (!childText.includes('하위고유문구')) {
         throw new Error(`child content missing after return: "${childText}"`);
       }
+    }) ? 0 : 1;
+
+    failed += await runCheck('child document typing stays visible after reconcile wait', async () => {
+      await createFreshNote(page);
+      const subPageBtn = await openPageMenu(page);
+      await subPageBtn.click();
+      await page.waitForTimeout(2000);
+      const { childDocId } = await openChildDocumentFromLastPageBlock(page);
+      await waitForDocumentBlocksHydrated(page, childDocId);
+      await page.waitForTimeout(1500);
+      await typeInFirstBlock(page, '하위타이핑유지', 0);
+      await waitForBlockText(page, '하위타이핑유지', 0);
+      await waitForApiBlockText(page, '하위타이핑유지', 0, childDocId);
+      await clickDocumentBody(page);
+      await page.waitForTimeout(800);
+      await page.waitForTimeout(RECONCILE_WAIT_MS);
+      const rowText = await page.locator('[data-note-block-row]').first().innerText();
+      if (!rowText.includes('하위타이핑유지')) {
+        const apiText = await blockTextFromApi(page, 0);
+        if (!apiText.includes('하위타이핑유지')) {
+          throw new Error(`child typing vanished: row="${rowText}" api="${apiText}"`);
+        }
+      }
+    }) ? 0 : 1;
+
+    failed += await runCheck('child document todo backspace chain: clear → unwrap → delete → focus previous', async () => {
+      // 전용 시드 문서로 동일 SSOT 체인 재검증 (부모 스모크와 독립)
+      await assertTodoBackspaceChain(page, 'child');
     }) ? 0 : 1;
 
     failed += await runCheck('page block opens child document', async () => {

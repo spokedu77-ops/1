@@ -49,7 +49,10 @@ export function resolveToggleChildEmptyBackspaceAction(options: {
   if (options.parentBlockType === 'toggle' && options.isFirstChildInToggle) {
     return { kind: 'delete-and-focus-toggle-title' };
   }
-  return resolveEmptyBackspaceAction(options.canMergeWithPrevious);
+  // decorated(todo 등)는 호출 측에서 convert-to-text를 먼저 적용한다.
+  return options.canMergeWithPrevious
+    ? { kind: 'merge-with-previous' }
+    : { kind: 'delete-block' };
 }
 
 /** Notion 스타일 인라인 블록(todo·bullet 등) Enter 결과 */
@@ -251,15 +254,25 @@ export function resolvePageBlockEnterAction(): NotionPageKeyAction {
   return { kind: 'open-page' };
 }
 
-/** 빈 블록 Backspace — Notion은 이전 블록과 병합 또는 삭제 */
+/** 빈 블록 Backspace — Notion 2단계(부모·하위 문서 공통)
+ * 1) todo·heading 등 decorated → text로 장식만 해제 (커서 유지)
+ * 2) 빈 text → 블록 삭제 (이전 있으면 포커스만 위로)
+ */
 export type NotionEmptyBackspaceAction =
+  | { kind: 'convert-to-text' }
   | { kind: 'delete-block' }
   | { kind: 'merge-with-previous' };
 
-export function resolveEmptyBackspaceAction(canMergeWithPrevious: boolean): NotionEmptyBackspaceAction {
-  return canMergeWithPrevious
-    ? { kind: 'merge-with-previous' }
-    : { kind: 'delete-block' };
+export function resolveEmptyBackspaceAction(options: {
+  blockType: NoteBlock['type'];
+  canMergeWithPrevious: boolean;
+}): NotionEmptyBackspaceAction {
+  if (INLINE_DECORATED_BLOCK_TYPES.has(options.blockType)) {
+    return { kind: 'convert-to-text' };
+  }
+  // 빈 본문 Backspace는 블록 삭제. (비어 있지 않은 맨 앞 Backspace의 merge는 at-start 경로)
+  void options.canMergeWithPrevious;
+  return { kind: 'delete-block' };
 }
 
 /** 인라인 텍스트 블록 맨 앞 Backspace */
@@ -276,12 +289,21 @@ export function resolveInlineBackspaceAtStartAction(
 }
 
 export function createNotionEmptyBackspaceHandler(options: {
+  getBlockType: () => NoteBlock['type'];
   canMergeWithPrevious: () => boolean;
+  onConvertToText: () => void;
   onMergeWithPrevious: () => void;
   onDeleteEmptyBlock: () => void;
 }): () => void {
   return () => {
-    const action = resolveEmptyBackspaceAction(options.canMergeWithPrevious());
+    const action = resolveEmptyBackspaceAction({
+      blockType: options.getBlockType(),
+      canMergeWithPrevious: options.canMergeWithPrevious(),
+    });
+    if (action.kind === 'convert-to-text') {
+      options.onConvertToText();
+      return;
+    }
     if (action.kind === 'merge-with-previous') {
       options.onMergeWithPrevious();
       return;

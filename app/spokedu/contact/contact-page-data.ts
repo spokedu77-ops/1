@@ -21,7 +21,7 @@ export const contactPageContent = {
     kicker: '문의',
     titleLines: ['필요한 수업 방향에 맞춰', '상담을 연결합니다'] as const,
     subtitle:
-      '개인·소그룹 수업, 기관 출강, SPOMOVE 도입, 커리큘럼·교육, 기타 협업 목적에 맞는 문의 유형을 선택해 주세요.',
+      '개인·소그룹 수업, 기관 프로그램, SPOMOVE 도입, 커리큘럼·교육, 기타 협업 목적에 맞는 상담 유형을 선택해 주세요.',
   },
   inquiryTypes: [
     {
@@ -37,9 +37,9 @@ export const contactPageContent = {
     {
       id: 'dispatch',
       step: '02',
-      title: '기관 출강',
+      title: '기관 프로그램',
       description: '기관의 공간, 인원, 일정에 맞는 정규수업·원데이·방학캠프를 제안합니다.',
-      ctaLabel: '기관 출강 문의하기',
+      ctaLabel: '기관 프로그램 상담하기',
       accent: 'sky',
       selectTrackLabel: 'contact-select-dispatch',
       submitTrackLabel: 'contact-submit-dispatch',

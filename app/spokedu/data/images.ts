@@ -82,7 +82,7 @@ export const SPOKEDU_IMAGES = {
       'home-hero-media.jpg',
       'KBS 슈돌 방송 — 스포키듀 신체 측정 프로그램 현장',
     ),
-    dispatchScene: defineImage('home', 'home-dispatch', 'home-dispatch-scene.jpg', '기관 파견 체육수업 현장 장면'),
+    dispatchScene: defineImage('home', 'home-dispatch', 'home-dispatch-scene.jpg', '기관 프로그램 체육수업 현장 장면'),
     heroMovement: defineImage(
       'home',
       'home-hero-movement',

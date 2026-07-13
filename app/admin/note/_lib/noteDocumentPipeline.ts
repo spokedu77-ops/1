@@ -12,7 +12,7 @@ import {
   type SoftDeletePersistArgs,
 } from './noteDocumentOpQueue';
 import { setNoteContentSavePending } from './notePendingSave';
-import { contentChangeNeedsReactBlocks } from './noteContentPatch';
+import { markNoteLocalSave, getPendingBlockDeleteIds } from './noteReconcileIdle';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import {
   disposeNoteSyncCoordinator,
@@ -26,12 +26,12 @@ import {
   type SnapshotTraceOrigin,
 } from './noteFlickerTrace';
 import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
+import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import type { NoteBlock } from './types';
 
 const CONTENT_DEBOUNCE_MS = 1500;
 
 export type NoteDocumentPipelineCallbacks = {
-  onBlocksChanged: (blocks: NoteBlock[]) => void;
   onError?: (error: Error) => void;
   triggerSave: () => void;
 };
@@ -51,14 +51,18 @@ function buildCommandContext(documentId: string) {
   };
 }
 
-function commitBlocksToStore(blocks: NoteBlock[], structural: boolean): void {
+function commitBlocksToStore(blocks: NoteBlock[], command: NoteCommand): void {
   const store = useNoteBlockStore.getState();
-  if (structural) {
-    store.syncBlocksStructure(blocks);
-  } else {
-    // patchContent는 reducer 결과 전체를 structure sync — content는 store 우선 규칙 적용됨
-    store.syncBlocksStructure(blocks);
+  if (command.type === 'hydrate' || command.type === 'replaceBlocks') {
+    // 문서 open·전환 — 부모 문서 블록이 스토어에 남지 않게 전체 교체 (하위=상위 동일)
+    store.replaceBlocks(blocks);
+    return;
   }
+  store.syncBlocksStructure(blocks);
+}
+
+function blocksForDocument(blocks: NoteBlock[], documentId: string): NoteBlock[] {
+  return blocks.filter((block) => block.document_id === documentId);
 }
 
 /**
@@ -82,6 +86,16 @@ export class NoteDocumentPipeline {
   }
 
   private dispatchSnapshotIfChanged(blocks: NoteBlock[], origin: SnapshotTraceOrigin): void {
+    if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
+      return;
+    }
+    const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
+      .filter((block) => block.document_id === this.documentId);
+    if (storeForDoc.length > 0) {
+      const mergedStore = mergeBlocksWithStoreContent(storeForDoc);
+      this.coordinator?.setBlocks(mergedStore);
+      blocks = mergedStore;
+    }
     const current = useNoteBlockStore.getState().getBlocksArray();
     const reason = describeSnapshotDiff(current, blocks, this.documentId);
     if (reason === 'equivalent') {
@@ -127,14 +141,25 @@ export class NoteDocumentPipeline {
 
   /** 모든 로컬·remote 블록 상태 변경의 유일한 입구 */
   dispatch(command: NoteCommand): NoteBlock[] {
+    if (
+      useNoteBlockStore.getState().activeDocumentId !== this.documentId
+      && command.type !== 'replaceBlocks'
+      && command.type !== 'hydrate'
+    ) {
+      return useNoteBlockStore.getState().getBlocksArray();
+    }
     const store = useNoteBlockStore.getState();
     const previous = store.getBlocksArray();
     const ctx = buildCommandContext(this.documentId);
-    const { blocks, structural } = applyNoteCommand(previous, command, ctx);
-    commitBlocksToStore(blocks, structural);
+    let { blocks } = applyNoteCommand(previous, command, ctx);
+    // soft delete outbound 적재 전에 patchFields/reconcile이 블록을 되살리지 않게
+    const pendingDeletes = getPendingBlockDeleteIds(this.documentId);
+    if (pendingDeletes.size > 0) {
+      blocks = blocks.filter((block) => !pendingDeletes.has(block.id));
+    }
+    commitBlocksToStore(blocks, command);
     const next = useNoteBlockStore.getState().getBlocksArray();
     this.coordinator?.setBlocks(next);
-    this.callbacks.onBlocksChanged(next);
     return next;
   }
 
@@ -153,15 +178,17 @@ export class NoteDocumentPipeline {
       ?? (storeBlock?.content as Record<string, unknown> | null | undefined)
       ?? {}) as Record<string, unknown>;
     const nextContent = { ...prevContent, ...content };
-    useNoteBlockStore.getState().patchContent(blockId, content);
-    this.queue?.scheduleContentPatch(blockId, content, baseContent);
+    useNoteBlockStore.getState().patchContent(blockId, nextContent);
+    markNoteLocalSave(this.documentId);
+    this.queue?.scheduleContentPatch(blockId, nextContent, baseContent);
     this.syncPendingFlag();
     const next = useNoteBlockStore.getState().getBlocksArray();
-    this.coordinator?.setBlocks(next);
-    rememberNoteDocumentBlocks(this.documentId, next);
-    if (contentChangeNeedsReactBlocks(prevContent, nextContent)) {
-      this.callbacks.onBlocksChanged(next);
-    }
+    const forDoc = blocksForDocument(next, this.documentId);
+    this.coordinator?.setBlocks(forDoc.length > 0 ? forDoc : next);
+    rememberNoteDocumentBlocks(
+      this.documentId,
+      mergeBlocksWithStoreContent(forDoc.length > 0 ? forDoc : next),
+    );
   }
 
   clearContentPatch(blockId: string): void {
@@ -199,10 +226,13 @@ export class NoteDocumentPipeline {
     }
     await this.coordinator.syncWithServer(initialBlocks);
     if (options?.skipDispatch) return;
-    const blocks = this.coordinator.getBlocks();
-    const currentForDoc = useNoteBlockStore.getState().getBlocksArray()
+    const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    if (currentForDoc.length === 0) {
+    if (storeForDoc.length > 0) {
+      this.coordinator.setBlocks(mergeBlocksWithStoreContent(storeForDoc));
+    }
+    const blocks = this.coordinator.getBlocks();
+    if (storeForDoc.length === 0) {
       const reason = describeSnapshotDiff([], blocks, this.documentId);
       if (reason !== 'equivalent') {
         traceSnapshotDecision('syncWithServer', 'dispatch', reason, this.documentId);
@@ -280,12 +310,20 @@ export class NoteDocumentPipeline {
     return useNoteBlockStore.getState().getBlocksArray();
   }
 
+  getCoordinatorBlocks(): NoteBlock[] {
+    return this.coordinator?.getBlocks() ?? [];
+  }
+
   hasPendingContent(): boolean {
     return this.queue?.hasPendingContent ?? false;
   }
 
   hasPendingPersist(): boolean {
     return this.queue?.hasPendingPersist() ?? false;
+  }
+
+  async hasPendingOutbound(): Promise<boolean> {
+    return this.coordinator?.hasPendingOutbound() ?? false;
   }
 
   isOplogEnabled(): boolean {

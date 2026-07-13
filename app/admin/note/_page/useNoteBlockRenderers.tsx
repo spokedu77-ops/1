@@ -155,7 +155,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         numberedListIndex={numberedListIndex}
         bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
-        onContentPatch={(content) => deps.syncBlockContent(block.id, content)}
+        onContentPatch={(content) => deps.handleUpdateBlock(block, content)}
         onDelete={() => deps.handleDeleteBlock(block)}
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}
@@ -224,7 +224,7 @@ export function useNoteBlockRenderers(deps: NoteBlockRendererDeps) {
         bulletListNestLevel={bulletListNestLevel}
         renderChildBlock={renderToggleInlineChild}
         onAddChildBelow={(type, content) => { void deps.handleInsertBlockInParent(block.id, type ?? 'text', content); }}
-        onContentPatch={(content) => deps.syncBlockContent(block.id, content)}
+        onContentPatch={(content) => deps.handleUpdateBlock(block, content)}
         onDelete={() => deps.handleDeleteBlock(block)}
         onChangeType={(type) => deps.handleChangeBlockType(block, type)}
         onEnter={() => deps.handleInsertBlockAfter(block, 'text')}

@@ -22,11 +22,27 @@ const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCa
 const locationCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const reviewCardShell = `flex h-full flex-col border-l-4 border-l-teal-600 p-4 sm:p-5 ${landingCardShell}`;
 const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
+const privateDecisionFlow = [
+  { label: '1', title: '아이 상태 확인', body: '운동 경험, 자신감, 목표 종목을 먼저 정리합니다.' },
+  { label: '2', title: '수업 방향 선택', body: '1:1, 소그룹, 종목 준비 중 적합한 방향을 좁힙니다.' },
+  { label: '3', title: '수업 설계', body: '1:1 또는 소그룹, 장소와 주기를 아이에게 맞춰 제안합니다.' },
+] as const;
 
-function Section({ children, className = '', delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
+function Section({
+  children,
+  className = '',
+  delay = 0,
+  id,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+  id?: string;
+}) {
   const reducedMotion = useReducedMotion();
   return (
     <motion.section
+      id={id}
       initial={reducedMotion ? false : { opacity: 0, y: 12 }}
       whileInView={reducedMotion ? {} : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.12 }}
@@ -70,6 +86,45 @@ export default function PrivateLanding() {
 
       <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
         <PrivateTrustMetrics />
+      </Section>
+
+      <Section
+        id="lesson-design"
+        className="grid scroll-mt-24 gap-4 rounded-2xl border border-teal-100 bg-teal-50/40 px-5 py-6 sm:px-6 sm:py-7 lg:grid-cols-[0.38fr_0.62fr] lg:items-center"
+      >
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">Private Lesson Design</p>
+          <h2 className="mt-2 text-2xl font-black leading-tight tracking-tight text-slate-950 sm:text-3xl [word-break:keep-all]">
+            아이에게 필요한 수업 방향을 먼저 정리합니다.
+          </h2>
+          <p className={`mt-3 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
+            운동 경험, 자신감, 목표 종목, 가능한 장소를 함께 확인한 뒤 아이에게 맞는 수업 형태와 운영 방식을
+            제안합니다.
+          </p>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <a
+              href="#move-report"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-teal-200 bg-white px-4 text-sm font-bold text-teal-900"
+            >
+              움직임 성향 참고하기
+            </a>
+            <a
+              href="#consult-flow"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-slate-950 px-4 text-sm font-bold text-white"
+            >
+              상담 흐름 보기
+            </a>
+          </div>
+        </div>
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {privateDecisionFlow.map((item) => (
+            <li key={item.title} className="rounded-xl border border-white/80 bg-white p-4 shadow-sm shadow-slate-900/[0.03]">
+              <span className="text-xs font-black text-teal-700">{item.label}</span>
+              <h3 className="mt-2 text-sm font-bold text-slate-950">{item.title}</h3>
+              <p className={`mt-1.5 text-xs leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.body}</p>
+            </li>
+          ))}
+        </ol>
       </Section>
 
       <HomeSectionRule />
@@ -242,14 +297,16 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section>
-        <LandingStepPanel steps={privatePage.consultFlow.steps} accent="teal" columns="4">
-          <LandingSectionHeading
-            eyebrow={privatePage.consultFlow.eyebrow}
-            title={privatePage.consultFlow.title}
-            accent="teal"
-          />
-        </LandingStepPanel>
+      <Section className="scroll-mt-24">
+        <div id="consult-flow" className="scroll-mt-24">
+          <LandingStepPanel steps={privatePage.consultFlow.steps} accent="teal" columns="4">
+            <LandingSectionHeading
+              eyebrow={privatePage.consultFlow.eyebrow}
+              title={privatePage.consultFlow.title}
+              accent="teal"
+            />
+          </LandingStepPanel>
+        </div>
       </Section>
 
       <Section className="space-y-5 sm:space-y-6">

@@ -13,11 +13,10 @@ import { FlowCamera, type FlowCameraUpdateInput } from './FlowCamera';
 import { FlowAudio } from './FlowAudio';
 import { AdaptiveQuality } from './AdaptiveQuality';
 import { ObstacleManager } from './entities/ObstacleManager';
-import { ColorGateManager, COLOR_GATE_LOCAL_Z } from './entities/ColorGateManager';
+import { ColorGateManager } from './entities/ColorGateManager';
 import type { FlowBridge } from './entities/ObstacleManager';
 import {
   BridgeRenderer,
-  type BridgeVisual,
   LANE_WIDTH,
   BRIDGE_LENGTH,
   PAD_DEPTH,
@@ -39,9 +38,7 @@ import { ArenaRenderer } from './renderers/ArenaRenderer';
 import { PostProcessingRenderer } from './renderers/PostProcessingRenderer';
 import { staticPerfTier } from '../../lib/reactTrainPerf';
 import {
-  pickRandomGateColor,
   preloadColorGatePoseImages,
-  shouldSpawnColorGateOnBridgeAttempt,
   type GateColorId,
 } from './modules/colorGateGuides';
 
@@ -134,7 +131,6 @@ export interface FlowEngineOptions {
 }
 
 interface BridgeObj extends FlowBridge {
-  visual:           BridgeVisual;
   padDepth:         number;
   instructionFired: boolean;
   preJumpFired:     boolean;
@@ -162,6 +158,7 @@ export class FlowEngine {
   private crateGlbScene:     THREE.Object3D | null = null;
   private spaceshipGlbScene: THREE.Object3D | null = null;
   private wallGlbScene:      THREE.Object3D | null = null;
+  private trackLaneMeshes: THREE.Mesh[] = [];
   private oceanSurface: THREE.Mesh | null = null;
   private oceanBubbles: THREE.Points | null = null;
   private oceanTime = 0;
@@ -176,8 +173,6 @@ export class FlowEngine {
   private obstacles:      ObstacleManager | null = null;
   private colorGates:     ColorGateManager | null = null;
   private currentColorGateAction: FlowModuleKey | null = null;
-  private colorGateSpawnIdx = 0;
-  private colorGateLaneOverrideX: number | null = null;
   private flowCam:        FlowCamera | null = null;
   private bridgeRenderer: BridgeRenderer | null = null;
   private spaceEnv:       SpaceEnvironment | null = null;
@@ -451,6 +446,7 @@ export class FlowEngine {
       strip.rotation.x = -Math.PI / 2;
       strip.position.set(i * LANE_WIDTH, -30, -20000);
       this.scene.add(strip);
+      this.trackLaneMeshes.push(strip);
     }
     // 구분선 제거 — 흰 선이 배경에서 계속 보이는 문제
   }
@@ -596,7 +592,6 @@ export class FlowEngine {
       spawnZ = -8000;
     }
 
-    const gateColorId = !isFirst ? this.planColorGateForNextBridge() : null;
     const randLane = FlowEngine.BRIDGE_LANE_SEQ[this.bridgeLaneIdx % 3]!;
     this.bridgeLaneIdx++;
     const bridgeX  = (randLane - 1) * LANE_WIDTH;
@@ -605,15 +600,11 @@ export class FlowEngine {
       lane: randLane,
       x: bridgeX,
       z: spawnZ,
-      colorGateDeck: gateColorId
-        ? { gateLocalZ: COLOR_GATE_LOCAL_Z, color: 0x1d4ed8 }
-        : undefined,
     });
 
     const bridgeObj: BridgeObj = {
       mesh: visual.mesh, lane: randLane, bridgeId: this.bridgeIdCnt++,
       x: bridgeX,
-      visual,
       hasBox: false, hasColorGate: false, padMesh: visual.padMesh, padDepth: visual.padDepth,
       instructionFired: false,
       preJumpFired: false,
@@ -637,27 +628,33 @@ export class FlowEngine {
       }
     }
 
-    if (gateColorId && this.colorGates) {
-      this.colorGates.attach(bridgeObj, bridgeX, gateColorId);
-    }
   }
 
   /** 색 관문: 시작 후 2브릿지는 비우고, 이후 브릿지마다 게이트 색 lane으로 생성 */
-  private planColorGateForNextBridge(): GateColorId | null {
-    if (!this.currentColorGateAction || !this.colorGates) return null;
-    if (!this.stageList[this.stageIdx]?.isColorGate) return null;
-    if (!this.colorGates.isReady()) return null;
+  private clearBridges(): void {
+    if (this.bridgeRenderer) {
+      for (const bridge of this.bridges) {
+        this.bridgeRenderer.removeBridge(bridge);
+      }
+    }
+    this.bridges = [];
+    this.activeBridge = null;
+  }
 
-    this.colorGateSpawnIdx += 1;
-    if (!shouldSpawnColorGateOnBridgeAttempt(this.colorGateSpawnIdx, Math.random())) return null;
-
-    return pickRandomGateColor();
+  private setTrackLanesVisible(visible: boolean): void {
+    for (const lane of this.trackLaneMeshes) {
+      lane.visible = visible;
+    }
   }
 
   /** 카운트다운·init3D에서 미리 준비 */
   private ensureColorGateManager(): void {
-    if (this.colorGates) return;
+    if (this.colorGates) {
+      this.colorGates.setScene(this.scene);
+      return;
+    }
     this.colorGates = new ColorGateManager(staticPerfTier === 'low');
+    this.colorGates.setScene(this.scene);
     void preloadColorGatePoseImages().then((images) => {
       if (this.disposed || !this.colorGates) return;
       this.colorGates.setPoseImages(images);
@@ -711,7 +708,20 @@ export class FlowEngine {
     }
     this.bridgeLaneIdx = 0; // 스테이지마다 빨강부터 다시 시작
     this.activeBridge = null;
-    this.colorGateLaneOverrideX = null;
+    if (stage.isColorGate) {
+      this.clearBridges();
+      this.setTrackLanesVisible(false);
+      this.isOnBridge = true;
+      this.isOnPad = false;
+      this.isChangingLane = false;
+      this.targetX = 0;
+      this.groundY = GROUND_Y;
+    } else if (this.bridges.length === 0) {
+      this.setTrackLanesVisible(true);
+      for (let i = 0; i < 3; i++) this.spawnBridge(i === 0);
+    } else {
+      this.setTrackLanesVisible(true);
+    }
 
     // 장애물 스케줄 생성 (색 관문: 장애물 없음)
     const speedMult = SPEED_MULTS[Math.min(idx, SPEED_MULTS.length - 1)]!;
@@ -731,13 +741,8 @@ export class FlowEngine {
 
     if (stage.isColorGate && stage.colorGateAction) {
       this.currentColorGateAction = stage.colorGateAction;
-      this.colorGateSpawnIdx = 0;
       this.ensureColorGateManager();
-      this.colorGates?.clearAll();
-      for (const b of this.bridges) {
-        b.hasColorGate = false;
-      }
-      this.colorGateLaneOverrideX = null;
+      this.colorGates?.resetRun();
       this.cb.onColorGateStage?.({
         action: stage.colorGateAction,
         step: stage.colorGateStep ?? 1,
@@ -745,12 +750,12 @@ export class FlowEngine {
       });
     } else {
       this.currentColorGateAction = null;
-      this.colorGateLaneOverrideX = null;
+      this.cb.onColorGateColor?.(null);
     }
 
     this.cb.onStageChange?.(idx);
     // 스테이지 0은 카운트다운 후 already-playing. 1+ 또는 색 관문은 2초 인트로
-    if (idx > 0) {
+    if (idx > 0 && !stage.isColorGate) {
       this.setPhase('stage-intro');
       this.countdownTimer = setTimeout(() => this.setPhase('playing'), 2000);
     }
@@ -908,7 +913,7 @@ export class FlowEngine {
         isJumping: this.isJumping, jumpProgress: this.jumpProgress, playerJumpY: this.playerJumpY,
         isOnBridge: this.isOnBridge, isOnPad: this.isOnPad, isChangingLane: this.isChangingLane,
         targetX: this.targetX,
-        activeBridgeX: this.colorGateLaneOverrideX ?? this.activeBridge?.x ?? null,
+        activeBridgeX: this.stageList[this.stageIdx]?.isColorGate ? 0 : (this.activeBridge?.x ?? null),
         groundY: this.groundY,
       } satisfies FlowCameraUpdateInput);
       return;
@@ -923,14 +928,20 @@ export class FlowEngine {
     this.stageTimer += dt;
     if (this.jumpInstrCooldown > 0) this.jumpInstrCooldown = Math.max(0, this.jumpInstrCooldown - dt);
     const remaining     = Math.max(0, stage.durationSec - this.stageTimer);
-    const totalProgress = (this.stageIdx * stage.durationSec + this.stageTimer) /
-      (this.stageList.length * stage.durationSec);
+    const elapsedBeforeStage = this.stageList
+      .slice(0, this.stageIdx)
+      .reduce((sum, s) => sum + s.durationSec, 0);
+    const totalDuration = this.stageList.reduce((sum, s) => sum + s.durationSec, 0);
+    const totalProgress = totalDuration > 0
+      ? (elapsedBeforeStage + this.stageTimer) / totalDuration
+      : 0;
     this.cb.onTimerUpdate?.(remaining, Math.min(1, totalProgress));
 
     if (this.stageTimer >= stage.durationSec) { this.endStage(); return; }
 
     // ── 후반 속도 안내 — 1단계(stageIdx 0)에서만, 색 관문 제외 ─────────────
-    if (!stage.isColorGate && this.stageIdx === 0 && !this.speedIntroShown && this.stageTimer >= stage.durationSec / 2) {
+    const hasNonGateTrainingAfterStage1 = this.stageList.some((s, idx) => idx > 0 && !s.isColorGate);
+    if (!stage.isColorGate && hasNonGateTrainingAfterStage1 && this.stageIdx === 0 && !this.speedIntroShown && this.stageTimer >= stage.durationSec / 2) {
       this.speedIntroShown = true;
       if (this.countdownTimer) clearTimeout(this.countdownTimer);
       this.setPhase('speed-intro');
@@ -957,7 +968,7 @@ export class FlowEngine {
         this.bridges.splice(i, 1);
       }
     }
-    if (this.bridges.length < 3) this.spawnBridge(false);
+    if (!stage.isColorGate && this.bridges.length < 3) this.spawnBridge(false);
 
     // ── activeBridge 탐색 및 점프 트리거 (원본 로직 동일) ────────────────────
     let foundActive = false;
@@ -1007,15 +1018,17 @@ export class FlowEngine {
 
     // ── 색 관문: 통과 연출 + HUD 색 동기화 ─────────────────────────────────
     if (stage.isColorGate && this.colorGates) {
+      this.isOnBridge = true;
+      this.isOnPad = false;
+      this.isChangingLane = false;
+      this.targetX = 0;
+      this.groundY = GROUND_Y;
       this.colorGates.update(
         PLAYER_Z,
         dt,
+        bridgeMove,
         (gateColorId) => {
           this.cb.onColorGateColor?.(gateColorId);
-        },
-        (_gateColorId, bridge) => {
-          this.bridgeRenderer?.revealColorGateDeck((bridge as BridgeObj).visual);
-          this.colorGateLaneOverrideX = null;
         },
       );
     }
@@ -1105,7 +1118,7 @@ export class FlowEngine {
       isJumping: this.isJumping, jumpProgress: this.jumpProgress, playerJumpY: this.playerJumpY,
       isOnBridge: this.isOnBridge, isOnPad: this.isOnPad, isChangingLane: this.isChangingLane,
       targetX: this.targetX,
-      activeBridgeX: this.colorGateLaneOverrideX ?? this.activeBridge?.x ?? null,
+      activeBridgeX: stage.isColorGate ? 0 : (this.activeBridge?.x ?? null),
       groundY: this.groundY,
     } satisfies FlowCameraUpdateInput);
   }
@@ -1188,6 +1201,7 @@ export class FlowEngine {
     this.spaceshipGlbScene = null;
     this.wallGlbScene      = null;
     this.loadedGltfScenes  = []; // 참조 해제 (geometry/material은 scene.traverse에서 처리)
+    this.trackLaneMeshes = [];
     if (this.scene) {
       this.scene.traverse((obj) => {
         const mesh = obj as THREE.Mesh;

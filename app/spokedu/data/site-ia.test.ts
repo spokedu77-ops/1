@@ -20,7 +20,7 @@ describe('spokedu site IA', () => {
     if (programs?.type !== 'group') return;
     expect(programs.children.map((child) => child.label)).toEqual([
       '개인·소그룹 수업',
-      '기관 출강',
+      '기관 프로그램',
       '특수체육',
       '커리큘럼·지도자 교육',
     ]);
@@ -35,13 +35,18 @@ describe('spokedu site IA', () => {
     expect(homePage.proofStrip.processLine).toContain('현장 수업');
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
     expect(homePage.audienceGate.items).toHaveLength(3);
+    expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.spomove.flowSteps).toHaveLength(4);
     expect(homePage.spomove.proofs).toHaveLength(3);
+    expect(homePage.spomove.useCases).toHaveLength(3);
     expect(homePage.cases.proofStats).toHaveLength(3);
+    expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
+    expect(homePage.cases.consultCta.href).toBe(`${SPOKEDU_BASE_PATH}/contact?type=dispatch`);
     expect(homePage.cases.cards.length).toBeGreaterThanOrEqual(3);
     expect(homePage.cases.cards.length).toBeLessThanOrEqual(4);
     expect(homePage.finalCta.items).toHaveLength(3);
     expect(homePage.finalCta.notes).toHaveLength(3);
+    expect(homePage.finalCta.support).toContain('프로그램이 정해지지 않았어도');
   });
 
   it('uses verified catalog slugs for home cases', () => {

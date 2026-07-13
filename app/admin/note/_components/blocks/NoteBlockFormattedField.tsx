@@ -94,6 +94,7 @@ export function NoteBlockFormattedField({
   const convertInlineBlockToText = inlineBackspaceAction.kind === 'convert-to-text' && onChangeType
     ? () => { onChangeType('text'); }
     : undefined;
+  // at-start만 prop type 기준 convert — empty는 runtime(store 최신 type) SSOT
   const handleBackspaceAtBlockStart = onEditorBackspaceAtBlockStart
     ?? (convertInlineBlockToText
       ? () => {
@@ -103,7 +104,7 @@ export function NoteBlockFormattedField({
       : undefined);
   const handleEmptyBackspace = onEditorBackspace === false
     ? false
-    : (onEditorBackspace ?? convertInlineBlockToText ?? onEmptyBackspace);
+    : (onEditorBackspace ?? onEmptyBackspace);
 
   return (
     <NoteEditableField

@@ -109,12 +109,25 @@ describe('resolveHeadingEnterAction', () => {
 });
 
 describe('resolveEmptyBackspaceAction', () => {
-  it('empty block with previous merges', () => {
-    expect(resolveEmptyBackspaceAction(true)).toEqual({ kind: 'merge-with-previous' });
+  it('empty todo converts to text (step 1)', () => {
+    expect(resolveEmptyBackspaceAction({
+      blockType: 'todo',
+      canMergeWithPrevious: true,
+    })).toEqual({ kind: 'convert-to-text' });
   });
 
-  it('empty first block deletes', () => {
-    expect(resolveEmptyBackspaceAction(false)).toEqual({ kind: 'delete-block' });
+  it('empty text deletes block (step 2)', () => {
+    expect(resolveEmptyBackspaceAction({
+      blockType: 'text',
+      canMergeWithPrevious: true,
+    })).toEqual({ kind: 'delete-block' });
+  });
+
+  it('empty first text block deletes', () => {
+    expect(resolveEmptyBackspaceAction({
+      blockType: 'text',
+      canMergeWithPrevious: false,
+    })).toEqual({ kind: 'delete-block' });
   });
 });
 
@@ -205,24 +218,44 @@ describe('resolveInlineBackspaceAtStartAction', () => {
 });
 
 describe('createNotionEmptyBackspaceHandler', () => {
-  it('merges when previous block exists', () => {
+  it('converts decorated todo before merge', () => {
+    const onConvert = vi.fn();
     const onMerge = vi.fn();
     const onDelete = vi.fn();
     const handler = createNotionEmptyBackspaceHandler({
+      getBlockType: () => 'todo',
       canMergeWithPrevious: () => true,
+      onConvertToText: onConvert,
       onMergeWithPrevious: onMerge,
       onDeleteEmptyBlock: onDelete,
     });
     handler();
-    expect(onMerge).toHaveBeenCalledOnce();
-    expect(onDelete).not.toHaveBeenCalled();
+    expect(onConvert).toHaveBeenCalledOnce();
+    expect(onMerge).not.toHaveBeenCalled();
+  });
+
+  it('merges empty text when previous block exists', () => {
+    const onMerge = vi.fn();
+    const onDelete = vi.fn();
+    const handler = createNotionEmptyBackspaceHandler({
+      getBlockType: () => 'text',
+      canMergeWithPrevious: () => true,
+      onConvertToText: vi.fn(),
+      onMergeWithPrevious: onMerge,
+      onDeleteEmptyBlock: onDelete,
+    });
+    handler();
+    expect(onDelete).toHaveBeenCalledOnce();
+    expect(onMerge).not.toHaveBeenCalled();
   });
 
   it('deletes when no previous block', () => {
     const onMerge = vi.fn();
     const onDelete = vi.fn();
     const handler = createNotionEmptyBackspaceHandler({
+      getBlockType: () => 'text',
       canMergeWithPrevious: () => false,
+      onConvertToText: vi.fn(),
       onMergeWithPrevious: onMerge,
       onDeleteEmptyBlock: onDelete,
     });

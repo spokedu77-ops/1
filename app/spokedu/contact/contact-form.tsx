@@ -229,7 +229,7 @@ function CommonFields({
         />
       </Field>
       <div className="sm:col-span-2">
-        <Field label="문의 유형">
+        <Field label="상담 유형">
           <input readOnly value={inquiryTypeLabel} className={`${inputClass} bg-slate-50 text-slate-700`} />
         </Field>
       </div>
@@ -443,7 +443,7 @@ export default function SpokeduContactForm() {
           : '';
       const reportSummary = fromQuery || fromStorage;
       if (reportSummary) {
-        const prefix = `[Move report 요약]\n${reportSummary}`;
+        const prefix = `[간단 진단 요약]\n${reportSummary}`;
         setPrivateForm((prev) => ({
           ...prev,
           message: prev.message.trim() ? prev.message : prefix,
@@ -586,7 +586,7 @@ export default function SpokeduContactForm() {
           <div>
             <h2 className="text-lg font-bold tracking-tight text-slate-950 sm:text-xl">목적에 맞는 상담 흐름</h2>
             <p className="mt-1 text-sm text-slate-600 [word-break:keep-all]">
-              아래에서 문의 유형을 선택하면 맞춤 입력 항목이 바로 표시됩니다.
+              아래에서 상담 유형을 선택하면 맞춤 입력 항목이 바로 표시됩니다.
             </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -685,7 +685,7 @@ export default function SpokeduContactForm() {
               <InstitutionFields
                 values={dispatchForm}
                 onChange={(patch) => setDispatchForm((p) => ({ ...p, ...patch }))}
-                title="기관 출강 정보"
+                title="기관 프로그램 정보"
               />
             ) : null}
 
@@ -791,7 +791,7 @@ export default function SpokeduContactForm() {
                     }}
                     className="mt-3 min-h-11 text-sm font-semibold text-emerald-800 underline underline-offset-2"
                   >
-                    다른 문의 유형으로 접수하기
+                    다른 상담 유형으로 접수하기
                   </button>
                 ) : null}
                 {notice.kind === 'error' && notice.showFallback ? (
@@ -815,7 +815,7 @@ export default function SpokeduContactForm() {
                   data-track-label={activeOption.submitTrackLabel}
                   className={`${btnPrimary} w-full`}
                 >
-                  {submitting ? '접수 중...' : '문의 접수하기'}
+                  {submitting ? '접수 중...' : '상담 접수하기'}
                 </button>
               </div>
             ) : null}

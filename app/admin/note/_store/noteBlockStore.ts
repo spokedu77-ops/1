@@ -1,12 +1,14 @@
 'use client';
 
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { clearAllDocumentPreviewCrossHighlights } from '../_components/noteBlockPreviewCrossSelect';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
 import {
   contentChangedForUndo,
   mergeBlockContentWithStore,
 } from '../_lib/noteContentPatch';
+import { getPendingBlockDeleteIds } from '../_lib/noteReconcileIdle';
 import type { NoteTableCellField } from '../_lib/noteTableBlock';
 import type { NoteBlock } from '../_lib/types';
 
@@ -17,7 +19,7 @@ export type NoteActiveEditor = {
   field: NoteActiveEditorField;
 };
 
-type NoteBlockStoreState = {
+export type NoteBlockStoreState = {
   byId: Record<string, NoteBlock>;
   order: string[];
   activeDocumentId: string | null;
@@ -35,72 +37,89 @@ type NoteBlockStoreState = {
   getBlocksArray: () => NoteBlock[];
 };
 
+function excludePendingDeletes(
+  blocks: NoteBlock[],
+  documentId: string | null,
+): NoteBlock[] {
+  if (!documentId || blocks.length === 0) return blocks;
+  const pending = getPendingBlockDeleteIds(documentId);
+  if (pending.size === 0) return blocks;
+  return blocks.filter((block) => !pending.has(block.id));
+}
+
 export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
   byId: {},
   order: [],
   activeDocumentId: null,
   activeEditor: null,
   hydrate: (blocks) => {
+    const next = excludePendingDeletes(blocks, get().activeDocumentId);
     const byId: Record<string, NoteBlock> = {};
-    for (const block of blocks) byId[block.id] = block;
-    set({ byId, order: blocks.map((block) => block.id) });
+    for (const block of next) byId[block.id] = block;
+    set({ byId, order: next.map((block) => block.id) });
   },
   replaceBlocks: (blocks) => {
+    const next = excludePendingDeletes(blocks, get().activeDocumentId);
     const byId: Record<string, NoteBlock> = {};
-    for (const block of blocks) byId[block.id] = block;
-    set({ byId, order: blocks.map((block) => block.id) });
+    for (const block of next) byId[block.id] = block;
+    set({ byId, order: next.map((block) => block.id) });
   },
   applyBlocks: (updater) => {
     const current = get().getBlocksArray();
-    const next = updater(current);
+    const next = excludePendingDeletes(updater(current), get().activeDocumentId);
     const byId: Record<string, NoteBlock> = {};
     for (const block of next) byId[block.id] = block;
     set({ byId, order: next.map((block) => block.id) });
     return next;
   },
-  /** React blocks 구조 갱신 — 편집 중 content는 스토어(최신) 우선, 삭제된 id는 제거 */
+  /** 구조 갱신 — 편집 중 content는 스토어(최신) 우선, 삭제된 id·타문서 블록은 제거 */
   syncBlocksStructure: (blocks) => {
     set((state) => {
       const docId = state.activeDocumentId;
+      const incoming = excludePendingDeletes(blocks, docId);
       const nextById: Record<string, NoteBlock> = { ...state.byId };
-      const incomingIds = new Set(blocks.map((b) => b.id));
+      const incomingIds = new Set(incoming.map((b) => b.id));
+      const pending = docId ? getPendingBlockDeleteIds(docId) : new Set<string>();
 
       if (docId) {
         for (const [id, existing] of Object.entries(nextById)) {
+          if (pending.has(id)) {
+            delete nextById[id];
+            continue;
+          }
           if (existing.document_id === docId && !incomingIds.has(id)) {
             delete nextById[id];
           }
         }
       }
 
-      for (const incoming of blocks) {
-        if (docId && incoming.document_id !== docId) {
-          nextById[incoming.id] = incoming;
+      for (const block of incoming) {
+        if (docId && block.document_id !== docId) {
           continue;
         }
-        const prev = state.byId[incoming.id];
-        const sameType = prev?.type === incoming.type;
-        const isActiveBlock = state.activeEditor?.blockId === incoming.id;
+        const prev = state.byId[block.id];
+        const sameType = prev?.type === block.type;
+        const isActiveBlock = state.activeEditor?.blockId === block.id;
         if (
           isActiveBlock
           && sameType
           && prev?.content != null
           && (!docId || prev.document_id === docId)
         ) {
-          nextById[incoming.id] = {
-            ...incoming,
+          nextById[block.id] = {
+            ...block,
             content: mergeBlockContentWithStore(
-              incoming.content as Record<string, unknown> | null | undefined,
+              block.content as Record<string, unknown> | null | undefined,
               prev.content as Record<string, unknown>,
             ) ?? prev.content,
           };
           continue;
         }
-        nextById[incoming.id] = incoming;
+        nextById[block.id] = block;
       }
       return {
         byId: nextById,
-        order: blocks.map((block) => block.id),
+        order: incoming.map((block) => block.id),
       };
     });
   },
@@ -124,6 +143,10 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
   },
   upsertBlock: (block) => {
     set((state) => {
+      const pending = state.activeDocumentId
+        ? getPendingBlockDeleteIds(state.activeDocumentId)
+        : new Set<string>();
+      if (pending.has(block.id)) return state;
       const exists = !!state.byId[block.id];
       return {
         byId: { ...state.byId, [block.id]: block },
@@ -174,6 +197,24 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
       .filter((block): block is NoteBlock => !!block);
   },
 }));
+
+/** activeDocumentId와 무관하게 documentId에 속한 블록만 반환 */
+export function selectDocumentBlocks(
+  state: NoteBlockStoreState,
+  documentId: string | null,
+): NoteBlock[] {
+  if (!documentId) return [];
+  return state.order
+    .map((id) => state.byId[id])
+    .filter((block): block is NoteBlock => !!block && block.document_id === documentId);
+}
+
+/** UI 투영 — Zustand SSOT 단일 구독 (React blocks state 없음) */
+export function useActiveDocumentBlocks(documentId: string | null): NoteBlock[] {
+  return useNoteBlockStore(
+    useShallow((state) => selectDocumentBlocks(state, documentId)),
+  );
+}
 
 export function useNoteBlockContent(blockId: string) {
   return useNoteBlockStore((state) => state.byId[blockId]?.content);

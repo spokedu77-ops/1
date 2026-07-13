@@ -47,17 +47,12 @@ export interface BridgeCreateInput {
   lane: 0 | 1 | 2;
   x:    number;
   z:    number;
-  colorGateDeck?: {
-    gateLocalZ: number;
-    color: number;
-  };
 }
 
 export interface BridgeVisual {
   mesh:               THREE.Group;
   padMesh:            THREE.Mesh;
   padDepth:           number;
-  colorGateDeckMesh?: THREE.Mesh;
 }
 
 // ─── BridgeRenderer ──────────────────────────────────────────────────────────
@@ -112,31 +107,6 @@ export class BridgeRenderer {
       // cyan 베이스라인 — 분위기 네온
       this.baseCyanMat = new THREE.MeshStandardMaterial({ color: 0x000000, emissive: 0x22d3ee, emissiveIntensity: 1.4, roughness: 1, metalness: 0, toneMapped: false });
     }
-  }
-
-  private addColorGateDeck(
-    group: THREE.Group,
-    gateLocalZ: number,
-    color: number,
-    width: number,
-    y: number,
-  ): THREE.Mesh | undefined {
-    const startZ = -BRIDGE_LENGTH / 2;
-    const endZ = Math.min(gateLocalZ - 8, BRIDGE_LENGTH / 2);
-    const depth = endZ - startZ;
-    if (depth <= 1) return undefined;
-
-    const mat = new THREE.MeshBasicMaterial({ color, toneMapped: false, fog: false });
-    const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, 2, depth), mat);
-    mesh.position.set(0, y, startZ + depth / 2);
-    mesh.visible = false;
-    mesh.renderOrder = 2;
-    mesh.frustumCulled = false;
-    mesh.userData['ownGeo'] = true;
-    mesh.userData['ownMat'] = true;
-    mesh.userData['colorGateDeck'] = true;
-    group.add(mesh);
-    return mesh;
   }
 
   createBridge(input: BridgeCreateInput): BridgeVisual {
@@ -237,19 +207,9 @@ export class BridgeRenderer {
       pad.visible = false;
       g.add(pad);
 
-      const colorGateDeckMesh = input.colorGateDeck
-        ? this.addColorGateDeck(
-          g,
-          input.colorGateDeck.gateLocalZ,
-          input.colorGateDeck.color,
-          ENHANCED_DECK_W,
-          DECK_SURFACE_Y + 0.8,
-        )
-        : undefined;
-
       g.position.set(x, 0, z);
       this.scene.add(g);
-      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH, colorGateDeckMesh };
+      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH };
     }
 
     // ── enhanced BoxGeometry (GLB 없을 때 폴백) ──────────────────────────────
@@ -343,19 +303,9 @@ export class BridgeRenderer {
         g.add(pm);
       }
 
-      const colorGateDeckMesh = input.colorGateDeck
-        ? this.addColorGateDeck(
-          g,
-          input.colorGateDeck.gateLocalZ,
-          input.colorGateDeck.color,
-          ENHANCED_DECK_W,
-          45.8,
-        )
-        : undefined;
-
       g.position.set(x, 0, z);
       this.scene.add(g);
-      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH, colorGateDeckMesh };
+      return { mesh: g, padMesh: pad, padDepth: PAD_DEPTH };
     }
 
     // ── legacy 브릿지 (원본 동일) ────────────────────────────────────────────
@@ -382,25 +332,9 @@ export class BridgeRenderer {
     rightB.position.set( (LANE_WIDTH / 2 - 4), 30, 0);
     g.add(leftB, rightB);
 
-    const colorGateDeckMesh = input.colorGateDeck
-      ? this.addColorGateDeck(
-        g,
-        input.colorGateDeck.gateLocalZ,
-        input.colorGateDeck.color,
-        LANE_WIDTH - 5,
-        45.2,
-      )
-      : undefined;
-
     g.position.set(x, 0, z);
     this.scene.add(g);
-    return { mesh: g, padMesh: legacyPad, padDepth: PAD_DEPTH, colorGateDeckMesh };
-  }
-
-  revealColorGateDeck(visual: BridgeVisual): void {
-    if (visual.colorGateDeckMesh) {
-      visual.colorGateDeckMesh.visible = true;
-    }
+    return { mesh: g, padMesh: legacyPad, padDepth: PAD_DEPTH };
   }
 
   removeBridge(visual: BridgeVisual): void {

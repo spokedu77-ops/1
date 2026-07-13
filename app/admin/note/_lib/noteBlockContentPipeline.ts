@@ -1,8 +1,7 @@
-import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
+import type { MutableRefObject } from 'react';
 import { normalizeTodoBlockContentRecord } from './noteTodoContent';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
-  contentChangeNeedsReactBlocks,
   contentChangedForUndo,
   mergeContentPatchWithActiveStore,
 } from './noteContentPatch';
@@ -23,7 +22,6 @@ export type ApplyBlockContentChangeArgs = {
   block: NoteBlock;
   content: unknown;
   blocksRef: MutableRefObject<NoteBlock[]>;
-  setBlocks: Dispatch<SetStateAction<NoteBlock[]>>;
   recordContentUndoBeforeChange: (blockId: string) => void;
   scheduleBlockContentSave: (
     blockId: string,
@@ -34,13 +32,12 @@ export type ApplyBlockContentChangeArgs = {
 };
 
 /**
- * 블록 content 갱신 단일 경로 — 스토어·blocksRef·(필요 시) React state를 한 번에 맞춘다.
+ * 블록 content 갱신 단일 경로 — Zustand patchContent만 (UI는 store 구독).
  */
 export function applyBlockContentChange({
   block,
   content,
   blocksRef,
-  setBlocks,
   recordContentUndoBeforeChange,
   scheduleBlockContentSave,
   onAfterChange,
@@ -66,12 +63,4 @@ export function applyBlockContentChange({
 
   scheduleBlockContentSave(block.id, nextRecord, prevRecord);
   onAfterChange?.();
-
-  if (!contentChangeNeedsReactBlocks(prevRecord, nextRecord)) {
-    return;
-  }
-
-  setBlocks((prev) =>
-    prev.map((item) => (item.id === block.id ? { ...item, content: nextRecord } : item)),
-  );
 }

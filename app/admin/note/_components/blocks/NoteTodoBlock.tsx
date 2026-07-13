@@ -1,7 +1,6 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { getMergedBlockContentBase } from '../../_lib/noteBlockContentResolve';
 import { resolveTodoChecked } from '../../_lib/noteTodoContent';
 import { EMPTY_BLOCK_PLACEHOLDER } from '../../_lib/noteBlockRowUi';
 import { createInlineBlockEnterHandler } from '../../_lib/noteInlineBlockEnter';
@@ -58,7 +57,7 @@ export function NoteTodoBlock({
   slashHostRef,
   ...fieldProps
 }: NoteTodoBlockProps) {
-  const resolved = getMergedBlockContentBase({ ...block, content: liveContent });
+  const resolved = liveContent;
   const checked = resolveTodoChecked(resolved);
   const text = typeof resolved.text === 'string' ? resolved.text : '';
 

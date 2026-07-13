@@ -412,6 +412,7 @@ export function generateSignal(
         type: 'full_color',
         bg: c.bg,
         content: {
+          colorId: c.id,
           symbol: c.symbol,
           textColor: c.text,
           name: c.name,
@@ -1182,7 +1183,10 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
   const t = sig.type as string;
   const content = sig.content as Record<string, unknown> | undefined;
 
-  if (t === 'full_color' || t === 'gonogo_dual') {
+  if (t === 'full_color') {
+    return uniqueColorKeys([content?.colorId as string | undefined, colorIdFromHex(sig.bg)]);
+  }
+  if (t === 'gonogo_dual') {
     return uniqueColorKeys([colorIdFromHex(sig.bg)]);
   }
   if (!content) return [];

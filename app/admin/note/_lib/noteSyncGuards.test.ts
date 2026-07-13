@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { partitionOutboundForSafePush, newNoteBlockClientId } from './noteSyncGuards';
+import { buildKnownBlockIdsForPush, partitionOutboundForSafePush, newNoteBlockClientId } from './noteSyncGuards';
 import { persistOpToPushItems } from './notePersistOpToBlockOps';
 
 describe('noteSyncGuards', () => {
@@ -28,13 +28,23 @@ describe('noteSyncGuards', () => {
     expect(deferred.map((item) => item.payload.opType)).toEqual(['patch_content']);
   });
 
-  it('allows patch_content when block already exists locally', () => {
+  it('allows patch_content when create for same id is still only in outbound', () => {
+    const create = persistOpToPushItems({
+      type: 'createBlock',
+      id: 'block-1',
+      documentId: 'doc-1',
+      blockType: 'text',
+      content: { text: '' },
+      parent_block_id: null,
+    });
     const patch = persistOpToPushItems({
       type: 'patchContent',
-      updates: [{ id: 'existing', content: { text: 'hi' } }],
+      updates: [{ id: 'block-1', content: { text: 'hi' } }],
     });
-    const { ready, deferred } = partitionOutboundForSafePush(patch, new Set(['existing']));
-    expect(ready).toHaveLength(1);
+    const outbound = [...create, ...patch];
+    const known = buildKnownBlockIdsForPush([], outbound);
+    const { ready, deferred } = partitionOutboundForSafePush(outbound, known);
+    expect(ready.map((item) => item.payload.opType)).toEqual(['create_block', 'patch_content']);
     expect(deferred).toHaveLength(0);
   });
 });

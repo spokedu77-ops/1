@@ -26,7 +26,6 @@ export const GATE_COLORS: Record<GateColorId, GateColorDef> = {
   blue:   { bg: '#1d4ed8', label: '파랑', text: '#ffffff', hex: 0x1d4ed8 },
 };
 
-export const COLOR_GATE_SPAN_LANES = 3;
 export const COLOR_GATE_POSE_IMAGE_URL = '/spomove/dive/color-gate/lunge-reach.png';
 export const COLOR_GATE_POSE_IMAGE_URLS = [
   '/spomove/dive/color-gate/lunge-reach.png',
@@ -39,26 +38,6 @@ export const COLOR_GATE_POSE_INSTRUCTION =
   '한쪽 다리를 앞으로 굽히고 팔을 앞으로 뻗으세요';
 
 export const COLOR_GATE_ACTION_SEQUENCE: FlowModuleKey[] = ['reach'];
-export const COLOR_GATE_SPAWN_SKIP_BRIDGES = 2;
-export const COLOR_GATE_SPAWN_RATE = 1;
-
-export function shouldSpawnColorGateOnBridgeAttempt(
-  bridgeAttempt: number,
-  randomValue: number,
-): boolean {
-  if (bridgeAttempt <= COLOR_GATE_SPAWN_SKIP_BRIDGES) return false;
-  return randomValue < COLOR_GATE_SPAWN_RATE;
-}
-
-export function pickRandomGateColor(): GateColorId {
-  return COLOR_GATE_FIXED_COLOR_ID;
-}
-
-export function laneForGateColor(gateColorId: GateColorId): 0 | 1 | 2 {
-  if (gateColorId === 'green') return 0;
-  if (gateColorId === 'yellow') return 2;
-  return 1;
-}
 
 export function buildColorGateCue(gateColorId: GateColorId): string {
   return `${GATE_COLORS[gateColorId].label}으로!`;

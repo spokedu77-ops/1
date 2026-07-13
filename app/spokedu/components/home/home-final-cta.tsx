@@ -34,6 +34,9 @@ export function HomeFinalCta() {
             <p className={`mt-4 max-w-xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.finalCta.lead}
             </p>
+            <p className={`mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanText}`}>
+              {homePage.finalCta.support}
+            </p>
             <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
               {homePage.finalCta.notes.map((note) => (
                 <li key={note} className={`rounded-lg border border-[#1D4ED8]/15 bg-white/70 px-3 py-2 text-sm font-semibold text-slate-700 ${koreanText}`}>

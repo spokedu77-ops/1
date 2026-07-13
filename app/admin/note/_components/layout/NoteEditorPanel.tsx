@@ -415,6 +415,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
             </div>
           </div>
           <div
+            data-note-document-body="true"
             className={`${NOTE_PAGE_SHELL} cursor-text ${resolveDocCover(activeDocument.properties) ? 'pt-6' : 'pt-10'}`}
             onMouseDown={handleDocumentBodyMouseDown}
           >

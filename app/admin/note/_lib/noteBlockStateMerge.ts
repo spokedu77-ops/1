@@ -100,19 +100,21 @@ export function mergeReconciledBlocks(
   const merged = reconciledBlocks.map((block) => {
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
     const fromStore = store.byId[block.id];
+    if (!fromStore?.content) return block;
 
-    if (block.id === activeId && fromStore?.content) {
-      if (activeDocumentId && fromStore.document_id !== activeDocumentId) return block;
-      return {
-        ...block,
-        content: mergeBlockContentWithStore(
-          block.content as Record<string, unknown> | null | undefined,
-          fromStore.content as Record<string, unknown>,
-        ),
-      };
-    }
+    const serverContent = block.content as Record<string, unknown> | null | undefined;
+    const storeContent = fromStore.content as Record<string, unknown>;
+    const serverText = typeof serverContent?.text === 'string' ? serverContent.text : '';
+    const storeText = typeof storeContent.text === 'string' ? storeContent.text : '';
+    const storeAhead = storeText.length > serverText.length;
+    const isActive = block.id === activeId;
 
-    return block;
+    if (!storeAhead && !isActive) return block;
+
+    return {
+      ...block,
+      content: mergeBlockContentWithStore(serverContent, storeContent),
+    };
   });
 
   return dedupeNoteBlocksById(normalizeListBlocksOnly(merged));
@@ -150,6 +152,26 @@ export function wouldReconcileRegressLocalStructure(
     return local.type !== block.type
       || local.parent_block_id !== block.parent_block_id
       || local.order_index !== block.order_index;
+  });
+}
+
+function readBlockBodyText(block: NoteBlock): string {
+  const text = (block.content as Record<string, unknown> | null | undefined)?.text;
+  return typeof text === 'string' ? text : '';
+}
+
+/** 로컬(스토어) 본문이 incoming 스냅샷보다 앞서 있으면 true — stale open/reconcile 덮어쓰기 방지 */
+export function documentContentAheadOfSnapshot(
+  localBlocks: NoteBlock[],
+  snapshotBlocks: NoteBlock[],
+): boolean {
+  const snapshotById = new Map(snapshotBlocks.map((block) => [block.id, block]));
+  return localBlocks.some((local) => {
+    const localText = readBlockBodyText(local);
+    if (localText.length === 0) return false;
+    const incoming = snapshotById.get(local.id);
+    const incomingText = incoming ? readBlockBodyText(incoming) : '';
+    return localText.length > incomingText.length;
   });
 }
 

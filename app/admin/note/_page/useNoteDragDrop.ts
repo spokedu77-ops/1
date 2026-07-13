@@ -34,6 +34,7 @@ import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { resolveBlockDropTarget, resolveBlockDropTargetFromPointer } from '../_lib/noteDropResolver';
 import type { NoteBlock, NoteDocument } from '../_lib/types';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -86,10 +87,12 @@ export function useNoteDragDrop(options: {
     return () => window.removeEventListener('pointermove', onPointerMove);
   }, []);
 
-  const activeBlock = useMemo(
-    () => (activeBlockId ? blocks.find((b) => b.id === activeBlockId) ?? null : null),
-    [activeBlockId, blocks],
-  );
+  const activeBlock = useMemo(() => {
+    if (!activeBlockId) return null;
+    return blocks.find((b) => b.id === activeBlockId)
+      ?? useNoteBlockStore.getState().getBlock(activeBlockId)
+      ?? null;
+  }, [activeBlockId, blocks]);
   const activeDragDocument = useMemo(
     () => (activeDragDocId ? documents.find((d) => d.id === activeDragDocId) ?? null : null),
     [activeDragDocId, documents],
@@ -124,15 +127,27 @@ export function useNoteDragDrop(options: {
 
   const handleDragOver = useCallback((event: DragOverEvent) => {
     const { active, over } = event;
-    if (!over) {
+    const activeId = String(active.id);
+
+    if (activeId.startsWith('doc-drag:')) {
       setDropTarget(null);
       dropTargetRef.current = null;
       return;
     }
-    const activeId = String(active.id);
+
+    if (!over) {
+      const pointerTarget = resolveBlockDropTargetFromPointer(
+        pointerYRef.current,
+        blocksRef.current,
+        activeId,
+      );
+      setDropTarget(pointerTarget);
+      dropTargetRef.current = pointerTarget;
+      return;
+    }
+
     const overId = String(over.id);
     if (
-      activeId.startsWith('doc-drag:') ||
       overId.startsWith('doc:') ||
       overId.startsWith('doc-drop:') ||
       overId === 'doc-root' ||
@@ -144,8 +159,13 @@ export function useNoteDragDrop(options: {
       return;
     }
     if (activeId === overId) {
-      setDropTarget(null);
-      dropTargetRef.current = null;
+      const pointerTarget = resolveBlockDropTargetFromPointer(
+        pointerYRef.current,
+        blocksRef.current,
+        activeId,
+      );
+      setDropTarget(pointerTarget);
+      dropTargetRef.current = pointerTarget;
       return;
     }
     const nextTarget = resolveBlockDropTargetFromPointer(

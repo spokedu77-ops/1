@@ -26,6 +26,7 @@ export type HomeAudienceGateItem = {
   badge: string;
   title: string;
   description: string;
+  fit: string;
   bullets: readonly string[];
   ctaLabel: string;
   href: string;
@@ -41,6 +42,11 @@ export type HomeSpomoveFlowStep = {
 export type HomeSpomoveProof = {
   value: string;
   label: string;
+};
+
+export type HomeSpomoveUseCase = {
+  title: string;
+  body: string;
 };
 
 export type HomeHeroQuickLink = {
@@ -132,12 +138,14 @@ export const homePage = {
   audienceGate: {
     id: 'paths',
     title: '어떤 수업이 필요하신가요?',
+    lead: '기관 담당자, 학부모, 협업 담당자가 처음 확인해야 할 내용을 나눠 정리했습니다.',
     items: [
       {
         id: 'dispatch',
         badge: '기관 담당자용',
         title: '기관 정규·행사 수업',
         description: '키움센터·학교·복지관의 공간, 인원, 일정에 맞춰 체육 프로그램을 구성합니다.',
+        fit: '정기 수업, 행사, 방학 프로그램을 외부 강사와 안정적으로 운영해야 할 때',
         bullets: ['정규수업', '원데이 행사', '방학 프로그램'] as const,
         ctaLabel: '기관 운영안 보기',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
@@ -149,6 +157,7 @@ export const homePage = {
         badge: '학부모용',
         title: '1:1·소그룹 개인수업',
         description: '아이의 운동 경험, 자신감, 사회성 목표에 맞춰 방문형 수업을 설계합니다.',
+        fit: '운동 자신감, 기초체력, 종목 준비를 아이 속도에 맞춰 시작하고 싶을 때',
         bullets: ['기초 움직임', '운동 자신감', '맞춤 피드백'] as const,
         ctaLabel: '개인수업 보기',
         href: `${SPOKEDU_BASE_PATH}/private`,
@@ -160,6 +169,7 @@ export const homePage = {
         badge: '도입·협업용',
         title: 'SPOMOVE·커리큘럼 도입',
         description: '스크린 반응활동과 수업안을 기관 운영 흐름에 맞춰 적용합니다.',
+        fit: 'SPOMOVE 활동, 수업안, 강사교육을 기관 프로그램 안에 넣고 싶을 때',
         bullets: ['SPOMOVE', '커리큘럼', '강사교육'] as const,
         ctaLabel: '도입 방식 보기',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
@@ -184,6 +194,11 @@ export const homePage = {
       { value: '난이도 조절', label: '연령·대상별 속도와 규칙 변경' },
       { value: '기관 적용', label: '정규수업·행사·통합반 구성' },
     ] as const satisfies readonly HomeSpomoveProof[],
+    useCases: [
+      { title: '정규수업', body: '반복 참여 속에서 인지, 판단, 움직임 반응을 단계적으로 높입니다.' },
+      { title: '원데이 행사', body: '짧은 시간에도 규칙 이해와 참여 몰입이 빠르게 만들어집니다.' },
+      { title: '통합반·느린 학습자', body: '속도와 신호 난이도를 조절해 각자 성공 경험을 만들 수 있습니다.' },
+    ] as const satisfies readonly HomeSpomoveUseCase[],
     mediaKey: 'trackDispatch' as HomeMediaKey,
     primaryCta: {
       label: 'SPOMOVE 자세히 보기',
@@ -200,6 +215,16 @@ export const homePage = {
     id: 'cases',
     title: '실제 기관 운영 사례',
     lead: '공간, 대상, 운영 목적에 맞춰 실제로 구성하고 진행한 수업 기록입니다.',
+    recordsCta: {
+      label: '사례 전체 보기',
+      href: `${SPOKEDU_BASE_PATH}/records`,
+      trackLabel: 'cta-home-cases-records',
+    },
+    consultCta: {
+      label: '기관 운영 상담',
+      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      trackLabel: 'cta-home-cases-consult',
+    },
     proofStats: [
       { value: '정규수업', label: '키움센터·학교 연계 운영' },
       { value: '원데이', label: '행사·특별활동 구성' },
@@ -211,6 +236,7 @@ export const homePage = {
     id: 'contact-cta',
     headlineLines: ['운영 환경을 알려주시면', '맞는 수업안부터 제안합니다.'] as const,
     lead: '기관 유형, 대상 연령, 참여 인원, 공간 조건을 기준으로 정규수업·행사·SPOMOVE·개인수업 중 적합한 방향을 안내합니다.',
+    support: '아직 프로그램이 정해지지 않았어도 괜찮습니다. 목적과 조건을 먼저 듣고 가능한 운영안을 좁혀드립니다.',
     notes: ['대상 연령·인원 확인', '공간·일정 조건 정리', '프로그램 방향 제안'] as const,
     items: [
       {

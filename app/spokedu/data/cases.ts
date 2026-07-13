@@ -4,7 +4,7 @@ import { recordsCaseImageBySlug } from './images';
 import type { ProgramSlug } from './programs-catalog';
 import type { CaseFilterId } from './cases-page';
 
-export type CaseType = '기관 파견' | '개인·소그룹' | '행사형' | '강사교육';
+export type CaseType = '기관 프로그램' | '개인·소그룹' | '행사형' | '강사교육';
 export type RelatedProgramSlug = ProgramSlug;
 
 export type CaseData = {
@@ -42,7 +42,7 @@ export const cases: CaseData[] = [
     title: '양천거점형키움센터 SPOMOVE 정규수업',
     slug: 'yangcheon-spomove',
     institution: '양천거점형키움센터',
-    type: '기관 파견',
+    type: '기관 프로그램',
     program: 'SPOMOVE',
     target: '초등 저학년',
     location: '서울 양천구',
@@ -88,7 +88,7 @@ export const cases: CaseData[] = [
     title: '동작거점형키움센터 SPOMOVE 연계 수업',
     slug: 'dongjak-rhythm',
     institution: '동작거점형키움센터',
-    type: '기관 파견',
+    type: '기관 프로그램',
     program: 'SPOMOVE 연계',
     target: '초등 저학년~중학년',
     location: '서울 동작구',
@@ -271,7 +271,7 @@ export const cases: CaseData[] = [
 ];
 
 export const dispatchCases = cases
-  .filter((item) => item.type === '기관 파견' || item.type === '행사형')
+  .filter((item) => item.type === '기관 프로그램' || item.type === '행사형')
   .map((item) => item.title);
 
 export function getCaseBySlug(slug: string) {

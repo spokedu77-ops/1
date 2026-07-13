@@ -44,28 +44,27 @@ export type NoteDocumentEngineApi = {
   persistRestoreBlock: (blockId: string) => Promise<NoteBlock[]>;
   persistPurgeBlock: (blockId: string) => Promise<void>;
   getBlocks: () => NoteBlock[];
+  getCoordinatorBlocks: () => NoteBlock[];
   hasPendingContent: () => boolean;
   hasPendingPersist: () => boolean;
+  hasPendingOutbound: () => Promise<boolean>;
   isOplogSyncEnabled: () => boolean;
 };
 
 export function useNoteDocumentEngine(options: {
   documentId: string | null;
-  onBlocksChanged: (blocks: NoteBlock[]) => void;
   triggerSave: () => void;
   onError?: (error: Error) => void;
 }): NoteDocumentEngineApi {
-  const { documentId, onBlocksChanged, triggerSave, onError } = options;
+  const { documentId, triggerSave, onError } = options;
   const pipelineRef = useRef<NoteDocumentPipeline | null>(null);
-  const onBlocksChangedRef = useRef(onBlocksChanged);
   const triggerSaveRef = useRef(triggerSave);
   const onErrorRef = useRef(onError);
 
   useLayoutEffect(() => {
-    onBlocksChangedRef.current = onBlocksChanged;
     triggerSaveRef.current = triggerSave;
     onErrorRef.current = onError;
-  }, [onBlocksChanged, triggerSave, onError]);
+  }, [triggerSave, onError]);
 
   useLayoutEffect(() => {
     if (!documentId) {
@@ -74,7 +73,6 @@ export function useNoteDocumentEngine(options: {
     }
 
     const pipeline = getNoteDocumentPipeline(documentId, {
-      onBlocksChanged: (blocks) => onBlocksChangedRef.current(blocks),
       triggerSave: () => triggerSaveRef.current(),
       onError: (error) => onErrorRef.current?.(error),
     });
@@ -117,8 +115,7 @@ export function useNoteDocumentEngine(options: {
   const replaceBlocks = useCallback((blocks: NoteBlock[]) => {
     const pipeline = pipelineRef.current;
     if (!pipeline) {
-      useNoteBlockStore.getState().applyBlocks(() => blocks);
-      onBlocksChangedRef.current(blocks);
+      useNoteBlockStore.getState().replaceBlocks(blocks);
       return;
     }
     pipeline.dispatch({ type: 'replaceBlocks', blocks });
@@ -160,7 +157,6 @@ export function useNoteDocumentEngine(options: {
     if (!pipelineRef.current) {
       if (!options?.skipDispatch) {
         useNoteBlockStore.getState().hydrate(initialBlocks);
-        onBlocksChangedRef.current(initialBlocks);
       }
       return;
     }
@@ -215,12 +211,22 @@ export function useNoteDocumentEngine(options: {
     return pipelineRef.current?.getBlocks() ?? [];
   }, []);
 
+  const getCoordinatorBlocks = useCallback(() => {
+    return pipelineRef.current?.getCoordinatorBlocks() ?? [];
+  }, []);
+
   const hasPendingContent = useCallback(() => {
     return pipelineRef.current?.hasPendingContent() ?? false;
   }, []);
 
   const hasPendingPersist = useCallback(() => {
     return pipelineRef.current?.hasPendingPersist() ?? false;
+  }, []);
+
+  const hasPendingOutbound = useCallback(async () => {
+    const pipeline = pipelineRef.current;
+    if (!pipeline) return false;
+    return pipeline.hasPendingOutbound();
   }, []);
 
   const isOplogSyncEnabledFn = useCallback(
@@ -246,8 +252,10 @@ export function useNoteDocumentEngine(options: {
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
+    getCoordinatorBlocks,
     hasPendingContent,
     hasPendingPersist,
+    hasPendingOutbound,
     isOplogSyncEnabled: isOplogSyncEnabledFn,
   }), [
     dispatch,
@@ -267,8 +275,10 @@ export function useNoteDocumentEngine(options: {
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
+    getCoordinatorBlocks,
     hasPendingContent,
     hasPendingPersist,
+    hasPendingOutbound,
     isOplogSyncEnabledFn,
   ]);
 }
