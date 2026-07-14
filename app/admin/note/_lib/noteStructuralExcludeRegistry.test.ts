@@ -14,7 +14,7 @@ function softDeleteOp(blockId: string): NoteLocalOutboundOp {
     clientOpId: `op-${blockId}`,
     createdAt: Date.now(),
     opType: 'soft_delete',
-    payload: { opType: 'soft_delete', blockId },
+    payload: { opType: 'soft_delete', ids: [blockId] },
   };
 }
 
