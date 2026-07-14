@@ -12,7 +12,8 @@ import {
   type SoftDeletePersistArgs,
 } from './noteDocumentOpQueue';
 import { setNoteContentSavePending } from './notePendingSave';
-import { markNoteLocalSave, getPendingBlockDeleteIds } from './noteReconcileIdle';
+import { markNoteLocalSave } from './noteReconcileIdle';
+import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import {
   disposeNoteSyncCoordinator,
@@ -153,7 +154,7 @@ export class NoteDocumentPipeline {
     const ctx = buildCommandContext(this.documentId);
     let { blocks } = applyNoteCommand(previous, command, ctx);
     // soft delete outbound 적재 전에 patchFields/reconcile이 블록을 되살리지 않게
-    const pendingDeletes = getPendingBlockDeleteIds(this.documentId);
+    const pendingDeletes = getStructuralExcludeIds(this.documentId);
     if (pendingDeletes.size > 0) {
       blocks = blocks.filter((block) => !pendingDeletes.has(block.id));
     }

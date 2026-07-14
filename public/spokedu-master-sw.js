@@ -1,4 +1,4 @@
-const STATIC_CACHE = 'spokedu-master-static-v4';
+const STATIC_CACHE = 'spokedu-master-static-v5';
 const STORAGE_CACHE = 'spokedu-master-storage-v1';
 const CURRENT_CACHES = new Set([STATIC_CACHE, STORAGE_CACHE]);
 const MASTER_CACHE_PREFIX = 'spokedu-master';
@@ -16,10 +16,9 @@ function isAllowedSupabasePublicAsset(url) {
 }
 
 function isAllowedSameOriginStatic(url) {
-  return url.origin === self.location.origin && (
-    url.pathname.startsWith('/_next/static/') ||
-    PUBLIC_STATIC_PATHS.has(url.pathname)
-  );
+  // /_next/static 은 배포 해시가 바뀌므로 SW cache-first 금지 (ChunkLoadError 방지).
+  // hashed asset은 브라우저 HTTP 캐시로 충분하다.
+  return url.origin === self.location.origin && PUBLIC_STATIC_PATHS.has(url.pathname);
 }
 
 function canStoreResponse(request, response) {
@@ -85,6 +84,8 @@ self.addEventListener('fetch', (event) => {
   if (url.origin === self.location.origin) {
     if (url.pathname.startsWith('/api/')) return;
     if (url.pathname.startsWith('/spokedu-master')) return;
+    // Never intercept Next hashed bundles — let the network/HTTP cache handle them.
+    if (url.pathname.startsWith('/_next/static/')) return;
   }
 
   if (isAllowedSupabasePublicAsset(url)) {

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   coalescePushItems,
   collectPendingSoftDeleteIds,
+  collectPendingOutboundExcludedIds,
+  collectPendingTransferAwayIds,
   excludeBlocksPendingSoftDelete,
   filterStalePendingSoftDeletes,
+  findOutboundOpsSupersededByServerRestore,
   mergeServerBlocksIntoLocalSnapshot,
   persistOpToPushItems,
   serverSnapshotHasBlocksMissingFrom,
@@ -211,11 +214,40 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     expect(merged).toHaveLength(0);
   });
 
-  it('filterStalePendingSoftDeletes drops ids present on server restore', () => {
+  it('filterStalePendingSoftDeletes keeps pending ids while server still has blocks (pre-push)', () => {
     const server = [serverBlock('child-1', '복구 본문')];
     const pending = new Set(['child-1', 'gone-forever']);
     const effective = filterStalePendingSoftDeletes(server, pending);
-    expect([...effective]).toEqual(['gone-forever']);
+    expect([...effective].sort()).toEqual(['child-1', 'gone-forever']);
+  });
+
+  it('findOutboundOpsSupersededByServerRestore never drops outbound before push ack', () => {
+    const items = persistOpToPushItems({ type: 'softDelete', ids: ['child-1'] });
+    const outbound = items.map((item, index) => ({
+      ...item,
+      documentId: 'doc-1',
+      createdAt: index,
+    }));
+    const superseded = findOutboundOpsSupersededByServerRestore(
+      outbound,
+      [serverBlock('child-1', 'still on server')],
+    );
+    expect(superseded).toEqual([]);
+  });
+
+  it('collectPendingTransferAwayIds excludes moved blocks from source doc merge', () => {
+    const items = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [{ id: 'todo-1', document_id: 'doc-target' }],
+      deleteIds: [],
+    });
+    const outbound = items.map((item, index) => ({
+      ...item,
+      documentId: 'doc-source',
+      createdAt: index,
+    }));
+    expect([...collectPendingTransferAwayIds(outbound, 'doc-source')]).toEqual(['todo-1']);
+    expect([...collectPendingOutboundExcludedIds(outbound, 'doc-source')]).toEqual(['todo-1']);
   });
 });
 

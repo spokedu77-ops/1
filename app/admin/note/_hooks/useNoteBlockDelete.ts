@@ -27,6 +27,7 @@ import {
   markNoteLocalSave,
   markPendingBlockDeletes,
 } from '../_lib/noteReconcileIdle';
+import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { setNoteMergeSplitHint } from '../_lib/noteMergeSplitHint';
 import { readToggleTitleText } from '../_lib/noteNotionBlockBehavior';
 import type { NoteBlock } from '../_lib/types';
@@ -198,6 +199,7 @@ export function useNoteBlockDelete(options: {
     } catch (e) {
       devLogger.error(logLabel, e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
+      if (documentId) removeStructuralExcludeIds(documentId, command.affectedIds);
       documentEngine.replaceBlocks(prevBlocks);
     }
   }, [
@@ -240,6 +242,7 @@ export function useNoteBlockDelete(options: {
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
       setError(e instanceof Error ? e.message : '블록 병합 실패');
+      if (documentId) removeStructuralExcludeIds(documentId, removedIds);
       documentEngine.replaceBlocks(prevBlocks);
     } finally {
       window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);

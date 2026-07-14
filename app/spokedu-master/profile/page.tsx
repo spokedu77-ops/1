@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
 import { BottomSheet } from '../components/ui/BottomSheet';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import {
@@ -262,6 +263,7 @@ function SpokeduMasterProfileContent() {
     try {
       await supabase.auth.signOut();
     } finally {
+      clearLoginSessionMarkers();
       resetProfile();
       router.replace('/spokedu-master/landing');
     }

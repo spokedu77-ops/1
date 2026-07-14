@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { BookOpen, CheckCircle2, ChevronRight, Clock, MapPin, Play, Shield, Timer, Users, Zap } from 'lucide-react';
 import { MASTER_PRODUCT_CATALOG, MASTER_BUSINESS_INFO, MASTER_CUSTOMER_SERVICE_HREF, MASTER_CENTER_INQUIRY_HREF } from '../lib/productCatalog';
+import { LandingLoggedInBanner } from './LandingLoggedInBanner';
 
 const FEATURES = [
   {
@@ -119,6 +120,7 @@ export const metadata = {
 export default function LandingPage() {
   return (
     <div className="min-h-dvh" style={{ background: 'var(--spm-bg)', color: 'var(--spm-t)', fontFamily: 'var(--spm-font-body)' }}>
+      <LandingLoggedInBanner />
       {/* Nav */}
       <header className="sticky top-0 z-50 flex items-center justify-between border-b px-[22px] py-4 sm:px-10" style={{ background: 'rgba(7,7,12,0.92)', backdropFilter: 'blur(20px)', borderColor: 'var(--spm-br2)' }}>
         <div className="flex items-baseline gap-2">
@@ -126,7 +128,7 @@ export default function LandingPage() {
           <span className="text-[17px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)' }}>MASTER</span>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/spokedu-master/dashboard" className="hidden h-9 items-center rounded-full px-4 text-[12px] font-black sm:flex" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+          <Link href="/login?next=/spokedu-master/dashboard" className="flex h-9 items-center rounded-full px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
           <Link href="/login?next=/spokedu-master/onboarding" className="flex h-9 items-center rounded-full px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
@@ -296,10 +298,15 @@ export default function LandingPage() {
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
             라이브러리와 수업 도구는 라이트부터, SPOMOVE·PRO 자료는 프리미엄에서 이용해 보세요.
           </p>
-          <Link href="/login?next=/spokedu-master/onboarding" className="mt-8 inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href="/login?next=/spokedu-master/onboarding" className="inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px rgba(99,102,241,0.36)' }}>
             <Play size={16} fill="#fff" />
             이용권 선택
           </Link>
+          <Link href="/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+            로그인
+          </Link>
+          </div>
           <p className="mt-3 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>라이트·프리미엄 월 자동결제</p>
         </div>
       </section>

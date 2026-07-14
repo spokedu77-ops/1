@@ -8,7 +8,7 @@ import {
   contentChangedForUndo,
   mergeBlockContentWithStore,
 } from '../_lib/noteContentPatch';
-import { getPendingBlockDeleteIds } from '../_lib/noteReconcileIdle';
+import { getStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import type { NoteTableCellField } from '../_lib/noteTableBlock';
 import type { NoteBlock } from '../_lib/types';
 
@@ -42,7 +42,7 @@ function excludePendingDeletes(
   documentId: string | null,
 ): NoteBlock[] {
   if (!documentId || blocks.length === 0) return blocks;
-  const pending = getPendingBlockDeleteIds(documentId);
+  const pending = getStructuralExcludeIds(documentId);
   if (pending.size === 0) return blocks;
   return blocks.filter((block) => !pending.has(block.id));
 }
@@ -79,7 +79,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
       const incoming = excludePendingDeletes(blocks, docId);
       const nextById: Record<string, NoteBlock> = { ...state.byId };
       const incomingIds = new Set(incoming.map((b) => b.id));
-      const pending = docId ? getPendingBlockDeleteIds(docId) : new Set<string>();
+      const pending = docId ? getStructuralExcludeIds(docId) : new Set<string>();
 
       if (docId) {
         for (const [id, existing] of Object.entries(nextById)) {
@@ -144,7 +144,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
   upsertBlock: (block) => {
     set((state) => {
       const pending = state.activeDocumentId
-        ? getPendingBlockDeleteIds(state.activeDocumentId)
+        ? getStructuralExcludeIds(state.activeDocumentId)
         : new Set<string>();
       if (pending.has(block.id)) return state;
       const exists = !!state.byId[block.id];

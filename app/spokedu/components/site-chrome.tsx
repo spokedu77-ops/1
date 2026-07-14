@@ -298,14 +298,34 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2">
           <NavAnchor
-            href={`${SPOKEDU_BASE_PATH}/contact`}
-            trackLabel="header-contact"
-            className={`hidden min-h-11 items-center justify-center rounded-full px-5 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
+            href="/login?next=/spokedu-master/dashboard"
+            trackLabel="header-login"
+            className={`hidden min-h-11 items-center justify-center rounded-full border px-4 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
               onHero
-                ? 'bg-[#0a2540] text-white hover:bg-[#0d2d4f] focus-visible:outline-[#635bff]'
-                : 'text-white hover:opacity-90 focus-visible:outline-blue-600'
+                ? 'border-slate-300/80 text-[#0a2540] hover:bg-white/60 focus-visible:outline-[#635bff]'
+                : 'border-slate-300 text-[#0B1220] hover:bg-slate-50 focus-visible:outline-blue-600'
+            }`}
+          >
+            로그인
+          </NavAnchor>
+          <NavAnchor
+            href="/login?next=/spokedu-master/onboarding"
+            trackLabel="header-master-start"
+            className={`hidden min-h-11 items-center justify-center rounded-full px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
+              onHero ? 'bg-[#0a2540] focus-visible:outline-[#635bff]' : 'focus-visible:outline-blue-600'
             }`}
             style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
+          >
+            MASTER 시작
+          </NavAnchor>
+          <NavAnchor
+            href={`${SPOKEDU_BASE_PATH}/contact`}
+            trackLabel="header-contact"
+            className={`hidden min-h-11 items-center justify-center rounded-full px-5 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 md:inline-flex md:text-[13px] ${
+              onHero
+                ? 'border border-slate-300/80 text-[#0a2540] hover:bg-white/60 focus-visible:outline-[#635bff]'
+                : 'border border-slate-300 text-[#0B1220] hover:bg-slate-50 focus-visible:outline-blue-600'
+            }`}
           >
             상담하기
           </NavAnchor>
@@ -346,15 +366,33 @@ export function SiteHeader() {
         >
           <nav className="flex flex-col px-5 py-4 backdrop-blur-md">
             {siteNav.map(renderMobileEntry)}
-            <NavAnchor
-              href={`${SPOKEDU_BASE_PATH}/contact`}
-              trackLabel="mobile-header-contact"
-              className="mt-4 inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              style={{ backgroundColor: ATHLETIC_BLUE }}
-              onNavigate={closeMenus}
-            >
-              상담하기
-            </NavAnchor>
+            <div className="mt-4 grid gap-2">
+              <NavAnchor
+                href="/login?next=/spokedu-master/dashboard"
+                trackLabel="mobile-header-login"
+                className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/25 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                onNavigate={closeMenus}
+              >
+                로그인
+              </NavAnchor>
+              <NavAnchor
+                href="/login?next=/spokedu-master/onboarding"
+                trackLabel="mobile-header-master-start"
+                className="inline-flex min-h-12 items-center justify-center rounded-md px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                style={{ backgroundColor: ATHLETIC_BLUE }}
+                onNavigate={closeMenus}
+              >
+                MASTER 시작
+              </NavAnchor>
+              <NavAnchor
+                href={`${SPOKEDU_BASE_PATH}/contact`}
+                trackLabel="mobile-header-contact"
+                className="inline-flex min-h-12 items-center justify-center rounded-md border border-white/25 px-4 text-sm font-semibold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                onNavigate={closeMenus}
+              >
+                상담하기
+              </NavAnchor>
+            </div>
           </nav>
         </div>
       ) : null}

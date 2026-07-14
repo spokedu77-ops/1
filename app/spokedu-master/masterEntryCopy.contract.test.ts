@@ -7,14 +7,18 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 describe('SPOKEDU MASTER entry copy alignment', () => {
   it('keeps login OTP copy aligned with no-trial billing policy', () => {
     const login = read('app/login/page.tsx');
+    const otpForm = read('app/components/auth/MasterEmailOtpForm.tsx');
 
-    expect(login).toContain('SPOKEDU MASTER 시작하기');
-    expect(login).toContain('이용권 선택 후 사용할 수 있습니다');
+    expect(otpForm).toContain('SPOKEDU MASTER 시작하기');
+    expect(otpForm).toContain('이용권 선택 후 사용할 수 있습니다');
     expect(login).toContain('이메일 인증으로 시작하기');
+    expect(login).toContain('MasterEmailOtpForm');
 
     expect(login).not.toContain('14일');
     expect(login).not.toContain('무료 체험');
     expect(login).not.toContain('SPOKEDU MASTER Trial');
+    expect(otpForm).not.toContain('14일');
+    expect(otpForm).not.toContain('무료 체험');
   });
 
   it('keeps spokedu curriculum marketing aligned with MASTER billing policy', () => {

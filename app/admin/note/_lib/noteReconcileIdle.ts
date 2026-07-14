@@ -11,35 +11,24 @@ let pendingDocumentId: string | null = null;
 
 const localSaveSuppressUntil = new Map<string, number>();
 
-const PENDING_BLOCK_DELETE_MS = 15_000;
-const pendingBlockDeletes = new Map<string, { until: number; ids: Set<string> }>();
+import {
+  addStructuralExcludeIds,
+  getStructuralExcludeIds,
+  hasStructuralExcludeIds,
+} from './noteStructuralExcludeRegistry';
 
-/** soft delete 직후 legacy HTTP reconcile이 블록을 되살리지 않도록 억제 */
-export function markPendingBlockDeletes(
-  documentId: string,
-  ids: string[],
-  ms = PENDING_BLOCK_DELETE_MS,
-): void {
-  if (!documentId || ids.length === 0) return;
-  const existing = pendingBlockDeletes.get(documentId);
-  const idSet = existing?.ids ?? new Set<string>();
-  for (const id of ids) idSet.add(id);
-  pendingBlockDeletes.set(documentId, { until: Date.now() + ms, ids: idSet });
+/** soft delete·이동 직후 — outbound push ack 전까지 되살림 방지 */
+export function markPendingBlockDeletes(documentId: string, ids: string[]): void {
+  addStructuralExcludeIds(documentId, ids);
 }
 
 export function hasRecentBlockDeletes(documentId: string): boolean {
-  return getPendingBlockDeleteIds(documentId).size > 0;
+  return hasStructuralExcludeIds(documentId);
 }
 
-/** soft delete 확정 전 hydrate/reconcile이 해당 id를 되살리지 않도록 */
+/** @deprecated noteStructuralExcludeRegistry.getStructuralExcludeIds 사용 */
 export function getPendingBlockDeleteIds(documentId: string): Set<string> {
-  const entry = pendingBlockDeletes.get(documentId);
-  if (!entry) return new Set();
-  if (Date.now() > entry.until) {
-    pendingBlockDeletes.delete(documentId);
-    return new Set();
-  }
-  return new Set(entry.ids);
+  return getStructuralExcludeIds(documentId);
 }
 
 export function registerNoteReconcileIdleHandler(handler: NoteReconcileIdleHandler | null): void {

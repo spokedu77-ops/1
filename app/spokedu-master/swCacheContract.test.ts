@@ -55,7 +55,9 @@ describe('SPOKEDU MASTER service worker cache contract', () => {
   it('caches only explicit public static allowlist and public Supabase storage objects', () => {
     const source = read('public/spokedu-master-sw.js');
 
-    expect(source).toContain("url.pathname.startsWith('/_next/static/')");
+    // Hashed Next bundles must not be SW cache-first (stale ChunkLoadError after deploy).
+    expect(source).toContain("if (url.pathname.startsWith('/_next/static/')) return;");
+    expect(source).not.toContain("url.pathname.startsWith('/_next/static/') ||");
     expect(source).toContain("'/manifest.json'");
     expect(source).toContain("'/spokedu-master-icon.svg'");
     expect(source).toContain("url.pathname.includes('/storage/v1/object/public/iiwarmup-files/')");

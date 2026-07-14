@@ -13,13 +13,11 @@ import {
 } from './noteLocalDb';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
 import {
-  collectPendingSoftDeleteIds,
+  collectPendingOutboundExcludedIds,
   mergeServerBlocksIntoLocalSnapshot,
   shouldTrustEmptyLocalWithOutbound,
   coalescePushItems,
   excludeBlocksPendingSoftDelete,
-  filterStalePendingSoftDeletes,
-  findOutboundOpsSupersededByServerRestore,
   persistOpToPushItems,
 } from './notePersistOpToBlockOps';
 import { buildKnownBlockIdsForPush, partitionOutboundForSafePush } from './noteSyncGuards';
@@ -30,8 +28,11 @@ import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { traceApiEgress, type SnapshotTraceOrigin } from './noteFlickerTrace';
 import {
   markNoteLocalSave,
-  getPendingBlockDeleteIds,
 } from './noteReconcileIdle';
+import {
+  getStructuralExcludeIds,
+  syncStructuralExcludeFromOutbound,
+} from './noteStructuralExcludeRegistry';
 
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
@@ -191,8 +192,9 @@ export class NoteSyncCoordinator {
     if (!local) return null;
     this.blocks = local.blocks;
     this.lastAppliedSeq = local.lastAppliedSeq;
+    const outbound = await listOutboundOps(this.documentId);
+    syncStructuralExcludeFromOutbound(this.documentId, outbound);
     try {
-      const outbound = await listOutboundOps(this.documentId);
       await this.rebaseFromServer({ allowRemotePull: outbound.length === 0 });
     } catch (error) {
       devLogger.error('[NoteSyncCoordinator] hydrate rebase failed', error);
@@ -204,28 +206,22 @@ export class NoteSyncCoordinator {
   async syncWithServer(initialBlocks: NoteBlock[]): Promise<void> {
     const local = await readLocalDocument(this.documentId);
     const outbound = await listOutboundOps(this.documentId);
+    syncStructuralExcludeFromOutbound(this.documentId, outbound);
     const lastSeq = await fetchSyncState(this.documentId);
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
-    const pendingDeletes = filterStalePendingSoftDeletes(
-      serverBlocks,
-      collectPendingSoftDeleteIds(outbound),
-    );
-    const supersededOpIds = findOutboundOpsSupersededByServerRestore(outbound, serverBlocks);
-    if (supersededOpIds.length > 0) {
-      await removeOutboundOps(supersededOpIds);
-    }
+    const excludedIds = collectPendingOutboundExcludedIds(outbound, this.documentId);
     if (outbound.length > 0) {
       if (local && local.blocks.length > 0) {
         this.blocks = mergeServerBlocksIntoLocalSnapshot(
           local.blocks,
           serverBlocks,
-          pendingDeletes,
+          excludedIds,
         );
       } else if (shouldTrustEmptyLocalWithOutbound(outbound, serverBlocks)) {
-        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, pendingDeletes);
+        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
       } else {
-        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, pendingDeletes);
+        this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
       }
     } else {
       this.blocks = serverBlocks;
@@ -257,6 +253,8 @@ export class NoteSyncCoordinator {
     if (items.length === 0) return;
     // 로컬 optimistic 상태는 pipeline.dispatch가 담당 — coordinator는 outbound만 적재
     await appendOutboundOps(this.documentId, items);
+    const outbound = await listOutboundOps(this.documentId);
+    syncStructuralExcludeFromOutbound(this.documentId, outbound);
     const delay = options?.immediate || op.type !== 'patchContent'
       ? STRUCTURE_PUSH_DEBOUNCE_MS
       : CONTENT_PUSH_DEBOUNCE_MS;
@@ -401,18 +399,17 @@ export class NoteSyncCoordinator {
         continue;
       }
 
-      const pendingDeletes = new Set([
-        ...collectPendingSoftDeleteIds(outbound),
-        ...getPendingBlockDeleteIds(this.documentId),
-      ]);
+      const pendingExcluded = getStructuralExcludeIds(this.documentId);
       this.blocks = excludeBlocksPendingSoftDelete(
         mergeSnapshotPatches(this.blocks, result.blocks, {
-          excludeBlockIds: pendingDeletes,
+          excludeBlockIds: pendingExcluded,
         }),
-        pendingDeletes,
+        pendingExcluded,
       );
       this.lastAppliedSeq = result.lastSeq;
       await removeOutboundOps(consumedClientOpIds);
+      const remainingOutbound = await listOutboundOps(this.documentId);
+      syncStructuralExcludeFromOutbound(this.documentId, remainingOutbound);
       await this.persistLocal();
       markNoteLocalSave(this.documentId);
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:push');
@@ -473,12 +470,13 @@ export class NoteSyncCoordinator {
     options?: { notify?: boolean },
   ): Promise<void> {
     const outbound = await listOutboundOps(this.documentId);
-    const pendingDeletes = collectPendingSoftDeleteIds(outbound);
+    syncStructuralExcludeFromOutbound(this.documentId, outbound);
+    const pendingExcluded = getStructuralExcludeIds(this.documentId);
     if (ops.length > 0) {
       this.blocks = applyRemoteOpRecords(this.blocks, ops);
     }
-    if (pendingDeletes.size > 0) {
-      this.blocks = excludeBlocksPendingSoftDelete(this.blocks, pendingDeletes);
+    if (pendingExcluded.size > 0) {
+      this.blocks = excludeBlocksPendingSoftDelete(this.blocks, pendingExcluded);
     }
     this.lastAppliedSeq = lastSeq;
     await this.persistLocal();

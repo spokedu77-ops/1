@@ -5,6 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, CheckCircle2, Loader2, Mail, Shield } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { MasterEmailOtpForm } from '@/app/components/auth/MasterEmailOtpForm';
+import { useMasterEmailOtp } from '@/app/components/auth/useMasterEmailOtp';
+import { applyLoginSessionPreference, readKeepLoggedInPreference } from '@/app/lib/auth/sessionPersistence';
+import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
 import { toMasterClientError } from '../lib/clientErrors';
 import {
   MASTER_CENTER_INQUIRY_HREF,
@@ -132,17 +136,16 @@ function PaymentContent() {
   const params = useSearchParams();
   const initialPlan = isPaidPlanId(params.get('plan')) ? params.get('plan') as PaidPlanId : 'premium';
   const [selectedPlan, setSelectedPlan] = useState<PaidPlanId>(initialPlan);
-  const [email, setEmail] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
+  const masterOtp = useMasterEmailOtp();
   const [isAuthed, setIsAuthed] = useState(false);
   const [userId, setUserId] = useState('');
   const [subscription, setSubscription] = useState<SubscriptionSummaryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [workingPlan, setWorkingPlan] = useState<PaidPlanId | null>(null);
-  const [authWorking, setAuthWorking] = useState(false);
   const [error, setError] = useState('');
+  const [keepLoggedIn] = useState(() => readKeepLoggedInPreference());
 
+  const email = isAuthed ? (masterOtp.email || '') : masterOtp.email;
   const directProducts = useMemo(() => getDirectPurchaseMasterProducts(), []);
   const subscriptionDisplay = getSubscriptionDisplaySummary(subscription);
   const paymentPageMode = getPaymentPageMode(subscription);
@@ -170,7 +173,7 @@ function PaymentContent() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setIsAuthed(true);
-          setEmail(session.user.email ?? '');
+          masterOtp.setEmail(session.user.email ?? '');
           setUserId(session.user.id);
           const res = await fetch('/api/spokedu-master/subscription', { cache: 'no-store' });
           const json = await res.json() as { error?: string };
@@ -185,48 +188,22 @@ function PaymentContent() {
       }
     };
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 마운트 시 1회만 세션 로드
   }, []);
 
-  const sendOtp = async () => {
-    if (!email.includes('@')) {
-      setError('이메일 주소를 입력해 주세요.');
+  const handleOtpSubmit = async () => {
+    setError('');
+    const result = await masterOtp.submit();
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
-    setAuthWorking(true);
-    setError('');
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const { error: authError } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-      if (authError) {
-        setError('로그인 코드를 보내지 못했습니다. 잠시 후 다시 시도해 주세요.');
-        return;
-      }
-      setOtpSent(true);
-    } finally {
-      setAuthWorking(false);
-    }
-  };
-
-  const verifyOtp = async () => {
-    if (otp.length < 6) {
-      setError('이메일로 받은 6자리 코드를 입력해 주세요.');
-      return;
-    }
-    setAuthWorking(true);
-    setError('');
-    try {
-      const supabase = getSupabaseBrowserClient();
-      const { data, error: authError } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' });
-      if (authError || !data.user) {
-        setError('인증 코드를 확인하지 못했습니다.');
-        return;
-      }
-      setIsAuthed(true);
-      setUserId(data.user.id);
-      setEmail(data.user.email ?? email);
-    } finally {
-      setAuthWorking(false);
-    }
+    if (result.kind === 'sent') return;
+    applyLoginSessionPreference(keepLoggedIn);
+    rememberLastUsedAppFromPath('/spokedu-master/payment');
+    setIsAuthed(true);
+    setUserId(result.user.id);
+    masterOtp.setEmail(result.user.email ?? masterOtp.email);
   };
 
   const startBillingAuth = (plan: PaidPlanId) => {
@@ -384,25 +361,19 @@ function PaymentContent() {
               </div>
 
               {!isAuthed ? (
-                <div className="mt-4 space-y-3">
-                  {!otpSent ? (
-                    <>
-                      <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" placeholder="이메일 주소" className="h-12 w-full rounded-[12px] border px-3 text-[14px] font-semibold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-                      <button type="button" onClick={() => void sendOtp()} disabled={authWorking} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
-                        {authWorking ? <Loader2 size={16} className="animate-spin" /> : <Mail size={15} />}
-                        인증 코드 받기
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <input value={otp} onChange={(event) => setOtp(event.target.value.replace(/\D/g, ''))} inputMode="numeric" maxLength={6} placeholder="인증 코드 6자리" className="h-12 w-full rounded-[12px] border px-3 text-center text-[20px] font-black outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
-                      <button type="button" onClick={() => void verifyOtp()} disabled={authWorking} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-60" style={{ background: 'var(--spm-acc)' }}>
-                        {authWorking ? <Loader2 size={16} className="animate-spin" /> : null}
-                        인증 확인
-                      </button>
-                    </>
-                  )}
-                </div>
+                <MasterEmailOtpForm
+                  variant="payment"
+                  email={masterOtp.email}
+                  otp={masterOtp.otp}
+                  otpSent={masterOtp.otpSent}
+                  loading={masterOtp.loading}
+                  message={masterOtp.message}
+                  sendLabel="인증 코드 받기"
+                  verifyLabel="인증 확인"
+                  onEmailChange={masterOtp.setEmail}
+                  onOtpChange={masterOtp.setOtp}
+                  onSubmit={() => void handleOtpSubmit()}
+                />
               ) : (
                 <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--spm-s3)' }}>
                   <p className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{email}</p>

@@ -5,6 +5,14 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Toaster } from 'sonner';
 import Sidebar from './components/Sidebar';
+import { installChunkLoadRecovery } from '@/app/lib/client/chunkLoadRecovery';
+import {
+  enforceSessionOnlyPolicy,
+  registerEphemeralBrowserSession,
+} from '@/app/lib/auth/sessionPersistence';
+import { rememberLastUsedAppFromPath } from '@/app/lib/auth/lastUsedApp';
+import { reportLoginUxEvent } from '@/app/lib/auth/loginUxTelemetry';
+import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { isFullscreenPath } from '@/app/lib/constants/fullscreen-paths';
 import { AppSidebarProvider, useAppSidebar } from './providers/AppSidebarProvider';
 import { QueryProvider } from './providers/QueryProvider';
@@ -28,12 +36,27 @@ const naverSiteVerification = process.env.NEXT_PUBLIC_NAVER_SITE_VERIFICATION?.t
 
 function RootLayoutShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const hideSidebar = isFullscreenPath(pathname);
+  const hideSidebar = isFullscreenPath(pathname ?? '');
   const { isDesktopOpen, toggleDesktop } = useAppSidebar();
   const fullscreenWrapStyle = hideSidebar
     ? { minHeight: 'var(--viewport-height-px, 100dvh)', height: 'var(--viewport-height-px, 100dvh)', width: '100vw', maxWidth: '100%' }
     : undefined;
   const mainFullscreenStyle = hideSidebar ? { height: 'var(--viewport-height-px, 100dvh)' } : undefined;
+
+  useEffect(() => installChunkLoadRecovery(), []);
+
+  useEffect(() => {
+    const supabase = getSupabaseBrowserClient();
+    void enforceSessionOnlyPolicy(() => supabase.auth.signOut()).then((signedOut) => {
+      if (signedOut) reportLoginUxEvent('ephemeral_session_cleared');
+    });
+    return registerEphemeralBrowserSession();
+  }, []);
+
+  useEffect(() => {
+    if (!pathname) return;
+    rememberLastUsedAppFromPath(pathname);
+  }, [pathname]);
 
   useEffect(() => {
     const setViewportHeight = () => {

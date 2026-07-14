@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { clearLoginSessionMarkers } from '@/app/lib/auth/sessionPersistence';
 import {
   ADMIN_CONSULT_PENDING_REFRESH,
   loadConsultPendingCount,
@@ -113,6 +114,7 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
     } catch (error) {
       devLogger.error('Logout error:', error);
     } finally {
+      clearLoginSessionMarkers();
       window.location.href = '/login';
     }
   };

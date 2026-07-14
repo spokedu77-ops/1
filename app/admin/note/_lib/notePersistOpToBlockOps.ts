@@ -60,43 +60,68 @@ export function excludeBlocksPendingSoftDelete(
 }
 
 /**
- * 서버 load에 블록이 다시 포함되면(관리자/DB 복구) 클라이언트 pending soft delete는 stale.
- * 그대로 두면 복구된 본문·이미지가 화면에서 빠진다.
+ * outbound에 document_id 이전(patch)이 아직 push되지 않았을 때,
+ * 출발 문서 sync가 서버 스냅샷으로 블록을 되살리지 않도록 id 수집.
+ */
+export function collectPendingTransferAwayIds(
+  outbound: NoteLocalOutboundOp[],
+  documentId: string,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const op of outbound) {
+    const payload = op.payload;
+    if (payload.opType === 'patch_fields') {
+      for (const patch of payload.patches) {
+        if (typeof patch.document_id === 'string' && patch.document_id !== documentId) {
+          ids.add(patch.id);
+        }
+      }
+      continue;
+    }
+    if (payload.opType === 'block_transaction') {
+      for (const patch of payload.patches) {
+        if (typeof patch.document_id === 'string' && patch.document_id !== documentId) {
+          ids.add(patch.id);
+        }
+      }
+    }
+  }
+  return ids;
+}
+
+/** soft delete + 타 문서로의 이동 등 outbound 확정 전 되살림 방지 id */
+export function collectPendingOutboundExcludedIds(
+  outbound: NoteLocalOutboundOp[],
+  documentId: string,
+): Set<string> {
+  return new Set([
+    ...collectPendingSoftDeleteIds(outbound),
+    ...collectPendingTransferAwayIds(outbound, documentId),
+  ]);
+}
+
+/**
+ * blocks/load에 id가 남아 있다고 pending soft delete를 stale로 보지 않는다.
+ * push 전에는 서버에 블록이 있는 것이 정상이며, 확정은 outbound 소비(push ack)로만 처리한다.
  */
 export function filterStalePendingSoftDeletes(
   serverBlocks: NoteBlock[],
   pendingDeleteIds: Set<string>,
 ): Set<string> {
-  if (pendingDeleteIds.size === 0) return pendingDeleteIds;
-  const serverIds = new Set(serverBlocks.map((block) => block.id));
-  const next = new Set<string>();
-  for (const id of pendingDeleteIds) {
-    if (!serverIds.has(id)) next.add(id);
-  }
-  return next;
+  void serverBlocks;
+  return pendingDeleteIds;
 }
 
+/**
+ * @deprecated blocks/load 존재만으로 outbound soft delete를 폐기하지 않는다 (push 전 정상 상태).
+ */
 export function findOutboundOpsSupersededByServerRestore(
   outbound: NoteLocalOutboundOp[],
   serverBlocks: NoteBlock[],
 ): string[] {
-  const serverIds = new Set(serverBlocks.map((block) => block.id));
-  const clientOpIds: string[] = [];
-  for (const op of outbound) {
-    const payload = op.payload;
-    if (payload.opType === 'soft_delete') {
-      if (payload.ids.length > 0 && payload.ids.every((id) => serverIds.has(id))) {
-        clientOpIds.push(op.clientOpId);
-      }
-      continue;
-    }
-    if (payload.opType === 'block_transaction') {
-      if (payload.deleteIds.length > 0 && payload.deleteIds.every((id) => serverIds.has(id))) {
-        clientOpIds.push(op.clientOpId);
-      }
-    }
-  }
-  return clientOpIds;
+  void outbound;
+  void serverBlocks;
+  return [];
 }
 
 /**

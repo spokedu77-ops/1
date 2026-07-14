@@ -3,6 +3,10 @@ import {
   isKnownPlatformAdminEmail,
   isPlatformAdminIdentity,
 } from '@/app/lib/auth/platformAdminIdentity';
+import {
+  readLastUsedApp,
+  resolveDefaultHomeForLastUsedApp,
+} from '@/app/lib/auth/lastUsedApp';
 
 type AdminCheckResponse = {
   admin?: boolean;
@@ -58,5 +62,9 @@ export async function resolvePostLoginRedirect(
     return '/admin';
   }
   if (nextSafe) return nextSafe;
+
+  const lastUsedHome = resolveDefaultHomeForLastUsedApp(readLastUsedApp(), isAdmin);
+  if (lastUsedHome) return lastUsedHome;
+
   return isAdmin ? '/admin' : '/teacher/my-classes';
 }

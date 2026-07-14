@@ -24,6 +24,10 @@ import { isDocumentDescendantOf } from '@/app/lib/note/orphanSubPageBlocks';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
+import { invalidatePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import { rememberNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
+import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
+import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { reparentDocumentTree } from '../_lib/noteDocumentTreeApi';
 import {
   buildMoveBlockGroupCommand,
@@ -277,18 +281,32 @@ export function useNoteDragDrop(options: {
       mergeBlocksWithStoreContent(prevBlocks),
       command.movedIds,
     );
+    if (selectedId) {
+      markPendingBlockDeletes(selectedId, command.movedIds);
+    }
     try {
       await documentEngine.persistBlockTransaction(command.patches);
       setBlocks(command.nextBlocks);
+      if (selectedId) {
+        invalidatePrefetchedNoteBlocks(selectedId);
+        rememberNoteDocumentBlocks(
+          selectedId,
+          mergeBlocksWithStoreContent(
+            command.nextBlocks.filter((block) => block.document_id === selectedId),
+          ),
+          { trustServer: true },
+        );
+      }
       options.afterPersist?.();
       return true;
     } catch (e) {
       devLogger.error(options.logLabel, e);
       setBlocks(prevBlocks);
+      if (selectedId) removeStructuralExcludeIds(selectedId, command.movedIds);
       setError(e instanceof Error ? e.message : options.errorMessage);
       return false;
     }
-  }, [documentEngine, noteUndo, setBlocks, setError]);
+  }, [documentEngine, noteUndo, selectedId, setBlocks, setError]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
