@@ -177,6 +177,7 @@ export class NoteDocumentOpQueue {
   }
 
   enqueueRestoreBlock(op: { id: string }): Promise<NoteBlock[]> {
+    // Authority 예외: op-log restore 미구현 — HTTP trash restore만. 신규 HTTP mutation 금지.
     let resolve!: (blocks: NoteBlock[]) => void;
     let reject!: (error: Error) => void;
     const result = new Promise<NoteBlock[]>((res, rej) => {

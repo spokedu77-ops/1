@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import {
   disposeNoteDocumentPipeline,
   getNoteDocumentPipeline,
+  unmapNoteDocumentPipeline,
   type NoteDocumentPipeline,
 } from '../_lib/noteDocumentPipeline';
 import { commitActiveNoteEditorToStore } from '../_lib/noteBlockStateMerge';
@@ -31,7 +32,7 @@ export type NoteDocumentEngineApi = {
   hydrateFromLocal: () => Promise<NoteBlock[] | null>;
   syncWithServer: (
     initialBlocks: NoteBlock[],
-    options?: { skipDispatch?: boolean },
+    options?: { skipDispatch?: boolean; emptyConfirmed?: boolean },
   ) => Promise<void>;
   scheduleOplogPull: () => void;
   persistSoftDelete: (args: SoftDeletePersistArgs) => Promise<void>;
@@ -80,11 +81,13 @@ export function useNoteDocumentEngine(options: {
 
     return () => {
       const leavingId = documentId;
-      const leaving = pipelineRef.current;
+      const leaving = pipeline;
       pipelineRef.current = null;
+      // Strict Mode: remount 전에 맵에서 제거해 stale 파이프라인 재사용을 막는다
+      unmapNoteDocumentPipeline(leavingId, leaving);
       void (async () => {
-        if (leaving) {
-          try {
+        try {
+          if (!leaving.isDisposed()) {
             commitActiveNoteEditorToStore();
             if (leaving.hasPendingContent()) {
               await leaving.flushContentPatches();
@@ -92,11 +95,11 @@ export function useNoteDocumentEngine(options: {
             if (leaving.hasPendingPersist()) {
               await leaving.flushPersistQueue();
             }
-          } catch (error) {
-            onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
           }
+        } catch (error) {
+          onErrorRef.current?.(error instanceof Error ? error : new Error(String(error)));
         }
-        await disposeNoteDocumentPipeline(leavingId);
+        await disposeNoteDocumentPipeline(leavingId, leaving);
       })();
     };
   }, [documentId]);
@@ -152,7 +155,7 @@ export function useNoteDocumentEngine(options: {
 
   const syncWithServer = useCallback(async (
     initialBlocks: NoteBlock[],
-    options?: { skipDispatch?: boolean },
+    options?: { skipDispatch?: boolean; emptyConfirmed?: boolean },
   ) => {
     if (!pipelineRef.current) {
       if (!options?.skipDispatch) {

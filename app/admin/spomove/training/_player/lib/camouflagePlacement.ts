@@ -3,7 +3,7 @@ import { pickSimonPolePosition } from './signals';
 export type CamouflagePlacementMode = 'center' | 'variant';
 
 /** 도형 실루엣이 canvas 밖으로 잘리지 않도록 하는 보수 반경 비율 — 별·플러스·화살표 등 최대 외곽 ≈ size */
-export const CAMO_SHAPE_RADIUS_RATIO = 1;
+export const CAMO_SHAPE_RADIUS_RATIO = 0.55;
 
 export function camoShapeSize(canvasW: number, canvasH: number): number {
   return Math.min(canvasW, canvasH) * 0.35;
@@ -25,6 +25,10 @@ export function pickCamouflageCenter(canvasW: number, canvasH: number): { cx: nu
   return { cx: canvasW / 2, cy: canvasH / 2 };
 }
 
+function clamp(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, n));
+}
+
 export function pickCamouflageVariantPosition(
   canvasW: number,
   canvasH: number,
@@ -33,7 +37,11 @@ export function pickCamouflageVariantPosition(
 ): { cx: number; cy: number } {
   const margin = camoPlacementMargin(canvasW, canvasH, size);
   const { posX, posY } = pickSimonPolePosition(edgeIdx, margin);
-  return { cx: posX * canvasW, cy: posY * canvasH };
+  const radius = camoShapeRadius(size);
+  return {
+    cx: clamp(posX * canvasW, radius, canvasW - radius),
+    cy: clamp(posY * canvasH, radius, canvasH - radius),
+  };
 }
 
 export function resolveCamouflagePosition(

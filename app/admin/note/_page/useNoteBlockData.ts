@@ -5,7 +5,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   buildChildrenByParentBlock,
   dedupeNoteBlocksById,
-  flattenVisualBlockIds,
+  flattenVisualBlockIdsWithOptions,
   sortRootBlocks,
 } from '@/app/lib/note/noteBlockTree';
 import {
@@ -484,7 +484,10 @@ export function useNoteBlockData(options: {
 
   const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
   const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);
-  const allSortableBlockIds = useMemo(() => flattenVisualBlockIds(blocks), [blocks]);
+  const allSortableBlockIds = useMemo(
+    () => flattenVisualBlockIdsWithOptions(blocks, { skipChildrenOfCollapsedToggles: true }),
+    [blocks],
+  );
 
   const loadTrashedBlocks = useCallback(async () => {
     if (!selectedId) {

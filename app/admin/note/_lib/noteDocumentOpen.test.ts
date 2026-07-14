@@ -59,7 +59,7 @@ describe('noteDocumentOpen', () => {
 
     const result = await applyOpenServerSnapshot('doc-1', server, engine);
     expect(syncWithServer).toHaveBeenCalledTimes(1);
-    expect(syncWithServer.mock.calls[0][1]).toBeUndefined();
+    expect(syncWithServer.mock.calls[0][1]).toEqual({ emptyConfirmed: false });
     expect(result.blocks).toEqual(server);
     expect(result.emptyConfirmed).toBe(false);
   });

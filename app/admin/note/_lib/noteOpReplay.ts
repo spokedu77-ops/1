@@ -63,16 +63,9 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
     });
   }
   case 'soft_delete': {
+    // 활성 블록 집합에서 제거 (deleted_at 잔류 = Project 좀비)
     const idSet = new Set(payload.ids);
-    const now = op.createdAt;
-    return blocks.map((block) => {
-      if (!idSet.has(block.id)) return block;
-      return ensureNoteBlockVersion({
-        ...block,
-        deleted_at: now,
-        updated_at: now,
-      });
-    });
+    return blocks.filter((block) => !idSet.has(block.id));
   }
   case 'create_block': {
     const id = payload.id ?? crypto.randomUUID();
@@ -154,22 +147,27 @@ export function mergeSnapshotPatches(
   const exclude = options?.excludeBlockIds;
   const map = new Map(snapshots.map((snapshot) => [snapshot.id, snapshot]));
   const seen = new Set<string>();
-  const next = blocks.map((block) => {
+  const next: NoteBlock[] = [];
+  for (const block of blocks) {
     const snapshot = map.get(block.id);
-    if (!snapshot) return block;
-    if (exclude?.has(block.id)) return block;
+    if (!snapshot) {
+      next.push(block);
+      continue;
+    }
+    if (exclude?.has(block.id)) {
+      next.push(block);
+      continue;
+    }
     seen.add(block.id);
     if (snapshot.deleted_at) {
-      return ensureNoteBlockVersion({
-        ...block,
-        ...snapshotToNoteBlock(snapshot),
-      });
+      // identityLeave ack — 활성 집합에서 drop
+      continue;
     }
-    return ensureNoteBlockVersion({
+    next.push(ensureNoteBlockVersion({
       ...snapshotToNoteBlock(snapshot),
       content: block.content ?? snapshot.content ?? {},
-    });
-  });
+    }));
+  }
   for (const snapshot of snapshots) {
     if (seen.has(snapshot.id)) continue;
     if (snapshot.deleted_at) continue;

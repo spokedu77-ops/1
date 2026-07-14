@@ -1,5 +1,7 @@
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { hasRecentBlockDeletes } from './noteReconcileIdle';
+import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
+import { decideEmptySnapshotApply } from './noteAuthority';
 import type { NoteBlock } from './types';
 
 type VisitCacheEntry = {
@@ -159,21 +161,23 @@ export function rememberNoteDocumentBlocks(
   );
   if (blocks.length > 0 && incoming.length === 0) return;
 
-  if (!options?.trustServer && incoming.length === 0) {
+  let emptyConfirmed = false;
+  if (incoming.length === 0) {
     const existing = readEntry(documentId);
     if (existing && existing.blocks.length > 0) {
-      return;
+      const decision = decideEmptySnapshotApply({
+        localBlocks: existing.blocks,
+        incomingBlocks: [],
+        emptyConfirmed: options?.serverConfirmedEmpty === true,
+        pendingLeaveIds: getStructuralExcludeIds(documentId),
+      });
+      if (decision === 'reject_race_wipe') return;
+      // non-empty → empty 허용 = leave/stub/confirmed — revisit 시 [] 표시
+      emptyConfirmed = true;
+    } else {
+      emptyConfirmed = options?.serverConfirmedEmpty === true;
     }
-  }
-
-  if (options?.trustServer && incoming.length === 0 && options?.serverConfirmedEmpty !== true) {
-    const existing = readEntry(documentId);
-    if (existing && existing.blocks.length > 0) {
-      return;
-    }
-  }
-
-  if (!options?.trustServer && !hasRecentBlockDeletes(documentId)) {
+  } else if (!options?.trustServer && !hasRecentBlockDeletes(documentId)) {
     const existing = readEntry(documentId);
     if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {
       return;
@@ -183,7 +187,7 @@ export function rememberNoteDocumentBlocks(
   const entry: VisitCacheEntry = {
     blocks: cloneBlocks(incoming),
     savedAt: Date.now(),
-    emptyConfirmed: incoming.length === 0 && options?.serverConfirmedEmpty === true,
+    emptyConfirmed: incoming.length === 0 && emptyConfirmed,
   };
   pruneMemoryCache();
   visitCache.set(documentId, entry);

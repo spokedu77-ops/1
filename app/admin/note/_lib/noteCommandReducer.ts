@@ -2,6 +2,7 @@ import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import type { NoteCommand, NoteCommandContext, NoteCommandResult } from './noteCommand';
+import { decideEmptySnapshotApply } from './noteAuthority';
 import { mergeBlockContentWithStore } from './noteContentPatch';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
 import {
@@ -102,7 +103,16 @@ export function applyNoteCommand(
   case 'hydrate': {
     const incoming = filterDocumentBlocks(command.blocks, ctx.documentId);
     if (incoming.length === 0 && docBlocks.length > 0) {
-      return { blocks: docBlocks, structural: false };
+      const emptyDecision = decideEmptySnapshotApply({
+        localBlocks: docBlocks,
+        incomingBlocks: incoming,
+        emptyConfirmed: command.emptyConfirmed === true,
+        pendingLeaveIds: ctx.pendingLeaveIds,
+      });
+      if (emptyDecision === 'reject_race_wipe') {
+        return { blocks: docBlocks, structural: false };
+      }
+      return { blocks: [], structural: true };
     }
     let next = mergeReconciledBlocks(docBlocks, incoming);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
@@ -145,7 +155,16 @@ export function applyNoteCommand(
   case 'syncSnapshot': {
     const incoming = filterDocumentBlocks(command.blocks, ctx.documentId);
     if (incoming.length === 0 && docBlocks.length > 0) {
-      return { blocks: docBlocks, structural: false };
+      const emptyDecision = decideEmptySnapshotApply({
+        localBlocks: docBlocks,
+        incomingBlocks: incoming,
+        emptyConfirmed: command.emptyConfirmed === true,
+        pendingLeaveIds: ctx.pendingLeaveIds,
+      });
+      if (emptyDecision === 'reject_race_wipe') {
+        return { blocks: docBlocks, structural: false };
+      }
+      return { blocks: [], structural: true };
     }
     let next = mergeReconciledBlocks(docBlocks, incoming);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);

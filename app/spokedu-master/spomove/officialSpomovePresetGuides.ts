@@ -158,6 +158,7 @@ function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingL
 function responseTypeForPreset(preset: OfficialSpomovePreset): SpomoveResponseType {
   if (preset.engine.mode === 'spatial') return 'memory';
   if (preset.engine.mode === 'simon' || preset.engine.mode === 'flanker' || preset.engine.mode === 'stroop') return 'rule';
+  if (preset.engine.mode === 'flow' && (preset.engine.flowFeatures ?? []).includes('colorGate')) return 'select';
   if (preset.engine.mode === 'basic' && preset.engine.level > 1) return 'select';
   return 'direct';
 }
@@ -165,6 +166,7 @@ function responseTypeForPreset(preset: OfficialSpomovePreset): SpomoveResponseTy
 function flowFeatureActions(features: OfficialFlowFeatureKey[] | undefined): SpomoveKeyAction[] {
   const actions: SpomoveKeyAction[] = ['jump'];
   for (const feature of features ?? []) {
+    if (feature === 'colorGate') actions.push('punch', 'kick', 'duck', 'handTouch');
     if (feature === 'faster') actions.push('continuousMove');
     if (feature === 'punch') actions.push('punch');
     if (feature === 'duck') actions.push('duck');

@@ -111,6 +111,7 @@ type Props = {
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
   colorTrackerDualPanel?: boolean;
+  camouflagePlacement?: 'center' | 'variant';
   flowFeatures?: string[];
   flowDuration?: number;
   onComplete: (payload: EngineCompletePayload) => void;
@@ -152,6 +153,7 @@ export function EngineRouter({
   numberCartTier,
   colorTrackerTier,
   colorTrackerDualPanel,
+  camouflagePlacement,
   flowFeatures,
   flowDuration,
   onComplete,
@@ -261,6 +263,7 @@ export function EngineRouter({
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
+            placementMode={camouflagePlacement ?? 'center'}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
@@ -393,17 +396,23 @@ export function EngineRouter({
   }
 
   if (mode === 'flow') {
+    const resolvedFlowFeatures =
+      level === 2 && !(flowFeatures ?? []).includes('colorGate')
+        ? [...(flowFeatures ?? []), 'colorGate']
+        : flowFeatures ?? [];
+
     return (
       <Suspense fallback={<LoadingOverlay />}>
         <MemoryGameApp
           initialMode="flow"
+          initialLevel={level}
           autoLaunch={{
             speed: speedSec ?? 3,
             timeMode: 'time',
             duration: 60,
             warmup: 3,
             audioMode: soundEnabled ? 'beep' : 'off',
-            flowFeatures: flowFeatures ?? [],
+            flowFeatures: resolvedFlowFeatures,
             flowDuration: flowDuration ?? 25,
           }}
           embed

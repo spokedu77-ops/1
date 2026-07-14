@@ -69,4 +69,31 @@ describe('buildBlockForestTransferCommand', () => {
     ]);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
   });
+
+  it('moves collapsed toggle forest without orphaning children', () => {
+    const toggle: NoteBlock = {
+      ...block('toggle', null, 0),
+      type: 'toggle',
+      content: { title: 'Section', collapsed: true },
+    };
+    const child: NoteBlock = {
+      ...block('toggle-child', 'toggle', 0),
+      content: { text: 'inside', html: '<p>inside</p>' },
+    };
+    const sibling = block('other', null, 1);
+
+    const command = buildBlockForestTransferCommand(
+      [toggle, child, sibling],
+      ['toggle'],
+      'target',
+    );
+
+    expect(command.rootIds).toEqual(['toggle']);
+    expect(command.movedIds).toEqual(['toggle', 'toggle-child']);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
+    expect(command.patches).toEqual([
+      { id: 'toggle', document_id: 'target', parent_block_id: null },
+      { id: 'toggle-child', document_id: 'target' },
+    ]);
+  });
 });

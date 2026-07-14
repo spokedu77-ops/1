@@ -57,7 +57,7 @@ describe('official SPOMOVE preset guide contract', () => {
     const diveLike = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) =>
       preset.programGroup === 'dive' || preset.programGroup === 'bonus'
     );
-    expect(diveLike).toHaveLength(5);
+    expect(diveLike).toHaveLength(8);
 
     const source = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
     const groupTabsSource = source.match(/const PROGRAM_GROUP_TABS[\s\S]*?\];/)?.[0] ?? '';

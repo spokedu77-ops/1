@@ -9,7 +9,7 @@ export type OfficialSpomoveAxis = SpomoveAxis;
 
 export type SpomoveAxisTitle = (typeof SPOMOVE_AXIS_META)[OfficialSpomoveAxis]['title'];
 
-export type OfficialFlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick';
+export type OfficialFlowFeatureKey = 'faster' | 'punch' | 'duck' | 'reach' | 'kick' | 'colorGate';
 
 export type OfficialSpomoveProgramGroup =
   | 'reaction-cognition'
@@ -57,6 +57,7 @@ export type OfficialSpomovePreset = {
     colorTrackerDualPanel?: boolean;
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
+    camouflagePlacement?: 'center' | 'variant';
   };
   cueSeconds: number;
   rounds: number;
@@ -70,7 +71,7 @@ export type OfficialSpomovePreset = {
   executionFacts: ExecutionFact[];
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 51;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 52;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -1382,6 +1383,33 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '동작', value: '가속+펀치+숙이기+벽' },
       { label: '스테이지당', value: '60초' },
       { label: '진행 방식', value: 'FLOW' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+  {
+    id: 'dive-color-gate-61',
+    sortOrder: 47,
+    title: 'DIVE · Color Gate',
+    en: 'Dive Color Gate',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'dive',
+    programTitle: 'DIVE',
+    engine: { mode: 'flow', level: 2, flowFeatures: ['colorGate'], flowDuration: 60 },
+    description: 'DIVE 2단계: 브릿지 없이 공유 우주 배경에서 빨강·노랑·초록·파랑 색 관문과 5가지 포즈를 수행하는 활동',
+    salesCopy: '색상 판단과 전신 포즈 전환을 함께 훈련하는 DIVE 2단계 관문',
+    cueSeconds: 3,
+    rounds: 1,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '색상 반응, 포즈 전환, DIVE 2단계',
+    isReady: true,
+    settingSummary: 'DIVE 2단계 · 색 포즈 관문 · 60초 · BGM 자동',
+    settingChips: ['2단계', '색 포즈 관문', '60초', 'BGM 자동'],
+    executionFacts: [
+      { label: '단계', value: 'DIVE 2단계' },
+      { label: '관문 색', value: '빨강·노랑·초록·파랑' },
+      { label: '포즈', value: '점프·펀치·킥·숙이기·런지 펀치' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },

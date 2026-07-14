@@ -9,8 +9,7 @@ import type { FlowModuleKey } from './flowModules';
 
 export const GATE_COLOR_IDS = ['red', 'yellow', 'green', 'blue'] as const;
 export type GateColorId = (typeof GATE_COLOR_IDS)[number];
-export const COLOR_GATE_FIXED_COLOR_ID: GateColorId = 'blue';
-export const PLAYABLE_GATE_COLOR_IDS = [COLOR_GATE_FIXED_COLOR_ID] as const satisfies readonly GateColorId[];
+export const PLAYABLE_GATE_COLOR_IDS = GATE_COLOR_IDS;
 
 export interface GateColorDef {
   bg: string;
@@ -33,11 +32,32 @@ export const COLOR_GATE_POSE_IMAGE_URLS = [
   '/spomove/dive/color-gate/e265bc34-9722-408c-8235-29a64fc2254c.png',
   '/spomove/dive/color-gate/f00b1d2b-1251-4b6f-9567-b3ffedb2b27e.png',
 ] as const;
-export const COLOR_GATE_POSE_LABEL = '런지 펀치';
-export const COLOR_GATE_POSE_INSTRUCTION =
-  '한쪽 다리를 앞으로 굽히고 팔을 앞으로 뻗으세요';
+export const COLOR_GATE_ACTION_SEQUENCE: FlowModuleKey[] = ['jump', 'punch', 'kick', 'duck', 'reach'];
 
-export const COLOR_GATE_ACTION_SEQUENCE: FlowModuleKey[] = ['reach'];
+export const COLOR_GATE_POSE_LABELS: Record<FlowModuleKey, string> = {
+  jump: '점프',
+  punch: '펀치',
+  kick: '킥',
+  duck: '숙이기',
+  reach: '런지 펀치',
+  faster: '속도 올리기',
+  colorGate: '색 포즈 관문',
+};
+
+export const COLOR_GATE_POSE_INSTRUCTIONS: Record<FlowModuleKey, string> = {
+  jump: '양발로 가볍게 점프하세요',
+  punch: '앞으로 주먹을 뻗어 펀치하세요',
+  kick: '한쪽 발을 들어 앞으로 차세요',
+  duck: '몸을 빠르게 낮춰 숙이세요',
+  reach: '한쪽 다리를 앞으로 굽히고 팔을 앞으로 뻗으세요',
+  faster: '속도를 유지하세요',
+  colorGate: '색 관문을 통과하세요',
+};
+
+/** 구 import 호환 — 오버레이로 QA 클릭이 막히지 않게 alias 유지 */
+export const COLOR_GATE_POSE_LABEL = COLOR_GATE_POSE_LABELS;
+export const COLOR_GATE_POSE_INSTRUCTION = COLOR_GATE_POSE_INSTRUCTIONS;
+export const COLOR_GATE_FIXED_COLOR_ID = 'red' as GateColorId;
 
 const SILHOUETTE_ALPHA_MIN = 16;
 const SILHOUETTE_LUMA_MAX = 150;
@@ -98,9 +118,9 @@ export function buildColorGateCue(gateColorId: GateColorId): string {
   return `${GATE_COLORS[gateColorId].label}으로!`;
 }
 
-export function buildColorGateInstruction(gateColorId: GateColorId): string {
+export function buildColorGateInstruction(gateColorId: GateColorId, action: FlowModuleKey): string {
   const color = GATE_COLORS[gateColorId];
-  return `${color.label} 패드로 이동한 뒤 「${COLOR_GATE_POSE_LABEL}」 자세를 취하세요`;
+  return `${color.label} 패드로 이동한 뒤 「${COLOR_GATE_POSE_LABELS[action]}」 자세를 취하세요`;
 }
 
 export function buildColorGateSilhouetteCanvas(

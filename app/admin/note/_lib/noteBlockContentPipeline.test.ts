@@ -18,13 +18,24 @@ const block = (
   updated_at: '',
 });
 
+/** 단위 테스트용 — 실제품은 pipeline.scheduleContentPatch가 LocalApply */
+function scheduleViaStore(
+  blockId: string,
+  content: unknown,
+) {
+  useNoteBlockStore.getState().patchContent(
+    blockId,
+    (content ?? {}) as Record<string, unknown>,
+  );
+}
+
 describe('applyBlockContentChange', () => {
   beforeEach(() => {
     useNoteBlockStore.getState().setActiveDocumentId('doc');
     useNoteBlockStore.getState().hydrate([]);
   });
 
-  it('updates toggle title in store', () => {
+  it('updates toggle title via schedule LocalApply', () => {
     const toggle = block('t', 'toggle', { title: '', body: '' });
     useNoteBlockStore.getState().hydrate([toggle]);
     const blocksRef = { current: [toggle] };
@@ -34,13 +45,13 @@ describe('applyBlockContentChange', () => {
       content: { title: '섹션 제목', body: '' },
       blocksRef,
       recordContentUndoBeforeChange: vi.fn(),
-      scheduleBlockContentSave: vi.fn(),
+      scheduleBlockContentSave: scheduleViaStore,
     });
 
     expect(useNoteBlockStore.getState().getBlock('t')?.content?.title).toBe('섹션 제목');
   });
 
-  it('updates text/html in store only', () => {
+  it('updates text/html via schedule LocalApply', () => {
     const textBlock = block('a', 'text', { text: 'a', html: '<p>a</p>' });
     useNoteBlockStore.getState().hydrate([textBlock]);
     const blocksRef = { current: [textBlock] };
@@ -50,7 +61,7 @@ describe('applyBlockContentChange', () => {
       content: { text: 'ab', html: '<p>ab</p>' },
       blocksRef,
       recordContentUndoBeforeChange: vi.fn(),
-      scheduleBlockContentSave: vi.fn(),
+      scheduleBlockContentSave: scheduleViaStore,
     });
 
     expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('ab');
@@ -72,7 +83,7 @@ describe('applyBlockContentChange', () => {
       content: { ...staleReact.content, checked: true },
       blocksRef,
       recordContentUndoBeforeChange: vi.fn(),
-      scheduleBlockContentSave: vi.fn(),
+      scheduleBlockContentSave: scheduleViaStore,
     });
 
     const saved = useNoteBlockStore.getState().getBlock('todo')?.content;
@@ -90,7 +101,7 @@ describe('applyBlockContentChange', () => {
       content: { text: '할 일', checked: 1 },
       blocksRef,
       recordContentUndoBeforeChange: vi.fn(),
-      scheduleBlockContentSave: vi.fn(),
+      scheduleBlockContentSave: scheduleViaStore,
     });
 
     expect(useNoteBlockStore.getState().getBlock('todo')?.content).toMatchObject({

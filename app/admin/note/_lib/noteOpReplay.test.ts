@@ -41,13 +41,12 @@ describe('applyRemoteOpRecords', () => {
     expect((next[0].content as { text?: string }).text).toBe('world');
   });
 
-  it('soft deletes blocks by id', () => {
+  it('soft deletes blocks by removing them from the active set', () => {
     const blocks = [baseBlock('a', 'hello'), baseBlock('b', 'keep')];
     const next = applyRemoteOpRecords(blocks, [
       opRecord(1, { opType: 'soft_delete', ids: ['a'] }),
     ]);
-    expect(next.find((block) => block.id === 'a')?.deleted_at).toBeTruthy();
-    expect(next.find((block) => block.id === 'b')?.deleted_at).toBeFalsy();
+    expect(next.map((block) => block.id)).toEqual(['b']);
   });
 
   it('creates a new block', () => {
@@ -69,6 +68,23 @@ describe('applyRemoteOpRecords', () => {
 });
 
 describe('mergeSnapshotPatches', () => {
+  it('drops active blocks when merge snapshot reports deleted_at', () => {
+    const blocks = [baseBlock('a', 'hello'), baseBlock('b', 'keep')];
+    const snapshots: NoteBlockSnapshot[] = [{
+      id: 'a',
+      document_id: 'doc-1',
+      parent_block_id: null,
+      type: 'text',
+      order_index: 0,
+      content: { text: 'hello' },
+      version: 2,
+      updated_at: '2026-01-03T00:00:00.000Z',
+      deleted_at: '2026-01-03T00:00:00.000Z',
+    }];
+    const next = mergeSnapshotPatches(blocks, snapshots);
+    expect(next.map((block) => block.id)).toEqual(['b']);
+  });
+
   it('preserves local content when snapshot has server content', () => {
     const blocks = [baseBlock('a', 'local typing')];
     const snapshots: NoteBlockSnapshot[] = [{

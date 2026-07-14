@@ -14,6 +14,8 @@ import {
   documentContentAheadOfSnapshot,
   mergeBlocksWithStoreContent,
 } from './noteBlockStateMerge';
+import { shouldKeepLocalOverEmptyServerAuthority } from './noteAuthority';
+import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
 import { readLocalDocument, readLocalDocumentMemory } from './noteLocalDb';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import type { NoteBlock } from './types';
@@ -23,7 +25,7 @@ export type NoteDocumentOpenEngine = {
   isOplogSyncEnabled: () => boolean;
   syncWithServer: (
     initialBlocks: NoteBlock[],
-    options?: { skipDispatch?: boolean },
+    options?: { skipDispatch?: boolean; emptyConfirmed?: boolean },
   ) => Promise<void>;
   replaceBlocks: (blocks: NoteBlock[]) => void;
   getBlocks: () => NoteBlock[];
@@ -81,13 +83,6 @@ export async function fetchServerBlocksForOpen(
   return json.blocks ?? [];
 }
 
-function documentHasNonEmptyBodyText(blocks: NoteBlock[]): boolean {
-  return blocks.some((block) => {
-    const text = (block.content as Record<string, unknown> | null)?.text;
-    return typeof text === 'string' && text.trim().length > 0;
-  });
-}
-
 function readLocalBlocksForOpen(documentId: string): NoteBlock[] {
   return mergeBlocksWithStoreContent(
     selectDocumentBlocks(useNoteBlockStore.getState(), documentId),
@@ -97,9 +92,13 @@ function readLocalBlocksForOpen(documentId: string): NoteBlock[] {
 function shouldKeepLocalOverEmptyServer(
   localBlocks: NoteBlock[],
   serverBlocks: NoteBlock[],
+  documentId: string,
 ): boolean {
-  return documentHasNonEmptyBodyText(localBlocks)
-    && !documentHasNonEmptyBodyText(serverBlocks);
+  return shouldKeepLocalOverEmptyServerAuthority({
+    localBlocks,
+    serverBlocks,
+    pendingLeaveIds: getStructuralExcludeIds(documentId),
+  });
 }
 
 function finishOpenWithLocalBlocks(
@@ -131,7 +130,7 @@ export async function applyOpenServerSnapshot(
   useNoteBlockStore.getState().setActiveDocumentId(documentId);
 
   const localBeforeSync = readLocalBlocksForOpen(documentId);
-  if (shouldKeepLocalOverEmptyServer(localBeforeSync, serverForDoc)) {
+  if (shouldKeepLocalOverEmptyServer(localBeforeSync, serverForDoc, documentId)) {
     return finishOpenWithLocalBlocks(
       documentId,
       localBeforeSync,
@@ -146,13 +145,16 @@ export async function applyOpenServerSnapshot(
     );
   }
 
+  const emptyConfirmed = serverForDoc.length === 0
+    && !shouldKeepLocalOverEmptyServer(localBeforeSync, serverForDoc, documentId);
+
   if (engine.isOplogSyncEnabled()) {
-    await engine.syncWithServer(normalized);
+    await engine.syncWithServer(normalized, { emptyConfirmed });
   } else {
     engine.replaceBlocks(normalized);
   }
 
-  if (shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc)) {
+  if (shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc, documentId)) {
     return finishOpenWithLocalBlocks(
       documentId,
       readLocalBlocksForOpen(documentId),
@@ -161,20 +163,20 @@ export async function applyOpenServerSnapshot(
   }
 
   const current = engine.getBlocks().filter((block) => block.document_id === documentId);
-  const emptyConfirmed = current.length === 0 && serverForDoc.length === 0;
+  const confirmedEmpty = current.length === 0 && serverForDoc.length === 0;
 
   rememberNoteDocumentBlocks(
     documentId,
     mergeBlocksWithStoreContent(current),
     {
       trustServer: true,
-      serverConfirmedEmpty: emptyConfirmed,
+      serverConfirmedEmpty: confirmedEmpty,
     },
   );
 
   return {
     blocks: current,
-    emptyConfirmed,
+    emptyConfirmed: confirmedEmpty,
     toggleMigration,
   };
 }

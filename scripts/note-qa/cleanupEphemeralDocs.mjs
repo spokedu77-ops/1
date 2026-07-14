@@ -17,14 +17,14 @@ export function isEphemeralQaDocumentTitle(title) {
   if (typeof title !== 'string') return false;
   const trimmed = title.trim();
   if (!trimmed) return false;
-  if (trimmed === 'Smoke QA' || trimmed.startsWith('Smoke ')) return true;
-  if (trimmed.startsWith('SmokeTodoChain')) return true;
+  // Smoke … (공백 유무) — LeaveAck / ToggleForest / TodoChain 포함
+  if (/^Smoke(\s|$)/i.test(trimmed) || trimmed.startsWith('SmokeTodoChain')) return true;
   if (trimmed.startsWith('Typing QA ')) return true;
   if (trimmed.startsWith('Regression QA ')) return true;
   if (trimmed.startsWith('Toggle KB QA ')) return true;
   if (trimmed.startsWith('Toggle Zombie QA ')) return true;
   if (trimmed.startsWith('dbg ')) return true;
-  if (trimmed === '스모크 하위') return true;
+  if (trimmed === '스모크 하위' || trimmed.startsWith('스모크 ')) return true;
   // 임시 프로브/디버그 문서 (에이전트·수동 점검 잔여)
   if (/^(BS|UIProbe|ChainProbe|SeedProbe|Debug|Probe)\b/i.test(trimmed)) return true;
   return false;
@@ -76,19 +76,29 @@ export async function softDeleteDocumentsViaPage(page, ids) {
   }
 }
 
-/** 브라우저 세션(Playwright page)으로 ephemeral QA 문서 휴지통 이동 */
+/** 브라우저 세션(Playwright page)으로 ephemeral QA 문서 휴지통 이동 (잔여 없을 때까지 최대 2회) */
 export async function cleanupEphemeralQaDocumentsViaPage(page) {
-  const documents = await fetchActiveNoteDocumentsViaPage(page);
-  const ids = collectEphemeralQaDocumentIds(documents);
-  if (ids.length === 0) {
-    return { deleted: 0, titles: [] };
+  let deleted = 0;
+  const titles = [];
+  for (let pass = 0; pass < 2; pass += 1) {
+    const documents = await fetchActiveNoteDocumentsViaPage(page);
+    const ids = collectEphemeralQaDocumentIds(documents);
+    if (ids.length === 0) break;
+    const titleById = new Map(documents.map((doc) => [doc.id, doc.title]));
+    await softDeleteDocumentsViaPage(page, ids);
+    deleted += ids.length;
+    for (const id of ids) titles.push(titleById.get(id) ?? id);
   }
-  const titleById = new Map(documents.map((doc) => [doc.id, doc.title]));
-  await softDeleteDocumentsViaPage(page, ids);
-  return {
-    deleted: ids.length,
-    titles: ids.map((id) => titleById.get(id) ?? id),
-  };
+  return { deleted, titles };
+}
+
+/** cleanup 후에도 ephemeral이 남아 있으면 메시지와 함께 목록 반환 */
+export async function listRemainingEphemeralQaDocumentsViaPage(page) {
+  const documents = await fetchActiveNoteDocumentsViaPage(page);
+  const ids = new Set(collectEphemeralQaDocumentIds(documents));
+  return documents
+    .filter((doc) => ids.has(doc.id))
+    .map((doc) => ({ id: doc.id, title: doc.title }));
 }
 
 async function resolveActorUserId(service) {

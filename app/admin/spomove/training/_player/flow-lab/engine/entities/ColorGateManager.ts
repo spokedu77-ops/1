@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import {
-  COLOR_GATE_FIXED_COLOR_ID,
+  COLOR_GATE_ACTION_SEQUENCE,
   GATE_COLORS,
+  PLAYABLE_GATE_COLOR_IDS,
   buildColorGateSilhouetteCanvas,
   type GateColorId,
 } from '../modules/colorGateGuides';
+import type { FlowModuleKey } from '../modules/flowModules';
 
 const GATE_W = 260;
 const GATE_H = 210;
@@ -19,14 +21,21 @@ const HUD_VISIBLE_DISTANCE = 3200;
 const APPROACH_Z = -520;
 const PASS_Z = 320;
 const SCALE_LERP = 8;
+const SAME_COLOR_REPEAT_CHANCE = 0.1;
 
 interface ColorGateEntity {
   group: THREE.Group;
   panel: THREE.Mesh;
   silhouette: THREE.Mesh;
   gateColorId: GateColorId;
+  action: FlowModuleKey;
   scaleSmoothed: number;
   passed: boolean;
+}
+
+export interface ColorGateRuntimeInfo {
+  gateColorId: GateColorId;
+  action: FlowModuleKey;
 }
 
 function targetScaleFromDelta(delta: number): number {
@@ -61,6 +70,9 @@ export class ColorGateManager {
   private spawnTimer = 0;
   private readonly lowRes: boolean;
   private lastNearestGate: ColorGateEntity | null = null;
+  private lastSpawnColorId: GateColorId | null = null;
+  private sameColorRunLength = 0;
+  private actionBag: FlowModuleKey[] = [];
 
   constructor(lowRes = false) {
     this.lowRes = lowRes;
@@ -92,18 +104,21 @@ export class ColorGateManager {
   resetRun(): void {
     this.clearAll();
     this.spawnTimer = FIRST_SPAWN_DELAY_SEC;
+    this.lastSpawnColorId = null;
+    this.sameColorRunLength = 0;
+    this.actionBag = [];
   }
 
   update(
     playerZ: number,
     dt: number,
     travel: number,
-    onHudColor?: (gateColorId: GateColorId | null) => void,
-    onGatePassed?: (gateColorId: GateColorId) => void,
+    onHudGate?: (gate: ColorGateRuntimeInfo | null) => void,
+    onGatePassed?: (gate: ColorGateRuntimeInfo) => void,
   ): void {
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
-      this.spawn(COLOR_GATE_FIXED_COLOR_ID);
+      this.spawn(this.pickNextGateColor());
       this.spawnTimer += SPAWN_INTERVAL_SEC;
     }
 
@@ -128,7 +143,7 @@ export class ColorGateManager {
 
       if (!gate.passed && delta > PASS_Z) {
         gate.passed = true;
-        onGatePassed?.(gate.gateColorId);
+        onGatePassed?.({ gateColorId: gate.gateColorId, action: gate.action });
       }
 
       if (delta > GATE_DESPAWN_OFFSET_Z) {
@@ -136,12 +151,12 @@ export class ColorGateManager {
       }
     }
 
-    if (nearest && onHudColor && nearest !== this.lastNearestGate) {
+    if (nearest && onHudGate && nearest !== this.lastNearestGate) {
       this.lastNearestGate = nearest;
-      onHudColor(nearest.gateColorId);
+      onHudGate({ gateColorId: nearest.gateColorId, action: nearest.action });
     } else if (!nearest && this.lastNearestGate) {
       this.lastNearestGate = null;
-      onHudColor?.(null);
+      onHudGate?.(null);
     }
   }
 
@@ -167,14 +182,14 @@ export class ColorGateManager {
 
     const panelGeo = new THREE.PlaneGeometry(GATE_W, GATE_H);
     const panel = new THREE.Mesh(panelGeo, this.makePanelMaterial(gateColorId));
-    panel.renderOrder = 4;
+    panel.renderOrder = 40;
     panel.frustumCulled = false;
     group.add(panel);
 
     const silhouetteGeo = new THREE.PlaneGeometry(SILHOUETTE_W, SILHOUETTE_H);
     const silhouette = new THREE.Mesh(silhouetteGeo, this.makeSilhouetteMaterial());
     silhouette.position.z = 1;
-    silhouette.renderOrder = 5;
+    silhouette.renderOrder = 41;
     silhouette.frustumCulled = false;
     group.add(silhouette);
 
@@ -184,9 +199,49 @@ export class ColorGateManager {
       panel,
       silhouette,
       gateColorId,
+      action: this.pickNextAction(),
       scaleSmoothed: 1,
       passed: false,
     });
+  }
+
+  private pickNextAction(): FlowModuleKey {
+    if (this.actionBag.length === 0) {
+      this.actionBag = [...COLOR_GATE_ACTION_SEQUENCE];
+      for (let i = this.actionBag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = this.actionBag[i]!;
+        this.actionBag[i] = this.actionBag[j]!;
+        this.actionBag[j] = tmp;
+      }
+    }
+    return this.actionBag.pop() ?? 'reach';
+  }
+
+  private pickNextGateColor(): GateColorId {
+    const colors = [...PLAYABLE_GATE_COLOR_IDS];
+    if (colors.length === 0) return 'blue';
+    if (!this.lastSpawnColorId) {
+      return this.commitSpawnColor(colors[Math.floor(Math.random() * colors.length)]!);
+    }
+
+    const canRepeat = this.sameColorRunLength < 2 && Math.random() < SAME_COLOR_REPEAT_CHANCE;
+    const candidates = canRepeat
+      ? colors
+      : colors.filter((colorId) => colorId !== this.lastSpawnColorId);
+    const pool = candidates.length > 0 ? candidates : colors.filter((colorId) => colorId !== this.lastSpawnColorId);
+    const picked = pool[Math.floor(Math.random() * pool.length)] ?? colors[0]!;
+    return this.commitSpawnColor(picked);
+  }
+
+  private commitSpawnColor(colorId: GateColorId): GateColorId {
+    if (colorId === this.lastSpawnColorId) {
+      this.sameColorRunLength += 1;
+    } else {
+      this.lastSpawnColorId = colorId;
+      this.sameColorRunLength = 1;
+    }
+    return colorId;
   }
 
   private removeGate(index: number): void {
@@ -224,6 +279,8 @@ export class ColorGateManager {
       color: GATE_COLORS[gateColorId].hex,
       toneMapped: false,
       fog: false,
+      depthWrite: false,
+      depthTest: false,
       side: THREE.DoubleSide,
     });
   }
@@ -239,7 +296,7 @@ export class ColorGateManager {
       fog: false,
       transparent: true,
       depthWrite: false,
-      depthTest: true,
+      depthTest: false,
       side: THREE.DoubleSide,
     });
   }

@@ -75,6 +75,28 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('하위타이핑유지');
   });
 
+  it('syncSnapshot accepts empty when emptyConfirmed', () => {
+    const previous = [block('a', { content: { text: 'gone', html: '<p>gone</p>' } })];
+    const { blocks, structural } = applyNoteCommand(
+      previous,
+      { type: 'syncSnapshot', blocks: [], emptyConfirmed: true },
+      ctx,
+    );
+    expect(structural).toBe(true);
+    expect(blocks).toHaveLength(0);
+  });
+
+  it('syncSnapshot accepts empty when pending leave covers all local ids', () => {
+    const previous = [block('a', { content: { text: 'gone', html: '<p>gone</p>' } })];
+    const { blocks, structural } = applyNoteCommand(
+      previous,
+      { type: 'syncSnapshot', blocks: [] },
+      { ...ctx, pendingLeaveIds: new Set(['a']) },
+    );
+    expect(structural).toBe(true);
+    expect(blocks).toHaveLength(0);
+  });
+
   it('hydrate preserves store typing over empty server block', () => {
     const previous = [block('a', { content: { text: 'typed', html: '<p>typed</p>' } })];
     const incoming = [block('a', { content: { text: '', html: '<p></p>' } })];

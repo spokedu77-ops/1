@@ -1,6 +1,6 @@
 'use client';
 
-import { GATE_COLORS, COLOR_GATE_POSE_LABEL, type GateColorId } from '../engine/modules/colorGateGuides';
+import { GATE_COLORS, type GateColorId } from '../engine/modules/colorGateGuides';
 
 interface ColorGateHudProps {
   gateColorId: GateColorId;
@@ -8,6 +8,7 @@ interface ColorGateHudProps {
   totalSteps?: number;
   cueWord: string;
   shortInstruction: string;
+  poseLabel: string;
   remainingSec?: number;
 }
 
@@ -18,6 +19,7 @@ export default function ColorGateHud({
   totalSteps = 1,
   cueWord,
   shortInstruction,
+  poseLabel,
   remainingSec,
 }: ColorGateHudProps) {
   const color = GATE_COLORS[gateColorId];
@@ -82,7 +84,7 @@ export default function ColorGateHud({
         background: 'rgba(0,0,0,0.45)',
         color: '#fff',
       }}>
-        {COLOR_GATE_POSE_LABEL}
+        {poseLabel}
       </span>
 
       {remainingSec !== undefined ? (

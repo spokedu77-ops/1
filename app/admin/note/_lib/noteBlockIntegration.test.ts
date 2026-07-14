@@ -207,7 +207,12 @@ describe('sub-document navigation (parent ↔ child)', () => {
       content: { text: '할 일', checked: true },
       blocksRef,
       recordContentUndoBeforeChange: vi.fn(),
-      scheduleBlockContentSave: vi.fn(),
+      scheduleBlockContentSave: (blockId, content) => {
+        useNoteBlockStore.getState().patchContent(
+          blockId,
+          (content ?? {}) as Record<string, unknown>,
+        );
+      },
     });
 
     expect(useNoteBlockStore.getState().getBlock('c-todo')?.content?.checked).toBe(true);
@@ -231,7 +236,12 @@ describe('sub-document navigation (parent ↔ child)', () => {
       content: { text: '할 일', checked: true },
       blocksRef,
       recordContentUndoBeforeChange: vi.fn(),
-      scheduleBlockContentSave: vi.fn(),
+      scheduleBlockContentSave: (blockId, content) => {
+        useNoteBlockStore.getState().patchContent(
+          blockId,
+          (content ?? {}) as Record<string, unknown>,
+        );
+      },
     });
 
     expect(useNoteBlockStore.getState().getBlock('c-todo')?.content?.checked).toBe(true);

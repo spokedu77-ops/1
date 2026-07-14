@@ -198,6 +198,8 @@ function buildProgramSummary(mode: string, level: number): string {
 }
 
 function buildBenefitLine(mode: string, level: number): string {
+  if (mode === 'basic' && level === 2) return '눈이 색을 잡는 순간 발이 출발합니다';
+
   const phase = findGuidePhase(mode, level);
   const fallbacks: Record<string, string> = {
     basic: '화면을 보면 몸이 바로 움직이는 힘을 키웠어요',

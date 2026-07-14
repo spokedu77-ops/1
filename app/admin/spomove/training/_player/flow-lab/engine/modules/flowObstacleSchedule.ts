@@ -25,7 +25,7 @@ const FRAMES_PER_SEC      = 60;
 const UNITS_PER_FRAME_DIV = 50; // currentSpeed * 50 * dt60
 
 /** 세션 전체 reach 허용 횟수 */
-const REACH_CAP_SESSION = 6;
+const REACH_CAP_SESSION = 2;
 /** 보너스 스테이지 reach 허용 횟수 (세션 한도 무관) */
 const REACH_CAP_BONUS = 3;
 

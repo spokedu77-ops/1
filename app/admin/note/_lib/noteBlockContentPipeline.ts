@@ -23,6 +23,10 @@ export type ApplyBlockContentChangeArgs = {
   content: unknown;
   blocksRef: MutableRefObject<NoteBlock[]>;
   recordContentUndoBeforeChange: (blockId: string) => void;
+  /**
+   * LocalApply + outbound — 반드시 pipeline.scheduleContentPatch
+   * (dispatch patchContent) 경로. store 직패치 금지.
+   */
   scheduleBlockContentSave: (
     blockId: string,
     content: unknown,
@@ -32,7 +36,8 @@ export type ApplyBlockContentChangeArgs = {
 };
 
 /**
- * 블록 content 갱신 단일 경로 — Zustand patchContent만 (UI는 store 구독).
+ * 블록 content Intent 단일 경로.
+ * LocalApply는 scheduleBlockContentSave → pipeline.dispatch(patchContent)만.
  */
 export function applyBlockContentChange({
   block,
@@ -58,8 +63,6 @@ export function applyBlockContentChange({
   if (contentChangedForUndo(prevRecord, nextRecord)) {
     recordContentUndoBeforeChange(block.id);
   }
-
-  store.patchContent(block.id, nextRecord);
 
   scheduleBlockContentSave(block.id, nextRecord, prevRecord);
   onAfterChange?.();

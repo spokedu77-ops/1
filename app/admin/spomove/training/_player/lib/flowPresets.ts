@@ -46,19 +46,20 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
     environmentTheme = 'space';
   }
 
-  return {
+  const preset: FlowPreset = {
     id,
     name,
     features: features as string[],
     environmentTheme,
     duration,
   };
-}
-
-function isValidPreset(x: unknown): x is FlowPreset {
-  if (!x || typeof x !== 'object') return false;
-  const p = x as Record<string, unknown>;
-  return migratePreset(p) !== null;
+  if (raw.colorTheme === 'default' || raw.colorTheme === 'space' || raw.colorTheme === 'neon' || raw.colorTheme === 'ocean') {
+    preset.colorTheme = raw.colorTheme;
+  }
+  if (raw.visualVariant === 'classic' || raw.visualVariant === 'plus') {
+    preset.visualVariant = raw.visualVariant;
+  }
+  return preset;
 }
 
 function parsePresets(raw: string | null): FlowPreset[] {

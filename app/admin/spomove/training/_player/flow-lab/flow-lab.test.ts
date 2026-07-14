@@ -127,20 +127,18 @@ describe('buildStages 동일성', () => {
 
   test('colorGate 단독 — 런지 펀치 포즈 1단계', () => {
     const stages = labBuildStages(['colorGate'], 25);
-    expect(stages).toHaveLength(2);
-    expect(stages[0]!.isColorGate).toBeUndefined();
-    expect(stages[0]!.activeModules).toEqual(new Set(['jump']));
-    expect(stages[1]!.isColorGate).toBe(true);
-    expect(stages[1]!.activeModules).toEqual(new Set(['reach', 'colorGate']));
-    expect(stages[1]!.colorGateAction).toBe('reach');
-    expect(stages[1]!.colorGateTotal).toBe(1);
+    expect(stages).toHaveLength(1);
+    expect(stages[0]!.stageNum).toBe(2);
+    expect(stages[0]!.isColorGate).toBe(true);
+    expect(stages[0]!.activeModules).toEqual(new Set(['jump', 'punch', 'kick', 'duck', 'reach', 'colorGate']));
+    expect(stages[0]!.colorGateAction).toBe('jump');
+    expect(stages[0]!.colorGateTotal).toBe(1);
   });
 
   test('colorGate 단독 — 지정한 진행 시간을 그대로 사용', () => {
     const stages = labBuildStages(['colorGate'], 60);
-    expect(stages).toHaveLength(2);
-    expect(stages[0]!.durationSec).toBe(8);
-    expect(stages[1]!.durationSec).toBe(60);
+    expect(stages).toHaveLength(1);
+    expect(stages[0]!.durationSec).toBe(60);
   });
 
   test('보너스 스테이지는 항상 60초', () => {
@@ -171,8 +169,18 @@ describe('buildStagePreview 동일성', () => {
 });
 
 describe('colorGate spawn policy', () => {
-  test('uses the fixed blue colorGate color', () => {
-    expect(PLAYABLE_GATE_COLOR_IDS).toEqual(['blue']);
+  test('uses all four playable gate colors', () => {
+    expect(PLAYABLE_GATE_COLOR_IDS).toEqual(['red', 'yellow', 'green', 'blue']);
+  });
+
+  test('places colorGate as stage 2 even when other actions are selected', () => {
+    const stages = labBuildStages(['punch', 'duck', 'colorGate'], 25);
+    expect(stages[0]!.activeModules).toEqual(new Set(['jump']));
+    expect(stages[1]!.isColorGate).toBe(true);
+    expect(stages[1]!.stageNum).toBe(2);
+    expect(stages[1]!.label).toBe('GATE');
+    expect(stages[2]!.newModule).toBe('punch');
+    expect(stages[3]!.newModule).toBe('duck');
   });
 
 });
@@ -442,6 +450,7 @@ describe('FlowCamera', () => {
 describe('buildStages 불변 속성', () => {
   test('stage1 activeModules = {jump}', () => {
     for (const [, mods, dur] of STAGE_CASES) {
+      if (mods.length === 1 && mods[0] === 'colorGate') continue;
       const s = labBuildStages(mods, dur);
       expect([...s[0]!.activeModules]).toEqual(['jump']);
     }

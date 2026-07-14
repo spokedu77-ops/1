@@ -62,7 +62,7 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
   if (type === 'toggle') {
     return {
       title: '',
-      collapsed: false,
+      collapsed: true,
       ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }

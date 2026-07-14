@@ -6,6 +6,7 @@ import {
   clearAllNoteTextSelections,
   getActiveCrossRanges,
 } from '../_components/noteCrossSelect';
+import { tipTapHasRedoDepth, tipTapHasUndoDepth } from '../_lib/noteEditorHistory';
 import { getActiveListCrossRanges } from '../_components/noteListCrossSelect';
 import { extractActiveCrossSelectClipboardText } from '../_components/noteListCrossHighlight';
 import { parseBlockClipboardText } from '../_lib/noteBlockClipboard';
@@ -89,14 +90,14 @@ export function useNoteBlockKeyboard(options: {
       if (inProseMirror) {
         const editor = getActiveNoteEditor(focusedEditorBlockIdRef.current);
         if (editor) {
-          if (isRedo && editor.can().redo()) {
+          if (isRedo && tipTapHasRedoDepth(editor) && editor.can().redo()) {
             e.preventDefault();
             e.stopImmediatePropagation();
             clearAllNoteTextSelections();
             editor.chain().focus().redo().run();
             return;
           }
-          if (isUndo && editor.can().undo()) {
+          if (isUndo && tipTapHasUndoDepth(editor) && editor.can().undo()) {
             e.preventDefault();
             e.stopImmediatePropagation();
             clearAllNoteTextSelections();

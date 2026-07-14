@@ -25,7 +25,10 @@ import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
 import { invalidatePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
-import { rememberNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
+import {
+  readRememberedNoteDocumentBlocks,
+  rememberNoteDocumentBlocks,
+} from '../_lib/noteDocumentBlocksCache';
 import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
 import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { reparentDocumentTree } from '../_lib/noteDocumentTreeApi';
@@ -284,6 +287,9 @@ export function useNoteDragDrop(options: {
     if (selectedId) {
       markPendingBlockDeletes(selectedId, command.movedIds);
     }
+    const targetDocumentId = command.patches.find(
+      (patch) => typeof patch.document_id === 'string' && patch.document_id.length > 0,
+    )?.document_id;
     try {
       await documentEngine.persistBlockTransaction(command.patches);
       setBlocks(command.nextBlocks);
@@ -294,6 +300,32 @@ export function useNoteDragDrop(options: {
           mergeBlocksWithStoreContent(
             command.nextBlocks.filter((block) => block.document_id === selectedId),
           ),
+          { trustServer: true },
+        );
+      }
+      if (typeof targetDocumentId === 'string' && targetDocumentId !== selectedId) {
+        invalidatePrefetchedNoteBlocks(targetDocumentId);
+        const movedSet = new Set(command.movedIds);
+        const patchById = new Map(command.patches.map((patch) => [patch.id, patch]));
+        const transferred = prevBlocks
+          .filter((block) => movedSet.has(block.id))
+          .map((block) => {
+            const patch = patchById.get(block.id);
+            return {
+              ...block,
+              document_id: targetDocumentId,
+              ...(patch && 'parent_block_id' in patch
+                ? { parent_block_id: patch.parent_block_id ?? null }
+                : {}),
+            };
+          });
+        const existing = readRememberedNoteDocumentBlocks(targetDocumentId) ?? [];
+        rememberNoteDocumentBlocks(
+          targetDocumentId,
+          [
+            ...existing.filter((block) => !movedSet.has(block.id)),
+            ...transferred,
+          ],
           { trustServer: true },
         );
       }

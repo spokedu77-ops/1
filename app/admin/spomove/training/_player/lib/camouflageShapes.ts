@@ -1,7 +1,19 @@
+function makePath2D(): Path2D {
+  if (typeof Path2D !== 'undefined') return new Path2D();
+  return {
+    moveTo: () => {},
+    lineTo: () => {},
+    closePath: () => {},
+    arc: () => {},
+    rect: () => {},
+    bezierCurveTo: () => {},
+  } as unknown as Path2D;
+}
+
 function createStarPath(cx: number, cy: number, spikes: number, outerR: number, innerR: number): Path2D {
   let rot = -Math.PI / 2;
   const step = Math.PI / spikes;
-  const path = new Path2D();
+  const path = makePath2D();
   path.moveTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
   for (let i = 0; i < spikes; i++) {
     rot += step;
@@ -14,13 +26,13 @@ function createStarPath(cx: number, cy: number, spikes: number, outerR: number, 
 }
 
 function createCirclePath(cx: number, cy: number, r: number): Path2D {
-  const path = new Path2D();
+  const path = makePath2D();
   path.arc(cx, cy, r, 0, Math.PI * 2);
   return path;
 }
 
 function createSquarePath(cx: number, cy: number, size: number): Path2D {
-  const path = new Path2D();
+  const path = makePath2D();
   path.rect(cx - size / 2, cy - size / 2, size, size);
   return path;
 }
@@ -32,7 +44,7 @@ function createRegularPolygonPath(
   radius: number,
   rotation = -Math.PI / 2,
 ): Path2D {
-  const path = new Path2D();
+  const path = makePath2D();
   const step = (Math.PI * 2) / sides;
   for (let i = 0; i < sides; i++) {
     const angle = rotation + step * i;
@@ -46,7 +58,7 @@ function createRegularPolygonPath(
 }
 
 function createDiamondPath(cx: number, cy: number, radius: number): Path2D {
-  const path = new Path2D();
+  const path = makePath2D();
   path.moveTo(cx, cy - radius);
   path.lineTo(cx + radius * 0.72, cy);
   path.lineTo(cx, cy + radius);
@@ -57,7 +69,7 @@ function createDiamondPath(cx: number, cy: number, radius: number): Path2D {
 
 function createHeartPath(cx: number, cy: number, size: number): Path2D {
   const r = size * 0.42;
-  const path = new Path2D();
+  const path = makePath2D();
   path.moveTo(cx, cy + r * 1.15);
   path.bezierCurveTo(cx - r * 1.35, cy + r * 0.15, cx - r * 0.95, cy - r * 0.95, cx, cy - r * 0.35);
   path.bezierCurveTo(cx + r * 0.95, cy - r * 0.95, cx + r * 1.35, cy + r * 0.15, cx, cy + r * 1.15);
@@ -68,7 +80,7 @@ function createHeartPath(cx: number, cy: number, size: number): Path2D {
 function createPlusPath(cx: number, cy: number, size: number): Path2D {
   const arm = size * 0.82;
   const thick = size * 0.3;
-  const path = new Path2D();
+  const path = makePath2D();
   path.rect(cx - thick / 2, cy - arm, thick, arm * 2);
   path.rect(cx - arm, cy - thick / 2, arm * 2, thick);
   return path;
@@ -78,7 +90,7 @@ function createArrowPath(cx: number, cy: number, size: number): Path2D {
   const h = size * 0.95;
   const w = size * 0.55;
   const shaft = size * 0.22;
-  const path = new Path2D();
+  const path = makePath2D();
   path.moveTo(cx, cy - h);
   path.lineTo(cx + w, cy - h * 0.15);
   path.lineTo(cx + shaft / 2, cy - h * 0.15);
@@ -92,7 +104,7 @@ function createArrowPath(cx: number, cy: number, size: number): Path2D {
 
 function createCrescentPath(cx: number, cy: number, size: number): Path2D {
   const r = size * 0.78;
-  const path = new Path2D();
+  const path = makePath2D();
   path.arc(cx, cy, r, -Math.PI * 0.35, Math.PI * 1.35);
   path.arc(cx + r * 0.42, cy, r * 0.72, Math.PI * 1.1, -Math.PI * 0.25, true);
   path.closePath();

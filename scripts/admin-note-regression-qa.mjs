@@ -11,7 +11,7 @@ import {
   loadPlaywrightChromium,
   runCheck,
 } from './note-qa/shared.mjs';
-import { cleanupEphemeralQaDocumentsViaPage } from './note-qa/cleanupEphemeralDocs.mjs';
+import { cleanupEphemeralQaDocumentsViaPage, listRemainingEphemeralQaDocumentsViaPage } from './note-qa/cleanupEphemeralDocs.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -78,11 +78,11 @@ async function findToggleWithGymTitle(page, documentId) {
   return { toggle, children, legacyBody, childText };
 }
 
-async function expandGymToggleInDom(page) {
-  const result = await page.evaluate(async (needle) => {
+async function expandToggleByTitleInDomAndRead(page, titleNeedle) {
+  return page.evaluate(async (needle) => {
     const inputs = [...document.querySelectorAll('[data-toggle-title]')];
     const input = inputs.find((el) => (el.value || '').includes(needle));
-    if (!input) return { ok: false, reason: 'input-not-found' };
+    if (!input) return { ok: false, reason: 'input-not-found', childRowCount: 0, visibleText: '' };
     input.scrollIntoView({ block: 'center' });
     const toggleRoot = input.closest('.relative.overflow-visible.py-0\\.5')
       ?? input.parentElement?.parentElement;
@@ -102,9 +102,10 @@ async function expandGymToggleInDom(page) {
       childRowCount,
       visibleText,
     };
-  }, GYM_TOGGLE_TITLE);
-  if (!result.ok) throw new Error(`toggle "${GYM_TOGGLE_TITLE}" not in DOM (${result.reason})`);
-  return result;
+  }, titleNeedle).then((result) => {
+    if (!result.ok) throw new Error(`toggle "${titleNeedle}" not in DOM (${result.reason})`);
+    return result;
+  });
 }
 
 async function createFreshDocumentWithToggleBody(page) {
@@ -354,28 +355,36 @@ async function main() {
       if (!usesSkip) throw new Error('full load failed');
     });
 
-    failed += await runCheck(`토글 "${GYM_TOGGLE_TITLE}" DB 본문 존재`, async () => {
-      const { toggle, children, legacyBody, childText } = await findToggleWithGymTitle(page, COMMON_BOARD_ID);
-      const hasContent = Boolean(childText.trim() || legacyBody.trim());
-      if (!hasContent) {
-        throw new Error(
-          `no body in DB for toggle ${toggle.id} (children=${children.length}, legacy="${legacyBody.slice(0, 80)}")`,
-        );
+    failed += await runCheck('토글 DB 자식 본문 존재 (시드)', async () => {
+      const body = `시드토글본문-${Date.now()}`;
+      const seeded = await createFreshDocumentWithToggleAndChild(page, { childText: body });
+      await openDocument(page, seeded.documentId);
+      const blocks = await fetchBlocks(page, seeded.documentId);
+      const toggle = blocks.find((b) => b.id === seeded.toggleId);
+      const children = blocks.filter((b) => b.parent_block_id === seeded.toggleId);
+      const childText = children
+        .map((c) => (typeof c.content?.text === 'string' ? c.content.text : ''))
+        .join(' ')
+        .trim();
+      if (!toggle || toggle.type !== 'toggle') {
+        throw new Error(`seeded toggle missing: ${JSON.stringify({ toggle, children: children.length })}`);
+      }
+      if (!childText.includes(body)) {
+        throw new Error(`seeded toggle child body missing: "${childText}"`);
       }
     });
 
-    failed += await runCheck(`토글 "${GYM_TOGGLE_TITLE}" UI 펼침 후 본문 표시`, async () => {
-      await openDocument(page, COMMON_BOARD_ID);
-      const { childText, legacyBody } = await findToggleWithGymTitle(page, COMMON_BOARD_ID);
-      const { childRowCount, visibleText } = await expandGymToggleInDom(page);
-      const expectedSnippet = (childText || legacyBody).trim().slice(0, 12);
+    failed += await runCheck('토글 UI 펼침 후 자식 본문 표시 (시드)', async () => {
+      const body = `시드토글UI-${Date.now()}`;
+      const seeded = await createFreshDocumentWithToggleAndChild(page, { childText: body });
+      await openDocument(page, seeded.documentId);
+      // createFresh… 기본 collapsed:false 이지만 UI는 !!collapsed로 펼침 보장
+      const { childRowCount, visibleText } = await expandToggleByTitleInDomAndRead(page, TOGGLE_KB_TITLE);
       if (childRowCount < 1 && !visibleText) {
-        throw new Error(`toggle expanded but no child rows (api childText="${childText.slice(0, 60)}")`);
+        throw new Error(`toggle expanded but no child rows (visible="${visibleText}")`);
       }
-      if (expectedSnippet && !visibleText.includes(expectedSnippet.slice(0, 6))) {
-        throw new Error(
-          `visible "${visibleText.slice(0, 80)}" does not match api "${expectedSnippet}"`,
-        );
+      if (!visibleText.includes(body.slice(0, 8))) {
+        throw new Error(`visible "${visibleText.slice(0, 80)}" does not include "${body}"`);
       }
     });
 
@@ -511,11 +520,20 @@ async function main() {
         if (cleaned.deleted > 0) {
           console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s).`);
         }
+        const remaining = await listRemainingEphemeralQaDocumentsViaPage(page);
+        if (remaining.length > 0) {
+          console.error(
+            'Ephemeral QA documents remain after cleanup:',
+            remaining.map((doc) => doc.title).join(' | '),
+          );
+          failed += 1;
+        }
       } catch (cleanupError) {
-        console.warn(
-          'WARN QA doc cleanup:',
+        console.error(
+          'QA doc cleanup failed:',
           cleanupError instanceof Error ? cleanupError.message : cleanupError,
         );
+        failed += 1;
       }
     }
     if (context) await context.close().catch(() => undefined);

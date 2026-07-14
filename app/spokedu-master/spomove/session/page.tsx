@@ -383,6 +383,7 @@ function SpomoveSessionContent() {
         numberCartTier={officialPreset.engine.numberCartTier}
         colorTrackerTier={officialPreset.engine.colorTrackerTier}
         colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}
+        camouflagePlacement={officialPreset.engine.camouflagePlacement}
         flowFeatures={officialPreset.engine.flowFeatures}
         flowDuration={officialPreset.engine.flowDuration}
         onExit={() => {

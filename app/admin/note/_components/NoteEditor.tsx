@@ -47,6 +47,7 @@ import { parseClipboardHtmlToBlocks, shouldSplitHtmlPaste } from '../_lib/notePa
 import { parseMarkdownPlainToBlocks, shouldSplitMarkdownPaste } from '../_lib/notePasteMarkdown';
 import { pastedBlocksFromPlainLines, type PastedBlockSpec, isStructuralHtmlPasteSpec } from '../_lib/notePasteBlocks';
 import type { TableCellNavigateDirection } from '../_lib/noteTableBlock';
+import { clearTipTapHistory } from '../_lib/noteEditorHistory';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { NoteListCrossHighlightExtension } from './noteListCrossHighlight';
 import { NoteHighlight, NoteTextColor } from './noteEditorMarks';
@@ -839,7 +840,21 @@ export function NoteEditor({
           && currentOnNavigatePrevious
         ) {
           const { selection } = view.state;
-          if (selection.empty && selection.from <= 1) {
+          if (!selection.empty) return false;
+          // ArrowUp: 첫 시각 줄이면 블록 맨앞이 아니어도 이전 블록 (체크리스트 끝→같은 칸 앞으로 가는 문제)
+          if (event.key === 'ArrowUp') {
+            const caret = view.coordsAtPos(selection.from);
+            const first = view.coordsAtPos(1);
+            const onFirstLine = Math.abs(caret.top - first.top) < 4;
+            if (onFirstLine) {
+              event.preventDefault();
+              flush();
+              currentOnNavigatePrevious();
+              return true;
+            }
+            return false;
+          }
+          if (selection.from <= 1) {
             event.preventDefault();
             flush();
             currentOnNavigatePrevious();
@@ -852,7 +867,21 @@ export function NoteEditor({
           && currentOnNavigateNext
         ) {
           const { doc, selection } = view.state;
-          if (selection.empty && selection.to >= doc.content.size - 1) {
+          if (!selection.empty) return false;
+          if (event.key === 'ArrowDown') {
+            const caret = view.coordsAtPos(selection.to);
+            const lastPos = Math.max(1, doc.content.size - 1);
+            const last = view.coordsAtPos(lastPos);
+            const onLastLine = Math.abs(caret.top - last.top) < 4;
+            if (onLastLine) {
+              event.preventDefault();
+              flush();
+              currentOnNavigateNext();
+              return true;
+            }
+            return false;
+          }
+          if (selection.to >= doc.content.size - 1) {
             event.preventDefault();
             flush();
             currentOnNavigateNext();
@@ -1114,6 +1143,8 @@ export function NoteEditor({
       .command(({ tr }) => { tr.setMeta('addToHistory', false); return true; })
       .setContent(sourceHtml, { emitUpdate: false })
       .run();
+    // remap ghost undo가 Ctrl+Z를 가로채지 않게 history 플러그인 초기화
+    clearTipTapHistory(editor);
     if (isEditingRef.current) {
       if (!empty && from < to) {
         const docSize = editor.state.doc.content.size;

@@ -13,7 +13,7 @@ import { FlowCamera, type FlowCameraUpdateInput } from './FlowCamera';
 import { FlowAudio } from './FlowAudio';
 import { AdaptiveQuality } from './AdaptiveQuality';
 import { ObstacleManager } from './entities/ObstacleManager';
-import { ColorGateManager } from './entities/ColorGateManager';
+import { ColorGateManager, type ColorGateRuntimeInfo } from './entities/ColorGateManager';
 import type { FlowBridge } from './entities/ObstacleManager';
 import {
   BridgeRenderer,
@@ -113,12 +113,13 @@ export interface FlowEngineCallbacks {
     total: number;
   }) => void;
   /** 가장 가까운 관문 색 — 문마다 갱신 (null이면 HUD 숨김) */
-  onColorGateColor?: (gateColorId: GateColorId | null) => void;
+  onColorGateColor?: (gateColorId: GateColorId | null, action?: FlowModuleKey | null) => void;
 }
 
 export interface FlowStats {
   stagesCompleted: number;
   totalSec:        number;
+  colorGateColorCounts?: Record<GateColorId, number>;
 }
 
 export interface FlowEngineOptions {
@@ -228,7 +229,11 @@ export class FlowEngine {
   private jumpInstrCooldown = 0;
   private isBonus = false; // 보너스 스테이지 여부
 
-  private stats:     FlowStats = { stagesCompleted: 0, totalSec: 0 };
+  private stats:     FlowStats = {
+    stagesCompleted: 0,
+    totalSec: 0,
+    colorGateColorCounts: { red: 0, yellow: 0, green: 0, blue: 0 },
+  };
   private countdownTimer: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
 
@@ -379,7 +384,11 @@ export class FlowEngine {
       getShardScale:      () => this.aq.getShardScale(),
     }, glbTemplates);
 
-    for (let i = 0; i < 3; i++) this.spawnBridge(i === 0);
+    if (this.stageList[0]?.isColorGate) {
+      this.setTrackLanesVisible(false);
+    } else {
+      for (let i = 0; i < 3; i++) this.spawnBridge(i === 0);
+    }
 
     if (this.stageList.some((s) => s.isColorGate)) {
       this.ensureColorGateManager();
@@ -1027,8 +1036,13 @@ export class FlowEngine {
         PLAYER_Z,
         dt,
         bridgeMove,
-        (gateColorId) => {
-          this.cb.onColorGateColor?.(gateColorId);
+        (gate) => {
+          this.cb.onColorGateColor?.(gate?.gateColorId ?? null, gate?.action ?? null);
+        },
+        (gate: ColorGateRuntimeInfo) => {
+          const counts = this.stats.colorGateColorCounts ?? { red: 0, yellow: 0, green: 0, blue: 0 };
+          counts[gate.gateColorId] += 1;
+          this.stats.colorGateColorCounts = counts;
         },
       );
     }

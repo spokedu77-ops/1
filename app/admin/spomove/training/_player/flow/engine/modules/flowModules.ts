@@ -122,5 +122,5 @@ export const FLOW_MODULES: Record<FlowModuleKey, FlowModule> = {
 
 /** 사용자가 선택 가능한 장애물·관문 모듈 (faster는 각 스테이지 후반 자동 적용) */
 export const SELECTABLE_MODULE_KEYS: FlowModuleKey[] = [
-  'punch', 'kick', 'duck', 'reach', 'colorGate',
+  'punch', 'kick', 'duck', 'reach',
 ];

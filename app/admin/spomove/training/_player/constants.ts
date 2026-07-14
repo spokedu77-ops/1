@@ -210,7 +210,10 @@ export const MODES: Record<string, SpomoveMode> = {
     coreCode: 'VM',
     tag: '몰입 러닝 · 반응 전환',
     desc: '3D 몰입 환경에서 달리고, 점프하고, 동작을 수행하는 DIVE 트레이닝입니다.',
-    levels: [{ id: 1, name: '1단계', enName: 'Dive Program', desc: 'DIVE 전체 시퀀스를 진행합니다.' }],
+    levels: [
+      { id: 1, name: '1단계', enName: 'Dive Program', desc: 'DIVE 전체 시퀀스를 진행합니다.' },
+      { id: 2, name: '2단계', enName: 'Color Gate', desc: '브릿지 없이 공유 배경에서 색 포즈 관문만 진행합니다.' },
+    ],
   },
 };
 

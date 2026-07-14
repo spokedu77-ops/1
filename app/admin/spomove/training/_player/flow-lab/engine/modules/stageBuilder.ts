@@ -12,11 +12,7 @@ import { FLOW_MODULES } from './flowModules';
 import type { FlowModuleKey } from './flowModules';
 import {
   COLOR_GATE_ACTION_SEQUENCE,
-  COLOR_GATE_POSE_INSTRUCTION,
-  COLOR_GATE_POSE_LABEL,
 } from './colorGateGuides';
-
-const COLOR_GATE_WARMUP_DURATION_SEC = 8;
 
 export interface FlowStageConfig {
   stageIndex: number;
@@ -54,30 +50,26 @@ function buildColorGateStages(
   durationSec: number,
 ): FlowStageConfig[] {
   const gateMod = FLOW_MODULES.colorGate;
-  const total = COLOR_GATE_ACTION_SEQUENCE.length;
-
-  return COLOR_GATE_ACTION_SEQUENCE.map((actionKey, j) => {
-    const actionMod = FLOW_MODULES[actionKey];
-    const isPoseOnly = COLOR_GATE_ACTION_SEQUENCE.length === 1;
-    return {
-      stageIndex: startIndex + j,
-      stageNum: startNum + j,
-      label: isPoseOnly ? 'GATE' : `GATE ${j + 1}`,
-      durationSec,
-      activeModules: new Set<FlowModuleKey>([actionKey, 'colorGate']),
-      newModule: actionKey,
-      isBonus: false,
-      isColorGate: true,
-      colorGateAction: actionKey,
-      colorGateStep: j + 1,
-      colorGateTotal: total,
-      color: actionMod.color,
-      colorBg: gateMod.colorBg,
-      colorBorder: gateMod.colorBorder,
-      cueWord: isPoseOnly ? COLOR_GATE_POSE_LABEL : actionMod.cueWord,
-      shortInstruction: isPoseOnly ? COLOR_GATE_POSE_INSTRUCTION : actionMod.shortInstruction,
-    };
-  });
+  const actionKey = COLOR_GATE_ACTION_SEQUENCE[0] ?? 'reach';
+  const actionMod = FLOW_MODULES[actionKey];
+  return [{
+    stageIndex: startIndex,
+    stageNum: startNum,
+    label: 'GATE',
+    durationSec,
+    activeModules: new Set<FlowModuleKey>([...COLOR_GATE_ACTION_SEQUENCE, 'colorGate']),
+    newModule: actionKey,
+    isBonus: false,
+    isColorGate: true,
+    colorGateAction: actionKey,
+    colorGateStep: 1,
+    colorGateTotal: 1,
+    color: actionMod.color,
+    colorBg: gateMod.colorBg,
+    colorBorder: gateMod.colorBorder,
+    cueWord: gateMod.cueWord,
+    shortInstruction: gateMod.shortInstruction,
+  }];
 }
 
 /**
@@ -96,12 +88,16 @@ export function buildStages(
   const stages: FlowStageConfig[] = [];
   const baseMod = FLOW_MODULES.jump;
 
+  if (isColorGateOnly) {
+    return buildColorGateStages(0, 2, durationSec);
+  }
+
   // Stage 1: 점프만
   stages.push({
     stageIndex: 0,
     stageNum: 1,
     label: 'STAGE 1',
-    durationSec: isColorGateOnly ? Math.min(COLOR_GATE_WARMUP_DURATION_SEC, durationSec) : durationSec,
+    durationSec,
     activeModules: new Set<FlowModuleKey>(['jump']),
     newModule: 'jump',
     isBonus: false,
@@ -113,13 +109,17 @@ export function buildStages(
   });
 
   // 각 장애물 모듈 단독 스테이지
+  if (hasColorGate) {
+    stages.push(...buildColorGateStages(stages.length, stages.length + 1, durationSec));
+  }
+
   for (let i = 0; i < obstacleModules.length; i++) {
     const key = obstacleModules[i]!;
     const mod = FLOW_MODULES[key];
     stages.push({
-      stageIndex: i + 1,
-      stageNum: i + 2,
-      label: `STAGE ${i + 2}`,
+      stageIndex: stages.length,
+      stageNum: stages.length + 1,
+      label: `STAGE ${stages.length + 1}`,
       durationSec,
       activeModules: new Set<FlowModuleKey>(['jump', key]),
       newModule: key,
@@ -134,7 +134,7 @@ export function buildStages(
 
   // 보너스: 장애물 2개 이상
   if (obstacleModules.length >= 2) {
-    const bonusIdx = obstacleModules.length + 1;
+    const bonusIdx = stages.length;
     stages.push({
       stageIndex: bonusIdx,
       stageNum: bonusIdx + 1,
@@ -152,12 +152,6 @@ export function buildStages(
   }
 
   // 5번째 관문: 색+포즈 5단계 (맨 마지막)
-  if (hasColorGate) {
-    const gateStartIdx = stages.length;
-    const gateStartNum = stages.length + 1;
-    stages.push(...buildColorGateStages(gateStartIdx, gateStartNum, durationSec));
-  }
-
   return stages;
 }
 

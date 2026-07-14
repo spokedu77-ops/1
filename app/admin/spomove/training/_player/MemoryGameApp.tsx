@@ -1407,14 +1407,16 @@ export default function MemoryGameApp({
                 <div style={S.sec}>
                   {stepNum(4, 'Choose DIVE actions')}
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
-                    Selected actions are added across DIVE stages.
+                    Selected obstacle actions are added to DIVE stages.
                   </p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                     {SELECTABLE_MODULE_KEYS.map((key) => {
                       const mod = FLOW_MODULES[key];
                       const icon = mod.icon;
-                      const label = mod.label;
-                      const desc = mod.shortInstruction;
+                      const label = key === 'colorGate' ? 'Color Gate (Stage 2)' : mod.label;
+                      const desc = key === 'colorGate'
+                        ? 'Runs as a separate Stage 2 GATE with no bridge floor: follow the blue gate and pose.'
+                        : mod.shortInstruction;
                       const active = settings.flowFeatures.has(key as FlowFeatureKey);
                       return (
                         <button
@@ -1453,6 +1455,46 @@ export default function MemoryGameApp({
                       );
                     })}
                   </div>
+                </div>
+                <div style={S.sec}>
+                  {stepNum(5, 'Stage 2 Color Gate')}
+                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.75rem', lineHeight: 1.55 }}>
+                    Color Gate is a separate Stage 2 mode with the shared background and no bridge floor.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettings((s) => {
+                        const next = new Set(s.flowFeatures);
+                        if (next.has('colorGate')) next.delete('colorGate');
+                        else next.add('colorGate');
+                        return { ...s, flowFeatures: next };
+                      });
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.75rem',
+                      width: '100%',
+                      padding: '0.75rem 0.9rem',
+                      borderRadius: '1rem',
+                      border: `2px solid ${settings.flowFeatures.has('colorGate') ? '#38BDF8' : 'var(--border)'}`,
+                      background: settings.flowFeatures.has('colorGate') ? 'rgba(56,189,248,0.10)' : 'var(--card)',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <span style={{ fontSize: '1.3rem', lineHeight: 1, marginTop: '0.05rem' }}>🎯</span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.9rem', color: settings.flowFeatures.has('colorGate') ? '#38BDF8' : 'var(--text)', marginBottom: '0.15rem' }}>
+                        {settings.flowFeatures.has('colorGate') ? '✓ ' : ''}Color Gate
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                        Runs as Stage 2 only: blue gate, pose cue, no bridge floor.
+                      </div>
+                    </div>
+                  </button>
                 </div>
                 <div style={S.sec}>
                   {stepNum(6, "Stage duration")}
@@ -1947,16 +1989,20 @@ export default function MemoryGameApp({
 
   if (screen === 'flow') {
     // SELECTABLE_MODULE_KEYS ?????????????????????????????????????????????????????????????????????????????????????????????????????? ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹??????????????????????????釉먮폁?????????????????
-    const selectedModules = SELECTABLE_MODULE_KEYS.filter((k) => settings.flowFeatures.has(k as FlowFeatureKey));
+    const selectedModules = [
+      ...SELECTABLE_MODULE_KEYS,
+      ...(settings.flowFeatures.has('colorGate') ? ['colorGate' as const] : []),
+    ].filter((k) => settings.flowFeatures.has(k as FlowFeatureKey));
     const stages = buildStages(selectedModules, settings.flowDuration);
 
-    const handleFlowDone = () => {
+    const handleFlowDone = (stats?: { colorGateColorCounts?: ColorStimulusCounts }) => {
       if (flowCompleteGuardRef.current) return;
       flowCompleteGuardRef.current = true;
       if (document.fullscreenElement) document.exitFullscreen();
       const cfg = { ...settings, mode: 'flow', level: 1 };
       const elapsedMs = sessionStartMsRef.current > 0 ? performance.now() - sessionStartMsRef.current : 0;
-      deliverSessionResult(cfg, elapsedMs, null);
+      const flowColorCounts = stats?.colorGateColorCounts ?? null;
+      deliverSessionResult(cfg, elapsedMs, flowColorCounts && totalColorStimulusCount(flowColorCounts) > 0 ? flowColorCounts : null);
     };
 
     return (

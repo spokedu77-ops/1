@@ -8,24 +8,136 @@ export function newNoteBlockClientId(): string {
   return `block-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function requiredBlockIdsForPush(item: NoteBlockOpPushItem): string[] {
+/** transport가 해석하는 편집 op 등급 — 기능명이 아니라 틀 계약 */
+export type NoteBlockOpKind =
+  | 'presence'
+  | 'content'
+  | 'topology'
+  | 'identityLeave'
+  | 'relocation'
+  | 'mixed';
+
+function patchLeavesDocument(patch: { document_id?: string }): boolean {
+  return typeof patch.document_id === 'string' && patch.document_id.length > 0;
+}
+
+export function classifyPushItem(item: NoteBlockOpPushItem): NoteBlockOpKind {
+  const payload = item.payload;
+  switch (payload.opType) {
+  case 'create_block':
+    return 'presence';
+  case 'patch_content':
+    return 'content';
+  case 'soft_delete':
+  case 'purge_block':
+    return 'identityLeave';
+  case 'patch_fields': {
+    const leave = payload.patches.some(patchLeavesDocument);
+    const stay = payload.patches.some((patch) => !patchLeavesDocument(patch));
+    if (leave && stay) return 'mixed';
+    if (leave) return 'relocation';
+    return 'topology';
+  }
+  case 'block_transaction': {
+    const hasCreate = (payload.creates?.length ?? 0) > 0;
+    const hasDelete = payload.deleteIds.length > 0;
+    const leave = payload.patches.some(patchLeavesDocument);
+    const stay = payload.patches.some((patch) => !patchLeavesDocument(patch));
+    const kinds = new Set<NoteBlockOpKind>();
+    if (hasCreate) kinds.add('presence');
+    if (hasDelete) kinds.add('identityLeave');
+    if (leave) kinds.add('relocation');
+    if (stay) kinds.add('topology');
+    if (kinds.size === 0) return 'topology';
+    if (kinds.size === 1) return [...kinds][0]!;
+    return 'mixed';
+  }
+  default: {
+    const _exhaustive: never = payload;
+    return _exhaustive;
+  }
+  }
+}
+
+/** identityLeave·relocation — 로컬 활성 목록에 id가 없어도 push되어야 하는 op */
+export function isIdentityLeaveOrRelocationPush(item: NoteBlockOpPushItem): boolean {
+  const kind = classifyPushItem(item);
+  return kind === 'identityLeave' || kind === 'relocation' || kind === 'mixed';
+}
+
+/** inactive drain용 — mixed(topology/create 포함)는 제외하고 pure leave만 */
+export function isPureIdentityLeaveOrRelocationPush(item: NoteBlockOpPushItem): boolean {
+  const kind = classifyPushItem(item);
+  return kind === 'identityLeave' || kind === 'relocation';
+}
+
+export function outboundHasIdentityLeaveOrRelocation(
+  items: ReadonlyArray<NoteBlockOpPushItem>,
+): boolean {
+  return items.some(isIdentityLeaveOrRelocationPush);
+}
+
+export function outboundHasPureIdentityLeaveOrRelocation(
+  items: ReadonlyArray<NoteBlockOpPushItem>,
+): boolean {
+  return items.some(isPureIdentityLeaveOrRelocationPush);
+}
+
+function collectCreateIdsFromOutbound(
+  outbound: ReadonlyArray<NoteBlockOpPushItem>,
+): Set<string> {
+  const ids = new Set<string>();
+  for (const item of outbound) {
+    const payload = item.payload;
+    if (payload.opType === 'create_block' && payload.id) {
+      ids.add(payload.id);
+      continue;
+    }
+    if (payload.opType === 'block_transaction' && payload.creates) {
+      for (const create of payload.creates) {
+        if (create.id) ids.add(create.id);
+      }
+    }
+  }
+  return ids;
+}
+
+/**
+ * content/topology만 known(로컬·create)을 요구한다.
+ * identityLeave·relocation은 로컬에서 이미 빠진 뒤가 정상이므로 store presence를 요구하지 않는다.
+ * 다만 아직 미전송 create인 id에 대한 leave만 create 뒤로 defer.
+ */
+function requiredKnownIdsForPush(
+  item: NoteBlockOpPushItem,
+  createIdsInOutbound: ReadonlySet<string>,
+  known: ReadonlySet<string>,
+): string[] {
   const payload = item.payload;
   switch (payload.opType) {
   case 'patch_content':
     return [payload.blockId];
   case 'create_block':
-    return payload.id ? [payload.id] : [];
-  case 'patch_fields':
-    return payload.patches.map((patch) => patch.id);
+    return [];
   case 'soft_delete':
-    return payload.ids;
-  case 'block_transaction':
-    return [
-      ...payload.patches.map((patch) => patch.id),
-      ...(payload.creates?.map((create) => create.id).filter((id): id is string => !!id) ?? []),
-    ];
+    return payload.ids.filter((id) => createIdsInOutbound.has(id) && !known.has(id));
   case 'purge_block':
-    return [payload.id];
+    return createIdsInOutbound.has(payload.id) && !known.has(payload.id)
+      ? [payload.id]
+      : [];
+  case 'patch_fields':
+    // relocation(document_id)은 leave — known 불요. same-doc topology만 요구.
+    return payload.patches
+      .filter((patch) => !patchLeavesDocument(patch))
+      .map((patch) => patch.id);
+  case 'block_transaction': {
+    const topologyIds = payload.patches
+      .filter((patch) => !patchLeavesDocument(patch))
+      .map((patch) => patch.id);
+    const leaveWaitingCreate = payload.deleteIds.filter(
+      (id) => createIdsInOutbound.has(id) && !known.has(id),
+    );
+    return [...topologyIds, ...leaveWaitingCreate];
+  }
   default: {
     const _exhaustive: never = payload;
     return _exhaustive;
@@ -50,19 +162,20 @@ function registerCreatesFromPush(
 }
 
 /**
- * push 배치에서 서버에 아직 없는 블록을 건드리는 op는 뒤로 미룬다.
- * create → patch 순서가 깨져도 block not found가 나지 않게 한다.
+ * push 배치에서 content/topology가 create보다 앞서지 않게 한다.
+ * identityLeave·relocation은 활성 목록 부재를 정상으로 본다.
  */
-/** coordinator.blocks + outbound create id — patch가 create보다 먼저 ready 되는 것을 방지 */
+/**
+ * 로컬 활성 집합의 id.
+ * outbound create는 partition 루프에서 ready 되는 순간에만 known에 올린다.
+ * (미리 올리면 identityLeave가 create보다 앞서 push될 수 있음)
+ */
 export function buildKnownBlockIdsForPush(
   blocks: ReadonlyArray<{ id: string }>,
-  outbound: ReadonlyArray<NoteBlockOpPushItem>,
+  _outbound?: ReadonlyArray<NoteBlockOpPushItem>,
 ): Set<string> {
-  const known = new Set(blocks.map((block) => block.id));
-  for (const item of outbound) {
-    registerCreatesFromPush(item, known);
-  }
-  return known;
+  void _outbound;
+  return new Set(blocks.map((block) => block.id));
 }
 
 export function partitionOutboundForSafePush(
@@ -70,6 +183,7 @@ export function partitionOutboundForSafePush(
   knownBlockIds: ReadonlySet<string>,
 ): { ready: NoteBlockOpPushItem[]; deferred: NoteBlockOpPushItem[] } {
   const known = new Set(knownBlockIds);
+  const createIdsInOutbound = collectCreateIdsFromOutbound(items);
   const ready: NoteBlockOpPushItem[] = [];
   const deferred: NoteBlockOpPushItem[] = [];
 
@@ -86,8 +200,8 @@ export function partitionOutboundForSafePush(
       continue;
     }
 
-    const requiredIds = requiredBlockIdsForPush(item);
-    if (requiredIds.length === 0 || requiredIds.some((id) => !known.has(id))) {
+    const requiredIds = requiredKnownIdsForPush(item, createIdsInOutbound, known);
+    if (requiredIds.some((id) => !known.has(id))) {
       deferred.push(item);
       continue;
     }

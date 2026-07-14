@@ -26,7 +26,7 @@ function mergeExcludeSets(
   structuralExcludeByDocument.set(documentId, merged);
 }
 
-/** soft delete·이동 등 구조 변경 직후 — push ack 전까지 되살림 방지 */
+/** soft delete·이동 등 구조 변경 직후 — outbound identityLeave 투영(SSOT 아님). push ack 전 Project 되살림 방지 */
 export function addStructuralExcludeIds(documentId: string, ids: string[]): void {
   if (!documentId || ids.length === 0) return;
   const extra = extraUntilOutboundSynced.get(documentId) ?? new Set<string>();
@@ -56,7 +56,7 @@ export function clearStructuralExcludeForDocument(documentId: string): void {
   structuralExcludeByDocument.delete(documentId);
 }
 
-/** outbound 큐 기준으로 SSOT 동기화 — push ack로 op 소비 시 자동 해제 */
+/** outbound 큐 기준 투영 동기화 — push ack로 op 소비 시 자동 해제 */
 export function syncStructuralExcludeFromOutbound(
   documentId: string,
   outbound: NoteLocalOutboundOp[],

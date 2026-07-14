@@ -16,7 +16,7 @@ import { markNoteLocalSave } from './noteReconcileIdle';
 import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import {
-  disposeNoteSyncCoordinator,
+  disposeNoteSyncCoordinatorInstance,
   getNoteSyncCoordinator,
   type NoteSyncCoordinator,
 } from './noteSyncCoordinator';
@@ -49,6 +49,7 @@ function buildCommandContext(documentId: string) {
     documentId,
     activeBlockId: store.activeEditor?.blockId ?? null,
     storeContentById,
+    pendingLeaveIds: getStructuralExcludeIds(documentId),
   };
 }
 
@@ -57,6 +58,13 @@ function commitBlocksToStore(blocks: NoteBlock[], command: NoteCommand): void {
   if (command.type === 'hydrate' || command.type === 'replaceBlocks') {
     // 문서 open·전환 — 부모 문서 블록이 스토어에 남지 않게 전체 교체 (하위=상위 동일)
     store.replaceBlocks(blocks);
+    return;
+  }
+  if (command.type === 'patchContent') {
+    const block = blocks.find((item) => item.id === command.blockId);
+    if (block?.content && typeof block.content === 'object') {
+      store.patchContent(command.blockId, block.content as Record<string, unknown>);
+    }
     return;
   }
   store.syncBlocksStructure(blocks);
@@ -86,13 +94,18 @@ export class NoteDocumentPipeline {
     this.initQueue();
   }
 
-  private dispatchSnapshotIfChanged(blocks: NoteBlock[], origin: SnapshotTraceOrigin): void {
+  private dispatchSnapshotIfChanged(
+    blocks: NoteBlock[],
+    origin: SnapshotTraceOrigin,
+    emptyConfirmed?: boolean,
+  ): void {
     if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
       return;
     }
     const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    if (storeForDoc.length > 0) {
+    // emptyConfirmed면 store로 다시 채우지 않는다 (의도적 빈 문서 Authority)
+    if (!emptyConfirmed && storeForDoc.length > 0) {
       const mergedStore = mergeBlocksWithStoreContent(storeForDoc);
       this.coordinator?.setBlocks(mergedStore);
       blocks = mergedStore;
@@ -104,7 +117,11 @@ export class NoteDocumentPipeline {
       return;
     }
     traceSnapshotDecision(origin, 'dispatch', reason, this.documentId);
-    this.dispatch({ type: 'syncSnapshot', blocks });
+    this.dispatch({
+      type: 'syncSnapshot',
+      blocks,
+      ...(emptyConfirmed ? { emptyConfirmed: true } : {}),
+    });
   }
 
   private initQueue(): void {
@@ -152,12 +169,8 @@ export class NoteDocumentPipeline {
     const store = useNoteBlockStore.getState();
     const previous = store.getBlocksArray();
     const ctx = buildCommandContext(this.documentId);
-    let { blocks } = applyNoteCommand(previous, command, ctx);
-    // soft delete outbound 적재 전에 patchFields/reconcile이 블록을 되살리지 않게
-    const pendingDeletes = getStructuralExcludeIds(this.documentId);
-    if (pendingDeletes.size > 0) {
-      blocks = blocks.filter((block) => !pendingDeletes.has(block.id));
-    }
+    const { blocks } = applyNoteCommand(previous, command, ctx);
+    // Project exclude는 store write SSOT (hydrate/replace/sync) — dispatch에서 이중 필터하지 않음
     commitBlocksToStore(blocks, command);
     const next = useNoteBlockStore.getState().getBlocksArray();
     this.coordinator?.setBlocks(next);
@@ -179,7 +192,8 @@ export class NoteDocumentPipeline {
       ?? (storeBlock?.content as Record<string, unknown> | null | undefined)
       ?? {}) as Record<string, unknown>;
     const nextContent = { ...prevContent, ...content };
-    useNoteBlockStore.getState().patchContent(blockId, nextContent);
+    // LocalApply = dispatch(patchContent) — store 직패치 금지
+    this.dispatch({ type: 'patchContent', blockId, content: nextContent });
     markNoteLocalSave(this.documentId);
     this.queue?.scheduleContentPatch(blockId, nextContent, baseContent);
     this.syncPendingFlag();
@@ -209,41 +223,62 @@ export class NoteDocumentPipeline {
   }
 
   async hydrateFromLocal(): Promise<NoteBlock[] | null> {
-    if (!this.coordinator) return null;
-    const blocks = await this.coordinator.hydrateFromLocal();
+    const coordinator = this.coordinator;
+    if (!coordinator) return null;
+    const blocks = await coordinator.hydrateFromLocal();
+    if (this.disposed || this.coordinator !== coordinator) return null;
     if (!blocks || blocks.length === 0) return null;
     return this.dispatch({ type: 'hydrate', blocks });
   }
 
   async syncWithServer(
     initialBlocks: NoteBlock[],
-    options?: { skipDispatch?: boolean },
+    options?: { skipDispatch?: boolean; emptyConfirmed?: boolean },
   ): Promise<void> {
-    if (!this.coordinator) {
+    const coordinator = this.coordinator;
+    if (!coordinator) {
       if (!options?.skipDispatch) {
-        this.dispatch({ type: 'hydrate', blocks: initialBlocks });
+        this.dispatch({
+          type: 'hydrate',
+          blocks: initialBlocks,
+          ...(options?.emptyConfirmed ? { emptyConfirmed: true } : {}),
+        });
       }
       return;
     }
-    await this.coordinator.syncWithServer(initialBlocks);
+    await coordinator.syncWithServer(initialBlocks);
     if (options?.skipDispatch) return;
+    // 문서 전환 중 dispose되면 coordinator가 null — await 이후 재진입 금지
+    if (this.disposed || this.coordinator !== coordinator) {
+      return;
+    }
     const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    if (storeForDoc.length > 0) {
-      this.coordinator.setBlocks(mergeBlocksWithStoreContent(storeForDoc));
+    if (!options?.emptyConfirmed && storeForDoc.length > 0) {
+      coordinator.setBlocks(mergeBlocksWithStoreContent(storeForDoc));
     }
-    const blocks = this.coordinator.getBlocks();
-    if (storeForDoc.length === 0) {
-      const reason = describeSnapshotDiff([], blocks, this.documentId);
+    const blocks = options?.emptyConfirmed
+      ? initialBlocks.filter((block) => block.document_id === this.documentId)
+      : coordinator.getBlocks();
+    if (storeForDoc.length === 0 || options?.emptyConfirmed) {
+      const reason = describeSnapshotDiff(
+        options?.emptyConfirmed ? storeForDoc : [],
+        blocks,
+        this.documentId,
+      );
       if (reason !== 'equivalent') {
         traceSnapshotDecision('syncWithServer', 'dispatch', reason, this.documentId);
-        this.dispatch({ type: 'hydrate', blocks });
+        this.dispatch({
+          type: 'hydrate',
+          blocks,
+          ...(options?.emptyConfirmed ? { emptyConfirmed: true } : {}),
+        });
       } else {
         traceSnapshotDecision('syncWithServer', 'skip', 'equivalent', this.documentId);
       }
       return;
     }
-    this.dispatchSnapshotIfChanged(blocks, 'syncWithServer');
+    this.dispatchSnapshotIfChanged(blocks, 'syncWithServer', options?.emptyConfirmed);
   }
 
   schedulePull(): void {
@@ -345,8 +380,8 @@ export class NoteDocumentPipeline {
     const coordinator = this.coordinator;
     await this.queue?.drain().finally(async () => {
       await coordinator?.drain().finally(() => {
-        if (this.oplogEnabled) {
-          disposeNoteSyncCoordinator(this.documentId);
+        if (this.oplogEnabled && coordinator) {
+          disposeNoteSyncCoordinatorInstance(this.documentId, coordinator);
         }
       });
     });
@@ -377,9 +412,36 @@ export function getNoteDocumentPipeline(
   return pipeline;
 }
 
-export async function disposeNoteDocumentPipeline(documentId: string): Promise<void> {
+export async function disposeNoteDocumentPipeline(
+  documentId: string,
+  expected?: NoteDocumentPipeline,
+): Promise<void> {
   const existing = pipelines.get(documentId);
-  if (!existing) return;
+  if (!existing) {
+    // 맵에서 이미 제거된 뒤에도 expected dispose가 필요할 수 있음 (unmap-then-async)
+    if (expected && !expected.isDisposed()) {
+      await expected.dispose();
+    }
+    return;
+  }
+  // Strict Mode remount가 새 인스턴스를 맵에 올렸으면 옛 인스턴스만 dispose
+  if (expected && existing !== expected) {
+    if (!expected.isDisposed()) {
+      await expected.dispose();
+    }
+    return;
+  }
   pipelines.delete(documentId);
   await existing.dispose();
 }
+
+/** effect cleanup 직후 remount가 stale 인스턴스를 재사용하지 않게 맵에서 먼저 제거 */
+export function unmapNoteDocumentPipeline(
+  documentId: string,
+  expected: NoteDocumentPipeline,
+): void {
+  if (pipelines.get(documentId) === expected) {
+    pipelines.delete(documentId);
+  }
+}
+

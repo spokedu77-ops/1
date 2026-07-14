@@ -15,9 +15,11 @@ import ColorGateHud from './components/ColorGateHud';
 import {
   buildColorGateCue,
   buildColorGateInstruction,
+  COLOR_GATE_POSE_LABELS,
   preloadColorGatePoseImages,
   type GateColorId,
 } from './engine/modules/colorGateGuides';
+import type { FlowModuleKey } from './engine/modules/flowModules';
 
 interface FlowGameClientProps {
   stages:            FlowStageConfig[];
@@ -79,6 +81,7 @@ export default function FlowGameClient({
   /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
   const [initKey,       setInitKey]      = useState(0);
   const [gateColorId,   setGateColorId]  = useState<GateColorId | null>(null);
+  const [gateAction,    setGateAction]   = useState<FlowModuleKey | null>(null);
   const mountedRef   = useRef(true);
   /** 현재 엔진 init 시점의 bgmPath 캡처 — 이후 변경 시 loadBgmLate만 호출 (더블스타트 방지) */
   const engineBgmRef = useRef<string | undefined>(undefined);
@@ -132,15 +135,18 @@ export default function FlowGameClient({
             const st = stages[idx];
             if (!st?.isColorGate) {
               setGateColorId(null);
+              setGateAction(null);
             }
           },
           onColorGateStage: () => {
             if (!mountedRef.current) return;
             setGateColorId(null);
+            setGateAction(null);
           },
-          onColorGateColor: (gateColorId) => {
+          onColorGateColor: (gateColorId, action) => {
             if (!mountedRef.current) return;
             setGateColorId(gateColorId);
+            setGateAction(action ?? null);
           },
           onTimerUpdate:  (rem, prog) => {
             if (!mountedRef.current) return;
@@ -219,6 +225,7 @@ export default function FlowGameClient({
   const colorGateHud = currentStage?.isColorGate
     && currentStage.colorGateAction
     && gateColorId
+    && gateAction
     && (phase === 'playing' || phase === 'stage-intro')
     ? (
       <ColorGateHud
@@ -226,7 +233,8 @@ export default function FlowGameClient({
         step={currentStage.colorGateStep ?? 1}
         totalSteps={currentStage.colorGateTotal ?? 1}
         cueWord={buildColorGateCue(gateColorId)}
-        shortInstruction={buildColorGateInstruction(gateColorId)}
+        shortInstruction={buildColorGateInstruction(gateColorId, gateAction)}
+        poseLabel={COLOR_GATE_POSE_LABELS[gateAction]}
         remainingSec={phase === 'playing' ? timerSec : undefined}
       />
     )

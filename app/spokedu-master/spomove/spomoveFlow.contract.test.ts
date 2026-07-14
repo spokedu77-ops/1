@@ -8,21 +8,20 @@ function read(path: string) {
 
 const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const session = read('app/spokedu-master/spomove/session/page.tsx');
+const guidelineSheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
 
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and guideline actions on hub cards', () => {
     expect(hub).toContain('buildSpomoveCardTags');
     expect(hub).toContain('가이드라인');
-    expect(hub).toContain('큰 화면 실행');
-    expect(hub).toContain('이 기기에서 실행');
-    expect(hub).not.toContain('최근 실행');
-    expect(hub).not.toContain('최근 실행한 활동');
+    expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).toContain('실행');
+    expect(hub).toContain('최근 SPOMOVE 활동');
   });
 
   it('keeps normal program cards separate from recent rerun actions', () => {
     expect(hub).toContain('data-spm-spomove-card-action="preview"');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
-    expect(hub).toContain('data-spm-spomove-card-action="start-mobile"');
     expect(hub).toContain('data-spm-spomove-recent-action="rerun"');
 
     const cardInfoBlock = hub.slice(
@@ -46,14 +45,14 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('loads guideline videos and renders pad layout in the guideline sheet', () => {
     expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
-    expect(hub).toContain('SpomoveGuidelineSheet');
-    expect(hub).toContain('SpomovePadLayoutView');
-    expect(hub).toContain('SpomoveGuideVideo');
+    expect(hub).toContain('SharedSpomoveGuidelineSheet');
+    expect(guidelineSheet).toContain('SpomovePadLayoutView');
+    expect(guidelineSheet).toContain('SpomoveGuideVideo');
   });
 
   it('starts sessions immediately from hub cards and guideline sheet', () => {
     expect(hub).toContain("officialPresetSessionHref(preset, { autostart: true })");
-    expect(hub).toContain("mode: 'mobile'");
+    expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(session).toContain("searchParams.get('autostart') === '1'");
   });
 
@@ -75,7 +74,7 @@ describe('SPOMOVE pilot flow contract', () => {
   it('separates completed and early-ended sessions', () => {
     expect(session).toContain("type SessionState = 'idle' | 'running' | 'done' | 'ended'");
     expect(session).toContain("finishSession('ended')");
-    expect(session).toContain("finishSession('done')");
+    expect(session).toContain("finishSession('done', payload)");
     expect(session).toContain('TrainingResultScreen');
     expect(session).toContain('중도 종료');
     expect(session).toContain('완료');
@@ -86,7 +85,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).not.toContain('/spokedu-master/class-record?program=${officialPreset.id}');
     expect(session).toContain('/spokedu-master/activity');
     expect(session).toContain('같은 프로그램 다시 실행');
-    expect(session).toContain('다른 프로그램 선택');
+    expect(session).toContain('다른 프로그램');
   });
 
   it('keeps user-facing hub copy in valid UTF-8 Korean', () => {

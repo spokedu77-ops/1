@@ -76,13 +76,18 @@ describe('official SPOMOVE runtime contract', () => {
     const source = read('app/spokedu-master/spomove/session/EngineRouter.tsx');
     expect(source).not.toMatch(/mode === '(memory|flash|pattern|diagonal|gonogo|taskswitch)'/);
     expect(source).toContain('variant="flow"');
+    expect(source).toContain('initialLevel={level}');
+    expect(source).toContain("level === 2 && !(flowFeatures ?? []).includes('colorGate')");
+    expect(source).toContain('flowFeatures: resolvedFlowFeatures');
+    expect(source).toContain("camouflagePlacement?: 'center' | 'variant'");
+    expect(source).toContain("placementMode={camouflagePlacement ?? 'center'}");
   });
 
   it('does not consume legacy or remote preset sources in the session', () => {
     const source = read('app/spokedu-master/spomove/session/page.tsx');
 
     expect(source).not.toMatch(/SESSION_CUES|OFFICIAL_SPOMOVE_PRESETS|USER_SPOMOVE_PRESETS_KEY/);
-    expect(source).not.toMatch(/spomove-presets|engineMode|requestedLevel|requestedDuration|requestedSpeed/);
+    expect(source).not.toMatch(/spomove-presets|requestedLevel|requestedDuration|requestedSpeed/);
     expect(source).not.toMatch(/\bdrills\b|loadDrills|drills\[0\]/);
     expect(source).toContain('지원하지 않는 SPOMOVE 활동입니다.');
     expect(source).not.toContain("fetch('/api/spokedu-master/access'");

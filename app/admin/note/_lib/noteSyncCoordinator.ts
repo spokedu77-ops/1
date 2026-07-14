@@ -20,7 +20,16 @@ import {
   excludeBlocksPendingSoftDelete,
   persistOpToPushItems,
 } from './notePersistOpToBlockOps';
-import { buildKnownBlockIdsForPush, partitionOutboundForSafePush } from './noteSyncGuards';
+import {
+  contentHasMediaPresence,
+  decideRegressiveContentOp,
+  readAuthorityBlockText,
+} from './noteAuthority';
+import { buildKnownBlockIdsForPush,
+  isPureIdentityLeaveOrRelocationPush,
+  outboundHasPureIdentityLeaveOrRelocation,
+  partitionOutboundForSafePush,
+} from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
@@ -40,29 +49,42 @@ const LEADER_CHANNEL = 'spm-note-sync-leader-v1';
 const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 const MAX_PUSH_ATTEMPTS = 8;
 
-function readBlockBodyText(content: unknown): string {
-  if (!content || typeof content !== 'object') return '';
-  const text = (content as Record<string, unknown>).text;
-  return typeof text === 'string' ? text : '';
-}
-
-/** 스토어/로컬에 본문이 있는데 patch가 비우려 할 때 push 차단 — reconcile 레이스 서버 wipe 방지 */
+/** Authority: clear intent는 push, store에 본문이 남은 stale empty patch만 drop */
 function filterRegressivePatchContentOps(
   ops: NoteBlockOpPushItem[],
   blocks: NoteBlock[],
-): NoteBlockOpPushItem[] {
+): { safeReady: NoteBlockOpPushItem[]; dropStaleIds: string[] } {
   const blocksById = new Map(blocks.map((block) => [block.id, block]));
-  return ops.filter((op) => {
-    if (op.opType !== 'patch_content') return true;
+  const safeReady: NoteBlockOpPushItem[] = [];
+  const dropStaleIds: string[] = [];
+  for (const op of ops) {
+    if (op.opType !== 'patch_content') {
+      safeReady.push(op);
+      continue;
+    }
     const payload = op.payload;
-    if (payload.opType !== 'patch_content') return true;
+    if (payload.opType !== 'patch_content') {
+      safeReady.push(op);
+      continue;
+    }
     const block = blocksById.get(payload.blockId);
-    if (!block) return true;
-    const currentText = readBlockBodyText(block.content);
-    const patchText = readBlockBodyText(payload.content);
-    if (currentText.length > 0 && patchText.length === 0) return false;
-    return true;
-  });
+    const localText = block ? readAuthorityBlockText(block.content) : '';
+    const patchText = readAuthorityBlockText(payload.content);
+    const decision = decideRegressiveContentOp({
+      localText,
+      patchText,
+      localHasMediaPresence: block
+        ? contentHasMediaPresence(block.content)
+        : false,
+      patchHasMediaPresence: contentHasMediaPresence(payload.content),
+    });
+    if (decision === 'drop_stale') {
+      dropStaleIds.push(op.clientOpId);
+      continue;
+    }
+    safeReady.push(op);
+  }
+  return { safeReady, dropStaleIds };
 }
 
 export type NoteSyncCoordinatorCallbacks = {
@@ -174,6 +196,9 @@ export class NoteSyncCoordinator {
 
   private leaderLockRelease: (() => void) | null = null;
 
+  /** 리더 미선출 시 enqueue가 남긴 flush — lock/else에서 소진 */
+  private pendingPushDelayMs: number | null = null;
+
   private blocks: NoteBlock[] = [];
 
   private lastAppliedSeq = 0;
@@ -249,20 +274,57 @@ export class NoteSyncCoordinator {
   }
 
   async enqueuePersistOp(op: NotePersistOp, options?: { immediate?: boolean }): Promise<void> {
+    if (this.disposed) {
+      const live = getNoteSyncCoordinator(this.documentId, this.callbacks);
+      if (live !== this) {
+        await live.enqueuePersistOp(op, options);
+        return;
+      }
+    }
     const items = persistOpToPushItems(op);
     if (items.length === 0) return;
-    // 로컬 optimistic 상태는 pipeline.dispatch가 담당 — coordinator는 outbound만 적재
     await appendOutboundOps(this.documentId, items);
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
     const delay = options?.immediate || op.type !== 'patchContent'
       ? STRUCTURE_PUSH_DEBOUNCE_MS
       : CONTENT_PUSH_DEBOUNCE_MS;
-    if (this.isLeader) {
-      this.schedulePush(delay);
-    } else {
-      this.requestLeaderFlush();
+    this.pendingPushDelayMs = delay;
+    this.startLeaderElection();
+    this.isLeader = true;
+    if (options?.immediate || op.type !== 'patchContent') {
+      await this.flushPush();
+      if (await this.hasPendingOutbound()) {
+        this.schedulePush(250);
+        this.scheduleOutboundFlushWatchdog(250);
+      }
+      return;
     }
+    this.schedulePush(delay);
+    this.scheduleOutboundFlushWatchdog(delay);
+  }
+
+  isDisposedPublic(): boolean {
+    return this.disposed;
+  }
+
+  private outboundFlushWatchdog: ReturnType<typeof setTimeout> | null = null;
+
+  /** Playwright 등 locks 부재·선출 레이스에서도 outbound가 무기한 남는 것을 막는다 */
+  private scheduleOutboundFlushWatchdog(delayMs: number): void {
+    if (this.outboundFlushWatchdog) clearTimeout(this.outboundFlushWatchdog);
+    this.outboundFlushWatchdog = setTimeout(() => {
+      this.outboundFlushWatchdog = null;
+      if (this.disposed) return;
+      void (async () => {
+        if (!(await this.hasPendingOutbound())) return;
+        if (!this.isLeader) {
+          this.becomeLeaderAndFlush();
+          return;
+        }
+        this.schedulePush(0);
+      })();
+    }, Math.max(delayMs, 100) + 50);
   }
 
   schedulePull(): void {
@@ -287,6 +349,8 @@ export class NoteSyncCoordinator {
   dispose(): void {
     this.disposed = true;
     if (this.pushTimer) clearTimeout(this.pushTimer);
+    if (this.outboundFlushWatchdog) clearTimeout(this.outboundFlushWatchdog);
+    this.outboundFlushWatchdog = null;
     if (this.leaderChannel && this.leaderListener) {
       this.leaderChannel.removeEventListener('message', this.leaderListener);
       this.leaderChannel.close();
@@ -316,7 +380,16 @@ export class NoteSyncCoordinator {
   }
 
   private async flushPush(): Promise<void> {
-    if (!this.isLeader || this.disposed) return;
+    if (this.disposed) {
+      const live = coordinators.get(this.documentId);
+      if (live && live !== this && !live.disposed) {
+        await live.flushPush();
+      }
+      return;
+    }
+    if (!this.isLeader) {
+      this.isLeader = true;
+    }
     if (this.isPushing) {
       this.pushRequested = true;
       return;
@@ -346,14 +419,22 @@ export class NoteSyncCoordinator {
   }
 
   private async pushBatchOnce(): Promise<boolean> {
-    if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
-      this.schedulePush(2000);
-      return false;
+    const isActiveDocument =
+      useNoteBlockStore.getState().activeDocumentId === this.documentId;
+
+    // activeDocument는 Project(store 쓰기)용. identityLeave·relocation Outbound drain은 막지 않는다.
+    if (!isActiveDocument) {
+      const pending = await listOutboundOps(this.documentId);
+      const pendingItems = pending.map(({ documentId: _d, createdAt: _c, ...op }) => op);
+      if (!outboundHasPureIdentityLeaveOrRelocation(pendingItems)) {
+        this.schedulePush(2000);
+        return false;
+      }
     }
 
     const storeMerged = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    if (storeMerged.length > 0) {
+    if (isActiveDocument && storeMerged.length > 0) {
       this.blocks = dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeMerged));
     }
 
@@ -366,22 +447,30 @@ export class NoteSyncCoordinator {
       if (outbound.length === 0) return false;
 
       const coalesced = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
+      if (!isActiveDocument && !outboundHasPureIdentityLeaveOrRelocation(coalesced)) {
+        this.schedulePush(2000);
+        return false;
+      }
       const knownIds = buildKnownBlockIdsForPush(this.blocks, coalesced);
-      const { ready, deferred } = partitionOutboundForSafePush(coalesced, knownIds);
-      const safeReady = filterRegressivePatchContentOps(ready, this.blocks);
-      const blockedRegressiveIds = ready
-        .filter((op) => !safeReady.some((safe) => safe.clientOpId === op.clientOpId))
-        .map((op) => op.clientOpId);
-      if (blockedRegressiveIds.length > 0) {
-        // 서버 wipe 방지용으로 차단된 patch는 outbound에서 제거 — 무한 재시도 방지
+      let { ready, deferred } = partitionOutboundForSafePush(coalesced, knownIds);
+      if (!isActiveDocument) {
+        const leaveReady = ready.filter(isPureIdentityLeaveOrRelocationPush);
+        const contentDeferred = ready.filter((item) => !isPureIdentityLeaveOrRelocationPush(item));
+        ready = leaveReady;
+        deferred = [...contentDeferred, ...deferred];
+      }
+      const { safeReady, dropStaleIds } = filterRegressivePatchContentOps(ready, this.blocks);
+      if (dropStaleIds.length > 0) {
+        // Authority drop_stale만 outbound에서 제거 — clear intent는 절대 여기서 지우지 않음
         // eslint-disable-next-line no-await-in-loop
-        await removeOutboundOps(blockedRegressiveIds);
+        await removeOutboundOps(dropStaleIds);
       }
 
       if (safeReady.length === 0) {
         // ready가 없으면 while을 즉시 돌리지 않는다 — schedulePush로만 재시도.
         // true를 반환하면 flushPush의 while이 ops/state만 폭주한다.
-        if (deferred.length > 0) this.schedulePush(500);
+        // inactive일 때 content만 deferred면 leave drain 후 ops/state 폴링 스피너를 돌리지 않는다.
+        if (deferred.length > 0 && isActiveDocument) this.schedulePush(500);
         return false;
       }
 
@@ -496,6 +585,13 @@ export class NoteSyncCoordinator {
 
   private leaderElectionStarted = false;
 
+  private becomeLeaderAndFlush(): void {
+    this.isLeader = true;
+    const delay = this.pendingPushDelayMs ?? STRUCTURE_PUSH_DEBOUNCE_MS;
+    this.pendingPushDelayMs = null;
+    this.schedulePush(delay);
+  }
+
   private startLeaderElection(): void {
     if (this.leaderElectionStarted) return;
     this.leaderElectionStarted = true;
@@ -528,6 +624,10 @@ export class NoteSyncCoordinator {
       this.leaderChannel.addEventListener('message', this.leaderListener);
     }
 
+    // Web Locks는 환경마다 즉시 grant되지 않거나(또는 잔여 lock) soft_delete outbound가
+    // 무기한 남을 수 있다. clientOpId unique로 중복 push는 안전하므로 즉시 self-elect.
+    this.becomeLeaderAndFlush();
+
     const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
     if (locks && typeof locks.request === 'function') {
       void locks.request(
@@ -540,13 +640,10 @@ export class NoteSyncCoordinator {
           }
           this.isLeader = true;
           this.leaderLockRelease = resolve;
-          this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);
         }),
       ).catch(() => {
         this.isLeader = true;
       });
-    } else {
-      this.isLeader = true;
     }
   }
 
@@ -569,9 +666,12 @@ export function getNoteSyncCoordinator(
   callbacks: NoteSyncCoordinatorCallbacks,
 ): NoteSyncCoordinator {
   const existing = coordinators.get(documentId);
-  if (existing) {
+  if (existing && !existing.isDisposedPublic()) {
     existing.updateCallbacks(callbacks);
     return existing;
+  }
+  if (existing) {
+    coordinators.delete(documentId);
   }
   const coordinator = new NoteSyncCoordinator(documentId, callbacks);
   coordinators.set(documentId, coordinator);
@@ -582,4 +682,15 @@ export function disposeNoteSyncCoordinator(documentId: string): void {
   const existing = coordinators.get(documentId);
   existing?.dispose();
   coordinators.delete(documentId);
+}
+
+/** Strict Mode: remount의 새 coordinator를 옛 pipeline dispose가 죽이지 않게 인스턴스 가드 */
+export function disposeNoteSyncCoordinatorInstance(
+  documentId: string,
+  expected: NoteSyncCoordinator,
+): void {
+  expected.dispose();
+  if (coordinators.get(documentId) === expected) {
+    coordinators.delete(documentId);
+  }
 }
