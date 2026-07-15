@@ -33,6 +33,14 @@ describe('planDocumentParentPatches', () => {
     expect(patches).toEqual([{ id: 'child', parent_id: 'right' }]);
   });
 
+  it('ignores self-referential page blocks and clears parent_id === id', () => {
+    const docs = [{ id: 'orphan', parent_id: 'orphan' }];
+    const patches = planDocumentParentPatches(docs, [
+      { document_id: 'orphan', content: { page_document_id: 'orphan', title: 'Self' } },
+    ]);
+    expect(patches).toEqual([{ id: 'orphan', parent_id: null }]);
+  });
+
   it('applyDocumentParentPatchesInMemory merges patches', () => {
     const docs = [
       { id: 'a', parent_id: null },

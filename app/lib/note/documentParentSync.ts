@@ -27,6 +27,8 @@ export function buildParentByChildFromPageBlocks(
   for (const block of pageBlocks) {
     const childId = getChildDocumentIdFromPageContent(block.content);
     if (!childId) continue;
+    // page 블록이 자기 문서 안에 있으면 parent 후보로 쓰지 않는다 (사이드바 고아·자기참조 방지)
+    if (childId === block.document_id) continue;
     if (docIds && !docIds.has(childId)) continue;
     if (!parentByChild.has(childId)) {
       parentByChild.set(childId, block.document_id);
@@ -50,8 +52,13 @@ export function planDocumentParentPatches<T extends DocRow>(
   const patches: Array<{ id: string; parent_id: string | null }> = [];
 
   for (const doc of documents) {
+    // 이미 parent_id === id 인 손상 행은 null로 풀어 사이드바에서 고아 처리
+    if (doc.parent_id === doc.id) {
+      patches.push({ id: doc.id, parent_id: null });
+      continue;
+    }
     const canonicalParent = parentByChild.get(doc.id) ?? null;
-    if (canonicalParent) {
+    if (canonicalParent && canonicalParent !== doc.id) {
       if (doc.parent_id !== canonicalParent) {
         patches.push({ id: doc.id, parent_id: canonicalParent });
       }

@@ -96,4 +96,20 @@ describe('buildBlockForestTransferCommand', () => {
       { id: 'toggle-child', document_id: 'target' },
     ]);
   });
+
+  it('refuses to transfer a page link into the document it points to', () => {
+    const page: NoteBlock = {
+      ...block('page-link', null, 0),
+      type: 'page',
+      content: { title: 'Child', page_document_id: 'child-doc' },
+    };
+    const other = block('other', null, 1);
+    const command = buildBlockForestTransferCommand(
+      [page, other],
+      ['page-link'],
+      'child-doc',
+    );
+    expect(command.movedIds).toEqual([]);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['page-link', 'other']);
+  });
 });

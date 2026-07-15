@@ -442,6 +442,10 @@ export function useNoteDragDrop(options: {
         [movingBlock.id],
         targetDocumentId,
       );
+      if (command.movedIds.length === 0) {
+        setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
+        return;
+      }
       await runPersistedBlockTransfer(previousBlocks, command, {
         logLabel: '[Note] moveBlockToDoc',
         errorMessage: '블록 이동 실패',
@@ -477,13 +481,17 @@ export function useNoteDragDrop(options: {
                 (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
               );
               const roots = topLevelSelectedDragIds(ordered, prevBlocks);
+              const command = buildBlockForestTransferCommand(
+                prevBlocks,
+                roots,
+                targetDocId,
+              );
+              if (command.movedIds.length === 0) {
+                setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
+                return;
+              }
               try {
                 await commitNoteDocumentBeforeLeave();
-                const command = buildBlockForestTransferCommand(
-                  prevBlocks,
-                  roots,
-                  targetDocId,
-                );
                 await runPersistedBlockTransfer(prevBlocks, command, {
                   logLabel: '[Note] moveBlockGroupToSubPage',
                   errorMessage: '하위 페이지로 블록 묶음 이동 실패',
@@ -547,13 +555,17 @@ export function useNoteDragDrop(options: {
           ? pageInsideTarget.content.page_document_id.trim()
           : '';
       if (targetDocId && targetDocId !== selectedId) {
+        const command = buildBlockForestTransferCommand(
+          prevBlocks,
+          [moving.id],
+          targetDocId,
+        );
+        if (command.movedIds.length === 0) {
+          setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
+          return;
+        }
         try {
           await commitNoteDocumentBeforeLeave();
-          const command = buildBlockForestTransferCommand(
-            prevBlocks,
-            [moving.id],
-            targetDocId,
-          );
           await runPersistedBlockTransfer(prevBlocks, command, {
             logLabel: '[Note] moveBlockToSubPage',
             errorMessage: '하위 페이지로 블록 이동 실패',

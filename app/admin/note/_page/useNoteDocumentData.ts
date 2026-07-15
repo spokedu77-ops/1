@@ -103,7 +103,7 @@ export function useNoteDocumentData(options: {
   const childrenByParent = useMemo(() => {
     const map = new Map<string, NoteDocument[]>();
     for (const doc of filteredDocuments) {
-      if (!doc.parent_id) continue;
+      if (!doc.parent_id || doc.parent_id === doc.id) continue;
       const list = map.get(doc.parent_id) ?? [];
       list.push(doc);
       map.set(doc.parent_id, list);
@@ -119,7 +119,9 @@ export function useNoteDocumentData(options: {
     return map;
   }, [filteredDocuments]);
   const rootDocuments = useMemo(
-    () => otherDocuments.filter((d) => !d.parent_id || !docMap.has(d.parent_id)),
+    () => otherDocuments.filter(
+      (d) => !d.parent_id || d.parent_id === d.id || !docMap.has(d.parent_id),
+    ),
     [otherDocuments, docMap],
   );
 

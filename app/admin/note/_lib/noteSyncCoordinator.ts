@@ -315,10 +315,6 @@ export class NoteSyncCoordinator {
     this.isLeader = true;
     if (options?.immediate || op.type !== 'patchContent') {
       await this.flushPush();
-      if (await this.hasPendingOutbound()) {
-        this.schedulePush(250);
-        this.scheduleOutboundFlushWatchdog(250);
-      }
       return;
     }
     this.schedulePush(delay);
@@ -491,10 +487,9 @@ export class NoteSyncCoordinator {
       }
 
       if (safeReady.length === 0) {
-        // ready가 없으면 while을 즉시 돌리지 않는다 — schedulePush로만 재시도.
-        // true를 반환하면 flushPush의 while이 ops/state만 폭주한다.
-        // inactive일 때 content만 deferred면 leave drain 후 ops/state 폴링 스피너를 돌리지 않는다.
-        if (deferred.length > 0 && isActiveDocument) this.schedulePush(500);
+        // 상태 변화 없이 deferred만 남았으면 서버를 반복 조회하지 않는다.
+        // 새 op enqueue · realtime pull · 문서 재진입이 다음 재시도 트리거다.
+        void deferred;
         return false;
       }
 
