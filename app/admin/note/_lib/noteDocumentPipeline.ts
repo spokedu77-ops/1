@@ -26,7 +26,7 @@ import {
   traceSnapshotDecision,
   type SnapshotTraceOrigin,
 } from './noteFlickerTrace';
-import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
+
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import type { NoteBlock } from './types';
 
@@ -37,7 +37,10 @@ export type NoteDocumentPipelineCallbacks = {
   triggerSave: () => void;
 };
 
-function buildCommandContext(documentId: string) {
+function buildCommandContext(
+  documentId: string,
+  coordinator: NoteSyncCoordinator | null,
+) {
   const store = useNoteBlockStore.getState();
   const storeContentById: Record<string, Record<string, unknown> | undefined> = {};
   for (const [id, block] of Object.entries(store.byId)) {
@@ -50,6 +53,7 @@ function buildCommandContext(documentId: string) {
     activeBlockId: store.activeEditor?.blockId ?? null,
     storeContentById,
     pendingLeaveIds: getStructuralExcludeIds(documentId),
+    hasUnpublishedTopology: coordinator?.hasUnpublishedTopologyAuthority() ?? false,
   };
 }
 
@@ -94,6 +98,11 @@ export class NoteDocumentPipeline {
     this.initQueue();
   }
 
+  /** 구조는 coordinator/incoming, content만 store에서 병합 */
+  private blocksWithStoreContent(blocks: NoteBlock[]): NoteBlock[] {
+    return mergeBlocksWithStoreContent(blocks);
+  }
+
   private dispatchSnapshotIfChanged(
     blocks: NoteBlock[],
     origin: SnapshotTraceOrigin,
@@ -102,16 +111,9 @@ export class NoteDocumentPipeline {
     if (useNoteBlockStore.getState().activeDocumentId !== this.documentId) {
       return;
     }
-    const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
-      .filter((block) => block.document_id === this.documentId);
-    // emptyConfirmed면 store로 다시 채우지 않는다 (의도적 빈 문서 Authority)
-    if (!emptyConfirmed && storeForDoc.length > 0) {
-      const mergedStore = mergeBlocksWithStoreContent(storeForDoc);
-      this.coordinator?.setBlocks(mergedStore);
-      blocks = mergedStore;
-    }
+    const blocksWithContent = this.blocksWithStoreContent(blocks);
     const current = useNoteBlockStore.getState().getBlocksArray();
-    const reason = describeSnapshotDiff(current, blocks, this.documentId);
+    const reason = describeSnapshotDiff(current, blocksWithContent, this.documentId);
     if (reason === 'equivalent') {
       traceSnapshotDecision(origin, 'skip', reason, this.documentId);
       return;
@@ -119,7 +121,7 @@ export class NoteDocumentPipeline {
     traceSnapshotDecision(origin, 'dispatch', reason, this.documentId);
     this.dispatch({
       type: 'syncSnapshot',
-      blocks,
+      blocks: blocksWithContent,
       ...(emptyConfirmed ? { emptyConfirmed: true } : {}),
     });
   }
@@ -168,8 +170,15 @@ export class NoteDocumentPipeline {
     }
     const store = useNoteBlockStore.getState();
     const previous = store.getBlocksArray();
-    const ctx = buildCommandContext(this.documentId);
+    const ctx = buildCommandContext(this.documentId, this.coordinator);
     const { blocks } = applyNoteCommand(previous, command, ctx);
+    if (
+      command.type === 'replaceBlocks'
+      || command.type === 'applyPatches'
+    ) {
+      markNoteLocalSave(this.documentId);
+      this.coordinator?.markTopologyIntent();
+    }
     // Project exclude는 store write SSOT (hydrate/replace/sync) — dispatch에서 이중 필터하지 않음
     commitBlocksToStore(blocks, command);
     const next = useNoteBlockStore.getState().getBlocksArray();
@@ -200,10 +209,6 @@ export class NoteDocumentPipeline {
     const next = useNoteBlockStore.getState().getBlocksArray();
     const forDoc = blocksForDocument(next, this.documentId);
     this.coordinator?.setBlocks(forDoc.length > 0 ? forDoc : next);
-    rememberNoteDocumentBlocks(
-      this.documentId,
-      mergeBlocksWithStoreContent(forDoc.length > 0 ? forDoc : next),
-    );
   }
 
   clearContentPatch(blockId: string): void {
@@ -254,12 +259,11 @@ export class NoteDocumentPipeline {
     }
     const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    if (!options?.emptyConfirmed && storeForDoc.length > 0) {
-      coordinator.setBlocks(mergeBlocksWithStoreContent(storeForDoc));
-    }
-    const blocks = options?.emptyConfirmed
-      ? initialBlocks.filter((block) => block.document_id === this.documentId)
-      : coordinator.getBlocks();
+    const blocks = this.blocksWithStoreContent(
+      options?.emptyConfirmed
+        ? initialBlocks.filter((block) => block.document_id === this.documentId)
+        : coordinator.getBlocks(),
+    );
     if (storeForDoc.length === 0 || options?.emptyConfirmed) {
       const reason = describeSnapshotDiff(
         options?.emptyConfirmed ? storeForDoc : [],
@@ -325,7 +329,10 @@ export class NoteDocumentPipeline {
     patches: NoteBlockFieldPatch[],
     deleteIds: string[] = [],
   ): Promise<void> {
-    await this.queue?.enqueue({ type: 'blockTransaction', patches, deleteIds });
+    if (!this.queue) {
+      throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
+    }
+    await this.queue.enqueue({ type: 'blockTransaction', patches, deleteIds });
   }
 
   async persistRestoreBlock(blockId: string): Promise<NoteBlock[]> {
@@ -360,6 +367,10 @@ export class NoteDocumentPipeline {
 
   async hasPendingOutbound(): Promise<boolean> {
     return this.coordinator?.hasPendingOutbound() ?? false;
+  }
+
+  hasUnpublishedTopologySync(): boolean {
+    return this.coordinator?.hasUnpublishedTopologyAuthority() ?? false;
   }
 
   isOplogEnabled(): boolean {

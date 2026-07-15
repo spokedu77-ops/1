@@ -147,6 +147,17 @@ export function useNotePageOrchestration(): NotePageContextValue {
     syncDocumentParentsFromBlocks(docSelectedId, nextBlocks);
   }, [docSelectedId, setDocDocuments, syncDocumentParentsFromBlocks]);
 
+  const handleAfterBlocksChanged = useCallback((nextBlocks: NoteBlock[]) => {
+    if (!docSelectedId) return;
+    if (!nextBlocks.some((block) => block.type === 'page' && block.document_id === docSelectedId)) {
+      return;
+    }
+    syncDocumentParentsFromBlocks(docSelectedId, nextBlocks);
+  }, [docSelectedId, syncDocumentParentsFromBlocks]);
+
+  const afterBlocksChangedRef = useRef(handleAfterBlocksChanged);
+  afterBlocksChangedRef.current = handleAfterBlocksChanged;
+
   const blockData = useNoteBlockData({
     selectedId: docData.selectedId,
     docTab,
@@ -264,6 +275,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     noteUndo,
     selectedBlockIdsRef,
     documentEngine: blockData.documentEngine,
+    onAfterBlocksChanged: (nextBlocks) => afterBlocksChangedRef.current(nextBlocks),
   });
 
   const docActions = useNoteDocumentActions({
@@ -331,6 +343,7 @@ export function useNotePageOrchestration(): NotePageContextValue {
     persistBlockReparent: dragDrop.persistBlockReparent,
     documentEngine: blockData.documentEngine,
     onAfterBlocksRemoved: handleAfterBlocksRemoved,
+    onAfterBlocksChanged: handleAfterBlocksChanged,
   });
 
   const selection = useNoteBlockSelection({

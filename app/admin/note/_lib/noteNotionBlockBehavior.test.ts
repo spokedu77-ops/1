@@ -57,6 +57,16 @@ describe('resolveInlineBlockEnterAction (todo·text)', () => {
     })).toEqual({ kind: 'outdent' });
   });
 
+  it('empty todo with listNestLevel outdents nest before parent', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'todo',
+      text: '',
+      parentBlockId: null,
+      listNestLevel: 2,
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'outdent' });
+  });
+
   it('empty root todo Enter converts to plain text', () => {
     expect(resolveInlineBlockEnterAction({
       followType: 'todo',

@@ -17,9 +17,9 @@ import {
   buildColorGateInstruction,
   COLOR_GATE_POSE_LABELS,
   preloadColorGatePoseImages,
+  type ColorGatePoseKey,
   type GateColorId,
 } from './engine/modules/colorGateGuides';
-import type { FlowModuleKey } from './engine/modules/flowModules';
 
 interface FlowGameClientProps {
   stages:            FlowStageConfig[];
@@ -81,7 +81,8 @@ export default function FlowGameClient({
   /** retry 트리거 — 증가할 때마다 엔진 useEffect가 재실행되어 새 엔진을 생성한다 */
   const [initKey,       setInitKey]      = useState(0);
   const [gateColorId,   setGateColorId]  = useState<GateColorId | null>(null);
-  const [gateAction,    setGateAction]   = useState<FlowModuleKey | null>(null);
+  const [gatePose,      setGatePose]     = useState<ColorGatePoseKey | null>(null);
+  const [gatePassCount, setGatePassCount] = useState(0);
   const mountedRef   = useRef(true);
   /** 현재 엔진 init 시점의 bgmPath 캡처 — 이후 변경 시 loadBgmLate만 호출 (더블스타트 방지) */
   const engineBgmRef = useRef<string | undefined>(undefined);
@@ -135,18 +136,23 @@ export default function FlowGameClient({
             const st = stages[idx];
             if (!st?.isColorGate) {
               setGateColorId(null);
-              setGateAction(null);
+              setGatePose(null);
             }
           },
           onColorGateStage: () => {
             if (!mountedRef.current) return;
             setGateColorId(null);
-            setGateAction(null);
+            setGatePose(null);
+            setGatePassCount(0);
           },
-          onColorGateColor: (gateColorId, action) => {
+          onColorGateColor: (gateColorId, pose) => {
             if (!mountedRef.current) return;
             setGateColorId(gateColorId);
-            setGateAction(action ?? null);
+            setGatePose(pose ?? null);
+          },
+          onColorGatePassCount: (count) => {
+            if (!mountedRef.current) return;
+            setGatePassCount(count);
           },
           onTimerUpdate:  (rem, prog) => {
             if (!mountedRef.current) return;
@@ -223,19 +229,17 @@ export default function FlowGameClient({
   const currentStage = stages[stageIdx];
 
   const colorGateHud = currentStage?.isColorGate
-    && currentStage.colorGateAction
     && gateColorId
-    && gateAction
+    && gatePose
     && (phase === 'playing' || phase === 'stage-intro')
     ? (
       <ColorGateHud
         gateColorId={gateColorId}
-        step={currentStage.colorGateStep ?? 1}
-        totalSteps={currentStage.colorGateTotal ?? 1}
         cueWord={buildColorGateCue(gateColorId)}
-        shortInstruction={buildColorGateInstruction(gateColorId, gateAction)}
-        poseLabel={COLOR_GATE_POSE_LABELS[gateAction]}
+        shortInstruction={buildColorGateInstruction(gateColorId, gatePose)}
+        poseLabel={COLOR_GATE_POSE_LABELS[gatePose]}
         remainingSec={phase === 'playing' ? timerSec : undefined}
+        passCount={gatePassCount}
       />
     )
     : null;
@@ -430,7 +434,7 @@ export default function FlowGameClient({
             letterSpacing: '0.5em', marginBottom: '0.6rem',
             animation: 'flowInstPop 0.4s ease-out',
           }}>
-            🏆 &nbsp;ALL CLEAR
+            🏆 &nbsp;활동 완료
           </p>
           <h2 style={{
             fontSize: 'clamp(3rem, 10vw, 5.5rem)', fontWeight: 900, color: '#fff',
@@ -442,13 +446,13 @@ export default function FlowGameClient({
             DIVE DONE!
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.45)', marginBottom: '1.6rem' }}>
-            {stats.stagesCompleted} / {stages.length} 스테이지 완료&nbsp;·&nbsp;{Math.round(stats.totalSec)}초
+            {stats.stagesCompleted} / {stages.length} 스테이지 진행 완료&nbsp;·&nbsp;{Math.round(stats.totalSec)}초
           </p>
 
-          {/* 스테이지별 달성 배지 */}
+          {/* 스테이지별 경험 배지 */}
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', maxWidth: 340, marginBottom: '2.2rem' }}>
             {stages.map((s, si) => {
-              const mod      = FLOW_MODULES[s.newModule];
+              const mod      = s.isColorGate ? FLOW_MODULES.colorGate : FLOW_MODULES[s.newModule];
               const done     = si < stats.stagesCompleted;
               return (
                 <span key={s.stageIndex} style={{

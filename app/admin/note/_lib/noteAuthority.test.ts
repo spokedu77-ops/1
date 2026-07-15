@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vitest';
 import {
   decideEmptySnapshotApply,
   decideRegressiveContentOp,
+  decideStructureReconcile,
   readAuthorityBlockText,
   shouldKeepLocalOverEmptyServerAuthority,
 } from './noteAuthority';
+import type { NoteBlock } from './types';
 
 describe('decideEmptySnapshotApply', () => {
   it('merges when incoming is non-empty', () => {
@@ -109,5 +111,49 @@ describe('shouldKeepLocalOverEmptyServerAuthority', () => {
       serverBlocks: [],
       pendingLeaveIds: new Set(['a']),
     })).toBe(false);
+  });
+});
+
+function topoBlock(
+  id: string,
+  order_index: number,
+): NoteBlock {
+  return {
+    id,
+    document_id: 'doc-1',
+    parent_block_id: null,
+    type: 'todo',
+    order_index,
+    content: { text: id, checked: false },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    version: 1,
+  };
+}
+
+describe('decideStructureReconcile', () => {
+  it('accepts incoming when no unpublished topology', () => {
+    expect(decideStructureReconcile({
+      localBlocks: [topoBlock('a', 0), topoBlock('b', 1)],
+      incomingBlocks: [topoBlock('b', 0), topoBlock('a', 1)],
+      hasUnpublishedTopology: false,
+    })).toBe('accept_incoming');
+  });
+
+  it('preserves local when unpublished topology would regress reorder', () => {
+    expect(decideStructureReconcile({
+      localBlocks: [topoBlock('a', 0), topoBlock('b', 1), topoBlock('c', 2)],
+      incomingBlocks: [topoBlock('c', 0), topoBlock('a', 1), topoBlock('b', 2)],
+      hasUnpublishedTopology: true,
+    })).toBe('preserve_local');
+  });
+
+  it('accepts incoming when structures already match despite unpublished topology', () => {
+    const blocks = [topoBlock('a', 0), topoBlock('b', 1)];
+    expect(decideStructureReconcile({
+      localBlocks: blocks,
+      incomingBlocks: blocks,
+      hasUnpublishedTopology: true,
+    })).toBe('accept_incoming');
   });
 });

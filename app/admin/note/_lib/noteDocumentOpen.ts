@@ -7,7 +7,6 @@ import { noteBlocksLoadPath } from './noteBlocksLoad';
 import { getReadyPrefetchedBlocks } from './noteDocumentBlocksPrefetch';
 import { traceApiEgress } from './noteFlickerTrace';
 import {
-  readRememberedNoteDocumentBlocks,
   rememberNoteDocumentBlocks,
 } from './noteDocumentBlocksCache';
 import {
@@ -16,7 +15,7 @@ import {
 } from './noteBlockStateMerge';
 import { shouldKeepLocalOverEmptyServerAuthority } from './noteAuthority';
 import { getStructuralExcludeIds } from './noteStructuralExcludeRegistry';
-import { readLocalDocument, readLocalDocumentMemory } from './noteLocalDb';
+import { readLocalDocumentMemory } from './noteLocalDb';
 import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import type { NoteBlock } from './types';
 
@@ -36,23 +35,6 @@ export type OpenNoteDocumentResult = {
   emptyConfirmed: boolean;
   toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'];
 };
-
-/**
- * Notion-style SWR: 세션/메모리 캐시만 즉시 표시.
- * IndexedDB hydrate는 open 시 별도 paint 하지 않음 — syncWithServer가 IDB를 읽는다.
- */
-export function paintInstantSnapshotFromCache(
-  documentId: string,
-  engine: NoteDocumentOpenEngine,
-  currentDocBlockCount: number,
-): boolean {
-  if (currentDocBlockCount > 0) return false;
-  const remembered = readRememberedNoteDocumentBlocks(documentId);
-  if (!remembered || remembered.length === 0) return false;
-  useNoteBlockStore.getState().setActiveDocumentId(documentId);
-  engine.replaceBlocks(remembered);
-  return true;
-}
 
 /** bootstrap → prefetch → network 순으로 서버 스냅샷 확보 */
 export async function fetchServerBlocksForOpen(
@@ -106,7 +88,6 @@ function finishOpenWithLocalBlocks(
   localBlocks: NoteBlock[],
   toggleMigration: ReturnType<typeof prepareLoadedNoteBlocks>['toggleMigration'],
 ): OpenNoteDocumentResult {
-  rememberNoteDocumentBlocks(documentId, localBlocks, { trustServer: false });
   return {
     blocks: localBlocks,
     emptyConfirmed: false,
@@ -116,7 +97,7 @@ function finishOpenWithLocalBlocks(
 
 /**
  * 서버 스냅샷 1회 적용 — op-log: coordinator merge + reducer syncSnapshot 단일 dispatch.
- * hook 레벨 remember union / finishOplogLoadFallback 없음.
+ * 문서 open 시 store mutation은 이 함수(→ syncWithServer)만 수행한다.
  */
 export async function applyOpenServerSnapshot(
   documentId: string,
@@ -182,88 +163,14 @@ export async function applyOpenServerSnapshot(
 }
 
 /**
- * 문서 전환 직후 첫 paint 전에 세션 캐시를 동기 적용 (스켈레톤 깜빡임 방지).
- * hook은 openNoteDocument와 함께만 호출 — merge/load 분기는 이 파일에만 둔다.
+ * 문서 전환 직후 UI 힌트만 반환 — store에 쓰지 않는다.
+ * open 완료 전 선행 replaceBlocks가 좀비/깜빡임의 근본 원인이었음.
  */
-function paintInstantBlocks(
-  documentId: string,
-  blocks: NoteBlock[],
-  engine: NoteDocumentOpenEngine,
-): void {
-  const { blocks: prepared } = prepareLoadedNoteBlocks(blocks);
-  const normalized = dedupeNoteBlocksById(prepared);
-  // patchContent는 activeDocumentId와 block.document_id 일치를 요구 — replace 전에 설정
-  useNoteBlockStore.getState().setActiveDocumentId(documentId);
-  engine.replaceBlocks(normalized);
-  rememberNoteDocumentBlocks(
-    documentId,
-    mergeBlocksWithStoreContent(normalized.filter((block) => block.document_id === documentId)),
-    { trustServer: true },
-  );
-}
-
-/** bootstrap API가 layout 전에 도착했을 때 동기 paint */
-export function paintBootstrapBlocksSync(
-  documentId: string,
-  blocks: NoteBlock[],
-  engine: NoteDocumentOpenEngine,
-): boolean {
-  const currentForDoc = engine.getBlocks().filter((block) => block.document_id === documentId);
-  if (currentForDoc.length > 0) return false;
-  if (blocks.length === 0) return false;
-  paintInstantBlocks(documentId, blocks, engine);
-  return true;
-}
-
 export function prepareNoteDocumentOpenSync(
   documentId: string,
-  engine: NoteDocumentOpenEngine,
-): { hasCache: boolean; emptyConfirmed: boolean } {
-  const remembered = readRememberedNoteDocumentBlocks(documentId);
-  if (remembered === null) {
-    const prefetched = getReadyPrefetchedBlocks(documentId);
-    if (prefetched && prefetched.length > 0) {
-      paintInstantBlocks(documentId, prefetched, engine);
-      return { hasCache: true, emptyConfirmed: false };
-    }
-    const localMemory = readLocalDocumentMemory(documentId);
-    if (localMemory && localMemory.blocks.length > 0) {
-      paintInstantBlocks(documentId, localMemory.blocks, engine);
-      return { hasCache: true, emptyConfirmed: false };
-    }
-    return { hasCache: false, emptyConfirmed: false };
-  }
-  if (remembered.length > 0) {
-    paintInstantSnapshotFromCache(documentId, engine, 0);
-    return { hasCache: true, emptyConfirmed: false };
-  }
-  const liveForDoc = selectDocumentBlocks(useNoteBlockStore.getState(), documentId);
-  if (liveForDoc.length > 0) {
-    useNoteBlockStore.getState().setActiveDocumentId(documentId);
-    return { hasCache: true, emptyConfirmed: false };
-  }
-  engine.replaceBlocks([]);
-  useNoteBlockStore.getState().setActiveDocumentId(documentId);
-  return { hasCache: true, emptyConfirmed: true };
-}
-
-/** session 캐시가 없을 때 IDB 스냅샷을 network 전에 paint */
-export async function paintInstantSnapshotFromLocalDb(
-  documentId: string,
-  engine: NoteDocumentOpenEngine,
-): Promise<boolean> {
-  const currentForDoc = engine.getBlocks().filter((block) => block.document_id === documentId);
-  if (currentForDoc.length > 0) return false;
-
-  const local = await readLocalDocument(documentId);
-  if (!local || local.blocks.length === 0) return false;
-
-  const forDoc = local.blocks.filter((block) => block.document_id === documentId);
-  if (forDoc.length === 0) return false;
-
-  useNoteBlockStore.getState().setActiveDocumentId(documentId);
-  engine.replaceBlocks(forDoc);
-  return true;
+): { hasLocalHint: boolean } {
+  const localMemory = readLocalDocumentMemory(documentId);
+  return { hasLocalHint: (localMemory?.blocks.length ?? 0) > 0 };
 }
 
 export type OpenNoteDocumentOptions = {
@@ -277,8 +184,7 @@ export type OpenNoteDocumentOptions = {
 
 /**
  * 문서 open 단일 경로.
- * 1) (동기) prepareNoteDocumentOpenSync — 세션 캐시 즉시 paint
- * 2) fetch blocks/load 3) applyOpenServerSnapshot 1회
+ * fetch blocks/load → applyOpenServerSnapshot 1회 (coordinator IDB+outbound merge 포함)
  */
 export async function openNoteDocument(
   options: OpenNoteDocumentOptions,
@@ -290,10 +196,6 @@ export async function openNoteDocument(
     prefetchedBlocks,
     shouldAbort,
   } = options;
-
-  if (!bootstrapBlocks) {
-    await paintInstantSnapshotFromLocalDb(documentId, engine);
-  }
 
   const serverBlocks = await fetchServerBlocksForOpen(documentId, {
     bootstrapBlocks,

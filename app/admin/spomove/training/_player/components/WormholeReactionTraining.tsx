@@ -69,7 +69,7 @@ function asteroidTravelFrames(lv: number): number {
 
 const WARN_MS = 1800;
 const WAVE_GAP_MIN_MS = 4000;
-const ASTEROID_EXPLOSION_SCALE_PROGRESS = 0.62;
+const ASTEROID_EXPLOSION_SCALE_PROGRESS = 0.8;
 
 function visibleWorldHeight(z: number, fovDeg: number): number {
   return 2 * z * Math.tan((fovDeg * Math.PI) / 180 / 2);
@@ -177,9 +177,6 @@ const css = `
 .wh-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
 .wh-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .wh-play{position:relative;flex:1;min-height:0;transition:transform .04s linear}
-.wh-vignette{position:absolute;inset:0;z-index:19;pointer-events:none;opacity:0;box-shadow:inset 0 0 min(28vw,180px) rgba(255,45,45,.5);transition:opacity .15s}
-.wh-vignette.active{opacity:1;animation:whpulse .42s ease-in-out infinite alternate}
-@keyframes whpulse{from{opacity:.3}to{opacity:.9}}
 .wh-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .wh-ui{position:absolute;inset:0;z-index:20;pointer-events:none}
 .wh-corner{position:absolute;font-size:clamp(14px,2.2vw,26px);font-weight:900;letter-spacing:.2em;text-transform:uppercase;pointer-events:none}
@@ -190,11 +187,6 @@ const css = `
 .wh-cross{position:absolute;background:rgba(255,255,255,.18)}
 .wh-cross-v{top:0;left:50%;width:2px;height:100%;transform:translateX(-50%)}
 .wh-cross-h{top:50%;left:0;width:100%;height:2px;transform:translateY(-50%)}
-.wh-warn{position:absolute;inset:0;z-index:22;background:rgba(255,0,0,.2);box-shadow:inset 0 0 200px rgba(255,0,0,.6);opacity:0;transition:opacity .1s;display:flex;justify-content:center;align-items:center;pointer-events:none}
-.wh-warn.blink{animation:whflash .3s infinite alternate}
-@keyframes whflash{0%{opacity:0}100%{opacity:1}}
-.wh-warn-text{font-size:clamp(20px,5vw,52px);font-weight:900;color:#fff;text-shadow:0 0 40px #ff0000,0 0 16px #ff0000;text-align:center;padding:0 24px;transform:scale(.5);opacity:0;transition:all .2s cubic-bezier(.175,.885,.32,1.275)}
-.wh-warn-text.show{transform:scale(1);opacity:1}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
@@ -203,9 +195,6 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
   const playRef = useRef<HTMLDivElement>(null);
   const hudTimeRef = useRef<HTMLDivElement>(null);
   const hudWavesRef = useRef<HTMLDivElement>(null);
-  const warnOverlayRef = useRef<HTMLDivElement>(null);
-  const warnTextRef = useRef<HTMLDivElement>(null);
-  const vignetteRef = useRef<HTMLDivElement>(null);
   const [warn, setWarn] = useState(false);
   const gRef = useRef<WhGame | null>(null);
   const onCompleteRef = useRef(onComplete);
@@ -452,24 +441,12 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
     const triggerObstacleWave = () => {
       if (!gRef.current?.running) return;
 
-      const overlay = warnOverlayRef.current;
-      const text = warnTextRef.current;
-      if (overlay) {
-        overlay.classList.add('blink');
-        overlay.style.opacity = '';
-      }
-      if (text) {
-        text.textContent = '⚠️ 소행성 밀도 감지! ⚠️';
-        text.classList.add('show');
-      }
-
       const cachedSpeed = g.warpSpeed;
       g.warpSpeed = g.warpSpeed * 0.6;
 
       g.shakeAmp = 1.35;
       g.fovKick = 10;
       g.warnActive = true;
-      vignetteRef.current?.classList.add('active');
 
       const safeZoneIndex = Math.floor(Math.random() * 4);
       g.waves++;
@@ -487,19 +464,11 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       g.waveTimer = setTimeout(() => {
         if (!gRef.current?.running) return;
 
-        if (overlay) {
-          overlay.classList.remove('blink');
-          overlay.style.opacity = '0';
-        }
-        if (text) text.textContent = '!! 회피 기동 !!';
-
         g.warpSpeed = Math.min(g.maxWarpSpeed, cachedSpeed * 1.05);
         g.shakeAmp = Math.max(g.shakeAmp, 0.85);
 
         setTimeout(() => {
-          text?.classList.remove('show');
           g.warnActive = false;
-          vignetteRef.current?.classList.remove('active');
         }, 1800);
       }, WARN_MS);
 
@@ -705,10 +674,6 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
           </div>
           <div className="wh-cross wh-cross-v" />
           <div className="wh-cross wh-cross-h" />
-        </div>
-        <div className="wh-vignette" ref={vignetteRef} aria-hidden />
-        <div className="wh-warn" ref={warnOverlayRef}>
-          <div className="wh-warn-text" ref={warnTextRef} />
         </div>
       </div>
     </div>

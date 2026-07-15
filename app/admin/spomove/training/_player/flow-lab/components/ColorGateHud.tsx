@@ -4,23 +4,21 @@ import { GATE_COLORS, type GateColorId } from '../engine/modules/colorGateGuides
 
 interface ColorGateHudProps {
   gateColorId: GateColorId;
-  step: number;
-  totalSteps?: number;
   cueWord: string;
   shortInstruction: string;
   poseLabel: string;
   remainingSec?: number;
+  passCount?: number;
 }
 
 /** 브릿지 위 3D 문과 함께 쓰는 상단 안내 HUD (화면 전체 배경 없음) */
 export default function ColorGateHud({
   gateColorId,
-  step,
-  totalSteps = 1,
   cueWord,
   shortInstruction,
   poseLabel,
   remainingSec,
+  passCount,
 }: ColorGateHudProps) {
   const color = GATE_COLORS[gateColorId];
 
@@ -47,7 +45,7 @@ export default function ColorGateHud({
         color: 'rgba(255,255,255,0.75)',
         marginBottom: 6,
       }}>
-        GATE {step} / {totalSteps}
+        COLOR GATE
       </p>
 
       <p style={{
@@ -64,6 +62,16 @@ export default function ColorGateHud({
       </p>
 
       <p style={{
+        fontSize: 'clamp(1rem, 3.5vw, 1.35rem)',
+        fontWeight: 900,
+        color: '#fff',
+        letterSpacing: '0.04em',
+        marginBottom: 6,
+      }}>
+        {poseLabel}
+      </p>
+
+      <p style={{
         fontSize: '0.82rem',
         fontWeight: 700,
         color: 'rgba(255,255,255,0.92)',
@@ -75,17 +83,19 @@ export default function ColorGateHud({
         {shortInstruction}
       </p>
 
-      <span style={{
-        fontSize: '0.68rem',
-        fontWeight: 800,
-        padding: '0.2rem 0.75rem',
-        borderRadius: '9999px',
-        border: `1px solid ${color.bg}`,
-        background: 'rgba(0,0,0,0.45)',
-        color: '#fff',
-      }}>
-        {poseLabel}
-      </span>
+      {passCount !== undefined && passCount > 0 ? (
+        <span style={{
+          fontSize: '0.68rem',
+          fontWeight: 800,
+          padding: '0.2rem 0.75rem',
+          borderRadius: '9999px',
+          border: '1px solid rgba(255,255,255,0.25)',
+          background: 'rgba(0,0,0,0.45)',
+          color: 'rgba(255,255,255,0.75)',
+        }}>
+          {passCount}회
+        </span>
+      ) : null}
 
       {remainingSec !== undefined ? (
         <span style={{

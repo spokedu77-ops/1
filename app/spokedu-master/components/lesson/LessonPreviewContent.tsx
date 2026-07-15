@@ -31,7 +31,7 @@ export function LessonPreviewContent({
   onPlaybackStarted?: () => void;
 }) {
   const model = buildLessonDisplayModel(program);
-  const previewEquipment = locked ? [] : model.equipment.slice(0, 6);
+  const previewEquipment = locked ? [] : model.equipment.slice(0, 3);
   const previewRules = locked ? [] : model.activityMethod.slice(0, 3);
   const previewScript = locked ? '' : model.previewCoachScript;
   const hasSummaryContent =
@@ -47,15 +47,6 @@ export function LessonPreviewContent({
         <LessonTitle title={model.title} badges={badges} />
         {meta.length > 0 ? (
           <p className="mt-1 truncate text-[12px] font-bold text-slate-500">{meta.join(' · ')}</p>
-        ) : null}
-        {model.tags.length > 0 ? (
-          <div className="mt-2 flex max-h-6 gap-1.5 overflow-hidden">
-            {model.tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-600">
-                {tag}
-              </span>
-            ))}
-          </div>
         ) : null}
       </div>
 
@@ -92,7 +83,7 @@ export function LessonPreviewContent({
               {previewEquipment.length > 0 ? (
                 <section>
                   <p className="sr-only">핵심 준비물</p>
-                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">준비물</h3>
+                  <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">대표 준비물</h3>
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {previewEquipment.map((item) => (
                       <span

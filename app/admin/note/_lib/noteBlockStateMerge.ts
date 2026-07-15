@@ -88,36 +88,61 @@ export function resolveBlockTextCaretOffset(block: NoteBlock): number {
   return text.length;
 }
 
-/** reconcile 로드 결과를 병합 — 편집 중 content는 스토어 우선, 구조·신규 블록은 서버 반영 */
+export type MergeReconciledBlocksOptions = {
+  /** 기본 incoming — 미ack topology 시 local로 reorder 보호 */
+  structureAuthority?: 'local' | 'incoming';
+};
+
+/** reconcile 로드 결과를 병합 — 편집 중 content는 스토어 우선, 구조는 authority에 따름 */
 export function mergeReconciledBlocks(
-  _currentBlocks: NoteBlock[],
+  localBlocks: NoteBlock[],
   reconciledBlocks: NoteBlock[],
+  options?: MergeReconciledBlocksOptions,
 ): NoteBlock[] {
+  const structureAuthority = options?.structureAuthority ?? 'incoming';
+  const structuralBase = structureAuthority === 'local' ? localBlocks : reconciledBlocks;
+  const incomingById = new Map(reconciledBlocks.map((block) => [block.id, block]));
   const store = useNoteBlockStore.getState();
   const activeId = store.activeEditor?.blockId;
   const activeDocumentId = store.activeDocumentId;
 
-  const merged = reconciledBlocks.map((block) => {
+  const merged = structuralBase.map((block) => {
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
+    const incoming = incomingById.get(block.id);
     const fromStore = store.byId[block.id];
-    if (!fromStore?.content) return block;
+    if (!fromStore?.content) {
+      return incoming ?? block;
+    }
 
-    const serverContent = block.content as Record<string, unknown> | null | undefined;
+    const serverContent = (incoming?.content ?? block.content) as
+      | Record<string, unknown>
+      | null
+      | undefined;
     const storeContent = fromStore.content as Record<string, unknown>;
     const serverText = typeof serverContent?.text === 'string' ? serverContent.text : '';
     const storeText = typeof storeContent.text === 'string' ? storeContent.text : '';
     const storeAhead = storeText.length > serverText.length;
     const isActive = block.id === activeId;
 
-    if (!storeAhead && !isActive) return block;
+    const nextBlock = {
+      ...block,
+      ...(incoming?.version !== undefined ? { version: incoming.version } : {}),
+      ...(incoming?.updated_at !== undefined ? { updated_at: incoming.updated_at } : {}),
+    };
+
+    if (!storeAhead && !isActive) return nextBlock;
 
     return {
-      ...block,
+      ...nextBlock,
       content: mergeBlockContentWithStore(serverContent, storeContent),
     };
   });
 
-  return dedupeNoteBlocksById(normalizeListBlocksOnly(merged));
+  const mergedIds = new Set(merged.map((block) => block.id));
+  const remoteOnly = reconciledBlocks.filter((block) => !mergedIds.has(block.id));
+  const combined = remoteOnly.length > 0 ? [...merged, ...remoteOnly] : merged;
+
+  return dedupeNoteBlocksById(normalizeListBlocksOnly(combined));
 }
 
 /** 서버 reconcile에 아직 없는 로컬 블록(생성 직후 등)을 유지 */

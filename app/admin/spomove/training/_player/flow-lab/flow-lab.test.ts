@@ -1,12 +1,5 @@
 /**
- * flow-lab 동작 동일성 검증 — 운영 flow/ vs flow-lab/
- *
- * 이 파일은 리팩터링 1단계 전용이다.
- * 운영 코드와 flow-lab 복제본의 순수 함수가 동일한 입력에서
- * 동일한 출력을 내는지 확인한다.
- *
- * 환경: vitest (node, jsdom 없음)
- * 신규 라이브러리 없음. 기존 vitest 재사용.
+ * flow-lab 단위 테스트 — DIVE SSOT (flow-lab/)
  */
 
 import { describe, test, expect } from 'vitest';
@@ -22,64 +15,24 @@ import {
   LANE_WIDTH,
   BRIDGE_LENGTH,
   PAD_DEPTH,
+  LANE_COLORS,
 } from './engine/renderers/BridgeRenderer';
 
-// ── 운영 flow 순수 함수 ────────────────────────────────────────────────────────
-import {
-  buildStages as prodBuildStages,
-  buildStagePreview as prodBuildStagePreview,
-} from '../flow/engine/modules/stageBuilder';
-import { FLOW_MODULES as PROD_FLOW_MODULES } from '../flow/engine/modules/flowModules';
-import { generateObstacleSchedule as prodGenerateObstacleSchedule } from '../flow/engine/modules/flowObstacleSchedule';
-import type { FlowModuleKey as ProdFlowModuleKey } from '../flow/engine/modules/flowModules';
-
-// ── flow-lab 복제본 순수 함수 ─────────────────────────────────────────────────
 import {
   buildStages as labBuildStages,
   buildStagePreview as labBuildStagePreview,
 } from './engine/modules/stageBuilder';
-import { FLOW_MODULES as LAB_FLOW_MODULES } from './engine/modules/flowModules';
 import { generateObstacleSchedule as labGenerateObstacleSchedule } from './engine/modules/flowObstacleSchedule';
 import type { FlowModuleKey as LabFlowModuleKey } from './engine/modules/flowModules';
 import {
   PLAYABLE_GATE_COLOR_IDS,
 } from './engine/modules/colorGateGuides';
 
-// ── 공통 헬퍼 ─────────────────────────────────────────────────────────────────
-
-type AnyModuleKey = ProdFlowModuleKey & LabFlowModuleKey;
+type AnyModuleKey = LabFlowModuleKey;
 
 function makeActiveModules(...keys: AnyModuleKey[]): Set<AnyModuleKey> {
   return new Set<AnyModuleKey>(['jump', ...keys]);
 }
-
-// FlowStageConfig는 Set<FlowModuleKey>을 포함하므로 직렬화해서 비교한다.
-function serializeStages(stages: ReturnType<typeof prodBuildStages>) {
-  return stages.map((s) => ({
-    ...s,
-    activeModules: [...s.activeModules].sort(),
-  }));
-}
-
-// ── 1. FLOW_MODULES 상수 일치 ─────────────────────────────────────────────────
-
-describe('FLOW_MODULES 상수 동일성', () => {
-  test('운영·lab 키 집합 일치', () => {
-    const prodKeys = Object.keys(PROD_FLOW_MODULES).sort();
-    const labKeys  = Object.keys(LAB_FLOW_MODULES).sort();
-    expect(labKeys).toEqual(prodKeys);
-  });
-
-  test('각 모듈 속성 동일', () => {
-    for (const key of Object.keys(PROD_FLOW_MODULES) as ProdFlowModuleKey[]) {
-      expect(LAB_FLOW_MODULES[key as LabFlowModuleKey]).toEqual(
-        PROD_FLOW_MODULES[key],
-      );
-    }
-  });
-});
-
-// ── 2. buildStages 동일성 ─────────────────────────────────────────────────────
 
 const STAGE_CASES: [string, AnyModuleKey[], number][] = [
   ['기본 (모듈 없음)', [],              25],
@@ -96,15 +49,7 @@ const STAGE_CASES: [string, AnyModuleKey[], number][] = [
   ['colorGate 단독',   ['colorGate'],      25],
 ];
 
-describe('buildStages 동일성', () => {
-  for (const [label, mods, dur] of STAGE_CASES) {
-    test(`${label} — 스테이지 수·순서·속성 일치`, () => {
-      const prod = serializeStages(prodBuildStages(mods, dur));
-      const lab  = serializeStages(labBuildStages(mods, dur));
-      expect(lab).toEqual(prod);
-    });
-  }
-
+describe('buildStages', () => {
   test('모듈 없음 — 스테이지 1개 (jump 전용)', () => {
     const stages = labBuildStages([], 25);
     expect(stages).toHaveLength(1);
@@ -125,13 +70,14 @@ describe('buildStages 동일성', () => {
     expect(stages[3]!.isBonus).toBe(true);
   });
 
-  test('colorGate 단독 — 런지 펀치 포즈 1단계', () => {
+  test('colorGate 단독 — GATE 모듈 배지', () => {
     const stages = labBuildStages(['colorGate'], 25);
     expect(stages).toHaveLength(1);
     expect(stages[0]!.stageNum).toBe(2);
     expect(stages[0]!.isColorGate).toBe(true);
-    expect(stages[0]!.activeModules).toEqual(new Set(['jump', 'punch', 'kick', 'duck', 'reach', 'colorGate']));
-    expect(stages[0]!.colorGateAction).toBe('jump');
+    expect(stages[0]!.newModule).toBe('colorGate');
+    expect(stages[0]!.activeModules).toEqual(new Set(['colorGate']));
+    expect(stages[0]!.colorGatePose).toBe('jump');
     expect(stages[0]!.colorGateTotal).toBe(1);
   });
 
@@ -154,16 +100,12 @@ describe('buildStages 동일성', () => {
   });
 });
 
-// ── 3. buildStagePreview 동일성 ───────────────────────────────────────────────
-
-describe('buildStagePreview 동일성', () => {
+describe('buildStagePreview', () => {
   for (const [label, mods] of STAGE_CASES) {
-    test(`${label} — 미리보기 일치`, () => {
-      const prod = prodBuildStagePreview(mods);
-      const lab  = labBuildStagePreview(mods);
-      const serialize = (p: typeof prod) =>
-        p.map((s) => ({ ...s, modules: [...s.modules].sort() }));
-      expect(serialize(lab)).toEqual(serialize(prod));
+    test(`${label} — 미리보기 구조`, () => {
+      const preview = labBuildStagePreview(mods);
+      expect(preview.length).toBeGreaterThan(0);
+      expect(preview.every((s) => s.modules.includes('jump'))).toBe(true);
     });
   }
 });
@@ -209,7 +151,7 @@ function scheduleStats(schedule: (string | null)[]) {
   return counts;
 }
 
-describe('generateObstacleSchedule 속성 동일성', () => {
+describe('generateObstacleSchedule', () => {
   for (const [label, mods, dur, isBonus, sessionReach] of OBS_CASES) {
     test(`${label} — 인접 동일 타입 없음`, () => {
       const opts = {
@@ -219,20 +161,15 @@ describe('generateObstacleSchedule 속성 동일성', () => {
         isBonus,
         activeModules: makeActiveModules(...mods),
       };
-      const labSched  = labGenerateObstacleSchedule(opts);
-      const prodSched = prodGenerateObstacleSchedule(opts);
-
-      // 인접 중복 없음 (둘 다 동일한 규칙)
-      for (const sched of [labSched, prodSched]) {
-        for (let i = 1; i < sched.length; i++) {
-          if (sched[i - 1] !== null && sched[i] !== null) {
-            expect(sched[i]).not.toBe(sched[i - 1]);
-          }
+      const sched = labGenerateObstacleSchedule(opts);
+      for (let i = 1; i < sched.length; i++) {
+        if (sched[i - 1] !== null && sched[i] !== null) {
+          expect(sched[i]).not.toBe(sched[i - 1]);
         }
       }
     });
 
-    test(`${label} — lab 스케줄 타입 구조가 운영본 타입 구조와 동일`, () => {
+    test(`${label} — 스케줄 타입 구조`, () => {
       const opts = {
         durationSec: dur,
         speedMult: 1.0,
@@ -242,75 +179,49 @@ describe('generateObstacleSchedule 속성 동일성', () => {
       };
 
       const TRIALS = 30;
-      const labHasBox: boolean[]   = [];
-      const prodHasBox: boolean[]  = [];
-      const labHasUfo: boolean[]   = [];
-      const prodHasUfo: boolean[]  = [];
-      const labHasReach: boolean[] = [];
-      const prodHasReach: boolean[]= [];
-      const labHasKick: boolean[]  = [];
-      const prodHasKick: boolean[] = [];
+      const hasBox: boolean[] = [];
+      const hasUfo: boolean[] = [];
+      const hasReach: boolean[] = [];
+      const hasKick: boolean[] = [];
 
       for (let t = 0; t < TRIALS; t++) {
         const ls = scheduleStats(labGenerateObstacleSchedule(opts));
-        const ps = scheduleStats(prodGenerateObstacleSchedule(opts));
-        labHasBox.push(ls['box']! > 0);
-        prodHasBox.push(ps['box']! > 0);
-        labHasUfo.push(ls['ufo']! > 0);
-        prodHasUfo.push(ps['ufo']! > 0);
-        labHasReach.push(ls['reach']! > 0);
-        prodHasReach.push(ps['reach']! > 0);
-        labHasKick.push(ls['kick']! > 0);
-        prodHasKick.push(ps['kick']! > 0);
+        hasBox.push(ls['box']! > 0);
+        hasUfo.push(ls['ufo']! > 0);
+        hasReach.push(ls['reach']! > 0);
+        hasKick.push(ls['kick']! > 0);
       }
 
-      // box: punch 모듈 있을 때만 등장 — lab·prod 동일
-      const labBoxRate  = labHasBox.filter(Boolean).length;
-      const prodBoxRate = prodHasBox.filter(Boolean).length;
+      const boxRate = hasBox.filter(Boolean).length;
       if (mods.includes('punch' as AnyModuleKey) || isBonus) {
-        expect(labBoxRate).toBeGreaterThan(0);
-        expect(prodBoxRate).toBeGreaterThan(0);
+        expect(boxRate).toBeGreaterThan(0);
       } else {
-        expect(labBoxRate).toBe(0);
-        expect(prodBoxRate).toBe(0);
+        expect(boxRate).toBe(0);
       }
 
-      // ufo: duck 모듈 있을 때만 등장
-      const labUfoRate  = labHasUfo.filter(Boolean).length;
-      const prodUfoRate = prodHasUfo.filter(Boolean).length;
+      const ufoRate = hasUfo.filter(Boolean).length;
       if (mods.includes('duck' as AnyModuleKey) || isBonus) {
-        expect(labUfoRate).toBeGreaterThan(0);
-        expect(prodUfoRate).toBeGreaterThan(0);
+        expect(ufoRate).toBeGreaterThan(0);
       } else {
-        expect(labUfoRate).toBe(0);
-        expect(prodUfoRate).toBe(0);
+        expect(ufoRate).toBe(0);
       }
 
-      // reach: sessionReachPlaced < 2 일 때 등장 가능 (비보너스)
-      const labReachRate  = labHasReach.filter(Boolean).length;
-      const prodReachRate = prodHasReach.filter(Boolean).length;
+      const reachRate = hasReach.filter(Boolean).length;
       if (
         (mods.includes('reach' as AnyModuleKey) || isBonus) &&
         (isBonus || sessionReach < 2)
       ) {
-        expect(labReachRate).toBeGreaterThan(0);
-        expect(prodReachRate).toBeGreaterThan(0);
+        expect(reachRate).toBeGreaterThan(0);
       }
-      // REACH_CAP_SESSION=6 → sessionReachPlaced=6 이면 예산 0 → reach 0회
       if (!isBonus && sessionReach >= 6) {
-        expect(labReachRate).toBe(0);
-        expect(prodReachRate).toBe(0);
+        expect(reachRate).toBe(0);
       }
 
-      // kick: kick 모듈 있을 때만 등장
-      const labKickRate  = labHasKick.filter(Boolean).length;
-      const prodKickRate = prodHasKick.filter(Boolean).length;
+      const kickRate = hasKick.filter(Boolean).length;
       if (mods.includes('kick' as AnyModuleKey) || isBonus) {
-        expect(labKickRate).toBeGreaterThan(0);
-        expect(prodKickRate).toBeGreaterThan(0);
+        expect(kickRate).toBeGreaterThan(0);
       } else {
-        expect(labKickRate).toBe(0);
-        expect(prodKickRate).toBe(0);
+        expect(kickRate).toBe(0);
       }
     });
   }
@@ -792,40 +703,38 @@ describe('BridgeRenderer (enhanced)', () => {
     return { scene, br: new BridgeRenderer(scene, true) };
   };
 
-  test('1. enhanced 브릿지 — 자식 9개 (기반·좌레일·우레일·좌빔·우빔·패드·구분×3)', () => {
+  test('1. enhanced 폴백 — legacy와 동일 4자식 (상판·패드·좌빔·우빔)', () => {
     const { br } = makeEnhancedBr();
     const v = br.createBridge({ lane: 1, x: 0, z: 0 });
-    expect(v.mesh.children).toHaveLength(20);
+    expect(v.mesh.children).toHaveLength(4);
   });
 
-  test('2. 기반 상판 material이 MeshPhongMaterial', () => {
+  test('2. enhanced 상판 material이 MeshBasicMaterial (레인 색)', () => {
     const { br } = makeEnhancedBr();
     const v   = br.createBridge({ lane: 1, x: 0, z: 0 });
     const top = v.mesh.children[0] as THREE.Mesh;
-    expect(top.material).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect(top.material).toBeInstanceOf(THREE.MeshBasicMaterial);
   });
 
-  test('3. 좌측 네온 레일 — 같은 lane은 동일 material 참조 (공유)', () => {
+  test('3. 같은 lane은 동일 deck material 참조 (공유)', () => {
     const { br } = makeEnhancedBr();
     const v0  = br.createBridge({ lane: 0, x: -80, z: 0 });
     const v0b = br.createBridge({ lane: 0, x: -80, z: -5000 });
-    const rail0  = (v0.mesh.children[1]  as THREE.Mesh).material;
-    const rail0b = (v0b.mesh.children[1] as THREE.Mesh).material;
-    expect(rail0).toBe(rail0b);
+    const deck0  = (v0.mesh.children[0]  as THREE.Mesh).material;
+    const deck0b = (v0b.mesh.children[0] as THREE.Mesh).material;
+    expect(deck0).toBe(deck0b);
   });
 
-  test('4. 레인별 네온 레일 색상 — 0·1·2 모두 다름 (enhanced)', () => {
+  test('4. 레인별 상판 색상 — LANE_COLORS와 일치', () => {
     const { br } = makeEnhancedBr();
-    const v0 = br.createBridge({ lane: 0, x: -80, z: 0 });
-    const v1 = br.createBridge({ lane: 1, x:   0, z: 0 });
-    const v2 = br.createBridge({ lane: 2, x:  80, z: 0 });
-    const hex = (v: typeof v0) =>
-      ((v.mesh.children[1] as THREE.Mesh).material as THREE.MeshStandardMaterial).emissive.getHex();
-    expect(hex(v0)).not.toBe(hex(v1));
-    expect(hex(v1)).not.toBe(hex(v2));
+    for (const lane of [0, 1, 2] as const) {
+      const v = br.createBridge({ lane, x: 0, z: 0 });
+      const mat = (v.mesh.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      expect(mat.color.getHex()).toBe(LANE_COLORS[lane]);
+    }
   });
 
-  test('5. 상판 geometry 크기 — legacy와 동일 (수치 변경 없음)', () => {
+  test('5. 상판 geometry 크기 — legacy와 동일', () => {
     const { br } = makeEnhancedBr();
     const v   = br.createBridge({ lane: 1, x: 0, z: 0 });
     const top = v.mesh.children[0] as THREE.Mesh;
@@ -849,14 +758,12 @@ describe('BridgeRenderer (enhanced)', () => {
   test('7. dispose — 공유 material dispose 호출', () => {
     const { br } = makeEnhancedBr();
     const v   = br.createBridge({ lane: 0, x: 0, z: 0 });
-    const mat = (v.mesh.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
+    const mat = (v.mesh.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
     let disposed = false;
     const orig = mat.dispose.bind(mat);
     mat.dispose = () => { disposed = true; orig(); };
-    // removeBridge → geometry dispose (material은 공유이므로 여기서 dispose 안 함)
     br.removeBridge(v);
     expect(disposed).toBe(false);
-    // BridgeRenderer.dispose() → 공유 material 일괄 dispose
     br.dispose();
     expect(disposed).toBe(true);
   });

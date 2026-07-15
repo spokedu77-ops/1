@@ -112,6 +112,27 @@ describe('1) 구조 변경 insert/delete/DnD → reducer', () => {
     expect(blocks.find((b) => b.id === 'a')?.type).toBe('bulletList');
     expect(blocks.find((b) => b.id === 'b')).toBeDefined();
   });
+
+  it('todo reorder survives stale syncSnapshot when unpublished topology is active', () => {
+    const previous = [
+      block('todo-a', { type: 'todo', order_index: 0, content: { text: 'A', checked: false } }),
+      block('todo-b', { type: 'todo', order_index: 1, content: { text: 'B', checked: false } }),
+      block('todo-c', { type: 'todo', order_index: 2, content: { text: 'C', checked: false } }),
+    ];
+    const plan = planBlockDropAt(previous, 'todo-c', 'todo-a', 'before');
+    expect(plan).not.toBeNull();
+    const command = buildMoveBlockCommand(previous, 'todo-c', plan!);
+    const reordered = dispatchReplace(previous, command.nextBlocks);
+    expect(reordered.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
+
+    const staleServer = previous;
+    const { blocks } = applyNoteCommand(
+      reordered,
+      { type: 'syncSnapshot', blocks: staleServer },
+      { ...ctx(), hasUnpublishedTopology: true },
+    );
+    expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
+  });
 });
 
 describe('2) 다중 탭 follower — leader snapshot', () => {

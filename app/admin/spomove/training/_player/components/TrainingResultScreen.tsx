@@ -305,9 +305,9 @@ export function TrainingResultScreen({
 
         <section style={{ ...card, display: 'flex', flexDirection: 'column', gap: 'var(--tr-gap)' }}>
           <div>
-            <h2 style={sectionTitle}>색상 결과</h2>
+            <h2 style={sectionTitle}>색상 제시 횟수</h2>
             <p style={{ margin: '0.25rem 0 0', fontSize: 'var(--tr-body)', color: 'var(--text-muted)', fontWeight: 650 }}>
-              {showColorBreakdown ? `총 ${colorTotal}회 색상 신호가 기록되었습니다.` : '이번 과제에는 집계 가능한 색상 신호가 없습니다.'}
+              {showColorBreakdown ? `총 ${colorTotal}회 관문 색상이 제시되었습니다.` : '이번 과제에는 집계 가능한 색상 제시가 없습니다.'}
             </p>
           </div>
 

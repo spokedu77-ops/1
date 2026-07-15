@@ -262,6 +262,22 @@ export function resolveBlockDropTargetFromPointer(
       : undefined,
   );
 
+  // 페이지 링크를 다른 페이지 "안으로" 넣으면 parent 꼬임·사이드바 실종 발생.
+  // 페이지끼리 드래그는 순서(before/after)만 허용한다.
+  const activeBlock = activeBlockId
+    ? blocks.find((item) => item.id === activeBlockId)
+    : null;
+  if (
+    position === 'inside'
+    && block.type === 'page'
+    && activeBlock?.type === 'page'
+  ) {
+    return {
+      blockId: row.id,
+      position: pointerY < row.rect.top + row.rect.height / 2 ? 'before' : 'after',
+    };
+  }
+
   if (position === 'inside' && !blockSupportsInsideDrop(block.type)) {
     return {
       blockId: row.id,

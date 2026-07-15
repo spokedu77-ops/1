@@ -4,14 +4,15 @@
  * 구조:
  *   Stage 1      : {jump} — 기본 달리기 (장애물 모듈 선택 시)
  *   Stage 2..N   : {jump, 해당모듈만} — 기능 하나씩 단독 훈련
- *   colorGate    : 5단계 (jump→punch→kick→duck→reach) 색+포즈 관문
+ *   colorGate    : 2단계 색+포즈 관문 (ColorGatePoseKey 전용)
  *   BONUS Stage  : {jump, 전체 모듈} — 종합 (장애물 2개 이상일 때만)
  */
 
 import { FLOW_MODULES } from './flowModules';
 import type { FlowModuleKey } from './flowModules';
 import {
-  COLOR_GATE_ACTION_SEQUENCE,
+  COLOR_GATE_POSE_SEQUENCE,
+  type ColorGatePoseKey,
 } from './colorGateGuides';
 
 export interface FlowStageConfig {
@@ -23,7 +24,10 @@ export interface FlowStageConfig {
   newModule: FlowModuleKey;
   isBonus: boolean;
   isColorGate?: boolean;
-  colorGateAction?: FlowModuleKey;
+  /** Color Gate 초기 포즈 (런타임 순환은 ColorGateManager) */
+  colorGatePose?: ColorGatePoseKey;
+  /** @deprecated colorGatePose 사용 */
+  colorGateAction?: ColorGatePoseKey;
   colorGateStep?: number;
   colorGateTotal?: number;
   /** 런타임에 FlowGameClient에서 랜덤 배정 (빌드 시 비움) */
@@ -50,21 +54,20 @@ function buildColorGateStages(
   durationSec: number,
 ): FlowStageConfig[] {
   const gateMod = FLOW_MODULES.colorGate;
-  const actionKey = COLOR_GATE_ACTION_SEQUENCE[0] ?? 'reach';
-  const actionMod = FLOW_MODULES[actionKey];
+  const poseKey = COLOR_GATE_POSE_SEQUENCE[0] ?? 'jump';
   return [{
     stageIndex: startIndex,
     stageNum: startNum,
     label: 'GATE',
     durationSec,
-    activeModules: new Set<FlowModuleKey>([...COLOR_GATE_ACTION_SEQUENCE, 'colorGate']),
-    newModule: actionKey,
+    activeModules: new Set<FlowModuleKey>(['colorGate']),
+    newModule: 'colorGate',
     isBonus: false,
     isColorGate: true,
-    colorGateAction: actionKey,
+    colorGatePose: poseKey,
     colorGateStep: 1,
     colorGateTotal: 1,
-    color: actionMod.color,
+    color: gateMod.color,
     colorBg: gateMod.colorBg,
     colorBorder: gateMod.colorBorder,
     cueWord: gateMod.cueWord,
@@ -84,7 +87,6 @@ export function buildStages(
   const hasColorGate = selectedModules.includes('colorGate');
   const isColorGateOnly = hasColorGate && obstacleModules.length === 0;
 
-  // 색 관문만 단독 선택 → 5단계 관문만
   const stages: FlowStageConfig[] = [];
   const baseMod = FLOW_MODULES.jump;
 
@@ -92,7 +94,6 @@ export function buildStages(
     return buildColorGateStages(0, 2, durationSec);
   }
 
-  // Stage 1: 점프만
   stages.push({
     stageIndex: 0,
     stageNum: 1,
@@ -108,7 +109,6 @@ export function buildStages(
     shortInstruction: baseMod.shortInstruction,
   });
 
-  // 각 장애물 모듈 단독 스테이지
   if (hasColorGate) {
     stages.push(...buildColorGateStages(stages.length, stages.length + 1, durationSec));
   }
@@ -132,7 +132,6 @@ export function buildStages(
     });
   }
 
-  // 보너스: 장애물 2개 이상
   if (obstacleModules.length >= 2) {
     const bonusIdx = stages.length;
     stages.push({
@@ -151,7 +150,6 @@ export function buildStages(
     });
   }
 
-  // 5번째 관문: 색+포즈 5단계 (맨 마지막)
   return stages;
 }
 

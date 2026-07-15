@@ -36,7 +36,8 @@ describe('LibraryView favorites contract', () => {
   it('keeps the library search controls compact and purpose-led', () => {
     expect(source).toContain('조건에 맞는 수업 찾기');
     expect(source).toContain('결과 {filteredPrograms.length}개');
-    expect(source).toContain('placeholder="수업명, 교구, 태그 검색"');
+    expect(source).toContain('placeholder="수업명 검색"');
+    expect(source).toContain('return program.title.toLowerCase()');
     expect(source).not.toContain('MATERIAL_VIDEO_VALUE');
     expect(source).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(source).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');

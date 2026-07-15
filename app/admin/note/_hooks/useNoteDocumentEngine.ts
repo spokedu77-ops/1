@@ -49,6 +49,7 @@ export type NoteDocumentEngineApi = {
   hasPendingContent: () => boolean;
   hasPendingPersist: () => boolean;
   hasPendingOutbound: () => Promise<boolean>;
+  hasUnpublishedTopologySync: () => boolean;
   isOplogSyncEnabled: () => boolean;
 };
 
@@ -232,6 +233,10 @@ export function useNoteDocumentEngine(options: {
     return pipeline.hasPendingOutbound();
   }, []);
 
+  const hasUnpublishedTopologySync = useCallback(() => {
+    return pipelineRef.current?.hasUnpublishedTopologySync() ?? false;
+  }, []);
+
   const isOplogSyncEnabledFn = useCallback(
     () => pipelineRef.current?.isOplogEnabled() ?? false,
     [],
@@ -259,6 +264,7 @@ export function useNoteDocumentEngine(options: {
     hasPendingContent,
     hasPendingPersist,
     hasPendingOutbound,
+    hasUnpublishedTopologySync,
     isOplogSyncEnabled: isOplogSyncEnabledFn,
   }), [
     dispatch,
@@ -282,6 +288,7 @@ export function useNoteDocumentEngine(options: {
     hasPendingContent,
     hasPendingPersist,
     hasPendingOutbound,
+    hasUnpublishedTopologySync,
     isOplogSyncEnabledFn,
   ]);
 }

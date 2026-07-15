@@ -63,7 +63,9 @@ import {
   blockHandleLeftPx,
   toggleMenuAnchorOffset,
   toggleNestPaddingPx,
+  todoListNestPaddingPx,
 } from '../../_lib/constants';
+import { readTodoListNestLevel } from '../../_lib/noteTodoContent';
 import { filterTurnIntoCommands } from '../../_lib/noteBlockTypeChange';
 import {
   blockExternalizesChildren,
@@ -232,7 +234,12 @@ function BlockContent({
     />
   );
 
-  const contentMarginLeft = 0;
+  const todoListNestLevel = block.type === 'todo'
+    ? readTodoListNestLevel(liveContent)
+    : 0;
+  const contentMarginLeft = block.type === 'todo'
+    ? todoListNestPaddingPx(todoListNestLevel)
+    : 0;
   const isBorderlessInlineBlock =
     block.type === 'text'
     || block.type === 'todo'

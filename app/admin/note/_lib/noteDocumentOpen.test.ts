@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { rememberNoteDocumentBlocks } from './noteDocumentBlocksCache';
 import {
   applyOpenServerSnapshot,
   fetchServerBlocksForOpen,
-  paintInstantSnapshotFromCache,
+  prepareNoteDocumentOpenSync,
 } from './noteDocumentOpen';
 import type { NoteBlock } from './types';
 
@@ -23,20 +22,9 @@ function block(id: string, overrides: Partial<NoteBlock> = {}): NoteBlock {
 }
 
 describe('noteDocumentOpen', () => {
-  it('paintInstantSnapshotFromCache paints when store is empty', () => {
-    const remembered = [block('cached')];
-    const engine = {
-      replaceBlocks: vi.fn(),
-      isOplogSyncEnabled: () => true,
-      syncWithServer: vi.fn(),
-      getBlocks: () => remembered,
-    };
-
-    rememberNoteDocumentBlocks('doc-1', remembered, { trustServer: true });
-
-    const painted = paintInstantSnapshotFromCache('doc-1', engine, 0);
-    expect(painted).toBe(true);
-    expect(engine.replaceBlocks).toHaveBeenCalledWith(remembered);
+  it('prepareNoteDocumentOpenSync does not mutate store — hint only', () => {
+    const result = prepareNoteDocumentOpenSync('doc-1');
+    expect(result).toEqual({ hasLocalHint: false });
   });
 
   it('fetchServerBlocksForOpen prefers bootstrap over network', async () => {

@@ -293,35 +293,55 @@ export default function LibraryDetailView({ id }: { id: string }) {
       </header>
 
       <div className="mx-auto w-full max-w-[1360px] space-y-4 px-4 py-6 sm:px-6 lg:px-8">
-        <section className="rounded-[14px] border border-slate-200 bg-white p-4 text-[12px] font-bold text-slate-600">
-          <p className="text-[13px] font-black text-slate-950">전체 수업 자료 구성</p>
-          <ol className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
-            {['1. 수업 개요', '2. 준비물·공간', '3. 수업 목표', '4. 활동 진행 순서', '5. 규칙과 지도 포인트', '6. 난이도 조절·변형', '7. 안전 유의사항', '8. 실행 행동'].map((item) => (
-              <li key={item} className="break-words rounded-lg bg-slate-50 px-3 py-2">{item}</li>
-            ))}
-          </ol>
-        </section>
         <section className="rounded-[14px] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_rgba(15,23,42,0.06)] sm:p-6">
-          <LessonTitle
-            title={title}
-            badges={usageCount > 0 ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
-                <Check className="h-3 w-3" />
-                {usageCount}회 사용{latestUsageDate ? ` · 최근 ${latestUsageDate}` : ''}
-              </span>
-            ) : undefined}
-          />
-          <div className="mt-3">
-            <LessonMetaGrid
-              cells={[
-                { label: '테마', value: model.theme },
-                { label: '대상', value: model.target },
-                { label: '기능', value: model.functions.join(', ') },
-                { label: '움직임', value: model.movements.join(', ') },
-                { label: '공간', value: model.space },
-                { label: '인원', value: model.participantFormat },
-              ].filter((cell) => cell.value)}
-            />
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+            <div className="min-w-0">
+              <LessonTitle
+                title={title}
+                badges={usageCount > 0 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700">
+                    <Check className="h-3 w-3" />
+                    {usageCount}회 사용{latestUsageDate ? ` · 최근 ${latestUsageDate}` : ''}
+                  </span>
+                ) : undefined}
+              />
+              <div className="mt-4">
+                <LessonMetaGrid
+                  cells={[
+                    { label: '테마', value: model.theme },
+                    { label: '대상', value: model.target },
+                    { label: '기능', value: model.functions.join(', ') },
+                    { label: '움직임', value: model.movements.join(', ') },
+                    { label: '공간', value: model.space },
+                    { label: '인원', value: model.participantFormat },
+                  ].filter((cell) => cell.value)}
+                />
+              </div>
+            </div>
+
+            <aside className="rounded-[12px] border border-indigo-100 bg-indigo-50/70 p-4">
+              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-indigo-600">USE THIS LESSON</p>
+              <p className="mt-1 text-base font-black text-slate-950">이 수업으로 바로 진행</p>
+              <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+                수업 기록, 빠른 기록, 안내문 초안으로 이어집니다.
+              </p>
+              <div className="mt-4 grid gap-2">
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
+                  <Clipboard className="h-4 w-4" />
+                  수업 기록 시작
+                </Link>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={openQuickModal} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-white px-3 text-[12px] font-black text-emerald-700">
+                    <Check className="h-4 w-4" />
+                    빠른 기록
+                  </button>
+                  <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-white px-3 text-[12px] font-black text-indigo-700">
+                    <FileText className="h-4 w-4" />
+                    안내문
+                  </Link>
+                </div>
+              </div>
+            </aside>
           </div>
         </section>
 
@@ -458,34 +478,19 @@ export default function LibraryDetailView({ id }: { id: string }) {
           </details>
         ) : null}
 
-        <section className="rounded-[14px] border border-indigo-100 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-          <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-600">Use this lesson</p>
-            <h2 className="mt-1 text-lg font-black text-slate-950">이 수업으로 진행하기</h2>
-            <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-              라이브러리 수업을 내 반 기록과 안내문으로 이어갑니다.
-            </p>
-          </div>
-          <div className="mt-4 grid gap-2 sm:grid-cols-[1.2fr_1fr_1fr]">
-            <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white">
-              <Clipboard className="h-4 w-4" />
-              수업 기록 시작
-            </Link>
-            <button type="button" onClick={openQuickModal} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-[12px] font-black text-emerald-700">
-              <Check className="h-4 w-4" />
-              빠른 기록
-            </button>
-            <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700">
-              <FileText className="h-4 w-4" />
-              안내문 초안
-            </Link>
-          </div>
+        <details className="rounded-[14px] border border-slate-200 bg-white p-4 text-[12px] font-bold text-slate-600">
+          <summary className="cursor-pointer text-[13px] font-black text-slate-950">전체 수업 자료 구성</summary>
+          <ol className="mt-3 grid gap-1 sm:grid-cols-2 lg:grid-cols-4">
+            {['1. 수업 개요', '2. 준비물·공간', '3. 수업 목표', '4. 활동 진행 순서', '5. 규칙과 지도 포인트', '6. 난이도 조절·변형', '7. 안전 유의사항', '8. 실행 행동'].map((item) => (
+              <li key={item} className="break-words rounded-lg bg-slate-50 px-3 py-2">{item}</li>
+            ))}
+          </ol>
           {usageCount > 0 ? (
             <Link href="/spokedu-master/class-record" className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-xl px-1 text-[12px] font-black text-slate-500">
               기존 기록 보기
             </Link>
           ) : null}
-        </section>
+        </details>
       </div>
 
       <BottomSheet open={quickModalOpen} title="수업 기록" onClose={() => setQuickModalOpen(false)}>

@@ -109,6 +109,7 @@ export function resolveInlineBlockEnterAction(options: {
   text: string;
   parentBlockId: string | null;
   parentBlockType?: NoteBlock['type'] | null;
+  listNestLevel?: number;
   enterCtx?: NoteEditorEnterContext;
   isEmpty?: (rawText: string, enterCtx?: NoteEditorEnterContext) => boolean;
   emptyRootTextBehavior?: 'add-below' | 'convert-to-text';
@@ -131,6 +132,10 @@ export function resolveInlineBlockEnterAction(options: {
   const isEmpty = resolveEmpty(options.text, options.enterCtx);
   if (!isEmpty) {
     return { kind: 'add-below', followType: options.followType };
+  }
+
+  if (options.followType === 'todo' && (options.listNestLevel ?? 0) > 0) {
+    return { kind: 'outdent' };
   }
 
   if (options.parentBlockId) {

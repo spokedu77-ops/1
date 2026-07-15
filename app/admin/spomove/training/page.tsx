@@ -1269,8 +1269,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 키즈 세이프 모드 (시지각 반응 + 다이브) */}
-          {isReactTrain || isFlowOrChallenge ? (
+          {/* 키즈 세이프 모드 (시지각 반응 전용) */}
+          {isReactTrain ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -1296,9 +1296,7 @@ function SettingsScreen({
               >
                 {launch.kidsSafeMode ? '켜짐 ✓' : '끔'}
                 <span style={{ marginLeft: 10, fontWeight: 700, opacity: 0.85 }}>
-                  {isFlowOrChallenge
-                    ? '(Flow 3D 체감 속도 완화)'
-                    : '(시지각 반응 전체 속도/스폰 간격 완화)'}
+                  (시지각 반응 전체 속도/스폰 간격 완화)
                 </span>
               </button>
             </section>

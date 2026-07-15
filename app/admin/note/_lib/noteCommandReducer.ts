@@ -2,7 +2,7 @@ import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import type { NoteCommand, NoteCommandContext, NoteCommandResult } from './noteCommand';
-import { decideEmptySnapshotApply } from './noteAuthority';
+import { decideEmptySnapshotApply, decideStructureReconcile } from './noteAuthority';
 import { mergeBlockContentWithStore } from './noteContentPatch';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
 import {
@@ -88,6 +88,19 @@ function preserveStoreContent(
   });
 }
 
+function resolveStructureAuthority(
+  localBlocks: NoteBlock[],
+  incomingBlocks: NoteBlock[],
+  ctx: NoteCommandContext,
+): 'local' | 'incoming' {
+  const decision = decideStructureReconcile({
+    localBlocks,
+    incomingBlocks,
+    hasUnpublishedTopology: ctx.hasUnpublishedTopology === true,
+  });
+  return decision === 'preserve_local' ? 'local' : 'incoming';
+}
+
 /**
  * 순수 reducer — API·React·Zustand와 분리.
  * 모든 블록 상태 전이는 이 함수만 통과한다.
@@ -114,7 +127,11 @@ export function applyNoteCommand(
       }
       return { blocks: [], structural: true };
     }
-    let next = mergeReconciledBlocks(docBlocks, incoming);
+    let next = mergeReconciledBlocks(
+      docBlocks,
+      incoming,
+      { structureAuthority: resolveStructureAuthority(docBlocks, incoming, ctx) },
+    );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };
@@ -141,7 +158,11 @@ export function applyNoteCommand(
   }
   case 'applyRemoteOps': {
     let next = applyRemoteOpRecords(docBlocks, command.ops);
-    next = mergeReconciledBlocks(docBlocks, next);
+    next = mergeReconciledBlocks(
+      docBlocks,
+      next,
+      { structureAuthority: resolveStructureAuthority(docBlocks, next, ctx) },
+    );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };
@@ -166,7 +187,11 @@ export function applyNoteCommand(
       }
       return { blocks: [], structural: true };
     }
-    let next = mergeReconciledBlocks(docBlocks, incoming);
+    let next = mergeReconciledBlocks(
+      docBlocks,
+      incoming,
+      { structureAuthority: resolveStructureAuthority(docBlocks, incoming, ctx) },
+    );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };

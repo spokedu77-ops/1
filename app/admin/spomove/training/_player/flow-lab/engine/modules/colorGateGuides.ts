@@ -1,11 +1,8 @@
 /**
  * ColorGate shared definitions.
  *
- * This module intentionally does not decide bridge lanes. ColorGate is its own
- * stage mode; the lab engine renders gates directly in the shared background.
+ * 2단계 Color Gate 전용 포즈 키 — 1단계 장애물(FlowModuleKey)과 분리.
  */
-
-import type { FlowModuleKey } from './flowModules';
 
 export const GATE_COLOR_IDS = ['red', 'yellow', 'green', 'blue'] as const;
 export type GateColorId = (typeof GATE_COLOR_IDS)[number];
@@ -25,37 +22,50 @@ export const GATE_COLORS: Record<GateColorId, GateColorDef> = {
   blue:   { bg: '#1d4ed8', label: '파랑', text: '#ffffff', hex: 0x1d4ed8 },
 };
 
-export const COLOR_GATE_POSE_IMAGE_URL = '/spomove/dive/color-gate/lunge-reach.png';
-export const COLOR_GATE_POSE_IMAGE_URLS = [
-  '/spomove/dive/color-gate/lunge-reach.png',
-  '/spomove/dive/color-gate/2d6432ee-9de6-4fa1-b688-57a1cfd63474.png',
-  '/spomove/dive/color-gate/e265bc34-9722-408c-8235-29a64fc2254c.png',
-  '/spomove/dive/color-gate/f00b1d2b-1251-4b6f-9567-b3ffedb2b27e.png',
-] as const;
-export const COLOR_GATE_ACTION_SEQUENCE: FlowModuleKey[] = ['jump', 'punch', 'kick', 'duck', 'reach'];
+/** Color Gate 실루엣 포즈 — 이미지 파일명(stem)과 1:1 */
+export type ColorGatePoseKey = 'jump' | 'kick' | 'side-squat' | 'lunge-reach' | 'star';
 
-export const COLOR_GATE_POSE_LABELS: Record<FlowModuleKey, string> = {
-  jump: '점프',
-  punch: '펀치',
-  kick: '킥',
-  duck: '숙이기',
-  reach: '런지 펀치',
-  faster: '속도 올리기',
-  colorGate: '색 포즈 관문',
+export const COLOR_GATE_POSE_IMAGE_MAP: Record<ColorGatePoseKey, string> = {
+  jump:        '/spomove/dive/color-gate/jump.png',
+  kick:        '/spomove/dive/color-gate/kick.png',
+  'side-squat': '/spomove/dive/color-gate/side-squat.png',
+  'lunge-reach': '/spomove/dive/color-gate/lunge-reach.png',
+  star:        '/spomove/dive/color-gate/star.png',
 };
 
-export const COLOR_GATE_POSE_INSTRUCTIONS: Record<FlowModuleKey, string> = {
-  jump: '양발로 가볍게 점프하세요',
-  punch: '앞으로 주먹을 뻗어 펀치하세요',
-  kick: '한쪽 발을 들어 앞으로 차세요',
-  duck: '몸을 빠르게 낮춰 숙이세요',
-  reach: '한쪽 다리를 앞으로 굽히고 팔을 앞으로 뻗으세요',
-  faster: '속도를 유지하세요',
-  colorGate: '색 관문을 통과하세요',
+/** 관문에서 순환 제시할 포즈 순서 */
+export const COLOR_GATE_POSE_SEQUENCE: ColorGatePoseKey[] = [
+  'jump', 'kick', 'side-squat', 'lunge-reach', 'star',
+];
+
+/** HUD 라벨 — 이미지 파일명(stem)과 동일 */
+export const COLOR_GATE_POSE_LABELS: Record<ColorGatePoseKey, string> = {
+  jump:        'jump',
+  kick:        'kick',
+  'side-squat': 'side-squat',
+  'lunge-reach': 'lunge-reach',
+  star:        'star',
 };
 
-/** 구 import 호환 — 오버레이로 QA 클릭이 막히지 않게 alias 유지 */
+export const COLOR_GATE_POSE_INSTRUCTIONS: Record<ColorGatePoseKey, string> = {
+  jump:        'jump 자세를 취하세요',
+  kick:        'kick 자세를 취하세요',
+  'side-squat': 'side-squat 자세를 취하세요',
+  'lunge-reach': 'lunge-reach 자세를 취하세요',
+  star:        'star 자세를 취하세요',
+};
+
+/** @deprecated ColorGatePoseKey / COLOR_GATE_POSE_SEQUENCE 사용 */
+export type ColorGateAction = ColorGatePoseKey;
+/** @deprecated COLOR_GATE_POSE_IMAGE_MAP 사용 */
+export const COLOR_GATE_POSE_IMAGE_URL = COLOR_GATE_POSE_IMAGE_MAP['lunge-reach'];
+/** @deprecated COLOR_GATE_POSE_IMAGE_MAP 사용 */
+export const COLOR_GATE_POSE_IMAGE_URLS = Object.values(COLOR_GATE_POSE_IMAGE_MAP);
+/** @deprecated COLOR_GATE_POSE_SEQUENCE 사용 */
+export const COLOR_GATE_ACTION_SEQUENCE = COLOR_GATE_POSE_SEQUENCE;
+/** @deprecated COLOR_GATE_POSE_LABELS 사용 */
 export const COLOR_GATE_POSE_LABEL = COLOR_GATE_POSE_LABELS;
+/** @deprecated COLOR_GATE_POSE_INSTRUCTIONS 사용 */
 export const COLOR_GATE_POSE_INSTRUCTION = COLOR_GATE_POSE_INSTRUCTIONS;
 export const COLOR_GATE_FIXED_COLOR_ID = 'red' as GateColorId;
 
@@ -63,64 +73,66 @@ const SILHOUETTE_ALPHA_MIN = 16;
 const SILHOUETTE_LUMA_MAX = 150;
 const SILHOUETTE_RGB = { r: 10, g: 10, b: 12 };
 
-let poseImageCache: HTMLImageElement | null = null;
-let poseImageLoadPromise: Promise<HTMLImageElement | null> | null = null;
-let poseImagesCache: HTMLImageElement[] | null = null;
-let poseImagesLoadPromise: Promise<HTMLImageElement[]> | null = null;
+const poseImageCacheByPose = new Map<ColorGatePoseKey, HTMLImageElement>();
+let poseImagesLoadPromise: Promise<Map<ColorGatePoseKey, HTMLImageElement>> | null = null;
 
-export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
-  if (poseImageCache) return Promise.resolve(poseImageCache);
-  if (poseImageLoadPromise) return poseImageLoadPromise;
-
-  poseImageLoadPromise = new Promise((resolve) => {
+function loadPoseImage(url: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
     if (typeof window === 'undefined') {
       resolve(null);
       return;
     }
     const img = new Image();
     img.decoding = 'async';
-    img.onload = () => {
-      poseImageCache = img;
-      resolve(img);
-    };
+    img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = COLOR_GATE_POSE_IMAGE_URL;
+    img.src = url;
   });
-  return poseImageLoadPromise;
 }
 
-export function preloadColorGatePoseImages(): Promise<HTMLImageElement[]> {
-  if (poseImagesCache) return Promise.resolve(poseImagesCache);
+export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
+  const url = COLOR_GATE_POSE_IMAGE_MAP['lunge-reach'];
+  const cached = poseImageCacheByPose.get('lunge-reach');
+  if (cached) return Promise.resolve(cached);
+  return loadPoseImage(url).then((img) => {
+    if (img) poseImageCacheByPose.set('lunge-reach', img);
+    return img;
+  });
+}
+
+export function preloadColorGatePoseImages(): Promise<Map<ColorGatePoseKey, HTMLImageElement>> {
   if (poseImagesLoadPromise) return poseImagesLoadPromise;
 
   poseImagesLoadPromise = Promise.all(
-    COLOR_GATE_POSE_IMAGE_URLS.map((url) => new Promise<HTMLImageElement | null>((resolve) => {
-      if (typeof window === 'undefined') {
-        resolve(null);
-        return;
-      }
-      const img = new Image();
-      img.decoding = 'async';
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = url;
-    })),
-  ).then((images) => {
-    const loaded = images.filter((img): img is HTMLImageElement => img !== null);
-    poseImagesCache = loaded;
-    if (!poseImageCache && loaded[0]) poseImageCache = loaded[0];
-    return loaded;
+    COLOR_GATE_POSE_SEQUENCE.map(async (pose) => {
+      const url = COLOR_GATE_POSE_IMAGE_MAP[pose];
+      const cached = poseImageCacheByPose.get(pose);
+      if (cached) return [pose, cached] as const;
+      const img = await loadPoseImage(url);
+      if (img) poseImageCacheByPose.set(pose, img);
+      return [pose, img] as const;
+    }),
+  ).then((entries) => {
+    const map = new Map<ColorGatePoseKey, HTMLImageElement>();
+    for (const [pose, img] of entries) {
+      if (img) map.set(pose, img);
+    }
+    return map;
   });
   return poseImagesLoadPromise;
+}
+
+export function getColorGatePoseImage(pose: ColorGatePoseKey): HTMLImageElement | null {
+  return poseImageCacheByPose.get(pose) ?? null;
 }
 
 export function buildColorGateCue(gateColorId: GateColorId): string {
   return `${GATE_COLORS[gateColorId].label}으로!`;
 }
 
-export function buildColorGateInstruction(gateColorId: GateColorId, action: FlowModuleKey): string {
+export function buildColorGateInstruction(gateColorId: GateColorId, pose: ColorGatePoseKey): string {
   const color = GATE_COLORS[gateColorId];
-  return `${color.label} 패드로 이동한 뒤 「${COLOR_GATE_POSE_LABELS[action]}」 자세를 취하세요`;
+  return `${color.label} 패드로 이동한 뒤 「${COLOR_GATE_POSE_LABELS[pose]}」 자세를 취하세요`;
 }
 
 export function buildColorGateSilhouetteCanvas(

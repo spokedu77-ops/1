@@ -56,13 +56,14 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
     return {
       text: '',
       checked: false,
+      listNestLevel: 0,
       ...(options?.insideToggle ? { createdInsideToggle: true } : {}),
     };
   }
   if (type === 'toggle') {
     return {
       title: '',
-      collapsed: true,
+      collapsed: false,
       ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }
@@ -104,9 +105,13 @@ export const NOTE_GUTTER_SELECT_HIT_PX = 96;
 /** 토글 자식 한 단계 들여쓰기 (pl-[1.625rem]) */
 export const TOGGLE_INDENT_PX = 26;
 
-/** 토글·목록 중첩 — 블록 row 왼쪽 패딩 (거터는 row 기준 고정) */
+/** 토글·목록·체크리스트 중첩 — 블록 row 왼쪽 패딩 (거터는 row 기준 고정) */
 export function toggleNestPaddingPx(nestDepth: number): number {
   return Math.max(0, nestDepth - 1) * TOGGLE_INDENT_PX;
+}
+
+export function todoListNestPaddingPx(listNestLevel: number): number {
+  return Math.max(0, listNestLevel) * TOGGLE_INDENT_PX;
 }
 
 /** +·⋮⋮ — 항상 row 왼쪽 고정 (콘텐츠 들여쓰기와 분리) */

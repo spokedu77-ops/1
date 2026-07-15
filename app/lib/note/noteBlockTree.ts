@@ -348,6 +348,9 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
     const descendantIds = collectDescendantBlockIds(moving.id, blocks);
     if (descendantIds.has(prev.id)) return null;
 
+    // 체크리스트는 parent_block_id 중첩 대신 listNestLevel — planTodoListNestTab이 처리
+    if (moving.type === 'todo' && (prev.type === 'todo' || prev.type === 'text')) return null;
+
     const children = getBlocksInParent(blocks, prev.id).filter((block) => block.id !== moving.id);
     const targetSiblings = [...children, moving].map((block, index) => ({ ...block, order_index: index }));
     return {

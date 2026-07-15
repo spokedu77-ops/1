@@ -23,6 +23,8 @@ export type NoteCommandContext = {
   storeContentById: Readonly<Record<string, Record<string, unknown> | undefined>>;
   /** outbound identityLeave 투영 — Authority empty accept 입력 */
   pendingLeaveIds?: ReadonlySet<string>;
+  /** 미ack topology·LocalApply 직후 intent — 구조 reconcile 시 local order 보호 */
+  hasUnpublishedTopology?: boolean;
 };
 
 export type NoteCommandResult = {

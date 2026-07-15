@@ -24,11 +24,6 @@ import { isDocumentDescendantOf } from '@/app/lib/note/orphanSubPageBlocks';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
-import { invalidatePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
-import {
-  readRememberedNoteDocumentBlocks,
-  rememberNoteDocumentBlocks,
-} from '../_lib/noteDocumentBlocksCache';
 import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
 import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
 import { reparentDocumentTree } from '../_lib/noteDocumentTreeApi';
@@ -58,6 +53,7 @@ export function useNoteDragDrop(options: {
   noteUndo: NoteUndo;
   selectedBlockIdsRef: React.MutableRefObject<Set<string>>;
   documentEngine: NoteDocumentEngineApi;
+  onAfterBlocksChanged?: (nextBlocks: NoteBlock[]) => void;
 }) {
   const {
     blocks,
@@ -71,6 +67,7 @@ export function useNoteDragDrop(options: {
     noteUndo,
     selectedBlockIdsRef,
     documentEngine,
+    onAfterBlocksChanged,
   } = options;
 
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
@@ -214,9 +211,11 @@ export function useNoteDragDrop(options: {
         const withoutOldLink = prev.filter(
           (block) => !(block.type === 'page' && block.content?.page_document_id === movingDocId),
         );
-        return result.pageBlock && newParentId === selectedId
+        const next = result.pageBlock && newParentId === selectedId
           ? [...withoutOldLink, result.pageBlock]
           : withoutOldLink;
+        onAfterBlocksChanged?.(next);
+        return next;
       });
 
       triggerSave();
@@ -259,8 +258,10 @@ export function useNoteDragDrop(options: {
       command.affectedIds,
     );
     setBlocks(command.nextBlocks);
+    onAfterBlocksChanged?.(command.nextBlocks);
     try {
       await persistBlockReparent(command);
+      await documentEngine.flushPersistQueue();
       options.afterPersist?.();
       return true;
     } catch (e) {
@@ -269,7 +270,7 @@ export function useNoteDragDrop(options: {
       setError(e instanceof Error ? e.message : options.errorMessage);
       return false;
     }
-  }, [noteUndo, persistBlockReparent, setBlocks, setError]);
+  }, [documentEngine, noteUndo, persistBlockReparent, selectedId, setBlocks, setError]);
 
   const runPersistedBlockTransfer = useCallback(async (
     prevBlocks: NoteBlock[],
@@ -287,48 +288,11 @@ export function useNoteDragDrop(options: {
     if (selectedId) {
       markPendingBlockDeletes(selectedId, command.movedIds);
     }
-    const targetDocumentId = command.patches.find(
-      (patch) => typeof patch.document_id === 'string' && patch.document_id.length > 0,
-    )?.document_id;
     try {
-      await documentEngine.persistBlockTransaction(command.patches);
       setBlocks(command.nextBlocks);
-      if (selectedId) {
-        invalidatePrefetchedNoteBlocks(selectedId);
-        rememberNoteDocumentBlocks(
-          selectedId,
-          mergeBlocksWithStoreContent(
-            command.nextBlocks.filter((block) => block.document_id === selectedId),
-          ),
-          { trustServer: true },
-        );
-      }
-      if (typeof targetDocumentId === 'string' && targetDocumentId !== selectedId) {
-        invalidatePrefetchedNoteBlocks(targetDocumentId);
-        const movedSet = new Set(command.movedIds);
-        const patchById = new Map(command.patches.map((patch) => [patch.id, patch]));
-        const transferred = prevBlocks
-          .filter((block) => movedSet.has(block.id))
-          .map((block) => {
-            const patch = patchById.get(block.id);
-            return {
-              ...block,
-              document_id: targetDocumentId,
-              ...(patch && 'parent_block_id' in patch
-                ? { parent_block_id: patch.parent_block_id ?? null }
-                : {}),
-            };
-          });
-        const existing = readRememberedNoteDocumentBlocks(targetDocumentId) ?? [];
-        rememberNoteDocumentBlocks(
-          targetDocumentId,
-          [
-            ...existing.filter((block) => !movedSet.has(block.id)),
-            ...transferred,
-          ],
-          { trustServer: true },
-        );
-      }
+      onAfterBlocksChanged?.(command.nextBlocks);
+      await documentEngine.persistBlockTransaction(command.patches);
+      await documentEngine.flushPersistQueue();
       options.afterPersist?.();
       return true;
     } catch (e) {
@@ -481,9 +445,29 @@ export function useNoteDragDrop(options: {
                 (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
               );
               const roots = topLevelSelectedDragIds(ordered, prevBlocks);
+              // 페이지 링크는 다른 하위 페이지로 넣지 않고, 남은 블록만 이동
+              const nonPageRoots = roots.filter((id) => {
+                const block = prevBlocks.find((item) => item.id === id);
+                return block?.type !== 'page';
+              });
+              if (nonPageRoots.length === 0) {
+                const command = buildMoveBlockGroupCommand(
+                  prevBlocks,
+                  roots,
+                  target.blockId,
+                  'before',
+                );
+                if (command.affectedIds.length > 0) {
+                  await runOptimisticBlockCommand(prevBlocks, command, {
+                    logLabel: '[Note] movePageGroupBesidePage',
+                    errorMessage: '페이지 묶음 순서 저장 실패',
+                  });
+                }
+                return;
+              }
               const command = buildBlockForestTransferCommand(
                 prevBlocks,
-                roots,
+                nonPageRoots,
                 targetDocId,
               );
               if (command.movedIds.length === 0) {
@@ -549,7 +533,13 @@ export function useNoteDragDrop(options: {
     const pageInsideTarget = resolvedTarget
       ? prevBlocks.find((block) => block.id === resolvedTarget.blockId)
       : overBlock;
-    if (pageInsideTarget?.type === 'page' && resolvedTarget?.position === 'inside') {
+    // 페이지 링크 자체는 다른 페이지 "안"으로 옮기지 않는다 — 순서만 변경.
+    // (체크리스트 등 일반 블록만 하위 페이지로 transfer 허용)
+    if (
+      moving.type !== 'page'
+      && pageInsideTarget?.type === 'page'
+      && resolvedTarget?.position === 'inside'
+    ) {
       const targetDocId =
         typeof pageInsideTarget.content?.page_document_id === 'string'
           ? pageInsideTarget.content.page_document_id.trim()
@@ -579,7 +569,26 @@ export function useNoteDragDrop(options: {
       }
     }
 
-    const target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
+    let target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
+    if (
+      moving.type === 'page'
+      && target?.position === 'inside'
+    ) {
+      const container = prevBlocks.find((block) => block.id === target.blockId);
+      if (container?.type === 'page') {
+        const row = typeof document !== 'undefined'
+          ? document.querySelector<HTMLElement>(
+            `[data-note-block-row][data-block-id="${target.blockId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`,
+          )
+          : null;
+        const rect = row?.getBoundingClientRect();
+        const mid = rect ? rect.top + rect.height / 2 : pointerYRef.current;
+        target = {
+          blockId: target.blockId,
+          position: pointerYRef.current < mid ? 'before' : 'after',
+        };
+      }
+    }
     if (!target) return;
     const plan = planBlockDropAt(
       wasBlockDrag ? blocksRef.current : prevBlocks,

@@ -83,6 +83,16 @@ export function outboundHasPureIdentityLeaveOrRelocation(
   return items.some(isPureIdentityLeaveOrRelocationPush);
 }
 
+/** 미ack outbound에 same-doc 구조 변경(presence/topology/mixed)이 있는지 */
+export function outboundHasUnpublishedTopology(
+  items: ReadonlyArray<NoteBlockOpPushItem>,
+): boolean {
+  return items.some((item) => {
+    const kind = classifyPushItem(item);
+    return kind === 'topology' || kind === 'presence' || kind === 'mixed';
+  });
+}
+
 function collectCreateIdsFromOutbound(
   outbound: ReadonlyArray<NoteBlockOpPushItem>,
 ): Set<string> {

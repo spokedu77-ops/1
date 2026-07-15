@@ -5,6 +5,7 @@ import {
   isPureIdentityLeaveOrRelocationPush,
   newNoteBlockClientId,
   outboundHasIdentityLeaveOrRelocation,
+  outboundHasUnpublishedTopology,
   partitionOutboundForSafePush,
 } from './noteSyncGuards';
 import { persistOpToPushItems } from './notePersistOpToBlockOps';
@@ -28,6 +29,9 @@ describe('noteSyncGuards', () => {
     expect(classifyPushItem(topology)).toBe('topology');
     expect(classifyPushItem(relocation)).toBe('relocation');
     expect(outboundHasIdentityLeaveOrRelocation([relocation, topology])).toBe(true);
+    expect(outboundHasUnpublishedTopology([topology])).toBe(true);
+    expect(outboundHasUnpublishedTopology([relocation])).toBe(false);
+    expect(outboundHasUnpublishedTopology([softDelete])).toBe(false);
   });
 
   it('marks only pure leave for inactive drain (not mixed)', () => {

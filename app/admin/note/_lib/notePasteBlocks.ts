@@ -60,7 +60,12 @@ export function contentForPastedBlock(
   }
   const next = contentForMultilinePasteLine(spec.type, spec.text, sourceContent);
   if (spec.html?.trim()) next.html = spec.html;
-  if (spec.type === 'todo') next.checked = spec.checked ?? false;
+  if (spec.type === 'todo') {
+    next.checked = spec.checked ?? false;
+    if ((spec.listNestLevel ?? 0) > 0) {
+      next.listNestLevel = spec.listNestLevel;
+    }
+  }
   if (spec.type === 'code' && spec.language) next.language = spec.language;
   return next;
 }

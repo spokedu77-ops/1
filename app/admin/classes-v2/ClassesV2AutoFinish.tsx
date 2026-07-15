@@ -17,9 +17,10 @@ export default function ClassesV2AutoFinish() {
   useEffect(() => {
     let cancelled = false;
     let activeController: AbortController | null = null;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     const run = async () => {
-      if (cancelled) return;
+      if (cancelled || document.hidden) return;
       activeController?.abort();
       const controller = new AbortController();
       activeController = controller;
@@ -40,12 +41,19 @@ export default function ClassesV2AutoFinish() {
       }
     };
 
+    const onVisibility = () => {
+      if (!document.hidden) void run();
+    };
+
     void run();
-    const id = setInterval(run, 5 * 60 * 1000);
+    intervalId = setInterval(() => void run(), 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", onVisibility);
+
     return () => {
       cancelled = true;
       activeController?.abort();
-      clearInterval(id);
+      if (intervalId) clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {
-  COLOR_GATE_ACTION_SEQUENCE,
+  COLOR_GATE_POSE_SEQUENCE,
   GATE_COLORS,
   PLAYABLE_GATE_COLOR_IDS,
   buildColorGateSilhouetteCanvas,
+  type ColorGatePoseKey,
   type GateColorId,
 } from '../modules/colorGateGuides';
-import type { FlowModuleKey } from '../modules/flowModules';
 
 const GATE_W = 260;
 const GATE_H = 210;
@@ -28,14 +28,14 @@ interface ColorGateEntity {
   panel: THREE.Mesh;
   silhouette: THREE.Mesh;
   gateColorId: GateColorId;
-  action: FlowModuleKey;
+  pose: ColorGatePoseKey;
   scaleSmoothed: number;
   passed: boolean;
 }
 
 export interface ColorGateRuntimeInfo {
   gateColorId: GateColorId;
-  action: FlowModuleKey;
+  pose: ColorGatePoseKey;
 }
 
 function targetScaleFromDelta(delta: number): number {
@@ -65,14 +65,13 @@ function disposeMeshMaterial(mesh: THREE.Mesh): void {
 export class ColorGateManager {
   private scene: THREE.Scene | null = null;
   private gates: ColorGateEntity[] = [];
-  private poseImages: HTMLImageElement[] = [];
-  private silhouetteTextures: THREE.CanvasTexture[] = [];
+  private silhouetteTextures = new Map<ColorGatePoseKey, THREE.CanvasTexture>();
   private spawnTimer = 0;
   private readonly lowRes: boolean;
   private lastNearestGate: ColorGateEntity | null = null;
   private lastSpawnColorId: GateColorId | null = null;
   private sameColorRunLength = 0;
-  private actionBag: FlowModuleKey[] = [];
+  private poseBag: ColorGatePoseKey[] = [];
 
   constructor(lowRes = false) {
     this.lowRes = lowRes;
@@ -83,22 +82,34 @@ export class ColorGateManager {
   }
 
   isReady(): boolean {
-    return this.silhouetteTextures.length > 0;
+    return this.silhouetteTextures.size > 0;
   }
 
   setPoseImage(img: HTMLImageElement | null): void {
-    this.setPoseImages(img ? [img] : []);
+    if (!img) {
+      this.clearTextureCache();
+      return;
+    }
+    this.setPoseImagesByPose(new Map([['lunge-reach', img]]));
   }
 
   setPoseImages(images: HTMLImageElement[]): void {
-    this.poseImages = images;
+    if (images.length === 0) this.clearTextureCache();
+  }
+
+  setPoseImagesByPose(imagesByPose: Map<ColorGatePoseKey, HTMLImageElement>): void {
     this.clearTextureCache();
-    if (this.poseImages.length > 0) {
-      this.silhouetteTextures = this.poseImages.map((img) => this.buildSilhouetteTexture(img));
+    for (const [pose, img] of imagesByPose) {
+      this.silhouetteTextures.set(pose, this.buildSilhouetteTexture(img));
     }
     for (const gate of this.gates) {
       this.swapSilhouetteMaterial(gate);
     }
+  }
+
+  /** @deprecated setPoseImagesByPose 사용 */
+  setPoseImagesByAction(imagesByAction: Map<ColorGatePoseKey, HTMLImageElement>): void {
+    this.setPoseImagesByPose(imagesByAction);
   }
 
   resetRun(): void {
@@ -106,7 +117,7 @@ export class ColorGateManager {
     this.spawnTimer = FIRST_SPAWN_DELAY_SEC;
     this.lastSpawnColorId = null;
     this.sameColorRunLength = 0;
-    this.actionBag = [];
+    this.poseBag = [];
   }
 
   update(
@@ -143,7 +154,7 @@ export class ColorGateManager {
 
       if (!gate.passed && delta > PASS_Z) {
         gate.passed = true;
-        onGatePassed?.({ gateColorId: gate.gateColorId, action: gate.action });
+        onGatePassed?.({ gateColorId: gate.gateColorId, pose: gate.pose });
       }
 
       if (delta > GATE_DESPAWN_OFFSET_Z) {
@@ -153,7 +164,7 @@ export class ColorGateManager {
 
     if (nearest && onHudGate && nearest !== this.lastNearestGate) {
       this.lastNearestGate = nearest;
-      onHudGate({ gateColorId: nearest.gateColorId, action: nearest.action });
+      onHudGate({ gateColorId: nearest.gateColorId, pose: nearest.pose });
     } else if (!nearest && this.lastNearestGate) {
       this.lastNearestGate = null;
       onHudGate?.(null);
@@ -170,13 +181,13 @@ export class ColorGateManager {
   dispose(): void {
     this.clearAll();
     this.clearTextureCache();
-    this.poseImages = [];
     this.scene = null;
   }
 
   private spawn(gateColorId: GateColorId): void {
-    if (!this.scene || !this.isReady()) return;
+    if (!this.scene) return;
 
+    const pose = this.pickNextPose();
     const group = new THREE.Group();
     group.position.set(0, GATE_CENTER_Y, GATE_SPAWN_Z);
 
@@ -187,7 +198,7 @@ export class ColorGateManager {
     group.add(panel);
 
     const silhouetteGeo = new THREE.PlaneGeometry(SILHOUETTE_W, SILHOUETTE_H);
-    const silhouette = new THREE.Mesh(silhouetteGeo, this.makeSilhouetteMaterial());
+    const silhouette = new THREE.Mesh(silhouetteGeo, this.makeSilhouetteMaterial(pose));
     silhouette.position.z = 1;
     silhouette.renderOrder = 41;
     silhouette.frustumCulled = false;
@@ -199,23 +210,23 @@ export class ColorGateManager {
       panel,
       silhouette,
       gateColorId,
-      action: this.pickNextAction(),
+      pose,
       scaleSmoothed: 1,
       passed: false,
     });
   }
 
-  private pickNextAction(): FlowModuleKey {
-    if (this.actionBag.length === 0) {
-      this.actionBag = [...COLOR_GATE_ACTION_SEQUENCE];
-      for (let i = this.actionBag.length - 1; i > 0; i--) {
+  private pickNextPose(): ColorGatePoseKey {
+    if (this.poseBag.length === 0) {
+      this.poseBag = [...COLOR_GATE_POSE_SEQUENCE];
+      for (let i = this.poseBag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        const tmp = this.actionBag[i]!;
-        this.actionBag[i] = this.actionBag[j]!;
-        this.actionBag[j] = tmp;
+        const tmp = this.poseBag[i]!;
+        this.poseBag[i] = this.poseBag[j]!;
+        this.poseBag[j] = tmp;
       }
     }
-    return this.actionBag.pop() ?? 'reach';
+    return this.poseBag.pop() ?? 'star';
   }
 
   private pickNextGateColor(): GateColorId {
@@ -259,8 +270,8 @@ export class ColorGateManager {
   }
 
   private clearTextureCache(): void {
-    for (const tex of this.silhouetteTextures) tex.dispose();
-    this.silhouetteTextures = [];
+    for (const tex of this.silhouetteTextures.values()) tex.dispose();
+    this.silhouetteTextures.clear();
   }
 
   private buildSilhouetteTexture(poseImage: HTMLImageElement): THREE.CanvasTexture {
@@ -285,24 +296,25 @@ export class ColorGateManager {
     });
   }
 
-  private makeSilhouetteMaterial(): THREE.MeshBasicMaterial {
-    const texture = this.silhouetteTextures.length > 0
-      ? this.silhouetteTextures[Math.floor(Math.random() * this.silhouetteTextures.length)]
-      : undefined;
+  private makeSilhouetteMaterial(pose: ColorGatePoseKey): THREE.MeshBasicMaterial {
+    const texture = this.silhouetteTextures.get(pose);
     return new THREE.MeshBasicMaterial({
       map: texture,
       color: 0xffffff,
       toneMapped: false,
       fog: false,
       transparent: true,
+      opacity: texture ? 1 : 0,
       depthWrite: false,
       depthTest: false,
       side: THREE.DoubleSide,
+      visible: Boolean(texture),
     });
   }
 
   private swapSilhouetteMaterial(gate: ColorGateEntity): void {
     disposeMeshMaterial(gate.silhouette);
-    gate.silhouette.material = this.makeSilhouetteMaterial();
+    gate.silhouette.material = this.makeSilhouetteMaterial(gate.pose);
+    gate.silhouette.visible = Boolean(this.silhouetteTextures.get(gate.pose));
   }
 }

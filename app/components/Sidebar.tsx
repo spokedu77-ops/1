@@ -79,20 +79,23 @@ export default function Sidebar({ isDesktopOpen = true, onToggleDesktop }: Sideb
 
     let cancelled = false;
 
-    const refresh = async () => {
-      const count = await loadConsultPendingCount();
+    const refresh = async (force = false) => {
+      const count = await loadConsultPendingCount({ force });
       if (!cancelled && count !== null) {
         setConsultPendingCount(count);
       }
     };
 
-    void refresh();
+    void refresh(true);
 
-    const interval = window.setInterval(() => void refresh(), 60_000);
-    const onRefresh = () => void refresh();
-    const onFocus = () => void refresh();
+    // 탭이 보일 때만 5분마다 갱신 (기존 60초 전역 폴링 대체)
+    const interval = window.setInterval(() => {
+      if (!document.hidden) void refresh(false);
+    }, 5 * 60_000);
+    const onRefresh = () => void refresh(true);
+    const onFocus = () => void refresh(false);
     const onVisibility = () => {
-      if (!document.hidden) void refresh();
+      if (!document.hidden) void refresh(false);
     };
 
     window.addEventListener(ADMIN_CONSULT_PENDING_REFRESH, onRefresh);

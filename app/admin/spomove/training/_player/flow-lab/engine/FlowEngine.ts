@@ -39,6 +39,7 @@ import { PostProcessingRenderer } from './renderers/PostProcessingRenderer';
 import { staticPerfTier } from '../../lib/reactTrainPerf';
 import {
   preloadColorGatePoseImages,
+  type ColorGatePoseKey,
   type GateColorId,
 } from './modules/colorGateGuides';
 
@@ -68,8 +69,8 @@ const JUMP_DURATIONS: number[] = [0.72, 0.70, 0.64, 0.62, 0.62, 0.62, 0.62, 0.62
 
 // 점프 착지 졸트 (FlowCamera에 전달하는 값)
 const MICROJOLT_AMOUNT  = 0.65;
-const PUNCH_VFX_Y       = 52;  // 레인 위 펀치 (낮음)
-const KICK_VFX_Y        = 102;  // 가슴~어깨 높이 킥
+const PUNCH_VFX_Y       = 112;  // 복부 상단~가슴 하단 펀치
+const KICK_VFX_Y        = 66;  // 무릎~허벅지 높이 킥
 
 // 스피드라인
 const SPEEDLINE_COUNT      = 250;
@@ -108,18 +109,21 @@ export interface FlowEngineCallbacks {
   onFlash:        () => void;
   /** 색 관문 스테이지 시작 (색은 onColorGateColor로 문과 동기화) */
   onColorGateStage?: (info: {
-    action: FlowModuleKey;
+    pose: ColorGatePoseKey;
     step: number;
     total: number;
   }) => void;
-  /** 가장 가까운 관문 색 — 문마다 갱신 (null이면 HUD 숨김) */
-  onColorGateColor?: (gateColorId: GateColorId | null, action?: FlowModuleKey | null) => void;
+  /** 가장 가까운 관문 색·포즈 — 문마다 갱신 (null이면 HUD 숨김) */
+  onColorGateColor?: (gateColorId: GateColorId | null, pose?: ColorGatePoseKey | null) => void;
+  /** 관문 통과 누적 횟수 */
+  onColorGatePassCount?: (count: number) => void;
 }
 
 export interface FlowStats {
   stagesCompleted: number;
   totalSec:        number;
   colorGateColorCounts?: Record<GateColorId, number>;
+  colorGatePassCount?: number;
 }
 
 export interface FlowEngineOptions {
@@ -173,7 +177,7 @@ export class FlowEngine {
   );
   private obstacles:      ObstacleManager | null = null;
   private colorGates:     ColorGateManager | null = null;
-  private currentColorGateAction: FlowModuleKey | null = null;
+  private currentColorGatePose: ColorGatePoseKey | null = null;
   private flowCam:        FlowCamera | null = null;
   private bridgeRenderer: BridgeRenderer | null = null;
   private spaceEnv:       SpaceEnvironment | null = null;
@@ -233,6 +237,7 @@ export class FlowEngine {
     stagesCompleted: 0,
     totalSec: 0,
     colorGateColorCounts: { red: 0, yellow: 0, green: 0, blue: 0 },
+    colorGatePassCount: 0,
   };
   private countdownTimer: ReturnType<typeof setTimeout> | null = null;
   private disposed = false;
@@ -664,9 +669,9 @@ export class FlowEngine {
     }
     this.colorGates = new ColorGateManager(staticPerfTier === 'low');
     this.colorGates.setScene(this.scene);
-    void preloadColorGatePoseImages().then((images) => {
+    void preloadColorGatePoseImages().then((imagesByPose) => {
       if (this.disposed || !this.colorGates) return;
-      this.colorGates.setPoseImages(images);
+      this.colorGates.setPoseImagesByPose(imagesByPose);
     });
   }
 
@@ -748,17 +753,18 @@ export class FlowEngine {
     }
     this.stageScheduleIdx = 0;
 
-    if (stage.isColorGate && stage.colorGateAction) {
-      this.currentColorGateAction = stage.colorGateAction;
+    const initialPose = stage.colorGatePose ?? stage.colorGateAction;
+    if (stage.isColorGate && initialPose) {
+      this.currentColorGatePose = initialPose;
       this.ensureColorGateManager();
       this.colorGates?.resetRun();
       this.cb.onColorGateStage?.({
-        action: stage.colorGateAction,
+        pose: initialPose,
         step: stage.colorGateStep ?? 1,
         total: stage.colorGateTotal ?? 5,
       });
     } else {
-      this.currentColorGateAction = null;
+      this.currentColorGatePose = null;
       this.cb.onColorGateColor?.(null);
     }
 
@@ -1037,12 +1043,14 @@ export class FlowEngine {
         dt,
         bridgeMove,
         (gate) => {
-          this.cb.onColorGateColor?.(gate?.gateColorId ?? null, gate?.action ?? null);
+          this.cb.onColorGateColor?.(gate?.gateColorId ?? null, gate?.pose ?? null);
         },
         (gate: ColorGateRuntimeInfo) => {
           const counts = this.stats.colorGateColorCounts ?? { red: 0, yellow: 0, green: 0, blue: 0 };
           counts[gate.gateColorId] += 1;
           this.stats.colorGateColorCounts = counts;
+          this.stats.colorGatePassCount = (this.stats.colorGatePassCount ?? 0) + 1;
+          this.cb.onColorGatePassCount?.(this.stats.colorGatePassCount);
         },
       );
     }

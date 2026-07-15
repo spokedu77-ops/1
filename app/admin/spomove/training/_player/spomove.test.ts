@@ -22,8 +22,8 @@ import {
 import { registerPresentedSignal, type RepsState } from './lib/repsLogic';
 import { getNextIntervalState } from './lib/intervalTimer';
 import { generateSignal, createBasicSignalGenerator, createSimonSignalGenerator, type FruitSlide } from './lib/signals';
-import { generateObstacleSchedule } from './flow/engine/modules/flowObstacleSchedule';
-import type { FlowModuleKey } from './flow/engine/modules/flowModules';
+import { generateObstacleSchedule } from './flow-lab/engine/modules/flowObstacleSchedule';
+import type { FlowModuleKey } from './flow-lab/engine/modules/flowModules';
 import { spatialArrowFillForDirection } from './constants';
 
 // ── localStorage mock ──────────────────────────────────────────────────────────

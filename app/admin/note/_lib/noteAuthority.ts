@@ -1,3 +1,4 @@
+import { wouldReconcileRegressLocalStructure } from './noteBlockStateMerge';
 import type { NoteBlock } from './types';
 
 /**
@@ -8,6 +9,27 @@ import type { NoteBlock } from './types';
 export type EmptySnapshotDecision = 'accept_empty' | 'reject_race_wipe' | 'merge_non_empty';
 
 export type RegressiveContentDecision = 'push' | 'drop_stale';
+
+export type StructureReconcileDecision = 'accept_incoming' | 'preserve_local';
+
+/**
+ * 미ack topology op가 있을 때 incoming 구조가 로컬 reorder를 되돌리려 하면 local 유지.
+ * outbound 없으면 coordinator/incoming 구조 authority (다중 탭·pull).
+ */
+export function decideStructureReconcile(input: {
+  localBlocks: ReadonlyArray<NoteBlock>;
+  incomingBlocks: ReadonlyArray<NoteBlock>;
+  hasUnpublishedTopology: boolean;
+}): StructureReconcileDecision {
+  if (!input.hasUnpublishedTopology) return 'accept_incoming';
+  if (wouldReconcileRegressLocalStructure(
+    [...input.localBlocks],
+    [...input.incomingBlocks],
+  )) {
+    return 'preserve_local';
+  }
+  return 'accept_incoming';
+}
 
 /** text/title 공통 — empty 보호·regressive content 동일 기준 */
 export function readAuthorityBlockText(content: unknown): string {

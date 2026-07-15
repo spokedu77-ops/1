@@ -28,15 +28,17 @@ import {
 import { buildKnownBlockIdsForPush,
   isPureIdentityLeaveOrRelocationPush,
   outboundHasPureIdentityLeaveOrRelocation,
+  outboundHasUnpublishedTopology,
   partitionOutboundForSafePush,
 } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
-import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
+import { mergeBlocksWithStoreContent, wouldReconcileRegressLocalStructure } from './noteBlockStateMerge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { traceApiEgress, type SnapshotTraceOrigin } from './noteFlickerTrace';
 import {
   markNoteLocalSave,
+  NOTE_LOCAL_SAVE_SUPPRESS_MS,
 } from './noteReconcileIdle';
 import {
   getStructuralExcludeIds,
@@ -45,6 +47,11 @@ import {
 
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
+/** outbound가 있어 push를 미룰 때 — 0이면 ops/state 폭주 */
+const PENDING_OUTBOUND_RETRY_MS = 1500;
+/** deferred-only 재시도 백오프 (Active CPU 절감) */
+const DEFERRED_RETRY_BACKOFF_MS = [2_000, 5_000, 15_000, 30_000] as const;
+const SYNC_STATE_CACHE_MS = 2_000;
 const LEADER_CHANNEL = 'spm-note-sync-leader-v1';
 const LEADER_LOCK_PREFIX = 'spm-note-sync-leader-lock';
 const MAX_PUSH_ATTEMPTS = 8;
@@ -129,6 +136,35 @@ async function fetchSyncState(documentId: string): Promise<number> {
   }
 }
 
+/** 짧은 구간 동일 문서 state 조회 합치기 — push 루프·deferred 재시도 CPU 절감 */
+const syncStateCache = new Map<string, { seq: number; fetchedAt: number }>();
+/** force여도 이 간격 안에서는 네트워크 재조회 금지 (폭주 차단) */
+const SYNC_STATE_HARD_FLOOR_MS = 3_000;
+const syncStateLastNetworkAt = new Map<string, number>();
+
+async function fetchSyncStateCached(
+  documentId: string,
+  options?: { force?: boolean },
+): Promise<number> {
+  const hit = syncStateCache.get(documentId);
+  const now = Date.now();
+  const lastNet = syncStateLastNetworkAt.get(documentId) ?? 0;
+  if (hit && now - hit.fetchedAt < SYNC_STATE_CACHE_MS) {
+    return hit.seq;
+  }
+  if (hit && now - lastNet < SYNC_STATE_HARD_FLOOR_MS && !options?.force) {
+    return hit.seq;
+  }
+  // force여도 hard floor 내면 캐시 사용 — enqueue/open만 force+floor 돌파 필요 시 아래
+  if (hit && now - lastNet < SYNC_STATE_HARD_FLOOR_MS) {
+    return hit.seq;
+  }
+  const seq = await fetchSyncState(documentId);
+  syncStateCache.set(documentId, { seq, fetchedAt: now });
+  syncStateLastNetworkAt.set(documentId, now);
+  return seq;
+}
+
 async function pullOps(documentId: string, since: number): Promise<{ lastSeq: number; ops: NoteBlockOpRecord[] }> {
   traceApiEgress('pullOps', documentId);
   try {
@@ -175,7 +211,7 @@ async function pushOps(
         throw new Error(message);
       }
       if (res.status === 500 && isNoteSyncRecoverableError(message)) {
-        const state = await fetchSyncState(documentId);
+        const state = await fetchSyncStateCached(documentId);
         return {
           ok: false,
           error: 'seq_conflict',
@@ -224,6 +260,11 @@ export class NoteSyncCoordinator {
 
   private lastAppliedSeq = 0;
 
+  /** LocalApply 직후 outbound enqueue 전 — pull/reconcile이 reorder를 덮지 않게 */
+  private topologyIntentUntil = 0;
+
+  private cachedOutboundHasTopology = false;
+
   constructor(
     private readonly documentId: string,
     private callbacks: NoteSyncCoordinatorCallbacks,
@@ -240,6 +281,7 @@ export class NoteSyncCoordinator {
     this.lastAppliedSeq = local.lastAppliedSeq;
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
+    this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(outbound);
     try {
       await this.rebaseFromServer({ allowRemotePull: outbound.length === 0 });
     } catch (error) {
@@ -253,10 +295,13 @@ export class NoteSyncCoordinator {
     const local = await readLocalDocument(this.documentId);
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
+    this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(outbound);
     const lastSeq = await fetchSyncState(this.documentId);
+    syncStateCache.set(this.documentId, { seq: lastSeq, fetchedAt: Date.now() });
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
     const excludedIds = collectPendingOutboundExcludedIds(outbound, this.documentId);
+    this.lastAppliedSeq = lastSeq;
     if (outbound.length > 0) {
       if (local && local.blocks.length > 0) {
         this.blocks = mergeServerBlocksIntoLocalSnapshot(
@@ -269,20 +314,57 @@ export class NoteSyncCoordinator {
       } else {
         this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
       }
+    } else if (
+      local
+      && local.blocks.length > 0
+      && local.lastAppliedSeq >= lastSeq
+    ) {
+      // outbound 비었지만 로컬 seq가 서버와 같거나 앞설 때 — 미ack reorder가
+      // IDB에만 남은 경우. 서버로 통째로 덮어 좀비 복귀하지 않는다.
+      this.blocks = mergeServerBlocksIntoLocalSnapshot(
+        local.blocks,
+        serverBlocks,
+        excludedIds,
+      );
+      if (wouldReconcileRegressLocalStructure(this.blocks, serverBlocks)) {
+        const serverById = new Map(serverBlocks.map((block) => [block.id, block]));
+        const patches = this.blocks.flatMap((block) => {
+          const server = serverById.get(block.id);
+          if (!server) return [];
+          if (
+            server.order_index === block.order_index
+            && (server.parent_block_id ?? null) === (block.parent_block_id ?? null)
+          ) {
+            return [];
+          }
+          return [{
+            id: block.id,
+            order_index: block.order_index,
+            parent_block_id: block.parent_block_id ?? null,
+          }];
+        });
+        if (patches.length > 0) {
+          await this.enqueuePersistOp(
+            { type: 'blockTransaction', patches, deleteIds: [] },
+            { immediate: true },
+          );
+        }
+      }
     } else {
       this.blocks = serverBlocks;
     }
-    this.lastAppliedSeq = lastSeq;
 
     await this.persistLocal();
     this.startLeaderElection();
-    if (outbound.length > 0) {
-      void this.flushPush();
+    if (outbound.length > 0 || await this.hasPendingOutbound()) {
+      await this.flushPush();
     }
   }
 
   setBlocks(blocks: NoteBlock[]): void {
     this.blocks = dedupeNoteBlocksById(blocks);
+    // 빈 스냅샷으로는 durable IDB를 덮지 않는다 — open wipe가 미ack reorder를 지우는 경로.
+    if (this.blocks.length === 0) return;
     void this.persistLocal();
   }
 
@@ -292,6 +374,20 @@ export class NoteSyncCoordinator {
 
   getLastAppliedSeq(): number {
     return this.lastAppliedSeq;
+  }
+
+  /** replaceBlocks/applyPatches LocalApply 직후 — outbound 등록 전 race 창 보호 */
+  markTopologyIntent(ms = NOTE_LOCAL_SAVE_SUPPRESS_MS): void {
+    this.topologyIntentUntil = Date.now() + ms;
+  }
+
+  hasTopologyIntent(): boolean {
+    if (Date.now() > this.topologyIntentUntil) return false;
+    return true;
+  }
+
+  hasUnpublishedTopologyAuthority(): boolean {
+    return this.hasTopologyIntent() || this.cachedOutboundHasTopology;
   }
 
   async enqueuePersistOp(op: NotePersistOp, options?: { immediate?: boolean }): Promise<void> {
@@ -307,6 +403,8 @@ export class NoteSyncCoordinator {
     await appendOutboundOps(this.documentId, items);
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
+    this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(outbound);
+    this.deferredRetryCount = 0;
     const delay = options?.immediate || op.type !== 'patchContent'
       ? STRUCTURE_PUSH_DEBOUNCE_MS
       : CONTENT_PUSH_DEBOUNCE_MS;
@@ -314,6 +412,11 @@ export class NoteSyncCoordinator {
     this.startLeaderElection();
     this.isLeader = true;
     if (options?.immediate || op.type !== 'patchContent') {
+      // leader election의 schedulePush와 중복 flush 방지
+      if (this.pushTimer) {
+        clearTimeout(this.pushTimer);
+        this.pushTimer = null;
+      }
       await this.flushPush();
       return;
     }
@@ -327,6 +430,8 @@ export class NoteSyncCoordinator {
 
   private outboundFlushWatchdog: ReturnType<typeof setTimeout> | null = null;
 
+  private deferredRetryCount = 0;
+
   /** Playwright 등 locks 부재·선출 레이스에서도 outbound가 무기한 남는 것을 막는다 */
   private scheduleOutboundFlushWatchdog(delayMs: number): void {
     if (this.outboundFlushWatchdog) clearTimeout(this.outboundFlushWatchdog);
@@ -336,12 +441,21 @@ export class NoteSyncCoordinator {
       void (async () => {
         if (!(await this.hasPendingOutbound())) return;
         if (!this.isLeader) {
-          this.becomeLeaderAndFlush();
-          return;
+          this.isLeader = true;
         }
-        this.schedulePush(0);
+        // becomeLeaderAndFlush(0) 금지 — pending만 있을 때 드물게 1회
+        this.schedulePush(Math.max(delayMs, PENDING_OUTBOUND_RETRY_MS));
       })();
-    }, Math.max(delayMs, 100) + 50);
+    }, Math.max(delayMs, PENDING_OUTBOUND_RETRY_MS) + 50);
+  }
+
+  private scheduleDeferredRetry(): void {
+    const delay = DEFERRED_RETRY_BACKOFF_MS[
+      Math.min(this.deferredRetryCount, DEFERRED_RETRY_BACKOFF_MS.length - 1)
+    ]!;
+    this.deferredRetryCount += 1;
+    this.schedulePush(delay);
+    this.scheduleOutboundFlushWatchdog(delay);
   }
 
   schedulePull(): void {
@@ -360,7 +474,19 @@ export class NoteSyncCoordinator {
       clearTimeout(this.pushTimer);
       this.pushTimer = null;
     }
-    await this.flushPush();
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await this.flushPush();
+      // eslint-disable-next-line no-await-in-loop
+      if (!(await this.hasPendingOutbound())) return;
+      // eslint-disable-next-line no-await-in-loop
+      await new Promise((resolve) => {
+        setTimeout(resolve, 50);
+      });
+    }
+    if (await this.hasPendingOutbound()) {
+      this.scheduleDeferredRetry();
+    }
   }
 
   dispose(): void {
@@ -439,13 +565,15 @@ export class NoteSyncCoordinator {
   }
 
   private async pushBatchOnce(): Promise<boolean> {
+    const pendingFirst = await listOutboundOps(this.documentId);
+    if (pendingFirst.length === 0) return false;
+
     const isActiveDocument =
       useNoteBlockStore.getState().activeDocumentId === this.documentId;
 
     // activeDocument는 Project(store 쓰기)용. identityLeave·relocation Outbound drain은 막지 않는다.
     if (!isActiveDocument) {
-      const pending = await listOutboundOps(this.documentId);
-      const pendingItems = pending.map(({ documentId: _d, createdAt: _c, ...op }) => op);
+      const pendingItems = pendingFirst.map(({ documentId: _d, createdAt: _c, ...op }) => op);
       if (!outboundHasPureIdentityLeaveOrRelocation(pendingItems)) {
         this.schedulePush(2000);
         return false;
@@ -460,8 +588,12 @@ export class NoteSyncCoordinator {
 
     for (let attempt = 0; attempt < MAX_PUSH_ATTEMPTS; attempt += 1) {
       // outbound이 있어도 seq를 맞춰야 push baseSeq가 서버와 일치한다.
+      // 첫 attempt만 force — 이후는 캐시·hard floor로 Fluid CPU 절감
       // eslint-disable-next-line no-await-in-loop
-      await this.rebaseFromServer({ allowRemotePull: true });
+      await this.rebaseFromServer({
+        allowRemotePull: true,
+        forceStateFetch: attempt === 0,
+      });
 
       const outbound = await listOutboundOps(this.documentId);
       if (outbound.length === 0) return false;
@@ -487,11 +619,13 @@ export class NoteSyncCoordinator {
       }
 
       if (safeReady.length === 0) {
-        // 상태 변화 없이 deferred만 남았으면 서버를 반복 조회하지 않는다.
-        // 새 op enqueue · realtime pull · 문서 재진입이 다음 재시도 트리거다.
-        void deferred;
+        // deferred만 남으면 자동 재시도하지 않는다.
+        // (재시도 루프가 ops/state를 Fluid Active CPU로 연타함)
+        // 새 enqueue · drain · 문서 재진입이 다음 flush 트리거.
         return false;
       }
+
+      this.deferredRetryCount = 0;
 
       const consumedClientOpIds = safeReady.map((op) => op.clientOpId);
 
@@ -499,7 +633,7 @@ export class NoteSyncCoordinator {
       const result = await pushOps(this.documentId, this.lastAppliedSeq, safeReady);
       if (!result.ok) {
         await this.applyRemoteOps(result.ops, result.lastSeq);
-        const freshSeq = await fetchSyncState(this.documentId);
+        const freshSeq = await fetchSyncStateCached(this.documentId, { force: true });
         if (freshSeq > this.lastAppliedSeq) {
           this.lastAppliedSeq = freshSeq;
           await this.persistLocal();
@@ -515,15 +649,20 @@ export class NoteSyncCoordinator {
         pendingExcluded,
       );
       this.lastAppliedSeq = result.lastSeq;
+      syncStateCache.set(this.documentId, {
+        seq: result.lastSeq,
+        fetchedAt: Date.now(),
+      });
       await removeOutboundOps(consumedClientOpIds);
       const remainingOutbound = await listOutboundOps(this.documentId);
       syncStructuralExcludeFromOutbound(this.documentId, remainingOutbound);
+      this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(remainingOutbound);
       await this.persistLocal();
       markNoteLocalSave(this.documentId);
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:push');
       this.broadcastState();
-      // deferred가 남아 있을 때만 while 계속 — 없으면 한 번 더 state 폴링하지 않음
-      return deferred.length > 0;
+      // deferred 잔여가 있어도 while 즉시 재진입 금지
+      return false;
     }
 
     devLogger.warn('[NoteSyncCoordinator] push exhausted retries; scheduling recovery');
@@ -531,8 +670,13 @@ export class NoteSyncCoordinator {
     return false;
   }
 
-  private async rebaseFromServer(options?: { allowRemotePull?: boolean }): Promise<void> {
-    const serverSeq = await fetchSyncState(this.documentId);
+  private async rebaseFromServer(options?: {
+    allowRemotePull?: boolean;
+    forceStateFetch?: boolean;
+  }): Promise<void> {
+    const serverSeq = await fetchSyncStateCached(this.documentId, {
+      force: options?.forceStateFetch === true,
+    });
 
     if (this.lastAppliedSeq > serverSeq) {
       this.lastAppliedSeq = serverSeq;
@@ -540,11 +684,15 @@ export class NoteSyncCoordinator {
       return;
     }
 
-      if (this.lastAppliedSeq < serverSeq) {
+    if (this.lastAppliedSeq < serverSeq) {
       if (options?.allowRemotePull === false) return;
       const pulled = await pullOps(this.documentId, this.lastAppliedSeq);
       if (pulled.ops.length > 0 || pulled.lastSeq !== this.lastAppliedSeq) {
         await this.applyRemoteOps(pulled.ops, pulled.lastSeq, { notify: false });
+        syncStateCache.set(this.documentId, {
+          seq: pulled.lastSeq,
+          fetchedAt: Date.now(),
+        });
       }
     }
   }
@@ -559,9 +707,10 @@ export class NoteSyncCoordinator {
       if (storeMerged.length > 0) {
         this.blocks = dedupeNoteBlocksById(mergeBlocksWithStoreContent(storeMerged));
       }
-      if (this.isPushing || await this.hasPendingOutbound()) {
+      if (this.isPushing || await this.hasPendingOutbound() || this.hasTopologyIntent()) {
         // create/patch가 아직 서버에 없으면 pull 스냅샷이 로컬 블록을 지울 수 있다.
-        this.schedulePush(STRUCTURE_PUSH_DEBOUNCE_MS);
+        // STRUCTURE_PUSH_DEBOUNCE_MS=0 이라 즉시 재시도하면 ops/state 폭주.
+        this.schedulePush(PENDING_OUTBOUND_RETRY_MS);
         return;
       }
       await this.rebaseFromServer();
@@ -585,6 +734,7 @@ export class NoteSyncCoordinator {
   ): Promise<void> {
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
+    this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(outbound);
     const pendingExcluded = getStructuralExcludeIds(this.documentId);
     if (ops.length > 0) {
       this.blocks = applyRemoteOpRecords(this.blocks, ops);
@@ -612,9 +762,16 @@ export class NoteSyncCoordinator {
 
   private becomeLeaderAndFlush(): void {
     this.isLeader = true;
-    const delay = this.pendingPushDelayMs ?? STRUCTURE_PUSH_DEBOUNCE_MS;
+    const delay = this.pendingPushDelayMs;
     this.pendingPushDelayMs = null;
-    this.schedulePush(delay);
+    void (async () => {
+      if (this.disposed) return;
+      if (!(await this.hasPendingOutbound())) return;
+      // STRUCTURE_PUSH_DEBOUNCE_MS=0 이면 schedulePush(0) 폭주 → ops/state 연타
+      this.schedulePush(
+        delay == null || delay <= 0 ? PENDING_OUTBOUND_RETRY_MS : delay,
+      );
+    })();
   }
 
   private startLeaderElection(): void {

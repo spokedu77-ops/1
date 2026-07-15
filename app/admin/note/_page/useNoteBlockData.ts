@@ -29,10 +29,7 @@ import {
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import { readLocalDocument } from '../_lib/noteLocalDb';
-import {
-  rememberNoteDocumentBlocks,
-} from '../_lib/noteDocumentBlocksCache';
-import { openNoteDocument, paintBootstrapBlocksSync, paintInstantSnapshotFromLocalDb, prepareNoteDocumentOpenSync } from '../_lib/noteDocumentOpen';
+import { openNoteDocument } from '../_lib/noteDocumentOpen';
 import type { NoteBlock } from '../_lib/types';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
@@ -150,6 +147,7 @@ export function useNoteBlockData(options: {
     const engine = documentEngineRef.current;
     if (engine.hasPendingContent()) return true;
     if (engine.hasPendingPersist()) return true;
+    if (engine.hasUnpublishedTopologySync()) return true;
     if (await engine.hasPendingOutbound()) return true;
     const storeForDoc = selectDocumentBlocks(useNoteBlockStore.getState(), selectedId);
     const coordinatorForDoc = engine.getCoordinatorBlocks()
@@ -162,6 +160,7 @@ export function useNoteBlockData(options: {
     isActiveNoteEditorFocused()
     || documentEngineRef.current.hasPendingContent()
     || documentEngineRef.current.hasPendingPersist()
+    || documentEngineRef.current.hasUnpublishedTopologySync()
   ), []);
 
   const scheduleDeferredOplogPull = useCallback((documentId: string) => {
@@ -311,60 +310,20 @@ export function useNoteBlockData(options: {
 
     if (openLayoutSyncKeyRef.current === selectedId) return;
     openLayoutSyncKeyRef.current = selectedId;
-
-    const previousId = previousDocumentIdRef.current;
-    if (previousId && previousId !== selectedId) {
-      const leavingSnapshot = mergeBlocksWithStoreContent(
-        selectDocumentBlocks(useNoteBlockStore.getState(), previousId),
-      );
-      if (leavingSnapshot.length > 0) {
-        rememberNoteDocumentBlocks(previousId, leavingSnapshot);
-      }
-    }
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
     useNoteBlockStore.getState().setActiveDocumentId(documentId);
+    // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
+    // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
+    useNoteBlockStore.getState().replaceBlocks([]);
     void readLocalDocument(documentId);
-    let prep = prepareNoteDocumentOpenSync(documentId, documentEngineRef.current);
-    let paintedFromBootstrap = false;
-    const bootstrapPayload = bootstrapBlocksRef.current;
-    if (
-      !prep.hasCache
-      && bootstrapPayload?.documentId === documentId
-      && bootstrapPayload.blocks.length > 0
-    ) {
-      if (paintBootstrapBlocksSync(documentId, bootstrapPayload.blocks, documentEngineRef.current)) {
-        prep = { hasCache: true, emptyConfirmed: false };
-        paintedFromBootstrap = true;
-      }
-    }
-    if (prep.hasCache) {
-      setLoadSettledDocId(documentId, paintedFromBootstrap ? 'openSync:bootstrap' : 'openSync:cache');
-      setLoadingBlocks(false, 'openSync:cache');
-      setBlocksEmptyConfirmed(prep.emptyConfirmed, 'openSync:cache');
-    } else {
-      setBlocksEmptyConfirmed(false, 'openSync:noCache');
-      setLoadSettledDocId(null, 'openSync:noCache');
-      setLoadingBlocks(true, 'openSync:noCache');
-    }
-    setBlocksSyncing(false, 'openSync');
-  }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
-  useEffect(() => {
-    if (!selectedId || !bootstrapBlocks) return;
-    if (bootstrapBlocks.documentId !== selectedId) return;
-    if (loadSettledDocId === selectedId) return;
-    const painted = paintBootstrapBlocksSync(
-      selectedId,
-      bootstrapBlocks.blocks,
-      documentEngineRef.current,
-    );
-    if (!painted) return;
-    setLoadSettledDocId(selectedId, 'openSync:bootstrap');
-    setLoadingBlocks(false, 'openSync:bootstrap');
-    setBlocksEmptyConfirmed(false, 'openSync:bootstrap');
-  }, [bootstrapBlocks, selectedId, loadSettledDocId, setLoadSettledDocId, setLoadingBlocks, setBlocksEmptyConfirmed]);
+    setLoadSettledDocId(null, 'open:start');
+    setLoadingBlocks(true, 'open:start');
+    setBlocksEmptyConfirmed(false, 'open:start');
+    setBlocksSyncing(false, 'open:start');
+  }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -405,17 +364,6 @@ export function useNoteBlockData(options: {
             break;
           }
           await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-      }
-
-      if (!bootstrapForOpen) {
-        const paintedFromIdb = await paintInstantSnapshotFromLocalDb(
-          documentId,
-          documentEngineRef.current,
-        );
-        if (cancelled || blockLoadGenRef.current !== loadGen) return;
-        if (paintedFromIdb) {
-          markLoadSettled();
         }
       }
 
@@ -478,12 +426,6 @@ export function useNoteBlockData(options: {
       resetNoteDocumentEditorState();
     }
   }, [selectedId, setPendingDeleteUndo]);
-
-  useEffect(() => {
-    if (!selectedId || blocksSyncing) return;
-    if (blocks.length === 0) return;
-    rememberNoteDocumentBlocks(selectedId, mergeBlocksWithStoreContent(blocks));
-  }, [blocks, blocksSyncing, selectedId]);
 
   const childrenByParentBlock = useMemo(() => buildChildrenByParentBlock(blocks), [blocks]);
   const rootBlocks = useMemo(() => sortRootBlocks(blocks), [blocks]);

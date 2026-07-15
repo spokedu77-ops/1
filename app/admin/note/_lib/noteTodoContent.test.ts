@@ -14,6 +14,18 @@ describe('noteTodoContent', () => {
     expect(normalizeTodoBlockContentRecord({ checked: true }).checked).toBe(true);
   });
 
+  it('preserves listNestLevel when nested', () => {
+    expect(normalizeTodoBlockContentRecord({
+      text: 'nested',
+      checked: false,
+      listNestLevel: 2,
+    })).toEqual({
+      text: 'nested',
+      checked: false,
+      listNestLevel: 2,
+    });
+  });
+
   it('patchTodoChecked toggles checked', () => {
     expect(patchTodoChecked({ text: 'x', checked: false }).checked).toBe(true);
     expect(patchTodoChecked({ text: 'x', checked: true }).checked).toBe(false);

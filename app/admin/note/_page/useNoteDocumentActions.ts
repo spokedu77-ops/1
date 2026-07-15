@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { startTransition, useCallback } from 'react';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
@@ -6,11 +6,7 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { BOARD_DEFAULT_GROUP } from '../_components/BoardView';
 import { resolveDocIcon } from '../_lib/noteDocumentUi';
 import { commitAndResetNoteDocumentBeforeSwitch } from '../_lib/noteBlockStateMerge';
-import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
-import {
-  awaitPrefetchedNoteBlocks,
-  prefetchNoteDocumentBlocks,
-} from '../_lib/noteDocumentBlocksPrefetch';
+import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import { buildInsertBlockCommand } from '../_lib/noteBlockCommands';
 import { createSubPageTree } from '../_lib/noteDocumentTreeApi';
 import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
@@ -91,9 +87,6 @@ export function useNoteDocumentActions(options: {
     if (doc.id === selectedId) return;
     await commitAndResetNoteDocumentBeforeSwitch();
     prefetchNoteDocumentBlocks(doc.id);
-    if (readRememberedNoteDocumentBlocks(doc.id) === null) {
-      await awaitPrefetchedNoteBlocks(doc.id);
-    }
     setSelectedId(doc.id);
     setFocusedToggleId(null);
     setFocusedEditorBlockId(null);

@@ -1523,30 +1523,6 @@ export default function MemoryGameApp({
                   </div>
                 </div>
                 <div style={S.sec}>
-                  {stepNum(7, "Kids safe mode")}
-                  <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Reduces DIVE motion and speed for safer play.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => set('kidsSafeMode', !settings.kidsSafeMode)}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem 0.9rem',
-                      borderRadius: '0.75rem',
-                      border: `2px solid ${settings.kidsSafeMode ? '#F97316' : 'var(--border)'}`,
-                      background: settings.kidsSafeMode ? '#FFF7ED' : 'var(--card)',
-                      color: settings.kidsSafeMode ? '#C2410C' : 'var(--text)',
-                      fontWeight: 800,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      textAlign: 'left',
-                    }}
-                  >
-                    Kids safe mode: {settings.kidsSafeMode ? "On" : "Off"}
-                  </button>
-                </div>
-                <div style={S.sec}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
                     <div style={{ fontWeight: 800, fontSize: "0.9rem" }}>DIVE presets</div>
                     <button
@@ -2014,7 +1990,6 @@ export default function MemoryGameApp({
     return (
       <FlowGameClient
         stages={stages}
-        motionScale={settings.kidsSafeMode ? 0.5 : 1}
         bgmPath={flowBgmPathRef.current}
         panoramaHighUrl={divePanorama.highUrl}
         panoramaLowUrl={divePanorama.lowUrl}

@@ -29,7 +29,7 @@ function LessonFactCell({
   return (
     <div className={boxClass}>
       <p className={labelClass}>{label}</p>
-      {children ?? <p className={valueClass}>{value || '—'}</p>}
+      {children ?? <p className={valueClass}>{value || '정보 없음'}</p>}
     </div>
   );
 }
@@ -82,7 +82,7 @@ export function LessonPairGrid({
 
 export function LessonBulletList({ items, compact = false }: { items: string[]; compact?: boolean }) {
   if (items.length === 0) {
-    return <p className={`${compact ? 'mt-1' : 'mt-2'} flex-1 text-[13px] font-semibold leading-5 text-slate-400`}>—</p>;
+    return <p className={`${compact ? 'mt-1' : 'mt-2'} flex-1 text-[13px] font-semibold leading-5 text-slate-400`}>등록된 항목이 없습니다.</p>;
   }
   return (
     <ul className={`${compact ? 'mt-1 space-y-1' : 'mt-2 space-y-2'} flex-1`}>
@@ -98,7 +98,7 @@ export function LessonBulletList({ items, compact = false }: { items: string[]; 
 
 export function LessonScriptText({ text }: { text: string }) {
   if (!text) {
-    return <p className="mt-2 flex-1 text-[13px] font-semibold leading-6 text-slate-400">—</p>;
+    return <p className="mt-2 flex-1 text-[13px] font-semibold leading-6 text-slate-400">등록된 설명이 없습니다.</p>;
   }
   return <p className="mt-2 flex-1 whitespace-pre-line text-[13px] font-semibold leading-6 text-slate-700">{text}</p>;
 }
@@ -107,7 +107,7 @@ const NUMBERED_VARIATION_TITLE = /^(\d+\.)\s*(.+)$/;
 
 export function LessonVariationText({ text }: { text: string }) {
   if (!text) {
-    return <p className="mt-2 text-[13px] font-semibold leading-8 tracking-[0.03em] text-slate-400">—</p>;
+    return <p className="mt-2 text-[13px] font-semibold leading-8 tracking-[0.03em] text-slate-400">등록된 변형 방법이 없습니다.</p>;
   }
 
   const lines = text.split('\n');
@@ -140,7 +140,7 @@ export function LessonVariationText({ text }: { text: string }) {
 
 export function LessonCoachScript({ text, prominent = false }: { text: string; prominent?: boolean }) {
   if (!text) {
-    return <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-400">—</p>;
+    return <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-400">등록된 스크립트가 없습니다.</p>;
   }
   const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
   const openQuoteClass = prominent ? 'text-4xl' : 'text-lg';
@@ -149,7 +149,7 @@ export function LessonCoachScript({ text, prominent = false }: { text: string; p
   return (
     <div className="mt-2 space-y-2">
       {lines.map((line, index) => {
-        const body = line.replace(/^["“]|["”]$/g, '').trim();
+        const body = line.replace(/^["“”'‘’「『]+|["“”'‘’」』]+$/g, '').trim();
         return (
           <blockquote
             key={`${line}-${index}`}
@@ -171,7 +171,7 @@ export function LessonCoachScript({ text, prominent = false }: { text: string; p
 
 export function LessonEquipmentChecklist({ items, compact = false }: { items: string[]; compact?: boolean }) {
   if (items.length === 0) {
-    return <p className={`${compact ? 'text-[11px]' : 'text-[13px]'} font-semibold text-slate-400`}>—</p>;
+    return <p className={`${compact ? 'text-[11px]' : 'text-[13px]'} font-semibold text-slate-400`}>준비물 없음</p>;
   }
 
   return (
@@ -237,7 +237,7 @@ export function LessonFullSection({
 
 export function LessonNumberedList({ items }: { items: string[] }) {
   if (items.length === 0) {
-    return <p className="text-[13px] font-semibold text-slate-400">—</p>;
+    return <p className="text-[13px] font-semibold text-slate-400">등록된 단계가 없습니다.</p>;
   }
   return (
     <ol className="space-y-2">

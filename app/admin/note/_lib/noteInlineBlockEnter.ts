@@ -1,5 +1,6 @@
 import type { NoteEditorEnterContext } from '../_components/NoteEditor';
 import { getMergedBlockContentBase } from './noteBlockContentResolve';
+import { readTodoListNestLevel } from './noteTodoContent';
 import {
   resolveHeadingEnterAction,
   resolveInlineBlockEnterAction,
@@ -76,6 +77,9 @@ export function createInlineBlockEnterHandler(options: InlineEnterHandlerOptions
       text: liveTextForBlock(options.block, options.text ?? ''),
       parentBlockId: options.block.parent_block_id ?? null,
       parentBlockType: options.parentBlockType ?? null,
+      listNestLevel: options.followType === 'todo'
+        ? readTodoListNestLevel(getMergedBlockContentBase(options.block))
+        : 0,
       enterCtx,
       isEmpty: options.isEmpty,
     });

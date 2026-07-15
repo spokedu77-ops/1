@@ -16,13 +16,13 @@ const BOX_RATE        = 0.55;
 const UFO_RATE        = 0.45;
 const UFO_HEIGHT      = 180;
 const BRIDGE_DECK_Y   = 40;
-/** 펀치 크레이트 — 레인(바닥)에 붙음, 무릎~발 높이 */
+/** 펀치 크레이트 — 복부 상단~가슴 하단 (정면 주먹) */
 const PUNCH_CRATE_H   = 32;
-const PUNCH_ANCHOR_Y  = BRIDGE_DECK_Y;
-/** 킥 배럴 — 가슴 높이(발 들어 차기) */
+const PUNCH_ANCHOR_Y  = BRIDGE_DECK_Y + 60;
+/** 킥 배럴 — 무릎~허벅지 중간 (낮은 앞차기) */
 const KICK_BARREL_R   = 20;
 const KICK_BARREL_LEN = 72;
-const KICK_CENTER_ABOVE_DECK = 62;
+const KICK_CENTER_ABOVE_DECK = 24;
 const KICK_ANCHOR_Y   = BRIDGE_DECK_Y + KICK_CENTER_ABOVE_DECK - KICK_BARREL_R;
 const PUNCH_WALL_HP   = 5;    // 펀치 벽 총 타격 횟수
 const WALL_W          = 110;  // 더 넓게

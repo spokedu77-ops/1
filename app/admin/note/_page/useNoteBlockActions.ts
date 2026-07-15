@@ -13,6 +13,8 @@ import { useNoteBlockHistory } from '../_hooks/useNoteBlockHistory';
 import { useNoteBlockKeyboard } from '../_hooks/useNoteBlockKeyboard';
 import { useNoteBlockInsert } from '../_hooks/useNoteBlockInsert';
 import { useNoteBlockDelete } from '../_hooks/useNoteBlockDelete';
+import { planTodoListNestTab } from '../_lib/noteTodoNest';
+import { normalizeTodoBlockContentRecord } from '../_lib/noteTodoContent';
 import {
   getBlocksInParent,
   planBlockTabIndent,
@@ -108,6 +110,7 @@ export function useNoteBlockActions(options: {
   persistBlockReparent: (command: NoteBlockCommandResult) => Promise<void>;
   documentEngine: NoteDocumentEngineApi;
   onAfterBlocksRemoved?: (removed: NoteBlock[], nextBlocks: NoteBlock[]) => void;
+  onAfterBlocksChanged?: (nextBlocks: NoteBlock[]) => void;
 }) {
   const {
     blocks,
@@ -143,6 +146,7 @@ export function useNoteBlockActions(options: {
     persistBlockReparent,
     documentEngine,
     onAfterBlocksRemoved,
+    onAfterBlocksChanged,
   } = options;
 
   const { scheduleBlockContentSave, clearPendingContentPatch } = useNoteBlockContentSave({
@@ -260,20 +264,37 @@ export function useNoteBlockActions(options: {
     if (command.affectedIds.length === 0) return;
     recordBlockCommandUndo(prevBlocks, command);
     setBlocks(command.nextBlocks);
+    onAfterBlocksChanged?.(command.nextBlocks);
     void persistBlockReparent(command);
     syncFocusedToggleFromBlock(moving.id);
     bumpNoteReconcileIdle(selectedId);
-  }, [persistBlockReparent, recordBlockCommandUndo, syncFocusedToggleFromBlock, selectedId]);
+  }, [onAfterBlocksChanged, persistBlockReparent, recordBlockCommandUndo, syncFocusedToggleFromBlock, selectedId]);
 
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const prevBlocks = blocksRef.current;
-    const tabPlan = planBlockTabIndent(prevBlocks, block.id, direction);
-    if (tabPlan) {
-      applyBlockReparentPlan(block, tabPlan);
+    const todoNest = planTodoListNestTab(prevBlocks, block.id, direction);
+    if (todoNest) {
+      const base = (block.content ?? {}) as Record<string, unknown>;
+      const nextContent = normalizeTodoBlockContentRecord({
+        ...base,
+        listNestLevel: todoNest.listNestLevel,
+      });
+      recordContentUndoBeforeChange(block.id);
+      syncBlockContent(block.id, nextContent);
+      bumpNoteReconcileIdle(selectedId);
       return;
     }
 
-  }, [applyBlockReparentPlan]);
+    const tabPlan = planBlockTabIndent(prevBlocks, block.id, direction);
+    if (tabPlan) {
+      applyBlockReparentPlan(block, tabPlan);
+    }
+  }, [
+    applyBlockReparentPlan,
+    recordContentUndoBeforeChange,
+    selectedId,
+    syncBlockContent,
+  ]);
   const handleNavigateBlock = useCallback((block: NoteBlock, direction: 'previous' | 'next') => {
     const snapshot = blocksRef.current;
     const target = resolveVisualNavigateTarget(snapshot, block.id, direction);

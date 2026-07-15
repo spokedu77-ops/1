@@ -19,19 +19,22 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   it('keeps the library header as a compact search and filter control panel', () => {
     expect(library).toContain('조건에 맞는 수업 찾기');
     expect(library).toContain('결과 {filteredPrograms.length}개');
-    expect(library).toContain('placeholder="수업명, 교구, 태그 검색"');
+    expect(library).toContain('placeholder="수업명 검색"');
+    expect(library).toContain('return program.title.toLowerCase()');
     expect(library).not.toContain('MATERIAL_VIDEO_VALUE');
     expect(library).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(library).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
   });
 
   it('makes library detail the compact bridge from lesson choice to operation', () => {
-    expect(detail).toContain('이 수업으로 진행하기');
+    expect(detail).toContain('USE THIS LESSON');
+    expect(detail).toContain('이 수업으로 바로 진행');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}');
     expect(detail).toContain('수업 기록 시작');
     expect(detail).toContain('빠른 기록');
-    expect(detail).toContain('안내문 초안');
+    expect(detail).toContain('안내문 초안으로 이어집니다.');
+    expect(detail).not.toContain('라이브러리 수업을 내 반 기록과 안내문으로 이어갑니다.');
   });
 
   it('does not expose SPOMOVE execution from library detail', () => {
@@ -46,7 +49,7 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).not.toContain('수업 준비 보조');
     expect(detail).toContain('aria-pressed={favorite}');
     expect(detail).toContain('title={favorite');
-    expect(detail).toContain('이 수업으로 진행하기');
+    expect(detail).toContain('이 수업으로 바로 진행');
     expect(detail).toContain('빠른 기록');
     expect(detail).toContain('기존 기록 보기');
     expect(detail).not.toContain('/spokedu-master/class-tools');

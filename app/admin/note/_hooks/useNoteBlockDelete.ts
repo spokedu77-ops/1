@@ -19,9 +19,6 @@ import {
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
-import {
-  rememberNoteDocumentBlocks,
-} from '../_lib/noteDocumentBlocksCache';
 import { invalidatePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import {
   markNoteLocalSave,
@@ -36,20 +33,12 @@ type MergeWithPreviousCommand = NonNullable<ReturnType<typeof buildMergeWithPrev
 
 function applyPostBlockRemovalCache(
   documentId: string | null | undefined,
-  nextBlocks: NoteBlock[],
   removedIds: string[],
 ): void {
   if (!documentId) return;
   markNoteLocalSave(documentId);
   markPendingBlockDeletes(documentId, removedIds);
   invalidatePrefetchedNoteBlocks(documentId);
-  rememberNoteDocumentBlocks(
-    documentId,
-    mergeBlocksWithStoreContent(
-      nextBlocks.filter((block) => block.document_id === documentId),
-    ),
-    { trustServer: true },
-  );
 }
 
 export function useNoteBlockDelete(options: {
@@ -169,7 +158,7 @@ export function useNoteBlockDelete(options: {
       ?? nextBlocks.find((block) => block.document_id)?.document_id
       ?? null;
     // replace 전에 pending mark — 직후 patchFields/reconcile 레이스가 되살리지 않게
-    applyPostBlockRemovalCache(documentId, nextBlocks, command.affectedIds);
+    applyPostBlockRemovalCache(documentId, command.affectedIds);
     documentEngine.replaceBlocks(nextBlocks);
 
     try {
@@ -223,7 +212,7 @@ export function useNoteBlockDelete(options: {
       ?? command.nextBlocks.find((block) => block.document_id)?.document_id
       ?? null;
     if (removedIds.length > 0) {
-      applyPostBlockRemovalCache(documentId, command.nextBlocks, removedIds);
+      applyPostBlockRemovalCache(documentId, removedIds);
     }
     if (command.splitHint) {
       setNoteMergeSplitHint({
