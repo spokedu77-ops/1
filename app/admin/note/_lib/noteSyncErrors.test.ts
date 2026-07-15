@@ -18,6 +18,11 @@ describe('noteSyncErrors', () => {
     expect(toNoteSyncUserMessage(new Error('block not found: abc'))).toBeNull();
   });
 
+  it('treats Failed to fetch as recoverable / not user-facing', () => {
+    expect(isNoteSyncRecoverableError('Failed to fetch')).toBe(true);
+    expect(toNoteSyncUserMessage(new TypeError('Failed to fetch'))).toBeNull();
+  });
+
   it('surfaces non-sync errors', () => {
     expect(toNoteSyncUserMessage(new Error('permission denied'))).toBe('permission denied');
   });

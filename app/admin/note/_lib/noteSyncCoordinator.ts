@@ -1,7 +1,7 @@
 'use client';
 
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { isNoteSyncRecoverableError } from './noteSyncErrors';
+import { isNoteSyncRecoverableError, isNoteSyncTransientNetworkError } from './noteSyncErrors';
 import type { NoteBlockOpPushItem, NoteBlockOpRecord, NoteBlockSnapshot } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteBlock } from './types';
 import {
@@ -113,23 +113,37 @@ type PushResponse =
 
 async function fetchSyncState(documentId: string): Promise<number> {
   traceApiEgress('fetchSyncState', documentId);
-  const res = await fetch(
-    `/api/admin/note/ops/state?documentId=${encodeURIComponent(documentId)}`,
-    { credentials: 'include' },
-  );
-  if (!res.ok) throw new Error('sync state fetch failed');
-  const json = (await res.json()) as { lastSeq?: number };
-  return typeof json.lastSeq === 'number' ? json.lastSeq : 0;
+  try {
+    const res = await fetch(
+      `/api/admin/note/ops/state?documentId=${encodeURIComponent(documentId)}`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) throw new Error('sync state fetch failed');
+    const json = (await res.json()) as { lastSeq?: number };
+    return typeof json.lastSeq === 'number' ? json.lastSeq : 0;
+  } catch (error) {
+    if (isNoteSyncTransientNetworkError(error)) {
+      throw new Error('sync state fetch failed');
+    }
+    throw error;
+  }
 }
 
 async function pullOps(documentId: string, since: number): Promise<{ lastSeq: number; ops: NoteBlockOpRecord[] }> {
   traceApiEgress('pullOps', documentId);
-  const res = await fetch(
-    `/api/admin/note/ops/pull?documentId=${encodeURIComponent(documentId)}&since=${since}`,
-    { credentials: 'include' },
-  );
-  if (!res.ok) throw new Error('op pull failed');
-  return res.json() as Promise<{ lastSeq: number; ops: NoteBlockOpRecord[] }>;
+  try {
+    const res = await fetch(
+      `/api/admin/note/ops/pull?documentId=${encodeURIComponent(documentId)}&since=${since}`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) throw new Error('op pull failed');
+    return res.json() as Promise<{ lastSeq: number; ops: NoteBlockOpRecord[] }>;
+  } catch (error) {
+    if (isNoteSyncTransientNetworkError(error)) {
+      throw new Error('op pull failed');
+    }
+    throw error;
+  }
 }
 
 async function pushOps(
@@ -138,44 +152,51 @@ async function pushOps(
   ops: NoteBlockOpPushItem[],
 ): Promise<PushResponse> {
   traceApiEgress('pushOps', documentId);
-  const res = await fetch('/api/admin/note/ops/push', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify({ documentId, baseSeq, ops }),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (res.status === 409) {
-    return {
-      ok: false,
-      error: 'seq_conflict',
-      lastSeq: typeof json.lastSeq === 'number' ? json.lastSeq : baseSeq,
-      ops: Array.isArray(json.ops) ? json.ops as NoteBlockOpRecord[] : [],
-    };
-  }
-  if (!res.ok) {
-    const message = (json as { error?: string }).error || 'op push failed';
-    const normalized = message.toLowerCase();
-    if (normalized.includes('block not found')) {
-      throw new Error(message);
-    }
-    if (res.status === 500 && isNoteSyncRecoverableError(message)) {
-      const state = await fetchSyncState(documentId);
+  try {
+    const res = await fetch('/api/admin/note/ops/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ documentId, baseSeq, ops }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (res.status === 409) {
       return {
         ok: false,
         error: 'seq_conflict',
-        lastSeq: state,
-        ops: [],
+        lastSeq: typeof json.lastSeq === 'number' ? json.lastSeq : baseSeq,
+        ops: Array.isArray(json.ops) ? json.ops as NoteBlockOpRecord[] : [],
       };
     }
-    throw new Error(message);
+    if (!res.ok) {
+      const message = (json as { error?: string }).error || 'op push failed';
+      const normalized = message.toLowerCase();
+      if (normalized.includes('block not found')) {
+        throw new Error(message);
+      }
+      if (res.status === 500 && isNoteSyncRecoverableError(message)) {
+        const state = await fetchSyncState(documentId);
+        return {
+          ok: false,
+          error: 'seq_conflict',
+          lastSeq: state,
+          ops: [],
+        };
+      }
+      throw new Error(message);
+    }
+    return {
+      ok: true,
+      lastSeq: json.lastSeq as number,
+      appliedClientOpIds: json.appliedClientOpIds as string[],
+      blocks: json.blocks as NoteBlockSnapshot[],
+    };
+  } catch (error) {
+    if (isNoteSyncTransientNetworkError(error)) {
+      throw new Error('op push failed');
+    }
+    throw error;
   }
-  return {
-    ok: true,
-    lastSeq: json.lastSeq as number,
-    appliedClientOpIds: json.appliedClientOpIds as string[],
-    blocks: json.blocks as NoteBlockSnapshot[],
-  };
 }
 
 /** 문서별 local-first sync — IndexedDB + op push/pull */
@@ -404,11 +425,14 @@ export class NoteSyncCoordinator {
             if (this.disposed) break;
           }
         } catch (error) {
+          if (this.disposed) break;
           const err = error instanceof Error ? error : new Error(String(error));
-          if (!isNoteSyncRecoverableError(err.message)) {
+          const recoverable = isNoteSyncTransientNetworkError(error)
+            || isNoteSyncRecoverableError(err.message);
+          if (!recoverable) {
             this.callbacks.onError?.(err);
+            devLogger.error('[NoteSyncCoordinator] push failed', err);
           }
-          devLogger.error('[NoteSyncCoordinator] push failed', err);
           this.schedulePush(1000);
           break;
         }
@@ -549,6 +573,12 @@ export class NoteSyncCoordinator {
       this.callbacks.onBlocksUpdated(this.blocks, this.lastAppliedSeq, 'coordinator:pull');
       this.broadcastState();
     } catch (error) {
+      if (this.disposed || isNoteSyncTransientNetworkError(error)) return;
+      const err = error instanceof Error ? error : new Error(String(error));
+      if (isNoteSyncRecoverableError(err.message)) {
+        this.schedulePush(1000);
+        return;
+      }
       devLogger.error('[NoteSyncCoordinator] pull failed', error);
     }
   }

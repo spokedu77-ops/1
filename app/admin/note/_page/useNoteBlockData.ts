@@ -450,9 +450,12 @@ export function useNoteBlockData(options: {
         markLoadSettled();
         setError(null);
       } catch (e) {
-        devLogger.error('[Note] openNoteDocument', e);
+        const userMessage = toNoteSyncUserMessage(e);
+        if (userMessage) {
+          devLogger.error('[Note] openNoteDocument', e);
+        }
         if (!cancelled && blockLoadGenRef.current === loadGen) {
-          setError(e instanceof Error ? e.message : '로드 실패');
+          if (userMessage) setError(userMessage);
           markLoadSettled();
         }
       }
