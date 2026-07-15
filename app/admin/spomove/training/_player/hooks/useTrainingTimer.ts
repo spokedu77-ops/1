@@ -12,7 +12,7 @@ import {
 } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
-import { resolveTrainingEngine } from '../constants';
+import { resolveTrainingEngine, type SpatialArrowColorMapping } from '../constants';
 import { registerPresentedSignal, type RepsState } from '../lib/repsLogic';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
@@ -31,6 +31,7 @@ export function useTrainingTimer({
   fruitSlides,
   basicNumberOverlay,
   spatialArrowColorMode = 'basic',
+  spatialArrowColorMapping = 'random',
   flankerStimulusType,
   onSignal,
   onFinish,
@@ -49,6 +50,7 @@ export function useTrainingTimer({
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
   spatialArrowColorMode?: 'basic' | 'color';
+  spatialArrowColorMapping?: SpatialArrowColorMapping;
   flankerStimulusType?: 'color' | 'number';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
@@ -82,7 +84,7 @@ export function useTrainingTimer({
       // fruitSlides가 undefined이면 color 모드(이미지 없음) — getter를 undefined로 전달
       // defined이면 항상 최신 슬라이드를 읽는 getter 전달 → 타이머 재시작 없이 이미지 반영
       const getSlidesRef = () => fruitSlidesRef.current;
-      genRef.current = createBasicSignalGenerator(engineLevel, colors, getSlidesRef, basicNumberOverlay, effectiveArrowColorMode);
+      genRef.current = createBasicSignalGenerator(engineLevel, colors, getSlidesRef, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
     } else if (engineMode === 'simon') {
       const getSlidesRef = () => fruitSlidesRef.current;
       genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef);
@@ -189,7 +191,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, flankerStimulusType, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

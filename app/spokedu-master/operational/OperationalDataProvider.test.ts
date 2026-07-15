@@ -17,7 +17,7 @@ describe('OperationalDataProvider server-first contract', () => {
     expect(text).toContain('UUID_PATTERN');
     expect(text).toContain("profile?.id");
     expect(text).toContain("? profile.id : null");
-    expect(text).toContain("if (!ownerId)");
+    expect(text).toContain("if (!ownerId || !canUseRecords)");
   });
 
   it('clears previous owner data before loading and on logout', () => {

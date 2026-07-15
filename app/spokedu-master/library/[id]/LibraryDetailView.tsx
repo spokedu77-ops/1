@@ -16,6 +16,7 @@ import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { BottomSheet } from '../../components/ui/BottomSheet';
+import { SaveErrorBanner } from '../../components/ui/SaveErrorBanner';
 
 import {
   LessonBulletList,
@@ -35,13 +36,19 @@ import {
 } from '../../lib/program-media';
 import { classRecordToCreateInput, toClassRecord } from '../../lib/operationalDataAdapter';
 import { getFavoritesOwnerId } from '../../lib/favoriteLib';
+import {
+  canAttemptOnlineSave,
+  getOfflineSaveFeedback,
+  resolveSaveActionFeedback,
+  type SaveActionFeedback,
+} from '../../lib/saveActionFeedback';
+import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore } from '../../store';
 import type { ClassRecord } from '../../types';
 import { getLibraryReturnHref } from '../libraryNavigation';
 
 const THUMBNAIL_FRAME = 'relative aspect-square w-full max-w-[1250px] overflow-hidden';
-const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 function LessonPrepBlock({
   label,
@@ -85,9 +92,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
   );
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
+  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const operationalData = useOperationalData();
   const classRecords = operationalData.classRecords.map(toClassRecord);
-  const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
+  const accessSnapshot = useMasterAccessSnapshot();
+  const isOnline = useMasterStore((state) => state.operational.online);
   const searchParams = useSearchParams();
   const openedProgramRef = useRef<string | null>(null);
   const videoReportedRef = useRef<string | null>(null);
@@ -100,7 +109,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const [quickSaved, setQuickSaved] = useState(false);
   const [quickSaving, setQuickSaving] = useState(false);
   const [quickSavedRecordId, setQuickSavedRecordId] = useState<string | null>(null);
-  const [quickSaveError, setQuickSaveError] = useState<string | null>(null);
+  const [quickSaveFeedback, setQuickSaveFeedback] = useState<SaveActionFeedback | null>(null);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
@@ -194,7 +203,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     setQuickSaved(false);
     setQuickSavedRecordId(null);
     setQuickSaving(false);
-    setQuickSaveError(null);
+    setQuickSaveFeedback(null);
     setQuickModalOpen(true);
   };
 
@@ -202,6 +211,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   const handleQuickSave = () => {
     if (!canSaveQuickRecord || quickSaving) return;
+    if (!canAttemptOnlineSave(isOnline)) {
+      setQuickSaveFeedback(getOfflineSaveFeedback());
+      return;
+    }
     const record: ClassRecord = {
       id: Date.now().toString(),
       lessonTitle: title,
@@ -220,14 +233,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
       recordType: 'quick',
     };
     setQuickSaving(true);
-    setQuickSaveError(null);
+    setQuickSaveFeedback(null);
     setQuickSaved(false);
     setQuickSavedRecordId(null);
     void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
       setQuickSavedRecordId(saved.id);
       setQuickSaved(true);
-    }).catch(() => {
-      setQuickSaveError(RECORD_SAVE_ERROR_MESSAGE);
+    }).catch((caught) => {
+      setQuickSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
       setQuickSaved(false);
       setQuickSavedRecordId(null);
     }).finally(() => setQuickSaving(false));
@@ -535,8 +548,14 @@ export default function LibraryDetailView({ id }: { id: string }) {
             </div>
           ) : (
             <>
-              {quickSaveError ? (
-                <p className="rounded-xl bg-red-50 p-3 text-xs font-bold text-red-600">{quickSaveError}</p>
+              {quickSaveFeedback ? (
+                <SaveErrorBanner
+                  message={quickSaveFeedback.message}
+                  onRetry={quickSaveFeedback.retryable ? handleQuickSave : undefined}
+                  upgradeHref={quickSaveFeedback.upgradeHref}
+                  upgradeLabel={quickSaveFeedback.upgradeLabel}
+                  className="bg-red-50"
+                />
               ) : null}
               <div className="flex gap-2 pt-1">
                 <button

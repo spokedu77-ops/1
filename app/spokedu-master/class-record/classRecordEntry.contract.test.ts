@@ -8,7 +8,8 @@ describe('class record entry flow contract', () => {
   it('normalizes program query variants through one helper', () => {
     expect(source).toContain('function getClassRecordQuery');
     expect(source).toContain("searchParams.get('program') ?? searchParams.get('programId')");
-    expect(source).toContain('const { programId, recordId, sourceRecordId, studentId } = getClassRecordQuery(searchParams)');
+    expect(source).toContain("resolveSpomoveDraftFromQuery(searchParams)");
+    expect(source).toContain('spomoveDraft } = getClassRecordQuery(searchParams)');
   });
 
   it('does not fall back to an arbitrary program for an invalid query id', () => {
@@ -29,6 +30,10 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('selectedStudentCount');
     expect(source).toContain('전체 선택');
     expect(source).toContain('전체 해제');
+    expect(source).toContain('applyAttendanceToSelected');
+    expect(source).toContain('선택 출석');
+    expect(source).toContain('선택 결석');
+    expect(source).toContain('출석 초기화');
     expect(source).toContain('선택 {selectedStudentCount}명 / 전체 {students.length}명');
   });
 
@@ -45,8 +50,15 @@ describe('class record entry flow contract', () => {
 
   it('prevents duplicate submit and preserves explicit save labels', () => {
     expect(source).toContain('if (!canSaveRecord || recordSaving) return null');
+    expect(source).toContain('canAttemptOnlineSave(isOnline)');
+    expect(source).toContain('SaveErrorBanner');
     expect(source).toContain('저장 중...');
     expect(source).toContain('수업 기록 수정');
     expect(source).toContain('수업 기록 저장');
+  });
+
+  it('applies SPOMOVE record drafts only to empty class memo fields', () => {
+    expect(source).toContain('spomoveDraft');
+    expect(source).toContain('setClassMemo((current) => current.trim() ? current : spomoveDraft)');
   });
 });

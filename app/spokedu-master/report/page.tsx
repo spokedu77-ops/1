@@ -5,8 +5,15 @@ import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Sav
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
-import { getSafeMasterErrorMessage } from '../lib/clientErrors';
+import { SaveErrorBanner } from '../components/ui/SaveErrorBanner';
+import {
+  canAttemptOnlineSave,
+  getOfflineSaveFeedback,
+  resolveSaveActionFeedback,
+  type SaveActionFeedback,
+} from '../lib/saveActionFeedback';
 import { toClassRecord } from '../lib/operationalDataAdapter';
+import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
@@ -287,6 +294,8 @@ function ReportContent() {
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
   const programsError = useMasterStore((state) => state.programsError);
+  const isOnline = useMasterStore((state) => state.operational.online);
+  const accessSnapshot = useMasterAccessSnapshot();
   const operationalData = useOperationalData();
   const explanationData = useExplanationData();
   const classRecords = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
@@ -313,14 +322,14 @@ function ReportContent() {
   const [copied, setCopied] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'error' | 'idle' | 'success'>('idle');
   const [saveStatus, setSaveStatus] = useState<'error' | 'idle' | 'saving' | 'success'>('idle');
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveFeedback, setSaveFeedback] = useState<SaveActionFeedback | null>(null);
   const [savedOutputId, setSavedOutputId] = useState<string | null>(savedExplanationId);
   const savedQueryAppliedRef = useRef<string | null>(null);
   const recordQueryAppliedRef = useRef<string | null>(null);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!queryRecordId || recordQueryAppliedRef.current === queryRecordId) return;
+    if (operationalData.status !== 'ready' || !queryRecordId || recordQueryAppliedRef.current === queryRecordId) return;
     const record = classRecords.find((item) => item.id === queryRecordId);
     if (!record) return;
     recordQueryAppliedRef.current = queryRecordId;
@@ -332,8 +341,8 @@ function ReportContent() {
     setSelectedStudentId(initialStudentId);
     setGenerated(buildRecordDraft(record, initialTarget, initialStudentId));
     setSaveStatus('idle');
-    setSaveError(null);
-  }, [classRecords, queryRecordId]);
+    setSaveFeedback(null);
+  }, [classRecords, operationalData.status, queryRecordId]);
 
   useEffect(() => {
     if (!selectedRecord || recordNoteApplied) return;
@@ -394,7 +403,7 @@ function ReportContent() {
   const markDraftDirty = (currentProgramId = programId) => {
     setGenerated('');
     setSaveStatus('idle');
-    setSaveError(null);
+    setSaveFeedback(null);
     clearSavedContext(currentProgramId);
   };
 
@@ -406,6 +415,11 @@ function ReportContent() {
       setNote('');
       setRecordNoteApplied(false);
       router.replace(`/spokedu-master/report?program=${nextProgramId}`);
+      return;
+    }
+
+    if (queryProgramId && queryProgramId !== nextProgramId) {
+      router.replace(`/spokedu-master/report?program=${nextProgramId}`);
     }
   };
 
@@ -413,7 +427,7 @@ function ReportContent() {
     if (output.trim() && generated.trim() && !window.confirm('현재 수정한 안내문이 새 초안으로 교체됩니다.')) return;
     setGenerated(nextDraft);
     setSaveStatus('idle');
-    setSaveError(null);
+    setSaveFeedback(null);
     setSavedOutputId(null);
   };
 
@@ -477,8 +491,13 @@ function ReportContent() {
 
   const saveOutput = async () => {
     if (!program || !output.trim() || saveStatus === 'saving') return;
+    if (!canAttemptOnlineSave(isOnline)) {
+      setSaveStatus('error');
+      setSaveFeedback(getOfflineSaveFeedback());
+      return;
+    }
     setSaveStatus('saving');
-    setSaveError(null);
+    setSaveFeedback(null);
     try {
       const saved = await explanationData.saveExplanation({
         programId: program.id,
@@ -497,9 +516,9 @@ function ReportContent() {
       }
       router.replace(`/spokedu-master/report?program=${saved.programId}&saved=${saved.id}`);
       setSaveStatus('success');
-    } catch {
+    } catch (caught) {
       setSaveStatus('error');
-      setSaveError(getSafeMasterErrorMessage('server'));
+      setSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
     }
   };
 
@@ -751,10 +770,17 @@ function ReportContent() {
                 <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
               </div>
             ) : null}
-            {saveStatus === 'error' && saveError ? (
-              <p className="mt-2 text-[12px] font-bold text-red-600">{saveError}</p>
+            {saveStatus === 'error' && saveFeedback ? (
+              <div className="mt-2">
+                <SaveErrorBanner
+                  message={saveFeedback.message}
+                  onRetry={saveFeedback.retryable ? () => void saveOutput() : undefined}
+                  upgradeHref={saveFeedback.upgradeHref}
+                  upgradeLabel={saveFeedback.upgradeLabel}
+                />
+              </div>
             ) : null}
-            <textarea value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'} onChange={(event) => { setGenerated(event.target.value); setSaveStatus('idle'); setSaveError(null); setSavedOutputId(null); if (program) clearSavedContext(program.id); }} disabled={!program} className="mt-3 min-h-[260px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:mt-4 sm:min-h-[340px] sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }} />
+            <textarea data-report-output value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'} onChange={(event) => { setGenerated(event.target.value); setSaveStatus('idle'); setSaveFeedback(null); setSavedOutputId(null); if (program) clearSavedContext(program.id); }} disabled={!program} className="mt-3 min-h-[260px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:mt-4 sm:min-h-[340px] sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }} />
           </section>
         </section>
       </div>

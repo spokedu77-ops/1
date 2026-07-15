@@ -12,7 +12,7 @@ import {
 } from '../lib/signals';
 import { playBeep, getBeepForSignal, getSignalVoice } from '../lib/audio';
 import { tts, ttsClear } from '../lib/tts';
-import { resolveTrainingEngine } from '../constants';
+import { resolveTrainingEngine, type SpatialArrowColorMapping } from '../constants';
 import { getNextIntervalState } from '../lib/intervalTimer';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
@@ -30,6 +30,7 @@ export function useIntervalTimer({
   fruitSlides,
   basicNumberOverlay,
   spatialArrowColorMode = 'basic',
+  spatialArrowColorMapping = 'random',
   flankerStimulusType,
   onSignal,
   onFinish,
@@ -46,6 +47,7 @@ export function useIntervalTimer({
   fruitSlides?: FruitSlide[];
   basicNumberOverlay?: 'none' | '2' | '3';
   spatialArrowColorMode?: 'basic' | 'color';
+  spatialArrowColorMapping?: SpatialArrowColorMapping;
   flankerStimulusType?: 'color' | 'number';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
@@ -83,7 +85,7 @@ export function useIntervalTimer({
       ...(engineMode === 'flanker' ? { flankerStimulusType } : {}),
     };
     if (engineMode === 'basic') {
-      genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode);
+      genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
     } else if (engineMode === 'simon') {
       genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides);
     } else if (engineMode === 'taskswitch') {
@@ -170,7 +172,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, flankerStimulusType, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

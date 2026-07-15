@@ -9,6 +9,7 @@ function read(path: string) {
 const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 const session = read('app/spokedu-master/spomove/session/page.tsx');
 const guidelineSheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.tsx');
+const recordDraft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.ts');
 
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and guideline actions on hub cards', () => {
@@ -82,10 +83,19 @@ describe('SPOMOVE pilot flow contract', () => {
 
   it('connects lesson-context completion to class records and keeps standalone sessions separate', () => {
     expect(session).toContain('recordProgramHref');
+    expect(session).toContain('buildSpomoveRecordDraft');
+    expect(session).toContain('buildSpomoveRecordHref');
     expect(session).not.toContain('/spokedu-master/class-record?program=${officialPreset.id}');
     expect(session).toContain('/spokedu-master/activity');
     expect(session).toContain('같은 프로그램 다시 실행');
     expect(session).toContain('다른 프로그램');
+  });
+
+  it('keeps SPOMOVE class-record drafts as general estimates, not sensor-precise metrics', () => {
+    expect(recordDraft).toContain('실제 움직인 시간: 약');
+    expect(recordDraft).toContain('예상 소모 열량');
+    expect(recordDraft).toContain('센서 기반 정밀 측정값이 아니라 수업 기록용 일반 추정치');
+    expect(recordDraft).toContain('spomoveDraft');
   });
 
   it('keeps user-facing hub copy in valid UTF-8 Korean', () => {

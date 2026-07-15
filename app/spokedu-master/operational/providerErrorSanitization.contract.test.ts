@@ -13,12 +13,21 @@ describe('SPOKEDU MASTER provider error sanitization contract', () => {
   it.each(providers)('%s does not store raw API error messages in UI state', (path) => {
     const source = read(path);
 
-    expect(source).toContain('toMasterClientError(response.status, json.error)');
-    expect(source).toContain('toNetworkMasterClientError()');
+    expect(source).toContain('masterFetchJson');
+    expect(source).toContain('getMasterRequestErrorMessage(caught)');
     expect(source).toContain('setError(getProviderErrorMessage(caught))');
     expect(source).not.toContain('setError(caught instanceof Error ? caught.message');
     expect(source).not.toContain('throw new Error(json.error');
     expect(source).not.toContain('`HTTP ${response.status}`');
+  });
+
+  it('keeps raw response errors sanitized inside the shared request helper', () => {
+    const helper = read('app/spokedu-master/lib/masterRequestError.ts');
+
+    expect(helper).toContain('toMasterClientError(response.status, json.error)');
+    expect(helper).toContain('toNetworkMasterClientError()');
+    expect(helper).not.toContain('throw new Error(json.error');
+    expect(helper).not.toContain('`HTTP ${response.status}`');
   });
 
   it('keeps 400, 401, 403, server, and network wording centralized', () => {

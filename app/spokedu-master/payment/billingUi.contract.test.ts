@@ -45,7 +45,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
   it('uses only lite and premium plan IDs for payment CTAs', () => {
     expect(payment).toContain("type PaidPlanId = 'lite' | 'premium'");
     expect(payment).toContain('data-plan-id={planId ?? undefined}');
-    expect(payment).toContain('startBillingAuth(product.serverPlanKey as PaidPlanId)');
+    expect(payment).toContain('const planId = product.serverPlanKey as PaidPlanId');
+    expect(payment).toContain('startBillingAuth(planId)');
     expect(payment).not.toContain("payment?plan=pro");
     expect(payment).not.toContain("payment?plan=team");
   });
@@ -86,7 +87,8 @@ describe('SPOKEDU MASTER recurring billing UI contract', () => {
     expect(payment).not.toContain('blocksNewPayment');
     expect(subscription).toContain('canUpgradeToPremium');
     expect(subscription).toContain('upgradeHref');
-    expect(subscription).toContain('프리미엄으로 업그레이드');
+    expect(subscription).toContain('display.upgradeLabel');
+    expect(read('app/spokedu-master/profile/subscriptionSummary.ts')).toContain("upgradeLabel: canUpgrade ? '프리미엄으로 업그레이드' : null");
     expect(subscription).toContain('/spokedu-master/payment');
     expect(profile).not.toContain('/spokedu-master/payment?plan=');
     for (const source of [payment, success, cancel, subscription, profile]) {

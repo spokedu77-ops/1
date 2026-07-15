@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useMasterCanUseRecords } from '../access/MasterAccessProvider';
-import { toMasterClientError, toNetworkMasterClientError, type MasterClientError } from '../lib/clientErrors';
+import { getMasterRequestErrorMessage, masterFetchJson } from '../lib/masterRequestError';
 import { useProfile } from '../store';
 import type {
   CreateClassRecordInput,
@@ -37,24 +37,8 @@ function getProfileOwnerId(profile: ReturnType<typeof useProfile>) {
   return profile?.id && UUID_PATTERN.test(profile.id) ? profile.id : null;
 }
 
-async function readJson<T>(response: Response): Promise<T> {
-  const text = await response.text();
-  return text ? (JSON.parse(text) as T) : ({} as T);
-}
-
-class MasterClientRequestError extends Error {
-  readonly clientError: MasterClientError;
-
-  constructor(clientError: MasterClientError) {
-    super(clientError.kind);
-    this.name = 'MasterClientRequestError';
-    this.clientError = clientError;
-  }
-}
-
 function getProviderErrorMessage(caught: unknown) {
-  if (caught instanceof MasterClientRequestError) return caught.clientError.message;
-  return toNetworkMasterClientError().message;
+  return getMasterRequestErrorMessage(caught);
 }
 
 export function mergeOperationalRecordById(
@@ -62,27 +46,6 @@ export function mergeOperationalRecordById(
   next: MasterClassRecordDto,
 ) {
   return [next, ...current.filter((record) => record.id !== next.id)];
-}
-
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  try {
-    const response = await fetch(url, {
-      cache: init?.method ? undefined : 'no-store',
-      ...init,
-      headers: {
-        'content-type': 'application/json',
-        ...(init?.headers ?? {}),
-      },
-    });
-    const json = await readJson<T & { error?: string }>(response);
-    if (!response.ok) {
-      throw new MasterClientRequestError(toMasterClientError(response.status, json.error));
-    }
-    return json;
-  } catch (caught) {
-    if (caught instanceof MasterClientRequestError) throw caught;
-    throw new MasterClientRequestError(toNetworkMasterClientError());
-  }
 }
 
 export function OperationalDataProvider({ children }: { children: ReactNode }) {
@@ -116,8 +79,8 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
 
     try {
       const [studentsJson, recordsJson] = await Promise.all([
-        requestJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students'),
-        requestJson<{ data?: MasterClassRecordDto[] }>('/api/spokedu-master/class-records'),
+        masterFetchJson<{ data?: MasterStudentDto[] }>('/api/spokedu-master/students'),
+        masterFetchJson<{ data?: MasterClassRecordDto[] }>('/api/spokedu-master/class-records'),
       ]);
       if (activeOwnerRef.current !== ownerId) return;
       setStudents(studentsJson.data ?? []);
@@ -136,7 +99,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, [reload]);
 
   const createStudent = useCallback(async (input: CreateStudentInput) => {
-    const json = await requestJson<{ data: MasterStudentDto }>('/api/spokedu-master/students', {
+    const json = await masterFetchJson<{ data: MasterStudentDto }>('/api/spokedu-master/students', {
       body: JSON.stringify(input),
       method: 'POST',
     });
@@ -145,12 +108,12 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const deleteStudent = useCallback(async (studentId: string) => {
-    await requestJson<{ ok: true }>(`/api/spokedu-master/students/${studentId}`, { method: 'DELETE' });
+    await masterFetchJson<{ ok: true }>(`/api/spokedu-master/students/${studentId}`, { method: 'DELETE' });
     setStudents((current) => current.filter((student) => student.id !== studentId));
   }, []);
 
   const updateStudent = useCallback(async (studentId: string, input: UpdateStudentInput) => {
-    const json = await requestJson<{ data: MasterStudentDto }>(`/api/spokedu-master/students/${studentId}`, {
+    const json = await masterFetchJson<{ data: MasterStudentDto }>(`/api/spokedu-master/students/${studentId}`, {
       body: JSON.stringify(input),
       method: 'PATCH',
     });
@@ -159,7 +122,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const saveClassRecord = useCallback(async (input: CreateClassRecordInput) => {
-    const json = await requestJson<{ data: MasterClassRecordDto }>('/api/spokedu-master/class-records', {
+    const json = await masterFetchJson<{ data: MasterClassRecordDto }>('/api/spokedu-master/class-records', {
       body: JSON.stringify(input),
       method: 'POST',
     });
@@ -168,7 +131,7 @@ export function OperationalDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateClassRecord = useCallback(async (recordId: string, input: UpdateClassRecordInput) => {
-    const json = await requestJson<{ data: MasterClassRecordDto }>(
+    const json = await masterFetchJson<{ data: MasterClassRecordDto }>(
       `/api/spokedu-master/class-records?id=${encodeURIComponent(recordId)}`,
       {
         body: JSON.stringify(input),

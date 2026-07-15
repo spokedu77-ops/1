@@ -10,9 +10,20 @@ import { staticPerfTier } from '../lib/reactTrainPerf';
 const QUADRANT_COLORS = [
   { hex: 0xff4d4d, css: '#ff4d4d', name: 'RED' },
   { hex: 0xffd633, css: '#ffd633', name: 'YELLOW' },
-  { hex: 0x3399ff, css: '#3399ff', name: 'BLUE' },
   { hex: 0x33cc33, css: '#33cc33', name: 'GREEN' },
+  { hex: 0x3399ff, css: '#3399ff', name: 'BLUE' },
 ] as const;
+
+export function quadrantLaneCountToResultLaneCount(
+  quadrantLaneCount: [number, number, number, number],
+): [number, number, number, number] {
+  return [
+    quadrantLaneCount[0],
+    quadrantLaneCount[3],
+    quadrantLaneCount[2],
+    quadrantLaneCount[1],
+  ];
+}
 
 /** 구역별 운석 목표 X, Y 좌표(화면 모서리 쪽) */
 const TARGET_OFFSETS: { x: number; y: number }[] = [
@@ -39,6 +50,7 @@ type AsteroidData = {
   rotY: number;
   rotZ: number;
   quadrantIndex: number;
+  exploded: boolean;
 };
 
 type Burst = {
@@ -57,6 +69,7 @@ function asteroidTravelFrames(lv: number): number {
 
 const WARN_MS = 1800;
 const WAVE_GAP_MIN_MS = 4000;
+const ASTEROID_EXPLOSION_SCALE_PROGRESS = 0.62;
 
 function visibleWorldHeight(z: number, fovDeg: number): number {
   return 2 * z * Math.tan((fovDeg * Math.PI) / 180 / 2);
@@ -230,10 +243,11 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
     if (g.timer) clearInterval(g.timer);
     if (g.waveTimer) clearTimeout(g.waveTimer);
     if (g.nextWaveTimer) clearTimeout(g.nextWaveTimer);
+    const quadrantLaneCount = [...g.laneCount] as [number, number, number, number];
     onCompleteRef.current({
       stims: g.waves,
       maxCombo: g.waves,
-      laneCount: [...g.laneCount] as [number, number, number, number],
+      laneCount: quadrantLaneCountToResultLaneCount(quadrantLaneCount),
     });
   }, []);
 
@@ -389,11 +403,12 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         rotY: (Math.random() - 0.5) * 0.038,
         rotZ: (Math.random() - 0.5) * 0.03,
         quadrantIndex,
+        exploded: false,
       } satisfies AsteroidData;
       return group;
     };
 
-    const burstParticleCount = isLow ? 12 : 26;
+    const burstParticleCount = isLow ? 24 : 52;
 
     const spawnBurst = (position: THREE.Vector3, quadrantIndex: number): Burst => {
       const geometry = new THREE.BufferGeometry();
@@ -404,16 +419,16 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         positions[i * 3 + 1] = position.y;
         positions[i * 3 + 2] = position.z;
         const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(Math.random() * 2 - 1);
-        const speed = 7 + Math.random() * 12;
-        velocities[i * 3] = Math.sin(phi) * Math.cos(theta) * speed;
-        velocities[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
-        velocities[i * 3 + 2] = Math.cos(phi) * speed;
+        const radialSpeed = 11 + Math.random() * 20;
+        const depthSpeed = 2 + Math.random() * 8;
+        velocities[i * 3] = Math.cos(theta) * radialSpeed;
+        velocities[i * 3 + 1] = Math.sin(theta) * radialSpeed;
+        velocities[i * 3 + 2] = -depthSpeed;
       }
       geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
       const material = new THREE.PointsMaterial({
         color: quadrantColorObjs[quadrantIndex],
-        size: 7,
+        size: isLow ? 9 : 11,
         sizeAttenuation: true,
         transparent: true,
         opacity: 1,
@@ -422,7 +437,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       });
       const points = new THREE.Points(geometry, material);
       scene.add(points);
-      return { points, geometry, material, velocities, age: 0, life: 24 };
+      return { points, geometry, material, velocities, age: 0, life: isLow ? 18 : 24 };
     };
 
     const updateHudTime = () => {
@@ -531,10 +546,18 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         obs.rotation.y += data.rotY;
         obs.rotation.z += data.rotZ;
 
+        if (!data.exploded && scaleT >= ASTEROID_EXPLOSION_SCALE_PROGRESS) {
+          data.exploded = true;
+          const burstPosition = new THREE.Vector3(obs.position.x, obs.position.y, obs.position.z);
+          g.bursts.push(spawnBurst(burstPosition, data.quadrantIndex));
+          scene.remove(obs);
+          g.obstacles.splice(i, 1);
+          continue;
+        }
+
         // 카메라(z=0, -Z 방향을 봄) 근처, 아직 화면에 보이는 위치에서 터뜨림.
         // removeZ(=passZ 훌쩍 지난 화면 밖)까지 기다리면 이미 안 보이는 지점이라 폭발이 보이지 않았음.
         if (obs.position.z > data.removeZ) {
-          g.bursts.push(spawnBurst(obs.position, data.quadrantIndex));
           scene.remove(obs);
           g.obstacles.splice(i, 1);
         }
@@ -675,10 +698,10 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
             YELLOW
           </div>
           <div className="wh-corner wh-bl" style={{ color: QUADRANT_COLORS[2].css, textShadow: `0 0 20px ${QUADRANT_COLORS[2].css}` }}>
-            BLUE
+            {QUADRANT_COLORS[2].name}
           </div>
           <div className="wh-corner wh-br" style={{ color: QUADRANT_COLORS[3].css, textShadow: `0 0 20px ${QUADRANT_COLORS[3].css}` }}>
-            GREEN
+            {QUADRANT_COLORS[3].name}
           </div>
           <div className="wh-cross wh-cross-v" />
           <div className="wh-cross wh-cross-h" />
