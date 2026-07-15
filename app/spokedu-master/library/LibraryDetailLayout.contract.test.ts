@@ -41,7 +41,7 @@ describe('SPOKEDU MASTER library detail layout contract', () => {
   });
 
   it('uses stable bottom padding without sticky secondary actions', () => {
-    expect(detail).toContain('pb-10');
+    expect(detail).toContain('pb-[calc(5.5rem+env(safe-area-inset-bottom))]');
     expect(detail).toContain('lg:pb-12');
     expect(detail).not.toContain('primarySpomovePreset');
     expect(detail).not.toContain('SPOMOVE 실행');

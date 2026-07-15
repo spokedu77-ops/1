@@ -24,6 +24,7 @@ import { getNextIntervalState } from './lib/intervalTimer';
 import { generateSignal, createBasicSignalGenerator, createSimonSignalGenerator, type FruitSlide } from './lib/signals';
 import { generateObstacleSchedule } from './flow/engine/modules/flowObstacleSchedule';
 import type { FlowModuleKey } from './flow/engine/modules/flowModules';
+import { spatialArrowFillForDirection } from './constants';
 
 // ── localStorage mock ──────────────────────────────────────────────────────────
 
@@ -689,6 +690,28 @@ describe('SPOMOVE variant slot pad colors', () => {
       ['red', 'yellow'],
       ['green', 'blue'],
     ]);
+  });
+});
+
+describe('spatial arrow color mode', () => {
+  test('randomizes arrow fill color independently from direction by default', () => {
+    const originalRandom = Math.random;
+    try {
+      Math.random = () => 0.26;
+      expect(spatialArrowFillForDirection('up')).toBe('#3B82F6');
+
+      Math.random = () => 0.76;
+      expect(spatialArrowFillForDirection('up')).toBe('#FACC15');
+    } finally {
+      Math.random = originalRandom;
+    }
+  });
+
+  test('supports compass mapping for MASTER reaction cognition preset', () => {
+    expect(spatialArrowFillForDirection('up', undefined, 'compass')).toBe('#EF4444');
+    expect(spatialArrowFillForDirection('left', undefined, 'compass')).toBe('#22C55E');
+    expect(spatialArrowFillForDirection('right', undefined, 'compass')).toBe('#FACC15');
+    expect(spatialArrowFillForDirection('down', undefined, 'compass')).toBe('#3B82F6');
   });
 });
 

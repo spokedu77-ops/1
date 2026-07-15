@@ -106,6 +106,7 @@ type Props = {
   bodyLabelMode?: 'easy' | 'hard';
   hideBodyLabelModeControls?: boolean;
   spatialArrowColorMode?: 'basic' | 'color';
+  spatialArrowColorMapping?: 'random' | 'compass';
   reactTrainConcurrent?: 1 | 2 | 3;
   moleLookMode?: 'classic' | 'variant';
   numberCartTier?: 1 | 2 | 3;
@@ -148,6 +149,7 @@ export function EngineRouter({
   bodyLabelMode,
   hideBodyLabelModeControls,
   spatialArrowColorMode,
+  spatialArrowColorMapping,
   reactTrainConcurrent,
   moleLookMode,
   numberCartTier,
@@ -201,6 +203,7 @@ export function EngineRouter({
             bodyLabelMode,
             hideBodyLabelModeControls,
             spatialArrowColorMode,
+            spatialArrowColorMapping,
           }}
           embed
           disableBgm

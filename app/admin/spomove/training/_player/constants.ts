@@ -33,12 +33,19 @@ export const SPATIAL_ARROW_COLOR_BY_DIRECTION = {
   down: 'blue',
 } as const;
 
+export type SpatialArrowColorMapping = 'random' | 'compass';
+
 export function spatialArrowFillForDirection(
-  arrowId: string,
+  _arrowId: string,
   colors: typeof COLORS = COLORS,
+  mapping: SpatialArrowColorMapping = 'random',
 ): string {
-  const colorId = SPATIAL_ARROW_COLOR_BY_DIRECTION[arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION];
-  return colors.find((c) => c.id === colorId)?.bg ?? '#FFFFFF';
+  if (mapping === 'compass') {
+    const colorId = SPATIAL_ARROW_COLOR_BY_DIRECTION[_arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION];
+    return colors.find((c) => c.id === colorId)?.bg ?? '#FFFFFF';
+  }
+  const pool = colors.length > 0 ? colors : COLORS;
+  return pool[Math.floor(Math.random() * pool.length)]?.bg ?? '#FFFFFF';
 }
 
 export const DUAL_TWO_COLORS = COLORS.filter((c) => c.id === 'red' || c.id === 'blue');

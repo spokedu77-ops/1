@@ -50,6 +50,7 @@ export type OfficialSpomovePreset = {
     bodyLabelMode?: 'easy' | 'hard';
     hideBodyLabelModeControls?: boolean;
     spatialArrowColorMode?: 'basic' | 'color';
+    spatialArrowColorMapping?: 'random' | 'compass';
     reactTrainConcurrent?: 1 | 2 | 3;
     moleLookMode?: 'classic' | 'variant';
     numberCartTier?: 1 | 2 | 3;
@@ -114,7 +115,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     axisTitle: SPOMOVE_AXIS_META.response.title,
     programGroup: 'reaction-cognition',
     programTitle: '반응 인지',
-    engine: { mode: 'basic', level: 1, spatialArrowColorMode: 'color' },
+    engine: { mode: 'basic', level: 1, spatialArrowColorMode: 'color', spatialArrowColorMapping: 'compass' },
     description: '화면 극단의 거대 기둥+화살표 방향을 보고 해당 색 패드로 빠르게 이동하는 활동. 색상 모드에서는 위 빨·좌 초·우 노·아래 파로 화살표가 채워집니다.',
     salesCopy: '색이 채워진 화살표로 방향 반응을 확장하는 변형',
     cueSeconds: 3,

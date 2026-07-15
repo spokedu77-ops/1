@@ -77,6 +77,16 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
     }
   });
 
+  it('reaction cognition 1 color mode uses compass color mapping', () => {
+    const preset = findOfficialSpomovePreset('reaction-cognition-space-direction-color-01b');
+    expect(preset?.engine).toMatchObject({
+      mode: 'basic',
+      level: 1,
+      spatialArrowColorMode: 'color',
+      spatialArrowColorMapping: 'compass',
+    });
+  });
+
   const vr = byGroup('visual-reaction');
   it('시지각 반응 FLOW concurrent 1/2/3 존재', () => {
     expect(vr.some((preset) => preset.engine.level === 1 && (preset.engine.reactTrainConcurrent ?? 1) === 1)).toBe(true);

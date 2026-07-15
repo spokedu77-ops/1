@@ -62,7 +62,9 @@ type FilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme';
 type ActiveFilter = {
   group: FilterGroupKey;
   value: string;
-} | null;
+};
+
+type ActiveFilters = ActiveFilter[];
 
 type FilterGroup = {
   key: FilterGroupKey;
@@ -110,8 +112,17 @@ function getStructuredValues(program: Program, group: FilterGroupKey): string[] 
   return [];
 }
 
-function matchesFilter(program: Program, filter: ActiveFilter) {
-  return filter == null || getStructuredValues(program, filter.group).includes(filter.value);
+function matchesFilter(program: Program, filters: ActiveFilters) {
+  if (filters.length === 0) return true;
+  const filtersByGroup = new Map<FilterGroupKey, string[]>();
+  for (const filter of filters) {
+    filtersByGroup.set(filter.group, [...(filtersByGroup.get(filter.group) ?? []), filter.value]);
+  }
+  for (const [group, values] of filtersByGroup) {
+    const programValues = getStructuredValues(program, group);
+    if (!values.some((value) => programValues.includes(value))) return false;
+  }
+  return true;
 }
 
 function getHeroImage(program: Program) {
@@ -326,11 +337,11 @@ function ProgramCard({
 
 function FilterRow({
   group,
-  filter,
+  filters,
   onFilter,
 }: {
   group: FilterGroup;
-  filter: ActiveFilter;
+  filters: ActiveFilters;
   onFilter: (next: ActiveFilter) => void;
 }) {
   return (
@@ -338,12 +349,12 @@ function FilterRow({
       <p className="text-[11px] font-black text-slate-400">{group.label}</p>
       <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
         {group.options.map((option) => {
-          const active = filter?.group === group.key && filter.value === option.value;
+          const active = filters.some((filter) => filter.group === group.key && filter.value === option.value);
           return (
             <button
               key={option.value}
               type="button"
-              onClick={() => onFilter(active ? null : { group: group.key, value: option.value })}
+              onClick={() => onFilter({ group: group.key, value: option.value })}
               className={`h-8 shrink-0 rounded-full px-3 text-[11px] font-black transition ${
                 active
                   ? 'bg-slate-950 text-white'
@@ -379,11 +390,22 @@ export default function LibraryView() {
   const favoriteIds = storedFavoriteIds ?? getFavoriteProgramIds(ownerId);
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
-  const [filter, setFilter] = useState<ActiveFilter>(() => {
+  const [filters, setFilters] = useState<ActiveFilters>(() => {
     const group = searchParams.get('filterGroup') as FilterGroupKey | null;
     const value = searchParams.get('filter');
     const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme'];
-    return group && value && allowedGroups.includes(group) ? { group, value } : null;
+    const legacyFilter = group && value && allowedGroups.includes(group) ? [{ group, value }] : [];
+    const parsedFilters = searchParams
+      .getAll('filters')
+      .flatMap((item) => {
+        const [rawGroup, ...valueParts] = item.split(':');
+        const parsedGroup = rawGroup as FilterGroupKey;
+        const parsedValue = valueParts.join(':');
+        return allowedGroups.includes(parsedGroup) && parsedValue
+          ? [{ group: parsedGroup, value: parsedValue }]
+          : [];
+      });
+    return parsedFilters.length > 0 ? parsedFilters : legacyFilter;
   });
   const view = parseLibraryView(searchParams.get('view'));
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
@@ -422,16 +444,15 @@ export default function LibraryView() {
     const params = new URLSearchParams();
     const trimmedQuery = query.trim();
     if (trimmedQuery) params.set('q', trimmedQuery);
-    if (filter) {
-      params.set('filterGroup', filter.group);
-      params.set('filter', filter.value);
+    for (const filter of filters) {
+      params.append('filters', `${filter.group}:${filter.value}`);
     }
     params.set('view', view);
     const next = params.toString();
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
-  }, [filter, query, view, router, searchParams]);
+  }, [filters, query, view, router, searchParams]);
 
   const filteredPrograms = useMemo(
     () =>
@@ -439,17 +460,29 @@ export default function LibraryView() {
         viewPool,
         query,
         (program, normalizedQuery) => getSearchText(program).includes(normalizedQuery),
-        (program) => matchesFilter(program, filter),
+        (program) => matchesFilter(program, filters),
       ),
-    [filter, viewPool, query],
+    [filters, viewPool, query],
   );
+  const hasActiveFilters = filters.length > 0;
   const favoritesEmptyState = getFavoritesEmptyState(
     view,
     validFavoriteCount,
     query.trim().length > 0,
-    filter != null,
+    hasActiveFilters,
     filteredPrograms.length,
   );
+
+  const toggleFilter = (nextFilter: ActiveFilter) => {
+    setFilters((current) => {
+      const exists = current.some(
+        (filter) => filter.group === nextFilter.group && filter.value === nextFilter.value,
+      );
+      return exists
+        ? current.filter((filter) => filter.group !== nextFilter.group || filter.value !== nextFilter.value)
+        : [...current, nextFilter];
+    });
+  };
 
   const changeView = (nextView: LibraryViewMode) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -491,7 +524,7 @@ export default function LibraryView() {
 
   // 상세 필터에 활성 값이 있으면 자동 펼침
   const advancedHasActive =
-    filter != null && (['function', 'movement', 'theme'] as FilterGroupKey[]).includes(filter.group);
+    filters.some((filter) => (['function', 'movement', 'theme'] as FilterGroupKey[]).includes(filter.group));
   const isAdvancedOpen = showAdvanced || advancedHasActive;
 
   if (pool.length === 0) {
@@ -578,8 +611,8 @@ export default function LibraryView() {
                   저장 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
                 </button>
               </div>
-              {filter ? (
-                <button type="button" onClick={() => setFilter(null)} className="h-10 px-2 text-[12px] font-black text-indigo-600">
+              {hasActiveFilters ? (
+                <button type="button" onClick={() => setFilters([])} className="h-10 px-2 text-[12px] font-black text-indigo-600">
                   초기화
                 </button>
               ) : null}
@@ -587,7 +620,7 @@ export default function LibraryView() {
 
             <div className="space-y-2.5 border-t border-slate-100 pt-3">
               {basicGroups.map((group) => (
-                <FilterRow key={group.key} group={group} filter={filter} onFilter={setFilter} />
+                <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
               ))}
             </div>
 
@@ -604,7 +637,7 @@ export default function LibraryView() {
             {isAdvancedOpen ? (
               <div className="space-y-2.5 border-t border-slate-200 pt-3">
                 {advancedGroups.map((group) => (
-                  <FilterRow key={group.key} group={group} filter={filter} onFilter={setFilter} />
+                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
                 ))}
               </div>
             ) : null}
@@ -646,18 +679,23 @@ export default function LibraryView() {
               eyebrow="Programs"
               title={
                 view === 'favorites'
-                  ? (query || filter ? `즐겨찾기 결과 ${filteredPrograms.length}개` : `즐겨찾기한 수업 ${filteredPrograms.length}개`)
-                  : (query || filter ? `검색 결과 ${filteredPrograms.length}개` : `전체 수업 ${filteredPrograms.length}개`)
+                  ? (query || hasActiveFilters ? `즐겨찾기 결과 ${filteredPrograms.length}개` : `즐겨찾기한 수업 ${filteredPrograms.length}개`)
+                  : (query || hasActiveFilters ? `검색 결과 ${filteredPrograms.length}개` : `전체 수업 ${filteredPrograms.length}개`)
               }
             />
-            {filter ? (
-              <button
-                type="button"
-                onClick={() => setFilter(null)}
-                className="mb-4 inline-flex h-9 items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700"
-              >
-                {tagDisplayLabel(filter.group, filter.value)} ×
-              </button>
+            {hasActiveFilters ? (
+              <div className="mb-4 flex flex-wrap gap-1.5">
+                {filters.map((filter) => (
+                  <button
+                    key={`${filter.group}:${filter.value}`}
+                    type="button"
+                    onClick={() => toggleFilter(filter)}
+                    className="inline-flex h-9 items-center rounded-full border border-indigo-200 bg-indigo-50 px-3 text-[12px] font-black text-indigo-700"
+                  >
+                    {tagDisplayLabel(filter.group, filter.value)} ×
+                  </button>
+                ))}
+              </div>
             ) : null}
           </div>
           <ProgramGrid
@@ -699,7 +737,7 @@ export default function LibraryView() {
                   type="button"
                   onClick={() => {
                     setQuery('');
-                    setFilter(null);
+                    setFilters([]);
                   }}
                   className="mt-4 inline-flex min-h-11 items-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                 >

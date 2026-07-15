@@ -2,7 +2,7 @@
  * 신호 생성: 메모리 패턴, 일반 신호 (basic/stroop/dual)
  */
 
-import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection } from '../constants';
+import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection, type SpatialArrowColorMapping } from '../constants';
 import {
   SPOMOVE_VARIANT_SLOT_COLOR_IDS,
   SPOMOVE_VARIANT_SLOT_COUNT,
@@ -345,6 +345,7 @@ export type GenerateSignalOptions = {
   poleEdgeIndex?: number;
   /** basic 1번 · 공간 방향: 기본(흰 화살표) | 색상(방향별 고정 색: 위 빨·좌 초·우 노·아래 파) */
   spatialArrowColorMode?: 'basic' | 'color';
+  spatialArrowColorMapping?: SpatialArrowColorMapping;
 };
 
 export function generateSignal(
@@ -367,7 +368,7 @@ export function generateSignal(
     if (level === 1) {
       const a = r(ARROWS);
       if (opts?.spatialArrowColorMode === 'color') {
-        const fillHex = spatialArrowFillForDirection(a.id, activeColors);
+        const fillHex = spatialArrowFillForDirection(a.id, activeColors, opts.spatialArrowColorMapping);
         return {
           type: 'arrow',
           bg: '#0F172A',
@@ -1249,6 +1250,7 @@ export function createBasicSignalGenerator(
   fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
   basicNumberOverlay?: 'none' | '2' | '3',
   spatialArrowColorMode: 'basic' | 'color' = 'basic',
+  spatialArrowColorMapping: SpatialArrowColorMapping = 'random',
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1278,6 +1280,7 @@ export function createBasicSignalGenerator(
     if (level === 1) {
       o.poleEdgeIndex = poleEdgeIdx;
       o.spatialArrowColorMode = spatialArrowColorMode;
+      o.spatialArrowColorMapping = spatialArrowColorMapping;
     }
     if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;

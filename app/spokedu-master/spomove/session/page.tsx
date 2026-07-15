@@ -31,6 +31,7 @@ import {
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
+import { buildSpomoveRecordDraft, buildSpomoveRecordHref } from './spomoveRecordDraft';
 
 type SessionState = 'idle' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
@@ -246,7 +247,6 @@ function SpomoveSessionContent() {
   const programs = useMasterStore((state) => state.programs);
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const program = useMemo(() => programs.find((item) => item.id === programId) ?? null, [programId, programs]);
-  const recordProgramHref = program ? `/spokedu-master/class-record?program=${program.id}` : null;
   const { list: bgmList, loading: bgmLoading } = useSpomoveTrainingBGM();
   const selectedBgmPath = useMemo(() => {
     if (requestedBgmPath) return bgmList.includes(requestedBgmPath) ? requestedBgmPath : '';
@@ -261,6 +261,18 @@ function SpomoveSessionContent() {
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
   const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
+  const recordProgramHref = program && officialPreset && sessionResult
+    ? buildSpomoveRecordHref(
+        program.id,
+        buildSpomoveRecordDraft({
+          elapsedMs: sessionResult.elapsedMs,
+          preset: officialPreset,
+          status: state === 'done' ? 'done' : 'ended',
+        }),
+      )
+    : program
+      ? `/spokedu-master/class-record?program=${program.id}`
+      : null;
 
   const stopBgm = useCallback(() => {
     try {
@@ -378,6 +390,7 @@ function SpomoveSessionContent() {
         bodyLabelMode={officialPreset.engine.bodyLabelMode}
         hideBodyLabelModeControls={officialPreset.engine.hideBodyLabelModeControls}
         spatialArrowColorMode={officialPreset.engine.spatialArrowColorMode}
+        spatialArrowColorMapping={officialPreset.engine.spatialArrowColorMapping}
         reactTrainConcurrent={officialPreset.engine.reactTrainConcurrent}
         moleLookMode={officialPreset.engine.moleLookMode}
         numberCartTier={officialPreset.engine.numberCartTier}

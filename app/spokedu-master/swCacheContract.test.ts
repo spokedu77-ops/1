@@ -106,8 +106,9 @@ describe('SPOKEDU MASTER protected response cache contract', () => {
 
   it('uses no-store for operational protected GET requests', () => {
     const source = read('app/spokedu-master/operational/OperationalDataProvider.tsx');
+    const helper = read('app/spokedu-master/lib/masterRequestError.ts');
 
-    expect(source).toContain("cache: init?.method ? undefined : 'no-store'");
+    expect(helper).toContain("cache: init?.method ? undefined : 'no-store'");
     expect(source).toContain("'/api/spokedu-master/students'");
     expect(source).toContain("'/api/spokedu-master/class-records'");
   });

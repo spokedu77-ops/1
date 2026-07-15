@@ -10,7 +10,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { toMasterClientError, toNetworkMasterClientError, type MasterClientError } from '../lib/clientErrors';
+import { getMasterRequestErrorMessage, masterFetchJson } from '../lib/masterRequestError';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import type { CreateExplanationInput, MasterExplanationDto } from '../types/explanation';
 
@@ -28,45 +28,8 @@ type ExplanationDataContextValue = {
 
 const ExplanationDataContext = createContext<ExplanationDataContextValue | null>(null);
 
-async function readJson<T>(response: Response): Promise<T> {
-  const text = await response.text();
-  return text ? (JSON.parse(text) as T) : ({} as T);
-}
-
-class MasterClientRequestError extends Error {
-  readonly clientError: MasterClientError;
-
-  constructor(clientError: MasterClientError) {
-    super(clientError.kind);
-    this.name = 'MasterClientRequestError';
-    this.clientError = clientError;
-  }
-}
-
 function getProviderErrorMessage(caught: unknown) {
-  if (caught instanceof MasterClientRequestError) return caught.clientError.message;
-  return toNetworkMasterClientError().message;
-}
-
-async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-  try {
-    const response = await fetch(url, {
-      cache: init?.method ? undefined : 'no-store',
-      ...init,
-      headers: {
-        'content-type': 'application/json',
-        ...(init?.headers ?? {}),
-      },
-    });
-    const json = await readJson<T & { error?: string }>(response);
-    if (!response.ok) {
-      throw new MasterClientRequestError(toMasterClientError(response.status, json.error));
-    }
-    return json;
-  } catch (caught) {
-    if (caught instanceof MasterClientRequestError) throw caught;
-    throw new MasterClientRequestError(toNetworkMasterClientError());
-  }
+  return getMasterRequestErrorMessage(caught);
 }
 
 export function ExplanationDataProvider({ children }: { children: ReactNode }) {
@@ -97,7 +60,7 @@ export function ExplanationDataProvider({ children }: { children: ReactNode }) {
     setStatus('loading');
 
     try {
-      const json = await requestJson<{ data?: MasterExplanationDto[]; total?: number }>(
+      const json = await masterFetchJson<{ data?: MasterExplanationDto[]; total?: number }>(
         '/api/spokedu-master/explanations',
       );
       if (activeOwnerRef.current !== ownerId) return;
@@ -117,7 +80,7 @@ export function ExplanationDataProvider({ children }: { children: ReactNode }) {
   }, [reload]);
 
   const saveExplanation = useCallback(async (input: CreateExplanationInput) => {
-    const json = await requestJson<{ data: MasterExplanationDto }>('/api/spokedu-master/explanations', {
+    const json = await masterFetchJson<{ data: MasterExplanationDto }>('/api/spokedu-master/explanations', {
       body: JSON.stringify(input),
       method: 'POST',
     });
@@ -127,7 +90,7 @@ export function ExplanationDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const getExplanation = useCallback(async (id: string) => {
-    const json = await requestJson<{ data?: MasterExplanationDto[] }>(
+    const json = await masterFetchJson<{ data?: MasterExplanationDto[] }>(
       `/api/spokedu-master/explanations?saved=${encodeURIComponent(id)}`,
     );
     const explanation = json.data?.[0] ?? null;

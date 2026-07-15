@@ -8,7 +8,15 @@ import type { ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { SaveErrorBanner } from '../components/ui/SaveErrorBanner';
 import { classRecordToCreateInput, toClassRecord, toStudentProfile } from '../lib/operationalDataAdapter';
+import {
+  canAttemptOnlineSave,
+  getOfflineSaveFeedback,
+  resolveSaveActionFeedback,
+  type SaveActionFeedback,
+} from '../lib/saveActionFeedback';
+import { resolveSpomoveDraftFromQuery } from '../spomove/session/spomoveRecordDraft';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import {
   canCreateClassRecordFromSnapshot,
@@ -25,10 +33,9 @@ function getClassRecordQuery(searchParams: URLSearchParams | ReturnType<typeof u
     recordId: searchParams.get('record'),
     sourceRecordId: searchParams.get('from'),
     studentId: searchParams.get('student') ?? searchParams.get('studentId'),
+    spomoveDraft: resolveSpomoveDraftFromQuery(searchParams),
   };
 }
-
-const RECORD_SAVE_ERROR_MESSAGE = '기록을 저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
 
 const DEFAULT_SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
 
@@ -232,8 +239,9 @@ function RecordEntryView() {
   const students = useMemo(() => operationalData.students.map(toStudentProfile), [operationalData.students]);
   const records = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programs = useMasterStore((state) => state.programs);
+  const isOnline = useMasterStore((state) => state.operational.online);
   const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
-  const { programId: requestedProgramId, recordId: requestedRecordId, sourceRecordId, studentId: requestedStudentId } = getClassRecordQuery(searchParams);
+  const { programId: requestedProgramId, recordId: requestedRecordId, sourceRecordId, studentId: requestedStudentId, spomoveDraft } = getClassRecordQuery(searchParams);
   const editingRecord = requestedRecordId ? records.find((record) => record.id === requestedRecordId) ?? null : null;
   const sourceRecord = !requestedRecordId && sourceRecordId
     ? records.find((record) => record.id === sourceRecordId) ?? null
@@ -261,7 +269,7 @@ function RecordEntryView() {
   const [savedRecordId, setSavedRecordId] = useState<string | null>(null);
   const [savedOnly, setSavedOnly] = useState(false);
   const [recordSaving, setRecordSaving] = useState(false);
-  const [recordSaveError, setRecordSaveError] = useState<string | null>(null);
+  const [recordSaveFeedback, setRecordSaveFeedback] = useState<SaveActionFeedback | null>(null);
   const restoredRecordIdRef = useRef<string | null>(null);
 
   const selectedStudents = students.filter((student) => selectedStudentIds[student.id]);
@@ -306,6 +314,11 @@ function RecordEntryView() {
   }, [editingRecord, requestedStudentId, sourceRecord, students]);
 
   useEffect(() => {
+    if (!spomoveDraft || editingRecord || sourceRecord) return;
+    setClassMemo((current) => current.trim() ? current : spomoveDraft);
+  }, [editingRecord, sourceRecord, spomoveDraft]);
+
+  useEffect(() => {
     const nextProgramId = initialProgramId && programs.some((item) => item.id === initialProgramId) ? initialProgramId : '';
     setSelectedProgramId(nextProgramId);
   }, [initialProgramId, programs]);
@@ -318,7 +331,6 @@ function RecordEntryView() {
     setClassMemo(editingRecord.memo ?? '');
     setSavedRecordId(editingRecord.id);
     setSavedOnly(false);
-    setRecordSaveError(null);
     setSelectedStudentIds(Object.fromEntries(students.map((student) => [
       student.id,
       editingRecord.students.some((item) => item.studentId === student.id),
@@ -342,20 +354,19 @@ function RecordEntryView() {
   }, [defaultClassId, editingRecord, students]);
 
   useEffect(() => {
-    if (!sourceRecord || restoredRecordIdRef.current === `from:${sourceRecord.id}`) return;
+    if (operationalData.status !== 'ready' || !sourceRecord || restoredRecordIdRef.current === `from:${sourceRecord.id}`) return;
     restoredRecordIdRef.current = `from:${sourceRecord.id}`;
     setRecordDate(new Date().toISOString().slice(0, 10));
     setClassId(sourceRecord.classId || defaultClassId);
     setClassMemo('');
     setSavedRecordId(null);
     setSavedOnly(false);
-    setRecordSaveError(null);
     setSelectedStudentIds(Object.fromEntries(students.map((student) => [student.id, true])));
     setAttendance(Object.fromEntries(students.map((student) => [student.id, 'pending'])) as Record<string, AttendanceStatus>);
     setFocused({});
     setCheckedSkills({});
     setStudentMemos({});
-  }, [defaultClassId, sourceRecord, students]);
+  }, [defaultClassId, operationalData.status, sourceRecord, students]);
 
   const toggleSkill = (studentId: string, skill: string) => {
     setCheckedSkills((prev) => {
@@ -377,6 +388,16 @@ function RecordEntryView() {
   const clearAllStudents = () => {
     setSelectedStudentIds(Object.fromEntries(students.map((student) => [student.id, false])));
     setSelectedId(null);
+  };
+
+  const applyAttendanceToSelected = (status: AttendanceStatus) => {
+    setAttendance((prev) => {
+      const next = { ...prev };
+      for (const student of selectedStudents) {
+        next[student.id] = status;
+      }
+      return next;
+    });
   };
 
   const applyMemoToEmptyStudents = () => {
@@ -416,9 +437,13 @@ function RecordEntryView() {
 
   const persistRecord = (kakaoSent: boolean) => {
     if (!canSaveRecord || recordSaving) return null;
+    if (!canAttemptOnlineSave(isOnline)) {
+      setRecordSaveFeedback(getOfflineSaveFeedback());
+      return null;
+    }
     const record = buildRecord(kakaoSent);
     setRecordSaving(true);
-    setRecordSaveError(null);
+    setRecordSaveFeedback(null);
     setSavedOnly(false);
     if (!editingRecord) setSavedRecordId(null);
     const input = classRecordToCreateInput(record, operationalData.students);
@@ -428,8 +453,8 @@ function RecordEntryView() {
     void request.then((saved) => {
       setSavedRecordId(saved.id);
       setSavedOnly(!kakaoSent);
-    }).catch(() => {
-      setRecordSaveError(RECORD_SAVE_ERROR_MESSAGE);
+    }).catch((caught) => {
+      setRecordSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
       setSavedOnly(false);
       if (!editingRecord) setSavedRecordId(null);
     }).finally(() => {
@@ -507,7 +532,7 @@ function RecordEntryView() {
         </label>
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>반·기관명</span>
-          <input type="text" value={classId} onChange={(event) => setClassId(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
+          <input type="text" data-testid="class-id-input" value={classId} onChange={(event) => setClassId(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
         </label>
       </section>
 
@@ -526,6 +551,9 @@ function RecordEntryView() {
         <div className="mb-3 flex flex-wrap gap-2 px-[22px] sm:px-8 lg:px-10">
           <button type="button" onClick={selectAllStudents} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>전체 선택</button>
           <button type="button" onClick={clearAllStudents} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>전체 해제</button>
+          <button type="button" onClick={() => applyAttendanceToSelected('present')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'rgba(16,185,129,0.16)', color: 'var(--spm-grn)', border: '1px solid rgba(16,185,129,0.24)' }}>선택 출석</button>
+          <button type="button" onClick={() => applyAttendanceToSelected('absent')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)', border: '1px solid rgba(239,68,68,0.22)' }}>선택 결석</button>
+          <button type="button" onClick={() => applyAttendanceToSelected('pending')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>출석 초기화</button>
         </div>
       ) : null}
 
@@ -599,8 +627,15 @@ function RecordEntryView() {
             </div>
           </div>
         ) : null}
-        {recordSaveError ? (
-          <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>{recordSaveError}</p>
+        {recordSaveFeedback ? (
+          <div className="mt-4">
+            <SaveErrorBanner
+              message={recordSaveFeedback.message}
+              onRetry={recordSaveFeedback.retryable ? () => persistRecord(false) : undefined}
+              upgradeHref={recordSaveFeedback.upgradeHref}
+              upgradeLabel={recordSaveFeedback.upgradeLabel}
+            />
+          </div>
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr]">
           <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
