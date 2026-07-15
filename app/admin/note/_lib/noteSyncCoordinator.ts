@@ -475,11 +475,11 @@ export class NoteSyncCoordinator {
       this.pushTimer = null;
     }
     for (let attempt = 0; attempt < 8; attempt += 1) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await this.flushPush();
-      // eslint-disable-next-line no-await-in-loop
+       
       if (!(await this.hasPendingOutbound())) return;
-      // eslint-disable-next-line no-await-in-loop
+       
       await new Promise((resolve) => {
         setTimeout(resolve, 50);
       });
@@ -542,7 +542,7 @@ export class NoteSyncCoordinator {
       do {
         this.pushRequested = false;
         try {
-          // eslint-disable-next-line no-await-in-loop
+           
           while (await this.pushBatchOnce()) {
             if (this.disposed) break;
           }
@@ -573,7 +573,11 @@ export class NoteSyncCoordinator {
 
     // activeDocument는 Project(store 쓰기)용. identityLeave·relocation Outbound drain은 막지 않는다.
     if (!isActiveDocument) {
-      const pendingItems = pendingFirst.map(({ documentId: _d, createdAt: _c, ...op }) => op);
+      const pendingItems = pendingFirst.map(({ documentId, createdAt, ...op }) => {
+        void documentId;
+        void createdAt;
+        return op;
+      });
       if (!outboundHasPureIdentityLeaveOrRelocation(pendingItems)) {
         this.schedulePush(2000);
         return false;
@@ -589,7 +593,7 @@ export class NoteSyncCoordinator {
     for (let attempt = 0; attempt < MAX_PUSH_ATTEMPTS; attempt += 1) {
       // outbound이 있어도 seq를 맞춰야 push baseSeq가 서버와 일치한다.
       // 첫 attempt만 force — 이후는 캐시·hard floor로 Fluid CPU 절감
-      // eslint-disable-next-line no-await-in-loop
+       
       await this.rebaseFromServer({
         allowRemotePull: true,
         forceStateFetch: attempt === 0,
@@ -598,7 +602,11 @@ export class NoteSyncCoordinator {
       const outbound = await listOutboundOps(this.documentId);
       if (outbound.length === 0) return false;
 
-      const coalesced = coalescePushItems(outbound.map(({ documentId: _d, createdAt: _c, ...op }) => op));
+      const coalesced = coalescePushItems(outbound.map(({ documentId, createdAt, ...op }) => {
+        void documentId;
+        void createdAt;
+        return op;
+      }));
       if (!isActiveDocument && !outboundHasPureIdentityLeaveOrRelocation(coalesced)) {
         this.schedulePush(2000);
         return false;
@@ -614,7 +622,7 @@ export class NoteSyncCoordinator {
       const { safeReady, dropStaleIds } = filterRegressivePatchContentOps(ready, this.blocks);
       if (dropStaleIds.length > 0) {
         // Authority drop_stale만 outbound에서 제거 — clear intent는 절대 여기서 지우지 않음
-        // eslint-disable-next-line no-await-in-loop
+         
         await removeOutboundOps(dropStaleIds);
       }
 
@@ -629,7 +637,7 @@ export class NoteSyncCoordinator {
 
       const consumedClientOpIds = safeReady.map((op) => op.clientOpId);
 
-      // eslint-disable-next-line no-await-in-loop
+       
       const result = await pushOps(this.documentId, this.lastAppliedSeq, safeReady);
       if (!result.ok) {
         await this.applyRemoteOps(result.ops, result.lastSeq);

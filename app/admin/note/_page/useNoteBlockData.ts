@@ -17,7 +17,6 @@ import {
   commitNoteDocumentBeforeLeave,
   documentContentAheadOfSnapshot,
   isActiveNoteEditorFocused,
-  mergeBlocksWithStoreContent,
   resetNoteDocumentEditorState,
 } from '../_lib/noteBlockStateMerge';
 import {
@@ -417,6 +416,10 @@ export function useNoteBlockData(options: {
     selectedId,
     setError,
     persistToggleBodyMigration,
+    setBlocksEmptyConfirmed,
+    setBlocksSyncing,
+    setLoadSettledDocId,
+    setLoadingBlocks,
   ]);
 
   useEffect(() => {

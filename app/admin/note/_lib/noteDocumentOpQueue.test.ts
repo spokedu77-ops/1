@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   NoteBlockVersionConflictError,
-  type PatchedNoteBlock,
 } from './noteBlocksApi';
 import { NoteDocumentOpQueue } from './noteDocumentOpQueue';
 import type { NoteBlock } from './types';

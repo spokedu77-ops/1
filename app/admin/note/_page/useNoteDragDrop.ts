@@ -224,7 +224,7 @@ export function useNoteDragDrop(options: {
       setDocuments(prevDocuments);
       setError(e instanceof Error ? e.message : '문서 이동 실패');
     }
-  }, [documents, selectedId, triggerSave, documentEngine, setBlocks, setDocuments, setError]);
+  }, [documents, onAfterBlocksChanged, selectedId, triggerSave, documentEngine, setBlocks, setDocuments, setError]);
 
   const persistBlockReparent = useCallback(async (
     command: NoteBlockCommandResult,
@@ -270,7 +270,7 @@ export function useNoteDragDrop(options: {
       setError(e instanceof Error ? e.message : options.errorMessage);
       return false;
     }
-  }, [documentEngine, noteUndo, persistBlockReparent, selectedId, setBlocks, setError]);
+  }, [documentEngine, noteUndo, onAfterBlocksChanged, persistBlockReparent, setBlocks, setError]);
 
   const runPersistedBlockTransfer = useCallback(async (
     prevBlocks: NoteBlock[],
@@ -302,7 +302,7 @@ export function useNoteDragDrop(options: {
       setError(e instanceof Error ? e.message : options.errorMessage);
       return false;
     }
-  }, [documentEngine, noteUndo, selectedId, setBlocks, setError]);
+  }, [documentEngine, noteUndo, onAfterBlocksChanged, selectedId, setBlocks, setError]);
 
   const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     setActiveBlockId(null);
@@ -572,19 +572,21 @@ export function useNoteDragDrop(options: {
     let target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
     if (
       moving.type === 'page'
-      && target?.position === 'inside'
+      && target
+      && target.position === 'inside'
     ) {
-      const container = prevBlocks.find((block) => block.id === target.blockId);
+      const insideTarget = target;
+      const container = prevBlocks.find((block) => block.id === insideTarget.blockId);
       if (container?.type === 'page') {
         const row = typeof document !== 'undefined'
           ? document.querySelector<HTMLElement>(
-            `[data-note-block-row][data-block-id="${target.blockId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`,
+            `[data-note-block-row][data-block-id="${insideTarget.blockId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`,
           )
           : null;
         const rect = row?.getBoundingClientRect();
         const mid = rect ? rect.top + rect.height / 2 : pointerYRef.current;
         target = {
-          blockId: target.blockId,
+          blockId: insideTarget.blockId,
           position: pointerYRef.current < mid ? 'before' : 'after',
         };
       }

@@ -242,7 +242,6 @@ export function stripMarkdownTriggerForTypeChange(
   if (parsed.level > 0) return text;
 
   const token = parsed.body.trim();
-  const body = parsed.body;
   const isTriggerOnly = (() => {
     switch (nextType) {
       case 'heading3':

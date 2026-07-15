@@ -1,6 +1,5 @@
 'use client';
 
-import { devLogger } from '@/app/lib/logging/devLogger';
 import type { NoteBlockOpRecord } from '@/app/lib/note/noteBlockOpTypes';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
@@ -29,8 +28,6 @@ import {
 
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import type { NoteBlock } from './types';
-
-const CONTENT_DEBOUNCE_MS = 1500;
 
 export type NoteDocumentPipelineCallbacks = {
   onError?: (error: Error) => void;
@@ -455,4 +452,3 @@ export function unmapNoteDocumentPipeline(
     pipelines.delete(documentId);
   }
 }
-

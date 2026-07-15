@@ -4,3 +4,7 @@ let contentSavePending = false;
 export function setNoteContentSavePending(pending: boolean): void {
   contentSavePending = pending;
 }
+
+export function isNoteContentSavePending(): boolean {
+  return contentSavePending;
+}

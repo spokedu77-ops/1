@@ -4,7 +4,6 @@ import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { useNoteBlockStore, selectDocumentBlocks } from '../_store/noteBlockStore';
 import { noteBlocksLoadPath } from './noteBlocksLoad';
-import { getReadyPrefetchedBlocks } from './noteDocumentBlocksPrefetch';
 import { traceApiEgress } from './noteFlickerTrace';
 import {
   rememberNoteDocumentBlocks,

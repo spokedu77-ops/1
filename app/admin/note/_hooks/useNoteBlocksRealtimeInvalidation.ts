@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 
@@ -26,7 +25,7 @@ export function useNoteBlocksRealtimeInvalidation(options: {
           table: 'note_blocks',
           filter: `document_id=eq.${documentId}`,
         },
-        (_payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
+        () => {
           if (cancelled) return;
           onInvalidate(documentId);
         },

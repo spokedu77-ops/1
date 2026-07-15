@@ -115,7 +115,8 @@ export function todoListNestPaddingPx(listNestLevel: number): number {
 }
 
 /** +·⋮⋮ — 항상 row 왼쪽 고정 (콘텐츠 들여쓰기와 분리) */
-export function blockHandleLeftPx(_nestDepth?: number): number {
+export function blockHandleLeftPx(nestDepth?: number): number {
+  void nestDepth;
   return -NOTE_GUTTER_PX;
 }
 

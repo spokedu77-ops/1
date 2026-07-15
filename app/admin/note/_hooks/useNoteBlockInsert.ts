@@ -58,7 +58,6 @@ export function useNoteBlockInsert(options: {
   ) => Promise<void>;
 }) {
   const {
-    blocks,
     blocksRef,
     setBlocks,
     selectedId,
@@ -471,16 +470,14 @@ export function useNoteBlockInsert(options: {
       }
 
       await insertBlockAmongSiblings(null, type, 0);
-    } catch (e) {
+  } catch (e) {
       devLogger.error('[Note] addBlock', e);
       setError(e instanceof Error ? e.message : '추가 실패');
     }
   }, [
-    blocks,
     focusedToggleId,
     handleCreateSubPage,
     handleInsertBlockInParent,
-    handleUpdateBlock,
     selectedId,
     setError,
     setLoadingState,

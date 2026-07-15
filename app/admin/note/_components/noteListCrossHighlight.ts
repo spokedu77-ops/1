@@ -4,12 +4,8 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import {
-  applyBlockPreviewCrossHighlight,
-  blockPreviewPlainText,
-  clearBlockPreviewCrossHighlight,
   extractBlockPreviewSlice,
   getBlockPreviewTextRoot,
-  hoverBlockPreviewTextPos,
 } from './noteBlockPreviewCrossSelect';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { stripListItemMarkerPrefix } from './noteBulletInput';

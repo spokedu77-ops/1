@@ -156,7 +156,9 @@ export function useNotePageOrchestration(): NotePageContextValue {
   }, [docSelectedId, syncDocumentParentsFromBlocks]);
 
   const afterBlocksChangedRef = useRef(handleAfterBlocksChanged);
-  afterBlocksChangedRef.current = handleAfterBlocksChanged;
+  useEffect(() => {
+    afterBlocksChangedRef.current = handleAfterBlocksChanged;
+  }, [handleAfterBlocksChanged]);
 
   const blockData = useNoteBlockData({
     selectedId: docData.selectedId,

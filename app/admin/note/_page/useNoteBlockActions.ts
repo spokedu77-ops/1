@@ -16,7 +16,6 @@ import { useNoteBlockDelete } from '../_hooks/useNoteBlockDelete';
 import { planTodoListNestTab } from '../_lib/noteTodoNest';
 import { normalizeTodoBlockContentRecord } from '../_lib/noteTodoContent';
 import {
-  getBlocksInParent,
   planBlockTabIndent,
   resolveVisualNavigateTarget,
   sortRootBlocks,
@@ -45,7 +44,6 @@ import {
 } from '../_lib/noteMultilinePaste';
 import {
   isStructuralHtmlPasteSpec,
-  pastedBlocksFromPlainLines,
   type PastedBlockSpec,
 } from '../_lib/notePasteBlocks';
 import {
@@ -134,7 +132,6 @@ export function useNoteBlockActions(options: {
     editorScrollRef,
     titleInputRef,
     formatToolbarApiRef,
-    saveTimersRef,
     lastDeletedBlockIdRef,
     setPendingDeleteUndo,
     triggerSave,
@@ -184,7 +181,7 @@ export function useNoteBlockActions(options: {
       scheduleBlockContentSave,
       onAfterChange: () => bumpNoteReconcileIdle(selectedId),
     });
-  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
+  }, [blocksRef, recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
 
   const handleUpdateBlock = useCallback((block: NoteBlock, content: any) => {
     applyBlockContentChange({
@@ -195,7 +192,7 @@ export function useNoteBlockActions(options: {
       scheduleBlockContentSave,
       onAfterChange: () => bumpNoteReconcileIdle(selectedId),
     });
-  }, [recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
+  }, [blocksRef, recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
 
   const {
     insertBlockAmongSiblings,
@@ -268,7 +265,7 @@ export function useNoteBlockActions(options: {
     void persistBlockReparent(command);
     syncFocusedToggleFromBlock(moving.id);
     bumpNoteReconcileIdle(selectedId);
-  }, [onAfterBlocksChanged, persistBlockReparent, recordBlockCommandUndo, syncFocusedToggleFromBlock, selectedId]);
+  }, [blocksRef, onAfterBlocksChanged, persistBlockReparent, recordBlockCommandUndo, selectedId, setBlocks, syncFocusedToggleFromBlock]);
 
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const prevBlocks = blocksRef.current;
@@ -291,6 +288,7 @@ export function useNoteBlockActions(options: {
     }
   }, [
     applyBlockReparentPlan,
+    blocksRef,
     recordContentUndoBeforeChange,
     selectedId,
     syncBlockContent,
@@ -324,7 +322,7 @@ export function useNoteBlockActions(options: {
       return;
     }
     void handleInsertBlockAfter(last, 'text');
-  }, [focusBlockEditor, handleAddBlock, handleInsertBlockAfter]);
+  }, [blocksRef, focusBlockEditor, handleAddBlock, handleInsertBlockAfter]);
 
   const handleDocumentBodyMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = notePointerTargetElement(e.target);
@@ -338,7 +336,7 @@ export function useNoteBlockActions(options: {
     setSelectedBlockIds(new Set());
     e.preventDefault();
     handleClickEditorWhitespace();
-  }, [handleClickEditorWhitespace]);
+  }, [handleClickEditorWhitespace, setSelectedBlockIds]);
 
   const handleChangeBlockType = useCallback(async (
     block: NoteBlock,
@@ -406,9 +404,7 @@ export function useNoteBlockActions(options: {
     focusedEditorBlockIdRef,
     focusedEditorPartRef,
     recordBlockUndo,
-    scheduleBlockContentSave,
     selectedId,
-    setBlocks,
     setError,
     triggerSave,
   ]);
@@ -431,11 +427,11 @@ export function useNoteBlockActions(options: {
       insertTable,
       editLink,
     );
-  }, []);
+  }, [formatToolbarApiRef]);
 
   const hideFormatToolbar = useCallback(() => {
     formatToolbarApiRef.current.hide();
-  }, []);
+  }, [formatToolbarApiRef]);
 
   const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
     if (!selectedId || specs.length === 0) return;

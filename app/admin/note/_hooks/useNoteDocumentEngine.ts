@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   disposeNoteDocumentPipeline,
   getNoteDocumentPipeline,

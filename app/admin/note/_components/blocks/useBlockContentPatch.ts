@@ -20,5 +20,5 @@ export function useBlockContentPatch(
       next = normalizeTodoBlockContentRecord(next);
     }
     onContentPatch(next);
-  }, [block.id, block.type, block.content, onContentPatch]);
+  }, [block, onContentPatch]);
 }

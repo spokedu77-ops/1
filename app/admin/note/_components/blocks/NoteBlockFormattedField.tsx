@@ -70,8 +70,6 @@ export function NoteBlockFormattedField({
   onEditorMergeWithPrevious,
   onEditorCanMergeWithPrevious,
   editorMergeFocusCaretOffset,
-  onUpdate,
-  onContentSync,
   onContentPatch,
   onChangeType,
   onShowFormatToolbar,

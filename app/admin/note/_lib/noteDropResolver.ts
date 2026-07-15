@@ -92,7 +92,7 @@ function collectVisibleRowCandidates(excludeId: string): RowCandidate[] {
   return result;
 }
 
-function readToggleTitleBandBottom(rowEl: HTMLElement, rect: DOMRect): number | undefined {
+function readToggleTitleBandBottom(rowEl: HTMLElement): number | undefined {
   const title = rowEl.querySelector('[data-toggle-title]');
   if (!title) return undefined;
   return title.getBoundingClientRect().bottom;
@@ -232,7 +232,7 @@ export function resolveBlockDropTargetFromPointer(
 
   if (block.type === 'toggle') {
     const titleBandBottom = rowEl
-      ? readToggleTitleBandBottom(rowEl, row.rect)
+      ? readToggleTitleBandBottom(rowEl)
       : undefined;
     const headerBottom = titleBandBottom ?? row.rect.top + Math.min(TOGGLE_TITLE_BAND_PX, row.rect.height);
     if (pointerY > headerBottom) {
@@ -258,7 +258,7 @@ export function resolveBlockDropTargetFromPointer(
     { top: row.rect.top, height: row.rect.height },
     pointerY,
     rowEl && block.type === 'toggle'
-      ? { titleBandBottom: readToggleTitleBandBottom(rowEl, row.rect) }
+      ? { titleBandBottom: readToggleTitleBandBottom(rowEl) }
       : undefined,
   );
 

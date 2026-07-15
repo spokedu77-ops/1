@@ -141,7 +141,6 @@ export function NoteTableBlock({
     direction: TableCellNavigateDirection,
   ) => {
     const rowCount = table.rows.length;
-    const colCount = table.rows[0]?.length ?? 0;
     if (direction === 'left') {
       handleNavigateCell(row, col, 'previous');
       return;

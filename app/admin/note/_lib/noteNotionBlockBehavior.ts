@@ -98,8 +98,9 @@ export function shouldEditorShiftEnterHardBreak(shiftKey: boolean): boolean {
 
 export function resolveEditorShiftEnterAction(
   shiftKey: boolean,
-  _context?: EditorShiftEnterContext,
+  context?: EditorShiftEnterContext,
 ): NotionShiftEnterAction | null {
+  void context;
   if (!shouldEditorShiftEnterHardBreak(shiftKey)) return null;
   return { kind: 'hard-break' };
 }

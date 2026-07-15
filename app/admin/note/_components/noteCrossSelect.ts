@@ -25,14 +25,12 @@ import {
   bindListCrossHighlightEditorLookup,
   clearListCrossHighlight,
   extractActiveCrossSelectClipboardText,
-  type ListCrossRange,
 } from './noteListCrossHighlight';
 import {
   applyBlockPreviewCrossHighlight,
   applyBlockRowCrossHighlight,
   clearAllDocumentPreviewCrossHighlights,
   clearBlockPreviewCrossHighlight,
-  clearBlockRowCrossHighlight,
   getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
 } from './noteBlockPreviewCrossSelect';
@@ -49,7 +47,6 @@ import { noteBlockMarqueeGuard } from '../_lib/noteBlockMarqueeGuard';
 import { clearActiveListCrossSelectState } from './noteListCrossSelect';
 import {
   getOrderedBlockRowIds,
-  getOrderedSelectableBlockIds,
   resolveNoteBlockIdFromPoint,
 } from './noteBlockIdFromPoint';
 

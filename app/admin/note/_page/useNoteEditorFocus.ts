@@ -56,7 +56,8 @@ export function useNoteEditorFocus(options: {
     }
   }, [blocksRef]);
 
-  const commitBlockToState = useCallback((_blockId: string) => {
+  const commitBlockToState = useCallback((blockId: string) => {
+    void blockId;
     commitActiveNoteEditorToStore();
   }, []);
 

@@ -95,7 +95,7 @@ export function useNoteDocumentActions(options: {
     setMobileTab('editor');
     closeAll();
     router.replace(`/admin/note?id=${encodeURIComponent(doc.id)}`);
-  }, [selectedId, closeAll, router]);
+  }, [selectedId, closeAll, router, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab, setSelectedId, setShowDocIconPicker, setSidebarIconPicker]);
 
   const handleNavigateToWorkspace = useCallback(async () => {
     await commitAndResetNoteDocumentBeforeSwitch();
@@ -104,7 +104,7 @@ export function useNoteDocumentActions(options: {
     setMobileTab('editor');
     closeAll();
     router.replace('/admin/note');
-  }, [closeAll, router, setBlocks]);
+  }, [closeAll, router, setBlocks, setMobileTab, setSelectedId]);
 
   const handleUpdateDocProperties = useCallback(async (
     docId: string,
@@ -115,7 +115,7 @@ export function useNoteDocumentActions(options: {
       await enqueueDocumentPatch({ id: docId, properties });
       triggerSave();
     } catch (e) { devLogger.error('[Note] updateDocProperties', e); }
-  }, [triggerSave]);
+  }, [setDocuments, triggerSave]);
 
   const handleSetDocumentCover = useCallback(async (docId: string, cover: string) => {
     const doc = documents.find((d) => d.id === docId);
@@ -142,13 +142,13 @@ export function useNoteDocumentActions(options: {
     await handleUpdateDocProperties(docId, nextProperties);
     setShowDocIconPicker(false);
     setSidebarIconPicker(null);
-  }, [documents, handleUpdateDocProperties]);
+  }, [documents, handleUpdateDocProperties, setShowDocIconPicker, setSidebarIconPicker]);
 
   const openSidebarIconPicker = useCallback((doc: NoteDocument, e: React.MouseEvent<Element>) => {
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     setSidebarIconPicker({ docId: doc.id, top: rect.bottom + 4, left: rect.left });
     setSidebarIconDraft(resolveDocIcon(doc.properties) ?? '');
-  }, []);
+  }, [setSidebarIconDraft, setSidebarIconPicker]);
 
   const handleCreateDocumentInGroup = useCallback(async (group: string) => {
     const trimmedGroup = group.trim();
@@ -177,7 +177,7 @@ export function useNoteDocumentActions(options: {
       devLogger.error('[Note] createDocInGroup', e);
       setError(e instanceof Error ? e.message : '생성 실패');
     } finally { setLoadingState('idle'); }
-  }, [closeAll, router]);
+  }, [closeAll, router, setDocuments, setError, setLoadingState, setMobileTab, setSelectedId, setViewMode]);
 
   const handleMoveDocumentToGroup = useCallback(async (docId: string, group: string) => {
     const doc = documents.find((d) => d.id === docId);
@@ -235,7 +235,7 @@ export function useNoteDocumentActions(options: {
     setMobileTab('editor');
     closeAll();
     router.replace(`/admin/note?id=${encodeURIComponent(documentId)}`);
-  }, [selectedId, router, closeAll]);
+  }, [selectedId, router, closeAll, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab, setSelectedId, setShowDocIconPicker, setSidebarIconPicker]);
 
 
   /** 세션 방식: 문서(parent_id) + 부모 본문 page 블록을 항상 함께 생성 */
@@ -331,7 +331,7 @@ export function useNoteDocumentActions(options: {
     } finally {
       setLoadingState('idle');
     }
-  }, [selectedId, triggerSave, closeAll, router, noteUndo, documentEngine, blocksRef, setBlocks, setDocuments, setError, setLoadingState, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab]);
+  }, [selectedId, triggerSave, closeAll, router, noteUndo, blocksRef, pendingFocusDocTitleRef, setBlocks, setDocuments, setError, setLoadingState, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab, setSelectedId]);
 
   const handleCreateDocument = async (
     parentId: string | null = null,
@@ -380,7 +380,7 @@ export function useNoteDocumentActions(options: {
     } finally {
       setTogglingPublic(false);
     }
-  }, [triggerSave]);
+  }, [setDocuments, setError, setTogglingPublic, triggerSave]);
 
   const handleCopyPublicLink = useCallback(async (doc: NoteDocument) => {
     if (!doc.share_token) return;
@@ -392,7 +392,7 @@ export function useNoteDocumentActions(options: {
     } catch {
       setError('링크 복사에 실패했습니다.');
     }
-  }, []);
+  }, [setError, setShareLinkCopied]);
 
   const persistDocumentTitle = useCallback(async (docId: string, safeTitle: string, saveSeq: number) => {
     try {
@@ -426,7 +426,7 @@ export function useNoteDocumentActions(options: {
     } catch (e) {
       devLogger.error('[Note] renameDoc', e);
     }
-  }, [documentEngine, selectedId, triggerSave]);
+  }, [blocksRef, docTitleSaveSeqRef, documentEngine, selectedId, setBlocks, setDocuments, triggerSave]);
 
   const handleRenameDocument = useCallback((docId: string, title: string, options?: { immediate?: boolean }) => {
     const timers = saveTimersRef.current;
@@ -449,7 +449,7 @@ export function useNoteDocumentActions(options: {
       return;
     }
     timers[timerKey] = window.setTimeout(runSave, 600);
-  }, [persistDocumentTitle]);
+  }, [docTitleSaveSeqRef, persistDocumentTitle, saveTimersRef, setDocuments, titleInputRef]);
 
   const handleTogglePin = async (e: React.MouseEvent, doc: NoteDocument) => {
     e.stopPropagation();
@@ -530,7 +530,7 @@ export function useNoteDocumentActions(options: {
     } finally {
       setLoadingState('idle');
     }
-  }, [triggerSave]);
+  }, [setDocuments, setError, setLoadingState, triggerSave]);
 
   const handlePurgeDocument = useCallback(async (doc: NoteDocument) => {
     const deletedAt = doc.deleted_at ? new Date(doc.deleted_at).getTime() : null;
@@ -559,7 +559,7 @@ export function useNoteDocumentActions(options: {
     } finally {
       setLoadingState('idle');
     }
-  }, [triggerSave]);
+  }, [setDocuments, setError, setLoadingState, triggerSave]);
 
   return {
     handleGoToDashboard,

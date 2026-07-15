@@ -33,7 +33,6 @@ import {
   isNoteEditorFullBlockSelected,
   selectAllDocumentBlocksRef,
   unregisterNoteEditor,
-  getNoteEditor,
 } from './noteEditorRegistry';
 import {
   plainMultilineToInsertHtml,
@@ -186,11 +185,9 @@ function resolveListEnterSplit(editor: Editor): NoteEditorEnterSplit | null {
 
 function richTextSourceHtml({
   content,
-  field,
   text,
 }: {
   content: Record<string, unknown> | null | undefined;
-  field: RichField;
   text: string;
 }) {
   const html = content?.html;
@@ -319,7 +316,6 @@ function handleMarkdownShortcut(
 
 export function NoteEditor({
   content,
-  field = 'text',
   text,
   placeholder,
   className,
@@ -462,8 +458,8 @@ export function NoteEditor({
   };
 
   const sourceHtml = useMemo(
-    () => richTextSourceHtml({ content, field, text }),
-    [content, field, text],
+    () => richTextSourceHtml({ content, text }),
+    [content, text],
   );
 
   const flushPendingChange = useCallback(() => {
@@ -609,7 +605,7 @@ export function NoteEditor({
         return true;
       },
       handleDOMEvents: {
-        compositionend: (_view: EditorView, _event: CompositionEvent) => {
+        compositionend: () => {
           callbacksRef.current.flushPendingChange();
           return false;
         },

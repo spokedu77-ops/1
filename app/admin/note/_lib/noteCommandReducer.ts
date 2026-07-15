@@ -1,4 +1,7 @@
-import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import {
+  dedupeNoteBlocksById,
+  flattenVisualBlockIdsWithOptions,
+} from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import type { NoteCommand, NoteCommandContext, NoteCommandResult } from './noteCommand';
@@ -20,11 +23,15 @@ function cloneContent(content: unknown): unknown {
 }
 
 function filterDocumentBlocks(blocks: NoteBlock[], documentId: string): NoteBlock[] {
-  return dedupeNoteBlocksById(
+  const deduped = dedupeNoteBlocksById(
     blocks
       .filter((block) => block.document_id === documentId)
       .map(ensureNoteBlockVersion),
   );
+  const byId = new Map(deduped.map((block) => [block.id, block]));
+  return flattenVisualBlockIdsWithOptions(deduped)
+    .map((id) => byId.get(id))
+    .filter((block): block is NoteBlock => Boolean(block));
 }
 
 function applyFieldPatches(
