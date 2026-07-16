@@ -92,6 +92,10 @@ export function migrateFavoriteOwners(
   };
 }
 
+export function mergeFavoriteProgramIds(local: string[], remote: string[]): string[] {
+  return normalizeFavoriteProgramIds([...remote, ...local]);
+}
+
 export function claimPendingLegacyFavorites(
   byOwner: Record<string, string[]>,
   pendingLegacyProgramIds: string[],

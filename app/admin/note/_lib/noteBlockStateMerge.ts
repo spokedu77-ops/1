@@ -110,11 +110,20 @@ export function mergeReconciledBlocks(
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
     const incoming = incomingById.get(block.id);
     const fromStore = store.byId[block.id];
+    const nextBlock = structureAuthority === 'local'
+      ? {
+        ...block,
+        ...(incoming?.content !== undefined ? { content: incoming.content } : {}),
+        ...(incoming?.version !== undefined ? { version: incoming.version } : {}),
+        ...(incoming?.updated_at !== undefined ? { updated_at: incoming.updated_at } : {}),
+      }
+      : (incoming ?? block);
+
     if (!fromStore?.content) {
-      return incoming ?? block;
+      return nextBlock;
     }
 
-    const serverContent = (incoming?.content ?? block.content) as
+    const serverContent = (nextBlock.content ?? block.content) as
       | Record<string, unknown>
       | null
       | undefined;
@@ -123,12 +132,6 @@ export function mergeReconciledBlocks(
     const storeText = typeof storeContent.text === 'string' ? storeContent.text : '';
     const storeAhead = storeText.length > serverText.length;
     const isActive = block.id === activeId;
-
-    const nextBlock = {
-      ...block,
-      ...(incoming?.version !== undefined ? { version: incoming.version } : {}),
-      ...(incoming?.updated_at !== undefined ? { updated_at: incoming.updated_at } : {}),
-    };
 
     if (!storeAhead && !isActive) return nextBlock;
 

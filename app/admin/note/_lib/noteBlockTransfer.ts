@@ -1,6 +1,6 @@
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import type { NoteBlock } from './types';
-import { collectBlockForestIds, topLevelSelectedDragIds } from '@/app/lib/note/noteBlockTree';
+import { buildChildrenByParentBlock, collectBlockForestIds, topLevelSelectedDragIds } from '@/app/lib/note/noteBlockTree';
 import { getChildDocumentIdFromPageContent } from '@/app/lib/note/documentParentSync';
 
 /** page 링크를 그 링크가 가리키는 문서 안으로 옮기면 parent_id 자기참조·사이드바 실종 발생 */
@@ -12,6 +12,26 @@ export function isPageLinkToDocument(block: NoteBlock, documentId: string): bool
   return !!linkedId && linkedId === documentId;
 }
 
+function forestContainsPageLinkToDocument(
+  rootId: string,
+  blockById: Map<string, NoteBlock>,
+  childrenByParent: Map<string | null, NoteBlock[]>,
+  documentId: string,
+): boolean {
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const id = stack.pop();
+    if (!id) continue;
+    const block = blockById.get(id);
+    if (!block) continue;
+    if (isPageLinkToDocument(block, documentId)) return true;
+    for (const child of childrenByParent.get(id) ?? []) {
+      stack.push(child.id);
+    }
+  }
+  return false;
+}
+
 /** 블록 트리를 다른 문서로 옮길 때 PATCH 목록 생성 */
 export function buildBlockForestTransferCommand(
   blocks: NoteBlock[],
@@ -19,9 +39,9 @@ export function buildBlockForestTransferCommand(
   targetDocumentId: string,
 ) {
   const blockById = new Map(blocks.map((block) => [block.id, block]));
+  const childrenByParent = buildChildrenByParentBlock(blocks);
   const rootIds = topLevelSelectedDragIds(selectedRootIds, blocks).filter((id) => {
-    const block = blockById.get(id);
-    return !block || !isPageLinkToDocument(block, targetDocumentId);
+    return !forestContainsPageLinkToDocument(id, blockById, childrenByParent, targetDocumentId);
   });
   if (rootIds.length === 0) {
     return {

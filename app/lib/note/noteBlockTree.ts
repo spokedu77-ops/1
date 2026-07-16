@@ -541,6 +541,48 @@ export function planMoveSiblingBlockGroup<T extends BlockWithMeta>(
   });
 }
 
+export type BlockForestDropPlan<T extends BlockWithMeta = BlockWithMeta> = {
+  roots: T[];
+  targetParentId: string | null;
+  targetSiblings: T[];
+  placedInToggle: boolean;
+};
+
+export function planBlockForestDropAt<T extends BlockWithMeta>(
+  blocks: T[],
+  movingIds: string[],
+  targetBlockId: string,
+  position: BlockDropPosition,
+): BlockForestDropPlan<T> | null {
+  const roots = topLevelSelectedDragIds(movingIds, blocks)
+    .map((id) => blocks.find((block) => block.id === id))
+    .filter((block): block is T => !!block);
+  if (roots.length === 0 || roots.some((block) => block.id === targetBlockId)) return null;
+  if (position !== 'inside') return null;
+
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const target = byId.get(targetBlockId);
+  if (!target) return null;
+
+  for (const moving of roots) {
+    const descendantIds = collectDescendantBlockIds(moving.id, blocks);
+    if (descendantIds.has(target.id)) return null;
+  }
+
+  const rootIds = new Set(roots.map((block) => block.id));
+  const targetSiblings = [
+    ...getBlocksInParent(blocks, target.id).filter((block) => !rootIds.has(block.id)),
+    ...roots,
+  ].map((block, index) => ({ ...block, order_index: index }));
+
+  return {
+    roots,
+    targetParentId: target.id,
+    targetSiblings,
+    placedInToggle: target.type === 'toggle',
+  };
+}
+
 export function getBlockMergeText(block: BlockWithMeta): string {
   const text = block.content?.text;
   return typeof text === 'string' ? text : '';

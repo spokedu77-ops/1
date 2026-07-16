@@ -4,7 +4,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useRouter, useSearchParams } from 'next/navigation';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useDeferredNoteMeta } from '../_hooks/useDeferredNoteMeta';
-import { buildDocumentBreadcrumb, findDefaultNoteEntryDocument, resolveDocIcon } from '../_lib/noteDocumentUi';
+import {
+  buildDocumentBreadcrumb,
+  deriveDocumentTreeState,
+  findDefaultNoteEntryDocument,
+  resolveDocIcon,
+} from '../_lib/noteDocumentUi';
 import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import type { NoteCollaborator, NoteDocument, NoteBlock, SortKey } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
@@ -99,31 +104,16 @@ export function useNoteDocumentData(options: {
     () => (docTab === 'active' ? filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned) : filteredDocuments),
     [docTab, filteredDocuments],
   );
-  const docMap = useMemo(() => new Map(filteredDocuments.map((d) => [d.id, d])), [filteredDocuments]);
-  const childrenByParent = useMemo(() => {
-    const map = new Map<string, NoteDocument[]>();
-    for (const doc of filteredDocuments) {
-      if (!doc.parent_id || doc.parent_id === doc.id) continue;
-      const list = map.get(doc.parent_id) ?? [];
-      list.push(doc);
-      map.set(doc.parent_id, list);
-    }
-    for (const [key, list] of map.entries()) {
-      map.set(
-        key,
-        [...list].sort(
-          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
-        ),
-      );
-    }
-    return map;
-  }, [filteredDocuments]);
-  const rootDocuments = useMemo(
-    () => otherDocuments.filter(
-      (d) => !d.parent_id || d.parent_id === d.id || !docMap.has(d.parent_id),
-    ),
-    [otherDocuments, docMap],
+  const filteredTreeState = useMemo(
+    () => deriveDocumentTreeState(filteredDocuments),
+    [filteredDocuments],
   );
+  const otherTreeState = useMemo(
+    () => deriveDocumentTreeState(otherDocuments),
+    [otherDocuments],
+  );
+  const childrenByParent = filteredTreeState.childrenByParent;
+  const rootDocuments = otherTreeState.rootDocuments;
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {

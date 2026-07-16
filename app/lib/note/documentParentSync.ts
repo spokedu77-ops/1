@@ -6,8 +6,11 @@ type DocRow = {
 };
 
 export type PageBlockRow = {
+  id?: string;
   document_id: string;
   content: Record<string, unknown> | null;
+  order_index?: number | null;
+  updated_at?: string | null;
 };
 
 export function getChildDocumentIdFromPageContent(
@@ -24,7 +27,16 @@ export function buildParentByChildFromPageBlocks(
   docIds?: Set<string>,
 ): Map<string, string> {
   const parentByChild = new Map<string, string>();
-  for (const block of pageBlocks) {
+  const orderedPageBlocks = [...pageBlocks].sort((left, right) => {
+    const leftUpdated = Date.parse(left.updated_at ?? '');
+    const rightUpdated = Date.parse(right.updated_at ?? '');
+    const leftTime = Number.isFinite(leftUpdated) ? leftUpdated : 0;
+    const rightTime = Number.isFinite(rightUpdated) ? rightUpdated : 0;
+    return rightTime - leftTime
+      || (left.order_index ?? 0) - (right.order_index ?? 0)
+      || String(left.id ?? '').localeCompare(String(right.id ?? ''));
+  });
+  for (const block of orderedPageBlocks) {
     const childId = getChildDocumentIdFromPageContent(block.content);
     if (!childId) continue;
     // page 블록이 자기 문서 안에 있으면 parent 후보로 쓰지 않는다 (사이드바 고아·자기참조 방지)
@@ -95,10 +107,9 @@ export async function reconcileDocumentParents<T extends DocRow>(
 ): Promise<T[]> {
   if (documents.length === 0) return documents;
 
-  const docIds = new Set(documents.map((doc) => doc.id));
   const { data: pageBlocks, error } = await supabase
     .from('note_blocks')
-    .select('document_id, content')
+    .select('id, document_id, content, order_index, updated_at')
     .eq('type', 'page')
     .is('deleted_at', null)
     .limit(2000);
@@ -150,4 +161,56 @@ export async function removePageBlocksForChildDocument(
       updated_at: now,
     })
     .in('id', blocks.map((block) => block.id));
+}
+
+export async function ensurePageBlockForChildDocument(
+  supabase: SupabaseClient,
+  input: {
+    childDocumentId: string;
+    childTitle: string;
+    parentDocumentId: string | null;
+    actorId?: string | null;
+  },
+): Promise<void> {
+  if (!input.parentDocumentId) return;
+
+  const { data: existing, error: existingError } = await supabase
+    .from('note_blocks')
+    .select('id')
+    .eq('type', 'page')
+    .eq('document_id', input.parentDocumentId)
+    .is('deleted_at', null)
+    .filter('content->>page_document_id', 'eq', input.childDocumentId)
+    .limit(1);
+  if (existingError || existing?.length) return;
+
+  const { data: siblings, error: siblingsError } = await supabase
+    .from('note_blocks')
+    .select('order_index')
+    .eq('document_id', input.parentDocumentId)
+    .is('parent_block_id', null)
+    .is('deleted_at', null)
+    .order('order_index', { ascending: false })
+    .limit(1);
+  if (siblingsError) return;
+
+  const lastOrder = siblings?.[0]?.order_index;
+  const nextOrder = typeof lastOrder === 'number' ? lastOrder + 1 : 0;
+  const now = new Date().toISOString();
+  await supabase
+    .from('note_blocks')
+    .insert({
+      document_id: input.parentDocumentId,
+      parent_block_id: null,
+      type: 'page',
+      order_index: nextOrder,
+      content: {
+        page_document_id: input.childDocumentId,
+        title: input.childTitle || 'Untitled',
+      },
+      created_at: now,
+      updated_at: now,
+      created_by: input.actorId ?? null,
+      updated_by: input.actorId ?? null,
+    });
 }

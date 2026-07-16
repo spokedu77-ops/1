@@ -478,26 +478,6 @@ export function useNoteDocumentActions(options: {
     setBlocks((p) => p.filter((b) => !(b.type === 'page' && b.content?.page_document_id === doc.id)));
     if (selectedId === doc.id) { setSelectedId(null); router.replace('/admin/note'); }
     try {
-      if (doc.parent_id) {
-        const parentBlocksRes = await fetch(
-          `/api/admin/note/blocks?documentId=${encodeURIComponent(doc.parent_id)}`,
-          { credentials: 'include' },
-        );
-        if (parentBlocksRes.ok) {
-          const parentJson = (await parentBlocksRes.json()) as { blocks?: NoteBlock[] };
-          const linkedBlocks = (parentJson.blocks ?? []).filter(
-            (b) => b.type === 'page' && b.content?.page_document_id === doc.id,
-          );
-          await Promise.all(
-            linkedBlocks.map((b) =>
-              fetch(`/api/admin/note/blocks?id=${encodeURIComponent(b.id)}`, {
-                method: 'DELETE',
-                credentials: 'include',
-              }),
-            ),
-          );
-        }
-      }
       const res = await fetch(`/api/admin/note/documents?id=${encodeURIComponent(doc.id)}`, { method: 'DELETE', credentials: 'include' });
       if (!res.ok) throw new Error('삭제 실패');
     } catch (err) {

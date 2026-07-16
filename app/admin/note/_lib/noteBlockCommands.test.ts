@@ -201,6 +201,36 @@ describe('note block commands', () => {
     );
   });
 
+  it('moves only top-level selected roots when marquee selection includes descendants', () => {
+    const blocks = [
+      block('container', 0),
+      block('parent', 1),
+      block('child', 0, 'parent'),
+      block('sibling', 2),
+    ];
+
+    const command = buildMoveBlockGroupCommand(
+      blocks,
+      ['parent', 'child', 'sibling'],
+      'container',
+      'inside',
+    );
+
+    expect(command.nextBlocks.find((item) => item.id === 'parent')).toMatchObject({
+      parent_block_id: 'container',
+      order_index: 0,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'child')).toMatchObject({
+      parent_block_id: 'parent',
+      order_index: 0,
+    });
+    expect(command.nextBlocks.find((item) => item.id === 'sibling')).toMatchObject({
+      parent_block_id: 'container',
+      order_index: 1,
+    });
+    expect(command.fieldPatches.map((patch) => patch.id)).not.toContain('child');
+  });
+
   it('reorders a root group while preserving its visual order', () => {
     const blocks = [
       block('a', 0),

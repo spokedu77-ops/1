@@ -65,6 +65,72 @@ describe('applyRemoteOpRecords', () => {
     expect(next).toHaveLength(2);
     expect(next.find((block) => block.id === 'b')?.content).toEqual({ text: 'new' });
   });
+
+  it('applies patch_fields structure including explicit root parent', () => {
+    const blocks = [
+      baseBlock('toggle', 'section', { type: 'toggle', order_index: 0 }),
+      baseBlock('child', 'child', { parent_block_id: 'toggle', order_index: 0 }),
+      baseBlock('sibling', 'sibling', { order_index: 1 }),
+    ];
+
+    const next = applyRemoteOpRecords(blocks, [
+      opRecord(1, {
+        opType: 'patch_fields',
+        patches: [
+          { id: 'child', parent_block_id: null, order_index: 2 },
+          { id: 'sibling', parent_block_id: 'toggle', order_index: 0 },
+        ],
+      }),
+    ]);
+
+    expect(next.find((block) => block.id === 'child')).toMatchObject({
+      parent_block_id: null,
+      order_index: 2,
+    });
+    expect(next.find((block) => block.id === 'sibling')).toMatchObject({
+      parent_block_id: 'toggle',
+      order_index: 0,
+    });
+  });
+
+  it('applies block_transaction as patches, deletes, then creates', () => {
+    const blocks = [
+      baseBlock('root', 'root', { order_index: 0 }),
+      baseBlock('moving', 'moving', { order_index: 1 }),
+      baseBlock('deleted', 'deleted', { order_index: 2 }),
+    ];
+
+    const next = applyRemoteOpRecords(blocks, [
+      opRecord(1, {
+        opType: 'block_transaction',
+        patches: [
+          { id: 'moving', document_id: 'target-doc', parent_block_id: null, order_index: 0 },
+        ],
+        deleteIds: ['deleted'],
+        creates: [{
+          id: 'created',
+          document_id: 'doc-1',
+          parent_block_id: 'root',
+          type: 'todo',
+          order_index: 0,
+          content: { text: 'created', checked: false },
+        }],
+      }),
+    ]);
+
+    expect(next.map((block) => block.id).sort()).toEqual(['created', 'moving', 'root']);
+    expect(next.find((block) => block.id === 'moving')).toMatchObject({
+      document_id: 'target-doc',
+      parent_block_id: null,
+      order_index: 0,
+    });
+    expect(next.find((block) => block.id === 'created')).toMatchObject({
+      document_id: 'doc-1',
+      parent_block_id: 'root',
+      type: 'todo',
+      content: { text: 'created', checked: false },
+    });
+  });
 });
 
 describe('mergeSnapshotPatches', () => {

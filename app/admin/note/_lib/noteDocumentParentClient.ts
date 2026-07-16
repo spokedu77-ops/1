@@ -15,8 +15,11 @@ export function planParentPatchesForDocumentBlocks(
   const pageBlocks: PageBlockRow[] = blocks
     .filter((block) => block.document_id === parentDocumentId && block.type === 'page')
     .map((block) => ({
+      id: block.id,
       document_id: parentDocumentId,
       content: (block.content ?? null) as Record<string, unknown> | null,
+      order_index: block.order_index,
+      updated_at: block.updated_at,
     }));
 
   const linkedChildIds = new Set(

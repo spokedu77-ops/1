@@ -10,6 +10,7 @@ import {
   getFavoritesByOwner,
   isFavoriteByOwner,
   migrateLegacyFavorites,
+  mergeFavoriteProgramIds,
   normalizeFavoriteProgramIds,
   normalizeFavoritesByOwner,
   toggleFavoriteByOwner,
@@ -82,6 +83,7 @@ interface MasterState {
   getFavoriteProgramIds: (ownerId: string | null) => string[];
   isFavoriteProgram: (ownerId: string | null, programId: string) => boolean;
   toggleFavoriteProgram: (ownerId: string | null, programId: string) => void;
+  syncFavoriteProgramsFromServer: () => Promise<boolean>;
   notifications: Notification[];
   markRead: (id: string) => void;
   markAllRead: () => void;
@@ -259,6 +261,27 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
   }
 
   return migrated;
+}
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function getServerSyncableOwnerId(ownerId: string | null): string | null {
+  if (!ownerId?.startsWith('id:')) return null;
+  const userId = ownerId.slice(3);
+  return UUID_PATTERN.test(userId) ? ownerId : null;
+}
+
+async function pushFavoriteProgramsToServer(ownerId: string | null, programIds: string[]) {
+  if (!getServerSyncableOwnerId(ownerId)) return;
+  try {
+    await fetch('/api/spokedu-master/program-favorites', {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ programIds: normalizeFavoriteProgramIds(programIds) }),
+    });
+  } catch {
+    // Keep local favorites; retry on next sync.
+  }
 }
 
 function errorFromStatus(status: number): Exclude<ContentLoadError, null> {
@@ -568,10 +591,36 @@ export const useMasterStore = create<MasterState>()(
         getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId),
       isFavoriteProgram: (ownerId, programId) =>
         isFavoriteByOwner(get().favoriteProgramIdsByOwner, ownerId, programId),
-      toggleFavoriteProgram: (ownerId, programId) =>
+      toggleFavoriteProgram: (ownerId, programId) => {
         set((state) => ({
           favoriteProgramIdsByOwner: toggleFavoriteByOwner(state.favoriteProgramIdsByOwner, ownerId, programId),
-        })),
+        }));
+        void pushFavoriteProgramsToServer(ownerId, getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId));
+      },
+      syncFavoriteProgramsFromServer: async () => {
+        const ownerId = getServerSyncableOwnerId(getRecentActivityOwner(get().profile)?.ownerId ?? null);
+        if (!ownerId) return false;
+        try {
+          const res = await fetch('/api/spokedu-master/program-favorites', { cache: 'no-store' });
+          if (!res.ok) return false;
+          const json = await res.json() as { data?: unknown };
+          const remoteIds = normalizeFavoriteProgramIds(json.data);
+          const localIds = getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId);
+          const mergedIds = mergeFavoriteProgramIds(localIds, remoteIds);
+          set((state) => ({
+            favoriteProgramIdsByOwner: {
+              ...state.favoriteProgramIdsByOwner,
+              [ownerId]: mergedIds,
+            },
+          }));
+          if (mergedIds.length !== remoteIds.length || mergedIds.some((id) => !remoteIds.includes(id))) {
+            await pushFavoriteProgramsToServer(ownerId, mergedIds);
+          }
+          return true;
+        } catch {
+          return false;
+        }
+      },
       notifications: defaultNotifications,
       markRead: (id) => set((state) => state.localWorkspaceOwnerId ? ({ notifications: state.notifications.map((notification) => (notification.id === id ? { ...notification, read: true } : notification)) }) : {}),
       markAllRead: () => set((state) => state.localWorkspaceOwnerId ? ({ notifications: state.notifications.map((notification) => ({ ...notification, read: true })) }) : {}),

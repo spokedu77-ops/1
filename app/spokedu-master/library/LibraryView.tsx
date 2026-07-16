@@ -40,6 +40,13 @@ import {
   getFavoritesEmptyState,
   parseLibraryView,
   selectLibraryBasePrograms,
+  buildLibraryFilterGroups,
+  formatRecentRecordSubtitle,
+  LIBRARY_PAGE_SIZE,
+  matchesLibraryFilters,
+  paginateLibraryPrograms,
+  type LibraryActiveFilter,
+  type LibraryFilterGroupKey,
   type LibraryViewMode,
 } from './libraryViewModel';
 import { getLibraryProgramDetailHref } from './libraryNavigation';
@@ -57,13 +64,8 @@ const MOVEMENT_LABEL: Record<string, string> = {
   '안정운동기술': '안정',
 };
 
-type FilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme';
-
-type ActiveFilter = {
-  group: FilterGroupKey;
-  value: string;
-};
-
+type FilterGroupKey = LibraryFilterGroupKey;
+type ActiveFilter = LibraryActiveFilter;
 type ActiveFilters = ActiveFilter[];
 
 type FilterGroup = {
@@ -76,24 +78,6 @@ function tagDisplayLabel(group: FilterGroupKey, value: string): string {
   if (group === 'target') return TARGET_LABEL[value] ?? value;
   if (group === 'movement') return MOVEMENT_LABEL[value] ?? value;
   return value;
-}
-
-function normalizeTitle(title: string) {
-  return title.toLowerCase().replace(/\s+/g, '').replace(/[^\w가-힣]/g, '');
-}
-
-function uniquePrograms(programs: Program[]) {
-  const seen = new Set<string>();
-  return programs.filter((program) => {
-    const key = normalizeTitle(program.title);
-    if (!key || seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function buildProgramPool(programs: Program[]) {
-  return uniquePrograms(programs);
 }
 
 function getStructuredValues(program: Program, group: FilterGroupKey): string[] {
@@ -110,19 +94,6 @@ function getStructuredValues(program: Program, group: FilterGroupKey): string[] 
     return (LESSON_THEME_OPTIONS as readonly string[]).includes(theme) ? [theme] : [];
   }
   return [];
-}
-
-function matchesFilter(program: Program, filters: ActiveFilters) {
-  if (filters.length === 0) return true;
-  const filtersByGroup = new Map<FilterGroupKey, string[]>();
-  for (const filter of filters) {
-    filtersByGroup.set(filter.group, [...(filtersByGroup.get(filter.group) ?? []), filter.value]);
-  }
-  for (const [group, values] of filtersByGroup) {
-    const programValues = getStructuredValues(program, group);
-    if (!values.some((value) => programValues.includes(value))) return false;
-  }
-  return true;
 }
 
 function getHeroImage(program: Program) {
@@ -199,7 +170,6 @@ function ProgramCard({
               fill
               sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"
               className="object-cover object-[center_38%] transition duration-500 group-hover:scale-[1.025]"
-              unoptimized
             />
           </>
         ) : (
@@ -261,6 +231,7 @@ function ProgramCard({
         }`}
         aria-pressed={favorite}
         aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
+        title={!favoriteEnabled ? '로그인 후 저장할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
         disabled={!favoriteEnabled}
       >
         <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
@@ -282,12 +253,12 @@ function ProgramCard({
       </div>
       <div className="mt-2 grid min-h-[48px] grid-cols-[minmax(0,1fr)_1px_minmax(92px,auto)] items-center gap-3 rounded-[8px] bg-slate-50 px-3 ring-1 ring-slate-100">
         <div className="min-w-0">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Focus</p>
+          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">초점</p>
           <p className="mt-0.5 truncate text-[12px] font-black text-slate-800">{footerMeta.focus}</p>
         </div>
         <span className="h-7 w-px bg-slate-200" aria-hidden />
         <div className="min-w-0 text-right">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Prep</p>
+          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">준비</p>
           <p className="mt-0.5 truncate text-[12px] font-black text-slate-700">{footerMeta.prep}</p>
         </div>
       </div>
@@ -350,6 +321,7 @@ export default function LibraryView() {
   const favoriteIds = storedFavoriteIds ?? getFavoriteProgramIds(ownerId);
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
+  const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
   const [filters, setFilters] = useState<ActiveFilters>(() => {
     const group = searchParams.get('filterGroup') as FilterGroupKey | null;
     const value = searchParams.get('filter');
@@ -371,7 +343,7 @@ export default function LibraryView() {
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const pool = useMemo(() => buildProgramPool(programs), [programs]);
+  const pool = programs;
 
   const viewPool = useMemo(
     () => selectLibraryBasePrograms(pool, favoriteIds, view),
@@ -401,6 +373,10 @@ export default function LibraryView() {
   }, [classRecords, pool]);
 
   useEffect(() => {
+    setVisibleCount(LIBRARY_PAGE_SIZE);
+  }, [query, filters, view]);
+
+  useEffect(() => {
     const params = new URLSearchParams();
     const trimmedQuery = query.trim();
     if (trimmedQuery) params.set('q', trimmedQuery);
@@ -420,10 +396,15 @@ export default function LibraryView() {
         viewPool,
         query,
         (program, normalizedQuery) => getSearchText(program).includes(normalizedQuery),
-        (program) => matchesFilter(program, filters),
+        (program) => matchesLibraryFilters(program, filters, getStructuredValues),
       ),
     [filters, viewPool, query],
   );
+  const visiblePrograms = useMemo(
+    () => paginateLibraryPrograms(filteredPrograms, visibleCount),
+    [filteredPrograms, visibleCount],
+  );
+  const hasMorePrograms = visiblePrograms.length < filteredPrograms.length;
   const hasActiveFilters = filters.length > 0;
   const favoritesEmptyState = getFavoritesEmptyState(
     view,
@@ -450,28 +431,22 @@ export default function LibraryView() {
     router.push(`/spokedu-master/library?${params.toString()}`, { scroll: false });
   };
 
-  const filterGroups = useMemo<FilterGroup[]>(() => {
-    const definitions: Array<{ key: FilterGroupKey; label: string }> = [
-      { key: 'target', label: '대상' },
-      { key: 'space', label: '공간' },
-      { key: 'function', label: '신체 기능' },
-      { key: 'movement', label: '움직임' },
-      { key: 'theme', label: '테마' },
-    ];
-
-    return definitions.flatMap((definition) => {
-      const counts = new Map<string, number>();
-      for (const program of viewPool) {
-        for (const value of getStructuredValues(program, definition.key)) {
-          counts.set(value, (counts.get(value) ?? 0) + 1);
-        }
-      }
-      const options = Array.from(counts, ([value, count]) => ({ value, count })).sort(
-        (a, b) => b.count - a.count || a.value.localeCompare(b.value, 'ko'),
-      );
-      return options.length > 0 ? [{ ...definition, options }] : [];
-    });
-  }, [viewPool]);
+  const filterGroups = useMemo<FilterGroup[]>(
+    () =>
+      buildLibraryFilterGroups(
+        viewPool,
+        filters,
+        [
+          { key: 'target', label: '대상' },
+          { key: 'space', label: '공간' },
+          { key: 'function', label: '신체 기능' },
+          { key: 'movement', label: '움직임' },
+          { key: 'theme', label: '테마' },
+        ],
+        getStructuredValues,
+      ),
+    [viewPool, filters],
+  );
 
   const basicGroups = useMemo(
     () => filterGroups.filter((g) => (['target', 'space'] as FilterGroupKey[]).includes(g.key)),
@@ -517,7 +492,7 @@ export default function LibraryView() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-500">
-                  Master Library
+                  마스터 라이브러리
                 </p>
                 <h1 className="mt-1 text-[22px] font-black text-slate-950 sm:text-2xl">
                   조건에 맞는 수업 찾기
@@ -581,7 +556,7 @@ export default function LibraryView() {
             <div className="rounded-[14px] border border-slate-200 bg-slate-50/70 p-3">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-500">Recommended filters</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-500">추천 필터</p>
                   <p className="mt-0.5 text-[12px] font-black text-slate-700">수업 환경을 먼저 좁혀보세요.</p>
                 </div>
               </div>
@@ -619,7 +594,7 @@ export default function LibraryView() {
           <section className="rounded-[18px] border border-slate-200 bg-white p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600">Recent programs</p>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-emerald-600">최근 수업</p>
                 <h2 className="mt-1 text-lg font-black text-slate-950">최근 사용한 수업</h2>
               </div>
             </div>
@@ -627,7 +602,7 @@ export default function LibraryView() {
               {recentProgramRecords.map(({ program, record }) => (
                 <article key={program.id} className="rounded-[14px] border border-slate-100 bg-slate-50 p-3">
                   <p className="text-[11px] font-bold text-slate-400">
-                    {new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {record.classId}
+                    {formatRecentRecordSubtitle(record)}
                   </p>
                   <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-slate-950">{program.title}</h3>
                   <div className="mt-3 grid gap-2">
@@ -647,7 +622,7 @@ export default function LibraryView() {
         <section>
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
-              eyebrow="Programs"
+              eyebrow="수업 목록"
               title={
                 view === 'favorites'
                   ? (query || hasActiveFilters ? `즐겨찾기 결과 ${filteredPrograms.length}개` : `즐겨찾기한 수업 ${filteredPrograms.length}개`)
@@ -670,7 +645,7 @@ export default function LibraryView() {
             ) : null}
           </div>
           <ProgramGrid
-            programs={filteredPrograms}
+            programs={visiblePrograms}
             isPremium={isPremium}
             isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
             favoriteEnabled={ownerId != null}
@@ -679,6 +654,17 @@ export default function LibraryView() {
             toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
             setSelected={setSelected}
           />
+          {hasMorePrograms ? (
+            <div className="mt-4 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setVisibleCount((current) => current + LIBRARY_PAGE_SIZE)}
+                className="inline-flex min-h-11 items-center rounded-xl border border-slate-200 bg-white px-5 text-[13px] font-black text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              >
+                더 보기 ({visiblePrograms.length}/{filteredPrograms.length})
+              </button>
+            </div>
+          ) : null}
           {filteredPrograms.length === 0 ? (
             favoritesEmptyState === 'no-favorites' ? (
               <div className="rounded-[18px] border border-dashed border-slate-300 bg-white p-8 text-center">

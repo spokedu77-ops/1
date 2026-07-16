@@ -6,6 +6,7 @@ import {
   planMergeWithPreviousBlock,
   planMoveRootBlockGroup,
   planMoveSiblingBlockGroup,
+  topLevelSelectedDragIds,
   type BlockDropPlan,
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
@@ -181,8 +182,9 @@ export function buildMoveBlockGroupCommand(
     return buildStructureCommandResult(blocks, nextBlocks);
   }
 
+  const rootMovingIds = topLevelSelectedDragIds(movingIds, blocks);
   let nextBlocks = blocks;
-  for (const movingId of movingIds) {
+  for (const movingId of rootMovingIds) {
     const plan = planBlockDropAt(nextBlocks, movingId, targetBlockId, 'inside');
     if (!plan) return emptyCommandResult(blocks);
     nextBlocks = applyBlockDropPlanInMemory(nextBlocks, movingId, plan);

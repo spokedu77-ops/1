@@ -391,6 +391,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    await removePageBlocksForChildDocument(supabase, id, auth.userId);
+
     if (beforeDocument?.id) {
       await insertAuditLog({
         documentId: beforeDocument.id,

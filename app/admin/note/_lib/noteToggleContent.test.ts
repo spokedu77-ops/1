@@ -77,6 +77,62 @@ describe('toggle body migration', () => {
     expect(result.blocks.find((block) => block.id === 't1')?.content?.body).toBe('legacy');
   });
 
+  it('migrates legacy body into an existing empty child instead of creating a duplicate child', () => {
+    const blocks = [
+      toggle('t1', { title: 'T', body: 'legacy body', bodyHtml: '<p>legacy body</p>' }),
+      {
+        ...toggle('empty-child', { text: '', html: '' }),
+        type: 'text' as const,
+        parent_block_id: 't1',
+        order_index: 0,
+      },
+    ];
+
+    const result = migrateToggleLegacyToChildBlocks(blocks);
+
+    expect(result.created).toHaveLength(0);
+    expect(result.updatedChildPatches).toEqual([
+      {
+        id: 'empty-child',
+        content: {
+          text: 'legacy body',
+          html: '<p>legacy body</p>',
+          placedInToggle: true,
+          migratedFromToggleBody: true,
+        },
+      },
+    ]);
+    const migratedToggle = result.blocks.find((block) => block.id === 't1');
+    expect(migratedToggle?.content).toEqual({ title: 'T' });
+  });
+
+  it('does not cleanup toggle legacy archive while another displayable child remains', () => {
+    const toggleBlock = toggle('t1', {
+      title: 'Section',
+      legacyBody: 'archive until every display child is gone',
+      bodyMigrated: true,
+    });
+    const removedChild = {
+      ...toggle('c1', { text: 'migrated', migratedFromToggleBody: true }),
+      type: 'text' as const,
+      parent_block_id: 't1',
+      order_index: 0,
+    };
+    const remainingChild = {
+      ...toggle('c2', { text: 'remaining child' }),
+      type: 'text' as const,
+      parent_block_id: 't1',
+      order_index: 1,
+    };
+
+    const patches = buildToggleLegacyCleanupPatches(
+      [removedChild],
+      [toggleBlock, remainingChild],
+    );
+
+    expect(patches).toEqual([]);
+  });
+
   it('strips legacy body keys', () => {
     expect(stripToggleLegacyContentFields({
       title: 'T',

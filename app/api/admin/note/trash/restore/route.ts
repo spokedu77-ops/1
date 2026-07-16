@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { allocateSlugForActiveRow } from '@/app/lib/server/noteDocumentSlug';
+import { ensurePageBlockForChildDocument } from '@/app/lib/note/documentParentSync';
 
 type NoteDocument = {
   id: string;
@@ -93,6 +94,13 @@ export async function POST(request: NextRequest) {
       devLogger.error('[admin/note/trash/restore] restore error', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    await ensurePageBlockForChildDocument(supabase, {
+      childDocumentId: id,
+      childTitle: String(data.title ?? ''),
+      parentDocumentId: safeParentId,
+      actorId: auth.userId,
+    });
 
     return NextResponse.json({ document: data as NoteDocument });
   } catch (err) {

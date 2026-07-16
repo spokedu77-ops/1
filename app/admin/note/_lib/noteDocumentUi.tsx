@@ -46,6 +46,57 @@ export function buildDocumentBreadcrumb(
   return chain;
 }
 
+export type DocumentTreeState = {
+  docMap: Map<string, NoteDocument>;
+  childrenByParent: Map<string, NoteDocument[]>;
+  rootDocuments: NoteDocument[];
+};
+
+function documentUpdatedTime(doc: NoteDocument): number {
+  const time = new Date(doc.updated_at).getTime();
+  return Number.isFinite(time) ? time : 0;
+}
+
+function sortDocumentsByRecent(documents: NoteDocument[]): NoteDocument[] {
+  return [...documents].sort((a, b) =>
+    documentUpdatedTime(b) - documentUpdatedTime(a)
+    || a.title.localeCompare(b.title, 'ko')
+    || a.id.localeCompare(b.id));
+}
+
+export function deriveDocumentTreeState(documents: NoteDocument[]): DocumentTreeState {
+  const docMap = new Map(documents.map((doc) => [doc.id, doc]));
+  const childrenByParent = new Map<string, NoteDocument[]>();
+  const rootDocuments: NoteDocument[] = [];
+
+  for (const doc of documents) {
+    const parentId = doc.parent_id;
+    const invalidParent =
+      !parentId
+      || parentId === doc.id
+      || !docMap.has(parentId);
+
+    if (invalidParent) {
+      rootDocuments.push(doc);
+      continue;
+    }
+
+    const list = childrenByParent.get(parentId) ?? [];
+    list.push(doc);
+    childrenByParent.set(parentId, list);
+  }
+
+  for (const [parentId, children] of childrenByParent.entries()) {
+    childrenByParent.set(parentId, sortDocumentsByRecent(children));
+  }
+
+  return {
+    docMap,
+    childrenByParent,
+    rootDocuments: sortDocumentsByRecent(rootDocuments),
+  };
+}
+
 export function resolveDocIcon(properties?: NoteDocument['properties'] | null): string | null {
   const icon = properties?.icon?.trim();
   return icon || null;

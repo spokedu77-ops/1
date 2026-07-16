@@ -2,8 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   countValidFavoritePrograms,
+  countFacetedFilterOptions,
   filterLibraryPrograms,
+  formatRecentRecordSubtitle,
   getFavoritesEmptyState,
+  matchesLibraryFilters,
+  paginateLibraryPrograms,
   parseLibraryView,
   selectLibraryBasePrograms,
 } from './libraryViewModel';
@@ -96,5 +100,93 @@ describe('favorites empty state', () => {
   it('does not show a favorites empty state with results or in all view', () => {
     expect(getFavoritesEmptyState('favorites', 1, false, false, 1)).toBe('none');
     expect(getFavoritesEmptyState('all', 0, false, false, 0)).toBe('none');
+  });
+});
+
+describe('faceted filter counts', () => {
+  const taggedPrograms = [
+    { id: 'p1', target: 'child', space: 'gym' },
+    { id: 'p2', target: 'child', space: 'classroom' },
+    { id: 'p3', target: 'adult', space: 'gym' },
+  ];
+
+  it('narrows counts when another filter group is active', () => {
+    const counts = countFacetedFilterOptions(
+      taggedPrograms,
+      [{ group: 'target', value: 'child' }],
+      'space',
+      (program, group) => (group === 'target' ? [program.target] : group === 'space' ? [program.space] : []),
+    );
+    expect(counts.get('gym')).toBe(1);
+    expect(counts.get('classroom')).toBe(1);
+    expect(counts.has('adult')).toBe(false);
+  });
+
+  it('matches filters with OR inside a group and AND across groups', () => {
+    expect(
+      matchesLibraryFilters(
+        taggedPrograms[0],
+        [
+          { group: 'target', value: 'child' },
+          { group: 'space', value: 'gym' },
+        ],
+        (program, group) => (group === 'target' ? [program.target] : group === 'space' ? [program.space] : []),
+      ),
+    ).toBe(true);
+    expect(
+      matchesLibraryFilters(
+        taggedPrograms[1],
+        [
+          { group: 'target', value: 'child' },
+          { group: 'space', value: 'gym' },
+        ],
+        (program, group) => (group === 'target' ? [program.target] : group === 'space' ? [program.space] : []),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('library pagination and recent labels', () => {
+  it('limits visible cards until more are requested', () => {
+    const items = Array.from({ length: 30 }, (_, index) => ({ id: `p${index}` }));
+    expect(paginateLibraryPrograms(items, 24)).toHaveLength(24);
+    expect(paginateLibraryPrograms(items, 48)).toHaveLength(30);
+  });
+
+  it('formats recent record subtitles for quick and class labels', () => {
+    expect(
+      formatRecentRecordSubtitle({
+        id: 'r1',
+        lessonTitle: 'Lesson',
+        classId: '3학년 2반',
+        programId: 'p1',
+        programTitle: 'Lesson',
+        date: '2026-07-17',
+        present: 0,
+        absent: 0,
+        focusCount: 0,
+        skillCount: 0,
+        kakaoSent: false,
+        students: [],
+        recordType: 'detailed',
+      }),
+    ).toContain('3학년 2반');
+    expect(
+      formatRecentRecordSubtitle({
+        id: 'r2',
+        lessonTitle: 'Lesson',
+        classId: '수업',
+        programId: 'p1',
+        programTitle: 'Lesson',
+        date: '2026-07-17',
+        present: 0,
+        absent: 0,
+        focusCount: 0,
+        skillCount: 0,
+        kakaoSent: false,
+        students: [],
+        recordType: 'quick',
+      }),
+    ).toContain('빠른 기록');
   });
 });

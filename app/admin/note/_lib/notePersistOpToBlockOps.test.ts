@@ -74,6 +74,82 @@ describe('coalescePushItems', () => {
       content: { text: '2' },
     });
   });
+
+  it('keeps structural transactions in order and only coalesces content patches', () => {
+    const firstContent = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{ id: 'child', content: { text: 'old' } }],
+    });
+    const move = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'child', parent_block_id: 'toggle', order_index: 0 },
+        { id: 'sibling', parent_block_id: null, order_index: 1 },
+      ],
+      deleteIds: [],
+    });
+    const latestContent = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{ id: 'child', content: { text: 'new' } }],
+    });
+
+    const coalesced = coalescePushItems([
+      ...firstContent,
+      ...move,
+      ...latestContent,
+    ]);
+
+    expect(coalesced.map((item) => item.payload.opType)).toEqual([
+      'block_transaction',
+      'patch_content',
+    ]);
+    expect(coalesced[0]?.payload).toMatchObject({
+      opType: 'block_transaction',
+      patches: [
+        { id: 'child', parent_block_id: 'toggle', order_index: 0 },
+        { id: 'sibling', parent_block_id: null, order_index: 1 },
+      ],
+    });
+    expect(coalesced[1]?.payload).toMatchObject({
+      opType: 'patch_content',
+      blockId: 'child',
+      content: { text: 'new' },
+    });
+  });
+});
+
+describe('persistOpToPushItems structural contracts', () => {
+  it('preserves explicit null parent_block_id in patch_fields', () => {
+    const [item] = persistOpToPushItems({
+      type: 'patchFields',
+      patches: [{ id: 'child', parent_block_id: null, order_index: 2 }],
+    });
+
+    expect(item.payload).toEqual({
+      opType: 'patch_fields',
+      patches: [{ id: 'child', parent_block_id: null, order_index: 2 }],
+    });
+  });
+
+  it('preserves full block_transaction structure patches for document transfer', () => {
+    const [item] = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'root', document_id: 'target-doc', parent_block_id: null, order_index: 0 },
+        { id: 'child', document_id: 'target-doc' },
+      ],
+      deleteIds: ['deleted'],
+    });
+
+    expect(item.payload).toEqual({
+      opType: 'block_transaction',
+      patches: [
+        { id: 'root', document_id: 'target-doc', parent_block_id: null, order_index: 0 },
+        { id: 'child', document_id: 'target-doc' },
+      ],
+      deleteIds: ['deleted'],
+    });
+  });
 });
 
 describe('collectPendingSoftDeleteIds', () => {

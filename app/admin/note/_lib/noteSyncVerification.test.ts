@@ -132,6 +132,67 @@ describe('1) 구조 변경 insert/delete/DnD → reducer', () => {
       { ...ctx(), hasUnpublishedTopology: true },
     );
     expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
+    expect(blocks.find((item) => item.id === 'todo-c')?.order_index).toBe(0);
+    expect(blocks.find((item) => item.id === 'todo-a')?.order_index).toBe(1);
+    expect(blocks.find((item) => item.id === 'todo-b')?.order_index).toBe(2);
+  });
+
+  it('toggle child reparent survives stale syncSnapshot when unpublished topology is active', () => {
+    const previous = [
+      block('toggle', { type: 'toggle', order_index: 0, content: { title: 'Section' } }),
+      block('child', { type: 'text', order_index: 1, content: { text: 'Child' } }),
+    ];
+    const plan = planBlockDropAt(previous, 'child', 'toggle', 'inside');
+    expect(plan).not.toBeNull();
+    const command = buildMoveBlockCommand(previous, 'child', plan!);
+    const reparented = dispatchReplace(previous, command.nextBlocks);
+    expect(reparented.find((item) => item.id === 'child')).toMatchObject({
+      parent_block_id: 'toggle',
+      order_index: 0,
+    });
+
+    const { blocks } = applyNoteCommand(
+      reparented,
+      { type: 'syncSnapshot', blocks: previous },
+      { ...ctx(), hasUnpublishedTopology: true },
+    );
+
+    expect(blocks.find((item) => item.id === 'child')).toMatchObject({
+      parent_block_id: 'toggle',
+      order_index: 0,
+    });
+  });
+
+  it('local structural authority keeps local type while accepting incoming content version', () => {
+    const local = [
+      block('todo', {
+        type: 'todo',
+        order_index: 0,
+        content: { text: 'local', checked: false },
+        version: 1,
+      }),
+    ];
+    const staleIncoming = [
+      block('todo', {
+        type: 'text',
+        order_index: 0,
+        content: { text: 'server content' },
+        version: 2,
+      }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      local,
+      { type: 'syncSnapshot', blocks: staleIncoming },
+      { ...ctx(), hasUnpublishedTopology: true },
+    );
+
+    expect(blocks[0]).toMatchObject({
+      id: 'todo',
+      type: 'todo',
+      version: 2,
+      content: { text: 'server content' },
+    });
   });
 });
 

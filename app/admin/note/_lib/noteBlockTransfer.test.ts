@@ -112,4 +112,27 @@ describe('buildBlockForestTransferCommand', () => {
     expect(command.movedIds).toEqual([]);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['page-link', 'other']);
   });
+
+  it('refuses to transfer a forest that contains a page link to the target document', () => {
+    const parent = block('parent', null, 0);
+    const nestedPage: NoteBlock = {
+      ...block('nested-page', 'parent', 0),
+      type: 'page',
+      content: { title: 'Target', page_document_id: 'target' },
+    };
+    const safe = block('safe', null, 1);
+
+    const command = buildBlockForestTransferCommand(
+      [parent, nestedPage, safe],
+      ['parent', 'safe'],
+      'target',
+    );
+
+    expect(command.rootIds).toEqual(['safe']);
+    expect(command.movedIds).toEqual(['safe']);
+    expect(command.patches).toEqual([
+      { id: 'safe', document_id: 'target', parent_block_id: null },
+    ]);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['parent', 'nested-page']);
+  });
 });

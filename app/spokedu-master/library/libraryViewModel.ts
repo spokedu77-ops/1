@@ -1,4 +1,15 @@
+import type { ClassRecord } from '../types';
+
 export type LibraryViewMode = 'all' | 'favorites';
+
+export type LibraryFilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme';
+
+export type LibraryActiveFilter = {
+  group: LibraryFilterGroupKey;
+  value: string;
+};
+
+export const LIBRARY_PAGE_SIZE = 24;
 
 export function parseLibraryView(value: string | null): LibraryViewMode {
   return value === 'favorites' ? 'favorites' : 'all';
@@ -46,4 +57,69 @@ export function getFavoritesEmptyState(
   if (view !== 'favorites' || resultCount > 0) return 'none';
   if (validFavoriteCount === 0 && !hasQuery && !hasFilter) return 'no-favorites';
   return 'no-results';
+}
+
+function filtersByGroup(filters: LibraryActiveFilter[]) {
+  const grouped = new Map<LibraryFilterGroupKey, string[]>();
+  for (const filter of filters) {
+    grouped.set(filter.group, [...(grouped.get(filter.group) ?? []), filter.value]);
+  }
+  return grouped;
+}
+
+export function matchesLibraryFilters<T>(
+  program: T,
+  filters: LibraryActiveFilter[],
+  getStructuredValues: (program: T, group: LibraryFilterGroupKey) => string[],
+) {
+  if (filters.length === 0) return true;
+  for (const [group, values] of filtersByGroup(filters)) {
+    const programValues = getStructuredValues(program, group);
+    if (!values.some((value) => programValues.includes(value))) return false;
+  }
+  return true;
+}
+
+export function countFacetedFilterOptions<T>(
+  programs: T[],
+  filters: LibraryActiveFilter[],
+  targetGroup: LibraryFilterGroupKey,
+  getStructuredValues: (program: T, group: LibraryFilterGroupKey) => string[],
+): Map<string, number> {
+  const otherFilters = filters.filter((filter) => filter.group !== targetGroup);
+  const counts = new Map<string, number>();
+  for (const program of programs) {
+    if (!matchesLibraryFilters(program, otherFilters, getStructuredValues)) continue;
+    for (const value of getStructuredValues(program, targetGroup)) {
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+export function buildLibraryFilterGroups<T>(
+  programs: T[],
+  filters: LibraryActiveFilter[],
+  definitions: Array<{ key: LibraryFilterGroupKey; label: string }>,
+  getStructuredValues: (program: T, group: LibraryFilterGroupKey) => string[],
+) {
+  return definitions.flatMap((definition) => {
+    const counts = countFacetedFilterOptions(programs, filters, definition.key, getStructuredValues);
+    const options = Array.from(counts, ([value, count]) => ({ value, count })).sort(
+      (a, b) => b.count - a.count || a.value.localeCompare(b.value, 'ko'),
+    );
+    return options.length > 0 ? [{ ...definition, options }] : [];
+  });
+}
+
+export function paginateLibraryPrograms<T>(programs: T[], visibleCount: number) {
+  return programs.slice(0, visibleCount);
+}
+
+export function formatRecentRecordSubtitle(record: ClassRecord) {
+  const date = new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' });
+  if (record.recordType === 'quick') return `${date} · 빠른 기록`;
+  const classLabel = record.classId.trim();
+  if (classLabel && classLabel !== '수업') return `${date} · ${classLabel}`;
+  return date;
 }
