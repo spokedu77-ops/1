@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -11,9 +11,43 @@ import {
   findDefaultNoteEntryDocument,
   resolveDocIcon,
 } from '../_lib/noteDocumentUi';
-import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import {
+  prefetchNoteDocumentBlocks,
+  primePrefetchedNoteBlocks,
+} from '../_lib/noteDocumentBlocksPrefetch';
 import type { NoteCollaborator, NoteDocument, NoteBlock, SortKey } from '../_lib/types';
 import type { DocTab } from './NotePageContext';
+
+type NoteBootstrapResponse = {
+  documents: NoteDocument[];
+  blocks?: NoteBlock[];
+  documentId?: string;
+};
+
+const bootstrapRequestCache = new Map<string, Promise<NoteBootstrapResponse>>();
+
+async function fetchNoteBootstrap(path: string): Promise<NoteBootstrapResponse> {
+  const cached = bootstrapRequestCache.get(path);
+  if (cached) return cached;
+  const request = (async () => {
+    const res = await fetch(path, { credentials: 'include' });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      throw new Error(j?.error || 'Failed to load note documents');
+    }
+    return res.json() as Promise<NoteBootstrapResponse>;
+  })();
+  bootstrapRequestCache.set(path, request);
+  try {
+    return await request;
+  } finally {
+    window.setTimeout(() => {
+      if (bootstrapRequestCache.get(path) === request) {
+        bootstrapRequestCache.delete(path);
+      }
+    }, 1500);
+  }
+}
 
 export function useNoteDocumentData(options: {
   closeAll: () => void;
@@ -48,7 +82,7 @@ export function useNoteDocumentData(options: {
     const now = new Date().toISOString();
     return {
       id: selectedId,
-      title: '제목 없음',
+      title: '?쒕ぉ ?놁쓬',
       is_archived: false,
       is_favorite: false,
       is_pinned: false,
@@ -136,9 +170,6 @@ export function useNoteDocumentData(options: {
 
   useLayoutEffect(() => {
     const initialId = searchParams.get('id');
-    if (initialId) {
-      prefetchNoteDocumentBlocks(initialId);
-    }
     if (initialId && initialId !== selectedId) {
       setSelectedId(initialId);
       setMobileTab('editor');
@@ -157,7 +188,7 @@ export function useNoteDocumentData(options: {
           const res = await fetch('/api/admin/note/trash', { credentials: 'include' });
           if (!res.ok) {
             const j = await res.json().catch(() => null);
-            throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.');
+            throw new Error(j?.error || '臾몄꽌 紐⑸줉??遺덈윭?ㅼ? 紐삵뻽?듬땲??');
           }
           const json = (await res.json()) as { documents: NoteDocument[] };
           if (!alive) return;
@@ -169,17 +200,11 @@ export function useNoteDocumentData(options: {
         const bootstrapPath = urlDocId
           ? `/api/admin/note/bootstrap?documentId=${encodeURIComponent(urlDocId)}`
           : '/api/admin/note/bootstrap';
-        const res = await fetch(bootstrapPath, { credentials: 'include' });
-        if (!res.ok) {
-          const j = await res.json().catch(() => null);
-          throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.');
-        }
-        const json = (await res.json()) as {
-          documents: NoteDocument[];
-          blocks?: NoteBlock[];
-          documentId?: string;
-        };
+        const json = await fetchNoteBootstrap(bootstrapPath);
         if (!alive) return;
+        if (json.documentId && Array.isArray(json.blocks)) {
+          primePrefetchedNoteBlocks(json.documentId, json.blocks);
+        }
         const docs = json.documents ?? [];
         setDocuments(docs);
 
@@ -208,18 +233,12 @@ export function useNoteDocumentData(options: {
         if (targetDocId && docs.some((d) => d.id === targetDocId)) {
           let blocks = json.documentId === targetDocId ? json.blocks : undefined;
           if (!Array.isArray(blocks)) {
-            const blockRes = await fetch(
+            const blockJson = await fetchNoteBootstrap(
               `/api/admin/note/bootstrap?documentId=${encodeURIComponent(targetDocId)}`,
-              { credentials: 'include' },
-            );
-            if (blockRes.ok) {
-              const blockJson = (await blockRes.json()) as {
-                blocks?: NoteBlock[];
-                documentId?: string;
-              };
-              if (blockJson.documentId === targetDocId && Array.isArray(blockJson.blocks)) {
-                blocks = blockJson.blocks;
-              }
+            ).catch(() => null);
+            if (blockJson?.documentId === targetDocId && Array.isArray(blockJson.blocks)) {
+              primePrefetchedNoteBlocks(targetDocId, blockJson.blocks);
+              blocks = blockJson.blocks;
             }
           }
           if (Array.isArray(blocks)) {
@@ -229,7 +248,7 @@ export function useNoteDocumentData(options: {
 
       } catch (e) {
         devLogger.error('[Note] loadDocs', e);
-        if (alive) setError(e instanceof Error ? e.message : '로드 실패');
+        if (alive) setError(e instanceof Error ? e.message : '濡쒕뱶 ?ㅽ뙣');
       } finally {
         if (alive) setLoadingDocuments(false);
       }
@@ -258,9 +277,7 @@ export function useNoteDocumentData(options: {
 
   const reloadDocuments = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
-      if (!res.ok) return;
-      const json = (await res.json()) as { documents?: NoteDocument[] };
+      const json = await fetchNoteBootstrap('/api/admin/note/bootstrap');
       setDocuments(json.documents ?? []);
     } catch (e) {
       devLogger.error('[Note] reloadDocuments', e);
@@ -334,3 +351,4 @@ export function useNoteDocumentData(options: {
     reloadDocuments,
   };
 }
+

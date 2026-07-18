@@ -7,7 +7,7 @@ import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-cla
 const PROGRAM_OPTIONS = [
   'SPOMOVE',
   '월간 뉴스포츠',
-  '슬로우 스포츠·특수체육',
+  '특수체육',
   '미니 올림픽',
   '스포츠 부스·원데이',
   '방학캠프',
@@ -118,7 +118,7 @@ export function DispatchProposalForm() {
           return;
         }
         reset();
-        setStatus({ tone: 'ok', message: '제안서 요청이 접수되었습니다. 담당자가 확인 후 연락드립니다.' });
+        setStatus({ tone: 'ok', message: '운영 상담이 접수되었습니다. 담당자가 확인 후 연락드립니다.' });
       } catch {
         setStatus({ tone: 'error', message: '네트워크 오류로 접수에 실패했습니다.' });
       } finally {
@@ -145,9 +145,9 @@ export function DispatchProposalForm() {
   return (
     <section id="contact" className="scroll-mt-24 space-y-6 sm:space-y-8">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">제안서</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">운영 상담</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
-          기관 맞춤 제안서 요청
+          기관 맞춤 운영 상담
         </h2>
         <p className={`mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
           공간·인원·일정·프로그램 조건을 알려주시면 정규·원데이·방학·SPOMOVE 중 맞는 운영안을 제안합니다.
@@ -191,7 +191,7 @@ export function DispatchProposalForm() {
         <div className="mt-5 rounded-xl border border-teal-100 bg-teal-50/50 px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-wide text-teal-900">연락처 안내</p>
           <p className={`mt-1 text-sm text-slate-600 ${koreanLineBreak}`}>
-            전화번호 또는 이메일 중 하나만 있어도 접수됩니다. 제안서·견적은 이메일로 회신하는 경우가 많습니다.
+            전화번호 또는 이메일 중 하나만 있어도 접수됩니다. 운영안 안내는 이메일로 회신하는 경우가 많습니다.
           </p>
         </div>
 
@@ -215,7 +215,7 @@ export function DispatchProposalForm() {
             <label className={labelClass} htmlFor="dispatch-email">
               담당자 이메일
             </label>
-            <p className={hintClass}>제안서·견적 회신용</p>
+            <p className={hintClass}>운영안 회신용</p>
             <input
               id="dispatch-email"
               type="email"
@@ -392,7 +392,7 @@ export function DispatchProposalForm() {
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button type="submit" disabled={submitting} className={`${siteBtnPrimary} disabled:opacity-60`}>
-            {submitting ? '접수 중…' : '제안서 요청하기'}
+            {submitting ? '접수 중…' : '맞춤 운영안 받아보기'}
           </button>
           <a href={brandContactLinks.phone} className={siteBtnSecondary}>
             전화 상담 {brandProfile.phone}

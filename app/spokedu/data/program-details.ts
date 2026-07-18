@@ -154,7 +154,7 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
       trackLabel: 'program-oneday-inquiry',
     },
     secondaryCta: {
-      label: '제안서 요청',
+      label: '기관 운영 상담',
       href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
       trackLabel: 'program-oneday-proposal',
     },

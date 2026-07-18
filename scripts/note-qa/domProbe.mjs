@@ -1,5 +1,5 @@
-/**
- * 브라우저 DOM 프로브 — page.evaluate에 주입하는 순수 함수들
+﻿/**
+ * 釉뚮씪?곗? DOM ?꾨줈釉???page.evaluate??二쇱엯?섎뒗 ?쒖닔 ?⑥닔??
  */
 
 export function probeOrderedRowIds() {
@@ -51,8 +51,10 @@ export function probeRowDragPoint(blockId, edge) {
 
   const targets = [
     row.querySelector('[data-toggle-title]'),
-    row.querySelector('[data-note-list-text]'),
+    row.querySelector('[data-note-list-text] .ProseMirror'),
+    row.querySelector('[data-note-list-text] [data-note-preview-text]'),
     row.querySelector('[data-note-preview-text]'),
+    row.querySelector('[data-note-list-text]'),
     row.querySelector('.ProseMirror'),
     row,
   ].filter(Boolean);
@@ -60,7 +62,9 @@ export function probeRowDragPoint(blockId, edge) {
   const target = targets[0];
   const rect = target.getBoundingClientRect();
   const y = edge === 'start' ? rect.top + Math.min(12, rect.height / 2) : rect.bottom - Math.min(8, rect.height / 2);
-  const x = rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
+  const x = edge === 'start'
+    ? rect.left + 2
+    : rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
   return { x, y };
 }
 
@@ -80,7 +84,7 @@ export async function fetchDocumentBlockTexts(page) {
           ? content.title
           : (typeof content.text === 'string' ? content.text : '');
       } else if (typeof content.text === 'string') {
-        text = content.text.replace(/^[\s•◦\-\d.]+\s*/, '');
+        text = content.text.replace(/^[\s?™뿦\-\d.]+\s*/, '');
       }
       map[b.id] = { type: b.type, text: text.trim() };
     }
@@ -112,15 +116,19 @@ export async function clearCrossSelectState(page) {
 export async function crossDragBetweenRows(page, anchorId, hoverId) {
   await page.evaluate(
     async ({ anchorId: aId, hoverId: hId }) => {
-      function dragPoint(blockId, edge) {
+      function dragPoint(blockId, edge, options = {}) {
         const esc = CSS.escape(blockId);
         const row = document.querySelector(`[data-note-block-row][data-block-id="${esc}"]`);
         if (!row) return null;
-        row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        if (options.scroll !== false) {
+          row.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        }
         const targets = [
           row.querySelector('[data-toggle-title]'),
-          row.querySelector('[data-note-list-text]'),
+          row.querySelector('[data-note-list-text] .ProseMirror'),
+          row.querySelector('[data-note-list-text] [data-note-preview-text]'),
           row.querySelector('[data-note-preview-text]'),
+          row.querySelector('[data-note-list-text]'),
           row.querySelector('.ProseMirror'),
           row,
         ].filter(Boolean);
@@ -129,14 +137,15 @@ export async function crossDragBetweenRows(page, anchorId, hoverId) {
         const y = edge === 'start'
           ? rect.top + Math.min(12, rect.height / 2)
           : rect.bottom - Math.min(8, rect.height / 2);
-        const x = rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
+        const x = edge === 'start'
+          ? rect.left + 2
+          : rect.left + Math.min(48, Math.max(16, rect.width * 0.15));
         return { x, y, target };
       }
 
       const anchor = dragPoint(aId, 'start');
-      const hover = dragPoint(hId, 'end');
-      if (!anchor || !hover) {
-        throw new Error(`drag points missing: ${aId} → ${hId}`);
+      if (!anchor) {
+        throw new Error(`drag anchor missing: ${aId}`);
       }
 
       const pe = (type, x, y, buttons = 1) => new PointerEvent(type, {
@@ -153,6 +162,10 @@ export async function crossDragBetweenRows(page, anchorId, hoverId) {
       });
 
       anchor.target.dispatchEvent(pe('pointerdown', anchor.x, anchor.y, 1));
+      const hover = dragPoint(hId, 'end');
+      if (!hover) {
+        throw new Error(`drag hover missing: ${hId}`);
+      }
 
       const steps = 24;
       for (let i = 1; i <= steps; i += 1) {

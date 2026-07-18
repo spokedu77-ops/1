@@ -35,7 +35,7 @@ function InsightArticleCard({ article, photoPriority }: { article: InsightArticl
         sizes="card3"
         photoPriority={photoPriority}
       />
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
         <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
           {article.topic}
         </span>

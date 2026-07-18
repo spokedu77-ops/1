@@ -32,6 +32,7 @@ import {
   buildMoveBlockCommand,
   type NoteBlockCommandResult,
 } from '../_lib/noteBlockCommands';
+import { persistOpForBlockCommand } from '../_lib/noteBlockCommandPersist';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { resolveBlockDropTarget, resolveBlockDropTargetFromPointer } from '../_lib/noteDropResolver';
@@ -230,16 +231,13 @@ export function useNoteDragDrop(options: {
     command: NoteBlockCommandResult,
   ) => {
     if (command.affectedIds.length === 0) return;
-    const patchesById = new Map(
-      command.fieldPatches.map((patch) => [patch.id, patch]),
-    );
-    for (const order of command.orders) {
-      patchesById.set(order.id, {
-        ...patchesById.get(order.id),
-        ...order,
-      });
+    const persistOp = persistOpForBlockCommand(command);
+    if (persistOp?.type === 'blockTransaction') {
+      await documentEngine.persistBlockTransaction(
+        persistOp.patches,
+        persistOp.deleteIds,
+      );
     }
-    await documentEngine.persistBlockTransaction([...patchesById.values()]);
   }, [documentEngine]);
 
   const runOptimisticBlockCommand = useCallback(async (

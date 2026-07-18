@@ -11,6 +11,10 @@ import {
   buildDeleteBlockForestCommand,
   buildMergeWithPreviousBlockCommand,
 } from '../_lib/noteBlockCommands';
+import {
+  deletedIdsForBlockCommand,
+  persistOpForBlockCommand,
+} from '../_lib/noteBlockCommandPersist';
 import { buildToggleLegacyCleanupPatches } from '../_lib/noteToggleContent';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
@@ -207,7 +211,7 @@ export function useNoteBlockDelete(options: {
   ) => {
     recordBlockCommandUndo(prevBlocks, command);
     documentEngine.replaceBlocks(command.nextBlocks);
-    const removedIds = command.removedBlocks.map((removed) => removed.id);
+    const removedIds = deletedIdsForBlockCommand(command);
     const documentId = command.removedBlocks[0]?.document_id
       ?? command.nextBlocks.find((block) => block.document_id)?.document_id
       ?? null;
@@ -224,10 +228,13 @@ export function useNoteBlockDelete(options: {
     focusBlockEditor(command.focusBlockId, 'editor', command.caretOffset);
 
     try {
-      await documentEngine.persistBlockTransaction(
-        command.fieldPatches,
-        command.removedBlocks.map((removed) => removed.id),
-      );
+      const persistOp = persistOpForBlockCommand(command);
+      if (persistOp?.type === 'blockTransaction') {
+        await documentEngine.persistBlockTransaction(
+          persistOp.patches,
+          persistOp.deleteIds,
+        );
+      }
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
       setError(e instanceof Error ? e.message : '블록 병합 실패');

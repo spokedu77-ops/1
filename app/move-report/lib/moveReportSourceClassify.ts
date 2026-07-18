@@ -23,6 +23,7 @@ export function classifyMoveReportEventSource(meta: unknown, eventName?: string)
   const attr = parseAttribution(meta);
   const mr = attr.mr_source?.trim();
   if (mr === 'coach_link') return { label: 'coach_link', bucket: 'coach_link' };
+  if (mr === 'coach_observe') return { label: 'coach_observe', bucket: 'mr_source' };
   if (mr === 'shared') return { label: 'shared', bucket: 'shared' };
   if (mr === 'parent_direct') return { label: 'parent_direct', bucket: 'mr_source' };
   if (mr === 'educator_campaign') return { label: 'educator_campaign', bucket: 'mr_source' };

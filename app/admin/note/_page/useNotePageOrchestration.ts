@@ -24,6 +24,7 @@ import {
   planParentPatchesForDocumentBlocks,
 } from '../_lib/noteDocumentParentClient';
 import { setNoteToggleBackspaceRuntime } from '../_lib/noteToggleBackspaceRuntime';
+import { commitNoteDocumentBeforeLeave } from '../_lib/noteBlockStateMerge';
 
 /** NotePageContext value 조립 — 문서·블록·선택·DnD 훅 wiring */
 export function useNotePageOrchestration(): NotePageContextValue {
@@ -264,6 +265,23 @@ export function useNotePageOrchestration(): NotePageContextValue {
   useEffect(() => {
     triggerSaveRef.current = triggerSave;
   }, [triggerSave]);
+
+  useEffect(() => {
+    const commitBeforePageLeave = () => {
+      void commitNoteDocumentBeforeLeave();
+    };
+    const commitBeforeHidden = () => {
+      if (document.visibilityState === 'hidden') {
+        void commitNoteDocumentBeforeLeave();
+      }
+    };
+    window.addEventListener('pagehide', commitBeforePageLeave);
+    document.addEventListener('visibilitychange', commitBeforeHidden);
+    return () => {
+      window.removeEventListener('pagehide', commitBeforePageLeave);
+      document.removeEventListener('visibilitychange', commitBeforeHidden);
+    };
+  }, []);
 
   const dragDrop = useNoteDragDrop({
     blocks,

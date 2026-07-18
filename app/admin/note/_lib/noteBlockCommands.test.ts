@@ -148,7 +148,22 @@ describe('note block commands', () => {
       { id: 'new', order_index: 1 },
       { id: 'b', order_index: 2 },
     ]);
+    expect(command.focusTarget).toEqual({
+      blockId: 'new',
+      part: 'editor',
+    });
     expect(blocks).toHaveLength(3);
+  });
+
+  it('returns title focus for inserted toggles and can suppress focus', () => {
+    const blocks = [block('a', 0)];
+    const created = { ...block('toggle', 99), type: 'toggle' };
+
+    expect(buildInsertBlockCommand(blocks, created, null, 1).focusTarget).toEqual({
+      blockId: 'toggle',
+      part: 'title',
+    });
+    expect(buildInsertBlockCommand(blocks, created, null, 1, { focus: false }).focusTarget).toBeUndefined();
   });
 
   it('inserts a list sibling and moves existing children under the new sibling', () => {

@@ -5,6 +5,7 @@ import { HOME_MEDIA } from '../../data/home-media';
 import { homePage } from '../../data/home-page';
 import {
   homeBody,
+  homeCardPanelPad,
   homeCardTitle,
   homeFocusRing,
   homeGateCard,
@@ -23,7 +24,10 @@ export function HomeAudienceGates() {
   const reducedMotion = useReducedMotion();
 
   return (
-    <section id={homePage.audienceGate.id} className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#FAFAF8]`}>
+    <section
+      id={homePage.audienceGate.id}
+      className={`${homeSectionScrollMt} ${homeSectionPadCompact} border-b border-slate-200/90 bg-white`}
+    >
       <div className={siteContainer}>
         <motion.div
           initial={reducedMotion ? false : { opacity: 0, y: 12 }}
@@ -35,7 +39,7 @@ export function HomeAudienceGates() {
           <p className={`${homeBody} mt-4 max-w-2xl`}>{homePage.audienceGate.lead}</p>
         </motion.div>
 
-        <ul className="mt-10 grid grid-cols-1 gap-5 min-[900px]:grid-cols-3 min-[900px]:gap-6">
+        <ul className="mt-8 grid grid-cols-1 gap-5 min-[900px]:grid-cols-3 min-[900px]:gap-6">
           {homePage.audienceGate.items.map((item, index) => {
             const media = HOME_MEDIA[item.mediaKey];
             return (
@@ -53,7 +57,7 @@ export function HomeAudienceGates() {
                       photoPriority={index === 0}
                     />
                   </div>
-                  <div className="flex min-w-0 flex-col p-5 sm:p-6">
+                  <div className={`flex min-w-0 flex-col ${homeCardPanelPad}`}>
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">{item.badge}</p>
                     <h3 className={`${homeCardTitle} mt-2`}>{item.title}</h3>
                     <p className={`${homeBody} mt-2 line-clamp-3`}>{item.description}</p>

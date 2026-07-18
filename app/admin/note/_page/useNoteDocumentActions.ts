@@ -6,7 +6,6 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import { BOARD_DEFAULT_GROUP } from '../_components/BoardView';
 import { resolveDocIcon } from '../_lib/noteDocumentUi';
 import { commitAndResetNoteDocumentBeforeSwitch } from '../_lib/noteBlockStateMerge';
-import { prefetchNoteDocumentBlocks } from '../_lib/noteDocumentBlocksPrefetch';
 import { buildInsertBlockCommand } from '../_lib/noteBlockCommands';
 import { createSubPageTree } from '../_lib/noteDocumentTreeApi';
 import { enqueueDocumentPatch } from '../_lib/noteDocumentMetaOpQueue';
@@ -86,7 +85,6 @@ export function useNoteDocumentActions(options: {
   const handleSelectDocument = useCallback(async (doc: NoteDocument) => {
     if (doc.id === selectedId) return;
     await commitAndResetNoteDocumentBeforeSwitch();
-    prefetchNoteDocumentBlocks(doc.id);
     setSelectedId(doc.id);
     setFocusedToggleId(null);
     setFocusedEditorBlockId(null);

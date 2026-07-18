@@ -49,7 +49,7 @@ export const dispatchPage = {
   },
   heroCtas: {
     primary: {
-      label: '기관 맞춤 제안서 요청',
+      label: '기관 운영 상담',
       href: '#contact',
       trackLabel: 'dispatch-cta-program',
     },
@@ -216,16 +216,18 @@ export const dispatchPage = {
       {
         id: 'slow-sports',
         image: '/images/spokedu/dispatch/dispatch-institution-class.jpg',
-        imageAlt: '슬로우 스포츠 속도에 맞춘 포용형 체육',
-        audience: '발달센터 · 복지관 · 특수학급 · 포용형 클래스',
-        name: '슬로우 스포츠',
-        subtitle: '속도에 맞춘 포용형 체육',
+        imageAlt: '특수체육 — 속도·수준에 맞춘 기관 수업',
+        audience: '복지관 · 발달센터 · 통합반 · 기관 클래스',
+        name: '특수체육',
+        subtitle: '슬로우 스포츠 · 속도·수준에 맞춘 기관 수업',
         paragraphs: [
-          '느린 학습자와 특수 체육 대상을 포함해 각자의 속도에 맞춰 참여할 수 있도록 설계한 포용형 체육 클래스입니다. 빠른 수행보다 안정적인 참여와 반복 경험에 초점을 두고 수업을 진행합니다.',
-          '무리한 경쟁보다 활동의 즐거움과 성공 경험을 느낄 수 있도록 난이도와 과제를 단계적으로 구성합니다.',
+          '참여자 속도와 운동 수준에 맞춰 과제·규칙을 조절하는 기관 체육 프로그램입니다. 이동·균형·협동 활동을 단계적으로 구성해, 같은 수업 안에서도 각자 참여할 수 있도록 설계합니다.',
+          '정규수업·특강·행사형으로 운영할 수 있으며, 기관 목적에 맞게 난이도와 흐름을 조정해 반복 성공 경험과 안정적인 참여를 만듭니다.',
         ],
-        tags: ['개별 속도 반영', '반복 중심 활동', '성공 경험 설계'],
+        tags: ['수준별 과제 조절', '단계형 커리큘럼', '정규·특강 운영'],
         example: '예시: 단계별 이동운동, 규칙 단순화 게임 등',
+        href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+        trackLabel: 'dispatch-lineup-special',
         mediaKey: 'proofCenter' as HomeMediaKey,
       },
       {
@@ -308,7 +310,7 @@ export const dispatchPage = {
       {
         num: '02',
         label: '기관 환경 분석',
-        detail: '대상 연령, 인원, 특이사항을 파악해 기관에 맞는 제안서를 발송합니다.',
+        detail: '대상 연령, 인원, 특이사항을 파악해 기관에 맞는 운영안을 안내합니다.',
         duration: '1~2일',
       },
       {
@@ -369,7 +371,7 @@ export const dispatchPage = {
     items: [
       {
         q: '비용은 어떻게 되나요?',
-        a: '기관 규모, 대상 연령, 파견 횟수에 따라 달라집니다. 제안서 신청 후 맞춤 견적을 안내드립니다.',
+        a: '기관 규모, 대상 연령, 파견 횟수에 따라 달라집니다. 상담 접수 후 운영 조건에 맞는 안내를 드립니다.',
       },
       {
         q: '최소 계약 기간이 있나요?',
@@ -395,7 +397,7 @@ export const dispatchPage = {
       '대상 연령, 인원, 공간, 일정을 확인한 뒤 정규수업·원데이·방학캠프 중 적합한 운영안을 안내드립니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
     primary: {
-      label: '제안서 요청하기',
+      label: '맞춤 운영안 받아보기',
       href: '#contact',
       trackLabel: 'dispatch-final-program',
     },

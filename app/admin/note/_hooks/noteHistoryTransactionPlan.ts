@@ -10,6 +10,60 @@ export type NoteHistoryTransactionPlan = {
   fieldPatches: NoteBlockFieldPatch[];
 };
 
+export type NoteHistoryPersistStep =
+  | { type: 'softDelete'; ids: string[] }
+  | { type: 'restoreRoots'; roots: NoteBlock[] }
+  | { type: 'patchFields'; patches: NoteBlockFieldPatch[] };
+
+export function buildHistoryPersistSteps(
+  plan: Pick<NoteHistoryTransactionPlan, 'deleteIds' | 'restoreRoots' | 'fieldPatches'>,
+): NoteHistoryPersistStep[] {
+  const steps: NoteHistoryPersistStep[] = [];
+  if (plan.deleteIds.length > 0) {
+    steps.push({ type: 'softDelete', ids: plan.deleteIds });
+  }
+  if (plan.restoreRoots.length > 0) {
+    steps.push({ type: 'restoreRoots', roots: plan.restoreRoots });
+  }
+  if (plan.fieldPatches.length > 0) {
+    steps.push({ type: 'patchFields', patches: plan.fieldPatches });
+  }
+  return steps;
+}
+
+export function buildHistoryTransactionNextBlocks(input: {
+  current: NoteBlock[];
+  target: NoteBlock[];
+  plan: Pick<NoteHistoryTransactionPlan, 'scopeIds' | 'targetIds'>;
+  restoredById?: ReadonlyMap<string, NoteBlock>;
+}): NoteBlock[] {
+  const restoredById = input.restoredById ?? new Map<string, NoteBlock>();
+  const targetMap = new Map(input.target.map((block) => {
+    const restored = restoredById.get(block.id);
+    return [block.id, restored ? { ...block, version: restored.version } : block];
+  }));
+  const next = input.current
+    .filter((block) => !input.plan.scopeIds.has(block.id) || input.plan.targetIds.has(block.id))
+    .map((block) => targetMap.get(block.id) ?? block);
+  for (const snapshot of targetMap.values()) {
+    if (!next.some((block) => block.id === snapshot.id)) next.push(snapshot);
+  }
+  return next;
+}
+
+export function buildRestoreBlocksFieldPatches(
+  snapshots: NoteBlock[],
+): NoteBlockFieldPatch[] {
+  return snapshots.map((snapshot) => ({
+    id: snapshot.id,
+    document_id: snapshot.document_id,
+    type: snapshot.type,
+    content: snapshot.content,
+    parent_block_id: snapshot.parent_block_id ?? null,
+    order_index: snapshot.order_index,
+  }));
+}
+
 export function buildHistoryTransactionPlan(
   current: NoteBlock[],
   target: NoteBlock[],

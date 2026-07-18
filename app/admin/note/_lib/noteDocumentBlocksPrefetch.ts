@@ -79,6 +79,16 @@ export function prefetchNoteDocumentBlocks(documentId: string): void {
 }
 
 /** 선택 시 prefetch 결과 사용 — 없으면 null */
+export function primePrefetchedNoteBlocks(documentId: string, blocks: NoteBlock[]): void {
+  if (!documentId) return;
+  pruneCache();
+  cache.set(documentId, {
+    promise: Promise.resolve(blocks),
+    blocks,
+    fetchedAt: Date.now(),
+  });
+}
+
 export async function consumePrefetchedNoteBlocks(
   documentId: string,
 ): Promise<NoteBlock[] | null> {

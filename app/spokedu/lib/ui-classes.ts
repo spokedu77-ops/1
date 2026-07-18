@@ -40,7 +40,8 @@ export const landingPageStack = landingTrackStack;
 export const audienceLandingStack =
   'flex w-full flex-col gap-10 overflow-x-clip pb-8 sm:gap-12 sm:pb-10 lg:gap-16 lg:pb-12';
 
-export const landingCardShell =
+/** 정적 흰 카드 프레임 클래스. variant 함수는 `landingCardShell` (`./visual/card-variants`)을 쓴다. */
+export const landingCardFrame =
   'rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.03]';
 
 /** 서브 랜딩 Hero shell — Home `homeHeroShell`과 동일 정렬 */
@@ -96,6 +97,9 @@ export const siteContainer = 'site-container';
 
 /** 홈 카드 텍스트 패널 — 모바일 20 / 태블릿 22~24 / 데스크톱 24~28 */
 export const homeCardPanelPad = 'p-5 md:px-6 md:py-[22px] lg:px-7 lg:py-7';
+
+/** 서브 랜딩 카드 텍스트 패널 — 글자가 칸 앞에 붙지 않도록 */
+export const landingCardPanelPad = 'p-5 sm:px-5 sm:py-5 lg:p-6';
 
 /** 이미지 하단 → 제목 최소 간격 */
 export const homeCardImageToTitle = 'mt-5';
@@ -198,8 +202,9 @@ export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-sl
 export const homeHeroImage = 'overflow-hidden rounded-xl border border-slate-200/80 bg-slate-200 shadow-sm shadow-slate-900/[0.04]';
 
 /** Home 풀블리드 Hero — edge-to-edge 실사 + 카피 레이어 */
+/** 아동·청소년 체육 브랜드 — 전체 화면 점유보다 첫 인상 + 본문 연결을 우선 */
 export const homeHeroFullBleed =
-  'relative flex min-h-[100svh] w-full flex-col justify-end overflow-hidden bg-[#0B1220]';
+  'relative flex min-h-[min(72svh,640px)] w-full flex-col justify-end overflow-hidden bg-[#0B1220] sm:min-h-[min(78svh,720px)]';
 
 export const homeHeroFullBleedScrim =
   'pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/90 via-[#0B1220]/45 to-[#0B1220]/25';

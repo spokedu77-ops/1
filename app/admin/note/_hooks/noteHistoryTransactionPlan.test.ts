@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildHistoryTransactionPlan } from './noteHistoryTransactionPlan';
+import {
+  buildHistoryPersistSteps,
+  buildHistoryTransactionNextBlocks,
+  buildHistoryTransactionPlan,
+  buildRestoreBlocksFieldPatches,
+} from './noteHistoryTransactionPlan';
 import type { NoteBlock } from '../_lib/types';
 
 function block(
@@ -97,6 +102,93 @@ describe('buildHistoryTransactionPlan', () => {
 
     expect(plan.restoreRoots.map((item) => item.id)).toEqual(['toggle']);
     expect(plan.fieldPatches.map((item) => item.id)).toEqual(['outside', 'toggle', 'child']);
+  });
+
+  it('builds the next undo snapshot from the plan and absorbed restore versions', () => {
+    const current = [
+      block('outside'),
+      block('remove-me', { order_index: 1 }),
+    ];
+    const target = [
+      block('outside', { order_index: 0 }),
+      block('restored', { order_index: 1, version: 1 }),
+    ];
+    const plan = buildHistoryTransactionPlan(current, target);
+    const next = buildHistoryTransactionNextBlocks({
+      current,
+      target,
+      plan,
+      restoredById: new Map([
+        ['restored', block('restored', { version: 7 })],
+      ]),
+    });
+
+    expect(next.map((item) => item.id)).toEqual(['outside', 'restored']);
+    expect(next.find((item) => item.id === 'restored')?.version).toBe(7);
+  });
+
+  it('builds stable history persist steps in delete restore patch order', () => {
+    const current = [
+      block('delete-me'),
+      block('keep', { order_index: 1 }),
+    ];
+    const target = [
+      block('keep', { order_index: 0 }),
+      block('restore-me', { order_index: 1 }),
+    ];
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(buildHistoryPersistSteps(plan).map((step) => step.type)).toEqual([
+      'softDelete',
+      'restoreRoots',
+      'patchFields',
+    ]);
+  });
+
+  it('builds restore-block patches without dropping structured block content', () => {
+    const snapshots = [
+      block('callout', {
+        type: 'callout',
+        content: {
+          text: 'line one\nline two',
+          html: '<p>line one<br>line two</p>',
+          icon: '!',
+          blockColor: 'yellow',
+        },
+      }),
+      block('todo', {
+        type: 'todo',
+        order_index: 1,
+        content: { text: '7.20 강승현 면접', checked: false },
+      }),
+      block('page-link', {
+        type: 'page',
+        order_index: 2,
+        content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      }),
+    ];
+
+    expect(buildRestoreBlocksFieldPatches(snapshots)).toEqual([
+      expect.objectContaining({
+        id: 'callout',
+        type: 'callout',
+        content: expect.objectContaining({
+          html: '<p>line one<br>line two</p>',
+          icon: '!',
+          blockColor: 'yellow',
+        }),
+      }),
+      expect.objectContaining({
+        id: 'todo',
+        type: 'todo',
+        content: { text: '7.20 강승현 면접', checked: false },
+      }),
+      expect.objectContaining({
+        id: 'page-link',
+        type: 'page',
+        content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      }),
+    ]);
   });
 
   it('deletes removed subtrees as a forest within the transaction scope', () => {

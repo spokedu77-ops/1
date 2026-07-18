@@ -67,11 +67,6 @@ export const siteNav: SiteNavEntry[] = [
         trackLabel: 'nav-dispatch',
       },
       {
-        label: '특수체육',
-        href: `${SPOKEDU_BASE_PATH}/dispatch#special`,
-        trackLabel: 'nav-special',
-      },
-      {
         label: '커리큘럼·지도자 교육',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'nav-curriculum',

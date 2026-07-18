@@ -105,79 +105,101 @@ export function useNoteDocumentEngine(options: {
     };
   }, [documentId]);
 
-  const getPipeline = useCallback(() => {
-    if (!pipelineRef.current) {
-      throw new Error('문서 파이프라인이 준비되지 않았습니다');
-    }
-    return pipelineRef.current;
+  const getLivePipeline = useCallback(() => {
+    const pipeline = pipelineRef.current;
+    return pipeline && !pipeline.isDisposed() ? pipeline : null;
   }, []);
 
   const dispatch = useCallback((command: NoteCommand) => {
-    return getPipeline().dispatch(command);
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return useNoteBlockStore.getState().getBlocksArray();
+    return pipeline.dispatch(command);
+  }, [getLivePipeline]);
 
   const replaceBlocks = useCallback((blocks: NoteBlock[]) => {
-    const pipeline = pipelineRef.current;
+    const pipeline = getLivePipeline();
     if (!pipeline) {
       useNoteBlockStore.getState().replaceBlocks(blocks);
       return;
     }
     pipeline.dispatch({ type: 'replaceBlocks', blocks });
-  }, []);
+  }, [getLivePipeline]);
 
   const updateContent = useCallback((blockId: string, content: Record<string, unknown>) => {
-    getPipeline().dispatch({ type: 'patchContent', blockId, content });
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) {
+      useNoteBlockStore.getState().patchContent(blockId, content);
+      return;
+    }
+    pipeline.dispatch({ type: 'patchContent', blockId, content });
+  }, [getLivePipeline]);
 
   const scheduleContentPatch = useCallback((
     blockId: string,
     content: Record<string, unknown>,
     baseContent?: Record<string, unknown>,
   ) => {
-    getPipeline().scheduleContentPatch(blockId, content, baseContent);
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) {
+      useNoteBlockStore.getState().patchContent(blockId, content);
+      return;
+    }
+    pipeline.scheduleContentPatch(blockId, content, baseContent);
+  }, [getLivePipeline]);
 
   const clearContentPatch = useCallback((blockId: string) => {
-    getPipeline().clearContentPatch(blockId);
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    pipeline.clearContentPatch(blockId);
+  }, [getLivePipeline]);
 
   const flushContentPatches = useCallback(async () => {
-    await getPipeline().flushContentPatches();
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    await pipeline.flushContentPatches();
+  }, [getLivePipeline]);
 
   const flushPersistQueue = useCallback(async () => {
-    await getPipeline().flushPersistQueue();
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    await pipeline.flushPersistQueue();
+  }, [getLivePipeline]);
 
   const hydrateFromLocal = useCallback(async () => {
-    if (!pipelineRef.current) return null;
-    return pipelineRef.current.hydrateFromLocal();
-  }, []);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return null;
+    return pipeline.hydrateFromLocal();
+  }, [getLivePipeline]);
 
   const syncWithServer = useCallback(async (
     initialBlocks: NoteBlock[],
     options?: { skipDispatch?: boolean; emptyConfirmed?: boolean },
   ) => {
-    if (!pipelineRef.current) {
+    const pipeline = getLivePipeline();
+    if (!pipeline) {
       if (!options?.skipDispatch) {
         useNoteBlockStore.getState().hydrate(initialBlocks);
       }
       return;
     }
-    await pipelineRef.current.syncWithServer(initialBlocks, options);
-  }, []);
+    await pipeline.syncWithServer(initialBlocks, options);
+  }, [getLivePipeline]);
 
   const scheduleOplogPull = useCallback(() => {
-    pipelineRef.current?.schedulePull();
-  }, []);
+    getLivePipeline()?.schedulePull();
+  }, [getLivePipeline]);
 
   const persistSoftDelete = useCallback(async (args: SoftDeletePersistArgs) => {
-    await getPipeline().persistSoftDelete(args);
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    await pipeline.persistSoftDelete(args);
+  }, [getLivePipeline]);
 
   const persistFieldPatches = useCallback(async (patches: NoteBlockFieldPatch[]) => {
-    await getPipeline().persistFieldPatches(patches);
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    await pipeline.persistFieldPatches(patches);
+  }, [getLivePipeline]);
 
   const persistCreateBlock = useCallback(async (args: CreateBlockPersistArgs) => {
     for (let attempt = 0; attempt < 40; attempt += 1) {
@@ -196,50 +218,52 @@ export function useNoteDocumentEngine(options: {
     patches: NoteBlockFieldPatch[],
     deleteIds: string[] = [],
   ) => {
-    await getPipeline().persistBlockTransaction(patches, deleteIds);
-  }, [getPipeline]);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    await pipeline.persistBlockTransaction(patches, deleteIds);
+  }, [getLivePipeline]);
 
   const persistRestoreBlock = useCallback(async (blockId: string) => {
-    if (!pipelineRef.current) {
-      throw new Error('문서 파이프라인이 준비되지 않았습니다');
-    }
-    return pipelineRef.current.persistRestoreBlock(blockId);
-  }, []);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return [];
+    return pipeline.persistRestoreBlock(blockId);
+  }, [getLivePipeline]);
 
   const persistPurgeBlock = useCallback(async (blockId: string) => {
-    if (!pipelineRef.current) return;
-    await pipelineRef.current.persistPurgeBlock(blockId);
-  }, []);
+    const pipeline = getLivePipeline();
+    if (!pipeline) return;
+    await pipeline.persistPurgeBlock(blockId);
+  }, [getLivePipeline]);
 
   const getBlocks = useCallback(() => {
-    return pipelineRef.current?.getBlocks() ?? [];
-  }, []);
+    return getLivePipeline()?.getBlocks() ?? [];
+  }, [getLivePipeline]);
 
   const getCoordinatorBlocks = useCallback(() => {
-    return pipelineRef.current?.getCoordinatorBlocks() ?? [];
-  }, []);
+    return getLivePipeline()?.getCoordinatorBlocks() ?? [];
+  }, [getLivePipeline]);
 
   const hasPendingContent = useCallback(() => {
-    return pipelineRef.current?.hasPendingContent() ?? false;
-  }, []);
+    return getLivePipeline()?.hasPendingContent() ?? false;
+  }, [getLivePipeline]);
 
   const hasPendingPersist = useCallback(() => {
-    return pipelineRef.current?.hasPendingPersist() ?? false;
-  }, []);
+    return getLivePipeline()?.hasPendingPersist() ?? false;
+  }, [getLivePipeline]);
 
   const hasPendingOutbound = useCallback(async () => {
-    const pipeline = pipelineRef.current;
+    const pipeline = getLivePipeline();
     if (!pipeline) return false;
     return pipeline.hasPendingOutbound();
-  }, []);
+  }, [getLivePipeline]);
 
   const hasUnpublishedTopologySync = useCallback(() => {
-    return pipelineRef.current?.hasUnpublishedTopologySync() ?? false;
-  }, []);
+    return getLivePipeline()?.hasUnpublishedTopologySync() ?? false;
+  }, [getLivePipeline]);
 
   const isOplogSyncEnabledFn = useCallback(
-    () => pipelineRef.current?.isOplogEnabled() ?? false,
-    [],
+    () => getLivePipeline()?.isOplogEnabled() ?? false,
+    [getLivePipeline],
   );
 
   return useMemo(() => ({

@@ -74,6 +74,14 @@ describe('decideRegressiveContentOp', () => {
     })).toBe('drop_stale');
   });
 
+  it('treats html, captions, urls, and page links as authority text', () => {
+    expect(readAuthorityBlockText({ html: '<p>saved callout</p>' })).toBe('<p>saved callout</p>');
+    expect(readAuthorityBlockText({ caption: 'photo caption' })).toBe('photo caption');
+    expect(readAuthorityBlockText({ url: 'https://example.com/file.png' })).toBe('https://example.com/file.png');
+    expect(readAuthorityBlockText({ page_document_id: 'child-doc-1' })).toBe('child-doc-1');
+    expect(readAuthorityBlockText({ html: '<p></p>' })).toBe('');
+  });
+
   it('pushes non-empty patches', () => {
     expect(decideRegressiveContentOp({ localText: 'a', patchText: 'b' })).toBe('push');
   });
@@ -86,6 +94,15 @@ describe('decideRegressiveContentOp', () => {
   });
 
   it('drops stale empty patch when local still has image url', () => {
+    expect(decideRegressiveContentOp({
+      localText: '',
+      patchText: '',
+      localHasMediaPresence: true,
+      patchHasMediaPresence: false,
+    })).toBe('drop_stale');
+  });
+
+  it('drops stale empty patch when local still has structured content', () => {
     expect(decideRegressiveContentOp({
       localText: '',
       patchText: '',

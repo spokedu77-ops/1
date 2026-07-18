@@ -1,6 +1,7 @@
 import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
 import { contentForPastedBlock, type PastedBlockSpec } from './notePasteBlocks';
 import { mergeBlockContentWithStore } from './noteContentPatch';
+import { resolveInsertIndexAfterBlock } from './noteInsertPosition';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 
@@ -70,10 +71,10 @@ export async function insertPastedBlockSpecsAfterAnchor(
     }
   }
 
-  const parentId = anchor.parent_block_id ?? null;
-  const siblings = getBlocksInParent(ctx.blocksRef.current, parentId)
-    .sort((a, b) => a.order_index - b.order_index);
-  const afterIndex = siblings.findIndex((item) => item.id === anchor.id) + 1;
+  const { parentId, insertIndex: afterIndex } = resolveInsertIndexAfterBlock(
+    ctx.blocksRef.current,
+    anchor,
+  );
 
   if (rest.length > 0) {
     const tail = await insertSpecsAmongSiblings(
@@ -99,10 +100,10 @@ export async function insertPastedBlockSpecsAfterBlock(
   specs: PastedBlockSpec[],
   sourceContent: Record<string, unknown>,
 ): Promise<{ lastFocusId: string; lastFocusPart: 'title' | 'editor' }> {
-  const parentId = afterBlock.parent_block_id ?? null;
-  const siblings = getBlocksInParent(ctx.blocksRef.current, parentId)
-    .sort((a, b) => a.order_index - b.order_index);
-  const afterIndex = siblings.findIndex((item) => item.id === afterBlock.id) + 1;
+  const { parentId, insertIndex: afterIndex } = resolveInsertIndexAfterBlock(
+    ctx.blocksRef.current,
+    afterBlock,
+  );
   const result = await insertSpecsAmongSiblings(
     ctx,
     parentId,

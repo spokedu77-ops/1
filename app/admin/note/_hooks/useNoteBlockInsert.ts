@@ -11,6 +11,10 @@ import {
   COLUMN_TYPE,
 } from '../_lib/noteColumnBlock';
 import {
+  resolveFocusedInsertTarget,
+  resolveInsertIndexAfterBlock,
+} from '../_lib/noteInsertPosition';
+import {
   buildInsertBlockAndReparentChildrenCommand,
   buildInsertBlockCommand,
   collectBlockTransactionIds,
@@ -85,11 +89,12 @@ export function useNoteBlockInsert(options: {
     if (!selectedId) return null;
     try {
       setLoadingState('saving');
-      const siblings = blocksRef.current
+      const previousBlocks = blocksRef.current;
+      const siblings = previousBlocks
         .filter((b) => (b.parent_block_id ?? null) === parentId)
         .sort((a, b) => a.order_index - b.order_index);
       const clampedIndex = Math.max(0, Math.min(insertIndex, siblings.length));
-      const parentBlock = parentId ? blocksRef.current.find((b) => b.id === parentId) : null;
+      const parentBlock = parentId ? previousBlocks.find((b) => b.id === parentId) : null;
       const insideToggle = parentBlock?.type === 'toggle';
       const baseContent = insertOptions?.content ?? defaultBlockContent(type, { insideToggle });
       const baseContentMap = baseContent as Record<string, unknown>;
@@ -111,12 +116,12 @@ export function useNoteBlockInsert(options: {
         normalizeOrders: normalizedExistingOrders,
       });
       const command = buildInsertBlockCommand(
-        blocksRef.current,
+        previousBlocks,
         createdBlock,
         parentId,
-        insertIndex,
+        clampedIndex,
+        { focus: insertOptions?.focus !== false },
       );
-      const previousBlocks = blocksRef.current;
       let nextBlocks = command.nextBlocks;
       let affectedIds = [...command.affectedIds];
       if (type === COLUMN_LIST_TYPE) {
@@ -149,8 +154,12 @@ export function useNoteBlockInsert(options: {
           if (firstColumn) {
             focusBlockEditor(firstColumn.id, 'editor');
           }
-        } else {
-          focusBlockEditor(createdBlock.id, type === 'toggle' ? 'title' : 'editor');
+        } else if (command.focusTarget) {
+          focusBlockEditor(
+            command.focusTarget.blockId,
+            command.focusTarget.part,
+            command.focusTarget.caretOffset,
+          );
         }
       }
 
@@ -229,11 +238,7 @@ export function useNoteBlockInsert(options: {
       return;
     }
     const parentId = afterBlock.parent_block_id ?? null;
-    const siblings = blocksRef.current
-      .filter((b) => (b.parent_block_id ?? null) === parentId)
-      .sort((a, b) => a.order_index - b.order_index);
-    const afterIndex = siblings.findIndex((b) => b.id === afterBlock.id);
-    const insertIndex = afterIndex >= 0 ? afterIndex + 1 : siblings.length;
+    const { insertIndex } = resolveInsertIndexAfterBlock(blocksRef.current, afterBlock);
     await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
   }, [blocksRef, handleCreateSubPage, insertBlockAmongSiblings, selectedId]);
 
@@ -470,6 +475,13 @@ export function useNoteBlockInsert(options: {
         return;
       }
 
+      const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
+      const focusedTarget = resolveFocusedInsertTarget(blocksRef.current, focusedId);
+      if (focusedTarget) {
+        await insertBlockAmongSiblings(focusedTarget.parentId, type, focusedTarget.insertIndex);
+        return;
+      }
+
       await insertBlockAmongSiblings(null, type, 0);
   } catch (e) {
       devLogger.error('[Note] addBlock', e);
@@ -477,7 +489,10 @@ export function useNoteBlockInsert(options: {
     }
   }, [
     focusedToggleId,
+    focusedEditorBlockId,
+    focusedEditorBlockIdRef,
     handleCreateSubPage,
+    handleInsertBlockAfter,
     handleInsertBlockInParent,
     selectedId,
     setError,

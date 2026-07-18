@@ -1,0 +1,17 @@
+# spokedu 랜딩 카드 shell 이름
+
+## 두 심볼을 섞지 말 것
+
+| 심볼 | 모듈 | 종류 |
+|---|---|---|
+| `landingCardShell` | `app/spokedu/components/visual/card-variants` | **함수** (`landingCardShell('image' \| 'dark' \| 'glass' \| 'gradient')`) |
+| `landingCardFrame` | `app/spokedu/lib/ui-classes` | **문자열** 상수 (정적 흰 카드 프레임) |
+
+## 금지
+
+- `ui-classes`에서 `landingCardShell` 이름으로 문자열을 다시 export하지 않는다.
+- `ui-classes`에서 가져온 값에 `landingCardShell('…')`처럼 호출하지 않는다.
+
+## 이유
+
+동명이면 TypeScript가 `This expression is not callable`로 실패하고, Lane A `tsc --noEmit`이 깨진다.

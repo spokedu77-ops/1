@@ -157,7 +157,7 @@ export const HOME_MEDIA = {
     tone: 'lime',
     objectPosition: '50% 38%',
   }),
-  proofEvent: fromPhoto(SPOKEDU_IMAGES.dispatch.oneDayEvent, {
+  proofEvent: fromPhoto(SPOKEDU_IMAGES.records.seodaemun, {
     id: 'proof-event',
     label: '체험 부스',
     fallbackGradient: 'from-rose-400 via-pink-600 to-slate-900',

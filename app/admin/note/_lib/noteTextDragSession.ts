@@ -31,6 +31,7 @@ export type TextDragSessionOptions = {
 export function startTextDragSession(options: TextDragSessionOptions): () => void {
   let dragStarted = false;
   let crossBlockActive = false;
+  let lastCrossHoverId: string | null = null;
 
   const cleanup = () => {
     setNoteTextDragGuardActive(false);
@@ -68,6 +69,7 @@ export function startTextDragSession(options: TextDragSessionOptions): () => voi
       options.onIntraBlock(ev.clientX, ev.clientY);
       return;
     }
+    lastCrossHoverId = hoverId;
 
     const span = options.getSpanBlockIds(hoverId);
     const selectableSpan = options.filterSelectableSpan
@@ -108,7 +110,9 @@ export function startTextDragSession(options: TextDragSessionOptions): () => voi
     if (!wasDragging) return;
 
     if (wasCross) {
-      const hoverId = options.resolveHoverBlockId(ev.clientX, ev.clientY) ?? options.anchor.blockId;
+      const hoverId = options.resolveHoverBlockId(ev.clientX, ev.clientY)
+        ?? lastCrossHoverId
+        ?? options.anchor.blockId;
       const span = options.getSpanBlockIds(hoverId);
       const ranges = resolveCrossRanges(
         span,

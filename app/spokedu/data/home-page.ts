@@ -55,11 +55,12 @@ export type HomeHeroQuickLink = {
   trackLabel: string;
 };
 
-/** 메인 홈 운영 사례 3건 — 카탈로그 원천 데이터만 사용 */
+/** 메인 홈 운영 사례 4건 — 웹 2×2 그리드용 */
 export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'dongjak-spomove',
   'yangcheon-paps',
   'dasarang-oneday',
+  'seodaemun-event-booth',
 ] as const;
 
 function buildHomeCaseCard(slug: FieldRecordSlug): HomeCaseCard {
@@ -75,12 +76,7 @@ function buildHomeCaseCard(slug: FieldRecordSlug): HomeCaseCard {
     href: card.href,
     ctaLabel: '자세히 보기',
     trackLabel: card.trackLabel,
-    mediaKey:
-      item.slug === 'dongjak-spomove'
-        ? 'homeHero'
-        : item.slug === 'dasarang-oneday'
-          ? 'proofDasarang'
-          : card.mediaKey,
+    mediaKey: card.mediaKey,
     blogImageIndex: card.blogImageIndex,
     thumbnailSrc: card.thumbnailSrc,
   };
@@ -127,19 +123,22 @@ export const homePage = {
   },
   proofStrip: {
     id: 'proof',
+    title: '왜 SPOKEDU인가',
+    lead: '수업을 직접 운영한 기준으로 프로그램을 설계하고, 그 기준을 지도자 교육까지 확장합니다.',
     items: [
       '직접 수업 운영',
       '기관 맞춤 프로그램 설계',
       'SPOMOVE 자체 개발',
       '지도자 세미나·커리큘럼 제공',
     ] as const,
+    processLabel: '기준이 확장되는 흐름',
     processLine:
       '현장 수업 → 과정 설계 → 프로그램 표준화 → 지도자 교육·기관 운영안' as const,
   },
   audienceGate: {
     id: 'paths',
     title: '어떤 수업이 필요하신가요?',
-    lead: '아이에게 다양한 체육 경험, 기관 맞춤 프로그램, SPOMOVE·지도자 교육까지 목적에 맞게 나눠 안내합니다.',
+    lead: '기관 수업, 개인·소그룹, 지도자 교육·커리큘럼까지. 목적에 맞는 안내를 이어드립니다.',
     items: [
       {
         id: 'dispatch',
@@ -175,39 +174,39 @@ export const homePage = {
         ctaLabel: '교육·콘텐츠 보기',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
-        mediaKey: 'programSpomove',
+        mediaKey: 'gateCurriculum',
       },
     ] satisfies HomeAudienceGateItem[],
   },
   spomove: {
     id: 'spomove',
-    title: 'SPOMOVE는 화면을 보는 수업이 아니라',
-    titleLine2: '보고 판단하고 움직이는 수업입니다.',
-    lead: '빔 화면의 색상·위치·방향·리듬 신호를 보고 4색 패드 위에서 움직입니다. 아이의 연령, 공간, 인원에 맞춰 속도와 규칙을 조절해 정규수업·행사·통합반에 적용할 수 있습니다.',
+    title: 'SPOMOVE 놀이체육',
+    titleLine2: '',
+    lead: '스크린 신호를 보고 4색 패드에서 반응하는 수업입니다. 정규수업·원데이·통합반에서 운영합니다.',
     flowSteps: [
-      { label: '인지', hint: '화면 확인' },
-      { label: '선택', hint: '반응 결정' },
-      { label: '수행', hint: '몸으로 실행' },
-      { label: '조절', hint: '속도·동작 조정' },
+      { label: '인지', hint: 'SEE' },
+      { label: '선택', hint: 'CHOOSE' },
+      { label: '수행', hint: 'MOVE' },
+      { label: '조절', hint: 'ADJUST' },
     ] as const satisfies readonly HomeSpomoveFlowStep[],
     proofs: [
-      { value: '공간 맞춤', label: '강당·교실·센터룸 운영' },
-      { value: '난이도 조절', label: '연령·대상별 속도와 규칙 변경' },
-      { value: '기관 적용', label: '정규수업·행사·통합반 구성' },
+      { value: '공간', label: '강당·교실·센터' },
+      { value: '속도', label: '연령·수준 맞춤' },
+      { value: '운영', label: '정규·행사·통합반' },
     ] as const satisfies readonly HomeSpomoveProof[],
     useCases: [
-      { title: '정규수업', body: '반복 참여 속에서 인지, 판단, 움직임 반응을 단계적으로 높입니다.' },
-      { title: '원데이 행사', body: '짧은 시간에도 규칙 이해와 참여 몰입이 빠르게 만들어집니다.' },
-      { title: '통합반·느린 학습자', body: '속도와 신호 난이도를 조절해 각자 성공 경험을 만들 수 있습니다.' },
+      { title: '정규수업', body: '' },
+      { title: '원데이', body: '' },
+      { title: '통합반', body: '' },
     ] as const satisfies readonly HomeSpomoveUseCase[],
     mediaKey: 'programSpomove' as HomeMediaKey,
     primaryCta: {
-      label: 'SPOMOVE 자세히 보기',
+      label: '프로그램 자세히',
       href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
       trackLabel: 'cta-home-spomove-section',
     },
     secondaryCta: {
-      label: 'SPOMOVE 도입 문의',
+      label: '도입 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=spomove`,
       trackLabel: 'cta-home-spomove-dispatch',
     },

@@ -252,6 +252,69 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
     );
   });
 
+  it('keeps every external multiline paste row adjacent after a callout anchor', async () => {
+    const anchor = {
+      ...block('anchor', 'callout', 10),
+      content: {
+        text: 'old',
+        html: '<p>old</p>',
+        icon: '!',
+        blockColor: 'yellow',
+      },
+    };
+    const next = block('next', 'text', 30);
+    const blocksRef: { current: NoteBlock[] } = { current: [anchor, next] };
+    const created: Array<{ id: string; parentId: string | null; type: NoteBlock['type']; index: number }> = [];
+    let seq = 0;
+
+    const ctx: PasteInsertContext = {
+      blocksRef,
+      insertBlockAmongSiblings: vi.fn(async (
+        parentId: string | null,
+        type: NoteBlock['type'],
+        insertIndex: number,
+        options?: { content?: Record<string, unknown> },
+      ) => {
+        seq += 1;
+        const inserted: NoteBlock = {
+          ...block(`pasted-${seq}`, type, insertIndex, parentId),
+          content: options?.content ?? {},
+        };
+        created.push({ id: inserted.id, parentId, type, index: insertIndex });
+        blocksRef.current = [...blocksRef.current, inserted];
+        return inserted;
+      }),
+      changeBlockType: vi.fn(async () => {}),
+      syncBlockContent: vi.fn((blockId: string, content: Record<string, unknown>) => {
+        blocksRef.current = blocksRef.current.map((item) =>
+          (item.id === blockId ? { ...item, content } : item),
+        );
+      }),
+    };
+
+    await insertPastedBlockSpecsAfterAnchor(
+      ctx,
+      anchor,
+      [
+        { type: 'callout', text: 'first', html: '<p>first</p>' },
+        { type: 'text', text: 'second' },
+        { type: 'text', text: 'third' },
+      ],
+      anchor.content,
+    );
+
+    expect(blocksRef.current.find((item) => item.id === 'anchor')?.content).toMatchObject({
+      text: 'first',
+      html: '<p>first</p>',
+      icon: '!',
+      blockColor: 'yellow',
+    });
+    expect(created).toEqual([
+      { id: 'pasted-1', parentId: null, type: 'text', index: 1 },
+      { id: 'pasted-2', parentId: null, type: 'text', index: 2 },
+    ]);
+  });
+
   it('keeps a mixed structural paste as one complete transaction after rewriting the anchor', async () => {
     const anchor = {
       ...block('anchor', 'text', 0),

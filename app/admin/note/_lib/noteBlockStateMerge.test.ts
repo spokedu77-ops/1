@@ -1,10 +1,15 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
+import type { Editor } from '@tiptap/react';
+import { registerNoteEditor, unregisterNoteEditor } from '../_components/noteEditorRegistry';
+import { setActiveEditorBridge, clearActiveEditorBridge } from './noteActiveEditorBridge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   applyRestoreBlockSnapshots,
+  commitNoteDocumentBeforeLeave,
   LOCAL_ONLY_BLOCK_GRACE_MS,
   mergeBlocksWithStoreContent,
   mergeReconciledBlocks,
+  registerNoteContentFlush,
   serverSnapshotRecoversMissingBlocks,
   unionReconciledWithLocalBlocks,
   wouldReconcileRegressActiveText,
@@ -84,6 +89,47 @@ describe('applyRestoreBlockSnapshots', () => {
     expect(next.find((b) => b.id === 'a')?.content?.text).toBe('restored');
     expect(next.find((b) => b.id === 'a')?.type).toBe('bulletList');
     expect(next.find((b) => b.id === 'b')?.content?.text).toBe('keep');
+  });
+});
+
+describe('commitNoteDocumentBeforeLeave', () => {
+  beforeEach(() => {
+    registerNoteContentFlush(null);
+    unregisterNoteEditor('active');
+    clearActiveEditorBridge('active', 'text');
+  });
+
+  it('commits the active editor content before flushing persist queues', async () => {
+    const order: string[] = [];
+    const onChange = vi.fn(() => order.push('editor'));
+    const flush = vi.fn(async () => {
+      order.push('flush');
+    });
+    registerNoteEditor('active', {
+      isDestroyed: false,
+      getText: () => 'last typed text',
+      getHTML: () => '<p>last typed text</p>',
+    } as unknown as Editor);
+    setActiveEditorBridge({
+      blockId: 'active',
+      field: 'text',
+      slotElement: {} as HTMLElement,
+      getProps: () => ({
+        text: '',
+        content: {},
+        onChange,
+      } as never),
+    });
+    registerNoteContentFlush(flush);
+
+    await commitNoteDocumentBeforeLeave();
+
+    expect(onChange).toHaveBeenCalledWith({
+      text: 'last typed text',
+      html: '<p>last typed text</p>',
+    });
+    expect(flush).toHaveBeenCalledOnce();
+    expect(order).toEqual(['editor', 'flush']);
   });
 });
 

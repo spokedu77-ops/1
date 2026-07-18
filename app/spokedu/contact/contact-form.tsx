@@ -135,17 +135,17 @@ function ContactSidebar() {
   const { sidebar } = contactPageContent;
 
   return (
-    <aside className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 lg:sticky lg:top-24">
+    <aside className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 lg:sticky lg:top-24 lg:p-7">
       <p className="text-base font-bold text-slate-950">{sidebar.title}</p>
       <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">{sidebar.description}</p>
       <dl className="mt-5 space-y-4 border-t border-slate-100 pt-5 text-sm">
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">대표</dt>
-          <dd className="mt-1.5 text-base font-medium text-slate-900">{brandProfile.representative}</dd>
+          <dd className="mt-1.5 pl-0.5 text-base font-medium text-slate-900">{brandProfile.representative}</dd>
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">전화</dt>
-          <dd className="mt-1.5">
+          <dd className="mt-1.5 pl-0.5">
             <a
               href={brandContactLinks.phone}
               data-track="cta-phone"
@@ -158,7 +158,7 @@ function ContactSidebar() {
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">이메일</dt>
-          <dd className="mt-1.5 break-all">
+          <dd className="mt-1.5 break-all pl-0.5">
             <a
               href={brandContactLinks.email}
               data-track="cta-email"
@@ -171,7 +171,7 @@ function ContactSidebar() {
         </div>
         <div>
           <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">운영지역</dt>
-          <dd className="mt-1.5 text-base leading-relaxed text-slate-800">{brandProfile.serviceArea}</dd>
+          <dd className="mt-1.5 pl-0.5 text-base leading-relaxed text-slate-800">{brandProfile.serviceArea}</dd>
         </div>
       </dl>
     </aside>
@@ -589,10 +589,11 @@ export default function SpokeduContactForm() {
               아래에서 상담 유형을 선택하면 맞춤 입력 항목이 바로 표시됩니다.
             </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {contactTypeOptions.map((option) => {
+          <div className="grid gap-3 sm:grid-cols-2">
+            {contactTypeOptions.map((option, index) => {
               const active = inquiryType === option.id;
               const accent = accentStyles[option.accent];
+              const isLastOdd = index === contactTypeOptions.length - 1 && contactTypeOptions.length % 2 === 1;
               return (
                 <button
                   key={option.id}
@@ -600,7 +601,9 @@ export default function SpokeduContactForm() {
                   data-track={`contact-${option.id}`}
                   data-track-label={option.selectTrackLabel}
                   onClick={() => selectType(option.id)}
-                  className={`flex h-full min-h-[10.5rem] flex-col rounded-lg border p-4 text-left transition active:scale-[0.99] sm:p-5 ${cardInteractive} ${focusRing} ${
+                  className={`flex h-full min-h-[10.5rem] flex-col rounded-lg border p-5 text-left transition active:scale-[0.99] sm:p-6 ${
+                    isLastOdd ? 'sm:col-span-2' : ''
+                  } ${cardInteractive} ${focusRing} ${
                     active
                       ? accent.activeBorder
                       : `border-slate-200/90 bg-white ${fineHover}hover:border-slate-300`

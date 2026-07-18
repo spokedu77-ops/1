@@ -1199,8 +1199,10 @@ export function NoteEditor({
   useEffect(() => {
     if (!editor || typeof focusCaretOffset !== 'number' || focusCaretOffset < 0) return;
     requestAnimationFrame(() => {
-      const pos = Math.min(focusCaretOffset + 1, editor.state.doc.content.size);
-      editor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
+      const ed = editorRef.current;
+      if (!ed || ed !== editor || (ed as { isDestroyed?: boolean }).isDestroyed) return;
+      const pos = Math.min(focusCaretOffset + 1, ed.state.doc.content.size);
+      ed.chain().focus().setTextSelection({ from: pos, to: pos }).run();
     });
   }, [focusCaretOffset, editor]);
 
@@ -1215,13 +1217,15 @@ export function NoteEditor({
     }
 
     requestAnimationFrame(() => {
+      const ed = editorRef.current;
+      if (!ed || ed !== editor || (ed as { isDestroyed?: boolean }).isDestroyed) return;
       if (typeof focusCaretOffset === 'number' && focusCaretOffset >= 0) {
-        const pos = Math.min(focusCaretOffset + 1, editor.state.doc.content.size);
-        editor.chain().focus().setTextSelection({ from: pos, to: pos }).run();
+        const pos = Math.min(focusCaretOffset + 1, ed.state.doc.content.size);
+        ed.chain().focus().setTextSelection({ from: pos, to: pos }).run();
         return;
       }
       if (!isEditingRef.current) {
-        editor.commands.focus('start');
+        ed.commands.focus('start');
       }
     });
   }, [autoFocusSignal, editor, editorBlockId, focusCaretOffset]);

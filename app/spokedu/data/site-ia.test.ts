@@ -14,18 +14,17 @@ describe('spokedu site IA', () => {
     ]);
   });
 
-  it('includes program children with special education anchor', () => {
+  it('keeps program children as page-level destinations only', () => {
     const programs = siteNav.find((entry) => entry.type === 'group' && entry.label === '프로그램');
     expect(programs?.type).toBe('group');
     if (programs?.type !== 'group') return;
     expect(programs.children.map((child) => child.label)).toEqual([
       '개인·소그룹 수업',
       '기관 프로그램',
-      '특수체육',
       '커리큘럼·지도자 교육',
     ]);
-    const special = programs.children.find((child) => child.label === '특수체육');
-    expect(special?.href).toBe(`${SPOKEDU_BASE_PATH}/dispatch#special`);
+    // 특수체육은 전용 페이지가 아니라 기관 프로그램 라인업 하위 항목
+    expect(programs.children.some((child) => child.href.includes('#special'))).toBe(false);
   });
 
   it('defines six home sections with proof strip and audience gate', () => {
@@ -38,6 +37,7 @@ describe('spokedu site IA', () => {
     expect(homePage.proofStrip.items).toHaveLength(4);
     expect(homePage.proofStrip.processLine).toContain('현장 수업');
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
+    expect(homePage.proofStrip.title).toBe('왜 SPOKEDU인가');
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');
@@ -47,16 +47,21 @@ describe('spokedu site IA', () => {
     expect(homePage.cases.proofStats).toHaveLength(3);
     expect(homePage.cases.recordsCta.href).toBe(`${SPOKEDU_BASE_PATH}/records`);
     expect(homePage.cases.consultCta.href).toBe(`${SPOKEDU_BASE_PATH}/contact?type=dispatch`);
-    expect(homePage.cases.cards.length).toBeGreaterThanOrEqual(3);
-    expect(homePage.cases.cards.length).toBeLessThanOrEqual(4);
+    expect(homePage.cases.cards.length).toBe(4);
     expect(homePage.finalCta.items).toHaveLength(3);
     expect(homePage.finalCta.notes).toHaveLength(3);
     expect(homePage.finalCta.support).toContain('프로그램이 정해지지 않았어도');
   });
 
   it('uses verified catalog slugs for home cases', () => {
-    expect(HOME_MAIN_CASE_SLUGS).toEqual(['dongjak-spomove', 'yangcheon-paps', 'dasarang-oneday']);
+    expect(HOME_MAIN_CASE_SLUGS).toEqual([
+      'dongjak-spomove',
+      'yangcheon-paps',
+      'dasarang-oneday',
+      'seodaemun-event-booth',
+    ]);
     expect(homePage.cases.cards.map((card) => card.slug)).toEqual([...HOME_MAIN_CASE_SLUGS]);
+    expect(homePage.cases.cards).toHaveLength(4);
   });
 
   it('keeps home SEO aligned with the homepage positioning', () => {

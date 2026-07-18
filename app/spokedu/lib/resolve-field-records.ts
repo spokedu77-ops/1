@@ -3,8 +3,10 @@ import type { HomeFieldRecordCardFromCatalog } from '../data/field-records-catal
 import type { HomeMediaKey } from '../data/home-media';
 import type { FieldRecordItem } from '../data/records-page';
 
+/** slug → 로컬 records 폴더 미디어 (카탈로그 mediaKey와 동일하게 유지) */
 const stableRecordMediaBySlug: Partial<Record<string, HomeMediaKey>> = {
-  'dongjak-spomove': 'homeHero',
+  'dongjak-spomove': 'proofDongjak',
+  'yangcheon-paps': 'proofYangcheon',
   'dasarang-oneday': 'proofDasarang',
   'seodaemun-event-booth': 'proofEvent',
 };

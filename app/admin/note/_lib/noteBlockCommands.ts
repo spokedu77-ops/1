@@ -21,6 +21,11 @@ export type NoteBlockCommandResult = {
   fieldPatches: NoteBlockFieldPatch[];
   createdBlocks: NoteBlock[];
   removedBlocks: NoteBlock[];
+  focusTarget?: {
+    blockId: string;
+    part: 'title' | 'editor';
+    caretOffset?: number;
+  };
 };
 
 function emptyCommandResult(blocks: NoteBlock[]): NoteBlockCommandResult {
@@ -243,6 +248,7 @@ export function buildInsertBlockCommand(
   createdBlock: NoteBlock,
   parentId: string | null,
   insertIndex: number,
+  options?: { focus?: boolean },
 ): NoteBlockCommandResult {
   if (blocks.some((block) => block.id === createdBlock.id)) {
     return emptyCommandResult(blocks);
@@ -272,6 +278,14 @@ export function buildInsertBlockCommand(
     fieldPatches: [],
     createdBlocks: [inserted],
     removedBlocks: [],
+    ...(options?.focus === false
+      ? {}
+      : {
+        focusTarget: {
+          blockId: inserted.id,
+          part: inserted.type === 'toggle' ? 'title' : 'editor',
+        } as const,
+      }),
   };
 }
 

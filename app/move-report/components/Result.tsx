@@ -1,10 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ComputeResult } from '../types';
 import Radar from './Radar';
 import AxisRow from './AxisRow';
 import ResultShareActions from './ResultShareActions';
+import { coachUi } from '../i18n/coachUi';
 import { getMoveReportUi } from '../i18n/ui';
 import { formatOwnerPossessive, type MoveReportLocale } from '../lib/locale';
 import { axisLabelsJoined, topAxisHighlights } from '../lib/profileAxisLabels';
@@ -25,6 +27,10 @@ interface ResultProps {
   /** true: 내부 실험용(교육자 섹션). 공개 `/move-report`는 항상 false로 고정 */
   showEducatorCta?: boolean;
   locale?: MoveReportLocale;
+  /** 코치 관찰판 — 상담/공유/인스타 숨김, 수업 힌트·이력 중심 */
+  variant?: 'parent' | 'coachObserve';
+  /** 상단 뒤로 버튼 라벨 오버라이드 (예: 이력 목록으로) */
+  resetLabel?: string;
 }
 
 function DescAccordion({ desc, col, revealed }: { desc: string; col: string; revealed: boolean }) {
@@ -46,10 +52,14 @@ export default function Result({
   flash,
   showEducatorCta = false,
   locale = 'ko',
+  variant = 'parent',
+  resetLabel,
 }: ResultProps) {
   const { profile: p, bd, displayName, key } = result;
   const ui = useMemo(() => getMoveReportUi(locale), [locale]);
   const t = ui.result;
+  const isCoach = variant === 'coachObserve';
+  const ct = coachUi.result;
   const ownerPossessive = useMemo(() => formatOwnerPossessive(displayName, locale), [displayName, locale]);
   const [revealed, setRevealed] = useState(false);
   const [reportExpanded, setReportExpanded] = useState(false);
@@ -185,9 +195,13 @@ export default function Result({
           <div className="mr-result-hero-block" style={{ position: 'relative', zIndex: 2 }}>
             <header className={`mr-result-owner ${revealed ? 'anim-rise' : ''}`}>
               <p className="mr-result-owner-kicker" style={{ color: p.col }}>
-                {locale === 'en' ? `${ownerPossessive} MOVE Report` : `${ownerPossessive} MOVE 리포트`}
+                {isCoach
+                  ? ct.ownerKicker
+                  : locale === 'en'
+                    ? `${ownerPossessive} MOVE Report`
+                    : `${ownerPossessive} MOVE 리포트`}
               </p>
-              <p className="mr-result-owner-sub">{t.ownerSub}</p>
+              <p className="mr-result-owner-sub">{isCoach ? ct.ownerSub : t.ownerSub}</p>
             </header>
 
             <div className={revealed ? 'anim-rise d1' : ''}>
@@ -267,11 +281,11 @@ export default function Result({
             <div className="mr-result-topbar-actions">
               <button type="button" onClick={onReset} className="mr-result-back-btn">
                 <i className="fa-solid fa-arrow-left" aria-hidden />
-                {t.retry}
+                {resetLabel ?? (isCoach ? ct.backHub : t.retry)}
               </button>
               {onAnotherChild ? (
                 <button type="button" onClick={onAnotherChild} className="mr-result-another-btn">
-                  {t.anotherChild}
+                  {isCoach ? ct.anotherChild : t.anotherChild}
                 </button>
               ) : null}
             </div>
@@ -284,8 +298,8 @@ export default function Result({
           <div className="tabs mr-tabs-html">
             {(
               [
-                { id: 'report' as const, l: t.tabReport },
-                { id: 'solution' as const, l: t.tabSolution },
+                { id: 'report' as const, l: isCoach ? ct.tabReport : t.tabReport },
+                { id: 'solution' as const, l: isCoach ? ct.tabSolution : t.tabSolution },
               ] as const
             ).map((tabItem) => (
               <button
@@ -494,14 +508,35 @@ export default function Result({
                 </div>
               ) : null}
 
-              <ResultShareActions
-                profileKey={key}
-                graphCode={graphCodeStr}
-                displayName={displayName}
-                flash={flash}
-                showEducatorCta={showEducatorCta}
-                locale={locale}
-              />
+              {isCoach ? (
+                <section
+                  style={{
+                    marginTop: 4,
+                    borderRadius: 14,
+                    border: '1px solid #2A2A2A',
+                    background: '#161616',
+                    padding: '16px 14px',
+                  }}
+                >
+                  <p style={{ margin: '0 0 10px', fontSize: 13, color: '#BBBBBB', lineHeight: 1.55 }}>{ct.historyHint}</p>
+                  <Link
+                    href="/move-report/coach/history"
+                    className="btn-ghost"
+                    style={{ textDecoration: 'none', justifyContent: 'center', width: '100%', minHeight: 44 }}
+                  >
+                    {ct.viewHistory}
+                  </Link>
+                </section>
+              ) : (
+                <ResultShareActions
+                  profileKey={key}
+                  graphCode={graphCodeStr}
+                  displayName={displayName}
+                  flash={flash}
+                  showEducatorCta={showEducatorCta}
+                  locale={locale}
+                />
+              )}
             </div>
           )}
 
@@ -619,8 +654,8 @@ export default function Result({
                 </p>
               </div>
 
-              {/* 영문: 국내 인스타/홈 전환 CTA는 신뢰·맥락이 약해 숨김 */}
-              {locale !== 'en' ? (
+              {/* 영문·코치 관찰: 국내 인스타 CTA 숨김 */}
+              {locale !== 'en' && !isCoach ? (
                 <a
                   href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
                   target="_blank"
@@ -677,8 +712,8 @@ export default function Result({
             </div>
           )}
 
-          {/* 영문 버전은 국내 상담(/spokedu)으로 보내지 않음 */}
-          {locale !== 'en' ? (
+          {/* 영문·코치 관찰: 상담(/spokedu) CTA 없음 */}
+          {locale !== 'en' && !isCoach ? (
             <section
               style={{
                 marginTop: 18,
@@ -700,6 +735,28 @@ export default function Result({
                 {t.consultCta}
               </button>
             </section>
+          ) : null}
+
+          {isCoach ? (
+            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {onAnotherChild ? (
+                <button
+                  type="button"
+                  onClick={onAnotherChild}
+                  className="btn-fire"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                >
+                  {ct.anotherChild}
+                </button>
+              ) : null}
+              <Link
+                href="/move-report/coach/history"
+                className="btn-ghost"
+                style={{ textDecoration: 'none', justifyContent: 'center', width: '100%', minHeight: 44 }}
+              >
+                {ct.viewHistory}
+              </Link>
+            </div>
           ) : null}
         </div>
       </div>

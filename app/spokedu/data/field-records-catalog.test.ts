@@ -33,9 +33,9 @@ describe('field-records-catalog', () => {
     expect(yangcheon.mediaKey).toBe('proofYangcheon');
   });
 
-  it('uses proofCommunity media for dasarang oneday', () => {
+  it('uses proofDasarang media for dasarang oneday', () => {
     const dasarang = getFieldRecordCatalogItem('dasarang-oneday');
-    expect(dasarang.mediaKey).toBe('proofCommunity');
+    expect(dasarang.mediaKey).toBe('proofDasarang');
   });
 
   it('keeps catalog slugs unique', () => {

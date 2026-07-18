@@ -16,6 +16,10 @@ type SpokeduHomeLandingProps = {
   proofCards: HomeFieldRecordCardWithThumbnail[];
 };
 
+/**
+ * 홈 흐름
+ * 히어로(1) → 경로 선택 → SPOMOVE 프로그램 섹션 → 왜 SPOKEDU → 사례 → 후기 → 상담 CTA
+ */
 export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   const caseCards = mergeHomeCaseCards(proofCards);
 
@@ -29,9 +33,9 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       </a>
 
       <HomeHero />
-      <HomeProofStrip />
       <HomeAudienceGates />
       <HomeSpomoveSpotlight />
+      <HomeProofStrip />
       <HomeFieldRecords caseCards={caseCards} />
       <HomePartnerReviews />
       <HomeFinalCta />

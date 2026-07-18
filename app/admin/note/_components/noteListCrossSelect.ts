@@ -8,7 +8,9 @@ import {
   type CrossTextSurface,
 } from '../_lib/noteCrossSelectCore';
 import {
+  buildDocumentCrossBlockMeta,
   buildListCrossBlockMeta,
+  hoverDocumentCaretPos,
   hoverListCaretPos,
 } from '../_lib/noteCrossSelectBlockMeta';
 import {
@@ -23,10 +25,17 @@ import { startTextDragSession } from '../_lib/noteTextDragSession';
 import { getNoteEditor } from './noteEditorRegistry';
 import {
   applyBlockPreviewCrossHighlight,
+  applyBlockRowCrossHighlight,
   clearBlockPreviewCrossHighlight,
   getBlockPreviewTextRoot,
   hoverBlockPreviewTextPos,
 } from './noteBlockPreviewCrossSelect';
+import {
+  applyToggleTitleCrossHighlight,
+  clearToggleTitleCrossHighlight,
+  getToggleTitleInput,
+  rowHasToggleTitle,
+} from './noteToggleTitleCrossSelect';
 import {
   applyListCrossHighlight,
   bindListCrossHighlightEditorLookup,
@@ -61,7 +70,16 @@ function listTextTargetElement(target: EventTarget | null): HTMLElement | null {
 function isListTextTarget(target: EventTarget | null): boolean {
   const el = listTextTargetElement(target);
   if (!el) return false;
-  return !!el.closest('[data-note-list-text] .ProseMirror, [data-note-list-text] [data-note-preview-text]');
+  return !!el.closest(
+    '[data-note-list-text], [data-note-list-text] .ProseMirror, [data-note-list-text] [data-note-preview-text]',
+  );
+}
+
+function blockIdFromPointerTarget(target: EventTarget | null): string | null {
+  const el = listTextTargetElement(target);
+  const row = el?.closest('[data-note-block-row]');
+  const id = row?.getAttribute('data-block-id');
+  return id && id.length > 0 ? id : null;
 }
 
 function getListSiblingIds(blockId: string): string[] {
@@ -86,6 +104,17 @@ function getListSiblingIds(blockId: string): string[] {
     if (run.includes(blockId)) return run;
   }
   return [blockId];
+}
+
+function getOrderedBlockRowIds(): string[] {
+  return [...document.querySelectorAll<HTMLElement>('[data-note-block-row]')]
+    .sort((a, b) => {
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      return ra.top - rb.top || ra.left - rb.left;
+    })
+    .map((row) => row.getAttribute('data-block-id'))
+    .filter((id): id is string => !!id);
 }
 
 /** 비활성 목록 블록은 preview DOM — editor fallback 시 from=1 오프셋 버그 */
@@ -113,22 +142,28 @@ function collapseEditorSelection(editor: Editor, pos?: number) {
 function applyCrossDecorations(ranges: CrossSelectRange[]) {
   const touched = new Set<string>();
   ranges.forEach(({ blockId, from, to, surface }) => {
+    touched.add(blockId);
+    if (surface === 'toggle-title') {
+      const input = getToggleTitleInput(blockId);
+      if (input) applyToggleTitleCrossHighlight(input, from, to);
+      else applyBlockRowCrossHighlight(blockId);
+      return;
+    }
     if (surface === 'list-preview' || surface === 'preview') {
-      touched.add(blockId);
-      applyBlockPreviewCrossHighlight(blockId, from, to);
+      if (to <= from) applyBlockRowCrossHighlight(blockId);
+      else applyBlockPreviewCrossHighlight(blockId, from, to);
       return;
     }
     const editor = getNoteEditor(blockId);
-    if (!editor) return;
-    touched.add(blockId);
-    applyListCrossHighlight(editor, from, to);
+    if (editor) applyListCrossHighlight(editor, from, to);
+    else applyBlockRowCrossHighlight(blockId);
   });
 
-  const siblingIds = ranges.length > 0 ? getListSiblingIds(ranges[0].blockId) : [];
-  siblingIds.forEach((id) => {
+  getOrderedBlockRowIds().forEach((id) => {
     if (touched.has(id)) return;
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
+    if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
     clearBlockPreviewCrossHighlight(id);
   });
 }
@@ -145,6 +180,7 @@ function clearAllCrossHighlights(siblings: string[]) {
   siblings.forEach((id) => {
     const editor = getNoteEditor(id);
     if (editor) clearListCrossHighlight(editor);
+    if (rowHasToggleTitle(id)) clearToggleTitleCrossHighlight(id);
     clearBlockPreviewCrossHighlight(id);
   });
 }
@@ -156,15 +192,14 @@ function clearCrossSelectState() {
 export function reapplyActiveListCrossDecorations() {
   const ranges = getUnifiedCrossSelectRanges();
   if (ranges.length === 0) return;
-  const siblings = getListSiblingIds(ranges[0].blockId);
   applyCrossDecorations(ranges);
-  suppressNativeSelections(siblings);
+  suppressNativeSelections(ranges.map((range) => range.blockId));
 }
 
 export function clearActiveListCrossSelectState() {
-  if (getUnifiedCrossSelectRanges().length > 0) {
-    const siblings = getListSiblingIds(getUnifiedCrossSelectRanges()[0].blockId);
-    clearAllCrossHighlights(siblings);
+  const ranges = getUnifiedCrossSelectRanges();
+  if (ranges.length > 0) {
+    clearAllCrossHighlights(ranges.map((range) => range.blockId));
   }
   clearCrossSelectState();
 }
@@ -175,10 +210,21 @@ function beginListTextDragSession(anchor: CrossSelectAnchor, startX: number, sta
     anchor,
     startX,
     startY,
-    getSpanBlockIds: () => siblings,
-    resolveHoverBlockId: (x, y) => blockIdFromPoint(x, y, siblings),
-    hoverCaretPos: (blockId, x, y) => hoverListCaretPos(blockId, x, y),
-    getBlockMeta: buildListCrossBlockMeta,
+    getSpanBlockIds: (hoverId) => {
+      if (siblings.includes(hoverId)) return siblings;
+      const order = getOrderedBlockRowIds();
+      const anchorIdx = order.indexOf(anchor.blockId);
+      const hoverIdx = order.indexOf(hoverId);
+      if (anchorIdx < 0 || hoverIdx < 0) return siblings;
+      const lo = Math.min(anchorIdx, hoverIdx);
+      const hi = Math.max(anchorIdx, hoverIdx);
+      return order.slice(lo, hi + 1);
+    },
+    resolveHoverBlockId: (x, y) => blockIdFromPoint(x, y),
+    hoverCaretPos: (blockId, x, y) =>
+      (siblings.includes(blockId) ? hoverListCaretPos(blockId, x, y) : hoverDocumentCaretPos(blockId, x, y)),
+    getBlockMeta: (blockId) =>
+      (siblings.includes(blockId) ? buildListCrossBlockMeta(blockId) : buildDocumentCrossBlockMeta(blockId)),
     onDragStart: () => clearActiveListCrossSelectState(),
     onIntraBlock: (x, y) => {
       if (anchor.surface === 'editor') {
@@ -207,7 +253,7 @@ function beginListTextDragSession(anchor: CrossSelectAnchor, startX: number, sta
     onCrossBlock: (ranges, x, y) => {
       if (!isMultiBlockCrossSelect(ranges)) return;
       commitCrossSelectRanges(ranges, { listDrag: true });
-      suppressNativeSelections(siblings, blockIdFromPoint(x, y, siblings) ?? undefined);
+      suppressNativeSelections(siblings, blockIdFromPoint(x, y) ?? undefined);
       applyCrossDecorations(ranges);
       document.dispatchEvent(new CustomEvent('note-hide-format-toolbar'));
     },
@@ -217,7 +263,7 @@ function beginListTextDragSession(anchor: CrossSelectAnchor, startX: number, sta
         return;
       }
       commitCrossSelectRanges(ranges, { listDrag: false });
-      const hoverId = blockIdFromPoint(x, y, siblings) ?? anchor.blockId;
+      const hoverId = blockIdFromPoint(x, y) ?? anchor.blockId;
       const focusRange = ranges.find((range) => range.blockId === hoverId) ?? ranges[ranges.length - 1];
       suppressNativeSelections(siblings, focusRange.blockId);
       applyCrossDecorations(ranges);
@@ -248,7 +294,7 @@ function onPointerDown(e: PointerEvent) {
     return;
   }
 
-  const blockId = blockIdFromPoint(e.clientX, e.clientY);
+  const blockId = blockIdFromPointerTarget(e.target) ?? blockIdFromPoint(e.clientX, e.clientY);
   if (!blockId) return;
 
   const editor = getNoteEditor(blockId);

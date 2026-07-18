@@ -10,9 +10,11 @@ import {
   btnPrimary,
   btnSecondary,
   koreanLineBreak,
-  landingCardShell,
+  landingCardFrame,
+  landingCardPanelPad,
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
+import { AudienceTrustStrip } from './audience-trust-strip';
 import { CurriculumInquiryForm } from './curriculum-inquiry-form';
 import { HomeSectionRule } from './home-section-rule';
 import { LandingSectionHeading } from './landing-section-heading';
@@ -21,8 +23,8 @@ import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
 
-const contentCardShell = `flex h-full flex-col overflow-hidden ${landingCardShell}`;
-const exampleCardShell = `flex h-full flex-col overflow-hidden ${landingCardShell}`;
+const contentCardShell = `flex h-full flex-col overflow-hidden ${landingCardFrame}`;
+const exampleCardShell = `flex h-full flex-col overflow-hidden ${landingCardFrame}`;
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
@@ -61,21 +63,12 @@ export default function CurriculumLanding() {
       />
       </div>
 
-      <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
-        <span className="inline-flex items-center rounded-full bg-teal-600/10 px-3.5 py-1.5 text-xs font-semibold text-teal-900">
-          {curriculumPage.hero.trustBadge}
-        </span>
-        <p className="mt-6 text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">
-          {curriculumPage.trustMetrics.eyebrow}
-        </p>
-        <dl className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
-          {curriculumPage.trustMetrics.items.map((item) => (
-            <div key={item.label}>
-              <dt className="text-2xl font-bold tracking-tight text-stone-950 sm:text-[1.75rem]">{item.value}</dt>
-              <dd className={`mt-1 text-sm text-stone-600 ${koreanLineBreak}`}>{item.label}</dd>
-            </div>
-          ))}
-        </dl>
+      <Section className="border-y border-stone-200 bg-white px-1 py-8 sm:px-2 sm:py-10">
+        <AudienceTrustStrip
+          badge={curriculumPage.hero.trustBadge}
+          eyebrow={curriculumPage.trustMetrics.eyebrow}
+          items={curriculumPage.trustMetrics.items}
+        />
       </Section>
 
       <HomeSectionRule />
@@ -89,7 +82,7 @@ export default function CurriculumLanding() {
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           {curriculumPage.leaderAxes.items.map((item) => (
-            <article key={item.title} className={`px-5 py-5 ${landingCardShell}`}>
+            <article key={item.title} className={`${landingCardPanelPad} ${landingCardFrame}`}>
               <h3 className="text-base font-semibold text-slate-950">{item.title}</h3>
               <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.description}</p>
             </article>
@@ -114,7 +107,7 @@ export default function CurriculumLanding() {
                 className="aspect-[5/3] min-h-[120px] shrink-0 rounded-none border-0 sm:min-h-0"
                 photoPriority={index === 0}
               />
-              <div className="flex flex-1 flex-col border-t border-slate-100 p-5">
+              <div className={`flex flex-1 flex-col border-t border-slate-100 ${landingCardPanelPad}`}>
                 <h3 className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</h3>
                 <p className={`mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                   {item.description}
@@ -135,7 +128,7 @@ export default function CurriculumLanding() {
         />
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
           {curriculumPage.trainingTracks.items.map((item) => (
-            <article key={item.title} className={`px-5 py-5 ${landingCardShell}`}>
+            <article key={item.title} className={`px-5 py-5 ${landingCardFrame}`}>
               <h3 className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</h3>
               <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.body}</p>
             </article>

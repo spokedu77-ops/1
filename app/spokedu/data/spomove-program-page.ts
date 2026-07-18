@@ -3,37 +3,36 @@ import { SPOKEDU_BASE_PATH } from './site';
 
 export const spomoveProgramPage = {
   hero: {
-    kicker: '에듀테크 · 인지·신체 반응형 놀이체육',
-    lines: ['보고, 판단하고,', '몸으로 반응하는', '에듀테크 놀이체육'] as const,
-    subtitle:
-      '빔 화면의 색, 위치, 방향, 신호를 보고 아이들이 직접 움직이며 반응하는 스포키듀의 에듀테크 놀이체육 프로그램입니다.',
+    kicker: '프로그램',
+    lines: ['보고 판단하고 움직이는', '에듀테크 체육'] as const,
+    subtitle: '빔 신호를 읽고 4색 패드 위에서 반응하는 SPOMOVE. 기관 정규수업·행사·통합반에 맞춰 운영합니다.',
     mediaKey: 'programSpomove' as HomeMediaKey,
   },
   heroCta: {
-    label: 'SPOMOVE 도입 문의하기',
+    label: '도입 문의',
     href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     trackLabel: 'program-spomove-dispatch-hero',
   },
   overview: {
-    title: 'SPOMOVE란',
-    body: '빔 화면에 제시되는 색, 위치, 방향, 신호를 보고 아이들이 직접 움직이며 반응하는 빔 기반 에듀테크 놀이체육 프로그램입니다. 화면을 보는 활동이 아니라, 신호를 보고 몸으로 반응하는 수업입니다.',
-    flow: ['보고', '선택하고', '판단하고', '움직이는'] as const,
+    title: '화면을 보는 수업이 아닙니다',
+    body: '색·위치·방향·리듬을 읽고, 몸이 바로 반응하는 수업입니다.',
+    flow: ['인지', '선택', '수행', '조절'] as const,
   },
   padSystem: {
-    eyebrow: 'FOUR-COLOR PAD',
-    title: '한 장의 4색 패드가 움직임의 기준이 됩니다.',
-    body: '빨강·노랑·초록·파랑의 고정된 공간은 화면의 신호를 실제 발 위치로 연결합니다. 아이는 색을 맞히는 데서 끝나지 않고, 목표 위치를 선택해 이동하고 멈추며 다음 동작을 준비합니다.',
+    eyebrow: '핵심 구조',
+    title: '4색 패드가 움직임의 기준이 됩니다',
+    body: '화면 신호가 발 위치(빨강·노랑·초록·파랑)로 이어집니다. 이 한 장이 SPOMOVE의 중심입니다.',
     points: [
-      { title: '인지', body: '화면의 색·위치·방향·형태 변화를 확인합니다.' },
-      { title: '선택', body: '여러 정보 중 현재 규칙에 필요한 반응을 결정합니다.' },
-      { title: '수행', body: '선택한 반응을 스텝·점프·터치·방향 전환으로 실행합니다.' },
-      { title: '조절', body: '리듬과 순서에 맞춰 움직임의 속도와 타이밍을 이어갑니다.' },
+      { title: '인지', body: '색·위치·방향 변화를 읽습니다.' },
+      { title: '선택', body: '규칙에 맞는 반응을 고릅니다.' },
+      { title: '수행', body: '스텝·점프·터치로 실행합니다.' },
+      { title: '조절', body: '속도와 타이밍을 이어갑니다.' },
     ] as const,
   },
   reactionLevels: {
-    eyebrow: 'PROGRAM STRUCTURE',
-    title: '반응의 수준을 네 가지 영역으로 설계합니다.',
-    lead: 'SPOMOVE는 여러 게임을 단순히 모아 놓은 프로그램이 아닙니다. 하나의 자극에 바로 움직이는 단계부터 규칙·억제·기억이 필요한 과제와 몰입형 움직임까지 체계적으로 확장합니다.',
+    eyebrow: '난이도',
+    title: '반응은 단계적으로 깊어집니다',
+    lead: '단순 반응부터 선택·복합·몰입까지, 기관 대상에 맞춰 조절합니다.',
     items: [
       {
         level: '1',

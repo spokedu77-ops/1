@@ -8,8 +8,9 @@ import {
   homeSectionH2,
   homeSectionScrollMt,
   koreanText,
-  siteBtnPrimary,
-  siteBtnSecondary,
+  siteBtnGhostOnDark,
+  siteBtnPrimaryOnHero,
+  siteBtnSecondaryOnDark,
   siteContainer,
 } from '../../lib/ui-classes';
 import { TrackedLink } from './tracked-link';
@@ -49,7 +50,7 @@ export function HomeFinalCta() {
               <TrackedLink
                 href={primary.href}
                 trackLabel={primary.trackLabel}
-                className={`${siteBtnPrimary} w-full bg-white text-[#0B1220] hover:bg-white/90 ${homeFocusRing}`}
+                className={`${siteBtnPrimaryOnHero} w-full ${homeFocusRing}`}
               >
                 {primary.label}
               </TrackedLink>
@@ -58,7 +59,7 @@ export function HomeFinalCta() {
               <TrackedLink
                 href={secondary.href}
                 trackLabel={secondary.trackLabel}
-                className={`${siteBtnSecondary} w-full border-white/30 bg-transparent text-white hover:bg-white/10 ${homeFocusRing}`}
+                className={`${siteBtnSecondaryOnDark} w-full ${homeFocusRing}`}
               >
                 {secondary.label}
               </TrackedLink>
@@ -67,7 +68,7 @@ export function HomeFinalCta() {
               <TrackedLink
                 href={tertiary.href}
                 trackLabel={tertiary.trackLabel}
-                className={`inline-flex min-h-12 w-full items-center justify-center text-[15px] font-semibold text-white/80 underline-offset-4 transition hover:text-white hover:underline ${homeFocusRing}`}
+                className={`${siteBtnGhostOnDark} w-full text-white ${homeFocusRing}`}
               >
                 {tertiary.label}
               </TrackedLink>

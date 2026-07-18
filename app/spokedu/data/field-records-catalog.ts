@@ -61,8 +61,6 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-dongjak-spomove-blog',
     homeTrackLabel: 'cta-home-proof-dongjak-blog',
     filters: ['regular', 'edtech'],
-    thumbnailSrc:
-      'https://mblogthumb-phinf.pstatic.net/MjAyNjA1MThfMTE2/MDAxNzc5MDYwNTg4OTM2.8aN8D0TmEBq95IMW2IsF_0wpYPiZ5ATdW9r3ALfTPGwg.tZv4eTDgkX_92wP15vO_cI3k4CkyNoUQRWW4Y4DoWVMg.PNG/SE-b2da2054-ff7e-4ccc-b4d4-f26cca770b0e.png?type=w800',
   },
   {
     slug: 'yangcheon-paps',
@@ -78,8 +76,6 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-yangcheon-paps-blog',
     homeTrackLabel: 'cta-home-proof-yangcheon-paps-blog',
     filters: ['regular'],
-    thumbnailSrc:
-      'https://mblogthumb-phinf.pstatic.net/MjAyNjA1MTVfMTM5/MDAxNzc4ODEzODQ2NjQw.foLlYO1fCe6aONsCwWsaVUi9K7wmUFWc-MJBIdmTbuYg.8hqv6ZwZos7TYMWKVD9UoXe9b1Yd1Mo-BI_KtCcqFoMg.PNG/SE-8a5335e4-6807-497f-96c5-cac330a909b8.png?type=w800',
   },
   {
     slug: 'maedong-sports-stepup',
@@ -95,8 +91,6 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-maedong-sports-blog',
     homeTrackLabel: 'cta-home-proof-maedong-blog',
     filters: ['regular'],
-    thumbnailSrc:
-      'https://mblogthumb-phinf.pstatic.net/MjAyNjA1MThfMTY5/MDAxNzc5MDU5Nzk0MDEw.KNC6yKUgZiY2VMStQE5HjswYxJlqYunO06kSOlDdRE8g.VxM4hKR_Ke7lJoFdLjAxRKnr5QHrld5rwza3n0WaqGUg.PNG/SE-7d525f02-11a5-44ff-9d54-aa89e0e0aba5.png?type=w800',
   },
   {
     slug: 'dasarang-oneday',
@@ -106,14 +100,12 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     operationType: '원데이·행사',
     description:
       '펀스틱 펜싱, 플로어 컬링, 신체기능 놀이체육, SPOMOVE 리듬챌린지로 90분 원데이 체육 프로그램을 운영했습니다.',
-    mediaKey: 'proofCommunity',
+    mediaKey: 'proofDasarang',
     href: 'https://blog.naver.com/spokedutogether/224286297222',
     ctaLabel: '블로그 후기 보기',
     recordsTrackLabel: 'records-dasarang-blog',
     homeTrackLabel: 'cta-home-proof-dasarang-blog',
     filters: ['oneday', 'edtech'],
-    thumbnailSrc:
-      'https://mblogthumb-phinf.pstatic.net/MjAyNjA1MTVfMTc1/MDAxNzc4ODE2MDMwNDkw.qNpD8ajawYjmxS7YLhbCr-KYDFvO3N3PKAVQWasSBTQg.0wUMq42RBB888NMXvzrgCXVzDoahoxB95dRBOd34NSsg.PNG/image.png?type=w800',
   },
   {
     slug: 'seodaemun-event-booth',
@@ -129,8 +121,6 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-seodaemun-blog',
     homeTrackLabel: 'cta-home-proof-seodaemun-blog',
     filters: ['oneday', 'edtech'],
-    thumbnailSrc:
-      'https://mblogthumb-phinf.pstatic.net/MjAyNjA1MTJfNjUg/MDAxNzc4NTUyMTUyNjY0.TjWIB9vIYjbs22CrTb9zObO_gO6spbFaDn7g1z8Dgfcg.hmNXeG67IPw7jisQrqmsy8TlciaDac-28yD9P4f_OxEg.PNG/image.png?type=w800',
   },
 ] as const;
 

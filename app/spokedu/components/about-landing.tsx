@@ -89,7 +89,7 @@ export function AboutLanding() {
                   sizes="card3"
                   photoPriority={index === 0}
                 />
-                <div className={`flex flex-1 flex-col border-t-4 p-4 sm:p-5 ${roleAccent[index] ?? ''}`}>
+                <div className={`flex flex-1 flex-col border-t-4 p-5 sm:p-6 ${roleAccent[index] ?? ''}`}>
                   <h3 className="text-base font-bold leading-snug text-slate-950 [word-break:keep-all] sm:text-lg">
                     {card.title}
                   </h3>

@@ -138,14 +138,14 @@ export const privatePage = {
         title: '2~4명 소그룹',
         description:
           '또래와 함께 움직이며 참여 경험을 넓힙니다. 규칙·순서·협동을 자연스럽게 경험하는, 즐겁게 이어지는 흐름입니다.',
-        mediaKey: 'proofCommunity' as HomeMediaKey,
+        mediaKey: 'trackSmallGroup' as HomeMediaKey,
       },
     ],
   },
   curriculumPrograms: {
-    eyebrow: '종목',
-    title: '전문 커리큘럼',
-    lead: '아이의 연령과 기초 체력을 분석하여 가장 적합한 프로그램을 개별 설계합니다.',
+    eyebrow: '종목별 커리큘럼 가이드',
+    title: '목표 종목에 맞춰 설계하는 수업 방향',
+    lead: '줄넘기·구기·유아체육 등 목표 종목에 맞춰 수업 방향을 제안합니다. 연령과 기초 체력을 함께 보고 맞는 구성을 안내합니다.',
     items: [
       {
         img: 'https://i.postimg.cc/8Cjz4T9Y/Kakao-Talk-20260415-155838324.png',
@@ -221,6 +221,7 @@ export const privatePage = {
           '신체를 안정시키며 오늘 성취한 부분에 대해 스스로 이야기하게 유도하고, 긍정적인 피드백으로 자존감을 높여 마무리합니다.',
       },
     ] satisfies PrivateClassFlowStep[],
+    /** 현장 실사진만 (커리큘럼 가이드 PNG 금지) — 큰 1 + 작은 2 */
     images: [
       {
         src: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg',
@@ -234,18 +235,6 @@ export const privatePage = {
       {
         src: 'https://i.postimg.cc/VkKxKnPV/DSC06500.jpg',
         alt: '스포키듀 수업 스케치 — 현장 지도',
-      },
-      {
-        src: 'https://i.postimg.cc/JhGzxRvn/Kakao-Talk-20260415-155337917.png',
-        alt: '스포키듀 수업 스케치 — 놀이 기반 활동',
-      },
-      {
-        src: 'https://i.postimg.cc/R0yVbjz5/Kakao-Talk-20260415-155848168.png',
-        alt: '스포키듀 수업 스케치 — 구기 활동',
-      },
-      {
-        src: 'https://i.postimg.cc/8Cjz4T9Y/Kakao-Talk-20260415-155838324.png',
-        alt: '스포키듀 수업 스케치 — 줄넘기',
       },
     ] satisfies PrivateClassFlowImage[],
   },

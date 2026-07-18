@@ -4,31 +4,31 @@ import { motion, useReducedMotion } from 'framer-motion';
 import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { privatePage } from '../data/private-page';
-import { audienceLandingStack, koreanLineBreak, landingCardShell } from '../lib/ui-classes';
+import { audienceLandingStack, koreanLineBreak, landingCardFrame, landingCardPanelPad } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { HomeSectionRule } from './home-section-rule';
 import { LandingFaqList } from './landing-faq-list';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingStepPanel } from './landing-step-grid';
-import { PrivateCurriculumSection } from './private-curriculum-section';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { PrivateApplyForm } from './private-apply-form';
 import { PrivateClassFlowGallery } from './private-class-flow-gallery';
+import { PrivateCurriculumSection } from './private-curriculum-section';
 import { PrivateMoveReportSection } from './private-move-report-section';
 import { PrivateTrustMetrics } from './private-trust-metrics';
 import { LandingAnchorNav } from './landing-anchor-nav';
 import { LandingFloatingCta } from './landing-floating-cta';
 import { MediaPanel } from './visual';
 
-const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
-const locationCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
-const reviewCardShell = `flex h-full flex-col border-l-4 border-l-teal-600 p-4 sm:p-5 ${landingCardShell}`;
+const whoCardShell = `flex h-full flex-col ${landingCardPanelPad} ${landingCardFrame}`;
+const locationCardShell = `flex h-full flex-col ${landingCardPanelPad} ${landingCardFrame}`;
+const reviewCardShell = `flex h-full flex-col border-l-4 border-l-teal-600 ${landingCardPanelPad} ${landingCardFrame}`;
 const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
 const privateAnchorItems = [
   { href: '#instructors', label: '소개' },
-  { href: '#curriculum', label: '커리큘럼' },
   { href: '#class-flow', label: '수업 현장' },
+  { href: '#curriculum', label: '종목 가이드' },
   { href: '#reviews', label: '후기' },
 ] as const;
 const privateDecisionFlow = [
@@ -101,7 +101,7 @@ export default function PrivateLanding() {
         ariaLabel="개인수업 랜딩 바로가기"
       />
 
-      <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
+      <Section className="border-y border-stone-200 bg-white px-1 py-8 sm:px-2 sm:py-10">
         <PrivateTrustMetrics />
       </Section>
 
@@ -168,7 +168,7 @@ export default function PrivateLanding() {
         />
         <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
           {privatePage.instructors.items.map((item) => (
-            <article key={item.name} className={`relative overflow-hidden pt-1 ${landingCardShell}`}>
+            <article key={item.name} className={`relative overflow-hidden pt-1 ${landingCardFrame}`}>
               <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-500 to-teal-700" aria-hidden />
               <div className="flex flex-col items-center px-5 py-6 text-center sm:px-6 sm:py-7">
                 <div className="relative h-36 w-36 shrink-0 overflow-hidden rounded-[1.375rem] border border-slate-200 bg-slate-100 sm:h-44 sm:w-44">
@@ -210,17 +210,13 @@ export default function PrivateLanding() {
                 className="aspect-[16/10] min-h-[150px] shrink-0 rounded-none border-0 sm:min-h-0"
                 photoPriority={index === 0}
               />
-              <div className="flex flex-1 flex-col border-t border-slate-100 p-4 sm:p-5">
+              <div className={`flex flex-1 flex-col border-t border-slate-100 ${landingCardPanelPad}`}>
                 <h3 className="text-[15px] font-semibold text-slate-950 sm:text-lg">{item.title}</h3>
                 <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.description}</p>
               </div>
             </article>
           ))}
         </div>
-      </Section>
-
-      <Section id="curriculum" className="scroll-mt-36">
-        <PrivateCurriculumSection />
       </Section>
 
       <Section id="class-flow" className="scroll-mt-36 space-y-5 sm:space-y-6">
@@ -230,20 +226,40 @@ export default function PrivateLanding() {
           lead={privatePage.classFlow.lead}
           accent="teal"
         />
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.05fr] lg:items-start lg:gap-5">
-          <ol className="space-y-2.5">
-            {privatePage.classFlow.steps.map((step) => (
-              <li key={step.num} className={`px-4 py-3.5 sm:px-5 sm:py-4 ${landingCardShell}`}>
-                <span className="text-[10px] font-bold tracking-[0.1em] text-teal-700">{step.num}</span>
-                <h3 className={`mt-1 text-[15px] font-semibold text-slate-950 sm:text-base ${koreanLineBreak}`}>
-                  {step.title}
-                </h3>
-                <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{step.description}</p>
-              </li>
-            ))}
-          </ol>
-          <PrivateClassFlowGallery images={privatePage.classFlow.images} />
+        <div className="grid gap-3 lg:grid-cols-2 lg:grid-rows-3 lg:items-stretch lg:gap-3 lg:min-h-[26rem]">
+          {privatePage.classFlow.steps.map((step, index) => (
+            <article
+              key={step.num}
+              className={[
+                'flex h-full flex-col justify-center px-4 py-3.5 sm:px-5 sm:py-4',
+                landingCardFrame,
+                index === 0 ? 'lg:col-start-1 lg:row-start-1' : '',
+                index === 1 ? 'lg:col-start-1 lg:row-start-2' : '',
+                index === 2 ? 'lg:col-start-1 lg:row-start-3' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+            >
+              <span className="text-[10px] font-bold tracking-[0.1em] text-teal-700">{step.num}</span>
+              <h3 className={`mt-1 text-[15px] font-semibold text-slate-950 sm:text-base ${koreanLineBreak}`}>
+                {step.title}
+              </h3>
+              <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{step.description}</p>
+            </article>
+          ))}
+          <div className="min-h-[240px] sm:min-h-[280px] lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:min-h-0 lg:h-full">
+            <PrivateClassFlowGallery images={privatePage.classFlow.images} />
+          </div>
         </div>
+      </Section>
+
+      <HomeSectionRule />
+
+      <Section
+        id="curriculum"
+        className="scroll-mt-36 rounded-2xl border border-slate-200/80 bg-slate-50/90 px-4 py-6 sm:px-6 sm:py-8"
+      >
+        <PrivateCurriculumSection />
       </Section>
 
       <HomeSectionRule />

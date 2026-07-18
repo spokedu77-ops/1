@@ -292,6 +292,15 @@ export default function AdminMoveReportPage() {
               영문 버전 열기
               <ExternalLink className="h-4 w-4" />
             </Link>
+            <Link
+              href="/move-report/coach"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[40px] items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Coach 버전 열기
+              <ExternalLink className="h-4 w-4" />
+            </Link>
           </div>
         </div>
 

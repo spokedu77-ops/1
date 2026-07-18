@@ -35,11 +35,33 @@ export function decideStructureReconcile(input: {
 export function readAuthorityBlockText(content: unknown): string {
   if (!content || typeof content !== 'object') return '';
   const record = content as Record<string, unknown>;
-  const text = record.text;
-  if (typeof text === 'string' && text.trim()) return text.trim();
-  const title = record.title;
-  if (typeof title === 'string' && title.trim()) return title.trim();
+  for (const key of ['text', 'title', 'html', 'body', 'caption', 'url', 'page_document_id']) {
+    const value = record[key];
+    if (key === 'html' && isEmptyHtml(value)) continue;
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
   return '';
+}
+
+function isEmptyHtml(value: unknown): boolean {
+  return value === ''
+    || value === '<p></p>'
+    || value === '<p><br></p>'
+    || value === '<p><br class="ProseMirror-trailingBreak"></p>';
+}
+
+function contentHasStructuredPresence(content: unknown): boolean {
+  if (!content || typeof content !== 'object') return false;
+  return Object.entries(content as Record<string, unknown>).some(([key, value]) => {
+    if (['checked', 'collapsed'].includes(key)) return false;
+    if (typeof value === 'string') {
+      if (key === 'html') return !isEmptyHtml(value);
+      return value.trim().length > 0;
+    }
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === 'object') return Object.keys(value).length > 0;
+    return false;
+  });
 }
 
 const STRUCTURAL_PRESENCE_TYPES = new Set([
@@ -61,9 +83,7 @@ export function documentHasProtectablePresence(
     if (readAuthorityBlockText(block.content).length > 0) return true;
     if (STRUCTURAL_PRESENCE_TYPES.has(block.type)) return true;
     const content = block.content;
-    if (!content || typeof content !== 'object') return false;
-    const url = (content as Record<string, unknown>).url;
-    return typeof url === 'string' && url.trim().length > 0;
+    return contentHasStructuredPresence(content);
   });
 }
 
@@ -132,9 +152,7 @@ export function decideRegressiveContentOp(input: {
 
 /** regressive용 — content.url 등 미디어 필드 (type만으로는 true 아님) */
 export function contentHasMediaPresence(content: unknown): boolean {
-  if (!content || typeof content !== 'object') return false;
-  const url = (content as Record<string, unknown>).url;
-  return typeof url === 'string' && url.trim().length > 0;
+  return contentHasStructuredPresence(content);
 }
 
 /** open: 빈 서버보다 local 본문을 지킬지 */

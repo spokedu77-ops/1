@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react';
 import { copyTextToClipboard } from '../../lib/shareCard';
 import { trackMoveReportEvent } from '../../lib/events';
 import { EDUCATOR_ROLE_OPTIONS, EDUCATOR_TARGET_AGE_OPTIONS } from '../../components/EducatorBetaForm';
+import { coachUi } from '../../i18n/coachUi';
 import { isCoachSlugBlocklisted, isValidCoachSlugFormat, normalizeCoachSlugInput } from '../../lib/coachSlug';
 
 /** 학부모에게 그대로 보낼 수 있는 안내문(링크는 아래에 붙여 넣기) */
@@ -84,8 +85,8 @@ export default function CoachNewClient() {
     return (
       <main className="mr-page mr-coach-new-page">
         <div className="mr-page-inner mr-content-max mr-coach-new">
-          <Link href="/move-report" className="btn-ghost mr-coach-back" style={{ textDecoration: 'none' }}>
-            ← MOVE REPORT
+          <Link href="/move-report/coach" className="btn-ghost mr-coach-back" style={{ textDecoration: 'none' }}>
+            ← 코치 허브
           </Link>
 
           <h1 className="mr-coach-title">전용 링크가 만들어졌어요</h1>
@@ -146,15 +147,35 @@ export default function CoachNewClient() {
   return (
     <main className="mr-page mr-coach-new-page">
       <div className="mr-page-inner mr-content-max mr-coach-new">
-        <Link href="/move-report" className="btn-ghost mr-coach-back" style={{ textDecoration: 'none' }}>
-          ← MOVE REPORT
+        <Link href="/move-report/coach" className="btn-ghost mr-coach-back" style={{ textDecoration: 'none' }}>
+          ← 코치 허브
         </Link>
 
+        <div
+          style={{
+            marginBottom: 20,
+            padding: '12px 14px',
+            borderRadius: 12,
+            border: '1px solid #3A3428',
+            background: 'rgba(255,176,32,.1)',
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#E8D5A8',
+            lineHeight: 1.55,
+            wordBreak: 'keep-all',
+          }}
+        >
+          {coachUi.parentLinkBanner}{' '}
+          <Link href="/move-report/coach/observe" style={{ color: '#FFB020', fontWeight: 800 }}>
+            관찰 체크 시작 →
+          </Link>
+        </div>
+
         <header className="mr-coach-hero">
-          <h1 className="mr-coach-hero-title">체육 선생님을 위한 MOVE REPORT</h1>
-          <p className="mr-coach-hero-sub">우리 반, 센터, 기관 전용 링크를 만들고 아이들의 움직임 성향 분포를 확인해보세요.</p>
-          <p className="mr-coach-hero-note">개별 평가가 아니라 수업 방향을 잡기 위한 관찰형 데이터입니다.</p>
-          <p className="mr-coach-kicker">수업 전 학부모에게 보낼 수 있는 우리 반 전용 MOVE REPORT 링크를 만들어보세요.</p>
+          <h1 className="mr-coach-hero-title">학부모 응답 집계용 링크</h1>
+          <p className="mr-coach-hero-sub">학부모에게 링크를 보내 참여를 받고, 반 유형 분포를 확인할 때 쓰는 보조 기능입니다.</p>
+          <p className="mr-coach-hero-note">코치가 직접 관찰해 체크하려면 허브의 「관찰 체크 시작」을 사용하세요.</p>
+          <p className="mr-coach-kicker">수업 전 학부모에게 보낼 우리 반 전용 MOVE REPORT 링크를 만듭니다.</p>
         </header>
 
         <ul className="mr-coach-features" aria-label="이렇게 활용할 수 있어요">

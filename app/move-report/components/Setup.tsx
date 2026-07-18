@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { getAgeGroups } from '../data/catalog';
+import { coachUi } from '../i18n/coachUi';
 import { getMoveReportUi } from '../i18n/ui';
 import type { MoveReportLocale } from '../lib/locale';
 import type { AgeGroup } from '../types';
@@ -14,17 +15,39 @@ interface SetupProps {
   onBack: () => void;
   onNext: () => void;
   locale?: MoveReportLocale;
+  /** 코치 관찰: 이름 없이 연령만 */
+  ageOnly?: boolean;
 }
 
 /** 원본 HTML STEP 01 설정 화면 */
-export default function Setup({ name, onName, age, onAge, onBack, onNext, locale = 'ko' }: SetupProps) {
+export default function Setup({
+  name,
+  onName,
+  age,
+  onAge,
+  onBack,
+  onNext,
+  locale = 'ko',
+  ageOnly = false,
+}: SetupProps) {
   const ui = useMemo(() => getMoveReportUi(locale), [locale]);
   const ageGroups = useMemo(() => getAgeGroups(locale), [locale]);
   const t = ui.setup;
+  const ct = coachUi.setup;
   const startLabelName = name.trim() || t.defaultName;
 
   return (
-    <div className="page mr-setup-page" style={{ background: '#0D0D0D', padding: '0 max(20px, env(safe-area-inset-left))', paddingTop: '28px', paddingBottom: '120px', maxWidth: 430, margin: '0 auto' }}>
+    <div
+      className="page mr-setup-page"
+      style={{
+        background: '#0D0D0D',
+        padding: '0 max(20px, env(safe-area-inset-left))',
+        paddingTop: '28px',
+        paddingBottom: '120px',
+        maxWidth: 430,
+        margin: '0 auto',
+      }}
+    >
       <button
         type="button"
         onClick={onBack}
@@ -42,24 +65,32 @@ export default function Setup({ name, onName, age, onAge, onBack, onNext, locale
         }}
       >
         <i className="fa-solid fa-arrow-left" />
-        <span>{t.back}</span>
+        <span>{ageOnly ? ct.back : t.back}</span>
       </button>
 
       <div className="anim-rise" style={{ marginBottom: '32px' }}>
-        <div className="mr-setup-step">STEP 01 / 02</div>
-        <h2 className="mr-setup-title">{t.title}</h2>
-        <p className="mr-setup-lead">{t.lead}</p>
+        <div className="mr-setup-step">{ageOnly ? ct.step : 'STEP 01 / 02'}</div>
+        <h2 className="mr-setup-title">{ageOnly ? ct.title : t.title}</h2>
+        <p className="mr-setup-lead">{ageOnly ? ct.lead : t.lead}</p>
       </div>
 
-      <div className="anim-rise d1" style={{ marginBottom: '24px' }}>
-        <label className="mr-setup-label">
-          {t.nameLabel} <span style={{ fontWeight: 500, color: '#777' }}>{t.nameOptional}</span>
-        </label>
-        <input className="sp-input" value={name} onChange={(e) => onName(e.target.value)} placeholder={t.namePlaceholder} maxLength={10} />
-      </div>
+      {!ageOnly ? (
+        <div className="anim-rise d1" style={{ marginBottom: '24px' }}>
+          <label className="mr-setup-label">
+            {t.nameLabel} <span style={{ fontWeight: 500, color: '#777' }}>{t.nameOptional}</span>
+          </label>
+          <input
+            className="sp-input"
+            value={name}
+            onChange={(e) => onName(e.target.value)}
+            placeholder={t.namePlaceholder}
+            maxLength={10}
+          />
+        </div>
+      ) : null}
 
       <div className="anim-rise d2" style={{ marginBottom: '40px' }}>
-        <label className="mr-setup-label">{t.ageLabel}</label>
+        <label className="mr-setup-label">{ageOnly ? ct.ageLabel : t.ageLabel}</label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {(['preschool', 'elementary'] as const).map((k) => {
             const m = ageGroups[k];
@@ -115,7 +146,7 @@ export default function Setup({ name, onName, age, onAge, onBack, onNext, locale
       <div className="anim-rise d3">
         <button type="button" onClick={onNext} className="btn-fire mr-btn-fire-html">
           <i className="fa-solid fa-play" style={{ fontSize: '12px' }} />
-          {t.startWithName(startLabelName)}
+          {ageOnly ? ct.start : t.startWithName(startLabelName)}
         </button>
       </div>
     </div>

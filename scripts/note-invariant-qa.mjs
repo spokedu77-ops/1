@@ -267,16 +267,43 @@ async function runDocumentSuite(page, doc, pageErrors) {
   return failed;
 }
 
+async function isQaDocumentAvailable(page, doc) {
+  const result = await page.evaluate(async (documentId) => {
+    const res = await fetch(`/api/admin/note/bootstrap?documentId=${encodeURIComponent(documentId)}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) return { ok: false, reason: `bootstrap ${res.status}` };
+    const json = await res.json();
+    const listed = Array.isArray(json.documents)
+      && json.documents.some((item) => item.id === documentId && !item.deleted_at);
+    const hasBlocks = json.documentId === documentId
+      && Array.isArray(json.blocks)
+      && json.blocks.length > 0;
+    return {
+      ok: listed && hasBlocks,
+      reason: listed ? 'no active blocks' : 'document unavailable',
+    };
+  }, doc.id);
+  if (result.ok) return true;
+  if (ONLY_DOC) {
+    throw new Error(`[${doc.name}] QA document unavailable: ${result.reason}`);
+  }
+  console.warn(`SKIP [${doc.name}] QA document unavailable: ${result.reason}`);
+  return false;
+}
+
 async function main() {
   const chromium = await loadPlaywrightChromium();
   const browser = await chromium.launch({ headless: true });
   let failed = 0;
+  let checkedDocs = 0;
   const pageErrors = [];
 
   try {
     const context = await createNoteQaContext(browser, BASE);
     const page = await context.newPage();
     attachPageDiagnostics(page, pageErrors);
+    await page.goto(`${BASE}/admin/note`, { waitUntil: 'domcontentloaded' });
 
     const docs = ONLY_DOC
       ? NOTE_QA_DOCUMENTS.filter((d) => d.id === ONLY_DOC)
@@ -287,7 +314,12 @@ async function main() {
     }
 
     for (const doc of docs) {
+      if (!(await isQaDocumentAvailable(page, doc))) continue;
+      checkedDocs += 1;
       failed += await runDocumentSuite(page, doc, pageErrors);
+    }
+    if (checkedDocs === 0) {
+      throw new Error('no available QA documents');
     }
   } finally {
     await browser.close();
@@ -296,7 +328,7 @@ async function main() {
   console.log(
     failed
       ? `\n${failed} invariant check(s) failed`
-      : `\nAll note invariant checks passed (${ONLY_DOC ? 1 : NOTE_QA_DOCUMENTS.length} doc(s), ${QUICK ? 'quick' : 'full'} scan)`,
+      : `\nAll note invariant checks passed (${checkedDocs} doc(s), ${QUICK ? 'quick' : 'full'} scan)`,
   );
   process.exit(failed ? 1 : 0);
 }

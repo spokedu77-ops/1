@@ -8,7 +8,7 @@ import {
   fineHover,
   homeCaption,
   homeCaseCard,
-  homeCardTitle,
+  homeCardPanelPad,
   homeFocusRing,
   homePhotoGrade,
   homeSectionH2,
@@ -17,6 +17,7 @@ import {
   koreanText,
   siteContainer,
 } from '../../lib/ui-classes';
+import { ExternalPhoto } from '../external-photo';
 import { MediaPanel } from '../visual';
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
@@ -28,7 +29,6 @@ type HomeFieldRecordsProps = {
 };
 
 export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
-  const [featured, ...rest] = caseCards;
   const reducedMotion = useReducedMotion();
 
   return (
@@ -68,20 +68,13 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           </div>
         </motion.div>
 
-        <div className="mt-10 grid grid-cols-1 gap-5 min-[720px]:grid-cols-2 min-[1180px]:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] min-[1180px]:gap-6">
-          {featured ? (
-            <div className="min-w-0 min-[720px]:col-span-2 min-[1180px]:col-span-1">
-              <FeaturedCaseCard card={featured} priority />
-            </div>
-          ) : null}
-          <div className="grid gap-5 min-[720px]:col-span-2 min-[720px]:grid-cols-2 min-[1180px]:col-span-1 min-[1180px]:grid-cols-1">
-            {rest.map((card, index) => (
-              <div key={card.slug} className="min-w-0">
-                <CompactCaseCard card={card} priority={index === 0} />
-              </div>
-            ))}
-          </div>
-        </div>
+        <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
+          {caseCards.map((card, index) => (
+            <li key={card.slug} className="min-w-0">
+              <CaseCard card={card} priority={index < 2} />
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -95,42 +88,21 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
   });
 }
 
-function FeaturedCaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
+function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
-    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block ${homeFocusRing}`}>
-      <article className="overflow-hidden rounded-xl border border-slate-200/90 bg-white">
-        <div className="relative aspect-[16/10] w-full sm:aspect-[3/2]">
+    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group flex h-full ${homeFocusRing}`}>
+      <article className={`${homeCaseCard} h-full`}>
+        <div className="relative aspect-[16/10] w-full overflow-hidden">
           <CaseMedia card={card} priority={priority} />
         </div>
-        <div className="p-5 sm:p-6 lg:p-7">
-          <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-          <h3 className={`${homeCardTitle} mt-2`}>{card.programName}</h3>
-          <p className={`mt-2 text-sm font-semibold text-slate-700 sm:text-[15px] ${koreanText}`}>{card.venue}</p>
-          <p className={`mt-2 line-clamp-2 text-[15px] leading-relaxed text-slate-600 ${koreanText}`}>
-            {card.description}
-          </p>
-          <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
-            {card.ctaLabel}
-            <HomeChevron />
-          </span>
-        </div>
-      </article>
-    </TrackedLink>
-  );
-}
-
-function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
-  return (
-    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block ${homeFocusRing}`}>
-      <article className={`${homeCaseCard} sm:flex sm:flex-col`}>
-        <div className="relative aspect-[16/10] overflow-hidden">
-          <CaseMedia card={card} priority={priority} />
-        </div>
-        <div className="min-w-0 p-5 sm:p-6">
+        <div className={`flex min-h-0 flex-1 flex-col ${homeCardPanelPad}`}>
           <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
           <h3 className={`mt-2 text-lg font-bold leading-snug text-[#0B1220] ${koreanText}`}>{card.programName}</h3>
           <p className={`mt-2 text-sm font-semibold text-slate-700 ${koreanText}`}>{card.venue}</p>
-          <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
+          <p className={`mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600 ${koreanText}`}>
+            {card.description}
+          </p>
+          <span className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
             {card.ctaLabel}
             <HomeChevron />
           </span>
@@ -141,6 +113,18 @@ function CompactCaseCard({ card, priority }: { card: CaseCardWithThumb; priority
 }
 
 function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
+  if (card.thumbnailSrc) {
+    return (
+      <ExternalPhoto
+        src={card.thumbnailSrc}
+        alt={`${card.programName} — ${card.venue}`}
+        className={`absolute inset-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+        fit="cover"
+        priority={priority}
+      />
+    );
+  }
+
   return (
     <MediaPanel
       media={HOME_MEDIA[card.mediaKey]}

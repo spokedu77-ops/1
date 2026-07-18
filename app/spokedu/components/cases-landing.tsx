@@ -39,7 +39,7 @@ function CaseStudyCard({ item, photoPriority = false }: { item: CaseData; photoP
         sizes="card3"
         photoPriority={photoPriority}
       />
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className="flex flex-1 flex-col p-5 sm:p-6">
         <h3 className="line-clamp-2 text-base font-bold leading-snug text-slate-950 [word-break:keep-all]">
           {item.title}
         </h3>

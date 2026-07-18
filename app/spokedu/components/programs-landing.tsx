@@ -9,6 +9,7 @@ import {
   audienceLandingStack,
   cardInteractive,
   koreanLineBreak,
+  landingCardPanelPad,
 } from '../lib/ui-classes';
 import { landingCardShell } from './visual/card-variants';
 import { inferTrackFromHref } from '../lib/tracking';
@@ -71,7 +72,7 @@ export default function ProgramsLanding() {
                 className="aspect-[16/10] shrink-0 rounded-none border-0 border-b border-slate-200/80"
                 photoPriority={index < 2}
               />
-              <div className="flex flex-1 flex-col p-3.5 sm:p-4">
+              <div className={`flex flex-1 flex-col ${landingCardPanelPad}`}>
                 {item.featured ? (
                   <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">대표</p>
                 ) : null}
@@ -80,10 +81,10 @@ export default function ProgramsLanding() {
                 >
                   {item.name}
                 </h3>
-                <p className={`mt-1.5 flex-1 text-xs leading-5 text-slate-600 sm:text-sm ${koreanLineBreak}`}>
+                <p className={`mt-2 flex-1 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                   {item.description}
                 </p>
-                <span className="mt-3 text-xs font-semibold text-slate-900 transition group-hover:text-indigo-700 sm:text-sm">
+                <span className="mt-4 text-sm font-semibold text-slate-900 transition group-hover:text-indigo-700">
                   자세히 보기 →
                 </span>
               </div>

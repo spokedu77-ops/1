@@ -11,8 +11,10 @@ import {
   cardInteractive,
   fineHover,
   koreanLineBreak,
-  landingCardShell,
+  landingCardFrame,
+  landingCardPanelPad,
 } from '../lib/ui-classes';
+import { AudienceTrustStrip } from './audience-trust-strip';
 import { DispatchComparisonSection } from './dispatch-comparison-section';
 import { DispatchProgramLineup } from './dispatch-program-lineup';
 import { DispatchProposalForm } from './dispatch-proposal-form';
@@ -29,7 +31,7 @@ import { MediaPanel } from './visual';
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
 
-const institutionCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
+const institutionCardShell = `flex h-full flex-col ${landingCardPanelPad} ${landingCardFrame}`;
 const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
 const dispatchAnchorItems = [
   { href: '#comparison', label: '차별성' },
@@ -121,25 +123,16 @@ export default function DispatchLanding() {
 
       <LandingAnchorNav
         items={dispatchAnchorItems}
-        cta={{ href: '#contact', label: '제안서 요청' }}
+        cta={{ href: '#contact', label: '기관 운영 상담' }}
         ariaLabel="기관 랜딩 바로가기"
       />
 
-      <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
-        <span className="inline-flex items-center rounded-full bg-teal-600/10 px-3.5 py-1.5 text-xs font-semibold text-teal-900">
-          연세대 체육교육학과 출신 운영진
-        </span>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500 mt-6">
-          {dispatchPage.trustMetrics.eyebrow}
-        </p>
-        <dl className="mt-4 grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
-          {dispatchPage.trustMetrics.items.map((item) => (
-            <div key={item.label}>
-              <dt className="text-2xl font-bold tracking-tight text-stone-950 sm:text-[1.75rem]">{item.value}</dt>
-              <dd className={`mt-1 text-sm text-stone-600 ${koreanLineBreak}`}>{item.label}</dd>
-            </div>
-          ))}
-        </dl>
+      <Section className="border-y border-stone-200 bg-white px-1 py-8 sm:px-2 sm:py-10">
+        <AudienceTrustStrip
+          badge="연세대 체육교육학과 출신 운영진"
+          eyebrow={dispatchPage.trustMetrics.eyebrow}
+          items={dispatchPage.trustMetrics.items}
+        />
       </Section>
 
       <Section className="rounded-2xl bg-[#0B1220] px-5 py-7 text-white sm:px-7 sm:py-8">
@@ -163,9 +156,9 @@ export default function DispatchLanding() {
           <div className="space-y-3">
             <ul className="grid gap-3 sm:grid-cols-3">
               {dispatchPromiseCards.map((item) => (
-                <li key={item.title} className="rounded-xl border border-white/10 bg-white/[0.06] p-4">
+                <li key={item.title} className="rounded-xl border border-white/10 bg-white/[0.06] p-4 sm:p-5">
                   <h3 className="text-sm font-bold text-white">{item.title}</h3>
-                  <p className={`mt-2 text-xs leading-relaxed text-white/65 ${koreanLineBreak}`}>{item.body}</p>
+                  <p className={`mt-2 text-xs leading-relaxed text-white/75 ${koreanLineBreak}`}>{item.body}</p>
                 </li>
               ))}
             </ul>
@@ -195,7 +188,7 @@ export default function DispatchLanding() {
           {dispatchPage.partnerReviews.items.map((item) => (
             <article
               key={item.name}
-              className={`flex h-full flex-col border-l-4 p-4 sm:p-5 ${landingCardShell} ${reviewAccentBorder[item.accent]}`}
+              className={`flex h-full flex-col border-l-4 ${landingCardPanelPad} ${landingCardFrame} ${reviewAccentBorder[item.accent]}`}
             >
               <p className="text-sm text-amber-500" aria-hidden>
                 ★★★★★
@@ -287,7 +280,7 @@ export default function DispatchLanding() {
         <div className="grid gap-4 lg:grid-cols-[1fr_1.05fr] lg:items-stretch lg:gap-5">
           <div className="grid gap-2.5">
             {dispatchPage.operationTypes.rows.map((row) => (
-              <article key={row.label} className={`px-4 py-3.5 sm:px-5 sm:py-4 ${landingCardShell}`}>
+              <article key={row.label} className={`px-4 py-3.5 sm:px-5 sm:py-4 ${landingCardFrame}`}>
                 <h3 className="text-[15px] font-semibold text-slate-950 sm:text-base">{row.label}</h3>
                 <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{row.description}</p>
               </article>
@@ -374,7 +367,7 @@ export default function DispatchLanding() {
 
       <LandingFloatingCta
         primaryHref="#contact"
-        primaryLabel="제안서 요청하기"
+        primaryLabel="맞춤 운영안 받아보기"
         secondaryHref="https://pf.kakao.com/_VGWxeb/chat"
         secondaryLabel="카카오 B2B 상담"
         showAfterId="hero"

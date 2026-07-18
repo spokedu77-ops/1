@@ -51,4 +51,20 @@ describe('noteOpLogService transaction patch filtering', () => {
       { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
     )).toBe(false);
   });
+
+  it('treats html-only and structured content as protectable content', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { html: '<p>saved callout body</p>', icon: 'i' },
+      { text: '', html: '<p></p>' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { rows: [['a1', 'b1']], caption: '' },
+      { text: '', html: '<p></p>' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { rows: [['a1', 'b1']] },
+      { rows: [] },
+      { rows: [['a1', 'b1']] },
+    )).toBe(false);
+  });
 });

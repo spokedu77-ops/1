@@ -34,11 +34,34 @@ function stripExpectedVersion<T extends { expected_version?: number }>(patch: T)
 function readContentText(content: unknown): string {
   if (!content || typeof content !== 'object') return '';
   const record = content as Record<string, unknown>;
-  for (const key of ['text', 'title', 'caption', 'url', 'page_document_id']) {
+  for (const key of ['text', 'title', 'html', 'body', 'caption', 'url', 'page_document_id']) {
     const value = record[key];
+    if (key === 'html' && isEmptyHtml(value)) continue;
     if (typeof value === 'string' && value.trim().length > 0) return value;
   }
   return '';
+}
+
+function isEmptyHtml(value: unknown): boolean {
+  return value === ''
+    || value === '<p></p>'
+    || value === '<p><br></p>'
+    || value === '<p><br class="ProseMirror-trailingBreak"></p>';
+}
+
+function hasStructuredContent(content: unknown): boolean {
+  if (!content || typeof content !== 'object') return false;
+  const record = content as Record<string, unknown>;
+  return Object.entries(record).some(([key, value]) => {
+    if (['checked', 'collapsed'].includes(key)) return false;
+    if (typeof value === 'string') {
+      if (key === 'html') return !isEmptyHtml(value);
+      return value.trim().length > 0;
+    }
+    if (Array.isArray(value)) return value.length > 0;
+    if (value && typeof value === 'object') return Object.keys(value).length > 0;
+    return false;
+  });
 }
 
 export function shouldIgnoreRegressiveContentPatch(
@@ -49,7 +72,13 @@ export function shouldIgnoreRegressiveContentPatch(
   const currentText = readContentText(currentContent).trim();
   const incomingText = readContentText(incomingContent).trim();
   const baseText = readContentText(baseContent).trim();
-  if (!currentText) return false;
+  const currentHasStructuredContent = hasStructuredContent(currentContent);
+  const incomingHasStructuredContent = hasStructuredContent(incomingContent);
+  const baseHasStructuredContent = hasStructuredContent(baseContent);
+  if (!currentText && !currentHasStructuredContent) return false;
+  if (!incomingText && !incomingHasStructuredContent) {
+    return baseText !== currentText || baseHasStructuredContent !== currentHasStructuredContent;
+  }
   if (!incomingText) return baseText !== currentText;
   if (incomingText.length >= currentText.length) return false;
   if (baseText && baseText === currentText) return false;
