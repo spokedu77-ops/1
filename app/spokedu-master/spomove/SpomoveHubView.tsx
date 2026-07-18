@@ -892,7 +892,7 @@ export default function SpomoveHubView() {
         <PresetCard
           key={preset.id}
           preset={preset}
-          startHref={officialPresetSessionHref(preset, { autostart: true })}
+          startHref={officialPresetSessionHref(preset)}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
           hasGuideVideo={Boolean(guideVideoUrls[preset.id])}
           favorite={isFavoriteProgram(ownerId, preset.id)}
@@ -946,8 +946,8 @@ export default function SpomoveHubView() {
                       <Link
                         href={
                           preset
-                            ? officialPresetSessionHref(preset, { autostart: true })
-                            : `/spokedu-master/spomove/session?preset=${activity.programId}&autostart=1&mode=projector&sound=on`
+                            ? officialPresetSessionHref(preset)
+                            : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on`
                         }
                         data-spm-spomove-recent-action="rerun"
                         className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-3 text-[12px] font-black text-white"

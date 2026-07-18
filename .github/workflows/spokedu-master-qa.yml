@@ -1,4 +1,10 @@
-name: SPOKEDU MASTER Commercial Verification
+name: SPOKEDU MASTER QA
+
+# 역할 분리
+# - master-gate: MASTER 표면이 바뀔 때 항상 (lint + contract vitest). 빠르고 시끄럽지 않게.
+# - commercial-linux-smoke: release/commercial 브랜치 또는 수동 실행에서만 빌드·기동 스모크.
+# - 전체 repo typecheck는 typecheck.yml 담당 (이 워크플로에서 중복 실행하지 않음).
+# - Lane B staging은 workflow_dispatch 입력으로만.
 
 on:
   pull_request:
@@ -6,7 +12,6 @@ on:
       - 'app/spokedu-master/**'
       - 'app/api/spokedu-master/**'
       - 'app/login/page.tsx'
-      - 'app/spokedu/data/curriculum-page.ts'
       - 'app/lib/server/spokeduMaster*'
       - 'proxy.ts'
       - 'scripts/spokedu-master-*.mjs'
@@ -20,7 +25,6 @@ on:
       - 'app/spokedu-master/**'
       - 'app/api/spokedu-master/**'
       - 'app/login/page.tsx'
-      - 'app/spokedu/data/curriculum-page.ts'
       - 'app/lib/server/spokeduMaster*'
       - 'proxy.ts'
       - 'scripts/spokedu-master-*.mjs'
@@ -49,16 +53,21 @@ on:
         required: false
         default: false
         type: boolean
+      run_commercial_smoke:
+        description: 'Force Linux production build + next start smoke (even on main)'
+        required: false
+        default: false
+        type: boolean
 
 concurrency:
-  group: spokedu-master-commercial-verification-${{ github.ref }}
+  group: spokedu-master-qa-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  lane-a-linux-isolated:
-    name: Lane A — Linux isolated verification
+  master-gate:
+    name: MASTER gate — lint + contracts
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 20
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
@@ -76,10 +85,7 @@ jobs:
       - name: npm ci
         run: npm ci
 
-      - name: TypeScript
-        run: npm run typecheck
-
-      - name: ESLint
+      - name: ESLint (MASTER surface only)
         run: >
           npx eslint
           app/spokedu-master
@@ -92,7 +98,7 @@ jobs:
           scripts/spokedu-master-commercial-preflight.mjs
           --max-warnings 0
 
-      - name: Related Vitest
+      - name: MASTER contract Vitest
         run: >
           npx vitest run
           app/lib/server/spokeduMasterEntitlement.test.ts
@@ -106,6 +112,9 @@ jobs:
           app/api/spokedu-master/class-records/replaceClassRecord.contract.test.ts
           app/api/spokedu-master/operational-data/route.test.ts
           app/api/spokedu-master/apiRouteImports.contract.test.ts
+          app/api/spokedu-master/access/route.test.ts
+          app/api/spokedu-master/subscription/route.test.ts
+          app/api/spokedu-master/operational-routes.test.ts
           app/spokedu-master/navigation.contract.test.ts
           app/spokedu-master/lessonFlow.contract.test.ts
           app/spokedu-master/terminology.contract.test.ts
@@ -114,13 +123,56 @@ jobs:
           app/spokedu-master/entryOnboardingAccess.contract.test.ts
           app/spokedu-master/landing/landingBillingCopy.contract.test.ts
 
-      - name: Migration contract tests
-        run: >
-          npx vitest run
-          app/lib/server/spokeduMasterPaymentRpcMigration.contract.test.ts
-          app/api/spokedu-master/class-records/createClassRecord.contract.test.ts
-          app/api/spokedu-master/class-records/replaceClassRecord.contract.test.ts
-          app/api/spokedu-master/operational-data/route.test.ts
+      - name: git diff check
+        run: git diff --check
+
+      - name: Write gate report
+        if: always()
+        run: |
+          mkdir -p commercial-verification
+          cat > commercial-verification/master-gate-report.json <<'JSON'
+          {
+            "job": "master-gate",
+            "scope": "lint_and_contracts_only",
+            "commercialSmoke": "separate_job_when_release_or_dispatch"
+          }
+          JSON
+
+      - name: Upload gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spokedu-master-gate-artifacts
+          path: commercial-verification/master-gate-report.json
+          if-no-files-found: ignore
+
+  commercial-linux-smoke:
+    name: Commercial — Linux build + start smoke
+    runs-on: ubuntu-latest
+    needs: master-gate
+    # main 일상 푸시에서는 생략. 상용 브랜치·수동(run_commercial_smoke)에서만 무거운 빌드/기동.
+    if: ${{
+      (github.event_name == 'workflow_dispatch' && inputs.run_commercial_smoke)
+      || startsWith(github.ref_name, 'release/')
+      || startsWith(github.ref_name, 'commercial/')
+    }}
+    timeout-minutes: 35
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-anon-key
+      SUPABASE_SERVICE_ROLE_KEY: ci-service-role-key
+      NEXT_PUBLIC_TOSS_CLIENT_KEY: test_ci_client_key
+      TOSS_SECRET_KEY: test_ci_secret_key
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: npm ci
+        run: npm ci
 
       - name: Production build
         run: npm run build
@@ -148,36 +200,23 @@ jobs:
           curl -sfI http://127.0.0.1:3099/spokedu-master/landing >/dev/null
           curl -sfI http://127.0.0.1:3099/spokedu-master/payment >/dev/null
 
-      - name: Mocked auth/payment/record route contracts
-        run: >
-          npx vitest run
-          app/api/spokedu-master/access/route.test.ts
-          app/api/spokedu-master/subscription/route.test.ts
-          app/api/spokedu-master/payment/confirm/ownership.contract.test.ts
-          app/api/spokedu-master/payment/webhook/route.test.ts
-          app/api/spokedu-master/class-records/createClassRecord.contract.test.ts
-          app/api/spokedu-master/operational-routes.test.ts
-
-      - name: git diff check
-        run: git diff --check
-
-      - name: Write Lane A report
+      - name: Write commercial smoke report
         if: always()
         run: |
           mkdir -p commercial-verification
           cat > commercial-verification/commercial-verification-report.json <<'JSON'
           {
-            "laneA": "completed",
-            "laneB": "not_run_in_lane_a",
+            "laneA": "commercial_linux_smoke",
+            "laneB": "not_run_in_this_job",
             "finalDecision": "HOLD_UNTIL_REMOTE_STAGING_AND_TOSS_COMPLETE"
           }
           JSON
 
-      - name: Upload Lane A artifacts
+      - name: Upload commercial smoke artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: spokedu-master-lane-a-artifacts
+          name: spokedu-master-commercial-smoke-artifacts
           path: |
             commercial-verification/commercial-verification-report.json
             next-start.log
@@ -186,7 +225,7 @@ jobs:
   preview-remote-smoke:
     name: Preview remote read-only smoke
     runs-on: ubuntu-latest
-    needs: lane-a-linux-isolated
+    needs: master-gate
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.preview_base_url != '' }}
     timeout-minutes: 10
     steps:
@@ -213,7 +252,7 @@ jobs:
   lane-b-staging-guard:
     name: Lane B — staging guard
     runs-on: ubuntu-latest
-    needs: lane-a-linux-isolated
+    needs: master-gate
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_staging_validation }}
     timeout-minutes: 10
     env:

@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardList, Gauge, Maximize, Minimize, Music2, Play, Users, Volume2, X } from 'lucide-react';
+import { ChevronDown, ClipboardList, Maximize, Minimize, Play, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -29,6 +29,14 @@ import {
   getOfficialSpomovePresetGuide,
 } from '../officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
+import {
+  SPOMOVE_CUE_SPEED_OPTIONS,
+  clampCueSpeedSec,
+  resolveInitialCueSeconds,
+  supportsCueSpeedOverride,
+  writeLastCueSeconds,
+  type SpomoveCueSpeedSec,
+} from '../spomoveCueSpeed';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 import { buildSpomoveRecordDraft, buildSpomoveRecordHref } from './spomoveRecordDraft';
@@ -90,125 +98,176 @@ function OfficialEngineBriefing({
   preset,
   startDisabled,
   launchMode,
+  cueSeconds,
+  onCueSecondsChange,
   onStart,
 }: {
   preset: OfficialSpomovePreset;
   startDisabled: boolean;
   launchMode: LaunchMode;
+  cueSeconds: SpomoveCueSpeedSec;
+  onCueSecondsChange: (value: SpomoveCueSpeedSec) => void;
   onStart: () => void;
 }) {
   const isMobile = launchMode === 'mobile';
   const guide = getOfficialSpomovePresetGuide(preset);
   const display = getSpomovePresetDisplayModel(preset);
-  const factIcons = [Volume2, Users, Music2, Gauge] as const;
-  const facts = (preset.executionFacts ?? []).slice(0, 4).map((fact, index) => ({
-    icon: factIcons[index] ?? Gauge,
-    label: fact.label,
-    value: fact.value,
-  }));
-  const checklist = (preset.executionFacts ?? []).slice(0, 6);
+  const showCueSpeed = supportsCueSpeedOverride(preset);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+
+  const startLabel = startDisabled
+    ? '불러오는 중…'
+    : showCueSpeed
+      ? `${cueSeconds}초로 시작`
+      : isMobile
+        ? '지금 시작'
+        : '큰 화면으로 시작';
 
   return (
-    <div
-      className="flex min-h-min w-full justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(4.75rem+env(safe-area-inset-top))] sm:px-8"
-    >
-      <section className="w-full max-w-[880px] rounded-[28px] border border-white/10 bg-white/[0.06] shadow-[0_28px_90px_rgba(0,0,0,0.38)] backdrop-blur-xl">
-        <div className="border-b border-white/10 bg-white/[0.04] px-5 py-4 sm:px-7">
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--spm-acc)_55%,white)]">SPOMOVE 공식 활동</p>
-          <h1 className={`mt-2 font-black leading-tight text-white ${isMobile ? 'text-[26px]' : 'text-[30px] sm:text-[44px]'}`}>{display.displayTitle}</h1>
-          <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/58">{preset.description}</p>
+    <div className="flex min-h-min w-full justify-center px-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-[calc(4.75rem+env(safe-area-inset-top))] sm:px-8">
+      <section className="w-full max-w-[560px] rounded-[28px] border border-white/10 bg-white/[0.06] shadow-[0_28px_90px_rgba(0,0,0,0.38)] backdrop-blur-xl">
+        <div className="px-5 pt-6 sm:px-7 sm:pt-8">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] font-black text-white/70">
+              {display.programLabel}
+            </span>
+            <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/55">
+              {isMobile ? '이 기기' : '큰 화면'}
+            </span>
+          </div>
+          <h1 className={`mt-3 font-black leading-tight text-white ${isMobile ? 'text-[26px]' : 'text-[32px]'}`}>
+            {display.displayTitle}
+          </h1>
+          <p className="mt-2 text-[15px] font-black leading-snug text-[color-mix(in_srgb,var(--spm-acc)_80%,white)]">
+            {showCueSpeed ? '속도만 고르고 시작하세요' : '준비가 되면 바로 시작하세요'}
+          </p>
         </div>
 
-        <div className={`grid gap-3 p-5 sm:gap-4 sm:p-7 ${isMobile ? 'grid-cols-1 min-[360px]:grid-cols-2' : 'sm:grid-cols-4'}`}>
-          {facts.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <Icon className="h-4 w-4 text-[color-mix(in_srgb,var(--spm-acc)_70%,white)]" />
-              <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-white/34">{label}</p>
-              <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
+        <div className="px-5 pt-5 sm:px-7">
+          {showCueSpeed ? (
+            <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5">
+              <div className="flex items-end justify-between gap-3">
+                <div>
+                  <p className="text-[12px] font-black tracking-[0.08em] text-white/55">자극 속도</p>
+                  <p className="mt-1 text-[13px] font-semibold text-white/50">신호가 바뀌는 간격 · 마지막 선택 기억</p>
+                </div>
+                <p className="text-[34px] font-black leading-none tracking-tight text-white tabular-nums">
+                  {cueSeconds}
+                  <span className="ml-1 text-[16px] font-black text-white/55">초</span>
+                </p>
+              </div>
+              <div className="mt-4 grid grid-cols-5 gap-2">
+                {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
+                  const active = cueSeconds === sec;
+                  return (
+                    <button
+                      key={sec}
+                      type="button"
+                      onClick={() => onCueSecondsChange(sec)}
+                      className={`inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition ${
+                        active
+                          ? 'bg-[var(--spm-acc)] text-white shadow-[0_10px_28px_rgba(0,0,0,0.28)]'
+                          : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35 hover:text-white'
+                      }`}
+                    >
+                      {sec}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          ))}
-        </div>
+          ) : (
+            <div className="rounded-[22px] border border-white/10 bg-black/25 px-4 py-4">
+              <p className="text-[12px] font-black tracking-[0.08em] text-white/45">이 활동</p>
+              <p className="mt-1 text-sm font-bold text-white/75">
+                {display.durationLabel}
+                <span className="mx-2 text-white/25">·</span>
+                {preset.rounds}회
+              </p>
+              <p className="mt-2 text-[12px] font-semibold text-white/45">속도 조절이 없는 활동입니다.</p>
+            </div>
+          )}
 
-        <div className="grid gap-4 border-t border-white/10 px-5 py-5 sm:grid-cols-[1fr_220px] sm:px-7">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">시작 전 확인</p>
-            <ol className="mt-3 grid gap-2 text-sm font-bold text-white/78 sm:grid-cols-2">
-              {checklist.map((item) => (
-                <li key={`${item.label}-${item.value}`} className="rounded-xl border border-white/10 bg-white/[0.06] px-3 py-2">
-                  {item.label}: {item.value}
-                </li>
-              ))}
-            </ol>
-            <div className="mt-3 flex flex-wrap gap-2 text-[12px] font-black text-white/72">
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">진행 시간: {display.durationLabel}</span>
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">반복 횟수: {preset.rounds}회</span>
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">자극 속도: {preset.cueSeconds}초</span>
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">음향: 사용 가능</span>
-              {!isMobile ? (
-                <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">전체 화면: 지원</span>
-              ) : (
-                <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5">화면: 기기 크기</span>
-              )}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-white p-4 text-slate-950">
-            <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} />
-          </div>
-        </div>
-
-        <div className="grid gap-3 border-t border-white/10 px-5 pb-5 sm:grid-cols-4 sm:px-7 sm:pb-7">
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:col-span-2">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">추천 대상</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {guide.targetGroups.map((target) => (
-                <span key={target} className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-black text-white/78">
-                  {SPOMOVE_TARGET_GROUP_LABELS[target]}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">생각 난이도</p>
-            <p className="mt-2 text-sm font-black text-white">{SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">반응 축</p>
-            <p className="mt-2 text-sm font-black text-white">{preset.axisTitle}</p>
-          </div>
-          <div className="rounded-2xl border border-white/10 bg-black/20 p-4 sm:col-span-4">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-white/34">주요 동작</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {guide.keyActions.map((action) => (
-                <span key={action} className="rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-1 text-[11px] font-black text-white/78">
-                  {SPOMOVE_KEY_ACTION_LABELS[action]}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className={`grid gap-4 border-t border-white/10 p-5 sm:items-center sm:p-7 ${isMobile ? '' : 'sm:grid-cols-[1fr_auto]'}`}>
-          <div>
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">
-                {isMobile ? '모바일 실행' : '큰 화면'}
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/[0.08] px-3 py-1.5 text-[12px] font-black text-white/78">
-                <Volume2 className="mr-1 inline h-3.5 w-3.5" />
-                효과음 자동
-              </span>
-            </div>
-            <p className="mt-3 text-xs font-semibold leading-5 text-white/42">{preset.recommendedUse}</p>
-          </div>
           <button
             type="button"
             onClick={onStart}
             disabled={startDisabled}
-            className={`inline-flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-white px-6 text-sm font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 ${isMobile ? '' : 'sm:w-auto'}`}
+            className="mt-4 inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5 fill-black" />
-            {startDisabled ? '불러오는 중…' : isMobile ? '훈련 시작' : '큰 화면으로 실행'}
+            {startLabel}
           </button>
+          <p className="mt-2 text-center text-[11px] font-semibold text-white/38">
+            {showCueSpeed ? '선택한 속도로 바로 실행됩니다' : '화면이 준비되면 바로 실행됩니다'}
+          </p>
+        </div>
+
+        <div className="mt-5 border-t border-white/10 px-5 py-4 sm:px-7">
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((open) => !open)}
+            aria-expanded={detailsOpen}
+            className="flex w-full items-center justify-between gap-3 rounded-xl px-1 py-1 text-left"
+          >
+            <span className="text-[13px] font-black text-white/70">자세히 보기</span>
+            <ChevronDown
+              className={`h-4 w-4 text-white/45 transition-transform ${detailsOpen ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {detailsOpen ? (
+            <div className="mt-3 space-y-3">
+              <p className="text-sm font-semibold leading-6 text-white/55">{preset.description}</p>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/70">
+                  {display.durationLabel}
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/70">
+                  {preset.rounds}회
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/70">
+                  {SPOMOVE_THINKING_LEVEL_LABELS[guide.thinkingLevel]}
+                </span>
+                {!showCueSpeed ? (
+                  <span className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/70">
+                    자극 속도 {preset.cueSeconds}초
+                  </span>
+                ) : null}
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">추천 대상</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {guide.targetGroups.map((target) => (
+                    <span
+                      key={target}
+                      className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/70"
+                    >
+                      {SPOMOVE_TARGET_GROUP_LABELS[target]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/35">주요 동작</p>
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {guide.keyActions.map((action) => (
+                    <span
+                      key={action}
+                      className="rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 text-[11px] font-black text-white/70"
+                    >
+                      {SPOMOVE_KEY_ACTION_LABELS[action]}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-white p-3 text-slate-950">
+                <SpomovePadLayoutView variant={getSpomovePadLayoutVariant(preset)} />
+              </div>
+              {preset.recommendedUse ? (
+                <p className="text-[12px] font-semibold leading-5 text-white/42">{preset.recommendedUse}</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       </section>
     </div>
@@ -257,10 +316,28 @@ function SpomoveSessionContent() {
 
   const [state, setState] = useState<SessionState>('idle');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [cueSeconds, setCueSeconds] = useState<SpomoveCueSpeedSec>(() =>
+    officialPreset ? resolveInitialCueSeconds(officialPreset) : 3,
+  );
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
   const [sessionResult, setSessionResult] = useState<EngineCompletePayload | null>(null);
+
+  useEffect(() => {
+    if (!officialPreset) return;
+    setCueSeconds(resolveInitialCueSeconds(officialPreset));
+  }, [officialPreset]);
+
+  const handleCueSecondsChange = useCallback((value: SpomoveCueSpeedSec) => {
+    setCueSeconds(writeLastCueSeconds(value));
+  }, []);
+
+  const effectiveCueSeconds = useMemo(() => {
+    if (!officialPreset) return cueSeconds;
+    if (!supportsCueSpeedOverride(officialPreset)) return clampCueSpeedSec(officialPreset.cueSeconds);
+    return cueSeconds;
+  }, [cueSeconds, officialPreset]);
   const recordProgramHref = program && officialPreset && sessionResult
     ? buildSpomoveRecordHref(
         program.id,
@@ -378,12 +455,12 @@ function SpomoveSessionContent() {
       <EngineRouter
         durationSec={
           officialPreset.engine.mode === 'reactTrain'
-            ? standardSpomoveDurationSec(officialPreset.cueSeconds, officialPreset.rounds)
+            ? standardSpomoveDurationSec(effectiveCueSeconds, officialPreset.rounds)
             : undefined
         }
         mode={officialPreset.engine.mode}
         level={officialPreset.engine.level}
-        speedSec={officialPreset.cueSeconds}
+        speedSec={effectiveCueSeconds}
         rounds={officialPreset.rounds}
         soundEnabled={soundEnabled}
         variantColorTheme={officialPreset.engine.variantColorTheme}
@@ -441,6 +518,8 @@ function SpomoveSessionContent() {
           preset={officialPreset}
           startDisabled={bgmLoading}
           launchMode={launchMode}
+          cueSeconds={effectiveCueSeconds}
+          onCueSecondsChange={handleCueSecondsChange}
           onStart={startOfficialSession}
         />
       ) : null}

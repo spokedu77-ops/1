@@ -16,7 +16,8 @@ const baseArg = args.find((arg) => !arg.startsWith('--'));
 const BASE = (baseArg || process.env.NOTE_QA_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 const docArg = args.find((arg) => arg.startsWith('--doc='));
 const altArg = args.find((arg) => arg.startsWith('--alt='));
-const DOC_ID = docArg?.slice('--doc='.length) || NOTE_QA_DOCUMENTS[0].id;
+const TRUSTED_PROFILE_DOC_ID = '630e1104-84f9-41a2-b25b-7c4faa6a1300';
+const DOC_ID = docArg?.slice('--doc='.length) || TRUSTED_PROFILE_DOC_ID;
 const ALT_DOC_ID = altArg?.slice('--alt='.length) || NOTE_QA_DOCUMENTS.find((doc) => doc.id !== DOC_ID)?.id || DOC_ID;
 
 function endpointKey(url) {

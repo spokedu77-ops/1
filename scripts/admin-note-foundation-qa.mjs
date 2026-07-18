@@ -21,6 +21,9 @@ loadEnvConfig(process.cwd());
 
 const BASE = (process.argv[2] || process.env.NOTE_QA_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 const COMMON_BOARD_ID = NOTE_QA_DOCUMENTS[0]?.id ?? '7c095438-335b-4318-a3fb-09145f01d24a';
+const JIHOON_WORK_NOTE_ID = '630e1104-84f9-41a2-b25b-7c4faa6a1300';
+const JIHOON_JULY_PAGE_BLOCK_ID = '923724e3-1da2-4343-bf2a-f41854a181a2';
+const JIHOON_JULY_PAGE_TITLE = '7월 업무 히스토리';
 const FOUNDATION_PREFIX = 'Foundation QA';
 const WAIT = 12_000;
 
@@ -56,6 +59,36 @@ async function fetchBlocks(page, documentId = documentIdFromPage(page)) {
     const json = await res.json();
     return json.blocks ?? [];
   }, documentId);
+}
+
+function isEmptyStoredInputBlock(block) {
+  if (block.parent_block_id !== null && block.parent_block_id !== undefined) return false;
+  if (!['text', 'todo', 'callout', 'quote'].includes(block.type)) return false;
+  const content = block.content ?? {};
+  const text = typeof content.text === 'string' ? content.text.trim() : '';
+  const html = typeof content.html === 'string'
+    ? content.html.replace(/<[^>]*>/g, '').trim()
+    : '';
+  const title = typeof content.title === 'string' ? content.title.trim() : '';
+  return text.length === 0 && html.length === 0 && title.length === 0;
+}
+
+async function fetchBootstrapForDocument(page, documentId) {
+  return page.evaluate(async (docId) => {
+    const res = await fetch(`/api/admin/note/bootstrap?documentId=${encodeURIComponent(docId)}`, {
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error(`bootstrap ${res.status}`);
+    return res.json();
+  }, documentId);
+}
+
+async function readRenderedRows(page) {
+  return page.evaluate(() => [...document.querySelectorAll('[data-note-block-row]')].map((el, index) => ({
+    index,
+    id: el.getAttribute('data-block-id'),
+    text: (el.textContent ?? '').trim(),
+  })));
 }
 
 async function createDocument(page, title = `${FOUNDATION_PREFIX} ${Date.now()}`) {
@@ -192,6 +225,51 @@ async function main() {
       const apiBlocks = await fetchBlocks(page, COMMON_BOARD_ID);
       if (rows < 1 && apiBlocks.length < NOTE_QA_DOCUMENTS[0].minRows) {
         throw new Error(`too few rows: dom=${rows} api=${apiBlocks.length}`);
+      }
+    });
+
+    failed += await runCheck('reload keeps existing child page links and does not create blank blocks', async () => {
+      const bootstrap = await fetchBootstrapForDocument(page, JIHOON_WORK_NOTE_ID);
+      const bootstrapBlocks = bootstrap.blocks ?? [];
+      const expectedPage = bootstrapBlocks.find((block) => block.id === JIHOON_JULY_PAGE_BLOCK_ID);
+      if (!expectedPage || expectedPage.type !== 'page') {
+        throw new Error(`baseline July page block missing from bootstrap: ${JIHOON_JULY_PAGE_BLOCK_ID}`);
+      }
+
+      const initialBlocks = await fetchBlocks(page, JIHOON_WORK_NOTE_ID);
+      const initialActiveCount = initialBlocks.length;
+      const initialEmptyStoredIds = initialBlocks.filter(isEmptyStoredInputBlock).map((block) => block.id);
+      if (initialEmptyStoredIds.length > 0) {
+        throw new Error(`baseline has stored empty root input blocks: ${initialEmptyStoredIds.join(', ')}`);
+      }
+
+      for (let attempt = 1; attempt <= 8; attempt += 1) {
+        await page.goto(`${BASE}/admin/note?id=${encodeURIComponent(JIHOON_WORK_NOTE_ID)}&foundationReload=${Date.now()}-${attempt}`, {
+          waitUntil: 'domcontentloaded',
+        });
+        await page.waitForTimeout(350);
+        await page.locator('[data-note-document-body="true"]').click({
+          position: { x: 900, y: 760 },
+          force: true,
+        }).catch(() => undefined);
+        await waitForLoaded(page, JIHOON_WORK_NOTE_ID);
+        await page.waitForTimeout(500);
+
+        const rows = await readRenderedRows(page);
+        const hasJulyById = rows.some((row) => row.id === JIHOON_JULY_PAGE_BLOCK_ID);
+        const hasJulyByText = rows.some((row) => row.text.includes(JIHOON_JULY_PAGE_TITLE));
+        if (!hasJulyById || !hasJulyByText) {
+          throw new Error(`July page disappeared after reload ${attempt}: ${JSON.stringify(rows.slice(0, 14))}`);
+        }
+
+        const apiBlocks = await fetchBlocks(page, JIHOON_WORK_NOTE_ID);
+        if (apiBlocks.length !== initialActiveCount) {
+          throw new Error(`reload ${attempt} changed active block count: before=${initialActiveCount} after=${apiBlocks.length}`);
+        }
+        const emptyStoredIds = apiBlocks.filter(isEmptyStoredInputBlock).map((block) => block.id);
+        if (emptyStoredIds.length > 0) {
+          throw new Error(`reload ${attempt} created/still has empty root input blocks: ${emptyStoredIds.join(', ')}`);
+        }
       }
     });
 

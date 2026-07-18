@@ -78,7 +78,8 @@ describe('official SPOMOVE preset guide contract', () => {
     expect(hub).toContain('getSpomovePresetDisplayModel');
     expect(hub).toContain('buildSpomoveCardTags');
     expect(session).toContain('추천 대상');
-    expect(session).toContain('생각 난이도');
     expect(session).toContain('주요 동작');
+    expect(session).toContain('자세히 보기');
+    expect(session).toContain('속도만 고르고 시작하세요');
   });
 });

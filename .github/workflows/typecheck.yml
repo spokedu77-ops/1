@@ -1,6 +1,6 @@
 name: TypeScript check
 
-# Keep TypeScript failures isolated from slower product QA workflows.
+# 전체 repo tsc 전용. MASTER QA(spokedu-master-qa)는 여기를 중복 실행하지 않는다.
 on:
   pull_request:
     paths:

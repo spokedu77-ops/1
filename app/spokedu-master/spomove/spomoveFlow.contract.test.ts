@@ -53,18 +53,24 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).toContain('참고 영상');
   });
 
-  it('starts sessions immediately from hub cards and guideline sheet', () => {
-    expect(hub).toContain("officialPresetSessionHref(preset, { autostart: true })");
+  it('routes hub/guideline starts through briefing (no autostart) and exposes cue speed controls', () => {
+    expect(hub).toContain('officialPresetSessionHref(preset)');
+    expect(hub).not.toContain('autostart: true');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(guidelineSheet).not.toContain('autostart: true');
+    expect(session).toContain('supportsCueSpeedOverride');
+    expect(session).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
+    expect(session).toContain('자극 속도');
+    expect(session).toContain('속도만 고르고 시작하세요');
     expect(session).toContain("searchParams.get('autostart') === '1'");
   });
 
-  it('shows a preparation checklist and only existing runtime settings', () => {
-    expect(session).toContain('시작 전 확인');
-    expect(session).toContain('반복 횟수');
+  it('keeps briefing speed-first with a primary start CTA and collapsible details', () => {
+    expect(session).toContain('속도만 고르고 시작하세요');
+    expect(session).toContain('초로 시작');
+    expect(session).toContain('자세히 보기');
     expect(session).toContain('자극 속도');
-    expect(session).toContain('음향');
-    expect(session).toContain('전체 화면');
+    expect(session).not.toContain('시작 전 확인');
   });
 
   it('prevents duplicate session starts and records only real starts', () => {

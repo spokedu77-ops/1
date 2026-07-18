@@ -410,7 +410,7 @@ function ReturnTimerTab() {
           ? '모두 모임 완료'
           : isFinalThirty
             ? '마지막 30초'
-            : '진행 중';
+            : '실행 중';
   const tone = status === 'expired'
     ? { accent: '#ef4444', soft: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.28)' }
     : status === 'completed'

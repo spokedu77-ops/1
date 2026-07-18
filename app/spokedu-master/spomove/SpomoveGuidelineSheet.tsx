@@ -60,8 +60,8 @@ export function SpomoveGuidelineSheet({
   if (!preset) return null;
   const display = getSpomovePresetDisplayModel(preset);
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
-  const startHref = officialPresetSessionHref(preset, { autostart: true });
-  const mobileStartHref = officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' });
+  const startHref = officialPresetSessionHref(preset);
+  const mobileStartHref = officialPresetSessionHref(preset, { mode: 'mobile' });
 
   return (
     <BottomSheet open title="가이드 · 참고 영상" onClose={onClose} size="preview">

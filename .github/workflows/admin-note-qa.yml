@@ -7,6 +7,7 @@ on:
       - 'app/api/admin/note/**'
       - 'app/lib/note/**'
       - 'scripts/admin-note-foundation-qa.mjs'
+      - 'scripts/admin-note-regression-qa.mjs'
       - 'scripts/admin-note-smoke-qa.mjs'
       - 'scripts/admin-note-content-integrity.mjs'
       - 'scripts/admin-note-data-integrity.mjs'
@@ -23,6 +24,7 @@ on:
       - 'app/api/admin/note/**'
       - 'app/lib/note/**'
       - 'scripts/admin-note-foundation-qa.mjs'
+      - 'scripts/admin-note-regression-qa.mjs'
       - 'scripts/admin-note-smoke-qa.mjs'
       - 'scripts/admin-note-content-integrity.mjs'
       - 'scripts/admin-note-data-integrity.mjs'
@@ -116,6 +118,9 @@ jobs:
       - name: Foundation smoke QA
         if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-foundation-qa.mjs http://127.0.0.1:3099
+      - name: Regression editing QA
+        if: steps.gate.outputs.e2e_enabled == 'true' && github.event_name != 'pull_request'
+        run: node scripts/admin-note-regression-qa.mjs http://127.0.0.1:3099
       - name: Data integrity audit
         if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-data-integrity.mjs

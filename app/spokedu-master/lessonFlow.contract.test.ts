@@ -13,19 +13,21 @@ const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
 describe('lesson discovery and execution flow contract', () => {
   it('shows decision metadata and non-conflicting card actions in the library', () => {
-    expect(library).toContain('function getCardDecisionItems');
+    // 카드 footer 메타는 getCardFooterMeta(활동/준비). 예전 getCardDecisionItems 명칭은 폐기.
+    expect(library).toContain('function getCardFooterMeta');
     expect(library).toContain('event.stopPropagation();');
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
   it('keeps preview focused on quick suitability information', () => {
     expect(preview).toContain('model.activityMethod.slice(0, 3)');
-    expect(preview).toContain('model.equipment.slice(0, 6)');
+    expect(preview).toContain('model.equipment.slice(0, 3)');
   });
 
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
-    expect(detail).toContain('이 수업으로 진행하기');
+    expect(detail).toContain('이 수업으로 바로 진행');
+    expect(detail).toContain('수업 기록 시작');
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 

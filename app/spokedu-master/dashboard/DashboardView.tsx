@@ -484,7 +484,7 @@ function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; 
         <h3 className="mt-1 line-clamp-2 min-h-10 text-[17px] font-black leading-5 text-[color:var(--spm-t)]">{preset.title}</h3>
         <p className="mt-2 line-clamp-2 min-h-10 text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">{preset.salesCopy || preset.recommendedUse}</p>
         <Link
-          href={officialPresetSessionHref(preset, { autostart: true })}
+          href={officialPresetSessionHref(preset)}
           className="mt-auto inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
         >
           <MonitorPlay size={15} />

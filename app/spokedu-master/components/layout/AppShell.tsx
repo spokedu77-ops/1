@@ -83,7 +83,7 @@ function FloatingTimerPill() {
         <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="min-h-11 font-mono text-[15px] font-black tabular-nums text-white">
           {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
         </button>
-        <span className="text-[11px] font-semibold text-slate-300">{running ? '진행 중' : '일시정지'}</span>
+        <span className="text-[11px] font-semibold text-slate-300">{running ? '실행 중' : '일시정지'}</span>
         <button
           type="button"
           onClick={() => {
