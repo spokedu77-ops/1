@@ -46,7 +46,7 @@ export function ProgramPreviewModal({
         <button
           type="button"
           onClick={onFavorite}
-          className={`inline-flex h-11 w-11 items-center justify-center rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${
+          className={`inline-flex h-11 w-11 items-center justify-center rounded-[10px] border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 ${
             favorite
               ? 'border-amber-200 bg-amber-50 text-amber-600'
               : 'border-slate-200 bg-white text-slate-500'
@@ -69,11 +69,11 @@ export function ProgramPreviewModal({
             {locked ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-3 py-1 text-xs font-black text-amber-800">
                 <Lock className="h-3 w-3" />
-                PRO 전용
+                프리미엄
               </span>
             ) : null}
             {hasSpomoveLink(program) ? (
-              <span className="rounded-full bg-indigo-100 px-3 py-1 text-xs font-black text-indigo-700">
+              <span className="rounded-full bg-[var(--spm-acc-glow)] px-3 py-1 text-xs font-black text-[var(--spm-acc)]">
                 SPOMOVE 연결
               </span>
             ) : null}
@@ -91,7 +91,7 @@ export function ProgramPreviewModal({
             {locked ? (
               <Link
                 href="/spokedu-master/payment?plan=premium"
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
               >
                 <Lock className="h-4 w-4" />
                 프리미엄으로 열기
@@ -99,7 +99,7 @@ export function ProgramPreviewModal({
             ) : (
               <Link
                 href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
+                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
               >
                 <BookOpen className="h-4 w-4" />
                 전체 수업 자료 보기

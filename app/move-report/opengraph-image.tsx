@@ -34,8 +34,8 @@ export default function Image() {
           <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#FEE500' }} />
           <div style={{ fontSize: 28, fontWeight: 700, letterSpacing: '0.04em', color: '#FEE500' }}>SPOKEDU MOVE REPORT</div>
         </div>
-        <div style={{ marginTop: 28, fontSize: 62, fontWeight: 800, letterSpacing: '-0.03em' }}>우리 아이 움직임 유형 분석</div>
-        <div style={{ marginTop: 20, fontSize: 30, color: '#D1D5DB' }}>질문 12개로 성향을 확인하고 맞춤 활동 힌트까지</div>
+        <div style={{ marginTop: 28, fontSize: 62, fontWeight: 800, letterSpacing: '-0.03em' }}>우리 아이 움직임 성향</div>
+        <div style={{ marginTop: 20, fontSize: 30, color: '#D1D5DB' }}>질문 12개로 유형을 살펴보고, 집에서 쓸 팁까지</div>
       </div>
     ),
     { ...size }

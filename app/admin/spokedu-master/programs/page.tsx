@@ -59,10 +59,11 @@ import {
   serializeMasterTags,
   setMasterParticipantFormatTag,
 } from '@/app/spokedu-master/lib/programDisplayTags';
+import { ContentAuditPanel } from './ContentAuditPanel';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
-type AdminTabKey = 'programs' | 'spomove-thumbnails' | 'spomove-guide-videos';
+type AdminTabKey = 'programs' | 'content-audit' | 'spomove-thumbnails' | 'spomove-guide-videos';
 
 type SpomoveGuideVideoDraft = Record<string, string>;
 
@@ -184,6 +185,7 @@ const THEME_OPTIONS = [...LESSON_THEME_OPTIONS];
 const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
 const ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'programs', label: '수업 자료' },
+  { key: 'content-audit', label: 'Phase E 감사' },
   { key: 'spomove-thumbnails', label: 'SPOMOVE 썸네일' },
   { key: 'spomove-guide-videos', label: 'SPOMOVE 가이드 영상' },
 ];
@@ -1630,6 +1632,16 @@ export default function AdminSmProgramsPage() {
     setForm(toForm(item));
   };
 
+  const openProgramFromAudit = (curriculumId: number) => {
+    const item = items.find((candidate) => candidate.curriculum.id === curriculumId);
+    if (!item) {
+      toast.error('편집기 목록에 해당 수업이 없습니다. 새로고침 후 다시 시도해 주세요.');
+      return;
+    }
+    selectItem(item);
+    setActiveTab('programs');
+  };
+
   const updateForm = <K extends keyof EditForm>(key: K, value: EditForm[K]) => {
     setForm((prev) => (prev ? { ...prev, [key]: value } : prev));
   };
@@ -1931,7 +1943,9 @@ export default function AdminSmProgramsPage() {
         />
       ) : null}
 
-      {activeTab === 'spomove-thumbnails' ? (
+      {activeTab === 'content-audit' ? (
+        <ContentAuditPanel onOpenProgram={openProgramFromAudit} />
+      ) : activeTab === 'spomove-thumbnails' ? (
         <SpomoveThumbnailManager />
       ) : activeTab === 'spomove-guide-videos' ? (
         <SpomoveGuideVideoManager />

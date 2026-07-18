@@ -17,6 +17,27 @@ type NoteBlock = {
   version: number;
 };
 
+export function collectActiveSubtreeIds(rootIds: string[], blocks: NoteBlock[]): string[] {
+  const childrenByParent = new Map<string, NoteBlock[]>();
+  for (const block of blocks) {
+    if (block.deleted_at || !block.parent_block_id) continue;
+    const list = childrenByParent.get(block.parent_block_id) ?? [];
+    list.push(block);
+    childrenByParent.set(block.parent_block_id, list);
+  }
+
+  const result = new Set<string>();
+  const walk = (id: string) => {
+    if (result.has(id)) return;
+    result.add(id);
+    for (const child of childrenByParent.get(id) ?? []) {
+      walk(child.id);
+    }
+  };
+  for (const id of rootIds) walk(id);
+  return [...result];
+}
+
 async function insertAuditLog({
   documentId,
   blockId,
@@ -630,16 +651,34 @@ export async function DELETE(request: NextRequest) {
     const supabase = getServiceSupabase();
     const now = new Date().toISOString();
 
-    const { data: beforeBlocks, error: beforeError } = await supabase
+    const { data: rootBlocks, error: rootError } = await supabase
+      .from('note_blocks')
+      .select('id, document_id')
+      .in('id', uniqueIds);
+    if (rootError) {
+      devLogger.error('[admin/note/blocks] DELETE root error', rootError);
+      return NextResponse.json({ error: rootError.message }, { status: 500 });
+    }
+
+    const documentIds = [...new Set((rootBlocks ?? [])
+      .map((block) => block.document_id)
+      .filter(Boolean))];
+    if (documentIds.length === 0) {
+      return NextResponse.json({ ok: true, softDeleted: true, count: 0 });
+    }
+
+    const { data: allDocumentBlocks, error: beforeError } = await supabase
       .from('note_blocks')
       .select(BLOCK_SELECT)
-      .in('id', uniqueIds);
+      .in('document_id', documentIds);
     if (beforeError) {
       devLogger.error('[admin/note/blocks] DELETE before error', beforeError);
       return NextResponse.json({ error: beforeError.message }, { status: 500 });
     }
 
-    const deleteTargets = ((beforeBlocks ?? []) as NoteBlock[])
+    const deleteIds = collectActiveSubtreeIds(uniqueIds, (allDocumentBlocks ?? []) as NoteBlock[]);
+    const deleteTargets = ((allDocumentBlocks ?? []) as NoteBlock[])
+      .filter((block) => deleteIds.includes(block.id))
       .filter((block) => !block.deleted_at);
     const deleteResults = await Promise.all(
       deleteTargets.map((block) =>
@@ -662,7 +701,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await Promise.all(
-      (beforeBlocks ?? []).map((beforeBlock) =>
+      deleteTargets.map((beforeBlock) =>
         beforeBlock.document_id
           ? insertAuditLog({
             documentId: beforeBlock.document_id,
@@ -676,7 +715,7 @@ export async function DELETE(request: NextRequest) {
       ),
     );
 
-    return NextResponse.json({ ok: true, softDeleted: true, count: uniqueIds.length });
+    return NextResponse.json({ ok: true, softDeleted: true, count: deleteTargets.length });
   } catch (err) {
     devLogger.error('[admin/note/blocks] DELETE exception', err);
     return NextResponse.json(

@@ -252,6 +252,16 @@ describe('SPOKEDU MASTER operational data deletion migration contract', () => {
     expect(migration).toContain("'students'");
     expect(migration).toContain("'total'");
   });
+
+  it('extends privacy delete to program favorites in the later migration', () => {
+    const favoritesMigration = readFileSync(
+      join(process.cwd(), 'supabase/migrations/20260717120000_spokedu_master_program_favorites.sql'),
+      'utf8',
+    );
+    expect(favoritesMigration).toContain('DELETE FROM public.spokedu_master_program_favorites');
+    expect(favoritesMigration).toContain("'programFavorites'");
+    expect(favoritesMigration).toContain('DROP POLICY IF EXISTS spokedu_master_program_favorites_select_own');
+  });
 });
 
 describe('profile local cleanup boundary', () => {

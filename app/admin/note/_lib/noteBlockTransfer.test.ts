@@ -135,4 +135,41 @@ describe('buildBlockForestTransferCommand', () => {
     ]);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['parent', 'nested-page']);
   });
+
+  it('moves todo and toggle forests to a subpage while leaving page links in the parent document', () => {
+    const todo: NoteBlock = {
+      ...block('todo', null, 0),
+      type: 'todo',
+      content: { text: '7.20 월요일 11시 강승현 면접', checked: false },
+    };
+    const toggle: NoteBlock = {
+      ...block('toggle', null, 1),
+      type: 'toggle',
+      content: { title: 'P0 핵심 과제', collapsed: true },
+    };
+    const toggleChild: NoteBlock = {
+      ...block('toggle-child', 'toggle', 0),
+      content: { text: '토글 자식 내용', html: '<p>토글 자식 내용</p>' },
+    };
+    const pageLink: NoteBlock = {
+      ...block('page-link', null, 2),
+      type: 'page',
+      content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'target' },
+    };
+
+    const command = buildBlockForestTransferCommand(
+      [todo, toggle, toggleChild, pageLink],
+      ['todo', 'toggle'],
+      'target',
+    );
+
+    expect(command.rootIds).toEqual(['todo', 'toggle']);
+    expect(command.movedIds).toEqual(['todo', 'toggle', 'toggle-child']);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['page-link']);
+    expect(command.patches).toEqual([
+      { id: 'todo', document_id: 'target', parent_block_id: null },
+      { id: 'toggle', document_id: 'target', parent_block_id: null },
+      { id: 'toggle-child', document_id: 'target' },
+    ]);
+  });
 });

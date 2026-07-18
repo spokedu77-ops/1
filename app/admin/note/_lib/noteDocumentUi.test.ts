@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { findDefaultNoteEntryDocument } from './noteDocumentUi';
+import {
+  filterDocumentsOutsideFeaturedAncestors,
+  findDefaultNoteEntryDocument,
+} from './noteDocumentUi';
 import type { NoteDocument } from './types';
 
 function doc(id: string, title: string, deleted = false): NoteDocument {
@@ -20,6 +23,13 @@ function doc(id: string, title: string, deleted = false): NoteDocument {
   };
 }
 
+function childDoc(id: string, title: string, parentId: string): NoteDocument {
+  return {
+    ...doc(id, title),
+    parent_id: parentId,
+  };
+}
+
 describe('findDefaultNoteEntryDocument', () => {
   it('matches 공통 보드 by title (ignores extra spaces)', () => {
     const found = findDefaultNoteEntryDocument([
@@ -36,5 +46,31 @@ describe('findDefaultNoteEntryDocument', () => {
 
   it('ignores deleted documents', () => {
     expect(findDefaultNoteEntryDocument([doc('board', '공통 보드', true)])).toBeNull();
+  });
+});
+
+describe('filterDocumentsOutsideFeaturedAncestors', () => {
+  it('does not promote children of favorite parents into the personal root list', () => {
+    const favorite = { ...doc('favorite', 'Favorite'), is_favorite: true };
+    const child = childDoc('child', 'Child', 'favorite');
+    const standalone = doc('standalone', 'Standalone');
+
+    expect(filterDocumentsOutsideFeaturedAncestors(
+      [child, standalone],
+      new Set(['favorite']),
+      [favorite, child, standalone],
+    ).map((item) => item.id)).toEqual(['standalone']);
+  });
+
+  it('excludes deep descendants under featured ancestors', () => {
+    const favorite = { ...doc('favorite', 'Favorite'), is_favorite: true };
+    const child = childDoc('child', 'Child', 'favorite');
+    const grandchild = childDoc('grandchild', 'Grandchild', 'child');
+
+    expect(filterDocumentsOutsideFeaturedAncestors(
+      [child, grandchild],
+      new Set(['favorite']),
+      [favorite, child, grandchild],
+    )).toEqual([]);
   });
 });

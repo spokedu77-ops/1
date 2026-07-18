@@ -5,10 +5,10 @@ import {
 import { NoteDocumentOpQueue } from './noteDocumentOpQueue';
 import type { NoteBlock } from './types';
 
-const baseBlock = (id: string, text: string, version = 1): NoteBlock => ({
+const baseBlock = (id: string, text: string, version = 1, type: NoteBlock['type'] = 'text'): NoteBlock => ({
   id,
   document_id: 'doc-1',
-  type: 'text',
+  type,
   content: { text },
   order_index: 0,
   parent_block_id: null,
@@ -20,6 +20,7 @@ const baseBlock = (id: string, text: string, version = 1): NoteBlock => ({
 describe('NoteDocumentOpQueue', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('routes content patch through op-log persist', async () => {
@@ -44,9 +45,155 @@ describe('NoteDocumentOpQueue', () => {
         type: 'patchContent',
         updates: [{ id: 'a', content: { text: 'hello world' } }],
       }),
-      { immediate: false },
+      { immediate: true },
     );
     expect(triggerSave).toHaveBeenCalled();
+  });
+
+  it('keeps pending content visible until debounce flush is drained', async () => {
+    vi.useFakeTimers();
+    const blocks = new Map([['a', baseBlock('a', 'draft', 3)]]);
+    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+    const triggerSave = vi.fn();
+
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => blocks.get(id),
+      getActiveBlockId: () => null,
+      triggerSave,
+      persistViaOpLog,
+    });
+
+    queue.scheduleContentPatch('a', { text: 'draft plus' }, { text: 'draft' });
+
+    expect(queue.hasPendingContent).toBe(true);
+    expect(queue.hasPendingPersist()).toBe(true);
+
+    await vi.advanceTimersByTimeAsync(1500);
+    await queue.drain();
+
+    expect(queue.hasPendingContent).toBe(false);
+    expect(queue.hasPendingPersist()).toBe(false);
+    expect(persistViaOpLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'patchContent',
+        updates: [expect.objectContaining({ id: 'a', content: { text: 'draft plus' } })],
+      }),
+      { immediate: true },
+    );
+  });
+
+  it('does not persist stale empty body patches over protectable content', async () => {
+    const blocks = new Map([
+      ['a', {
+        ...baseBlock('a', '', 3),
+        content: {
+          text: '',
+          html: '<p>important schedule</p>',
+          icon: '!',
+          blockColor: 'yellow',
+        },
+      }],
+    ]);
+    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => blocks.get(id),
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      persistViaOpLog,
+    });
+
+    queue.scheduleContentPatch('a', { text: '', html: '<p></p>' }, {
+      text: '',
+      html: '<p>important schedule</p>',
+      icon: '!',
+      blockColor: 'yellow',
+    });
+
+    await queue.flushContentPatches();
+
+    expect(persistViaOpLog).not.toHaveBeenCalled();
+  });
+
+  it('allows an explicit user body delete when local content already reflects the delete', async () => {
+    const blocks = new Map([
+      ['a', { ...baseBlock('a', '', 3), content: { text: '', html: '' } }],
+    ]);
+    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => blocks.get(id),
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      persistViaOpLog,
+    });
+
+    queue.scheduleContentPatch('a', { text: '', html: '' }, {
+      text: 'delete me intentionally',
+      html: '<p>delete me intentionally</p>',
+    });
+
+    await queue.flushContentPatches();
+
+    expect(persistViaOpLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'patchContent',
+        updates: [expect.objectContaining({
+          id: 'a',
+          content: { text: '', html: '' },
+          baseContent: {
+            text: 'delete me intentionally',
+            html: '<p>delete me intentionally</p>',
+          },
+        })],
+      }),
+      { immediate: true },
+    );
+  });
+
+  it.each([
+    ['todo', { text: '7.20 월요일 11시 강승현 면접', checked: false }],
+    ['toggle', { title: 'P0 핵심 과제', collapsed: false }],
+    ['page', { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' }],
+  ] satisfies Array<[NoteBlock['type'], Record<string, unknown>]>)(
+    'drops stale empty body patches over %s contract fields',
+    async (type, content) => {
+      const blocks = new Map([
+        ['a', { ...baseBlock('a', '', 3, type), content }],
+      ]);
+      const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+
+      const queue = new NoteDocumentOpQueue({
+        getBlock: (id) => blocks.get(id),
+        getActiveBlockId: () => null,
+        triggerSave: vi.fn(),
+        persistViaOpLog,
+      });
+
+      queue.scheduleContentPatch('a', { text: '', html: '<p></p>' }, content);
+      await queue.flushContentPatches();
+
+      expect(persistViaOpLog).not.toHaveBeenCalled();
+    },
+  );
+
+  it('drops no-op empty patches when local content is already empty', async () => {
+    const blocks = new Map([
+      ['a', { ...baseBlock('a', '', 3), content: { text: '', html: '<p></p>' } }],
+    ]);
+    const persistViaOpLog = vi.fn().mockResolvedValue(undefined);
+
+    const queue = new NoteDocumentOpQueue({
+      getBlock: (id) => blocks.get(id),
+      getActiveBlockId: () => null,
+      triggerSave: vi.fn(),
+      persistViaOpLog,
+    });
+
+    queue.scheduleContentPatch('a', { text: '', html: '<p></p>' }, { text: '', html: '<p></p>' });
+    await queue.flushContentPatches();
+
+    expect(persistViaOpLog).not.toHaveBeenCalled();
   });
 
   it('routes createBlock through op-log persist with immediate flush', async () => {

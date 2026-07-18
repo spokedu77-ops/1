@@ -18,6 +18,30 @@ type NoteDocument = {
   deleted_by: string | null;
 };
 
+export async function restoreBlocksForDocumentDelete(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  documentId: string,
+  documentDeletedAt: string | null,
+  actorId: string,
+  restoredAt: string,
+): Promise<number> {
+  if (!documentDeletedAt) return 0;
+  const { data, error } = await supabase
+    .from('note_blocks')
+    .update({
+      deleted_at: null,
+      deleted_by: null,
+      updated_at: restoredAt,
+      updated_by: actorId,
+    })
+    .eq('document_id', documentId)
+    .eq('deleted_at', documentDeletedAt)
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireAdmin();
@@ -34,7 +58,7 @@ export async function POST(request: NextRequest) {
     // 복구 대상 문서의 parent_id를 확인
     const { data: current, error: currentError } = await supabase
       .from('note_documents')
-      .select('id, parent_id, slug')
+      .select('id, parent_id, slug, deleted_at')
       .eq('id', id)
       .maybeSingle();
 
@@ -95,6 +119,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const restoredBlocks = await restoreBlocksForDocumentDelete(
+      supabase,
+      id,
+      typeof current?.deleted_at === 'string' ? current.deleted_at : null,
+      auth.userId,
+      now,
+    );
+
     await ensurePageBlockForChildDocument(supabase, {
       childDocumentId: id,
       childTitle: String(data.title ?? ''),
@@ -102,7 +134,7 @@ export async function POST(request: NextRequest) {
       actorId: auth.userId,
     });
 
-    return NextResponse.json({ document: data as NoteDocument });
+    return NextResponse.json({ document: data as NoteDocument, restoredBlocks });
   } catch (err) {
     devLogger.error('[admin/note/trash/restore] exception', err);
     return NextResponse.json(

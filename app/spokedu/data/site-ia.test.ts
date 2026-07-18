@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { HOME_MAIN_CASE_SLUGS, homePage } from './home-page';
 import { seoMeta } from './seo';
-import { siteNav, SPOKEDU_BASE_PATH } from './site';
+import { HOME_PROGRAM_SYSTEM_HREF, siteNav, SPOKEDU_BASE_PATH } from './site';
 
 describe('spokedu site IA', () => {
   it('exposes primary siteNav entries in expected order', () => {
@@ -30,12 +30,17 @@ describe('spokedu site IA', () => {
 
   it('defines six home sections with proof strip and audience gate', () => {
     expect(homePage.hero.lines[0]).toContain('기관과 아이');
-    expect(homePage.hero.quickLinks.map((link) => link.label)).toEqual(['기관 담당자', '학부모', 'SPOMOVE 도입']);
-    expect(homePage.proofStrip.items).toHaveLength(3);
+    expect(homePage.hero.quickLinks.map((link) => link.label)).toEqual([
+      '기관 담당자',
+      '학부모',
+      '지도자·커리큘럼',
+    ]);
+    expect(homePage.proofStrip.items).toHaveLength(4);
     expect(homePage.proofStrip.processLine).toContain('현장 수업');
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
+    expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');
     expect(homePage.spomove.flowSteps).toHaveLength(4);
     expect(homePage.spomove.proofs).toHaveLength(3);
     expect(homePage.spomove.useCases).toHaveLength(3);
@@ -58,5 +63,9 @@ describe('spokedu site IA', () => {
     expect(seoMeta.home.title).toContain('기관·개인');
     expect(seoMeta.home.description).toContain('SPOMOVE');
     expect(seoMeta.home.description).toContain('키움센터');
+  });
+
+  it('keeps program index href valid (no self-redirect target)', () => {
+    expect(HOME_PROGRAM_SYSTEM_HREF).toBe(`${SPOKEDU_BASE_PATH}/programs`);
   });
 });

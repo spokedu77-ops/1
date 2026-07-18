@@ -58,15 +58,17 @@ export function getExternalVideoUrl(url?: string) {
 
 export function normalizeImageSrc(src: string) {
   if (!src.includes('img.youtube.com')) return src;
+  // Keep hqdefault for list/card surfaces — maxres is heavy on low-end / weak networks.
   return src
-    .replace('/mqdefault.jpg', '/maxresdefault.jpg')
-    .replace('/hqdefault.jpg', '/maxresdefault.jpg')
-    .replace('/default.jpg', '/maxresdefault.jpg');
+    .replace('/maxresdefault.jpg', '/hqdefault.jpg')
+    .replace('/sddefault.jpg', '/hqdefault.jpg')
+    .replace('/mqdefault.jpg', '/hqdefault.jpg')
+    .replace('/default.jpg', '/hqdefault.jpg');
 }
 
 export function getImageFallbackSrc(src: string) {
-  if (!src.includes('img.youtube.com') || !src.includes('/maxresdefault.jpg')) return undefined;
-  return src.replace('/maxresdefault.jpg', '/hqdefault.jpg');
+  if (!src.includes('img.youtube.com') || !src.includes('/hqdefault.jpg')) return undefined;
+  return src.replace('/hqdefault.jpg', '/mqdefault.jpg');
 }
 
 export function isRemoteImage(src: string) {

@@ -1,4 +1,5 @@
 import { defaultBlockContent } from './constants';
+import { DECORATION_CONTENT_KEYS } from './noteContentPatch';
 import { MULTILINE_PASTE_SPLIT_TYPES } from './noteBlockTypes';
 import type { NoteBlock } from './types';
 
@@ -19,6 +20,9 @@ export function contentForMultilinePasteLine(
 ): Record<string, unknown> {
   const base = defaultBlockContent(blockType) as Record<string, unknown>;
   const next: Record<string, unknown> = { ...base, text: line };
+  for (const key of DECORATION_CONTENT_KEYS) {
+    if (sourceContent && key in sourceContent) next[key] = sourceContent[key];
+  }
   if (blockType === 'todo') next.checked = false;
   if (sourceContent?.placedInToggle === true) next.placedInToggle = true;
   if (sourceContent?.createdInsideToggle === true) next.createdInsideToggle = true;

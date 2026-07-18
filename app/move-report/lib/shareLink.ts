@@ -1,4 +1,6 @@
 import { P } from '../data/profiles';
+import type { MoveReportLocale } from './locale';
+import { moveReportBasePath } from './locale';
 import { MOVE_REPORT_ATTRIBUTION_QUERY_KEYS } from './attributionSchema';
 
 export type MoveReportSharePayloadCompactV5 = {
@@ -7,6 +9,10 @@ export type MoveReportSharePayloadCompactV5 = {
   graphCode: string;
   /** 공유 링크·OG용 표시 이름 (compact 13자 링크에는 미포함) */
   displayName?: string;
+};
+
+export type BuildMoveReportShareUrlOptions = {
+  locale?: MoveReportLocale;
 };
 
 type CompactSharePayloadV5 = {
@@ -52,15 +58,21 @@ function fromBase64Url(input: string): string {
 
 export function buildMoveReportShareUrl(
   origin: string,
-  payload: MoveReportSharePayloadCompactV5
+  payload: MoveReportSharePayloadCompactV5,
+  options?: BuildMoveReportShareUrlOptions
 ): string {
+  const locale = options?.locale ?? 'ko';
+  const sharedPath = `${moveReportBasePath(locale)}/shared`;
   const { profileKey, graphCode, displayName } = payload;
   const shortCandidate = `5${profileKey}${graphCode}`;
   const includeName =
-    typeof displayName === 'string' && displayName.trim() !== '' && displayName !== '아이';
+    typeof displayName === 'string' &&
+    displayName.trim() !== '' &&
+    displayName !== '아이' &&
+    displayName !== 'child';
 
   if (!includeName && COMPACT_V5_RE.test(shortCandidate)) {
-    return `${origin}/move-report/shared?d=${encodeURIComponent(shortCandidate)}`;
+    return `${origin}${sharedPath}?d=${encodeURIComponent(shortCandidate)}`;
   }
 
   const body: CompactSharePayloadV5 = { v: 5, k: profileKey, g: graphCode };
@@ -68,7 +80,7 @@ export function buildMoveReportShareUrl(
     body.n = displayName;
   }
   const encoded = toBase64Url(JSON.stringify(body));
-  return `${origin}/move-report/shared?d=${encodeURIComponent(encoded)}`;
+  return `${origin}${sharedPath}?d=${encodeURIComponent(encoded)}`;
 }
 
 /** 공유 URL에 전파할 UTM·ref 등만 덧붙임(`d` 등 기존 쿼리 유지, 이미 있는 키는 덮어쓰지 않음) */

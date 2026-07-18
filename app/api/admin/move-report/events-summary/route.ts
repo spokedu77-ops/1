@@ -2,24 +2,18 @@ import { NextResponse } from 'next/server';
 import { getServiceSupabase, requireAdmin } from '@/app/lib/server/adminAuth';
 import { classifyMoveReportEventSource } from '@/app/move-report/lib/moveReportSourceClassify';
 
-/** KPI·버킷용으로 조회하는 이벤트명 */
+/** 슬림 대시보드용 조회 이벤트만 */
 const QUERY_EVENT_NAMES = [
-  'intro_started',
   'move_report_started',
-  'survey_completed',
   'move_report_completed',
   'result_viewed',
-  'share_clicked',
-  'move_report_result_card_opened',
-  'shared_entry_opened',
   'shared_entry_completed',
-  'move_report_shared_page_start_clicked',
   'move_report_shared_page_viewed',
-  'move_report_coach_link_created',
-  'move_report_coach_link_landing',
-  'move_report_coach_submission_completed',
-  'move_report_coach_dashboard_viewed',
-  'move_report_coach_csv_downloaded',
+  'move_report_shared_page_start_clicked',
+  'move_report_private_consult_clicked',
+  'move_report_private_apply_submitted',
+  'move_report_educator_beta_form_opened',
+  'move_report_educator_beta_submitted',
 ] as const;
 
 type WindowKey = 'today' | 'days7' | 'days30';
@@ -56,7 +50,6 @@ function parseAttribution(meta: unknown): Record<string, string> {
   return out;
 }
 
-/** 바이럴 admin 채널 행 — coach 링크 유입은 INTERNAL 표식(메인 UI에서 제외). */
 function viralChannelKey(meta: unknown, eventName?: string): string {
   const attr = parseAttribution(meta);
   const { bucket, label } = classifyMoveReportEventSource(meta, eventName);
@@ -76,21 +69,19 @@ function viralChannelKey(meta: unknown, eventName?: string): string {
   return 'direct_unknown';
 }
 
-function pctLabel(num: number, den: number): { display: string; percent: number | null } {
-  if (!den || den <= 0) return { display: '-', percent: null };
-  if (num > den) return { display: '100%', percent: 100 };
+function pctLabel(num: number, den: number): { display: string; percent: number | null; numerator: number; denominator: number } {
+  if (!den || den <= 0) return { display: '-', percent: null, numerator: num, denominator: den };
+  if (num > den) return { display: '100%', percent: 100, numerator: num, denominator: den };
   const p = Math.round((num / den) * 1000) / 10;
-  return { display: `${p}%`, percent: p };
+  return { display: `${p}%`, percent: p, numerator: num, denominator: den };
 }
 
 export type SourceBreakdownRow = {
   channelKey: string;
-  visits: number;
   started: number;
   completed: number;
   completionRateDisplay: string;
-  resultCardOpened: number;
-  sharedRestart: number;
+  consultClicked: number;
 };
 
 export type ProfileDistributionRow = {
@@ -98,54 +89,14 @@ export type ProfileDistributionRow = {
   profileTitle: string;
   completed: number;
   pctDisplay: string;
-  resultCardOpened: number;
 };
 
-function emptyBucket() {
-  return {
-    viral: {
-      visitUnique: 0,
-      startedUnique: 0,
-      completedUnique: 0,
-      completionRate: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-      resultCardOpenedUnique: 0,
-      shareRate: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-      sharedPageViewedUnique: 0,
-      sharedStartClickedUnique: 0,
-      sharedRestartRate: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-      sharedInboundCompletedUnique: 0,
-      sharedReentryRate: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-    },
-    completion: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-    share: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-    sharedReentry: { display: '-', numerator: 0, denominator: 0, percent: null as number | null },
-    dataQuality: {
-      orphanCompletedSessions: 0,
-      orphanResultCardOpenedSessions: 0,
-      orphanSharedCompletedSessions: 0,
-    },
-    rawEventTotals: {} as Record<string, number>,
-    parentViral: {
-      startedUnique: 0,
-      completedUnique: 0,
-      resultCardOpenedUnique: 0,
-      sharedPageViewedUnique: 0,
-      sharedStartClickedUnique: 0,
-    },
-    /** 내부 실험(coach) 건수 — API 보존, 바이럴 메인 UI에서는 미사용 */
-    educatorDistribution: {
-      coachLinkCreated: 0,
-      coachLinkLanding: 0,
-      coachSubmissionCompleted: 0,
-      coachDashboardViewed: 0,
-      coachCsvDownloaded: 0,
-    },
-    sourceBreakdown: [] as SourceBreakdownRow[],
-    profileDistribution: [] as ProfileDistributionRow[],
-  };
-}
-
-type Bucket = ReturnType<typeof emptyBucket>;
+export type DailySeriesRow = {
+  date: string;
+  started: number;
+  completed: number;
+  consultClicked: number;
+};
 
 function sortChannelKeys(keys: string[]): string[] {
   const priority = ['parent_direct', 'educator_campaign', 'shared', 'direct_unknown'];
@@ -159,24 +110,33 @@ function sortChannelKeys(keys: string[]): string[] {
   });
 }
 
-function finalizeBucket(rows: EvRow[], submissionsInWindow: SubRow[]): Bucket {
-  const b = emptyBucket();
+function ymdLocal(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
-  const introSet = new Set<string>();
+function finalizeBucket(rows: EvRow[], submissionsInWindow: SubRow[], educatorLeadsCount: number) {
   const started = new Set<string>();
   const completed = new Set<string>();
   const resultViewed = new Set<string>();
-  const cardOpened = new Set<string>();
-  const sharedStart = new Set<string>();
+  const consultClicked = new Set<string>();
+  const applySubmitted = new Set<string>();
   const sharedPageViewed = new Set<string>();
+  const sharedStart = new Set<string>();
   const sharedCompleted = new Set<string>();
+  let educatorBetaOpened = 0;
+  let educatorBetaSubmitted = 0;
 
   const sortedAsc = [...rows].sort(
     (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
   );
   const sessionChannel = new Map<string, string>();
   for (const row of sortedAsc) {
-    if (row.event_name !== 'intro_started' && row.event_name !== 'move_report_started') continue;
+    if (row.event_name !== 'move_report_started') continue;
     if (sessionChannel.has(row.session_id)) continue;
     sessionChannel.set(row.session_id, viralChannelKey(row.meta, row.event_name));
   }
@@ -187,143 +147,56 @@ function finalizeBucket(rows: EvRow[], submissionsInWindow: SubRow[]): Bucket {
     const en = row.event_name;
     const attr = parseAttribution(row.meta);
 
-    b.rawEventTotals[en] = (b.rawEventTotals[en] ?? 0) + 1;
-
-    if (en === 'move_report_coach_link_created') b.educatorDistribution.coachLinkCreated += 1;
-    if (en === 'move_report_coach_link_landing') b.educatorDistribution.coachLinkLanding += 1;
-    if (en === 'move_report_coach_submission_completed') b.educatorDistribution.coachSubmissionCompleted += 1;
-    if (en === 'move_report_coach_dashboard_viewed') b.educatorDistribution.coachDashboardViewed += 1;
-    if (en === 'move_report_coach_csv_downloaded') b.educatorDistribution.coachCsvDownloaded += 1;
-
-    if (en === 'intro_started') introSet.add(sid);
-    if (en === 'intro_started' || en === 'move_report_started') started.add(sid);
-    if (en === 'survey_completed' || en === 'move_report_completed') {
+    if (en === 'move_report_started') started.add(sid);
+    if (en === 'move_report_completed') {
       completed.add(sid);
       const classifiedShared = classifyMoveReportEventSource(row.meta, en).bucket === 'shared';
       if (attr.mr_source === 'shared' || classifiedShared) sharedCompleted.add(sid);
     }
     if (en === 'result_viewed') resultViewed.add(sid);
-    if (en === 'move_report_result_card_opened') cardOpened.add(sid);
-    if (en === 'move_report_shared_page_start_clicked') sharedStart.add(sid);
+    if (en === 'move_report_private_consult_clicked') consultClicked.add(sid);
+    if (en === 'move_report_private_apply_submitted') applySubmitted.add(sid);
     if (en === 'move_report_shared_page_viewed') sharedPageViewed.add(sid);
+    if (en === 'move_report_shared_page_start_clicked') sharedStart.add(sid);
+    if (en === 'shared_entry_completed') sharedCompleted.add(sid);
+    if (en === 'move_report_educator_beta_form_opened') educatorBetaOpened += 1;
+    if (en === 'move_report_educator_beta_submitted') educatorBetaSubmitted += 1;
   }
-
-  b.parentViral.startedUnique = started.size;
-  b.parentViral.completedUnique = completed.size;
-  b.parentViral.resultCardOpenedUnique = cardOpened.size;
-  b.parentViral.sharedStartClickedUnique = sharedStart.size;
-  b.parentViral.sharedPageViewedUnique = sharedPageViewed.size;
-
-  b.viral.visitUnique = introSet.size;
-  b.viral.startedUnique = started.size;
-  b.viral.completedUnique = completed.size;
-  b.viral.resultCardOpenedUnique = cardOpened.size;
-  b.viral.sharedPageViewedUnique = sharedPageViewed.size;
-  b.viral.sharedStartClickedUnique = sharedStart.size;
-  b.viral.sharedInboundCompletedUnique = sharedCompleted.size;
 
   let completionIntersect = 0;
-  for (const sid of completed) {
-    if (started.has(sid)) completionIntersect += 1;
-  }
   let orphanCompleted = 0;
   for (const sid of completed) {
-    if (!started.has(sid)) orphanCompleted += 1;
+    if (started.has(sid)) completionIntersect += 1;
+    else orphanCompleted += 1;
   }
 
-  let shareIntersect = 0;
-  for (const sid of cardOpened) {
-    if (resultViewed.has(sid)) shareIntersect += 1;
-  }
-  let orphanCardOpened = 0;
-  for (const sid of cardOpened) {
-    if (!resultViewed.has(sid)) orphanCardOpened += 1;
+  let consultIntersect = 0;
+  for (const sid of consultClicked) {
+    if (resultViewed.has(sid)) consultIntersect += 1;
   }
 
-  let sharedReIntersect = 0;
-  for (const sid of sharedCompleted) {
-    if (sharedStart.has(sid)) sharedReIntersect += 1;
-  }
-  let orphanSharedCompleted = 0;
-  for (const sid of sharedCompleted) {
-    if (!sharedStart.has(sid)) orphanSharedCompleted += 1;
+  let applyIntersect = 0;
+  for (const sid of applySubmitted) {
+    if (consultClicked.has(sid)) applyIntersect += 1;
   }
 
-  b.dataQuality = {
-    orphanCompletedSessions: orphanCompleted,
-    orphanResultCardOpenedSessions: orphanCardOpened,
-    orphanSharedCompletedSessions: orphanSharedCompleted,
-  };
-
-  const startedDen = started.size;
-  const c = pctLabel(completionIntersect, startedDen);
-  b.completion = {
-    display: c.display,
-    percent: c.percent,
-    numerator: completionIntersect,
-    denominator: startedDen,
-  };
-  b.viral.completionRate = { ...b.completion };
-
-  const viewedDen = resultViewed.size;
-  const s = pctLabel(shareIntersect, viewedDen);
-  b.share = {
-    display: s.display,
-    percent: s.percent,
-    numerator: shareIntersect,
-    denominator: viewedDen,
-  };
-  b.viral.shareRate = { ...b.share };
-
-  const sharedStartDen = sharedStart.size;
-  const srRe = pctLabel(sharedReIntersect, sharedStartDen);
-  b.sharedReentry = {
-    display: srRe.display,
-    percent: srRe.percent,
-    numerator: sharedReIntersect,
-    denominator: sharedStartDen,
-  };
-  b.viral.sharedReentryRate = { ...b.sharedReentry };
-
-  const sharedViewDen = sharedPageViewed.size;
-  const srRestart = pctLabel(sharedStart.size, sharedViewDen);
-  b.viral.sharedRestartRate = {
-    display: srRestart.display,
-    percent: srRestart.percent,
-    numerator: sharedStart.size,
-    denominator: sharedViewDen,
-  };
-
-  /** 채널별 — coach 내부 유입 행은 메인 표에서 제외 */
   const channelKeys = new Set<string>();
   for (const sid of started) {
     const ch = sessionChannel.get(sid) ?? 'direct_unknown';
     if (ch === INTERNAL_COACH_CHANNEL) continue;
     channelKeys.add(ch);
   }
-  for (const sid of introSet) {
-    const ch = sessionChannel.get(sid) ?? 'direct_unknown';
-    if (ch === INTERNAL_COACH_CHANNEL) continue;
-    channelKeys.add(ch);
-  }
   for (const sid of completed) {
     const ch = sessionChannel.get(sid) ?? 'direct_unknown';
     if (ch === INTERNAL_COACH_CHANNEL) continue;
     channelKeys.add(ch);
   }
 
-  const breakdown: SourceBreakdownRow[] = [];
+  const sourceBreakdown: SourceBreakdownRow[] = [];
   for (const ch of sortChannelKeys([...channelKeys])) {
-    let visits = 0;
     let startedN = 0;
     let completedN = 0;
-    let cardN = 0;
-    let sharedRestartN = 0;
-
-    for (const sid of introSet) {
-      if ((sessionChannel.get(sid) ?? 'direct_unknown') !== ch) continue;
-      visits += 1;
-    }
+    let consultN = 0;
     for (const sid of started) {
       if ((sessionChannel.get(sid) ?? 'direct_unknown') !== ch) continue;
       startedN += 1;
@@ -332,50 +205,89 @@ function finalizeBucket(rows: EvRow[], submissionsInWindow: SubRow[]): Bucket {
       if ((sessionChannel.get(sid) ?? 'direct_unknown') !== ch) continue;
       if (started.has(sid)) completedN += 1;
     }
-    for (const sid of cardOpened) {
+    for (const sid of consultClicked) {
       if ((sessionChannel.get(sid) ?? 'direct_unknown') !== ch) continue;
-      cardN += 1;
+      consultN += 1;
     }
-    for (const sid of sharedStart) {
-      if ((sessionChannel.get(sid) ?? 'direct_unknown') !== ch) continue;
-      sharedRestartN += 1;
-    }
-
-    breakdown.push({
+    sourceBreakdown.push({
       channelKey: ch,
-      visits,
       started: startedN,
       completed: completedN,
       completionRateDisplay: pctLabel(completedN, startedN).display,
-      resultCardOpened: cardN,
-      sharedRestart: sharedRestartN,
+      consultClicked: consultN,
     });
   }
-  b.sourceBreakdown = breakdown;
 
-  /** 유형 분포 — 제출 테이블 기준 */
   const totalSubs = submissionsInWindow.length;
-  const profMap = new Map<string, { title: string; n: number; card: number }>();
+  const profMap = new Map<string, { title: string; n: number }>();
   for (const sub of submissionsInWindow) {
     const pk = sub.profile_key?.trim() || 'unknown';
     const title = sub.profile_title?.trim() || pk;
-    const cur = profMap.get(pk) ?? { title, n: 0, card: 0 };
+    const cur = profMap.get(pk) ?? { title, n: 0 };
     cur.n += 1;
-    const sid = sub.session_id;
-    if (sid && cardOpened.has(sid)) cur.card += 1;
     profMap.set(pk, cur);
   }
-  b.profileDistribution = [...profMap.entries()]
+  const profileDistribution: ProfileDistributionRow[] = [...profMap.entries()]
     .map(([profileKey, v]) => ({
       profileKey,
       profileTitle: v.title,
       completed: v.n,
       pctDisplay: totalSubs > 0 ? `${Math.min(100, Math.round((v.n / totalSubs) * 1000) / 10)}%` : '-',
-      resultCardOpened: v.card,
     }))
     .sort((a, b) => b.completed - a.completed);
 
-  return b;
+  const dayMap = new Map<string, { started: Set<string>; completed: Set<string>; consult: Set<string> }>();
+  for (const row of rows) {
+    const day = ymdLocal(row.created_at);
+    if (!day || !row.session_id) continue;
+    const bucket = dayMap.get(day) ?? {
+      started: new Set<string>(),
+      completed: new Set<string>(),
+      consult: new Set<string>(),
+    };
+    if (row.event_name === 'move_report_started') bucket.started.add(row.session_id);
+    if (row.event_name === 'move_report_completed') bucket.completed.add(row.session_id);
+    if (row.event_name === 'move_report_private_consult_clicked') bucket.consult.add(row.session_id);
+    dayMap.set(day, bucket);
+  }
+  const dailySeries: DailySeriesRow[] = [...dayMap.entries()]
+    .map(([date, v]) => ({
+      date,
+      started: v.started.size,
+      completed: v.completed.size,
+      consultClicked: v.consult.size,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  return {
+    funnel: {
+      startedUnique: started.size,
+      completedUnique: completed.size,
+      completionRate: pctLabel(completionIntersect, started.size),
+      resultViewedUnique: resultViewed.size,
+    },
+    conversion: {
+      consultClickedUnique: consultClicked.size,
+      applySubmittedUnique: applySubmitted.size,
+      consultRate: pctLabel(consultIntersect, resultViewed.size),
+      applyRate: pctLabel(applyIntersect, consultClicked.size),
+      educatorBetaOpened,
+      educatorBetaSubmitted,
+      educatorLeadsCount,
+    },
+    shared: {
+      pageViewedUnique: sharedPageViewed.size,
+      startClickedUnique: sharedStart.size,
+      restartRate: pctLabel(sharedStart.size, sharedPageViewed.size),
+      inboundCompletedUnique: sharedCompleted.size,
+    },
+    sourceBreakdown,
+    profileDistribution,
+    dailySeries,
+    dataQuality: {
+      orphanCompletedSessions: orphanCompleted,
+    },
+  };
 }
 
 export async function GET() {
@@ -388,7 +300,7 @@ export async function GET() {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
-    const [evRes, subRes] = await Promise.all([
+    const [evRes, subRes, eduToday, edu7, edu30] = await Promise.all([
       supabase
         .from('move_report_events')
         .select('event_name, created_at, session_id, meta')
@@ -402,6 +314,18 @@ export async function GET() {
         .gte('created_at', thirtyDaysAgo.toISOString())
         .order('created_at', { ascending: false })
         .limit(50000),
+      supabase
+        .from('move_report_educator_leads')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', todayStart.toISOString()),
+      supabase
+        .from('move_report_educator_leads')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', sevenDaysAgo.toISOString()),
+      supabase
+        .from('move_report_educator_leads')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', thirtyDaysAgo.toISOString()),
     ]);
 
     if (evRes.error) {
@@ -435,10 +359,16 @@ export async function GET() {
       if (createdAtMs >= todayStart.getTime()) subsByWindow.today.push(row);
     }
 
+    const eduCounts: Record<WindowKey, number> = {
+      today: eduToday.count ?? 0,
+      days7: edu7.count ?? 0,
+      days30: edu30.count ?? 0,
+    };
+
     const summary = {
-      today: finalizeBucket(byWindow.today, subsByWindow.today),
-      days7: finalizeBucket(byWindow.days7, subsByWindow.days7),
-      days30: finalizeBucket(byWindow.days30, subsByWindow.days30),
+      today: finalizeBucket(byWindow.today, subsByWindow.today, eduCounts.today),
+      days7: finalizeBucket(byWindow.days7, subsByWindow.days7, eduCounts.days7),
+      days30: finalizeBucket(byWindow.days30, subsByWindow.days30, eduCounts.days30),
     };
 
     return NextResponse.json({ ok: true, summary });

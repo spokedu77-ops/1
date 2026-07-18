@@ -158,8 +158,8 @@ export function SiteHeader() {
     `text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
       onHero
         ? active
-          ? 'text-[#0a2540]'
-          : 'text-[#425466] hover:text-[#0a2540] focus-visible:outline-[#635bff]'
+          ? 'text-white'
+          : 'text-white/75 hover:text-white focus-visible:outline-white'
         : active
           ? 'text-[#0B1220]'
           : 'text-slate-600 hover:text-[#0B1220] focus-visible:outline-blue-600'
@@ -276,7 +276,7 @@ export function SiteHeader() {
     <header
       className={`${isHome ? 'fixed inset-x-0' : 'sticky'} top-0 z-40 transition-all duration-300 ${
         onHero
-          ? 'border-b border-slate-200/40 bg-[#f6f9fc]/75 backdrop-blur-xl'
+          ? 'border-b border-white/10 bg-[#0B1220]/35 backdrop-blur-md'
           : 'border-b border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-xl'
       }`}
     >
@@ -285,7 +285,7 @@ export function SiteHeader() {
           href={SPOKEDU_BASE_PATH}
           className={`text-[13px] font-semibold tracking-[0.14em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
             onHero
-              ? 'text-[#0a2540] focus-visible:outline-[#635bff]'
+              ? 'text-white focus-visible:outline-white'
               : 'text-[#0B1220] focus-visible:outline-blue-600'
           }`}
         >
@@ -302,7 +302,7 @@ export function SiteHeader() {
             trackLabel="header-login"
             className={`hidden min-h-11 items-center justify-center rounded-full border px-4 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
               onHero
-                ? 'border-slate-300/80 text-[#0a2540] hover:bg-white/60 focus-visible:outline-[#635bff]'
+                ? 'border-white/35 text-white hover:bg-white/10 focus-visible:outline-white'
                 : 'border-slate-300 text-[#0B1220] hover:bg-slate-50 focus-visible:outline-blue-600'
             }`}
           >
@@ -312,7 +312,7 @@ export function SiteHeader() {
             href="/login?next=/spokedu-master/onboarding"
             trackLabel="header-master-start"
             className={`hidden min-h-11 items-center justify-center rounded-full px-4 py-2 text-xs font-semibold text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
-              onHero ? 'bg-[#0a2540] focus-visible:outline-[#635bff]' : 'focus-visible:outline-blue-600'
+              onHero ? 'bg-white/15 focus-visible:outline-white' : 'focus-visible:outline-blue-600'
             }`}
             style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
           >
@@ -323,7 +323,7 @@ export function SiteHeader() {
             trackLabel="header-contact"
             className={`hidden min-h-11 items-center justify-center rounded-full px-5 py-2 text-xs font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 md:inline-flex md:text-[13px] ${
               onHero
-                ? 'border border-slate-300/80 text-[#0a2540] hover:bg-white/60 focus-visible:outline-[#635bff]'
+                ? 'border border-white/35 text-white hover:bg-white/10 focus-visible:outline-white'
                 : 'border border-slate-300 text-[#0B1220] hover:bg-slate-50 focus-visible:outline-blue-600'
             }`}
           >
@@ -334,7 +334,7 @@ export function SiteHeader() {
             type="button"
             className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
               onHero
-                ? 'border-slate-300/80 text-[#0a2540] focus-visible:outline-[#635bff]'
+                ? 'border-white/35 text-white focus-visible:outline-white'
                 : 'border-slate-300 text-[#0B1220] focus-visible:outline-blue-600'
             } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
             aria-expanded={menuOpen}

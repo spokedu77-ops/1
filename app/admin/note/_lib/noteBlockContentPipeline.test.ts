@@ -67,6 +67,51 @@ describe('applyBlockContentChange', () => {
     expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('ab');
   });
 
+  it('can suppress ordinary content undo while structural paste records one transaction', () => {
+    const textBlock = block('a', 'text', { text: '', html: '<p></p>' });
+    useNoteBlockStore.getState().hydrate([textBlock]);
+    const blocksRef = { current: [textBlock] };
+    const recordUndo = vi.fn();
+
+    applyBlockContentChange({
+      block: textBlock,
+      content: { text: 'paste line one', html: '<p>paste line one</p>' },
+      blocksRef,
+      recordContentUndoBeforeChange: recordUndo,
+      scheduleBlockContentSave: scheduleViaStore,
+      skipUndo: true,
+    });
+
+    expect(recordUndo).not.toHaveBeenCalled();
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('paste line one');
+  });
+
+  it('preserves callout metadata when pasted text replaces the body', () => {
+    const callout = block('callout', 'callout', {
+      text: 'old',
+      html: '<p>old</p>',
+      icon: '!',
+      blockColor: 'yellow',
+    });
+    useNoteBlockStore.getState().hydrate([callout]);
+    const blocksRef = { current: [callout] };
+
+    applyBlockContentChange({
+      block: callout,
+      content: { text: 'pasted', html: '<p>pasted</p>' },
+      blocksRef,
+      recordContentUndoBeforeChange: vi.fn(),
+      scheduleBlockContentSave: scheduleViaStore,
+    });
+
+    expect(useNoteBlockStore.getState().getBlock('callout')?.content).toMatchObject({
+      text: 'pasted',
+      html: '<p>pasted</p>',
+      icon: '!',
+      blockColor: 'yellow',
+    });
+  });
+
   it('preserves store text when meta patch uses stale React content', () => {
     const todo = block('todo', 'todo', { text: '', checked: false });
     useNoteBlockStore.getState().hydrate([todo]);

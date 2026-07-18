@@ -12,6 +12,12 @@ import {
   resolveSaveActionFeedback,
   type SaveActionFeedback,
 } from '../lib/saveActionFeedback';
+import {
+  REPORT_DRAFT_KEY,
+  clearSaveDraft,
+  readSaveDraft,
+  writeSaveDraft,
+} from '../lib/saveDraftStorage';
 import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
@@ -23,6 +29,19 @@ import type { ClassRecord, Program } from '../types';
 
 type Audience = ExplanationAudience;
 type ReportTarget = 'class' | 'student';
+
+type ReportDraft = {
+  programId: string;
+  selectedRecordId: string;
+  audience: Audience;
+  target: ReportTarget;
+  selectedStudentId: string | null;
+  mood: string;
+  reaction: string;
+  focusSkills: string[];
+  note: string;
+  generated: string;
+};
 
 const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: typeof MessageCircle }> = [
   { id: 'parent', label: '학부모용', description: '아이들이 경험한 움직임을 쉽게 안내합니다.', Icon: UsersRound },
@@ -75,6 +94,12 @@ function buildStudentObservation(record: ClassRecord, studentId: string) {
 }
 
 function buildRecordDraft(record: ClassRecord, target: ReportTarget, studentId: string | null) {
+  const parentNote = record.parentNoteSnapshot?.trim();
+  // 빠른 기록에서 남긴 안내문 초안이 있으면 그 내용을 본문으로 우선 사용한다.
+  if (parentNote) {
+    return parentNote;
+  }
+
   const lines = [
     '안녕하세요.',
     '',
@@ -249,7 +274,7 @@ function ChipGroup({ options, selected, onChange }: { options: string[]; selecte
             key={option}
             type="button"
             onClick={() => onChange(toggle(selected, option))}
-            className="min-h-9 rounded-full border px-3 text-[12px] font-black"
+            className="min-h-11 rounded-full border px-3 text-[12px] font-black"
             style={{
               background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
               borderColor: active ? 'transparent' : 'var(--spm-br2)',
@@ -274,7 +299,7 @@ function SingleChoice({ options, value, onChange }: { options: string[]; value: 
             key={option}
             type="button"
             onClick={() => onChange(option)}
-            className="min-h-9 rounded-full border px-3 text-[12px] font-black"
+            className="min-h-11 rounded-full border px-3 text-[12px] font-black"
             style={{
               background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
               borderColor: active ? 'transparent' : 'var(--spm-br2)',
@@ -326,7 +351,57 @@ function ReportContent() {
   const [savedOutputId, setSavedOutputId] = useState<string | null>(savedExplanationId);
   const savedQueryAppliedRef = useRef<string | null>(null);
   const recordQueryAppliedRef = useRef<string | null>(null);
+  const draftHydratedRef = useRef(false);
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (savedExplanationId || queryRecordId || draftHydratedRef.current) return;
+    const draft = readSaveDraft<ReportDraft>(REPORT_DRAFT_KEY);
+    draftHydratedRef.current = true;
+    if (!draft?.generated?.trim() && !draft?.note?.trim()) return;
+    // URL로 다른 프로그램 안내문에 들어왔으면 이전 프로그램 초안을 덮어쓰지 않는다.
+    if (queryProgramId && draft.programId && draft.programId !== queryProgramId) return;
+    if (draft.programId) setProgramId(draft.programId);
+    if (draft.selectedRecordId) setSelectedRecordId(draft.selectedRecordId);
+    if (draft.audience) setAudience(draft.audience);
+    if (draft.target) setTarget(draft.target);
+    if (draft.selectedStudentId !== undefined) setSelectedStudentId(draft.selectedStudentId);
+    if (draft.mood) setMood(draft.mood);
+    if (draft.reaction) setReaction(draft.reaction);
+    if (draft.focusSkills?.length) setFocusSkills(draft.focusSkills);
+    if (draft.note) setNote(draft.note);
+    if (draft.generated) setGenerated(draft.generated);
+  }, [queryProgramId, queryRecordId, savedExplanationId]);
+
+  useEffect(() => {
+    if (savedExplanationId || saveStatus === 'success') return;
+    if (!generated.trim() && !note.trim()) return;
+    writeSaveDraft(REPORT_DRAFT_KEY, {
+      programId,
+      selectedRecordId,
+      audience,
+      target,
+      selectedStudentId,
+      mood,
+      reaction,
+      focusSkills,
+      note,
+      generated,
+    } satisfies ReportDraft);
+  }, [
+    audience,
+    focusSkills,
+    generated,
+    mood,
+    note,
+    programId,
+    reaction,
+    saveStatus,
+    savedExplanationId,
+    selectedRecordId,
+    selectedStudentId,
+    target,
+  ]);
 
   useEffect(() => {
     if (operationalData.status !== 'ready' || !queryRecordId || recordQueryAppliedRef.current === queryRecordId) return;
@@ -516,6 +591,7 @@ function ReportContent() {
       }
       router.replace(`/spokedu-master/report?program=${saved.programId}&saved=${saved.id}`);
       setSaveStatus('success');
+      clearSaveDraft(REPORT_DRAFT_KEY);
     } catch (caught) {
       setSaveStatus('error');
       setSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
@@ -525,7 +601,7 @@ function ReportContent() {
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>lesson explanation</p>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 안내문</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 안내문 만들기</h1>
         <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
           수업이 끝나면 오늘의 활동이 설명 가능한 문장으로 정리됩니다. 체육수업의 의미를 학부모, 기관, 학교에 맞는 언어로 남깁니다.
@@ -533,9 +609,9 @@ function ReportContent() {
       </header>
 
       {selectedRecord ? (
-        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.24)' }}>
+        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-acc-a12)', border: '1px solid var(--spm-acc-a24)' }}>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>
-            {selectedRecord.recordType === 'quick' ? '사용 기록 기반 안내문' : '학생 기록 기반 안내문'}
+            {selectedRecord.recordType === 'quick' ? '빠른 기록 기반 안내문' : '상세 기록 기반 안내문'}
           </p>
           <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{selectedRecord.programTitle} 안내문 만들기</h2>
           <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
@@ -544,13 +620,13 @@ function ReportContent() {
             {selectedRecord.focusCount > 0 ? ` · 관찰 ${selectedRecord.focusCount}명` : ''}
           </p>
           {selectedRecord.parentNoteSnapshot ? (
-            <p className="mt-3 rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'rgba(99,102,241,0.08)', color: 'var(--spm-t2)' }}>
-              저장된 안내문: {selectedRecord.parentNoteSnapshot}
+            <p className="mt-3 rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-acc-a08)', color: 'var(--spm-t2)' }}>
+              안내문 초안: {selectedRecord.parentNoteSnapshot}
             </p>
           ) : null}
         </section>
       ) : hasProgramQuery && program ? (
-        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.24)' }}>
+        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-acc-a12)', border: '1px solid var(--spm-acc-a24)' }}>
           <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>수업 자료 기반 문구</p>
           <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program.title} 설명 만들기</h2>
           <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
@@ -612,7 +688,7 @@ function ReportContent() {
                     type="button"
                     onClick={() => handleProgramSelect(item.id)}
                     className="w-full rounded-[12px] px-3 py-2.5 text-left"
-                    style={{ background: item.id === program?.id ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid rgba(99,102,241,0.4)' : '1px solid transparent' }}
+                    style={{ background: item.id === program?.id ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid var(--spm-acc-a40)' : '1px solid transparent' }}
                   >
                     <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
                     <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space)]) || item.category}</span>
@@ -621,7 +697,7 @@ function ReportContent() {
               ) : (
                 <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
                   {programsError === 'forbidden'
-                    ? '이용권 만료로 수업 자료를 불러올 수 없습니다. 이용권을 구독해 주세요.'
+                    ? '이용권 만료로 수업 자료를 불러올 수 없습니다. 구독을 시작해 주세요.'
                     : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'}
                 </p>
               )}
@@ -645,7 +721,7 @@ function ReportContent() {
                   <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
                   <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(item.createdAt).toLocaleDateString('ko-KR')} · {item.text.includes(' 학생은 ') ? '학생별 안내문' : '전체 수업 안내문'}</span>
                 </button>
-                <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="mt-1 min-h-10 w-full rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc)' }}>복사</button>
+                <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="mt-1 min-h-10 w-full rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}>복사</button>
                 </div>
               )) : (
                 <div className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
@@ -664,9 +740,9 @@ function ReportContent() {
                 <h2 className="mt-1 text-[24px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program?.title ? `${program.title} 설명 만들기` : '수업을 선택하세요'}</h2>
               </div>
               {program ? (
-                <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-10 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 items-center gap-2 rounded-[10px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
                   <BookOpen size={14} />
-                  수업 자료 보기
+                  전체 수업 자료 보기
                 </Link>
               ) : null}
             </div>
@@ -675,11 +751,11 @@ function ReportContent() {
               <div>
                 <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>2. 안내 대상 선택</p>
                 <div className="grid gap-2 sm:grid-cols-2">
-                  <button type="button" onClick={() => handleTargetChange('class')} className="min-h-11 rounded-[14px] p-3 text-left" style={{ background: target === 'class' ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: target === 'class' ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                  <button type="button" onClick={() => handleTargetChange('class')} className="min-h-11 rounded-[14px] p-3 text-left" style={{ background: target === 'class' ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: target === 'class' ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br2)' }}>
                     <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>전체 수업 안내문</strong>
                     <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>학생별 관찰 내용은 포함하지 않습니다.</span>
                   </button>
-                  <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord?.students.length} className="min-h-11 rounded-[14px] p-3 text-left disabled:opacity-50" style={{ background: target === 'student' ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: target === 'student' ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                  <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord?.students.length} className="min-h-11 rounded-[14px] p-3 text-left disabled:opacity-50" style={{ background: target === 'student' ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: target === 'student' ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br2)' }}>
                     <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>학생별 안내문</strong>
                     <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>선택한 학생 1명의 기록만 사용합니다.</span>
                   </button>
@@ -699,7 +775,7 @@ function ReportContent() {
                   {AUDIENCES.map(({ id, label, description, Icon }) => {
                     const active = audience === id;
                     return (
-                      <button key={id} type="button" onClick={() => { setAudience(id); markDraftDirty(); }} className="rounded-[14px] p-2.5 text-left sm:p-3" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s3)', border: active ? '1px solid rgba(99,102,241,0.45)' : '1px solid var(--spm-br2)' }}>
+                      <button key={id} type="button" onClick={() => { setAudience(id); markDraftDirty(); }} className="rounded-[14px] p-2.5 text-left sm:p-3" style={{ background: active ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: active ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br2)' }}>
                         <Icon size={16} color={active ? 'var(--spm-acc)' : 'var(--spm-t3)'} />
                         <strong className="mt-2 block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
                         <span className="mt-1 hidden text-[11px] font-semibold leading-4 sm:block" style={{ color: 'var(--spm-t3)' }}>{description}</span>
@@ -739,10 +815,10 @@ function ReportContent() {
             </div>
           </section>
 
-          <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.14), var(--spm-s1))', border: '1px solid rgba(99,102,241,0.22)' }}>
+          <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, var(--spm-acc-a14), var(--spm-s1))', border: '1px solid var(--spm-acc-a22)' }}>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: '#818cf8' }}>{audienceMeta.label}</p>
+                <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc-muted)' }}>{audienceMeta.label}</p>
                 <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{getAudienceOutputTitle(audience)}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -750,7 +826,7 @@ function ReportContent() {
                   <FileText size={14} />
                   안내문 다시 생성
                 </button>
-                <button type="button" onClick={copyOutput} disabled={!output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-50" style={{ background: copied ? 'rgba(16,185,129,0.16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+                <button type="button" onClick={copyOutput} disabled={!output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-50" style={{ background: copied ? 'var(--spm-grn-a16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
                   {copied ? <Check size={14} /> : <Clipboard size={14} />}
                   {copied ? '복사 완료' : '현재 문구 복사'}
                 </button>
@@ -763,11 +839,11 @@ function ReportContent() {
             {copyStatus === 'success' ? <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-grn)' }}>안내문을 복사했습니다.</p> : null}
             {copyStatus === 'error' ? <p className="mt-2 text-[12px] font-bold text-red-600">자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.</p> : null}
             {saveStatus === 'success' ? (
-              <div className="mt-3 flex flex-wrap gap-2 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
+              <div className="mt-3 flex flex-wrap gap-2 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
                 <p className="w-full text-[12px] font-bold">안내문이 저장되었습니다.</p>
-                <button type="button" onClick={copyOutput} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>안내문 복사</button>
-                {savedOutputId ? <Link href={`/spokedu-master/report?saved=${savedOutputId}`} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>저장한 안내문 보기</Link> : null}
-                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
+                <button type="button" onClick={copyOutput} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>안내문 복사</button>
+                {savedOutputId ? <Link href={`/spokedu-master/report?saved=${savedOutputId}`} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>저장한 안내문 보기</Link> : null}
+                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
               </div>
             ) : null}
             {saveStatus === 'error' && saveFeedback ? (

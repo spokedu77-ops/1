@@ -28,7 +28,7 @@ export const brandChannels: BrandChannel[] = [
     key: 'naver-blog',
     label: '네이버 블로그',
     href: 'https://blog.naver.com/spokedu77',
-    description: '월간 수업 후기와 운영 스토리',
+    description: '공식 블로그(spokedu77) — 월간 수업 후기와 운영 스토리',
     isPending: false,
   },
   {

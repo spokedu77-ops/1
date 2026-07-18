@@ -65,7 +65,7 @@ export function PwaInstallCard({ compact = false }: { compact?: boolean }) {
   return (
     <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="PWA 설치 상태">
       <div className="flex items-start gap-3">
-        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
+        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: 'var(--spm-acc-a14)' }}>
           <Smartphone size={20} color="var(--spm-acc)" />
         </span>
         <div className="min-w-0 flex-1">

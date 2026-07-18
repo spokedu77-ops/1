@@ -60,12 +60,12 @@ export function getEntitlementPaymentHref(snapshot: MasterAccessSnapshot | null 
 }
 
 export function getEntitlementPrimaryCtaLabel(snapshot: MasterAccessSnapshot | null | undefined): string {
-  if (!snapshot || snapshot.subscriptionStatus === 'none') return '이용권 선택';
+  if (!snapshot || snapshot.subscriptionStatus === 'none') return '구독 선택';
   if (snapshot.subscriptionStatus === 'expired' || snapshot.subscriptionStatus === 'cancelled') {
-    return '이용권 다시 선택';
+    return '구독 다시 선택';
   }
   if (snapshot.plan === 'lite' && snapshot.subscriptionStatus === 'active') return '프리미엄 업그레이드';
-  return '이용권 선택';
+  return '구독 선택';
 }
 
 export function canBuySpomatFromSnapshot(snapshot: MasterAccessSnapshot | null | undefined): boolean {
@@ -104,5 +104,5 @@ export function getUpgradeHrefFromSnapshot(snapshot: MasterAccessSnapshot | null
 }
 
 export function getUpgradeLabelFromSnapshot(snapshot: MasterAccessSnapshot | null | undefined): string {
-  return hasMasterEntitlement(snapshot) ? '이용권 확인' : '이용권 선택';
+  return hasMasterEntitlement(snapshot) ? '구독 확인' : '구독 선택';
 }

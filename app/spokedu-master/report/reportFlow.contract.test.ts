@@ -38,6 +38,12 @@ describe('report writing flow contract', () => {
     expect(source).toContain('setGenerated(buildRecordDraft(record, initialTarget, initialStudentId))');
   });
 
+  it('prefers parentNoteSnapshot as the record draft body when present', () => {
+    expect(source).toContain('const parentNote = record.parentNoteSnapshot?.trim()');
+    expect(source).toContain('if (parentNote) {');
+    expect(source).toContain('return parentNote;');
+  });
+
   it('protects edited text before regenerating a draft', () => {
     expect(source).toContain('현재 수정한 안내문이 새 초안으로 교체됩니다.');
     expect(source).toContain('replaceDraft(buildRecordDraft');
@@ -49,6 +55,20 @@ describe('report writing flow contract', () => {
     expect(source).toContain('안내문이 저장되었습니다.');
     expect(source).toContain('안내문을 복사했습니다.');
     expect(source).toContain('자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.');
+  });
+
+  it('blocks offline saves and maps forbidden errors to payment CTA', () => {
+    expect(source).toContain('canAttemptOnlineSave(isOnline)');
+    expect(source).toContain('getOfflineSaveFeedback()');
+    expect(source).toContain('resolveSaveActionFeedback(caught, accessSnapshot)');
+    expect(source).toContain('SaveErrorBanner');
+  });
+
+  it('restores unsaved report drafts after refresh', () => {
+    expect(source).toContain('REPORT_DRAFT_KEY');
+    expect(source).toContain('writeSaveDraft(REPORT_DRAFT_KEY');
+    expect(source).toContain('clearSaveDraft(REPORT_DRAFT_KEY)');
+    expect(source).toContain('if (queryProgramId && draft.programId && draft.programId !== queryProgramId) return');
   });
 
   it('clears saved context when the restored output is edited', () => {

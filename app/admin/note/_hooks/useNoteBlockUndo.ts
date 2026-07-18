@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import type { NoteBlock } from '../_lib/types';
 
 export type NoteHistoryEntry =
@@ -120,7 +120,7 @@ export function useNoteBlockUndo() {
     trimStack(undoStackRef.current);
   }, []);
 
-  return {
+  return useMemo(() => ({
     pushBlockTransactionUndo,
     pushRestoreBlocksUndo,
     pushDeleteBlockUndo,
@@ -132,7 +132,19 @@ export function useNoteBlockUndo() {
     popRedo,
     pushRedo,
     clearHistory,
-  };
+  }), [
+    pushBlockTransactionUndo,
+    pushRestoreBlocksUndo,
+    pushDeleteBlockUndo,
+    pushUndoNoClear,
+    hasUndo,
+    hasRedo,
+    peekUndo,
+    popUndo,
+    popRedo,
+    pushRedo,
+    clearHistory,
+  ]);
 }
 
 export type NoteUndo = ReturnType<typeof useNoteBlockUndo>;

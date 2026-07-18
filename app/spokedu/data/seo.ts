@@ -34,9 +34,9 @@ const CANONICAL: Record<SpokeduSeoPageKey, string> = {
   private: '/spokedu/private',
   dispatch: '/spokedu/dispatch',
   curriculum: '/spokedu/curriculum',
-  programs: '/spokedu',
+  programs: '/spokedu/programs',
   records: '/spokedu/records',
-  cases: '/spokedu/cases',
+  cases: '/spokedu/records',
   monthly: '/spokedu/monthly',
   insights: '/spokedu/insights',
   contact: '/spokedu/contact',
@@ -113,9 +113,9 @@ export const seoMeta: Record<SpokeduSeoPageKey, SeoMetaItem> = {
       '키움센터·지역아동센터·학교에 맞춘 기관 체육수업과 원데이·정규 프로그램. 공간·인원·일정에 맞는 SPOMOVE·PAPS 운영안을 제안합니다.',
   },
   curriculum: {
-    title: '체육 커리큘럼·콘텐츠 | SPOKEDU',
+    title: '지도자 교육·체육 커리큘럼 | SPOKEDU',
     description:
-      '놀이체육 수업안, 운영 매뉴얼, 교구 활용, 강사 교육까지. 현장 수업을 반복 운영 가능한 체육 커리큘럼과 콘텐츠 도입을 안내합니다.',
+      '수업안·운영 매뉴얼·교구 활용·지도자 세미나·SPOMOVE 도입 교육. 현장 수업을 과정으로 만들고 강사를 교육하는 스포키듀 커리큘럼을 안내합니다.',
   },
   programs: {
     title: 'SPOKEDU 프로그램 | SPOMOVE·PAPS·원데이·방학캠프',

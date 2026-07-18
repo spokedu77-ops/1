@@ -44,7 +44,7 @@ export function LandingLoggedInBanner() {
   return (
     <div
       className="border-b px-[22px] py-3 sm:px-10"
-      style={{ background: 'rgba(99,102,241,0.14)', borderColor: 'rgba(99,102,241,0.28)' }}
+      style={{ background: 'var(--spm-acc-a14)', borderColor: 'var(--spm-acc-a28)' }}
     >
       <div className="mx-auto flex max-w-[1120px] flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
@@ -57,7 +57,7 @@ export function LandingLoggedInBanner() {
         </div>
         <Link
           href={destination}
-          className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-5 text-[12px] font-black text-white"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[12px] font-black text-white"
           style={{ background: 'var(--spm-acc)' }}
         >
           앱으로 바로가기

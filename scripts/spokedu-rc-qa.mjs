@@ -19,7 +19,7 @@ const NAV_PATHS = [
   '/spokedu/dispatch',
   '/spokedu/curriculum',
   '/spokedu/records',
-  '/spokedu/cases',
+  '/spokedu/programs',
   '/spokedu/monthly',
   '/spokedu/insights',
   '/spokedu/contact',
@@ -139,7 +139,7 @@ async function main() {
   for (const vp of VIEWPORTS) {
     await page.setViewportSize({ width: vp, height: 900 });
     const samples = [];
-    for (const path of ['/spokedu', '/spokedu/about', '/spokedu/contact', '/spokedu/records', '/spokedu/cases', '/spokedu/programs/spomove']) {
+    for (const path of ['/spokedu', '/spokedu/about', '/spokedu/contact', '/spokedu/records', '/spokedu/programs', '/spokedu/programs/spomove']) {
       await page.goto(`${BASE}${path}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
       const m = await page.evaluate(() => {
         const h1 = document.querySelector('h1');

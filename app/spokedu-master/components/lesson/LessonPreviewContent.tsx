@@ -90,7 +90,7 @@ export function LessonPreviewContent({
                         key={item}
                         className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[9px] border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[12px] font-bold leading-4 text-emerald-900"
                       >
-                        <Package className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                        <Package className="h-3.5 w-3.5 shrink-0 text-[var(--spm-grn)]" />
                         <span className="min-w-0 break-words">{item}</span>
                       </span>
                     ))}
@@ -99,9 +99,9 @@ export function LessonPreviewContent({
               ) : null}
 
               {previewScript ? (
-                <section className="rounded-[12px] border border-indigo-100 bg-indigo-50/70 p-3">
+                <section className="rounded-[12px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-3">
                   <p className="sr-only">수업 목표</p>
-                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-indigo-700">
+                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-[var(--spm-acc)]">
                     <MessageSquareQuote className="h-3.5 w-3.5" />
                     수업 스크립트
                   </h3>
@@ -121,7 +121,7 @@ export function LessonPreviewContent({
                         {index < previewRules.length - 1 ? (
                           <span aria-hidden className="absolute left-[13px] top-7 h-[calc(100%+4px)] w-px bg-slate-200" />
                         ) : null}
-                        <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-[11px] font-black text-indigo-600">
+                        <span className="relative z-10 grid h-7 w-7 place-items-center rounded-full border border-slate-200 bg-white text-[11px] font-black text-[var(--spm-acc)]">
                           {index + 1}
                         </span>
                         <span className="min-w-0 pt-0.5 text-[13px] font-semibold leading-6 text-slate-700">

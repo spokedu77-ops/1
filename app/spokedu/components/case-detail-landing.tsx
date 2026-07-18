@@ -38,7 +38,7 @@ export function CaseDetailLanding({ item }: CaseDetailLandingProps) {
   const reducedMotion = useReducedMotion();
   const relatedProgram = getProgramBySlug(item.relatedProgram);
   const heroMedia = HOME_MEDIA[item.mediaKey];
-  const backHref = `${SPOKEDU_BASE_PATH}/cases`;
+  const backHref = `${SPOKEDU_BASE_PATH}/records`;
   const dispatchHref = `${SPOKEDU_BASE_PATH}/contact?type=dispatch`;
   const programHref = relatedProgram?.href ?? HOME_PROGRAM_SYSTEM_HREF;
   const primaryImage = item.images[0];

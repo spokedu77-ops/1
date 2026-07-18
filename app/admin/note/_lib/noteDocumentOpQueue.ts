@@ -11,6 +11,37 @@ import type { NoteBlock } from './types';
 
 const CONTENT_DEBOUNCE_MS = 1500;
 
+function hasProtectableContent(content: Record<string, unknown> | null | undefined): boolean {
+  if (!content) return false;
+  const textKeys = ['text', 'html', 'title', 'body', 'caption', 'url', 'icon', 'blockColor', 'page_document_id'];
+  return textKeys.some((key) => {
+    const value = content[key];
+    if (key === 'html' && isEmptyHtml(value)) return false;
+    return typeof value === 'string' && value.trim().length > 0;
+  });
+}
+
+function isEmptyHtml(value: unknown): boolean {
+  return value === ''
+    || value === '<p></p>'
+    || value === '<p><br></p>'
+    || value === '<p><br class="ProseMirror-trailingBreak"></p>';
+}
+
+function isEmptyBodyPatch(content: Record<string, unknown>): boolean {
+  const text = content.text;
+  const html = content.html;
+  return text === ''
+    && (
+      !('html' in content)
+      || isEmptyHtml(html)
+    );
+}
+
+function contentRecordsEqual(left: Record<string, unknown> | null | undefined, right: Record<string, unknown> | null | undefined): boolean {
+  return JSON.stringify(left ?? {}) === JSON.stringify(right ?? {});
+}
+
 export type NoteDocumentOpQueueDeps = {
   getBlock: (blockId: string) => NoteBlock | undefined;
   getActiveBlockId: () => string | null;
@@ -18,6 +49,7 @@ export type NoteDocumentOpQueueDeps = {
   onError?: (error: Error) => void;
   onServerPatches?: (blocks: PatchedNoteBlock[]) => void;
   onServerConflicts?: (blocks: NoteBlock[]) => void;
+  onContentPersisted?: (blockIds: string[]) => void;
   /** op-log sync 활성 시 HTTP persist 대신 coordinator에 위임 */
   persistViaOpLog?: (
     op: NotePersistOp,
@@ -110,8 +142,17 @@ export class NoteDocumentOpQueue {
         const storeText = typeof storeContent?.text === 'string' ? storeContent.text : '';
         const pendingText = typeof pending.content.text === 'string' ? pending.content.text : '';
         const baseText = typeof pending.baseContent?.text === 'string' ? pending.baseContent.text : '';
-        if (pendingText.length === 0 && (storeText.length > 0 || baseText.length > 0)) {
-          return null;
+        if (isEmptyBodyPatch(pending.content)) {
+          const storeMatchesEmptyPatch = contentRecordsEqual(storeContent, pending.content);
+          const explicitDelete = storeMatchesEmptyPatch && hasProtectableContent(pending.baseContent);
+          const staleEmptyPatch = !explicitDelete && (
+            storeText.length > 0
+            || baseText.length > 0
+            || hasProtectableContent(storeContent)
+            || hasProtectableContent(pending.baseContent)
+          );
+          if (staleEmptyPatch) return null;
+          if (storeMatchesEmptyPatch && !hasProtectableContent(pending.baseContent)) return null;
         }
         const content = storeText.length > pendingText.length
           ? { ...(storeContent ?? {}), ...pending.content, text: storeText }
@@ -127,6 +168,7 @@ export class NoteDocumentOpQueue {
     if (updates.length === 0) return;
 
     await this.enqueue({ type: 'patchContent', updates });
+    this.deps.onContentPersisted?.(updates.map((update) => update.id));
   }
 
   enqueue(op: NotePersistOp): Promise<void> {
@@ -246,7 +288,7 @@ export class NoteDocumentOpQueue {
       if (!this.deps.persistViaOpLog) {
         throw new Error('[Note] op-log persist is required; legacy HTTP persist is disabled');
       }
-      await this.deps.persistViaOpLog(op, { immediate: op.type !== 'patchContent' });
+      await this.deps.persistViaOpLog(op, { immediate: true });
       this.deps.triggerSave();
     } finally {
       this.persistInFlight = false;

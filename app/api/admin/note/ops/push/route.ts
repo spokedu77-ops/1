@@ -12,6 +12,12 @@ function isSeqConflictMessage(message: string): boolean {
     || normalized.includes('note_block_ops_document_seq');
 }
 
+function isRecoverableApplyConflictMessage(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return normalized.includes('block not found')
+    || normalized.includes('version_conflict');
+}
+
 function parsePushOps(raw: unknown): NoteBlockOpPushItem[] {
   if (!Array.isArray(raw)) return [];
   return raw.flatMap((item) => {
@@ -53,8 +59,8 @@ export async function POST(request: NextRequest) {
 
     if (!result.ok) {
       return NextResponse.json(
-        { error: result.error, lastSeq: result.lastSeq, ops: result.ops },
-        { status: 409 },
+        { ok: false, error: result.error, lastSeq: result.lastSeq, ops: result.ops },
+        { status: 200 },
       );
     }
 
@@ -67,13 +73,13 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     devLogger.error('[admin/note/ops/push]', err);
     const message = err instanceof Error ? err.message : 'Server error';
-    if (isSeqConflictMessage(message) && documentId) {
+    if ((isSeqConflictMessage(message) || isRecoverableApplyConflictMessage(message)) && documentId) {
       try {
         const supabase = getServiceSupabase();
         const missed = await pullNoteBlockOps(supabase, documentId, baseSeq);
         return NextResponse.json(
-          { error: 'seq_conflict', lastSeq: missed.lastSeq, ops: missed.ops },
-          { status: 409 },
+          { ok: false, error: 'seq_conflict', reason: message, lastSeq: missed.lastSeq, ops: missed.ops },
+          { status: 200 },
         );
       } catch (pullErr) {
         devLogger.error('[admin/note/ops/push] conflict pull fallback failed', pullErr);

@@ -1,5 +1,7 @@
 import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
 import { contentForPastedBlock, type PastedBlockSpec } from './notePasteBlocks';
+import { mergeBlockContentWithStore } from './noteContentPatch';
+import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlock } from './types';
 
 export type PasteInsertContext = {
@@ -11,7 +13,11 @@ export type PasteInsertContext = {
     options?: { content?: Record<string, unknown>; focus?: boolean; registerUndo?: boolean },
   ) => Promise<NoteBlock | null>;
   changeBlockType: (block: NoteBlock, type: NoteBlock['type']) => Promise<void>;
-  syncBlockContent: (blockId: string, content: Record<string, unknown>) => void;
+  syncBlockContent: (
+    blockId: string,
+    content: Record<string, unknown>,
+    options?: { skipUndo?: boolean },
+  ) => void;
 };
 
 function isListSpec(spec: PastedBlockSpec): boolean {
@@ -20,6 +26,14 @@ function isListSpec(spec: PastedBlockSpec): boolean {
 
 function parentInsertKey(parentId: string | null): string {
   return parentId ?? '__root__';
+}
+
+export function resolvePasteSourceContent(block: NoteBlock): Record<string, unknown> {
+  const base = (block.content ?? {}) as Record<string, unknown>;
+  const storeContent = useNoteBlockStore.getState().getBlock(block.id)?.content as
+    | Record<string, unknown>
+    | undefined;
+  return (mergeBlockContentWithStore(base, storeContent) ?? base) as Record<string, unknown>;
 }
 
 export async function insertPastedBlockSpecsAfterAnchor(
@@ -36,7 +50,7 @@ export async function insertPastedBlockSpecsAfterAnchor(
   if (first.type !== anchor.type) {
     await ctx.changeBlockType(anchor, first.type);
   }
-  ctx.syncBlockContent(anchor.id, contentForPastedBlock(first, sourceContent));
+  ctx.syncBlockContent(anchor.id, contentForPastedBlock(first, sourceContent), { skipUndo: true });
 
   let lastFocusId = anchor.id;
   let lastFocusPart: 'title' | 'editor' = first.type === 'toggle' ? 'title' : 'editor';

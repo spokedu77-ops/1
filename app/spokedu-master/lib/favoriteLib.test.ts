@@ -5,6 +5,7 @@ import {
   getFavoritesByOwner,
   getFavoritesOwnerId,
   isFavoriteByOwner,
+  mergeFavoriteProgramIds,
   migrateLegacyFavorites,
   normalizeFavoriteProgramIds,
   toggleFavoriteByOwner,
@@ -117,5 +118,10 @@ describe('legacy favorite migration helpers', () => {
   it('normalizes only unique non-empty string IDs', () => {
     expect(normalizeFavoriteProgramIds(['p1', '', 'p1', null, 'p2']))
       .toEqual(['p1', 'p2']);
+  });
+
+  it('merges remote and local favorite ids without dropping either side', () => {
+    expect(mergeFavoriteProgramIds(['local-only', 'shared'], ['shared', 'remote-only']))
+      .toEqual(['shared', 'remote-only', 'local-only']);
   });
 });

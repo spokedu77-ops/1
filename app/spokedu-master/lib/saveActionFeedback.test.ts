@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { MasterClientRequestError } from './masterRequestError';
-import { toMasterClientError } from './clientErrors';
+import { toMasterClientError, toNetworkMasterClientError } from './clientErrors';
 import {
   canAttemptOnlineSave,
   getOfflineSaveFeedback,
@@ -41,12 +41,20 @@ describe('saveActionFeedback', () => {
     const feedback = resolveSaveActionFeedback(error, expiredSnapshot);
     expect(feedback.retryable).toBe(false);
     expect(feedback.upgradeHref).toBe('/spokedu-master/payment');
-    expect(feedback.upgradeLabel).toBe('이용권 다시 선택');
+    expect(feedback.upgradeLabel).toBe('구독 다시 선택');
   });
 
   it('maps server errors as retryable save feedback', () => {
     const error = new MasterClientRequestError(toMasterClientError(500));
     const feedback = resolveSaveActionFeedback(error);
+    expect(feedback.retryable).toBe(true);
+  });
+
+  it('uses the offline save message for mid-request network failures', () => {
+    const feedback = resolveSaveActionFeedback(
+      new MasterClientRequestError(toNetworkMasterClientError()),
+    );
+    expect(feedback.message).toBe(OFFLINE_SAVE_MESSAGE);
     expect(feedback.retryable).toBe(true);
   });
 });

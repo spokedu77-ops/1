@@ -1,5 +1,4 @@
 import type { MetadataRoute } from 'next';
-import { cases } from './spokedu/data/cases';
 import { monthlyRecords } from './spokedu/data/monthly';
 import { getSpokeduSiteUrl } from './spokedu/lib/site-url';
 
@@ -12,14 +11,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/spokedu/private',
     '/spokedu/dispatch',
     '/spokedu/curriculum',
+    '/spokedu/programs',
     '/spokedu/programs/spomove',
     '/spokedu/programs/paps',
     '/spokedu/programs/monthly-newsports',
     '/spokedu/programs/oneday-event',
     '/spokedu/programs/camp',
     '/spokedu/records',
-    '/spokedu/cases',
-    ...cases.map((item) => `/spokedu/cases/${item.slug}`),
     '/spokedu/monthly',
     '/spokedu/insights',
     '/spokedu/contact',

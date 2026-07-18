@@ -591,6 +591,7 @@ function BlockContent({
         <button
           ref={pageBtnRef}
           type="button"
+          data-note-open-page-block
           tabIndex={0}
           title="클릭하여 페이지 열기"
           className={`flex w-full min-w-0 items-center gap-2 rounded-sm py-1.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-300 ${

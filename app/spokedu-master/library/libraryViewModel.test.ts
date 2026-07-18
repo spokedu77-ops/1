@@ -4,6 +4,7 @@ import {
   countValidFavoritePrograms,
   countFacetedFilterOptions,
   filterLibraryPrograms,
+  formatLibraryCardEquipmentName,
   formatRecentRecordSubtitle,
   getFavoritesEmptyState,
   matchesLibraryFilters,
@@ -188,5 +189,23 @@ describe('library pagination and recent labels', () => {
         recordType: 'quick',
       }),
     ).toContain('빠른 기록');
+  });
+});
+
+describe('formatLibraryCardEquipmentName', () => {
+  it('keeps the equipment name and strips quantity suffixes', () => {
+    expect(formatLibraryCardEquipmentName('원형면 4개')).toBe('원형면');
+    expect(formatLibraryCardEquipmentName('마커콘 4개')).toBe('마커콘');
+    expect(formatLibraryCardEquipmentName('접시콘 12~15개')).toBe('접시콘');
+    expect(formatLibraryCardEquipmentName('바톤 2~4개')).toBe('바톤');
+  });
+
+  it('uses the first alternative and drops trailing notes', () => {
+    expect(formatLibraryCardEquipmentName('색깔 원판 4~6개 또는 색 테이프')).toBe('색깔 원판');
+    expect(formatLibraryCardEquipmentName('콩주머니 1개 (선택)')).toBe('콩주머니');
+  });
+
+  it('normalizes empty-equipment labels', () => {
+    expect(formatLibraryCardEquipmentName('준비물 없음')).toBe('없음');
   });
 });

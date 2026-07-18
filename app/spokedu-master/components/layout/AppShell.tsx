@@ -74,10 +74,13 @@ function FloatingTimerPill() {
   const secs = Math.floor((displayMs % 60000) / 1000);
 
   return (
-    <div className="flex shrink-0 justify-center px-4 pb-2">
-      <div className="flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/95 px-4 py-2.5 shadow-xl">
+    <div
+      className="pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4 lg:bottom-4"
+      style={{ bottom: 'calc(72px + env(safe-area-inset-bottom, 0px))' }}
+    >
+      <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-slate-700 bg-slate-950/95 px-4 py-2.5 shadow-xl">
         <span className={`h-2 w-2 rounded-full ${running ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="font-mono text-[15px] font-black tabular-nums text-white">
+        <button type="button" onClick={() => router.push('/spokedu-master/class-tools')} className="min-h-11 font-mono text-[15px] font-black tabular-nums text-white">
           {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
         </button>
         <span className="text-[11px] font-semibold text-slate-300">{running ? '진행 중' : '일시정지'}</span>
@@ -87,7 +90,7 @@ function FloatingTimerPill() {
             timerReset();
             setDisplayMs(0);
           }}
-          className="grid h-6 w-6 place-items-center rounded-full bg-white/10 text-[11px] font-black text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+          className="grid h-11 w-11 place-items-center rounded-full bg-white/10 text-[13px] font-black text-slate-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
           aria-label="스탑워치 초기화"
         >
           ×
@@ -111,7 +114,7 @@ function MasterAccessCheckingState({ error = false, onRetry }: { error?: boolean
           <button
             type="button"
             onClick={onRetry}
-            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-indigo-600 px-4 text-[13px] font-black text-white"
+            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
           >
             다시 시도
           </button>
@@ -125,23 +128,23 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="h-full overflow-y-auto px-5 py-10 sm:px-8">
       <div className="mx-auto flex min-h-full w-full max-w-[520px] items-center">
-        <section className="w-full rounded-[28px] border border-indigo-100 bg-white p-6 shadow-sm sm:p-8">
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-indigo-600">
+        <section className="w-full rounded-[28px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-white p-6 shadow-sm sm:p-8">
+          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--spm-acc)]">
             SPOKEDU MASTER
           </p>
           <h1 className="mt-3 text-[28px] font-black leading-tight text-slate-950 sm:text-[34px]">
             SPOKEDU MASTER 이용 권한이 필요합니다.
           </h1>
           <p className="mt-3 text-[14px] font-semibold leading-6 text-slate-500">
-            수업 자료, 학생 기록, 저장 안내문을 사용하려면 이용권을 결제해 주세요.
+            수업 자료, 학생 기록, 저장 안내문을 사용하려면 구독을 시작해 주세요.
           </p>
 
           <div className="mt-6 grid gap-2">
             <Link
               href="/spokedu-master/payment"
-              className="flex min-h-12 items-center justify-center rounded-[14px] bg-indigo-600 px-4 text-[14px] font-black text-white shadow-lg shadow-indigo-100"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
             >
-              이용권 선택
+              구독 선택
             </Link>
           </div>
 
@@ -149,13 +152,13 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
             <button
               type="button"
               onClick={onRetry}
-              className="flex min-h-11 items-center justify-center rounded-[12px] bg-slate-100 px-3 text-[13px] font-black text-slate-700"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-slate-100 px-3 text-[13px] font-black text-slate-700"
             >
               권한 다시 확인
             </button>
             <Link
               href="/spokedu-master/landing"
-              className="flex min-h-11 items-center justify-center rounded-[12px] px-3 text-[13px] font-black text-slate-500"
+              className="inline-flex h-11 items-center justify-center rounded-[10px] px-3 text-[13px] font-black text-slate-500"
             >
               소개 페이지로 이동
             </Link>
@@ -394,15 +397,15 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
   }
 
   return (
-    <div className="min-h-dvh bg-[#eef2f7] text-slate-900">
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[#f5f7fb]" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
+    <div className="min-h-dvh bg-[var(--spm-bg)] text-slate-900">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-[1440px] overflow-hidden border-x border-slate-200 bg-[var(--spm-bg)]" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>
         <div className="flex min-w-0 flex-1 flex-col">
           {hideChrome ? null : (
             <div className={isLibraryDetail ? 'hidden lg:block' : undefined}>
               <StatusBar />
             </div>
           )}
-          <main className="min-h-0 flex-1 overflow-hidden bg-[#f5f7fb]">
+          <main className="min-h-0 flex-1 overflow-hidden bg-[var(--spm-bg)]">
             {isAccessGuardPending ? (
               <MasterAccessCheckingState />
             ) : routeGateDenied && routeRequirement.capability !== 'authenticated' && accessGuard.snapshot ? (

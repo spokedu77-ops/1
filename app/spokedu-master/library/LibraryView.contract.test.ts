@@ -26,11 +26,12 @@ describe('LibraryView favorites contract', () => {
     expect(source).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");
   });
 
-  it('opens preview from the media card and keeps card actions compact', () => {
+  it('opens preview from the media card and keeps one full-lesson CTA', () => {
     expect(source).toContain('aria-label={`${program.title} 수업 미리보기`}');
-    expect(source.match(/onClick=\{onPreview\}/g)?.length).toBeGreaterThanOrEqual(2);
-    expect(source).toContain('mt-2 grid grid-cols-2 gap-2');
-    expect(source).toContain('전체 자료 보기');
+    expect(source.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
+    expect(source).not.toMatch(/>\s*수업 미리보기\s*</);
+    expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
+    expect(source).toContain('전체 수업 자료 보기');
   });
 
   it('keeps the library search controls compact and purpose-led', () => {

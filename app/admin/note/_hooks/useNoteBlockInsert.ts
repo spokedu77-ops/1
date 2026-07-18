@@ -139,6 +139,7 @@ export function useNoteBlockInsert(options: {
           affectedIds = [...new Set([...affectedIds, ...columnCommand.affectedIds])];
         }
       }
+      blocksRef.current = nextBlocks;
       setBlocks(nextBlocks);
       if (insertOptions?.focus !== false) {
         if (type === COLUMN_LIST_TYPE) {

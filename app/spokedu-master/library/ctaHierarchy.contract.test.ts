@@ -8,11 +8,13 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   const library = read('app/spokedu-master/library/LibraryView.tsx');
   const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
-  it('keeps library cards focused on preview and compact full lesson material actions', () => {
-    expect(library.match(/onClick=\{onPreview\}/g)).toHaveLength(2);
+  it('keeps library cards focused on media preview and one full-lesson CTA', () => {
+    expect(library.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
     expect(library).toContain('aria-label={`${program.title} 수업 미리보기`}');
-    expect(library).toContain('mt-2 grid grid-cols-2 gap-2');
-    expect(library).toContain('전체 자료 보기');
+    expect(library).not.toMatch(/>\s*수업 미리보기\s*</);
+    expect(library).toContain('전체 수업 자료 보기');
+    expect(library).toContain('autoplayVideo: programHasPlayableVideo(program)');
+    expect(library).not.toMatch(/>\s*전체 자료 보기\s*</);
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
@@ -27,14 +29,20 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   });
 
   it('makes library detail the compact bridge from lesson choice to operation', () => {
-    expect(detail).toContain('USE THIS LESSON');
+    expect(detail).toContain('이 수업으로');
     expect(detail).toContain('이 수업으로 바로 진행');
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}');
     expect(detail).toContain('수업 기록 시작');
     expect(detail).toContain('빠른 기록');
-    expect(detail).toContain('안내문 초안으로 이어집니다.');
+    expect(detail).toContain('오늘 관찰을 남기면 학생 이력과 안내문 초안으로 이어집니다.');
     expect(detail).not.toContain('라이브러리 수업을 내 반 기록과 안내문으로 이어갑니다.');
+    expect(detail).toContain('오늘 관찰·지도 포인트');
+    expect(detail).toContain('오늘 집중 관찰');
+    expect(detail).toContain('이 기록 보강');
+    expect(detail).toContain('기록 남기기');
+    expect(detail).toContain('resolveQuickRecordClassId');
+    expect(detail).not.toContain('상세 기록 작성');
   });
 
   it('does not expose SPOMOVE execution from library detail', () => {
@@ -52,6 +60,8 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).toContain('이 수업으로 바로 진행');
     expect(detail).toContain('빠른 기록');
     expect(detail).toContain('기존 기록 보기');
+    expect(detail).toContain('이 수업에 쌓인 운영 증거');
+    expect(detail).toContain('recentEvidenceRecords');
     expect(detail).not.toContain('/spokedu-master/class-tools');
   });
 });

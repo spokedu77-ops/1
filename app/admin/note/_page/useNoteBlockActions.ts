@@ -55,6 +55,7 @@ import {
 import {
   insertPastedBlockSpecsAfterAnchor,
   insertPastedBlockSpecsAfterBlock,
+  resolvePasteSourceContent,
 } from '../_lib/notePasteInsert';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
@@ -167,7 +168,11 @@ export function useNoteBlockActions(options: {
     clearContentUndoSession,
   });
 
-  const syncBlockContent = useCallback((blockId: string, content: unknown) => {
+  const syncBlockContent = useCallback((
+    blockId: string,
+    content: unknown,
+    options?: { skipUndo?: boolean },
+  ) => {
     let block = useNoteBlockStore.getState().getBlock(blockId);
     if (!block) {
       block = blocksRef.current.find((b) => b.id === blockId);
@@ -179,6 +184,7 @@ export function useNoteBlockActions(options: {
       blocksRef,
       recordContentUndoBeforeChange,
       scheduleBlockContentSave,
+      skipUndo: options?.skipUndo,
       onAfterChange: () => bumpNoteReconcileIdle(selectedId),
     });
   }, [blocksRef, recordContentUndoBeforeChange, scheduleBlockContentSave, selectedId]);
@@ -443,7 +449,7 @@ export function useNoteBlockActions(options: {
     if (specs.length === 1 && !singleSpecialPaste) return;
 
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-    const sourceContent = (block.content ?? {}) as Record<string, unknown>;
+    const sourceContent = resolvePasteSourceContent(block);
 
     const { lastFocusId, lastFocusPart } = await insertPastedBlockSpecsAfterAnchor(
       {
@@ -492,7 +498,7 @@ export function useNoteBlockActions(options: {
     if (!anchor) return;
 
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
-    const sourceContent = (anchor.content ?? {}) as Record<string, unknown>;
+    const sourceContent = resolvePasteSourceContent(anchor);
     const { lastFocusId, lastFocusPart } = await insertPastedBlockSpecsAfterBlock(
       {
         blocksRef,

@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { devLogger } from '@/app/lib/logging/devLogger';
 import type {
   NoteBlockOpPayload,
   NoteBlockOpPushItem,
@@ -30,6 +29,50 @@ function stripExpectedVersion<T extends { expected_version?: number }>(patch: T)
   const next = { ...patch };
   delete next.expected_version;
   return next;
+}
+
+function readContentText(content: unknown): string {
+  if (!content || typeof content !== 'object') return '';
+  const value = (content as Record<string, unknown>).text;
+  return typeof value === 'string' ? value : '';
+}
+
+export function shouldIgnoreRegressiveContentPatch(
+  currentContent: unknown,
+  incomingContent: unknown,
+  baseContent?: unknown,
+): boolean {
+  const currentText = readContentText(currentContent).trim();
+  const incomingText = readContentText(incomingContent).trim();
+  const baseText = readContentText(baseContent).trim();
+  if (!currentText) return false;
+  if (!incomingText) return baseText !== currentText;
+  if (incomingText.length >= currentText.length) return false;
+  if (baseText && baseText === currentText) return false;
+  return currentText.startsWith(incomingText);
+}
+
+export function filterTransactionPatchesByExistingIds<T extends { id: string }>(
+  patches: T[],
+  existingIds: ReadonlySet<string>,
+): T[] {
+  return patches.filter((patch) => existingIds.has(patch.id));
+}
+
+async function filterExistingTransactionPatches<T extends { id: string }>(
+  supabase: SupabaseClient,
+  patches: T[],
+): Promise<T[]> {
+  if (patches.length === 0) return patches;
+  const ids = [...new Set(patches.map((patch) => patch.id).filter(Boolean))];
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('note_blocks')
+    .select('id')
+    .in('id', ids);
+  if (error) throw new Error(error.message);
+  const existingIds = new Set((data ?? []).map((row) => String(row.id)));
+  return filterTransactionPatchesByExistingIds(patches, existingIds);
 }
 
 export async function getNoteDocumentSyncState(
@@ -118,10 +161,14 @@ export async function applyNoteBlockOpPayload(
   case 'patch_content': {
     const { data: current } = await supabase
       .from('note_blocks')
-      .select('version')
+      .select('version, content')
       .eq('id', payload.blockId)
       .eq('document_id', documentId)
       .maybeSingle();
+    if (!current) return [];
+    if (shouldIgnoreRegressiveContentPatch(current.content, payload.content, payload.baseContent)) {
+      return [];
+    }
     const nextVersion = (typeof current?.version === 'number' ? current.version : 1) + 1;
     const { data: updated, error: patchError } = await supabase
       .from('note_blocks')
@@ -137,11 +184,14 @@ export async function applyNoteBlockOpPayload(
       .select(BLOCK_SELECT)
       .maybeSingle();
     if (patchError) throw new Error(patchError.message);
-    if (!updated) throw new Error(`block not found: ${payload.blockId}`);
+    if (!updated) return [];
     return [toSnapshot(updated as Record<string, unknown>)];
   }
   case 'patch_fields': {
-    const patches = payload.patches.map(stripExpectedVersion);
+    const patches = await filterExistingTransactionPatches(
+      supabase,
+      payload.patches.map(stripExpectedVersion),
+    );
     if (patches.length === 0) return [];
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
       p_updates: patches,
@@ -185,13 +235,13 @@ export async function applyNoteBlockOpPayload(
     return snapshots;
   }
   case 'create_block': {
-    const updates = [
+    const updates = await filterExistingTransactionPatches(supabase, [
       ...(payload.normalizeOrders ?? []).map((order) => ({
         id: order.id,
         order_index: order.order_index,
       })),
       ...(payload.transactionUpdates ?? []).map(stripExpectedVersion),
-    ];
+    ]);
     const creates = [{
       id: payload.id,
       document_id: payload.documentId,
@@ -220,8 +270,12 @@ export async function applyNoteBlockOpPayload(
     return [...patched, ...created];
   }
   case 'block_transaction': {
+    const patches = await filterExistingTransactionPatches(
+      supabase,
+      payload.patches.map(stripExpectedVersion),
+    );
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
-      p_updates: payload.patches.map(stripExpectedVersion),
+      p_updates: patches,
       p_delete_ids: payload.deleteIds,
       p_actor_id: actorId,
       p_creates: payload.creates ?? [],

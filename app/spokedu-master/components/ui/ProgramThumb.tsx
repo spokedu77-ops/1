@@ -35,9 +35,7 @@ export function ProgramThumb({ program, size = 72 }: { program: Program; size?: 
     return (
       <div className="relative shrink-0 overflow-hidden rounded-[12px]" style={{ width: size, height: size }} aria-hidden>
         {/^https?:\/\//.test(imageUrl) ? (
-          // YouTube thumbnails are external and may not be in next/image remotePatterns.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <Image src={imageUrl} alt="" fill sizes={`${size}px`} className="object-cover" quality={75} />
         ) : (
           <Image src={imageUrl} alt="" fill sizes={`${size}px`} className="object-cover" quality={88} />
         )}

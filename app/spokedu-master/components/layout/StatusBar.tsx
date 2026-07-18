@@ -30,10 +30,10 @@ export function StatusBar() {
       <div className="mx-auto flex w-full max-w-[1376px] items-center justify-between gap-4">
         <Link
           href="/spokedu-master/dashboard"
-          className="flex min-h-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+          className="flex min-h-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
           aria-label="SPOKEDU MASTER 홈"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-indigo-600 text-[11px] font-black text-white">SM</span>
+          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-[var(--spm-acc)] text-[11px] font-black text-white">SM</span>
           <span className="hidden items-baseline gap-1.5 sm:flex">
             <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">SPOKEDU</span>
             <span className="text-[15px] font-black text-slate-900">MASTER</span>
@@ -47,7 +47,7 @@ export function StatusBar() {
               <Link
                 key={href}
                 href={href}
-                className="flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[13px] font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+                className="flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[13px] font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
                 style={{ background: active ? 'rgba(79,70,229,0.09)' : 'transparent', color: active ? '#4338ca' : '#475569' }}
                 aria-current={active ? 'page' : undefined}
               >
@@ -61,14 +61,14 @@ export function StatusBar() {
         <div className="flex shrink-0 items-center gap-2">
           <Link
             href="/spokedu-master/library"
-            className="grid h-11 w-11 place-items-center rounded-[12px] border border-slate-200 bg-white text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+            className="grid h-11 w-11 place-items-center rounded-[12px] border border-slate-200 bg-white text-slate-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
             aria-label="라이브러리"
           >
             <Search size={17} />
           </Link>
           <span
             className="hidden min-h-9 items-center gap-1.5 rounded-full px-2.5 text-[11px] font-black sm:inline-flex"
-            style={{ background: operational.online ? 'rgba(16,185,129,0.11)' : 'rgba(245,158,11,0.12)', color: operational.online ? '#047857' : '#b45309' }}
+            style={{ background: operational.online ? 'var(--spm-grn-a11)' : 'var(--spm-amb-a12)', color: operational.online ? 'var(--spm-grn-strong)' : 'var(--spm-amb-strong)' }}
             role="status"
           >
             {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
@@ -76,8 +76,8 @@ export function StatusBar() {
           </span>
           <Link
             href="/spokedu-master/profile"
-            className="grid h-11 w-11 place-items-center rounded-[12px] bg-indigo-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
-            aria-label="계정 및 이용권"
+            className="grid h-11 w-11 place-items-center rounded-[12px] bg-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            aria-label="계정 및 구독"
           >
             <CircleUserRound size={18} color="#fff" />
           </Link>

@@ -332,32 +332,53 @@ export default function FlowGameClient({
           background: 'rgba(0,0,0,0.55)',
           animation: 'stageIntroBg 0.3s ease-out',
           pointerEvents: 'none',
+          padding: 'clamp(0.75rem, 3vw, 1.5rem)',
         }}>
           <div style={{
             background: currentStage.isBonus ? 'rgba(40,25,0,0.95)' : 'rgba(5,8,20,0.95)',
             border: `2px solid ${currentStage.color}44`,
             borderRadius: '1.5rem',
-            padding: '2rem 2.5rem',
+            padding: 'clamp(1.25rem, 3.5vw, 2rem) clamp(1.25rem, 4vw, 2.5rem)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            maxWidth: 360, width: '90%',
+            width: 'min(92vw, 28rem)',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
             boxShadow: `0 0 60px ${currentStage.color}33`,
             animation: 'stageIntroCard 0.35s cubic-bezier(0.22,1.4,0.36,1)',
           }}>
-            <p style={{ fontSize: '0.58rem', color: currentStage.color, fontWeight: 800, letterSpacing: '0.5em', marginBottom: '0.6rem' }}>
+            <p style={{
+              fontSize: '0.58rem', color: currentStage.color, fontWeight: 800,
+              letterSpacing: '0.28em', marginBottom: '0.6rem', textAlign: 'center',
+              wordBreak: 'keep-all',
+            }}>
               {currentStage.isBonus ? '🏆 BONUS' : currentStage.label}
             </p>
             <h2 style={{
-              fontSize: 'clamp(2.4rem, 8vw, 4rem)', fontWeight: 900, color: '#fff',
+              fontSize: 'clamp(2.2rem, 7vw, 3.6rem)', fontWeight: 900, color: '#fff',
               fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
               letterSpacing: '0.04em', marginBottom: '0.6rem', textAlign: 'center',
               textShadow: `0 0 30px ${currentStage.color}, 3px 3px 0 #000`,
+              wordBreak: 'keep-all', whiteSpace: 'nowrap',
             }}>
               {currentStage.cueWord}
             </h2>
-            <p style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1.6, textAlign: 'center', marginBottom: '1rem' }}>
+            <p style={{
+              fontSize: 'clamp(0.85rem, 2.4vw, 1rem)',
+              color: 'rgba(255,255,255,0.8)',
+              lineHeight: 1.55,
+              textAlign: 'center',
+              marginBottom: '1rem',
+              width: '100%',
+              wordBreak: 'keep-all',
+              overflowWrap: 'break-word',
+              whiteSpace: 'pre-line',
+            }}>
               {currentStage.shortInstruction}
             </p>
-            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{
+              display: 'flex', gap: '0.4rem', flexWrap: 'wrap',
+              justifyContent: 'center', width: '100%',
+            }}>
               {[...currentStage.activeModules].filter(k => k !== 'jump').map((key) => {
                 const mod = FLOW_MODULES[key];
                 return (
@@ -379,30 +400,47 @@ export default function FlowGameClient({
           background: 'rgba(0,0,0,0.55)',
           animation: 'stageIntroBg 0.3s ease-out',
           pointerEvents: 'none',
+          padding: 'clamp(0.75rem, 3vw, 1.5rem)',
         }}>
           <div style={{
             background: 'rgba(5,15,25,0.95)',
             border: '2px solid #22d3ee44',
             borderRadius: '1.5rem',
-            padding: '1.8rem 2.5rem',
+            padding: 'clamp(1.25rem, 3.5vw, 1.8rem) clamp(1.25rem, 4vw, 2.5rem)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            maxWidth: 320, width: '90%',
+            width: 'min(92vw, 26rem)',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
             boxShadow: '0 0 60px #22d3ee33',
             animation: 'stageIntroCard 0.35s cubic-bezier(0.22,1.4,0.36,1)',
           }}>
-            <p style={{ fontSize: '0.58rem', color: '#22d3ee', fontWeight: 800, letterSpacing: '0.5em', marginBottom: '0.6rem' }}>
+            <p style={{
+              fontSize: '0.58rem', color: '#22d3ee', fontWeight: 800,
+              letterSpacing: '0.28em', marginBottom: '0.6rem', textAlign: 'center',
+              wordBreak: 'keep-all',
+            }}>
               ⚡ SPEED UP
             </p>
             <h2 style={{
-              fontSize: 'clamp(2rem, 8vw, 3.5rem)', fontWeight: 900, color: '#fff',
+              fontSize: 'clamp(1.9rem, 7vw, 3.2rem)', fontWeight: 900, color: '#fff',
               fontFamily: "'Black Han Sans', 'Noto Sans KR', sans-serif",
               letterSpacing: '0.04em', marginBottom: '0.4rem', textAlign: 'center',
               textShadow: '0 0 30px #22d3ee, 3px 3px 0 #000',
+              wordBreak: 'keep-all', whiteSpace: 'nowrap',
             }}>
               빨라진다!
             </h2>
-            <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', textAlign: 'center' }}>
-              속도가 올라갑니다 — 리듬 잃지 마세요!
+            <p style={{
+              fontSize: 'clamp(0.8rem, 2.2vw, 0.95rem)',
+              color: 'rgba(255,255,255,0.7)',
+              textAlign: 'center',
+              lineHeight: 1.55,
+              width: '100%',
+              wordBreak: 'keep-all',
+              overflowWrap: 'break-word',
+              whiteSpace: 'pre-line',
+            }}>
+              속도가 올라갑니다{'\n'}리듬 잃지 마세요!
             </p>
           </div>
         </div>

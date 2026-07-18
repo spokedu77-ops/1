@@ -17,7 +17,7 @@ describe('MASTER execution screen access boundary', () => {
   it('does not render session children before access is allowed', () => {
     const sessionBlock = shell.slice(
       shell.indexOf('if (isSession)'),
-      shell.indexOf('<div className="min-h-dvh bg-[#eef2f7]', shell.indexOf('if (isSession)')),
+      shell.indexOf('<div className="min-h-dvh bg-[var(--spm-bg)]', shell.indexOf('if (isSession)')),
     );
     expect(sessionBlock).toContain('isAccessGuardPending');
     expect(sessionBlock).toContain('isAccessGuardDenied');

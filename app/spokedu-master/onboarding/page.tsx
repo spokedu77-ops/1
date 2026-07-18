@@ -13,7 +13,7 @@ const STEP_LABELS = ['환경', '프로필', '흐름', '시작'];
 const FLOW_ITEMS = [
   { icon: BookOpen, title: '수업 전', desc: '홈, 라이브러리, 수업 미리보기에서 전체 수업 자료를 확인합니다.' },
   { icon: MonitorPlay, title: '수업 중', desc: '수업 도구와 연결된 활동 화면으로 현장 진행을 돕습니다.' },
-  { icon: Clipboard, title: '수업 후', desc: '수업 기록, 안내문, 내 활동과 기록을 이어서 정리합니다.' },
+  { icon: Clipboard, title: '수업 후', desc: '빠른 기록으로 관찰을 남기고, 같은 기록을 보강한 뒤 안내문으로 이어갑니다.' },
 ] as const;
 
 function StepDot({ active, done }: { active: boolean; done: boolean }) {
@@ -22,7 +22,7 @@ function StepDot({ active, done }: { active: boolean; done: boolean }) {
 
 function ChoiceCard({ title, desc, active, icon: Icon, onClick }: { title: string; desc: string; active: boolean; icon: LucideIcon; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="flex w-full items-start gap-3 rounded-[16px] p-4 text-left" style={{ background: active ? 'rgba(99,102,241,0.15)' : 'var(--spm-s2)', border: active ? '1px solid rgba(99,102,241,0.55)' : '1px solid var(--spm-br2)' }}>
+    <button type="button" onClick={onClick} className="flex w-full items-start gap-3 rounded-[16px] p-4 text-left" style={{ background: active ? 'var(--spm-acc-a15)' : 'var(--spm-s2)', border: active ? '1px solid var(--spm-acc-a55)' : '1px solid var(--spm-br2)' }}>
       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px]" style={{ background: active ? 'var(--spm-acc)' : 'var(--spm-s3)' }}>
         <Icon size={20} color={active ? '#fff' : 'var(--spm-t2)'} />
       </span>
@@ -183,7 +183,7 @@ export default function OnboardingPage() {
             {step === 3 ? (
               <div className="space-y-5">
                 <div className="flex items-center gap-3">
-                  <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'rgba(16,185,129,0.14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
+                  <span className="grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'var(--spm-grn-a14)' }}><Sparkles size={24} color="var(--spm-grn)" /></span>
                   <div>
                     <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-grn)' }}>준비 완료</p>
                     <h2 className="mt-1 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>대시보드에서 시작하세요</h2>
@@ -195,7 +195,7 @@ export default function OnboardingPage() {
                     {saveError}
                   </p>
                 ) : null}
-                <button type="button" onClick={finish} disabled={saving} className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px rgba(99,102,241,0.32)' }}>
+                <button type="button" onClick={finish} disabled={saving} className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px var(--spm-acc-a32)' }}>
                   {saving ? '저장 중...' : '시작하기'}
                 </button>
               </div>
@@ -217,8 +217,8 @@ export default function OnboardingPage() {
           </section>
         </div>
 
-        <aside className="rounded-[22px] p-5" style={{ background: 'linear-gradient(180deg, rgba(99,102,241,0.16), rgba(16,185,129,0.08))', border: '1px solid var(--spm-br2)' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>Start</p>
+        <aside className="rounded-[22px] p-5" style={{ background: 'linear-gradient(180deg, var(--spm-acc-a16), var(--spm-grn-a08))', border: '1px solid var(--spm-br2)' }}>
+          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>시작하기</p>
           <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', wordBreak: 'keep-all' }}>수업 흐름을 먼저 익히세요</h2>
           <div className="mt-5 space-y-3">
             {FLOW_ITEMS.map(({ icon: Icon, title, desc }) => (

@@ -5,9 +5,12 @@ import type { ComputeResult } from '../types';
 import Radar from './Radar';
 import AxisRow from './AxisRow';
 import ResultShareActions from './ResultShareActions';
-import { axisLabelsJoined } from '../lib/profileAxisLabels';
+import { getMoveReportUi } from '../i18n/ui';
+import { formatOwnerPossessive, type MoveReportLocale } from '../lib/locale';
+import { axisLabelsJoined, topAxisHighlights } from '../lib/profileAxisLabels';
 import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from '../lib/shareLink';
 import { getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
+import { trackMoveReportEvent } from '../lib/events';
 
 export type ResultTab = 'report' | 'solution';
 
@@ -16,35 +19,19 @@ interface ResultProps {
   tab: ResultTab;
   onTab: (t: ResultTab) => void;
   onReset: () => void;
+  /** 이름만 바꿔 다시 진단 (설정 화면으로) */
+  onAnotherChild?: () => void;
   flash: (msg: string) => void;
   /** true: 내부 실험용(교육자 섹션). 공개 `/move-report`는 항상 false로 고정 */
   showEducatorCta?: boolean;
+  locale?: MoveReportLocale;
 }
 
 function DescAccordion({ desc, col, revealed }: { desc: string; col: string; revealed: boolean }) {
   return (
-    <div className={revealed ? 'anim-rise d3' : ''} style={{ marginBottom: '20px' }}>
-      <div
-        style={{
-          background: 'rgba(0,0,0,.5)',
-          backdropFilter: 'blur(12px)',
-          border: '1px solid #2A2A2A',
-          borderLeft: `3px solid ${col}`,
-          borderRadius: '12px',
-          padding: '16px',
-        }}
-      >
-        <p
-          className="mr-result-desc-p"
-          style={{
-            fontWeight: 500,
-            color: '#CCCCCC',
-            wordBreak: 'keep-all',
-            margin: 0,
-          }}
-        >
-          {desc}
-        </p>
+    <div className={`mr-result-desc-wrap ${revealed ? 'anim-rise d3' : ''}`}>
+      <div className="mr-result-desc-card" style={{ borderLeftColor: col }}>
+        <p className="mr-result-desc-p">{desc}</p>
       </div>
     </div>
   );
@@ -55,10 +42,15 @@ export default function Result({
   tab,
   onTab,
   onReset,
+  onAnotherChild,
   flash,
   showEducatorCta = false,
+  locale = 'ko',
 }: ResultProps) {
   const { profile: p, bd, displayName, key } = result;
+  const ui = useMemo(() => getMoveReportUi(locale), [locale]);
+  const t = ui.result;
+  const ownerPossessive = useMemo(() => formatOwnerPossessive(displayName, locale), [displayName, locale]);
   const [revealed, setRevealed] = useState(false);
   const [reportExpanded, setReportExpanded] = useState(false);
   const graphCodeStr = useMemo(
@@ -66,27 +58,32 @@ export default function Result({
       `${bd.social.l}${bd.social.r}${bd.structure.l}${bd.structure.r}${bd.motivation.l}${bd.motivation.r}${bd.energy.l}${bd.energy.r}`,
     [bd]
   );
+  const highlights = useMemo(() => topAxisHighlights(bd, 2, locale), [bd, locale]);
 
   const privateConsultShareUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const built = buildMoveReportShareUrl(window.location.origin, {
-      v: 5,
-      profileKey: key,
-      graphCode: graphCodeStr,
-    });
+    const built = buildMoveReportShareUrl(
+      window.location.origin,
+      {
+        v: 5,
+        profileKey: key,
+        graphCode: graphCodeStr,
+      },
+      { locale }
+    );
     return appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
-  }, [key, graphCodeStr]);
+  }, [key, graphCodeStr, locale]);
 
   const consultSummary = useMemo(
     () =>
       [
-        '[MOVE REPORT 요약]',
-        `- 이름: ${displayName}`,
-        `- 유형: ${p.char}`,
-        `- 한 줄 설명: ${p.catchcopy}`,
-        `- 권장 접근: ${p.shortTip}`,
+        t.consultSummaryTitle,
+        `- ${t.consultName}: ${displayName}`,
+        `- ${t.consultType}: ${p.char}`,
+        `- ${t.consultLine}: ${p.catchcopy}`,
+        `- ${t.consultApproach}: ${p.shortTip}`,
       ].join('\n'),
-    [displayName, p.char, p.catchcopy, p.shortTip]
+    [displayName, p.char, p.catchcopy, p.shortTip, t]
   );
 
   const handleGoPrivateConsult = useCallback(() => {
@@ -97,8 +94,12 @@ export default function Result({
     } else {
       window.localStorage.removeItem('private.moveReport.shareUrl');
     }
-    window.location.href = '/info/private#move-report';
-  }, [consultSummary, privateConsultShareUrl]);
+    void trackMoveReportEvent({
+      eventName: 'move_report_private_consult_clicked',
+      meta: { profileKey: key },
+    });
+    window.location.href = '/spokedu/private#apply';
+  }, [consultSummary, privateConsultShareUrl, key]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -111,16 +112,7 @@ export default function Result({
 
   return (
     <div style={{ background: '#0D0D0D', minHeight: '100vh' }}>
-      <div
-        className="mr-result-page"
-        style={{
-          maxWidth: 430,
-          margin: '0 auto',
-          minHeight: '100vh',
-          borderLeft: '1px solid #1A1A1A',
-          borderRight: '1px solid #1A1A1A',
-        }}
-      >
+      <div className="mr-result-page" style={{ maxWidth: 430, margin: '0 auto', minHeight: '100vh' }}>
         {/* 히어로 */}
         <div
           style={{
@@ -190,125 +182,72 @@ export default function Result({
             }}
           />
 
-          <div className="mr-result-hero-block" style={{ position: 'relative', zIndex: 2, padding: '56px 24px 24px' }}>
-            <div className={revealed ? 'anim-rise' : ''} style={{ marginBottom: '20px' }}>
-              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-                {axisLabelsJoined(key).split(' · ').map((label, i, arr) => (
-                  <span key={label + i} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <span
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        padding: '5px 10px',
-                        borderRadius: '8px',
-                        background: `${p.col}18`,
-                        border: `1px solid ${p.col}35`,
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        color: 'rgba(255,255,255,.88)',
-                        letterSpacing: '.01em',
-                      }}
-                    >
-                      {label}
-                    </span>
-                    {i < arr.length - 1 ? (
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'rgba(255,255,255,.35)' }} aria-hidden>
-                        ·
-                      </span>
-                    ) : null}
-                  </span>
-                ))}
-              </div>
-            </div>
+          <div className="mr-result-hero-block" style={{ position: 'relative', zIndex: 2 }}>
+            <header className={`mr-result-owner ${revealed ? 'anim-rise' : ''}`}>
+              <p className="mr-result-owner-kicker" style={{ color: p.col }}>
+                {locale === 'en' ? `${ownerPossessive} MOVE Report` : `${ownerPossessive} MOVE 리포트`}
+              </p>
+              <p className="mr-result-owner-sub">{t.ownerSub}</p>
+            </header>
 
             <div className={revealed ? 'anim-rise d1' : ''}>
-              <div
-                style={{
-                  marginBottom: '14px',
-                  padding: '10px 14px',
-                  background: `${p.col}18`,
-                  border: `1px solid ${p.col}40`,
-                  borderRadius: '10px',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '14px',
-                    fontWeight: 800,
-                    color: '#fff',
-                    margin: 0,
-                    lineHeight: 1.4,
-                    wordBreak: 'keep-all',
-                    letterSpacing: '-.01em',
-                  }}
-                >
-                  &quot;{p.catchcopy}&quot;
-                </p>
+              <div className="mr-result-quote" style={{ background: `${p.col}14`, borderColor: `${p.col}40` }}>
+                <p className="mr-result-quote-text">&quot;{p.catchcopy}&quot;</p>
               </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '16px' }}>
+
+              <div className="mr-result-identity">
                 <div
                   className="mr-result-hero-emoji"
                   style={{
-                    filter: `drop-shadow(0 0 24px ${p.col}80)`,
+                    filter: `drop-shadow(0 0 20px ${p.col}70)`,
                     animation: 'floatY 3s ease-in-out infinite',
                   }}
+                  aria-hidden
                 >
                   {p.em}
                 </div>
-                <div style={{ paddingTop: '8px' }}>
-                  <div
-                    style={{
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      letterSpacing: '.08em',
-                      color: p.col,
-                      marginBottom: '6px',
-                    }}
-                  >
-                    {displayName}의 MOVE 유형
-                  </div>
-                  <h1
-                    className="mr-result-hero-type"
-                    style={{
-                      textShadow: `0 0 30px ${p.col}50`,
-                    }}
-                  >
+                <div className="mr-result-identity-text">
+                  <h1 className="mr-result-hero-type" style={{ textShadow: `0 0 28px ${p.col}45` }}>
                     {p.char}
                   </h1>
+                  <p className="mr-result-hero-title" style={{ backgroundImage: p.grad }}>
+                    {p.title}
+                  </p>
                 </div>
-              </div>
-              <div style={{ marginBottom: '16px' }}>
-                <span
-                  style={{
-                    fontFamily: 'Bebas Neue,sans-serif',
-                    fontSize: '16px',
-                    letterSpacing: '.06em',
-                    background: p.grad,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                  }}
-                >
-                  {p.title}
-                </span>
               </div>
             </div>
 
-            <div className={revealed ? 'anim-rise d2' : ''} style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '20px' }}>
-              {p.kw.map((k, i) => (
-                <span
-                  key={i}
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    padding: '5px 11px',
-                    borderRadius: '6px',
-                    letterSpacing: '.04em',
-                    background: 'rgba(255,255,255,.07)',
-                    color: 'rgba(255,255,255,.75)',
-                    border: '1px solid rgba(255,255,255,.12)',
-                  }}
-                >
+            {highlights.length > 0 ? (
+              <div className={`mr-result-highlight-row ${revealed ? 'anim-rise d2' : ''}`}>
+                {highlights.map((h) => (
+                  <span
+                    key={h.label}
+                    className="mr-result-highlight-chip"
+                    style={{ background: `${p.col}18`, borderColor: `${p.col}40`, color: p.col }}
+                  >
+                    {t.highlightStrong(h.label)}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <div className={`mr-result-axis-row ${revealed ? 'anim-rise d2' : ''}`}>
+              {axisLabelsJoined(key, ' · ', locale)
+                .split(' · ')
+                .map((label) => (
+                  <span
+                    key={label}
+                    className="mr-result-axis-chip"
+                    style={{ background: `${p.col}16`, borderColor: `${p.col}30` }}
+                  >
+                    {label}
+                  </span>
+                ))}
+            </div>
+
+            <div className={`mr-result-kw-row ${revealed ? 'anim-rise d2' : ''}`}>
+              {p.kw.map((k) => (
+                <span key={k} className="mr-result-kw-chip">
                   {k}
                 </span>
               ))}
@@ -316,97 +255,53 @@ export default function Result({
 
             <DescAccordion desc={p.desc} col={p.col} revealed={revealed} />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', opacity: 0.4, marginTop: '8px' }}>
-              <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,transparent,#444)' }} />
-              <i className="fa-solid fa-chevron-down" style={{ fontSize: '12px', color: '#999', animation: 'floatY 2s ease-in-out infinite' }} />
-              <span style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '.08em', color: '#A8A8A8' }}>SCROLL</span>
-              <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg,#444,transparent)' }} />
+            <div className="mr-result-scroll-hint" aria-hidden>
+              <div className="mr-result-scroll-line" />
+              <i className="fa-solid fa-chevron-down" />
+              <span>{t.scrollHint}</span>
+              <div className="mr-result-scroll-line mr-result-scroll-line--flip" />
             </div>
           </div>
 
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              padding: '20px 20px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              zIndex: 3,
-              background: 'linear-gradient(to bottom,rgba(0,0,0,.6),transparent)',
-            }}
-          >
-            <button
-              type="button"
-              onClick={onReset}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                background: 'rgba(0,0,0,.5)',
-                border: '1px solid #333',
-                padding: '7px 12px',
-                borderRadius: '8px',
-                color: '#A8A8A8',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              <i className="fa-solid fa-arrow-left" style={{ fontSize: '11px' }} />
-              다시하기
-            </button>
-            <div
-              style={{
-                fontFamily: 'Bebas Neue,sans-serif',
-                fontSize: '16px',
-                letterSpacing: '.1em',
-                color: '#FF4B1F',
-                textShadow: '0 0 10px rgba(255,75,31,.5)',
-              }}
-            >
-              SPOKEDU
+          <div className="mr-result-topbar">
+            <div className="mr-result-topbar-actions">
+              <button type="button" onClick={onReset} className="mr-result-back-btn">
+                <i className="fa-solid fa-arrow-left" aria-hidden />
+                {t.retry}
+              </button>
+              {onAnotherChild ? (
+                <button type="button" onClick={onAnotherChild} className="mr-result-another-btn">
+                  {t.anotherChild}
+                </button>
+              ) : null}
             </div>
+            <div className="mr-result-brand">SPOKEDU</div>
           </div>
         </div>
 
         {/* 탭 */}
-        <div
-          className="mr-result-tabs-wrap"
-          style={{
-            position: 'sticky',
-            top: 0,
-            zIndex: 20,
-            background: '#0D0D0D',
-            padding: '12px 20px',
-            borderBottom: '1px solid #1A1A1A',
-          }}
-        >
+        <div className="mr-result-tabs-wrap">
           <div className="tabs mr-tabs-html">
             {(
               [
-                { id: 'report' as const, l: '무브 리포트' },
-                { id: 'solution' as const, l: '맞춤 솔루션' },
+                { id: 'report' as const, l: t.tabReport },
+                { id: 'solution' as const, l: t.tabSolution },
               ] as const
-            ).map((t) => (
+            ).map((tabItem) => (
               <button
-                key={t.id}
+                key={tabItem.id}
                 type="button"
-                onClick={() => onTab(t.id)}
-                className={`tab ${tab === t.id ? 'on' : 'off'}`}
-                style={tab === t.id ? { color: p.col } : undefined}
+                onClick={() => onTab(tabItem.id)}
+                className={`tab ${tab === tabItem.id ? 'on' : 'off'}`}
+                style={tab === tabItem.id ? { color: p.col } : undefined}
               >
-                {t.l}
+                {tabItem.l}
               </button>
             ))}
           </div>
         </div>
 
-        <div className="mr-result-main-pad" style={{ padding: '16px 20px 60px' }}>
+        <div className="mr-result-main-pad">
           {tab === 'report' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }} className="anim-fade">
               <div className="card mr-card-html">
@@ -418,8 +313,10 @@ export default function Result({
                     <i className="fa-solid fa-chart-line" style={{ fontSize: '13px', color: p.col }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>8대 행동 지표 밸런스</div>
-                    <div style={{ fontSize: '11px', color: '#A8A8A8', marginTop: '1px' }}>신체활동 성향 분포도</div>
+                    <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>
+                      {t.radarTitle(displayName)}
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#A8A8A8', marginTop: '1px' }}>{t.radarSub}</div>
                   </div>
                 </div>
                 <div className="card-section">
@@ -452,7 +349,7 @@ export default function Result({
                     padding: 0,
                   }}
                 >
-                  <span>{reportExpanded ? '상세 분석 접기' : '상세 분석 펼쳐보기'}</span>
+                  <span>{reportExpanded ? t.collapse : t.expand}</span>
                   <i className={`fa-solid ${reportExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`} style={{ color: '#9A9A9A' }} />
                 </button>
               </div>
@@ -467,44 +364,48 @@ export default function Result({
                       >
                         <i className="fa-solid fa-sliders" style={{ fontSize: '13px', color: p.col }} />
                       </div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>성향 강도 분석</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{t.axisTitle}</div>
                     </div>
                     <div className="card-section" style={{ paddingTop: '4px' }}>
                       <AxisRow
-                        label="사회성"
+                        label={t.axisSocial}
                         ll={bd.social.ll}
                         rl={bd.social.rl}
                         lv={bd.social.l}
                         rv={bd.social.r}
                         col="#1E90FF"
                         delay={0}
+                        dominantSuffix={t.dominantSuffix}
                       />
                       <AxisRow
-                        label="탐구"
+                        label={t.axisExplore}
                         ll={bd.structure.ll}
                         rl={bd.structure.rl}
                         lv={bd.structure.l}
                         rv={bd.structure.r}
                         col="#FF2D88"
                         delay={120}
+                        dominantSuffix={t.dominantSuffix}
                       />
                       <AxisRow
-                        label="동기"
+                        label={t.axisMotive}
                         ll={bd.motivation.ll}
                         rl={bd.motivation.rl}
                         lv={bd.motivation.l}
                         rv={bd.motivation.r}
                         col="#FFB020"
                         delay={240}
+                        dominantSuffix={t.dominantSuffix}
                       />
                       <AxisRow
-                        label="에너지"
+                        label={t.axisEnergy}
                         ll={bd.energy.ll}
                         rl={bd.energy.rl}
                         lv={bd.energy.l}
                         rv={bd.energy.r}
                         col="#44CC00"
                         delay={360}
+                        dominantSuffix={t.dominantSuffix}
                       />
                     </div>
                   </div>
@@ -517,7 +418,7 @@ export default function Result({
                       >
                         <i className="fa-solid fa-bolt" style={{ fontSize: '13px', color: p.col }} />
                       </div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>사고 &amp; 강점 (THINK)</div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>{t.thinkTitle}</div>
                     </div>
                     <div className="card-section" style={{ paddingTop: '4px' }}>
                       {p.str.map((s, i) => (
@@ -568,8 +469,8 @@ export default function Result({
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   {(
                     [
-                      { label: '✨ 찰떡궁합', sub: p.best.n, desc: p.best.d, top: '#FFB020' },
-                      { label: '🤝 배려 필요', sub: p.care.n, desc: p.care.d, top: '#555' },
+                      { label: t.bestLabel, sub: p.best.n, desc: p.best.d, top: '#FFB020' },
+                      { label: t.careLabel, sub: p.care.n, desc: p.care.d, top: '#555' },
                     ] as const
                   ).map((c, i) => (
                     <div key={i} className="card mr-card-html" style={{ borderTop: `2px solid ${c.top}`, overflow: 'hidden' }}>
@@ -596,8 +497,10 @@ export default function Result({
               <ResultShareActions
                 profileKey={key}
                 graphCode={graphCodeStr}
+                displayName={displayName}
                 flash={flash}
                 showEducatorCta={showEducatorCta}
+                locale={locale}
               />
             </div>
           )}
@@ -607,7 +510,9 @@ export default function Result({
               <div style={{ background: `${p.col}12`, border: `1px solid ${p.col}35`, borderRadius: '16px', padding: '18px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                   <span style={{ fontSize: '18px' }}>💬</span>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: p.col, letterSpacing: '.04em' }}>이 한 마디가 통해요</span>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: p.col, letterSpacing: '.04em' }}>
+                    {t.tipTitle(displayName)}
+                  </span>
                 </div>
                 <p style={{ fontSize: '16px', fontWeight: 700, color: '#fff', lineHeight: 1.5, wordBreak: 'keep-all', margin: 0 }}>
                   {p.shortTip}
@@ -630,7 +535,9 @@ export default function Result({
                   >
                     <i className="fa-solid fa-bolt" style={{ fontSize: '13px', color: p.col }} />
                   </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>이런 환경에서 잘 반응해요</div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff' }}>
+                    {t.envTitle(displayName)}
+                  </div>
                 </div>
                 <div className="card-section" style={{ paddingTop: '4px' }}>
                   {p.env.map((e, i) => (
@@ -671,7 +578,9 @@ export default function Result({
                       <span style={{ fontSize: '14px' }}>🌱</span>
                     </div>
                     <div>
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#BBBBBB' }}>함께 키워가면 좋은 부분</div>
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#BBBBBB' }}>
+                        {t.weakTitle(displayName)}
+                      </div>
                       <div style={{ fontSize: '12px', fontWeight: 700, color: '#DDDDDD', marginTop: '2px' }}>{p.weak.title}</div>
                     </div>
                   </div>
@@ -706,48 +615,51 @@ export default function Result({
                   S
                 </div>
                 <p style={{ fontSize: '12px', fontWeight: 500, color: '#BBBBBB', lineHeight: 1.5, wordBreak: 'keep-all', margin: 0 }}>
-                  스포키듀는 아이 성향에 맞는 움직임을 설계합니다. 같은 체육도 아이마다 접근이 달라야 해요.
+                  {t.brandBlurb(displayName)}
                 </p>
               </div>
 
-              <a
-                href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{ display: 'block', textDecoration: 'none', background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)', borderRadius: '16px', padding: '2px' }}
-              >
-                <div
-                  style={{
-                    background: '#111',
-                    borderRadius: '14px',
-                    padding: '18px 20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                  }}
+              {/* 영문: 국내 인스타/홈 전환 CTA는 신뢰·맥락이 약해 숨김 */}
+              {locale !== 'en' ? (
+                <a
+                  href="https://www.instagram.com/spokedu_kids?igsh=M2ZmYWZxMzRxenVt&utm_source=qr"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ display: 'block', textDecoration: 'none', background: 'linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045)', borderRadius: '16px', padding: '2px' }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                    <div
-                      style={{
-                        width: '44px',
-                        height: '44px',
-                        borderRadius: '12px',
-                        flexShrink: 0,
-                        background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <i className="fa-brands fa-instagram" style={{ fontSize: '22px', color: '#fff' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '3px' }}>스포키듀 인스타그램</div>
-                      <div style={{ fontSize: '12px', color: '#AAAAAA' }}>@spokedu_kids · 수업 현장 영상 보러가기 →</div>
+                  <div
+                    style={{
+                      background: '#111',
+                      borderRadius: '14px',
+                      padding: '18px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '12px',
+                          flexShrink: 0,
+                          background: 'linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <i className="fa-brands fa-instagram" style={{ fontSize: '22px', color: '#fff' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#fff', marginBottom: '3px' }}>{t.igTitle}</div>
+                        <div style={{ fontSize: '12px', color: '#AAAAAA' }}>{t.igSub}</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </a>
+                </a>
+              ) : null}
 
               <p
                 style={{
@@ -760,33 +672,35 @@ export default function Result({
                   wordBreak: 'keep-all',
                 }}
               >
-                스포키듀 현장 수업 경험을 담은 관찰형 테스트입니다.
+                {t.footerNote}
               </p>
             </div>
           )}
 
-          <section
-            style={{
-              marginTop: 18,
-              borderRadius: 14,
-              border: `1px solid ${p.col}44`,
-              background: `${p.col}14`,
-              padding: '16px 14px',
-            }}
-          >
-            <p style={{ margin: '0 0 10px', fontSize: 12, color: '#d4d4d8', lineHeight: 1.6 }}>
-              요약 텍스트와 결과 카드 링크를 브라우저에 저장한 뒤, 과외 상담 페이지로 이동합니다. 상담 폼에서 「요약
-              반영」을 누르면 메일 초안에 포함됩니다.
-            </p>
-            <button
-              type="button"
-              onClick={handleGoPrivateConsult}
-              className="btn-fire"
-              style={{ width: '100%', justifyContent: 'center' }}
+          {/* 영문 버전은 국내 상담(/spokedu)으로 보내지 않음 */}
+          {locale !== 'en' ? (
+            <section
+              style={{
+                marginTop: 18,
+                borderRadius: 14,
+                border: `1px solid ${p.col}44`,
+                background: `${p.col}14`,
+                padding: '16px 14px',
+              }}
             >
-              결과 가지고 상담 페이지로 돌아가기
-            </button>
-          </section>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: '#d4d4d8', lineHeight: 1.6 }}>
+                {t.consultBody}
+              </p>
+              <button
+                type="button"
+                onClick={handleGoPrivateConsult}
+                className="btn-fire"
+                style={{ width: '100%', justifyContent: 'center' }}
+              >
+                {t.consultCta}
+              </button>
+            </section>
+          ) : null}
         </div>
       </div>
     </div>

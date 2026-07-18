@@ -30,6 +30,28 @@ type NoteDocument = {
 const DOCUMENT_SELECT =
   'id, title, is_archived, is_favorite, is_pinned, is_public, share_token, parent_id, slug, properties, created_at, updated_at';
 
+export async function softDeleteBlocksForDocument(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  documentId: string,
+  actorId: string,
+  deletedAt: string,
+): Promise<number> {
+  const { data, error } = await supabase
+    .from('note_blocks')
+    .update({
+      deleted_at: deletedAt,
+      deleted_by: actorId,
+      updated_at: deletedAt,
+      updated_by: actorId,
+    })
+    .eq('document_id', documentId)
+    .is('deleted_at', null)
+    .select('id');
+
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}
+
 async function insertAuditLog({
   documentId,
   actorId,
@@ -392,6 +414,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     await removePageBlocksForChildDocument(supabase, id, auth.userId);
+    const deletedBlocks = await softDeleteBlocksForDocument(supabase, id, auth.userId, now);
 
     if (beforeDocument?.id) {
       await insertAuditLog({
@@ -399,11 +422,11 @@ export async function DELETE(request: NextRequest) {
         actorId: auth.userId,
         action: 'delete_document',
         summary: '문서 휴지통 이동',
-        diff: { before: beforeDocument, after: { deleted_at: now, deleted_by: auth.userId } },
+        diff: { before: beforeDocument, after: { deleted_at: now, deleted_by: auth.userId, deleted_blocks: deletedBlocks } },
       });
     }
 
-    return NextResponse.json({ ok: true, softDeleted: true });
+    return NextResponse.json({ ok: true, softDeleted: true, deletedBlocks });
   } catch (err) {
     devLogger.error('[admin/note/documents] DELETE exception', err);
     return NextResponse.json(

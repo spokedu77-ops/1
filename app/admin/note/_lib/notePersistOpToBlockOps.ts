@@ -185,6 +185,7 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
         opType: 'patch_content' as const,
         blockId: update.id,
         content: update.content,
+        ...(update.baseContent ? { baseContent: update.baseContent } : {}),
       },
     }));
   }

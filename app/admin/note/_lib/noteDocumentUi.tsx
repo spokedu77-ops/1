@@ -97,6 +97,25 @@ export function deriveDocumentTreeState(documents: NoteDocument[]): DocumentTree
   };
 }
 
+export function filterDocumentsOutsideFeaturedAncestors(
+  candidates: NoteDocument[],
+  featuredIds: Set<string>,
+  allDocuments: NoteDocument[] = candidates,
+): NoteDocument[] {
+  const docMap = new Map(allDocuments.map((doc) => [doc.id, doc]));
+  return candidates.filter((doc) => {
+    let parentId = doc.parent_id;
+    const visited = new Set<string>();
+    while (parentId) {
+      if (featuredIds.has(parentId)) return false;
+      if (visited.has(parentId)) return true;
+      visited.add(parentId);
+      parentId = docMap.get(parentId)?.parent_id ?? null;
+    }
+    return true;
+  });
+}
+
 export function resolveDocIcon(properties?: NoteDocument['properties'] | null): string | null {
   const icon = properties?.icon?.trim();
   return icon || null;

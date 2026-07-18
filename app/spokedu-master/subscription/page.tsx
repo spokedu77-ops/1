@@ -38,7 +38,7 @@ function SubscriptionStatusCard({
             {display.planLabel}
           </h2>
         </div>
-        <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: display.state === 'active' ? 'rgba(16,185,129,0.14)' : 'rgba(245,158,11,0.14)', color: display.state === 'active' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
+        <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: display.state === 'active' ? 'var(--spm-grn-a14)' : 'var(--spm-amb-a14)', color: display.state === 'active' ? 'var(--spm-grn)' : 'var(--spm-yel)' }}>
           {display.statusLabel}
         </span>
       </div>
@@ -73,7 +73,7 @@ function SubscriptionStatusCard({
       {display.canUpgradeToPremium && display.upgradeHref && display.upgradeLabel ? (
         <Link
           href={display.upgradeHref}
-          className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
+          className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black text-white"
           style={{ background: 'var(--spm-acc)' }}
         >
           {display.upgradeLabel}
@@ -83,7 +83,7 @@ function SubscriptionStatusCard({
       {display.primaryHref === '/spokedu-master/payment' && display.primaryLabel ? (
         <Link
           href="/spokedu-master/payment"
-          className="mt-5 flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white"
+          className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black text-white"
           style={{ background: 'var(--spm-acc)' }}
         >
           {display.primaryLabel}

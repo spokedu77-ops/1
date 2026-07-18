@@ -1,4 +1,5 @@
 -- Server-owned program favorites for SPOKEDU MASTER library.
+-- Idempotent: safe to re-run in SQL Editor.
 
 CREATE TABLE IF NOT EXISTS public.spokedu_master_program_favorites (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -13,16 +14,22 @@ CREATE INDEX IF NOT EXISTS idx_spokedu_master_program_favorites_owner_created
 
 ALTER TABLE public.spokedu_master_program_favorites ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS spokedu_master_program_favorites_select_own
+  ON public.spokedu_master_program_favorites;
 CREATE POLICY spokedu_master_program_favorites_select_own
   ON public.spokedu_master_program_favorites
   FOR SELECT
   USING (owner_id = (SELECT auth.uid()));
 
+DROP POLICY IF EXISTS spokedu_master_program_favorites_insert_own
+  ON public.spokedu_master_program_favorites;
 CREATE POLICY spokedu_master_program_favorites_insert_own
   ON public.spokedu_master_program_favorites
   FOR INSERT
   WITH CHECK (owner_id = (SELECT auth.uid()));
 
+DROP POLICY IF EXISTS spokedu_master_program_favorites_delete_own
+  ON public.spokedu_master_program_favorites;
 CREATE POLICY spokedu_master_program_favorites_delete_own
   ON public.spokedu_master_program_favorites
   FOR DELETE

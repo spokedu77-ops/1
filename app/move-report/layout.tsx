@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = await getMoveReportMetadataBaseUrl();
-  const title = '스포키듀 MOVE 리포트 | 우리 아이 움직임 성향 분석';
-  const description = '질문 12개로 우리 아이의 움직임 유형을 확인하고, 맞춤 활동 힌트까지 받아보세요.';
+  const title = '스포키듀 MOVE 리포트 | 우리 아이 움직임 성향';
+  const description =
+    '3분·12문항으로 우리 아이의 움직임 유형을 살펴보고, 집에서 쓸 팁까지 받아보세요. 관찰형 가이드이며 진단·검사가 아닙니다.';
   const url = `${baseUrl}/move-report`;
   const imageUrl = `${baseUrl}/move-report/opengraph-image`;
 

@@ -19,7 +19,8 @@ describe('activity class record flow', () => {
 
   it('keeps student setup visible because records and class tools depend on the roster', () => {
     expect(source).toContain('/spokedu-master/students?add=1');
-    expect(source).toContain('내 반 명단 준비');
+    expect(source).toContain('학생 추가');
+    expect(source).not.toContain('내 반 명단 준비');
     expect(source).toContain('학생 명단 관리');
     expect(source).toContain('학생 이력');
   });

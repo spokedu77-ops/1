@@ -70,9 +70,31 @@ function mockSubscriptionRow(row: {
     };
     return { error: null };
   });
-  const from = vi.fn().mockReturnValue({ select, insert });
+
+  const paymentOrdersChain: {
+    select: ReturnType<typeof vi.fn>;
+    eq: ReturnType<typeof vi.fn>;
+    order: ReturnType<typeof vi.fn>;
+    limit: ReturnType<typeof vi.fn>;
+    maybeSingle: ReturnType<typeof vi.fn>;
+  } = {
+    select: vi.fn(),
+    eq: vi.fn(),
+    order: vi.fn(),
+    limit: vi.fn(),
+    maybeSingle: vi.fn(async () => ({ data: null, error: null })),
+  };
+  paymentOrdersChain.select.mockReturnValue(paymentOrdersChain);
+  paymentOrdersChain.eq.mockReturnValue(paymentOrdersChain);
+  paymentOrdersChain.order.mockReturnValue(paymentOrdersChain);
+  paymentOrdersChain.limit.mockReturnValue(paymentOrdersChain);
+
+  const from = vi.fn((table: string) => {
+    if (table === 'spokedu_master_payment_orders') return paymentOrdersChain;
+    return { select, insert };
+  });
   getServiceSupabase.mockReturnValue({ from });
-  return { from, select, eq, maybeSingle, insert };
+  return { from, select, eq, maybeSingle, insert, paymentOrdersChain };
 }
 
 describe('SPOKEDU MASTER subscription endpoint', () => {
@@ -96,6 +118,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
       status: 'none',
       isAdmin: false,
       canCancelAutoBilling: false,
+      billingRenewalFailed: false,
     });
     expect(getServiceSupabase).not.toHaveBeenCalled();
   });
@@ -114,6 +137,7 @@ describe('SPOKEDU MASTER subscription endpoint', () => {
       userId: user.id,
       email: user.email,
       trialEndsAt: null,
+      billingRenewalFailed: false,
     });
     expect(getServiceSupabase).not.toHaveBeenCalled();
   });

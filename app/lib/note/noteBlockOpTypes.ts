@@ -23,6 +23,7 @@ export type NoteBlockOpPayload =
     opType: 'patch_content';
     blockId: string;
     content: Record<string, unknown>;
+    baseContent?: Record<string, unknown>;
   }
   | {
     opType: 'patch_fields';

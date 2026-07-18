@@ -75,6 +75,24 @@ describe('coalescePushItems', () => {
     });
   });
 
+  it('carries baseContent so the server can distinguish user deletion from stale truncation', () => {
+    const [item] = persistOpToPushItems({
+      type: 'patchContent',
+      updates: [{
+        id: 'a',
+        content: { text: 'short' },
+        baseContent: { text: 'shortened from this text' },
+      }],
+    });
+
+    expect(item?.payload).toMatchObject({
+      opType: 'patch_content',
+      blockId: 'a',
+      content: { text: 'short' },
+      baseContent: { text: 'shortened from this text' },
+    });
+  });
+
   it('keeps structural transactions in order and only coalesces content patches', () => {
     const firstContent = persistOpToPushItems({
       type: 'patchContent',

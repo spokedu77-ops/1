@@ -1,8 +1,8 @@
 'use client';
 
+import { motion, useReducedMotion } from 'framer-motion';
 import { homePage } from '../../data/home-page';
 import {
-  homeCardPanelPad,
   homeFinalCtaPad,
   homeFocusRing,
   homeSectionH2,
@@ -16,42 +16,40 @@ import { TrackedLink } from './tracked-link';
 
 export function HomeFinalCta() {
   const [primary, secondary, tertiary] = homePage.finalCta.items;
+  const reducedMotion = useReducedMotion();
 
   return (
-    <section id={homePage.finalCta.id} className={`${homeSectionScrollMt} ${homeFinalCtaPad} bg-[#FAFAF8]`}>
+    <section id={homePage.finalCta.id} className={`${homeSectionScrollMt} ${homeFinalCtaPad} bg-[#0B1220]`}>
       <div className={siteContainer}>
-        <div
-          className={`w-full min-w-0 rounded-2xl border border-[#1D4ED8]/12 bg-[#EEF3FA] ${homeCardPanelPad} min-[1200px]:grid min-[1200px]:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] min-[1200px]:items-start min-[1200px]:gap-10 lg:px-7 lg:py-7`}
+        <motion.div
+          className="grid gap-10 min-[1000px]:grid-cols-[minmax(0,1fr)_minmax(260px,320px)] min-[1000px]:items-end"
+          initial={reducedMotion ? false : { opacity: 0, y: 14 }}
+          whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
         >
           <div className="min-w-0">
-            <h2 className={`${homeSectionH2} max-w-[36rem]`}>
+            <h2 className={`${homeSectionH2} text-white`}>
               {homePage.finalCta.headlineLines.map((line) => (
                 <span key={line} className="block">
                   {line}
                 </span>
               ))}
             </h2>
-            <p className={`mt-4 max-w-xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
+            <p className={`mt-4 max-w-xl text-base leading-relaxed text-white/75 sm:text-[17px] ${koreanText}`}>
               {homePage.finalCta.lead}
             </p>
-            <p className={`mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanText}`}>
+            <p className={`mt-3 max-w-xl text-sm leading-relaxed text-white/55 sm:text-[15px] ${koreanText}`}>
               {homePage.finalCta.support}
             </p>
-            <ul className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {homePage.finalCta.notes.map((note) => (
-                <li key={note} className={`rounded-lg border border-[#1D4ED8]/15 bg-white/70 px-3 py-2 text-sm font-semibold text-slate-700 ${koreanText}`}>
-                  {note}
-                </li>
-              ))}
-            </ul>
           </div>
 
-          <div className="mt-8 flex w-full min-w-0 flex-col gap-3 min-[1200px]:mt-0">
+          <div className="flex w-full min-w-0 flex-col gap-3">
             {primary ? (
               <TrackedLink
                 href={primary.href}
                 trackLabel={primary.trackLabel}
-                className={`${siteBtnPrimary} w-full ${homeFocusRing}`}
+                className={`${siteBtnPrimary} w-full bg-white text-[#0B1220] hover:bg-white/90 ${homeFocusRing}`}
               >
                 {primary.label}
               </TrackedLink>
@@ -60,7 +58,7 @@ export function HomeFinalCta() {
               <TrackedLink
                 href={secondary.href}
                 trackLabel={secondary.trackLabel}
-                className={`${siteBtnSecondary} w-full bg-white ${homeFocusRing}`}
+                className={`${siteBtnSecondary} w-full border-white/30 bg-transparent text-white hover:bg-white/10 ${homeFocusRing}`}
               >
                 {secondary.label}
               </TrackedLink>
@@ -69,13 +67,13 @@ export function HomeFinalCta() {
               <TrackedLink
                 href={tertiary.href}
                 trackLabel={tertiary.trackLabel}
-                className={`inline-flex min-h-12 w-full items-center justify-center text-[15px] font-semibold text-[#1D4ED8] underline-offset-4 transition hover:underline ${homeFocusRing}`}
+                className={`inline-flex min-h-12 w-full items-center justify-center text-[15px] font-semibold text-white/80 underline-offset-4 transition hover:text-white hover:underline ${homeFocusRing}`}
               >
                 {tertiary.label}
               </TrackedLink>
             ) : null}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   );

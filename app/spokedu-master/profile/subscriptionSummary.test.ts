@@ -50,6 +50,23 @@ describe('subscriptionSummary', () => {
       isDirectBillingPlan: true,
       canCancel: true,
       canUseSpomatMemberPrice: true,
+      warningText: null,
+    });
+  });
+
+  it('warns before period end when automatic renewal payment failed', () => {
+    const value = summary({
+      plan: 'premium',
+      status: 'active',
+      nextBillingAt: future,
+      canCancelAutoBilling: true,
+      billingRenewalFailed: true,
+    });
+
+    expect(getSubscriptionDisplaySummary(value)).toMatchObject({
+      state: 'active',
+      statusLabel: '결제 확인 필요',
+      warningText: '최근 자동결제가 실패했습니다. 이용 종료일 전에 결제수단을 확인해 주세요.',
     });
   });
 
@@ -172,7 +189,7 @@ describe('subscriptionSummary', () => {
     const value = summary({ plan: 'premium', status: 'expired', periodEnd: past });
 
     expect(getSubscriptionStatusLabel(value)).toBe('이용 종료');
-    expect(getSubscriptionPrimaryLabel(value)).toBe('이용권 선택');
+    expect(getSubscriptionPrimaryLabel(value)).toBe('구독 선택');
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'ended',
       primaryHref: '/spokedu-master/payment',
@@ -194,7 +211,7 @@ describe('subscriptionSummary', () => {
     expect(getSubscriptionPrimaryHref(value)).toBe('/spokedu-master/payment');
     expect(getSubscriptionDisplaySummary(value)).toMatchObject({
       state: 'none',
-      primaryLabel: '이용권 선택',
+      primaryLabel: '구독 선택',
     });
   });
 

@@ -196,7 +196,7 @@ async function pushOps(
       body: JSON.stringify({ documentId, baseSeq, ops }),
     });
     const json = await res.json().catch(() => ({}));
-    if (res.status === 409) {
+    if (res.status === 409 || (json as { ok?: unknown; error?: unknown }).ok === false) {
       return {
         ok: false,
         error: 'seq_conflict',
@@ -206,10 +206,6 @@ async function pushOps(
     }
     if (!res.ok) {
       const message = (json as { error?: string }).error || 'op push failed';
-      const normalized = message.toLowerCase();
-      if (normalized.includes('block not found')) {
-        throw new Error(message);
-      }
       if (res.status === 500 && isNoteSyncRecoverableError(message)) {
         const state = await fetchSyncStateCached(documentId);
         return {

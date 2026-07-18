@@ -24,6 +24,10 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/privacy/page.tsx',
   'app/spokedu-master/subscription/page.tsx',
   'app/spokedu-master/students/page.tsx',
+  'app/spokedu-master/director/page.tsx',
+  'app/spokedu-master/error.tsx',
+  'app/spokedu-master/components/ui/ClassToolsView.tsx',
+  'app/spokedu-master/components/operations/OperationsPanel.tsx',
 ] as const;
 
 const userVisibleSource = () => USER_VISIBLE_FILES.map(read).join('\n');
@@ -56,10 +60,19 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).toContain('라이브러리');
     expect(source).toContain('수업 미리보기');
     expect(source).toContain('전체 수업 자료 보기');
+    expect(source).not.toMatch(/>\s*수업 자료\s*</);
+    expect(source).not.toMatch(/>\s*수업 자료 보기\s*</);
+    expect(source).not.toMatch(/>\s*전체 자료 보기\s*</);
+    expect(source).not.toMatch(/>\s*다시 시도하기\s*</);
+    expect(source).not.toMatch(/>\s*학생 추가하기\s*</);
+    expect(source).not.toMatch(/>\s*다음 수업 자료\s*</);
+    expect(source).not.toMatch(/>\s*내 반 명단 준비\s*</);
     expect(source).toContain('수업 기록');
     expect(source).toContain('안내문 작성·복사');
     expect(source).toContain('즐겨찾기');
     expect(source).toContain('오늘 수업 기록 남기기');
+    expect(source).toContain('구독 선택');
+    expect(source).toContain('프리미엄');
   });
 
   it('does not expose deprecated representative terms in the checked files', () => {
@@ -69,6 +82,49 @@ describe('SPOKEDU MASTER user-facing terminology and product truth', () => {
     expect(source).not.toContain('AI 추천');
     expect(source).not.toContain('성장 분석');
     expect(source).not.toContain('진행 중');
+  });
+
+  it('keeps billing CTA and bookmark labels unified in Korean', () => {
+    const source = userVisibleSource();
+    const library = read('app/spokedu-master/library/LibraryView.tsx');
+    const preview = read('app/spokedu-master/components/lesson/ProgramPreviewModal.tsx');
+    const access = read('app/spokedu-master/lib/masterAccessModel.ts');
+
+    expect(access).toContain("return '구독 선택'");
+    expect(access).toContain("return '구독 다시 선택'");
+    expect(source).not.toContain('이용권 선택');
+    expect(source).not.toContain('이용권 다시 구독하기');
+    expect(source).not.toContain('이용권 다시 선택');
+    expect(library).toContain('즐겨찾기 <span');
+    expect(library).not.toContain('>저장 <');
+    expect(library).not.toContain('>PRO<');
+    expect(preview).not.toContain('PRO 전용');
+    expect(source).not.toContain('USE THIS LESSON');
+    expect(source).not.toContain('class record');
+    expect(source).not.toContain('lesson explanation');
+    expect(source).not.toContain('Weekly selection');
+    expect(source).not.toContain('director dashboard');
+    expect(source).not.toContain('center plan');
+    expect(source).not.toContain('CLASS COMMAND');
+    expect(source).not.toContain('>operations<');
+    expect(source).not.toContain('official preset');
+  });
+
+  it('keeps product chrome on --spm-* tokens instead of indigo/legacy hex', () => {
+    const source = userVisibleSource();
+    const globals = read('app/globals.css');
+
+    expect(globals).toContain('--spm-acc:');
+    expect(globals).toContain('--spm-bg:');
+    expect(globals).toContain('--spm-acc-a12:');
+    expect(source).not.toContain('bg-indigo-');
+    expect(source).not.toContain('text-indigo-');
+    expect(source).not.toContain('border-indigo-');
+    expect(source).not.toContain('#f5f7fb');
+    expect(source).not.toContain('#eef2f7');
+    expect(source).not.toContain('#4f46e5');
+    expect(source).not.toContain('rgba(99,102,241');
+    expect(source).not.toContain('rgba(99, 102, 241');
   });
 
   it('does not expose internal diagnostics or unfinished-feature copy in user-facing screens', () => {

@@ -17,7 +17,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('가이드라인');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain('실행');
-    expect(hub).toContain('최근 SPOMOVE 활동');
+    expect(hub).toContain('최근 SPOMOVE');
   });
 
   it('keeps normal program cards separate from recent rerun actions', () => {
@@ -35,8 +35,8 @@ describe('SPOMOVE pilot flow contract', () => {
   });
 
   it('shows recent SPOMOVE re-entry without exposing other owners', () => {
-    expect(hub).toContain('최근 SPOMOVE 활동');
-    expect(hub).toContain('최근 활동');
+    expect(hub).toContain('최근 SPOMOVE');
+    expect(hub).toContain('최근 사용한 활동');
     expect(hub).toContain('활동 선택');
     expect(hub).toContain('아직 실행한 SPOMOVE 활동이 없습니다.');
     expect(hub).toContain('activity.ownerId === ownerId');

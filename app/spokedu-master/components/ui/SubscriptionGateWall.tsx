@@ -26,7 +26,7 @@ const FEATURE_COPY = {
   records: {
     icon: FileText,
     title: '이 기능을 사용하려면 이용권이 필요합니다',
-    desc: '수업 기록, 안내문, 내 활동과 기록은 활성 이용권에서 사용할 수 있습니다.',
+    desc: '수업 기록, 안내문은 활성 이용권에서 사용할 수 있습니다.',
   },
   spomove: {
     icon: MonitorPlay,
@@ -41,10 +41,10 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
   const hasBaseSubscriptionAccess = snapshot.canUseLibrary || snapshot.canUseClassTools || snapshot.canUseRecords;
   const subscriptionBlockedFeature = requirement === 'spomove' && hasBaseSubscriptionAccess && !snapshot.canUseSpomove;
   const primaryHref = subscriptionBlockedFeature ? '/spokedu-master/subscription' : '/spokedu-master/payment';
-  const primaryLabel = subscriptionBlockedFeature ? '구독 관리' : '이용권 선택';
+  const primaryLabel = subscriptionBlockedFeature ? '구독 관리' : '구독 선택';
 
   return (
-    <div className="grid h-full place-items-center overflow-y-auto bg-[#f5f7fb] p-6">
+    <div className="grid h-full place-items-center overflow-y-auto p-6" style={{ background: 'var(--spm-bg)' }}>
       <section className="w-full max-w-[440px] rounded-[22px] border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-6 grid h-14 w-14 place-items-center rounded-[18px] border border-red-200 bg-red-50">
           <Lock size={24} className="text-red-600" />
@@ -60,14 +60,14 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
         </p>
         <div className="mt-5 rounded-[13px] border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-start gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-indigo-50">
-              <Icon size={16} className="text-indigo-600" />
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--spm-acc-glow)]">
+              <Icon size={16} className="text-[var(--spm-acc)]" />
             </span>
             <div>
               <p className="text-[13px] font-black text-slate-900">필요한 접근 권한</p>
               <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
                 {requirement === 'records'
-                  ? '수업 기록 · 안내문 · 내 활동과 기록'
+                  ? '수업 기록 · 안내문'
                   : requirement === 'classTools'
                     ? '수업 도구'
                     : requirement === 'library'
@@ -78,11 +78,11 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
           </div>
         </div>
         <div className="mt-7 grid gap-2">
-          <Link href={primaryHref} className="flex h-12 w-full items-center justify-center rounded-[12px] bg-indigo-600 text-[14px] font-black text-white shadow-lg shadow-indigo-200">
+          <Link href={primaryHref} className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white">
             {primaryLabel}
           </Link>
           {!subscriptionBlockedFeature ? (
-            <Link href="/spokedu-master/dashboard" className="flex h-11 w-full items-center justify-center gap-2 rounded-[12px] text-[13px] font-black text-slate-500">
+            <Link href="/spokedu-master/dashboard" className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] text-[13px] font-black text-slate-500">
               <ArrowLeft size={15} />
               홈으로
             </Link>

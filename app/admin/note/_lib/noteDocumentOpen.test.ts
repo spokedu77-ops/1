@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyOpenServerSnapshot,
   fetchServerBlocksForOpen,
+  openNoteDocument,
   prepareNoteDocumentOpenSync,
 } from './noteDocumentOpen';
 import type { NoteBlock } from './types';
@@ -22,6 +23,12 @@ function block(id: string, overrides: Partial<NoteBlock> = {}): NoteBlock {
 }
 
 describe('noteDocumentOpen', () => {
+  beforeEach(async () => {
+    const { useNoteBlockStore } = await import('../_store/noteBlockStore');
+    useNoteBlockStore.getState().setActiveDocumentId(null);
+    useNoteBlockStore.getState().hydrate([]);
+  });
+
   it('prepareNoteDocumentOpenSync does not mutate store — hint only', () => {
     const result = prepareNoteDocumentOpenSync('doc-1');
     expect(result).toEqual({ hasLocalHint: false });
@@ -84,5 +91,29 @@ describe('noteDocumentOpen', () => {
     const result = await applyOpenServerSnapshot('doc-1', server, engine);
     expect(syncWithServer).not.toHaveBeenCalled();
     expect(result.blocks[0]?.content?.text).toBe('하위타이핑유지');
+  });
+
+  it('openNoteDocument still routes bootstrap snapshots through syncWithServer', async () => {
+    const bootstrap = [block('toggle', {
+      type: 'toggle',
+      content: { title: 'Section', bodyMigrated: true },
+    })];
+    const syncWithServer = vi.fn().mockResolvedValue(undefined);
+    const engine = {
+      isOplogSyncEnabled: () => true,
+      syncWithServer,
+      replaceBlocks: vi.fn(),
+      getBlocks: () => bootstrap,
+    };
+
+    const result = await openNoteDocument({
+      documentId: 'doc-1',
+      engine,
+      bootstrapBlocks: bootstrap,
+    });
+
+    expect(syncWithServer).toHaveBeenCalledTimes(1);
+    expect(syncWithServer.mock.calls[0][0]).toEqual(bootstrap);
+    expect(result.blocks).toEqual(bootstrap);
   });
 });

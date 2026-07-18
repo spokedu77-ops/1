@@ -26,6 +26,15 @@ describe('student history flow contract', () => {
     expect(studentDetail).toContain('entries.slice(0, 5)');
   });
 
+  it('surfaces accumulated evidence from quick and enriched records', () => {
+    expect(studentDetail).toContain('쌓인 증거');
+    expect(studentDetail).toContain('빠른 기록');
+    expect(studentDetail).toContain('집중 관찰');
+    expect(studentDetail).toContain('이 기록 보강');
+    expect(studentDetail).toContain('hasEvidence');
+    expect(studentsList).toContain('수업 관찰:');
+  });
+
   it('keeps unrelated student notes out of the student detail page', () => {
     expect(studentDetail).toContain('공통 메모:');
     expect(studentDetail).toContain('학생별 메모:');

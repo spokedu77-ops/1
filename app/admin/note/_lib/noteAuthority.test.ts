@@ -78,6 +78,13 @@ describe('decideRegressiveContentOp', () => {
     expect(decideRegressiveContentOp({ localText: 'a', patchText: 'b' })).toBe('push');
   });
 
+  it('drops stale prefix patches that would truncate local text', () => {
+    expect(decideRegressiveContentOp({
+      localText: '7.20 월요일 12시 송예원T OT',
+      patchText: '7',
+    })).toBe('drop_stale');
+  });
+
   it('drops stale empty patch when local still has image url', () => {
     expect(decideRegressiveContentOp({
       localText: '',

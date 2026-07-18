@@ -1,6 +1,9 @@
 'use client';
 
-import { AGE_GROUPS } from '../data/ageGroups';
+import { useMemo } from 'react';
+import { getAgeGroups } from '../data/catalog';
+import { getMoveReportUi } from '../i18n/ui';
+import type { MoveReportLocale } from '../lib/locale';
 import type { AgeGroup } from '../types';
 
 interface SetupProps {
@@ -10,10 +13,16 @@ interface SetupProps {
   onAge: (v: AgeGroup) => void;
   onBack: () => void;
   onNext: () => void;
+  locale?: MoveReportLocale;
 }
 
 /** 원본 HTML STEP 01 설정 화면 */
-export default function Setup({ name, onName, age, onAge, onBack, onNext }: SetupProps) {
+export default function Setup({ name, onName, age, onAge, onBack, onNext, locale = 'ko' }: SetupProps) {
+  const ui = useMemo(() => getMoveReportUi(locale), [locale]);
+  const ageGroups = useMemo(() => getAgeGroups(locale), [locale]);
+  const t = ui.setup;
+  const startLabelName = name.trim() || t.defaultName;
+
   return (
     <div className="page mr-setup-page" style={{ background: '#0D0D0D', padding: '0 max(20px, env(safe-area-inset-left))', paddingTop: '28px', paddingBottom: '120px', maxWidth: 430, margin: '0 auto' }}>
       <button
@@ -33,27 +42,27 @@ export default function Setup({ name, onName, age, onAge, onBack, onNext }: Setu
         }}
       >
         <i className="fa-solid fa-arrow-left" />
-        <span>뒤로</span>
+        <span>{t.back}</span>
       </button>
 
       <div className="anim-rise" style={{ marginBottom: '32px' }}>
         <div className="mr-setup-step">STEP 01 / 02</div>
-        <h2 className="mr-setup-title">아이 정보 입력</h2>
-        <p className="mr-setup-lead">연령대에 맞춰 질문이 최적화됩니다.</p>
+        <h2 className="mr-setup-title">{t.title}</h2>
+        <p className="mr-setup-lead">{t.lead}</p>
       </div>
 
       <div className="anim-rise d1" style={{ marginBottom: '24px' }}>
         <label className="mr-setup-label">
-          이름 또는 애칭 <span style={{ fontWeight: 500, color: '#777' }}>(선택)</span>
+          {t.nameLabel} <span style={{ fontWeight: 500, color: '#777' }}>{t.nameOptional}</span>
         </label>
-        <input className="sp-input" value={name} onChange={(e) => onName(e.target.value)} placeholder="예: 지아, 씩씩이" maxLength={10} />
+        <input className="sp-input" value={name} onChange={(e) => onName(e.target.value)} placeholder={t.namePlaceholder} maxLength={10} />
       </div>
 
       <div className="anim-rise d2" style={{ marginBottom: '40px' }}>
-        <label className="mr-setup-label">관찰 연령대</label>
+        <label className="mr-setup-label">{t.ageLabel}</label>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {(['preschool', 'elementary'] as const).map((k) => {
-            const m = AGE_GROUPS[k];
+            const m = ageGroups[k];
             const on = age === k;
             return (
               <button
@@ -106,7 +115,7 @@ export default function Setup({ name, onName, age, onAge, onBack, onNext }: Setu
       <div className="anim-rise d3">
         <button type="button" onClick={onNext} className="btn-fire mr-btn-fire-html">
           <i className="fa-solid fa-play" style={{ fontSize: '12px' }} />
-          {name.trim() || '아이'} 맞춤 분석 시작
+          {t.startWithName(startLabelName)}
         </button>
       </div>
     </div>

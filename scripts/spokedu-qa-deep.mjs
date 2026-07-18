@@ -22,7 +22,7 @@ const PAGES = [
   '/spokedu/programs/oneday-event',
   '/spokedu/programs/camp',
   '/spokedu/records',
-  '/spokedu/cases',
+  '/spokedu/programs',
   '/spokedu/monthly',
   '/spokedu/insights',
 ];
@@ -41,7 +41,7 @@ const EXPECTED_CTAS = {
   '/spokedu/programs/oneday-event': [['원데이 이벤트 문의하기', 'type=dispatch']],
   '/spokedu/programs/camp': [['방학캠프 운영 문의하기', 'type=dispatch']],
   '/spokedu/records': [['기관 프로그램', 'type=dispatch']],
-  '/spokedu/cases': [['기관 프로그램', 'type=dispatch']],
+  '/spokedu/programs': [['상담 문의하기', 'type=dispatch']],
   '/spokedu/monthly': [['월간 수업 문의', 'type=dispatch']],
   '/spokedu/insights': [['스포키듀 수업 상담하기', '/spokedu/contact']],
   '/spokedu/about': [

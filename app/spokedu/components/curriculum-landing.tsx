@@ -13,9 +13,11 @@ import {
   landingCardShell,
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
+import { CurriculumInquiryForm } from './curriculum-inquiry-form';
 import { HomeSectionRule } from './home-section-rule';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingFinalCta } from './landing-final-cta';
+import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
 
@@ -44,7 +46,8 @@ export default function CurriculumLanding() {
   const spotlight = curriculumPage.masterSpotlight;
 
   return (
-    <div className={audienceLandingStack}>
+    <div className={`${audienceLandingStack} pb-24`}>
+      <div id="hero">
       <LandingHero
         kicker={curriculumPage.hero.kicker}
         kickerClassName="text-stone-500"
@@ -56,6 +59,7 @@ export default function CurriculumLanding() {
         primaryCta={curriculumPage.heroCtas.primary}
         secondaryCta={curriculumPage.heroCtas.secondary}
       />
+      </div>
 
       <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
         <span className="inline-flex items-center rounded-full bg-teal-600/10 px-3.5 py-1.5 text-xs font-semibold text-teal-900">
@@ -72,6 +76,25 @@ export default function CurriculumLanding() {
             </div>
           ))}
         </dl>
+      </Section>
+
+      <HomeSectionRule />
+
+      <Section className="space-y-5 sm:space-y-6">
+        <LandingSectionHeading
+          eyebrow={curriculumPage.leaderAxes.eyebrow}
+          title={curriculumPage.leaderAxes.title}
+          lead={curriculumPage.leaderAxes.lead}
+          accent="teal"
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          {curriculumPage.leaderAxes.items.map((item) => (
+            <article key={item.title} className={`px-5 py-5 ${landingCardShell}`}>
+              <h3 className="text-base font-semibold text-slate-950">{item.title}</h3>
+              <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.description}</p>
+            </article>
+          ))}
+        </div>
       </Section>
 
       <HomeSectionRule />
@@ -97,6 +120,24 @@ export default function CurriculumLanding() {
                   {item.description}
                 </p>
               </div>
+            </article>
+          ))}
+        </div>
+      </Section>
+
+      <HomeSectionRule />
+
+      <Section className="space-y-5 sm:space-y-6">
+        <LandingSectionHeading
+          eyebrow={curriculumPage.trainingTracks.eyebrow}
+          title={curriculumPage.trainingTracks.title}
+          accent="teal"
+        />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4 sm:gap-4">
+          {curriculumPage.trainingTracks.items.map((item) => (
+            <article key={item.title} className={`px-5 py-5 ${landingCardShell}`}>
+              <h3 className="text-sm font-semibold text-slate-950 sm:text-base">{item.title}</h3>
+              <p className={`mt-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>{item.body}</p>
             </article>
           ))}
         </div>
@@ -200,12 +241,22 @@ export default function CurriculumLanding() {
 
       <HomeSectionRule />
 
+      <Section>
+        <CurriculumInquiryForm />
+      </Section>
+
       <LandingFinalCta
         title={curriculumPage.finalCta.title}
         description={curriculumPage.finalCta.description}
         tone="dark"
         backgroundMedia={HOME_MEDIA[curriculumPage.finalCta.mediaKey]}
         links={[{ ...curriculumPage.finalCta.primary, variant: 'on-dark-primary' }]}
+      />
+
+      <LandingFloatingCta
+        primaryHref="#inquiry"
+        primaryLabel="커리큘럼·교육 문의"
+        showAfterId="hero"
       />
     </div>
   );

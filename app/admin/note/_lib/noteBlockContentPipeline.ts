@@ -32,6 +32,7 @@ export type ApplyBlockContentChangeArgs = {
     content: unknown,
     baseContent?: Record<string, unknown>,
   ) => void;
+  skipUndo?: boolean;
   onAfterChange?: () => void;
 };
 
@@ -45,6 +46,7 @@ export function applyBlockContentChange({
   blocksRef,
   recordContentUndoBeforeChange,
   scheduleBlockContentSave,
+  skipUndo = false,
   onAfterChange,
 }: ApplyBlockContentChangeArgs): void {
   const store = useNoteBlockStore.getState();
@@ -60,7 +62,7 @@ export function applyBlockContentChange({
   const incoming = normalizeBlockContentRecord(block, content);
   const nextRecord = mergeContentPatchWithActiveStore(incoming, prevRecord);
 
-  if (contentChangedForUndo(prevRecord, nextRecord)) {
+  if (!skipUndo && contentChangedForUndo(prevRecord, nextRecord)) {
     recordContentUndoBeforeChange(block.id);
   }
 

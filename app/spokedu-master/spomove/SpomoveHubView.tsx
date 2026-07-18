@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bookmark, Eye, Lock, MonitorPlay } from 'lucide-react';
+import { Bookmark, Lock, MonitorPlay } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -350,15 +350,15 @@ function SpatialDirectionVisual({ colorMode = false }: { colorMode?: boolean }) 
 
 function VisualReactionVisual() {
   return (
-    <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-cyan-950 to-indigo-950 overflow-hidden">
+    <div className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-cyan-950 to-slate-950 overflow-hidden">
       {[40, 30, 20, 12].map((r, i) => (
         <div
           key={i}
-          className="absolute rounded-full border border-indigo-500/30"
+          className="absolute rounded-full border border-[color-mix(in_srgb,var(--spm-acc)_30%,transparent)]"
           style={{ width: r * 2, height: r * 2 }}
         />
       ))}
-      <div className="absolute h-3 w-3 rounded-full bg-indigo-400/90" />
+      <div className="absolute h-3 w-3 rounded-full bg-[color-mix(in_srgb,var(--spm-acc)_90%,white)]" />
       {/* Speed lines */}
       {[22, 38, 55, 70].map((y) => (
         <div
@@ -411,7 +411,7 @@ function FlankerVisual() {
             <span
               key={ai}
               className={`text-xl font-black leading-none ${
-                ai === 2 ? 'text-indigo-600' : 'text-slate-300'
+                ai === 2 ? 'text-[var(--spm-acc)]' : 'text-slate-300'
               }`}
             >
               {arrow}
@@ -471,11 +471,11 @@ function SequentialMemoryVisual() {
 
 function DiveVisual({ isBonus }: { isBonus?: boolean }) {
   return (
-    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 to-indigo-950">
+    <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 to-slate-950">
       {[18, 33, 50, 66, 80].map((y, i) => (
         <div
           key={i}
-          className="absolute h-px bg-indigo-500/20"
+          className="absolute h-px bg-[var(--spm-acc-glow)]0/20"
           style={{ top: `${y}%`, left: `${8 + (i % 3) * 4}%`, width: `${64 + (i % 4) * 8}%` }}
         />
       ))}
@@ -483,12 +483,12 @@ function DiveVisual({ isBonus }: { isBonus?: boolean }) {
         <path
           d="M 4 32 Q 40 4 76 32"
           fill="none"
-          stroke="rgba(99,102,241,0.55)"
+          stroke="var(--spm-acc-a55)"
           strokeWidth="2.5"
           strokeLinecap="round"
         />
       </svg>
-      <span className="z-10 text-[11px] font-black tracking-[0.35em] text-indigo-300/70">
+      <span className="z-10 text-[11px] font-black tracking-[0.35em] text-[color-mix(in_srgb,var(--spm-acc)_55%,white)]/70">
         {isBonus ? 'BONUS' : 'DIVE'}
       </span>
       <div className="absolute bottom-3 right-3">
@@ -592,12 +592,12 @@ function CardVisual({
           src={thumbnailUrl}
           alt=""
           fill
-          unoptimized
           sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
+          quality={75}
           className={
             fitInsideSquare
               ? 'object-contain'
-              : 'object-cover transition-transform duration-300 group-hover:scale-[1.03]'
+              : 'object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]'
           }
           onError={onImageError}
         />
@@ -620,13 +620,11 @@ function CardInfo({
   displayTitle,
   isReady,
   startHref,
-  onPreview,
 }: {
   preset: OfficialSpomovePreset;
   displayTitle: string;
   isReady: boolean;
   startHref: string;
-  onPreview: () => void;
 }) {
   const display = getSpomovePresetDisplayModel(preset);
   const cardTags = buildSpomoveCardTags(preset);
@@ -651,29 +649,14 @@ function CardInfo({
 
       {isReady ? (
         <div className="mt-4">
-          <div className="grid gap-2 sm:grid-cols-2">
-            <button
-              data-spm-spomove-card-action="preview"
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onPreview();
-              }}
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 active:scale-[0.98] active:bg-slate-100"
-            >
-              <Eye className="h-3.5 w-3.5" />
-              가이드라인
-            </button>
-            <Link
-              href={startHref}
-              data-spm-spomove-card-action="start"
-              className="inline-flex min-h-10 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white shadow-sm transition hover:bg-indigo-700 active:scale-[0.98] active:bg-indigo-800"
-            >
-              <MonitorPlay className="h-3.5 w-3.5" />
-              실행
-            </Link>
-          </div>
+          <Link
+            href={startHref}
+            data-spm-spomove-card-action="start"
+            className="inline-flex h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] active:opacity-80"
+          >
+            <MonitorPlay className="h-3.5 w-3.5" />
+            실행
+          </Link>
         </div>
       ) : null}
 
@@ -735,7 +718,7 @@ function PresetCard({
         aria-pressed={favorite}
         aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
         title={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-        className={`absolute right-3 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70 ${
+        className={`absolute right-3 top-4 z-10 inline-flex h-10 w-10 items-center justify-center rounded-full shadow-md backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 disabled:opacity-70 ${
           favorite
             ? 'bg-amber-50 text-amber-600'
             : 'bg-white/90 text-slate-500 hover:bg-white hover:text-slate-900'
@@ -743,18 +726,31 @@ function PresetCard({
       >
         <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
       </button>
-      <CardVisual
-        preset={preset}
-        thumbnailUrl={thumbnailUrl}
-        imageFailed={imageFailed}
-        onImageError={() => setImageFailed(true)}
-      />
+      <button
+        type="button"
+        data-spm-spomove-card-action="preview"
+        disabled={!preset.isReady}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!preset.isReady) return;
+          onPreview();
+        }}
+        aria-label={`${displayModel.displayTitle} 가이드라인`}
+        className="relative block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
+      >
+        <CardVisual
+          preset={preset}
+          thumbnailUrl={thumbnailUrl}
+          imageFailed={imageFailed}
+          onImageError={() => setImageFailed(true)}
+        />
+      </button>
       <CardInfo
         preset={preset}
         displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
         startHref={startHref}
-        onPreview={onPreview}
       />
     </>
   );
@@ -768,7 +764,7 @@ function PresetCard({
   }
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2">
+    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
       {inner}
     </article>
   );
@@ -887,7 +883,7 @@ export default function SpomoveHubView() {
   );
 
   return (
-    <main className="h-full overflow-y-auto bg-[#f5f7fb]">
+    <main className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
       <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-16">
         {/* 헤더 */}
         <header className="overflow-hidden rounded-[28px] bg-slate-950 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-12">
@@ -911,10 +907,10 @@ export default function SpomoveHubView() {
         <section className="mt-6 rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[12px] font-black text-indigo-600">최근 SPOMOVE 활동</p>
-              <h2 className="text-xl font-black text-slate-950">최근 활동</h2>
+              <p className="text-[12px] font-black text-[var(--spm-acc)]">최근 SPOMOVE</p>
+              <h2 className="text-xl font-black text-slate-950">최근 사용한 활동</h2>
             </div>
-            <a href="#spomove-program-list" className="text-sm font-black text-indigo-600">활동 선택</a>
+            <a href="#spomove-program-list" className="text-sm font-black text-[var(--spm-acc)]">활동 선택</a>
           </div>
           {recentSpomoveActivities.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -932,7 +928,7 @@ export default function SpomoveHubView() {
                             : `/spokedu-master/spomove/session?preset=${activity.programId}&autostart=1&mode=projector&sound=on`
                         }
                         data-spm-spomove-recent-action="rerun"
-                        className="inline-flex min-h-10 items-center justify-center rounded-xl bg-indigo-600 px-3 text-[12px] font-black text-white"
+                        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-3 text-[12px] font-black text-white"
                       >
                         다시 실행
                       </Link>
@@ -945,7 +941,7 @@ export default function SpomoveHubView() {
             <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
               <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 활동이 없습니다.</p>
               <p className="mt-1 text-sm font-semibold text-slate-500">활동을 선택해 첫 실행을 시작해 보세요.</p>
-              <a href="#spomove-program-list" className="mt-3 inline-flex min-h-10 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white">활동 선택</a>
+              <a href="#spomove-program-list" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white">활동 선택</a>
             </div>
           )}
         </section>
@@ -956,14 +952,14 @@ export default function SpomoveHubView() {
             type="button"
             onClick={() => setShowSavedOnly((current) => !current)}
             aria-pressed={showSavedOnly}
-            className={`inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-[13px] font-black transition ${
+            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[13px] font-black transition ${
               showSavedOnly
                 ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
                 : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950'
             }`}
           >
             <Bookmark className={`h-4 w-4 ${showSavedOnly ? 'fill-current' : ''}`} />
-            저장한 활동
+            즐겨찾기한 활동
             <span className="text-[11px] font-black opacity-60">{favoriteSpomoveIds.size}</span>
           </button>
         </div>
@@ -974,7 +970,7 @@ export default function SpomoveHubView() {
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
               활동 종류
             </span>
-            <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <div className="flex flex-wrap gap-2">
               {PROGRAM_GROUP_TABS.map((tab) => {
                 const active = activeProgramGroup === tab;
                 const count = programGroupCount(tab, activeThinkingLevel);
@@ -983,7 +979,7 @@ export default function SpomoveHubView() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveProgramGroup(tab)}
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[12px] font-bold transition-all ${
+                    className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold transition-all ${
                       active
                         ? 'bg-slate-950 text-white shadow-sm'
                         : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
@@ -1004,7 +1000,7 @@ export default function SpomoveHubView() {
             <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
               인지 난이도
             </span>
-            <div className="flex gap-2 overflow-x-auto pb-0.5 sm:flex-wrap sm:overflow-visible sm:pb-0">
+            <div className="flex flex-wrap gap-2">
               {THINKING_LEVEL_TABS.map((tab) => {
                 const active = activeThinkingLevel === tab;
                 const count = thinkingLevelCount(tab, activeProgramGroup);
@@ -1013,9 +1009,9 @@ export default function SpomoveHubView() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveThinkingLevel(tab)}
-                    className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold transition-all ${
+                    className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-all ${
                       active
-                        ? 'border border-indigo-200 bg-indigo-50 text-indigo-700 shadow-sm'
+                        ? 'border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] text-[var(--spm-acc)] shadow-sm'
                         : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
                     }`}
                   >
@@ -1055,7 +1051,7 @@ export default function SpomoveHubView() {
         ) : (
           <div className="mt-12 flex flex-col items-center gap-4 text-center">
             <p className="text-[14px] font-semibold text-slate-500">
-              {showSavedOnly ? '저장한 조건에 해당하는 활동이 없습니다.' : '선택한 조건에 해당하는 활동이 없습니다.'}
+              {showSavedOnly ? '즐겨찾기한 조건에 해당하는 활동이 없습니다.' : '선택한 조건에 해당하는 활동이 없습니다.'}
             </p>
             <button
               type="button"
@@ -1064,7 +1060,7 @@ export default function SpomoveHubView() {
                 setActiveThinkingLevel('all');
                 setShowSavedOnly(false);
               }}
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-[13px] font-bold text-slate-600 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:text-[var(--spm-acc)]"
             >
               전체 보기
             </button>

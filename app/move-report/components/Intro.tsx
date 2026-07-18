@@ -1,15 +1,21 @@
 'use client';
 
+import { useMemo } from 'react';
+import { getMoveReportUi } from '../i18n/ui';
+import type { MoveReportLocale } from '../lib/locale';
+
 interface IntroProps {
   onStart: () => void;
   /** /move-report?coach=… 전용 링크 유입 시 안내 배너 */
   coachLinkActive?: boolean;
+  locale?: MoveReportLocale;
 }
 
-const INTRO_FIXED_LINE = '연세대 체육교육학과 출신 개발 · 무료 테스트';
-
 /** 인트로: 브랜딩 + 고정 안내 띠(비스크롤) + CTA */
-export default function Intro({ onStart, coachLinkActive }: IntroProps) {
+export default function Intro({ onStart, coachLinkActive, locale = 'ko' }: IntroProps) {
+  const ui = useMemo(() => getMoveReportUi(locale), [locale]);
+  const t = ui.intro;
+
   return (
     <div className="page mr-intro-page" style={{ background: '#0D0D0D', position: 'relative', overflow: 'hidden', minHeight: '100dvh' }}>
       <div
@@ -65,10 +71,9 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               wordBreak: 'keep-all',
             }}
           >
-            선생님 전용 링크로 참여 중이에요. 응답은 유형만 익명 집계되며, 개별 이름은 저장되지 않습니다.
+            {t.coachBanner}
           </div>
         ) : null}
-        {/* 브랜드: 영문 워드마크만 */}
         <div className="anim-rise" style={{ marginBottom: '36px', textAlign: 'center' }}>
           <div
             style={{
@@ -99,7 +104,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
         <div className="mr-intro-product-lockup anim-rise">MOVE REPORT</div>
 
         <div className="anim-rise d1" style={{ marginBottom: '8px' }}>
-          <p className="mr-intro-lead">우리 아이는 어떤 움직임 타입일까요?</p>
+          <p className="mr-intro-lead">{t.lead}</p>
           <h1
             className="mr-intro-display"
             style={{
@@ -120,7 +125,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
                 filter: 'drop-shadow(0 0 20px rgba(255,75,31,.5))',
               }}
             >
-              리포트
+              {t.reportWord}
             </span>
           </h1>
         </div>
@@ -135,7 +140,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               color: '#FFB020',
             }}
           >
-            3분 · 12문항 · 16가지 유형 · 무료 테스트
+            {t.meta}
           </p>
           <p
             className="mr-intro-copy"
@@ -149,9 +154,11 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               marginTop: '0',
             }}
           >
-            아이마다 몸이 빛나는 순간이 <span style={{ color: '#FF4B1F', fontWeight: 700 }}>다릅니다.</span>
+            {t.copyBefore}
+            <span style={{ color: '#FF4B1F', fontWeight: 700 }}>{t.copyAccent}</span>
+            {locale === 'en' ? ' ' : null}
             <br />
-            우리 아이의 움직임 유형을 찾아보세요.
+            {t.copyAfter}
           </p>
         </div>
 
@@ -189,7 +196,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
             ))}
             <div style={{ width: '1px', height: '24px', background: '#2A2A2A', margin: '0 2px' }} />
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#CCCCCC', letterSpacing: '.04em', padding: '0 14px 0 8px', lineHeight: 1 }}>
-              Movement · 16가지 움직임 유형
+              {t.moveTypes}
             </span>
           </div>
         </div>
@@ -206,11 +213,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
             marginBottom: '32px',
           }}
         >
-          {[
-            { n: '3만+', l: '누적 수업 인원' },
-            { n: '1만+', l: '누적 수업 시간' },
-            { n: '16종', l: '성향 프로파일' },
-          ].map((s, i) => (
+          {t.stats.map((s, i) => (
             <div key={i} style={{ background: '#161616', padding: '18px 12px', textAlign: 'center' }}>
               <div style={{ fontFamily: 'Bebas Neue,sans-serif', fontSize: '30px', color: '#fff', lineHeight: 1 }}>{s.n}</div>
               <div className="mr-intro-stat-label" style={{ fontWeight: 600, color: '#A8A8A8', marginTop: '4px', letterSpacing: '.04em' }}>
@@ -222,12 +225,11 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
 
         <div className="anim-rise d4" style={{ textAlign: 'center', marginBottom: '8px' }}>
           <span className="mr-intro-fineprint" style={{ color: '#777', fontWeight: 500, letterSpacing: '.04em' }}>
-            스포키듀 현장 수업 경험을 담은 관찰형 테스트
+            {t.fineprint}
           </span>
         </div>
       </div>
 
-      {/* 움직이는 티커 제거 → 고정 문구 띠 */}
       <div
         style={{
           position: 'fixed',
@@ -260,7 +262,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
               wordBreak: 'keep-all',
             }}
           >
-            {INTRO_FIXED_LINE}
+            {t.strip}
           </p>
         </div>
       </div>
@@ -268,7 +270,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
       <div className="mr-intro-cta-bar">
         <div className="mr-content-max" style={{ margin: '0 auto' }}>
           <button type="button" onClick={onStart} className="btn-fire mr-btn-fire-html">
-            <span>3분 테스트 시작하기</span>
+            <span>{t.cta}</span>
             <span
               style={{
                 width: '26px',
@@ -284,7 +286,7 @@ export default function Intro({ onStart, coachLinkActive }: IntroProps) {
             </span>
           </button>
           <p className="mr-intro-foot-hint" style={{ textAlign: 'center', color: '#AAAAAA', marginTop: '8px', fontWeight: 500 }}>
-            3분 · 12문항 · 16가지 유형 · 무료
+            {t.footHint}
           </p>
         </div>
       </div>

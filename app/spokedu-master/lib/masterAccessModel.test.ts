@@ -55,7 +55,7 @@ describe('masterAccessModel', () => {
 
   it('routes free users to payment and lapsed users to re-purchase', () => {
     expect(getEntitlementPaymentHref(freeSnapshot)).toBe('/spokedu-master/payment');
-    expect(getEntitlementPrimaryCtaLabel(freeSnapshot)).toBe('이용권 선택');
+    expect(getEntitlementPrimaryCtaLabel(freeSnapshot)).toBe('구독 선택');
     expect(
       getEntitlementPaymentHref({
         ...liteSnapshot,

@@ -1,10 +1,13 @@
 import { MODES } from '../constants';
 import { GUIDE_BLOCKS, type GuidePhase } from '../trainingGuideContent';
 import {
+  RESULT_COLOR_ORDER,
+  colorMeta,
   describeSessionVolume,
   formatElapsedSeconds,
   totalColorStimulusCount,
   type ColorStimulusCounts,
+  type PadColorId,
   type TrainingResultConfig,
 } from './trainingResultSummary';
 
@@ -13,12 +16,24 @@ export type SelfCheckItem = {
   label: string;
 };
 
+export type SessionSnapshotItem = {
+  id: string;
+  label: string;
+  value: string;
+};
+
 export type TrainingResultRichContent = {
   praise: string;
   praiseSub: string;
   activityFeel: string;
   elapsedLabel: string;
   volumeLabel: string;
+  /** 헤더형 한 줄: 모드 · 단계 · 분량 */
+  sessionHighlight: string;
+  /** 색 집계가 없을 때 가운데 패널을 채울 세션 스냅샷 */
+  sessionSnapshot: SessionSnapshotItem[];
+  /** 색 집계가 있을 때 최빈색 한 줄 코멘트 (없으면 null) */
+  colorDominantLine: string | null;
   programTitle: string;
   phaseName: string;
   programSummary: string;
@@ -222,6 +237,69 @@ function buildCoachTip(mode: string, level: number): string {
   return toFriendlyLine(raw);
 }
 
+function spatialPatternLabel(level: number): string {
+  if (level === 1) return '3색';
+  if (level === 2) return '5색';
+  if (level === 4 || level === 5) return '색·번호';
+  return '10색';
+}
+
+function buildSessionHighlight(cfg: TrainingResultConfig, phaseName: string, volumeLabel: string): string {
+  const mo = MODES[cfg.mode];
+  const title = mo?.title ?? 'SPOMOVE';
+  const step = phaseName || `${cfg.level}번`;
+  return `${title} · ${step} · ${volumeLabel}`;
+}
+
+function buildSessionSnapshot(
+  cfg: TrainingResultConfig,
+  elapsedLabel: string,
+  volumeLabel: string,
+  activityFeel: string,
+  phaseName: string,
+): SessionSnapshotItem[] {
+  const mo = MODES[cfg.mode];
+  const items: SessionSnapshotItem[] = [
+    { id: 'mode', label: '프로그램', value: mo?.title ?? 'SPOMOVE' },
+    { id: 'phase', label: '단계', value: phaseName || `${cfg.level}번` },
+    { id: 'volume', label: '설정 분량', value: volumeLabel },
+    { id: 'elapsed', label: '진행 시간', value: elapsedLabel },
+  ];
+
+  if (cfg.mode === 'spatial') {
+    items.push({ id: 'pattern', label: '기억 길이', value: spatialPatternLabel(cfg.level) });
+  } else if (cfg.mode === 'flow') {
+    items.push({ id: 'focus', label: '활동 포인트', value: '리듬에 맞춰 동작' });
+  } else if (cfg.mode === 'stroop' && isVoiceHeavyStroop(cfg.level)) {
+    items.push({ id: 'focus', label: '활동 포인트', value: '규칙에 맞춰 말하기' });
+  } else if (cfg.mode === 'flanker') {
+    items.push({ id: 'focus', label: '활동 포인트', value: '가운데만 보기' });
+  } else {
+    items.push({ id: 'feel', label: '오늘 느낌', value: activityFeel });
+  }
+
+  return items.slice(0, 5);
+}
+
+function buildColorDominantLine(colorCounts: ColorStimulusCounts, colorTotal: number): string | null {
+  if (colorTotal <= 0) return null;
+
+  let topId: PadColorId = 'red';
+  let topCount = -1;
+  for (const id of RESULT_COLOR_ORDER) {
+    const count = colorCounts[id];
+    if (count > topCount) {
+      topCount = count;
+      topId = id;
+    }
+  }
+  if (topCount <= 0) return null;
+
+  const meta = colorMeta(topId);
+  const percent = Math.round((topCount / colorTotal) * 100);
+  return `${meta.name}이 가장 많이 나왔어요 · ${topCount}회(${percent}%)`;
+}
+
 export function resolveTrainingResultRichContent(
   cfg: TrainingResultConfig,
   elapsedMs: number,
@@ -232,13 +310,19 @@ export function resolveTrainingResultRichContent(
   const colorTotal = colorCounts ? totalColorStimulusCount(colorCounts) : 0;
   const { praise, praiseSub } = buildPraise(cfg.mode);
   const phaseName = buildPhaseName(cfg.mode, cfg.level);
+  const elapsedLabel = formatElapsedSeconds(elapsedMs);
+  const volumeLabel = describeSessionVolume(cfg);
+  const activityFeel = buildActivityFeel(cfg.mode, cfg.level, colorTotal);
 
   return {
     praise,
     praiseSub,
-    activityFeel: buildActivityFeel(cfg.mode, cfg.level, colorTotal),
-    elapsedLabel: formatElapsedSeconds(elapsedMs),
-    volumeLabel: describeSessionVolume(cfg),
+    activityFeel,
+    elapsedLabel,
+    volumeLabel,
+    sessionHighlight: buildSessionHighlight(cfg, phaseName, volumeLabel),
+    sessionSnapshot: buildSessionSnapshot(cfg, elapsedLabel, volumeLabel, activityFeel, phaseName),
+    colorDominantLine: colorCounts && colorTotal > 0 ? buildColorDominantLine(colorCounts, colorTotal) : null,
     programTitle: options?.programTitle ?? (phaseName ? `${mo?.title ?? 'SPOMOVE'} · ${phaseName}` : mo?.title ?? 'SPOMOVE'),
     phaseName,
     programSummary: buildProgramSummary(cfg.mode, cfg.level),

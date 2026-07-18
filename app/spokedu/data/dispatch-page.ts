@@ -1,5 +1,5 @@
 import type { HomeMediaKey } from './home-media';
-import { HOME_PROGRAM_SYSTEM_HREF, SPOKEDU_BASE_PATH } from './site';
+import { SPOKEDU_BASE_PATH } from './site';
 
 export type DispatchExampleItem = {
   venue: string;
@@ -42,29 +42,29 @@ export type DispatchLineupItem = {
 export const dispatchPage = {
   hero: {
     kicker: '기관·단체 프로그램',
-    lines: ['대상과 현장에 맞는', '체육교육 과정을 설계합니다'] as const,
+    lines: ['움직이고 싶게 만드는', '체육수업을 설계합니다'] as const,
     subtitle:
       '키움센터·아동시설·학교·복지관에 맞춘 맞춤 프로그램. 공간·인원·목표에 따라 정규·원데이·방학 운영과 SPOMOVE를 제안합니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
   },
   heroCtas: {
     primary: {
-      label: '기관 프로그램 제안받기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      label: '기관 맞춤 제안서 요청',
+      href: '#contact',
       trackLabel: 'dispatch-cta-program',
     },
     secondary: {
       label: '프로그램 라인업 보기',
-      href: HOME_PROGRAM_SYSTEM_HREF,
+      href: '#programs',
       trackLabel: 'dispatch-cta-programs',
     },
   },
   trustMetrics: {
-    eyebrow: '운영 지표',
+    eyebrow: '운영 방식',
     items: [
-      { value: '500개 +', label: '누적 파견 기관' },
-      { value: '98%', label: '기관 재계약률' },
-      { value: '맞춤형', label: '공간·인원 맞춤 수업 설계' },
+      { value: '맞춤 설계', label: '공간·인원·목표에 맞춘 수업 구성' },
+      { value: '정규·원데이', label: '학기 운영부터 행사형까지' },
+      { value: '서울·수도권', label: '상담 후 운영 가능 지역 안내' },
     ] as const,
   },
   partnerReviews: {
@@ -334,7 +334,7 @@ export const dispatchPage = {
   examples: {
     eyebrow: '사례',
     title: '실제 운영 사례',
-    href: `${SPOKEDU_BASE_PATH}/cases`,
+    href: `${SPOKEDU_BASE_PATH}/records`,
     trackLabel: 'dispatch-cases',
     items: [
       {
@@ -343,7 +343,7 @@ export const dispatchPage = {
         operation: 'SPOMOVE 정규수업',
         activity: '시각 자극 반응형 에듀테크 체육',
         mediaKey: 'proofClass' as HomeMediaKey,
-        href: `${SPOKEDU_BASE_PATH}/cases/yangcheon-spomove`,
+        href: `${SPOKEDU_BASE_PATH}/records`,
       },
       {
         venue: 'PLAYZ Lounge',
@@ -351,7 +351,7 @@ export const dispatchPage = {
         operation: '방학 원데이 캠프',
         activity: '체육·예체능 결합 몰입 프로그램',
         mediaKey: 'proofLounge' as HomeMediaKey,
-        href: `${SPOKEDU_BASE_PATH}/cases/playz-camp`,
+        href: `${SPOKEDU_BASE_PATH}/records`,
       },
       {
         venue: '동작거점형키움센터',
@@ -395,8 +395,8 @@ export const dispatchPage = {
       '대상 연령, 인원, 공간, 일정을 확인한 뒤 정규수업·원데이·방학캠프 중 적합한 운영안을 안내드립니다.',
     mediaKey: 'trackDispatch' as HomeMediaKey,
     primary: {
-      label: '기관 프로그램 제안받기',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
+      label: '제안서 요청하기',
+      href: '#contact',
       trackLabel: 'dispatch-final-program',
     },
   },

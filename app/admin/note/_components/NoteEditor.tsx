@@ -63,6 +63,7 @@ import {
   invokeToggleChildBackspaceAtStart,
   invokeToggleChildEmptyBackspace,
 } from '../_lib/noteToggleBackspaceRuntime';
+import { resolveArrowBlockNavigation } from '../_lib/noteArrowNavigation';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -268,6 +269,14 @@ function applyEditorTextStyle(editor: Editor, style: TextStyle) {
   setHeading(3);
 }
 
+function readCoordsTop(view: EditorView, pos: number): number | undefined {
+  try {
+    return view.coordsAtPos(pos).top;
+  } catch {
+    return undefined;
+  }
+}
+
 function firstImageFile(files: FileList | null | undefined): File | null {
   if (!files) return null;
   return Array.from(files).find((file) => file.type.startsWith('image/')) ?? null;
@@ -393,6 +402,7 @@ export function NoteEditor({
 }) {
   const pendingChangeRef = useRef<NoteEditorChange | null>(null);
   const changeTimerRef = useRef<number | null>(null);
+  const structuralPasteUndoArmedRef = useRef(false);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
   const isEditingRef = useRef(false);
   const lastAutoFocusSignalRef = useRef(0);
@@ -623,6 +633,12 @@ export function NoteEditor({
           return true;
         },
         keydown: (view, event) => {
+          if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !event.shiftKey && structuralPasteUndoArmedRef.current) {
+            event.preventDefault();
+            structuralPasteUndoArmedRef.current = false;
+            window.dispatchEvent(new CustomEvent('admin-note:undo-request'));
+            return true;
+          }
           if (handleMarkdownShortcut(
             view,
             event,
@@ -728,6 +744,12 @@ export function NoteEditor({
           return false;
         }
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+          if (!event.shiftKey && structuralPasteUndoArmedRef.current) {
+            event.preventDefault();
+            structuralPasteUndoArmedRef.current = false;
+            window.dispatchEvent(new CustomEvent('admin-note:undo-request'));
+            return true;
+          }
           const ed = editorRef.current;
           if (ed && !(ed as { isDestroyed?: boolean }).isDestroyed) {
             if (event.shiftKey && ed.can().redo()) {
@@ -839,10 +861,16 @@ export function NoteEditor({
           if (!selection.empty) return false;
           // ArrowUp: 첫 시각 줄이면 블록 맨앞이 아니어도 이전 블록 (체크리스트 끝→같은 칸 앞으로 가는 문제)
           if (event.key === 'ArrowUp') {
-            const caret = view.coordsAtPos(selection.from);
-            const first = view.coordsAtPos(1);
-            const onFirstLine = Math.abs(caret.top - first.top) < 4;
-            if (onFirstLine) {
+            const direction = resolveArrowBlockNavigation({
+              key: event.key,
+              selectionEmpty: selection.empty,
+              selectionFrom: selection.from,
+              selectionTo: selection.to,
+              docContentSize: doc.content.size,
+              caretTop: readCoordsTop(view, selection.from),
+              boundaryTop: readCoordsTop(view, 1),
+            });
+            if (direction === 'previous') {
               event.preventDefault();
               flush();
               currentOnNavigatePrevious();
@@ -865,11 +893,17 @@ export function NoteEditor({
           const { doc, selection } = view.state;
           if (!selection.empty) return false;
           if (event.key === 'ArrowDown') {
-            const caret = view.coordsAtPos(selection.to);
             const lastPos = Math.max(1, doc.content.size - 1);
-            const last = view.coordsAtPos(lastPos);
-            const onLastLine = Math.abs(caret.top - last.top) < 4;
-            if (onLastLine) {
+            const direction = resolveArrowBlockNavigation({
+              key: event.key,
+              selectionEmpty: selection.empty,
+              selectionFrom: selection.from,
+              selectionTo: selection.to,
+              docContentSize: doc.content.size,
+              caretTop: readCoordsTop(view, selection.to),
+              boundaryTop: readCoordsTop(view, lastPos),
+            });
+            if (direction === 'next') {
               event.preventDefault();
               flush();
               currentOnNavigateNext();
@@ -948,10 +982,11 @@ export function NoteEditor({
               const firstHtml = first.html?.trim()
                 ? first.html
                 : legacyTextToEditorHtml(first.text);
-              editorRef.current?.chain().focus().setContent(firstHtml).run();
-              scheduleChange({ text: first.text, html: first.html ?? '' });
+              editorRef.current?.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
             }
             onMultilinePaste(mdSpecs);
+            structuralPasteUndoArmedRef.current = true;
+            if (editorRef.current) clearTipTapHistory(editorRef.current);
             return true;
           }
         }
@@ -966,10 +1001,11 @@ export function NoteEditor({
               const firstHtml = first.html?.trim()
                 ? first.html
                 : legacyTextToEditorHtml(first.text);
-              editorRef.current?.chain().focus().setContent(firstHtml).run();
-              scheduleChange({ text: first.text, html: first.html ?? '' });
+              editorRef.current?.chain().focus().setContent(firstHtml, { emitUpdate: false }).run();
             }
             onMultilinePaste(htmlSpecs);
+            structuralPasteUndoArmedRef.current = true;
+            if (editorRef.current) clearTipTapHistory(editorRef.current);
             return true;
           }
         }
@@ -984,9 +1020,10 @@ export function NoteEditor({
               : null) ?? 'text';
             const specs = pastedBlocksFromPlainLines(blockType, lines);
             const first = specs[0];
-            editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(first.text)).run();
-            scheduleChange({ text: first.text, html: '' });
+            editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(first.text), { emitUpdate: false }).run();
             onMultilinePaste(specs);
+            structuralPasteUndoArmedRef.current = true;
+            if (editorRef.current) clearTipTapHistory(editorRef.current);
             return true;
           }
           event.preventDefault();
@@ -1008,6 +1045,7 @@ export function NoteEditor({
       },
     },
     onUpdate: ({ editor: currentEditor }) => {
+      structuralPasteUndoArmedRef.current = false;
       const nextText = currentEditor.getText();
       const slashMatch = nextText.match(/^\/([^\n]*)$/);
       callbacksRef.current.onSlashChange?.(!!slashMatch, slashMatch?.[1] ?? '');

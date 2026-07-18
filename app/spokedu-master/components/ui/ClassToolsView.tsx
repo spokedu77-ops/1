@@ -61,7 +61,7 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className="flex h-14 min-w-[132px] items-center justify-center gap-2 rounded-[14px] px-6 text-[14px] font-black text-white transition-opacity disabled:opacity-40"
-      style={{ background: accent ?? 'var(--spm-acc)', boxShadow: `0 8px 24px ${accent ?? 'rgba(99,102,241,0.3)'}40` }}
+      style={{ background: accent ?? 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-a30)' }}
     >
       {children}
     </button>
@@ -115,7 +115,7 @@ function StopwatchTab() {
           onClick={() => setLaps((items) => [displayMs, ...items].slice(0, 12))}
           disabled={displayMs <= 0}
           className="flex h-14 items-center gap-2 rounded-[14px] px-6 text-[14px] font-black disabled:opacity-40"
-          style={{ background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.28)', color: 'var(--spm-grn)' }}
+          style={{ background: 'var(--spm-grn-a14)', border: '1px solid var(--spm-grn-a28)', color: 'var(--spm-grn)' }}
         >
           <Timer size={16} />랩타임
         </button>
@@ -414,10 +414,10 @@ function ReturnTimerTab() {
   const tone = status === 'expired'
     ? { accent: '#ef4444', soft: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.28)' }
     : status === 'completed'
-      ? { accent: '#10b981', soft: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.28)' }
+      ? { accent: 'var(--spm-grn)', soft: 'var(--spm-grn-a12)', border: 'var(--spm-grn-a28)' }
       : isFinalThirty
-        ? { accent: '#f59e0b', soft: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.28)' }
-        : { accent: 'var(--spm-acc)', soft: 'rgba(99,102,241,0.09)', border: 'rgba(99,102,241,0.22)' };
+        ? { accent: 'var(--spm-amb)', soft: 'var(--spm-amb-a12)', border: 'var(--spm-amb-a28)' }
+        : { accent: 'var(--spm-acc)', soft: 'var(--spm-acc-a09)', border: 'var(--spm-acc-a22)' };
 
   return (
     <div className="h-full px-3 py-3 pb-4 sm:px-5 sm:py-4">
@@ -535,10 +535,10 @@ function ReturnTimerTab() {
             ) : null}
             {status === 'running' ? (
               <>
-                <ActionButton onClick={pause} accent="#f59e0b">
+                <ActionButton onClick={pause} accent="var(--spm-amb)">
                   <Pause size={18} fill="currentColor" />일시정지
                 </ActionButton>
-                <ActionButton onClick={complete} accent="#10b981">
+                <ActionButton onClick={complete} accent="var(--spm-grn)">
                   <CheckCircle2 size={19} />완료
                 </ActionButton>
               </>
@@ -548,7 +548,7 @@ function ReturnTimerTab() {
                 <ActionButton onClick={resume}>
                   <Play size={18} fill="currentColor" />계속
                 </ActionButton>
-                <ActionButton onClick={complete} accent="#10b981">
+                <ActionButton onClick={complete} accent="var(--spm-grn)">
                   <CheckCircle2 size={19} />완료
                 </ActionButton>
               </>
@@ -605,9 +605,9 @@ function ScoreboardTab() {
 function StudentModeNote({ usingSample }: { usingSample: boolean }) {
   if (!usingSample) return null;
   return (
-    <div className="mx-auto mb-4 flex max-w-[560px] flex-col items-center gap-3 rounded-[14px] px-4 py-3 text-center text-[12px] font-bold sm:flex-row sm:justify-between sm:text-left" style={{ background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.24)', color: 'var(--spm-amb)' }}>
+    <div className="mx-auto mb-4 flex max-w-[560px] flex-col items-center gap-3 rounded-[14px] px-4 py-3 text-center text-[12px] font-bold sm:flex-row sm:justify-between sm:text-left" style={{ background: 'var(--spm-amb-a12)', border: '1px solid var(--spm-amb-a24)', color: 'var(--spm-amb)' }}>
       <span>등록된 학생 명단이 없어 예시 명단으로 흐름을 보여줍니다.</span>
-      <Link href="/spokedu-master/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.16)', border: '1px solid rgba(245,158,11,0.26)', color: 'var(--spm-amb)' }}>
+      <Link href="/spokedu-master/students?add=1" className="inline-flex h-9 shrink-0 items-center gap-2 rounded-[10px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-amb-a16)', border: '1px solid var(--spm-amb-a26)', color: 'var(--spm-amb)' }}>
         <UserPlus size={14} />
         학생 추가
       </Link>
@@ -625,9 +625,9 @@ function EmptyStudentsForTools() {
           학생 관리에서 학생을 먼저 등록해 주세요.
         </p>
       </div>
-      <Link href="/spokedu-master/students?add=1" className="inline-flex h-10 items-center gap-2 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+      <Link href="/spokedu-master/students?add=1" className="inline-flex h-11 items-center gap-2 rounded-[10px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
         <UserPlus size={14} />
-        학생 추가하기
+        학생 추가
       </Link>
     </div>
   );
@@ -792,7 +792,7 @@ function OrderTab({ students, usingSample }: { students: StudentProfile[]; using
       {!students.length ? <EmptyStudentsForTools /> : null}
       <div className="mb-5 flex items-center justify-between">
         <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>발표·게임 순서 · {students.length}명</p>
-        <button type="button" onClick={reshuffle} className="rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'rgba(245,158,11,0.14)', color: 'var(--spm-amb)', border: '1px solid rgba(245,158,11,0.28)' }}>
+        <button type="button" onClick={reshuffle} className="rounded-full px-4 py-2 text-[12px] font-black" style={{ background: 'var(--spm-amb-a14)', color: 'var(--spm-amb)', border: '1px solid var(--spm-amb-a28)' }}>
           다시 섞기
         </button>
       </div>
@@ -821,7 +821,7 @@ export default function ClassToolsView() {
       <section className="shrink-0 border-b px-5 py-5 sm:px-7" style={{ borderColor: 'var(--spm-br2)', background: 'var(--spm-s1)' }}>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-[640px]">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>CLASS COMMAND</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>수업 도구</p>
             <h1 className="mt-1 text-[26px] font-black leading-tight sm:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
               수업 중 바로 꺼내 쓰는 진행 콘솔
             </h1>
@@ -838,7 +838,7 @@ export default function ClassToolsView() {
             ))}
           </div>
         </div>
-        <div className="mt-5 flex flex-col gap-3 rounded-[16px] px-4 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.18)' }}>
+        <div className="mt-5 flex flex-col gap-3 rounded-[16px] px-4 py-4 sm:flex-row sm:items-center sm:justify-between" style={{ background: 'var(--spm-acc-a08)', border: '1px solid var(--spm-acc-a18)' }}>
           <div className="flex items-start gap-3">
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-acc)', color: 'white' }}>
               <ActiveIcon size={18} />
@@ -875,13 +875,13 @@ export default function ClassToolsView() {
               style={{
                 borderColor: active ? 'var(--spm-acc)' : 'transparent',
                 color: active ? 'var(--spm-acc)' : 'var(--spm-t3)',
-                background: active ? 'rgba(99,102,241,0.06)' : 'transparent',
+                background: active ? 'var(--spm-acc-a06)' : 'transparent',
               }}
             >
               <Icon size={15} />
               {label}
               {hasCount ? (
-                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-black" style={{ background: 'rgba(16,185,129,0.18)', color: 'var(--spm-grn)' }}>
+                <span className="rounded-full px-1.5 py-0.5 text-[10px] font-black" style={{ background: 'var(--spm-grn-a18)', color: 'var(--spm-grn)' }}>
                   {students.length}
                 </span>
               ) : null}

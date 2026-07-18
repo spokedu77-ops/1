@@ -45,7 +45,7 @@ export default function TermsPage() {
         </Section>
 
         <Section title="2. 제공 기능">
-          <p>SPOKEDU MASTER는 수업 전 라이브러리와 전체 수업 자료, 수업 중 수업 도구 또는 SPOMOVE, 수업 후 수업 기록·안내문·내 활동과 기록을 제공하는 교육 운영 보조 서비스입니다.</p>
+          <p>SPOKEDU MASTER는 수업 전 라이브러리와 전체 수업 자료, 수업 중 수업 도구 또는 SPOMOVE, 수업 후 수업 기록·안내문을 제공하는 교육 운영 보조 서비스입니다.</p>
           <p>학생 기록과 안내문은 교육 운영을 돕기 위한 자료이며 의료, 진단, 평가 자료가 아닙니다.</p>
         </Section>
 

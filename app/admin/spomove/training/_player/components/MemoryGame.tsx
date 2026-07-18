@@ -284,14 +284,41 @@ export function MemoryGame({
         {progress}
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1.8rem', padding: '6rem 2rem 4rem' }}>
           <div style={{ color: 'rgba(255,255,255,0.42)', fontSize: '0.82rem', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>{round + 1}번 정답</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.8rem', maxWidth: '32rem' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
+              gap: 'clamp(0.35rem,1.5vw,0.8rem)',
+              width: '100%',
+              maxWidth: 'min(100%, 42rem)',
+              justifyItems: 'center',
+            }}
+          >
             {currentPattern.map((color, index) => (
-              <div key={index} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
-                <div style={{ display: 'flex', width: 'clamp(64px,13vw,96px)', height: 'clamp(64px,13vw,96px)', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.1rem', border: '2px solid rgba(255,255,255,0.15)', borderRadius: '1.1rem', background: color.bg, color: color.text, fontSize: 'clamp(1.1rem,2.5vw,1.4rem)', fontWeight: 900, boxShadow: `0 6px 24px ${color.bg}66` }}>
+              <div key={index} style={{ display: 'flex', width: '100%', flexDirection: 'column', alignItems: 'center', gap: '0.45rem' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    width: '100%',
+                    maxWidth: 'clamp(48px,11vw,88px)',
+                    aspectRatio: '1',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.1rem',
+                    border: '2px solid rgba(255,255,255,0.15)',
+                    borderRadius: '1.1rem',
+                    background: color.bg,
+                    color: color.text,
+                    fontSize: 'clamp(0.95rem,2.2vw,1.35rem)',
+                    fontWeight: 900,
+                    boxShadow: `0 6px 24px ${color.bg}66`,
+                  }}
+                >
                   <span style={{ fontSize: '0.7rem', opacity: 0.7 }}>{color.symbol}</span>
                   <span>{index + 1}</span>
                 </div>
-                <div style={{ color: '#fff', fontSize: 'clamp(0.8rem,2vw,1rem)', fontWeight: 800 }}>{color.name}</div>
+                <div style={{ color: '#fff', fontSize: 'clamp(0.7rem,1.8vw,0.95rem)', fontWeight: 800, textAlign: 'center' }}>{color.name}</div>
               </div>
             ))}
           </div>

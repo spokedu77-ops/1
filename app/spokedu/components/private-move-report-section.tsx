@@ -3,47 +3,45 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { privatePage } from '../data/private-page';
+import {
+  clearPrivateMoveReportSummary,
+  readPrivateMoveReportSummary,
+  writePrivateMoveReportSummary,
+} from '../lib/private-move-report';
 import { btnPrimary, btnSecondary, koreanLineBreak } from '../lib/ui-classes';
 import { LandingSectionHeading } from './landing-section-heading';
 
-const LS_KEY = 'private.moveReport.summary';
-
 export function PrivateMoveReportSection() {
   const [summary, setSummary] = useState('');
+  const [savedHint, setSavedHint] = useState('');
   const section = privatePage.moveReport;
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem(LS_KEY)?.trim() ?? '';
-    if (stored) setSummary(stored);
+    setSummary(readPrivateMoveReportSummary());
   }, []);
 
-  const persistSummary = useCallback((value: string) => {
-    if (typeof window === 'undefined') return;
-    const normalized = value.trim();
-    if (!normalized) {
-      window.localStorage.removeItem(LS_KEY);
-      return;
-    }
-    window.localStorage.setItem(LS_KEY, normalized);
-  }, []);
-
-  const handleApply = useCallback(() => {
-    persistSummary(summary);
-  }, [persistSummary, summary]);
+  const handleSave = useCallback(() => {
+    writePrivateMoveReportSummary(summary);
+    setSavedHint(summary.trim() ? '요약을 저장했습니다. 하단 상담 폼에 반영됩니다.' : '저장된 요약을 지웠습니다.');
+  }, [summary]);
 
   const handleReset = useCallback(() => {
     setSummary('');
-    persistSummary('');
-  }, [persistSummary]);
+    clearPrivateMoveReportSummary();
+    setSavedHint('저장된 요약을 초기화했습니다.');
+  }, []);
 
-  const contactHref =
-    summary.trim().length > 0
-      ? `${section.contactHref}&reportSummary=${encodeURIComponent(summary.trim())}`
-      : section.contactHref;
+  const handleGoApply = useCallback(() => {
+    writePrivateMoveReportSummary(summary);
+    setSavedHint(summary.trim() ? '요약이 상담 폼에 반영되었습니다.' : '');
+    if (typeof window !== 'undefined') {
+      window.location.hash = 'apply';
+      document.getElementById('apply')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [summary]);
 
   return (
-    <section id="move-report" className="scroll-mt-20 space-y-5 sm:space-y-6">
+    <section id="move-report" className="scroll-mt-36 space-y-5 sm:space-y-6">
       <LandingSectionHeading
         eyebrow={section.eyebrow}
         title={section.title}
@@ -89,13 +87,16 @@ export function PrivateMoveReportSection() {
           <textarea
             id="private-move-report-summary"
             value={summary}
-            onChange={(e) => setSummary(e.target.value)}
+            onChange={(e) => {
+              setSummary(e.target.value);
+              setSavedHint('');
+            }}
             rows={6}
-            placeholder="간단 진단 결과의 핵심 내용을 붙여넣어 주세요."
+            placeholder="간단 진단 결과의 핵심 내용을 붙여넣어 주세요. 진단 결과에서 「상담 페이지로」를 누르면 자동으로 채워질 수 있습니다."
             className="mt-3 w-full resize-y rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-3 text-sm leading-relaxed text-slate-800 outline-none transition focus:border-teal-300 focus:bg-white focus:ring-2 focus:ring-teal-100"
           />
           <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-            <button type="button" onClick={handleApply} className={`${btnSecondary} min-h-11 !w-full sm:!w-auto`}>
+            <button type="button" onClick={handleSave} className={`${btnSecondary} min-h-11 !w-full sm:!w-auto`}>
               요약 저장
             </button>
             <button
@@ -106,15 +107,21 @@ export function PrivateMoveReportSection() {
               초기화
             </button>
           </div>
+          {savedHint ? (
+            <p className="mt-3 text-sm font-medium text-teal-800" role="status">
+              {savedHint}
+            </p>
+          ) : null}
           <p className="mt-4">
-            <Link
-              href={contactHref}
+            <button
+              type="button"
+              onClick={handleGoApply}
               data-track="cta-contact"
               data-track-label="private-move-report-contact"
               className={`${btnPrimary} min-h-12 !w-full sm:!w-auto`}
             >
               {section.contactLabel}
-            </Link>
+            </button>
           </p>
         </div>
       </div>

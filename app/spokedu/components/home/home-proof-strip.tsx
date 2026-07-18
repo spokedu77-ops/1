@@ -3,9 +3,9 @@ import { homeFocusRing, homeSectionScrollMt, koreanText, siteContainer } from '.
 import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
+/** 슬림 신뢰 스트립 — 운영 방식만. 경로 선택은 게이트 섹션으로 */
 export function HomeProofStrip() {
   const { items, processLine } = homePage.proofStrip;
-  const pathItems = homePage.audienceGate.items;
 
   return (
     <section
@@ -17,7 +17,7 @@ export function HomeProofStrip() {
         <h2 id="home-proof-heading" className="sr-only">
           운영 근거
         </h2>
-        <ul className="flex flex-col divide-y divide-slate-200/90 py-4 sm:flex-row sm:divide-x sm:divide-y-0 sm:py-5">
+        <ul className="flex flex-col divide-y divide-slate-200/90 py-5 sm:flex-row sm:divide-x sm:divide-y-0 sm:py-6">
           {items.map((item) => (
             <li
               key={item}
@@ -27,30 +27,23 @@ export function HomeProofStrip() {
             </li>
           ))}
         </ul>
-        <p className={`border-t border-slate-200/90 py-4 text-center text-sm font-medium text-slate-600 sm:text-[15px] ${koreanText}`}>
+        <p
+          className={`border-t border-slate-200/90 py-4 text-center text-sm font-medium text-slate-600 sm:py-5 sm:text-[15px] ${koreanText}`}
+        >
           {processLine}
         </p>
         <div className="hidden border-t border-slate-200/90 py-4 sm:block sm:py-5">
-          <p className={`text-sm font-bold text-slate-950 sm:text-[15px] ${koreanText}`}>필요한 방향으로 바로 이동하세요</p>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-            {pathItems.map((item) => (
-              <li key={item.id}>
+          <p className={`text-sm font-bold text-slate-950 sm:text-[15px] ${koreanText}`}>바로 찾기</p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {homePage.hero.quickLinks.map((link) => (
+              <li key={link.label}>
                 <TrackedLink
-                  href={item.href}
-                  trackLabel={`proof-strip-${item.trackLabel}`}
-                  className={`flex min-h-[4.25rem] items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-3 text-left transition hover:border-[#1D4ED8]/40 hover:bg-white ${homeFocusRing}`}
+                  href={link.href}
+                  trackLabel={`proof-strip-${link.trackLabel}`}
+                  className={`inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-sm font-semibold text-slate-800 transition hover:border-[#1D4ED8]/40 hover:bg-white ${homeFocusRing}`}
                 >
-                  <span className="min-w-0">
-                    <span className="block text-[11px] font-bold uppercase tracking-[0.12em] text-[#1D4ED8]">
-                      {item.badge}
-                    </span>
-                    <span className={`mt-1 block text-sm font-bold leading-snug text-slate-950 ${koreanText}`}>
-                      {item.title}
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-[#1D4ED8]" aria-hidden>
-                    <HomeChevron />
-                  </span>
+                  {link.label}
+                  <HomeChevron />
                 </TrackedLink>
               </li>
             ))}

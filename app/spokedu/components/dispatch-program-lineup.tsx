@@ -16,7 +16,7 @@ export function DispatchProgramLineup() {
   const section = dispatchPage.programLineup;
 
   return (
-    <div id="programs" className="scroll-mt-20 space-y-5 sm:space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <LandingSectionHeading
         eyebrow={section.eyebrow}
         title={section.title}

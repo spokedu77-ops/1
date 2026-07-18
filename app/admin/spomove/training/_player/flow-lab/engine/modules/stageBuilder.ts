@@ -146,7 +146,7 @@ export function buildStages(
       colorBg: 'rgba(251,191,36,0.15)',
       colorBorder: 'rgba(251,191,36,0.6)',
       cueWord: '보너스!',
-      shortInstruction: '지금까지 배운 모든 동작을 펼쳐보세요!',
+      shortInstruction: '지금까지 배운\n모든 동작을 펼쳐보세요!',
     });
   }
 

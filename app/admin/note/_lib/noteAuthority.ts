@@ -117,7 +117,15 @@ export function decideRegressiveContentOp(input: {
   localHasMediaPresence?: boolean;
   patchHasMediaPresence?: boolean;
 }): RegressiveContentDecision {
-  if (input.patchText.length > 0 || input.patchHasMediaPresence) return 'push';
+  if (input.patchText.length > 0 || input.patchHasMediaPresence) {
+    if (
+      input.localText.length > input.patchText.length
+      && input.localText.startsWith(input.patchText)
+    ) {
+      return 'drop_stale';
+    }
+    return 'push';
+  }
   if (input.localText.length === 0 && !input.localHasMediaPresence) return 'push';
   return 'drop_stale';
 }

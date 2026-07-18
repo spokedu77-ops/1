@@ -3,7 +3,7 @@ import { getLiveExternalChannels } from './external-channels';
 
 export const SPOKEDU_BASE_PATH = '/spokedu';
 
-/** @deprecated 홈 #program-system 제거 — `/programs`로 대체 */
+/** 프로그램 인덱스 (`/spokedu/programs`) — 홈 레거시 앵커 ID는 호환용으로만 유지 */
 export const HOME_PROGRAM_SYSTEM_ID = 'program-system';
 export const HOME_PROGRAM_SYSTEM_HREF = `${SPOKEDU_BASE_PATH}/programs`;
 

@@ -29,7 +29,7 @@ export function MasterEmailOtpForm({
   message,
   variant = 'login',
   title = 'SPOKEDU MASTER 시작하기',
-  description = '이메일 인증 후 계정 설정(온보딩)으로 이어집니다. 기존 계정이 있다면 같은 이메일로 로그인됩니다. 수업 기능은 이용권 선택 후 사용할 수 있습니다.',
+  description = '이메일 인증 후 계정 설정(온보딩)으로 이어집니다. 기존 계정이 있다면 같은 이메일로 로그인됩니다. 수업 기능은 구독 선택 후 사용할 수 있습니다.',
   sendLabel = '인증 코드 받기',
   verifyLabel = '시작하기',
   footer,

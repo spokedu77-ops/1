@@ -1,3 +1,5 @@
+import type { MoveReportLocale } from './locale';
+
 /** 한글 음절 마지막 받침 여부 (이/가·은/는·을/를 선택) */
 function hangulSyllableHasBatchim(ch: string): boolean {
   if (!ch) return false;
@@ -13,11 +15,7 @@ function lastCharForParticle(name: string): string {
   return chars[chars.length - 1] ?? '';
 }
 
-/**
- * 설문 원문(q/선지)에서 "아이·우리 아이"를 입력 이름으로 치환.
- * 이름이 비었거나 기본값 `아이`면 원문 유지.
- */
-export function personalizeMoveReportQuestion(text: string, displayName: string): string {
+function personalizeKo(text: string, displayName: string): string {
   const raw = (displayName ?? '').trim();
   if (!raw || raw === '아이' || raw === '우리 아이') return text;
 
@@ -41,4 +39,34 @@ export function personalizeMoveReportQuestion(text: string, displayName: string)
     s = s.split(from).join(to);
   }
   return s;
+}
+
+function personalizeEn(text: string, displayName: string): string {
+  const raw = (displayName ?? '').trim();
+  if (!raw || raw === 'child' || raw.toLowerCase() === 'your child') return text;
+
+  const possessive = /s$/i.test(raw) ? `${raw}'` : `${raw}'s`;
+  let s = text;
+  const replacements: [string, string][] = [
+    ["Your child's", possessive],
+    ["your child's", possessive],
+    ['Your child', raw],
+    ['your child', raw],
+  ];
+  for (const [from, to] of replacements) {
+    s = s.split(from).join(to);
+  }
+  return s;
+}
+
+/**
+ * 설문 원문(q/선지)에서 기본 호칭을 입력 이름으로 치환.
+ * 이름이 비었거나 locale 기본값이면 원문 유지.
+ */
+export function personalizeMoveReportQuestion(
+  text: string,
+  displayName: string,
+  locale: MoveReportLocale = 'ko'
+): string {
+  return locale === 'en' ? personalizeEn(text, displayName) : personalizeKo(text, displayName);
 }

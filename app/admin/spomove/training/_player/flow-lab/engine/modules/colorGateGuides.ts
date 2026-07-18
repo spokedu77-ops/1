@@ -132,7 +132,7 @@ export function buildColorGateCue(gateColorId: GateColorId): string {
 
 export function buildColorGateInstruction(gateColorId: GateColorId, pose: ColorGatePoseKey): string {
   const color = GATE_COLORS[gateColorId];
-  return `${color.label} 패드로 이동한 뒤 「${COLOR_GATE_POSE_LABELS[pose]}」 자세를 취하세요`;
+  return `${color.label} 패드로 이동한 뒤\n「${COLOR_GATE_POSE_LABELS[pose]}」 자세를 취하세요`;
 }
 
 export function buildColorGateSilhouetteCanvas(

@@ -1,7 +1,9 @@
 'use client';
 
-import type { Profile } from '../types';
+import { getMoveReportUi } from '../i18n/ui';
+import { formatOwnerPossessive, type MoveReportLocale } from '../lib/locale';
 import { axisLabelsFromProfileKey } from '../lib/profileAxisLabels';
+import type { Profile } from '../types';
 
 export type ShareResultCardVariant = 'default' | 'viralShare';
 
@@ -16,14 +18,17 @@ interface ShareResultCardProps {
   p: Profile;
   /** default: 기존 캡처용 레이아웃. viralShare: 공유 전용 바이럴 카드 */
   variant?: ShareResultCardVariant;
+  locale?: MoveReportLocale;
 }
 
-const VIRAL_POSTER_DESC_FALLBACK = '아이의 움직임 성향을 긍정적으로 보여주는 MOVE REPORT 결과입니다.';
+const VIRAL_POSTER_DESC_FALLBACK_KO = '아이의 움직임 성향을 긍정적으로 보여주는 MOVE REPORT 결과입니다.';
+const VIRAL_POSTER_DESC_FALLBACK_EN = 'A MOVE REPORT result that highlights your child’s movement style in a positive light.';
 
 /** shared 바이럴 카드용 설명: `desc` 원문은 읽기만 하고, 완결된 1~2문장만 사용(말줄임·substring 금지). */
-function viralPosterDisplayDesc(rawDesc: string): string {
+function viralPosterDisplayDesc(rawDesc: string, locale: MoveReportLocale): string {
+  const fallback = locale === 'en' ? VIRAL_POSTER_DESC_FALLBACK_EN : VIRAL_POSTER_DESC_FALLBACK_KO;
   const t = rawDesc.trim();
-  if (!t) return VIRAL_POSTER_DESC_FALLBACK;
+  if (!t) return fallback;
 
   const MAX_TOTAL = 118;
 
@@ -42,8 +47,8 @@ function viralPosterDisplayDesc(rawDesc: string): string {
         });
 
   const first = sentences[0] ?? '';
-  if (!first) return VIRAL_POSTER_DESC_FALLBACK;
-  if (first.length > MAX_TOTAL) return VIRAL_POSTER_DESC_FALLBACK;
+  if (!first) return fallback;
+  if (first.length > MAX_TOTAL) return fallback;
 
   if (sentences.length === 1) {
     return first;
@@ -58,8 +63,19 @@ function viralPosterDisplayDesc(rawDesc: string): string {
   return first;
 }
 
-function DefaultShareResultCard({ displayName, profileCode, p }: Omit<ShareResultCardProps, 'variant'>) {
-  const axisLabels = axisLabelsFromProfileKey(profileCode) ?? [];
+function DefaultShareResultCard({
+  displayName,
+  profileCode,
+  p,
+  locale = 'ko',
+}: Omit<ShareResultCardProps, 'variant'>) {
+  const ui = getMoveReportUi(locale);
+  const axisLabels = axisLabelsFromProfileKey(profileCode, locale) ?? [];
+  const owner = (displayName || '').trim() || (locale === 'en' ? 'Your child' : '우리 아이');
+  const ownerLine =
+    locale === 'en'
+      ? `${formatOwnerPossessive(owner, 'en')} MOVE Report`
+      : `${formatOwnerPossessive(owner, 'ko')} MOVE 리포트`;
 
   return (
     <div
@@ -195,10 +211,21 @@ function DefaultShareResultCard({ displayName, profileCode, p }: Omit<ShareResul
                 fontWeight: 700,
                 letterSpacing: '.08em',
                 color: p.col,
-                marginBottom: 14,
+                marginBottom: 6,
               }}
             >
-              {displayName || '우리 아이'}의 MOVE 유형
+              {ownerLine}
+            </div>
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 600,
+                color: 'rgba(255,255,255,.48)',
+                letterSpacing: '-.01em',
+                marginBottom: 18,
+              }}
+            >
+              {ui.shareCard.ownerSub}
             </div>
             <div
               style={{
@@ -277,17 +304,23 @@ function DefaultShareResultCard({ displayName, profileCode, p }: Omit<ShareResul
   );
 }
 
-function ViralShareResultCard({ displayName, p }: Omit<ShareResultCardProps, 'variant' | 'profileCode'>) {
+function ViralShareResultCard({
+  displayName,
+  p,
+  locale = 'ko',
+}: Omit<ShareResultCardProps, 'variant' | 'profileCode'>) {
+  const ui = getMoveReportUi(locale);
   const keywords = p.kw.slice(0, 4);
   const tipText = typeof p.shortTip === 'string' ? p.shortTip.trim() : '';
-  const posterDesc = viralPosterDisplayDesc(p.desc);
+  const posterDesc = viralPosterDisplayDesc(p.desc, locale);
+  const ownerLabel = (displayName || '').trim() || (locale === 'en' ? 'Your child' : '우리 아이');
 
   return (
     <div
       data-share-card="move-report"
       data-share-variant="poster"
       className="mr-poster-card"
-      aria-label={`${displayName || '우리 아이'}의 MOVE REPORT`}
+      aria-label={`${ownerLabel} MOVE REPORT`}
       style={{
         ['--poster-accent' as string]: p.col,
         fontFamily: "'Noto Sans KR', sans-serif",
@@ -300,7 +333,7 @@ function ViralShareResultCard({ displayName, p }: Omit<ShareResultCardProps, 'va
         <header className="mr-poster-head">
           <div className="mr-poster-brand-sm">SPOKEDU</div>
           <div className="mr-poster-brand-lg">MOVE REPORT</div>
-          <p className="mr-poster-sub">우리 아이의 움직임 성향</p>
+          <p className="mr-poster-sub">{ui.shareCard.posterSub(ownerLabel)}</p>
         </header>
 
         <div className="mr-poster-hero">
@@ -318,7 +351,7 @@ function ViralShareResultCard({ displayName, p }: Omit<ShareResultCardProps, 'va
           </div>
         </div>
 
-        <ul className="mr-poster-pills" aria-label="성향 키워드">
+        <ul className="mr-poster-pills" aria-label={locale === 'en' ? 'Style keywords' : '성향 키워드'}>
           {keywords.map((k, i) => (
             <li key={i} className="mr-poster-pill">
               {k}
@@ -330,7 +363,7 @@ function ViralShareResultCard({ displayName, p }: Omit<ShareResultCardProps, 'va
 
         {tipText ? (
           <div className="mr-poster-tip">
-            <span className="mr-poster-tip-label">이 아이에게 잘 통하는 말</span>
+            <span className="mr-poster-tip-label">{ui.shareCard.tipLabel(ownerLabel)}</span>
             <p className="mr-poster-tip-text">{tipText}</p>
           </div>
         ) : null}
@@ -339,9 +372,15 @@ function ViralShareResultCard({ displayName, p }: Omit<ShareResultCardProps, 'va
   );
 }
 
-export default function ShareResultCard({ displayName, profileCode, p, variant = 'default' }: ShareResultCardProps) {
+export default function ShareResultCard({
+  displayName,
+  profileCode,
+  p,
+  variant = 'default',
+  locale = 'ko',
+}: ShareResultCardProps) {
   if (variant === 'viralShare') {
-    return <ViralShareResultCard displayName={displayName} p={p} />;
+    return <ViralShareResultCard displayName={displayName} p={p} locale={locale} />;
   }
-  return <DefaultShareResultCard displayName={displayName} profileCode={profileCode} p={p} />;
+  return <DefaultShareResultCard displayName={displayName} profileCode={profileCode} p={p} locale={locale} />;
 }

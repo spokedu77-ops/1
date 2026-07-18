@@ -190,11 +190,35 @@ export const homeFinalCtaPad = 'pt-8 pb-12 sm:pt-10 sm:pb-14 lg:pt-12 lg:pb-16';
 /** 앵커 스크롤 — sticky header 가림 방지 */
 export const homeSectionScrollMt = 'scroll-mt-24 sm:scroll-mt-28';
 
+/** @deprecated 분할 Hero용 — 풀블리드는 `homeHeroFullBleed*` 사용 */
 export const homeHeroSection = 'relative bg-[#FAFAF8] pt-24 sm:pt-28 lg:pt-32';
 
 export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-slate-600 sm:text-[17px] lg:text-lg ${koreanText}`;
 
 export const homeHeroImage = 'overflow-hidden rounded-xl border border-slate-200/80 bg-slate-200 shadow-sm shadow-slate-900/[0.04]';
+
+/** Home 풀블리드 Hero — edge-to-edge 실사 + 카피 레이어 */
+export const homeHeroFullBleed =
+  'relative flex min-h-[100svh] w-full flex-col justify-end overflow-hidden bg-[#0B1220]';
+
+export const homeHeroFullBleedScrim =
+  'pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/90 via-[#0B1220]/45 to-[#0B1220]/25';
+
+export const homeHeroFullBleedCopy =
+  'relative z-[1] w-full pb-12 pt-28 sm:pb-16 sm:pt-32 lg:pb-20 lg:pt-36';
+
+export const homeHeroBrand =
+  'text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80 sm:text-xs';
+
+export const homeHeroFullBleedTitle = `font-bold tracking-tight text-white ${koreanText} text-[1.875rem] leading-[1.12] min-[390px]:text-[2.125rem] min-[430px]:text-[2.375rem] sm:text-[3rem] sm:leading-[1.08] lg:text-[3.5rem] xl:text-[4rem]`;
+
+export const homeHeroFullBleedLead = `mt-4 max-w-[34rem] text-base leading-[1.65] text-white/85 sm:mt-5 sm:text-[17px] lg:text-lg ${koreanText}`;
+
+export const siteBtnPrimaryOnHero =
+  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
+
+export const siteBtnSecondaryOnHero =
+  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-7 py-3.5 text-[15px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
 
 export const homeFocusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]';

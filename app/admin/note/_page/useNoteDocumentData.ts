@@ -7,6 +7,7 @@ import { useDeferredNoteMeta } from '../_hooks/useDeferredNoteMeta';
 import {
   buildDocumentBreadcrumb,
   deriveDocumentTreeState,
+  filterDocumentsOutsideFeaturedAncestors,
   findDefaultNoteEntryDocument,
   resolveDocIcon,
 } from '../_lib/noteDocumentUi';
@@ -100,9 +101,19 @@ export function useNoteDocumentData(options: {
     if (docTab !== 'active') return [];
     return filteredDocuments.filter((d) => d.is_favorite && !d.is_pinned);
   }, [docTab, filteredDocuments]);
+  const favoriteOrPinnedIds = useMemo(
+    () => new Set(filteredDocuments.filter((d) => d.is_favorite || d.is_pinned).map((d) => d.id)),
+    [filteredDocuments],
+  );
   const otherDocuments = useMemo(
-    () => (docTab === 'active' ? filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned) : filteredDocuments),
-    [docTab, filteredDocuments],
+    () => (docTab === 'active'
+      ? filterDocumentsOutsideFeaturedAncestors(
+        filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned),
+        favoriteOrPinnedIds,
+        filteredDocuments,
+      )
+      : filteredDocuments),
+    [docTab, favoriteOrPinnedIds, filteredDocuments],
   );
   const filteredTreeState = useMemo(
     () => deriveDocumentTreeState(filteredDocuments),
@@ -175,8 +186,15 @@ export function useNoteDocumentData(options: {
           if (defaultDoc) targetDocId = defaultDoc.id;
         }
 
+        const hasBootstrapBlocksForTarget =
+          targetDocId
+          && json.documentId === targetDocId
+          && Array.isArray(json.blocks);
+
         if (targetDocId && docs.some((d) => d.id === targetDocId)) {
-          prefetchNoteDocumentBlocks(targetDocId);
+          if (!hasBootstrapBlocksForTarget) {
+            prefetchNoteDocumentBlocks(targetDocId);
+          }
           setSelectedId(targetDocId);
           setMobileTab('editor');
           if (targetDocId !== urlDocId) {
@@ -205,6 +223,7 @@ export function useNoteDocumentData(options: {
             onBootstrapBlocks?.({ documentId: targetDocId, blocks });
           }
         }
+
       } catch (e) {
         devLogger.error('[Note] loadDocs', e);
         if (alive) setError(e instanceof Error ? e.message : '로드 실패');

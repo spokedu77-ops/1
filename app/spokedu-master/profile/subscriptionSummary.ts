@@ -19,6 +19,8 @@ export type SubscriptionSummaryData = {
   trialEndsAt: string | null;
   isAdmin: boolean;
   canCancelAutoBilling: boolean;
+  /** 최근 자동결제 갱신이 실패했고, 이후 성공 결제가 없을 때 */
+  billingRenewalFailed?: boolean;
 };
 
 export type SubscriptionDisplayState =
@@ -33,12 +35,13 @@ export type SubscriptionDisplaySummary = {
   state: SubscriptionDisplayState;
   planLabel: string;
   statusLabel: string;
-  primaryLabel: '구독 관리' | '이용권 선택' | null;
+  primaryLabel: '구독 관리' | '구독 선택' | null;
   primaryHref: '/spokedu-master/subscription' | '/spokedu-master/payment' | null;
   dateLabel: '다음 결제일' | '이용 종료일' | null;
   dateText: string | null;
   amountText: string | null;
   description: string;
+  warningText: string | null;
   isDirectBillingPlan: boolean;
   canCancel: boolean;
   canUseSpomatMemberPrice: boolean;
@@ -114,6 +117,7 @@ export function normalizeSubscriptionSummary(value: unknown): SubscriptionSummar
     trialEndsAt: typeof input.trialEndsAt === 'string' ? input.trialEndsAt : null,
     isAdmin: input.isAdmin === true,
     canCancelAutoBilling: input.canCancelAutoBilling === true,
+    billingRenewalFailed: input.billingRenewalFailed === true,
   };
 }
 
@@ -179,6 +183,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateText: null,
       amountText: null,
       description: '이용권 정보를 확인하고 있습니다.',
+      warningText: null,
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
@@ -187,6 +192,9 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
   }
 
   const planLabel = getSubscriptionPlanLabel(summary);
+  const renewalWarning = summary.billingRenewalFailed
+    ? '최근 자동결제가 실패했습니다. 이용 종료일 전에 결제수단을 확인해 주세요.'
+    : null;
 
   if (summary.isAdmin || summary.plan === 'team') {
     return {
@@ -199,6 +207,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       dateText: null,
       amountText: null,
       description: '관리자 또는 기관에서 관리하는 이용권입니다.',
+      warningText: null,
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
@@ -225,6 +234,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
         dateText: endDate,
         amountText: getAmountText(summary.plan),
         description: cancelDescription,
+        warningText: null,
         isDirectBillingPlan: true,
         canCancel: false,
         canUseSpomatMemberPrice: summary.plan === 'premium' || summary.plan === 'pro',
@@ -235,7 +245,7 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     return {
       state: 'active',
       planLabel,
-      statusLabel: '이용 중',
+      statusLabel: renewalWarning ? '결제 확인 필요' : '이용 중',
       primaryLabel: '구독 관리',
       primaryHref: '/spokedu-master/subscription',
       dateLabel: '다음 결제일',
@@ -243,9 +253,10 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       amountText: getAmountText(summary.plan),
       description: summary.canCancelAutoBilling
         ? summary.plan === 'lite'
-          ? '라이트 이용 중입니다. SPOMOVE·PRO 자료는 프리미엄에서 이용할 수 있습니다.'
+          ? '라이트 이용 중입니다. SPOMOVE·프리미엄 자료는 프리미엄에서 이용할 수 있습니다.'
           : '매월 결제일에 자동 결제됩니다.'
         : '수동 발급 또는 기관 관리 이용권입니다. 변경이 필요하면 고객센터로 문의해 주세요.',
+      warningText: renewalWarning,
       isDirectBillingPlan: summary.canCancelAutoBilling,
       canCancel: summary.canCancelAutoBilling,
       canUseSpomatMemberPrice: summary.plan === 'premium' || summary.plan === 'pro',
@@ -258,12 +269,13 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
       state: 'ended',
       planLabel: planLabel === '없음' ? '이용권' : planLabel,
       statusLabel: '이용 종료',
-      primaryLabel: '이용권 선택',
+      primaryLabel: '구독 선택',
       primaryHref: '/spokedu-master/payment',
       dateLabel: '이용 종료일',
       dateText: formatSubscriptionEndDate(getPeriodEnd(summary)),
       amountText: getAmountText(summary.plan),
       description: '이용권이 종료되었습니다.',
+      warningText: null,
       isDirectBillingPlan: false,
       canCancel: false,
       canUseSpomatMemberPrice: false,
@@ -275,12 +287,13 @@ export function getSubscriptionDisplaySummary(summary: SubscriptionSummaryData |
     state: 'none',
     planLabel: '없음',
     statusLabel: '이용권 없음',
-    primaryLabel: '이용권 선택',
+    primaryLabel: '구독 선택',
     primaryHref: '/spokedu-master/payment',
     dateLabel: null,
     dateText: null,
     amountText: null,
     description: '현재 이용 중인 이용권이 없습니다.',
+    warningText: null,
     isDirectBillingPlan: false,
     canCancel: false,
     canUseSpomatMemberPrice: false,

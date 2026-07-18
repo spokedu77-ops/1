@@ -49,6 +49,12 @@ export function useNoteBlockKeyboard(options: {
   } = options;
 
   useEffect(() => {
+    const onUndoRequest = () => {
+      if (docTab !== 'active' || !selectedId) return;
+      if (!noteUndo.hasUndo()) return;
+      clearAllNoteTextSelections();
+      void runNoteUndo();
+    };
     const onKey = (e: KeyboardEvent) => {
       const meta = e.ctrlKey || e.metaKey;
       if (!meta) return;
@@ -65,6 +71,7 @@ export function useNoteBlockKeyboard(options: {
       if (inDocTitle) return;
 
       const topNoteUndo = isUndo ? noteUndo.peekUndo() : null;
+      const preferTransactionUndo = topNoteUndo?.kind === 'block-transaction';
       const preferBlockUndo = topNoteUndo?.kind === 'create-block'
         || topNoteUndo?.kind === 'delete-block'
         || topNoteUndo?.kind === 'restore-blocks';
@@ -84,6 +91,14 @@ export function useNoteBlockKeyboard(options: {
           void runNoteRedo();
           return;
         }
+        return;
+      }
+
+      if (isUndo && preferTransactionUndo && noteUndo.hasUndo()) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        clearAllNoteTextSelections();
+        void runNoteUndo();
         return;
       }
 
@@ -129,9 +144,13 @@ export function useNoteBlockKeyboard(options: {
         void runNoteRedo();
       }
     };
+    window.addEventListener('admin-note:undo-request', onUndoRequest);
     window.addEventListener('keydown', onKey, true);
-    return () => window.removeEventListener('keydown', onKey, true);
-  }, [focusedEditorBlockIdRef, noteUndo, runNoteRedo, runNoteUndo, titleInputRef]);
+    return () => {
+      window.removeEventListener('admin-note:undo-request', onUndoRequest);
+      window.removeEventListener('keydown', onKey, true);
+    };
+  }, [docTab, focusedEditorBlockIdRef, noteUndo, runNoteRedo, runNoteUndo, selectedId, titleInputRef]);
 
   useEffect(() => {
     const onCopyKey = (e: KeyboardEvent) => {

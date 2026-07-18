@@ -88,7 +88,7 @@ function SubscriptionSummaryCard({
             {loadStatus === 'loading' ? '확인 중' : display.planLabel}
           </h2>
         </div>
-        <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: isEmpty ? 'rgba(245,158,11,0.14)' : 'rgba(16,185,129,0.14)', color: isEmpty ? 'var(--spm-yel)' : 'var(--spm-grn)' }}>
+        <span className="rounded-full px-3 py-1 text-[11px] font-black" style={{ background: isEmpty ? 'var(--spm-amb-a14)' : 'var(--spm-grn-a14)', color: isEmpty ? 'var(--spm-yel)' : 'var(--spm-grn)' }}>
           {loadStatus === 'loading' ? '확인 중' : display.statusLabel}
         </span>
       </div>
@@ -105,6 +105,11 @@ function SubscriptionSummaryCard({
       ) : (
         <>
           <p className="mt-3 text-[13px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>{display.description}</p>
+          {display.warningText ? (
+            <p className="mt-3 rounded-[12px] p-3 text-[12px] font-bold leading-5" style={{ background: 'var(--spm-amb-a14)', color: 'var(--spm-yel)' }}>
+              {display.warningText}
+            </p>
+          ) : null}
           {display.dateLabel && display.dateText ? (
             <p className="mt-2 text-[13px] font-bold" style={{ color: 'var(--spm-t2)' }}>
               {display.dateLabel} <strong style={{ color: 'var(--spm-t)' }}>{display.dateText}</strong>
@@ -113,7 +118,7 @@ function SubscriptionSummaryCard({
           {display.primaryHref && display.primaryLabel ? (
             <Link
               href={display.primaryHref}
-              className="mt-4 flex min-h-11 items-center justify-center rounded-[12px] px-4 text-[13px] font-black text-white"
+              className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-black text-white"
               style={{ background: 'var(--spm-acc)' }}
             >
               {display.primaryLabel}

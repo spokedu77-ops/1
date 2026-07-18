@@ -91,12 +91,12 @@ export class ErrorBoundary extends Component<Props, State> {
           <button
             type="button"
             onClick={this.handleRetry}
-            className="h-11 rounded-[12px] px-5 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
+            className="h-11 rounded-[12px] px-5 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
             style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}
           >
             다시 시도
           </button>
-          <Link href={fallbackHref} className="flex h-11 items-center rounded-[12px] px-5 text-[13px] font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500" style={{ background: 'var(--spm-acc)' }}>
+          <Link href={fallbackHref} className="flex h-11 items-center rounded-[12px] px-5 text-[13px] font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]" style={{ background: 'var(--spm-acc)' }}>
             {fallbackLabel}
           </Link>
         </div>

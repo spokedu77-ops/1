@@ -47,6 +47,8 @@ describe('SPOKEDU MASTER commercial tier gate contracts', () => {
     expect(source).toContain("activePlan !== 'lite' || plan !== 'premium'");
     expect(source).toContain("billingMode = activeSubscription ? 'upgrade' : 'initial'");
     expect(source).toContain('expectedCustomerKey');
+    expect(source).toContain('billingCycleKey = `${billingMode}:${user.id}:${plan}`');
+    expect(source).toContain('claimSpokeduMasterBillingOrder');
   });
 
   it('requires payment success to match the requested plan and the active access plan', () => {

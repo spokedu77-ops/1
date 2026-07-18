@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const BASE = process.argv[2] || 'http://localhost:3000';
-const PAGES = ['/spokedu', '/spokedu/records', '/spokedu/cases', '/spokedu/about', '/spokedu/programs/spomove', '/spokedu/contact'];
+const PAGES = ['/spokedu', '/spokedu/records', '/spokedu/programs', '/spokedu/about', '/spokedu/programs/spomove', '/spokedu/contact'];
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '../.qa-spokedu/report-network.json');
 mkdirSync(dirname(OUT), { recursive: true });
 

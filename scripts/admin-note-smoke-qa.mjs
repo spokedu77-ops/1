@@ -395,6 +395,63 @@ async function rootBlockFromApi(page, orderIndex = 0) {
   return { type: block.type, text, id: block.id };
 }
 
+async function rootBlockContentFromApi(page, orderIndex = 0) {
+  const documentId = documentIdFromPage(page);
+  if (!documentId) throw new Error('document id missing in URL');
+  const loaded = await fetchBlocksInPage(page, documentId);
+  const roots = loaded.blocks
+    .filter((block) => !block.parent_block_id)
+    .sort((a, b) => a.order_index - b.order_index);
+  const block = roots[orderIndex];
+  if (!block) throw new Error(`root block missing at index ${orderIndex}`);
+  return {
+    id: block.id,
+    type: block.type,
+    content: block.content ?? {},
+  };
+}
+
+async function createCalloutDocument(page) {
+  const docId = await page.evaluate(async () => {
+    const docRes = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title: `Smoke Callout Paste ${Date.now()}` }),
+    });
+    if (!docRes.ok) {
+      const j = await docRes.json().catch(() => null);
+      throw new Error(j?.error || `document create failed (${docRes.status})`);
+    }
+    const { document } = await docRes.json();
+    const blockRes = await fetch('/api/admin/note/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        documentId: document.id,
+        type: 'callout',
+        content: {
+          text: 'before',
+          html: '<p>before</p>',
+          icon: '!',
+          blockColor: 'yellow',
+        },
+        order_index: 0,
+        parent_block_id: null,
+      }),
+    });
+    if (!blockRes.ok) {
+      const j = await blockRes.json().catch(() => null);
+      throw new Error(j?.error || `callout seed failed (${blockRes.status})`);
+    }
+    return document.id;
+  });
+  await openDocument(page, docId);
+  await waitForEditorSurface(page, 0);
+  return docId;
+}
+
 async function waitForSlashMenu(page) {
   const menu = page.locator('[data-note-overlay-menu]').first();
   await menu.waitFor({ state: 'visible', timeout: 8000 });
@@ -952,8 +1009,8 @@ async function typeInFirstBlock(page, text, index = 0) {
 async function openChildDocumentFromLastPageBlock(page) {
   const parentDocId = documentIdFromPage(page);
   if (!parentDocId) throw new Error('parent document id missing');
-  const pageOpenBtn = page.locator('button[title="클릭하여 페이지 열기"]').last();
-  await pageOpenBtn.waitFor({ state: 'visible', timeout: 15000 });
+  const pageOpenBtn = page.locator('[data-note-open-page-block]').last();
+  await pageOpenBtn.waitFor({ state: 'visible', timeout: 30000 });
   await pageOpenBtn.click();
   await page.waitForURL((url) => {
     const id = url.searchParams.get('id');
@@ -965,18 +1022,77 @@ async function openChildDocumentFromLastPageBlock(page) {
   return { parentDocId, childDocId };
 }
 
+async function createSubPageViaTreeAction(page, parentDocId) {
+  const childDocId = await page.evaluate(async (parentDocumentId) => {
+    const res = await fetch('/api/admin/note/documents/tree', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        action: 'createSubPage',
+        parentDocumentId,
+        title: 'Untitled',
+      }),
+    });
+    if (!res.ok) {
+      const json = await res.json().catch(() => null);
+      throw new Error(json?.error || `createSubPage failed (${res.status})`);
+    }
+    const json = await res.json();
+    return json.document?.id;
+  }, parentDocId);
+  if (!childDocId) throw new Error('createSubPage response missing child document id');
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForDocumentBlocksHydrated(page, parentDocId);
+  await page.locator('[data-note-open-page-block]').last().waitFor({ state: 'visible', timeout: 30000 });
+  return childDocId;
+}
+
 async function waitForBlockText(page, expectedSubstring, index = 0, timeoutMs = 20000) {
   await blurActiveEditor(page);
   const deadline = Date.now() + timeoutMs;
   let last = '';
   while (Date.now() < deadline) {
-    last = await blockTextFromDom(page, index);
+    last = await blockTextFromDom(page, index).catch(() => '');
     if (last.includes(expectedSubstring)) return last;
     await page.waitForTimeout(500);
   }
   const apiText = await blockTextFromApi(page, index);
   if (apiText.includes(expectedSubstring)) return apiText;
   throw new Error(`timeout waiting for "${expectedSubstring}", dom="${last}" api="${apiText}"`);
+}
+
+async function waitForBlockTextNotContaining(page, unexpectedSubstring, index = 0, timeoutMs = 20000) {
+  await blurActiveEditor(page);
+  const deadline = Date.now() + timeoutMs;
+  let last = '';
+  while (Date.now() < deadline) {
+    last = await blockTextFromDom(page, index).catch(() => '');
+    if (!last.includes(unexpectedSubstring)) {
+      const apiText = await blockTextFromApi(page, index).catch(() => '');
+      if (!apiText.includes(unexpectedSubstring)) return { domText: last, apiText };
+    }
+    await page.waitForTimeout(500);
+  }
+  const apiText = await blockTextFromApi(page, index);
+  throw new Error(`text still contains "${unexpectedSubstring}", dom="${last}" api="${apiText}"`);
+}
+
+async function waitForDocumentTextNotContaining(page, unexpectedSubstring, timeoutMs = 20000) {
+  const documentId = documentIdFromPage(page);
+  if (!documentId) throw new Error('document id missing in URL');
+  const deadline = Date.now() + timeoutMs;
+  let lastTexts = [];
+  while (Date.now() < deadline) {
+    const loaded = await fetchBlocksInPage(page, documentId);
+    lastTexts = (loaded.blocks ?? [])
+      .filter((block) => !block.deleted_at)
+      .map((block) => block.content?.text)
+      .filter((text) => typeof text === 'string');
+    if (!lastTexts.includes(unexpectedSubstring)) return lastTexts;
+    await page.waitForTimeout(500);
+  }
+  throw new Error(`document still contains "${unexpectedSubstring}": ${JSON.stringify(lastTexts)}`);
 }
 
 async function blockTextFromPage(page, blockIndex, type = 'text', explicitDocumentId) {
@@ -1002,9 +1118,9 @@ async function blockTextFromApi(page, blockIndex, type = 'text', explicitDocumen
 }
 
 async function openPageMenu(page) {
-  await page.getByRole('button', { name: '페이지 메뉴' }).click();
+  await page.locator('[data-note-page-menu-button]').click();
   await page.waitForTimeout(200);
-  return page.locator('div.absolute.right-0.top-full').getByRole('button', { name: '하위 페이지', exact: true });
+  return page.locator('[data-note-create-subpage]');
 }
 
 async function dismissDevOverlay(page) {
@@ -1059,11 +1175,29 @@ async function main() {
       );
     }
     const consoleErrors = [];
+    const httpErrors = [];
     page.on('console', (msg) => {
       if (msg.type() !== 'error') return;
       const text = msg.text();
       if (/favicon|extension|devtools/i.test(text)) return;
       consoleErrors.push(text);
+    });
+    page.on('response', async (response) => {
+      if (response.status() < 500) return;
+      const url = response.url();
+      if (!url.startsWith(BASE)) return;
+      let body = '';
+      try {
+        body = (await response.text()).slice(0, 300);
+      } catch {
+        body = '';
+      }
+      httpErrors.push({
+        method: response.request().method(),
+        status: response.status(),
+        url,
+        body,
+      });
     });
     failed += await runCheck('note page loads', async () => {
       await ensureDocumentWithBlocks(page);
@@ -1108,6 +1242,85 @@ async function main() {
     }) ? 0 : 1;
 
     // --- structure / doc tests (각각 새 문서) ---
+    failed += await runCheck('Ctrl+Z restores typed block text', async () => {
+      await createFreshNote(page);
+      await waitForEditorSurface(page, 0);
+      const editor = await focusBlockAt(page, 0);
+      const text = `undo-${Date.now()}`;
+      await editor.click({ force: true });
+      await page.keyboard.type(text, { delay: 10 });
+      await page.waitForTimeout(800);
+      const typed = await blockTextFromDom(page, 0);
+      if (!typed.includes(text)) throw new Error(`typing did not appear before undo: "${typed}"`);
+      await page.keyboard.press('Control+Z');
+      await page.waitForTimeout(800);
+      await waitForBlockTextNotContaining(page, text, 0);
+    }) ? 0 : 1;
+
+    failed += await runCheck('paste into callout preserves callout metadata', async () => {
+      await createCalloutDocument(page);
+      const editor = await focusBlockAt(page, 0);
+      await editor.click({ force: true });
+      await page.evaluate(() => {
+        const target = document.querySelector('[data-note-block-row] .ProseMirror');
+        if (!target) throw new Error('callout editor not found');
+        const data = new DataTransfer();
+        data.setData('text/plain', 'pasted callout text');
+        const event = new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: data,
+        });
+        target.dispatchEvent(event);
+      });
+      await page.waitForTimeout(1200);
+      await blurActiveEditor(page);
+      await page.waitForTimeout(1200);
+      const block = await rootBlockContentFromApi(page, 0);
+      if (block.type !== 'callout') throw new Error(`expected callout, got ${block.type}`);
+      if (block.content.icon !== '!') throw new Error(`callout icon lost: ${JSON.stringify(block.content)}`);
+      if (block.content.blockColor !== 'yellow') throw new Error(`callout color lost: ${JSON.stringify(block.content)}`);
+      const text = typeof block.content.text === 'string' ? block.content.text : '';
+      if (!text.includes('pasted callout text')) throw new Error(`pasted text missing: ${JSON.stringify(block.content)}`);
+    }) ? 0 : 1;
+
+    failed += await runCheck('multiline paste undo restores one transaction', async () => {
+      await createFreshNote(page);
+      const editor = await focusBlockAt(page, 0);
+      await editor.click({ force: true });
+      await page.evaluate(() => {
+        const target = document.querySelector('[data-note-block-row] .ProseMirror');
+        if (!target) throw new Error('editor not found');
+        const data = new DataTransfer();
+        data.setData('text/plain', 'paste line one\npaste line two');
+        const event = new ClipboardEvent('paste', {
+          bubbles: true,
+          cancelable: true,
+          clipboardData: data,
+        });
+        target.dispatchEvent(event);
+      });
+      await page.waitForTimeout(1600);
+      await waitForBlockText(page, 'paste line one', 0, 15000);
+      let loaded = await fetchBlocksInPage(page, documentIdFromPage(page));
+      const activeTexts = (loaded.blocks ?? [])
+        .filter((block) => !block.deleted_at)
+        .map((block) => block.content?.text)
+        .filter((text) => typeof text === 'string');
+      if (!activeTexts.includes('paste line one') || !activeTexts.includes('paste line two')) {
+        throw new Error(`multiline paste did not create expected texts: ${JSON.stringify(activeTexts)}`);
+      }
+      await focusBlockAt(page, 0);
+      await page.keyboard.press('Control+Z');
+      const afterUndoTexts = await waitForDocumentTextNotContaining(page, 'paste line two', 20000);
+      if (afterUndoTexts.includes('paste line two')) {
+        throw new Error(`Ctrl+Z did not remove pasted second block: ${JSON.stringify(afterUndoTexts)}`);
+      }
+      if (afterUndoTexts.includes('paste line one')) {
+        throw new Error(`Ctrl+Z did not restore anchor block body: ${JSON.stringify(afterUndoTexts)}`);
+      }
+    }) ? 0 : 1;
+
     failed += await runCheck('Tab indent nests bullet under previous sibling', async () => {
       await createEmptyDocument(page);
       await seedSiblingBulletBlocks(page);
@@ -1219,9 +1432,7 @@ async function main() {
       await typeInFirstBlock(page, '부모본문', 0);
       await waitForBlockText(page, '부모본문', 0);
       await waitForApiBlockText(page, '부모본문', 0, parentDocId);
-      const subPageBtn = await openPageMenu(page);
-      await subPageBtn.click();
-      await page.waitForTimeout(2000);
+      await createSubPageViaTreeAction(page, parentDocId);
       const { childDocId } = await openChildDocumentFromLastPageBlock(page);
       await waitForDocumentBlocksHydrated(page, childDocId);
       await typeInFirstBlock(page, '하위고유문구', 0);
@@ -1250,7 +1461,7 @@ async function main() {
       await createFreshNote(page);
       const subPageBtn = await openPageMenu(page);
       await subPageBtn.click();
-      await page.waitForTimeout(2000);
+      await page.locator('[data-note-open-page-block]').last().waitFor({ state: 'visible', timeout: 30000 });
       const { childDocId } = await openChildDocumentFromLastPageBlock(page);
       await waitForDocumentBlocksHydrated(page, childDocId);
       await page.waitForTimeout(1500);
@@ -1331,6 +1542,15 @@ async function main() {
 
     if (consoleErrors.length > 0) {
       console.warn('WARN console errors:', consoleErrors.slice(0, 3).join(' | '));
+    }
+    if (httpErrors.length > 0) {
+      console.warn(
+        'WARN HTTP 5xx responses:',
+        httpErrors
+          .slice(0, 5)
+          .map((entry) => `${entry.method} ${entry.status} ${entry.url}${entry.body ? ` ${entry.body}` : ''}`)
+          .join(' | '),
+      );
     }
   } finally {
     if (page) {

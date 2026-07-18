@@ -67,8 +67,8 @@ export const SPOKEDU_IMAGES = {
     hero: defineImage(
       'home',
       'home-hero',
-      'home-hero-spomove-class.png',
-      'SPOMOVE 시지각 기반 놀이체육 — 기관 단체 수업 현장',
+      'home-hero-movement.jpg',
+      '아동·청소년 체육수업 현장 — 지도자와 아이들이 함께 움직이는 장면',
     ),
     labScene: defineImage(
       'home',
@@ -86,7 +86,7 @@ export const SPOKEDU_IMAGES = {
     heroMovement: defineImage(
       'home',
       'home-hero-movement',
-      'home-hero-movement.png',
+      'home-hero-movement.jpg',
       '아동·청소년 체육수업 현장 — 지도자와 참여 활동',
     ),
   },

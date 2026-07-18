@@ -13,15 +13,24 @@ import { LandingStepPanel } from './landing-step-grid';
 import { PrivateCurriculumSection } from './private-curriculum-section';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
+import { PrivateApplyForm } from './private-apply-form';
 import { PrivateClassFlowGallery } from './private-class-flow-gallery';
 import { PrivateMoveReportSection } from './private-move-report-section';
 import { PrivateTrustMetrics } from './private-trust-metrics';
+import { LandingAnchorNav } from './landing-anchor-nav';
+import { LandingFloatingCta } from './landing-floating-cta';
 import { MediaPanel } from './visual';
 
 const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const locationCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const reviewCardShell = `flex h-full flex-col border-l-4 border-l-teal-600 p-4 sm:p-5 ${landingCardShell}`;
 const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
+const privateAnchorItems = [
+  { href: '#instructors', label: '소개' },
+  { href: '#curriculum', label: '커리큘럼' },
+  { href: '#class-flow', label: '수업 현장' },
+  { href: '#reviews', label: '후기' },
+] as const;
 const privateDecisionFlow = [
   { label: '1', title: '아이 상태 확인', body: '운동 경험, 자신감, 목표 종목을 먼저 정리합니다.' },
   { label: '2', title: '수업 방향 선택', body: '1:1, 소그룹, 종목 준비 중 적합한 방향을 좁힙니다.' },
@@ -56,7 +65,8 @@ function Section({
 
 export default function PrivateLanding() {
   return (
-    <div className={audienceLandingStack}>
+    <div className={`${audienceLandingStack} pb-24`}>
+      <div id="hero">
       <LandingHero
         kicker={privatePage.hero.kicker}
         kickerClassName="text-stone-500"
@@ -82,6 +92,13 @@ export default function PrivateLanding() {
         priority
         primaryCta={privatePage.heroCtas.primary}
         secondaryCta={privatePage.heroCtas.secondary}
+      />
+      </div>
+
+      <LandingAnchorNav
+        items={privateAnchorItems}
+        cta={{ href: '#apply', label: '상담 신청' }}
+        ariaLabel="개인수업 랜딩 바로가기"
       />
 
       <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
@@ -143,7 +160,7 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section className="space-y-5 sm:space-y-6">
+      <Section id="instructors" className="scroll-mt-36 space-y-5 sm:space-y-6">
         <LandingSectionHeading
           eyebrow={privatePage.instructors.eyebrow}
           title={privatePage.instructors.title}
@@ -202,11 +219,11 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section>
+      <Section id="curriculum" className="scroll-mt-36">
         <PrivateCurriculumSection />
       </Section>
 
-      <Section className="space-y-5 sm:space-y-6">
+      <Section id="class-flow" className="scroll-mt-36 space-y-5 sm:space-y-6">
         <LandingSectionHeading
           eyebrow={privatePage.classFlow.eyebrow}
           title={privatePage.classFlow.title}
@@ -272,7 +289,7 @@ export default function PrivateLanding() {
         <PrivateMoveReportSection />
       </Section>
 
-      <Section className="space-y-5 sm:space-y-6">
+      <Section id="reviews" className="scroll-mt-36 space-y-5 sm:space-y-6">
         <LandingSectionHeading
           eyebrow={privatePage.reviews.eyebrow}
           title={privatePage.reviews.title}
@@ -316,6 +333,10 @@ export default function PrivateLanding() {
 
       <HomeSectionRule />
 
+      <Section>
+        <PrivateApplyForm />
+      </Section>
+
       <LandingFinalCta
         title={privatePage.finalCta.title}
         description={privatePage.finalCta.description}
@@ -323,6 +344,8 @@ export default function PrivateLanding() {
         backgroundMedia={HOME_MEDIA[privatePage.finalCta.mediaKey]}
         links={[{ ...privatePage.finalCta.primary, variant: 'on-dark-primary' }]}
       />
+
+      <LandingFloatingCta primaryHref="#apply" primaryLabel="상담 신청하기" showAfterId="hero" />
     </div>
   );
 }

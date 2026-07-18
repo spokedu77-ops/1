@@ -10,10 +10,21 @@ interface AxisRowProps {
   rv: number;
   col: string;
   delay?: number;
+  /** e.g. " 우세" / " strong" */
+  dominantSuffix?: string;
 }
 
 /** 원본 HTML 성향 강도 행 (양쪽 막대 + 우세 표기) */
-export default function AxisRow({ label, ll, rl, lv, rv, col, delay = 0 }: AxisRowProps) {
+export default function AxisRow({
+  label,
+  ll,
+  rl,
+  lv,
+  rv,
+  col,
+  delay = 0,
+  dominantSuffix = ' 우세',
+}: AxisRowProps) {
   const [w, setW] = useState(0);
   useEffect(() => {
     const t = window.setTimeout(() => setW(1), 300 + delay);
@@ -27,7 +38,10 @@ export default function AxisRow({ label, ll, rl, lv, rv, col, delay = 0 }: AxisR
         <span style={{ fontSize: '11px', fontWeight: 700, color: '#999', letterSpacing: '.04em' }}>
           {label.toUpperCase()}
         </span>
-        <span style={{ fontSize: '12px', fontWeight: 800, color: col }}>{dom ? ll : rl} 우세</span>
+        <span style={{ fontSize: '12px', fontWeight: 800, color: col }}>
+          {dom ? ll : rl}
+          {dominantSuffix}
+        </span>
       </div>
       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
         <span
@@ -35,7 +49,7 @@ export default function AxisRow({ label, ll, rl, lv, rv, col, delay = 0 }: AxisR
             fontSize: '11px',
             color: dom ? col : '#555',
             fontWeight: 700,
-            width: '24px',
+            minWidth: '24px',
             textAlign: 'right',
             transition: 'color .3s',
           }}

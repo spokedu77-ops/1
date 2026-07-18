@@ -44,7 +44,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
   const reducedMotion = useReducedMotion();
   const heroMedia = HOME_MEDIA.proofMonthly;
   const backHref = `${SPOKEDU_BASE_PATH}/monthly`;
-  const casesHref = `${SPOKEDU_BASE_PATH}/cases`;
+  const casesHref = `${SPOKEDU_BASE_PATH}/records`;
   const dispatchHref = record.nextInquiryCta.href;
   const heroImage = record.images[0];
   const heroPosterMedia = heroImage

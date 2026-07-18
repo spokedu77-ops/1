@@ -43,7 +43,7 @@ export function getUpgradeHref(profile: UserProfile | null): string {
 }
 
 export function getUpgradeLabel(profile: UserProfile | null): string {
-  return isPaidMasterPlan(profile) ? '이용권 확인' : '상품 보기';
+  return isPaidMasterPlan(profile) ? '구독 확인' : '상품 보기';
 }
 
 function resolveMasterProductKey(profile: UserProfile | null): MasterProductKey | null {

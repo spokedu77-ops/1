@@ -26,7 +26,7 @@ describe('SPOKEDU MASTER library detail layout contract', () => {
 
   it('uses a single section level for short preparation blocks', () => {
     expect(detail).toContain('function LessonPrepBlock');
-    expect(detail).toContain('border-t border-slate-100 pt-4');
+    expect(detail).toContain('border-t border-[color:var(--spm-br)] pt-4');
     expect(detail).not.toContain('LessonChecklistCard');
   });
 

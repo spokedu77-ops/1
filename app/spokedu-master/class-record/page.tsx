@@ -16,6 +16,13 @@ import {
   resolveSaveActionFeedback,
   type SaveActionFeedback,
 } from '../lib/saveActionFeedback';
+import {
+  CLASS_RECORD_DRAFT_KEY,
+  clearSaveDraft,
+  hasMeaningfulClassRecordDraft,
+  readSaveDraft,
+  writeSaveDraft,
+} from '../lib/saveDraftStorage';
 import { resolveSpomoveDraftFromQuery } from '../spomove/session/spomoveRecordDraft';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import {
@@ -39,6 +46,19 @@ function getClassRecordQuery(searchParams: URLSearchParams | ReturnType<typeof u
 
 const DEFAULT_SKILLS = ['방향 전환', '균형 유지', '신호 반응', '차분한 대기'];
 
+type ClassRecordDraft = {
+  selectedProgramId: string;
+  recordDate: string;
+  classId: string;
+  classMemo: string;
+  attendance: Record<string, AttendanceStatus>;
+  focused: Record<string, boolean>;
+  checkedSkills: Record<string, string[]>;
+  studentMemos: Record<string, string>;
+  selectedStudentIds: Record<string, boolean>;
+  bulkStudentMemo: string;
+};
+
 function SummaryPill({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
     <div className="rounded-[12px] p-2.5 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -52,7 +72,7 @@ function OutcomeCard({ icon, label, value }: { icon: ReactNode; label: string; v
   return (
     <div className="rounded-[14px] p-3" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
       <div className="mb-2 flex items-center gap-2">
-        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'rgba(99,102,241,0.14)' }}>{icon}</span>
+        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-acc-a14)' }}>{icon}</span>
         <p className="text-[11px] font-black uppercase tracking-[0.1em]" style={{ color: 'var(--spm-t3)' }}>{label}</p>
       </div>
       <p className="text-[13px] font-bold leading-5" style={{ color: 'var(--spm-t)' }}>{value}</p>
@@ -63,11 +83,11 @@ function OutcomeCard({ icon, label, value }: { icon: ReactNode; label: string; v
 function EmptyRecordState() {
   return (
     <div className="rounded-[18px] p-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <span className="mx-auto grid h-12 w-12 place-items-center rounded-[14px]" style={{ background: 'rgba(99,102,241,0.14)' }}>
+      <span className="mx-auto grid h-12 w-12 place-items-center rounded-[14px]" style={{ background: 'var(--spm-acc-a14)' }}>
         <ClipboardList size={22} color="var(--spm-acc)" />
       </span>
       <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>아직 남긴 수업 기록이 없습니다.</h2>
-      <p className="mx-auto mt-2 max-w-[440px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 날짜와 출석, 간단한 메모만 남겨도 학생 이력과 안내문 작성에 활용할 수 있습니다.</p>
+      <p className="mx-auto mt-2 max-w-[440px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>날짜와 관찰 한 줄만 남겨도 학생 이력과 안내문 초안으로 이어집니다. 필요할 때 같은 기록에 출석·관찰을 보강하세요.</p>
       <div className="mt-5 flex justify-center">
         <RecordProgramPicker label="첫 수업 기록 남기기" />
       </div>
@@ -97,6 +117,7 @@ function RecordErrorState({ onRetry }: { onRetry: () => void }) {
 function RecordCard({ record }: { record: ClassRecord }) {
   const hasMemo = Boolean(record.memo?.trim() || record.parentNoteSnapshot?.trim());
   const hasObservation = record.focusCount > 0 || record.skillCount > 0 || record.students.some((student) => Boolean(student.memo?.trim()));
+  const isQuick = record.recordType === 'quick';
 
   return (
     <article className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
@@ -104,19 +125,21 @@ function RecordCard({ record }: { record: ClassRecord }) {
         <div className="min-w-0">
           <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>
             {new Date(record.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })} · {record.classId}
+            {isQuick ? ' · 빠른 기록' : ''}
           </p>
           <h2 className="mt-1 text-[18px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0, wordBreak: 'keep-all' }}>{record.programTitle}</h2>
         </div>
       </div>
       <p className="mt-2 break-words text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-        출석 {record.present}명
-        {hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}
+        {isQuick
+          ? (hasMemo ? '관찰 메모 있음' : '관찰 메모 없음') + (record.focusCount > 0 ? ' · 집중 관찰 있음' : '')
+          : `출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
       </p>
       <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight text-white" style={{ background: 'var(--spm-acc)' }}>
-          <ClipboardList size={13} /> 기록 보기
+        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex h-11 max-w-full items-center justify-center gap-1.5 rounded-[10px] px-3 text-center text-[13px] font-black leading-tight text-white" style={{ background: 'var(--spm-acc)' }}>
+          <ClipboardList size={13} /> {isQuick ? '이 기록 보강' : '기록 보기'}
         </Link>
-        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex min-h-11 max-w-full items-center justify-center gap-1.5 rounded-[11px] px-3 text-center text-[12px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-11 max-w-full items-center justify-center gap-1.5 rounded-[10px] px-3 text-center text-[13px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
           <FileText size={13} /> 안내문 만들기
         </Link>
       </div>
@@ -151,7 +174,7 @@ function RecordListView() {
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
         <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 기록</p>
         <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업 후 짧게 남긴 기록은 학생 이력과 안내문 작성에 활용됩니다.</p>
+        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>짧게 남긴 빠른 기록과 보강된 상세 기록이 학생 이력·안내문 근거로 쌓입니다.</p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
           <RecordProgramPicker label="오늘 수업 기록 남기기" />
           <Link href="/spokedu-master/students" className="inline-flex min-h-11 items-center justify-center rounded-[12px] px-3 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>
@@ -178,13 +201,13 @@ function RecordListView() {
             {classes.length > 1 ? (
               <div className="mb-2 flex flex-wrap gap-2">
                 {classes.map((cls) => (
-                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === cls ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === cls ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{cls}</button>
+                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className="min-h-11 max-w-[40vw] truncate rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === cls ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === cls ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }} title={cls}>{cls}</button>
                 ))}
               </div>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-2">
               {([['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className="h-9 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
+                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className="min-h-11 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'var(--spm-grn-a15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
               ))}
             </div>
           </section>
@@ -218,13 +241,13 @@ function StudentRow({ student, attendance, focused, onAttendance, onFocus, onOpe
         <ChevronRight size={16} color="var(--spm-t3)" />
       </button>
       <div className="mt-3 grid grid-cols-3 gap-2">
-        <button type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex h-10 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'rgba(16,185,129,0.16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
+        <button type="button" disabled={disabled} onClick={() => onAttendance('present')} className="flex min-h-11 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: attendance === 'present' ? 'var(--spm-grn-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 출석`}>
           <UserCheck size={17} color={attendance === 'present' ? 'var(--spm-grn)' : 'var(--spm-t3)'} />
         </button>
-        <button type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex h-10 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
+        <button type="button" disabled={disabled} onClick={() => onAttendance('absent')} className="flex min-h-11 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: attendance === 'absent' ? 'rgba(239,68,68,0.15)' : 'var(--spm-s3)' }} aria-label={`${student.name} 결석`}>
           <UserX size={17} color={attendance === 'absent' ? 'var(--spm-red)' : 'var(--spm-t3)'} />
         </button>
-        <button type="button" disabled={disabled} onClick={onFocus} className="flex h-10 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: focused ? 'rgba(245,158,11,0.16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 집중 관찰`}>
+        <button type="button" disabled={disabled} onClick={onFocus} className="flex min-h-11 items-center justify-center rounded-[11px] disabled:opacity-40" style={{ background: focused ? 'var(--spm-amb-a16)' : 'var(--spm-s3)' }} aria-label={`${student.name} 집중 관찰`}>
           <Star size={17} color={focused ? 'var(--spm-amb)' : 'var(--spm-t3)'} fill={focused ? 'var(--spm-amb)' : 'none'} />
         </button>
       </div>
@@ -271,6 +294,8 @@ function RecordEntryView() {
   const [recordSaving, setRecordSaving] = useState(false);
   const [recordSaveFeedback, setRecordSaveFeedback] = useState<SaveActionFeedback | null>(null);
   const restoredRecordIdRef = useRef<string | null>(null);
+  const draftHydratedRef = useRef(false);
+  const canUseLocalDraft = !editingRecord && !sourceRecord && !requestedRecordId;
 
   const selectedStudents = students.filter((student) => selectedStudentIds[student.id]);
   const selectedStudentCount = selectedStudents.length;
@@ -294,6 +319,9 @@ function RecordEntryView() {
   const editingRecordMissing = Boolean(requestedRecordId && operationalData.status === 'ready' && !editingRecord);
   const sourceRecordMissing = Boolean(sourceRecordId && operationalData.status === 'ready' && !sourceRecord && !editingRecord);
   const isEditingRecord = Boolean(editingRecord);
+  const isEnrichingQuickRecord = Boolean(
+    editingRecord && (editingRecord.recordType === 'quick' || editingRecord.students.length === 0),
+  );
   const reportHref = program
     ? savedRecordId
       ? `/spokedu-master/report?record=${savedRecordId}&program=${program.id}`
@@ -304,6 +332,57 @@ function RecordEntryView() {
     setAttendance((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? 'pending'])) as Record<string, AttendanceStatus>);
     setSelectedStudentIds((prev) => Object.fromEntries(students.map((student) => [student.id, prev[student.id] ?? true])));
   }, [students]);
+
+  useEffect(() => {
+    if (!canUseLocalDraft || draftHydratedRef.current) return;
+    const draft = readSaveDraft<ClassRecordDraft>(CLASS_RECORD_DRAFT_KEY);
+    draftHydratedRef.current = true;
+    if (!hasMeaningfulClassRecordDraft(draft) || !draft) return;
+    // URL로 다른 프로그램 기록에 들어왔으면 이전 프로그램 초안(출석·메모)을 섞지 않는다.
+    if (requestedProgramId && draft.selectedProgramId && draft.selectedProgramId !== requestedProgramId) return;
+    if (draft.selectedProgramId) setSelectedProgramId(draft.selectedProgramId);
+    if (draft.recordDate) setRecordDate(draft.recordDate);
+    if (draft.classId) setClassId(draft.classId);
+    if (draft.classMemo) setClassMemo(draft.classMemo);
+    if (draft.attendance) setAttendance((prev) => ({ ...prev, ...draft.attendance }));
+    if (draft.focused) setFocused(draft.focused);
+    if (draft.checkedSkills) setCheckedSkills(draft.checkedSkills);
+    if (draft.studentMemos) setStudentMemos(draft.studentMemos);
+    if (draft.selectedStudentIds) {
+      setSelectedStudentIds((prev) => ({ ...prev, ...draft.selectedStudentIds }));
+    }
+    if (draft.bulkStudentMemo) setBulkStudentMemo(draft.bulkStudentMemo);
+  }, [canUseLocalDraft, requestedProgramId]);
+
+  useEffect(() => {
+    if (!canUseLocalDraft || !draftHydratedRef.current || savedOnly || savedRecordId) return;
+    writeSaveDraft(CLASS_RECORD_DRAFT_KEY, {
+      selectedProgramId,
+      recordDate,
+      classId,
+      classMemo,
+      attendance,
+      focused,
+      checkedSkills,
+      studentMemos,
+      selectedStudentIds,
+      bulkStudentMemo,
+    } satisfies ClassRecordDraft);
+  }, [
+    attendance,
+    bulkStudentMemo,
+    canUseLocalDraft,
+    checkedSkills,
+    classId,
+    classMemo,
+    focused,
+    recordDate,
+    savedOnly,
+    savedRecordId,
+    selectedProgramId,
+    selectedStudentIds,
+    studentMemos,
+  ]);
 
   useEffect(() => {
     if (!requestedStudentId || editingRecord || sourceRecord) return;
@@ -319,13 +398,16 @@ function RecordEntryView() {
   }, [editingRecord, sourceRecord, spomoveDraft]);
 
   useEffect(() => {
-    const nextProgramId = initialProgramId && programs.some((item) => item.id === initialProgramId) ? initialProgramId : '';
+    // URL/편집/복제 프로그램만 강제. 없으면 session draft·현재 선택을 유지한다.
+    if (!initialProgramId) return;
+    const nextProgramId = programs.some((item) => item.id === initialProgramId) ? initialProgramId : '';
     setSelectedProgramId(nextProgramId);
   }, [initialProgramId, programs]);
 
   useEffect(() => {
     if (!editingRecord || restoredRecordIdRef.current === editingRecord.id) return;
     restoredRecordIdRef.current = editingRecord.id;
+    const enrichingEmptyRoster = editingRecord.students.length === 0;
     setRecordDate(new Date(editingRecord.date).toISOString().slice(0, 10));
     setClassId(editingRecord.classId || defaultClassId);
     setClassMemo(editingRecord.memo ?? '');
@@ -333,7 +415,9 @@ function RecordEntryView() {
     setSavedOnly(false);
     setSelectedStudentIds(Object.fromEntries(students.map((student) => [
       student.id,
-      editingRecord.students.some((item) => item.studentId === student.id),
+      enrichingEmptyRoster
+        ? true
+        : editingRecord.students.some((item) => item.studentId === student.id),
     ])));
     setAttendance(Object.fromEntries(students.map((student) => {
       const recordStudent = editingRecord.students.find((item) => item.studentId === student.id);
@@ -412,7 +496,7 @@ function RecordEntryView() {
     });
   };
 
-  const buildRecord = (kakaoSent: boolean): ClassRecord => ({
+  const buildRecord = (): ClassRecord => ({
     id: editingRecord?.id ?? savedRecordId ?? Date.now().toString(),
     lessonTitle: activeLessonTitle,
     classId: classId.trim() || defaultClassId,
@@ -423,7 +507,7 @@ function RecordEntryView() {
     absent,
     focusCount,
     skillCount: recordedSkills,
-    kakaoSent,
+    kakaoSent: false,
     students: selectedStudents.map((student) => ({
       studentId: student.id,
       studentName: student.name,
@@ -433,15 +517,18 @@ function RecordEntryView() {
       memo: studentMemos[student.id]?.trim() || undefined,
     })),
     memo: classMemo.trim() || undefined,
+    parentNoteSnapshot: editingRecord?.parentNoteSnapshot,
+    // 출석·관찰 보강 저장 시 quick → detailed로 승격한다.
+    recordType: 'detailed',
   });
 
-  const persistRecord = (kakaoSent: boolean) => {
+  const persistRecord = () => {
     if (!canSaveRecord || recordSaving) return null;
     if (!canAttemptOnlineSave(isOnline)) {
       setRecordSaveFeedback(getOfflineSaveFeedback());
       return null;
     }
-    const record = buildRecord(kakaoSent);
+    const record = buildRecord();
     setRecordSaving(true);
     setRecordSaveFeedback(null);
     setSavedOnly(false);
@@ -452,7 +539,8 @@ function RecordEntryView() {
       : operationalData.saveClassRecord(input);
     void request.then((saved) => {
       setSavedRecordId(saved.id);
-      setSavedOnly(!kakaoSent);
+      setSavedOnly(true);
+      clearSaveDraft(CLASS_RECORD_DRAFT_KEY);
     }).catch((caught) => {
       setRecordSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
       setSavedOnly(false);
@@ -466,12 +554,32 @@ function RecordEntryView() {
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
       <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class record</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
+        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 기록</p>
+        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+          {isEnrichingQuickRecord ? '기록 보강' : '수업 기록'}
+        </h1>
         <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          학생별 출석, 관찰, 동작 체크를 남기는 수업 기록 작성 화면입니다.
+          {isEnrichingQuickRecord
+            ? '빠른 기록에 출석·관찰을 더합니다. 새 기록이 아니라 같은 기록이 업데이트됩니다.'
+            : '학생별 출석, 관찰, 동작 체크를 남기는 수업 기록 작성 화면입니다.'}
         </p>
       </header>
+
+      {isEnrichingQuickRecord && editingRecord ? (
+        <section className="mx-[22px] mb-5 rounded-[16px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-grn-a10)', border: '1px solid var(--spm-grn-a24)' }}>
+          <p className="text-[12px] font-black" style={{ color: 'var(--spm-grn)' }}>같은 기록 보강 중</p>
+          <p className="mt-1 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
+            {editingRecord.memo?.trim()
+              ? `남긴 관찰: ${editingRecord.memo.trim()}`
+              : '관찰 메모는 비어 있습니다. 아래에서 출석과 집중 관찰을 이어서 남겨 주세요.'}
+          </p>
+          {editingRecord.parentNoteSnapshot?.trim() ? (
+            <p className="mt-2 text-[11px] font-semibold leading-5" style={{ color: 'var(--spm-t3)' }}>
+              안내문 초안은 유지됩니다. 원본 수업 자료는 변경되지 않습니다.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {!recordStatus.allowed ? (
         <section className="mx-[22px] mb-5 rounded-[16px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.28)' }}>
@@ -486,11 +594,13 @@ function RecordEntryView() {
         </section>
       ) : null}
 
-      <section className="mx-[22px] mb-5 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, rgba(99,102,241,0.25), var(--spm-s2))', border: '1px solid rgba(99,102,241,0.34)' }}>
+      <section className="mx-[22px] mb-5 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, var(--spm-acc-a25), var(--spm-s2))', border: '1px solid var(--spm-acc-a34)' }}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: '#a5b4fc' }}>{classId || defaultClassId} / {activePeriod}교시</p>
-            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>{isEditingRecord ? '수업 기록 수정' : activeLessonTitle}</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc-muted)' }}>{classId || defaultClassId} / {activePeriod}교시</p>
+            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
+              {isEnrichingQuickRecord ? '빠른 기록 보강' : isEditingRecord ? '수업 기록 수정' : activeLessonTitle}
+            </h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{[packageMeta, packageFocus].filter(Boolean).join(' · ')}</p>
           </div>
           {program ? (
@@ -500,7 +610,7 @@ function RecordEntryView() {
           ) : null}
         </div>
         <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }}>
-          <div className="h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg,#6366f1,#10b981)' }} />
+          <div className="h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg,var(--spm-acc),var(--spm-grn))' }} />
         </div>
       </section>
 
@@ -519,7 +629,25 @@ function RecordEntryView() {
       <section className="mx-[22px] mb-5 grid gap-3 rounded-[18px] p-4 sm:mx-8 md:grid-cols-2 xl:grid-cols-3 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>기록할 수업</span>
-          <select value={selectedProgramId} onChange={(event) => setSelectedProgramId(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <select
+            value={selectedProgramId}
+            onChange={(event) => {
+              const nextProgramId = event.target.value;
+              if (nextProgramId === selectedProgramId) return;
+              setSelectedProgramId(nextProgramId);
+              // 수업이 바뀌면 이전 수업의 출석·관찰·메모를 새 기록에 섞지 않는다.
+              setAttendance(Object.fromEntries(students.map((student) => [student.id, 'pending'])) as Record<string, AttendanceStatus>);
+              setFocused({});
+              setCheckedSkills({});
+              setStudentMemos({});
+              setSelectedStudentIds(Object.fromEntries(students.map((student) => [student.id, true])));
+              setClassMemo('');
+              setBulkStudentMemo('');
+              setSelectedId(null);
+            }}
+            className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none"
+            style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+          >
             <option value="">수업을 선택하세요</option>
             {programs.map((item) => (
               <option key={item.id} value={item.id}>{item.title}</option>
@@ -551,7 +679,7 @@ function RecordEntryView() {
         <div className="mb-3 flex flex-wrap gap-2 px-[22px] sm:px-8 lg:px-10">
           <button type="button" onClick={selectAllStudents} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>전체 선택</button>
           <button type="button" onClick={clearAllStudents} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>전체 해제</button>
-          <button type="button" onClick={() => applyAttendanceToSelected('present')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'rgba(16,185,129,0.16)', color: 'var(--spm-grn)', border: '1px solid rgba(16,185,129,0.24)' }}>선택 출석</button>
+          <button type="button" onClick={() => applyAttendanceToSelected('present')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-grn-a16)', color: 'var(--spm-grn)', border: '1px solid var(--spm-grn-a24)' }}>선택 출석</button>
           <button type="button" onClick={() => applyAttendanceToSelected('absent')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)', border: '1px solid rgba(239,68,68,0.22)' }}>선택 결석</button>
           <button type="button" onClick={() => applyAttendanceToSelected('pending')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>출석 초기화</button>
         </div>
@@ -559,8 +687,8 @@ function RecordEntryView() {
 
       <section className="grid gap-2 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
         {hasStudents ? students.map((student) => (
-          <div key={student.id} className="rounded-[18px]" style={{ outline: selectedStudentIds[student.id] ? '2px solid rgba(99,102,241,0.5)' : '1px solid var(--spm-br2)' }}>
-            <label className="flex min-h-11 items-center gap-2 rounded-t-[18px] px-4 py-2 text-[12px] font-black" style={{ background: selectedStudentIds[student.id] ? 'rgba(99,102,241,0.12)' : 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+          <div key={student.id} className="rounded-[18px]" style={{ outline: selectedStudentIds[student.id] ? '2px solid var(--spm-acc-a50)' : '1px solid var(--spm-br2)' }}>
+            <label className="flex min-h-11 items-center gap-2 rounded-t-[18px] px-4 py-2 text-[12px] font-black" style={{ background: selectedStudentIds[student.id] ? 'var(--spm-acc-a12)' : 'var(--spm-s2)', color: 'var(--spm-t)' }}>
               <input type="checkbox" checked={!!selectedStudentIds[student.id]} onChange={(event) => setSelectedStudentIds((prev) => ({ ...prev, [student.id]: event.target.checked }))} />
               참여 학생
             </label>
@@ -602,28 +730,28 @@ function RecordEntryView() {
       <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>class end</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 마무리</p>
             <h2 className="mt-2 text-[22px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 후 1분 정리</h2>
           </div>
-          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'rgba(99,102,241,0.13)', color: 'var(--spm-acc)' }}>발송 전 복사 검토</span>
+          <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: 'var(--spm-acc-a13)', color: 'var(--spm-acc)' }}>안내문 복사 준비</span>
         </div>
         <p className="mt-2 text-[12px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>수업이 끝나면 기록은 학생 이력에 남고, 프로그램 맥락은 보호자·센터·학교용 안내문의 근거로 활용됩니다.</p>
         <div className="mt-4 grid gap-2 md:grid-cols-3">
           <OutcomeCard icon={<History size={15} color="var(--spm-acc)" />} label="학생 이력" value={`출석 ${present}명 · 관찰 ${focusCount}명`} />
           <OutcomeCard icon={<FileText size={15} color="var(--spm-acc)" />} label="기록 근거" value={packageFocus || '활동 목표와 관찰 포인트'} />
-          <OutcomeCard icon={<MessageCircle size={15} color="var(--spm-acc)" />} label="안내문" value="발송 전 복사해서 검토" />
+          <OutcomeCard icon={<MessageCircle size={15} color="var(--spm-acc)" />} label="안내문" value="복사해서 전달" />
         </div>
         {!hasStudents ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>등록된 학생이 없어 학생 기록을 만들 수 없습니다.</p> : null}
-        {!program ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>기록할 수업을 선택해 주세요.</p> : null}
-        {hasStudents && selectedStudentCount === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>참여 학생을 1명 이상 선택해 주세요.</p> : null}
-        {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
+        {!program ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb)' }}>기록할 수업을 선택해 주세요.</p> : null}
+        {hasStudents && selectedStudentCount === 0 ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb)' }}>참여 학생을 1명 이상 선택해 주세요.</p> : null}
+        {hasStudents && !hasAttendance ? <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-amb-a12)', color: 'var(--spm-amb)' }}>출석 또는 결석을 최소 1명 이상 체크해 주세요.</p> : null}
         {savedOnly ? (
-          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>
+          <div className="mt-4 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
             <p className="text-[12px] font-bold">출석과 관찰 원본 기록이 저장되었습니다.</p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <Link href={reportHref} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>안내문 작성</Link>
-              <Link href={savedRecordId && program ? `/spokedu-master/class-record?record=${savedRecordId}&program=${program.id}` : '/spokedu-master/class-record'} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>저장한 기록 보기</Link>
-              <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'rgba(16,185,129,0.08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
+              <Link href={reportHref} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>안내문 작성</Link>
+              <Link href={savedRecordId && program ? `/spokedu-master/class-record?record=${savedRecordId}&program=${program.id}` : '/spokedu-master/class-record'} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>저장한 기록 보기</Link>
+              <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
             </div>
           </div>
         ) : null}
@@ -631,14 +759,14 @@ function RecordEntryView() {
           <div className="mt-4">
             <SaveErrorBanner
               message={recordSaveFeedback.message}
-              onRetry={recordSaveFeedback.retryable ? () => persistRecord(false) : undefined}
+              onRetry={recordSaveFeedback.retryable ? () => persistRecord() : undefined}
               upgradeHref={recordSaveFeedback.upgradeHref}
               upgradeLabel={recordSaveFeedback.upgradeLabel}
             />
           </div>
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr]">
-          <button type="button" onClick={() => persistRecord(false)} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
+          <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
           <Link href={reportHref} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들기</Link>
         </div>
       </section>
@@ -657,7 +785,7 @@ function RecordEntryView() {
               {skills.map((skill) => {
                 const checked = checkedSkills[selectedStudent.id]?.includes(skill) ?? false;
                 return (
-                  <button key={skill} type="button" onClick={() => toggleSkill(selectedStudent.id, skill)} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: checked ? 'rgba(16,185,129,0.15)' : 'var(--spm-s2)', color: checked ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>
+                  <button key={skill} type="button" onClick={() => toggleSkill(selectedStudent.id, skill)} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: checked ? 'var(--spm-grn-a15)' : 'var(--spm-s2)', color: checked ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>
                     {checked ? <Check size={15} /> : null}
                     {skill}
                   </button>

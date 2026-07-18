@@ -55,6 +55,39 @@ describe('class record entry flow contract', () => {
     expect(source).toContain('저장 중...');
     expect(source).toContain('수업 기록 수정');
     expect(source).toContain('수업 기록 저장');
+    expect(source).toContain('보강 저장');
+  });
+
+  it('enriches quick records on the same record id and promotes to detailed', () => {
+    expect(source).toContain('isEnrichingQuickRecord');
+    expect(source).toContain("editingRecord.recordType === 'quick'");
+    expect(source).toContain('enrichingEmptyRoster');
+    expect(source).toContain('parentNoteSnapshot: editingRecord?.parentNoteSnapshot');
+    expect(source).toContain("recordType: 'detailed'");
+    expect(source).toContain('같은 기록 보강 중');
+    expect(source).toContain('이 기록 보강');
+  });
+
+  it('keeps offline and expired save feedback with payment CTA wiring', () => {
+    expect(source).toContain('getOfflineSaveFeedback()');
+    expect(source).toContain('resolveSaveActionFeedback(caught, accessSnapshot)');
+    expect(source).toContain('upgradeHref');
+    expect(source).toContain('upgradeLabel');
+  });
+
+  it('persists in-progress drafts across refresh for new records', () => {
+    expect(source).toContain('CLASS_RECORD_DRAFT_KEY');
+    expect(source).toContain('writeSaveDraft(CLASS_RECORD_DRAFT_KEY');
+    expect(source).toContain('clearSaveDraft(CLASS_RECORD_DRAFT_KEY)');
+    expect(source).toContain('hasMeaningfulClassRecordDraft');
+    expect(source).toContain('if (requestedProgramId && draft.selectedProgramId && draft.selectedProgramId !== requestedProgramId) return');
+  });
+
+  it('resets student observations when the selected program changes', () => {
+    expect(source).toContain('수업이 바뀌면 이전 수업의 출석·관찰·메모를 새 기록에 섞지 않는다.');
+    expect(source).toContain("setAttendance(Object.fromEntries(students.map((student) => [student.id, 'pending']))");
+    expect(source).toContain('setFocused({})');
+    expect(source).toContain('setStudentMemos({})');
   });
 
   it('applies SPOMOVE record drafts only to empty class memo fields', () => {

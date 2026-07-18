@@ -9,7 +9,7 @@ export type LibraryActiveFilter = {
   value: string;
 };
 
-export const LIBRARY_PAGE_SIZE = 24;
+export const LIBRARY_PAGE_SIZE = 12;
 
 export function parseLibraryView(value: string | null): LibraryViewMode {
   return value === 'favorites' ? 'favorites' : 'all';
@@ -122,4 +122,18 @@ export function formatRecentRecordSubtitle(record: ClassRecord) {
   const classLabel = record.classId.trim();
   if (classLabel && classLabel !== '수업') return `${date} · ${classLabel}`;
   return date;
+}
+
+/** Card footer prep label: name only, strip counts like "4개" / "12~15개". */
+export function formatLibraryCardEquipmentName(raw: string): string {
+  const text = raw.trim();
+  if (!text) return '';
+  if (/^준비물\s*없음$/i.test(text) || /^no\s*equipment$/i.test(text)) return '없음';
+  const primary = text.split(/\s*또는\s*/)[0]!.trim();
+  const stripped = primary
+    .replace(/\s*\([^)]*\)\s*$/g, '')
+    .replace(/\s*\d+(?:\s*[~～\-]\s*\d+)?\s*개(?:\s*이상)?\s*$/g, '')
+    .replace(/\s+\d+(?:\s*[~～\-]\s*\d+)?\s*$/g, '')
+    .trim();
+  return stripped || primary;
 }

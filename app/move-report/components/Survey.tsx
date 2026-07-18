@@ -1,8 +1,11 @@
 'use client';
 
 import type { CSSProperties } from 'react';
+import { useMemo } from 'react';
 import type { Question } from '../types';
+import { getMoveReportUi } from '../i18n/ui';
 import { AXIS_COL, AXIS_ICON } from '../lib/constants';
+import type { MoveReportLocale } from '../lib/locale';
 import { personalizeMoveReportQuestion } from '../lib/personalizeQuestion';
 
 interface SurveyProps {
@@ -14,22 +17,35 @@ interface SurveyProps {
   onAnswer: (v: string) => void;
   onBack: () => void;
   answering?: boolean;
+  locale?: MoveReportLocale;
 }
 
 /** 원본 HTML 설문 (진행률·중간 메시지·닷 네비) */
-export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, answering = false }: SurveyProps) {
+export default function Survey({
+  q,
+  qi,
+  total,
+  resps,
+  name,
+  onAnswer,
+  onBack,
+  answering = false,
+  locale = 'ko',
+}: SurveyProps) {
+  const ui = useMemo(() => getMoveReportUi(locale), [locale]);
   if (!q) return null;
   const safeTotal = Math.max(total, 1);
   const prog = ((qi + 1) / safeTotal) * 100;
   const acol = AXIS_COL[q.axis] ?? '#FF4B1F';
   const aicon = AXIS_ICON[q.axis] ?? 'fa-circle';
-  const lines = q.q.split('\n');
+  const qText = personalizeMoveReportQuestion(q.q, name, locale);
+  const lines = qText.split('\n');
 
   const midMsg =
     qi === 3
-      ? { em: '⚡', text: '잘 하고 있어요! 절반을 향해 가고 있어요' }
+      ? { em: '⚡', text: ui.survey.midHalf }
       : qi === 7
-        ? { em: '🎯', text: '거의 다 왔어요! 마지막 4문항이에요' }
+        ? { em: '🎯', text: ui.survey.midAlmost }
         : null;
 
   return (
@@ -158,8 +174,8 @@ export default function Survey({ q, qi, total, resps, name, onAnswer, onBack, an
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {q.opts.map((opt, i) => {
               const sel = resps[qi] === opt.v;
-              const optTitle = personalizeMoveReportQuestion(opt.t, name);
-              const optDesc = personalizeMoveReportQuestion(opt.d, name);
+              const optTitle = personalizeMoveReportQuestion(opt.t, name, locale);
+              const optDesc = personalizeMoveReportQuestion(opt.d, name, locale);
               return (
                 <button
                   key={i}

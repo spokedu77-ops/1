@@ -1,10 +1,16 @@
 import { TOGGLE_LEGACY_CONTENT_KEYS } from './noteBlockTypes';
 
 /** TipTap·스토어 전용 — React blocks 재렌더 없이 patchContent로 처리 */
+export const DECORATION_CONTENT_KEYS = new Set([
+  'icon',
+  'blockColor',
+]);
+
 export const STORE_ONLY_CONTENT_KEYS = new Set([
   'text',
   'html',
   'legacyText',
+  ...DECORATION_CONTENT_KEYS,
   ...TOGGLE_LEGACY_CONTENT_KEYS,
 ]);
 
@@ -61,6 +67,11 @@ export function mergeContentPatchWithActiveStore(
 ): Record<string, unknown> {
   if (!store) return incoming;
   const merged = { ...store, ...incoming };
+  for (const key of DECORATION_CONTENT_KEYS) {
+    if (!(key in incoming) && key in store) {
+      merged[key] = store[key];
+    }
+  }
   const incomingClearsBody = 'text' in incoming
     && incoming.text === ''
     && 'html' in incoming

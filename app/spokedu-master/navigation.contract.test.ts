@@ -57,9 +57,12 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
     expect(activity).toContain('라이브러리에서 수업 고르기');
     expect(activity).toContain('최근 수업 기록');
     expect(activity).toContain('기록 보기');
+    expect(activity).toContain('이 기록 보강');
+    expect(activity).toContain('빠른 기록');
     expect(activity).toContain('안내문 만들기');
     expect(activity).toContain('/spokedu-master/students?add=1');
-    expect(activity).toContain('내 반 명단 준비');
+    expect(activity).toContain('학생 추가');
+    expect(activity).not.toContain('내 반 명단 준비');
     expect(activity).toContain('학생 명단 관리');
     expect(activity).not.toContain('최근 안내문');
     expect(activity).not.toContain('/spokedu-master/plan');

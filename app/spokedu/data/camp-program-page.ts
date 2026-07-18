@@ -99,7 +99,7 @@ export const campProgramPage = {
   cases: {
     title: '실제 운영 예시',
     slugs: ['playz-camp'] as const,
-    recordsHref: `${SPOKEDU_BASE_PATH}/cases/playz-camp`,
+    recordsHref: `${SPOKEDU_BASE_PATH}/records`,
   },
   finalCta: {
     title: '방학 시즌 프로그램을 함께 운영하고 싶다면',

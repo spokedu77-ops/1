@@ -82,7 +82,7 @@ export const cases: CaseData[] = [
     tags: ['SPOMOVE', '키움센터', '정규수업'],
     filters: ['regular'],
     ctaLabel: '운영 사례 보기',
-    href: `${SPOKEDU_BASE_PATH}/cases/yangcheon-spomove`,
+    href: `${SPOKEDU_BASE_PATH}/records`,
   },
   {
     title: '동작거점형키움센터 SPOMOVE 연계 수업',
@@ -128,7 +128,7 @@ export const cases: CaseData[] = [
     tags: ['SPOMOVE', '키움센터', '정규수업'],
     filters: ['regular'],
     ctaLabel: '수업 사례 보기',
-    href: `${SPOKEDU_BASE_PATH}/cases/dongjak-rhythm`,
+    href: `${SPOKEDU_BASE_PATH}/records`,
   },
   {
     title: '다사랑영등포지역아동센터 원데이 체육행사',
@@ -174,7 +174,7 @@ export const cases: CaseData[] = [
     type: '행사형',
     filters: ['oneday'],
     ctaLabel: '운영 사례 보기',
-    href: `${SPOKEDU_BASE_PATH}/cases/dasarang-oneday`,
+    href: `${SPOKEDU_BASE_PATH}/records`,
   },
   {
     title: '서울숲 PLAYZ Lounge 방학캠프',
@@ -220,7 +220,7 @@ export const cases: CaseData[] = [
     tags: ['방학캠프', '공간 협업', '복합프로그램'],
     filters: ['camp', 'space'],
     ctaLabel: '수업 사례 보기',
-    href: `${SPOKEDU_BASE_PATH}/cases/playz-camp`,
+    href: `${SPOKEDU_BASE_PATH}/records`,
   },
   {
     title: '서대문형무소 어린이날 체험 부스',
@@ -266,7 +266,7 @@ export const cases: CaseData[] = [
     tags: ['공공행사', '체험부스', '공간 협업'],
     filters: ['oneday', 'space'],
     ctaLabel: '사례 자세히 보기',
-    href: `${SPOKEDU_BASE_PATH}/cases/seodaemun-event-booth`,
+    href: `${SPOKEDU_BASE_PATH}/records`,
   },
 ];
 

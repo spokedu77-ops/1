@@ -48,15 +48,17 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     }
   });
 
-  it('requires billing key issue then first server-priced payment before apply', () => {
-    const issue = issueRoute.indexOf('billing = await issueSpokeduMasterBillingKey');
-    const store = issueRoute.indexOf('billingKeySecretId = await storeSpokeduMasterBillingKey');
-    const pay = issueRoute.indexOf('payment = await paySpokeduMasterBillingKey');
-    const apply = issueRoute.indexOf('applyResult = await applySpokeduMasterPayment');
-    expect(issue).toBeGreaterThan(-1);
-    expect(store).toBeGreaterThan(issue);
-    expect(pay).toBeGreaterThan(store);
-    expect(apply).toBeGreaterThan(pay);
+  it('requires order claim, then billing key issue, first charge, vault store, then apply', () => {
+    const claim = issueRoute.indexOf('claimSpokeduMasterBillingOrder');
+    const issue = issueRoute.lastIndexOf('billing = await issueSpokeduMasterBillingKey');
+    const pay = issueRoute.lastIndexOf('payment = await paySpokeduMasterBillingKey');
+    const store = issueRoute.lastIndexOf('billingKeySecretId = await storeSpokeduMasterBillingKey');
+    const apply = issueRoute.lastIndexOf('applyResult = await applySpokeduMasterPayment');
+    expect(claim).toBeGreaterThan(-1);
+    expect(issue).toBeGreaterThan(claim);
+    expect(pay).toBeGreaterThan(issue);
+    expect(store).toBeGreaterThan(pay);
+    expect(apply).toBeGreaterThan(store);
     expect(issueRoute).toContain('SPOKEDU_MASTER_PLAN_CONFIG[plan].amount');
     expect(issueRoute).toContain('body.amount !== amount');
   });
@@ -108,7 +110,7 @@ describe('SPOKEDU MASTER billing API contracts', () => {
     expect(vaultStore).toContain("rpc('spokedu_master_read_billing_key'");
     expect(vaultStore).toContain("rpc('spokedu_master_delete_billing_key'");
     expect(issueRoute).toContain('storeSpokeduMasterBillingKey');
-    expect(issueRoute).toContain('deleteSpokeduMasterBillingKey');
+    expect(issueRoute).not.toContain('provider_billing_key,');
     expect(renewRoute).toContain('readSpokeduMasterBillingKey');
     expect(renewRoute).toContain('provider_billing_key_secret_id');
     expect(renewRoute).not.toContain('provider_billing_key,');

@@ -26,7 +26,7 @@ const PAGES = [
   { path: '/spokedu/dispatch', slug: 'dispatch' },
   { path: '/spokedu/curriculum', slug: 'curriculum' },
   { path: '/spokedu/records', slug: 'records' },
-  { path: '/spokedu/cases', slug: 'cases' },
+  { path: '/spokedu/programs', slug: 'programs' },
 ];
 
 async function auditPage(page) {

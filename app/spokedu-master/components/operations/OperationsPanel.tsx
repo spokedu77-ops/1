@@ -23,11 +23,11 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
     <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }} aria-label="운영 상태">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>operations</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>운영</p>
           <h2 className="mt-2 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>운영 상태</h2>
           <p className="mt-1 text-[12px] font-medium" style={{ color: 'var(--spm-t3)' }}>최근 로컬 변경 · {formatSyncTime(operational.lastSyncAt)}</p>
         </div>
-        <span className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: operational.online ? 'rgba(16,185,129,0.13)' : 'rgba(245,158,11,0.13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>
+        <span className="flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: operational.online ? 'var(--spm-grn-a13)' : 'var(--spm-amb-a13)', color: operational.online ? 'var(--spm-grn)' : 'var(--spm-amb)' }}>
           {operational.online ? <Wifi size={13} /> : <WifiOff size={13} />}
           {operational.online ? '인터넷 연결됨' : '인터넷 연결 없음'}
         </span>
@@ -47,8 +47,8 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
       {operational.retryQueue.length > 0 ? (
         <div className="mt-4 space-y-2">
           {operational.retryQueue.slice(0, compact ? 2 : 6).map((item) => (
-            <div key={item.id} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.18)' }}>
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'rgba(245,158,11,0.12)' }}>
+            <div key={item.id} className="flex items-center gap-3 rounded-[12px] p-3" style={{ background: 'var(--spm-amb-a10)', border: '1px solid var(--spm-amb-a18)' }}>
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px]" style={{ background: 'var(--spm-amb-a12)' }}>
                 <AlertTriangle size={15} color="var(--spm-amb)" />
               </span>
               <span className="min-w-0 flex-1">
@@ -62,7 +62,7 @@ export function OperationsPanel({ compact = false }: { compact?: boolean }) {
           ))}
         </div>
       ) : (
-        <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(16,185,129,0.1)', color: 'var(--spm-grn)' }}>대기 중인 실패 항목이 없습니다.</p>
+        <p className="mt-4 rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>대기 중인 실패 항목이 없습니다.</p>
       )}
     </section>
   );

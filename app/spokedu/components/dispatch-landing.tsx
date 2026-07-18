@@ -15,8 +15,11 @@ import {
 } from '../lib/ui-classes';
 import { DispatchComparisonSection } from './dispatch-comparison-section';
 import { DispatchProgramLineup } from './dispatch-program-lineup';
+import { DispatchProposalForm } from './dispatch-proposal-form';
 import { HomeSectionRule } from './home-section-rule';
+import { LandingAnchorNav } from './landing-anchor-nav';
 import { LandingFaqList } from './landing-faq-list';
+import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingStepPanel } from './landing-step-grid';
 import { LandingFinalCta } from './landing-final-cta';
@@ -28,6 +31,12 @@ const focusRing =
 
 const institutionCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${landingCardShell}`;
 const dispatchHeroChecks = ['공간·인원 확인', '운영 목적 설계', '강사·교구 투입'] as const;
+const dispatchAnchorItems = [
+  { href: '#comparison', label: '차별성' },
+  { href: '#programs', label: '프로그램' },
+  { href: '#process', label: '도입 절차' },
+  { href: '#faq', label: 'FAQ' },
+] as const;
 const dispatchPromiseCards = [
   {
     title: '전공자 기반 커리큘럼',
@@ -83,7 +92,8 @@ function Section({
 
 export default function DispatchLanding() {
   return (
-    <div className={audienceLandingStack}>
+    <div className={`${audienceLandingStack} pb-24`}>
+      <div id="hero">
       <LandingHero
         kicker={dispatchPage.hero.kicker}
         kickerClassName="text-stone-500"
@@ -106,6 +116,13 @@ export default function DispatchLanding() {
         priority
         primaryCta={dispatchPage.heroCtas.primary}
         secondaryCta={dispatchPage.heroCtas.secondary}
+      />
+      </div>
+
+      <LandingAnchorNav
+        items={dispatchAnchorItems}
+        cta={{ href: '#contact', label: '제안서 요청' }}
+        ariaLabel="기관 랜딩 바로가기"
       />
 
       <Section className="border-y border-stone-200 bg-white py-8 sm:py-10">
@@ -137,7 +154,7 @@ export default function DispatchLanding() {
               SPOKEDU는 이 기준을 먼저 확인하고 현장에 맞는 운영안을 제안합니다.
             </p>
             <a
-              href="#dispatch-process"
+              href="#process"
               className={`mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-white px-4 text-sm font-bold text-slate-950 ${fineHover}hover:bg-teal-50 ${focusRing}`}
             >
               도입 절차 보기
@@ -196,7 +213,7 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section>
+      <Section id="comparison" className="scroll-mt-36">
         <DispatchComparisonSection />
       </Section>
 
@@ -255,7 +272,7 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section>
+      <Section id="programs" className="scroll-mt-36">
         <DispatchProgramLineup />
       </Section>
 
@@ -325,7 +342,7 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section id="dispatch-process" className="scroll-mt-24">
+      <Section id="process" className="scroll-mt-36">
         <LandingStepPanel steps={dispatchPage.processSteps.steps} accent="teal" columns="5">
           <LandingSectionHeading
             eyebrow={dispatchPage.processSteps.eyebrow}
@@ -336,12 +353,16 @@ export default function DispatchLanding() {
         </LandingStepPanel>
       </Section>
 
-      <Section className="space-y-5 sm:space-y-6">
+      <Section id="faq" className="scroll-mt-36 space-y-5 sm:space-y-6">
         <LandingSectionHeading eyebrow={dispatchPage.faq.eyebrow} title={dispatchPage.faq.title} accent="teal" />
         <LandingFaqList items={dispatchPage.faq.items} accent="teal" />
       </Section>
 
       <HomeSectionRule />
+
+      <Section>
+        <DispatchProposalForm />
+      </Section>
 
       <LandingFinalCta
         title={dispatchPage.finalCta.title}
@@ -349,6 +370,14 @@ export default function DispatchLanding() {
         tone="dark"
         backgroundMedia={HOME_MEDIA[dispatchPage.finalCta.mediaKey]}
         links={[{ ...dispatchPage.finalCta.primary, variant: 'on-dark-primary' }]}
+      />
+
+      <LandingFloatingCta
+        primaryHref="#contact"
+        primaryLabel="제안서 요청하기"
+        secondaryHref="https://pf.kakao.com/_VGWxeb/chat"
+        secondaryLabel="카카오 B2B 상담"
+        showAfterId="hero"
       />
     </div>
   );

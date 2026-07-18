@@ -36,7 +36,7 @@ export default function SpokeduMasterShopPage() {
       <div className="px-[22px] sm:px-8 lg:px-10">
         <article className="max-w-[640px] rounded-[20px] p-6" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
           <div className="flex items-start gap-4">
-            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[16px]" style={{ background: 'rgba(99,102,241,0.12)' }}>
+            <span className="grid h-14 w-14 shrink-0 place-items-center rounded-[16px]" style={{ background: 'var(--spm-acc-a12)' }}>
               <Package size={26} color="var(--spm-acc)" />
             </span>
             <div>

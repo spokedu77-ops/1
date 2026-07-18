@@ -1,7 +1,21 @@
 'use client';
 
-/** 보고서 직전: 움직임 없이 SPOKEDU 워드마크만 (다크·트렌디) */
-export default function Loading() {
+import { useMemo } from 'react';
+import { getMoveReportUi } from '../i18n/ui';
+import { resolveMoveReportDisplayName } from '../lib/compute';
+import type { MoveReportLocale } from '../lib/locale';
+
+type LoadingProps = {
+  displayName?: string;
+  locale?: MoveReportLocale;
+};
+
+/** 보고서 직전: 이름 있으면 “○○의 리포트”로 연결 */
+export default function Loading({ displayName, locale = 'ko' }: LoadingProps) {
+  const ui = useMemo(() => getMoveReportUi(locale), [locale]);
+  const owner = resolveMoveReportDisplayName(displayName ?? '', locale);
+  const lines = ui.loading.preparing(owner).split('\n');
+
   return (
     <div
       style={{
@@ -36,7 +50,7 @@ export default function Loading() {
           pointerEvents: 'none',
         }}
       />
-      <div style={{ position: 'relative', textAlign: 'center', zIndex: 1 }}>
+      <div style={{ position: 'relative', textAlign: 'center', zIndex: 1, maxWidth: 320 }}>
         <div
           style={{
             fontFamily: 'Bebas Neue,sans-serif',
@@ -59,6 +73,24 @@ export default function Loading() {
             background: 'linear-gradient(90deg, #FF4B1F, rgba(255,75,31,.15), transparent)',
           }}
         />
+        <p
+          style={{
+            margin: '22px 0 0',
+            fontSize: 15,
+            fontWeight: 700,
+            color: 'rgba(255,255,255,.88)',
+            letterSpacing: '-0.02em',
+            wordBreak: 'keep-all',
+            lineHeight: 1.45,
+          }}
+        >
+          {lines.map((line, i) => (
+            <span key={i}>
+              {line}
+              {i < lines.length - 1 ? <br /> : null}
+            </span>
+          ))}
+        </p>
       </div>
     </div>
   );

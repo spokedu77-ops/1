@@ -113,3 +113,39 @@ export async function paySpokeduMasterBillingKey(input: {
     approvedAt,
   };
 }
+
+/** 동일 orderId로 이미 승인된 결제가 있으면 재청구 전에 회수한다. */
+export async function findSpokeduMasterPaymentByOrderId(input: {
+  orderId: string;
+  amount: number;
+}): Promise<TossBillingPaymentResult | null> {
+  const secretKey = getTossSecretKey();
+  if (!secretKey || !input.orderId) return null;
+
+  const response = await fetch(
+    `${TOSS_API_BASE}/payments/orders/${encodeURIComponent(input.orderId)}`,
+    {
+      method: 'GET',
+      headers: {
+        Authorization: tossAuthorization(secretKey),
+      },
+      cache: 'no-store',
+    },
+  );
+
+  if (!response.ok) return null;
+  const json = readRecord(await response.json());
+  const paymentKey = readString(json.paymentKey);
+  const returnedOrderId = readString(json.orderId);
+  const totalAmount = readNumber(json.totalAmount);
+  const approvedAt = readString(json.approvedAt);
+  const status = readString(json.status);
+  if (!paymentKey || returnedOrderId !== input.orderId || totalAmount !== input.amount) return null;
+  if (status !== 'DONE') return null;
+  return {
+    paymentKey,
+    orderId: returnedOrderId,
+    totalAmount,
+    approvedAt,
+  };
+}

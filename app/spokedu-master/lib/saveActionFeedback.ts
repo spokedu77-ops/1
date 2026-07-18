@@ -38,7 +38,7 @@ export function resolveSaveActionFeedback(
   }
   if (clientError) {
     return {
-      message: clientError.message,
+      message: clientError.kind === 'network' ? OFFLINE_SAVE_MESSAGE : clientError.message,
       retryable: clientError.kind === 'network' || clientError.kind === 'server',
     };
   }

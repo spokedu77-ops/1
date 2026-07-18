@@ -14,7 +14,7 @@ export function SaveErrorBanner({
   onRetry,
   retryLabel = '다시 시도',
   upgradeHref,
-  upgradeLabel = '이용권 선택',
+  upgradeLabel = '구독 선택',
   className = '',
 }: SaveErrorBannerProps) {
   return (
@@ -42,7 +42,7 @@ export function SaveErrorBanner({
             <Link
               href={upgradeHref}
               className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black"
-              style={{ background: 'rgba(99,102,241,0.12)', color: 'var(--spm-acc, #4f46e5)' }}
+              style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}
             >
               {upgradeLabel}
             </Link>

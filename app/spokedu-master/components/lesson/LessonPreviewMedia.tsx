@@ -6,11 +6,14 @@ import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 
 import { CategoryIcon } from '../ui/ProgramThumb';
+import { canOptimizeRemoteImage } from '../../lib/mediaPreferences';
 import {
   getExternalVideoUrl,
   getTrustedProgramVideoUrl,
   getVideoEmbedUrl,
+  getVideoThumbnail,
   isDirectVideoUrl,
+  isRemoteImage,
   resolveProgramHero,
 } from '../../lib/program-media';
 import { getLessonTheme } from '../../lib/lessonDisplay';
@@ -18,7 +21,8 @@ import type { Program } from '../../types';
 import { TrackedVideoIframe } from './TrackedVideoIframe';
 
 function CoverImage({ src, alt, sizes, className }: { src: string; alt: string; sizes: string; className?: string }) {
-  return <Image src={src} alt={alt} fill sizes={sizes} className={className} unoptimized />;
+  const optimize = !isRemoteImage(src) || canOptimizeRemoteImage(src);
+  return <Image src={src} alt={alt} fill sizes={sizes} className={className} unoptimized={!optimize} />;
 }
 
 export function LessonPreviewMedia({
@@ -35,6 +39,7 @@ export function LessonPreviewMedia({
   const heroImage = resolveProgramHero(program);
   const trustedVideoUrl = getTrustedProgramVideoUrl(program);
   const videoEmbedUrl = getVideoEmbedUrl(trustedVideoUrl, { autoplay });
+  const posterUrl = heroImage ?? getVideoThumbnail(trustedVideoUrl);
   const directVideoUrl = !videoEmbedUrl && isDirectVideoUrl(trustedVideoUrl) ? trustedVideoUrl : undefined;
   const externalVideoUrl = !videoEmbedUrl && !directVideoUrl ? getExternalVideoUrl(trustedVideoUrl) : undefined;
   const hasVideo = Boolean(videoEmbedUrl || directVideoUrl || externalVideoUrl);
@@ -59,15 +64,29 @@ export function LessonPreviewMedia({
         title={`${title} 참고 영상`}
         className="h-full w-full"
         onPlaybackStarted={reportPlayback}
+        posterUrl={posterUrl}
+        deferUntilPlay={!autoplay}
       />
     );
   } else if (directVideoUrl) {
-    media = <video src={directVideoUrl} className="h-full w-full object-cover" controls playsInline autoPlay={autoplay} muted onPlay={reportPlayback} />;
+    media = (
+      <video
+        src={directVideoUrl}
+        className="h-full w-full object-cover"
+        controls
+        playsInline
+        autoPlay={autoplay}
+        muted={autoplay}
+        preload="none"
+        poster={posterUrl}
+        onPlay={reportPlayback}
+      />
+    );
   } else if (externalVideoUrl) {
     media = (
       <div className="grid h-full place-items-center bg-slate-950 p-6 text-center text-white">
         <div>
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-indigo-600 text-white ring-4 ring-white/70">
+          <span className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-[var(--spm-acc)] text-white ring-4 ring-white/70">
             <Play className="h-5 w-5 fill-current" />
           </span>
           <p className="mt-4 text-base font-black">참고 영상 링크</p>
@@ -87,7 +106,7 @@ export function LessonPreviewMedia({
   } else if (heroImage) {
     media = (
       <>
-        <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-indigo-50 to-slate-100 text-indigo-600">
+        <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[var(--spm-acc-glow)] to-slate-100 text-[var(--spm-acc)]">
           <CategoryIcon category={getLessonTheme(program) || '체육 수업'} size={48} />
         </div>
         <CoverImage src={heroImage} alt={title} sizes="(min-width: 1024px) 1250px, 100vw" className="object-cover" />

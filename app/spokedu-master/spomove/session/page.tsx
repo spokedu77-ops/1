@@ -114,7 +114,7 @@ function OfficialEngineBriefing({
     >
       <section className="w-full max-w-[880px] rounded-[28px] border border-white/10 bg-white/[0.06] shadow-[0_28px_90px_rgba(0,0,0,0.38)] backdrop-blur-xl">
         <div className="border-b border-white/10 bg-white/[0.04] px-5 py-4 sm:px-7">
-          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-200/70">SPOMOVE official preset</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[color-mix(in_srgb,var(--spm-acc)_55%,white)]">SPOMOVE 공식 활동</p>
           <h1 className={`mt-2 font-black leading-tight text-white ${isMobile ? 'text-[26px]' : 'text-[30px] sm:text-[44px]'}`}>{display.displayTitle}</h1>
           <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/58">{preset.description}</p>
         </div>
@@ -122,7 +122,7 @@ function OfficialEngineBriefing({
         <div className={`grid gap-3 p-5 sm:gap-4 sm:p-7 ${isMobile ? 'grid-cols-1 min-[360px]:grid-cols-2' : 'sm:grid-cols-4'}`}>
           {facts.map(({ icon: Icon, label, value }) => (
             <div key={label} className="rounded-2xl border border-white/10 bg-black/20 p-4">
-              <Icon className="h-4 w-4 text-indigo-200" />
+              <Icon className="h-4 w-4 text-[color-mix(in_srgb,var(--spm-acc)_70%,white)]" />
               <p className="mt-3 text-[10px] font-black uppercase tracking-[0.14em] text-white/34">{label}</p>
               <p className="mt-1 line-clamp-2 text-sm font-black text-white">{value}</p>
             </div>

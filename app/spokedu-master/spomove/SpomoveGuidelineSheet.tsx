@@ -3,7 +3,9 @@
 import Link from 'next/link';
 
 import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
+import { TrackedVideoIframe } from '../components/lesson/TrackedVideoIframe';
 import { BottomSheet } from '../components/ui/BottomSheet';
+import { getVideoThumbnail } from '../lib/program-media';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 import { officialPresetSessionHref } from './officialSpomovePresets';
 import { SpomovePadLayoutView } from './SpomovePadLayoutView';
@@ -19,15 +21,17 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
     );
   }
 
+  const posterUrl = getVideoThumbnail(videoUrl);
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black">
       <div className="aspect-video">
-        <iframe
+        <TrackedVideoIframe
           src={embed.embedUrl}
           title="SPOMOVE 가이드 영상"
           className="h-full w-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
+          posterUrl={posterUrl}
+          deferUntilPlay
         />
       </div>
     </div>
@@ -70,13 +74,13 @@ export function SpomoveGuidelineSheet({
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href={startHref}
-              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-black text-white"
+              className="inline-flex h-11 flex-1 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
             >
               큰 화면 실행
             </Link>
             <Link
               href={mobileStartHref}
-              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-black text-indigo-700"
+              className="inline-flex h-11 flex-1 items-center justify-center rounded-[10px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] px-4 text-[13px] font-black text-[var(--spm-acc)]"
             >
               이 기기에서 실행
             </Link>
@@ -84,7 +88,7 @@ export function SpomoveGuidelineSheet({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-black text-slate-700"
+            className="inline-flex h-11 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-700"
           >
             닫기
           </button>

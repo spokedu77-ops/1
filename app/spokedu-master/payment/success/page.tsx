@@ -209,13 +209,13 @@ function SuccessContent() {
           </div>
         </dl>
         <div className="grid gap-3">
-          <Link href="/spokedu-master/library" className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
             첫 수업 고르기
           </Link>
-          <Link href="/spokedu-master/subscription" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-master/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             구독 관리
           </Link>
-          <Link href="/spokedu-master/dashboard" className="flex h-11 items-center justify-center rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+          <Link href="/spokedu-master/dashboard" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
             홈으로
           </Link>
         </div>

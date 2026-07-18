@@ -37,6 +37,7 @@ import { useNoteTextDragActive } from '../../_hooks/useNoteTextDragActive';
 import type { NotePageContextValue } from '../../_page/NotePageContext';
 import { NoteWorkspaceHome } from './NoteWorkspaceHome';
 import { NotePageFindBar } from './NotePageFindBar';
+import { NoteBlockLoadSkeleton } from './NoteBlockLoadSkeleton';
 
 type NoteEditorPanelProps = Pick<
   NotePageContextValue,
@@ -214,6 +215,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   titleInputRef,
   handleRenameDocument,
   setSelectedBlockIds,
+  loadingBlocks,
   blocks,
   selectedBlockIds,
   handleBlockSelect,
@@ -337,6 +339,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
                 <button
                   type="button"
                   onClick={() => setShowPageMenu((v) => !v)}
+                  data-note-page-menu-button
                   className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
                   aria-label="페이지 메뉴"
                 >
@@ -346,6 +349,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
                   <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-lg border border-neutral-200 bg-white py-1 shadow-lg">
                     <button
                       type="button"
+                      data-note-create-subpage
                       className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-neutral-700 hover:bg-neutral-50"
                       onClick={() => {
                         setShowPageMenu(false);
@@ -602,20 +606,26 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
             </div>
           )}
 
-          <NoteBlockCanvas
-            selectedId={selectedId}
-            rootBlocks={rootBlocks}
-            selectedBlockIds={selectedBlockIds}
-            handleBlockSelect={handleBlockSelect}
-            suppressGripMenuRef={suppressGripMenuRef}
-            marqueeOverlayRef={marqueeOverlayRef}
-            handleBlockListPointerDown={handleBlockListPointerDown}
-            allSortableBlockIds={allSortableBlockIds}
-            activeBlockId={activeBlockId}
-            blockMarqueeActive={blockMarqueeActive}
-            renderSortableBlock={renderSortableBlock}
-            editorScrollRef={editorScrollRef}
-          />
+          {loadingBlocks ? (
+            <div className={NOTE_PAGE_SHELL}>
+              <NoteBlockLoadSkeleton />
+            </div>
+          ) : (
+            <NoteBlockCanvas
+              selectedId={selectedId}
+              rootBlocks={rootBlocks}
+              selectedBlockIds={selectedBlockIds}
+              handleBlockSelect={handleBlockSelect}
+              suppressGripMenuRef={suppressGripMenuRef}
+              marqueeOverlayRef={marqueeOverlayRef}
+              handleBlockListPointerDown={handleBlockListPointerDown}
+              allSortableBlockIds={allSortableBlockIds}
+              activeBlockId={activeBlockId}
+              blockMarqueeActive={blockMarqueeActive}
+              renderSortableBlock={renderSortableBlock}
+              editorScrollRef={editorScrollRef}
+            />
+          )}
         </div>
       )}
     </div>

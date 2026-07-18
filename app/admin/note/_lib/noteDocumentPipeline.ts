@@ -25,6 +25,11 @@ import {
   traceSnapshotDecision,
   type SnapshotTraceOrigin,
 } from './noteFlickerTrace';
+import {
+  applyNoteEmergencyDrafts,
+  clearNoteEmergencyDrafts,
+  saveNoteEmergencyDraft,
+} from './noteEmergencyDrafts';
 
 import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import type { NoteBlock } from './types';
@@ -138,6 +143,7 @@ export class NoteDocumentPipeline {
       getActiveBlockId: () => useNoteBlockStore.getState().activeEditor?.blockId ?? null,
       triggerSave: () => this.callbacks.triggerSave(),
       onError: (error) => this.callbacks.onError?.(error),
+      onContentPersisted: (blockIds) => clearNoteEmergencyDrafts(this.documentId, blockIds),
       persistViaOpLog: this.coordinator
         ? (op, options) => this.coordinator!.enqueuePersistOp(op, options)
         : undefined,
@@ -206,6 +212,7 @@ export class NoteDocumentPipeline {
     const next = useNoteBlockStore.getState().getBlocksArray();
     const forDoc = blocksForDocument(next, this.documentId);
     this.coordinator?.setBlocks(forDoc.length > 0 ? forDoc : next);
+    saveNoteEmergencyDraft(this.documentId, blockId, nextContent);
   }
 
   clearContentPatch(blockId: string): void {
@@ -230,7 +237,8 @@ export class NoteDocumentPipeline {
     const blocks = await coordinator.hydrateFromLocal();
     if (this.disposed || this.coordinator !== coordinator) return null;
     if (!blocks || blocks.length === 0) return null;
-    return this.dispatch({ type: 'hydrate', blocks });
+    const recovered = this.applyEmergencyDrafts(blocks);
+    return this.dispatch({ type: 'hydrate', blocks: recovered });
   }
 
   async syncWithServer(
@@ -256,11 +264,11 @@ export class NoteDocumentPipeline {
     }
     const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
-    const blocks = this.blocksWithStoreContent(
+    const blocks = this.applyEmergencyDrafts(this.blocksWithStoreContent(
       options?.emptyConfirmed
         ? initialBlocks.filter((block) => block.document_id === this.documentId)
         : coordinator.getBlocks(),
-    );
+    ));
     if (storeForDoc.length === 0 || options?.emptyConfirmed) {
       const reason = describeSnapshotDiff(
         options?.emptyConfirmed ? storeForDoc : [],
@@ -380,6 +388,18 @@ export class NoteDocumentPipeline {
 
   private syncPendingFlag(): void {
     setNoteContentSavePending(this.queue?.hasPendingContent ?? false);
+  }
+
+  private applyEmergencyDrafts(blocks: NoteBlock[]): NoteBlock[] {
+    const { blocks: recoveredBlocks, recovered } = applyNoteEmergencyDrafts(this.documentId, blocks);
+    for (const draft of recovered) {
+      this.queue?.scheduleContentPatch(draft.blockId, draft.content);
+    }
+    if (recovered.length > 0) {
+      this.syncPendingFlag();
+      this.coordinator?.setBlocks(recoveredBlocks);
+    }
+    return recoveredBlocks;
   }
 
   async dispose(): Promise<void> {

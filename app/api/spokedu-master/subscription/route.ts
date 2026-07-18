@@ -9,6 +9,33 @@ import {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+async function hasUnresolvedRenewalFailure(userId: string): Promise<boolean> {
+  const service = getServiceSupabase();
+  const { data: failed } = await service
+    .from('spokedu_master_payment_orders')
+    .select('updated_at')
+    .eq('user_id', userId)
+    .eq('status', 'failed')
+    .eq('last_error_code', 'renewal_payment_failed')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!failed?.updated_at) return false;
+
+  const { data: succeeded } = await service
+    .from('spokedu_master_payment_orders')
+    .select('updated_at')
+    .eq('user_id', userId)
+    .eq('status', 'active')
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!succeeded?.updated_at) return true;
+  return new Date(failed.updated_at).getTime() > new Date(succeeded.updated_at).getTime();
+}
+
 export async function GET() {
   const supabase = await createServerSupabaseClient();
   const {
@@ -21,6 +48,7 @@ export async function GET() {
       status: 'none',
       isAdmin: false,
       canCancelAutoBilling: false,
+      billingRenewalFailed: false,
     });
   }
 
@@ -35,6 +63,7 @@ export async function GET() {
       trialEndsAt: null,
       periodEnd: null,
       canCancelAutoBilling: false,
+      billingRenewalFailed: false,
     });
   }
 
@@ -60,6 +89,7 @@ export async function GET() {
       trialEndsAt: null,
       periodEnd: null,
       canCancelAutoBilling: false,
+      billingRenewalFailed: false,
     });
   }
 
@@ -68,6 +98,10 @@ export async function GET() {
     (row.plan === 'lite' || row.plan === 'premium' || row.plan === 'pro') &&
     row.cancel_at_period_end !== true &&
     Boolean(row.provider_billing_key_secret_id);
+
+  const billingRenewalFailed = canCancelAutoBilling
+    ? await hasUnresolvedRenewalFailure(user.id)
+    : false;
 
   const common = {
     isAdmin: false,
@@ -80,6 +114,7 @@ export async function GET() {
     nextBillingAt: row.next_billing_at ?? null,
     currentPeriodEnd: row.current_period_end ?? null,
     canCancelAutoBilling,
+    billingRenewalFailed,
   };
 
   const entitlement = evaluateSpokeduMasterEntitlement(row);
@@ -98,6 +133,7 @@ export async function GET() {
       plan: entitlement.plan,
       status: entitlement.status,
       trialEndsAt: null,
+      billingRenewalFailed: false,
     });
   }
 
@@ -105,5 +141,6 @@ export async function GET() {
     ...common,
     plan: 'free',
     status: entitlement.status,
+    billingRenewalFailed: false,
   });
 }

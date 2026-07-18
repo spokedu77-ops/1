@@ -19,7 +19,7 @@ type MonthlyRecordCardProps = {
 
 export function MonthlyRecordCard({ record, mediaKey, cardVariant = 'image' }: MonthlyRecordCardProps) {
   const detailHref = `/spokedu/monthly/${record.slug}`;
-  const primaryCase = record.relatedCases.find((l) => /\/cases\/[^/]+$/.test(l.href));
+  const relatedHint = record.relatedCases[0];
 
   return (
     <Link
@@ -45,9 +45,9 @@ export function MonthlyRecordCard({ record, mediaKey, cardVariant = 'image' }: M
           {record.movementPoints.slice(0, 2).join(' · ')}
         </p>
         <p className="mt-0.5 line-clamp-1 text-xs text-slate-600">{record.educationPoints[0]}</p>
-        {primaryCase ? (
+        {relatedHint ? (
           <p className="mt-auto pt-2.5 text-[11px] font-medium text-slate-500 line-clamp-1">
-            관련 사례 · {primaryCase.label}
+            관련 · {relatedHint.label}
           </p>
         ) : null}
         <span className={`inline-flex pt-2 text-xs font-semibold text-slate-900 sm:text-sm ${fineHover}group-hover:text-indigo-700`}>

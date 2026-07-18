@@ -115,9 +115,9 @@ export const homePage = {
         trackLabel: 'cta-home-hero-quick-private',
       },
       {
-        label: 'SPOMOVE 도입',
-        href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
-        trackLabel: 'cta-home-hero-quick-spomove',
+        label: '지도자·커리큘럼',
+        href: `${SPOKEDU_BASE_PATH}/curriculum`,
+        trackLabel: 'cta-home-hero-quick-curriculum',
       },
     ] as const satisfies readonly HomeHeroQuickLink[],
     mediaCaption: {
@@ -128,17 +128,18 @@ export const homePage = {
   proofStrip: {
     id: 'proof',
     items: [
-      '2020년부터 직접 운영',
-      '체육교육 전공 운영진',
-      '기관·개인·특수체육 수업 경험',
+      '직접 수업 운영',
+      '기관 맞춤 프로그램 설계',
+      'SPOMOVE 자체 개발',
+      '지도자 세미나·커리큘럼 제공',
     ] as const,
     processLine:
-      '현장 수업 → 아이 반응 관찰 → 프로그램 표준화 → 기관별 운영안 제안' as const,
+      '현장 수업 → 과정 설계 → 프로그램 표준화 → 지도자 교육·기관 운영안' as const,
   },
   audienceGate: {
     id: 'paths',
     title: '어떤 수업이 필요하신가요?',
-    lead: '기관 담당자, 학부모, 협업 담당자가 처음 확인해야 할 내용을 나눠 정리했습니다.',
+    lead: '아이에게 다양한 체육 경험, 기관 맞춤 프로그램, SPOMOVE·지도자 교육까지 목적에 맞게 나눠 안내합니다.',
     items: [
       {
         id: 'dispatch',
@@ -150,7 +151,7 @@ export const homePage = {
         ctaLabel: '기관 운영안 보기',
         href: `${SPOKEDU_BASE_PATH}/dispatch`,
         trackLabel: 'cta-home-gate-dispatch',
-        mediaKey: 'proofYangcheon',
+        mediaKey: 'trackDispatch',
       },
       {
         id: 'private',
@@ -162,19 +163,19 @@ export const homePage = {
         ctaLabel: '개인수업 보기',
         href: `${SPOKEDU_BASE_PATH}/private`,
         trackLabel: 'cta-home-gate-private',
-        mediaKey: 'homeHero',
+        mediaKey: 'trackPrivate',
       },
       {
         id: 'curriculum',
-        badge: '도입·협업용',
-        title: 'SPOMOVE·커리큘럼 도입',
-        description: '스크린 반응활동과 수업안을 기관 운영 흐름에 맞춰 적용합니다.',
-        fit: 'SPOMOVE 활동, 수업안, 강사교육을 기관 프로그램 안에 넣고 싶을 때',
-        bullets: ['SPOMOVE', '커리큘럼', '강사교육'] as const,
-        ctaLabel: '도입 방식 보기',
+        badge: '지도자·협업용',
+        title: '커리큘럼·지도자 교육',
+        description: '수업안·운영 매뉴얼·SPOMOVE 도입 교육으로 현장 기준을 함께 만듭니다.',
+        fit: '강사 교육, 수업안, 기관 컨설팅, SPOMOVE 도입이 필요할 때',
+        bullets: ['지도자 교육', '수업안·매뉴얼', 'SPOMOVE 도입'] as const,
+        ctaLabel: '교육·콘텐츠 보기',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-gate-curriculum',
-        mediaKey: 'gateCurriculum',
+        mediaKey: 'programSpomove',
       },
     ] satisfies HomeAudienceGateItem[],
   },
@@ -199,7 +200,7 @@ export const homePage = {
       { title: '원데이 행사', body: '짧은 시간에도 규칙 이해와 참여 몰입이 빠르게 만들어집니다.' },
       { title: '통합반·느린 학습자', body: '속도와 신호 난이도를 조절해 각자 성공 경험을 만들 수 있습니다.' },
     ] as const satisfies readonly HomeSpomoveUseCase[],
-    mediaKey: 'trackDispatch' as HomeMediaKey,
+    mediaKey: 'programSpomove' as HomeMediaKey,
     primaryCta: {
       label: 'SPOMOVE 자세히 보기',
       href: `${SPOKEDU_BASE_PATH}/programs/spomove`,
@@ -250,7 +251,7 @@ export const homePage = {
         trackLabel: 'cta-home-final-private',
       },
       {
-        label: '커리큘럼·협업 문의',
+        label: '지도자 교육·커리큘럼',
         href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
         trackLabel: 'cta-home-final-curriculum',
       },

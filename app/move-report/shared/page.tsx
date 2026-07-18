@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import MoveReportSharedContent from './MoveReportSharedContent';
 import { parseMoveReportSharePayload } from '../lib/shareLink';
 import { getMoveReportMetadataBaseUrl } from '../lib/siteUrl';
-import { P } from '../data/profiles';
+import { getProfiles } from '../data/catalog';
 
 /** 매 요청마다 Host 기준으로 og:url·og:image 절대 경로를 잡기 (크롤러 미리보기 깨짐 방지) */
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
   const payload = !parsed
     ? null
     : (() => {
-        const profile = P[parsed.profileKey];
+        const profile = getProfiles('ko')[parsed.profileKey];
         if (!profile) return null;
         const name = parsed.displayName || '우리 아이';
         return {
@@ -38,7 +38,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     ? (() => {
         const line = `「${payload.profileName}」${payload.catchcopy}`.replace(/\s+/g, ' ').trim();
         const clipped = line.length > 118 ? `${line.slice(0, 115)}…` : line;
-        return `${payload.name}의 움직임 성향 — ${clipped} 나도 MOVE REPORT를 시작해 보세요.`;
+        return `${payload.name}의 움직임 성향 — ${clipped} 다른 친구 성향도 확인해 보세요.`;
       })()
     : '공유받은 MOVE REPORT 카드를 열거나, 새로 테스트를 시작해 보세요.';
   const baseUrl = await getMoveReportMetadataBaseUrl();
@@ -83,7 +83,7 @@ function SharedFallback() {
 export default function MoveReportSharedPage() {
   return (
     <Suspense fallback={<SharedFallback />}>
-      <MoveReportSharedContent />
+      <MoveReportSharedContent locale="ko" />
     </Suspense>
   );
 }

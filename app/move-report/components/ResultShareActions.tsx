@@ -2,18 +2,22 @@
 
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
+import { getMoveReportUi } from '../i18n/ui';
 import { copyTextToClipboard } from '../lib/shareCard';
 import { getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
 import { trackMoveReportEvent } from '../lib/events';
+import type { MoveReportLocale } from '../lib/locale';
 import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from '../lib/shareLink';
 import EducatorBetaModal from './EducatorBetaModal';
 
 export interface ResultShareActionsProps {
   profileKey: string;
   graphCode: string;
+  displayName: string;
   flash: (msg: string) => void;
   /** false면 교육자 섹션(선생님 링크·베타) 미렌더 — 코치/shared 유입 등 */
   showEducatorCta?: boolean;
+  locale?: MoveReportLocale;
 }
 
 function extractShareKey(shareUrl: string): string | null {
@@ -25,20 +29,34 @@ function extractShareKey(shareUrl: string): string | null {
   }
 }
 
-export default function ResultShareActions({ profileKey, graphCode, flash, showEducatorCta = false }: ResultShareActionsProps) {
+export default function ResultShareActions({
+  profileKey,
+  graphCode,
+  displayName,
+  flash,
+  showEducatorCta = false,
+  locale = 'ko',
+}: ResultShareActionsProps) {
+  const ui = useMemo(() => getMoveReportUi(locale), [locale]);
+  const t = ui.share;
   const [copyBusy, setCopyBusy] = useState(false);
   const [educatorModalOpen, setEducatorModalOpen] = useState(false);
+  const ownerLabel = displayName.trim() || (locale === 'en' ? 'Your child' : '우리 아이');
 
   const shareUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     /** 공유 URL에는 실명을 넣지 않음(v5 포맷·파서 유지, displayName 생략으로 짧은 링크만 사용) */
-    const built = buildMoveReportShareUrl(window.location.origin, {
-      v: 5,
-      profileKey,
-      graphCode,
-    });
+    const built = buildMoveReportShareUrl(
+      window.location.origin,
+      {
+        v: 5,
+        profileKey,
+        graphCode,
+      },
+      { locale }
+    );
     return appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
-  }, [profileKey, graphCode]);
+  }, [profileKey, graphCode, locale]);
 
   const shareKey = useMemo(() => extractShareKey(shareUrl), [shareUrl]);
 
@@ -46,13 +64,13 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
     if (!shareUrl) return false;
     const ok = await copyTextToClipboard(shareUrl);
     if (ok) {
-      flash('링크가 복사되었어요');
-      void trackMoveReportEvent({ eventName: 'move_report_result_link_copied', shareKey });
+      flash(t.copied);
+      void trackMoveReportEvent({ eventName: 'move_report_result_link_copied', shareKey, meta: { locale } });
     } else {
-      flash('복사에 실패했어요. 링크를 길게 눌러 직접 복사해 보세요.');
+      flash(t.copyFail);
     }
     return ok;
-  }, [flash, shareKey, shareUrl]);
+  }, [flash, locale, shareKey, shareUrl, t.copied, t.copyFail]);
 
   const onCopyLinkClick = useCallback(async () => {
     if (!shareUrl || copyBusy) return;
@@ -66,8 +84,8 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
 
   const onOpenResultCardClick = useCallback(() => {
     if (!shareUrl) return;
-    void trackMoveReportEvent({ eventName: 'move_report_result_card_opened', shareKey });
-  }, [shareKey, shareUrl]);
+    void trackMoveReportEvent({ eventName: 'move_report_result_card_opened', shareKey, meta: { locale } });
+  }, [locale, shareKey, shareUrl]);
 
   const onEducatorCoachClick = useCallback(() => {
     void trackMoveReportEvent({ eventName: 'move_report_educator_entry_clicked', shareKey });
@@ -77,11 +95,9 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
     <div className="mr-result-share-root" style={{ position: 'relative' }}>
       <section className="mr-result-share-parent" aria-labelledby="mr-result-share-parent-title">
         <h2 id="mr-result-share-parent-title" className="mr-result-share-lead-title">
-          결과를 공유해보세요
+          {t.leadTitle(ownerLabel)}
         </h2>
-        <p className="mr-result-share-lead-body">
-          아이의 움직임 성향을 가볍게 공유하고, 주변 아이들은 어떤 유형인지 함께 확인해보세요.
-        </p>
+        <p className="mr-result-share-lead-body">{t.leadBody(ownerLabel)}</p>
         <div className="mr-result-share-actions">
           {shareUrl ? (
             <a
@@ -92,12 +108,12 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
               onClick={onOpenResultCardClick}
             >
               <i className="fa-regular fa-image" aria-hidden />
-              결과 카드 보기
+              {t.openCard}
             </a>
           ) : (
             <button type="button" className="btn-fire mr-result-share-btn mr-result-share-btn--primary" disabled>
               <i className="fa-regular fa-image" aria-hidden />
-              결과 카드 보기
+              {t.openCard}
             </button>
           )}
           <button
@@ -107,7 +123,7 @@ export default function ResultShareActions({ profileKey, graphCode, flash, showE
             disabled={!shareUrl || copyBusy}
           >
             <i className="fa-regular fa-copy" aria-hidden />
-            {copyBusy ? '복사 중…' : '링크 복사'}
+            {copyBusy ? t.copying : t.copyLink}
           </button>
         </div>
       </section>
