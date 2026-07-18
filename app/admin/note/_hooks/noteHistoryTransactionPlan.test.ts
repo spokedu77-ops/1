@@ -1,0 +1,190 @@
+import { describe, expect, it } from 'vitest';
+import { buildHistoryTransactionPlan } from './noteHistoryTransactionPlan';
+import type { NoteBlock } from '../_lib/types';
+
+function block(
+  id: string,
+  overrides: Partial<NoteBlock> = {},
+): NoteBlock {
+  return {
+    id,
+    document_id: 'source',
+    type: 'text',
+    content: { text: id },
+    parent_block_id: null,
+    order_index: 0,
+    created_at: '',
+    updated_at: '',
+    ...overrides,
+  };
+}
+
+describe('buildHistoryTransactionPlan', () => {
+  it('plans undo patches that preserve todo, toggle-child, and page-link contracts', () => {
+    const current = [
+      block('todo', {
+        document_id: 'target',
+        type: 'todo',
+        content: { text: '7.20 월요일 11시 강승현 면접', checked: true },
+        order_index: 0,
+      }),
+      block('toggle', {
+        document_id: 'target',
+        type: 'toggle',
+        content: { title: 'P0 핵심 과제', collapsed: true },
+        order_index: 1,
+      }),
+      block('toggle-child', {
+        document_id: 'target',
+        parent_block_id: 'toggle',
+        content: { text: '토글 자식 내용', html: '<p>토글 자식 내용</p>' },
+        order_index: 0,
+      }),
+      block('page-link', {
+        document_id: 'source',
+        type: 'page',
+        content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+        order_index: 2,
+      }),
+    ];
+    const target = current.map((item) => ({
+      ...item,
+      document_id: 'source',
+      parent_block_id: item.id === 'toggle-child' ? 'toggle' : null,
+    }));
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.deleteIds).toEqual([]);
+    expect(plan.restoreRoots).toEqual([]);
+    expect(plan.fieldPatches).toEqual([
+      expect.objectContaining({
+        id: 'todo',
+        document_id: 'source',
+        type: 'todo',
+        content: { text: '7.20 월요일 11시 강승현 면접', checked: true },
+      }),
+      expect.objectContaining({
+        id: 'toggle',
+        document_id: 'source',
+        type: 'toggle',
+        content: { title: 'P0 핵심 과제', collapsed: true },
+      }),
+      expect.objectContaining({
+        id: 'toggle-child',
+        document_id: 'source',
+        parent_block_id: 'toggle',
+        content: { text: '토글 자식 내용', html: '<p>토글 자식 내용</p>' },
+      }),
+      expect.objectContaining({
+        id: 'page-link',
+        document_id: 'source',
+        type: 'page',
+        content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      }),
+    ]);
+  });
+
+  it('restores only missing forest roots so toggle children are restored with their parent', () => {
+    const current = [block('outside')];
+    const target = [
+      block('outside'),
+      block('toggle', { type: 'toggle', content: { title: 'P0' } }),
+      block('child', { parent_block_id: 'toggle', content: { text: 'inside' } }),
+    ];
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.restoreRoots.map((item) => item.id)).toEqual(['toggle']);
+    expect(plan.fieldPatches.map((item) => item.id)).toEqual(['outside', 'toggle', 'child']);
+  });
+
+  it('deletes removed subtrees as a forest within the transaction scope', () => {
+    const current = [
+      block('toggle', { type: 'toggle', content: { title: 'remove' } }),
+      block('child', { parent_block_id: 'toggle', content: { text: 'remove child' } }),
+      block('keep', { order_index: 1 }),
+    ];
+    const target = [block('keep', { order_index: 0 })];
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.deleteIds).toEqual(['toggle', 'child']);
+    expect(plan.fieldPatches).toEqual([
+      expect.objectContaining({ id: 'keep', order_index: 0 }),
+    ]);
+  });
+
+  it('uses the same page-link delete contract as direct deletion', () => {
+    const current = [
+      block('page-link', {
+        type: 'page',
+        content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      }),
+      block('misplaced-child', {
+        parent_block_id: 'page-link',
+        content: { text: 'must not be deleted through page link deletion' },
+      }),
+      block('keep', { order_index: 1 }),
+    ];
+    const target = [
+      block('misplaced-child', {
+        parent_block_id: 'page-link',
+        content: { text: 'must not be deleted through page link deletion' },
+      }),
+      block('keep', { order_index: 0 }),
+    ];
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.deleteIds).toEqual(['page-link']);
+    expect(plan.fieldPatches.map((patch) => patch.id)).toEqual(['misplaced-child', 'keep']);
+  });
+
+  it('plans undo for mixed structural paste without dropping anchor metadata', () => {
+    const current = [
+      block('anchor', {
+        type: 'toggle',
+        content: { title: 'P0 핵심 과제', collapsed: true },
+      }),
+      block('pasted-todo', {
+        type: 'todo',
+        parent_block_id: 'anchor',
+        content: { text: '7.20 강승현 면접', checked: false },
+      }),
+      block('pasted-page', {
+        type: 'page',
+        order_index: 1,
+        content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      }),
+    ];
+    const target = [
+      block('anchor', {
+        type: 'callout',
+        content: {
+          text: '원래 콜아웃',
+          html: '<p>원래 콜아웃</p>',
+          icon: '!',
+          blockColor: 'yellow',
+        },
+      }),
+    ];
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.deleteIds).toEqual(['pasted-todo', 'pasted-page']);
+    expect(plan.restoreRoots).toEqual([]);
+    expect(plan.fieldPatches).toEqual([
+      expect.objectContaining({
+        id: 'anchor',
+        type: 'callout',
+        content: {
+          text: '원래 콜아웃',
+          html: '<p>원래 콜아웃</p>',
+          icon: '!',
+          blockColor: 'yellow',
+        },
+      }),
+    ]);
+  });
+});

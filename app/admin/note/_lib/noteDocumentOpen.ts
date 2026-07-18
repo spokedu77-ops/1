@@ -9,7 +9,6 @@ import {
   rememberNoteDocumentBlocks,
 } from './noteDocumentBlocksCache';
 import {
-  documentContentAheadOfSnapshot,
   mergeBlocksWithStoreContent,
 } from './noteBlockStateMerge';
 import { shouldKeepLocalOverEmptyServerAuthority } from './noteAuthority';
@@ -117,14 +116,6 @@ export async function applyOpenServerSnapshot(
       toggleMigration,
     );
   }
-  if (documentContentAheadOfSnapshot(localBeforeSync, serverForDoc)) {
-    return finishOpenWithLocalBlocks(
-      documentId,
-      localBeforeSync,
-      toggleMigration,
-    );
-  }
-
   const emptyConfirmed = serverForDoc.length === 0
     && !shouldKeepLocalOverEmptyServer(localBeforeSync, serverForDoc, documentId);
 
@@ -205,15 +196,6 @@ export async function openNoteDocument(
     const local = readLocalBlocksForOpen(documentId);
     const { toggleMigration } = prepareLoadedNoteBlocks(serverBlocks);
     return finishOpenWithLocalBlocks(documentId, local, toggleMigration);
-  }
-
-  const localBeforeApply = readLocalBlocksForOpen(documentId);
-  const serverForDoc = dedupeNoteBlocksById(
-    prepareLoadedNoteBlocks(serverBlocks).blocks,
-  ).filter((block) => block.document_id === documentId);
-  if (documentContentAheadOfSnapshot(localBeforeApply, serverForDoc)) {
-    const { toggleMigration } = prepareLoadedNoteBlocks(serverBlocks);
-    return finishOpenWithLocalBlocks(documentId, localBeforeApply, toggleMigration);
   }
 
   return applyOpenServerSnapshot(documentId, serverBlocks, engine);

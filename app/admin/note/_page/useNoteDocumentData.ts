@@ -166,7 +166,10 @@ export function useNoteDocumentData(options: {
         }
 
         const urlDocId = searchParams.get('id');
-        const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
+        const bootstrapPath = urlDocId
+          ? `/api/admin/note/bootstrap?documentId=${encodeURIComponent(urlDocId)}`
+          : '/api/admin/note/bootstrap';
+        const res = await fetch(bootstrapPath, { credentials: 'include' });
         if (!res.ok) {
           const j = await res.json().catch(() => null);
           throw new Error(j?.error || '문서 목록을 불러오지 못했습니다.');

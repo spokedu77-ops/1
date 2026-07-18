@@ -78,6 +78,57 @@ describe('note block commands', () => {
     expect(blocks).toHaveLength(4);
   });
 
+  it('deletes a todo block as a single durable user deletion', () => {
+    const blocks = [
+      { ...block('todo', 0), type: 'todo', content: { text: '7.20 강승현 면접', checked: false } },
+      block('other', 1),
+    ];
+
+    const command = buildDeleteBlockForestCommand(blocks, ['todo']);
+
+    expect(command.affectedIds).toEqual(['todo']);
+    expect(command.removedBlocks).toEqual([blocks[0]]);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
+  });
+
+  it('deletes a toggle with its full child forest', () => {
+    const blocks = [
+      { ...block('toggle', 0), type: 'toggle', content: { title: 'P0', collapsed: true } },
+      { ...block('todo-child', 0, 'toggle'), type: 'todo', content: { text: 'OT', checked: false } },
+      block('nested', 0, 'todo-child'),
+      block('other', 1),
+    ];
+
+    const command = buildDeleteBlockForestCommand(blocks, ['toggle']);
+
+    expect(command.affectedIds).toEqual(['toggle', 'todo-child', 'nested']);
+    expect(command.removedBlocks.map((item) => item.id)).toEqual(['toggle', 'todo-child', 'nested']);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
+  });
+
+  it('deletes only the page link block, never the linked document content', () => {
+    const page: NoteBlock = {
+      ...block('page-link', 0),
+      type: 'page',
+      content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+    };
+    const childDocBlock: NoteBlock = {
+      ...block('child-doc-block', 0),
+      document_id: 'child-doc-1',
+      content: { text: '하위문서 본문' },
+    };
+    const other = block('other', 1);
+
+    const command = buildDeleteBlockForestCommand(
+      [page, childDocBlock, other],
+      ['page-link'],
+    );
+
+    expect(command.affectedIds).toEqual(['page-link']);
+    expect(command.removedBlocks).toEqual([page]);
+    expect(command.nextBlocks.map((item) => item.id)).toEqual(['child-doc-block', 'other']);
+  });
+
   it('inserts a block among siblings and normalizes only that sibling list', () => {
     const blocks = [
       block('a', 0),

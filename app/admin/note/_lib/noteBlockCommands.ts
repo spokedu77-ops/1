@@ -11,6 +11,7 @@ import {
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
+import { allowsLocalChildBlocks } from './noteBlockSemantics';
 import type { NoteBlock } from './types';
 
 export type NoteBlockCommandResult = {
@@ -31,6 +32,33 @@ function emptyCommandResult(blocks: NoteBlock[]): NoteBlockCommandResult {
     createdBlocks: [],
     removedBlocks: [],
   };
+}
+
+export function collectDeletableBlockForestIds(
+  rootIds: Iterable<string>,
+  blocks: NoteBlock[],
+): string[] {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  const childrenByParent = new Map<string, NoteBlock[]>();
+  for (const block of blocks) {
+    const parentId = block.parent_block_id ?? null;
+    if (!parentId) continue;
+    const siblings = childrenByParent.get(parentId) ?? [];
+    siblings.push(block);
+    childrenByParent.set(parentId, siblings);
+  }
+
+  const result = new Set<string>();
+  const visit = (id: string) => {
+    const block = byId.get(id);
+    if (!block || result.has(id)) return;
+    result.add(id);
+    if (!allowsLocalChildBlocks(block)) return;
+    for (const child of childrenByParent.get(id) ?? []) visit(child.id);
+  };
+
+  for (const id of rootIds) visit(id);
+  return [...result];
 }
 
 function contentsEqual(left: unknown, right: unknown): boolean {
@@ -196,7 +224,7 @@ export function buildDeleteBlockForestCommand(
   blocks: NoteBlock[],
   rootIds: Iterable<string>,
 ): NoteBlockCommandResult {
-  const affectedIds = collectBlockForestIds(rootIds, blocks);
+  const affectedIds = collectDeletableBlockForestIds(rootIds, blocks);
   if (affectedIds.length === 0) return emptyCommandResult(blocks);
 
   const deleteSet = new Set(affectedIds);

@@ -321,6 +321,21 @@ describe('handleNotionPageBlockKeyDown', () => {
     )).toBe(true);
     expect(openPage).toHaveBeenCalledOnce();
   });
+
+  it('Backspace and Delete delete the page link through the block delete contract', () => {
+    const openPage = vi.fn();
+    const deletePageLink = vi.fn();
+    expect(handleNotionPageBlockKeyDown(
+      { key: 'Backspace', shiftKey: false },
+      { isFocused: true, openPage, deletePageLink },
+    )).toBe(true);
+    expect(handleNotionPageBlockKeyDown(
+      { key: 'Delete', shiftKey: false },
+      { isFocused: true, openPage, deletePageLink },
+    )).toBe(true);
+    expect(openPage).not.toHaveBeenCalled();
+    expect(deletePageLink).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('resolvePageBlockEnterAction', () => {

@@ -604,7 +604,11 @@ function BlockContent({
             openPage();
           }}
           onKeyDown={(e) => {
-            if (handleNotionPageBlockKeyDown(e, { isFocused, openPage })) {
+            if (handleNotionPageBlockKeyDown(e, {
+              isFocused,
+              openPage,
+              deletePageLink: onDelete,
+            })) {
               e.preventDefault();
             }
           }}

@@ -12,6 +12,22 @@ describe('mergeBlockContentWithStore', () => {
       { title: '', text: 'typed' },
     )).toEqual({ title: '제목', text: 'typed' });
   });
+  it('preserves protectable title and page link values over empty incoming content', () => {
+    expect(mergeBlockContentWithStore(
+      { title: '', page_document_id: '' },
+      { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+    )).toEqual({
+      title: '최지훈 업무노트 하위페이지',
+      page_document_id: 'child-doc-1',
+    });
+  });
+
+  it('does not overwrite a non-empty incoming title with store title', () => {
+    expect(mergeBlockContentWithStore(
+      { title: '서버 제목' },
+      { title: '로컬 제목' },
+    )).toEqual({ title: '서버 제목' });
+  });
 });
 
 describe('contentChangeNeedsReactBlocks', () => {

@@ -73,7 +73,8 @@ export type NotionToggleTitleBackspaceAction =
 
 /** 페이지 블록 키보드 결과 */
 export type NotionPageKeyAction =
-  | { kind: 'open-page' };
+  | { kind: 'open-page' }
+  | { kind: 'delete-page-link' };
 
 /** Shift+Enter — 같은 블록 안 줄바꿈 */
 export type NotionShiftEnterAction = { kind: 'hard-break' };
@@ -351,7 +352,7 @@ export function resolveListEmptyBackspaceAction(
 /** page 블록 Enter·Space — true면 이벤트를 처리했다 */
 export function handleNotionPageBlockKeyDown(
   event: Pick<KeyboardEvent, 'key' | 'shiftKey'>,
-  options: { isFocused: boolean; openPage: () => void },
+  options: { isFocused: boolean; openPage: () => void; deletePageLink?: () => void },
 ): boolean {
   if (event.key === 'Enter' && !event.shiftKey) {
     resolvePageBlockEnterAction();
@@ -360,6 +361,10 @@ export function handleNotionPageBlockKeyDown(
   }
   if (event.key === ' ' && options.isFocused) {
     options.openPage();
+    return true;
+  }
+  if ((event.key === 'Backspace' || event.key === 'Delete') && options.deletePageLink) {
+    options.deletePageLink();
     return true;
   }
   return false;

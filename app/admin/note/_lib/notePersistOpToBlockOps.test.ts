@@ -301,6 +301,50 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     expect(merged[0].content?.text).toBe('복구 본문');
   });
 
+  it('replaces stale local callout content with the newer server snapshot', () => {
+    const local: NoteBlock[] = [{
+      ...serverBlock('callout-1', ''),
+      type: 'callout',
+      content: { icon: 'i', text: '', html: '<p></p>' },
+      version: 1,
+      updated_at: '2026-07-18T06:31:05.000Z',
+    }];
+    const server: NoteBlock[] = [{
+      ...serverBlock('callout-1', 'server callout line 1\nserver callout line 2'),
+      type: 'callout',
+      content: {
+        icon: 'i',
+        text: 'server callout line 1\nserver callout line 2',
+        html: '<p>server callout line 1<br>server callout line 2</p>',
+      },
+      version: 2,
+      updated_at: '2026-07-18T06:32:11.000Z',
+    }];
+    const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set());
+    expect(merged[0].content?.text).toBe('server callout line 1\nserver callout line 2');
+    expect(merged[0].version).toBe(2);
+  });
+
+  it('keeps longer local callout text over an older server snapshot', () => {
+    const local: NoteBlock[] = [{
+      ...serverBlock('callout-1', 'longer local unsaved callout body'),
+      type: 'callout',
+      content: { icon: 'i', text: 'longer local unsaved callout body' },
+      version: 3,
+      updated_at: '2026-07-18T06:33:00.000Z',
+    }];
+    const server: NoteBlock[] = [{
+      ...serverBlock('callout-1', 'short server body'),
+      type: 'callout',
+      content: { icon: 'i', text: 'short server body' },
+      version: 2,
+      updated_at: '2026-07-18T06:32:00.000Z',
+    }];
+    const merged = mergeServerBlocksIntoLocalSnapshot(local, server, new Set());
+    expect(merged[0].content?.text).toBe('longer local unsaved callout body');
+    expect(merged[0].version).toBe(3);
+  });
+
   it('skips ids pending soft delete', () => {
     const local: NoteBlock[] = [];
     const server = [serverBlock('child-1', 'gone')];

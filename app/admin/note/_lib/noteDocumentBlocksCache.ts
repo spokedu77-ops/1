@@ -16,7 +16,7 @@ const MEMORY_MAX_ENTRIES = 48;
 /** In-memory hot cache — sessionStorage가 더 오래 보관 */
 const MEMORY_MAX_AGE_MS = 30 * 60_000;
 /** Notion처럼 탭/새로고침 후에도 즉시 표시 */
-const SESSION_MAX_AGE_MS = 7 * 24 * 60 * 60_000;
+const SESSION_MAX_AGE_MS = 2 * 60_000;
 const SESSION_MAX_ENTRIES = 64;
 const SESSION_STORAGE_KEY = 'spm-note-doc-blocks-v1';
 

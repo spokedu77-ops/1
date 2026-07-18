@@ -14,6 +14,13 @@ export const STORE_ONLY_CONTENT_KEYS = new Set([
   ...TOGGLE_LEGACY_CONTENT_KEYS,
 ]);
 
+const PROTECTABLE_STRING_CONTENT_KEYS = new Set([
+  'title',
+  'page_document_id',
+  'url',
+  'caption',
+]);
+
 /** React·서버 content와 스토어(편집 중 text/html)를 병합 — title·checked 등은 React 우선 */
 export function mergeBlockContentWithStore(
   base: Record<string, unknown> | null | undefined,
@@ -25,6 +32,17 @@ export function mergeBlockContentWithStore(
   for (const key of STORE_ONLY_CONTENT_KEYS) {
     if (key in fromStore) {
       merged[key] = fromStore[key];
+    }
+  }
+  for (const key of PROTECTABLE_STRING_CONTENT_KEYS) {
+    const baseValue = merged[key];
+    const storeValue = fromStore[key];
+    if (
+      typeof storeValue === 'string'
+      && storeValue.trim().length > 0
+      && (typeof baseValue !== 'string' || baseValue.trim().length === 0)
+    ) {
+      merged[key] = storeValue;
     }
   }
   return merged;

@@ -15,14 +15,86 @@ function readBlockImageUrl(block: NoteBlock): string {
   return typeof url === 'string' ? url.trim() : '';
 }
 
+function readBlockVersion(block: NoteBlock): number {
+  return typeof block.version === 'number' && Number.isFinite(block.version)
+    ? block.version
+    : 1;
+}
+
+function readBlockUpdatedAtMs(block: NoteBlock): number {
+  const ms = Date.parse(block.updated_at ?? '');
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function stableContentFingerprint(value: unknown): string {
+  if (value === null || value === undefined) return JSON.stringify(value);
+  if (typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableContentFingerprint(item)).join(',')}]`;
+  }
+  const record = value as Record<string, unknown>;
+  return `{${Object.keys(record)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableContentFingerprint(record[key])}`)
+    .join(',')}}`;
+}
+
+function blockContentChanged(local: NoteBlock, server: NoteBlock): boolean {
+  return stableContentFingerprint(local.content ?? null)
+    !== stableContentFingerprint(server.content ?? null);
+}
+
 function shouldPreferServerBlockOverLocal(local: NoteBlock, server: NoteBlock): boolean {
+  const localText = readBlockText(local);
+  const serverText = readBlockText(server);
+  const localTextAhead = localText.length > serverText.length;
+
   if (local.type === 'text' && server.type === 'text') {
-    return !readBlockText(local) && !!readBlockText(server);
+    if (localTextAhead) return false;
+    if (!localText && !!serverText) return true;
   }
   if (local.type === 'image' && server.type === 'image') {
     return !readBlockImageUrl(local) && !!readBlockImageUrl(server);
   }
-  return false;
+  if (!blockContentChanged(local, server)) return false;
+  if (localTextAhead) return false;
+
+  const localVersion = readBlockVersion(local);
+  const serverVersion = readBlockVersion(server);
+  if (serverVersion > localVersion) return true;
+  if (serverVersion < localVersion) return false;
+
+  return readBlockUpdatedAtMs(server) > readBlockUpdatedAtMs(local);
+}
+
+function mergeServerMetadata(local: NoteBlock, server: NoteBlock): NoteBlock {
+  if (server === local) return local;
+  const serverVersion = readBlockVersion(server);
+  const localVersion = readBlockVersion(local);
+  const serverUpdatedAt = readBlockUpdatedAtMs(server);
+  const localUpdatedAt = readBlockUpdatedAtMs(local);
+  if (serverVersion < localVersion) return local;
+  if (serverVersion === localVersion && serverUpdatedAt <= localUpdatedAt) return local;
+  return {
+    ...local,
+    version: server.version,
+    updated_at: server.updated_at,
+  };
+}
+
+function mergeServerBlockIntoLocal(local: NoteBlock, server: NoteBlock): NoteBlock {
+  if (shouldPreferServerBlockOverLocal(local, server)) {
+    return server;
+  }
+  if (
+    local.type !== server.type
+    || local.order_index !== server.order_index
+    || (local.parent_block_id ?? null) !== (server.parent_block_id ?? null)
+    || local.document_id !== server.document_id
+  ) {
+    return local;
+  }
+  return mergeServerMetadata(local, server);
 }
 
 function newClientOpId(): string {
@@ -153,8 +225,9 @@ export function mergeServerBlocksIntoLocalSnapshot(
       merged.push(serverBlock);
       continue;
     }
-    if (!shouldPreferServerBlockOverLocal(local, serverBlock)) continue;
-    merged = merged.map((block) => (block.id === serverBlock.id ? serverBlock : block));
+    const nextBlock = mergeServerBlockIntoLocal(local, serverBlock);
+    if (nextBlock === local) continue;
+    merged = merged.map((block) => (block.id === serverBlock.id ? nextBlock : block));
   }
 
   return dedupeNoteBlocksById(merged);

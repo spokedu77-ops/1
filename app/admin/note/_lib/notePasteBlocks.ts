@@ -6,6 +6,7 @@ import {
 } from './noteMultilinePaste';
 import { defaultImageBlockContent } from './noteImageBlock';
 import { normalizeTableContent, type NoteTableContent } from './noteTableBlock';
+import { isPageLinkBlock, isTodoBlock, isToggleBlock } from './noteBlockSemantics';
 import type { NoteBlock } from './types';
 
 export type PastedBlockSpec = {
@@ -15,6 +16,7 @@ export type PastedBlockSpec = {
   checked?: boolean;
   language?: string;
   imageUrl?: string;
+  pageDocumentId?: string;
   caption?: string;
   tableContent?: NoteTableContent;
   listNestLevel?: number;
@@ -50,7 +52,14 @@ export function contentForPastedBlock(
   if (spec.type === 'divider') {
     return {};
   }
-  if (spec.type === 'toggle') {
+  if (isPageLinkBlock(spec)) {
+    return {
+      ...defaultBlockContent('page'),
+      title: spec.text,
+      ...(spec.pageDocumentId ? { page_document_id: spec.pageDocumentId } : {}),
+    };
+  }
+  if (isToggleBlock(spec)) {
     const next = { ...defaultBlockContent('toggle') } as Record<string, unknown>;
     next.title = spec.text;
     if (spec.collapsed != null) next.collapsed = spec.collapsed;
@@ -60,7 +69,7 @@ export function contentForPastedBlock(
   }
   const next = contentForMultilinePasteLine(spec.type, spec.text, sourceContent);
   if (spec.html?.trim()) next.html = spec.html;
-  if (spec.type === 'todo') {
+  if (isTodoBlock(spec)) {
     next.checked = spec.checked ?? false;
     if ((spec.listNestLevel ?? 0) > 0) {
       next.listNestLevel = spec.listNestLevel;

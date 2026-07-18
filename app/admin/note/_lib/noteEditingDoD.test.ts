@@ -29,6 +29,12 @@ import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import { getSiblingBlockRangeIds } from './noteDropResolver';
 import { buildBlockForestTransferCommand } from './noteBlockTransfer';
 import { rowSubstantiallyInMarquee } from './noteMarquee';
+import {
+  allowsLocalChildBlocks,
+  isTodoBlock,
+  isToggleBlock,
+  supportsInsideDropTarget,
+} from './noteBlockSemantics';
 import type { NoteBlock } from './types';
 
 const TURN_INTO_COMMANDS = [
@@ -82,6 +88,19 @@ describe('Admin Note editing DoD — Phase A paste & clipboard', () => {
     const parsed = parseBlockClipboardText(serialized);
     const specs = clipboardPayloadToPasteSpecs(parsed!);
     expect(specs[0].children?.[0]?.type).toBe('bulletList');
+  });
+
+  it('page is a sub-document drop target, not a local child container', () => {
+    expect(supportsInsideDropTarget('page')).toBe(true);
+    expect(allowsLocalChildBlocks(block('page-link', 'page'))).toBe(false);
+    expect(allowsLocalChildBlocks(block('toggle', 'toggle'))).toBe(true);
+  });
+
+  it('todo and toggle have named minimum block semantics', () => {
+    expect(isTodoBlock(block('todo', 'todo'))).toBe(true);
+    expect(isToggleBlock(block('toggle', 'toggle'))).toBe(true);
+    expect(supportsInsideDropTarget('todo')).toBe(false);
+    expect(supportsInsideDropTarget('toggle')).toBe(true);
   });
 });
 

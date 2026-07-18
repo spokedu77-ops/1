@@ -12,6 +12,7 @@
     "lint:rules": "eslint . --format json -o eslint-report.json && node scripts/eslint-rule-count.mjs eslint-report.json",
     "lint:ci": "eslint . --max-warnings 102",
     "test": "vitest run",
+    "typecheck": "tsc --noEmit --pretty false",
     "test:admin-note": "vitest run app/admin/note app/lib/note",
     "verify:admin-note": "vitest run app/admin/note app/lib/note && tsc --noEmit --pretty false",
     "test:spomove": "vitest run app/admin/spomove/training/_player/spomove.test.ts",

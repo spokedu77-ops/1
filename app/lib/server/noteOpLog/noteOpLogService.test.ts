@@ -35,4 +35,20 @@ describe('noteOpLogService transaction patch filtering', () => {
       { text: '7.20 월요일 13시 송예원T OT' },
     )).toBe(false);
   });
+
+  it('treats toggle titles and page links as protectable content', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { title: 'P0 핵심 과제', collapsed: true },
+      { text: '', html: '<p></p>' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      { title: '' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+      { title: '', page_document_id: '' },
+      { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+    )).toBe(false);
+  });
 });

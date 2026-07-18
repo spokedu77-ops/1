@@ -1,5 +1,6 @@
 import { topLevelSelectedDragIds } from '@/app/lib/note/noteBlockTree';
 import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
+import { allowsLocalChildBlocks, isPageLinkBlock, isTodoBlock, isToggleBlock } from './noteBlockSemantics';
 import type { PastedBlockSpec } from './notePasteBlocks';
 import type { NoteBlock } from './types';
 
@@ -25,9 +26,11 @@ function stripBlockForClipboard(block: NoteBlock): Record<string, unknown> {
 }
 
 function buildClipboardNode(block: NoteBlock, blocks: NoteBlock[]): NoteBlockClipboardNode {
-  const children = getBlocksInParent(blocks, block.id)
-    .sort((a, b) => a.order_index - b.order_index)
-    .map((child) => buildClipboardNode(child, blocks));
+  const children = !allowsLocalChildBlocks(block)
+    ? []
+    : getBlocksInParent(blocks, block.id)
+      .sort((a, b) => a.order_index - b.order_index)
+      .map((child) => buildClipboardNode(child, blocks));
   return {
     type: block.type,
     content: stripBlockForClipboard(block),
@@ -59,7 +62,7 @@ export function buildBlockClipboardPayload(
 
 function clipboardNodeToPasteSpec(node: NoteBlockClipboardNode): PastedBlockSpec {
   const content = node.content ?? {};
-  if (node.type === 'toggle') {
+  if (isToggleBlock(node)) {
     const title = typeof content.title === 'string'
       ? content.title
       : (typeof content.text === 'string' ? content.text : '');
@@ -89,13 +92,20 @@ function clipboardNodeToPasteSpec(node: NoteBlockClipboardNode): PastedBlockSpec
       },
     };
   }
-  if (node.type === 'todo') {
+  if (isTodoBlock(node)) {
     return {
       type: 'todo',
       text: typeof content.text === 'string' ? content.text : '',
       html: typeof content.html === 'string' ? content.html : undefined,
       checked: !!content.checked,
       children: node.children?.map(clipboardNodeToPasteSpec),
+    };
+  }
+  if (isPageLinkBlock(node)) {
+    return {
+      type: 'page',
+      text: typeof content.title === 'string' ? content.title : '',
+      pageDocumentId: typeof content.page_document_id === 'string' ? content.page_document_id : '',
     };
   }
   if (node.type === 'divider') {

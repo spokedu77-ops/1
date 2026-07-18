@@ -33,8 +33,12 @@ function stripExpectedVersion<T extends { expected_version?: number }>(patch: T)
 
 function readContentText(content: unknown): string {
   if (!content || typeof content !== 'object') return '';
-  const value = (content as Record<string, unknown>).text;
-  return typeof value === 'string' ? value : '';
+  const record = content as Record<string, unknown>;
+  for (const key of ['text', 'title', 'caption', 'url', 'page_document_id']) {
+    const value = record[key];
+    if (typeof value === 'string' && value.trim().length > 0) return value;
+  }
+  return '';
 }
 
 export function shouldIgnoreRegressiveContentPatch(

@@ -108,6 +108,32 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('typed');
   });
 
+  it('syncSnapshot preserves local page-link identity over empty incoming content', () => {
+    const previous = [block('page-link', {
+      type: 'page',
+      content: { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+    })];
+    const incoming = [block('page-link', {
+      type: 'page',
+      content: { title: '', page_document_id: '' },
+    })];
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'syncSnapshot', blocks: incoming },
+      {
+        ...ctx,
+        storeContentById: {
+          'page-link': { title: '최지훈 업무노트 하위페이지', page_document_id: 'child-doc-1' },
+        },
+      },
+    );
+
+    expect(blocks[0].content).toMatchObject({
+      title: '최지훈 업무노트 하위페이지',
+      page_document_id: 'child-doc-1',
+    });
+  });
+
   it('syncSnapshot recovers server blocks missing from stale local snapshot', () => {
     const serverBlocks = [
       block('toggle', { type: 'toggle', content: { title: 'Gym' } }),

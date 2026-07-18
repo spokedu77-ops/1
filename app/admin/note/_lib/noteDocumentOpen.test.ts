@@ -73,7 +73,7 @@ describe('noteDocumentOpen', () => {
     expect(replaceBlocks).toHaveBeenCalledTimes(1);
   });
 
-  it('applyOpenServerSnapshot keeps local when store text is ahead of stale server', async () => {
+  it('applyOpenServerSnapshot syncs server siblings while keeping local text ahead', async () => {
     const server = [block('server', { content: { text: '', html: '<p></p>' } })];
     const local = [block('server', { content: { text: '하위타이핑유지', html: '<p>하위타이핑유지</p>' } })];
     const syncWithServer = vi.fn();
@@ -89,7 +89,7 @@ describe('noteDocumentOpen', () => {
     useNoteBlockStore.getState().hydrate(local);
 
     const result = await applyOpenServerSnapshot('doc-1', server, engine);
-    expect(syncWithServer).not.toHaveBeenCalled();
+    expect(syncWithServer).toHaveBeenCalledTimes(1);
     expect(result.blocks[0]?.content?.text).toBe('하위타이핑유지');
   });
 

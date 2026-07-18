@@ -27,6 +27,7 @@ import {
   scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
+import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
 import { readLocalDocument } from '../_lib/noteLocalDb';
 import { openNoteDocument } from '../_lib/noteDocumentOpen';
 import type { NoteBlock } from '../_lib/types';
@@ -313,15 +314,16 @@ export function useNoteBlockData(options: {
 
     const documentId = selectedId;
     useNoteBlockStore.getState().setActiveDocumentId(documentId);
+    const remembered = readRememberedNoteDocumentBlocks(documentId);
     // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
     // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
-    useNoteBlockStore.getState().replaceBlocks([]);
+    useNoteBlockStore.getState().replaceBlocks(remembered ?? []);
     void readLocalDocument(documentId);
 
-    setLoadSettledDocId(null, 'open:start');
-    setLoadingBlocks(true, 'open:start');
+    setLoadSettledDocId(remembered ? documentId : null, 'open:start');
+    setLoadingBlocks(!remembered, 'open:start');
     setBlocksEmptyConfirmed(false, 'open:start');
-    setBlocksSyncing(false, 'open:start');
+    setBlocksSyncing(!!remembered, 'open:start:remembered');
   }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
   useEffect(() => {
@@ -354,7 +356,7 @@ export function useNoteBlockData(options: {
         bootstrapAppliedDocIdRef.current = documentId;
         bootstrapForOpen = bootstrapPayload.blocks;
       } else if (bootstrapAppliedDocIdRef.current !== documentId) {
-        for (let attempt = 0; attempt < 40; attempt += 1) {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
           if (cancelled || blockLoadGenRef.current !== loadGen) return;
           const lateBootstrap = bootstrapBlocksRef.current;
           if (lateBootstrap?.documentId === documentId) {

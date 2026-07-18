@@ -12,8 +12,8 @@ import {
   commitNoteDocumentBeforeLeave,
   mergeBlocksWithStoreContent,
 } from '../_lib/noteBlockStateMerge';
-import { collectBlockForestIds } from '@/app/lib/note/noteBlockTree';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
+import { buildHistoryTransactionPlan } from './noteHistoryTransactionPlan';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { NoteBlock } from '../_lib/types';
 
@@ -59,35 +59,15 @@ export function useNoteBlockHistory(options: {
     if (!entry) return;
     if (entry.kind === 'block-transaction') {
       const current = mergeBlocksWithStoreContent(blocksRef.current);
-      const scopeIds = new Set([
-        ...entry.before.map((block) => block.id),
-        ...entry.after.map((block) => block.id),
-      ]);
-      const targetIds = new Set(entry.after.map((block) => block.id));
-      const currentScoped = current.filter((block) => scopeIds.has(block.id));
-      const deleteRootCandidates = currentScoped
-        .filter((block) => !targetIds.has(block.id))
-        .map((block) => block.id);
-      const deleteIds = collectBlockForestIds(deleteRootCandidates, current)
-        .filter((id) => scopeIds.has(id));
-      const currentIds = new Set(current.map((block) => block.id));
-      const missingIds = new Set(
-        entry.after
-          .filter((block) => !currentIds.has(block.id))
-          .map((block) => block.id),
-      );
-      const restoreRoots = entry.after.filter((block) =>
-        missingIds.has(block.id)
-        && (!block.parent_block_id || !missingIds.has(block.parent_block_id)),
-      );
+      const plan = buildHistoryTransactionPlan(current, entry.after);
 
       try {
-        if (deleteIds.length > 0) {
-          await documentEngine.persistSoftDelete({ ids: deleteIds });
+        if (plan.deleteIds.length > 0) {
+          await documentEngine.persistSoftDelete({ ids: plan.deleteIds });
         }
 
         const restoredById = new Map<string, NoteBlock>();
-        for (const root of restoreRoots) {
+        for (const root of plan.restoreRoots) {
           const restored = await documentEngine.persistRestoreBlock(root.id);
           restored.forEach((block) => restoredById.set(block.id, block));
         }
@@ -97,7 +77,7 @@ export function useNoteBlockHistory(options: {
           return [block.id, restored ? { ...block, version: restored.version } : block];
         }));
         const next = current
-          .filter((block) => !scopeIds.has(block.id) || targetIds.has(block.id))
+          .filter((block) => !plan.scopeIds.has(block.id) || plan.targetIds.has(block.id))
           .map((block) => targetMap.get(block.id) ?? block);
         for (const snapshot of targetMap.values()) {
           if (!next.some((block) => block.id === snapshot.id)) next.push(snapshot);
@@ -105,14 +85,7 @@ export function useNoteBlockHistory(options: {
         documentEngine.replaceBlocks(next);
 
         if (entry.after.length > 0) {
-          await documentEngine.persistFieldPatches(entry.after.map((snapshot) => ({
-            id: snapshot.id,
-            document_id: snapshot.document_id,
-            type: snapshot.type,
-            content: snapshot.content,
-            parent_block_id: snapshot.parent_block_id ?? null,
-            order_index: snapshot.order_index,
-          })));
+          await documentEngine.persistFieldPatches(plan.fieldPatches);
         }
       } catch (e) {
         devLogger.error('[Note] history block-transaction', e);
