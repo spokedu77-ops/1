@@ -9,8 +9,8 @@ import {
   audienceLandingStack,
   cardInteractive,
   koreanLineBreak,
-  landingCardShell,
 } from '../lib/ui-classes';
+import { landingCardShell } from './visual/card-variants';
 import { inferTrackFromHref } from '../lib/tracking';
 import { HomeSectionRule } from './home-section-rule';
 import { LandingFinalCta } from './landing-final-cta';

@@ -106,7 +106,7 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
         blockColor: 'yellow',
       },
     };
-    const blocksRef = { current: [anchor] };
+    const blocksRef: { current: NoteBlock[] } = { current: [anchor] };
     const before = blocksRef.current.map((item) => ({ ...item, content: { ...item.content } }));
     let seq = 0;
 

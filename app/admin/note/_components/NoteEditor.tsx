@@ -786,7 +786,7 @@ export function NoteEditor({
         if (event.key === 'Backspace') {
           const atStart = selectionAtBlockStart(view);
           const editor = editorRef.current;
-          const { selection } = view.state;
+          const { doc, selection } = view.state;
           // remount 직후 editorRef가 destroyed여도 view 기준으로 빈 블록 판정
           const viewDocEmpty = view.state.doc.textContent.trim().length === 0;
           if (
@@ -857,7 +857,7 @@ export function NoteEditor({
           && (event.key === 'ArrowLeft' || event.key === 'ArrowUp')
           && currentOnNavigatePrevious
         ) {
-          const { selection } = view.state;
+          const { doc, selection } = view.state;
           if (!selection.empty) return false;
           // ArrowUp: 첫 시각 줄이면 블록 맨앞이 아니어도 이전 블록 (체크리스트 끝→같은 칸 앞으로 가는 문제)
           if (event.key === 'ArrowUp') {
