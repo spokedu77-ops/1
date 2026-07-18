@@ -3,9 +3,12 @@ import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
 import { buildSpomoveCardTags, getSpomovePresetDisplayModel, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
 
 describe('spomove preset display model', () => {
-  it('uses unique preset titles and runtime-aware duration labels without BGM copy', () => {
-    const titles = OFFICIAL_SPOMOVE_LIBRARY.map((preset) => getSpomovePresetDisplayModel(preset).displayTitle);
-    expect(new Set(titles).size).toBe(OFFICIAL_SPOMOVE_LIBRARY.length);
+  it('uses unique program+displayTitle pairs and runtime-aware duration labels without BGM copy', () => {
+    const keys = OFFICIAL_SPOMOVE_LIBRARY.map((preset) => {
+      const display = getSpomovePresetDisplayModel(preset);
+      return `${display.programLabel}::${display.displayTitle}`;
+    });
+    expect(new Set(keys).size).toBe(OFFICIAL_SPOMOVE_LIBRARY.length);
 
     const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
     expect(visual).toBeTruthy();
@@ -29,5 +32,26 @@ describe('spomove preset display model', () => {
     const sorted = sortSpomovePresetsByDisplayTitle(shuffled);
     const titles = sorted.map((preset) => getSpomovePresetDisplayModel(preset).displayTitle);
     expect([...titles].sort((a, b) => a.localeCompare(b, 'ko'))).toEqual(titles);
+  });
+
+  it('displayTitle omits programLabel prefix already shown as the card tag', () => {
+    for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
+      const display = getSpomovePresetDisplayModel(preset);
+      const compactProgram = display.programLabel.replace(/\s+/g, '');
+      expect(display.displayTitle.startsWith(display.programLabel)).toBe(false);
+      expect(display.displayTitle.startsWith(`${compactProgram} ·`)).toBe(false);
+      expect(display.displayTitle.startsWith(`${compactProgram} `)).toBe(false);
+    }
+
+    const rc = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'reaction-cognition-space-direction-01');
+    expect(getSpomovePresetDisplayModel(rc!).displayTitle).toBe('공간 방향');
+
+    const magic = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
+    expect(getSpomovePresetDisplayModel(magic!).displayTitle).toBe('매직 아이 L1');
+
+    for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
+      expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/^\d+번\b/);
+      expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/\d+번\s*[·:]/);
+    }
   });
 });

@@ -335,6 +335,8 @@ export function useNotePageOrchestration(): NotePageContextValue {
     setBlocks,
     setTrashedBlocks,
     selectedId,
+    loadingBlocks,
+    loadSettledDocId,
     docTab,
     setLoadingState,
     setError,

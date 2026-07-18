@@ -27,7 +27,6 @@ import {
   scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
-import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
 import { readLocalDocument } from '../_lib/noteLocalDb';
 import { openNoteDocument } from '../_lib/noteDocumentOpen';
 import type { NoteBlock } from '../_lib/types';
@@ -314,16 +313,17 @@ export function useNoteBlockData(options: {
 
     const documentId = selectedId;
     useNoteBlockStore.getState().setActiveDocumentId(documentId);
-    const remembered = readRememberedNoteDocumentBlocks(documentId);
     // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
     // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
-    useNoteBlockStore.getState().replaceBlocks(remembered ?? []);
-    void readLocalDocument(documentId);
+    useNoteBlockStore.getState().replaceBlocks([]);
+    void readLocalDocument(documentId).catch((e) => {
+      devLogger.warn('[Note] readLocalDocument hint failed', e);
+    });
 
-    setLoadSettledDocId(remembered ? documentId : null, 'open:start');
-    setLoadingBlocks(!remembered, 'open:start');
+    setLoadSettledDocId(null, 'open:start');
+    setLoadingBlocks(true, 'open:start');
     setBlocksEmptyConfirmed(false, 'open:start');
-    setBlocksSyncing(!!remembered, 'open:start:remembered');
+    setBlocksSyncing(false, 'open:start');
   }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
   useEffect(() => {

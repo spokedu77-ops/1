@@ -648,9 +648,14 @@ function CardInfo({
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
           {display.programLabel}
         </span>
-        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
-          {display.variantLabel}
-        </span>
+        {display.variantLabel &&
+        display.variantLabel !== display.programLabel &&
+        display.variantLabel !== display.displayTitle &&
+        !display.displayTitle.endsWith(display.variantLabel) ? (
+          <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-black tracking-wide ${AXIS_BADGE[preset.axis]}`}>
+            {display.variantLabel}
+          </span>
+        ) : null}
       </div>
 
       <h2 className="mt-3 line-clamp-2 text-[18px] font-black leading-snug text-slate-950 sm:text-[20px]">

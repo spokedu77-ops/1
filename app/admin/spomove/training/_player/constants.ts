@@ -163,10 +163,10 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '방해 자극 · 목표 선택',
     desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로만 이동합니다.',
     levels: [
-      { id: 1, name: '1단계', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
-      { id: 3, name: '3단계', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
-      { id: 4, name: '4단계', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
-      { id: 6, name: '6단계', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
+      { id: 1, name: '동일 플랭커', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
+      { id: 3, name: '랜덤 플랭커', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
+      { id: 4, name: '크기/색 혼합', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
+      { id: 6, name: '5원 극단 크기', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
     ],
   },
 

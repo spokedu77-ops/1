@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
-import { reconcileDocumentParents } from '@/app/lib/note/documentParentSync';
+import {
+  getChildDocumentIdFromPageContent,
+  reconcileDocumentParents,
+} from '@/app/lib/note/documentParentSync';
 import { loadNoteDocumentBlocks } from '@/app/lib/server/loadNoteDocumentBlocks';
 
 const DOCUMENT_SELECT =
@@ -42,7 +45,35 @@ export async function GET(request: NextRequest) {
     }
 
     const baseDocuments = documentsResult.data ?? [];
-    const documents = await reconcileDocumentParents(supabase, baseDocuments);
+    const documentsById = new Map(baseDocuments.map((doc) => [doc.id, doc]));
+    const requiredDocumentIds = new Set<string>();
+    if (documentId) requiredDocumentIds.add(documentId);
+    for (const block of blocks ?? []) {
+      if (block.type !== 'page') continue;
+      const childId = getChildDocumentIdFromPageContent(block.content as Record<string, unknown> | null);
+      if (childId) requiredDocumentIds.add(childId);
+    }
+
+    for (let pass = 0; pass < 4; pass += 1) {
+      const missingIds = [...requiredDocumentIds].filter((id) => !documentsById.has(id));
+      if (missingIds.length === 0) break;
+      const { data: missingDocuments, error: missingDocumentsError } = await supabase
+        .from('note_documents')
+        .select(DOCUMENT_SELECT)
+        .in('id', missingIds)
+        .is('deleted_at', null)
+        .eq('is_archived', false);
+      if (missingDocumentsError) {
+        devLogger.error('[admin/note/bootstrap] required documents error', missingDocumentsError);
+        return NextResponse.json({ error: missingDocumentsError.message }, { status: 500 });
+      }
+      for (const doc of missingDocuments ?? []) {
+        documentsById.set(doc.id, doc);
+        if (doc.parent_id) requiredDocumentIds.add(doc.parent_id);
+      }
+    }
+
+    const documents = await reconcileDocumentParents(supabase, [...documentsById.values()]);
 
     return NextResponse.json({
       documents,

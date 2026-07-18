@@ -102,12 +102,12 @@ export function colorMeta(id: PadColorId) {
   return COLORS.find((c) => c.id === id)!;
 }
 
+/** 카탈로그 배열 순서로 1번·2번… (엔진 id와 무관) */
 export function resultLevelLabel(mode: string | undefined, level: number): string {
-  if (mode === 'basic' || mode === 'reactTrain') {
-    const m = MODES[mode];
-    const idx = m?.levels.findIndex((lv) => lv.id === level) ?? -1;
-    if (idx >= 0) return `${idx + 1}번`;
-  }
+  if (!mode) return `${level}번`;
+  const m = MODES[mode];
+  const idx = m?.levels.findIndex((lv) => lv.id === level) ?? -1;
+  if (idx >= 0) return `${idx + 1}번`;
   return `${level}번`;
 }
 

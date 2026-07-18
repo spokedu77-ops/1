@@ -78,11 +78,54 @@ function buildBodyFunctionLabel(preset: OfficialSpomovePreset): string {
     .join(' · ');
 }
 
+/**
+ * 카드 표시 제목: 프로그램명 태그·구 카탈로그 번호(N번) 잔여물 제거.
+ * 예: "반응인지 1번 · 공간 방향" → "공간 방향"
+ *     "시지각 반응 · 매직 아이 L1" → "매직 아이 L1"
+ */
+function buildDisplayTitle(preset: OfficialSpomovePreset): string {
+  let title = preset.title.trim();
+  if (!title) return title;
+
+  const program = preset.programTitle.trim();
+  // 반응 인지 ↔ 반응인지 등 공백 유무 alias
+  const aliases = new Set<string>(
+    [program, program.replace(/\s+/g, ''), program.replace(/\s+/g, ' ')].filter(Boolean),
+  );
+
+  for (const alias of aliases) {
+    if (!alias) continue;
+    // "{프로그램} · 나머지"
+    const dotted = new RegExp(`^${escapeRegExp(alias)}\\s*[·:]\\s*(.+)$`);
+    const dottedMatch = title.match(dotted);
+    if (dottedMatch?.[1]) {
+      title = dottedMatch[1].trim();
+      break;
+    }
+
+    // "{프로그램} N번 · 나머지" → "나머지" (N번은 잔여물)
+    const numbered = new RegExp(`^${escapeRegExp(alias)}\\s*\\d+번\\s*[·:]\\s*(.+)$`);
+    const numberedMatch = title.match(numbered);
+    if (numberedMatch?.[1]) {
+      title = numberedMatch[1].trim();
+      break;
+    }
+  }
+
+  // 접두 제거 후에도 남은 "N번 · " 잔여물
+  title = title.replace(/^\d+번\s*[·:]\s*/, '').trim();
+  return title || preset.title.trim();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): SpomovePresetDisplayModel {
   const guide = getOfficialSpomovePresetGuide(preset);
   const durationLabel = buildDurationLabel(preset);
   return {
-    displayTitle: preset.title,
+    displayTitle: buildDisplayTitle(preset),
     axisLabel: preset.axisTitle,
     programLabel: preset.programTitle,
     variantLabel: buildVariantLabel(preset),

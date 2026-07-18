@@ -67,6 +67,8 @@ export function useNoteBlockActions(options: {
   setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
   setTrashedBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
   selectedId: string | null;
+  loadingBlocks: boolean;
+  loadSettledDocId: string | null;
   docTab: 'active' | 'trash' | 'block-trash';
   setLoadingState: (state: LoadingState) => void;
   setError: (error: string | null) => void;
@@ -117,6 +119,8 @@ export function useNoteBlockActions(options: {
     setBlocks,
     setTrashedBlocks,
     selectedId,
+    loadingBlocks,
+    loadSettledDocId,
     docTab,
     setLoadingState,
     setError,
@@ -316,19 +320,38 @@ export function useNoteBlockActions(options: {
   }, [blocksRef, focusBlockEditor]);
 
   const handleClickEditorWhitespace = useCallback(() => {
+    if (!selectedId || loadingBlocks || loadSettledDocId !== selectedId) return;
     const roots = sortRootBlocks(blocksRef.current);
     const last = roots[roots.length - 1];
     if (!last) {
       void handleAddBlock('text');
       return;
     }
-    const lastText = typeof last.content?.text === 'string' ? last.content.text : '';
-    if (last.type === 'text' && lastText.trim().length === 0) {
-      focusBlockEditor(last.id);
+    const lastContent = (last.content ?? {}) as Record<string, unknown>;
+    const lastText = typeof lastContent.text === 'string' ? lastContent.text : '';
+    const lastHtml = typeof lastContent.html === 'string'
+      ? lastContent.html.replace(/<[^>]*>/g, '').trim()
+      : '';
+    const lastTitle = typeof lastContent.title === 'string' ? lastContent.title : '';
+    if (
+      (last.type === 'text' || last.type === 'todo' || last.type === 'callout' || last.type === 'quote')
+      && lastText.trim().length === 0
+      && lastHtml.length === 0
+      && lastTitle.trim().length === 0
+    ) {
+      focusBlockEditor(last.id, 'editor');
       return;
     }
     void handleInsertBlockAfter(last, 'text');
-  }, [blocksRef, focusBlockEditor, handleAddBlock, handleInsertBlockAfter]);
+  }, [
+    blocksRef,
+    focusBlockEditor,
+    handleAddBlock,
+    handleInsertBlockAfter,
+    loadSettledDocId,
+    loadingBlocks,
+    selectedId,
+  ]);
 
   const handleDocumentBodyMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const target = notePointerTargetElement(e.target);

@@ -100,12 +100,11 @@ const AXIS_GROUPS: ReadonlyArray<{
 type TopTab = 'training' | 'teacher' | 'app';
 const TEACHER_SPOMOVE_URL = '/teacher/spomove';
 
+/** 카탈로그 배열 순서로 1번·2번… (엔진 id와 무관) */
 function levelLabel(modeId: string, levelId: number): string {
-  if (modeId === 'basic' || modeId === 'reactTrain') {
-    const m = MODES[modeId];
-    const idx = m?.levels.findIndex((lv) => lv.id === levelId) ?? -1;
-    if (idx >= 0) return `${idx + 1}번`;
-  }
+  const m = MODES[modeId];
+  const idx = m?.levels.findIndex((lv) => lv.id === levelId) ?? -1;
+  if (idx >= 0) return `${idx + 1}번`;
   return `${levelId}번`;
 }
 

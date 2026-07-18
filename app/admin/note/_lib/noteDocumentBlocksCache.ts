@@ -18,7 +18,7 @@ const MEMORY_MAX_AGE_MS = 30 * 60_000;
 /** Notion처럼 탭/새로고침 후에도 즉시 표시 */
 const SESSION_MAX_AGE_MS = 2 * 60_000;
 const SESSION_MAX_ENTRIES = 64;
-const SESSION_STORAGE_KEY = 'spm-note-doc-blocks-v1';
+const SESSION_STORAGE_KEY = 'spm-note-doc-blocks-v3';
 
 function cloneBlocks(blocks: NoteBlock[]): NoteBlock[] {
   return blocks.map((block) => ({
