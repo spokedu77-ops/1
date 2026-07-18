@@ -91,15 +91,21 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
-      { id: 6, name: '파도타기', enName: 'Rush', desc: '빠르게 몰려오는 자극을 보고 반응합니다.' },
       { id: 1, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
       { id: 2, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
       { id: 3, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속에 위장된 다양한 도형이 서서히 드러날 때 해당 색을 찾습니다.' },
-      { id: 7, name: '두더지 잡기', enName: 'Mole Simulator', desc: '화면 곳곳 구멍에서 튀어나오는 색 자극에 반응합니다.' },
+      { id: 4, name: '매직 아이 L1', enName: 'Camouflage L1', desc: '노이즈 속 위장 도형이 화면 중앙에 서서히 드러날 때 해당 색을 찾습니다.' },
+      { id: 41, name: '매직 아이 L2', enName: 'Camouflage L2', desc: '위장 도형이 좌·우·상·하 극단을 순환하며 나타나는 매직 아이 L2입니다.' },
+      { id: 6, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
+      { id: 7, name: '두더지 잡기 L1', enName: 'Mole L1', desc: '기본 외형 두더지가 1마리씩 나타납니다.' },
+      { id: 71, name: '두더지 잡기 L2', enName: 'Mole L2', desc: '변형 외형·2마리 동시 출현이 섞이는 두더지 잡기 L2입니다.' },
       { id: 8, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
-      { id: 9, name: '숫자 기차', enName: 'Number Cart', desc: '광산 수레의 목표 숫자(또는 식)를 보고, 같은 답이 붙은 색 문으로 수레가 들어갑니다. L1~L3 난이도 선택.' },
-      { id: 10, name: '흰 공을 찾아라', enName: 'Color Tracker', desc: '시지각 10번. 흰 공을 눈으로 추적해 멈춘 뒤 빨·노·초·파 구역을 맞춰봅니다. L1~L3, 라운드마다 3-2-1.' },
+      { id: 91, name: '숫자 기차 L1', enName: 'Number Cart L1', desc: '1~4 단일 숫자를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다.' },
+      { id: 92, name: '숫자 기차 L2', enName: 'Number Cart L2', desc: '문마다 두 숫자를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다.' },
+      { id: 93, name: '숫자 기차 L3', enName: 'Number Cart L3', desc: '+-×÷ 식을 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다.' },
+      { id: 101, name: '흰 공 L1', enName: 'Color Tracker L1', desc: '흰 공 추적 L1(9개 공).' },
+      { id: 102, name: '흰 공 L2', enName: 'Color Tracker L2', desc: '흰 공 추적 L2(11개 공).' },
+      { id: 103, name: '흰 공 L3', enName: 'Color Tracker L3', desc: '흰 공 추적 L3(13개 공·간헐 플래시).' },
     ],
   },
   basic: {
@@ -142,7 +148,7 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '1단계', enName: 'Pole Shape', desc: '도형의 위치와 색을 분리해서 판단합니다.' },
       { id: 2, name: '2단계', enName: 'Pole Arrows', desc: '화살표가 가리키는 방향과 색 규칙을 구분합니다.' },
-      { id: 3, name: '믹스 갤러리', enName: 'Mixed Gallery', desc: '과일·동물·감정 등 모든 변형 색상 이미지가 섞여 극단 위치에 나타납니다. 이미지 색(패드) 위치로 이동합니다.' },
+      { id: 3, name: '믹스 갤러리', enName: 'Mixed Gallery', desc: '과일·동물 등 변형 색상 이미지가 섞여 극단 위치에 나타납니다. 이미지 색(패드) 위치로 이동합니다.' },
     ],
   },
   flanker: {
@@ -158,10 +164,8 @@ export const MODES: Record<string, SpomoveMode> = {
     desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로만 이동합니다.',
     levels: [
       { id: 1, name: '1단계', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
-      { id: 2, name: '2단계', enName: 'Grouped Flankers', desc: '중앙 그룹과 양쪽 방해 자극을 구분합니다.' },
       { id: 3, name: '3단계', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
       { id: 4, name: '4단계', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
-      { id: 5, name: '5단계', enName: '3-Circle Extreme Sizes', desc: '세 개의 원이 극단적인 크기로 나타납니다.' },
       { id: 6, name: '6단계', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
     ],
   },
@@ -245,6 +249,46 @@ export const SPOMOVE_BOTTOM_CATALOG_SLOT_IDS = [
   'flow', // 다이브 / Dive Mode
 ] as const;
 
+export type ReactTrainUiLevelDefaults = {
+  engineLevel: number;
+  moleLookMode?: 'classic' | 'variant';
+  numberCartTier?: 1 | 2 | 3;
+  colorTrackerTier?: 1 | 2 | 3;
+  camouflagePlacement?: 'center' | 'variant';
+};
+
+/** reactTrain UI level id → engine level + tier/mode defaults (L1/L2/L3 카탈로그용) */
+export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaults {
+  switch (level) {
+    case 41:
+      return { engineLevel: 4, camouflagePlacement: 'variant' };
+    case 4:
+      return { engineLevel: 4, camouflagePlacement: 'center' };
+    case 71:
+      return { engineLevel: 7, moleLookMode: 'variant' };
+    case 7:
+      return { engineLevel: 7, moleLookMode: 'classic' };
+    case 91:
+      return { engineLevel: 9, numberCartTier: 1 };
+    case 92:
+      return { engineLevel: 9, numberCartTier: 2 };
+    case 93:
+      return { engineLevel: 9, numberCartTier: 3 };
+    case 101:
+      return { engineLevel: 10, colorTrackerTier: 1 };
+    case 102:
+      return { engineLevel: 10, colorTrackerTier: 2 };
+    case 103:
+      return { engineLevel: 10, colorTrackerTier: 3 };
+    default:
+      return { engineLevel: level };
+  }
+}
+
+export function reactTrainEngineLevelForUi(uiLevel: number): number {
+  return resolveReactTrainUiLevel(uiLevel).engineLevel;
+}
+
 export function resolveTrainingEngine(mode: string, level: number): { engineMode: string; engineLevel: number } {
   if (mode === 'executive') {
     const lv = Math.min(7, Math.max(1, Math.floor(level)));
@@ -261,6 +305,9 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
   }
   if (mode === 'stroop' && level === 1) {
     return { engineMode: 'basic', engineLevel: 1 };
+  }
+  if (mode === 'reactTrain') {
+    return { engineMode: 'reactTrain', engineLevel: resolveReactTrainUiLevel(level).engineLevel };
   }
   return { engineMode: mode, engineLevel: level };
 }

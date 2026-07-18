@@ -399,6 +399,9 @@ function SpomoveSessionContent() {
         camouflagePlacement={officialPreset.engine.camouflagePlacement}
         flowFeatures={officialPreset.engine.flowFeatures}
         flowDuration={officialPreset.engine.flowDuration}
+        flowLayout={officialPreset.engine.flowLayout}
+        flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
+        flankerStimulusType={officialPreset.engine.flankerStimulusType}
         onExit={() => {
           finishSession('ended');
         }}

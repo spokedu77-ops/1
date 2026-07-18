@@ -21,8 +21,10 @@ const TRAINING_OPTIONS = ['필요', '선택', '불필요', '상담 후 결정'] 
 const PARTNERSHIP_OPTIONS = ['단건 구매', '구독·정기', '교육 위탁', '협업 검토', '기타'] as const;
 
 const inputClass =
-  'mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20';
+  'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
 const labelClass = 'text-sm font-semibold text-slate-800';
+const formShell =
+  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
 
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
@@ -45,7 +47,7 @@ function ChipGroup({
           className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition ${
             value === option
               ? 'border-teal-600 bg-teal-600 text-white'
-              : 'border-slate-200 bg-white text-slate-700 hover:border-teal-300'
+              : 'border-stone-200 bg-white text-slate-700 hover:border-teal-300'
           }`}
         >
           {option}
@@ -155,7 +157,7 @@ export function CurriculumInquiryForm() {
   );
 
   return (
-    <section id="inquiry" className="scroll-mt-36 space-y-6 sm:space-y-8">
+    <section id="inquiry" className="scroll-mt-36 space-y-5 sm:space-y-6">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">문의</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
@@ -167,11 +169,7 @@ export function CurriculumInquiryForm() {
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm shadow-slate-900/[0.03] sm:p-6 lg:p-8"
-        noValidate
-      >
+      <form onSubmit={handleSubmit} className={`${formShell} p-5 sm:p-6 lg:p-7`} noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <label className={labelClass} htmlFor="curriculum-name">
@@ -252,12 +250,12 @@ export function CurriculumInquiryForm() {
 
         {status.message ? (
           <p
-            className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
+            className={`mt-4 rounded-2xl px-4 py-3 text-sm font-medium ${
               status.tone === 'ok'
                 ? 'bg-teal-50 text-teal-900'
                 : status.tone === 'error'
                   ? 'bg-rose-50 text-rose-800'
-                  : 'bg-slate-50 text-slate-700'
+                  : 'bg-stone-50 text-stone-700'
             }`}
             role="status"
           >
@@ -265,7 +263,7 @@ export function CurriculumInquiryForm() {
           </p>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button type="submit" disabled={submitting || !canSubmit} className={`${siteBtnPrimary} disabled:opacity-60`}>
             {submitting ? '접수 중…' : '커리큘럼·교육 문의하기'}
           </button>

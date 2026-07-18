@@ -45,9 +45,10 @@ export const HOME_MEDIA = {
   homeHero: fromPhoto(SPOKEDU_IMAGES.home.hero, {
     id: 'home-hero',
     label: 'SPOMOVE 단체 수업',
-    fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
-    tone: 'indigo',
-    objectPosition: '50% 55%',
+    fallbackGradient: 'from-sky-600 via-blue-800 to-slate-900',
+    tone: 'sky',
+    /** 아이들 등·스크린이 가운데에 오도록 */
+    objectPosition: '50% 42%',
   }),
   homeHeroMovement: fromPhoto(SPOKEDU_IMAGES.home.heroMovement, {
     id: 'home-hero-movement',
@@ -82,7 +83,8 @@ export const HOME_MEDIA = {
     label: '소그룹 수업',
     fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
     tone: 'sky',
-    objectPosition: '50% 38%',
+    /** 아이·코치 군집이 프레임 중앙에 오도록 */
+    objectPosition: '62% 48%',
   }),
   trackDispatch: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
     id: 'track-dispatch',
@@ -96,6 +98,13 @@ export const HOME_MEDIA = {
     label: '커리큘럼',
     fallbackGradient: 'from-emerald-500 via-teal-700 to-slate-900',
     tone: 'lime',
+  }),
+  curriculumTools: fromPhoto(SPOKEDU_IMAGES.curriculum.toolSetup, {
+    id: 'curriculum-tools',
+    label: '교구·운영',
+    fallbackGradient: 'from-teal-500 via-emerald-700 to-slate-900',
+    tone: 'lime',
+    objectPosition: '50% 45%',
   }),
   proofLab: fromPhoto(SPOKEDU_IMAGES.home.labScene, {
     id: 'proof-lab',

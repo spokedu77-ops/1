@@ -35,6 +35,14 @@ export type NotePersistOp =
     type: 'blockTransaction';
     patches: NoteBlockFieldPatch[];
     deleteIds: string[];
+    creates?: Array<{
+      id: string;
+      document_id: string;
+      parent_block_id: string | null;
+      type: NoteBlock['type'];
+      order_index: number;
+      content: Record<string, unknown>;
+    }>;
   }
   | { type: 'purgeBlock'; id: string };
 

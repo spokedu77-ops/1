@@ -48,6 +48,14 @@ export interface FlowStagePreview {
   color: string;
 }
 
+export type FlowStageLayout = 'sequential' | 'random';
+
+export interface FlowStageBuildOptions {
+  layout?: FlowStageLayout;
+  /** sequential 모드에서 BONUS 스테이지 포함 여부 (기본 true) */
+  includeBonus?: boolean;
+}
+
 function buildColorGateStages(
   startIndex: number,
   startNum: number,
@@ -75,6 +83,44 @@ function buildColorGateStages(
   }];
 }
 
+function buildRandomDiveStages(
+  durationSec: number,
+  obstacleModules: FlowModuleKey[],
+): FlowStageConfig[] {
+  const baseMod = FLOW_MODULES.jump;
+  if (obstacleModules.length === 0) {
+    return [{
+      stageIndex: 0,
+      stageNum: 1,
+      label: 'STAGE 1',
+      durationSec,
+      activeModules: new Set<FlowModuleKey>(['jump']),
+      newModule: 'jump',
+      isBonus: false,
+      color: baseMod.color,
+      colorBg: baseMod.colorBg,
+      colorBorder: baseMod.colorBorder,
+      cueWord: baseMod.cueWord,
+      shortInstruction: baseMod.shortInstruction,
+    }];
+  }
+  const lastMod = obstacleModules[obstacleModules.length - 1]!;
+  return [{
+    stageIndex: 0,
+    stageNum: 1,
+    label: 'RANDOM',
+    durationSec,
+    activeModules: new Set<FlowModuleKey>(['jump', ...obstacleModules]),
+    newModule: lastMod,
+    isBonus: true,
+    color: '#fbbf24',
+    colorBg: 'rgba(251,191,36,0.15)',
+    colorBorder: 'rgba(251,191,36,0.6)',
+    cueWord: '랜덤!',
+    shortInstruction: '모든 장애물이\n무작위로 등장합니다',
+  }];
+}
+
 /**
  * @param selectedModules 선택된 모듈 (순서 = 스테이지 도입 순서, base 제외)
  * @param durationSec     스테이지당 시간 (초)
@@ -82,7 +128,10 @@ function buildColorGateStages(
 export function buildStages(
   selectedModules: FlowModuleKey[],
   durationSec = 25,
+  options?: FlowStageBuildOptions,
 ): FlowStageConfig[] {
+  const layout = options?.layout ?? 'sequential';
+  const includeBonus = options?.includeBonus ?? true;
   const obstacleModules = selectedModules.filter((k) => k !== 'colorGate');
   const hasColorGate = selectedModules.includes('colorGate');
   const isColorGateOnly = hasColorGate && obstacleModules.length === 0;
@@ -92,6 +141,10 @@ export function buildStages(
 
   if (isColorGateOnly) {
     return buildColorGateStages(0, 2, durationSec);
+  }
+
+  if (layout === 'random') {
+    return buildRandomDiveStages(durationSec, obstacleModules);
   }
 
   stages.push({
@@ -132,7 +185,7 @@ export function buildStages(
     });
   }
 
-  if (obstacleModules.length >= 2) {
+  if (obstacleModules.length >= 2 && includeBonus) {
     const bonusIdx = stages.length;
     stages.push({
       stageIndex: bonusIdx,

@@ -95,3 +95,4 @@
 [0714/024026.157:ERROR:gpu\command_buffer\service\gl_utils.cc:430] [.WebGL-0x1b74001b7400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels
 [0714/024026.193:ERROR:gpu\command_buffer\service\gl_utils.cc:430] [.WebGL-0x1b74001b7400]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)
 [0718/161203.599:WARNING:net\extras\sqlite\sqlite_persistent_store_backend_base.cc:179] Failed to post task from operator()@net\extras\sqlite\sqlite_persistent_shared_dictionary_store.cc:259 to client_task_runner_.
+[0719/004354.339:WARNING:net\extras\sqlite\sqlite_persistent_store_backend_base.cc:179] Failed to post task from operator()@net\extras\sqlite\sqlite_persistent_shared_dictionary_store.cc:259 to client_task_runner_.

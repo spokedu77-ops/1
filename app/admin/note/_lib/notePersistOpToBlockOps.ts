@@ -318,7 +318,7 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
     }];
   }
   case 'blockTransaction': {
-    if (op.patches.length === 0 && op.deleteIds.length === 0) return [];
+    if (op.patches.length === 0 && op.deleteIds.length === 0 && (!op.creates || op.creates.length === 0)) return [];
     return [{
       clientOpId: newClientOpId(),
       opType: 'block_transaction',
@@ -334,6 +334,7 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
           ...(patch.expected_version !== undefined ? { expected_version: patch.expected_version } : {}),
         })),
         deleteIds: op.deleteIds,
+        ...(op.creates ? { creates: op.creates } : {}),
       },
     }];
   }

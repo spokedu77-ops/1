@@ -53,7 +53,7 @@ function hasStructuredContent(content: unknown): boolean {
   if (!content || typeof content !== 'object') return false;
   const record = content as Record<string, unknown>;
   return Object.entries(record).some(([key, value]) => {
-    if (['checked', 'collapsed'].includes(key)) return false;
+    if (['checked', 'collapsed', 'icon', 'blockColor', 'backgroundColor', 'color'].includes(key)) return false;
     if (typeof value === 'string') {
       if (key === 'html') return !isEmptyHtml(value);
       return value.trim().length > 0;
@@ -382,8 +382,6 @@ export async function pushNoteBlockOps(
   let runningBaseSeq = baseSeq;
 
   for (const op of newOps) {
-    const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
-
     const commit = await commitNoteBlockOp(
       supabase,
       documentId,
@@ -408,6 +406,7 @@ export async function pushNoteBlockOps(
       continue;
     }
 
+    const applied = await applyNoteBlockOpPayload(supabase, documentId, op.payload, actorId);
     blocks.push(...applied);
     appliedClientOpIds.push(op.clientOpId);
     runningBaseSeq = commit.assignedSeq;

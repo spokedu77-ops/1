@@ -24,3 +24,13 @@ export function resolveFocusedInsertTarget(
   if (!focusedBlock) return null;
   return resolveInsertIndexAfterBlock(blocks, focusedBlock);
 }
+
+export function isBlockInParent(
+  blocks: ReadonlyArray<NoteBlock>,
+  blockId: string | null,
+  parentId: string | null,
+): boolean {
+  if (!blockId || !parentId) return false;
+  const block = blocks.find((item) => item.id === blockId);
+  return (block?.parent_block_id ?? null) === parentId;
+}

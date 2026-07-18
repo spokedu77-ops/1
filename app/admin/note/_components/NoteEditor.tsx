@@ -64,6 +64,7 @@ import {
   invokeToggleChildEmptyBackspace,
 } from '../_lib/noteToggleBackspaceRuntime';
 import { resolveArrowBlockNavigation } from '../_lib/noteArrowNavigation';
+import type { NoteBlock } from '../_lib/types';
 
 const UnderlineWithShortcut = Underline.extend({
   addKeyboardShortcuts() {
@@ -351,6 +352,7 @@ export function NoteEditor({
   onOpenDocumentById,
   onMultilinePaste,
   canSplitMultilinePaste = false,
+  blockType = 'text',
   tabBehavior = 'block-indent',
   resetKey,
   editorBlockId,
@@ -395,6 +397,7 @@ export function NoteEditor({
   onOpenDocumentById?: (documentId: string) => void;
   onMultilinePaste?: (specs: PastedBlockSpec[]) => void;
   canSplitMultilinePaste?: boolean;
+  blockType?: NoteBlock['type'];
   tabBehavior?: 'block-indent' | 'insert-text-indent' | 'table-cell-nav';
   resetKey?: string;
   editorBlockId?: string;
@@ -432,6 +435,7 @@ export function NoteEditor({
     onOpenDocumentById,
     onMultilinePaste,
     canSplitMultilinePaste,
+    blockType,
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
@@ -460,6 +464,7 @@ export function NoteEditor({
     onOpenDocumentById,
     onMultilinePaste,
     canSplitMultilinePaste,
+    blockType,
     enterCreatesBlock,
     enterSplitOnMidBlock,
     tabBehavior,
@@ -1015,12 +1020,12 @@ export function NoteEditor({
           if (splitEnabled && onMultilinePaste && lines.length > 1) {
             event.preventDefault();
             callbacksRef.current.flushPendingChange();
-            const blockType = (editorBlockId
-              ? useNoteBlockStore.getState().getBlock(editorBlockId)?.type
-              : null) ?? 'text';
-            const specs = pastedBlocksFromPlainLines(blockType, lines);
-            const first = specs[0];
-            editorRef.current?.chain().focus().setContent(legacyTextToEditorHtml(first.text), { emitUpdate: false }).run();
+            const currentBlockType = callbacksRef.current.blockType
+              ?? (editorBlockId
+                ? useNoteBlockStore.getState().getBlock(editorBlockId)?.type
+                : null)
+              ?? 'text';
+            const specs = pastedBlocksFromPlainLines(currentBlockType, lines);
             onMultilinePaste(specs);
             structuralPasteUndoArmedRef.current = true;
             if (editorRef.current) clearTipTapHistory(editorRef.current);

@@ -260,6 +260,7 @@ export function NoteEditableField({
     onOpenDocumentById,
     onMultilinePaste,
     canSplitMultilinePaste: field === 'text' && canSplitMultilinePasteToBlocks(blockType),
+    blockType,
     onChange: handleChange,
   };
 

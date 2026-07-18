@@ -67,8 +67,14 @@ export const SPOKEDU_IMAGES = {
     hero: defineImage(
       'home',
       'home-hero',
-      'home-hero-movement.jpg',
-      '아동·청소년 체육수업 현장 — 지도자와 아이들이 함께 움직이는 장면',
+      'home-hero-spomove-class.jpg',
+      'SPOMOVE 수업 현장 — 아이들이 4색 패드 위에서 스크린을 보며 움직이는 장면',
+    ),
+    heroSpomoveClass: defineImage(
+      'home',
+      'home-hero-spomove-class',
+      'home-hero-spomove-class.jpg',
+      'SPOMOVE 수업 현장 — 아이들이 4색 패드 위에서 스크린을 보며 움직이는 장면',
     ),
     labScene: defineImage(
       'home',
@@ -97,8 +103,18 @@ export const SPOKEDU_IMAGES = {
       'private-coaching.jpg',
       '스포키듀 1:1 개인 체육수업 장면',
     ),
-    smallGroup: defineImage('private', 'private-small-group', 'private-small-group.jpg', '스포키듀 2~4명 소그룹 체육수업 장면'),
-    toolActivity: defineImage('private', 'private-tool', 'private-tool-activity.jpg', '교구를 활용한 개인·소그룹 체육 활동 장면'),
+    smallGroup: defineImage(
+      'private',
+      'private-small-group',
+      'private-small-group.jpg',
+      '스포키듀 소그룹 체육수업 — 코치와 아이들이 함께 움직이는 장면',
+    ),
+    toolActivity: defineImage(
+      'private',
+      'private-tool',
+      'private-tool-activity.jpg',
+      '교구·콘을 활용한 개인·소그룹 체육 활동 장면',
+    ),
   },
   dispatch: {
     groupClass: defineImage(

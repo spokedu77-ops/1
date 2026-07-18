@@ -16,6 +16,7 @@ type NoteTodoBlockProps = {
   inlineRowPadding: string;
   rootBlockShell: string;
   enterCreatesBlockBelow: boolean;
+  parentBlockType?: NoteBlock['type'] | null;
   /** applyBlockContentChange 단일 진입점 (syncBlockContent) */
   onContentPatch: (content: Record<string, unknown>) => void;
   onEnter: () => void;
@@ -49,6 +50,7 @@ export function NoteTodoBlock({
   inlineRowPadding,
   rootBlockShell,
   enterCreatesBlockBelow,
+  parentBlockType = null,
   onContentPatch,
   onEnter,
   onAddBelow,
@@ -67,6 +69,7 @@ export function NoteTodoBlock({
     block,
     followType: 'todo',
     text,
+    parentBlockType,
     onAddBelow,
     onChangeType,
     onIndentChange: fieldProps.onIndentChange,

@@ -26,52 +26,67 @@ export function HomeAudienceGates() {
   return (
     <section
       id={homePage.audienceGate.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} border-b border-slate-200/90 bg-white`}
+      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#F3F7FC]`}
     >
       <div className={siteContainer}>
         <motion.div
-          initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+          className="max-w-2xl"
+          initial={reducedMotion ? false : { opacity: 0, y: 14 }}
           whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
+          viewport={{ once: true, amount: 0.25 }}
           transition={{ duration: 0.45 }}
         >
-          <h2 className={homeSectionH2}>{homePage.audienceGate.title}</h2>
-          <p className={`${homeBody} mt-4 max-w-2xl`}>{homePage.audienceGate.lead}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">어디로 갈까요</p>
+          <h2 className={`${homeSectionH2} mt-3`}>{homePage.audienceGate.title}</h2>
+          <p className={`${homeBody} mt-4`}>{homePage.audienceGate.lead}</p>
         </motion.div>
 
-        <ul className="mt-8 grid grid-cols-1 gap-5 min-[900px]:grid-cols-3 min-[900px]:gap-6">
+        <ul className="mt-10 grid grid-cols-1 gap-5 min-[900px]:grid-cols-3 min-[900px]:gap-5">
           {homePage.audienceGate.items.map((item, index) => {
             const media = HOME_MEDIA[item.mediaKey];
             return (
-              <li key={item.id} className="min-w-0">
+              <motion.li
+                key={item.id}
+                className="min-w-0"
+                initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+                whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.45, delay: index * 0.06 }}
+              >
                 <TrackedLink
                   href={item.href}
                   trackLabel={item.trackLabel}
                   className={`${homeGateCard} ${homeFocusRing} block h-full`}
                 >
-                  <div className="overflow-hidden">
+                  <div className="relative overflow-hidden">
                     <MediaPanel
                       media={media}
-                      className={`aspect-[4/3] w-full border-0 rounded-none ${homePhotoGrade}`}
+                      className={`aspect-[5/4] w-full border-0 rounded-none transition duration-500 ${homePhotoGrade} [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04]`}
                       sizes="gateCard"
                       photoPriority={index === 0}
                     />
+                    <div
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/35 via-transparent to-transparent"
+                      aria-hidden
+                    />
+                    <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold tracking-wide text-[#1D4ED8] shadow-sm backdrop-blur">
+                      {item.badge}
+                    </span>
                   </div>
-                  <div className={`flex min-w-0 flex-col ${homeCardPanelPad}`}>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">{item.badge}</p>
-                    <h3 className={`${homeCardTitle} mt-2`}>{item.title}</h3>
+                  <div className={`flex min-w-0 flex-1 flex-col ${homeCardPanelPad}`}>
+                    <h3 className={homeCardTitle}>{item.title}</h3>
                     <p className={`${homeBody} mt-2 line-clamp-3`}>{item.description}</p>
-                    <p className={`mt-4 text-sm leading-relaxed text-slate-600 ${koreanText}`}>
-                      <span className="font-semibold text-slate-800">이럴 때 · </span>
+                    <p className={`mt-4 text-sm leading-relaxed text-slate-500 ${koreanText}`}>
+                      <span className="font-semibold text-slate-700">이럴 때 · </span>
                       {item.fit}
                     </p>
-                    <span className="mt-6 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
+                    <span className="mt-auto pt-6 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
                       {item.ctaLabel}
                       <HomeChevron />
                     </span>
                   </div>
                 </TrackedLink>
-              </li>
+              </motion.li>
             );
           })}
         </ul>

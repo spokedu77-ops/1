@@ -150,4 +150,45 @@ describe('applyNoteCommand', () => {
       ['img-child', 'text-child', 'toggle'].sort(),
     );
   });
+
+  it('rejects an unconfirmed empty syncSnapshot for schedule checklist content', () => {
+    const previous = [
+      block('interview', {
+        type: 'todo',
+        content: { text: '7.20 월요일 11시 강승현 면접', checked: false },
+        order_index: 0,
+      }),
+      block('ot-toggle', {
+        type: 'toggle',
+        content: { title: 'OT 일정', collapsed: false },
+        order_index: 1,
+      }),
+      block('ot-child', {
+        type: 'todo',
+        parent_block_id: 'ot-toggle',
+        content: { text: '면접/OT 자료 확인', checked: false },
+        order_index: 0,
+      }),
+    ];
+
+    const { blocks, structural } = applyNoteCommand(
+      previous,
+      { type: 'syncSnapshot', blocks: [] },
+      {
+        ...ctx,
+        storeContentById: {
+          interview: { text: '7.20 월요일 11시 강승현 면접', checked: false },
+          'ot-toggle': { title: 'OT 일정', collapsed: false },
+          'ot-child': { text: '면접/OT 자료 확인', checked: false },
+        },
+      },
+    );
+
+    expect(structural).toBe(false);
+    expect(blocks.map((item) => item.id)).toEqual(['interview', 'ot-toggle', 'ot-child']);
+    expect(blocks.find((item) => item.id === 'interview')?.content).toMatchObject({
+      text: '7.20 월요일 11시 강승현 면접',
+      checked: false,
+    });
+  });
 });

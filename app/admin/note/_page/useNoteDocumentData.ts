@@ -136,18 +136,18 @@ export function useNoteDocumentData(options: {
     return filteredDocuments.filter((d) => d.is_favorite && !d.is_pinned);
   }, [docTab, filteredDocuments]);
   const favoriteOrPinnedIds = useMemo(
-    () => new Set(filteredDocuments.filter((d) => d.is_favorite || d.is_pinned).map((d) => d.id)),
-    [filteredDocuments],
+    () => new Set(documents.filter((d) => d.is_favorite || d.is_pinned).map((d) => d.id)),
+    [documents],
   );
   const otherDocuments = useMemo(
     () => (docTab === 'active'
       ? filterDocumentsOutsideFeaturedAncestors(
         filteredDocuments.filter((d) => !d.is_favorite && !d.is_pinned),
         favoriteOrPinnedIds,
-        filteredDocuments,
+        documents,
       )
       : filteredDocuments),
-    [docTab, favoriteOrPinnedIds, filteredDocuments],
+    [docTab, documents, favoriteOrPinnedIds, filteredDocuments],
   );
   const filteredTreeState = useMemo(
     () => deriveDocumentTreeState(filteredDocuments),

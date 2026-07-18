@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  isBlockInParent,
   resolveFocusedInsertTarget,
   resolveInsertIndexAfterBlock,
 } from './noteInsertPosition';
@@ -76,5 +77,16 @@ describe('note insert position', () => {
       parentId: 'toggle',
       insertIndex: 2,
     });
+  });
+
+  it('recognizes whether a focused block still belongs to a stale parent context', () => {
+    const blocks = [
+      block('toggle', 0),
+      block('toggle-child', 0, 'toggle'),
+      block('focused-root', 1),
+    ];
+
+    expect(isBlockInParent(blocks, 'toggle-child', 'toggle')).toBe(true);
+    expect(isBlockInParent(blocks, 'focused-root', 'toggle')).toBe(false);
   });
 });

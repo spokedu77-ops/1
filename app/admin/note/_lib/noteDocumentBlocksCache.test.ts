@@ -92,14 +92,14 @@ describe('noteDocumentBlocksCache', () => {
     expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(8);
   });
 
-  it('allows intentional shrink when trustServer is set', () => {
+  it('does not trust sudden server shrink without a local delete signal', () => {
     const many = Array.from({ length: 8 }, (_, index) => ({
       ...block(`b${index}`),
       order_index: index,
     }));
     rememberNoteDocumentBlocks('doc-1', many, { trustServer: true });
     rememberNoteDocumentBlocks('doc-1', [many[0]], { trustServer: true });
-    expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(1);
+    expect(readRememberedNoteDocumentBlocks('doc-1')).toHaveLength(8);
   });
 
   it('allows shrink while block delete is pending even without trustServer', () => {

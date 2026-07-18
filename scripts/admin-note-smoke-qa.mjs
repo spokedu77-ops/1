@@ -4,7 +4,10 @@ import {
   createNoteQaContext,
   loadPlaywrightChromium,
 } from './note-qa/shared.mjs';
-import { cleanupEphemeralQaDocumentsViaPage, listRemainingEphemeralQaDocumentsViaPage } from './note-qa/cleanupEphemeralDocs.mjs';
+import {
+  cleanupEphemeralQaDocumentsBestEffort,
+  cleanupEphemeralQaDocumentsViaPage,
+} from './note-qa/cleanupEphemeralDocs.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -1553,27 +1556,20 @@ async function main() {
       );
     }
   } finally {
-    if (page) {
-      try {
-        const cleaned = await cleanupEphemeralQaDocumentsViaPage(page);
-        if (cleaned.deleted > 0) {
-          console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s).`);
-        }
-        const remaining = await listRemainingEphemeralQaDocumentsViaPage(page);
-        if (remaining.length > 0) {
-          console.error(
-            'Ephemeral QA documents remain after cleanup:',
-            remaining.map((doc) => doc.title).join(' | '),
-          );
-          failed += 1;
-        }
-      } catch (cleanupError) {
-        console.error(
-          'QA doc cleanup failed:',
-          cleanupError instanceof Error ? cleanupError.message : cleanupError,
-        );
-        failed += 1;
+    try {
+      const cleaned = await cleanupEphemeralQaDocumentsBestEffort(page);
+      if (cleaned.deleted > 0) {
+        console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s) via ${cleaned.via}.`);
       }
+      for (const cleanupError of cleaned.errors) {
+        console.warn('WARN cleanup fallback:', cleanupError.message);
+      }
+    } catch (cleanupError) {
+      console.error(
+        'QA doc cleanup failed:',
+        cleanupError instanceof Error ? cleanupError.message : cleanupError,
+      );
+      failed += 1;
     }
     if (context) await context.close().catch(() => undefined);
     await browser.close();

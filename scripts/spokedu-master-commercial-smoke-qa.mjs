@@ -348,49 +348,6 @@ async function assertDevServerReachable() {
   });
 }
 
-async function installLoginMocks(page) {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const fakeUser = {
-    id: OWNER_ID,
-    aud: 'authenticated',
-    role: 'authenticated',
-    email: QA_ID,
-    email_confirmed_at: iso(-10_000),
-    phone: '',
-    confirmed_at: iso(-10_000),
-    last_sign_in_at: iso(0),
-    app_metadata: { provider: 'email', providers: ['email'] },
-    user_metadata: {},
-    identities: [],
-    created_at: iso(-10_000),
-    updated_at: iso(0),
-  };
-  const fakeSession = {
-    access_token: 'qa-access-token',
-    refresh_token: 'qa-refresh-token',
-    token_type: 'bearer',
-    expires_in: 3600,
-    expires_at: nowSeconds + 3600,
-    user: fakeUser,
-  };
-
-  await page.route('**/auth/v1/token?grant_type=password', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeSession) });
-  });
-  await page.route('**/auth/v1/user', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(fakeUser) });
-  });
-  await page.route('**/rest/v1/profiles**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ role: 'teacher' }) });
-  });
-  await page.route('**/rest/v1/users**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ role: 'teacher', is_admin: false, name: 'QA Teacher' }) });
-  });
-  await page.route('**/api/auth/check-admin', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ admin: false }) });
-  });
-}
-
 async function loginWithRealCredentials(context) {
   const page = await context.newPage();
   try {
@@ -708,18 +665,6 @@ async function gotoPage(page, route) {
   await waitAppReady(page);
 }
 
-async function clickFirstVisible(locator, description) {
-  const count = await locator.count();
-  for (let index = 0; index < count; index += 1) {
-    const item = locator.nth(index);
-    if (await item.isVisible().catch(() => false)) {
-      await item.click();
-      return;
-    }
-  }
-  throw new Error(`Could not find visible ${description}`);
-}
-
 async function clickFirstAvailable(locators, description) {
   for (const locator of locators) {
     const count = await locator.count().catch(() => 0);
@@ -767,10 +712,6 @@ async function fillStudentFieldSelect(dialog, testId, customValue, description) 
   await customInput.waitFor({ state: 'visible', timeout: 5000 });
   await customInput.fill(customValue);
   await expectValue(customInput, customValue, description);
-}
-
-async function getReportOutput(page) {
-  return page.locator('[data-report-output]').inputValue({ timeout: 10_000 });
 }
 
 async function runUnauthRedirectSmoke(browser) {

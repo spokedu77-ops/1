@@ -279,4 +279,91 @@ describe('buildHistoryTransactionPlan', () => {
       }),
     ]);
   });
+
+  it('undoes a deleted schedule checklist forest by restoring only the durable root', () => {
+    const current = [
+      block('p0-heading', {
+        type: 'heading',
+        content: { text: 'P0 (핵심 과제 및 일주일 내로 처리 문제)' },
+        order_index: 0,
+      }),
+    ];
+    const target = [
+      current[0],
+      block('interview', {
+        type: 'todo',
+        content: { text: '7.20 월요일 11시 강승현 면접', checked: false },
+        order_index: 1,
+      }),
+      block('ot-toggle', {
+        type: 'toggle',
+        content: { title: 'OT 일정', collapsed: false },
+        order_index: 2,
+      }),
+      block('ot-child', {
+        type: 'todo',
+        parent_block_id: 'ot-toggle',
+        content: { text: '면접/OT 자료 확인', checked: false },
+        order_index: 0,
+      }),
+    ];
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.deleteIds).toEqual([]);
+    expect(plan.restoreRoots.map((item) => item.id)).toEqual(['interview', 'ot-toggle']);
+    expect(plan.fieldPatches).toEqual([
+      expect.objectContaining({
+        id: 'p0-heading',
+        content: { text: 'P0 (핵심 과제 및 일주일 내로 처리 문제)' },
+      }),
+      expect.objectContaining({
+        id: 'interview',
+        type: 'todo',
+        content: { text: '7.20 월요일 11시 강승현 면접', checked: false },
+      }),
+      expect.objectContaining({
+        id: 'ot-toggle',
+        type: 'toggle',
+        content: { title: 'OT 일정', collapsed: false },
+      }),
+      expect.objectContaining({
+        id: 'ot-child',
+        parent_block_id: 'ot-toggle',
+        type: 'todo',
+        content: { text: '면접/OT 자료 확인', checked: false },
+      }),
+    ]);
+  });
+
+  it('redo after restored schedule deletion removes the whole restored forest again', () => {
+    const current = [
+      block('interview', {
+        type: 'todo',
+        content: { text: '7.20 월요일 11시 강승현 면접', checked: false },
+        order_index: 0,
+      }),
+      block('ot-toggle', {
+        type: 'toggle',
+        content: { title: 'OT 일정', collapsed: false },
+        order_index: 1,
+      }),
+      block('ot-child', {
+        type: 'todo',
+        parent_block_id: 'ot-toggle',
+        content: { text: '면접/OT 자료 확인', checked: false },
+        order_index: 0,
+      }),
+      block('keep', { order_index: 2 }),
+    ];
+    const target = [block('keep', { order_index: 0 })];
+
+    const plan = buildHistoryTransactionPlan(current, target);
+
+    expect(plan.deleteIds).toEqual(['interview', 'ot-toggle', 'ot-child']);
+    expect(buildHistoryPersistSteps(plan).map((step) => step.type)).toEqual([
+      'softDelete',
+      'patchFields',
+    ]);
+  });
 });

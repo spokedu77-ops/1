@@ -110,6 +110,17 @@ export function useNoteDocumentEngine(options: {
     return pipeline && !pipeline.isDisposed() ? pipeline : null;
   }, []);
 
+  const waitForLivePipeline = useCallback(async () => {
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const pipeline = pipelineRef.current;
+      if (pipeline && !pipeline.isDisposed()) return pipeline;
+      await new Promise((resolve) => {
+        setTimeout(resolve, 16);
+      });
+    }
+    throw new Error('문서 파이프라인이 준비되지 않았습니다');
+  }, []);
+
   const dispatch = useCallback((command: NoteCommand) => {
     const pipeline = getLivePipeline();
     if (!pipeline) return useNoteBlockStore.getState().getBlocksArray();
@@ -190,50 +201,39 @@ export function useNoteDocumentEngine(options: {
   }, [getLivePipeline]);
 
   const persistSoftDelete = useCallback(async (args: SoftDeletePersistArgs) => {
-    const pipeline = getLivePipeline();
-    if (!pipeline) return;
+    const pipeline = await waitForLivePipeline();
     await pipeline.persistSoftDelete(args);
-  }, [getLivePipeline]);
+  }, [waitForLivePipeline]);
 
   const persistFieldPatches = useCallback(async (patches: NoteBlockFieldPatch[]) => {
-    const pipeline = getLivePipeline();
-    if (!pipeline) return;
+    if (patches.length === 0) return;
+    const pipeline = await waitForLivePipeline();
     await pipeline.persistFieldPatches(patches);
-  }, [getLivePipeline]);
+  }, [waitForLivePipeline]);
 
   const persistCreateBlock = useCallback(async (args: CreateBlockPersistArgs) => {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const pipeline = pipelineRef.current;
-      if (pipeline && !pipeline.isDisposed()) {
-        return pipeline.persistCreateBlock(args);
-      }
-      await new Promise((resolve) => {
-        setTimeout(resolve, 16);
-      });
-    }
-    throw new Error('문서 파이프라인이 준비되지 않았습니다');
-  }, []);
+    const pipeline = await waitForLivePipeline();
+    return pipeline.persistCreateBlock(args);
+  }, [waitForLivePipeline]);
 
   const persistBlockTransaction = useCallback(async (
     patches: NoteBlockFieldPatch[],
     deleteIds: string[] = [],
   ) => {
-    const pipeline = getLivePipeline();
-    if (!pipeline) return;
+    if (patches.length === 0 && deleteIds.length === 0) return;
+    const pipeline = await waitForLivePipeline();
     await pipeline.persistBlockTransaction(patches, deleteIds);
-  }, [getLivePipeline]);
+  }, [waitForLivePipeline]);
 
   const persistRestoreBlock = useCallback(async (blockId: string) => {
-    const pipeline = getLivePipeline();
-    if (!pipeline) return [];
+    const pipeline = await waitForLivePipeline();
     return pipeline.persistRestoreBlock(blockId);
-  }, [getLivePipeline]);
+  }, [waitForLivePipeline]);
 
   const persistPurgeBlock = useCallback(async (blockId: string) => {
-    const pipeline = getLivePipeline();
-    if (!pipeline) return;
+    const pipeline = await waitForLivePipeline();
     await pipeline.persistPurgeBlock(blockId);
-  }, [getLivePipeline]);
+  }, [waitForLivePipeline]);
 
   const getBlocks = useCallback(() => {
     return getLivePipeline()?.getBlocks() ?? [];

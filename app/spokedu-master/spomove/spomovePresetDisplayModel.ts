@@ -2,6 +2,7 @@ import {
   getOfficialSpomovePresetGuide,
   SPOMOVE_BODY_FUNCTION_LABELS,
   SPOMOVE_KEY_ACTION_LABELS,
+  SPOMOVE_TARGET_GROUP_LABELS,
   SPOMOVE_THINKING_LEVEL_LABELS,
   type SpomoveTargetGroup,
 } from './officialSpomovePresetGuides';
@@ -22,13 +23,6 @@ export type SpomovePresetDisplayModel = {
   isAvailable: boolean;
 };
 
-const TARGET_LABELS: Record<SpomoveTargetGroup, string> = {
-  preschool: '미취학',
-  elementaryLower: '초저',
-  elementaryUpper: '초고',
-  specialSupport: '특수',
-};
-
 function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
   if (groups.length === 0) return '';
   const s = new Set(groups);
@@ -39,7 +33,7 @@ function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
   if (s.has('preschool') && s.has('elementaryLower')) return '미취학·초저';
   if (s.has('elementaryLower') && s.has('elementaryUpper')) return '초등 전학년';
   if (s.has('elementaryUpper') && s.has('specialSupport')) return '초고·특수';
-  return groups.slice(0, 2).map((g) => TARGET_LABELS[g]).join('·');
+  return groups.slice(0, 2).map((g) => SPOMOVE_TARGET_GROUP_LABELS[g]).join('·');
 }
 
 function stripBgmCopy(value: string): string {
@@ -69,7 +63,7 @@ function buildDurationLabel(preset: OfficialSpomovePreset): string {
   }
   if (preset.engine.mode === 'spatial') {
     if (preset.engine.level === 1 || preset.engine.level === 2) {
-      return `1~2.5초 랜덤 · ${preset.rounds}라운드`;
+      return `1-2.5초 랜덤 · ${preset.rounds}라운드`;
     }
     return `${preset.cueSeconds}초 · ${preset.rounds}라운드`;
   }
@@ -100,6 +94,15 @@ export function getSpomovePresetDisplayModel(preset: OfficialSpomovePreset): Spo
     padLayoutVariant: getSpomovePadLayoutVariant(preset),
     isAvailable: preset.isReady,
   };
+}
+
+export function sortSpomovePresetsByDisplayTitle(presets: readonly OfficialSpomovePreset[]): OfficialSpomovePreset[] {
+  return [...presets].sort((a, b) =>
+    getSpomovePresetDisplayModel(a).displayTitle.localeCompare(
+      getSpomovePresetDisplayModel(b).displayTitle,
+      'ko',
+    ),
+  );
 }
 
 export type SpomoveCardTag = {

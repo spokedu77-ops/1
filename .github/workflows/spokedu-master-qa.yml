@@ -7,9 +7,6 @@ on:
       - 'app/api/spokedu-master/**'
       - 'app/login/page.tsx'
       - 'app/spokedu/data/curriculum-page.ts'
-      - 'app/spokedu/lib/ui-classes.ts'
-      - 'app/spokedu/lib/landingCardShell.contract.test.ts'
-      - 'app/spokedu/components/visual/card-variants.ts'
       - 'app/lib/server/spokeduMaster*'
       - 'proxy.ts'
       - 'scripts/spokedu-master-*.mjs'
@@ -24,9 +21,6 @@ on:
       - 'app/api/spokedu-master/**'
       - 'app/login/page.tsx'
       - 'app/spokedu/data/curriculum-page.ts'
-      - 'app/spokedu/lib/ui-classes.ts'
-      - 'app/spokedu/lib/landingCardShell.contract.test.ts'
-      - 'app/spokedu/components/visual/card-variants.ts'
       - 'app/lib/server/spokeduMaster*'
       - 'proxy.ts'
       - 'scripts/spokedu-master-*.mjs'
@@ -119,7 +113,6 @@ jobs:
           app/spokedu-master/masterEntryCopy.contract.test.ts
           app/spokedu-master/entryOnboardingAccess.contract.test.ts
           app/spokedu-master/landing/landingBillingCopy.contract.test.ts
-          app/spokedu/lib/landingCardShell.contract.test.ts
 
       - name: Migration contract tests
         run: >

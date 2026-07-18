@@ -1,10 +1,20 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   filterTransactionPatchesByExistingIds,
+  pushNoteBlockOps,
   shouldIgnoreRegressiveContentPatch,
 } from './noteOpLogService';
+import { commitNoteBlockOp } from './noteCommitBlockOp';
+
+vi.mock('./noteCommitBlockOp', () => ({
+  commitNoteBlockOp: vi.fn(),
+}));
 
 describe('noteOpLogService transaction patch filtering', () => {
+  beforeEach(() => {
+    vi.mocked(commitNoteBlockOp).mockReset();
+  });
+
   it('drops stale transaction updates for blocks that no longer exist', () => {
     const patches = [
       { id: 'alive', order_index: 0 },
@@ -66,5 +76,88 @@ describe('noteOpLogService transaction patch filtering', () => {
       { rows: [] },
       { rows: [['a1', 'b1']] },
     )).toBe(false);
+  });
+
+  it('does not treat callout decoration alone as protectable content', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { icon: 'i', text: '', html: '<p></p>' },
+      { text: '', html: '<p></p>' },
+    )).toBe(false);
+  });
+
+  it('does not materialize block data before an op-log seq conflict is committed', async () => {
+    vi.mocked(commitNoteBlockOp).mockResolvedValueOnce({ status: 'conflict' });
+
+    const touchedTables: string[] = [];
+    const supabase = {
+      from(table: string) {
+        touchedTables.push(table);
+        const calls: string[] = [];
+        const chain = {
+          select() {
+            calls.push('select');
+            return chain;
+          },
+          eq() {
+            calls.push('eq');
+            return chain;
+          },
+          in() {
+            calls.push('in');
+            return chain;
+          },
+          gt() {
+            calls.push('gt');
+            return chain;
+          },
+          order() {
+            calls.push('order');
+            return chain;
+          },
+          limit() {
+            calls.push('limit');
+            return chain;
+          },
+          maybeSingle() {
+            if (table === 'note_document_sync_state') {
+              return Promise.resolve({ data: { last_seq: 1 }, error: null });
+            }
+            return Promise.resolve({ data: null, error: null });
+          },
+          then(resolve: (value: unknown) => void) {
+            if (table === 'note_block_ops') {
+              resolve({ data: [], error: null });
+              return;
+            }
+            resolve({ data: null, error: null });
+          },
+        };
+        return chain;
+      },
+    };
+
+    const result = await pushNoteBlockOps(
+      supabase as never,
+      'doc-1',
+      0,
+      [{
+        clientOpId: 'op-stale-empty',
+        opType: 'patch_content',
+        payload: {
+          opType: 'patch_content',
+          blockId: 'block-1',
+          content: { text: '' },
+        },
+      }],
+      'actor-1',
+    );
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'seq_conflict',
+      lastSeq: 1,
+      ops: [],
+    });
+    expect(touchedTables).not.toContain('note_blocks');
   });
 });

@@ -53,7 +53,7 @@ function isEmptyHtml(value: unknown): boolean {
 function contentHasStructuredPresence(content: unknown): boolean {
   if (!content || typeof content !== 'object') return false;
   return Object.entries(content as Record<string, unknown>).some(([key, value]) => {
-    if (['checked', 'collapsed'].includes(key)) return false;
+    if (['checked', 'collapsed', 'icon', 'blockColor', 'backgroundColor', 'color'].includes(key)) return false;
     if (typeof value === 'string') {
       if (key === 'html') return !isEmptyHtml(value);
       return value.trim().length > 0;

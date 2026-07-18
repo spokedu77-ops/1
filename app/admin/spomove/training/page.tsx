@@ -15,6 +15,8 @@ import {
   SPOMOVE_AXIS_ORDER,
   SPOMOVE_BOTTOM_CATALOG_SLOT_IDS,
   SPOMOVE_CATALOG_SLOT_IDS,
+  reactTrainEngineLevelForUi,
+  resolveReactTrainUiLevel,
   type SpomoveAxis,
 } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
@@ -131,10 +133,8 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Pole Shape': '폴 도형',
   'Pole Arrows': '폴 화살표',
   'Uniform Flankers': '동일 플랭커',
-  'Grouped Flankers': '그룹 플랭커',
   'Random Flankers': '랜덤 플랭커',
   'Mixed Size & Color': '크기/색 혼합',
-  '3-Circle Extreme Sizes': '3원 극단 크기',
   '5-Circle Extreme Sizes': '5원 극단 크기',
   'Go / No-Go (Color)': '색상 고/노고',
   'Go / No-Go (Shape)': '도형 고/노고',
@@ -157,10 +157,17 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Beat Wave': '동그라미 파동',
   Rush: '파도타기',
   Camouflage: '매직 아이',
-  'Mole Simulator': '두더지 잡기',
+  'Camouflage L1': '매직 아이 L1',
+  'Camouflage L2': '매직 아이 L2',
+  'Mole L1': '두더지 잡기 L1',
+  'Mole L2': '두더지 잡기 L2',
   Wormhole: '소행성을 피해라',
-  'Number Cart': '숫자 기차',
-  'Color Tracker': '흰 공을 찾아라',
+  'Number Cart L1': '숫자 기차 L1',
+  'Number Cart L2': '숫자 기차 L2',
+  'Number Cart L3': '숫자 기차 L3',
+  'Color Tracker L1': '흰 공 L1',
+  'Color Tracker L2': '흰 공 L2',
+  'Color Tracker L3': '흰 공 L3',
 };
 
 function levelNameKo(modeId: string, levelId: number): string {
@@ -795,21 +802,32 @@ function SettingsScreen({
                     type="button"
                     onClick={() => {
                       setLevelId(lv.id);
-                      setLaunch((s) => launchSettingsForLevel(modeId, lv.id, s));
-                      if (isReactTrain && lv.id === 9) {
-                        setLaunch((s) => ({
-                          ...s,
-                          timeMode: 'reps',
-                          targetReps: [7, 10, 15, 25].includes(s.targetReps) ? s.targetReps : 10,
-                        }));
-                      }
-                      if (isReactTrain && lv.id === 10) {
-                        setLaunch((s) => ({
-                          ...s,
-                          timeMode: 'reps',
-                          targetReps: [2, 3, 5, 10].includes(s.targetReps) ? s.targetReps : 5,
-                        }));
-                      }
+                      setLaunch((s) => {
+                        let next = launchSettingsForLevel(modeId, lv.id, s);
+                        if (isReactTrain) {
+                          const mapped = resolveReactTrainUiLevel(lv.id);
+                          if (mapped.moleLookMode) next = { ...next, moleLookMode: mapped.moleLookMode };
+                          if (mapped.numberCartTier) next = { ...next, numberCartTier: mapped.numberCartTier };
+                          if (mapped.colorTrackerTier) next = { ...next, colorTrackerTier: mapped.colorTrackerTier };
+                          if (mapped.camouflagePlacement) next = { ...next, camouflagePlacement: mapped.camouflagePlacement };
+                          const engineLevel = mapped.engineLevel;
+                          if (engineLevel === 9) {
+                            next = {
+                              ...next,
+                              timeMode: 'reps',
+                              targetReps: [7, 10, 15, 25].includes(next.targetReps) ? next.targetReps : 10,
+                            };
+                          }
+                          if (engineLevel === 10) {
+                            next = {
+                              ...next,
+                              timeMode: 'reps',
+                              targetReps: [2, 3, 5, 10].includes(next.targetReps) ? next.targetReps : 5,
+                            };
+                          }
+                        }
+                        return next;
+                      });
                     }}
                     style={{
                       padding: '10px 12px',
@@ -988,51 +1006,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {isReactTrain && levelId === 4 ? (
-            <section style={{ marginBottom: 22 }}>
-              <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>배치 모드</label>
-                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  기존은 화면 중앙에 도형이 나타납니다. 변형은 사이먼 효과처럼 좌·우·상·하 극단을 번갈아 배치하며, 도형 전체가 잘리지 않도록 여백을 둡니다.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {([
-                  { id: 'center' as const, label: '기존', sub: '중앙 고정' },
-                  { id: 'variant' as const, label: '변형', sub: '극단 순환' },
-                ]).map((opt) => {
-                  const active = launch.camouflagePlacement === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, camouflagePlacement: opt.id }))}
-                      style={{
-                        flex: 1,
-                        padding: '11px 8px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.textDim,
-                        fontFamily: 'inherit',
-                        fontSize: 15,
-                        fontWeight: active ? 900 : 700,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {opt.label}
-                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
-                        {opt.sub}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {isReactTrain && levelId === 7 ? (
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 7 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>외형 모드</label>
@@ -1077,7 +1051,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 시지각반응 숫자 기차(8번 표시, engine level 9) 전용: 난이도 */}
-          {isReactTrain && levelId === 9 ? (
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
@@ -1123,7 +1097,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 전용: 난이도 */}
-          {isReactTrain && levelId === 10 ? (
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
@@ -1169,7 +1143,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 전용: 패널 모드 */}
-          {isReactTrain && levelId === 10 ? (
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>패널 모드</label>
@@ -1214,7 +1188,7 @@ function SettingsScreen({
           ) : null}
 
           {/* 속도 (DIVE·흰 공 9번·순차기억 1·2번은 내부 타이밍) */}
-          {!isFlowOrChallenge && !(isReactTrain && levelId === 10) && !(isSpatial && (levelId === 1 || levelId === 2)) ? (
+          {!isFlowOrChallenge && !(isReactTrain && reactTrainEngineLevelForUi(levelId) === 10) && !(isSpatial && (levelId === 1 || levelId === 2)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
@@ -1501,11 +1475,11 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && (levelId === 9 || levelId === 10) ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
+                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 10) ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
                 </label>
               </div>
 
-              {isReactTrain && levelId === 9 ? (
+              {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[7, 10, 15, 25].map((r) => {
                     const active = launch.targetReps === r;

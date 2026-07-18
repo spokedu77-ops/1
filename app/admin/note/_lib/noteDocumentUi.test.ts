@@ -73,4 +73,15 @@ describe('filterDocumentsOutsideFeaturedAncestors', () => {
       [favorite, child, grandchild],
     )).toEqual([]);
   });
+
+  it('uses the full document set for ancestor checks even when the visible list is filtered', () => {
+    const favorite = { ...doc('favorite', 'Favorite'), is_favorite: true };
+    const child = childDoc('child', 'Visible Child', 'favorite');
+
+    expect(filterDocumentsOutsideFeaturedAncestors(
+      [child],
+      new Set(['favorite']),
+      [favorite, child],
+    )).toEqual([]);
+  });
 });

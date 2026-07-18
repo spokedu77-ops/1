@@ -180,9 +180,9 @@ export const homePage = {
   },
   spomove: {
     id: 'spomove',
-    title: 'SPOMOVE 놀이체육',
+    title: '보고 반응하는 놀이체육',
     titleLine2: '',
-    lead: '스크린 신호를 보고 4색 패드에서 반응하는 수업입니다. 정규수업·원데이·통합반에서 운영합니다.',
+    lead: '스크린 신호를 읽고 4색 패드 위에서 바로 움직이는 SPOMOVE. 키움센터·학교 강당에서도 정규·원데이·통합반으로 운영합니다.',
     flowSteps: [
       { label: '인지', hint: 'SEE' },
       { label: '선택', hint: 'CHOOSE' },

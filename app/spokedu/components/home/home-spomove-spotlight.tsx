@@ -1,5 +1,6 @@
 'use client';
 
+import { motion, useReducedMotion } from 'framer-motion';
 import { HOME_MEDIA } from '../../data/home-media';
 import { homePage } from '../../data/home-page';
 import {
@@ -11,78 +12,100 @@ import {
   homeSectionScrollMt,
   koreanText,
   siteBtnPrimary,
+  siteBtnSecondary,
   siteContainer,
 } from '../../lib/ui-classes';
 import { MediaPanel } from '../visual';
-import { HomeChevron } from './home-chevron';
 import { TrackedLink } from './tracked-link';
 
-const PAD_COLORS = ['#3B82F6', '#22C55E', '#EAB308', '#EC4899'] as const;
+const PAD_COLORS = ['#EF4444', '#EAB308', '#22C55E', '#3B82F6'] as const;
 
-/**
- * 홈 SPOMOVE — 일반 프로그램 안내 블록 (히어로 문법 사용 안 함)
- */
+/** 시그니처 프로그램 — 히어로와 다른 문법, 현장 임팩트는 유지 */
 export function HomeSpomoveSpotlight() {
-  const media = HOME_MEDIA[homePage.spomove.mediaKey];
+  const media = HOME_MEDIA.homeHeroMovement;
+  const reducedMotion = useReducedMotion();
   const { title, lead, flowSteps, useCases, primaryCta, secondaryCta } = homePage.spomove;
 
   return (
     <section
       id={homePage.spomove.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} border-b border-slate-200/90 bg-white`}
+      className={`${homeSectionScrollMt} ${homeSectionPadCompact} relative overflow-hidden bg-white`}
       aria-labelledby="home-spomove-heading"
     >
-      <div className={siteContainer}>
-        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-10">
-          <div className={`overflow-hidden rounded-xl border border-slate-200/90 ${homePhotoGrade}`}>
+      <div
+        className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-sky-200/40 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -left-16 bottom-0 h-64 w-64 rounded-full bg-blue-200/30 blur-3xl"
+        aria-hidden
+      />
+
+      <div className={`relative ${siteContainer}`}>
+        <div className="grid items-center gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-14">
+          <motion.div
+            className="relative overflow-hidden rounded-[1.75rem] shadow-[0_28px_60px_-32px_rgba(15,23,42,0.45)] ring-1 ring-slate-200/70"
+            initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.55 }}
+          >
             <MediaPanel
               media={media}
-              className="aspect-[5/4] w-full border-0 rounded-none sm:aspect-[4/3]"
-              sizes="gateCard"
+              className={`aspect-[16/11] w-full border-0 rounded-none sm:aspect-[16/10] ${homePhotoGrade}`}
+              sizes="full"
             />
-          </div>
+            <div className="absolute inset-x-0 bottom-0 flex gap-1.5 bg-gradient-to-t from-black/50 to-transparent p-4 pt-10">
+              {PAD_COLORS.map((hex) => (
+                <span key={hex} className="h-1.5 flex-1 rounded-full" style={{ backgroundColor: hex }} aria-hidden />
+              ))}
+            </div>
+          </motion.div>
 
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#1D4ED8]">프로그램</p>
-            <h2 id="home-spomove-heading" className={`${homeSectionH2} mt-2`}>
+          <motion.div
+            className="min-w-0"
+            initial={reducedMotion ? false : { opacity: 0, y: 18 }}
+            whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={{ duration: 0.55, delay: 0.05 }}
+          >
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">SPOMOVE</p>
+            <h2 id="home-spomove-heading" className={`${homeSectionH2} mt-3`}>
               {title}
             </h2>
-            <p className={`${homeBody} mt-3 max-w-xl`}>{lead}</p>
+            <p className={`${homeBody} mt-4 max-w-md`}>{lead}</p>
 
-            <ul className="mt-4 flex flex-wrap gap-2" aria-label="적용 형태">
+            <ol className="mt-6 grid grid-cols-2 gap-2.5" aria-label="수업 흐름">
+              {flowSteps.map((step, index) => (
+                <li
+                  key={step.label}
+                  className="rounded-2xl border border-slate-200/80 bg-[#F3F7FC] px-3.5 py-3.5"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: PAD_COLORS[index] ?? PAD_COLORS[0] }}
+                      aria-hidden
+                    />
+                    <span className="text-[10px] font-bold tracking-[0.14em] text-slate-400">{step.hint}</span>
+                  </div>
+                  <p className={`mt-1.5 text-[15px] font-bold text-slate-900 ${koreanText}`}>{step.label}</p>
+                </li>
+              ))}
+            </ol>
+
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label="적용 형태">
               {useCases.map((item) => (
                 <li
                   key={item.title}
-                  className="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-700"
+                  className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white"
                 >
                   {item.title}
                 </li>
               ))}
             </ul>
 
-            <ol className="mt-5 flex flex-wrap items-center gap-2" aria-label="수업 흐름">
-              {flowSteps.map((step, index) => (
-                <li key={step.label} className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-800 ${koreanText}`}
-                  >
-                    <span
-                      className="h-2 w-2 rounded-full"
-                      style={{ backgroundColor: PAD_COLORS[index] ?? PAD_COLORS[0] }}
-                      aria-hidden
-                    />
-                    {step.label}
-                  </span>
-                  {index < flowSteps.length - 1 ? (
-                    <span className="text-slate-300" aria-hidden>
-                      →
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ol>
-
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <TrackedLink
                 href={primaryCta.href}
                 trackLabel={primaryCta.trackLabel}
@@ -93,13 +116,12 @@ export function HomeSpomoveSpotlight() {
               <TrackedLink
                 href={secondaryCta.href}
                 trackLabel={secondaryCta.trackLabel}
-                className={`inline-flex min-h-11 items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8] ${homeFocusRing}`}
+                className={`${siteBtnSecondary} ${homeFocusRing}`}
               >
                 {secondaryCta.label}
-                <HomeChevron />
               </TrackedLink>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>

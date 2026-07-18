@@ -64,11 +64,28 @@ export function SpomoveGuidelineSheet({
   const mobileStartHref = officialPresetSessionHref(preset, { autostart: true, mode: 'mobile' });
 
   return (
-    <BottomSheet open title="가이드라인" onClose={onClose} size="preview">
+    <BottomSheet open title="가이드 · 참고 영상" onClose={onClose} size="preview">
       <div className="space-y-5">
         <div className="text-center">
           <h2 className="text-2xl font-black text-slate-950">{display.displayTitle}</h2>
+          <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500">
+            실행 전 아래 참고 영상과 패드 배치를 확인하세요.
+          </p>
         </div>
+
+        <section aria-labelledby="spomove-guide-video-heading">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--spm-acc-glow)] text-[var(--spm-acc)]">
+              ▶
+            </span>
+            <h3 id="spomove-guide-video-heading" className="text-[13px] font-black text-slate-950">
+              참고 영상
+            </h3>
+          </div>
+          <SpomoveGuideVideo videoUrl={guideVideoUrl} />
+        </section>
+
+        <SpomovePadLayoutView variant={display.padLayoutVariant} />
 
         <div className="flex flex-col gap-2">
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -93,10 +110,6 @@ export function SpomoveGuidelineSheet({
             닫기
           </button>
         </div>
-
-        <SpomoveGuideVideo videoUrl={guideVideoUrl} />
-
-        <SpomovePadLayoutView variant={display.padLayoutVariant} />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <InfoBlock title="대상" value={display.targetLabel} />

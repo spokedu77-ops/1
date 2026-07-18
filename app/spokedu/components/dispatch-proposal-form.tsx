@@ -19,9 +19,11 @@ const AGE_OPTIONS = ['유아', '초등 저학년', '초등 고학년', '중등',
 const HEADCOUNT_OPTIONS = ['10명 미만', '10~20명', '20~30명', '30명 이상'] as const;
 
 const inputClass =
-  'mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20';
+  'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
 const labelClass = 'text-sm font-semibold text-slate-800';
-const hintClass = 'mt-1 text-xs leading-relaxed text-slate-500';
+const hintClass = 'mt-1 text-xs leading-relaxed text-stone-500';
+const formShell =
+  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
 
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
@@ -143,7 +145,7 @@ export function DispatchProposalForm() {
   );
 
   return (
-    <section id="contact" className="scroll-mt-24 space-y-6 sm:space-y-8">
+    <section id="contact" className="scroll-mt-24 space-y-5 sm:space-y-6">
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">운영 상담</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
@@ -154,11 +156,7 @@ export function DispatchProposalForm() {
         </p>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm shadow-slate-900/[0.03] sm:p-6 lg:p-8"
-        noValidate
-      >
+      <form onSubmit={handleSubmit} className={`${formShell} p-5 sm:p-6 lg:p-7`} noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className={labelClass} htmlFor="dispatch-org">
@@ -188,7 +186,7 @@ export function DispatchProposalForm() {
           </div>
         </div>
 
-        <div className="mt-5 rounded-xl border border-teal-100 bg-teal-50/50 px-4 py-3">
+        <div className="mt-5 rounded-2xl border border-teal-100 bg-teal-50/50 px-4 py-3">
           <p className="text-xs font-bold uppercase tracking-wide text-teal-900">연락처 안내</p>
           <p className={`mt-1 text-sm text-slate-600 ${koreanLineBreak}`}>
             전화번호 또는 이메일 중 하나만 있어도 접수됩니다. 운영안 안내는 이메일로 회신하는 경우가 많습니다.
@@ -377,12 +375,12 @@ export function DispatchProposalForm() {
 
         {status.message ? (
           <p
-            className={`mt-4 rounded-xl px-4 py-3 text-sm font-medium ${
+            className={`mt-4 rounded-2xl px-4 py-3 text-sm font-medium ${
               status.tone === 'ok'
                 ? 'bg-teal-50 text-teal-900'
                 : status.tone === 'error'
                   ? 'bg-rose-50 text-rose-800'
-                  : 'bg-slate-50 text-slate-700'
+                  : 'bg-stone-50 text-stone-700'
             }`}
             role="status"
           >
@@ -390,7 +388,7 @@ export function DispatchProposalForm() {
           </p>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button type="submit" disabled={submitting} className={`${siteBtnPrimary} disabled:opacity-60`}>
             {submitting ? '접수 중…' : '맞춤 운영안 받아보기'}
           </button>

@@ -166,13 +166,13 @@ export const homeCaption = 'text-[13px] font-medium leading-snug text-slate-500 
 
 /** 브랜드 primary CTA — 48~52px */
 export const siteBtnPrimary =
-  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg bg-[#1D4ED8] px-7 py-3.5 text-[15px] font-semibold text-white transition hover:bg-[#1a44c4] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] sm:min-h-[3.25rem] sm:text-base';
+  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl bg-[#1D4ED8] px-7 py-3.5 text-[15px] font-semibold text-white shadow-sm shadow-blue-900/15 transition ${fineHover}hover:bg-[#1a44c4] ${fineHover}hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] sm:min-h-[3.25rem] sm:text-base`;
 
 export const siteBtnSecondary =
-  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition hover:border-slate-400 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] sm:min-h-[3.25rem] sm:text-base';
+  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl border border-slate-300/90 bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition ${fineHover}hover:border-slate-400 ${fineHover}hover:bg-slate-50 ${fineHover}hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8] sm:min-h-[3.25rem] sm:text-base`;
 
 export const siteBtnSecondaryOnDark =
-  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg border border-white/35 bg-white/5 px-7 py-3.5 text-[15px] font-semibold text-white transition hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
+  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl border border-white/35 bg-white/5 px-7 py-3.5 text-[15px] font-semibold text-white transition ${fineHover}hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base`;
 
 export const siteBtnGhostOnDark =
   'inline-flex min-h-[3rem] items-center justify-center gap-1.5 text-[15px] font-semibold text-white/85 underline-offset-4 transition hover:text-white hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
@@ -180,8 +180,8 @@ export const siteBtnGhostOnDark =
 /** 얇은 border 카드 — 그림자 최소 */
 export const siteCardBorder = 'border border-slate-200/90 bg-white';
 
-/** 홈 에디토리얼 — 현장 기반 브랜드 톤 */
-export const homePageSurface = 'bg-[#FAFAF8] text-[#0B1220]';
+/** 홈 — 쿨톤 현장 브랜드 서피스 */
+export const homePageSurface = 'bg-[#F3F7FC] text-[#0B1220]';
 
 export const homeSectionPad = 'py-16 sm:py-20 lg:py-24 xl:py-28';
 
@@ -201,37 +201,36 @@ export const homeHeroLead = `mt-5 max-w-[36rem] text-base leading-[1.72] text-sl
 
 export const homeHeroImage = 'overflow-hidden rounded-xl border border-slate-200/80 bg-slate-200 shadow-sm shadow-slate-900/[0.04]';
 
-/** Home 풀블리드 Hero — edge-to-edge 실사 + 카피 레이어 */
-/** 아동·청소년 체육 브랜드 — 전체 화면 점유보다 첫 인상 + 본문 연결을 우선 */
+/** Home 풀블리드 Hero — 현장 사진 한 장으로 첫 인상 (2차 히어로와 구분) */
 export const homeHeroFullBleed =
-  'relative flex min-h-[min(72svh,640px)] w-full flex-col justify-end overflow-hidden bg-[#0B1220] sm:min-h-[min(78svh,720px)]';
+  'relative flex min-h-[min(88svh,860px)] w-full flex-col justify-end overflow-hidden bg-[#07101f] sm:min-h-[min(92svh,920px)]';
 
 export const homeHeroFullBleedScrim =
-  'pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/90 via-[#0B1220]/45 to-[#0B1220]/25';
+  'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(7,16,31,0.25)_0%,rgba(7,16,31,0.2)_35%,rgba(7,16,31,0.72)_72%,rgba(7,16,31,0.94)_100%)]';
 
 export const homeHeroFullBleedCopy =
-  'relative z-[1] w-full pb-12 pt-28 sm:pb-16 sm:pt-32 lg:pb-20 lg:pt-36';
+  'relative z-[1] w-full pb-14 pt-28 sm:pb-16 sm:pt-32 lg:pb-20 lg:pt-36';
 
 export const homeHeroBrand =
-  'text-[11px] font-semibold uppercase tracking-[0.22em] text-white/80 sm:text-xs';
+  'text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs';
 
-export const homeHeroFullBleedTitle = `font-bold tracking-tight text-white ${koreanText} text-[1.875rem] leading-[1.12] min-[390px]:text-[2.125rem] min-[430px]:text-[2.375rem] sm:text-[3rem] sm:leading-[1.08] lg:text-[3.5rem] xl:text-[4rem]`;
+export const homeHeroFullBleedTitle = `font-black tracking-[-0.03em] text-white ${koreanText} text-[2rem] leading-[1.08] min-[390px]:text-[2.25rem] min-[430px]:text-[2.5rem] sm:text-[3.25rem] sm:leading-[1.05] lg:text-[3.75rem] xl:text-[4.25rem]`;
 
-export const homeHeroFullBleedLead = `mt-4 max-w-[34rem] text-base leading-[1.65] text-white/85 sm:mt-5 sm:text-[17px] lg:text-lg ${koreanText}`;
+export const homeHeroFullBleedLead = `mt-4 max-w-[34rem] text-base leading-[1.65] text-white/82 sm:mt-5 sm:text-[17px] lg:text-lg ${koreanText}`;
 
 export const siteBtnPrimaryOnHero =
-  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
+  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition ${fineHover}hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base`;
 
 export const siteBtnSecondaryOnHero =
-  'inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-lg border border-white/40 bg-white/10 px-7 py-3.5 text-[15px] font-semibold text-white backdrop-blur-sm transition hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base';
+  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl border border-white/45 bg-white/10 px-7 py-3.5 text-[15px] font-semibold text-white backdrop-blur-md transition ${fineHover}hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base`;
 
 export const homeFocusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]';
 
 export const homeGateCard =
-  `group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.03] transition ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-slate-300 ${fineHover}hover:shadow-md`;
+  `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)] ring-1 ring-slate-200/60 transition ${fineHover}hover:-translate-y-1 ${fineHover}hover:shadow-[0_22px_50px_-28px_rgba(29,78,216,0.35)]`;
 
 export const homeCaseCard =
-  `group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm shadow-slate-900/[0.03] transition ${fineHover}hover:-translate-y-0.5 ${fineHover}hover:border-slate-300 ${fineHover}hover:shadow-md`;
+  `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-white/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.3)] ring-1 ring-slate-200/50 transition ${fineHover}hover:-translate-y-1 ${fineHover}hover:shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)]`;
 
-export const homeDarkSection = 'relative overflow-hidden bg-[#0B1220] text-white';
+export const homeDarkSection = 'relative overflow-hidden bg-[#07101f] text-white';

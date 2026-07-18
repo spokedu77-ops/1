@@ -441,12 +441,15 @@ export function useNoteBlockActions(options: {
 
   const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
     if (!selectedId || specs.length === 0) return;
-    const singleSpecialPaste = specs.length === 1 && (
-      isStructuralHtmlPasteSpec(specs[0])
-      || specs[0].type !== block.type
+    const normalizedSpecs = specs.length > 1 && specs[0]?.type === 'text' && block.type !== 'text'
+      ? [{ ...specs[0], type: block.type }, ...specs.slice(1)]
+      : specs;
+    const singleSpecialPaste = normalizedSpecs.length === 1 && (
+      isStructuralHtmlPasteSpec(normalizedSpecs[0])
+      || normalizedSpecs[0].type !== block.type
     );
-    if (specs.length > 1 && !canSplitMultilinePasteToBlocks(block.type)) return;
-    if (specs.length === 1 && !singleSpecialPaste) return;
+    if (normalizedSpecs.length > 1 && !canSplitMultilinePasteToBlocks(block.type)) return;
+    if (normalizedSpecs.length === 1 && !singleSpecialPaste) return;
 
     const previousBlocks = mergeBlocksWithStoreContent(blocksRef.current);
     const sourceContent = resolvePasteSourceContent(block);
@@ -459,9 +462,12 @@ export function useNoteBlockActions(options: {
         syncBlockContent,
       },
       block,
-      specs,
+      normalizedSpecs,
       sourceContent,
     );
+    if (documentEngine.hasPendingContent()) {
+      await documentEngine.flushContentPatches();
+    }
 
     const nextBlocks = mergeBlocksWithStoreContent(blocksRef.current);
     recordBlockTransactionUndo(
@@ -469,7 +475,7 @@ export function useNoteBlockActions(options: {
       nextBlocks,
       collectBlockTransactionIds(previousBlocks, nextBlocks),
     );
-    if (specs[0]?.type === 'image' || specs[0]?.type === 'table' || specs[0]?.type === 'divider') {
+    if (normalizedSpecs[0]?.type === 'image' || normalizedSpecs[0]?.type === 'table' || normalizedSpecs[0]?.type === 'divider') {
       return;
     }
     focusBlockEditor(lastFocusId, lastFocusPart);
@@ -481,6 +487,7 @@ export function useNoteBlockActions(options: {
     recordBlockTransactionUndo,
     focusBlockEditor,
     blocksRef,
+    documentEngine,
   ]);
 
   const handlePasteBlockClipboard = useCallback(async (payloadText: string) => {

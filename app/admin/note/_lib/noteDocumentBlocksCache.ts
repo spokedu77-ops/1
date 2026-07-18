@@ -177,7 +177,7 @@ export function rememberNoteDocumentBlocks(
     } else {
       emptyConfirmed = options?.serverConfirmedEmpty === true;
     }
-  } else if (!options?.trustServer && !hasRecentBlockDeletes(documentId)) {
+  } else if (!hasRecentBlockDeletes(documentId)) {
     const existing = readEntry(documentId);
     if (existing && shouldSkipSuspiciousCacheShrink(existing.blocks, incoming)) {
       return;

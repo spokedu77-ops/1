@@ -14,7 +14,8 @@ const recordDraft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and guideline actions on hub cards', () => {
     expect(hub).toContain('buildSpomoveCardTags');
-    expect(hub).toContain('가이드라인');
+    expect(hub).toContain('참고 영상');
+    expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain('실행');
     expect(hub).toContain('최근 SPOMOVE');
@@ -49,6 +50,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(guidelineSheet).toContain('SpomovePadLayoutView');
     expect(guidelineSheet).toContain('SpomoveGuideVideo');
+    expect(guidelineSheet).toContain('참고 영상');
   });
 
   it('starts sessions immediately from hub cards and guideline sheet', () => {

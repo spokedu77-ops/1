@@ -98,6 +98,24 @@ describe('buildStages', () => {
     const nonBonus = stages.filter((s) => !s.isBonus);
     expect(nonBonus.every((s) => s.durationSec === 30)).toBe(true);
   });
+
+  test('random layout — 1스테이지 혼합, 60초', () => {
+    const stages = labBuildStages(['punch', 'kick', 'duck', 'reach'], 60, { layout: 'random' });
+    expect(stages).toHaveLength(1);
+    expect(stages[0]!.label).toBe('RANDOM');
+    expect(stages[0]!.durationSec).toBe(60);
+    expect(stages[0]!.activeModules).toEqual(new Set(['jump', 'punch', 'kick', 'duck', 'reach']));
+  });
+
+  test('sequential + includeBonus false — 보너스 없이 순차만', () => {
+    const stages = labBuildStages(['punch', 'kick', 'duck', 'reach'], 20, {
+      layout: 'sequential',
+      includeBonus: false,
+    });
+    expect(stages).toHaveLength(5);
+    expect(stages.every((s) => !s.isBonus)).toBe(true);
+    expect(stages.every((s) => s.durationSec === 20)).toBe(true);
+  });
 });
 
 describe('buildStagePreview', () => {

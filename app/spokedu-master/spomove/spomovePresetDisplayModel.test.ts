@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { OFFICIAL_SPOMOVE_LIBRARY } from './officialSpomovePresets';
-import { buildSpomoveCardTags, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { buildSpomoveCardTags, getSpomovePresetDisplayModel, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
 
 describe('spomove preset display model', () => {
   it('uses unique preset titles and runtime-aware duration labels without BGM copy', () => {
@@ -11,7 +11,7 @@ describe('spomove preset display model', () => {
     expect(visual).toBeTruthy();
     expect(getSpomovePresetDisplayModel(visual!).durationLabel).toBe('3초 · 20회');
 
-    const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.programGroup === 'bonus');
+    const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'dive-random');
     expect(dive).toBeTruthy();
     expect(getSpomovePresetDisplayModel(dive!).durationLabel).toMatch(/^세션 \d+초/);
 
@@ -21,5 +21,13 @@ describe('spomove preset display model', () => {
       expect(settingTag?.value).not.toMatch(/BGM/i);
       expect((bodyFunctionTag?.value.split(' · ') ?? []).filter(Boolean).length).toBeLessThanOrEqual(2);
     }
+  });
+
+  it('sortSpomovePresetsByDisplayTitle sorts by Korean display title', () => {
+    const sample = OFFICIAL_SPOMOVE_LIBRARY.slice(0, 12);
+    const shuffled = [...sample].reverse();
+    const sorted = sortSpomovePresetsByDisplayTitle(shuffled);
+    const titles = sorted.map((preset) => getSpomovePresetDisplayModel(preset).displayTitle);
+    expect([...titles].sort((a, b) => a.localeCompare(b, 'ko'))).toEqual(titles);
   });
 });

@@ -11,6 +11,7 @@ import {
   COLUMN_TYPE,
 } from '../_lib/noteColumnBlock';
 import {
+  isBlockInParent,
   resolveFocusedInsertTarget,
   resolveInsertIndexAfterBlock,
 } from '../_lib/noteInsertPosition';
@@ -87,9 +88,9 @@ export function useNoteBlockInsert(options: {
     insertOptions?: { content?: Record<string, unknown>; focus?: boolean; registerUndo?: boolean },
   ): Promise<NoteBlock | null> => {
     if (!selectedId) return null;
+    const previousBlocks = blocksRef.current;
     try {
       setLoadingState('saving');
-      const previousBlocks = blocksRef.current;
       const siblings = previousBlocks
         .filter((b) => (b.parent_block_id ?? null) === parentId)
         .sort((a, b) => a.order_index - b.order_index);
@@ -106,6 +107,40 @@ export function useNoteBlockInsert(options: {
         order_index: index >= clampedIndex ? index + 1 : index,
       }));
       const createdBlockId = newNoteBlockClientId();
+      const now = new Date().toISOString();
+      const optimisticBlock: NoteBlock = {
+        id: createdBlockId,
+        document_id: selectedId,
+        parent_block_id: parentId,
+        type,
+        order_index: clampedIndex,
+        content: blockContent as Record<string, unknown>,
+        created_at: now,
+        updated_at: now,
+        version: 1,
+      };
+      const command = buildInsertBlockCommand(
+        previousBlocks,
+        optimisticBlock,
+        parentId,
+        clampedIndex,
+        { focus: insertOptions?.focus !== false },
+      );
+      let nextBlocks = command.nextBlocks;
+      let affectedIds = [...command.affectedIds];
+      blocksRef.current = nextBlocks;
+      setBlocks(nextBlocks);
+      if (insertOptions?.focus !== false && command.focusTarget) {
+        focusBlockEditor(
+          command.focusTarget.blockId,
+          command.focusTarget.part,
+          command.focusTarget.caretOffset,
+        );
+      }
+      if (insertOptions?.registerUndo !== false && type !== COLUMN_LIST_TYPE) {
+        recordBlockCommandUndo(previousBlocks, { ...command, nextBlocks, affectedIds });
+      }
+
       const createdBlock = await documentEngine.persistCreateBlock({
         id: createdBlockId,
         documentId: selectedId,
@@ -115,15 +150,6 @@ export function useNoteBlockInsert(options: {
         parent_block_id: parentId,
         normalizeOrders: normalizedExistingOrders,
       });
-      const command = buildInsertBlockCommand(
-        previousBlocks,
-        createdBlock,
-        parentId,
-        clampedIndex,
-        { focus: insertOptions?.focus !== false },
-      );
-      let nextBlocks = command.nextBlocks;
-      let affectedIds = [...command.affectedIds];
       if (type === COLUMN_LIST_TYPE) {
         for (const spec of buildDefaultColumnChildren(createdBlock)) {
           const columnBlock = await documentEngine.persistCreateBlock({
@@ -146,7 +172,7 @@ export function useNoteBlockInsert(options: {
       }
       blocksRef.current = nextBlocks;
       setBlocks(nextBlocks);
-      if (insertOptions?.focus !== false) {
+      if (insertOptions?.focus !== false && type === COLUMN_LIST_TYPE) {
         if (type === COLUMN_LIST_TYPE) {
           const firstColumn = nextBlocks.find(
             (block) => block.parent_block_id === createdBlock.id && block.type === COLUMN_TYPE,
@@ -154,22 +180,18 @@ export function useNoteBlockInsert(options: {
           if (firstColumn) {
             focusBlockEditor(firstColumn.id, 'editor');
           }
-        } else if (command.focusTarget) {
-          focusBlockEditor(
-            command.focusTarget.blockId,
-            command.focusTarget.part,
-            command.focusTarget.caretOffset,
-          );
         }
       }
 
-      if (insertOptions?.registerUndo !== false) {
+      if (insertOptions?.registerUndo !== false && type === COLUMN_LIST_TYPE) {
         recordBlockCommandUndo(previousBlocks, { ...command, nextBlocks, affectedIds });
       }
 
       return createdBlock;
     } catch (e) {
       devLogger.error('[Note] insertBlockAmongSiblings', e);
+      blocksRef.current = previousBlocks;
+      setBlocks(previousBlocks);
       setError(e instanceof Error ? e.message : '블록 추가 실패');
       setLoadingState('idle');
       return null;
@@ -470,15 +492,15 @@ export function useNoteBlockInsert(options: {
 
       setLoadingState('saving');
       const parentBlockId = focusedToggleId ?? null;
-      if (parentBlockId) {
-        await handleInsertBlockInParent(parentBlockId, type);
+      const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
+      const focusedTarget = resolveFocusedInsertTarget(blocksRef.current, focusedId);
+      if (focusedTarget && (!parentBlockId || isBlockInParent(blocksRef.current, focusedId, parentBlockId))) {
+        await insertBlockAmongSiblings(focusedTarget.parentId, type, focusedTarget.insertIndex);
         return;
       }
 
-      const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
-      const focusedTarget = resolveFocusedInsertTarget(blocksRef.current, focusedId);
-      if (focusedTarget) {
-        await insertBlockAmongSiblings(focusedTarget.parentId, type, focusedTarget.insertIndex);
+      if (parentBlockId) {
+        await handleInsertBlockInParent(parentBlockId, type);
         return;
       }
 

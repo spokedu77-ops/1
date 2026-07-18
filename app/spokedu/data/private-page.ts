@@ -59,7 +59,7 @@ export const privatePage = {
     items: [
       { id: 'format', value: '1:1·소그룹', label: '아이 속도에 맞춘 수업 형태' },
       { id: 'visit', value: '방문형', label: '집·공원·체육시설 상담 후 운영' },
-      { id: 'report', value: 'Move Report', label: '상담 전 간단 진단 활용' },
+      { id: 'feedback', value: '회차 피드백', label: '수업 후 성장 포인트 전달' },
     ],
   },
   heroCtas: {
@@ -69,9 +69,9 @@ export const privatePage = {
       trackLabel: 'private-cta-consult',
     },
     secondary: {
-      label: '수업 방식 보기',
-      href: '#lesson-design',
-      trackLabel: 'private-cta-lesson-design',
+      label: '수업 현장 보기',
+      href: '#class-flow',
+      trackLabel: 'private-cta-class-flow',
     },
   },
   whoNeeds: {

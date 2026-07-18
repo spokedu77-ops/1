@@ -377,6 +377,7 @@ function BlockContent({
           inlineRowPadding={inlineRowPadding}
           rootBlockShell={rootBlockShell}
           enterCreatesBlockBelow={enterCreatesBlockBelow}
+          parentBlockType={isInsideToggle ? 'toggle' : null}
           onContentPatch={onContentPatch}
           onEnter={onEnter}
           onAddBelow={onAddBelow}

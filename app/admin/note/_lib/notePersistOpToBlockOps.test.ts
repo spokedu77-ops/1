@@ -168,6 +168,36 @@ describe('persistOpToPushItems structural contracts', () => {
       deleteIds: ['deleted'],
     });
   });
+
+  it('preserves block_transaction creates for atomic structural edits', () => {
+    const [item] = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [{ id: 'existing', order_index: 1 }],
+      deleteIds: ['deleted'],
+      creates: [{
+        id: 'new-todo',
+        document_id: 'doc-1',
+        parent_block_id: 'toggle-1',
+        type: 'todo',
+        order_index: 0,
+        content: { text: '7.20 interview OT', checked: false },
+      }],
+    });
+
+    expect(item.payload).toEqual({
+      opType: 'block_transaction',
+      patches: [{ id: 'existing', order_index: 1 }],
+      deleteIds: ['deleted'],
+      creates: [{
+        id: 'new-todo',
+        document_id: 'doc-1',
+        parent_block_id: 'toggle-1',
+        type: 'todo',
+        order_index: 0,
+        content: { text: '7.20 interview OT', checked: false },
+      }],
+    });
+  });
 });
 
 describe('collectPendingSoftDeleteIds', () => {

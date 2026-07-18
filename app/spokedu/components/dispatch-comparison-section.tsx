@@ -2,6 +2,9 @@ import { dispatchPage } from '../data/dispatch-page';
 import { koreanLineBreak } from '../lib/ui-classes';
 import { LandingSectionHeading } from './landing-section-heading';
 
+const premiumPanel =
+  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
+
 function CheckIcon() {
   return (
     <svg className="mt-0.5 h-4 w-4 shrink-0 text-teal-700" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
@@ -30,7 +33,7 @@ export function DispatchComparisonSection() {
   const section = dispatchPage.comparison;
 
   return (
-    <div className="space-y-5 sm:space-y-6">
+    <div className="space-y-4">
       <LandingSectionHeading
         eyebrow={section.eyebrow}
         title={section.title}
@@ -38,25 +41,21 @@ export function DispatchComparisonSection() {
         accent="teal"
       />
 
-      {/* 모바일·태블릿: 카드형 비교 */}
-      <div className="space-y-3 lg:hidden">
+      <div className="space-y-2.5 lg:hidden">
         {section.rows.map((row) => (
-          <article
-            key={row.label}
-            className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.02]"
-          >
-            <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+          <article key={row.label} className={premiumPanel}>
+            <div className="border-b border-stone-100 bg-stone-50/80 px-4 py-2.5">
               <h3 className="text-sm font-semibold text-slate-900">{row.label}</h3>
             </div>
-            <div className="divide-y divide-slate-100">
-              <div className="flex gap-3 bg-teal-50/40 px-4 py-3.5">
+            <div className="divide-y divide-stone-100">
+              <div className="flex gap-3 bg-teal-50/40 px-4 py-3">
                 <CheckIcon />
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-teal-900">SPOKEDU</p>
                   <p className={`mt-1 text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>{row.spokedu}</p>
                 </div>
               </div>
-              <div className="flex gap-3 px-4 py-3.5">
+              <div className="flex gap-3 px-4 py-3">
                 <XIcon />
                 <div className="min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">일반 업체</p>
@@ -68,29 +67,30 @@ export function DispatchComparisonSection() {
         ))}
       </div>
 
-      {/* 데스크톱: 표 */}
-      <div className="hidden overflow-hidden rounded-[1.35rem] border border-slate-200/80 bg-white lg:block">
-        <div className="grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-b border-slate-100 bg-slate-50/90">
-          <div className="px-5 py-3.5 text-xs font-bold uppercase tracking-wide text-slate-500">비교 항목</div>
-          <div className="border-l border-slate-100 px-5 py-3.5">
+      <div className={`hidden lg:block ${premiumPanel}`}>
+        <div className="grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-b border-stone-100 bg-stone-50/90">
+          <div className="px-5 py-3 text-xs font-bold uppercase tracking-wide text-stone-500">비교 항목</div>
+          <div className="border-l border-stone-100 px-5 py-3">
             <span className="text-xs font-bold text-teal-900">SPOKEDU</span>
-            <span className="ml-2 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">PREMIUM</span>
+            <span className="ml-2 rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-bold text-teal-800">
+              PREMIUM
+            </span>
           </div>
-          <div className="border-l border-slate-100 px-5 py-3.5 text-xs font-bold text-slate-500">일반 업체</div>
+          <div className="border-l border-stone-100 px-5 py-3 text-xs font-bold text-stone-500">일반 업체</div>
         </div>
         {section.rows.map((row, index) => (
           <div
             key={row.label}
-            className={`grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-t border-slate-100 ${
-              index % 2 === 1 ? 'bg-slate-50/40' : 'bg-white'
+            className={`grid grid-cols-[minmax(0,0.85fr)_1fr_1fr] border-t border-stone-100 ${
+              index % 2 === 1 ? 'bg-stone-50/40' : 'bg-white'
             }`}
           >
-            <div className="px-5 py-4 text-sm font-semibold text-slate-900">{row.label}</div>
-            <div className="flex gap-2.5 border-l border-slate-100 bg-teal-50/30 px-5 py-4">
+            <div className="px-5 py-3.5 text-sm font-semibold text-slate-900">{row.label}</div>
+            <div className="flex gap-2.5 border-l border-stone-100 bg-teal-50/30 px-5 py-3.5">
               <CheckIcon />
               <p className={`text-sm leading-relaxed text-slate-700 ${koreanLineBreak}`}>{row.spokedu}</p>
             </div>
-            <div className="flex gap-2.5 border-l border-slate-100 px-5 py-4">
+            <div className="flex gap-2.5 border-l border-stone-100 px-5 py-3.5">
               <XIcon />
               <p className={`text-sm leading-relaxed text-slate-500 ${koreanLineBreak}`}>{row.basic}</p>
             </div>

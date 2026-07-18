@@ -155,6 +155,22 @@ describe('note block commands', () => {
     expect(blocks).toHaveLength(3);
   });
 
+  it('uses the immediately updated local structure for consecutive inserts', () => {
+    const blocks = [
+      block('anchor', 0),
+      block('after', 1),
+    ];
+    const first = buildInsertBlockCommand(blocks, block('todo-1', 99), null, 1);
+    const second = buildInsertBlockCommand(first.nextBlocks, block('todo-2', 99), null, 2);
+
+    const roots = second.nextBlocks
+      .filter((item) => !item.parent_block_id)
+      .sort((left, right) => left.order_index - right.order_index);
+
+    expect(roots.map((item) => item.id)).toEqual(['anchor', 'todo-1', 'todo-2', 'after']);
+    expect(roots.map((item) => item.order_index)).toEqual([0, 1, 2, 3]);
+  });
+
   it('returns title focus for inserted toggles and can suppress focus', () => {
     const blocks = [block('a', 0)];
     const created = { ...block('toggle', 99), type: 'toggle' };

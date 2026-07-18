@@ -21,6 +21,7 @@ export function isEphemeralQaDocumentTitle(title) {
   if (/^Smoke(\s|$)/i.test(trimmed) || trimmed.startsWith('SmokeTodoChain')) return true;
   if (trimmed.startsWith('Typing QA ')) return true;
   if (trimmed.startsWith('Regression QA ')) return true;
+  if (trimmed.startsWith('Foundation QA ')) return true;
   if (trimmed.startsWith('Toggle KB QA ')) return true;
   if (trimmed.startsWith('Toggle Zombie QA ')) return true;
   if (trimmed.startsWith('dbg ')) return true;
@@ -99,6 +100,35 @@ export async function listRemainingEphemeralQaDocumentsViaPage(page) {
   return documents
     .filter((doc) => ids.has(doc.id))
     .map((doc) => ({ id: doc.id, title: doc.title }));
+}
+
+/**
+ * Browser session cleanup first, service_role fallback second.
+ * QA scripts must not leave Smoke/Regression documents behind just because the
+ * page session is already broken by the failure being investigated.
+ */
+export async function cleanupEphemeralQaDocumentsBestEffort(page) {
+  const errors = [];
+  if (page) {
+    try {
+      const cleaned = await cleanupEphemeralQaDocumentsViaPage(page);
+      const remaining = await listRemainingEphemeralQaDocumentsViaPage(page);
+      if (remaining.length === 0) {
+        return { ...cleaned, remaining, via: 'page', errors };
+      }
+      errors.push(new Error(`page cleanup left ${remaining.length} document(s)`));
+    } catch (error) {
+      errors.push(error instanceof Error ? error : new Error(String(error)));
+    }
+  }
+
+  const cleaned = await cleanupEphemeralQaDocumentsViaService();
+  return {
+    ...cleaned,
+    remaining: [],
+    via: 'service',
+    errors,
+  };
 }
 
 async function resolveActorUserId(service) {

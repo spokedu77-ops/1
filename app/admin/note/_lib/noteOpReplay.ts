@@ -2,6 +2,7 @@ import type { NoteBlock } from './types';
 import type { NoteBlockOpRecord, NoteBlockSnapshot } from '@/app/lib/note/noteBlockOpTypes';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
+import { documentHasProtectablePresence } from './noteAuthority';
 
 export function snapshotToNoteBlock(snapshot: NoteBlockSnapshot): NoteBlock {
   return ensureNoteBlockVersion({
@@ -163,9 +164,12 @@ export function mergeSnapshotPatches(
       // identityLeave ack — 활성 집합에서 drop
       continue;
     }
+    const serverBlock = snapshotToNoteBlock(snapshot);
+    const keepLocalContent = documentHasProtectablePresence([block])
+      || !documentHasProtectablePresence([serverBlock]);
     next.push(ensureNoteBlockVersion({
-      ...snapshotToNoteBlock(snapshot),
-      content: block.content ?? snapshot.content ?? {},
+      ...serverBlock,
+      content: keepLocalContent ? (block.content ?? serverBlock.content ?? {}) : (serverBlock.content ?? {}),
     }));
   }
   for (const snapshot of snapshots) {

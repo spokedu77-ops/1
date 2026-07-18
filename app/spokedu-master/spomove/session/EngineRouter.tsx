@@ -30,12 +30,6 @@ const CamouflageReactionTraining = lazy(() =>
   })),
 );
 
-const SweepReactionTraining = lazy(() =>
-  import('@/app/admin/spomove/training/_player/components/SweepReactionTraining').then((m) => ({
-    default: m.SweepReactionTraining,
-  })),
-);
-
 const RushReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/RushReactionTraining').then((m) => ({
     default: m.RushReactionTraining,
@@ -115,6 +109,9 @@ type Props = {
   camouflagePlacement?: 'center' | 'variant';
   flowFeatures?: string[];
   flowDuration?: number;
+  flowLayout?: 'sequential' | 'random';
+  flowIncludeBonus?: boolean;
+  flankerStimulusType?: 'color' | 'number';
   onComplete: (payload: EngineCompletePayload) => void;
   onExit: () => void;
 };
@@ -158,6 +155,9 @@ export function EngineRouter({
   camouflagePlacement,
   flowFeatures,
   flowDuration,
+  flowLayout,
+  flowIncludeBonus,
+  flankerStimulusType,
   onComplete,
   onExit,
 }: Props) {
@@ -204,6 +204,7 @@ export function EngineRouter({
             hideBodyLabelModeControls,
             spatialArrowColorMode,
             spatialArrowColorMapping,
+            flankerStimulusType,
           }}
           embed
           disableBgm
@@ -267,19 +268,6 @@ export function EngineRouter({
             speedLevel={reactSpeedLevel}
             speedSec={sp}
             placementMode={camouflagePlacement ?? 'center'}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
-    if (level === 5) {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <SweepReactionTraining
-            durationSec={dur}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
@@ -417,6 +405,8 @@ export function EngineRouter({
             audioMode: soundEnabled ? 'beep' : 'off',
             flowFeatures: resolvedFlowFeatures,
             flowDuration: flowDuration ?? 25,
+            flowLayout: flowLayout ?? 'sequential',
+            flowIncludeBonus: flowIncludeBonus ?? true,
           }}
           embed
           onExit={onExit}

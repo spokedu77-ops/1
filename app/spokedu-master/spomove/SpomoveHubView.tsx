@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { Bookmark, Lock, MonitorPlay } from 'lucide-react';
+import { Bookmark, Lock, MonitorPlay, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
@@ -33,7 +33,7 @@ import {
   getOfficialSpomovePresetGuide,
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
-import { getSpomovePresetDisplayModel, buildSpomoveCardTags } from './spomovePresetDisplayModel';
+import { getSpomovePresetDisplayModel, buildSpomoveCardTags, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
 import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 
@@ -576,11 +576,13 @@ function CardVisual({
   thumbnailUrl,
   imageFailed,
   onImageError,
+  hasGuideVideo,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   imageFailed: boolean;
   onImageError: () => void;
+  hasGuideVideo: boolean;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const fitInsideSquare = shouldFitThumbnailInsideSquare(preset);
@@ -604,6 +606,17 @@ function CardVisual({
       ) : (
         <SpomoveProgramVisual preset={preset} />
       )}
+      {preset.isReady ? (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pb-3 pt-10">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-black tracking-wide text-white backdrop-blur-[2px] motion-safe:transition group-hover:bg-white/25">
+            <Play className="h-3 w-3 fill-current" aria-hidden />
+            {hasGuideVideo ? '참고 영상 · 가이드' : '가이드 · 패드 배치'}
+          </span>
+          <p className="mt-1.5 hidden text-[10px] font-bold text-white/80 sm:block motion-safe:opacity-0 motion-safe:transition group-hover:opacity-100">
+            썸네일을 눌러 확인
+          </p>
+        </div>
+      ) : null}
       {!preset.isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-[1px]">
           <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-black text-white">
@@ -688,6 +701,7 @@ function PresetCard({
   preset,
   startHref,
   thumbnailUrl,
+  hasGuideVideo,
   favorite,
   favoriteEnabled,
   onPreview,
@@ -696,6 +710,7 @@ function PresetCard({
   preset: OfficialSpomovePreset;
   startHref: string;
   thumbnailUrl: string;
+  hasGuideVideo: boolean;
   favorite: boolean;
   favoriteEnabled: boolean;
   onPreview: () => void;
@@ -736,14 +751,15 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} 가이드라인`}
-        className="relative block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
+        aria-label={`${displayModel.displayTitle} ${hasGuideVideo ? '참고 영상과 ' : ''}가이드 보기`}
+        className="relative block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
           preset={preset}
           thumbnailUrl={thumbnailUrl}
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
+          hasGuideVideo={hasGuideVideo}
         />
       </button>
       <CardInfo
@@ -848,9 +864,9 @@ export default function SpomoveHubView() {
   }, []);
 
   const filteredPresets = useMemo(() => {
-    const presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
-    if (!showSavedOnly) return presets;
-    return presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
+    let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
+    if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
+    return sortSpomovePresetsByDisplayTitle(presets);
   }, [activeProgramGroup, activeThinkingLevel, favoriteSpomoveIds, showSavedOnly]);
   const showAxisSections = activeProgramGroup === 'all' && activeThinkingLevel === 'all';
   const axisSections = useMemo(() => {
@@ -873,6 +889,7 @@ export default function SpomoveHubView() {
           preset={preset}
           startHref={officialPresetSessionHref(preset, { autostart: true })}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
+          hasGuideVideo={Boolean(guideVideoUrls[preset.id])}
           favorite={isFavoriteProgram(ownerId, preset.id)}
           favoriteEnabled={ownerId != null && preset.isReady}
           onPreview={() => setPreviewPreset(preset)}
@@ -1023,6 +1040,14 @@ export default function SpomoveHubView() {
             </div>
           </div>
         </div>
+        <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold leading-relaxed text-slate-600">
+          <span className="font-black text-slate-800">썸네일</span>
+          을 누르면{' '}
+          <span className="font-black text-[var(--spm-acc)]">참고 영상</span>
+          과 패드 배치·활동 안내를 볼 수 있습니다. 실행은 아래{' '}
+          <span className="font-black text-slate-800">실행</span>
+          버튼을 사용하세요.
+        </p>
         {/* 카드 그리드 — 1:1 썸네일 · 2열 모바일 / 3열 / 4열 */}
         {filteredPresets.length > 0 ? (
           showAxisSections ? (

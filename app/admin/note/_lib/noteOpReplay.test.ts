@@ -168,6 +168,30 @@ describe('mergeSnapshotPatches', () => {
     expect(next[0].version).toBe(2);
   });
 
+  it('restores server content over an empty local placeholder', () => {
+    const blocks = [baseBlock('a', '', {
+      type: 'callout',
+      content: { icon: 'i', text: '', html: '<p></p>' },
+    })];
+    const snapshots: NoteBlockSnapshot[] = [{
+      id: 'a',
+      document_id: 'doc-1',
+      parent_block_id: null,
+      type: 'callout',
+      order_index: 0,
+      content: {
+        icon: 'i',
+        text: 'server callout line 1\nserver callout line 2',
+        html: '<p>server callout line 1<br>server callout line 2</p>',
+      },
+      version: 2,
+      updated_at: '2026-01-03T00:00:00.000Z',
+    }];
+    const next = mergeSnapshotPatches(blocks, snapshots);
+    expect((next[0].content as { text?: string }).text).toBe('server callout line 1\nserver callout line 2');
+    expect(next[0].version).toBe(2);
+  });
+
   it('does not resurrect blocks excluded as pending soft deletes', () => {
     const blocks = [baseBlock('a', 'keep')];
     const snapshots: NoteBlockSnapshot[] = [{

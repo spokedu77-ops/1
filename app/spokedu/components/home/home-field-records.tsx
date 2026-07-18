@@ -5,7 +5,6 @@ import { HOME_MEDIA } from '../../data/home-media';
 import { homePage, type HomeCaseCard } from '../../data/home-page';
 import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-records';
 import {
-  fineHover,
   homeCaption,
   homeCaseCard,
   homeCardPanelPad,
@@ -15,6 +14,8 @@ import {
   homeSectionPadCompact,
   homeSectionScrollMt,
   koreanText,
+  siteBtnPrimary,
+  siteBtnSecondary,
   siteContainer,
 } from '../../lib/ui-classes';
 import { ExternalPhoto } from '../external-photo';
@@ -34,34 +35,35 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
   return (
     <section
       id={homePage.cases.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-white`}
+      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#F3F7FC]`}
     >
       <div className={siteContainer}>
         <motion.div
-          className="flex flex-col gap-4 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between"
-          initial={reducedMotion ? false : { opacity: 0, y: 12 }}
+          className="flex flex-col gap-5 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between"
+          initial={reducedMotion ? false : { opacity: 0, y: 14 }}
           whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.45 }}
         >
           <div>
-            <h2 className={homeSectionH2}>{homePage.cases.title}</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">Field Notes</p>
+            <h2 className={`${homeSectionH2} mt-3`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="flex flex-col gap-2.5 sm:flex-row">
             <TrackedLink
               href={homePage.cases.recordsCta.href}
               trackLabel={homePage.cases.recordsCta.trackLabel}
-              className={`inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-900 transition ${fineHover}hover:border-slate-400 ${fineHover}hover:bg-slate-50 ${homeFocusRing}`}
+              className={`${siteBtnSecondary} ${homeFocusRing}`}
             >
               {homePage.cases.recordsCta.label}
             </TrackedLink>
             <TrackedLink
               href={homePage.cases.consultCta.href}
               trackLabel={homePage.cases.consultCta.trackLabel}
-              className={`inline-flex min-h-11 items-center justify-center rounded-lg bg-[#1D4ED8] px-4 text-sm font-semibold text-white transition ${fineHover}hover:bg-[#1a44c4] ${homeFocusRing}`}
+              className={`${siteBtnPrimary} ${homeFocusRing}`}
             >
               {homePage.cases.consultCta.label}
             </TrackedLink>
@@ -70,9 +72,16 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
 
         <ul className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6">
           {caseCards.map((card, index) => (
-            <li key={card.slug} className="min-w-0">
+            <motion.li
+              key={card.slug}
+              className="min-w-0"
+              initial={reducedMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.45, delay: Math.min(index, 3) * 0.05 }}
+            >
               <CaseCard card={card} priority={index < 2} />
-            </li>
+            </motion.li>
           ))}
         </ul>
       </div>
@@ -94,10 +103,16 @@ function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: bool
       <article className={`${homeCaseCard} h-full`}>
         <div className="relative aspect-[16/10] w-full overflow-hidden">
           <CaseMedia card={card} priority={priority} />
+          <div
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/25 via-transparent to-transparent opacity-80"
+            aria-hidden
+          />
         </div>
         <div className={`flex min-h-0 flex-1 flex-col ${homeCardPanelPad}`}>
           <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-          <h3 className={`mt-2 text-lg font-bold leading-snug text-[#0B1220] ${koreanText}`}>{card.programName}</h3>
+          <h3 className={`mt-2 text-lg font-bold leading-snug text-[#0B1220] sm:text-xl ${koreanText}`}>
+            {card.programName}
+          </h3>
           <p className={`mt-2 text-sm font-semibold text-slate-700 ${koreanText}`}>{card.venue}</p>
           <p className={`mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600 ${koreanText}`}>
             {card.description}
@@ -118,7 +133,7 @@ function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boo
       <ExternalPhoto
         src={card.thumbnailSrc}
         alt={`${card.programName} — ${card.venue}`}
-        className={`absolute inset-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+        className={`absolute inset-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04] ${homePhotoGrade}`}
         fit="cover"
         priority={priority}
       />
@@ -128,7 +143,7 @@ function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boo
   return (
     <MediaPanel
       media={HOME_MEDIA[card.mediaKey]}
-      className={`absolute inset-0 h-full w-full border-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.02] ${homePhotoGrade}`}
+      className={`absolute inset-0 h-full w-full border-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04] ${homePhotoGrade}`}
       sizes="gateCard"
       photoPriority={priority}
       priority={priority}

@@ -152,6 +152,23 @@ describe('toggle child keyboard parity', () => {
     })).toEqual({ kind: 'add-below', followType: 'text' });
   });
 
+  it('empty toggle child todo and callout Enter add text siblings below', () => {
+    expect(resolveInlineBlockEnterAction({
+      followType: 'todo',
+      text: '',
+      parentBlockId: 'toggle-1',
+      parentBlockType: 'toggle',
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'add-below', followType: 'text' });
+    expect(resolveInlineBlockEnterAction({
+      followType: 'callout',
+      text: '',
+      parentBlockId: 'toggle-1',
+      parentBlockType: 'toggle',
+      enterCtx: { isEmpty: true },
+    })).toEqual({ kind: 'add-below', followType: 'text' });
+  });
+
   it('first toggle child empty backspace deletes and focuses title', () => {
     expect(resolveToggleChildEmptyBackspaceAction({
       parentBlockType: 'toggle',
