@@ -29,10 +29,11 @@ function PosterStill({
   }, [posterCandidates, posterUrl]);
   const [index, setIndex] = useState(0);
   const current = candidates[index];
+  const candidatesKey = candidates.join('|');
 
   useEffect(() => {
     setIndex(0);
-  }, [candidates.join('|')]);
+  }, [candidatesKey]);
 
   if (!current) {
     return <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800" />;

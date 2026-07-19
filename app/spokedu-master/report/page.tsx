@@ -346,7 +346,7 @@ function ReportContent() {
   const [copyStatus, setCopyStatus] = useState<'error' | 'idle' | 'success'>('idle');
   const [saveStatus, setSaveStatus] = useState<'error' | 'idle' | 'saving' | 'success'>('idle');
   const [saveFeedback, setSaveFeedback] = useState<SaveActionFeedback | null>(null);
-  const [savedOutputId, setSavedOutputId] = useState<string | null>(savedExplanationId);
+  const [, setSavedOutputId] = useState<string | null>(savedExplanationId);
   const savedQueryAppliedRef = useRef<string | null>(null);
   const recordQueryAppliedRef = useRef<string | null>(null);
   const draftHydratedRef = useRef(false);

@@ -22,7 +22,7 @@ import { isInlineRichTextBlockType } from '../_lib/noteBlockTypes';
 import { BlockTextPreview } from './blocks/BlockTextPreview';
 import type { NoteEditor } from './NoteEditor';
 import type { NoteEditorEnterContext } from './NoteEditor';
-import type { MarkdownBlockTrigger } from './noteBulletInput';
+import type { NoteBlock } from '../_lib/types';
 import {
   stripListItemMarkerFromHtml,
   stripListItemMarkerPrefix,
@@ -69,7 +69,7 @@ type NoteEditableFieldProps = {
   onContentPatch?: (content: Record<string, unknown>) => void;
   onContentSync?: (content: Record<string, unknown>) => void;
   onUpdate?: (content: Record<string, unknown>) => void;
-  onChangeType?: (trigger: MarkdownBlockTrigger) => void;
+  onChangeType?: (type: NoteBlock['type']) => void;
   onShowFormatToolbar?: (
     applyMark: (mark: InlineMark) => void,
     applyTextStyle: (style: 'paragraph' | 'heading1' | 'heading2' | 'heading3') => void,
@@ -89,7 +89,7 @@ type NoteEditableFieldProps = {
 
 function mapToolbarStyleToBlockType(
   style: 'paragraph' | 'heading1' | 'heading2' | 'heading3',
-): MarkdownBlockTrigger {
+): NoteBlock['type'] {
   if (style === 'heading1') return 'heading';
   if (style === 'heading2') return 'heading2';
   if (style === 'heading3') return 'heading3';

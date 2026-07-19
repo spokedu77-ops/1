@@ -572,13 +572,11 @@ function CardVisual({
   thumbnailUrl,
   imageFailed,
   onImageError,
-  hasGuideVideo,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   imageFailed: boolean;
   onImageError: () => void;
-  hasGuideVideo: boolean;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
@@ -766,7 +764,6 @@ function PresetCard({
           thumbnailUrl={thumbnailUrl}
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
-          hasGuideVideo={hasGuideVideo}
         />
       </button>
       <CardInfo
