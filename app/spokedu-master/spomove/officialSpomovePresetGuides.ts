@@ -40,8 +40,8 @@ export type SpomovePresetGuide = {
 
 export const SPOMOVE_TARGET_GROUP_LABELS: Record<SpomoveTargetGroup, string> = {
   preschool: '미취학',
-  elementaryLower: '초저',
-  elementaryUpper: '초고',
+  elementaryLower: '초등 저학년',
+  elementaryUpper: '초등 고학년',
   specialSupport: '특수',
 };
 

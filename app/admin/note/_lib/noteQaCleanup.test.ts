@@ -39,4 +39,17 @@ describe('admin note ephemeral QA document cleanup', () => {
 
     expect(ids).toEqual([]);
   });
+
+  it('scopes cleanup to the requested title prefixes and descendants only', () => {
+    const ids = collectEphemeralQaDocumentIds([
+      doc('foundation', 'Foundation QA 1784358775697'),
+      doc('foundation-child', 'Untitled', 'foundation'),
+      doc('regression', 'Regression QA 1784358775697'),
+      doc('toggle-kb', 'Toggle KB QA 1784358775697'),
+      doc('toggle-child', 'Untitled', 'toggle-kb'),
+      doc('smoke', 'Smoke 1784358775697'),
+    ], { titlePrefixes: ['Regression QA ', 'Toggle KB QA '] });
+
+    expect(new Set(ids)).toEqual(new Set(['regression', 'toggle-kb', 'toggle-child']));
+  });
 });

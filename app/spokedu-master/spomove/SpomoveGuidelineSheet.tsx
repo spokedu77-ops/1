@@ -1,18 +1,39 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 import { parseVideoEmbedUrl } from '@/app/lib/note/videoEmbed';
 import { TrackedVideoIframe } from '../components/lesson/TrackedVideoIframe';
 import { BottomSheet } from '../components/ui/BottomSheet';
-import { getVideoThumbnail } from '../lib/program-media';
+import { preferLiteMedia } from '../lib/mediaPreferences';
+import { getVideoThumbnailCandidates } from '../lib/program-media';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 import { officialPresetSessionHref } from './officialSpomovePresets';
-import { SpomovePadLayoutView } from './SpomovePadLayoutView';
 import { buildSpomoveGuidelineNarrative, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 
+function usePreferredLaunchMode(): 'projector' | 'mobile' {
+  const [mode, setMode] = useState<'projector' | 'mobile'>('projector');
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)');
+    const apply = () => setMode(media.matches ? 'mobile' : 'projector');
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
+
+  return mode;
+}
+
 function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
+  const [liteMedia, setLiteMedia] = useState(false);
   const embed = parseVideoEmbedUrl(videoUrl);
+
+  useEffect(() => {
+    setLiteMedia(preferLiteMedia());
+  }, []);
+
   if (!embed) {
     return (
       <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
@@ -21,7 +42,7 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
     );
   }
 
-  const posterUrl = getVideoThumbnail(videoUrl);
+  const posterCandidates = getVideoThumbnailCandidates(videoUrl, { lite: liteMedia });
 
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black">
@@ -30,7 +51,7 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
           src={embed.embedUrl}
           title="SPOMOVE 가이드 영상"
           className="h-full w-full"
-          posterUrl={posterUrl}
+          posterCandidates={posterCandidates}
           deferUntilPlay
         />
       </div>
@@ -57,11 +78,11 @@ export function SpomoveGuidelineSheet({
   guideVideoUrl?: string;
   onClose: () => void;
 }) {
+  const launchMode = usePreferredLaunchMode();
   if (!preset) return null;
   const display = getSpomovePresetDisplayModel(preset);
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
-  const startHref = officialPresetSessionHref(preset);
-  const mobileStartHref = officialPresetSessionHref(preset, { mode: 'mobile' });
+  const startHref = officialPresetSessionHref(preset, { mode: launchMode });
 
   return (
     <BottomSheet open title="가이드 · 참고 영상" onClose={onClose} size="preview">
@@ -69,7 +90,7 @@ export function SpomoveGuidelineSheet({
         <div className="text-center">
           <h2 className="text-2xl font-black text-slate-950">{display.displayTitle}</h2>
           <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500">
-            실행 전 아래 참고 영상과 패드 배치를 확인하세요.
+            실행 전 아래 참고 영상을 확인하세요.
           </p>
         </div>
 
@@ -85,23 +106,18 @@ export function SpomoveGuidelineSheet({
           <SpomoveGuideVideo videoUrl={guideVideoUrl} />
         </section>
 
-        <SpomovePadLayoutView variant={display.padLayoutVariant} />
-
         <div className="flex flex-col gap-2">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Link
-              href={startHref}
-              className="inline-flex h-11 flex-1 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
-            >
-              큰 화면 실행
-            </Link>
-            <Link
-              href={mobileStartHref}
-              className="inline-flex h-11 flex-1 items-center justify-center rounded-[10px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] px-4 text-[13px] font-black text-[var(--spm-acc)]"
-            >
-              이 기기에서 실행
-            </Link>
-          </div>
+          <Link
+            href={startHref}
+            className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
+          >
+            실행
+          </Link>
+          <p className="text-center text-[12px] font-semibold leading-5 text-slate-500">
+            {launchMode === 'mobile'
+              ? '이 기기 레이아웃으로 엽니다. 프로젝터·TV에 연결했다면 PC에서 실행하세요.'
+              : '큰 화면(프로젝터·TV) 레이아웃으로 엽니다. 세션에서 전체화면을 켤 수 있습니다.'}
+          </p>
           <button
             type="button"
             onClick={onClose}

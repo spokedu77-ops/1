@@ -4,6 +4,7 @@ import {
   normalizeMasterSpace,
   normalizeMasterTarget,
 } from '@/app/spokedu-master/lib/programDisplayTags';
+import { normalizeLessonTheme } from '@/app/spokedu-master/lib/lessonTheme';
 import {
   buildAdminProgramSaveFailure,
   buildAdminProgramSaveSuccess,
@@ -360,7 +361,9 @@ export async function PATCH(request: Request) {
     const metaInput = body.meta ?? {};
     const overlayInput = body.overlay ?? {};
     const metaPatch: Record<string, unknown> = {};
-    if ('sm_theme' in metaInput) metaPatch.sm_theme = normalizeUnknownText(metaInput.sm_theme);
+    if ('sm_theme' in metaInput) {
+      metaPatch.sm_theme = normalizeNullableText(normalizeLessonTheme(normalizeUnknownText(metaInput.sm_theme)));
+    }
     if ('sm_grade' in metaInput) metaPatch.sm_grade = normalizeUnknownText(metaInput.sm_grade);
     if ('sm_tags' in metaInput) metaPatch.sm_tags = normalizeAdminTags(Array.isArray(metaInput.sm_tags) ? metaInput.sm_tags.filter(isString) : []);
     if ('sm_space' in metaInput) metaPatch.sm_space = normalizeUnknownText(metaInput.sm_space);

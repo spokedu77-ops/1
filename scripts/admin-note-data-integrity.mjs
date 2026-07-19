@@ -42,6 +42,7 @@ const supabase = createClient(
 );
 
 async function loadData() {
+  const dedupeById = (rows) => [...new Map(rows.map((row) => [row.id, row])).values()];
   const fetchPages = async (table, select, configure, limit) => {
     const rows = [];
     for (let from = 0; from < limit; from += PAGE_SIZE) {
@@ -53,7 +54,7 @@ async function loadData() {
       rows.push(...(data ?? []));
       if (!data || data.length < PAGE_SIZE) break;
     }
-    return rows;
+    return dedupeById(rows);
   };
 
   const documents = await fetchPages(

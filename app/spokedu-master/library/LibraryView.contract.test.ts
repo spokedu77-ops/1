@@ -6,6 +6,10 @@ const source = readFileSync(
   join(process.cwd(), 'app/spokedu-master/library/LibraryView.tsx'),
   'utf8',
 );
+const catalogCard = readFileSync(
+  join(process.cwd(), 'app/spokedu-master/components/lesson/LessonCatalogCard.tsx'),
+  'utf8',
+);
 
 describe('LibraryView favorites contract', () => {
   it('uses the owner-scoped canonical selectors and action', () => {
@@ -18,18 +22,21 @@ describe('LibraryView favorites contract', () => {
   it('keeps one ProgramCard implementation for both views', () => {
     expect(source.match(/function ProgramCard\(/g)).toHaveLength(1);
     expect(source.match(/<ProgramGrid/g)).toHaveLength(1);
+    expect(source).toContain('LessonCatalogCard');
   });
 
   it('provides an accessible bookmark button without opening preview', () => {
-    expect(source).toContain('event.stopPropagation()');
-    expect(source).toContain('aria-pressed={favorite}');
-    expect(source).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");
+    expect(catalogCard).toContain('event.stopPropagation()');
+    expect(catalogCard).toContain('aria-pressed={favorite}');
+    expect(catalogCard).toContain("favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'");
   });
 
   it('opens preview from the media card and keeps one full-lesson CTA', () => {
-    expect(source).toContain('aria-label={`${program.title} 수업 미리보기`}');
-    expect(source.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
-    expect(source).not.toMatch(/>\s*수업 미리보기\s*</);
+    expect(catalogCard).toContain('aria-label={`${title} 수업 미리보기`}');
+    expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
+    expect(catalogCard).not.toMatch(/>\s*수업 미리보기\s*</);
+    expect(catalogCard).toContain('자료 보기');
+    expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
     expect(source).toContain('전체 수업 자료 보기');
   });

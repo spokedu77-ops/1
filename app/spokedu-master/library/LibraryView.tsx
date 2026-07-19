@@ -3,24 +3,25 @@
 import {
   Bookmark,
   BookOpen,
-  Check,
   ChevronDown,
   Lock,
-  Play,
   Search,
   SlidersHorizontal,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
+import {
+  joinCatalogMeta,
+  LessonCatalogCard,
+} from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
-import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
+  getLessonTarget,
   getLessonTheme,
   parseTaggedValues,
 } from '../lib/lessonDisplay';
@@ -51,9 +52,6 @@ import {
   type LibraryViewMode,
 } from './libraryViewModel';
 import { getLibraryProgramDetailHref } from './libraryNavigation';
-
-const THUMBNAIL_FRAME =
-  'relative aspect-[6/5] w-full max-w-[1250px] overflow-hidden rounded-t-[20px]';
 
 // Display-only label mapping — stored matching value는 변경하지 않음
 const TARGET_LABEL: Record<string, string> = {
@@ -153,118 +151,36 @@ function ProgramCard({
   detailHref: string;
   priority?: boolean;
 }) {
-  const heroImage = getHeroImage(program);
-  const hasVideo = programHasPlayableVideo(program);
   const footerMeta = getCardFooterMeta(program, locked);
+  const targetLabel = getLessonTarget(program)
+    .split(/[,|/]/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => TARGET_LABEL[part] ?? part)
+    .join(' · ');
+  // SPOMOVE 카드와 동일: 액센트=테마, 설명=대상·활동·준비
+  const decisionMeta = getLessonTheme(program) || program.category || '체육 수업';
+  const supportMeta = joinCatalogMeta([targetLabel, footerMeta.activity, footerMeta.prep]);
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-[20px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] shadow-[0_12px_30px_rgba(15,23,42,0.07)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[color:var(--spm-br3)] hover:shadow-[0_18px_42px_rgba(15,23,42,0.12)]">
-      <button
-        type="button"
-        onClick={onPreview}
-        className={`${THUMBNAIL_FRAME} block bg-[var(--spm-s3)] text-left transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2`}
-        aria-label={`${program.title} 수업 미리보기`}
-      >
-        {heroImage ? (
-          <>
-            <Image
-              src={heroImage}
-              alt=""
-              fill
-              sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"
-              priority={priority}
-              className="object-cover object-[center_38%] motion-safe:transition motion-safe:duration-500 motion-safe:group-hover:scale-[1.025]"
-            />
-          </>
-        ) : (
-          <div className="grid h-full w-full place-items-center bg-gradient-to-br from-[var(--spm-acc-glow)] via-[var(--spm-s2)] to-[var(--spm-s1)]">
-            <CategoryIcon category={program.category} size={42} />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/88 via-slate-950/22 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-1/2 bg-[linear-gradient(to_top,rgba(15,23,42,0.42),transparent)]" />
-
-        <div className="absolute left-3 top-3 flex gap-1">
-          {locked ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500 px-2.5 py-1 text-[10px] font-black text-white">
-              <Lock className="h-3 w-3" />
-              프리미엄
-            </span>
-          ) : null}
-        </div>
-
-        {hasVideo ? (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <span className="grid h-9 w-9 place-items-center rounded-full bg-[var(--spm-acc)] text-white shadow-[0_6px_16px_rgba(49,46,129,0.22)] ring-2 ring-white/70">
-              <Play className="h-4 w-4 fill-current" />
-            </span>
-          </div>
-        ) : null}
-
-        <div className="absolute inset-x-0 bottom-0 px-3.5 pb-3.5 pt-10">
-          <h3 className="line-clamp-2 text-[15px] font-black leading-[1.16] text-white [text-shadow:0_1px_10px_rgba(0,0,0,0.45)] sm:text-[16px]">
-            {program.title}
-          </h3>
-          <div className="mt-2 flex items-center justify-between gap-2">
-            {used ? (
-              <span
-                className="inline-flex items-center gap-1 rounded-full bg-emerald-400/90 px-2.5 py-1 text-[10px] font-black text-emerald-950"
-                title="사용 이력 있음"
-              >
-                <Check className="h-3 w-3" />
-                사용함
-              </span>
-            ) : (
-              <span />
-            )}
-            <span />
-          </div>
-        </div>
-      </button>
-
-      <button
-        type="button"
-        onClick={(event) => {
-          event.stopPropagation();
-          onFavorite();
-        }}
-        className={`absolute right-3 top-3 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full shadow-lg backdrop-blur transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-[var(--spm-s3)] disabled:text-[color:var(--spm-t3)] disabled:opacity-70 ${
-          favorite
-            ? 'bg-amber-50 text-amber-600'
-            : 'bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] text-[color:var(--spm-t2)] hover:bg-[var(--spm-s1)] hover:text-[color:var(--spm-t)]'
-        }`}
-        aria-pressed={favorite}
-        aria-label={favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-        title={!favoriteEnabled ? '로그인 후 즐겨찾기할 수 있습니다' : favorite ? '즐겨찾기에서 제거' : '즐겨찾기에 추가'}
-        disabled={!favoriteEnabled}
-      >
-        <Bookmark className={`h-4 w-4 ${favorite ? 'fill-current' : ''}`} />
-      </button>
-
-      <div className="p-2.5">
-      <div className="mt-0">
-        {locked ? (
-          <Link href="/spokedu-master/payment?plan=premium" className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
-            프리미엄 자료
-          </Link>
-        ) : (
-          <Link href={detailHref} className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
-            전체 수업 자료 보기
-          </Link>
-        )}
-      </div>
-      <div className="mt-2 grid min-h-[48px] grid-cols-2 items-center gap-3 rounded-[10px] bg-[var(--spm-s2)] px-3 ring-1 ring-[color:var(--spm-br)]">
-        <div className="min-w-0">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[color:var(--spm-t3)]">활동</p>
-          <p className="mt-0.5 truncate text-[12px] font-black text-[color:var(--spm-t)]">{footerMeta.activity}</p>
-        </div>
-        <div className="min-w-0 border-l border-[color:var(--spm-br2)] pl-3 text-right">
-          <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[color:var(--spm-t3)]">준비</p>
-          <p className="mt-0.5 truncate text-[12px] font-black text-[color:var(--spm-t2)]">{footerMeta.prep}</p>
-        </div>
-      </div>
-      </div>
-    </article>
+    <LessonCatalogCard
+      variant="library"
+      title={program.title}
+      heroImageUrl={getHeroImage(program)}
+      categoryFallback={program.category || getLessonTheme(program) || '체육 수업'}
+      hasVideo={programHasPlayableVideo(program)}
+      onPreview={onPreview}
+      detailHref={detailHref}
+      decisionMeta={decisionMeta}
+      supportMeta={supportMeta}
+      locked={locked}
+      used={used}
+      favorite={favorite}
+      favoriteEnabled={favoriteEnabled}
+      onFavorite={onFavorite}
+      priority={priority}
+      sizes="(min-width: 1280px) 400px, (min-width: 768px) 50vw, 100vw"
+    />
   );
 }
 

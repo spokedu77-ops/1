@@ -241,7 +241,6 @@ export function useNoteBlockActions(options: {
     setBlocks,
     documentEngine,
     setTrashedBlocks,
-    selectedId,
     docTab,
     setError,
     setMobileTab,
@@ -415,10 +414,12 @@ export function useNoteBlockActions(options: {
       bumpNoteReconcileIdle(selectedId);
       triggerSave();
       preserveEditorScrollPosition(editorScrollRef.current, () => {});
+      const nextFocusOffset = nextFocusPart === 'editor' ? 0 : undefined;
       if (wasOnThisBlock) {
-        focusBlockEditor(block.id, nextFocusPart, undefined, { preventScroll: true });
+        focusBlockEditor(block.id, nextFocusPart, nextFocusOffset, { preventScroll: true });
       } else {
-        focusBlockEditor(block.id, type === 'toggle' ? 'title' : 'editor', undefined, { preventScroll: true });
+        const fallbackPart = type === 'toggle' ? 'title' : 'editor';
+        focusBlockEditor(block.id, fallbackPart, fallbackPart === 'editor' ? 0 : undefined, { preventScroll: true });
       }
     } catch (e) {
       devLogger.error('[Note] changeBlockType', e);

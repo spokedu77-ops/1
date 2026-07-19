@@ -64,6 +64,7 @@ export function SlashMenu<T extends string>({
       if (e.key === 'Enter') {
         e.preventDefault();
         e.stopPropagation();
+        e.stopImmediatePropagation();
         const cmd = filtered[activeIndex];
         if (cmd) { onSelect(cmd.type); onClose(); }
       }
@@ -92,6 +93,7 @@ export function SlashMenu<T extends string>({
             <button
               key={type}
               type="button"
+              data-note-block-picker-command={type}
               className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
                 idx === activeIndex ? 'bg-neutral-100' : 'hover:bg-neutral-50'
               }`}
@@ -193,7 +195,7 @@ export function BlockPickerMenu<T extends string>({
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex((i) => Math.min(i + 1, filtered.length - 1)); }
       if (e.key === 'ArrowUp')   { e.preventDefault(); setActiveIndex((i) => Math.max(i - 1, 0)); }
-      if (e.key === 'Enter')     { e.preventDefault(); const cmd = filtered[activeIndex]; if (cmd) { onSelect(cmd.type); onClose(); } }
+      if (e.key === 'Enter')     { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); const cmd = filtered[activeIndex]; if (cmd) { onSelect(cmd.type); onClose(); } }
       if (e.key === 'Escape')    { e.preventDefault(); onClose(); }
     };
     document.addEventListener('keydown', handler);
@@ -203,6 +205,7 @@ export function BlockPickerMenu<T extends string>({
   return (
     <div
       ref={ref}
+      data-note-block-picker-menu
       className="w-[240px] overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-xl shadow-neutral-900/10"
       onMouseDown={(e) => e.stopPropagation()}
     >
@@ -224,6 +227,7 @@ export function BlockPickerMenu<T extends string>({
             <button
               key={type}
               type="button"
+              data-note-block-picker-command={type}
               className={`flex w-full items-center gap-2.5 px-3 py-1.5 text-left transition-colors ${
                 idx === activeIndex ? 'bg-neutral-100' : 'hover:bg-neutral-50'
               }`}

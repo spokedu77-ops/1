@@ -114,27 +114,7 @@ export async function createNoteQaContext(browser, baseUrl) {
   }
   const adminEmail = await resolveAdminEmail();
   const service = createClient(SUPABASE_URL, SUPABASE_SERVICE, { auth: { persistSession: false } });
-  const { data, error } = await service.auth.admin.generateLink({
-    type: 'magiclink',
-    email: adminEmail,
-    options: { redirectTo: `${baseUrl}/admin/note` },
-  });
-  if (error || !data?.properties?.action_link) throw new Error('auth link failed');
-
-  const actionUrl = new URL(data.properties.action_link);
-  const tokenHash = actionUrl.searchParams.get('token_hash')
-    ?? actionUrl.searchParams.get('token');
-  const verificationType = actionUrl.searchParams.get('type') ?? 'magiclink';
-  if (!tokenHash) throw new Error('auth link missing token');
-  const cookies = [];
-  const ssr = createServerClient(SUPABASE_URL, SUPABASE_ANON, {
-    cookies: {
-      getAll: () => cookies,
-      setAll: (next) => cookies.splice(0, cookies.length, ...next),
-    },
-  });
-  const { error: verifyError } = await ssr.auth.verifyOtp({ token_hash: tokenHash, type: verificationType });
-  if (verifyError) throw verifyError;
+  const cookies = await createAdminSessionCookies(service, adminEmail, baseUrl);
 
   const context = await browser.newContext({
     viewport: { width: 1280, height: 900 },
@@ -154,6 +134,49 @@ export async function createNoteQaContext(browser, baseUrl) {
   })));
   await assertAdminBrowserSession(context, baseUrl);
   return context;
+}
+
+async function createAdminSessionCookies(service, adminEmail, baseUrl) {
+  let lastError = null;
+  for (let attempt = 1; attempt <= 4; attempt += 1) {
+    try {
+      const { data, error } = await service.auth.admin.generateLink({
+        type: 'magiclink',
+        email: adminEmail,
+        options: { redirectTo: `${baseUrl}/admin/note` },
+      });
+      if (error || !data?.properties?.action_link) {
+        throw error ?? new Error('auth link failed');
+      }
+
+      const actionUrl = new URL(data.properties.action_link);
+      const tokenHash = actionUrl.searchParams.get('token_hash')
+        ?? actionUrl.searchParams.get('token');
+      const verificationType = actionUrl.searchParams.get('type') ?? 'magiclink';
+      if (!tokenHash) throw new Error('auth link missing token');
+
+      const cookies = [];
+      const ssr = createServerClient(SUPABASE_URL, SUPABASE_ANON, {
+        cookies: {
+          getAll: () => cookies,
+          setAll: (next) => cookies.splice(0, cookies.length, ...next),
+        },
+      });
+      const { error: verifyError } = await ssr.auth.verifyOtp({
+        token_hash: tokenHash,
+        type: verificationType,
+      });
+      if (verifyError) throw verifyError;
+      return cookies;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (attempt === 4) break;
+      await new Promise((resolve) => {
+        setTimeout(resolve, 250 * attempt);
+      });
+    }
+  }
+  throw lastError ?? new Error('auth link failed');
 }
 
 export async function runCheck(name, fn) {

@@ -563,12 +563,11 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
   }
 }
 
-function shouldFitThumbnailInsideSquare(preset: OfficialSpomovePreset) {
-  return (
-    preset.programGroup === 'reaction-cognition' &&
-    preset.engine.mode === 'basic' &&
-    [4, 5, 6].includes(preset.engine.level)
-  );
+function shouldStretchThumbnailToSquare(width: number, height: number, src: string) {
+  if (/\.svg(\?|#|$)/i.test(src)) return true;
+  if (!width || !height) return false;
+  const ratio = width / height;
+  return ratio > 1.08 || ratio < 0.93;
 }
 
 function CardVisual({
@@ -585,7 +584,10 @@ function CardVisual({
   hasGuideVideo: boolean;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
-  const fitInsideSquare = shouldFitThumbnailInsideSquare(preset);
+  const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
+  const fitClass = stretch
+    ? 'object-fill object-center'
+    : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]';
 
   return (
     <div className="relative aspect-square overflow-hidden bg-white">
@@ -596,26 +598,29 @@ function CardVisual({
           fill
           sizes="(min-width: 1280px) 25vw, (min-width: 640px) 33vw, 50vw"
           quality={75}
-          className={
-            fitInsideSquare
-              ? 'object-contain'
-              : 'object-cover motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]'
-          }
+          className={fitClass}
+          onLoadingComplete={(img) => {
+            if (shouldStretchThumbnailToSquare(img.naturalWidth, img.naturalHeight, thumbnailUrl)) {
+              setStretch(true);
+            }
+          }}
           onError={onImageError}
         />
       ) : (
         <SpomoveProgramVisual preset={preset} />
       )}
       {preset.isReady ? (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pb-3 pt-10">
-          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-black tracking-wide text-white backdrop-blur-[2px] motion-safe:transition group-hover:bg-white/25">
-            <Play className="h-3 w-3 fill-current" aria-hidden />
-            {hasGuideVideo ? '참고 영상 · 가이드' : '가이드 · 패드 배치'}
+        <span className="pointer-events-none absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-105"
+          >
+            <Play className="h-3.5 w-3.5 fill-current" />
           </span>
-          <p className="mt-1.5 hidden text-[10px] font-bold text-white/80 sm:block motion-safe:opacity-0 motion-safe:transition group-hover:opacity-100">
-            썸네일을 눌러 확인
-          </p>
-        </div>
+          <span className="rounded-md bg-black/55 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            가이드
+          </span>
+        </span>
       ) : null}
       {!preset.isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-[1px]">
@@ -1049,7 +1054,7 @@ export default function SpomoveHubView() {
           <span className="font-black text-slate-800">썸네일</span>
           을 누르면{' '}
           <span className="font-black text-[var(--spm-acc)]">참고 영상</span>
-          과 패드 배치·활동 안내를 볼 수 있습니다. 실행은 아래{' '}
+          과 활동 안내를 볼 수 있습니다. 실행은 아래{' '}
           <span className="font-black text-slate-800">실행</span>
           버튼을 사용하세요.
         </p>

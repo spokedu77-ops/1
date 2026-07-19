@@ -13,10 +13,13 @@ const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
 describe('lesson discovery and execution flow contract', () => {
   it('shows decision metadata and non-conflicting card actions in the library', () => {
-    // 카드 footer 메타는 getCardFooterMeta(활동/준비). 예전 getCardDecisionItems 명칭은 폐기.
+    // 카드 footer 메타는 getCardFooterMeta → LessonCatalogCard 한 줄 메타. 예전 getCardDecisionItems 명칭은 폐기.
     expect(library).toContain('function getCardFooterMeta');
-    expect(library).toContain('event.stopPropagation();');
+    expect(library).toContain('LessonCatalogCard');
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
+    const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
+    expect(catalogCard).toContain('event.stopPropagation()');
+    expect(catalogCard).toContain('자료 보기');
   });
 
   it('keeps preview focused on quick suitability information', () => {
@@ -32,19 +35,24 @@ describe('lesson discovery and execution flow contract', () => {
   });
 
   it('keeps dashboard discovery first and removes duplicate home favorite re-entry', () => {
+    const billboardIndex = dashboard.indexOf('data-dashboard-section="billboard"');
     const weeklyIndex = dashboard.indexOf('data-dashboard-section="weekly"');
-    const recentIndex = dashboard.indexOf('<ContinueSection item={continueItem} />');
     const spomoveIndex = dashboard.indexOf('data-dashboard-section="spomove"');
+    const recentIndex = dashboard.indexOf('<ContinueSection item={continueItem} />');
     const contextIndex = dashboard.indexOf('data-dashboard-section="context-programs"');
     const activityIndex = dashboard.indexOf('<ActivityPanel');
 
-    expect(weeklyIndex).toBeGreaterThanOrEqual(0);
-    expect(recentIndex).toBeGreaterThan(weeklyIndex);
-    expect(spomoveIndex).toBeGreaterThan(recentIndex);
-    expect(contextIndex).toBeGreaterThan(spomoveIndex);
+    // 빌보드(수업+SPOMOVE) → 수업 레일 → SPOMOVE → 이어하기 → 맞춤 → 기록
+    expect(billboardIndex).toBeGreaterThanOrEqual(0);
+    expect(weeklyIndex).toBeGreaterThan(billboardIndex);
+    expect(spomoveIndex).toBeGreaterThan(weeklyIndex);
+    expect(recentIndex).toBeGreaterThan(spomoveIndex);
+    expect(contextIndex).toBeGreaterThan(recentIndex);
     expect(activityIndex).toBeGreaterThan(contextIndex);
+    expect(dashboard).toContain('function HomeBillboard');
     expect(dashboard).not.toContain('data-dashboard-section="lesson-reentry"');
     expect(dashboard).not.toContain('favoritePrograms');
     expect(dashboard).not.toContain('recentLessonPrograms');
+    expect(dashboard).not.toContain('function RailRowHeader');
   });
 });

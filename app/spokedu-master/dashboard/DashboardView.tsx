@@ -10,17 +10,26 @@ import {
   Sparkles,
   UsersRound,
 } from 'lucide-react';
-import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+
+const WEEKLY_RECOMMENDATION_COUNT = 4;
+const HERO_ROTATE_MS = 5500;
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
+  normalizeSpomoveGuideVideoMap,
   normalizeSpomoveThumbnailMap,
+  SPOMOVE_GUIDE_VIDEO_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
+import {
+  joinCatalogMeta,
+  LessonCatalogCard,
+  splitLessonCardTitle,
+} from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
@@ -33,6 +42,7 @@ import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
+import { formatLibraryCardEquipmentName } from '../library/libraryViewModel';
 import {
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
@@ -52,6 +62,7 @@ import {
   officialPresetSessionHref,
   type OfficialSpomovePreset,
 } from '../spomove/officialSpomovePresets';
+import { SpomoveGuidelineSheet } from '../spomove/SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from '../spomove/spomovePadDisplay';
 import { parseMasterSpaces, parseMasterTargets } from '../lib/programDisplayTags';
 import { selectWeeklyRecommendationSlots } from '../lib/weeklyRecommendations';
@@ -76,6 +87,11 @@ type ContinueItem = {
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
+  error: { code?: string } | null;
+};
+
+type SpomoveGuideVideoPackQueryResult = {
+  data: { assets_json?: unknown } | null;
   error: { code?: string } | null;
 };
 
@@ -181,8 +197,11 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   }
 }
 
-function shouldFitSpomoveThumbnailInsideFrame(preset: OfficialSpomovePreset) {
-  return preset.engine.mode === 'basic' && [4, 5, 6].includes(preset.engine.level);
+function shouldStretchSpomoveThumbnail(width: number, height: number, src: string) {
+  if (/\.svg(\?|#|$)/i.test(src)) return true;
+  if (!width || !height) return false;
+  const ratio = width / height;
+  return ratio > 1.08 || ratio < 0.93;
 }
 
 type ContextProgramTab = 'classroom' | 'preschool';
@@ -257,62 +276,237 @@ function formatRelativeDate(value: string) {
   return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(time));
 }
 
-function CoverImage({
-  src,
-  alt,
-  className,
-  sizes,
-  priority = false,
-}: {
-  src: string;
-  alt: string;
-  className: string;
-  sizes: string;
-  priority?: boolean;
-}) {
-  const imageSrc = normalizeImageSrc(src);
+/** 추천 슬롯을 최대 4개까지 풀에서 보충한다. */
+function ensureWeeklyRecommendationCount(
+  selected: Program[],
+  pool: Program[],
+  count = WEEKLY_RECOMMENDATION_COUNT,
+): Program[] {
+  const result = selected.slice(0, count);
+  if (result.length >= count) return result;
 
-  if (isRemoteImage(imageSrc)) {
+  const usedIds = new Set(result.map((program) => program.id));
+  const usedTitles = new Set(result.map((program) => normalizeTitle(getProgramTitle(program))).filter(Boolean));
+
+  for (const program of pool) {
+    if (result.length >= count) break;
+    const titleKey = normalizeTitle(getProgramTitle(program));
+    if (!titleKey || usedIds.has(program.id) || usedTitles.has(titleKey)) continue;
+    result.push(program);
+    usedIds.add(program.id);
+    usedTitles.add(titleKey);
+  }
+
+  return result;
+}
+
+function BillboardBackdrop({ program }: { program: Program }) {
+  const model = buildLessonDisplayModel(program);
+  const imageSrc = model.heroImageUrl ? normalizeImageSrc(model.heroImageUrl) : '';
+  const remote = Boolean(imageSrc) && isRemoteImage(imageSrc);
+
+  if (!imageSrc) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={imageSrc}
-        alt={alt}
-        className={`absolute inset-0 h-full w-full ${className}`}
-        loading={priority ? 'eager' : 'lazy'}
-        onError={(event) => {
-          const fallback = getImageFallbackSrc(imageSrc);
-          if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
-        }}
-      />
+      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950">
+        <CategoryIcon category={model.theme || '체육 수업'} size={64} color="rgba(255,255,255,0.35)" />
+      </div>
     );
   }
 
-  return <Image src={imageSrc} alt={alt} fill sizes={sizes} className={className} priority={priority} />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={imageSrc}
+      alt=""
+      className="h-full w-full object-cover object-center"
+      onError={(event) => {
+        if (!remote) return;
+        const fallback = getImageFallbackSrc(imageSrc);
+        if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
+      }}
+    />
+  );
+}
+
+/** 홈 히어로: 추천 수업 자동 로테이션 */
+function HomeBillboard({
+  programs,
+  onPreviewLesson,
+}: {
+  programs: Program[];
+  onPreviewLesson: (program: Program) => void;
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const count = programs.length;
+  const safeIndex = count > 0 ? activeIndex % count : 0;
+  const program = programs[safeIndex];
+
+  const programIds = programs.map((item) => item.id).join('|');
+
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [programIds]);
+
+  useEffect(() => {
+    if (count <= 1 || paused) return;
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+    const timer = window.setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % count);
+    }, HERO_ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [count, paused]);
+
+  if (!program) return null;
+
+  const model = buildLessonDisplayModel(program);
+  const { title, subtitle } = splitLessonCardTitle(model.title);
+  const meta = joinCatalogMeta([
+    model.theme,
+    model.target.replace(/,/g, ' · '),
+    model.space.replace(/,/g, ' · '),
+  ]);
+  const hasVideo = programHasPlayableVideo(program);
+
+  return (
+    <section
+      data-dashboard-section="billboard"
+      aria-label="이번 주 추천 수업"
+      aria-roledescription="carousel"
+      className="relative isolate min-h-[340px] overflow-hidden rounded-[18px] bg-slate-950 sm:min-h-[420px] lg:min-h-[480px]"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false);
+      }}
+    >
+      <div className="absolute inset-0">
+        {programs.map((item, index) => (
+          <div
+            key={item.id}
+            className={`absolute inset-0 transition-opacity duration-700 ease-out ${
+              index === safeIndex ? 'opacity-100' : 'opacity-0'
+            }`}
+            aria-hidden={index !== safeIndex}
+          >
+            <BillboardBackdrop program={item} />
+          </div>
+        ))}
+      </div>
+
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-transparent sm:via-slate-950/55" />
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+
+      <div className="relative flex min-h-[340px] flex-col justify-end px-5 py-6 sm:min-h-[420px] sm:px-8 sm:py-8 lg:min-h-[480px] lg:max-w-[58%] lg:px-10 lg:pb-10">
+        <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-white/80 uppercase">
+          <Sparkles size={13} className="text-[var(--spm-acc)]" />
+          추천 {String(safeIndex + 1).padStart(2, '0')}
+        </p>
+        <div key={program.id}>
+          <h2 className="mt-3 text-[28px] font-black leading-[1.12] tracking-[-0.04em] text-white sm:text-[36px] lg:text-[44px]">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-1.5 text-[13px] font-medium text-white/65 sm:text-[14px]">{subtitle}</p>
+          ) : null}
+          {meta ? (
+            <p className="mt-3 text-[13px] font-semibold text-white/85 sm:text-[14px]">{meta}</p>
+          ) : null}
+        </div>
+
+        <div className="mt-5 flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => onPreviewLesson(program)}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-white px-5 text-[13px] font-black text-slate-900 transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            {hasVideo ? <Play className="h-4 w-4 fill-current" /> : <Sparkles size={15} />}
+            {hasVideo ? '수업 미리보기' : '수업 살펴보기'}
+          </button>
+          <Link
+            href={`/spokedu-master/library/${program.id}`}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          >
+            자료 보기
+            <ArrowRight size={15} />
+          </Link>
+        </div>
+
+        {count > 1 ? (
+          <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="추천 수업 선택">
+            {programs.map((item, index) => {
+              const active = index === safeIndex;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={`추천 ${index + 1}`}
+                  onClick={() => setActiveIndex(index)}
+                  className={`h-2 rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
+                    active ? 'w-7 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
+                  }`}
+                />
+              );
+            })}
+          </div>
+        ) : null}
+      </div>
+    </section>
+  );
 }
 
 function SectionHeader({
   eyebrow,
+  eyebrowIcon,
   title,
   description,
   href,
   action,
+  titleId,
+  size = 'md',
 }: {
   eyebrow?: string;
+  eyebrowIcon?: ReactNode;
   title: string;
   description?: string;
   href?: string;
   action?: string;
+  titleId?: string;
+  size?: 'md' | 'lg';
 }) {
+  const titleClass =
+    size === 'lg'
+      ? 'text-[26px] font-black tracking-[-0.04em] text-[color:var(--spm-t)] sm:text-[32px]'
+      : 'text-[20px] font-black tracking-[-0.025em] text-[color:var(--spm-t)] sm:text-[23px]';
+
   return (
     <div className="mb-4 flex items-end justify-between gap-4">
-      <div>
-        {eyebrow ? <p className="mb-1 text-[11px] font-black uppercase tracking-[0.15em] text-[var(--spm-acc)]">{eyebrow}</p> : null}
-        <h2 className="text-[20px] font-black tracking-[-0.025em] text-[color:var(--spm-t)] sm:text-[23px]">{title}</h2>
-        {description ? <p className="mt-1 text-[13px] font-semibold leading-5 text-[color:var(--spm-t2)] sm:text-sm">{description}</p> : null}
+      <div className="min-w-0">
+        {eyebrow ? (
+          <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[var(--spm-acc)]">
+            {eyebrowIcon}
+            {eyebrow}
+          </p>
+        ) : null}
+        <h2 id={titleId} className={titleClass}>
+          {title}
+        </h2>
+        {description ? (
+          <p className="mt-1.5 max-w-2xl text-[13px] font-semibold leading-5 text-[color:var(--spm-t2)] sm:text-sm">
+            {description}
+          </p>
+        ) : null}
       </div>
       {href && action ? (
-        <Link href={href} className="inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]">
+        <Link
+          href={href}
+          className="inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+        >
           {action}
           <ArrowRight size={15} />
         </Link>
@@ -335,65 +529,40 @@ function WeeklyProgramCard({
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
-  const image = model.heroImageUrl;
-  const meta = [model.theme, model.target, model.space].filter(Boolean).slice(0, 3);
-  const hasVideo = programHasPlayableVideo(program);
+  const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
+  const target = model.target.replace(/,/g, ' · ');
+  const supportMeta = joinCatalogMeta([target, prep]) || model.space.replace(/,/g, ' · ');
 
   return (
-    <article
-      data-weekly-program={scope === 'weekly' ? program.id : undefined}
-      data-context-program={scope === 'context' ? program.id : undefined}
-      className="flex h-full flex-col overflow-hidden rounded-[20px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] shadow-[0_12px_30px_rgba(15,23,42,0.07)]"
-    >
-      <div data-card-media className="group relative h-[calc(83.333333cqw+32px)] w-full overflow-hidden bg-[var(--spm-s3)] lg:h-[calc(83.333333cqw+42px)]">
-        <button
-          type="button"
-          onClick={() => onPreview(program)}
-          className="absolute inset-0 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-          aria-label={`${model.title} 수업 미리보기`}
-        >
-          {image ? (
-            <CoverImage src={image} alt={model.title} sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw" className="object-cover object-[center_38%] transition-transform duration-300 group-hover:scale-[1.01]" priority={priority} />
-          ) : (
-            <div className="absolute inset-0 grid place-items-center bg-gradient-to-br from-[var(--spm-acc-glow)] to-[var(--spm-s2)]">
-              <CategoryIcon category={model.theme || '체육 수업'} size={30} />
-            </div>
-          )}
-        </button>
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] bg-gradient-to-t from-slate-950/90 via-slate-950/45 to-transparent" />
-        <span className="absolute left-3 top-3 rounded-full border border-white/30 bg-[color-mix(in_srgb,var(--spm-s1)_92%,transparent)] px-2.5 py-1 text-[10px] font-black tracking-[0.06em] text-[var(--spm-acc)]">
-          {cornerLabel}
-        </span>
-        {hasVideo ? (
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/2 grid h-9 w-9 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-[var(--spm-acc)] text-white shadow-[0_6px_16px_rgba(49,46,129,0.22)] ring-2 ring-white/70"
-          >
-            <Play className="h-4 w-4 fill-current" />
-          </span>
-        ) : null}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 p-3.5">
-          <h3 className="line-clamp-2 text-[16px] font-black leading-5 text-white">{model.title}</h3>
-          {meta.length > 0 ? (
-            <p className="mt-1 truncate text-[11px] font-bold text-white/85 sm:text-[12px]">{meta.join(' · ')}</p>
-          ) : null}
-        </div>
-      </div>
-      <div data-card-footer className="flex h-16 items-center px-2.5 py-2 lg:h-[54px]">
-        <div data-card-actions className="flex w-full items-center gap-1.5">
-          <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]">
-            전체 수업 자료 보기
-          </Link>
-        </div>
-      </div>
-    </article>
+    <LessonCatalogCard
+      variant="home"
+      title={model.title}
+      heroImageUrl={model.heroImageUrl}
+      categoryFallback={model.theme || '체육 수업'}
+      hasVideo={programHasPlayableVideo(program)}
+      onPreview={() => onPreview(program)}
+      detailHref={`/spokedu-master/library/${program.id}`}
+      decisionMeta={model.theme || '체육 수업'}
+      supportMeta={supportMeta}
+      cornerLabel={cornerLabel}
+      priority={priority}
+      dataAttrs={{
+        'data-weekly-program': scope === 'weekly' ? program.id : undefined,
+        'data-context-program': scope === 'context' ? program.id : undefined,
+      }}
+      sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
+    />
   );
 }
 
 function ContinueSection({ item }: { item: ContinueItem }) {
   return (
     <section className="rounded-[20px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)] sm:p-5">
-      <SectionHeader title="최근 사용한 수업" description="최근 열어본 수업과 SPOMOVE를 빠르게 다시 확인합니다." />
+      <SectionHeader
+        eyebrow="이어하기"
+        title="최근 수업"
+        description="마지막으로 연 수업을 바로 이어갑니다."
+      />
       <Link
         data-continue-item={item.id}
         href={item.href}
@@ -453,19 +622,49 @@ function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
   );
 }
 
-function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; thumbnailUrl: string }) {
+function SpomoveCard({
+  preset,
+  thumbnailUrl,
+  onOpenGuide,
+}: {
+  preset: OfficialSpomovePreset;
+  thumbnailUrl: string;
+  onOpenGuide: (preset: OfficialSpomovePreset) => void;
+}) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
-  const fitInsideFrame = shouldFitSpomoveThumbnailInsideFrame(preset);
+  const fitClass = stretch ? 'object-fill object-center' : 'object-cover object-center';
+  const startHref = officialPresetSessionHref(preset);
+
   return (
-    <article data-spomove-preset={preset.id} className="flex h-full min-h-[360px] flex-col overflow-hidden rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-[0_16px_34px_rgba(15,23,42,0.12)] transition duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:shadow-[0_20px_42px_rgba(79,70,229,0.18)]">
-      <div className="relative aspect-square overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)]">
+    <article
+      data-spomove-preset={preset.id}
+      className="group flex h-full min-h-[360px] flex-col overflow-hidden rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-[0_16px_34px_rgba(15,23,42,0.12)] transition duration-200 hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:shadow-[0_20px_42px_rgba(79,70,229,0.18)]"
+    >
+      <button
+        type="button"
+        onClick={() => onOpenGuide(preset)}
+        className="relative aspect-square overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+        aria-label={`${preset.title} 가이드 보기`}
+      >
         {showThumbnail ? (
           /* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */
           <img
             src={thumbnailUrl}
             alt=""
-            className={`h-full w-full ${fitInsideFrame ? 'object-contain' : 'object-cover'}`}
+            className={`h-full w-full ${fitClass}`}
+            onLoad={(event) => {
+              if (
+                shouldStretchSpomoveThumbnail(
+                  event.currentTarget.naturalWidth,
+                  event.currentTarget.naturalHeight,
+                  thumbnailUrl,
+                )
+              ) {
+                setStretch(true);
+              }
+            }}
             onError={() => setImageFailed(true)}
           />
         ) : (
@@ -475,16 +674,29 @@ function SpomoveCard({ preset, thumbnailUrl }: { preset: OfficialSpomovePreset; 
             ))}
           </div>
         )}
+        <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
         <span className="absolute right-3 top-3 rounded-full border border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[11px] font-black text-[color:var(--spm-t2)] shadow-sm backdrop-blur">
           {preset.axisTitle}
         </span>
-      </div>
+        <span className="pointer-events-none absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 transition-transform duration-150 group-hover:scale-105"
+          >
+            <Play className="h-3.5 w-3.5 fill-current" />
+          </span>
+          <span className="rounded-md bg-black/55 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            가이드
+          </span>
+        </span>
+      </button>
       <div className="flex flex-1 flex-col p-4">
         <p className="text-[11px] font-black text-[var(--spm-acc)]">{preset.programTitle}</p>
         <h3 className="mt-1 line-clamp-2 min-h-10 text-[17px] font-black leading-5 text-[color:var(--spm-t)]">{preset.title}</h3>
         <p className="mt-2 line-clamp-2 min-h-10 text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">{preset.salesCopy || preset.recommendedUse}</p>
         <Link
-          href={officialPresetSessionHref(preset)}
+          href={startHref}
+          data-spm-spomove-card-action="start"
           className="mt-auto inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
         >
           <MonitorPlay size={15} />
@@ -669,6 +881,8 @@ function EntitledDashboardView() {
   const [previewAutoplay, setPreviewAutoplay] = useState(false);
   const [spomoveThumbnailPaths, setSpomoveThumbnailPaths] = useState<Record<string, string>>({});
   const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
+  const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
+  const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
 
   useEffect(() => {
@@ -678,27 +892,40 @@ function EntitledDashboardView() {
   useEffect(() => {
     let alive = true;
     const supabase = getSupabaseBrowserClient();
-    void supabase
-      .from('think_asset_packs')
-      .select('assets_json, updated_at')
-      .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
-      .maybeSingle()
-      .then((result: SpomoveThumbnailPackQueryResult) => {
+    void Promise.all([
+      supabase
+        .from('think_asset_packs')
+        .select('assets_json, updated_at')
+        .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
+        .maybeSingle(),
+      supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID).maybeSingle(),
+    ])
+      .then(([thumbnailResult, guideVideoResult]) => {
         if (!alive) return;
-        const { data, error } = result;
+        const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
         if (error && error.code !== 'PGRST116') {
           setSpomoveThumbnailPaths({});
           setSpomoveThumbnailCacheBust(undefined);
-          return;
+        } else {
+          const next = normalizeSpomoveThumbnailMap(data?.assets_json);
+          setSpomoveThumbnailPaths(next);
+          setSpomoveThumbnailCacheBust(
+            resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)),
+          );
         }
-        const next = normalizeSpomoveThumbnailMap(data?.assets_json);
-        setSpomoveThumbnailPaths(next);
-        setSpomoveThumbnailCacheBust(resolveSpomovePackCacheBust(data?.updated_at as string | undefined, Object.values(next)));
+
+        const { data: guideVideoData, error: guideVideoError } = guideVideoResult as SpomoveGuideVideoPackQueryResult;
+        if (guideVideoError && guideVideoError.code !== 'PGRST116') {
+          setGuideVideoUrls({});
+        } else {
+          setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
+        }
       })
       .catch(() => {
         if (!alive) return;
         setSpomoveThumbnailPaths({});
         setSpomoveThumbnailCacheBust(undefined);
+        setGuideVideoUrls({});
       });
     return () => {
       alive = false;
@@ -720,8 +947,11 @@ function EntitledDashboardView() {
       }),
     [programs],
   );
-  const weeklyPrograms = weeklySelection.programs;
   const programPool = useMemo(() => uniquePrograms(programs).sort(compareHomePrograms), [programs]);
+  const weeklyPrograms = useMemo(
+    () => ensureWeeklyRecommendationCount(weeklySelection.programs, programPool, WEEKLY_RECOMMENDATION_COUNT),
+    [programPool, weeklySelection.programs],
+  );
   const weeklyIds = useMemo(() => new Set(weeklyPrograms.map((program) => program.id)), [weeklyPrograms]);
   const featuredSpomove = useMemo(() => selectFeaturedSpomove(), []);
   const contextPrograms = useMemo(() => {
@@ -816,53 +1046,53 @@ function EntitledDashboardView() {
 
   return (
     <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-6 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-      <header className="flex min-h-[76px] flex-col justify-center gap-4 border-b border-[color:var(--spm-br2)] pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--spm-acc)]">오늘</p>
-          <h1 className="mt-1 text-[25px] font-black tracking-[-0.035em] text-[color:var(--spm-t)]">오늘 운영</h1>
-          <p className="mt-1 text-[13px] font-semibold text-[color:var(--spm-t2)] sm:text-sm">오늘 쓸 수업을 고르고, 필요한 화면 활동과 기록으로 이어가세요.</p>
-        </div>
-        <div className="flex max-w-sm flex-col items-stretch gap-1.5 sm:items-end">
-          <Link href={loopAction.href} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white">
-            <ArrowRight size={15} />
-            {loopAction.label}
-          </Link>
-          <p className="max-w-[280px] text-left text-[11px] font-semibold leading-4 text-[color:var(--spm-t2)] sm:text-right">{loopAction.summary}</p>
-        </div>
+      <header className="flex min-h-[56px] flex-col justify-center gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="sr-only">오늘 운영</h1>
+        <p className="text-[13px] font-semibold text-[color:var(--spm-t2)]">
+          오늘 바로 쓸 수업과 SPOMOVE
+        </p>
+        <Link href={loopAction.href} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white">
+          <ArrowRight size={15} />
+          {loopAction.label}
+        </Link>
       </header>
+
+      {weeklyPrograms.length > 0 ? (
+        <HomeBillboard
+          programs={weeklyPrograms}
+          onPreviewLesson={(item) => openPreview(item, programHasPlayableVideo(item))}
+        />
+      ) : null}
 
       {isFirstUser ? <FirstStartGuide spomoveAvailable={spomoveAvailable} /> : null}
 
       <section data-dashboard-section="weekly" aria-labelledby="weekly-heading">
-        <div className="mb-4 flex items-end justify-between gap-4">
-          <div>
-            <p className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[var(--spm-acc)]"><Sparkles size={13} />이번 주 추천</p>
-            <h2 id="weekly-heading" className="text-[22px] font-black tracking-[-0.03em] text-[color:var(--spm-t)] sm:text-[26px]">이번 주 추천 프로그램</h2>
-            <p className="mt-1 text-[13px] font-semibold text-[color:var(--spm-t2)]">
-              {weeklyPrograms.length === 4
-                ? '이번 주 현장에서 바로 활용하기 좋은 수업 4개를 골랐습니다.'
-                : weeklyPrograms.length > 0
-                  ? `이번 주 추천 가능한 수업 ${weeklyPrograms.length}개를 표시합니다.`
-                  : '지금은 추천 가능한 수업이 없습니다. 라이브러리에서 오늘 수업을 고르세요.'}
-            </p>
-          </div>
-        </div>
+        <SectionHeader
+          eyebrow="수업"
+          eyebrowIcon={<BookOpen size={14} />}
+          title="이번 주 수업"
+          titleId="weekly-heading"
+          size="lg"
+          description="이번 주 추천 수업입니다."
+          href="/spokedu-master/library"
+          action="전체 보기"
+        />
         {weeklyPrograms.length > 0 ? (
-        <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
-          {weeklyPrograms.map((program, index) => (
-            <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
-              <WeeklyProgramCard
-                program={program}
-                cornerLabel={`추천 ${String(index + 1).padStart(2, '0')}`}
-                onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
-                priority={index < 2}
-              />
-            </div>
-          ))}
-        </div>
+          <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            {weeklyPrograms.map((program, index) => (
+              <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+                <WeeklyProgramCard
+                  program={program}
+                  cornerLabel={`추천 ${String(index + 1).padStart(2, '0')}`}
+                  onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
+                  priority={index < 2}
+                />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 text-center">
-            <p className="text-[14px] font-semibold text-[color:var(--spm-t2)]">라이브러리에서 수업을 선택해 오늘 수업을 시작하세요.</p>
+            <p className="text-[14px] font-semibold text-[color:var(--spm-t2)]">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
             <Link href="/spokedu-master/library" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white">
               라이브러리 열기
             </Link>
@@ -870,35 +1100,44 @@ function EntitledDashboardView() {
         )}
       </section>
 
-      {showRecentUse && continueItem ? <ContinueSection item={continueItem} /> : null}
-
-      <section data-dashboard-section="spomove">
+      <section
+        data-dashboard-section="spomove"
+        aria-labelledby="spomove-heading"
+        className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_18%,var(--spm-br2))] bg-[color-mix(in_srgb,var(--spm-acc-glow)_55%,var(--spm-s1))] p-4 sm:p-5"
+      >
         <SectionHeader
-          eyebrow="공식 활동"
-          title="SPOMOVE 공식 활동"
-          description="수업 도입·집중 전환·마무리에 바로 쓸 수 있는 큰 화면 반응 활동"
+          eyebrow="화면 활동"
+          eyebrowIcon={<MonitorPlay size={14} />}
+          title="SPOMOVE"
+          titleId="spomove-heading"
+          size="lg"
+          description="이번 주 추천 SPOMOVE입니다."
           href="/spokedu-master/spomove"
           action="전체 보기"
         />
-        <div className="-mx-4 flex snap-x items-stretch gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+        <div className="-mx-4 flex snap-x items-stretch gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-6 sm:px-6 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
           {featuredSpomove.map((preset) => (
             <div key={preset.id} className="h-full w-[76vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
               <SpomoveCard
                 preset={preset}
                 thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
+                onOpenGuide={setPreviewSpomove}
               />
             </div>
           ))}
         </div>
       </section>
 
+      {showRecentUse && continueItem ? <ContinueSection item={continueItem} /> : null}
+
       {availableContextTabs.length > 0 || profile?.isAdmin ? (
       <section data-dashboard-section="context-programs">
         <SectionHeader
-          title="현장 맞춤 프로그램"
-          description="교실 체육과 미취학 체육 프로그램을 바로 찾아보세요."
+          eyebrow="현장 맞춤"
+          title="맞춤 수업"
+          description="교실·미취학 체육 수업을 바로 찾아보세요."
           href="/spokedu-master/library"
-          action="라이브러리 보기"
+          action="전체 보기"
         />
         {showContextTypeControl ? (
           <div className="mb-4 flex gap-2" role="group" aria-label="현장 맞춤 프로그램 유형">
@@ -970,6 +1209,11 @@ function EntitledDashboardView() {
         />
       ) : null}
 
+      <SpomoveGuidelineSheet
+        preset={previewSpomove}
+        guideVideoUrl={previewSpomove ? guideVideoUrls[previewSpomove.id] ?? '' : ''}
+        onClose={() => setPreviewSpomove(null)}
+      />
     </main>
   );
 }

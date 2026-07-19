@@ -22,7 +22,7 @@ function formatLearnerBlock(learners: string[]): string {
 
 type Status = { tone: 'idle' | 'ok' | 'error'; message: string };
 
-/** 개인수업 상담 폼 — Move Report 없이 문의 전환만 */
+/** 개인수업 상담 폼 — 온페이지 문의 전환 */
 export function PrivateApplyForm() {
   const [learners, setLearners] = useState<string[]>(['']);
   const [phone, setPhone] = useState('');
@@ -127,7 +127,7 @@ export function PrivateApplyForm() {
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">상담 신청</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
-          개인·소그룹 수업 상담 의
+          개인·소그룹 수업 상담
         </h2>
         <p className={`mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
           아래 정보를 접수하신 뒤, 카카오 채널에 문의 남겨 주셨다는 메시지를 꼭 남겨 주세요.

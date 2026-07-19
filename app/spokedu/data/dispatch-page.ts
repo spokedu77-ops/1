@@ -122,7 +122,7 @@ export const dispatchPage = {
       },
       {
         label: '기관 제공 데이터',
-        spokedu: '참여도 및 신체 성장 지표를 분석한 월간 리포트 발송',
+        spokedu: '필요 시 활동 기록·관찰 내용을 정리해 기관과 공유',
         basic: '전무함 (구두 전달 수준)',
       },
     ] satisfies DispatchCompareRow[],
@@ -292,7 +292,7 @@ export const dispatchPage = {
   processSteps: {
     eyebrow: '도입 절차',
     title: '가장 빠르고 확실한 도입 프로세스',
-    lead: '복잡한 절차 없이, 문의 접수 후 최단 7일 이내에 프리미엄 체육 수업이 시작됩니다.',
+    lead: '일정·공간·강사 조건을 확인한 뒤, 가능한 운영 시작 일정을 안내합니다.',
     steps: [
       {
         num: '01',
@@ -322,7 +322,7 @@ export const dispatchPage = {
         num: '05',
         label: '첫 수업 개시',
         detail: '기관 담당자와 사전 오리엔테이션 후, 첫 수업을 시작합니다.',
-        duration: '7일 이내',
+        duration: '조건 확인 후',
       },
     ] as const,
   },

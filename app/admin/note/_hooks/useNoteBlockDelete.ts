@@ -5,7 +5,6 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import {
   filterSiblingBlocks,
   getBlocksInParent,
-  sortRootBlocks,
 } from '@/app/lib/note/noteBlockTree';
 import {
   buildDeleteBlockForestCommand,
@@ -50,7 +49,6 @@ export function useNoteBlockDelete(options: {
   setBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
   documentEngine: NoteDocumentEngineApi;
   setTrashedBlocks: React.Dispatch<React.SetStateAction<NoteBlock[]>>;
-  selectedId: string | null;
   docTab: 'active' | 'trash' | 'block-trash';
   setError: (error: string | null) => void;
   setMobileTab: (tab: 'list' | 'editor') => void;
@@ -74,7 +72,6 @@ export function useNoteBlockDelete(options: {
     setBlocks,
     documentEngine,
     setTrashedBlocks,
-    selectedId,
     docTab,
     setError,
     setMobileTab,
@@ -87,7 +84,6 @@ export function useNoteBlockDelete(options: {
     loadTrashedBlocks,
     focusBlockEditor,
     recordBlockCommandUndo,
-    ensureMinimumRootTextBlock,
     onAfterBlocksRemoved,
   } = options;
 
@@ -132,7 +128,6 @@ export function useNoteBlockDelete(options: {
     command: NoteBlockCommandResult;
     skipDeleteUndo?: boolean;
     deletedBlock?: NoteBlock | null;
-    emptyRootDocumentId?: string | null;
     logLabel: string;
   }) => {
     const {
@@ -140,7 +135,6 @@ export function useNoteBlockDelete(options: {
       command,
       skipDeleteUndo = false,
       deletedBlock = null,
-      emptyRootDocumentId = null,
       logLabel,
     } = params;
 
@@ -178,17 +172,6 @@ export function useNoteBlockDelete(options: {
       });
       focusToggleTitleIfChildForestEmptied(prevBlocks, nextBlocks, command.removedBlocks);
       onAfterBlocksRemoved?.(command.removedBlocks, nextBlocks);
-
-      if (emptyRootDocumentId) {
-        const rootsAfterDelete = sortRootBlocks(
-          nextBlocks.filter(
-            (b) => b.document_id === emptyRootDocumentId && (b.parent_block_id ?? null) === null,
-          ),
-        );
-        if (rootsAfterDelete.length === 0) {
-          await ensureMinimumRootTextBlock();
-        }
-      }
     } catch (e) {
       devLogger.error(logLabel, e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
@@ -197,7 +180,6 @@ export function useNoteBlockDelete(options: {
     }
   }, [
     documentEngine,
-    ensureMinimumRootTextBlock,
     finalizeBlockDelete,
     focusToggleTitleIfChildForestEmptied,
     onAfterBlocksRemoved,
@@ -275,7 +257,6 @@ export function useNoteBlockDelete(options: {
       command,
       skipDeleteUndo,
       deletedBlock: prevBlocks.find((b) => b.id === block.id) ?? block,
-      emptyRootDocumentId: block.document_id,
       logLabel: '[Note] deleteBlock',
     });
   }, [
@@ -319,14 +300,12 @@ export function useNoteBlockDelete(options: {
       )
         ?? targets[targets.length - 1]
         ?? null,
-      emptyRootDocumentId: targets[targets.length - 1]?.document_id ?? selectedId,
       logLabel: '[Note] deleteBlocks',
     });
   }, [
     blocksRef,
     focusBlockEditor,
     runDeleteForestCommand,
-    selectedId,
   ]);
 
   const handleMergeWithPreviousBlock = useCallback(async (block: NoteBlock) => {

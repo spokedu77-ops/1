@@ -25,6 +25,19 @@ export function resolveFocusedInsertTarget(
   return resolveInsertIndexAfterBlock(blocks, focusedBlock);
 }
 
+export function resolveAddBlockInsertTarget(
+  blocks: ReadonlyArray<NoteBlock>,
+  focusedBlockId: string | null,
+  activeContainerBlockId: string | null,
+): { parentId: string | null; insertIndex: number } | null {
+  const focusedTarget = resolveFocusedInsertTarget(blocks, focusedBlockId);
+  if (!focusedTarget) return null;
+  if (!activeContainerBlockId || isBlockInParent(blocks, focusedBlockId, activeContainerBlockId)) {
+    return focusedTarget;
+  }
+  return null;
+}
+
 export function isBlockInParent(
   blocks: ReadonlyArray<NoteBlock>,
   blockId: string | null,

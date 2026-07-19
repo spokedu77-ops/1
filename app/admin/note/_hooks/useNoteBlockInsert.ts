@@ -12,6 +12,7 @@ import {
 } from '../_lib/noteColumnBlock';
 import {
   isBlockInParent,
+  resolveAddBlockInsertTarget,
   resolveFocusedInsertTarget,
   resolveInsertIndexAfterBlock,
 } from '../_lib/noteInsertPosition';
@@ -483,6 +484,17 @@ export function useNoteBlockInsert(options: {
         return;
       }
       if (type === 'page') {
+        const parentBlockId = focusedToggleId ?? null;
+        const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
+        const focusedTarget = resolveAddBlockInsertTarget(blocksRef.current, focusedId, parentBlockId);
+        if (focusedTarget) {
+          await handleCreateSubPage(selectedId, {
+            parentBlockId: focusedTarget.parentId,
+            insertIndex: focusedTarget.insertIndex,
+            navigateToChild: false,
+          });
+          return;
+        }
         await handleCreateSubPage(selectedId, {
           parentBlockId: focusedToggleId ?? null,
           navigateToChild: false,

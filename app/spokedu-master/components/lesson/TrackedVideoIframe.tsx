@@ -16,12 +16,57 @@ function withAutoplay(src: string): string {
   }
 }
 
+function PosterStill({
+  posterUrl,
+  posterCandidates,
+}: {
+  posterUrl?: string;
+  posterCandidates?: string[];
+}) {
+  const candidates = useMemo(() => {
+    const list = [...(posterCandidates ?? []), ...(posterUrl ? [posterUrl] : [])];
+    return Array.from(new Set(list.filter(Boolean)));
+  }, [posterCandidates, posterUrl]);
+  const [index, setIndex] = useState(0);
+  const current = candidates[index];
+
+  useEffect(() => {
+    setIndex(0);
+  }, [candidates.join('|')]);
+
+  if (!current) {
+    return <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800" />;
+  }
+
+  const advance = () => {
+    setIndex((prev) => (prev + 1 < candidates.length ? prev + 1 : prev));
+  };
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- poster before iframe; avoid optimizer cost on click path
+    <img
+      src={current}
+      alt=""
+      className="absolute inset-0 h-full w-full object-cover"
+      loading="lazy"
+      decoding="async"
+      onError={advance}
+      onLoad={(event) => {
+        // YouTube often returns HTTP 200 with a tiny grey stub when maxres is missing.
+        const { naturalWidth, naturalHeight } = event.currentTarget;
+        if (naturalWidth > 0 && naturalWidth <= 120 && naturalHeight <= 90) advance();
+      }}
+    />
+  );
+}
+
 export function TrackedVideoIframe({
   src,
   title,
   className,
   onPlaybackStarted,
   posterUrl,
+  posterCandidates,
   deferUntilPlay = false,
 }: {
   src: string;
@@ -30,6 +75,8 @@ export function TrackedVideoIframe({
   onPlaybackStarted?: () => void;
   /** Shown until the user taps play when deferUntilPlay is true. */
   posterUrl?: string;
+  /** Prefer high-res first; falls back on load error (YouTube maxres gaps). */
+  posterCandidates?: string[];
   /** Do not mount the YouTube iframe until the user taps play (low-end friendly). */
   deferUntilPlay?: boolean;
 }) {
@@ -97,12 +144,7 @@ export function TrackedVideoIframe({
         onClick={() => setActive(true)}
         aria-label={`${title} 재생`}
       >
-        {posterUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- poster before iframe; avoid optimizer cost on click path
-          <img src={posterUrl} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" decoding="async" />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-800" />
-        )}
+        <PosterStill posterUrl={posterUrl} posterCandidates={posterCandidates} />
         <span className="relative z-10 grid h-14 w-14 place-items-center rounded-full bg-white/95 text-[var(--spm-acc)] shadow-lg ring-4 ring-white/30">
           <Play className="ml-0.5 h-5 w-5 fill-current" />
         </span>

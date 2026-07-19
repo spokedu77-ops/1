@@ -392,6 +392,7 @@ export function useNoteDragDrop(options: {
           {
             logLabel: '[Note] moveBlockToCurrentDoc',
             errorMessage: '블록 순서 저장 실패',
+            afterPersist: triggerSave,
           },
         );
         return;
@@ -459,6 +460,7 @@ export function useNoteDragDrop(options: {
                   await runOptimisticBlockCommand(prevBlocks, command, {
                     logLabel: '[Note] movePageGroupBesidePage',
                     errorMessage: '페이지 묶음 순서 저장 실패',
+                    afterPersist: triggerSave,
                   });
                 }
                 return;
@@ -521,6 +523,7 @@ export function useNoteDragDrop(options: {
             await runOptimisticBlockCommand(prevBlocks, command, {
               logLabel: '[Note] moveBlockGroup',
               errorMessage: '블록 묶음 이동 저장 실패',
+              afterPersist: triggerSave,
             });
             return;
           }
@@ -603,6 +606,7 @@ export function useNoteDragDrop(options: {
     await runOptimisticBlockCommand(prevBlocks, command, {
       logLabel: '[Note] reparentBlock',
       errorMessage: '블록 이동 저장 실패',
+      afterPersist: triggerSave,
     });
   }, [
     blocksRef,

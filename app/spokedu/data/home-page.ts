@@ -91,13 +91,13 @@ export const homePage = {
     mediaKey: 'homeHero' as HomeMediaKey,
     primaryCta: {
       label: '기관 프로그램 문의',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
-      trackLabel: 'cta-home-contact-hero',
+      href: `${SPOKEDU_BASE_PATH}/dispatch`,
+      trackLabel: 'cta-home-dispatch-hero',
     },
     secondaryCta: {
       label: '개인수업 상담',
-      href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
-      trackLabel: 'cta-home-audience-gate-hero',
+      href: `${SPOKEDU_BASE_PATH}/private`,
+      trackLabel: 'cta-home-private-hero',
     },
     quickLinks: [
       {
@@ -195,9 +195,18 @@ export const homePage = {
       { value: '운영', label: '정규·행사·통합반' },
     ] as const satisfies readonly HomeSpomoveProof[],
     useCases: [
-      { title: '정규수업', body: '' },
-      { title: '원데이', body: '' },
-      { title: '통합반', body: '' },
+      {
+        title: '정규수업',
+        body: '반복 참여 속에서 화면 신호와 움직임 반응을 단계적으로 연결합니다.',
+      },
+      {
+        title: '원데이',
+        body: '짧은 시간에도 직관적인 규칙과 신체 반응으로 몰입을 만듭니다.',
+      },
+      {
+        title: '통합반',
+        body: '속도와 신호 난이도를 조절해 각자 참여 가능한 움직임을 제공합니다.',
+      },
     ] as const satisfies readonly HomeSpomoveUseCase[],
     mediaKey: 'programSpomove' as HomeMediaKey,
     primaryCta: {

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  applyNoteBlockOpPayload,
+  filterTransactionPatchesByDocument,
   filterTransactionPatchesByExistingIds,
   pushNoteBlockOps,
   shouldIgnoreRegressiveContentPatch,
@@ -24,6 +26,21 @@ describe('noteOpLogService transaction patch filtering', () => {
     expect(
       filterTransactionPatchesByExistingIds(patches, new Set(['alive'])),
     ).toEqual([{ id: 'alive', order_index: 0 }]);
+  });
+
+  it('drops transaction patches for blocks owned by another document stream', () => {
+    const patches = [
+      { id: 'same-doc', order_index: 0 },
+      { id: 'other-doc', order_index: 1 },
+    ];
+    const ownerById = new Map([
+      ['same-doc', 'doc-1'],
+      ['other-doc', 'doc-2'],
+    ]);
+
+    expect(filterTransactionPatchesByDocument(patches, ownerById, 'doc-1')).toEqual([
+      { id: 'same-doc', order_index: 0 },
+    ]);
   });
 
   it('ignores stale prefix patches that would truncate saved text', () => {
@@ -159,5 +176,96 @@ describe('noteOpLogService transaction patch filtering', () => {
       ops: [],
     });
     expect(touchedTables).not.toContain('note_blocks');
+  });
+
+  it('does not update a block when patch_content is sent through the wrong document stream', async () => {
+    const calls: string[] = [];
+    const supabase = {
+      from(table: string) {
+        const chain = {
+          select() {
+            calls.push(`${table}.select`);
+            return chain;
+          },
+          update() {
+            calls.push(`${table}.update`);
+            return chain;
+          },
+          eq(column: string, value: string) {
+            calls.push(`${table}.eq.${column}.${value}`);
+            return chain;
+          },
+          is() {
+            calls.push(`${table}.is`);
+            return chain;
+          },
+          maybeSingle() {
+            return Promise.resolve({ data: null, error: null });
+          },
+        };
+        return chain;
+      },
+    };
+
+    const result = await applyNoteBlockOpPayload(
+      supabase as never,
+      'wrong-doc',
+      {
+        opType: 'patch_content',
+        blockId: 'block-owned-by-other-doc',
+        content: { text: 'must not cross documents' },
+      },
+      'actor-1',
+    );
+
+    expect(result).toEqual([]);
+    expect(calls).toContain('note_blocks.eq.document_id.wrong-doc');
+    expect(calls).not.toContain('note_blocks.update');
+  });
+
+  it('does not let an empty stale content patch overwrite saved text', async () => {
+    const calls: string[] = [];
+    const supabase = {
+      from(table: string) {
+        const chain = {
+          select() {
+            calls.push(`${table}.select`);
+            return chain;
+          },
+          update() {
+            calls.push(`${table}.update`);
+            return chain;
+          },
+          eq() {
+            return chain;
+          },
+          is() {
+            return chain;
+          },
+          maybeSingle() {
+            return Promise.resolve({
+              data: { version: 3, content: { text: 'saved admin text', html: '<p>saved admin text</p>' } },
+              error: null,
+            });
+          },
+        };
+        return chain;
+      },
+    };
+
+    const result = await applyNoteBlockOpPayload(
+      supabase as never,
+      'doc-1',
+      {
+        opType: 'patch_content',
+        blockId: 'block-1',
+        content: { text: '', html: '<p></p>' },
+        baseContent: { text: '', html: '<p></p>' },
+      },
+      'actor-1',
+    );
+
+    expect(result).toEqual([]);
+    expect(calls).not.toContain('note_blocks.update');
   });
 });

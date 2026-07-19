@@ -63,6 +63,21 @@ test('keeps newest active non-self page block as canonical child document parent
   assert.equal(issues.staleParentDocuments[0].canonicalParent, 'parent-new');
 });
 
+test('dedupes repeated rows from unstable paginated reads before duplicate-link checks', () => {
+  const link = pageBlock('same-link-row', 'parent', 'child');
+  const issues = collectIssues(
+    [
+      doc('parent'),
+      doc('child', { parent_id: 'parent' }),
+      doc('child', { parent_id: 'parent' }),
+    ],
+    [link, { ...link }],
+  );
+
+  assert.equal(issues.duplicatePageLinks.length, 0);
+  assert.equal(countIssues(issues), 0);
+});
+
 test('does not treat self page links as canonical parents', () => {
   const issues = collectIssues(
     [doc('child', { parent_id: 'child' })],

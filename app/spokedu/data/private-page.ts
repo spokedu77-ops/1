@@ -1,5 +1,4 @@
 import type { HomeMediaKey } from './home-media';
-import { SPOKEDU_BASE_PATH } from './site';
 
 export type PrivateLocationItem = {
   title: string;
@@ -262,24 +261,6 @@ export const privatePage = {
           '꾸준한 습관 형성을 위해 정기 단위로 이어갑니다. 정기 수업은 최대 2회까지 연기가 가능합니다.',
       },
     ],
-  },
-  moveReport: {
-    eyebrow: '선택 진단',
-    title: '움직임 성향 참고하기',
-    lead: '상담 전에 아이의 움직임 성향을 간단히 확인하고, 수업 설계에 참고할 내용을 전달할 수 있습니다.',
-    kicker: '3분 · 12문항 · 무료 테스트',
-    headline: '간단 진단으로 수업 설계 힌트를 먼저 확인하세요',
-    description:
-      '진단 결과는 상담 전 아이 상태를 이해하는 참고자료입니다. 필수 절차가 아니라, 더 정확한 상담을 위한 보조 도구입니다.',
-    steps: [
-      '새 탭에서 간단 진단을 완료합니다.',
-      '결과 화면에서 「상담 페이지로 돌아가기」를 누르면 요약이 자동 저장됩니다.',
-      '이 페이지 하단 상담 폼에서 Move Report 요약을 확인한 뒤 접수합니다.',
-    ] as const,
-    startHref: '/move-report',
-    startLabel: '간단 진단 새 탭에서 시작하기',
-    contactHref: '#apply',
-    contactLabel: '요약 반영 후 상담하기',
   },
   reviews: {
     eyebrow: '후기',

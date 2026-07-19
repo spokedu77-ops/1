@@ -6,7 +6,7 @@ export const curriculumPage = {
     trustBadge: '연세대 체육교육학과 출신 운영진',
     lines: ['현장에서 검증한 기준을', '지도자 교육으로 전합니다'] as const,
     subtitle:
-      '현장 수업에서 검증한 기준을 수업안·운영 매뉴얼·지도자 교육·SPOMOVE 도입 교육으로 확장합니다. 선생님들의 선생님을 지향합니다.',
+      '현장 수업에서 검증한 기준을 수업안·운영 매뉴얼·지도자 교육·SPOMOVE 도입 교육으로 확장합니다. 더 많은 선생님이 좋은 수업을 운영할 수 있도록 기준과 도구를 제공합니다.',
     mediaKey: 'trackCurriculum' as HomeMediaKey,
   },
   trustMetrics: {

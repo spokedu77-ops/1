@@ -13,10 +13,13 @@ import {
 const PROTECTED_IDS = new Set(NOTE_QA_DOCUMENTS.map((doc) => doc.id));
 
 /** QA 스크립트·디버그 세션이 만드는 일회성 문서 제목 패턴 */
-export function isEphemeralQaDocumentTitle(title) {
+export function isEphemeralQaDocumentTitle(title, options = {}) {
   if (typeof title !== 'string') return false;
   const trimmed = title.trim();
   if (!trimmed) return false;
+  if (Array.isArray(options.titlePrefixes) && options.titlePrefixes.length > 0) {
+    return options.titlePrefixes.some((prefix) => trimmed.startsWith(prefix));
+  }
   // Smoke … (공백 유무) — LeaveAck / ToggleForest / TodoChain 포함
   if (/^Smoke(\s|$)/i.test(trimmed) || trimmed.startsWith('SmokeTodoChain')) return true;
   if (trimmed.startsWith('Typing QA ')) return true;
@@ -32,12 +35,12 @@ export function isEphemeralQaDocumentTitle(title) {
 }
 
 /** 삭제 대상 id — 제목 매칭 + ephemeral 부모의 하위 문서 포함 */
-export function collectEphemeralQaDocumentIds(documents) {
+export function collectEphemeralQaDocumentIds(documents, options = {}) {
   const toDelete = new Set();
 
   for (const doc of documents) {
     if (PROTECTED_IDS.has(doc.id)) continue;
-    if (isEphemeralQaDocumentTitle(doc.title)) toDelete.add(doc.id);
+    if (isEphemeralQaDocumentTitle(doc.title, options)) toDelete.add(doc.id);
   }
 
   let expanded = true;
@@ -78,12 +81,12 @@ export async function softDeleteDocumentsViaPage(page, ids) {
 }
 
 /** 브라우저 세션(Playwright page)으로 ephemeral QA 문서 휴지통 이동 (잔여 없을 때까지 최대 2회) */
-export async function cleanupEphemeralQaDocumentsViaPage(page) {
+export async function cleanupEphemeralQaDocumentsViaPage(page, options = {}) {
   let deleted = 0;
   const titles = [];
   for (let pass = 0; pass < 2; pass += 1) {
     const documents = await fetchActiveNoteDocumentsViaPage(page);
-    const ids = collectEphemeralQaDocumentIds(documents);
+    const ids = collectEphemeralQaDocumentIds(documents, options);
     if (ids.length === 0) break;
     const titleById = new Map(documents.map((doc) => [doc.id, doc.title]));
     await softDeleteDocumentsViaPage(page, ids);
@@ -94,9 +97,9 @@ export async function cleanupEphemeralQaDocumentsViaPage(page) {
 }
 
 /** cleanup 후에도 ephemeral이 남아 있으면 메시지와 함께 목록 반환 */
-export async function listRemainingEphemeralQaDocumentsViaPage(page) {
+export async function listRemainingEphemeralQaDocumentsViaPage(page, options = {}) {
   const documents = await fetchActiveNoteDocumentsViaPage(page);
-  const ids = new Set(collectEphemeralQaDocumentIds(documents));
+  const ids = new Set(collectEphemeralQaDocumentIds(documents, options));
   return documents
     .filter((doc) => ids.has(doc.id))
     .map((doc) => ({ id: doc.id, title: doc.title }));
@@ -107,12 +110,12 @@ export async function listRemainingEphemeralQaDocumentsViaPage(page) {
  * QA scripts must not leave Smoke/Regression documents behind just because the
  * page session is already broken by the failure being investigated.
  */
-export async function cleanupEphemeralQaDocumentsBestEffort(page) {
+export async function cleanupEphemeralQaDocumentsBestEffort(page, options = {}) {
   const errors = [];
   if (page) {
     try {
-      const cleaned = await cleanupEphemeralQaDocumentsViaPage(page);
-      const remaining = await listRemainingEphemeralQaDocumentsViaPage(page);
+      const cleaned = await cleanupEphemeralQaDocumentsViaPage(page, options);
+      const remaining = await listRemainingEphemeralQaDocumentsViaPage(page, options);
       if (remaining.length === 0) {
         return { ...cleaned, remaining, via: 'page', errors };
       }
@@ -122,7 +125,7 @@ export async function cleanupEphemeralQaDocumentsBestEffort(page) {
     }
   }
 
-  const cleaned = await cleanupEphemeralQaDocumentsViaService();
+  const cleaned = await cleanupEphemeralQaDocumentsViaService(options);
   return {
     ...cleaned,
     remaining: [],
@@ -141,7 +144,7 @@ async function resolveActorUserId(service) {
 }
 
 /** service_role로 ephemeral QA 문서 일괄 soft-delete (dev 서버 불필요) */
-export async function cleanupEphemeralQaDocumentsViaService() {
+export async function cleanupEphemeralQaDocumentsViaService(options = {}) {
   if (!SUPABASE_URL || !SUPABASE_SERVICE) {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
   }
@@ -155,7 +158,7 @@ export async function cleanupEphemeralQaDocumentsViaService() {
   if (error) throw new Error(`note_documents list failed: ${error.message}`);
 
   const documents = data ?? [];
-  const ids = collectEphemeralQaDocumentIds(documents);
+  const ids = collectEphemeralQaDocumentIds(documents, options);
   if (ids.length === 0) {
     return { deleted: 0, titles: [] };
   }

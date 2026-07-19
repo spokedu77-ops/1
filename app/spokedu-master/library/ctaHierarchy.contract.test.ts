@@ -6,14 +6,18 @@ const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
 
 describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
   const library = read('app/spokedu-master/library/LibraryView.tsx');
+  const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
   const detail = read('app/spokedu-master/library/[id]/LibraryDetailView.tsx');
 
   it('keeps library cards focused on media preview and one full-lesson CTA', () => {
-    expect(library.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
-    expect(library).toContain('aria-label={`${program.title} 수업 미리보기`}');
-    expect(library).not.toMatch(/>\s*수업 미리보기\s*</);
-    expect(library).toContain('전체 수업 자료 보기');
+    expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
+    expect(catalogCard).toContain('aria-label={`${title} 수업 미리보기`}');
+    expect(catalogCard).not.toMatch(/>\s*수업 미리보기\s*</);
+    expect(catalogCard).toContain('자료 보기');
+    expect(catalogCard).not.toContain('전체 수업 자료 보기');
+    expect(library).toContain('LessonCatalogCard');
     expect(library).toContain('autoplayVideo: programHasPlayableVideo(program)');
+    expect(library).toContain('전체 수업 자료 보기');
     expect(library).not.toMatch(/>\s*전체 자료 보기\s*</);
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });

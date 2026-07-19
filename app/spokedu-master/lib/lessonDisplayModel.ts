@@ -1,5 +1,6 @@
 import type { Program } from '../types';
 import { mergeStrengthBodyFunctions } from './lessonDisplay';
+import { normalizeLessonTheme } from './lessonTheme';
 import { resolveProgramHero } from './program-media';
 import { getProgramQualityReport, type ProgramQualityReport } from './program-meta';
 
@@ -96,7 +97,7 @@ export function buildLessonDisplayModel(program: Program): LessonDisplayModel {
   return {
     id: program.id,
     title: cleanValue(program.title),
-    theme: cleanValue(program.category),
+    theme: normalizeLessonTheme(program.category),
     target: cleanValue(detail?.recommendedAge || program.grade),
     space: cleanValue(program.space),
     participantFormat: cleanValue(detail?.recommendedPlayers),

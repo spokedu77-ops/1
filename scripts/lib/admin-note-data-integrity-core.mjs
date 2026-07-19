@@ -35,11 +35,13 @@ export function canonicalParentByChild(pageBlocks, documentIds) {
 }
 
 export function collectIssues(documents, blocks) {
-  const documentMap = byId(documents);
-  const blockMap = byId(blocks);
-  const activeDocuments = documents.filter((doc) => !doc.deleted_at);
+  const uniqueDocuments = [...byId(documents).values()];
+  const uniqueBlocks = [...byId(blocks).values()];
+  const documentMap = byId(uniqueDocuments);
+  const blockMap = byId(uniqueBlocks);
+  const activeDocuments = uniqueDocuments.filter((doc) => !doc.deleted_at);
   const activeDocumentIds = new Set(activeDocuments.map((doc) => doc.id));
-  const activePageBlocks = blocks.filter((block) =>
+  const activePageBlocks = uniqueBlocks.filter((block) =>
     block.type === 'page'
     && !block.deleted_at
     && activeDocumentIds.has(block.document_id));
@@ -79,7 +81,7 @@ export function collectIssues(documents, blocks) {
     }
   }
 
-  for (const block of blocks) {
+  for (const block of uniqueBlocks) {
     const document = documentMap.get(block.document_id);
     if (!block.deleted_at && document?.deleted_at) {
       activeBlocksInDeletedDocuments.push({ block, document });

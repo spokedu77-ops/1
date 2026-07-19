@@ -35,10 +35,10 @@ describe('resolveDropPositionForBlock', () => {
     expect(resolveDropPositionForBlock('toggle', rect, 133, { titleBandBottom: titleBottom })).toBe('after');
   });
 
-  it('uses edge bands for page blocks', () => {
+  it('keeps page row coordinate drops as before/after only', () => {
     const rect = { top: 0, height: 100 };
     expect(resolveDropPositionForBlock('page', rect, 10)).toBe('before');
-    expect(resolveDropPositionForBlock('page', rect, 50)).toBe('inside');
+    expect(resolveDropPositionForBlock('page', rect, 50)).toBe('after');
     expect(resolveDropPositionForBlock('page', rect, 90)).toBe('after');
   });
 
@@ -107,6 +107,48 @@ describe('resolveBlockDropTarget page insertion contract', () => {
       position: 'before',
     });
     expect(resolveBlockDropTarget('block-inside:target', blocks, event, 130, 'moving')).toEqual({
+      blockId: 'target',
+      position: 'after',
+    });
+  });
+
+  it('allows non-page blocks into a child page only on the explicit inside target', () => {
+    document.body.innerHTML = '<div data-note-block-row data-block-id="target"></div>';
+    const row = document.querySelector<HTMLElement>('[data-block-id="target"]');
+    row!.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 140,
+      left: 0,
+      right: 200,
+      width: 200,
+      height: 40,
+      x: 0,
+      y: 100,
+      toJSON: () => ({}),
+    }) as DOMRect;
+
+    const blocks = [
+      {
+        id: 'moving',
+        document_id: 'doc',
+        parent_block_id: null,
+        type: 'todo',
+        order_index: 0,
+        content: { text: 'Task', checked: false },
+        created_at: '',
+        updated_at: '',
+      },
+      pageBlock('target', 1),
+    ] satisfies NoteBlock[];
+    const event = { over: null } as unknown as DragEndEvent;
+
+    expect(resolveBlockDropTarget('block-inside:target', blocks, event, 120, 'moving')).toEqual({
+      blockId: 'target',
+      position: 'inside',
+    });
+    expect(resolveBlockDropTarget('target', blocks, {
+      over: { rect: { top: 100, height: 40 } },
+    } as unknown as DragEndEvent, 120, 'moving')).toEqual({
       blockId: 'target',
       position: 'after',
     });

@@ -32,6 +32,9 @@ import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 import {
   SPOMOVE_CUE_SPEED_OPTIONS,
   clampCueSpeedSec,
+  formatCueSpeedTargetLabel,
+  getCueSpeedGuide,
+  recommendedCueSecondsForPreset,
   resolveInitialCueSeconds,
   supportsCueSpeedOverride,
   writeLastCueSeconds,
@@ -114,6 +117,10 @@ function OfficialEngineBriefing({
   const display = getSpomovePresetDisplayModel(preset);
   const showCueSpeed = supportsCueSpeedOverride(preset);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const selectedGuide = getCueSpeedGuide(cueSeconds);
+  const recommendedSec = recommendedCueSecondsForPreset(preset);
+  const recommendedGuide = getCueSpeedGuide(recommendedSec);
+  const isRecommendedSelected = cueSeconds === recommendedSec;
 
   const startLabel = startDisabled
     ? '불러오는 중…'
@@ -159,21 +166,61 @@ function OfficialEngineBriefing({
               <div className="mt-4 grid grid-cols-5 gap-2">
                 {SPOMOVE_CUE_SPEED_OPTIONS.map((sec) => {
                   const active = cueSeconds === sec;
+                  const recommended = sec === recommendedSec;
                   return (
                     <button
                       key={sec}
                       type="button"
                       onClick={() => onCueSecondsChange(sec)}
-                      className={`inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition ${
+                      title={`${sec}초 · ${getCueSpeedGuide(sec).tempoLabel}`}
+                      className={`relative inline-flex h-12 items-center justify-center rounded-xl text-[15px] font-black transition ${
                         active
                           ? 'bg-[var(--spm-acc)] text-white shadow-[0_10px_28px_rgba(0,0,0,0.28)]'
                           : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35 hover:text-white'
                       }`}
                     >
                       {sec}
+                      {recommended ? (
+                        <span
+                          className={`absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full ${
+                            active ? 'bg-white' : 'bg-[var(--spm-acc)]'
+                          }`}
+                          aria-hidden
+                        />
+                      ) : null}
                     </button>
                   );
                 })}
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-white/12 px-2.5 py-0.5 text-[11px] font-black text-white">
+                    {selectedGuide.tempoLabel}
+                  </span>
+                  <span className="text-[11px] font-black text-white/55">
+                    추천 {formatCueSpeedTargetLabel(selectedGuide.recommendTargets)}
+                  </span>
+                  {isRecommendedSelected ? (
+                    <span className="rounded-full border border-[color-mix(in_srgb,var(--spm-acc)_45%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_18%,transparent)] px-2 py-0.5 text-[10px] font-black text-[color-mix(in_srgb,var(--spm-acc)_85%,white)]">
+                      이 활동 추천
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-2 text-[12px] font-black leading-5 text-white/78">{selectedGuide.reason}</p>
+                <p className="mt-1 text-[12px] font-semibold leading-5 text-white/50">{selectedGuide.summary}</p>
+                {!isRecommendedSelected ? (
+                  <button
+                    type="button"
+                    onClick={() => onCueSecondsChange(recommendedSec)}
+                    className="mt-2.5 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[11px] font-black text-white/80 transition hover:border-white/30 hover:text-white"
+                  >
+                    이 활동 추천 {recommendedSec}초
+                    <span className="font-semibold text-white/45">
+                      ({formatCueSpeedTargetLabel(recommendedGuide.recommendTargets)} · {recommendedGuide.tempoLabel})
+                    </span>
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : (

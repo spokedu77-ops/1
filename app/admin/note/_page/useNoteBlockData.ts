@@ -356,7 +356,7 @@ export function useNoteBlockData(options: {
         bootstrapAppliedDocIdRef.current = documentId;
         bootstrapForOpen = bootstrapPayload.blocks;
       } else if (bootstrapAppliedDocIdRef.current !== documentId) {
-        for (let attempt = 0; attempt < 24; attempt += 1) {
+        for (let attempt = 0; attempt < 4; attempt += 1) {
           if (cancelled || blockLoadGenRef.current !== loadGen) return;
           const lateBootstrap = bootstrapBlocksRef.current;
           if (lateBootstrap?.documentId === documentId) {

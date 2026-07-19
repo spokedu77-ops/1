@@ -22,6 +22,9 @@ const JIHOON_NOTE_ID = '630e1104-84f9-41a2-b25b-7c4faa6a1300';
 const GYM_TOGGLE_TITLE = '체육관 이용방법';
 const RECONCILE_WAIT_MS = 3500;
 const ZOMBIE_MARKER = '좀비회귀QA마커';
+const REGRESSION_CLEANUP_OPTIONS = {
+  titlePrefixes: ['Regression QA ', 'Toggle KB QA ', 'Toggle Zombie QA '],
+};
 
 function matchesGymToggleTitle(value) {
   return typeof value === 'string' && value.includes(GYM_TOGGLE_TITLE);
@@ -515,7 +518,7 @@ async function main() {
 
   } finally {
     try {
-      const cleaned = await cleanupEphemeralQaDocumentsBestEffort(page);
+      const cleaned = await cleanupEphemeralQaDocumentsBestEffort(page, REGRESSION_CLEANUP_OPTIONS);
       if (cleaned.deleted > 0) {
         console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s) via ${cleaned.via}.`);
       }

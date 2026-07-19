@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isBlockInParent,
+  resolveAddBlockInsertTarget,
   resolveFocusedInsertTarget,
   resolveInsertIndexAfterBlock,
 } from './noteInsertPosition';
@@ -88,5 +89,43 @@ describe('note insert position', () => {
 
     expect(isBlockInParent(blocks, 'toggle-child', 'toggle')).toBe(true);
     expect(isBlockInParent(blocks, 'focused-root', 'toggle')).toBe(false);
+  });
+
+  it('uses the focused block position for toolbar/slash page insertion', () => {
+    const blocks = [
+      block('first', 0),
+      block('focused', 1),
+      block('next', 2),
+    ];
+
+    expect(resolveAddBlockInsertTarget(blocks, 'focused', null)).toEqual({
+      parentId: null,
+      insertIndex: 2,
+    });
+  });
+
+  it('keeps toolbar/slash page insertion inside the active toggle when focus is a child', () => {
+    const blocks = [
+      block('toggle', 0),
+      block('child-a', 0, 'toggle'),
+      block('focused-child', 1, 'toggle'),
+      block('child-next', 2, 'toggle'),
+      block('root-next', 1),
+    ];
+
+    expect(resolveAddBlockInsertTarget(blocks, 'focused-child', 'toggle')).toEqual({
+      parentId: 'toggle',
+      insertIndex: 2,
+    });
+  });
+
+  it('does not reuse a stale toggle container when focus has moved outside it', () => {
+    const blocks = [
+      block('toggle', 0),
+      block('toggle-child', 0, 'toggle'),
+      block('focused-root', 1),
+    ];
+
+    expect(resolveAddBlockInsertTarget(blocks, 'focused-root', 'toggle')).toBeNull();
   });
 });

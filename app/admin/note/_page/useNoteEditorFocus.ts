@@ -124,7 +124,7 @@ export function useNoteEditorFocus(options: {
     focusedEditorPartRef.current = part;
     setFocusedEditorBlockId(blockId);
     setFocusedEditorPart(part);
-    if (!alreadyFocused) {
+    if (!alreadyFocused || caretOffset !== undefined) {
       if (part === 'title') {
         setFocusTitleSignal((v) => v + 1);
       } else {

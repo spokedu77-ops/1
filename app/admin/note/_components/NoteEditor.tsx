@@ -934,6 +934,10 @@ export function NoteEditor({
           return false;
         }
         // 글머리·번호 블록 — NoteBlockEnterExtension이 Keymap Enter보다 먼저 처리
+        if (event.key === 'Enter' && isSlashMenuActiveText(view.state.doc.textContent)) {
+          event.preventDefault();
+          return true;
+        }
         if (event.key === 'Enter' && currentEnterCreatesBlock) {
           return false;
         }
@@ -1110,7 +1114,7 @@ export function NoteEditor({
     storage.handler = (currentEditor, shiftKey) => {
       const cbs = callbacksRef.current;
       if (!shiftKey && isSlashMenuActiveText(currentEditor.getText())) {
-        return false;
+        return true;
       }
       if (resolveEditorShiftEnterAction(shiftKey, { tabBehavior: cbs.tabBehavior })) {
         return currentEditor.commands.setHardBreak();

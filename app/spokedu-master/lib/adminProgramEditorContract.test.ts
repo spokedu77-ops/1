@@ -34,7 +34,7 @@ describe('admin program editor contract', () => {
       equipment: ' 공 1개 \n\n 원마커 ',
       activityMethod: ' 1단계 \n 2단계 ',
       publicationStatus: 'ready',
-      theme: ' 협동 ',
+      theme: ' 민첩성 발동작, 도전형 ',
       target: ' 미취학 ',
       tags: [' 움직임:동적 ', '신체 기능:민첩성', '움직임:동적'],
       space: ' 교실 ',
@@ -61,6 +61,7 @@ describe('admin program editor contract', () => {
       'activity_method',
       'is_published',
     ]);
+    expect(payload.meta.sm_theme).toBe('도전형');
     expect(payload.meta.sm_tags).toEqual(['움직임:동적', '신체 기능:민첩성']);
     expect(payload.overlay).not.toHaveProperty('main_theme');
     expect(payload.overlay).not.toHaveProperty('group_size');

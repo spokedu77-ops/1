@@ -45,10 +45,10 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('slice(0, 3)');
   });
 
-  it('loads guideline videos and renders pad layout in the guideline sheet', () => {
+  it('loads guideline videos in the guideline sheet without pad layout clutter', () => {
     expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
-    expect(guidelineSheet).toContain('SpomovePadLayoutView');
+    expect(guidelineSheet).not.toContain('SpomovePadLayoutView');
     expect(guidelineSheet).toContain('SpomoveGuideVideo');
     expect(guidelineSheet).toContain('참고 영상');
   });
@@ -62,6 +62,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
     expect(session).toContain('자극 속도');
     expect(session).toContain('속도만 고르고 시작하세요');
+    expect(session).toContain('recommendedCueSecondsForPreset');
+    expect(session).toContain('이 활동 추천');
     expect(session).toContain("searchParams.get('autostart') === '1'");
   });
 
@@ -70,6 +72,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('초로 시작');
     expect(session).toContain('자세히 보기');
     expect(session).toContain('자극 속도');
+    expect(session).toContain('getCueSpeedGuide');
     expect(session).not.toContain('시작 전 확인');
   });
 

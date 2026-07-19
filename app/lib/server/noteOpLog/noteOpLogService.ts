@@ -92,8 +92,17 @@ export function filterTransactionPatchesByExistingIds<T extends { id: string }>(
   return patches.filter((patch) => existingIds.has(patch.id));
 }
 
-async function filterExistingTransactionPatches<T extends { id: string }>(
+export function filterTransactionPatchesByDocument<T extends { id: string; document_id?: string }>(
+  patches: T[],
+  blockDocumentById: ReadonlyMap<string, string>,
+  documentId: string,
+): T[] {
+  return patches.filter((patch) => blockDocumentById.get(patch.id) === documentId);
+}
+
+async function filterExistingTransactionPatches<T extends { id: string; document_id?: string }>(
   supabase: SupabaseClient,
+  documentId: string,
   patches: T[],
 ): Promise<T[]> {
   if (patches.length === 0) return patches;
@@ -101,11 +110,13 @@ async function filterExistingTransactionPatches<T extends { id: string }>(
   if (ids.length === 0) return [];
   const { data, error } = await supabase
     .from('note_blocks')
-    .select('id')
+    .select('id,document_id')
     .in('id', ids);
   if (error) throw new Error(error.message);
-  const existingIds = new Set((data ?? []).map((row) => String(row.id)));
-  return filterTransactionPatchesByExistingIds(patches, existingIds);
+  const blockDocumentById = new Map(
+    (data ?? []).map((row) => [String(row.id), String(row.document_id)]),
+  );
+  return filterTransactionPatchesByDocument(patches, blockDocumentById, documentId);
 }
 
 export async function getNoteDocumentSyncState(
@@ -223,6 +234,7 @@ export async function applyNoteBlockOpPayload(
   case 'patch_fields': {
     const patches = await filterExistingTransactionPatches(
       supabase,
+      documentId,
       payload.patches.map(stripExpectedVersion),
     );
     if (patches.length === 0) return [];
@@ -268,7 +280,7 @@ export async function applyNoteBlockOpPayload(
     return snapshots;
   }
   case 'create_block': {
-    const updates = await filterExistingTransactionPatches(supabase, [
+    const updates = await filterExistingTransactionPatches(supabase, documentId, [
       ...(payload.normalizeOrders ?? []).map((order) => ({
         id: order.id,
         order_index: order.order_index,
@@ -305,6 +317,7 @@ export async function applyNoteBlockOpPayload(
   case 'block_transaction': {
     const patches = await filterExistingTransactionPatches(
       supabase,
+      documentId,
       payload.patches.map(stripExpectedVersion),
     );
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {

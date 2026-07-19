@@ -42,7 +42,7 @@ function validMeta(overrides: Record<string, unknown> = {}) {
   return {
     curriculum_id: 101,
     sm_tags: [],
-    sm_theme: 'movement',
+    sm_theme: '조절형',
     sm_grade: 'ALL',
     sm_space: 'ALL',
     sm_is_pro: false,

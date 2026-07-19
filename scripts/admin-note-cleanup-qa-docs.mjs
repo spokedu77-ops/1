@@ -3,16 +3,26 @@
  *
  * Usage:
  *   node scripts/admin-note-cleanup-qa-docs.mjs
+ *   node scripts/admin-note-cleanup-qa-docs.mjs --prefix="Foundation QA"
  */
 import { cleanupEphemeralQaDocumentsViaService } from './note-qa/cleanupEphemeralDocs.mjs';
 
+const prefixes = process.argv
+  .slice(2)
+  .filter((arg) => arg.startsWith('--prefix='))
+  .map((arg) => arg.slice('--prefix='.length).trim())
+  .filter(Boolean);
+
 async function main() {
-  const result = await cleanupEphemeralQaDocumentsViaService();
+  const result = await cleanupEphemeralQaDocumentsViaService(
+    prefixes.length > 0 ? { titlePrefixes: prefixes } : undefined,
+  );
   if (result.deleted === 0) {
     console.log('No ephemeral QA documents to clean up.');
     return;
   }
-  console.log(`Moved ${result.deleted} ephemeral QA document(s) to trash:`);
+  const scope = prefixes.length > 0 ? ` for prefixes: ${prefixes.join(', ')}` : '';
+  console.log(`Moved ${result.deleted} ephemeral QA document(s) to trash${scope}:`);
   for (const title of result.titles) {
     console.log(`  - ${title}`);
   }

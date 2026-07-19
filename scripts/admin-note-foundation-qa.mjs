@@ -25,6 +25,7 @@ const JIHOON_WORK_NOTE_ID = '630e1104-84f9-41a2-b25b-7c4faa6a1300';
 const JIHOON_JULY_PAGE_BLOCK_ID = '923724e3-1da2-4343-bf2a-f41854a181a2';
 const JIHOON_JULY_PAGE_TITLE = '7월 업무 히스토리';
 const FOUNDATION_PREFIX = 'Foundation QA';
+const FOUNDATION_CLEANUP_OPTIONS = { titlePrefixes: [FOUNDATION_PREFIX] };
 const WAIT = 12_000;
 
 function documentIdFromPage(page) {
@@ -135,6 +136,21 @@ async function createSeededDocument(page) {
   return document.id;
 }
 
+async function createThreeRootTextDocument(page) {
+  const document = await createDocument(page, `${FOUNDATION_PREFIX} Insert ${Date.now()}`);
+  for (let index = 0; index < 3; index += 1) {
+    await createBlock(page, {
+      documentId: document.id,
+      type: 'text',
+      content: { text: `insert-anchor-${index}`, html: `<p>insert-anchor-${index}</p>` },
+      order_index: index,
+      parent_block_id: null,
+    });
+  }
+  await openDocument(page, document.id);
+  return document.id;
+}
+
 async function focusRowEditor(page, index = 0) {
   const row = page.locator('[data-note-block-row]').nth(index);
   await row.waitFor({ state: 'visible', timeout: WAIT });
@@ -192,6 +208,33 @@ async function pastePlainText(page, text) {
     await navigator.clipboard.writeText(payload);
   }, text);
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+V' : 'Control+V');
+}
+
+async function addBlockBelowRow(page, rowIndex, blockType) {
+  const pickerIndexes = {
+    todo: 6,
+    toggle: 7,
+    page: 16,
+  };
+  const row = page.locator('[data-note-block-row]').nth(rowIndex);
+  await row.waitFor({ state: 'visible', timeout: WAIT });
+  await row.hover();
+  const addButton = row.locator('[data-note-add-block-below]').first();
+  await addButton.waitFor({ state: 'visible', timeout: WAIT });
+  await addButton.click({ force: true });
+  const picker = page.locator('[data-note-block-picker-menu]').last();
+  const command = picker.locator(`[data-note-block-picker-command="${blockType}"]`).first();
+  try {
+    await command.waitFor({ state: 'visible', timeout: 2_000 });
+    await command.click({ force: true });
+    return;
+  } catch {
+    const fallbackIndex = pickerIndexes[blockType];
+    if (fallbackIndex === undefined) throw new Error(`No picker fallback index for ${blockType}`);
+    const fallbackCommand = picker.locator('button').nth(fallbackIndex);
+    await fallbackCommand.waitFor({ state: 'visible', timeout: WAIT });
+    await fallbackCommand.click({ force: true });
+  }
 }
 
 async function assertNoFoundationArtifacts(page) {
@@ -286,6 +329,32 @@ async function main() {
       await waitForBlockText(page, documentId, text);
     });
 
+    failed += await runCheck('page block inserts immediately after focused row', async () => {
+      const documentId = await createThreeRootTextDocument(page);
+      await focusRowEditor(page, 1);
+      await addBlockBelowRow(page, 1, 'page');
+      await page.waitForFunction(async ({ docId }) => {
+        const res = await fetch(
+          `/api/admin/note/blocks/load?documentId=${encodeURIComponent(docId)}&skipReconcile=true`,
+          { credentials: 'include' },
+        );
+        if (!res.ok) return false;
+        const json = await res.json();
+        return (json.blocks ?? [])
+          .filter((block) => !block.deleted_at && !block.parent_block_id)
+          .length >= 4;
+      }, { docId: documentId }, { timeout: 25_000 });
+      const roots = (await fetchBlocks(page, documentId))
+        .filter((block) => !block.deleted_at && !block.parent_block_id)
+        .sort((a, b) => a.order_index - b.order_index);
+      const order = roots.map((block) =>
+        block.type === 'page' ? 'page' : (block.content?.text ?? block.type));
+      const expected = ['insert-anchor-0', 'insert-anchor-1', 'page', 'insert-anchor-2'];
+      if (JSON.stringify(order) !== JSON.stringify(expected)) {
+        throw new Error(`page inserted at wrong position: ${JSON.stringify(order)}`);
+      }
+    });
+
     failed += await runCheck('callout paste keeps metadata and pasted text', async () => {
       const document = await createDocument(page, `${FOUNDATION_PREFIX} Callout ${Date.now()}`);
       await createBlock(page, {
@@ -375,7 +444,7 @@ async function main() {
 
   } finally {
     try {
-      const cleaned = await cleanupEphemeralQaDocumentsBestEffort(page);
+      const cleaned = await cleanupEphemeralQaDocumentsBestEffort(page, FOUNDATION_CLEANUP_OPTIONS);
       if (cleaned.deleted > 0) {
         console.log(`Cleaned ${cleaned.deleted} ephemeral QA document(s) via ${cleaned.via}.`);
       }

@@ -32,9 +32,30 @@ export function getYouTubeId(url?: string) {
   return match?.[1];
 }
 
-export function getVideoThumbnail(url?: string) {
+export type YouTubeThumbnailQuality = 'hq' | 'sd' | 'max';
+
+const YOUTUBE_THUMB_FILE: Record<YouTubeThumbnailQuality, string> = {
+  hq: 'hqdefault.jpg',
+  sd: 'sddefault.jpg',
+  max: 'maxresdefault.jpg',
+};
+
+/** 카드/목록 기본은 hq. 모달·프리뷰 등 큰 면적은 quality: 'max' + fallback 권장. */
+export function getVideoThumbnail(url?: string, quality: YouTubeThumbnailQuality = 'hq') {
   const youtubeId = getYouTubeId(url);
-  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : undefined;
+  return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/${YOUTUBE_THUMB_FILE[quality]}` : undefined;
+}
+
+/**
+ * max → sd → hq.
+ * lite(Save-Data/2G 등)면 hq만 — 모달 고화질은 네트워크 여유 있을 때만.
+ * maxres가 없는 영상은 회색 스텁이 올 수 있어 img onError/크기 체크로 내려간다.
+ */
+export function getVideoThumbnailCandidates(url?: string, options?: { lite?: boolean }): string[] {
+  const youtubeId = getYouTubeId(url);
+  if (!youtubeId) return [];
+  const qualities: YouTubeThumbnailQuality[] = options?.lite ? ['hq'] : ['max', 'sd', 'hq'];
+  return qualities.map((quality) => `https://img.youtube.com/vi/${youtubeId}/${YOUTUBE_THUMB_FILE[quality]}`);
 }
 
 export function getVideoEmbedUrl(url?: string, options?: { autoplay?: boolean }) {

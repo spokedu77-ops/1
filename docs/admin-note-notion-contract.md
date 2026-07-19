@@ -66,6 +66,8 @@ The supported Notion-like surface is intentionally small:
 
 - Performance fixes must not bypass `syncWithServer`, toggle migration cleanup, child-document reconciliation, or structural-authority merge rules.
 - Bootstrap snapshots are allowed to reduce duplicate network calls only when they flow through the same document-open path as an ordinary block load.
+- First paint must not apply remembered/session/IndexedDB block snapshots as authoritative document content. A stale local snapshot may be useful for diagnostics or recovery, but the visible document tree must be established by the server/bootstrap open path.
+- During document load, body whitespace clicks must not create blocks. A block may be created from whitespace only after `loadingBlocks` is false and the selected document's load has settled.
 - Database reads for active block trees, active page links, and active document lists must be supported by explicit indexes instead of relying on broad scans as note volume grows.
 - Idle note screens must not poll note APIs unless a feature explicitly requires live refresh. Realtime or user-triggered refresh should be preferred over timer-based reloads.
 - Temporary QA/smoke documents must be deleted or soft-deleted at the end of the script that created them.
@@ -77,3 +79,13 @@ The supported Notion-like surface is intentionally small:
 - If server push fails or remains pending, the note must stay in a pending/error state instead of silently implying durable persistence.
 - Content edits must write a synchronous emergency draft before the debounce/server push path. The draft is cleared only after the corresponding content patch is persisted, and newer emergency drafts may recover over stale server snapshots on document load.
 - Missing-content investigations must start with `node scripts/admin-note-search-data.mjs <terms...>` before assuming a rendering bug.
+
+## QA Contract
+
+- `npm run test:admin-note` is the unit-level contract for block trees, paste, undo, sync, cleanup, and shared note helpers.
+- `npm run qa:admin-note` is the fast always-on browser contract. It must include the real regression case for the Choi Jihoon work note: repeated reloads must keep the `7월 업무 히스토리` page block visible and must not create stored blank root input blocks from load-time body clicks.
+- `npm run qa:admin-note-regression` is the deeper browser editing contract. It covers document switching, hard refresh, toggle child body display, deleted block non-resurrection, legacy toggle-body cleanup, Backspace focus behavior, and idle typing persistence.
+- CI must run foundation QA before data/content integrity audits. Regression QA runs on main/manual flows where runtime cost is acceptable.
+- QA scripts must clean only their own temporary document title families. Foundation cleanup must not delete Regression/Toggle QA documents, and regression cleanup must not delete Foundation QA documents.
+- QA auth helpers should tolerate transient Supabase magic-link invalidation with bounded retry. Authentication flake must not be confused with product data loss.
+- Load profiling uses `node scripts/admin-note-load-profile.mjs`. The default profile document should remain a stable, real-world admin note with child-page links, currently Choi Jihoon's work note.

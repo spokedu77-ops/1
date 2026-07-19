@@ -29,10 +29,10 @@ function buildTargetLabel(groups: SpomoveTargetGroup[]): string {
   if (s.size >= 4) return '전 연령';
   if (s.has('preschool') && s.has('elementaryLower') && s.has('elementaryUpper')) return '미취학·초등';
   if (s.has('elementaryLower') && s.has('elementaryUpper') && s.has('specialSupport')) return '초등 전학년·특수';
-  if (s.has('preschool') && s.has('elementaryLower') && s.has('specialSupport')) return '미취학·초저·특수';
-  if (s.has('preschool') && s.has('elementaryLower')) return '미취학·초저';
+  if (s.has('preschool') && s.has('elementaryLower') && s.has('specialSupport')) return '미취학·초등 저학년·특수';
+  if (s.has('preschool') && s.has('elementaryLower')) return '미취학·초등 저학년';
   if (s.has('elementaryLower') && s.has('elementaryUpper')) return '초등 전학년';
-  if (s.has('elementaryUpper') && s.has('specialSupport')) return '초고·특수';
+  if (s.has('elementaryUpper') && s.has('specialSupport')) return '초등 고학년·특수';
   return groups.slice(0, 2).map((g) => SPOMOVE_TARGET_GROUP_LABELS[g]).join('·');
 }
 

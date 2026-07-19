@@ -1,3 +1,5 @@
+import { normalizeLessonTheme } from './lessonTheme';
+
 export type AdminProgramSaveInput = {
   title: string;
   fallbackTitle: string;
@@ -52,7 +54,7 @@ export function resolveAdminVariationMethod(metaValue: string | null | undefined
 export function buildAdminProgramSavePayload(input: AdminProgramSaveInput) {
   return {
     meta: {
-      sm_theme: normalizeNullableText(input.theme),
+      sm_theme: normalizeNullableText(normalizeLessonTheme(input.theme)),
       sm_grade: normalizeNullableText(input.target),
       sm_tags: normalizeAdminTags(input.tags),
       sm_space: normalizeNullableText(input.space),

@@ -860,6 +860,7 @@ function BlockRowGutter({
         <button
           ref={addBtnRef}
           type="button"
+          data-note-add-block-below
           className="flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
           aria-label="아래에 블록 추가"
           title="아래에 블록 추가"
