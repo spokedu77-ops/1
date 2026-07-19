@@ -29,8 +29,8 @@ function block(
 }
 
 describe('note block commands', () => {
-  it('moves a regular block inside another regular block with one persistence payload', () => {
-    const blocks = [block('a', 0), block('b', 1), block('c', 2)];
+  it('moves a regular block inside a page container with one persistence payload', () => {
+    const blocks = [{ ...block('a', 0), type: 'page' as const }, block('b', 1), block('c', 2)];
     const plan = planBlockDropAt(blocks, 'b', 'a', 'inside');
     expect(plan).not.toBeNull();
 
@@ -254,9 +254,9 @@ describe('note block commands', () => {
     });
   });
 
-  it('moves a selected group inside one block with one persistence payload', () => {
+  it('moves a selected group inside one page container with one persistence payload', () => {
     const blocks = [
-      block('container', 0),
+      { ...block('container', 0), type: 'page' as const },
       block('a', 1),
       block('b', 2),
       block('other', 3),
@@ -283,9 +283,9 @@ describe('note block commands', () => {
     );
   });
 
-  it('moves only top-level selected roots when marquee selection includes descendants', () => {
+  it('moves only top-level selected roots when marquee selection includes descendants into a page', () => {
     const blocks = [
-      block('container', 0),
+      { ...block('container', 0), type: 'page' as const },
       block('parent', 1),
       block('child', 0, 'parent'),
       block('sibling', 2),
@@ -361,8 +361,9 @@ describe('note block commands', () => {
       block('b', 1),
       block('c', 2),
     ];
-    const plan = planBlockDropAt(blocks, 'b', 'a', 'inside');
-    const command = buildMoveBlockCommand(blocks, 'b', plan!);
+    const pageContainer = { ...block('a', 0), type: 'page' as const };
+    const plan = planBlockDropAt([pageContainer, ...blocks.slice(1)], 'b', 'a', 'inside');
+    const command = buildMoveBlockCommand([pageContainer, ...blocks.slice(1)], 'b', plan!);
 
     expect(command.fieldPatches).toEqual(expect.arrayContaining([
       expect.objectContaining({ id: 'b', parent_block_id: 'a', order_index: 0 }),
@@ -378,8 +379,9 @@ describe('note block commands', () => {
       block('grandchild', 0, 'child'),
       block('after', 2),
     ];
-    const plan = planBlockDropAt(blocks, 'parent', 'a', 'inside');
-    const command = buildMoveBlockCommand(blocks, 'parent', plan!);
+    const pageContainer = { ...block('a', 0), type: 'page' as const };
+    const plan = planBlockDropAt([pageContainer, ...blocks.slice(1)], 'parent', 'a', 'inside');
+    const command = buildMoveBlockCommand([pageContainer, ...blocks.slice(1)], 'parent', plan!);
 
     expect(command.nextBlocks.find((item) => item.id === 'parent')).toMatchObject({
       parent_block_id: 'a',

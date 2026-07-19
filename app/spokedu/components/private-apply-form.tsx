@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
-
-const KAKAO_CHANNEL_URL = 'https://pf.kakao.com/_VGWxeb/chat';
+import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 
 const inputClass =
   'mt-1.5 w-full rounded-2xl border border-stone-200 bg-white px-3.5 py-3 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/15';
@@ -32,6 +31,15 @@ export function PrivateApplyForm() {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
+
+  useEffect(() => {
+    try {
+      window.localStorage.removeItem('private.moveReport.summary');
+      window.localStorage.removeItem('private.moveReport.shareUrl');
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const filledCount = useMemo(() => {
     let n = learners.some((l) => l.trim()) ? 1 : 0;
@@ -125,7 +133,7 @@ export function PrivateApplyForm() {
   return (
     <section id="apply" className="scroll-mt-24 space-y-6 sm:space-y-7">
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">상담 신청</p>
+        <p className="text-[11px] font-bold tracking-[0.12em] text-teal-800">상담 신청</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
           개인·소그룹 수업 상담
         </h2>
@@ -326,14 +334,16 @@ export function PrivateApplyForm() {
             >
               {submitting ? '접수 중…' : '상담 접수하기'}
             </button>
-            <a
-              href={KAKAO_CHANNEL_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={siteBtnSecondary}
-            >
-              카카오 채널 열기
-            </a>
+            {KAKAO_CHANNEL_URL ? (
+              <a
+                href={KAKAO_CHANNEL_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={siteBtnSecondary}
+              >
+                카카오 채널 열기
+              </a>
+            ) : null}
           </div>
         </div>
       </div>

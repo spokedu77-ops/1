@@ -122,8 +122,8 @@ export const AUDIENCE_TRACK_PATHS: Record<AudienceTrackId, string> = {
 export const siteNavItems: SiteNavItem[] = [
   { label: '스포키듀', path: '/about', href: `${SPOKEDU_BASE_PATH}/about` },
   { label: '기관 프로그램', path: AUDIENCE_TRACK_PATHS.dispatch, href: `${SPOKEDU_BASE_PATH}/dispatch` },
-  { label: '개인수업', path: AUDIENCE_TRACK_PATHS.private, href: `${SPOKEDU_BASE_PATH}/private` },
-  { label: '커리큘럼', path: AUDIENCE_TRACK_PATHS.curriculum, href: `${SPOKEDU_BASE_PATH}/curriculum` },
+  { label: '개인·소그룹 수업', path: AUDIENCE_TRACK_PATHS.private, href: `${SPOKEDU_BASE_PATH}/private` },
+  { label: '커리큘럼·지도자 교육', path: AUDIENCE_TRACK_PATHS.curriculum, href: `${SPOKEDU_BASE_PATH}/curriculum` },
   { label: '수업 사례', path: '/records', href: `${SPOKEDU_BASE_PATH}/records` },
   { label: '문의', path: '/contact', href: `${SPOKEDU_BASE_PATH}/contact` },
 ];

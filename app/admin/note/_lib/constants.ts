@@ -47,6 +47,7 @@ export const BLOCK_TYPES: {
 ];
 
 export function defaultBlockContent(type: NoteBlock['type'], options?: { insideToggle?: boolean }) {
+  void options;
   if (type === 'heading') return { text: '' };
   if (type === 'heading2') return { text: '' };
   if (type === 'heading3') return { text: '' };
@@ -57,14 +58,12 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
       text: '',
       checked: false,
       listNestLevel: 0,
-      ...(options?.insideToggle ? { createdInsideToggle: true } : {}),
     };
   }
   if (type === 'toggle') {
     return {
       title: '',
       collapsed: false,
-      ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }
   if (type === 'callout') return { text: '', icon: '💡' };
@@ -74,7 +73,6 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
     return {
       page_document_id: '',
       title: '문서',
-      ...(options?.insideToggle ? { placedInToggle: true } : {}),
     };
   }
   if (type === 'code') return { text: '', language: 'plain' };
@@ -86,7 +84,6 @@ export function defaultBlockContent(type: NoteBlock['type'], options?: { insideT
   if (type === 'text') {
     return {
       text: '',
-      ...(options?.insideToggle ? { createdInsideToggle: true, placedInToggle: true } : {}),
     };
   }
   return { text: '' };

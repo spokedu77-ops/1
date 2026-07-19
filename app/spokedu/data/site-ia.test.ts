@@ -32,12 +32,12 @@ describe('spokedu site IA', () => {
     expect(homePage.hero.quickLinks.map((link) => link.label)).toEqual([
       '기관 담당자',
       '학부모',
-      '지도자·커리큘럼',
+      '커리큘럼·지도자 교육',
     ]);
     expect(homePage.proofStrip.items).toHaveLength(4);
     expect(homePage.proofStrip.processLine).toContain('현장 수업');
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
-    expect(homePage.proofStrip.title).toBe('왜 SPOKEDU인가');
+    expect(homePage.proofStrip.title).toBe('왜 스포키듀인가');
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');

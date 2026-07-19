@@ -1,9 +1,9 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { newNoteBlockClientId } from '../_lib/noteSyncGuards';
-import { getBlocksInParent, sortRootBlocks } from '@/app/lib/note/noteBlockTree';
+import { getBlocksInParent } from '@/app/lib/note/noteBlockTree';
 import { defaultBlockContent } from '../_lib/constants';
 import {
   buildDefaultColumnChildren,
@@ -24,6 +24,34 @@ import {
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { LoadingState, NoteBlock } from '../_lib/types';
+
+type BlockInsertReason = 'explicit' | 'enter' | 'paste' | 'duplicate' | 'system';
+
+type BlockInsertOptions = {
+  content?: Record<string, unknown>;
+  focus?: boolean;
+  registerUndo?: boolean;
+  reason?: BlockInsertReason;
+};
+
+function textLikeContentIsBlank(content: Record<string, unknown>): boolean {
+  const text = typeof content.text === 'string' ? content.text.trim() : '';
+  const title = typeof content.title === 'string' ? content.title.trim() : '';
+  const html = typeof content.html === 'string'
+    ? content.html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
+    : '';
+  return !text && !title && !html;
+}
+
+function isImplicitBlankVisibleBlock(
+  type: NoteBlock['type'],
+  content: Record<string, unknown>,
+  reason: BlockInsertReason,
+): boolean {
+  if (reason !== 'system') return false;
+  if (type !== 'text' && type !== 'todo') return false;
+  return textLikeContentIsBlank(content);
+}
 
 export function useNoteBlockInsert(options: {
   blocks: NoteBlock[];
@@ -80,13 +108,11 @@ export function useNoteBlockInsert(options: {
     handleCreateSubPage,
   } = options;
 
-  const ensuringMinimumBlockRef = useRef(false);
-
   const insertBlockAmongSiblings = useCallback(async (
     parentId: string | null,
     type: NoteBlock['type'],
     insertIndex: number,
-    insertOptions?: { content?: Record<string, unknown>; focus?: boolean; registerUndo?: boolean },
+    insertOptions?: BlockInsertOptions,
   ): Promise<NoteBlock | null> => {
     if (!selectedId) return null;
     const previousBlocks = blocksRef.current;
@@ -103,6 +129,10 @@ export function useNoteBlockInsert(options: {
       const blockContent = (insideToggle && baseContent && !baseContentMap.placedInToggle)
         ? { ...baseContent, placedInToggle: true }
         : baseContent;
+      const insertReason = insertOptions?.reason ?? 'system';
+      if (isImplicitBlankVisibleBlock(type, blockContent as Record<string, unknown>, insertReason)) {
+        return null;
+      }
       const normalizedExistingOrders = siblings.map((sibling, index) => ({
         id: sibling.id,
         order_index: index >= clampedIndex ? index + 1 : index,
@@ -211,6 +241,7 @@ export function useNoteBlockInsert(options: {
       content: clonedContent,
       focus: false,
       registerUndo: false,
+      reason: 'duplicate',
     });
     if (!created) return null;
 
@@ -262,7 +293,10 @@ export function useNoteBlockInsert(options: {
     }
     const parentId = afterBlock.parent_block_id ?? null;
     const { insertIndex } = resolveInsertIndexAfterBlock(blocksRef.current, afterBlock);
-    await insertBlockAmongSiblings(parentId, type, insertIndex, content ? { content } : undefined);
+    await insertBlockAmongSiblings(parentId, type, insertIndex, {
+      ...(content ? { content } : {}),
+      reason: 'enter',
+    });
   }, [blocksRef, handleCreateSubPage, insertBlockAmongSiblings, selectedId]);
 
   const runPostCreateStructuralCommand = useCallback(async (
@@ -435,14 +469,20 @@ export function useNoteBlockInsert(options: {
       return;
     }
     if (focusedId === parentBlockId) {
-      await insertBlockAmongSiblings(parentBlockId, type, 0, content ? { content } : undefined);
+      await insertBlockAmongSiblings(parentBlockId, type, 0, {
+        ...(content ? { content } : {}),
+        reason: content ? 'paste' : 'explicit',
+      });
       return;
     }
     if (siblings.length > 0) {
       await handleInsertBlockAfter(siblings[siblings.length - 1], type, content);
       return;
     }
-    await insertBlockAmongSiblings(parentBlockId, type, 0, content ? { content } : undefined);
+    await insertBlockAmongSiblings(parentBlockId, type, 0, {
+      ...(content ? { content } : {}),
+      reason: content ? 'paste' : 'explicit',
+    });
   }, [
     blocksRef,
     focusedEditorBlockId,
@@ -453,28 +493,6 @@ export function useNoteBlockInsert(options: {
     insertBlockAmongSiblings,
     selectedId,
   ]);
-
-  const ensureMinimumRootTextBlock = useCallback(async () => {
-    if (!selectedId || ensuringMinimumBlockRef.current) return;
-    const roots = sortRootBlocks(
-      blocksRef.current.filter(
-        (b) => b.document_id === selectedId && (b.parent_block_id ?? null) === null,
-      ),
-    );
-    if (roots.length > 0) return;
-    ensuringMinimumBlockRef.current = true;
-    try {
-      const latestRoots = sortRootBlocks(
-        blocksRef.current.filter(
-          (b) => b.document_id === selectedId && (b.parent_block_id ?? null) === null,
-        ),
-      );
-      if (latestRoots.length > 0) return;
-      await insertBlockAmongSiblings(null, 'text', 0, { focus: true });
-    } finally {
-      ensuringMinimumBlockRef.current = false;
-    }
-  }, [blocksRef, insertBlockAmongSiblings, selectedId]);
 
   const handleAddBlock = useCallback(async (type: NoteBlock['type']) => {
     if (!selectedId) return;
@@ -507,7 +525,9 @@ export function useNoteBlockInsert(options: {
       const focusedId = focusedEditorBlockIdRef.current ?? focusedEditorBlockId;
       const focusedTarget = resolveFocusedInsertTarget(blocksRef.current, focusedId);
       if (focusedTarget && (!parentBlockId || isBlockInParent(blocksRef.current, focusedId, parentBlockId))) {
-        await insertBlockAmongSiblings(focusedTarget.parentId, type, focusedTarget.insertIndex);
+        await insertBlockAmongSiblings(focusedTarget.parentId, type, focusedTarget.insertIndex, {
+          reason: 'explicit',
+        });
         return;
       }
 
@@ -516,7 +536,7 @@ export function useNoteBlockInsert(options: {
         return;
       }
 
-      await insertBlockAmongSiblings(null, type, 0);
+      await insertBlockAmongSiblings(null, type, 0, { reason: 'explicit' });
   } catch (e) {
       devLogger.error('[Note] addBlock', e);
       setError(e instanceof Error ? e.message : '추가 실패');
@@ -525,8 +545,8 @@ export function useNoteBlockInsert(options: {
     focusedToggleId,
     focusedEditorBlockId,
     focusedEditorBlockIdRef,
+    blocksRef,
     handleCreateSubPage,
-    handleInsertBlockAfter,
     handleInsertBlockInParent,
     selectedId,
     setError,
@@ -541,6 +561,5 @@ export function useNoteBlockInsert(options: {
     handleSplitListBlockAfterWithChildren,
     handleInsertBlockInParent,
     handleAddBlock,
-    ensureMinimumRootTextBlock,
   };
 }

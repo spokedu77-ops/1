@@ -32,7 +32,7 @@ export function HomeProofStrip() {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">Why SPOKEDU</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">왜 스포키듀인가</p>
             <h2 id="home-proof-heading" className={`${homeSectionH2} mt-3 text-white`}>
               {title}
             </h2>

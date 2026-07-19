@@ -2,13 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildContentAuditItem,
-  extractSafetyNotes,
   sortContentAuditItems,
   summarizeContentAudit,
 } from './contentAuditReport';
 
 describe('contentAuditReport', () => {
-  it('scores video equipment safety steps and tags', () => {
+  it('scores video equipment steps and tags', () => {
     const item = buildContentAuditItem({
       curriculumId: 1,
       title: '접시콘 빙고',
@@ -16,12 +15,11 @@ describe('contentAuditReport', () => {
       equipment: ['접시콘'],
       steps: ['준비', '진행'],
       tags: ['민첩성'],
-      briefingNotes: ['[안전 포인트]', '미끄럼 주의'].join('\n'),
       isHot: true,
       displayOrder: 1,
     });
     expect(item.pass).toBe(true);
-    expect(item.score).toBe(5);
+    expect(item.score).toBe(4);
     expect(item.missing).toEqual([]);
   });
 
@@ -33,16 +31,23 @@ describe('contentAuditReport', () => {
       equipment: [],
       steps: [],
       tags: [],
-      briefingNotes: '팁만 있음',
     });
     expect(item.pass).toBe(false);
-    expect(item.missing).toEqual(['video', 'equipment', 'safety', 'steps', 'tags']);
+    expect(item.missing).toEqual(['video', 'equipment', 'steps', 'tags']);
   });
 
-  it('extracts safety notes from briefing sections', () => {
-    expect(
-      extractSafetyNotes(['[안전 유의사항]', '간격 유지', '[운영 팁]', '빠르게'].join('\n')),
-    ).toEqual(['간격 유지']);
+  it('does not treat safety briefing sections as a required audit field', () => {
+    const item = buildContentAuditItem({
+      curriculumId: 3,
+      title: '안전 섹션 없음',
+      videoUrl: 'https://example.com/v.mp4',
+      equipment: ['콘'],
+      steps: ['1'],
+      tags: ['t'],
+    });
+    expect(item.pass).toBe(true);
+    expect(item.missing).not.toContain('safety');
+    expect(item.score).toBe(4);
   });
 
   it('sorts hot programs first then display order', () => {
@@ -63,7 +68,6 @@ describe('contentAuditReport', () => {
         equipment: ['콘'],
         steps: ['1'],
         tags: ['t'],
-        briefingNotes: '[안전]\n주의',
       }),
       buildContentAuditItem({ curriculumId: 2, title: 'Empty' }),
     ];
@@ -71,5 +75,6 @@ describe('contentAuditReport', () => {
     expect(summary.passCount).toBe(1);
     expect(summary.failCount).toBe(1);
     expect(summary.byMissing.video).toBe(1);
+    expect(summary.byMissing).not.toHaveProperty('safety');
   });
 });

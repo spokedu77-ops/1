@@ -91,7 +91,10 @@ describe('1) 구조 변경 insert/delete/DnD → reducer', () => {
   });
 
   it('DnD move command preserves order through replaceBlocks', () => {
-    const previous = [block('a', { order_index: 0 }), block('b', { order_index: 1 })];
+    const previous = [
+      block('a', { order_index: 0, type: 'page' }),
+      block('b', { order_index: 1 }),
+    ];
     const plan = planBlockDropAt(previous, 'b', 'a', 'inside');
     expect(plan).not.toBeNull();
     const command = buildMoveBlockCommand(previous, 'b', plan!);
@@ -135,6 +138,21 @@ describe('1) 구조 변경 insert/delete/DnD → reducer', () => {
     expect(blocks.find((item) => item.id === 'todo-c')?.order_index).toBe(0);
     expect(blocks.find((item) => item.id === 'todo-a')?.order_index).toBe(1);
     expect(blocks.find((item) => item.id === 'todo-b')?.order_index).toBe(2);
+  });
+
+  it('replaceBlocks preserves page nesting but rejects leaf parents', () => {
+    const previous = [
+      block('page-a', { order_index: 0, type: 'page' }),
+      block('page-b', { order_index: 0, type: 'page', parent_block_id: 'page-a' }),
+      block('todo-child', { order_index: 0, type: 'todo', parent_block_id: 'page-b' }),
+      block('bad-child', { order_index: 0, type: 'text', parent_block_id: 'todo-child' }),
+    ];
+
+    const next = dispatchReplace([], previous);
+
+    expect(next.find((b) => b.id === 'page-b')?.parent_block_id).toBe('page-a');
+    expect(next.find((b) => b.id === 'todo-child')?.parent_block_id).toBe('page-b');
+    expect(next.find((b) => b.id === 'bad-child')?.parent_block_id).toBe('page-b');
   });
 
   it('toggle child reparent survives stale syncSnapshot when unpublished topology is active', () => {
@@ -280,7 +298,7 @@ describe('3) 붙여넣기·토글·컬럼 복합', () => {
     expect(next.length).toBeGreaterThanOrEqual(3);
   });
 
-  it('toggle legacy migration + reducer keeps child under toggle', () => {
+  it('toggle legacy migration does not create visible blocks during load', () => {
     const toggleBlock = block('toggle-1', {
       type: 'toggle',
       content: { title: 'Section', body: 'legacy body' },
@@ -288,9 +306,9 @@ describe('3) 붙여넣기·토글·컬럼 복합', () => {
     const migration = migrateToggleLegacyToChildBlocks([toggleBlock]);
     const combined = dispatchReplace([], migration.blocks);
     expect(combined.some((b) => b.id === 'toggle-1')).toBe(true);
-    expect(migration.created.length).toBe(1);
-    const withChild = dispatchReplace(combined, [...combined, ...migration.created]);
-    expect(withChild.find((b) => b.parent_block_id === 'toggle-1')).toBeDefined();
+    expect(migration.created.length).toBe(0);
+    expect(combined.find((b) => b.parent_block_id === 'toggle-1')).toBeUndefined();
+    expect(combined.find((b) => b.id === 'toggle-1')?.content?.body).toBe('legacy body');
   });
 
   it('column list + default children structure is valid', () => {

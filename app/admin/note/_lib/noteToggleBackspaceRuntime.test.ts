@@ -75,6 +75,29 @@ describe('noteToggleBackspaceRuntime', () => {
     expect(handleMergeWithPreviousBlock).not.toHaveBeenCalled();
   });
 
+  it('does not delete when the live store still has visible text', () => {
+    const blocks = makeBlocks();
+    blocks[1] = { ...blocks[1], content: { text: 'keep me', html: '<p>keep me</p>' } };
+    useNoteBlockStore.getState().replaceBlocks(blocks);
+    const handleDeleteBlock = vi.fn();
+    const handleMergeWithPreviousBlock = vi.fn();
+    const handleChangeBlockType = vi.fn();
+
+    setNoteToggleBackspaceRuntime({
+      blocksRef: { current: blocks },
+      focusBlockEditor: vi.fn(),
+      handleDeleteBlock,
+      handleMergeWithPreviousBlock,
+      handleChangeBlockType,
+    });
+
+    invokeToggleChildEmptyBackspace('child-1');
+
+    expect(handleDeleteBlock).not.toHaveBeenCalled();
+    expect(handleMergeWithPreviousBlock).not.toHaveBeenCalled();
+    expect(handleChangeBlockType).not.toHaveBeenCalled();
+  });
+
   it('empty todo converts to text; after type=text deletes block', () => {
     const prev: NoteBlock = {
       id: 'prev-1',

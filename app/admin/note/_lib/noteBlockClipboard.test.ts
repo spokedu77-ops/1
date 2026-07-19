@@ -30,7 +30,7 @@ function block(
 describe('noteBlockClipboard', () => {
   it('serializes and parses selected block forest', () => {
     const blocks: NoteBlock[] = [
-      block('a', 'text', 0, null, { text: 'Root' }),
+      block('a', 'page', 0, null, { title: 'Root', page_document_id: 'page-a' }),
       block('b', 'bulletList', 1, 'a', { text: 'Child' }),
       block('c', 'text', 2, null, { text: 'Sibling' }),
     ];
@@ -43,7 +43,7 @@ describe('noteBlockClipboard', () => {
     expect(parsed).toEqual(payload);
 
     const specs = clipboardPayloadToPasteSpecs(parsed!);
-    expect(specs[0]).toMatchObject({ type: 'text', text: 'Root' });
+    expect(specs[0]).toMatchObject({ type: 'page', text: 'Root' });
     expect(specs[0].children?.[0]).toMatchObject({ type: 'bulletList', text: 'Child' });
   });
 

@@ -18,12 +18,9 @@ import {
  * - 프리미엄 카드 = isPro 잠금 수업 (SPOMOVE와 별개)
  */
 
-/** 정사각 프레임과 원본 비율 차이가 크면 fill(비율 조정), 아니면 cover */
-function shouldStretchToSquare(width: number, height: number, src: string) {
-  if (/\.svg(\?|#|$)/i.test(src)) return true;
-  if (!width || !height) return false;
-  const ratio = width / height;
-  return ratio > 1.08 || ratio < 0.93;
+/** SVG 플레이스홀더만 fill. 실사진은 cover로 비율 유지(잘림 허용). */
+function shouldStretchToSquare(_width: number, _height: number, src: string) {
+  return /\.svg(\?|#|$)/i.test(src);
 }
 
 /** `한글 제목 (English Subtitle)` → 표시 제목 / 부제 분리 */

@@ -90,7 +90,6 @@ export function MediaRenderer({
     );
   }
 
-  const isLocalSpokedu = imgSrc.startsWith('/images/spokedu/');
   const fitClass = objectFit === 'contain' ? 'object-contain' : homePhotoGrade;
 
   const imageNode = (
@@ -100,7 +99,7 @@ export function MediaRenderer({
       fill
       sizes={sizes}
       priority={priority}
-      unoptimized={isLocalSpokedu}
+      quality={75}
       className={intensity === 'photo' ? fitClass : 'object-cover'}
       style={objectFit === 'cover' && media.objectPosition ? { objectPosition: media.objectPosition } : undefined}
       onError={handleError}

@@ -76,7 +76,7 @@ export function SpokeduImage({
           fill
           sizes={sizes ?? '(max-width: 768px) 100vw, 50vw'}
           priority={priority}
-          unoptimized={resolvedSrc.startsWith('/images/spokedu/')}
+          quality={75}
           className={imageClassName}
           onError={handleError}
         />
@@ -88,7 +88,7 @@ export function SpokeduImage({
           height={height}
           sizes={sizes}
           priority={priority}
-          unoptimized={resolvedSrc.startsWith('/images/spokedu/')}
+          quality={75}
           className={`h-full w-full ${imageClassName}`}
           onError={handleError}
         />

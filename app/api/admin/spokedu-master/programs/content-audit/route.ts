@@ -45,20 +45,18 @@ export async function GET(request: Request) {
         sm_is_hot: boolean;
         sm_display_order: number;
         sm_tags: string[] | null;
-        sm_briefing_notes: string | null;
       }
     >();
     if (ids.length > 0) {
       const { data: metaRows } = await supabase
         .from('spokedu_master_program_meta')
-        .select('curriculum_id,sm_is_hot,sm_display_order,sm_tags,sm_briefing_notes')
+        .select('curriculum_id,sm_is_hot,sm_display_order,sm_tags')
         .in('curriculum_id', ids);
       for (const meta of metaRows ?? []) {
         metaById.set(meta.curriculum_id as number, {
           sm_is_hot: Boolean(meta.sm_is_hot),
           sm_display_order: Number(meta.sm_display_order ?? 9999),
           sm_tags: Array.isArray(meta.sm_tags) ? (meta.sm_tags as string[]) : null,
-          sm_briefing_notes: (meta.sm_briefing_notes as string | null) ?? null,
         });
       }
     }
@@ -97,7 +95,6 @@ export async function GET(request: Request) {
           equipment: splitLines(overlay?.equipment),
           steps: splitLines(overlay?.activity_method),
           tags: meta?.sm_tags ?? [],
-          briefingNotes: meta?.sm_briefing_notes ?? null,
           isHot: Boolean(meta?.sm_is_hot),
           displayOrder: meta?.sm_display_order ?? (row.display_order as number | null),
         });
@@ -110,7 +107,7 @@ export async function GET(request: Request) {
       meta: {
         limit,
         source: 'HOT 우선 → display_order → curriculum id',
-        checklistColumns: ['영상', '준비물', '안전', '단계', '태그'],
+        checklistColumns: ['영상', '준비물', '단계', '태그'],
       },
     });
   } catch (error) {

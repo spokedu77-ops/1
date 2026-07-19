@@ -74,6 +74,7 @@ export function useNoteDocumentData(options: {
   const [backlinksLoading, setBacklinksLoading] = useState(false);
 
   const sortMenuRef = useRef<HTMLDivElement>(null);
+  const manuallyCollapsedSidebarDocsRef = useRef<Set<string>>(new Set());
 
   const activeDocument = useMemo(() => {
     const found = documents.find((d) => d.id === selectedId);
@@ -302,7 +303,10 @@ export function useNoteDocumentData(options: {
     if (ancestorIds.length === 0) return;
     setExpandedSidebarDocs((prev) => {
       const next = new Set(prev);
-      for (const id of ancestorIds) next.add(id);
+      const manuallyCollapsed = manuallyCollapsedSidebarDocsRef.current;
+      for (const id of ancestorIds) {
+        if (!manuallyCollapsed.has(id)) next.add(id);
+      }
       return next;
     });
   }, [selectedId, documents]);
@@ -310,8 +314,13 @@ export function useNoteDocumentData(options: {
   const toggleSidebarDocExpanded = useCallback((docId: string) => {
     setExpandedSidebarDocs((prev) => {
       const next = new Set(prev);
-      if (next.has(docId)) next.delete(docId);
-      else next.add(docId);
+      if (next.has(docId)) {
+        next.delete(docId);
+        manuallyCollapsedSidebarDocsRef.current.add(docId);
+      } else {
+        next.add(docId);
+        manuallyCollapsedSidebarDocsRef.current.delete(docId);
+      }
       return next;
     });
   }, []);

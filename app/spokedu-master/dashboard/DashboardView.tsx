@@ -7,14 +7,12 @@ import {
   FileText,
   MonitorPlay,
   Play,
-  Sparkles,
   UsersRound,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 
 const WEEKLY_RECOMMENDATION_COUNT = 4;
-const HERO_ROTATE_MS = 5500;
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
@@ -28,17 +26,12 @@ import {
 import {
   joinCatalogMeta,
   LessonCatalogCard,
-  splitLessonCardTitle,
 } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
-import { CategoryIcon } from '../components/ui/ProgramThumb';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
-  getImageFallbackSrc,
-  isRemoteImage,
-  normalizeImageSrc,
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
@@ -197,11 +190,8 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
   }
 }
 
-function shouldStretchSpomoveThumbnail(width: number, height: number, src: string) {
-  if (/\.svg(\?|#|$)/i.test(src)) return true;
-  if (!width || !height) return false;
-  const ratio = width / height;
-  return ratio > 1.08 || ratio < 0.93;
+function shouldStretchSpomoveThumbnail(_width: number, _height: number, src: string) {
+  return /\.svg(\?|#|$)/i.test(src);
 }
 
 type ContextProgramTab = 'classroom' | 'preschool';
@@ -298,166 +288,6 @@ function ensureWeeklyRecommendationCount(
   }
 
   return result;
-}
-
-function BillboardBackdrop({ program }: { program: Program }) {
-  const model = buildLessonDisplayModel(program);
-  const imageSrc = model.heroImageUrl ? normalizeImageSrc(model.heroImageUrl) : '';
-  const remote = Boolean(imageSrc) && isRemoteImage(imageSrc);
-
-  if (!imageSrc) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-950">
-        <CategoryIcon category={model.theme || '체육 수업'} size={64} color="rgba(255,255,255,0.35)" />
-      </div>
-    );
-  }
-
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={imageSrc}
-      alt=""
-      className="h-full w-full object-cover object-center"
-      onError={(event) => {
-        if (!remote) return;
-        const fallback = getImageFallbackSrc(imageSrc);
-        if (fallback && event.currentTarget.src !== fallback) event.currentTarget.src = fallback;
-      }}
-    />
-  );
-}
-
-/** 홈 히어로: 추천 수업 자동 로테이션 */
-function HomeBillboard({
-  programs,
-  onPreviewLesson,
-}: {
-  programs: Program[];
-  onPreviewLesson: (program: Program) => void;
-}) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const count = programs.length;
-  const safeIndex = count > 0 ? activeIndex % count : 0;
-  const program = programs[safeIndex];
-
-  const programIds = programs.map((item) => item.id).join('|');
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [programIds]);
-
-  useEffect(() => {
-    if (count <= 1 || paused) return;
-    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      return;
-    }
-    const timer = window.setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % count);
-    }, HERO_ROTATE_MS);
-    return () => window.clearInterval(timer);
-  }, [count, paused]);
-
-  if (!program) return null;
-
-  const model = buildLessonDisplayModel(program);
-  const { title, subtitle } = splitLessonCardTitle(model.title);
-  const meta = joinCatalogMeta([
-    model.theme,
-    model.target.replace(/,/g, ' · '),
-    model.space.replace(/,/g, ' · '),
-  ]);
-  const hasVideo = programHasPlayableVideo(program);
-
-  return (
-    <section
-      data-dashboard-section="billboard"
-      aria-label="이번 주 추천 수업"
-      aria-roledescription="carousel"
-      className="relative isolate min-h-[340px] overflow-hidden rounded-[18px] bg-slate-950 sm:min-h-[420px] lg:min-h-[480px]"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onFocusCapture={() => setPaused(true)}
-      onBlurCapture={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setPaused(false);
-      }}
-    >
-      <div className="absolute inset-0">
-        {programs.map((item, index) => (
-          <div
-            key={item.id}
-            className={`absolute inset-0 transition-opacity duration-700 ease-out ${
-              index === safeIndex ? 'opacity-100' : 'opacity-0'
-            }`}
-            aria-hidden={index !== safeIndex}
-          >
-            <BillboardBackdrop program={item} />
-          </div>
-        ))}
-      </div>
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/75 to-transparent sm:via-slate-950/55" />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
-
-      <div className="relative flex min-h-[340px] flex-col justify-end px-5 py-6 sm:min-h-[420px] sm:px-8 sm:py-8 lg:min-h-[480px] lg:max-w-[58%] lg:px-10 lg:pb-10">
-        <p className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[0.16em] text-white/80 uppercase">
-          <Sparkles size={13} className="text-[var(--spm-acc)]" />
-          추천 {String(safeIndex + 1).padStart(2, '0')}
-        </p>
-        <div key={program.id}>
-          <h2 className="mt-3 text-[28px] font-black leading-[1.12] tracking-[-0.04em] text-white sm:text-[36px] lg:text-[44px]">
-            {title}
-          </h2>
-          {subtitle ? (
-            <p className="mt-1.5 text-[13px] font-medium text-white/65 sm:text-[14px]">{subtitle}</p>
-          ) : null}
-          {meta ? (
-            <p className="mt-3 text-[13px] font-semibold text-white/85 sm:text-[14px]">{meta}</p>
-          ) : null}
-        </div>
-
-        <div className="mt-5 flex flex-wrap items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => onPreviewLesson(program)}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-white px-5 text-[13px] font-black text-slate-900 transition hover:bg-white/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            {hasVideo ? <Play className="h-4 w-4 fill-current" /> : <Sparkles size={15} />}
-            {hasVideo ? '수업 미리보기' : '수업 살펴보기'}
-          </button>
-          <Link
-            href={`/spokedu-master/library/${program.id}`}
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            자료 보기
-            <ArrowRight size={15} />
-          </Link>
-        </div>
-
-        {count > 1 ? (
-          <div className="mt-5 flex items-center gap-2" role="tablist" aria-label="추천 수업 선택">
-            {programs.map((item, index) => {
-              const active = index === safeIndex;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={`추천 ${index + 1}`}
-                  onClick={() => setActiveIndex(index)}
-                  className={`h-2 rounded-full transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${
-                    active ? 'w-7 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
-                  }`}
-                />
-              );
-            })}
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
 }
 
 function SectionHeader({
@@ -732,7 +562,7 @@ function ActivityPanel({
     Icon: typeof FileText;
     action?: string;
   }> = [
-    { label: '저장 안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
+    { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
     { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
     { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
   ];
@@ -1056,13 +886,6 @@ function EntitledDashboardView() {
           {loopAction.label}
         </Link>
       </header>
-
-      {weeklyPrograms.length > 0 ? (
-        <HomeBillboard
-          programs={weeklyPrograms}
-          onPreviewLesson={(item) => openPreview(item, programHasPlayableVideo(item))}
-        />
-      ) : null}
 
       {isFirstUser ? <FirstStartGuide spomoveAvailable={spomoveAvailable} /> : null}
 

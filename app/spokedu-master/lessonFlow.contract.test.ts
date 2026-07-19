@@ -35,21 +35,22 @@ describe('lesson discovery and execution flow contract', () => {
   });
 
   it('keeps dashboard discovery first and removes duplicate home favorite re-entry', () => {
-    const billboardIndex = dashboard.indexOf('data-dashboard-section="billboard"');
     const weeklyIndex = dashboard.indexOf('data-dashboard-section="weekly"');
     const spomoveIndex = dashboard.indexOf('data-dashboard-section="spomove"');
     const recentIndex = dashboard.indexOf('<ContinueSection item={continueItem} />');
     const contextIndex = dashboard.indexOf('data-dashboard-section="context-programs"');
     const activityIndex = dashboard.indexOf('<ActivityPanel');
 
-    // 빌보드(수업+SPOMOVE) → 수업 레일 → SPOMOVE → 이어하기 → 맞춤 → 기록
-    expect(billboardIndex).toBeGreaterThanOrEqual(0);
-    expect(weeklyIndex).toBeGreaterThan(billboardIndex);
+    // 수업 레일 → SPOMOVE → 이어하기 → 맞춤 → 기록 (히어로/빌보드 없음)
+    expect(weeklyIndex).toBeGreaterThanOrEqual(0);
     expect(spomoveIndex).toBeGreaterThan(weeklyIndex);
     expect(recentIndex).toBeGreaterThan(spomoveIndex);
     expect(contextIndex).toBeGreaterThan(recentIndex);
     expect(activityIndex).toBeGreaterThan(contextIndex);
-    expect(dashboard).toContain('function HomeBillboard');
+    expect(dashboard).not.toContain('data-dashboard-section="billboard"');
+    expect(dashboard).not.toContain('function SpomoveBillboard');
+    expect(dashboard).not.toContain('function HomeBillboard');
+    expect(dashboard).not.toContain('HERO_ROTATE_MS');
     expect(dashboard).not.toContain('data-dashboard-section="lesson-reentry"');
     expect(dashboard).not.toContain('favoritePrograms');
     expect(dashboard).not.toContain('recentLessonPrograms');

@@ -106,6 +106,7 @@ function clipboardNodeToPasteSpec(node: NoteBlockClipboardNode): PastedBlockSpec
       type: 'page',
       text: typeof content.title === 'string' ? content.title : '',
       pageDocumentId: typeof content.page_document_id === 'string' ? content.page_document_id : '',
+      children: node.children?.map(clipboardNodeToPasteSpec),
     };
   }
   if (node.type === 'divider') {

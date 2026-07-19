@@ -7,10 +7,10 @@ import { useOperationalStatus } from '../../store';
 
 const APP_LINKS = [
   { href: '/spokedu-master/dashboard', label: '홈', Icon: Home },
-  { href: '/spokedu-master/library', label: '라이브러리', Icon: BookOpen },
+  { href: '/spokedu-master/library', label: '자료', Icon: BookOpen },
   { href: '/spokedu-master/spomove', label: 'SPOMOVE', Icon: Tv },
-  { href: '/spokedu-master/class-tools', label: '수업 도구', Icon: Wrench },
-  { href: '/spokedu-master/activity', label: '수업 기록', Icon: FileText },
+  { href: '/spokedu-master/class-tools', label: '도구', Icon: Wrench },
+  { href: '/spokedu-master/activity', label: '기록', Icon: FileText },
   { href: '/spokedu-master/profile', label: '프로필', Icon: CircleUserRound },
 ] as const;
 
@@ -40,19 +40,22 @@ export function StatusBar() {
           </span>
         </Link>
 
-        <nav className="hidden min-w-0 items-center gap-1 lg:flex" aria-label="SPOKEDU MASTER 데스크톱 메뉴">
+        <nav
+          className="hidden min-w-0 max-w-full items-center gap-0.5 overflow-x-auto lg:flex [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="SPOKEDU MASTER 데스크톱 메뉴"
+        >
           {APP_LINKS.map(({ href, label, Icon }) => {
             const active = isActivePath(pathname, href);
             return (
               <Link
                 key={href}
                 href={href}
-                className="flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[13px] font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+                className="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[12px] px-2.5 text-[12px] font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] xl:gap-2 xl:px-3 xl:text-[13px]"
                 style={{ background: active ? 'rgba(79,70,229,0.09)' : 'transparent', color: active ? '#4338ca' : '#475569' }}
                 aria-current={active ? 'page' : undefined}
               >
-                <Icon size={16} strokeWidth={1.9} />
-                {label}
+                <Icon size={16} strokeWidth={1.9} className="shrink-0" />
+                <span className="whitespace-nowrap">{label}</span>
               </Link>
             );
           })}

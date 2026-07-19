@@ -46,14 +46,14 @@ export const aboutPage = {
         mediaKey: 'trackCurriculum',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'about-role-curriculum',
-        linkLabel: '커리큘럼 콘텐츠',
+        linkLabel: '커리큘럼·지도자 교육',
       },
     ] satisfies AboutWhatWeDoCard[],
   },
   finalCta: {
     title: '스포키듀와 어떤 방식으로 연결할까요?',
     description:
-      '아이 개인수업, 기관 프로그램, 커리큘럼 콘텐츠 중 필요한 방향에 맞춰 상담을 안내드립니다.',
+      '아이 개인수업, 기관 프로그램, 커리큘럼·지도자 교육 중 필요한 방향에 맞춰 상담을 안내드립니다.',
     links: [
       {
         label: '개인수업 상담',
@@ -61,12 +61,12 @@ export const aboutPage = {
         trackLabel: 'about-cta-private',
       },
       {
-        label: '기관 프로그램 제안',
+        label: '기관 운영 상담',
         href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
         trackLabel: 'about-cta-dispatch',
       },
       {
-        label: '커리큘럼 콘텐츠 문의',
+        label: '커리큘럼·지도자 교육 문의',
         href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
         trackLabel: 'about-cta-curriculum',
       },

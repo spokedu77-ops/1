@@ -63,7 +63,7 @@ export const privatePage = {
   },
   heroCtas: {
     primary: {
-      label: '개인수업 상담하기',
+      label: '개인수업 상담',
       href: '#apply',
       trackLabel: 'private-cta-consult',
     },
@@ -104,19 +104,19 @@ export const privatePage = {
     title: '검증된 체육교육 전문가 운영진',
     items: [
       {
-        photo: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png',
+        photo: '/images/spokedu/private/instructor-choi.jpg',
         name: '총괄팀장 최지훈',
         degree: '연세대학교 체육교육학 학사',
         badges: ['지도 경력 10년 차', '교원자격증', '시스템 구축 및 강사 교육'],
       },
       {
-        photo: 'https://i.postimg.cc/RZ73P8f2/IMG-7176.jpg',
+        photo: '/images/spokedu/private/instructor-kim-yunki.jpg',
         name: '운영팀장 김윤기',
         degree: '연세대학교 체육교육학 학사',
         badges: ['지도 경력 8년 차', '교원자격증', '강사 관리 및 프로그램 기획'],
       },
       {
-        photo: 'https://i.postimg.cc/5yW4kbxr/20260403-134412.png',
+        photo: '/images/spokedu/private/instructor-kim-gumin.jpg',
         name: '수업팀장 김구민',
         degree: '강원대학교 체육교육학 학사',
         badges: ['지도 경력 5년 차', '생활체육 지도자 자격증', '프로그램 개발 및 수업 총괄'],
@@ -147,49 +147,49 @@ export const privatePage = {
     lead: '줄넘기·구기·유아체육 등 목표 종목에 맞춰 수업 방향을 제안합니다. 연령과 기초 체력을 함께 보고 맞는 구성을 안내합니다.',
     items: [
       {
-        img: 'https://i.postimg.cc/8Cjz4T9Y/Kakao-Talk-20260415-155838324.png',
+        img: '/images/spokedu/private/curriculum-jumprope.jpg',
         alt: '줄넘기',
         title: '줄넘기',
         description: '리듬감 및 전신 협응력 강화',
       },
       {
-        img: 'https://i.postimg.cc/QMHdmjwP/Kakao-Talk-20260415-155838324-01.png',
+        img: '/images/spokedu/private/curriculum-running.jpg',
         alt: '육상',
         title: '육상(달리기)',
         description: '바른 자세 교정과 반응 속도 향상',
       },
       {
-        img: 'https://i.postimg.cc/3wVJbPQZ/Kakao-Talk-20260415-155838324-02.png',
+        img: '/images/spokedu/private/curriculum-bike.jpg',
         alt: '자전거',
         title: '자전거',
         description: '균형 감각 및 두려움 극복',
       },
       {
-        img: 'https://i.postimg.cc/wBZTbSYW/Kakao-Talk-20260415-155838324-03.png',
+        img: '/images/spokedu/private/curriculum-inline.jpg',
         alt: '인라인',
         title: '인라인',
         description: '안전한 라이딩과 중심 이동 훈련',
       },
       {
-        img: 'https://i.postimg.cc/JhGzxRvn/Kakao-Talk-20260415-155337917.png',
+        img: '/images/spokedu/private/curriculum-preschool.jpg',
         alt: '유아체육',
         title: '유아체육',
         description: '놀이 기반 기초 운동 발달',
       },
       {
-        img: 'https://i.postimg.cc/R0yVbjz5/Kakao-Talk-20260415-155848168.png',
+        img: '/images/spokedu/private/curriculum-soccer.jpg',
         alt: '축구',
         title: '축구',
         description: '민첩성, 팀워크, 기초 구기 능력 향상',
       },
       {
-        img: 'https://i.postimg.cc/ZqC5HJ2n/Kakao-Talk-20260415-155848168-01.png',
+        img: '/images/spokedu/private/curriculum-basketball.jpg',
         alt: '농구',
         title: '농구',
         description: '드리블과 공간 인지 능력 강화',
       },
       {
-        img: 'https://i.postimg.cc/vBcLmNQ2/Kakao-Talk-20260416-153848501.png',
+        img: '/images/spokedu/private/curriculum-paps.jpg',
         alt: '팝스',
         title: '팝스',
         description: '팝스 수행평가 대비 및 체력향상',
@@ -223,16 +223,16 @@ export const privatePage = {
     /** 현장 실사진만 (커리큘럼 가이드 PNG 금지) — 큰 1 + 작은 2 */
     images: [
       {
-        src: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg',
+        src: '/images/spokedu/private/class-flow-01.jpg',
         alt: '스포키듀 수업 스케치 — 메인 활동',
         large: true,
       },
       {
-        src: 'https://i.postimg.cc/FHTMT3QX/IMG-1392.jpg',
+        src: '/images/spokedu/private/class-flow-02.jpg',
         alt: '스포키듀 수업 스케치 — 소그룹 활동',
       },
       {
-        src: 'https://i.postimg.cc/VkKxKnPV/DSC06500.jpg',
+        src: '/images/spokedu/private/class-flow-03.jpg',
         alt: '스포키듀 수업 스케치 — 현장 지도',
       },
     ] satisfies PrivateClassFlowImage[],
@@ -326,7 +326,7 @@ export const privatePage = {
       '운동 경험, 수업 형태, 가능한 장소를 확인한 뒤 아이에게 맞는 방향으로 안내드립니다.',
     mediaKey: 'trackPrivate' as HomeMediaKey,
     primary: {
-      label: '개인수업 상담하기',
+      label: '개인수업 상담',
       href: '#apply',
       trackLabel: 'private-final-consult',
     },

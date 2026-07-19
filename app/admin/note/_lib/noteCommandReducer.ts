@@ -2,6 +2,7 @@ import {
   dedupeNoteBlocksById,
   flattenVisualBlockIdsWithOptions,
 } from '@/app/lib/note/noteBlockTree';
+import { sanitizeNoteBlockTree } from '@/app/lib/note/noteBlockSanitize';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import { ensureNoteBlockVersion } from './noteBlockVersion';
 import type { NoteCommand, NoteCommandContext, NoteCommandResult } from './noteCommand';
@@ -22,12 +23,40 @@ function cloneContent(content: unknown): unknown {
   return content;
 }
 
+function isEffectivelyEmptyHtml(value: unknown): boolean {
+  if (typeof value !== 'string') return true;
+  const stripped = value
+    .replace(/<br\s*\/?>/gi, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim();
+  return stripped.length === 0;
+}
+
+function hasVisibleBlockContent(block: NoteBlock): boolean {
+  const content = (block.content ?? {}) as Record<string, unknown>;
+  for (const key of ['text', 'title', 'body', 'caption', 'url', 'page_document_id']) {
+    const value = content[key];
+    if (typeof value === 'string' && value.trim().length > 0) return true;
+  }
+  if (!isEffectivelyEmptyHtml(content.html)) return true;
+  return false;
+}
+
+function removeInactiveEmptyTodos(blocks: NoteBlock[], activeBlockId: string | null): NoteBlock[] {
+  return blocks.filter((block) => {
+    if (block.type !== 'todo') return true;
+    if (block.id === activeBlockId) return true;
+    return hasVisibleBlockContent(block);
+  });
+}
+
 function filterDocumentBlocks(blocks: NoteBlock[], documentId: string): NoteBlock[] {
-  const deduped = dedupeNoteBlocksById(
+  const deduped = sanitizeNoteBlockTree(dedupeNoteBlocksById(
     blocks
       .filter((block) => block.document_id === documentId)
       .map(ensureNoteBlockVersion),
-  );
+  ));
   const byId = new Map(deduped.map((block) => [block.id, block]));
   return flattenVisualBlockIdsWithOptions(deduped)
     .map((id) => byId.get(id))
@@ -100,12 +129,51 @@ function resolveStructureAuthority(
   incomingBlocks: NoteBlock[],
   ctx: NoteCommandContext,
 ): 'local' | 'incoming' {
+  if (ctx.activeBlockId !== null && wouldReconcileRegressLocalPosition(localBlocks, incomingBlocks)) {
+    return 'local';
+  }
   const decision = decideStructureReconcile({
     localBlocks,
     incomingBlocks,
     hasUnpublishedTopology: ctx.hasUnpublishedTopology === true,
   });
   return decision === 'preserve_local' ? 'local' : 'incoming';
+}
+
+function wouldReconcileRegressLocalPosition(
+  localBlocks: NoteBlock[],
+  incomingBlocks: NoteBlock[],
+): boolean {
+  const localById = new Map(localBlocks.map((block) => [block.id, block]));
+  return incomingBlocks.some((block) => {
+    const local = localById.get(block.id);
+    if (!local) return false;
+    return (local.parent_block_id ?? null) !== (block.parent_block_id ?? null)
+      || local.order_index !== block.order_index;
+  });
+}
+
+function preserveExistingLocalPositions(
+  localBlocks: NoteBlock[],
+  incomingBlocks: NoteBlock[],
+): NoteBlock[] {
+  const localById = new Map(localBlocks.map((block) => [block.id, block]));
+  return incomingBlocks.map((block) => {
+    const local = localById.get(block.id);
+    if (!local) return block;
+    return {
+      ...block,
+      parent_block_id: local.parent_block_id ?? null,
+      order_index: local.order_index,
+    };
+  });
+}
+
+function sortBlocksForVisualOrder(blocks: NoteBlock[]): NoteBlock[] {
+  const byId = new Map(blocks.map((block) => [block.id, block]));
+  return flattenVisualBlockIdsWithOptions(blocks)
+    .map((id) => byId.get(id))
+    .filter((block): block is NoteBlock => Boolean(block));
 }
 
 /**
@@ -117,11 +185,17 @@ export function applyNoteCommand(
   command: NoteCommand,
   ctx: NoteCommandContext,
 ): NoteCommandResult {
-  const docBlocks = filterDocumentBlocks(previous, ctx.documentId);
+  const docBlocks = removeInactiveEmptyTodos(
+    filterDocumentBlocks(previous, ctx.documentId),
+    ctx.activeBlockId,
+  );
 
   switch (command.type) {
   case 'hydrate': {
-    const incoming = filterDocumentBlocks(command.blocks, ctx.documentId);
+    const incoming = removeInactiveEmptyTodos(
+      filterDocumentBlocks(command.blocks, ctx.documentId),
+      ctx.activeBlockId,
+    );
     if (incoming.length === 0 && docBlocks.length > 0) {
       const emptyDecision = decideEmptySnapshotApply({
         localBlocks: docBlocks,
@@ -144,7 +218,10 @@ export function applyNoteCommand(
     return { blocks: next, structural: true };
   }
   case 'replaceBlocks': {
-    const blocks = filterDocumentBlocks(command.blocks, ctx.documentId);
+    const blocks = removeInactiveEmptyTodos(
+      filterDocumentBlocks(command.blocks, ctx.documentId),
+      ctx.activeBlockId,
+    );
     return { blocks, structural: true };
   }
   case 'patchContent': {
@@ -165,6 +242,7 @@ export function applyNoteCommand(
   }
   case 'applyRemoteOps': {
     let next = applyRemoteOpRecords(docBlocks, command.ops);
+    next = removeInactiveEmptyTodos(next, ctx.activeBlockId);
     next = mergeReconciledBlocks(
       docBlocks,
       next,
@@ -176,12 +254,16 @@ export function applyNoteCommand(
   }
   case 'mergeSnapshots': {
     let next = mergeSnapshotPatches(docBlocks, command.snapshots);
+    next = removeInactiveEmptyTodos(next, ctx.activeBlockId);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };
   }
   case 'syncSnapshot': {
-    const incoming = filterDocumentBlocks(command.blocks, ctx.documentId);
+    let incoming = removeInactiveEmptyTodos(
+      filterDocumentBlocks(command.blocks, ctx.documentId),
+      ctx.activeBlockId,
+    );
     if (incoming.length === 0 && docBlocks.length > 0) {
       const emptyDecision = decideEmptySnapshotApply({
         localBlocks: docBlocks,
@@ -194,6 +276,7 @@ export function applyNoteCommand(
       }
       return { blocks: [], structural: true };
     }
+    incoming = sortBlocksForVisualOrder(preserveExistingLocalPositions(docBlocks, incoming));
     let next = mergeReconciledBlocks(
       docBlocks,
       incoming,

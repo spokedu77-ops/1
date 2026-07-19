@@ -19,14 +19,14 @@ export const curriculumPage = {
   },
   heroCtas: {
     primary: {
-      label: '지도자 교육·커리큘럼 문의',
+      label: '커리큘럼·지도자 교육 문의',
       href: '#inquiry',
       trackLabel: 'curriculum-cta-inquiry',
     },
     secondary: {
-      label: 'SPOKEDU MASTER 보기',
-      href: '/spokedu-master/landing',
-      trackLabel: 'curriculum-cta-master',
+      label: '상담으로 이어가기',
+      href: '/spokedu/contact?type=curriculum',
+      trackLabel: 'curriculum-cta-contact',
     },
   },
   leaderAxes: {
@@ -149,7 +149,7 @@ export const curriculumPage = {
     },
   },
   finalCta: {
-    title: '지도자 교육·커리큘럼을 함께 만들고 싶다면',
+    title: '커리큘럼·지도자 교육을 함께 만들고 싶다면',
     description:
       '수업안, 운영 매뉴얼, 강사교육, SPOMOVE 도입, 라이선싱 등 필요한 범위에 맞춰 안내드립니다.',
     mediaKey: 'programCurriculum' as HomeMediaKey,

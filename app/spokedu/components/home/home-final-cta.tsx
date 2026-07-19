@@ -8,7 +8,6 @@ import {
   homeSectionH2,
   homeSectionScrollMt,
   koreanText,
-  siteBtnGhostOnDark,
   siteBtnPrimaryOnHero,
   siteBtnSecondaryOnDark,
   siteContainer,
@@ -56,6 +55,16 @@ export function HomeFinalCta() {
             <p className={`mt-3 max-w-xl text-sm leading-relaxed text-white/50 sm:text-[15px] ${koreanText}`}>
               {homePage.finalCta.support}
             </p>
+            <ul className="mt-5 flex flex-wrap gap-2" aria-label="상담 진행 안내">
+              {homePage.finalCta.notes.map((note) => (
+                <li
+                  key={note}
+                  className={`rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/70 ${koreanText}`}
+                >
+                  {note}
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="flex w-full min-w-0 flex-col gap-3">
@@ -81,7 +90,7 @@ export function HomeFinalCta() {
               <TrackedLink
                 href={tertiary.href}
                 trackLabel={tertiary.trackLabel}
-                className={`${siteBtnGhostOnDark} w-full text-white ${homeFocusRing}`}
+                className={`${siteBtnSecondaryOnDark} w-full ${homeFocusRing}`}
               >
                 {tertiary.label}
               </TrackedLink>

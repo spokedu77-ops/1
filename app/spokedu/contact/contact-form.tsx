@@ -399,6 +399,13 @@ export default function SpokeduContactForm() {
     migrateLegacyInquiryStorage();
     const draft = loadStoredInquiryDraft();
     if (draft) setStoredDraft(draft);
+    // Move Report 잔여 자동삽입 키 제거 (문의 메시지에 진단 요약이 붙던 경로)
+    try {
+      window.localStorage.removeItem('private.moveReport.summary');
+      window.localStorage.removeItem('private.moveReport.shareUrl');
+    } catch {
+      // ignore
+    }
   }, []);
 
   useEffect(() => {
@@ -433,22 +440,6 @@ export default function SpokeduContactForm() {
         inquiryPurpose: prev.inquiryPurpose || '라이선싱',
         utilizationTarget: prev.utilizationTarget || '협업 검토',
       }));
-    }
-
-    if (resolvedType === 'private') {
-      const fromQuery = searchParams.get('reportSummary')?.trim() ?? '';
-      const fromStorage =
-        typeof window !== 'undefined'
-          ? (window.localStorage.getItem('private.moveReport.summary')?.trim() ?? '')
-          : '';
-      const reportSummary = fromQuery || fromStorage;
-      if (reportSummary) {
-        const prefix = `[간단 진단 요약]\n${reportSummary}`;
-        setPrivateForm((prev) => ({
-          ...prev,
-          message: prev.message.trim() ? prev.message : prefix,
-        }));
-      }
     }
   }, [searchParams]);
 

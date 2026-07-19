@@ -151,11 +151,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: master-gate
     # main 일상 푸시에서는 생략. 상용 브랜치·수동(run_commercial_smoke)에서만 무거운 빌드/기동.
-    if: ${{
-      (github.event_name == 'workflow_dispatch' && inputs.run_commercial_smoke)
-      || startsWith(github.ref_name, 'release/')
-      || startsWith(github.ref_name, 'commercial/')
-    }}
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_commercial_smoke) || startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'commercial/') }}
     timeout-minutes: 35
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co

@@ -77,7 +77,7 @@ function MidConsultCta() {
           href="#inquiry"
           className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#0F1C1A] transition hover:bg-teal-50"
         >
-          커리큘럼·교육 문의
+          커리큘럼·지도자 교육 문의
         </a>
       </div>
     </div>
@@ -88,15 +88,15 @@ export default function CurriculumLanding() {
   const spotlight = curriculumPage.masterSpotlight;
 
   return (
-    <div className="flex w-full flex-col gap-8 overflow-x-clip pb-24 sm:gap-10 lg:gap-12">
+    <div className="flex w-full flex-col gap-8 pb-24 sm:gap-10 lg:gap-12">
       <div id="hero">
         <LandingHero
           kicker={curriculumPage.hero.kicker}
           kickerClassName="text-stone-500"
           leading={
             <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">For Educators</p>
-              <div className="flex flex-wrap gap-2" aria-label="커리큘럼·교육 주제">
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">지도자·교육</p>
+              <div className="flex flex-wrap gap-2" aria-label="커리큘럼·지도자 교육 주제">
                 {curriculumHeroNeeds.map((item) => (
                   <span
                     key={item}
@@ -120,7 +120,7 @@ export default function CurriculumLanding() {
 
       <LandingAnchorNav
         items={curriculumAnchorItems}
-        cta={{ href: '#inquiry', label: '교육·커리큘럼 문의' }}
+        cta={{ href: '#inquiry', label: '커리큘럼·지도자 교육 문의' }}
         ariaLabel="커리큘럼 랜딩 바로가기"
       />
 
@@ -304,7 +304,7 @@ export default function CurriculumLanding() {
 
       <LandingFloatingCta
         primaryHref="#inquiry"
-        primaryLabel="커리큘럼·교육 문의"
+        primaryLabel="커리큘럼·지도자 교육 문의"
         showAfterId="hero"
       />
     </div>

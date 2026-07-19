@@ -27,7 +27,7 @@ import {
   scheduleNoteReconcileRemote,
 } from '../_lib/noteReconcileIdle';
 import { consumePrefetchedNoteBlocks } from '../_lib/noteDocumentBlocksPrefetch';
-import { readLocalDocument } from '../_lib/noteLocalDb';
+import { ensureNoteLocalCacheVersion } from '../_lib/noteLocalDb';
 import { openNoteDocument } from '../_lib/noteDocumentOpen';
 import type { NoteBlock } from '../_lib/types';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
@@ -316,8 +316,8 @@ export function useNoteBlockData(options: {
     // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
     // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
     useNoteBlockStore.getState().replaceBlocks([]);
-    void readLocalDocument(documentId).catch((e) => {
-      devLogger.warn('[Note] readLocalDocument hint failed', e);
+    void ensureNoteLocalCacheVersion().catch((e) => {
+      devLogger.warn('[Note] ensureNoteLocalCacheVersion failed', e);
     });
 
     setLoadSettledDocId(null, 'open:start');
@@ -388,6 +388,7 @@ export function useNoteBlockData(options: {
         if (
           result.toggleMigration.created.length > 0
           || result.toggleMigration.updatedChildPatches.length > 0
+          || result.toggleMigration.updatedToggleIds.length > 0
         ) {
           void persistToggleBodyMigration(
             result.blocks,

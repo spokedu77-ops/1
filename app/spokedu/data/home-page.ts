@@ -90,12 +90,12 @@ export const homePage = {
       '키움센터·학교·복지관의 단체수업부터 1:1 개인수업까지, 현장에서 검증한 프로그램과 SPOMOVE 활동으로 운영합니다.',
     mediaKey: 'homeHero' as HomeMediaKey,
     primaryCta: {
-      label: '기관 프로그램 문의',
+      label: '기관 프로그램 보기',
       href: `${SPOKEDU_BASE_PATH}/dispatch`,
       trackLabel: 'cta-home-dispatch-hero',
     },
     secondaryCta: {
-      label: '개인수업 상담',
+      label: '개인수업 보기',
       href: `${SPOKEDU_BASE_PATH}/private`,
       trackLabel: 'cta-home-private-hero',
     },
@@ -111,7 +111,7 @@ export const homePage = {
         trackLabel: 'cta-home-hero-quick-private',
       },
       {
-        label: '지도자·커리큘럼',
+        label: '커리큘럼·지도자 교육',
         href: `${SPOKEDU_BASE_PATH}/curriculum`,
         trackLabel: 'cta-home-hero-quick-curriculum',
       },
@@ -123,7 +123,7 @@ export const homePage = {
   },
   proofStrip: {
     id: 'proof',
-    title: '왜 SPOKEDU인가',
+    title: '왜 스포키듀인가',
     lead: '수업을 직접 운영한 기준으로 프로그램을 설계하고, 그 기준을 지도자 교육까지 확장합니다.',
     items: [
       '직접 수업 운영',
@@ -138,7 +138,7 @@ export const homePage = {
   audienceGate: {
     id: 'paths',
     title: '어떤 수업이 필요하신가요?',
-    lead: '기관 수업, 개인·소그룹, 지도자 교육·커리큘럼까지. 목적에 맞는 안내를 이어드립니다.',
+    lead: '기관 수업, 개인·소그룹, 커리큘럼·지도자 교육까지. 목적에 맞는 안내를 이어드립니다.',
     items: [
       {
         id: 'dispatch',
@@ -181,13 +181,13 @@ export const homePage = {
   spomove: {
     id: 'spomove',
     title: '보고 반응하는 놀이체육',
-    titleLine2: '',
+    titleLine2: '스크린 신호로 움직이는 SPOMOVE',
     lead: '스크린 신호를 읽고 4색 패드 위에서 바로 움직이는 SPOMOVE. 키움센터·학교 강당에서도 정규·원데이·통합반으로 운영합니다.',
     flowSteps: [
-      { label: '인지', hint: 'SEE' },
-      { label: '선택', hint: 'CHOOSE' },
-      { label: '수행', hint: 'MOVE' },
-      { label: '조절', hint: 'ADJUST' },
+      { label: '인지', hint: '보기' },
+      { label: '선택', hint: '고르기' },
+      { label: '수행', hint: '움직이기' },
+      { label: '조절', hint: '맞추기' },
     ] as const satisfies readonly HomeSpomoveFlowStep[],
     proofs: [
       { value: '공간', label: '강당·교실·센터' },
@@ -259,7 +259,7 @@ export const homePage = {
         trackLabel: 'cta-home-final-private',
       },
       {
-        label: '지도자 교육·커리큘럼',
+        label: '커리큘럼·지도자 교육',
         href: `${SPOKEDU_BASE_PATH}/contact?type=curriculum`,
         trackLabel: 'cta-home-final-curriculum',
       },

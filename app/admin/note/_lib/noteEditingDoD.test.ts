@@ -80,7 +80,7 @@ describe('Admin Note editing DoD — Phase A paste & clipboard', () => {
 
   it('block clipboard round-trips forest', () => {
     const blocks = [
-      block('a', 'text'),
+      block('a', 'page'),
       block('b', 'bulletList', 'a'),
     ];
     const payload = buildBlockClipboardPayload(blocks, ['a', 'b']);
@@ -90,9 +90,9 @@ describe('Admin Note editing DoD — Phase A paste & clipboard', () => {
     expect(specs[0].children?.[0]?.type).toBe('bulletList');
   });
 
-  it('page is a sub-document drop target, not a local child container', () => {
+  it('page is a local child container', () => {
     expect(supportsInsideDropTarget('page')).toBe(true);
-    expect(allowsLocalChildBlocks(block('page-link', 'page'))).toBe(false);
+    expect(allowsLocalChildBlocks(block('page-link', 'page'))).toBe(true);
     expect(allowsLocalChildBlocks(block('toggle', 'toggle'))).toBe(true);
   });
 

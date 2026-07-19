@@ -129,6 +129,40 @@ describe('planBlockDropAt', () => {
     ]);
   });
 
+  it('moves a page block inside another page as an official page container child', () => {
+    const blocks = [
+      block('parent-page', 0, null, 'page'),
+      block('child-page', 1, null, 'page'),
+    ];
+
+    const plan = planBlockDropAt(blocks, 'child-page', 'parent-page', 'inside');
+
+    expect(plan?.targetParentId).toBe('parent-page');
+    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['child-page']);
+  });
+
+  it('allows todo and toggle blocks inside a page container', () => {
+    const blocks = [
+      block('page', 0, null, 'page'),
+      block('todo', 1, null, 'todo'),
+      block('toggle', 2, null, 'toggle'),
+    ];
+
+    expect(planBlockDropAt(blocks, 'todo', 'page', 'inside')?.targetParentId).toBe('page');
+    expect(planBlockDropAt(blocks, 'toggle', 'page', 'inside')?.targetParentId).toBe('page');
+  });
+
+  it('rejects page and toggle nesting inside toggles', () => {
+    const blocks = [
+      block('toggle-parent', 0, null, 'toggle'),
+      block('page', 1, null, 'page'),
+      block('toggle-child', 2, null, 'toggle'),
+    ];
+
+    expect(planBlockDropAt(blocks, 'page', 'toggle-parent', 'inside')).toBeNull();
+    expect(planBlockDropAt(blocks, 'toggle-child', 'toggle-parent', 'inside')).toBeNull();
+  });
+
   it('moves a toggle child back to the root list', () => {
     const blocks = [
       block('toggle', 0, null, 'toggle'),
@@ -158,7 +192,7 @@ describe('planBlockDropAt', () => {
 });
 
 describe('planBlockTabIndent', () => {
-  it('nests a text block under the previous text sibling', () => {
+  it('rejects nesting a text block under the previous text sibling', () => {
     const blocks = [
       block('a', 0, null, 'text'),
       block('b', 1, null, 'text'),
@@ -166,11 +200,10 @@ describe('planBlockTabIndent', () => {
 
     const plan = planBlockTabIndent(blocks, 'b', 'in');
 
-    expect(plan?.targetParentId).toBe('a');
-    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['b']);
+    expect(plan).toBeNull();
   });
 
-  it('moves a block inside a regular text block', () => {
+  it('rejects moving a block inside a regular text block', () => {
     const blocks = [
       block('parent', 0, null, 'text'),
       block('child', 1, null, 'todo'),
@@ -178,8 +211,7 @@ describe('planBlockTabIndent', () => {
 
     const plan = planBlockDropAt(blocks, 'child', 'parent', 'inside');
 
-    expect(plan?.targetParentId).toBe('parent');
-    expect(plan?.targetSiblings.map((item) => item.id)).toEqual(['child']);
+    expect(plan).toBeNull();
   });
 
   it('nests a bullet list item under the previous bullet sibling', () => {

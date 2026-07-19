@@ -261,22 +261,6 @@ export function resolveBlockDropTargetFromPointer(
       : undefined,
   );
 
-  // 페이지 링크를 다른 페이지 "안으로" 넣으면 parent 꼬임·사이드바 실종 발생.
-  // 페이지끼리 드래그는 순서(before/after)만 허용한다.
-  const activeBlock = activeBlockId
-    ? blocks.find((item) => item.id === activeBlockId)
-    : null;
-  if (
-    position === 'inside'
-    && block.type === 'page'
-    && activeBlock?.type === 'page'
-  ) {
-    return {
-      blockId: row.id,
-      position: pointerY < row.rect.top + row.rect.height / 2 ? 'before' : 'after',
-    };
-  }
-
   if (position === 'inside' && !blockSupportsInsideDrop(block.type)) {
     return {
       blockId: row.id,
@@ -298,19 +282,6 @@ export function resolveBlockDropTarget(
     const blockId = overId.slice('block-inside:'.length);
     const container = blocks.find((block) => block.id === blockId);
     if (!container || !blockSupportsInsideDrop(container.type)) return null;
-    const activeBlock = activeBlockId
-      ? blocks.find((block) => block.id === activeBlockId)
-      : null;
-    if (container.type === 'page' && activeBlock?.type === 'page') {
-      const row = typeof document !== 'undefined'
-        ? document.querySelector<HTMLElement>(
-          `[data-note-block-row][data-block-id="${escapeCssAttrValue(blockId)}"]`,
-        )
-        : null;
-      const rect = row?.getBoundingClientRect();
-      const mid = rect ? rect.top + rect.height / 2 : pointerY;
-      return { blockId, position: pointerY < mid ? 'before' : 'after' };
-    }
     return { blockId, position: 'inside' };
   }
 
@@ -330,17 +301,6 @@ export function resolveBlockDropTarget(
     { top: over.rect.top, height: over.rect.height },
     pointerY,
   );
-  if (position === 'inside' && overBlock.type === 'page') {
-    const activeBlock = activeBlockId
-      ? blocks.find((block) => block.id === activeBlockId)
-      : null;
-    if (activeBlock?.type === 'page') {
-      return {
-        blockId: overId,
-        position: pointerY < over.rect.top + over.rect.height / 2 ? 'before' : 'after',
-      };
-    }
-  }
   if (position === 'inside' && !blockSupportsInsideDrop(overBlock.type)) {
     return {
       blockId: overId,

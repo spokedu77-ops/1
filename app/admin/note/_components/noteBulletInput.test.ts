@@ -126,7 +126,7 @@ describe('normalizeLoadedNoteBlocks', () => {
     expect(normalized[1].content?.text).toBe('item');
   });
 
-  it('migrates legacy toggle body into a child text block on load', () => {
+  it('keeps legacy toggle body on load without creating a child block', () => {
     const toggle = {
       id: 't1',
       document_id: 'doc',
@@ -138,8 +138,8 @@ describe('normalizeLoadedNoteBlocks', () => {
       updated_at: '',
     };
     const normalized = normalizeLoadedNoteBlocks([toggle]);
-    expect(normalized.find((block) => block.id === 't1')?.content?.body).toBeUndefined();
-    expect(normalized.some((block) => block.parent_block_id === 't1' && block.content?.text === 'inside toggle')).toBe(true);
+    expect(normalized.find((block) => block.id === 't1')?.content?.body).toBe('inside toggle');
+    expect(normalized.some((block) => block.parent_block_id === 't1')).toBe(false);
   });
 });
 

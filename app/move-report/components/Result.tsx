@@ -10,8 +10,6 @@ import { coachUi } from '../i18n/coachUi';
 import { getMoveReportUi } from '../i18n/ui';
 import { formatOwnerPossessive, type MoveReportLocale } from '../lib/locale';
 import { axisLabelsJoined, topAxisHighlights } from '../lib/profileAxisLabels';
-import { appendMoveReportAttributionToUrl, buildMoveReportShareUrl } from '../lib/shareLink';
-import { getMoveReportAttribution, pickAttributionForShareUrl } from '../lib/attribution';
 import { trackMoveReportEvent } from '../lib/events';
 
 export type ResultTab = 'report' | 'solution';
@@ -70,46 +68,21 @@ export default function Result({
   );
   const highlights = useMemo(() => topAxisHighlights(bd, 2, locale), [bd, locale]);
 
-  const privateConsultShareUrl = useMemo(() => {
-    if (typeof window === 'undefined') return '';
-    const built = buildMoveReportShareUrl(
-      window.location.origin,
-      {
-        v: 5,
-        profileKey: key,
-        graphCode: graphCodeStr,
-      },
-      { locale }
-    );
-    return appendMoveReportAttributionToUrl(built, pickAttributionForShareUrl(getMoveReportAttribution()));
-  }, [key, graphCodeStr, locale]);
-
-  const consultSummary = useMemo(
-    () =>
-      [
-        t.consultSummaryTitle,
-        `- ${t.consultName}: ${displayName}`,
-        `- ${t.consultType}: ${p.char}`,
-        `- ${t.consultLine}: ${p.catchcopy}`,
-        `- ${t.consultApproach}: ${p.shortTip}`,
-      ].join('\n'),
-    [displayName, p.char, p.catchcopy, p.shortTip, t]
-  );
-
   const handleGoPrivateConsult = useCallback(() => {
     if (typeof window === 'undefined') return;
-    window.localStorage.setItem('private.moveReport.summary', consultSummary);
-    if (privateConsultShareUrl) {
-      window.localStorage.setItem('private.moveReport.shareUrl', privateConsultShareUrl);
-    } else {
+    // Move Report → 개인 상담 자동 요약 삽입은 제거 (문의 폼에 영문 진단 요약이 붙던 잔여 연동)
+    try {
+      window.localStorage.removeItem('private.moveReport.summary');
       window.localStorage.removeItem('private.moveReport.shareUrl');
+    } catch {
+      // ignore
     }
     void trackMoveReportEvent({
       eventName: 'move_report_private_consult_clicked',
       meta: { profileKey: key },
     });
-    window.location.href = '/spokedu/private#apply';
-  }, [consultSummary, privateConsultShareUrl, key]);
+    window.location.href = '/spokedu/contact?type=private';
+  }, [key]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

@@ -84,7 +84,7 @@ describe('resolveBlockDropTarget page insertion contract', () => {
     updated_at: '',
   });
 
-  it('coerces block-inside page-on-page drops to before or after', () => {
+  it('allows explicit block-inside page-on-page drops', () => {
     document.body.innerHTML = '<div data-note-block-row data-block-id="target"></div>';
     const row = document.querySelector<HTMLElement>('[data-block-id="target"]');
     row!.getBoundingClientRect = () => ({
@@ -104,11 +104,11 @@ describe('resolveBlockDropTarget page insertion contract', () => {
 
     expect(resolveBlockDropTarget('block-inside:target', blocks, event, 110, 'moving')).toEqual({
       blockId: 'target',
-      position: 'before',
+      position: 'inside',
     });
     expect(resolveBlockDropTarget('block-inside:target', blocks, event, 130, 'moving')).toEqual({
       blockId: 'target',
-      position: 'after',
+      position: 'inside',
     });
   });
 
@@ -154,7 +154,7 @@ describe('resolveBlockDropTarget page insertion contract', () => {
     });
   });
 
-  it('coerces page-on-page center-band drops to before or after in fallback resolver', () => {
+  it('keeps page row coordinate drops as before or after in fallback resolver', () => {
     const blocks = [pageBlock('moving', 0), pageBlock('target', 1)];
     const event = {
       over: {

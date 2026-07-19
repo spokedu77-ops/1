@@ -1,4 +1,5 @@
 import { LIST_CONTAINER_TYPES } from '@/app/lib/note/noteBlockTree';
+import { canBlockTypeHaveChildren } from '@/app/lib/note/noteBlockPolicy';
 import { COLUMN_TYPE } from './noteColumnBlock';
 import type { NoteBlock } from './types';
 
@@ -15,12 +16,13 @@ export function isTodoBlock(block: Pick<NoteBlock, 'type'>): boolean {
 }
 
 export function supportsInsideDropTarget(type: string): boolean {
-  return isToggleBlock({ type })
+  return canBlockTypeHaveChildren(type)
+    || isToggleBlock({ type })
     || type === 'page'
     || type === COLUMN_TYPE
     || LIST_CONTAINER_TYPES.has(type);
 }
 
 export function allowsLocalChildBlocks(block: Pick<NoteBlock, 'type'>): boolean {
-  return !isPageLinkBlock(block);
+  return canBlockTypeHaveChildren(block.type);
 }

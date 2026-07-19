@@ -161,7 +161,7 @@ export function CurriculumInquiryForm() {
       <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-800">문의</p>
         <h2 className={`mt-1 text-xl font-bold tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
-          지도자 교육·커리큘럼 문의
+          커리큘럼·지도자 교육 문의
         </h2>
         <p className={`mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanLineBreak}`}>
           수업안, 매뉴얼, 세미나, SPOMOVE 도입 교육, 라이선싱 등 필요한 범위를 알려주시면 맞는 협업 방식을
@@ -193,7 +193,7 @@ export function CurriculumInquiryForm() {
               className={inputClass}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="010-0000-0000"
+              placeholder="예: 010-1234-5678"
               inputMode="tel"
               required
             />
@@ -265,7 +265,7 @@ export function CurriculumInquiryForm() {
 
         <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <button type="submit" disabled={submitting || !canSubmit} className={`${siteBtnPrimary} disabled:opacity-60`}>
-            {submitting ? '접수 중…' : '커리큘럼·교육 문의하기'}
+            {submitting ? '접수 중…' : '커리큘럼·지도자 교육 문의하기'}
           </button>
           <a href={brandContactLinks.phone} className={siteBtnSecondary}>
             전화 {brandProfile.phone}

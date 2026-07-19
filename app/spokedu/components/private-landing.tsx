@@ -75,7 +75,7 @@ function MidConsultCta() {
           href="#apply"
           className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#0F1C1A] transition hover:bg-teal-50"
         >
-          상담 신청하기
+          개인수업 상담
         </a>
       </div>
     </div>
@@ -84,14 +84,14 @@ function MidConsultCta() {
 
 export default function PrivateLanding() {
   return (
-    <div className="flex w-full flex-col gap-8 overflow-x-clip pb-24 sm:gap-10 lg:gap-12">
+    <div className="flex w-full flex-col gap-8 pb-24 sm:gap-10 lg:gap-12">
       <div id="hero">
         <LandingHero
           kicker={privatePage.hero.kicker}
           kickerClassName="text-stone-500"
           leading={
             <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">For Parents</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-700">학부모</p>
               <div className="flex flex-wrap gap-2" aria-label="개인수업 상담 주제">
                 {privateHeroNeeds.map((item) => (
                   <span
@@ -116,7 +116,7 @@ export default function PrivateLanding() {
 
       <LandingAnchorNav
         items={privateAnchorItems}
-        cta={{ href: '#apply', label: '상담 신청' }}
+        cta={{ href: '#apply', label: '개인수업 상담' }}
         ariaLabel="개인수업 랜딩 바로가기"
       />
 
@@ -228,7 +228,7 @@ export default function PrivateLanding() {
           <div className={`${premiumPanel} px-6 py-7 sm:px-8 sm:py-8`}>
             <div className="flex items-end justify-between gap-3 border-b border-stone-200/80 pb-4">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-800">Place</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-800">수업 장소</p>
                 <h3 className="mt-1 text-lg font-semibold tracking-tight text-slate-950">수업 장소</h3>
               </div>
               <p className="text-xs font-medium text-stone-400">상담 후 조율</p>
@@ -252,7 +252,7 @@ export default function PrivateLanding() {
 
           <div className={`${premiumPanelDark} px-6 py-7 sm:px-8 sm:py-8`}>
             <div className="border-b border-white/10 pb-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-200/90">Cycle</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-200/90">수업 사이클</p>
               <h3 className="mt-1 text-lg font-semibold tracking-tight text-white">수업 단위</h3>
             </div>
             <ul className="mt-5 space-y-4">
@@ -280,7 +280,13 @@ export default function PrivateLanding() {
           {privatePage.instructors.items.map((item) => (
             <article key={item.name} className={premiumPanel}>
               <div className="relative aspect-[4/5] w-full overflow-hidden bg-stone-100">
-                <ExternalPhoto src={item.photo} alt={item.name} className="absolute inset-0" fit="cover" />
+                <ExternalPhoto
+                  src={item.photo}
+                  alt={item.name}
+                  className="absolute inset-0"
+                  fit="cover"
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                />
                 <div
                   className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0F1C1A]/55 to-transparent"
                   aria-hidden
@@ -342,7 +348,7 @@ export default function PrivateLanding() {
         <PrivateApplyForm />
       </Section>
 
-      <LandingFloatingCta primaryHref="#apply" primaryLabel="상담 신청하기" showAfterId="hero" />
+      <LandingFloatingCta primaryHref="#apply" primaryLabel="개인수업 상담" showAfterId="hero" />
     </div>
   );
 }

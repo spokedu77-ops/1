@@ -64,7 +64,6 @@ export function useNoteBlockDelete(options: {
     previousBlocks: NoteBlock[],
     command: NoteBlockCommandResult,
   ) => void;
-  ensureMinimumRootTextBlock: () => Promise<void>;
   onAfterBlocksRemoved?: (removed: NoteBlock[], nextBlocks: NoteBlock[]) => void;
 }) {
   const {

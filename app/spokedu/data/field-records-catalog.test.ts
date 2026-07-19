@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildHomeFieldRecordCards,
+  buildRecordsHeroSummary,
   buildRecordsPageFieldRecords,
   FIELD_RECORD_CATALOG,
   getFieldRecordCatalogItem,
@@ -41,5 +42,22 @@ describe('field-records-catalog', () => {
   it('keeps catalog slugs unique', () => {
     const slugs = FIELD_RECORD_CATALOG.map((r) => r.slug);
     expect(new Set(slugs).size).toBe(slugs.length);
+  });
+
+  it('pins local thumbnailSrc for every catalog item (no runtime Naver fetch)', () => {
+    for (const item of FIELD_RECORD_CATALOG) {
+      expect(item.thumbnailSrc).toMatch(/^\/images\/spokedu\/records\//);
+      expect(item.thumbnailSrc).toContain(item.slug);
+    }
+  });
+
+  it('derives records hero stats from catalog (no stale hardcoded counts)', () => {
+    const summary = buildRecordsHeroSummary();
+    expect(summary.caseCount).toBe(FIELD_RECORD_CATALOG.length);
+    expect(summary.venueTypeCount).toBe(summary.venueTypes.length);
+    expect(summary.caseCount).toBeGreaterThanOrEqual(8);
+    expect(summary.venueTypes).toEqual(
+      expect.arrayContaining(['키움센터', '학교', '보건소', '주민센터']),
+    );
   });
 });

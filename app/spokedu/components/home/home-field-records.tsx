@@ -46,11 +46,22 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           transition={{ duration: 0.45 }}
         >
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">Field Notes</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">현장 기록</p>
             <h2 className={`${homeSectionH2} mt-3`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
+            <dl className="mt-5 grid max-w-2xl grid-cols-1 gap-2 sm:grid-cols-3">
+              {homePage.cases.proofStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-slate-200/80 bg-white px-3.5 py-3"
+                >
+                  <dt className={`text-sm font-bold text-[#0B1220] ${koreanText}`}>{stat.value}</dt>
+                  <dd className={`mt-1 text-xs leading-snug text-slate-500 ${koreanText}`}>{stat.label}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
           <div className="flex flex-col gap-2.5 sm:flex-row">
             <TrackedLink
@@ -128,14 +139,18 @@ function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: bool
 }
 
 function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
+  const hoverZoom =
+    'transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04]';
+
   if (card.thumbnailSrc) {
     return (
       <ExternalPhoto
         src={card.thumbnailSrc}
         alt={`${card.programName} — ${card.venue}`}
-        className={`absolute inset-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04] ${homePhotoGrade}`}
+        className={`absolute inset-0 h-full w-full ${hoverZoom}`}
         fit="cover"
         priority={priority}
+        sizes="(max-width: 640px) 100vw, 50vw"
       />
     );
   }
@@ -143,7 +158,7 @@ function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boo
   return (
     <MediaPanel
       media={HOME_MEDIA[card.mediaKey]}
-      className={`absolute inset-0 h-full w-full border-0 transition duration-500 ease-out [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04] ${homePhotoGrade}`}
+      className={`absolute inset-0 h-full w-full border-0 ${hoverZoom} ${homePhotoGrade}`}
       sizes="gateCard"
       photoPriority={priority}
       priority={priority}

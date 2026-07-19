@@ -563,11 +563,8 @@ function resolveThumbnailUrl(path: string | null | undefined, cacheBust?: number
   }
 }
 
-function shouldStretchThumbnailToSquare(width: number, height: number, src: string) {
-  if (/\.svg(\?|#|$)/i.test(src)) return true;
-  if (!width || !height) return false;
-  const ratio = width / height;
-  return ratio > 1.08 || ratio < 0.93;
+function shouldStretchThumbnailToSquare(_width: number, _height: number, src: string) {
+  return /\.svg(\?|#|$)/i.test(src);
 }
 
 function CardVisual({

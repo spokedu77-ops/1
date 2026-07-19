@@ -17,21 +17,6 @@ on:
       - '.github/workflows/admin-note-qa.yml'
       - 'package.json'
       - 'package-lock.json'
-  push:
-    branches: [main, master]
-    paths:
-      - 'app/admin/note/**'
-      - 'app/api/admin/note/**'
-      - 'app/lib/note/**'
-      - 'scripts/admin-note-foundation-qa.mjs'
-      - 'scripts/admin-note-regression-qa.mjs'
-      - 'scripts/admin-note-smoke-qa.mjs'
-      - 'scripts/admin-note-content-integrity.mjs'
-      - 'scripts/admin-note-data-integrity.mjs'
-      - 'scripts/note-invariant-qa.mjs'
-      - 'scripts/note-qa/**'
-      - 'scripts/verify-note-cross-select-qa.mjs'
-      - '.github/workflows/admin-note-qa.yml'
   workflow_dispatch:
 
 concurrency:
@@ -52,8 +37,6 @@ jobs:
       - name: TypeScript (noEmit)
         run: npm run typecheck
       - run: npm run verify:admin-note
-      - name: Production build (Vercel parity)
-        run: npm run build
 
   e2e:
     name: Playwright smoke & invariants

@@ -5,6 +5,8 @@ import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 
 const DB_NAME = 'spm-note-oplog-v1';
 const DB_VERSION = 1;
+const FORCED_LOCAL_RESET_VERSION = '2026-07-20-note-global-recover-2';
+const FORCED_GLOBAL_LOCAL_RESET_KEY = 'spm-note-global-local-reset';
 
 export type NoteLocalDocumentRecord = {
   documentId: string;
@@ -45,6 +47,70 @@ function rememberLocalDocumentMemory(record: NoteLocalDocumentRecord): void {
         : block.content,
     })),
   });
+}
+
+function forgetLocalDocumentMemory(documentId: string): void {
+  localDocumentMemory.delete(documentId);
+}
+
+function forgetAllLocalDocumentMemory(): void {
+  localDocumentMemory.clear();
+}
+
+let globalResetPromise: Promise<void> | null = null;
+
+function shouldForceResetAllNoteLocal(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.localStorage.getItem(FORCED_GLOBAL_LOCAL_RESET_KEY)
+    !== FORCED_LOCAL_RESET_VERSION;
+}
+
+function markForcedAllNoteLocalReset(): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(
+    FORCED_GLOBAL_LOCAL_RESET_KEY,
+    FORCED_LOCAL_RESET_VERSION,
+  );
+}
+
+export function clearAllNoteLocal(): Promise<void> {
+  forgetAllLocalDocumentMemory();
+  if (typeof indexedDB === 'undefined') return Promise.resolve();
+  return new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase(DB_NAME);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error ?? new Error('IndexedDB delete failed'));
+    request.onblocked = () => resolve();
+  });
+}
+
+export async function ensureNoteLocalCacheVersion(): Promise<void> {
+  if (!shouldForceResetAllNoteLocal()) return;
+  if (!globalResetPromise) {
+    globalResetPromise = clearAllNoteLocal()
+      .then(() => {
+        markForcedAllNoteLocalReset();
+      })
+      .finally(() => {
+        globalResetPromise = null;
+      });
+  }
+  await globalResetPromise;
+}
+
+export function shouldForceResetLocalDocument(documentId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  if (shouldForceResetAllNoteLocal()) return true;
+  return window.localStorage.getItem(`spm-note-local-reset:${documentId}`)
+    !== FORCED_LOCAL_RESET_VERSION;
+}
+
+export function markForcedLocalDocumentReset(documentId: string): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(
+    `spm-note-local-reset:${documentId}`,
+    FORCED_LOCAL_RESET_VERSION,
+  );
 }
 
 function openDb(): Promise<IDBDatabase> {
@@ -173,19 +239,26 @@ export async function removeOutboundOps(clientOpIds: string[]): Promise<void> {
 }
 
 export async function clearDocumentLocal(documentId: string): Promise<void> {
+  forgetLocalDocumentMemory(documentId);
   await runTx<void>('readwrite', ['documents', 'outbound'], async (stores) => {
     await new Promise<void>((resolve, reject) => {
       const request = stores.documents.delete(documentId);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });
-    const outbound = await listOutboundOps(documentId);
-    for (const op of outbound) {
-      await new Promise<void>((resolve, reject) => {
-        const request = stores.outbound.delete(op.clientOpId);
-        request.onsuccess = () => resolve();
-        request.onerror = () => reject(request.error);
-      });
-    }
+    await new Promise<void>((resolve, reject) => {
+      const index = stores.outbound.index('byDocument');
+      const request = index.openCursor(IDBKeyRange.only(documentId));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) {
+          resolve();
+          return;
+        }
+        cursor.delete();
+        cursor.continue();
+      };
+      request.onerror = () => reject(request.error);
+    });
   });
 }

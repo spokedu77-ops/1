@@ -25,25 +25,16 @@ describe('toggle body migration', () => {
     expect(toggleBodyHasLegacyContent({ title: 'T', body: '  ' })).toBe(false);
   });
 
-  it('migrates body to a child text block when toggle has no children', () => {
+  it('does not create a child text block from legacy body when toggle has no children', () => {
     const blocks = [toggle('t1', { title: 'Section', body: 'legacy body', bodyHtml: '<p>legacy</p>' })];
     const result = migrateToggleLegacyToChildBlocks(blocks);
 
-    expect(result.created).toHaveLength(1);
-    expect(result.created[0]).toMatchObject({
-      type: 'text',
-      parent_block_id: 't1',
-      order_index: 0,
-      content: expect.objectContaining({
-        text: 'legacy body',
-        html: '<p>legacy</p>',
-        placedInToggle: true,
-      }),
-    });
+    expect(result.created).toHaveLength(0);
+    expect(result.updatedChildPatches).toHaveLength(0);
     const migratedToggle = result.blocks.find((block) => block.id === 't1');
-    expect(migratedToggle?.content?.body).toBeUndefined();
-    expect(migratedToggle?.content?.bodyHtml).toBeUndefined();
-    expect(result.updatedToggleIds).toEqual(['t1']);
+    expect(migratedToggle?.content?.body).toBe('legacy body');
+    expect(migratedToggle?.content?.bodyHtml).toBe('<p>legacy</p>');
+    expect(result.updatedToggleIds).toEqual([]);
   });
 
   it('strips orphaned legacyBody when bodyMigrated but child was deleted — no zombie recreate', () => {
@@ -165,28 +156,27 @@ describe('toggle body migration', () => {
     expect(patches[0].content.bodyMigrated).toBe(true);
   });
 
-  it('migrates legacy images to child image blocks', () => {
+  it('does not create child image blocks from legacy images on load', () => {
     const blocks = [toggle('t1', { title: 'T', images: ['https://example.com/a.png', ''] })];
     const result = migrateToggleLegacyToChildBlocks(blocks);
 
-    expect(result.created).toHaveLength(1);
-    expect(result.created[0]).toMatchObject({
-      type: 'image',
-      parent_block_id: 't1',
-      content: expect.objectContaining({
-        url: 'https://example.com/a.png',
-        migratedFromToggleImages: true,
-      }),
-    });
-    expect(result.blocks.find((block) => block.id === 't1')?.content?.images).toBeUndefined();
+    expect(result.created).toHaveLength(0);
+    expect(result.blocks.find((block) => block.id === 't1')?.content?.images).toEqual(['https://example.com/a.png', '']);
   });
 
-  it('invariant: delete migrated child + reload must not zombie-recreate from legacyBody', () => {
-    const migrated = migrateToggleLegacyToChildBlocks([
-      toggle('t1', { title: 'Section', body: '좀비방지본문' }),
-    ]);
-    const child = migrated.created[0];
-    const deleted = buildDeleteBlockForestCommand(migrated.blocks, [child.id]);
+  it('invariant: delete last toggle child + reload must not zombie-recreate from legacyBody', () => {
+    const parent = toggle('t1', {
+      title: 'Section',
+      legacyBody: '좀비방지본문',
+      bodyMigrated: true,
+    });
+    const child = {
+      ...toggle('c1', { text: 'child', migratedFromToggleBody: true }),
+      type: 'text' as const,
+      parent_block_id: 't1',
+      order_index: 0,
+    };
+    const deleted = buildDeleteBlockForestCommand([parent, child], [child.id]);
     const patches = buildToggleLegacyCleanupPatches(deleted.removedBlocks, deleted.nextBlocks);
     const patchById = new Map(patches.map((patch) => [patch.id, patch.content]));
     const afterDelete = deleted.nextBlocks.map((block) => {

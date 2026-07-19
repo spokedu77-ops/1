@@ -13,7 +13,8 @@ export type SpokeduImageCategory =
   | 'programs'
   | 'records'
   | 'cases'
-  | 'monthly';
+  | 'monthly'
+  | 'brand';
 
 /** `placeholder-copy`: 다른 슬롯 사진 임시 복사 — 전용 실사로 교체 예정 */
 export type SpokeduImageAssetStatus = 'production' | 'placeholder-copy';
@@ -63,6 +64,16 @@ function defineImage(
 export const SPOKEDU_PLACEHOLDER_IMAGE_ASSETS: readonly string[] = [] as const;
 
 export const SPOKEDU_IMAGES = {
+  brand: {
+    logo: defineImage('brand', 'spokedu-logo', 'spokedu-logo.png', 'SPOKEDU 로고'),
+    logoWhite: defineImage('brand', 'spokedu-logo-white', 'spokedu-logo-white.png', 'SPOKEDU 로고 (화이트)'),
+    spomat: defineImage(
+      'brand',
+      'spomat',
+      'spomat.png',
+      '스포매트 — SPOMOVE 4색 반응 패드 (초록·빨강·파랑·노랑)',
+    ),
+  },
   home: {
     hero: defineImage(
       'home',
@@ -286,6 +297,7 @@ export const spokeduImageManifest = {
 } as const;
 
 export const spokeduImageFolders = [
+  `${SPOKEDU_IMAGE_ROOT}/brand`,
   `${SPOKEDU_IMAGE_ROOT}/home`,
   `${SPOKEDU_IMAGE_ROOT}/private`,
   `${SPOKEDU_IMAGE_ROOT}/dispatch`,
@@ -310,6 +322,8 @@ export type PageImageSlot = {
 /** 페이지별 이미지 슬롯 (운영·교체 참고) */
 export const spokeduPageImageMap: PageImageSlot[] = [
   { page: 'Home', section: 'Hero', asset: SPOKEDU_IMAGES.home.hero },
+  { page: 'Brand', section: 'Logo', asset: SPOKEDU_IMAGES.brand.logo },
+  { page: 'Brand', section: 'Spomat', asset: SPOKEDU_IMAGES.brand.spomat },
   { page: 'Home', section: 'Living Proof / LAB', asset: SPOKEDU_IMAGES.home.labScene },
   { page: 'Home', section: 'Living Proof / Dispatch', asset: SPOKEDU_IMAGES.home.dispatchScene },
   { page: 'Private', section: 'Hero — 1:1', asset: SPOKEDU_IMAGES.private.oneToOne },

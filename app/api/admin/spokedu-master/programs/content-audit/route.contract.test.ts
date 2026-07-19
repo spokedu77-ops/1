@@ -16,7 +16,8 @@ describe('admin content-audit route contract', () => {
   });
 
   it('returns Phase E checklist columns for top N programs', () => {
-    expect(source).toContain("checklistColumns: ['영상', '준비물', '안전', '단계', '태그']");
+    expect(source).toContain("checklistColumns: ['영상', '준비물', '단계', '태그']");
+    expect(source).not.toContain("'안전'");
     expect(source).toContain('parseLimit');
     expect(source).toContain('summarizeContentAudit');
   });

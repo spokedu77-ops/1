@@ -12,7 +12,6 @@ type AuditSummary = {
   byMissing: {
     video: number;
     equipment: number;
-    safety: number;
     steps: number;
     tags: number;
   };
@@ -30,10 +29,11 @@ type ViewFilter = 'all' | 'fail' | 'pass';
 const CHECK_LABELS: Array<{ key: keyof ContentAuditItem['checks']; label: string }> = [
   { key: 'video', label: '영상' },
   { key: 'equipment', label: '준비물' },
-  { key: 'safety', label: '안전' },
   { key: 'steps', label: '단계' },
   { key: 'tags', label: '태그' },
 ];
+
+const CHECK_TOTAL = CHECK_LABELS.length;
 
 function CheckCell({ ok }: { ok: boolean }) {
   return ok ? (
@@ -93,7 +93,7 @@ export function ContentAuditPanel({
 
   const copyChecklist = async () => {
     const lines = [
-      ['#', 'curriculumId', '제목', '영상', '준비물', '안전', '단계', '태그', 'API pass'].join('\t'),
+      ['#', 'curriculumId', '제목', '영상', '준비물', '단계', '태그', 'API pass'].join('\t'),
       ...visible.map((item, index) =>
         [
           `E${index + 1}`,
@@ -101,7 +101,6 @@ export function ContentAuditPanel({
           item.title,
           item.checks.video ? 'Y' : 'N',
           item.checks.equipment ? 'Y' : 'N',
-          item.checks.safety ? 'Y' : 'N',
           item.checks.steps ? 'Y' : 'N',
           item.checks.tags ? 'Y' : 'N',
           item.pass ? 'Y' : 'N',
@@ -124,7 +123,7 @@ export function ContentAuditPanel({
             <p className="text-[11px] font-black uppercase tracking-[0.14em] text-indigo-600">Phase E</p>
             <h2 className="mt-1 text-[20px] font-black text-slate-950">상용화 콘텐츠 샘플 감사</h2>
             <p className="mt-1 max-w-2xl text-[12px] font-semibold leading-5 text-slate-500">
-              HOT 우선 상위 N개 수업의 영상·준비물·안전·단계·태그를 자동 점검합니다. API pass는 필드 존재 여부이고,
+              HOT 우선 상위 N개 수업의 영상·준비물·단계·태그를 자동 점검합니다. API pass는 필드 존재 여부이고,
               품질 Pass는 사람이 최종 판단합니다.
             </p>
             {source ? <p className="mt-2 text-[11px] font-bold text-slate-400">정렬: {source}</p> : null}
@@ -233,14 +232,14 @@ export function ContentAuditPanel({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-16 text-center text-[13px] font-bold text-slate-400">
+                  <td colSpan={9} className="px-3 py-16 text-center text-[13px] font-bold text-slate-400">
                     <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-indigo-500" />
                     감사 중…
                   </td>
                 </tr>
               ) : visible.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-3 py-16 text-center text-[13px] font-bold text-slate-400">
+                  <td colSpan={9} className="px-3 py-16 text-center text-[13px] font-bold text-slate-400">
                     표시할 수업이 없습니다.
                   </td>
                 </tr>
@@ -268,7 +267,7 @@ export function ContentAuditPanel({
                           color: item.pass ? '#047857' : '#be123c',
                         }}
                       >
-                        {item.pass ? 'pass' : 'fail'} · {item.score}/5
+                        {item.pass ? 'pass' : 'fail'} · {item.score}/{CHECK_TOTAL}
                       </span>
                     </td>
                     <td className="px-3 py-3 text-[11px] font-bold text-slate-500">

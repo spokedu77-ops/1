@@ -13,7 +13,7 @@ type LandingAnchorNavProps = {
   ariaLabel?: string;
 };
 
-/** 서브 랜딩용 sticky 앵커 내비 — 사이트 헤더(z-40) 아래에 고정 */
+/** 서브 랜딩용 sticky 앵커 내비 — 고정 사이트 헤더(z-40) 바로 아래 */
 export function LandingAnchorNav({
   items,
   cta,
@@ -22,7 +22,7 @@ export function LandingAnchorNav({
   return (
     <nav
       aria-label={ariaLabel}
-      className="sticky top-[57px] z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-md"
+      className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 border-b border-slate-200/90 bg-white/95 backdrop-blur-md sm:top-[calc(4.25rem+env(safe-area-inset-top,0px))]"
     >
       <div className="mx-auto flex w-full max-w-6xl items-center gap-2 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
         <ul className="flex min-w-0 flex-1 items-center gap-1 sm:gap-2">

@@ -207,7 +207,7 @@ describe('buildHistoryTransactionPlan', () => {
     ]);
   });
 
-  it('uses the same page-link delete contract as direct deletion', () => {
+  it('deletes a page container with its local child subtree', () => {
     const current = [
       block('page-link', {
         type: 'page',
@@ -219,18 +219,12 @@ describe('buildHistoryTransactionPlan', () => {
       }),
       block('keep', { order_index: 1 }),
     ];
-    const target = [
-      block('misplaced-child', {
-        parent_block_id: 'page-link',
-        content: { text: 'must not be deleted through page link deletion' },
-      }),
-      block('keep', { order_index: 0 }),
-    ];
+    const target = [block('keep', { order_index: 0 })];
 
     const plan = buildHistoryTransactionPlan(current, target);
 
-    expect(plan.deleteIds).toEqual(['page-link']);
-    expect(plan.fieldPatches.map((patch) => patch.id)).toEqual(['misplaced-child', 'keep']);
+    expect(plan.deleteIds).toEqual(['page-link', 'misplaced-child']);
+    expect(plan.fieldPatches.map((patch) => patch.id)).toEqual(['keep']);
   });
 
   it('plans undo for mixed structural paste without dropping anchor metadata', () => {

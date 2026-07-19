@@ -30,12 +30,23 @@ describe('report writing flow contract', () => {
     expect(source).not.toContain('record.students.map((student) => `${student.studentName}');
   });
 
-  it('starts record-query drafts from the first student observation without leaking every memo', () => {
+  it('starts record-query drafts as full-class copy while keeping a student ready for optional switch', () => {
     expect(source).toContain('const initialStudentId = record.students[0]?.studentId ?? null');
-    expect(source).toContain("const initialTarget: ReportTarget = initialStudentId ? 'student' : 'class'");
-    expect(source).toContain('setTarget(initialTarget)');
+    expect(source).toContain("setTarget('class')");
     expect(source).toContain('setSelectedStudentId(initialStudentId)');
-    expect(source).toContain('setGenerated(buildRecordDraft(record, initialTarget, initialStudentId))');
+    expect(source).toContain("setGenerated(buildRecordDraft(record, 'class', null))");
+  });
+
+  it('keeps copy as the primary delivery action and save as optional archive', () => {
+    expect(source).toContain('복사해서 전달');
+    expect(source).toContain('보관');
+    expect(source).toContain('나중에 다시 복사할 때만');
+  });
+
+  it('uses a single-column focused layout instead of a dual sidebar browser', () => {
+    expect(source).toContain('max-w-3xl');
+    expect(source).not.toContain('lg:grid-cols-[360px_minmax(0,1fr)]');
+    expect(source).toContain('보관함');
   });
 
   it('prefers parentNoteSnapshot as the record draft body when present', () => {
@@ -51,9 +62,9 @@ describe('report writing flow contract', () => {
 
   it('prevents duplicate saves and exposes safe save/copy status', () => {
     expect(source).toContain("saveStatus === 'saving'");
-    expect(source).toContain('저장 중...');
-    expect(source).toContain('안내문이 저장되었습니다.');
-    expect(source).toContain('안내문을 복사했습니다.');
+    expect(source).toContain('보관 중...');
+    expect(source).toContain('보관했습니다.');
+    expect(source).toContain('복사했습니다. 카톡·문자·메일에 붙여넣으세요.');
     expect(source).toContain('자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.');
   });
 

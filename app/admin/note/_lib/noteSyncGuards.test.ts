@@ -7,6 +7,7 @@ import {
   outboundHasIdentityLeaveOrRelocation,
   outboundHasUnpublishedTopology,
   partitionOutboundForSafePush,
+  shouldAllowRemotePullBeforePush,
 } from './noteSyncGuards';
 import { persistOpToPushItems } from './notePersistOpToBlockOps';
 
@@ -32,6 +33,22 @@ describe('noteSyncGuards', () => {
     expect(outboundHasUnpublishedTopology([topology])).toBe(true);
     expect(outboundHasUnpublishedTopology([relocation])).toBe(false);
     expect(outboundHasUnpublishedTopology([softDelete])).toBe(false);
+  });
+
+  it('blocks remote pull before pushing pending same-document order changes', () => {
+    const reorder = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [
+        { id: 'todo-c', parent_block_id: null, order_index: 0 },
+        { id: 'todo-a', parent_block_id: null, order_index: 1 },
+        { id: 'todo-b', parent_block_id: null, order_index: 2 },
+      ],
+      deleteIds: [],
+    });
+    const softDelete = persistOpToPushItems({ type: 'softDelete', ids: ['gone'] });
+
+    expect(shouldAllowRemotePullBeforePush(reorder)).toBe(false);
+    expect(shouldAllowRemotePullBeforePush(softDelete)).toBe(true);
   });
 
   it('marks only pure leave for inactive drain (not mixed)', () => {

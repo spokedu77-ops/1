@@ -168,8 +168,8 @@ const KO: MoveReportUi = {
     igSub: '@spokedu_kids · 수업 현장 영상 보러가기 →',
     footerNote: '스포키듀 현장 수업 경험을 담은 관찰형 가이드입니다. 의료·심리 진단이 아닙니다.',
     consultBody:
-      '요약과 결과 카드 링크를 이 브라우저에 저장한 뒤, 개인수업 상담 페이지로 이동합니다. 상담 폼에 Move Report 요약이 자동으로 들어갈 수 있어요.',
-    consultCta: '결과 가지고 상담 신청하기',
+      '개인·소그룹 수업 상담 페이지로 이동합니다. 아이 상황과 희망 종목을 적어 주시면 맞춰 안내해 드려요.',
+    consultCta: '개인수업 상담 신청하기',
     consultSummaryTitle: '[MOVE REPORT 요약]',
     consultName: '이름',
     consultType: '유형',
@@ -277,8 +277,8 @@ const EN: MoveReportUi = {
     footerNote:
       'Observation-based guidance from SPOKEDU classroom experience. Not a medical, clinical, or psychological assessment.',
     consultBody:
-      'We’ll save a short summary and result-card link in this browser, then open the private lesson consult page. The form can prefill your Move Report summary.',
-    consultCta: 'Take results to the consult page',
+      'Opens the private lesson consult page. Tell us about your child and preferred activities, and we’ll guide the next step.',
+    consultCta: 'Request a private lesson consult',
     consultSummaryTitle: '[MOVE REPORT SUMMARY]',
     consultName: 'Name',
     consultType: 'Type',

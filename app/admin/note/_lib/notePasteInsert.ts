@@ -11,7 +11,12 @@ export type PasteInsertContext = {
     parentId: string | null,
     type: NoteBlock['type'],
     insertIndex: number,
-    options?: { content?: Record<string, unknown>; focus?: boolean; registerUndo?: boolean },
+    options?: {
+      content?: Record<string, unknown>;
+      focus?: boolean;
+      registerUndo?: boolean;
+      reason?: 'explicit' | 'enter' | 'paste' | 'duplicate' | 'system';
+    },
   ) => Promise<NoteBlock | null>;
   changeBlockType: (block: NoteBlock, type: NoteBlock['type']) => Promise<void>;
   syncBlockContent: (
@@ -152,7 +157,7 @@ async function insertSpecsAmongSiblings(
       targetParentId,
       spec.type,
       clampedIndex,
-      { content, focus: false, registerUndo: false },
+      { content, focus: false, registerUndo: false, reason: 'paste' },
     );
     if (!created) break;
 

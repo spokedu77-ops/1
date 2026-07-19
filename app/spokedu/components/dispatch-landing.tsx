@@ -18,6 +18,7 @@ import { LandingSectionHeading } from './landing-section-heading';
 import { LandingStepPanel } from './landing-step-grid';
 import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
+import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
@@ -35,7 +36,7 @@ const dispatchAnchorItems = [
   { href: '#comparison', label: '차별성' },
   { href: '#programs', label: '프로그램' },
   { href: '#process', label: '도입 절차' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '#faq', label: '자주 묻는 질문' },
 ] as const;
 const dispatchPromiseCards = [
   {
@@ -111,14 +112,14 @@ function MidConsultCta() {
 
 export default function DispatchLanding() {
   return (
-    <div className="flex w-full flex-col gap-8 overflow-x-clip pb-24 sm:gap-10 lg:gap-12">
+    <div className="flex w-full flex-col gap-8 pb-24 sm:gap-10 lg:gap-12">
       <div id="hero">
         <LandingHero
           kicker={dispatchPage.hero.kicker}
           kickerClassName="text-stone-500"
           leading={
             <div className="rounded-2xl border border-teal-100 bg-teal-50/60 p-4 sm:max-w-xl">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">For Institutions</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-800">기관 담당자</p>
               <ul className="mt-3 grid gap-2 sm:grid-cols-3" aria-label="기관 프로그램 제안 기준">
                 {dispatchHeroChecks.map((item) => (
                   <li key={item} className="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-700">
@@ -155,7 +156,7 @@ export default function DispatchLanding() {
       <Section className={`${premiumPanelDark} px-5 py-6 sm:px-7 sm:py-7`}>
         <div className="grid gap-5 lg:grid-cols-[0.38fr_0.62fr] lg:items-start lg:gap-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">Institution Program</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">기관 프로그램</p>
             <h2 className="mt-2.5 text-xl font-black leading-tight tracking-tight sm:text-2xl [word-break:keep-all]">
               시키는 수업이 아니라, 움직이게 만드는 운영안을 제안합니다.
             </h2>
@@ -180,7 +181,7 @@ export default function DispatchLanding() {
               ))}
             </ul>
             <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3.5">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-200">Before Proposal</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-200">제안 전에</p>
               <ul className="mt-2.5 grid gap-2 sm:grid-cols-2">
                 {dispatchDecisionChecks.map((item) => (
                   <li key={item} className="rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/80">
@@ -359,9 +360,9 @@ export default function DispatchLanding() {
 
       <LandingFloatingCta
         primaryHref="#contact"
-        primaryLabel="맞춤 운영안 받아보기"
-        secondaryHref="https://pf.kakao.com/_VGWxeb/chat"
-        secondaryLabel="카카오 B2B 상담"
+        primaryLabel="기관 운영 상담"
+        secondaryHref={KAKAO_CHANNEL_URL || undefined}
+        secondaryLabel={KAKAO_CHANNEL_URL ? '카카오 상담' : undefined}
         showAfterId="hero"
       />
     </div>

@@ -1,13 +1,10 @@
-import { extractExactSectionLines, parseTextareaLines } from './lessonContentContract';
+import { parseTextareaLines } from './lessonContentContract';
 
 const INVALID_VIDEO = new Set(['', '-', '0', '123', 'none', 'null', 'undefined', '없음', '영상없음']);
-
-export const CONTENT_AUDIT_SAFETY_LABELS = ['안전 포인트', '안전 유의사항', '안전'] as const;
 
 export type ContentAuditChecks = {
   video: boolean;
   equipment: boolean;
-  safety: boolean;
   steps: boolean;
   tags: boolean;
 };
@@ -19,7 +16,6 @@ export type ContentAuditItemInput = {
   equipment?: string[] | string | null;
   steps?: string[] | string | null;
   tags?: string[] | null;
-  briefingNotes?: string | null;
   isHot?: boolean;
   displayOrder?: number | null;
 };
@@ -51,15 +47,10 @@ function toLines(value: string[] | string | null | undefined): string[] {
   return parseTextareaLines(value);
 }
 
-export function extractSafetyNotes(briefingNotes: string | null | undefined): string[] {
-  return CONTENT_AUDIT_SAFETY_LABELS.flatMap((label) => extractExactSectionLines(briefingNotes, label));
-}
-
 export function buildContentAuditItem(input: ContentAuditItemInput): ContentAuditItem {
   const checks: ContentAuditChecks = {
     video: Boolean(normalizeAuditVideoUrl(input.videoUrl)),
     equipment: toLines(input.equipment).length > 0,
-    safety: extractSafetyNotes(input.briefingNotes).length > 0,
     steps: toLines(input.steps).length > 0,
     tags: (input.tags ?? []).filter((tag) => typeof tag === 'string' && tag.trim()).length > 0,
   };
@@ -90,7 +81,6 @@ export function summarizeContentAudit(items: ContentAuditItem[]) {
   const byMissing = {
     video: items.filter((item) => !item.checks.video).length,
     equipment: items.filter((item) => !item.checks.equipment).length,
-    safety: items.filter((item) => !item.checks.safety).length,
     steps: items.filter((item) => !item.checks.steps).length,
     tags: items.filter((item) => !item.checks.tags).length,
   };

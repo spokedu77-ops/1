@@ -27,7 +27,7 @@ function ThemePhoto({ theme, priority }: { theme: NewsportsTheme; priority?: boo
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         className="object-cover brightness-[1.02] contrast-[1.04] saturate-[1.06]"
         priority={priority}
-        unoptimized={src.startsWith('/images/spokedu/')}
+        quality={75}
         onError={() => {
           if (src !== SPOKEDU_FALLBACK_FIELD) setSrc(SPOKEDU_FALLBACK_FIELD);
         }}

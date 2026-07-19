@@ -203,26 +203,26 @@ export const homeHeroImage = 'overflow-hidden rounded-xl border border-slate-200
 
 /** Home 풀블리드 Hero — 현장 사진 한 장으로 첫 인상 (2차 히어로와 구분) */
 export const homeHeroFullBleed =
-  'relative flex min-h-[min(88svh,860px)] w-full flex-col justify-end overflow-hidden bg-[#07101f] sm:min-h-[min(92svh,920px)]';
+  'relative flex min-h-[min(78svh,720px)] w-full flex-col justify-center overflow-hidden bg-[#07101f] sm:min-h-[min(84svh,780px)]';
 
 export const homeHeroFullBleedScrim =
-  'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(7,16,31,0.25)_0%,rgba(7,16,31,0.2)_35%,rgba(7,16,31,0.72)_72%,rgba(7,16,31,0.94)_100%)]';
+  'pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,rgba(7,16,31,0.82)_0%,rgba(7,16,31,0.55)_42%,rgba(7,16,31,0.28)_70%,rgba(7,16,31,0.45)_100%)]';
 
 export const homeHeroFullBleedCopy =
-  'relative z-[1] w-full pb-14 pt-28 sm:pb-16 sm:pt-32 lg:pb-20 lg:pt-36';
+  'relative z-[1] w-full py-28 sm:py-32 lg:py-36';
 
 export const homeHeroBrand =
   'text-[11px] font-bold uppercase tracking-[0.28em] text-sky-200 sm:text-xs';
 
-export const homeHeroFullBleedTitle = `font-black tracking-[-0.03em] text-white ${koreanText} text-[2rem] leading-[1.08] min-[390px]:text-[2.25rem] min-[430px]:text-[2.5rem] sm:text-[3.25rem] sm:leading-[1.05] lg:text-[3.75rem] xl:text-[4.25rem]`;
+export const homeHeroFullBleedTitle = `font-black tracking-[-0.035em] text-white ${koreanText} text-[1.75rem] leading-[1.18] min-[390px]:text-[2rem] sm:text-[2.5rem] sm:leading-[1.14] lg:text-[3rem]`;
 
-export const homeHeroFullBleedLead = `mt-4 max-w-[34rem] text-base leading-[1.65] text-white/82 sm:mt-5 sm:text-[17px] lg:text-lg ${koreanText}`;
+export const homeHeroFullBleedLead = `text-[15px] leading-[1.6] text-white/75 sm:text-base ${koreanText}`;
 
 export const siteBtnPrimaryOnHero =
-  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl bg-white px-7 py-3.5 text-[15px] font-semibold text-[#0B1220] transition ${fineHover}hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base`;
+  `inline-flex items-center justify-center gap-2 rounded-full bg-white text-[14px] font-semibold text-[#0B1220] transition ${fineHover}hover:bg-sky-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:text-[15px]`;
 
 export const siteBtnSecondaryOnHero =
-  `inline-flex min-h-[3rem] items-center justify-center gap-2 rounded-2xl border border-white/45 bg-white/10 px-7 py-3.5 text-[15px] font-semibold text-white backdrop-blur-md transition ${fineHover}hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-[3.25rem] sm:text-base`;
+  `inline-flex items-center justify-center gap-2 rounded-full border border-white/50 bg-transparent text-[14px] font-semibold text-white transition ${fineHover}hover:bg-white/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:text-[15px]`;
 
 export const homeFocusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]';

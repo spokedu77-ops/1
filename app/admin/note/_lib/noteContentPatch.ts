@@ -9,7 +9,6 @@ export const DECORATION_CONTENT_KEYS = new Set([
 export const STORE_ONLY_CONTENT_KEYS = new Set([
   'text',
   'html',
-  'legacyText',
   ...DECORATION_CONTENT_KEYS,
   ...TOGGLE_LEGACY_CONTENT_KEYS,
 ]);
@@ -20,6 +19,21 @@ const PROTECTABLE_STRING_CONTENT_KEYS = new Set([
   'url',
   'caption',
 ]);
+
+const VOLATILE_LEGACY_CONTENT_KEYS = [
+  'legacyText',
+  'placedInToggle',
+  'createdInsideToggle',
+] as const;
+
+function stripVolatileLegacyContent(
+  content: Record<string, unknown>,
+): Record<string, unknown> {
+  if (!VOLATILE_LEGACY_CONTENT_KEYS.some((key) => key in content)) return content;
+  const next = { ...content };
+  for (const key of VOLATILE_LEGACY_CONTENT_KEYS) delete next[key];
+  return next;
+}
 
 /** React·서버 content와 스토어(편집 중 text/html)를 병합 — title·checked 등은 React 우선 */
 export function mergeBlockContentWithStore(
@@ -45,7 +59,7 @@ export function mergeBlockContentWithStore(
       merged[key] = storeValue;
     }
   }
-  return merged;
+  return stripVolatileLegacyContent(merged);
 }
 
 /** undo 스냅샷이 필요한 content 변경인지 */
@@ -121,5 +135,5 @@ export function mergeContentPatchWithActiveStore(
       merged[key] = storeVal;
     }
   }
-  return merged;
+  return stripVolatileLegacyContent(merged);
 }

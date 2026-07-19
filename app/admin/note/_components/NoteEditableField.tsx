@@ -87,6 +87,15 @@ type NoteEditableFieldProps = {
   slashHostRef?: React.RefObject<HTMLDivElement | null>;
 };
 
+function mapToolbarStyleToBlockType(
+  style: 'paragraph' | 'heading1' | 'heading2' | 'heading3',
+): MarkdownBlockTrigger {
+  if (style === 'heading1') return 'heading';
+  if (style === 'heading2') return 'heading2';
+  if (style === 'heading3') return 'heading3';
+  return 'text';
+}
+
 /**
  * 노션 방식: 활성 블록·필드 1개만 TipTap(싱글톤 호스트), 나머지는 정적 미리보기.
  */
@@ -200,10 +209,9 @@ export function NoteEditableField({
       text: nextText,
       html: nextHtml,
     };
-    const original = baseContent.text;
-    if (typeof baseContent.legacyText !== 'string' && typeof original === 'string') {
-      nextContent.legacyText = original;
-    }
+    delete nextContent.legacyText;
+    delete nextContent.placedInToggle;
+    delete nextContent.createdInsideToggle;
     pushContent(nextContent);
   };
 
@@ -222,6 +230,8 @@ export function NoteEditableField({
 
   const resolvedEditorText = rawPreviewText;
   const editorRichField = 'text' as const;
+  const canTurnToolbarStyleIntoBlock =
+    field === 'text' && onChangeType && isInlineRichTextBlockType(blockType);
 
   const editorProps: ComponentProps<typeof NoteEditor> = {
     content: editorContent,
@@ -254,7 +264,29 @@ export function NoteEditableField({
     },
     onEditorSurfaceReady: markEditorSurfaceReady,
     onSlashChange,
-    onShowFormatToolbar,
+    onShowFormatToolbar: onShowFormatToolbar
+      ? (
+        applyMark,
+        applyTextStyle,
+        applyTextColor,
+        applyHighlight,
+        position,
+        insertTable,
+        editLink,
+      ) => {
+        onShowFormatToolbar(
+          applyMark,
+          canTurnToolbarStyleIntoBlock
+            ? (style) => { onChangeType(mapToolbarStyleToBlockType(style)); }
+            : applyTextStyle,
+          applyTextColor,
+          applyHighlight,
+          position,
+          insertTable,
+          editLink,
+        );
+      }
+      : undefined,
     onHideFormatToolbar,
     uploadImage,
     onOpenDocumentById,

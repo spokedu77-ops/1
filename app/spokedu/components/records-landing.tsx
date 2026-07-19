@@ -48,11 +48,11 @@ function RecordCard({
   const inner = (
     <>
       {record.thumbnailSrc ? (
-        <div className="aspect-[5/4] max-h-[220px] shrink-0 overflow-hidden bg-slate-200 sm:aspect-[16/10] sm:max-h-none">
+        <div className="relative aspect-[5/4] max-h-[220px] shrink-0 overflow-hidden bg-slate-200 sm:aspect-[16/10] sm:max-h-none">
           <ExternalPhoto
             src={record.thumbnailSrc}
             alt={`${record.venue} 수업 사례`}
-            className="h-full w-full"
+            className="absolute inset-0 h-full w-full"
             priority={photoPriority}
           />
         </div>
@@ -137,11 +137,7 @@ function RecordsPageHeader() {
         {recordsPage.hero.subtitle}
       </p>
       <dl className="mt-5 grid gap-2 sm:grid-cols-3">
-        {[
-          ['5', '공개 운영 사례'],
-          ['4', '기관 유형'],
-          ['3', '운영 방식'],
-        ].map(([value, label]) => (
+        {recordsPage.hero.stats.map(({ value, label }) => (
           <div key={label} className="rounded-xl border border-slate-200/80 bg-white px-4 py-3">
             <dt className="text-xs font-medium text-slate-500">{label}</dt>
             <dd className="mt-1 text-xl font-black text-slate-950">{value}</dd>
@@ -170,6 +166,15 @@ export function RecordsLanding({ fieldRecords }: RecordsLandingProps) {
   const reducedMotion = useReducedMotion();
   const [activeFilter, setActiveFilter] = useState<RecordFilterId>('all');
 
+  const visibleFilters = useMemo(
+    () =>
+      recordFilters.filter((filter) => {
+        if (filter.id === 'all') return true;
+        return fieldRecords.some((record) => record.filters.includes(filter.id));
+      }),
+    [fieldRecords],
+  );
+
   const filteredRecords = useMemo(
     () => fieldRecords.filter((r) => matchesFilter(r, activeFilter)),
     [activeFilter, fieldRecords],
@@ -185,7 +190,7 @@ export function RecordsLanding({ fieldRecords }: RecordsLandingProps) {
           role="tablist"
           aria-label="수업 사례 분류"
         >
-          {recordFilters.map((filter) => {
+          {visibleFilters.map((filter) => {
             const active = activeFilter === filter.id;
             return (
               <button

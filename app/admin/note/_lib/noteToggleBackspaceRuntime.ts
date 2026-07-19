@@ -48,6 +48,23 @@ function liveBlocksForDocument(documentId: string): NoteBlock[] {
   return runtime.blocksRef.current.filter((block) => block.document_id === documentId);
 }
 
+function isEmptyHtml(value: unknown): boolean {
+  if (typeof value !== 'string') return true;
+  return value
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .trim().length === 0;
+}
+
+function hasPersistedVisibleText(content: Record<string, unknown> | null | undefined): boolean {
+  if (!content) return false;
+  const textKeys = ['text', 'title', 'body', 'legacyText', 'legacyBody'];
+  if (textKeys.some((key) => typeof content[key] === 'string' && content[key].trim().length > 0)) {
+    return true;
+  }
+  return !isEmptyHtml(content.html) || !isEmptyHtml(content.bodyHtml) || !isEmptyHtml(content.legacyBodyHtml);
+}
+
 function resolveToggleChildContext(block: NoteBlock) {
   const blocks = liveBlocksForDocument(block.document_id);
   const parentId = block.parent_block_id ?? null;
@@ -75,6 +92,9 @@ export function invokeToggleChildEmptyBackspace(blockId: string) {
   if (!runtime) return;
   const block = resolveLiveBlock(blockId);
   if (!block) return;
+  if (hasPersistedVisibleText(block.content as Record<string, unknown> | null | undefined)) {
+    return;
+  }
 
   const canMerge = !!planMergeWithPreviousBlock(liveBlocksForDocument(block.document_id), block.id);
 

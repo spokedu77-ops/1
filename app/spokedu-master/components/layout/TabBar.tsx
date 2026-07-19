@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 const PRIMARY_TABS = [
   { key: 'dashboard', label: '홈', shortLabel: '홈', Icon: Home },
   { key: 'library', label: '라이브러리', shortLabel: '자료', Icon: BookOpen },
-  { key: 'spomove', label: 'SPOMOVE', shortLabel: 'SPOMOVE', Icon: Tv },
+  { key: 'spomove', label: 'SPOMOVE', shortLabel: '무브', Icon: Tv },
   { key: 'class-tools', label: '수업 도구', shortLabel: '도구', Icon: Wrench },
 ] as const;
 
@@ -64,7 +64,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                 <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? 'var(--spm-acc)' : 'transparent' }}>
                   <Icon size={17} strokeWidth={1.9} color={active ? '#ffffff' : '#64748b'} />
                 </span>
-                <span className="max-w-full truncate px-0.5 text-center text-[10px] font-bold leading-tight" style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}>
+                <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}>
                   {shortLabel}
                 </span>
               </button>
@@ -81,7 +81,7 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
             <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: activityActive ? 'var(--spm-acc)' : 'transparent' }}>
               <FileText size={17} strokeWidth={1.9} color={activityActive ? '#ffffff' : '#64748b'} />
             </span>
-            <span className="max-w-full truncate px-0.5 text-center text-[10px] font-bold leading-tight" style={{ color: activityActive ? 'var(--spm-acc)' : '#64748b' }}>
+            <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: activityActive ? 'var(--spm-acc)' : '#64748b' }}>
               기록
             </span>
           </button>

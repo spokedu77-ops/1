@@ -9,6 +9,10 @@ const stableRecordMediaBySlug: Partial<Record<string, HomeMediaKey>> = {
   'yangcheon-paps': 'proofYangcheon',
   'dasarang-oneday': 'proofDasarang',
   'seodaemun-event-booth': 'proofEvent',
+  'maedong-sports-stepup': 'proofCenter',
+  'donghaeng-special-pe': 'proofDongjak',
+  'gangdong-health-pe': 'proofYangcheon',
+  'shinwol-integrated-pe': 'proofEvent',
 };
 
 export type FieldRecordWithThumbnail = FieldRecordItem & {
@@ -19,25 +23,23 @@ export type HomeFieldRecordCardWithThumbnail = (HomeFieldRecordCardFromCatalog |
   thumbnailSrc?: string;
 };
 
-/** 카탈로그에 고정된 thumbnailSrc를 그대로 전달 (런타임 fetch 없음) */
+/** 카탈로그 thumbnailSrc(로컬 고정)를 유지하고, 없으면 mediaKey 폴백 */
 export function resolveFieldRecordsWithThumbnails(
   records: readonly FieldRecordItem[],
 ): FieldRecordWithThumbnail[] {
-  return records.map((record) => {
-    const resolved: FieldRecordWithThumbnail = { ...record };
-    resolved.mediaKey = stableRecordMediaBySlug[record.slug] ?? record.mediaKey;
-    delete resolved.thumbnailSrc;
-    return resolved;
-  });
+  return records.map((record) => ({
+    ...record,
+    mediaKey: stableRecordMediaBySlug[record.slug] ?? record.mediaKey,
+    thumbnailSrc: record.thumbnailSrc,
+  }));
 }
 
 export function resolveHomeFieldRecordCards(
   cards: readonly (HomeFieldRecordCardFromCatalog | HomeCaseCard)[],
 ): HomeFieldRecordCardWithThumbnail[] {
-  return cards.map((card) => {
-    const resolved: HomeFieldRecordCardWithThumbnail = { ...card };
-    resolved.mediaKey = stableRecordMediaBySlug[card.slug] ?? card.mediaKey;
-    delete resolved.thumbnailSrc;
-    return resolved;
-  });
+  return cards.map((card) => ({
+    ...card,
+    mediaKey: stableRecordMediaBySlug[card.slug] ?? card.mediaKey,
+    thumbnailSrc: card.thumbnailSrc,
+  }));
 }

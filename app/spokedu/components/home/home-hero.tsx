@@ -5,7 +5,6 @@ import { HOME_MEDIA } from '../../data/home-media';
 import { homePage } from '../../data/home-page';
 import {
   homeFocusRing,
-  homeHeroBrand,
   homeHeroFullBleed,
   homeHeroFullBleedCopy,
   homeHeroFullBleedLead,
@@ -21,8 +20,9 @@ import {
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 
-const PAD_ACCENTS = ['#EF4444', '#EAB308', '#22C55E', '#3B82F6'] as const;
-
+/**
+ * 히어로: 헤드라인 · 설명 · CTA
+ */
 export function HomeHero() {
   const media = HOME_MEDIA[homePage.hero.mediaKey];
   const [line1, line2] = homePage.hero.lines;
@@ -45,42 +45,34 @@ export function HomeHero() {
         />
       </div>
       <div className={homeHeroFullBleedScrim} aria-hidden />
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-[#1D4ED8]/25 to-transparent"
-        aria-hidden
-      />
 
       <div className={homeHeroFullBleedCopy}>
         <div className={siteContainer}>
           <motion.div
-            className="max-w-[42rem]"
-            initial={reducedMotion ? false : { opacity: 0, y: 22 }}
+            className="flex max-w-[36rem] flex-col"
+            initial={reducedMotion ? false : { opacity: 0, y: 14 }}
             animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="mb-4 flex gap-1.5" aria-hidden>
-              {PAD_ACCENTS.map((hex) => (
-                <span key={hex} className="h-1 w-8 rounded-full sm:w-10" style={{ backgroundColor: hex }} />
-              ))}
-            </div>
-            <p className={homeHeroBrand}>SPOKEDU</p>
-            <h1 id="home-hero-heading" className={`${homeHeroFullBleedTitle} mt-3 sm:mt-4`}>
-              <span className={homeHeroH1Line}>{line1}</span>
-              <span className={`${homeHeroH1Line} mt-1 text-sky-200`}>{line2}</span>
+            <h1 id="home-hero-heading" className={homeHeroFullBleedTitle}>
+              <span className={`${homeHeroH1Line} block`}>{line1}</span>
+              <span className={`${homeHeroH1Line} mt-1 block`}>{line2}</span>
             </h1>
-            <p className={homeHeroFullBleedLead}>{homePage.hero.support}</p>
-            <div className="mt-8 flex w-full flex-col gap-3 sm:mt-9 sm:w-auto sm:flex-row sm:flex-wrap">
+
+            <p className={`${homeHeroFullBleedLead} mt-4 max-w-[28rem]`}>{homePage.hero.support}</p>
+
+            <div className="mt-8 flex flex-wrap items-center gap-3">
               <TrackedLink
                 href={homePage.hero.primaryCta.href}
                 trackLabel={homePage.hero.primaryCta.trackLabel}
-                className={`${siteBtnPrimaryOnHero} w-full sm:w-auto ${homeFocusRing}`}
+                className={`${siteBtnPrimaryOnHero} h-12 min-h-12 whitespace-nowrap px-6 ${homeFocusRing}`}
               >
                 {homePage.hero.primaryCta.label}
               </TrackedLink>
               <TrackedLink
                 href={homePage.hero.secondaryCta.href}
                 trackLabel={homePage.hero.secondaryCta.trackLabel}
-                className={`${siteBtnSecondaryOnHero} w-full sm:w-auto ${homeFocusRing}`}
+                className={`${siteBtnSecondaryOnHero} h-12 min-h-12 whitespace-nowrap px-6 ${homeFocusRing}`}
               >
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>

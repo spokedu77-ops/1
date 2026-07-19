@@ -98,7 +98,7 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
     ]);
   });
 
-  it('treats page links as terminal clipboard nodes', () => {
+  it('serializes page links as local container nodes', () => {
     const blocks: NoteBlock[] = [
       {
         ...block('page-link', 'page', 0),
@@ -113,7 +113,7 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
     const payload = buildBlockClipboardPayload(blocks, ['page-link']);
     const specs = clipboardPayloadToPasteSpecs(payload!);
 
-    expect(payload?.blocks[0].children).toBeUndefined();
+    expect(payload?.blocks[0].children).toHaveLength(1);
     expect(specs).toEqual([
       expect.objectContaining({
         type: 'page',

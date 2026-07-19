@@ -11,7 +11,6 @@ import {
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
-import { allowsLocalChildBlocks } from './noteBlockSemantics';
 import type { NoteBlock } from './types';
 
 export type NoteBlockCommandResult = {
@@ -58,7 +57,6 @@ export function collectDeletableBlockForestIds(
     const block = byId.get(id);
     if (!block || result.has(id)) return;
     result.add(id);
-    if (!allowsLocalChildBlocks(block)) return;
     for (const child of childrenByParent.get(id) ?? []) visit(child.id);
   };
 

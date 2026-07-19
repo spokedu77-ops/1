@@ -93,6 +93,12 @@ export function outboundHasUnpublishedTopology(
   });
 }
 
+export function shouldAllowRemotePullBeforePush(
+  items: ReadonlyArray<NoteBlockOpPushItem>,
+): boolean {
+  return !outboundHasUnpublishedTopology(items);
+}
+
 function collectCreateIdsFromOutbound(
   outbound: ReadonlyArray<NoteBlockOpPushItem>,
 ): Set<string> {

@@ -28,6 +28,18 @@ describe('mergeBlockContentWithStore', () => {
       { title: '로컬 제목' },
     )).toEqual({ title: '서버 제목' });
   });
+  it('does not resurrect legacy body fields from store during content merge', () => {
+    expect(mergeBlockContentWithStore(
+      { text: 'current', html: '<p>current</p>' },
+      {
+        text: 'current',
+        html: '<p>current</p>',
+        legacyText: 'old mixed body',
+        placedInToggle: true,
+        createdInsideToggle: true,
+      },
+    )).toEqual({ text: 'current', html: '<p>current</p>' });
+  });
 });
 
 describe('contentChangeNeedsReactBlocks', () => {

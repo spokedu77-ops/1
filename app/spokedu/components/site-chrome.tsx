@@ -12,9 +12,11 @@ import {
   type SiteNavEntry,
   type SiteNavLink,
 } from '../data/site';
+import { BrandLogo } from './brand-logo';
+import { isExternalHref, externalLinkProps } from '../lib/external-link';
+import { scrollSpokeduToTop } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
 import { koreanText, siteContainer } from '../lib/ui-classes';
-import { isExternalHref, externalLinkProps } from '../lib/external-link';
 
 const ATHLETIC_BLUE = '#1D4ED8';
 const NAVY = '#0B1220';
@@ -67,7 +69,13 @@ function NavAnchor({
     'data-track-label': trackLabel,
     className,
     style,
-    onClick: onNavigate,
+    onClick: () => {
+      // 해시 앵커가 아니면 네비 클릭 시 항상 맨 위부터 (fullscreen 스크롤 잔여 방지)
+      if (!href.includes('#')) {
+        scrollSpokeduToTop();
+      }
+      onNavigate?.();
+    },
   };
 
   if (external) {
@@ -155,13 +163,13 @@ export function SiteHeader() {
   }, [programsOpen]);
 
   const linkClass = (active: boolean) =>
-    `text-[13px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+    `inline-flex h-9 items-center text-[13px] font-medium leading-none tracking-[-0.01em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
       onHero
         ? active
-          ? 'text-white'
-          : 'text-white/75 hover:text-white focus-visible:outline-white'
+          ? 'text-white underline decoration-white/80 underline-offset-[6px]'
+          : 'text-white/80 hover:text-white focus-visible:outline-white'
         : active
-          ? 'text-[#0B1220]'
+          ? 'text-[#0B1220] underline decoration-[#1D4ED8]/70 underline-offset-[6px]'
           : 'text-slate-600 hover:text-[#0B1220] focus-visible:outline-blue-600'
     }`;
 
@@ -182,18 +190,25 @@ export function SiteHeader() {
 
     const groupActive = isGroupActive(pathname, entry.children);
     return (
-      <div key={entry.label} className="relative">
+      <div key={entry.label} className="relative flex h-9 items-center">
         <button
           ref={programsButtonRef}
           type="button"
-          className={`inline-flex items-center gap-1 ${linkClass(groupActive || programsOpen)}`}
+          className={`inline-flex h-9 items-center gap-1 ${linkClass(groupActive || programsOpen)}`}
           aria-expanded={programsOpen}
           aria-controls="desktop-programs-menu"
           aria-haspopup="true"
           onClick={() => setProgramsOpen((open) => !open)}
         >
           {entry.label}
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden className={programsOpen ? 'rotate-180' : ''}>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            aria-hidden
+            className={`shrink-0 transition-transform ${programsOpen ? 'rotate-180' : ''}`}
+          >
             <path d="M2.5 4.5L6 8l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
@@ -274,33 +289,24 @@ export function SiteHeader() {
 
   return (
     <header
-      className={`${isHome ? 'fixed inset-x-0' : 'sticky'} top-0 z-40 transition-all duration-300 ${
+      className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
         onHero
           ? 'border-b border-white/10 bg-[#0B1220]/35 backdrop-blur-md'
-          : 'border-b border-slate-200/70 bg-white/90 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-xl'
+          : 'border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-xl'
       }`}
     >
-      <div className={`${siteContainer} flex items-center justify-between gap-3 py-4 sm:py-[1.125rem]`}>
-        <Link
-          href={SPOKEDU_BASE_PATH}
-          className={`text-[13px] font-semibold tracking-[0.14em] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-            onHero
-              ? 'text-white focus-visible:outline-white'
-              : 'text-[#0B1220] focus-visible:outline-blue-600'
-          }`}
-        >
-          {brandProfile.nameEn}
-        </Link>
+      <div className={`${siteContainer} flex h-14 items-center justify-between gap-3 sm:h-[3.75rem]`}>
+        <BrandLogo onDark={onHero} scrollHomeOnClick size="sm" />
 
-        <nav className="hidden items-center gap-6 lg:flex" aria-label="주 메뉴">
+        <nav className="hidden h-9 items-center gap-7 lg:flex" aria-label="주 메뉴">
           {siteNav.map(renderDesktopEntry)}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex h-9 items-center gap-2">
           <NavAnchor
             href={`${SPOKEDU_BASE_PATH}/contact`}
             trackLabel="header-contact"
-            className={`hidden min-h-11 items-center justify-center rounded-full px-5 py-2 text-xs font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex sm:text-[13px] ${
+            className={`hidden h-9 items-center justify-center rounded-full px-5 text-[13px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
               onHero
                 ? 'border border-white/35 bg-white text-[#0B1220] hover:bg-white/90 focus-visible:outline-white'
                 : 'text-white focus-visible:outline-blue-600'
@@ -378,30 +384,30 @@ export function SiteFooter() {
   const infoLinks = [
     { label: '스포키듀 소개', href: `${SPOKEDU_BASE_PATH}/about`, trackLabel: 'footer-info-about' },
     { label: '수업 사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-info-records' },
+    { label: '인사이트', href: `${SPOKEDU_BASE_PATH}/insights`, trackLabel: 'footer-info-insights' },
     { label: '문의', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'footer-info-contact' },
   ];
 
   const footerLinkClass =
-    'text-[15px] leading-relaxed text-white/75 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white';
+    `inline-flex min-h-8 items-center text-[14px] font-medium leading-none tracking-[-0.01em] text-white/75 transition hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${koreanText}`;
+  const footerHeadingClass = `text-[12px] font-semibold uppercase tracking-[0.12em] text-white/45 ${koreanText}`;
 
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">
-      <div className={`${siteContainer} py-14 sm:py-16`}>
+      <div className={`${siteContainer} py-12 sm:py-14`}>
         <div className="grid grid-cols-1 gap-10 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-4 min-[1200px]:items-start min-[1200px]:gap-12">
-          <div className="min-w-0 space-y-4 min-[640px]:col-span-2 min-[1200px]:col-span-1">
-            <Link href={SPOKEDU_BASE_PATH} className="inline-block text-lg font-bold tracking-[0.14em] text-white">
-              {brandProfile.nameEn}
-            </Link>
-            <p className={`text-[15px] font-medium text-white/90 ${koreanText}`}>{brandProfile.nameKo}</p>
-            <p className={`max-w-sm text-[15px] leading-relaxed text-white/70 ${koreanText}`}>{brandProfile.tagline}</p>
-            <p className={`text-sm text-white/55 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
+          <div className="min-w-0 space-y-3.5 min-[640px]:col-span-2 min-[1200px]:col-span-1">
+            <BrandLogo onDark scrollHomeOnClick size="md" />
+            <p className={`text-[14px] font-semibold leading-none text-white ${koreanText}`}>{brandProfile.nameKo}</p>
+            <p className={`max-w-sm text-[14px] leading-[1.65] text-white/65 ${koreanText}`}>{brandProfile.tagline}</p>
+            <p className={`text-[13px] leading-none text-white/45 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
           </div>
 
           <div className="min-w-0">
-            <p className={`text-sm font-semibold tracking-wide text-white/50 ${koreanText}`}>프로그램</p>
-            <ul className="mt-4 space-y-2.5">
+            <p className={footerHeadingClass}>프로그램</p>
+            <ul className="mt-4 space-y-1">
               {programLinks.map((link) => (
-                <li key={link.href}>
+                <li key={link.href} className="flex">
                   <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
                     {link.label}
                   </Link>
@@ -411,10 +417,10 @@ export function SiteFooter() {
           </div>
 
           <div className="min-w-0">
-            <p className={`text-sm font-semibold tracking-wide text-white/50 ${koreanText}`}>정보</p>
-            <ul className="mt-4 space-y-2.5">
+            <p className={footerHeadingClass}>정보</p>
+            <ul className="mt-4 space-y-1">
               {infoLinks.map((link) => (
-                <li key={link.href}>
+                <li key={link.href} className="flex">
                   <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
                     {link.label}
                   </Link>
@@ -424,24 +430,24 @@ export function SiteFooter() {
           </div>
 
           <div className="min-w-0">
-            <p className={`text-sm font-semibold tracking-wide text-white/50 ${koreanText}`}>연락처</p>
-            <ul className="mt-4 space-y-3 text-[15px] text-white/80">
-              <li>
-                <span className="text-white/55">대표 </span>
+            <p className={footerHeadingClass}>연락처</p>
+            <ul className="mt-4 space-y-1">
+              <li className={`flex min-h-8 items-center text-[14px] leading-none text-white/80 ${koreanText}`}>
+                <span className="text-white/45">대표&nbsp;</span>
                 {brandProfile.representative}
               </li>
-              <li>
+              <li className="flex">
                 <a id="footer-phone-link" href={brandContactLinks.phone} data-track="cta-phone" data-track-label="footer-phone" className={footerLinkClass}>
                   {brandProfile.phone}
                 </a>
               </li>
-              <li>
+              <li className="flex">
                 <a id="footer-email-link" href={brandContactLinks.email} data-track="cta-email" data-track-label="footer-email" className={`${footerLinkClass} break-all`}>
                   {brandProfile.email}
                 </a>
               </li>
               {blogLink ? (
-                <li>
+                <li className="flex">
                   <a
                     href={blogLink.href}
                     target="_blank"
@@ -458,8 +464,8 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-white/10 pt-6">
-          <p className="text-sm text-white/45">
+        <div className="mt-10 flex min-h-10 items-center border-t border-white/10 pt-5">
+          <p className="text-[12px] leading-none tracking-[-0.01em] text-white/40">
             © {new Date().getFullYear()} {brandProfile.nameEn}. All rights reserved.
           </p>
         </div>

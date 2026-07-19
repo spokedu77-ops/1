@@ -1,3 +1,5 @@
+import { canPlaceBlockInParent } from './noteBlockPolicy';
+
 export type NoteBlockLike = {
   id: string;
   parent_block_id?: string | null;
@@ -285,8 +287,11 @@ export function planBlockDropAt<T extends BlockWithMeta>(
   const withoutMoving = (parentId: string | null) =>
     getBlocksInParent(blocks, parentId).filter((block) => block.id !== moving.id);
 
-  const finish = (targetParentId: string | null, ordered: T[]): BlockDropPlan<T> => {
+  const finish = (targetParentId: string | null, ordered: T[]): BlockDropPlan<T> | null => {
     const parentBlock = targetParentId ? byId.get(targetParentId) : undefined;
+    if (!canPlaceBlockInParent(moving, parentBlock ?? null)) {
+      return null;
+    }
     return {
       targetParentId,
       targetSiblings: ordered.map((block, index) => ({ ...block, order_index: index })),
@@ -295,11 +300,14 @@ export function planBlockDropAt<T extends BlockWithMeta>(
   };
 
   if (position === 'inside') {
+    if (!canPlaceBlockInParent(moving, target)) return null;
     const children = withoutMoving(target.id);
     return finish(target.id, [...children, moving]);
   }
 
   const parentId = target.parent_block_id ?? null;
+  const parentBlock = parentId ? byId.get(parentId) : undefined;
+  if (!canPlaceBlockInParent(moving, parentBlock ?? null)) return null;
   const siblings = withoutMoving(parentId);
   let insertAt = siblings.findIndex((block) => block.id === target.id);
   if (insertAt < 0) return null;
@@ -350,6 +358,7 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
 
     // 체크리스트는 parent_block_id 중첩 대신 listNestLevel — planTodoListNestTab이 처리
     if (moving.type === 'todo' && (prev.type === 'todo' || prev.type === 'text')) return null;
+    if (!canPlaceBlockInParent(moving, prev)) return null;
 
     const children = getBlocksInParent(blocks, prev.id).filter((block) => block.id !== moving.id);
     const targetSiblings = [...children, moving].map((block, index) => ({ ...block, order_index: index }));
@@ -378,6 +387,7 @@ export function planBlockTabIndent<T extends BlockWithMeta>(
   ].map((block, index) => ({ ...block, order_index: index }));
 
   const grandParent = grandParentId ? byId.get(grandParentId) : undefined;
+  if (!canPlaceBlockInParent(moving, grandParent ?? null)) return null;
   return {
     targetParentId: grandParentId,
     targetSiblings,
@@ -421,13 +431,7 @@ export function buildReparentContentPatch(
   placedInToggle: boolean,
 ): Record<string, unknown> | undefined {
   const base = (content ?? {}) as Record<string, unknown>;
-  if (placedInToggle) {
-    return {
-      ...base,
-      placedInToggle: true,
-      createdInsideToggle: true,
-    };
-  }
+  void placedInToggle;
   if (!base.placedInToggle && !base.createdInsideToggle) return undefined;
   const next = { ...base };
   delete next.placedInToggle;
@@ -563,6 +567,7 @@ export function planBlockForestDropAt<T extends BlockWithMeta>(
   const byId = new Map(blocks.map((block) => [block.id, block]));
   const target = byId.get(targetBlockId);
   if (!target) return null;
+  if (!roots.every((moving) => canPlaceBlockInParent(moving, target))) return null;
 
   for (const moving of roots) {
     const descendantIds = collectDescendantBlockIds(moving.id, blocks);

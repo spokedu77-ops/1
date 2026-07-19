@@ -8,10 +8,10 @@ import {
 } from './noteBlockSemantics';
 
 describe('note block semantics', () => {
-  it('distinguishes page drop targets from local tree containers', () => {
+  it('treats page blocks as local tree containers', () => {
     expect(isPageLinkBlock({ type: 'page' })).toBe(true);
     expect(supportsInsideDropTarget('page')).toBe(true);
-    expect(allowsLocalChildBlocks({ type: 'page' })).toBe(false);
+    expect(allowsLocalChildBlocks({ type: 'page' })).toBe(true);
   });
 
   it('allows toggles and list-like blocks to own local children', () => {
@@ -25,6 +25,6 @@ describe('note block semantics', () => {
   it('identifies checklist blocks as text blocks with checked state', () => {
     expect(isTodoBlock({ type: 'todo' })).toBe(true);
     expect(supportsInsideDropTarget('todo')).toBe(false);
-    expect(allowsLocalChildBlocks({ type: 'todo' })).toBe(true);
+    expect(allowsLocalChildBlocks({ type: 'todo' })).toBe(false);
   });
 });

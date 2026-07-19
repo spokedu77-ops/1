@@ -42,6 +42,7 @@ function NoteLinkEditorPopover({ session }: { session: NoteLinkEditorSession }) 
   return (
     <div
       data-note-format-toolbar
+      data-note-overlay-menu
       className="pointer-events-auto fixed z-[10060] w-[min(360px,calc(100vw-24px))] -translate-y-full rounded-xl border border-slate-200 bg-white p-2 shadow-xl"
       style={{ left: session.anchor.left, top: session.anchor.top }}
       onMouseDown={(e) => e.stopPropagation()}
@@ -167,8 +168,10 @@ export function NoteFormatToolbarHost({ apiRef }: { apiRef: MutableRefObject<Not
       {toolbar ? (
         <div
           data-note-format-toolbar
+          data-note-overlay-menu
           className="pointer-events-auto fixed z-[10050] -translate-x-1/2 -translate-y-full rounded-xl border border-slate-200 bg-white/95 p-1 shadow-xl backdrop-blur"
           style={{ left: toolbar.position.left, top: toolbar.position.top }}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <BubbleToolbar
             applyMark={toolbar.applyMark}

@@ -18,6 +18,10 @@ export function ToggleDisclosureButton({
     <button
       type="button"
       className="relative z-20 flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-sm transition-colors hover:bg-neutral-100"
+      onMouseDown={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
       onClick={onClick}
       aria-label={collapsed ? '펼치기' : '접기'}
     >
@@ -190,6 +194,10 @@ export function DocItem({
             className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-neutral-400 hover:bg-neutral-200/80 hover:text-neutral-700"
             aria-label={isExpanded ? '하위 페이지 접기' : '하위 페이지 펼치기'}
             title={isExpanded ? '접기' : '펼치기'}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             onClick={(e) => {
               e.stopPropagation();
               onToggleExpand?.(e);

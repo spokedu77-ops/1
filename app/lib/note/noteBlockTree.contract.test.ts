@@ -45,6 +45,35 @@ describe('admin note minimum Notion block contract', () => {
     ]);
   });
 
+  it('keeps page as a first-class nested container', () => {
+    const blocks = [
+      block('page-a', null, 0, 'page'),
+      block('page-b', null, 1, 'page'),
+      block('todo', null, 2, 'todo'),
+      block('toggle', null, 3, 'toggle'),
+    ];
+
+    expect(planBlockDropAt(blocks, 'page-b', 'page-a', 'inside')?.targetParentId).toBe('page-a');
+    expect(planBlockDropAt(blocks, 'todo', 'page-a', 'inside')?.targetParentId).toBe('page-a');
+    expect(planBlockDropAt(blocks, 'toggle', 'page-a', 'inside')?.targetParentId).toBe('page-a');
+  });
+
+  it('keeps todo as a leaf, allows lists in toggles, and blocks page inside toggle', () => {
+    const blocks = [
+      block('todo-parent', null, 0, 'todo'),
+      block('toggle-parent', null, 1, 'toggle'),
+      block('page', null, 2, 'page'),
+      block('child', null, 3, 'todo'),
+      block('bullet', null, 4, 'bulletList'),
+      block('numbered', null, 5, 'numberedList'),
+    ];
+
+    expect(planBlockDropAt(blocks, 'child', 'todo-parent', 'inside')).toBeNull();
+    expect(planBlockDropAt(blocks, 'bullet', 'toggle-parent', 'inside')?.targetParentId).toBe('toggle-parent');
+    expect(planBlockDropAt(blocks, 'numbered', 'toggle-parent', 'inside')?.targetParentId).toBe('toggle-parent');
+    expect(planBlockDropAt(blocks, 'page', 'toggle-parent', 'inside')).toBeNull();
+  });
+
   it('rejects moving a block into its own descendant', () => {
     const blocks = [
       block('parent', null, 0, 'toggle'),

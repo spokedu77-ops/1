@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { privatePage } from '../data/private-page';
 import { koreanLineBreak, landingCardFrame } from '../lib/ui-classes';
+import { ExternalPhoto } from './external-photo';
 import { LandingSectionHeading } from './landing-section-heading';
 
 type ZoomedImage = { src: string; alt: string; title: string };
@@ -48,15 +49,13 @@ export function PrivateCurriculumSection() {
                 onClick={() => setZoomed({ src: item.img, alt: item.alt, title: item.title })}
                 aria-label={`${item.title} 이미지 확대`}
               >
-                <div className="relative aspect-[4/3] w-full overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#0b0b0d] p-2">
+                  <ExternalPhoto
                     src={item.img}
                     alt={item.alt}
-                    loading="lazy"
-                    decoding="async"
-                    referrerPolicy="no-referrer"
-                    className="absolute inset-0 h-full w-full object-contain p-2 transition duration-200 group-hover:opacity-95"
+                    className="absolute inset-2"
+                    fit="contain"
+                    sizes="(max-width: 640px) 50vw, 25vw"
                   />
                 </div>
               </button>
@@ -88,14 +87,16 @@ export function PrivateCurriculumSection() {
                 닫기
               </button>
             </div>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={zoomed.src}
-              alt={zoomed.alt}
-              decoding="async"
-              referrerPolicy="no-referrer"
-              className="mx-auto max-h-[calc(100vh-7rem)] w-auto max-w-full rounded-xl object-contain"
-            />
+            <div className="relative mx-auto h-[min(70vh,36rem)] w-full max-w-4xl overflow-hidden rounded-xl bg-slate-900">
+              <ExternalPhoto
+                src={zoomed.src}
+                alt={zoomed.alt}
+                className="absolute inset-0"
+                fit="contain"
+                priority
+                sizes="(max-width: 896px) 100vw, 896px"
+              />
+            </div>
           </div>
         </div>
       ) : null}

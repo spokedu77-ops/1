@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { CaseProofCard } from './case-proof-card';
 import { LandingFinalCta } from './landing-final-cta';
@@ -7,6 +8,7 @@ import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
 import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
+import { SPOKEDU_IMAGES } from '../data/images';
 import { spomoveProgramPage } from '../data/spomove-program-page';
 import {
   audienceLandingStack,
@@ -18,12 +20,12 @@ import {
 } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
-/** 실제 4색 패드 배치 — 좌상 빨강 · 우상 노랑 · 좌하 초록 · 우하 파랑 */
+/** 스포매트 실물 배치 — 좌상 초록 · 우상 빨강 · 좌하 파랑 · 우하 노랑 */
 const PAD_CELLS = [
-  { name: 'RED', ko: '빨강', hex: '#EF4444' },
-  { name: 'YELLOW', ko: '노랑', hex: '#EAB308' },
   { name: 'GREEN', ko: '초록', hex: '#22C55E' },
+  { name: 'RED', ko: '빨강', hex: '#EF4444' },
   { name: 'BLUE', ko: '파랑', hex: '#3B82F6' },
+  { name: 'YELLOW', ko: '노랑', hex: '#EAB308' },
 ] as const;
 
 /**
@@ -116,31 +118,32 @@ export default function SpomoveProgramLanding() {
             ))}
           </ol>
 
-          <div
-            className="mx-auto w-full max-w-[18rem] lg:mx-0 lg:max-w-none"
-            role="img"
-            aria-label="4색 패드 2×2: 빨강·노랑·초록·파랑"
-          >
-            <div className="rounded-[1.5rem] border border-slate-200 bg-[#FAFAF8] p-2.5">
-              <div className="grid aspect-square grid-cols-2 grid-rows-2 gap-2">
-                {PAD_CELLS.map((pad, index) => (
-                  <div
-                    key={pad.name}
-                    className="flex flex-col justify-between rounded-xl p-3 text-white"
-                    style={{ backgroundColor: pad.hex }}
-                  >
-                    <span className="text-[10px] font-bold tracking-[0.12em] text-white/80">{pad.name}</span>
-                    <div>
-                      <p className={`text-base font-black ${koreanText}`}>{pad.ko}</p>
-                      <p className={`text-xs font-semibold text-white/90 ${koreanText}`}>
-                        {page.padSystem.points[index]?.title}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+          <div className="mx-auto w-full max-w-[18rem] lg:mx-0 lg:max-w-none">
+            <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-[#FAFAF8] p-2.5 shadow-sm shadow-slate-900/5">
+              <div className="relative aspect-square overflow-hidden rounded-[1.15rem] bg-slate-200">
+                <Image
+                  src={SPOKEDU_IMAGES.brand.spomat.src}
+                  alt={SPOKEDU_IMAGES.brand.spomat.alt}
+                  fill
+                  sizes="(max-width: 1024px) 18rem, 20rem"
+                  className="object-cover"
+                />
               </div>
             </div>
-            <p className={`mt-2 text-center text-xs text-slate-500 ${koreanText}`}>현장 4색 패드 배치</p>
+            <p className={`mt-2 text-center text-xs font-semibold text-slate-600 ${koreanText}`}>
+              스포매트 · 현장 4색 반응 패드
+            </p>
+            <ul className="mt-2 grid grid-cols-2 gap-1.5" aria-label="스포매트 색 구성">
+              {PAD_CELLS.map((pad) => (
+                <li
+                  key={pad.name}
+                  className="flex items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700"
+                >
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: pad.hex }} aria-hidden />
+                  {pad.ko}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       </section>

@@ -48,9 +48,9 @@ export const brandChannels: BrandChannel[] = [
   {
     key: 'kakao-channel',
     label: '카카오채널',
-    href: '',
+    href: 'https://pf.kakao.com/_VGWxeb/chat',
     description: '상담/공지 채널',
-    isPending: true,
+    isPending: false,
   },
 ];
 

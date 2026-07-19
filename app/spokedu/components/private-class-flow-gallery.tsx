@@ -15,7 +15,7 @@ export function PrivateClassFlowGallery({ images, className = '' }: PrivateClass
   return (
     <div className={`flex h-full min-h-0 flex-col gap-3 ${className}`}>
       <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-sm lg:aspect-auto lg:min-h-0 lg:flex-[1.4]">
-        <ExternalPhoto src={hero.src} alt={hero.alt} className="absolute inset-0" fit="cover" priority />
+        <ExternalPhoto src={hero.src} alt={hero.alt} className="absolute inset-0" fit="cover" priority sizes="(max-width: 1024px) 100vw, 55vw" />
       </div>
       {thumbs.length > 0 ? (
         <div className="grid shrink-0 grid-cols-2 gap-3 lg:min-h-0 lg:flex-1 lg:shrink">
@@ -24,7 +24,13 @@ export function PrivateClassFlowGallery({ images, className = '' }: PrivateClass
               key={img.alt}
               className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-100 shadow-sm lg:aspect-auto lg:h-full lg:min-h-[7.5rem]"
             >
-              <ExternalPhoto src={img.src} alt={img.alt} className="absolute inset-0" fit="cover" />
+              <ExternalPhoto
+                src={img.src}
+                alt={img.alt}
+                className="absolute inset-0"
+                fit="cover"
+                sizes="(max-width: 1024px) 50vw, 28vw"
+              />
             </div>
           ))}
         </div>

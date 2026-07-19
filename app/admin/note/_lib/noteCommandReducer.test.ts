@@ -108,6 +108,82 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('typed');
   });
 
+  it('drops inactive empty todo placeholders from structural snapshots', () => {
+    const previous = [
+      block('heading', { type: 'heading3', content: { text: '총괄 체크', html: '<p>총괄 체크</p>' } }),
+      block('empty-todo', { type: 'todo', order_index: 1, content: { text: '', html: '<p></p>', checked: false } }),
+      block('todo', { type: 'todo', order_index: 2, content: { text: '마포 연락', html: '<p>마포 연락</p>', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'replaceBlocks', blocks: previous },
+      ctx,
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo']);
+  });
+
+  it('keeps the active empty todo while the user is editing it', () => {
+    const previous = [
+      block('empty-todo', { type: 'todo', content: { text: '', html: '<p></p>', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'replaceBlocks', blocks: previous },
+      { ...ctx, activeBlockId: 'empty-todo' },
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['empty-todo']);
+  });
+
+  it('preserves local checklist order from stale syncSnapshot while editing', () => {
+    const local = [
+      block('todo-c', { type: 'todo', order_index: 0, content: { text: 'C', checked: false } }),
+      block('todo-a', { type: 'todo', order_index: 1, content: { text: 'A', checked: false } }),
+      block('todo-b', { type: 'todo', order_index: 2, content: { text: 'B', checked: false } }),
+    ];
+    const staleIncoming = [
+      block('todo-a', { type: 'todo', order_index: 0, content: { text: 'A', checked: false } }),
+      block('todo-b', { type: 'todo', order_index: 1, content: { text: 'B', checked: false } }),
+      block('todo-c', { type: 'todo', order_index: 2, content: { text: 'C', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      local,
+      { type: 'syncSnapshot', blocks: staleIncoming },
+      { ...ctx, activeBlockId: 'todo-a' },
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
+    expect(blocks.map((item) => item.order_index)).toEqual([0, 1, 2]);
+  });
+
+  it('preserves existing block positions from syncSnapshot even when no editor is active', () => {
+    const local = [
+      block('heading', { type: 'heading3', order_index: 0, content: { text: '총괄' } }),
+      block('todo-c', { type: 'todo', order_index: 1, content: { text: 'C', checked: false } }),
+      block('todo-a', { type: 'todo', order_index: 2, content: { text: 'A edited', checked: false } }),
+      block('todo-b', { type: 'todo', order_index: 3, content: { text: 'B', checked: false } }),
+    ];
+    const staleIncoming = [
+      block('heading', { type: 'heading3', order_index: 0, content: { text: '총괄' } }),
+      block('todo-a', { type: 'todo', order_index: 1, content: { text: 'A server', checked: false } }),
+      block('todo-b', { type: 'todo', order_index: 2, content: { text: 'B server', checked: false } }),
+      block('todo-c', { type: 'todo', order_index: 3, content: { text: 'C server', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      local,
+      { type: 'syncSnapshot', blocks: staleIncoming },
+      ctx,
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['heading', 'todo-c', 'todo-a', 'todo-b']);
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A server' });
+  });
+
   it('syncSnapshot preserves local page-link identity over empty incoming content', () => {
     const previous = [block('page-link', {
       type: 'page',

@@ -1,9 +1,19 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react';
 import Link from 'next/link';
 import {
+  Check,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   Image as ImageIcon,
   Loader2,
@@ -1362,6 +1372,225 @@ function PreviewPane({ item, form }: { item: ProgramItem; form: EditForm }) {
   );
 }
 
+function SlotProgramCombobox({
+  items,
+  selectedId,
+  selectedElsewhere,
+  disabled,
+  onSelect,
+}: {
+  items: ProgramItem[];
+  selectedId: number | null;
+  selectedElsewhere: Set<number>;
+  disabled?: boolean;
+  onSelect: (curriculumId: number | null) => void;
+}) {
+  const listboxId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [highlight, setHighlight] = useState(0);
+
+  const selected = items.find((item) => item.curriculum.id === selectedId) ?? null;
+  const inputValue = open ? query : selected?.effective.title ?? '';
+
+  const options = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return items
+      .filter((item) => {
+        const id = item.curriculum.id;
+        if (selectedElsewhere.has(id) && id !== selectedId) return false;
+        if (!normalized) return true;
+        const text =
+          `${item.effective.title} ${item.curriculum.title} ${item.curriculum.id}`.toLowerCase();
+        return text.includes(normalized);
+      })
+      .sort((a, b) => {
+        const titleCompare = koreanTitleCollator.compare(
+          a.effective.title.trim(),
+          b.effective.title.trim(),
+        );
+        return titleCompare || a.curriculum.id - b.curriculum.id;
+      });
+  }, [items, query, selectedElsewhere, selectedId]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery('');
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    setHighlight(0);
+  }, [query, open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const active = listRef.current?.querySelector<HTMLElement>('[data-active="true"]');
+    active?.scrollIntoView({ block: 'nearest' });
+  }, [highlight, open, options]);
+
+  const choose = (curriculumId: number | null) => {
+    onSelect(curriculumId);
+    setOpen(false);
+    setQuery('');
+    inputRef.current?.blur();
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      setHighlight((current) => {
+        if (current < 0) return 0;
+        return Math.min(current + 1, Math.max(options.length - 1, 0));
+      });
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      setHighlight((current) => {
+        if (current <= 0) return -1;
+        return current - 1;
+      });
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      if (!open) {
+        setOpen(true);
+        return;
+      }
+      if (highlight < 0) {
+        choose(null);
+        return;
+      }
+      const item = options[highlight];
+      if (item) choose(item.curriculum.id);
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setOpen(false);
+      setQuery('');
+    }
+  };
+
+  return (
+    <div ref={rootRef} className="relative mt-2">
+      <Search
+        className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-slate-400"
+        size={14}
+      />
+      <input
+        ref={inputRef}
+        value={inputValue}
+        disabled={disabled}
+        role="combobox"
+        aria-expanded={open}
+        aria-autocomplete="list"
+        aria-controls={listboxId}
+        autoComplete="off"
+        placeholder={selected ? selected.effective.title : '프로그램명 또는 ID 검색'}
+        onFocus={() => {
+          setOpen(true);
+          setQuery('');
+        }}
+        onChange={(event) => {
+          setQuery(event.target.value);
+          if (!open) setOpen(true);
+        }}
+        onKeyDown={onKeyDown}
+        className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-9 text-[12px] font-bold text-slate-800 outline-none focus:border-indigo-400 disabled:opacity-50"
+      />
+      <ChevronDown
+        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+        size={14}
+      />
+      {open ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
+          <p className="border-b border-slate-100 px-3 py-1.5 text-[10px] font-black text-slate-400">
+            {options.length}개 · 키보드 ↑↓ Enter
+          </p>
+          <ul
+            ref={listRef}
+            id={listboxId}
+            role="listbox"
+            className="max-h-56 overflow-y-auto py-1"
+          >
+            <li role="option" aria-selected={selectedId == null}>
+              <button
+                type="button"
+                data-active={highlight === -1 ? 'true' : undefined}
+                onMouseEnter={() => setHighlight(-1)}
+                onClick={() => choose(null)}
+                className="flex w-full items-center justify-between px-3 py-2 text-left text-[12px] font-bold"
+                style={{
+                  background: highlight === -1 ? '#eef2ff' : 'transparent',
+                  color: highlight === -1 ? '#4338ca' : '#64748b',
+                }}
+              >
+                빈 슬롯
+              </button>
+            </li>
+            {options.length === 0 ? (
+              <li className="px-3 py-3 text-[12px] font-bold text-slate-400">검색 결과 없음</li>
+            ) : (
+              options.map((item, optionIndex) => {
+                const active = highlight === optionIndex;
+                const isSelected = item.curriculum.id === selectedId;
+                return (
+                  <li
+                    key={item.curriculum.id}
+                    role="option"
+                    aria-selected={isSelected}
+                  >
+                    <button
+                      type="button"
+                      data-active={active ? 'true' : undefined}
+                      onMouseEnter={() => setHighlight(optionIndex)}
+                      onClick={() => choose(item.curriculum.id)}
+                      className="flex w-full items-center justify-between gap-2 px-3 py-2 text-left"
+                      style={{
+                        background: active ? '#eef2ff' : isSelected ? '#f8fafc' : 'transparent',
+                      }}
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-[12px] font-black text-slate-900">
+                          {item.effective.title}
+                        </span>
+                        <span className="block text-[10px] font-bold text-slate-400">
+                          #{item.curriculum.id}
+                        </span>
+                      </span>
+                      {isSelected ? <Check size={14} className="shrink-0 text-indigo-600" /> : null}
+                    </button>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function WeeklyRecommendationManager({
   items,
   onSaved,
@@ -1370,7 +1599,6 @@ function WeeklyRecommendationManager({
   onSaved: () => Promise<void>;
 }) {
   const [slots, setSlots] = useState<Array<number | null>>([null, null, null, null]);
-  const [queries, setQueries] = useState(['', '', '', '']);
   const [loadingSlots, setLoadingSlots] = useState(true);
   const [savingSlots, setSavingSlots] = useState(false);
 
@@ -1455,7 +1683,8 @@ function WeeklyRecommendationManager({
               이번주 추천 프로그램 관리
             </h2>
             <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-              선택한 프로그램은 슬롯 순서대로 홈에 반영되며, 빈 슬롯은 자동 추천으로 보완됩니다.
+              프로그램명·ID로 검색해 고르세요. 선택한 프로그램은 슬롯 순서대로 홈에 반영되며, 빈
+              슬롯은 자동 추천으로 보완됩니다.
             </p>
           </div>
           <button
@@ -1471,25 +1700,9 @@ function WeeklyRecommendationManager({
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {slots.map((selectedId, index) => {
-            const query = queries[index].trim().toLowerCase();
             const selectedElsewhere = new Set(
-              slots.filter((id, slotIndex) => slotIndex !== index && id != null),
+              slots.filter((id, slotIndex): id is number => slotIndex !== index && id != null),
             );
-            const options = items
-              .filter((item) => {
-                if (item.curriculum.id === selectedId) return true;
-                if (!query) return true;
-                const text =
-                  `${item.effective.title} ${item.curriculum.title} ${item.curriculum.id}`.toLowerCase();
-                return text.includes(query);
-              })
-              .sort((a, b) => {
-                const titleCompare = koreanTitleCollator.compare(
-                  a.effective.title.trim(),
-                  b.effective.title.trim(),
-                );
-                return titleCompare || a.curriculum.id - b.curriculum.id;
-              });
 
             return (
               <div key={index} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -1507,43 +1720,18 @@ function WeeklyRecommendationManager({
                     </button>
                   ) : null}
                 </div>
-                <div className="relative mt-2">
-                  <Search
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    size={14}
-                  />
-                  <input
-                    value={queries[index]}
-                    onChange={(event) =>
-                      setQueries((current) =>
-                        current.map((value, queryIndex) =>
-                          queryIndex === index ? event.target.value : value,
-                        ),
-                      )
-                    }
-                    placeholder="프로그램 검색"
-                    className="h-9 w-full rounded-lg border border-slate-200 bg-white pl-8 pr-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                  />
-                </div>
-                <select
-                  value={selectedId ?? ''}
+                <SlotProgramCombobox
+                  items={items}
+                  selectedId={selectedId}
+                  selectedElsewhere={selectedElsewhere}
                   disabled={loadingSlots}
-                  onChange={(event) =>
-                    updateSlot(index, event.target.value ? Number(event.target.value) : null)
-                  }
-                  className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-2 text-[12px] font-bold text-slate-700 outline-none focus:border-indigo-400"
-                >
-                  <option value="">빈 슬롯</option>
-                  {options.map((item) => (
-                    <option
-                      key={item.curriculum.id}
-                      value={item.curriculum.id}
-                      disabled={selectedElsewhere.has(item.curriculum.id)}
-                    >
-                      {item.effective.title} · #{item.curriculum.id}
-                    </option>
-                  ))}
-                </select>
+                  onSelect={(curriculumId) => updateSlot(index, curriculumId)}
+                />
+                {selectedId != null ? (
+                  <p className="mt-1.5 text-[11px] font-bold text-slate-400">#{selectedId}</p>
+                ) : (
+                  <p className="mt-1.5 text-[11px] font-bold text-slate-400">비어 있음</p>
+                )}
               </div>
             );
           })}

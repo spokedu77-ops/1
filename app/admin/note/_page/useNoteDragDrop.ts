@@ -22,7 +22,7 @@ import {
 } from '@/app/lib/note/noteBlockTree';
 import { isDocumentDescendantOf } from '@/app/lib/note/orphanSubPageBlocks';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
-import { commitNoteDocumentBeforeLeave, mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
+import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
 import { markPendingBlockDeletes } from '../_lib/noteReconcileIdle';
 import { removeStructuralExcludeIds } from '../_lib/noteStructuralExcludeRegistry';
@@ -247,6 +247,7 @@ export function useNoteDragDrop(options: {
       logLabel: string;
       errorMessage: string;
       afterPersist?: () => void;
+      optimistic?: boolean;
     },
   ): Promise<boolean> => {
     if (command.affectedIds.length === 0) return false;
@@ -255,11 +256,17 @@ export function useNoteDragDrop(options: {
       command.nextBlocks,
       command.affectedIds,
     );
-    setBlocks(command.nextBlocks);
-    onAfterBlocksChanged?.(command.nextBlocks);
+    if (options.optimistic !== false) {
+      setBlocks(command.nextBlocks);
+      onAfterBlocksChanged?.(command.nextBlocks);
+    }
     try {
       await persistBlockReparent(command);
       await documentEngine.flushPersistQueue();
+      if (options.optimistic === false) {
+        setBlocks(command.nextBlocks);
+        onAfterBlocksChanged?.(command.nextBlocks);
+      }
       options.afterPersist?.();
       return true;
     } catch (e) {
@@ -393,6 +400,7 @@ export function useNoteDragDrop(options: {
             logLabel: '[Note] moveBlockToCurrentDoc',
             errorMessage: '블록 순서 저장 실패',
             afterPersist: triggerSave,
+            optimistic: false,
           },
         );
         return;
@@ -433,63 +441,7 @@ export function useNoteDragDrop(options: {
       if (target && !groupDragIds.includes(target.blockId)) {
         if (target.position === 'inside') {
           const container = prevBlocks.find((block) => block.id === target.blockId);
-          if (container?.type === 'page') {
-            const targetDocId =
-              typeof container.content?.page_document_id === 'string'
-                ? container.content.page_document_id.trim()
-                : '';
-            if (targetDocId && targetDocId !== selectedId) {
-              const visualIds = flattenVisualBlockIds(prevBlocks);
-              const ordered = [...groupDragIds].sort(
-                (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
-              );
-              const roots = topLevelSelectedDragIds(ordered, prevBlocks);
-              // 페이지 링크는 다른 하위 페이지로 넣지 않고, 남은 블록만 이동
-              const nonPageRoots = roots.filter((id) => {
-                const block = prevBlocks.find((item) => item.id === id);
-                return block?.type !== 'page';
-              });
-              if (nonPageRoots.length === 0) {
-                const command = buildMoveBlockGroupCommand(
-                  prevBlocks,
-                  roots,
-                  target.blockId,
-                  'before',
-                );
-                if (command.affectedIds.length > 0) {
-                  await runOptimisticBlockCommand(prevBlocks, command, {
-                    logLabel: '[Note] movePageGroupBesidePage',
-                    errorMessage: '페이지 묶음 순서 저장 실패',
-                    afterPersist: triggerSave,
-                  });
-                }
-                return;
-              }
-              const command = buildBlockForestTransferCommand(
-                prevBlocks,
-                nonPageRoots,
-                targetDocId,
-              );
-              if (command.movedIds.length === 0) {
-                setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
-                return;
-              }
-              try {
-                await commitNoteDocumentBeforeLeave();
-                await runPersistedBlockTransfer(prevBlocks, command, {
-                  logLabel: '[Note] moveBlockGroupToSubPage',
-                  errorMessage: '하위 페이지로 블록 묶음 이동 실패',
-                  afterPersist: triggerSave,
-                });
-              } catch (e) {
-                devLogger.error('[Note] moveBlockGroupToSubPage', e);
-                setBlocks(prevBlocks);
-                setError(e instanceof Error ? e.message : '하위 페이지로 블록 묶음 이동 실패');
-              }
-              return;
-            }
-          }
-          if (container && container.type !== 'page') {
+          if (container) {
             const visualIds = flattenVisualBlockIds(prevBlocks);
             const ordered = [...groupDragIds].sort(
               (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
@@ -504,6 +456,7 @@ export function useNoteDragDrop(options: {
               logLabel: '[Note] moveBlockGroupInsideBlock',
               errorMessage: '하위 블록 묶음 이동 저장 실패',
               afterPersist: triggerSave,
+              optimistic: false,
             });
             return;
           }
@@ -524,6 +477,7 @@ export function useNoteDragDrop(options: {
               logLabel: '[Note] moveBlockGroup',
               errorMessage: '블록 묶음 이동 저장 실패',
               afterPersist: triggerSave,
+              optimistic: false,
             });
             return;
           }
@@ -531,67 +485,7 @@ export function useNoteDragDrop(options: {
       }
     }
 
-    const pageInsideTarget = resolvedTarget
-      ? prevBlocks.find((block) => block.id === resolvedTarget.blockId)
-      : overBlock;
-    // 페이지 링크 자체는 다른 페이지 "안"으로 옮기지 않는다 — 순서만 변경.
-    // (체크리스트 등 일반 블록만 하위 페이지로 transfer 허용)
-    if (
-      moving.type !== 'page'
-      && pageInsideTarget?.type === 'page'
-      && resolvedTarget?.position === 'inside'
-    ) {
-      const targetDocId =
-        typeof pageInsideTarget.content?.page_document_id === 'string'
-          ? pageInsideTarget.content.page_document_id.trim()
-          : '';
-      if (targetDocId && targetDocId !== selectedId) {
-        const command = buildBlockForestTransferCommand(
-          prevBlocks,
-          [moving.id],
-          targetDocId,
-        );
-        if (command.movedIds.length === 0) {
-          setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
-          return;
-        }
-        try {
-          await commitNoteDocumentBeforeLeave();
-          await runPersistedBlockTransfer(prevBlocks, command, {
-            logLabel: '[Note] moveBlockToSubPage',
-            errorMessage: '하위 페이지로 블록 이동 실패',
-            afterPersist: triggerSave,
-          });
-        } catch (e) {
-          devLogger.error('[Note] moveBlockToSubPage', e);
-          setError(e instanceof Error ? e.message : '하위 페이지로 블록 이동 실패');
-        }
-        return;
-      }
-    }
-
     let target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
-    if (
-      moving.type === 'page'
-      && target
-      && target.position === 'inside'
-    ) {
-      const insideTarget = target;
-      const container = prevBlocks.find((block) => block.id === insideTarget.blockId);
-      if (container?.type === 'page') {
-        const row = typeof document !== 'undefined'
-          ? document.querySelector<HTMLElement>(
-            `[data-note-block-row][data-block-id="${insideTarget.blockId.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"]`,
-          )
-          : null;
-        const rect = row?.getBoundingClientRect();
-        const mid = rect ? rect.top + rect.height / 2 : pointerYRef.current;
-        target = {
-          blockId: insideTarget.blockId,
-          position: pointerYRef.current < mid ? 'before' : 'after',
-        };
-      }
-    }
     if (!target) return;
     const plan = planBlockDropAt(
       wasBlockDrag ? blocksRef.current : prevBlocks,
@@ -607,6 +501,7 @@ export function useNoteDragDrop(options: {
       logLabel: '[Note] reparentBlock',
       errorMessage: '블록 이동 저장 실패',
       afterPersist: triggerSave,
+      optimistic: false,
     });
   }, [
     blocksRef,
@@ -615,7 +510,6 @@ export function useNoteDragDrop(options: {
     runOptimisticBlockCommand,
     runPersistedBlockTransfer,
     selectedId,
-    setBlocks,
     setError,
     triggerSave,
   ]);

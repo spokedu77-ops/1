@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, type FormEvent } from 'react';
 import { brandContactLinks, brandProfile } from '../data/brand';
+import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
 
 const PROGRAM_OPTIONS = [
@@ -220,7 +221,7 @@ export function DispatchProposalForm() {
               className={inputClass}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="예: manager@org.kr"
+              placeholder="예: manager@company.co.kr"
               autoComplete="email"
             />
           </div>
@@ -395,14 +396,16 @@ export function DispatchProposalForm() {
           <a href={brandContactLinks.phone} className={siteBtnSecondary}>
             전화 상담 {brandProfile.phone}
           </a>
-          <a
-            href="https://pf.kakao.com/_VGWxeb/chat"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={siteBtnSecondary}
-          >
-            카카오 B2B 상담
-          </a>
+          {KAKAO_CHANNEL_URL ? (
+            <a
+              href={KAKAO_CHANNEL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={siteBtnSecondary}
+            >
+              카카오 상담
+            </a>
+          ) : null}
         </div>
       </form>
     </section>

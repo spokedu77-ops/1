@@ -6,9 +6,13 @@ import type { NoteBlockOpPushItem, NoteBlockOpRecord, NoteBlockSnapshot } from '
 import type { NoteBlock } from './types';
 import {
   appendOutboundOps,
+  clearDocumentLocal,
+  ensureNoteLocalCacheVersion,
   listOutboundOps,
+  markForcedLocalDocumentReset,
   readLocalDocument,
   removeOutboundOps,
+  shouldForceResetLocalDocument,
   writeLocalDocument,
 } from './noteLocalDb';
 import { applyRemoteOpRecords, mergeSnapshotPatches } from './noteOpReplay';
@@ -30,10 +34,11 @@ import { buildKnownBlockIdsForPush,
   outboundHasPureIdentityLeaveOrRelocation,
   outboundHasUnpublishedTopology,
   partitionOutboundForSafePush,
+  shouldAllowRemotePullBeforePush,
 } from './noteSyncGuards';
 import type { NotePersistOp } from './noteDocumentOps';
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
-import { mergeBlocksWithStoreContent, wouldReconcileRegressLocalStructure } from './noteBlockStateMerge';
+import { mergeBlocksWithStoreContent } from './noteBlockStateMerge';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { traceApiEgress, type SnapshotTraceOrigin } from './noteFlickerTrace';
 import {
@@ -271,11 +276,25 @@ export class NoteSyncCoordinator {
   }
 
   async hydrateFromLocal(): Promise<NoteBlock[] | null> {
+    await ensureNoteLocalCacheVersion();
+    if (shouldForceResetLocalDocument(this.documentId)) {
+      await clearDocumentLocal(this.documentId);
+      markForcedLocalDocumentReset(this.documentId);
+      this.blocks = [];
+      this.lastAppliedSeq = 0;
+      return null;
+    }
+    const outbound = await listOutboundOps(this.documentId);
+    if (outbound.length === 0) {
+      await clearDocumentLocal(this.documentId);
+      this.blocks = [];
+      this.lastAppliedSeq = 0;
+      return null;
+    }
     const local = await readLocalDocument(this.documentId);
     if (!local) return null;
     this.blocks = local.blocks;
     this.lastAppliedSeq = local.lastAppliedSeq;
-    const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
     this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(outbound);
     try {
@@ -288,6 +307,11 @@ export class NoteSyncCoordinator {
   }
 
   async syncWithServer(initialBlocks: NoteBlock[]): Promise<void> {
+    await ensureNoteLocalCacheVersion();
+    if (shouldForceResetLocalDocument(this.documentId)) {
+      await clearDocumentLocal(this.documentId);
+      markForcedLocalDocumentReset(this.documentId);
+    }
     const local = await readLocalDocument(this.documentId);
     const outbound = await listOutboundOps(this.documentId);
     syncStructuralExcludeFromOutbound(this.documentId, outbound);
@@ -309,42 +333,6 @@ export class NoteSyncCoordinator {
         this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
       } else {
         this.blocks = excludeBlocksPendingSoftDelete(serverBlocks, excludedIds);
-      }
-    } else if (
-      local
-      && local.blocks.length > 0
-      && local.lastAppliedSeq >= lastSeq
-    ) {
-      // outbound 비었지만 로컬 seq가 서버와 같거나 앞설 때 — 미ack reorder가
-      // IDB에만 남은 경우. 서버로 통째로 덮어 좀비 복귀하지 않는다.
-      this.blocks = mergeServerBlocksIntoLocalSnapshot(
-        local.blocks,
-        serverBlocks,
-        excludedIds,
-      );
-      if (wouldReconcileRegressLocalStructure(this.blocks, serverBlocks)) {
-        const serverById = new Map(serverBlocks.map((block) => [block.id, block]));
-        const patches = this.blocks.flatMap((block) => {
-          const server = serverById.get(block.id);
-          if (!server) return [];
-          if (
-            server.order_index === block.order_index
-            && (server.parent_block_id ?? null) === (block.parent_block_id ?? null)
-          ) {
-            return [];
-          }
-          return [{
-            id: block.id,
-            order_index: block.order_index,
-            parent_block_id: block.parent_block_id ?? null,
-          }];
-        });
-        if (patches.length > 0) {
-          await this.enqueuePersistOp(
-            { type: 'blockTransaction', patches, deleteIds: [] },
-            { immediate: true },
-          );
-        }
       }
     } else {
       this.blocks = serverBlocks;
@@ -563,18 +551,19 @@ export class NoteSyncCoordinator {
   private async pushBatchOnce(): Promise<boolean> {
     const pendingFirst = await listOutboundOps(this.documentId);
     if (pendingFirst.length === 0) return false;
+    const pendingFirstItems = pendingFirst.map(({ documentId, createdAt, ...op }) => {
+      void documentId;
+      void createdAt;
+      return op;
+    });
+    const allowRemotePullBeforePush = shouldAllowRemotePullBeforePush(pendingFirstItems);
 
     const isActiveDocument =
       useNoteBlockStore.getState().activeDocumentId === this.documentId;
 
     // activeDocument는 Project(store 쓰기)용. identityLeave·relocation Outbound drain은 막지 않는다.
     if (!isActiveDocument) {
-      const pendingItems = pendingFirst.map(({ documentId, createdAt, ...op }) => {
-        void documentId;
-        void createdAt;
-        return op;
-      });
-      if (!outboundHasPureIdentityLeaveOrRelocation(pendingItems)) {
+      if (!outboundHasPureIdentityLeaveOrRelocation(pendingFirstItems)) {
         this.schedulePush(2000);
         return false;
       }
@@ -591,7 +580,7 @@ export class NoteSyncCoordinator {
       // 첫 attempt만 force — 이후는 캐시·hard floor로 Fluid CPU 절감
        
       await this.rebaseFromServer({
-        allowRemotePull: true,
+        allowRemotePull: allowRemotePullBeforePush,
         forceStateFetch: attempt === 0,
       });
 

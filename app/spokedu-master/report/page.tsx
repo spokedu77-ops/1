@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { BookOpen, Check, Clipboard, FileText, GraduationCap, MessageCircle, Save, Search, UsersRound } from 'lucide-react';
+import { BookOpen, Check, Clipboard, FileText, Save, Search } from 'lucide-react';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { RecordProgramPicker } from '../components/record/RecordProgramPicker';
@@ -43,10 +43,10 @@ type ReportDraft = {
   generated: string;
 };
 
-const AUDIENCES: Array<{ id: Audience; label: string; description: string; Icon: typeof MessageCircle }> = [
-  { id: 'parent', label: '학부모용', description: '아이들이 경험한 움직임을 쉽게 안내합니다.', Icon: UsersRound },
-  { id: 'center', label: '기관용', description: '운영 목적과 활동 구성, 기대 효과를 정리합니다.', Icon: FileText },
-  { id: 'school', label: '학교용', description: '수업 활동 기록과 참여 내용을 정리합니다.', Icon: GraduationCap },
+const AUDIENCES: Array<{ id: Audience; label: string }> = [
+  { id: 'parent', label: '학부모용' },
+  { id: 'center', label: '기관용' },
+  { id: 'school', label: '학교용' },
 ];
 
 const MOODS = ['활기찬 분위기', '차분한 분위기', '집중도가 높았음', '도전하는 분위기', '협동하는 분위기'];
@@ -58,10 +58,6 @@ const REACTIONS = [
   '반복하며 자신감이 생김',
 ];
 const FOCUS_SKILLS = ['참여', '반응', '협동', '방향 전환', '공간 인식', '자기조절'];
-
-function compactList(values: Array<string | undefined | null>) {
-  return values.map((value) => value?.trim()).filter(Boolean).join(' / ');
-}
 
 function getReportQuery(searchParams: URLSearchParams | ReturnType<typeof useSearchParams>) {
   return {
@@ -315,6 +311,8 @@ function SingleChoice({ options, value, onChange }: { options: string[]; value: 
 }
 
 function ReportContent() {
+  const [showRefine, setShowRefine] = useState(false);
+  const [showExtras, setShowExtras] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const programs = useMasterStore((state) => state.programs);
@@ -409,12 +407,11 @@ function ReportContent() {
     if (!record) return;
     recordQueryAppliedRef.current = queryRecordId;
     const initialStudentId = record.students[0]?.studentId ?? null;
-    const initialTarget: ReportTarget = initialStudentId ? 'student' : 'class';
     setSelectedRecordId(record.id);
     setProgramId(record.programId);
-    setTarget(initialTarget);
+    setTarget('class');
     setSelectedStudentId(initialStudentId);
-    setGenerated(buildRecordDraft(record, initialTarget, initialStudentId));
+    setGenerated(buildRecordDraft(record, 'class', null));
     setSaveStatus('idle');
     setSaveFeedback(null);
   }, [classRecords, operationalData.status, queryRecordId]);
@@ -468,7 +465,6 @@ function ReportContent() {
     ? buildRecordDraft(selectedRecord, target, target === 'student' ? selectedStudentId : null)
     : program ? buildExplanation({ audience, program, mood, reaction, focusSkills, note }) : '';
   const output = generated || draft;
-  const activityPreview = program ? getActivityFlow(program).slice(0, 2) : [];
 
   const clearSavedContext = (currentProgramId: string) => {
     if (!savedExplanationId) return;
@@ -598,267 +594,270 @@ function ReportContent() {
     }
   };
 
+  const focused = Boolean(selectedRecord);
+  const programOptions = search.trim() ? filteredPrograms : programPool;
+
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 안내문</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 안내문 만들기</h1>
-        <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
-          수업이 끝나면 오늘의 활동이 설명 가능한 문장으로 정리됩니다. 체육수업의 의미를 학부모, 기관, 학교에 맞는 언어로 남깁니다.
-        </p>
-      </header>
+      <div className="mx-auto max-w-3xl px-[22px] pt-[22px] sm:px-8 lg:px-10">
+        <header className="pb-4">
+          <h1 className="text-[28px] font-black md:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>안내문 만들고 복사</h1>
+          <p className="mt-1.5 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+            문구 확인 → 복사 → 카톡·문자·메일에 붙여넣기. 보관은 나중에 다시 복사할 때만.
+          </p>
+        </header>
 
-      {selectedRecord ? (
-        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-acc-a12)', border: '1px solid var(--spm-acc-a24)' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>
-            {selectedRecord.recordType === 'quick' ? '빠른 기록 기반 안내문' : '상세 기록 기반 안내문'}
-          </p>
-          <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{selectedRecord.programTitle} 안내문 만들기</h2>
-          <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
-            {new Date(selectedRecord.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} · {selectedRecord.classId}
-            {selectedRecord.present > 0 ? ` · 출석 ${selectedRecord.present}명` : ''}
-            {selectedRecord.focusCount > 0 ? ` · 관찰 ${selectedRecord.focusCount}명` : ''}
-          </p>
-          {selectedRecord.parentNoteSnapshot ? (
-            <p className="mt-3 rounded-[10px] p-2.5 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-acc-a08)', color: 'var(--spm-t2)' }}>
-              안내문 초안: {selectedRecord.parentNoteSnapshot}
+        {selectedRecord ? (
+          <section className="mb-4 rounded-[16px] p-3.5" style={{ background: 'var(--spm-acc-a12)', border: '1px solid var(--spm-acc-a24)' }}>
+            <p className="text-[12px] font-black" style={{ color: 'var(--spm-acc)' }}>{selectedRecord.programTitle}</p>
+            <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
+              {new Date(selectedRecord.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
+              {selectedRecord.present > 0 ? ` · 출석 ${selectedRecord.present}명` : ''}
             </p>
-          ) : null}
-        </section>
-      ) : hasProgramQuery && program ? (
-        <section className="mx-[22px] mb-5 rounded-[18px] p-4 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-acc-a12)', border: '1px solid var(--spm-acc-a24)' }}>
-          <p className="text-[11px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>수업 자료 기반 문구</p>
-          <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program.title} 설명 만들기</h2>
-          <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
-            {compactList([normalizeMasterTarget(program.grade), normalizeMasterSpace(program.space)])}
-          </p>
-          {activityPreview.length ? (
-            <p className="mt-3 line-clamp-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
-              활동 흐름: {activityPreview.join(' ')}
-            </p>
-          ) : null}
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
-      <div className={`grid gap-5 px-[22px] sm:px-8 lg:px-10 ${hasProgramQuery ? 'lg:grid-cols-[minmax(0,1fr)_320px]' : 'lg:grid-cols-[360px_minmax(0,1fr)]'}`}>
-        <aside className={`space-y-4 ${hasProgramQuery ? 'order-2' : 'order-1'}`}>
-          <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="mb-3 flex items-center gap-2">
-              <FileText size={16} color="var(--spm-acc)" />
-              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>1. 수업 기록 선택</h2>
-            </div>
+        {!focused ? (
+          <section className="mb-4 space-y-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
             {classRecords.length ? (
-              <select value={selectedRecordId} onChange={(event) => handleRecordSelect(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
-                <option value="">수업 기록을 선택하세요</option>
-                {classRecords.map((record) => (
-                  <option key={record.id} value={record.id}>{record.programTitle} · {formatRecordDate(record.date)}</option>
-                ))}
-              </select>
+              <label className="block">
+                <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>수업 기록</span>
+                <select value={selectedRecordId} onChange={(event) => handleRecordSelect(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+                  <option value="">기록 없이 수업만으로 만들기</option>
+                  {classRecords.map((record) => (
+                    <option key={record.id} value={record.id}>{record.programTitle} · {formatRecordDate(record.date)}</option>
+                  ))}
+                </select>
+              </label>
             ) : (
               <div className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                <p>안내문을 작성하려면 먼저 수업 기록이 필요합니다.</p>
-                <p className="mt-1">수업 내용을 기록한 뒤 전달용 안내문을 작성할 수 있습니다.</p>
+                <p>기록이 있으면 더 자연스러운 안내문이 됩니다.</p>
                 <div className="mt-3">
                   <RecordProgramPicker label="수업 골라 기록" />
                 </div>
               </div>
             )}
-          </section>
-
-          <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="mb-3 flex items-center gap-2">
-              <BookOpen size={16} color="var(--spm-acc)" />
-              <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{hasProgramQuery ? '다른 수업 선택' : '수업 선택'}</h2>
-            </div>
-            <div className="relative mb-3">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" color="var(--spm-t3)" />
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="수업명이나 주제로 검색"
-                className="h-10 w-full rounded-[11px] border pl-9 pr-3 text-[13px] font-bold outline-none"
-                style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
-              />
-            </div>
-            <div className={`scrollbar-hide space-y-1 overflow-y-auto ${hasProgramQuery ? 'max-h-[220px] lg:max-h-[420px]' : 'max-h-[330px]'}`}>
-              {filteredPrograms.length ? (
-                filteredPrograms.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => handleProgramSelect(item.id)}
-                    className="w-full rounded-[12px] px-3 py-2.5 text-left"
-                    style={{ background: item.id === program?.id ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: item.id === program?.id ? '1px solid var(--spm-acc-a40)' : '1px solid transparent' }}
-                  >
-                    <strong className="block line-clamp-1 text-[13px]" style={{ color: 'var(--spm-t)' }}>{item.title}</strong>
-                    <span className="mt-1 block line-clamp-1 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{compactList([normalizeMasterTarget(item.grade), normalizeMasterSpace(item.space)]) || item.category}</span>
-                  </button>
-                ))
-              ) : (
-                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  {programsError === 'forbidden'
-                    ? '이용권 만료로 수업 자료를 불러올 수 없습니다. 구독을 시작해 주세요.'
-                    : '수업 자료를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.'}
-                </p>
-              )}
-            </div>
-          </section>
-
-          <section className="rounded-[18px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <h2 className="text-[15px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>최근 만든 설명</h2>
-            <div className="mt-3 space-y-2">
-              {explanationData.status === 'loading' ? (
-                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  저장한 안내문을 불러오는 중입니다.
-                </p>
-              ) : explanationData.status === 'error' ? (
-                <p className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  저장한 안내문을 불러오지 못했습니다.
-                </p>
-              ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
-                <div key={item.id}>
-                <button type="button" onClick={() => handleSavedExplanationSelect(item)} className="block w-full rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
-                  <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
-                  <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(item.createdAt).toLocaleDateString('ko-KR')} · {item.text.includes(' 학생은 ') ? '학생별 안내문' : '전체 수업 안내문'}</span>
-                </button>
-                <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="mt-1 min-h-10 w-full rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}>복사</button>
-                </div>
-              )) : (
-                <div className="rounded-[12px] p-3 text-[12px] font-semibold leading-5" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t3)' }}>
-                  아직 저장한 안내문이 없습니다. 수업 기록을 바탕으로 전달용 안내문을 작성할 수 있습니다.
-                </div>
-              )}
-            </div>
-          </section>
-        </aside>
-
-        <section className={`space-y-3 sm:space-y-4 ${hasProgramQuery ? 'order-1' : 'order-2'}`}>
-          <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>오늘 수업 정리</p>
-                <h2 className="mt-1 text-[24px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)', letterSpacing: 0 }}>{program?.title ? `${program.title} 설명 만들기` : '수업을 선택하세요'}</h2>
-              </div>
-              {program ? (
-                <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 items-center gap-2 rounded-[10px] px-3 text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
-                  <BookOpen size={14} />
-                  전체 수업 자료 보기
-                </Link>
-              ) : null}
-            </div>
-
-            <div className="mt-4 grid gap-4 sm:mt-5 sm:gap-5">
-              <div>
-                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>2. 안내 대상 선택</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <button type="button" onClick={() => handleTargetChange('class')} className="min-h-11 rounded-[14px] p-3 text-left" style={{ background: target === 'class' ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: target === 'class' ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br2)' }}>
-                    <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>전체 수업 안내문</strong>
-                    <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>학생별 관찰 내용은 포함하지 않습니다.</span>
-                  </button>
-                  <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord?.students.length} className="min-h-11 rounded-[14px] p-3 text-left disabled:opacity-50" style={{ background: target === 'student' ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: target === 'student' ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br2)' }}>
-                    <strong className="block text-[13px]" style={{ color: 'var(--spm-t)' }}>학생별 안내문</strong>
-                    <span className="mt-1 block text-[11px] font-semibold leading-4" style={{ color: 'var(--spm-t3)' }}>선택한 학생 1명의 기록만 사용합니다.</span>
-                  </button>
-                </div>
-                {target === 'student' && selectedRecord?.students.length ? (
-                  <select value={selectedStudentId ?? ''} onChange={(event) => handleStudentChange(event.target.value)} className="mt-3 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
-                    {selectedRecord.students.map((student) => (
-                      <option key={student.studentId} value={student.studentId}>{student.studentName}</option>
-                    ))}
-                  </select>
-                ) : null}
-              </div>
-
-              <div>
-                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>부가 설정</p>
-                <div className="grid grid-cols-1 gap-2 min-[400px]:grid-cols-3">
-                  {AUDIENCES.map(({ id, label, description, Icon }) => {
-                    const active = audience === id;
-                    return (
-                      <button key={id} type="button" onClick={() => { setAudience(id); markDraftDirty(); }} className="rounded-[14px] p-2.5 text-left sm:p-3" style={{ background: active ? 'var(--spm-acc-a15)' : 'var(--spm-s3)', border: active ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br2)' }}>
-                        <Icon size={16} color={active ? 'var(--spm-acc)' : 'var(--spm-t3)'} />
-                        <strong className="mt-2 block text-[13px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
-                        <span className="mt-1 hidden text-[11px] font-semibold leading-4 sm:block" style={{ color: 'var(--spm-t3)' }}>{description}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-2 lg:gap-5">
-                <div>
-                  <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>오늘 수업 분위기</p>
-                  <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); markDraftDirty(); }} />
-                </div>
-                <div>
-                  <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>아이들 반응</p>
-                  <SingleChoice options={REACTIONS} value={reaction} onChange={(next) => { setReaction(next); markDraftDirty(); }} />
-                </div>
-              </div>
-
-              <div>
-                <p className="mb-2 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>강조한 움직임</p>
-                <ChipGroup options={FOCUS_SKILLS} selected={focusSkills} onChange={(next) => { setFocusSkills(next); markDraftDirty(); }} />
-              </div>
-
-              <label className="block">
-                <span className="mb-2 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>특이사항</span>
-                <textarea
-                  value={note}
-                  onChange={(event) => { setNote(event.target.value); markDraftDirty(); }}
-                  rows={3}
-                  placeholder="예: 처음에는 조심스러웠지만 두 번째 라운드부터 규칙을 이해하고 적극적으로 참여했습니다."
-                  className="w-full resize-y rounded-[13px] border px-3 py-3 text-[13px] font-semibold leading-6 outline-none"
+            <label className="block">
+              <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>수업</span>
+              <div className="relative mb-2">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" color="var(--spm-t3)" />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="수업명 검색"
+                  className="h-10 w-full rounded-[11px] border pl-9 pr-3 text-[13px] font-bold outline-none"
                   style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
                 />
-              </label>
-            </div>
+              </div>
+              <select
+                value={program?.id ?? ''}
+                onChange={(event) => handleProgramSelect(event.target.value)}
+                className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none"
+                style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+              >
+                {!programOptions.length ? <option value="">수업 없음</option> : null}
+                {programOptions.map((item) => (
+                  <option key={item.id} value={item.id}>{item.title}</option>
+                ))}
+              </select>
+              {programsError === 'forbidden' ? (
+                <p className="mt-2 text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>이용권 만료로 수업 자료를 불러올 수 없습니다.</p>
+              ) : null}
+            </label>
           </section>
+        ) : null}
 
-          <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, var(--spm-acc-a14), var(--spm-s1))', border: '1px solid var(--spm-acc-a22)' }}>
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-[12px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-acc-muted)' }}>{audienceMeta.label}</p>
-                <h2 className="mt-1 text-[22px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>{getAudienceOutputTitle(audience)}</h2>
+        <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, var(--spm-acc-a14), var(--spm-s1))', border: '1px solid var(--spm-acc-a22)' }}>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[12px] font-black" style={{ color: 'var(--spm-acc-muted)' }}>{audienceMeta.label} · {getAudienceOutputTitle(audience)}</p>
+              <h2 className="mt-1 text-[20px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>
+                {program?.title ?? '수업을 선택하세요'}
+              </h2>
+            </div>
+            <button type="button" onClick={copyOutput} disabled={!output.trim()} className="inline-flex min-h-12 items-center gap-2 rounded-[12px] px-5 text-[14px] font-black text-white disabled:opacity-50" style={{ background: copied ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>
+              {copied ? <Check size={16} /> : <Clipboard size={16} />}
+              {copied ? '복사 완료' : '복사해서 전달'}
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-1.5">
+            {AUDIENCES.map(({ id, label }) => {
+              const active = audience === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => { setAudience(id); if (!selectedRecord) markDraftDirty(); }}
+                  className="min-h-10 rounded-full px-3 text-[12px] font-black"
+                  style={{
+                    background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
+                    color: active ? '#fff' : 'var(--spm-t2)',
+                    border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {selectedRecord ? (
+            <div className="mt-3">
+              <div className="flex flex-wrap gap-1.5">
+                <button type="button" onClick={() => handleTargetChange('class')} className="min-h-10 rounded-full px-3 text-[12px] font-black" style={{ background: target === 'class' ? 'var(--spm-acc)' : 'var(--spm-s2)', color: target === 'class' ? '#fff' : 'var(--spm-t2)', border: target === 'class' ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>
+                  전체 수업 안내문
+                </button>
+                <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord.students.length} className="min-h-10 rounded-full px-3 text-[12px] font-black disabled:opacity-50" style={{ background: target === 'student' ? 'var(--spm-acc)' : 'var(--spm-s2)', color: target === 'student' ? '#fff' : 'var(--spm-t2)', border: target === 'student' ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>
+                  학생별 안내문
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button type="button" onClick={() => replaceDraft(draft)} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
-                  <FileText size={14} />
-                  안내문 다시 생성
-                </button>
-                <button type="button" onClick={copyOutput} disabled={!output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-50" style={{ background: copied ? 'var(--spm-grn-a16)' : 'var(--spm-s2)', color: copied ? 'var(--spm-grn)' : 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
-                  {copied ? <Check size={14} /> : <Clipboard size={14} />}
-                  {copied ? '복사 완료' : '현재 문구 복사'}
-                </button>
-                <button type="button" data-report-action="save" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
-                  <Save size={14} />
-                  {saveStatus === 'saving' ? '저장 중...' : '안내문 저장'}
-                </button>
+              <p className="mt-1.5 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
+                {target === 'student' ? '선택한 학생 1명의 기록만 사용합니다.' : '학생별 관찰 내용은 포함하지 않습니다.'}
+              </p>
+              {target === 'student' && selectedRecord.students.length ? (
+                <select value={selectedStudentId ?? ''} onChange={(event) => handleStudentChange(event.target.value)} className="mt-2 h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+                  {selectedRecord.students.map((student) => (
+                    <option key={student.studentId} value={student.studentId}>{student.studentName}</option>
+                  ))}
+                </select>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!selectedRecord ? (
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setShowRefine((current) => !current)}
+                className="inline-flex min-h-9 items-center rounded-[10px] px-3 text-[11px] font-black"
+                style={{ background: 'var(--spm-s2)', color: 'var(--spm-t3)', border: '1px solid var(--spm-br2)' }}
+              >
+                {showRefine ? '다듬기 접기' : '문구 더 다듬기 (선택)'}
+              </button>
+              {showRefine ? (
+                <div className="mt-3 grid gap-3">
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-black" style={{ color: 'var(--spm-t2)' }}>분위기</p>
+                    <SingleChoice options={MOODS} value={mood} onChange={(next) => { setMood(next); markDraftDirty(); }} />
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-black" style={{ color: 'var(--spm-t2)' }}>반응</p>
+                    <SingleChoice options={REACTIONS} value={reaction} onChange={(next) => { setReaction(next); markDraftDirty(); }} />
+                  </div>
+                  <div>
+                    <p className="mb-1.5 text-[11px] font-black" style={{ color: 'var(--spm-t2)' }}>강조</p>
+                    <ChipGroup options={FOCUS_SKILLS} selected={focusSkills} onChange={(next) => { setFocusSkills(next); markDraftDirty(); }} />
+                  </div>
+                  <label className="block">
+                    <span className="mb-1.5 block text-[11px] font-black" style={{ color: 'var(--spm-t2)' }}>한마디</span>
+                    <textarea
+                      value={note}
+                      onChange={(event) => { setNote(event.target.value); markDraftDirty(); }}
+                      rows={2}
+                      placeholder="선택 사항"
+                      className="w-full resize-y rounded-[12px] border px-3 py-2.5 text-[13px] font-semibold leading-6 outline-none"
+                      style={{ background: 'var(--spm-s2)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {copyStatus === 'success' ? <p className="mt-3 text-[12px] font-bold" style={{ color: 'var(--spm-grn)' }}>복사했습니다. 카톡·문자·메일에 붙여넣으세요.</p> : null}
+          {copyStatus === 'error' ? <p className="mt-3 text-[12px] font-bold text-red-600">자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.</p> : null}
+          {saveStatus === 'success' ? (
+            <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
+              <p className="text-[12px] font-bold">보관했습니다. 아래 보관함에서 다시 복사할 수 있습니다.</p>
+            </div>
+          ) : null}
+          {saveStatus === 'error' && saveFeedback ? (
+            <div className="mt-3">
+              <SaveErrorBanner
+                message={saveFeedback.message}
+                onRetry={saveFeedback.retryable ? () => void saveOutput() : undefined}
+                upgradeHref={saveFeedback.upgradeHref}
+                upgradeLabel={saveFeedback.upgradeLabel}
+              />
+            </div>
+          ) : null}
+
+          <textarea
+            data-report-output
+            value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'}
+            onChange={(event) => {
+              setGenerated(event.target.value);
+              setSaveStatus('idle');
+              setSaveFeedback(null);
+              setSavedOutputId(null);
+              if (program) clearSavedContext(program.id);
+            }}
+            disabled={!program}
+            className="mt-4 min-h-[280px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:min-h-[320px] sm:text-[15px] sm:leading-8"
+            style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }}
+          />
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button type="button" onClick={() => replaceDraft(draft)} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+              <FileText size={14} />
+              다시 만들기
+            </button>
+            <button type="button" data-report-action="save" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+              <Save size={14} />
+              {saveStatus === 'saving' ? '보관 중...' : '보관'}
+            </button>
+            {focused ? (
+              <button type="button" onClick={() => setShowExtras((current) => !current)} className="inline-flex min-h-11 items-center rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t3)', border: '1px solid var(--spm-br2)' }}>
+                {showExtras ? '접기' : '다른 기록·보관함'}
+              </button>
+            ) : null}
+          </div>
+        </section>
+
+        {(showExtras || !focused) ? (
+          <section className="mt-4 mb-6 space-y-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+            {focused && classRecords.length ? (
+              <label className="block">
+                <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>다른 기록</span>
+                <select value={selectedRecordId} onChange={(event) => handleRecordSelect(event.target.value)} className="h-11 w-full rounded-[12px] border px-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}>
+                  {classRecords.map((record) => (
+                    <option key={record.id} value={record.id}>{record.programTitle} · {formatRecordDate(record.date)}</option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            <div>
+              <p className="text-[13px] font-black" style={{ color: 'var(--spm-t)' }}>보관함</p>
+              <p className="mt-0.5 text-[11px] font-semibold" style={{ color: 'var(--spm-t3)' }}>나중에 다시 복사할 때만 쓰면 됩니다.</p>
+              <div className="mt-2 space-y-2">
+                {explanationData.status === 'loading' ? (
+                  <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>보관한 안내문을 불러오는 중입니다.</p>
+                ) : explanationData.status === 'error' ? (
+                  <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>보관한 안내문을 불러오지 못했습니다.</p>
+                ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
+                  <div key={item.id} className="flex gap-2">
+                    <button type="button" onClick={() => handleSavedExplanationSelect(item)} className="min-w-0 flex-1 rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+                      <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
+                      <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
+                    </button>
+                    <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="shrink-0 rounded-[12px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}>복사</button>
+                  </div>
+                )) : (
+                  <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>보관한 안내문이 없습니다.</p>
+                )}
               </div>
             </div>
-            {copyStatus === 'success' ? <p className="mt-2 text-[12px] font-bold" style={{ color: 'var(--spm-grn)' }}>안내문을 복사했습니다.</p> : null}
-            {copyStatus === 'error' ? <p className="mt-2 text-[12px] font-bold text-red-600">자동으로 복사하지 못했습니다. 내용을 직접 선택해 복사해 주세요.</p> : null}
-            {saveStatus === 'success' ? (
-              <div className="mt-3 flex flex-wrap gap-2 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
-                <p className="w-full text-[12px] font-bold">안내문이 저장되었습니다.</p>
-                <button type="button" onClick={copyOutput} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>안내문 복사</button>
-                {savedOutputId ? <Link href={`/spokedu-master/report?saved=${savedOutputId}`} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>저장한 안내문 보기</Link> : null}
-                <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
-              </div>
+            {hasProgramQuery && program ? (
+              <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-10 items-center gap-2 text-[12px] font-black" style={{ color: 'var(--spm-acc)' }}>
+                <BookOpen size={14} />
+                전체 수업 자료 보기
+              </Link>
             ) : null}
-            {saveStatus === 'error' && saveFeedback ? (
-              <div className="mt-2">
-                <SaveErrorBanner
-                  message={saveFeedback.message}
-                  onRetry={saveFeedback.retryable ? () => void saveOutput() : undefined}
-                  upgradeHref={saveFeedback.upgradeHref}
-                  upgradeLabel={saveFeedback.upgradeLabel}
-                />
-              </div>
-            ) : null}
-            <textarea data-report-output value={program ? output : '수업을 선택하면 안내문을 만들 수 있습니다.'} onChange={(event) => { setGenerated(event.target.value); setSaveStatus('idle'); setSaveFeedback(null); setSavedOutputId(null); if (program) clearSavedContext(program.id); }} disabled={!program} className="mt-3 min-h-[260px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:mt-4 sm:min-h-[340px] sm:p-4 sm:text-[15px] sm:leading-8" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }} />
           </section>
-        </section>
+        ) : (
+          <div className="mb-6 mt-3" />
+        )}
       </div>
     </div>
   );
