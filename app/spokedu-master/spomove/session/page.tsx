@@ -52,15 +52,16 @@ import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 import { buildSpomoveRecordDraft, buildSpomoveRecordHref } from './spomoveRecordDraft';
 import { getActivityFamily } from '../movements/activityFamilies';
-import { MovementHud } from '../movements/MovementHud';
 import { isSpomoveMovementLayerEnabled } from '../movements/movementFlag';
 import { getMovementProfile } from '../movements/movementProfiles';
 import {
+  listAllowedMovementPicks,
   parseMovementQuery,
   resolveEffectiveMovement,
   resolveMovementConfiguration,
   resolveSessionConfiguration,
 } from '../movements/movementResolve';
+import { movementDisplayLabel } from '../movements/movementLabels';
 import {
   hasSeenMovementIntro,
   markMovementIntroSeen,
@@ -78,6 +79,8 @@ import type {
 } from '../movements/movementTypes';
 type SessionState = 'idle' | 'movementIntro' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
+
+const MOVEMENT_INTRO_MS = 1800;
 
 function normalizeMode(mode: string | null): LaunchMode {
   if (mode === 'projector' || mode === 'mobile') return mode;
@@ -140,6 +143,10 @@ function OfficialEngineBriefing({
   onDifficultyChange,
   onStart,
   movement,
+  movementPick,
+  movementProfile,
+  movementFamily,
+  onMovementPickChange,
   cueFloorNotice,
 }: {
   preset: OfficialSpomovePreset;
@@ -152,6 +159,10 @@ function OfficialEngineBriefing({
   onDifficultyChange: (value: string) => void;
   onStart: () => void;
   movement?: ResolvedMovementConfiguration | null;
+  movementPick?: MovementPick | null;
+  movementProfile?: ReturnType<typeof getMovementProfile> | null;
+  movementFamily?: ReturnType<typeof getActivityFamily> | null;
+  onMovementPickChange?: (pick: MovementPick) => void;
   cueFloorNotice?: string | null;
 }) {
   const isMobile = launchMode === 'mobile';
@@ -164,6 +175,13 @@ function OfficialEngineBriefing({
   const recommendedSec = recommendedCueSecondsForPreset(preset);
   const recommendedGuide = getCueSpeedGuide(recommendedSec);
   const isRecommendedSelected = cueSeconds === recommendedSec;
+  const movementChoices =
+    movementProfile &&
+    movementFamily &&
+    movementProfile.selectionMode === 'selectable' &&
+    onMovementPickChange
+      ? listAllowedMovementPicks(movementProfile, movementFamily)
+      : [];
 
   const startLabel = startDisabled
     ? '불러오는 중…'
@@ -198,13 +216,39 @@ function OfficialEngineBriefing({
           {movement ? (
             <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">오늘의 동작</p>
-              <p className="mt-1 text-[18px] font-black text-white">{movement.displayLabel}</p>
-              <p className="mt-1 text-[12px] font-semibold leading-5 text-white/65">{movement.hudLabel}</p>
+              <p className="mt-1 text-[22px] font-black text-white">{movement.displayLabel}</p>
+              <p className="mt-1 text-[13px] font-semibold leading-5 text-white/65">{movement.hudLabel}</p>
             </div>
           ) : null}
         </div>
 
         <div className="px-5 pt-5 sm:px-7">
+          {movementChoices.length > 1 && movementPick && onMovementPickChange ? (
+            <div className="mb-4 rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
+              <p className="text-[12px] font-black tracking-[0.08em] text-white/55">동작</p>
+              <div className="mt-3 grid gap-2">
+                {movementChoices.map((pick) => {
+                  const active =
+                    pick.baseMovement === movementPick.baseMovement &&
+                    pick.limbRule === movementPick.limbRule;
+                  return (
+                    <button
+                      key={`${pick.baseMovement}:${pick.limbRule}`}
+                      type="button"
+                      onClick={() => onMovementPickChange(pick)}
+                      className={`rounded-xl px-3 py-2.5 text-left text-[13px] font-black transition ${
+                        active
+                          ? 'bg-[var(--spm-acc)] text-white'
+                          : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
+                      }`}
+                    >
+                      {movementDisplayLabel(pick)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           {difficultyKind ? (
             <div className="mb-4 rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
               <p className="text-[12px] font-black tracking-[0.08em] text-white/55">난이도</p>
@@ -451,11 +495,14 @@ function SpomoveSessionContent() {
     [baseOfficialPreset],
   );
   const urlDifficulty = searchParams.get('difficulty');
-  const [difficultyValue, setDifficultyValue] = useState(() =>
-    baseOfficialPreset && difficultyKind
-      ? readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind)
-      : '1',
-  );
+  const [difficultyValue, setDifficultyValue] = useState(() => {
+    if (!baseOfficialPreset || !difficultyKind) return '1';
+    const options = getSpomoveDifficultyOptions(difficultyKind);
+    if (urlDifficulty && options.some((opt) => opt.value === urlDifficulty)) {
+      return urlDifficulty;
+    }
+    return readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind);
+  });
   useEffect(() => {
     if (!baseOfficialPreset || !difficultyKind) return;
     const options = getSpomoveDifficultyOptions(difficultyKind);
@@ -465,6 +512,7 @@ function SpomoveSessionContent() {
     }
     setDifficultyValue(readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind));
   }, [baseOfficialPreset, difficultyKind, urlDifficulty]);
+  const difficultyReady = !difficultyKind || Boolean(difficultyValue);
   const officialPreset = useMemo(() => {
     if (!baseOfficialPreset) return null;
     if (!difficultyKind) return baseOfficialPreset;
@@ -574,9 +622,10 @@ function SpomoveSessionContent() {
   }, [movementPick, movementProfile, movementResolutionStatus]);
 
   const canStartSession =
-    movementResolutionStatus === 'ready' ||
-    movementResolutionStatus === 'disabled' ||
-    movementResolutionStatus === 'legacyFallback';
+    (movementResolutionStatus === 'ready' ||
+      movementResolutionStatus === 'disabled' ||
+      movementResolutionStatus === 'legacyFallback') &&
+    difficultyReady;
 
   const urlCueSeconds = useMemo(
     () => parseCueSecondsQuery(searchParams.get('cueSeconds')),
@@ -584,8 +633,10 @@ function SpomoveSessionContent() {
   );
 
   const [state, setState] = useState<SessionState>('idle');
-  const [hudCollapsed, setHudCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activationBlocked, setActivationBlocked] = useState<
+    null | 'fullscreenBlocked' | 'audioBlocked' | 'bothBlocked'
+  >(null);
   const [cueSeconds, setCueSeconds] = useState<SpomoveCueSpeedSec>(() =>
     officialPreset ? resolveSessionCueSeconds(officialPreset, urlCueSeconds) : 3,
   );
@@ -679,12 +730,25 @@ function SpomoveSessionContent() {
     stopBgm();
     if (soundEnabled) getAudioCtx();
     // flow 모드: MemoryGameApp 내부 BGM이 처리하므로 session-level BgmPlayer 생략
-    if (selectedBgmPath && officialPreset.engine.mode !== 'flow') {
+    const wantsSessionBgm = Boolean(selectedBgmPath && officialPreset.engine.mode !== 'flow');
+    if (wantsSessionBgm && selectedBgmPath) {
       const player = new BgmPlayer();
       player.init(getPublicUrl(selectedBgmPath), 0.35);
       bgmPlayerRef.current = player;
-      void player.play();
-      player.fadeIn(180);
+      void player.play().then(() => {
+        if (player.status === 'playing') player.fadeIn(180);
+        const fsBlocked =
+          launchMode === 'projector' && typeof document !== 'undefined' && !document.fullscreenElement;
+        const audioBlocked = player.status === 'blocked';
+        if (fsBlocked && audioBlocked) setActivationBlocked('bothBlocked');
+        else if (fsBlocked) setActivationBlocked('fullscreenBlocked');
+        else if (audioBlocked) setActivationBlocked('audioBlocked');
+        else setActivationBlocked(null);
+      });
+    } else {
+      const fsBlocked =
+        launchMode === 'projector' && typeof document !== 'undefined' && !document.fullscreenElement;
+      setActivationBlocked(fsBlocked ? 'fullscreenBlocked' : null);
     }
 
     if (movementResolutionStatus === 'ready' && movementPick && officialPreset.activityFamilyId) {
@@ -721,6 +785,7 @@ function SpomoveSessionContent() {
     difficultyKind,
     difficultyValue,
     effectiveCueSeconds,
+    launchMode,
     movementPick,
     movementResolutionStatus,
     movementSource,
@@ -731,6 +796,20 @@ function SpomoveSessionContent() {
     soundEnabled,
     stopBgm,
   ]);
+
+  const unlockActivation = useCallback(() => {
+    if (launchMode === 'projector' && !document.fullscreenElement) {
+      void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    }
+    try {
+      const ctx = getAudioCtx();
+      void ctx?.resume?.();
+    } catch {
+      // ignore
+    }
+    void bgmPlayerRef.current?.play();
+    setActivationBlocked(null);
+  }, [launchMode]);
 
   const startOfficialSession = useCallback(() => {
     if (
@@ -764,7 +843,7 @@ function SpomoveSessionContent() {
       introTimerRef.current = window.setTimeout(() => {
         introTimerRef.current = null;
         enterRunning();
-      }, 2200);
+      }, MOVEMENT_INTRO_MS);
     } else {
       enterRunning();
     }
@@ -869,7 +948,7 @@ function SpomoveSessionContent() {
 
   if (state === 'movementIntro' && resolvedMovement) {
     return (
-      <div className="relative flex h-dvh items-center justify-center overflow-hidden bg-[#050509] px-6 text-white">
+      <div className="relative flex h-dvh items-center justify-center overflow-hidden bg-black px-6 text-white">
         <button
           type="button"
           onClick={() => {
@@ -887,11 +966,11 @@ function SpomoveSessionContent() {
         >
           <X size={16} />
         </button>
-        <div className="max-w-md rounded-3xl border border-white/15 bg-black/70 px-6 py-5 text-center shadow-2xl backdrop-blur-md">
-          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/50">오늘의 동작</p>
-          <p className="mt-2 text-[28px] font-black">{resolvedMovement.displayLabel}</p>
-          <p className="mt-3 text-[14px] font-semibold leading-relaxed text-white/80">
-            {resolvedMovement.instruction}
+        <div className="max-w-lg text-center">
+          <p className="text-[13px] font-black uppercase tracking-[0.16em] text-white/45">오늘의 동작</p>
+          <p className="mt-4 text-[40px] font-black leading-tight sm:text-[48px]">{resolvedMovement.displayLabel}</p>
+          <p className="mt-4 text-[18px] font-semibold leading-relaxed text-white/75 sm:text-[20px]">
+            {resolvedMovement.hudLabel}
           </p>
         </div>
       </div>
@@ -935,30 +1014,20 @@ function SpomoveSessionContent() {
             finishSession('done', payload);
           }}
         />
-        {resolvedMovement ? (
-          <MovementHud
-            movement={resolvedMovement}
-            collapsed={hudCollapsed}
-            compact={launchMode === 'mobile'}
-            onToggleCollapsed={() => {
-              setHudCollapsed((prev) => {
-                const next = !prev;
-                if (movementPick && officialPreset.activityFamilyId) {
-                  appendMovementUsageEvent({
-                    eventType: next ? 'hud_collapsed' : 'hud_expanded',
-                    sessionId: movementSessionIdRef.current,
-                    presetId: officialPreset.id,
-                    activityFamilyId: officialPreset.activityFamilyId,
-                    baseMovement: movementPick.baseMovement,
-                    limbRule: movementPick.limbRule,
-                    source: movementSource,
-                    cueSeconds: effectiveCueSeconds,
-                  });
-                }
-                return next;
-              });
-            }}
-          />
+        {activationBlocked ? (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
+            <button
+              type="button"
+              onClick={unlockActivation}
+              className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-white px-6 text-[16px] font-black text-black shadow-xl"
+            >
+              {activationBlocked === 'audioBlocked'
+                ? '소리 켜기'
+                : activationBlocked === 'fullscreenBlocked'
+                  ? '전체화면 켜기'
+                  : '전체화면과 소리 켜기'}
+            </button>
+          </div>
         ) : null}
       </div>
     );
@@ -1000,6 +1069,26 @@ function SpomoveSessionContent() {
           onDifficultyChange={setDifficultyValue}
           onStart={startOfficialSession}
           movement={resolvedMovement}
+          movementPick={movementPick}
+          movementProfile={movementProfile}
+          movementFamily={movementFamily}
+          onMovementPickChange={(pick) => {
+            setMovementPick(pick);
+            setMovementSource('changed');
+            if (officialPreset.activityFamilyId) {
+              writeFamilyMovement(officialPreset.activityFamilyId, pick);
+              appendMovementUsageEvent({
+                eventType: 'movement_changed',
+                sessionId: movementSessionIdRef.current,
+                presetId: officialPreset.id,
+                activityFamilyId: officialPreset.activityFamilyId,
+                baseMovement: pick.baseMovement,
+                limbRule: pick.limbRule,
+                source: 'changed',
+                cueSeconds: effectiveCueSeconds,
+              });
+            }
+          }}
           cueFloorNotice={cueFloorNotice}
         />
       ) : null}

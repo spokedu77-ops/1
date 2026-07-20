@@ -21,8 +21,8 @@ import {
 import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
-import { MovementChangeSheet } from './movements/MovementChangeSheet';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
+import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import { writeFamilyMovement, readFamilyMovement } from './movements/movementStorage';
 import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
@@ -30,7 +30,6 @@ import {
   resolveEffectiveMovement,
   resolveMovementConfiguration,
   resolveSessionConfiguration,
-  profileSupportsLowImpact,
 } from './movements/movementResolve';
 import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
 
@@ -45,7 +44,7 @@ import {
   getOfficialSpomovePresetGuide,
   type SpomoveThinkingLevel,
 } from './officialSpomovePresetGuides';
-import { getSpomovePresetDisplayModel, buildSpomoveCardTags, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
+import { getSpomovePresetDisplayModel, sortSpomovePresetsByDisplayTitle } from './spomovePresetDisplayModel';
 import { SpomoveGuidelineSheet as SharedSpomoveGuidelineSheet } from './SpomoveGuidelineSheet';
 import { SPOMOVE_PAD_GRID_HEX } from './spomovePadDisplay';
 
@@ -655,9 +654,7 @@ function CardInfo({
 }) {
   const router = useRouter();
   const display = getSpomovePresetDisplayModel(preset);
-  const cardTags = buildSpomoveCardTags(preset);
   const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
-  const [changeOpen, setChangeOpen] = useState(false);
   const profile = movementSummary?.profile ?? null;
   const [selectedPick, setSelectedPick] = useState<MovementPick | null>(null);
 
@@ -666,7 +663,6 @@ function CardInfo({
       setSelectedPick(null);
       return;
     }
-    // 조회만 — Official Resolver/필터와 같이 저장값을 바꾸지 않음
     const saved = readFamilyMovement(preset.activityFamilyId);
     setSelectedPick(
       resolveEffectiveMovement({
@@ -695,13 +691,12 @@ function CardInfo({
     });
 
   const startWithPick = (pick: MovementPick, autostart: boolean) => {
-    // 사용자가 동작을 명시적으로 확정한 시점에만 Family 저장
     if (preset.activityFamilyId) writeFamilyMovement(preset.activityFamilyId, pick);
     router.push(hrefForPick(pick, autostart));
   };
 
   return (
-    <div className="flex flex-1 flex-col p-4 text-center">
+    <div className="flex min-h-[188px] flex-1 flex-col p-4 text-center">
       <div className="flex flex-wrap items-center justify-center gap-1.5">
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
           {display.programLabel}
@@ -716,39 +711,34 @@ function CardInfo({
         ) : null}
       </div>
 
-      <h2 className="mt-3 line-clamp-2 text-[18px] font-black leading-snug text-slate-950 sm:text-[20px]">
+      <h2 className="mt-2 line-clamp-2 min-h-[2.6em] text-[17px] font-black leading-snug text-slate-950 sm:text-[18px]">
         {displayTitle}
       </h2>
-      <p className="mt-2 line-clamp-3 text-[13px] font-medium leading-snug text-slate-500">
+      <p className="mt-1.5 line-clamp-2 min-h-[2.6em] text-[12px] font-medium leading-snug text-slate-500">
         {preset.description}
       </p>
 
       {movementSummary ? (
-        <div className="mt-3 space-y-1.5 text-left">
-          <p className="text-[12px] font-black text-slate-800">
-            추천 동작: <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
-          </p>
-          <p className="text-[11px] font-semibold text-slate-500">
-            매트 {movementSummary.minMats}장
-            {movementSummary.jumpFree ? ' · 점프 없이 가능' : ''}
-            {' · '}
-            변형 {movementSummary.variationCount}종
-          </p>
-        </div>
-      ) : null}
+        <p className="mt-2 line-clamp-1 text-[12px] font-bold text-slate-700">
+          추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
+          <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
+        </p>
+      ) : (
+        <div className="mt-2 h-[18px]" aria-hidden />
+      )}
 
       {isReady ? (
-        <div className="mt-4 space-y-2">
+        <div className="mt-auto pt-3">
           {movementSummary && selectedPick && profile ? (
-            <>
+            <div className="flex gap-2">
               <button
                 type="button"
                 data-spm-spomove-card-action="start"
                 data-spm-spomove-start-mode="quick"
                 onClick={() => startWithPick(selectedPick, true)}
-                className="inline-flex h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] active:opacity-80"
+                className="inline-flex h-11 min-w-0 flex-[65] items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-2 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
               >
-                <MonitorPlay className="h-3.5 w-3.5" />
+                <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
                 빠른 시작
               </button>
               <button
@@ -756,66 +746,31 @@ function CardInfo({
                 data-spm-spomove-card-action="start"
                 data-spm-spomove-start-mode="settings"
                 onClick={() => startWithPick(selectedPick, false)}
-                className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
+                className="inline-flex h-11 min-w-0 flex-[35] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700"
               >
-                설정하고 시작
+                설정
               </button>
-              {movementSummary.selectionMode === 'selectable' ? (
-                <button
-                  type="button"
-                  onClick={() => setChangeOpen(true)}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
-                >
-                  동작 바꾸기
-                </button>
-              ) : null}
-              <MovementChangeSheet
-                open={changeOpen}
-                profile={profile}
-                family={movementSummary.family}
-                selected={selectedPick}
-                onSelect={setSelectedPick}
-                onClose={() => setChangeOpen(false)}
-                onConfirmStart={(pick) => {
-                  setChangeOpen(false);
-                  startWithPick(pick, true);
-                }}
-              />
-            </>
+            </div>
           ) : (
             <Link
               href={startHref}
               data-spm-spomove-card-action="start"
               data-spm-spomove-start-mode="dive"
-              className="inline-flex h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] active:opacity-80"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
             >
               <MonitorPlay className="h-3.5 w-3.5" />
               실행
             </Link>
           )}
         </div>
-      ) : null}
-
-      <div className="mt-2 grid grid-cols-1 gap-1.5 min-[380px]:grid-cols-2">
-        {cardTags.map((tag) => (
-          <span
-            key={tag.key}
-            title={`${tag.label}: ${tag.value}`}
-            className="flex min-h-[24px] items-center justify-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-center text-[10px] font-extrabold leading-tight text-slate-600"
-          >
-            {tag.value}
-          </span>
-        ))}
-      </div>
-
-      {!isReady ? (
+      ) : (
         <div className="mt-auto border-t border-slate-100 pt-3">
-          <span className="inline-flex shrink-0 items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
+          <span className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />
             제공 예정
           </span>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
@@ -1010,7 +965,7 @@ export default function SpomoveHubView() {
         if (movementFilter === 'feet') return summary.feet;
         if (movementFilter === 'hands') return summary.hands;
         if (movementFilter === 'balance') return summary.balance;
-        if (movementFilter === 'lowImpact') return profileSupportsLowImpact(summary.profile);
+        if (movementFilter === 'lowImpact') return summary.lowImpact;
         return true;
       });
     }
@@ -1090,11 +1045,9 @@ export default function SpomoveHubView() {
               {recentSpomoveActivities.map((activity) => {
                 const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId);
                 const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : activity.programTitle;
-                const canReproduceSameSettings = Boolean(
-                  activity.baseMovement && activity.limbRule && activity.cueSeconds != null,
-                );
+                const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
                 const recentHref = preset
-                  ? canReproduceSameSettings
+                  ? canReproduce
                     ? officialPresetSessionHref(preset, {
                         autostart: true,
                         movement: activity.baseMovement,
@@ -1111,17 +1064,16 @@ export default function SpomoveHubView() {
                       <p className="mt-1 text-[11px] font-semibold text-slate-500">
                         {activity.movementLabel}
                         {activity.cueSeconds ? ` · ${activity.cueSeconds}초` : ''}
-                        {' · 매트 1장'}
                       </p>
                     ) : null}
                     <div className="mt-3 grid gap-2">
                       <Link
                         href={recentHref}
                         data-spm-spomove-recent-action="rerun"
-                        data-spm-spomove-recent-reproduce={canReproduceSameSettings ? '1' : '0'}
+                        data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
                         className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-3 text-[12px] font-black text-white"
                       >
-                        {canReproduceSameSettings ? '같은 설정 실행' : '이 활동 다시 열기'}
+                        {canReproduce ? '같은 설정 실행' : '이 활동 다시 열기'}
                       </Link>
                     </div>
                   </article>

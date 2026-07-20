@@ -149,6 +149,17 @@ export function useNoteBlockInsert(options: {
         clampedIndex,
         { focus: insertOptions?.focus !== false },
       );
+      if (command.affectedIds.length === 0) return null;
+
+      blocksRef.current = command.nextBlocks;
+      setBlocks(command.nextBlocks);
+      if (insertOptions?.focus !== false && command.focusTarget) {
+        focusBlockEditor(
+          command.focusTarget.blockId,
+          command.focusTarget.part,
+          command.focusTarget.caretOffset,
+        );
+      }
 
       const createdBlock = await documentEngine.persistCreateBlock({
         id: createdBlockId,
@@ -190,13 +201,6 @@ export function useNoteBlockInsert(options: {
       }
       blocksRef.current = nextBlocks;
       setBlocks(nextBlocks);
-      if (insertOptions?.focus !== false && command.focusTarget) {
-        focusBlockEditor(
-          command.focusTarget.blockId,
-          command.focusTarget.part,
-          command.focusTarget.caretOffset,
-        );
-      }
       if (insertOptions?.focus !== false && type === COLUMN_LIST_TYPE) {
         if (type === COLUMN_LIST_TYPE) {
           const firstColumn = nextBlocks.find(

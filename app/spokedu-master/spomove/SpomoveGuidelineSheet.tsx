@@ -121,6 +121,7 @@ export function SpomoveGuidelineSheet({
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
   const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
   const movementProfile = preset.movementProfileId ? getMovementProfile(preset.movementProfileId) : null;
+  const isBodyCueBuiltIn = movementProfile?.id === 'bodyCueBuiltIn';
   const officialRecommended = movementSummary?.officialRecommended ?? null;
   const recommendedDef =
     officialRecommended && movementProfile && movementProfile.selectionMode !== 'disabled'
@@ -162,6 +163,15 @@ export function SpomoveGuidelineSheet({
           </div>
           <SpomoveGuideVideo videoUrl={guideVideoUrl} />
         </section>
+
+        {isBodyCueBuiltIn ? (
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-[11px] font-black text-slate-500">신체 안내</p>
+            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+              이 활동은 화면이 손·발을 직접 지정합니다. 별도의 움직임 선택 없이 화면 지시에 따라 수행하세요.
+            </p>
+          </div>
+        ) : null}
 
         {movementSummary && recommendedDef && movementProfile && officialRecommended ? (
           <>

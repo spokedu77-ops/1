@@ -40,15 +40,9 @@ export function enrichPresetWithMovementLayerResult(
       return { status: 'legacyFallback', preset, reason: 'unknownFamily' };
     }
     if (preset.movementProfileId !== family.movementProfileId) {
-      // 명시 profile이 family SSOT와 다르면 family 기준을 채움 (충돌은 MAP만 hard)
-      return {
-        status: 'ready',
-        preset: {
-          ...preset,
-          activityFamilyId: preset.activityFamilyId,
-          movementProfileId: family.movementProfileId,
-        },
-      };
+      throw new Error(
+        `Family profile conflict for preset ${preset.id}: explicit="${preset.movementProfileId}" family="${family.movementProfileId}"`,
+      );
     }
     return {
       status: 'ready',
@@ -69,6 +63,11 @@ export function enrichPresetWithMovementLayerResult(
   const movementProfileId = preset.movementProfileId ?? family.movementProfileId;
   if (!movementProfileId) {
     return { status: 'legacyFallback', preset, reason: 'missingProfile' };
+  }
+  if (preset.movementProfileId && preset.movementProfileId !== family.movementProfileId) {
+    throw new Error(
+      `Family profile conflict for preset ${preset.id}: explicit="${preset.movementProfileId}" family="${family.movementProfileId}"`,
+    );
   }
 
   return {

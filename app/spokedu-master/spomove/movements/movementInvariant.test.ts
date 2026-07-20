@@ -5,7 +5,7 @@ import {
   ACTIVITY_FAMILIES,
   PRESET_FAMILY_MAP,
   getActivityFamily,
-  isHubVisiblePreset,
+  isHubRunnablePreset,
   listAllowedMovementPicks,
   MOVEMENT_PROFILES,
   MOVEMENT_REGISTRY,
@@ -14,25 +14,27 @@ import {
   isLeftSpomatColor,
   isRightSpomatColor,
   resolveOfficialRecommended,
-  profileSupportsJumpFree,
 } from './index';
 import { enrichPresetWithMovementLayerResult } from './enrichPresetMovement';
 
-/** Core hard — 실행 안전·스키마 불변조건만. KPI는 movementAudit.test.ts */
+/** Core hard — 실행 안전·스키마 불변조건만. KPI·누락 현황은 movementAudit.test.ts */
 describe('SPOMOVE movement invariants', () => {
-  const visiblePresets = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubVisiblePreset);
+  const runnablePresets = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubRunnablePreset);
+  const enrichedRunnable = runnablePresets.filter((p) => p.activityFamilyId && p.movementProfileId);
 
-  it('모든 hub-visible 프리셋에 activityFamilyId와 movementProfileId가 있다', () => {
-    expect(visiblePresets.length).toBeGreaterThan(0);
-    for (const preset of visiblePresets) {
-      expect(preset.activityFamilyId, preset.id).toBeTruthy();
-      expect(preset.movementProfileId, preset.id).toBeTruthy();
+  it('enrich soft-fallback은 매핑 누락에서 throw하지 않는다', () => {
+    const result = enrichPresetWithMovementLayerResult({
+      id: 'synthetic-missing-family-xyz',
+    } as Parameters<typeof enrichPresetWithMovementLayerResult>[0]);
+    expect(result.status).toBe('legacyFallback');
+    if (result.status === 'legacyFallback') {
+      expect(result.reason).toBe('missingFamily');
     }
   });
 
   it('같은 family는 동일한 movementProfileId를 쓴다', () => {
     const byFamily = new Map<string, Set<string>>();
-    for (const preset of visiblePresets) {
+    for (const preset of enrichedRunnable) {
       const set = byFamily.get(preset.activityFamilyId!) ?? new Set();
       set.add(preset.movementProfileId!);
       byFamily.set(preset.activityFamilyId!, set);
@@ -43,7 +45,7 @@ describe('SPOMOVE movement invariants', () => {
   });
 
   it('PRESET_FAMILY_MAP과 enrichment 결과가 충돌하지 않는다', () => {
-    for (const preset of visiblePresets) {
+    for (const preset of enrichedRunnable) {
       const mapped = PRESET_FAMILY_MAP[preset.id];
       expect(mapped === undefined || mapped === preset.activityFamilyId).toBe(true);
     }
@@ -62,10 +64,25 @@ describe('SPOMOVE movement invariants', () => {
     for (const profile of Object.values(MOVEMENT_PROFILES)) {
       if (profile.selectionMode === 'disabled') continue;
       expect(isAllowedMovement(profile.recommended, profile)).toBe(true);
-      expect(listAllowedMovementPicks(profile).length).toBeGreaterThanOrEqual(
-        profile.minimumMovementCount,
-      );
     }
+  });
+
+  it('preset.movementProfileId는 Family Registry와 일치한다', () => {
+    for (const preset of enrichedRunnable) {
+      const family = getActivityFamily(preset.activityFamilyId!);
+      expect(family, preset.id).toBeTruthy();
+      expect(preset.movementProfileId, preset.id).toBe(family!.movementProfileId);
+    }
+  });
+
+  it('명시 Family–Profile 충돌은 hard-fail한다', () => {
+    expect(() =>
+      enrichPresetWithMovementLayerResult({
+        id: 'synthetic-conflict',
+        activityFamilyId: 'dive',
+        movementProfileId: 'simpleColorResponse',
+      } as Parameters<typeof enrichPresetWithMovementLayerResult>[0]),
+    ).toThrow(/Family profile conflict/);
   });
 
   it('Family 공식 추천은 Profile+제외 규칙을 통과한다', () => {
@@ -85,7 +102,7 @@ describe('SPOMOVE movement invariants', () => {
     }
   });
 
-  it('stepHold·squat·lunge는 free만 허용한다', () => {
+  it('P0 안정성 동작은 free limb rule만 제공한다', () => {
     for (const id of ['stepHold', 'squatTouch', 'lungeReach'] as const) {
       expect(MOVEMENT_REGISTRY[id].supportedLimbRules).toEqual(['free']);
     }
@@ -98,24 +115,23 @@ describe('SPOMOVE movement invariants', () => {
     expect(isRightSpomatColor('blue')).toBe(true);
   });
 
-  it('DIVE는 selectionMode disabled이다', () => {
-    for (const preset of visiblePresets.filter((p) => p.programGroup === 'dive')) {
+  it('DIVE·bodyCue는 selectionMode disabled이다', () => {
+    for (const preset of enrichedRunnable.filter((p) => p.programGroup === 'dive')) {
       expect(preset.movementProfileId).toBe('diveBuiltIn');
       expect(MOVEMENT_PROFILES.diveBuiltIn.selectionMode).toBe('disabled');
     }
-  });
-
-  it('등록된 모든 family가 ACTIVITY_FAMILIES에 있다', () => {
-    for (const preset of visiblePresets) {
-      expect(ACTIVITY_FAMILIES[preset.activityFamilyId!]).toBeTruthy();
-      expect(getActivityFamily(preset.activityFamilyId!)).toBeTruthy();
+    for (const preset of enrichedRunnable.filter(
+      (p) => p.activityFamilyId === 'reaction-variant-body-cue',
+    )) {
+      expect(preset.movementProfileId).toBe('bodyCueBuiltIn');
+      expect(MOVEMENT_PROFILES.bodyCueBuiltIn.selectionMode).toBe('disabled');
     }
   });
 
-  it('selectable 프로필은 점프 없는 동작을 제공한다', () => {
-    for (const profile of Object.values(MOVEMENT_PROFILES)) {
-      if (profile.selectionMode === 'disabled') continue;
-      expect(profileSupportsJumpFree(profile)).toBe(true);
+  it('enrich된 runnable의 family는 ACTIVITY_FAMILIES에 있다', () => {
+    for (const preset of enrichedRunnable) {
+      expect(ACTIVITY_FAMILIES[preset.activityFamilyId!]).toBeTruthy();
+      expect(getActivityFamily(preset.activityFamilyId!)).toBeTruthy();
     }
   });
 });

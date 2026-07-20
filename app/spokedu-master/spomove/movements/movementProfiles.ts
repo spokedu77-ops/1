@@ -83,6 +83,22 @@ export const MOVEMENT_PROFILES: Record<MovementProfileId, MovementProfile> = {
     alternatives: [],
     minimumMovementCount: 0,
   },
+  /** 변형 사분할 1단계 — 엔진이 발을 지정, 레이어는 footTap 고정 */
+  variantFootFixed: {
+    id: 'variantFootFixed',
+    selectionMode: 'fixed',
+    recommended: { baseMovement: 'footTap', limbRule: 'free' },
+    alternatives: [{ baseMovement: 'footTap', allowedLimbRules: ['free'] }],
+    minimumMovementCount: 1,
+  },
+  /** 변형 사분할 2~4단계 — 엔진이 손·발을 직접 제시, 일반 selector 비활성 */
+  bodyCueBuiltIn: {
+    id: 'bodyCueBuiltIn',
+    selectionMode: 'disabled',
+    recommended: { baseMovement: 'footTap', limbRule: 'free' },
+    alternatives: [],
+    minimumMovementCount: 0,
+  },
 };
 
 export function getMovementProfile(id: MovementProfileId) {

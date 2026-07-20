@@ -1325,8 +1325,7 @@ const OFFICIAL_SPOMOVE_LIBRARY_RAW: OfficialSpomovePreset[] = assignSequentialSo
 export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] =
   enrichOfficialSpomoveLibrary(OFFICIAL_SPOMOVE_LIBRARY_RAW);
 
-export const OFFICIAL_SPOMOVE_LIBRARY_SIZE =
-  OFFICIAL_SPOMOVE_CORE_COUNT + OFFICIAL_SPOMOVE_EXPANSION_COUNT;
+export const OFFICIAL_SPOMOVE_LIBRARY_SIZE = OFFICIAL_SPOMOVE_LIBRARY.length;
 
 export function standardSpomoveDurationSec(cueSeconds: number, rounds: number): number {
   return Math.max(1, cueSeconds) * Math.max(1, rounds);
@@ -1353,11 +1352,11 @@ export function officialPresetSessionHref(
 ) {
   const params = new URLSearchParams({
     preset: preset.id,
-    cueSeconds: String(options?.cueSeconds ?? preset.cueSeconds),
     rounds: String(preset.rounds),
     sound: 'on',
     mode: options?.mode ?? 'projector',
   });
+  if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
   if (options?.movement) params.set('movement', options.movement);

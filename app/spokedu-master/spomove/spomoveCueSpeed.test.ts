@@ -86,8 +86,10 @@ describe('spomoveCueSpeed', () => {
     const settingsHref = officialPresetSessionHref(preset, {
       movement: 'footTap',
       limb: 'free',
-      cueSeconds: 3,
     });
     expect(settingsHref).not.toContain('autostart=');
+    expect(settingsHref).not.toContain('cueSeconds=');
+    const defaultHref = officialPresetSessionHref(preset);
+    expect(defaultHref).not.toContain('cueSeconds=');
   });
 });

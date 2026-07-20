@@ -24,7 +24,9 @@ export type MovementProfileId =
   | 'complexReaction'
   | 'sequentialMemory'
   | 'gameSpecific'
-  | 'diveBuiltIn';
+  | 'diveBuiltIn'
+  | 'variantFootFixed'
+  | 'bodyCueBuiltIn';
 
 export type MovementDefinition = {
   id: BaseMovementId;

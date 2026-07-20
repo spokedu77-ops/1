@@ -27,16 +27,11 @@ function family(
   };
 }
 
-/** 인지 고난도에서 기본 제외하는 교차·고강도 조합 */
+/** 인지 고난도에서 기본 제외하는 교차·고강도 조합 (simpleColorResponse 허용 목록과 교차) */
 const EXCLUDE_CROSS_AND_LUNGE: MovementPick[] = [
   pick('footTap', 'oppositeSide'),
   pick('handTouch', 'oppositeSide'),
   pick('lungeReach', 'free'),
-];
-
-const EXCLUDE_CROSS_SQUAT_LUNGE: MovementPick[] = [
-  ...EXCLUDE_CROSS_AND_LUNGE,
-  pick('squatTouch', 'free'),
 ];
 
 /** 패밀리 레지스트리 — matRequirement·공식 추천의 단일 출처 */
@@ -61,16 +56,16 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
     recommendedMovement: pick('handTouch', 'free'),
     excludedMovements: EXCLUDE_CROSS_AND_LUNGE,
   }),
-  'reaction-variant-quadrant': family('reaction-variant-quadrant', 'simpleColorResponse', {
+  'reaction-variant-foot': family('reaction-variant-foot', 'variantFootFixed', {
     recommendedMovement: pick('footTap', 'free'),
   }),
+  'reaction-variant-body-cue': family('reaction-variant-body-cue', 'bodyCueBuiltIn'),
   'visual-flow': family('visual-flow', 'visualSearch', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: [pick('lungeReach', 'free')],
   }),
   'visual-flash': family('visual-flash', 'visualSearch', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: EXCLUDE_CROSS_AND_LUNGE,
+    excludedMovements: [pick('squatTouch', 'free')],
   }),
   'visual-pulse': family('visual-pulse', 'visualSearch', {
     recommendedMovement: pick('footTap', 'free'),
@@ -80,13 +75,13 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
   }),
   'visual-rush': family('visual-rush', 'visualSearch', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: EXCLUDE_CROSS_AND_LUNGE,
+    excludedMovements: [pick('squatTouch', 'free'), pick('stepHold', 'free')],
   }),
   'visual-mole': family('visual-mole', 'visualSearch', {
     recommendedMovement: pick('footTap', 'free'),
   }),
   'visual-wormhole': family('visual-wormhole', 'visualSearch', {
-    recommendedMovement: pick('handTouch', 'free'),
+    recommendedMovement: pick('footTap', 'free'),
   }),
   'visual-number-cart': family('visual-number-cart', 'gameSpecific', {
     recommendedMovement: pick('footTap', 'free'),
@@ -96,47 +91,33 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
   }),
   'simon-pole': family('simon-pole', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'simon-mixed': family('simon-mixed', 'choiceReaction', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'flanker-uniform': family('flanker-uniform', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'flanker-random': family('flanker-random', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'flanker-5circle': family('flanker-5circle', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'flanker-mixed': family('flanker-mixed', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'stroop-arrow': family('stroop-arrow', 'complexReaction', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'stroop-word': family('stroop-word', 'complexReaction', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'stroop-missing': family('stroop-missing', 'complexReaction', {
     recommendedMovement: pick('handTouch', 'free'),
-    excludedMovements: EXCLUDE_CROSS_SQUAT_LUNGE,
   }),
   'sequential-memory': family('sequential-memory', 'sequentialMemory', {
     recommendedMovement: pick('stepHold', 'free'),
-    excludedMovements: [
-      pick('footTap', 'oppositeSide'),
-      pick('handTouch', 'oppositeSide'),
-      pick('lungeReach', 'free'),
-    ],
   }),
   dive: family('dive', 'diveBuiltIn'),
 };
@@ -156,14 +137,14 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'reaction-cognition-split-color-04': 'reaction-split',
   'reaction-cognition-triple-color-25': 'reaction-triple',
   'reaction-cognition-triple-diff-color-31': 'reaction-triple-diff',
-  'reaction-cognition-mq1-32': 'reaction-variant-quadrant',
-  'reaction-cognition-mq2-33': 'reaction-variant-quadrant',
-  'reaction-cognition-mq3-34': 'reaction-variant-quadrant',
-  'reaction-cognition-mq4-35': 'reaction-variant-quadrant',
-  'reaction-cognition-mq1-32-hard': 'reaction-variant-quadrant',
-  'reaction-cognition-mq2-33-hard': 'reaction-variant-quadrant',
-  'reaction-cognition-mq3-34-hard': 'reaction-variant-quadrant',
-  'reaction-cognition-mq4-35-hard': 'reaction-variant-quadrant',
+  'reaction-cognition-mq1-32': 'reaction-variant-foot',
+  'reaction-cognition-mq2-33': 'reaction-variant-body-cue',
+  'reaction-cognition-mq3-34': 'reaction-variant-body-cue',
+  'reaction-cognition-mq4-35': 'reaction-variant-body-cue',
+  'reaction-cognition-mq1-32-hard': 'reaction-variant-foot',
+  'reaction-cognition-mq2-33-hard': 'reaction-variant-body-cue',
+  'reaction-cognition-mq3-34-hard': 'reaction-variant-body-cue',
+  'reaction-cognition-mq4-35-hard': 'reaction-variant-body-cue',
   'visual-reaction-flow-05': 'visual-flow',
   'visual-reaction-flow-2x-31': 'visual-flow',
   'visual-reaction-flow-3x-32': 'visual-flow',

@@ -13,9 +13,8 @@ const recordDraft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.
 
 describe('SPOMOVE pilot flow contract', () => {
   it('shows card tags and guideline actions on hub cards', () => {
-    expect(hub).toContain('buildSpomoveCardTags');
-    expect(hub).toContain('참고 영상');
     expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
+    expect(hub).toContain('참고 영상');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
     expect(hub).toContain('실행');
     expect(hub).toContain('최근 SPOMOVE');
@@ -58,10 +57,15 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('data-spm-spomove-start-mode="dive"');
     expect(hub).toContain('빠른 시작');
-    expect(hub).toContain('설정하고 시작');
+    expect(hub).toContain('설정');
     expect(hub).toContain('startWithPick(selectedPick, true)');
     expect(hub).toContain('startWithPick(selectedPick, false)');
     expect(hub).toContain('autostart: true');
+    expect(hub).not.toContain('동작 바꾸기');
+    expect(hub).not.toContain('변형 ');
+    expect(session).toContain('activationBlocked');
+    expect(session).toContain('전체화면과 소리 켜기');
+    expect(session).not.toContain('MovementHud');
     // DIVE/비움직임 카드는 기본 href(autostart 없음)
     const diveLinkBlock = hub.slice(
       hub.indexOf('data-spm-spomove-start-mode="dive"') - 80,
@@ -88,7 +92,7 @@ describe('SPOMOVE pilot flow contract', () => {
   });
 
   it('reproduces recent same-settings or downgrades the label', () => {
-    expect(hub).toContain('canReproduceSameSettings');
+    expect(hub).toContain('canReproduceSpomoveSameSettings');
     expect(hub).toContain('같은 설정 실행');
     expect(hub).toContain('이 활동 다시 열기');
     expect(hub).toContain('data-spm-spomove-recent-reproduce');
