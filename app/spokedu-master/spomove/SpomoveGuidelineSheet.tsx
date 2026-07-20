@@ -16,7 +16,7 @@ import { getMovementProfile } from './movements/movementProfiles';
 import { MOVEMENT_REGISTRY } from './movements/movementRegistry';
 import { listAllowedMovementPicks } from './movements/movementResolve';
 import { movementDisplayLabel } from './movements/movementLabels';
-import { SPOMAT_COLOR_POSITION } from './movements/spomatColorPosition';
+import { SpomatMovementDiagram } from './movements/SpomatMovementDiagram';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
 import { useProfile } from '../store';
@@ -79,25 +79,7 @@ function InfoBlock({ title, value }: { title: string; value: string }) {
 }
 
 function SpomatColorDiagram() {
-  const cell = (color: keyof typeof SPOMAT_COLOR_POSITION, label: string, bg: string) => (
-    <div className={`flex aspect-square items-center justify-center rounded-lg text-[11px] font-black text-white ${bg}`}>
-      {label}
-    </div>
-  );
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="text-[11px] font-black text-slate-500">매트 설치 · 화면 방향 ↑</p>
-      <div className="mx-auto mt-3 grid max-w-[200px] grid-cols-2 gap-1.5">
-        {cell('red', '빨강', 'bg-red-500')}
-        {cell('yellow', '노랑', 'bg-amber-400')}
-        {cell('green', '초록', 'bg-emerald-500')}
-        {cell('blue', '파랑', 'bg-blue-500')}
-      </div>
-      <p className="mt-3 text-[12px] font-semibold leading-5 text-slate-600">
-        화면 기준 빨강이 왼쪽 위로 오도록 놓습니다. 매트 중앙은 대기 위치가 아닙니다.
-      </p>
-    </div>
-  );
+  return <SpomatMovementDiagram variant="light" limbRule="free" caption="매트 설치" />;
 }
 
 export function SpomoveGuidelineSheet({

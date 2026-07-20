@@ -59,9 +59,14 @@ import {
   parseMovementQuery,
   resolveEffectiveMovement,
   resolveMovementConfiguration,
+  resolveOfficialRecommended,
   resolveSessionConfiguration,
 } from '../movements/movementResolve';
-import { movementDisplayLabel } from '../movements/movementLabels';
+import {
+  BuiltInMovementNotice,
+  FixedMovementSummary,
+  MovementConfigurator,
+} from '../movements/MovementConfigurator';
 import {
   hasSeenMovementIntro,
   markMovementIntroSeen,
@@ -175,13 +180,14 @@ function OfficialEngineBriefing({
   const recommendedSec = recommendedCueSecondsForPreset(preset);
   const recommendedGuide = getCueSpeedGuide(recommendedSec);
   const isRecommendedSelected = cueSeconds === recommendedSec;
-  const movementChoices =
-    movementProfile &&
-    movementFamily &&
-    movementProfile.selectionMode === 'selectable' &&
-    onMovementPickChange
+  const allowedPicks =
+    movementProfile && movementFamily
       ? listAllowedMovementPicks(movementProfile, movementFamily)
       : [];
+  const officialRecommended =
+    movementProfile && movementFamily
+      ? resolveOfficialRecommended(movementFamily, movementProfile)
+      : null;
 
   const startLabel = startDisabled
     ? '불러오는 중…'
@@ -213,40 +219,33 @@ function OfficialEngineBriefing({
                 ? '속도만 고르고 시작하세요'
                 : '준비가 되면 바로 시작하세요'}
           </p>
-          {movement ? (
-            <div className="mt-4 rounded-2xl border border-white/10 bg-black/25 px-3.5 py-3">
-              <p className="text-[11px] font-black uppercase tracking-[0.12em] text-white/45">오늘의 동작</p>
-              <p className="mt-1 text-[22px] font-black text-white">{movement.displayLabel}</p>
-              <p className="mt-1 text-[13px] font-semibold leading-5 text-white/65">{movement.hudLabel}</p>
-            </div>
-          ) : null}
         </div>
 
         <div className="px-5 pt-5 sm:px-7">
-          {movementChoices.length > 1 && movementPick && onMovementPickChange ? (
-            <div className="mb-4 rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-              <p className="text-[12px] font-black tracking-[0.08em] text-white/55">동작</p>
-              <div className="mt-3 grid gap-2">
-                {movementChoices.map((pick) => {
-                  const active =
-                    pick.baseMovement === movementPick.baseMovement &&
-                    pick.limbRule === movementPick.limbRule;
-                  return (
-                    <button
-                      key={`${pick.baseMovement}:${pick.limbRule}`}
-                      type="button"
-                      onClick={() => onMovementPickChange(pick)}
-                      className={`rounded-xl px-3 py-2.5 text-left text-[13px] font-black transition ${
-                        active
-                          ? 'bg-[var(--spm-acc)] text-white'
-                          : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35'
-                      }`}
-                    >
-                      {movementDisplayLabel(pick)}
-                    </button>
-                  );
-                })}
-              </div>
+          {movementProfile && movementFamily ? (
+            <div className="mb-4">
+              {movementProfile.selectionMode === 'selectable' &&
+              movementPick &&
+              officialRecommended &&
+              onMovementPickChange ? (
+                <MovementConfigurator
+                  profile={movementProfile}
+                  family={movementFamily}
+                  value={movementPick}
+                  officialRecommended={officialRecommended}
+                  allowedPicks={allowedPicks}
+                  onChange={onMovementPickChange}
+                />
+              ) : null}
+              {movementProfile.selectionMode === 'fixed' && movementPick && officialRecommended ? (
+                <FixedMovementSummary
+                  value={movementPick}
+                  officialRecommended={officialRecommended}
+                />
+              ) : null}
+              {movementProfile.selectionMode === 'disabled' ? (
+                <BuiltInMovementNotice profile={movementProfile} />
+              ) : null}
             </div>
           ) : null}
           {difficultyKind ? (

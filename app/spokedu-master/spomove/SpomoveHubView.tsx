@@ -26,7 +26,9 @@ import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomove
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import { writeFamilyMovement, readFamilyMovement } from './movements/movementStorage';
 import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
+import { movementDisplayLabel } from './movements/movementLabels';
 import {
+  movementPicksEqual,
   resolveEffectiveMovement,
   resolveMovementConfiguration,
   resolveSessionConfiguration,
@@ -720,7 +722,17 @@ function CardInfo({
 
       {movementSummary ? (
         <p className="mt-2 line-clamp-1 text-[12px] font-bold text-slate-700">
-          추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
+          {selectedPick &&
+          !movementPicksEqual(selectedPick, movementSummary.officialRecommended) ? (
+            <>
+              최근 설정{' '}
+              <span className="text-[var(--spm-acc)]">{movementDisplayLabel(selectedPick)}</span>
+            </>
+          ) : (
+            <>
+              추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
+            </>
+          )}
           <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
         </p>
       ) : (

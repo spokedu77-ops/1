@@ -32,10 +32,21 @@ describe('SPOMOVE preview gate (최소 4가지)', () => {
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('빠른 시작');
     expect(hub).toContain('설정');
+    expect(hub).toContain('최근 설정');
+    expect(hub).toContain('movementPicksEqual');
     expect(hub).not.toContain('동작 바꾸기');
     expect(hub).not.toContain('설정하고 시작');
     expect(hub).not.toContain('변형 ');
     expect(hub).not.toContain('점프 없이');
+  });
+
+  it('2b) 설정 표면은 MovementConfigurator · selectionMode 3분기', () => {
+    expect(session).toContain('MovementConfigurator');
+    expect(session).toContain('FixedMovementSummary');
+    expect(session).toContain('BuiltInMovementNotice');
+    expect(session).toContain("selectionMode === 'selectable'");
+    expect(session).toContain("selectionMode === 'fixed'");
+    expect(session).toContain("selectionMode === 'disabled'");
   });
 
   it('3) MQ2~4는 bodyCueBuiltIn — 일반 movement summary 없음', () => {

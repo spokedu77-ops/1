@@ -10,3 +10,5 @@ export * from './movementStorage';
 export * from './movementUsage';
 export * from './isHubVisiblePreset';
 export * from './presetMovementSummary';
+export * from './movementPresentation';
+export * from './spomatMovementDiagramModel';

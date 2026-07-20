@@ -4,10 +4,10 @@ import { MOVEMENT_REGISTRY } from './movementRegistry';
 const DISPLAY_LABELS: Record<string, string> = {
   'footTap:free': '자유발 터치',
   'footTap:sameSide': '같은 쪽 발 터치',
-  'footTap:oppositeSide': '반대발 터치',
+  'footTap:oppositeSide': '교차발 터치',
   'handTouch:free': '자유손 터치',
   'handTouch:sameSide': '같은 쪽 손 터치',
-  'handTouch:oppositeSide': '반대손 터치',
+  'handTouch:oppositeSide': '교차손 터치',
   'stepHold:free': '밟고 정지',
   'squatTouch:free': '스쿼트 터치',
   'lungeReach:free': '런지 리치',

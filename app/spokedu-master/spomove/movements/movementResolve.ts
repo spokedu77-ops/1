@@ -16,8 +16,13 @@ export const DEFAULT_SAFE_MOVEMENT: MovementPick = {
   limbRule: 'free',
 };
 
-function picksEqual(a: MovementPick, b: MovementPick) {
+export function movementPicksEqual(a: MovementPick, b: MovementPick) {
   return a.baseMovement === b.baseMovement && a.limbRule === b.limbRule;
+}
+
+/** @deprecated movementPicksEqual 사용 */
+function picksEqual(a: MovementPick, b: MovementPick) {
+  return movementPicksEqual(a, b);
 }
 
 export function listAllowedMovementPicks(
