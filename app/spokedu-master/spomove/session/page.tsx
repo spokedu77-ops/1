@@ -42,7 +42,8 @@ import {
   formatCueSpeedTargetLabel,
   getCueSpeedGuide,
   recommendedCueSecondsForPreset,
-  resolveInitialCueSeconds,
+  parseCueSecondsQuery,
+  resolveSessionCueSeconds,
   supportsCueSpeedOverride,
   writeLastCueSeconds,
   type SpomoveCueSpeedSec,
@@ -50,13 +51,14 @@ import {
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
 import { buildSpomoveRecordDraft, buildSpomoveRecordHref } from './spomoveRecordDraft';
+import { getActivityFamily } from '../movements/activityFamilies';
 import { MovementHud } from '../movements/MovementHud';
 import { isSpomoveMovementLayerEnabled } from '../movements/movementFlag';
 import { getMovementProfile } from '../movements/movementProfiles';
 import {
   parseMovementQuery,
+  resolveEffectiveMovement,
   resolveMovementConfiguration,
-  resolveMovementPick,
   resolveSessionConfiguration,
 } from '../movements/movementResolve';
 import {
@@ -69,8 +71,12 @@ import {
   appendMovementUsageEvent,
   createMovementSessionId,
 } from '../movements/movementUsage';
-import type { MovementPick, ResolvedMovementConfiguration } from '../movements/movementTypes';
-type SessionState = 'idle' | 'running' | 'done' | 'ended';
+import type {
+  MovementPick,
+  MovementResolutionStatus,
+  ResolvedMovementConfiguration,
+} from '../movements/movementTypes';
+type SessionState = 'idle' | 'movementIntro' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
 
 function normalizeMode(mode: string | null): LaunchMode {
@@ -444,6 +450,7 @@ function SpomoveSessionContent() {
     () => (baseOfficialPreset ? getSpomoveDifficultyKind(baseOfficialPreset) : null),
     [baseOfficialPreset],
   );
+  const urlDifficulty = searchParams.get('difficulty');
   const [difficultyValue, setDifficultyValue] = useState(() =>
     baseOfficialPreset && difficultyKind
       ? readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind)
@@ -451,8 +458,13 @@ function SpomoveSessionContent() {
   );
   useEffect(() => {
     if (!baseOfficialPreset || !difficultyKind) return;
+    const options = getSpomoveDifficultyOptions(difficultyKind);
+    if (urlDifficulty && options.some((opt) => opt.value === urlDifficulty)) {
+      setDifficultyValue(urlDifficulty);
+      return;
+    }
     setDifficultyValue(readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind));
-  }, [baseOfficialPreset, difficultyKind]);
+  }, [baseOfficialPreset, difficultyKind, urlDifficulty]);
   const officialPreset = useMemo(() => {
     if (!baseOfficialPreset) return null;
     if (!difficultyKind) return baseOfficialPreset;
@@ -478,6 +490,11 @@ function SpomoveSessionContent() {
     return '';
   }, [bgmList, officialPreset, requestedBgmPath]);
 
+  const movementFamily = useMemo(() => {
+    if (!movementLayerEnabled || !officialPreset?.activityFamilyId) return null;
+    return getActivityFamily(officialPreset.activityFamilyId);
+  }, [movementLayerEnabled, officialPreset?.activityFamilyId]);
+
   const movementProfile = useMemo(() => {
     if (!movementLayerEnabled || !officialPreset?.movementProfileId) return null;
     return getMovementProfile(officialPreset.movementProfileId);
@@ -492,44 +509,85 @@ function SpomoveSessionContent() {
   const [movementSource, setMovementSource] = useState<'recommended' | 'saved' | 'url' | 'changed'>(
     'recommended',
   );
-  const [showMovementIntro, setShowMovementIntro] = useState(false);
-  const [hudCollapsed, setHudCollapsed] = useState(false);
+  const [movementResolutionStatus, setMovementResolutionStatus] =
+    useState<MovementResolutionStatus>('pending');
   const movementSessionIdRef = useRef(createMovementSessionId());
+  const introTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!movementProfile || !officialPreset?.activityFamilyId) {
+    if (!movementLayerEnabled) {
       setMovementPick(null);
+      setMovementResolutionStatus('disabled');
+      return;
+    }
+    if (!officialPreset) {
+      setMovementPick(null);
+      setMovementResolutionStatus('pending');
+      return;
+    }
+    if (!movementFamily || !movementProfile) {
+      setMovementPick(null);
+      setMovementResolutionStatus('legacyFallback');
+      if (typeof console !== 'undefined') {
+        console.warn(
+          `[spomove-movement] legacyFallback session: preset=${officialPreset.id} missing family/profile`,
+        );
+      }
       return;
     }
     if (movementProfile.selectionMode === 'disabled') {
       setMovementPick(null);
+      setMovementResolutionStatus('disabled');
       return;
     }
-    const saved = readFamilyMovement(officialPreset.activityFamilyId);
-    const resolved = resolveMovementPick({
+    const saved = readFamilyMovement(officialPreset.activityFamilyId!);
+    const resolved = resolveEffectiveMovement({
       profile: movementProfile,
+      family: movementFamily,
       urlMovement,
       savedMovement: saved,
     });
     setMovementPick(resolved);
-    if (urlMovement && resolved && urlMovement.baseMovement === resolved.baseMovement && urlMovement.limbRule === resolved.limbRule) {
+    setMovementResolutionStatus('ready');
+    if (
+      urlMovement &&
+      resolved &&
+      urlMovement.baseMovement === resolved.baseMovement &&
+      urlMovement.limbRule === resolved.limbRule
+    ) {
       setMovementSource('url');
-    } else if (saved && resolved && saved.baseMovement === resolved.baseMovement && saved.limbRule === resolved.limbRule) {
+    } else if (
+      saved &&
+      resolved &&
+      saved.baseMovement === resolved.baseMovement &&
+      saved.limbRule === resolved.limbRule
+    ) {
       setMovementSource('saved');
     } else {
       setMovementSource('recommended');
     }
-  }, [movementProfile, officialPreset?.activityFamilyId, urlMovement]);
+  }, [movementFamily, movementLayerEnabled, movementProfile, officialPreset, urlMovement]);
 
   const resolvedMovement: ResolvedMovementConfiguration | null = useMemo(() => {
-    if (!movementProfile || !movementPick) return null;
+    if (movementResolutionStatus !== 'ready' || !movementProfile || !movementPick) return null;
     return resolveMovementConfiguration(movementPick, movementProfile);
-  }, [movementPick, movementProfile]);
+  }, [movementPick, movementProfile, movementResolutionStatus]);
+
+  const canStartSession =
+    movementResolutionStatus === 'ready' ||
+    movementResolutionStatus === 'disabled' ||
+    movementResolutionStatus === 'legacyFallback';
+
+  const urlCueSeconds = useMemo(
+    () => parseCueSecondsQuery(searchParams.get('cueSeconds')),
+    [searchParams],
+  );
 
   const [state, setState] = useState<SessionState>('idle');
+  const [hudCollapsed, setHudCollapsed] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cueSeconds, setCueSeconds] = useState<SpomoveCueSpeedSec>(() =>
-    officialPreset ? resolveInitialCueSeconds(officialPreset) : 3,
+    officialPreset ? resolveSessionCueSeconds(officialPreset, urlCueSeconds) : 3,
   );
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   const startLockedRef = useRef(false);
@@ -538,8 +596,8 @@ function SpomoveSessionContent() {
 
   useEffect(() => {
     if (!officialPreset) return;
-    setCueSeconds(resolveInitialCueSeconds(officialPreset));
-  }, [officialPreset]);
+    setCueSeconds(resolveSessionCueSeconds(officialPreset, urlCueSeconds));
+  }, [officialPreset, urlCueSeconds]);
 
   const handleCueSecondsChange = useCallback(
     (value: SpomoveCueSpeedSec) => {
@@ -616,14 +674,9 @@ function SpomoveSessionContent() {
     void document.exitFullscreen?.().catch(() => undefined);
   }, []);
 
-  const startOfficialSession = useCallback(() => {
-    if (!officialPreset || bgmLoading || !officialPreset.isReady || startLockedRef.current) return;
-    lockViewportScroll();
-    startLockedRef.current = true;
+  const enterRunning = useCallback(() => {
+    if (!officialPreset) return;
     stopBgm();
-    if (launchMode === 'projector' && !document.fullscreenElement) {
-      void document.documentElement.requestFullscreen?.().catch(() => undefined);
-    }
     if (soundEnabled) getAudioCtx();
     // flow 모드: MemoryGameApp 내부 BGM이 처리하므로 session-level BgmPlayer 생략
     if (selectedBgmPath && officialPreset.engine.mode !== 'flow') {
@@ -633,18 +686,9 @@ function SpomoveSessionContent() {
       void player.play();
       player.fadeIn(180);
     }
-    setSessionResult(null);
-    movementSessionIdRef.current = createMovementSessionId();
 
-    let introMs = 0;
-    if (resolvedMovement && movementPick && officialPreset.activityFamilyId) {
+    if (movementResolutionStatus === 'ready' && movementPick && officialPreset.activityFamilyId) {
       writeFamilyMovement(officialPreset.activityFamilyId, movementPick);
-      const needsIntro = !hasSeenMovementIntro(officialPreset.activityFamilyId, movementPick);
-      setShowMovementIntro(needsIntro);
-      if (needsIntro) {
-        markMovementIntroSeen(officialPreset.activityFamilyId, movementPick);
-        introMs = 2200;
-      }
       appendMovementUsageEvent({
         eventType: 'session_started',
         sessionId: movementSessionIdRef.current,
@@ -655,12 +699,10 @@ function SpomoveSessionContent() {
         source: movementSource,
         cueSeconds: effectiveCueSeconds,
       });
-    } else {
-      setShowMovementIntro(false);
     }
 
-    setState('running');
     sessionStartedAtRef.current = Date.now();
+    setState('running');
     const display = getSpomovePresetDisplayModel(officialPreset);
     recordRecentProgramActivity({
       programId: officialPreset.id,
@@ -672,18 +714,15 @@ function SpomoveSessionContent() {
       limbRule: movementPick?.limbRule,
       movementLabel: resolvedMovement?.displayLabel,
       cueSeconds: effectiveCueSeconds,
+      difficultyKind: difficultyKind ?? undefined,
+      difficultyValue: difficultyKind ? difficultyValue : undefined,
     });
-    window.setTimeout(() => {
-      startLockedRef.current = false;
-    }, 400);
-    if (introMs > 0) {
-      window.setTimeout(() => setShowMovementIntro(false), introMs);
-    }
   }, [
-    bgmLoading,
+    difficultyKind,
+    difficultyValue,
     effectiveCueSeconds,
-    launchMode,
     movementPick,
+    movementResolutionStatus,
     movementSource,
     officialPreset,
     recordRecentProgramActivity,
@@ -693,14 +732,75 @@ function SpomoveSessionContent() {
     stopBgm,
   ]);
 
+  const startOfficialSession = useCallback(() => {
+    if (
+      !officialPreset ||
+      bgmLoading ||
+      !officialPreset.isReady ||
+      startLockedRef.current ||
+      !canStartSession
+    ) {
+      return;
+    }
+    lockViewportScroll();
+    startLockedRef.current = true;
+    setSessionResult(null);
+    movementSessionIdRef.current = createMovementSessionId();
+    sessionStartedAtRef.current = null;
+
+    if (launchMode === 'projector' && !document.fullscreenElement) {
+      void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    }
+
+    const needsIntro =
+      movementResolutionStatus === 'ready' &&
+      Boolean(resolvedMovement && movementPick && officialPreset.activityFamilyId) &&
+      !hasSeenMovementIntro(officialPreset.activityFamilyId!, movementPick!);
+
+    if (needsIntro && resolvedMovement && movementPick && officialPreset.activityFamilyId) {
+      markMovementIntroSeen(officialPreset.activityFamilyId, movementPick);
+      setState('movementIntro');
+      if (introTimerRef.current) window.clearTimeout(introTimerRef.current);
+      introTimerRef.current = window.setTimeout(() => {
+        introTimerRef.current = null;
+        enterRunning();
+      }, 2200);
+    } else {
+      enterRunning();
+    }
+
+    window.setTimeout(() => {
+      startLockedRef.current = false;
+    }, 400);
+  }, [
+    bgmLoading,
+    canStartSession,
+    enterRunning,
+    launchMode,
+    movementPick,
+    movementResolutionStatus,
+    officialPreset,
+    resolvedMovement,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (introTimerRef.current) window.clearTimeout(introTimerRef.current);
+    };
+  }, []);
+
   const finishSession = useCallback((nextState: Extract<SessionState, 'done' | 'ended'>, payload?: EngineCompletePayload) => {
     if (!officialPreset) return;
+    if (introTimerRef.current) {
+      window.clearTimeout(introTimerRef.current);
+      introTimerRef.current = null;
+    }
     stopBgm();
     exitFullscreenAfterSession();
-    setShowMovementIntro(false);
     const startedAt = sessionStartedAtRef.current;
     const fallbackElapsedMs = startedAt ? Math.max(1, Date.now() - startedAt) : 0;
-    if (movementPick && officialPreset.activityFamilyId) {
+    // Intro 중 이탈: session_started가 없으므로 completed/exited도 남기지 않음
+    if (startedAt && movementPick && officialPreset.activityFamilyId) {
       appendMovementUsageEvent({
         eventType: nextState === 'done' ? 'session_completed' : 'session_exited',
         sessionId: movementSessionIdRef.current,
@@ -735,9 +835,18 @@ function SpomoveSessionContent() {
   }, [exitFullscreenAfterSession, state]);
 
   useEffect(() => {
-    if (!autostart || state !== 'idle' || !officialPreset || bgmLoading || !officialPreset.isReady) return;
+    if (
+      !autostart ||
+      state !== 'idle' ||
+      !officialPreset ||
+      bgmLoading ||
+      !officialPreset.isReady ||
+      !canStartSession
+    ) {
+      return;
+    }
     startOfficialSession();
-  }, [autostart, bgmLoading, officialPreset, startOfficialSession, state]);
+  }, [autostart, bgmLoading, canStartSession, officialPreset, startOfficialSession, state]);
 
   const showBriefing = state === 'idle' && !autostart;
 
@@ -757,6 +866,37 @@ function SpomoveSessionContent() {
   }, [startOfficialSession, state]);
 
   if (!officialPreset) return <UnsupportedPreset />;
+
+  if (state === 'movementIntro' && resolvedMovement) {
+    return (
+      <div className="relative flex h-dvh items-center justify-center overflow-hidden bg-[#050509] px-6 text-white">
+        <button
+          type="button"
+          onClick={() => {
+            if (introTimerRef.current) {
+              window.clearTimeout(introTimerRef.current);
+              introTimerRef.current = null;
+            }
+            startLockedRef.current = false;
+            exitFullscreenAfterSession();
+            router.push('/spokedu-master/spomove');
+          }}
+          className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white"
+          aria-label="나가기"
+          style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
+        >
+          <X size={16} />
+        </button>
+        <div className="max-w-md rounded-3xl border border-white/15 bg-black/70 px-6 py-5 text-center shadow-2xl backdrop-blur-md">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/50">오늘의 동작</p>
+          <p className="mt-2 text-[28px] font-black">{resolvedMovement.displayLabel}</p>
+          <p className="mt-3 text-[14px] font-semibold leading-relaxed text-white/80">
+            {resolvedMovement.instruction}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (state === 'running') {
     return (
@@ -795,17 +935,6 @@ function SpomoveSessionContent() {
             finishSession('done', payload);
           }}
         />
-        {showMovementIntro && resolvedMovement ? (
-          <div className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center bg-black/55 px-6">
-            <div className="max-w-md rounded-3xl border border-white/15 bg-black/70 px-6 py-5 text-center text-white shadow-2xl backdrop-blur-md">
-              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-white/50">오늘의 동작</p>
-              <p className="mt-2 text-[28px] font-black">{resolvedMovement.displayLabel}</p>
-              <p className="mt-3 text-[14px] font-semibold leading-relaxed text-white/80">
-                {resolvedMovement.instruction}
-              </p>
-            </div>
-          </div>
-        ) : null}
         {resolvedMovement ? (
           <MovementHud
             movement={resolvedMovement}
@@ -862,7 +991,7 @@ function SpomoveSessionContent() {
       {showBriefing ? (
         <OfficialEngineBriefing
           preset={officialPreset}
-          startDisabled={bgmLoading}
+          startDisabled={bgmLoading || !canStartSession}
           launchMode={launchMode}
           cueSeconds={effectiveCueSeconds}
           onCueSecondsChange={handleCueSecondsChange}

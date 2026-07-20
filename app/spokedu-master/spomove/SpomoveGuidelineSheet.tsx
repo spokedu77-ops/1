@@ -18,6 +18,7 @@ import { listAllowedMovementPicks } from './movements/movementResolve';
 import { movementDisplayLabel } from './movements/movementLabels';
 import { SPOMAT_COLOR_POSITION } from './movements/spomatColorPosition';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
+import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
 import { useProfile } from '../store';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
@@ -118,13 +119,27 @@ export function SpomoveGuidelineSheet({
   if (!preset) return null;
   const display = getSpomovePresetDisplayModel(preset);
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
-  const startHref = officialPresetSessionHref(preset, { mode: launchMode });
   const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
   const movementProfile = preset.movementProfileId ? getMovementProfile(preset.movementProfileId) : null;
+  const officialRecommended = movementSummary?.officialRecommended ?? null;
   const recommendedDef =
-    movementProfile && movementProfile.selectionMode !== 'disabled'
-      ? MOVEMENT_REGISTRY[movementProfile.recommended.baseMovement]
+    officialRecommended && movementProfile && movementProfile.selectionMode !== 'disabled'
+      ? MOVEMENT_REGISTRY[officialRecommended.baseMovement]
       : null;
+  // 가이드는 Official을 설명하므로 CTA도 Official을 URL에 명시 (설명≠실행 금지)
+  const startHref = officialPresetSessionHref(preset, {
+    mode: launchMode,
+    movement: officialRecommended?.baseMovement,
+    limb: officialRecommended?.limbRule,
+    cueSeconds: officialRecommended
+      ? clampCueSpeedSec(
+          Math.max(
+            resolveSessionCueSeconds(preset, null),
+            MOVEMENT_REGISTRY[officialRecommended.baseMovement].minimumCueSeconds,
+          ),
+        )
+      : undefined,
+  });
 
   return (
     <BottomSheet open title="가이드 · 참고 영상" onClose={onClose} size="preview">
@@ -148,14 +163,14 @@ export function SpomoveGuidelineSheet({
           <SpomoveGuideVideo videoUrl={guideVideoUrl} />
         </section>
 
-        {movementSummary && recommendedDef && movementProfile ? (
+        {movementSummary && recommendedDef && movementProfile && officialRecommended ? (
           <>
             <SpomatColorDiagram />
             <div className="grid gap-3 sm:grid-cols-2">
               <InfoBlock title="시작 위치" value="매트 아래쪽 바깥에서 시작합니다." />
               <InfoBlock
-                title="추천 동작"
-                value={movementDisplayLabel(movementProfile.recommended)}
+                title="공식 추천 동작"
+                value={movementDisplayLabel(officialRecommended)}
               />
               <InfoBlock title="동작 방법" value={recommendedDef.instruction} />
               <InfoBlock title="교사 멘트" value={recommendedDef.teacherCue} />
@@ -172,7 +187,7 @@ export function SpomoveGuidelineSheet({
             <div className="rounded-2xl border border-slate-200 bg-white p-4">
               <p className="text-[11px] font-black text-slate-500">허용 동작</p>
               <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
-                {listAllowedMovementPicks(movementProfile)
+                {listAllowedMovementPicks(movementProfile, movementSummary.family)
                   .map((pick) => movementDisplayLabel(pick))
                   .join(' · ')}
               </p>
@@ -183,14 +198,17 @@ export function SpomoveGuidelineSheet({
         <div className="flex flex-col gap-2">
           <Link
             href={startHref}
+            data-spm-spomove-guide-action="start-official"
             className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
           >
-            {movementSummary ? '바로 시작' : '실행'}
+            {movementSummary ? '공식 추천으로 시작' : '실행'}
           </Link>
           <p className="text-center text-[12px] font-semibold leading-5 text-slate-500">
-            {launchMode === 'mobile'
-              ? '이 기기 레이아웃으로 엽니다. 프로젝터·TV에 연결했다면 PC에서 실행하세요.'
-              : '큰 화면(프로젝터·TV) 레이아웃으로 엽니다. 세션에서 전체화면을 켤 수 있습니다.'}
+            {movementSummary
+              ? `위에서 안내한 ${movementSummary.recommendedLabel}으로 브리핑을 엽니다.`
+              : launchMode === 'mobile'
+                ? '이 기기 레이아웃으로 엽니다. 프로젝터·TV에 연결했다면 PC에서 실행하세요.'
+                : '큰 화면(프로젝터·TV) 레이아웃으로 엽니다. 세션에서 전체화면을 켤 수 있습니다.'}
           </p>
           <button
             type="button"

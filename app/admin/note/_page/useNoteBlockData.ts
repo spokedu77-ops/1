@@ -275,11 +275,12 @@ export function useNoteBlockData(options: {
         ),
       };
     });
-    if (togglePatches.length > 0) {
-      await documentEngineRef.current.persistFieldPatches(togglePatches);
-    }
-    if (toggleMigration.updatedChildPatches.length > 0) {
-      await documentEngineRef.current.persistFieldPatches(toggleMigration.updatedChildPatches);
+    const patches = [
+      ...togglePatches,
+      ...toggleMigration.updatedChildPatches,
+    ];
+    if (patches.length > 0) {
+      await documentEngineRef.current.persistBlockTransaction(patches);
     }
   }, []);
 

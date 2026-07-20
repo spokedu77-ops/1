@@ -5,9 +5,12 @@ import {
   clampCueSpeedSec,
   formatCueSpeedTargetLabel,
   getCueSpeedGuide,
+  parseCueSecondsQuery,
   recommendedCueSecondsForPreset,
+  resolveSessionCueSeconds,
   supportsCueSpeedOverride,
 } from './spomoveCueSpeed';
+import { officialPresetSessionHref } from './officialSpomovePresets';
 
 describe('spomoveCueSpeed', () => {
   it('clamps to integer 2~6', () => {
@@ -56,5 +59,35 @@ describe('spomoveCueSpeed', () => {
     const unsupported = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => !supportsCueSpeedOverride(preset));
     expect(supported.length).toBeGreaterThan(20);
     expect(unsupported.length).toBeGreaterThan(5);
+  });
+
+  it('resolveSessionCueSeconds prefers valid URL cue over preset default', () => {
+    const preset = findOfficialSpomovePreset('reaction-cognition-space-direction-01')!;
+    expect(resolveSessionCueSeconds(preset, 5)).toBe(5);
+    expect(resolveSessionCueSeconds(preset, 99)).toBe(6);
+    expect(parseCueSecondsQuery('4')).toBe(4);
+    expect(parseCueSecondsQuery('nope')).toBeNull();
+  });
+
+  it('session href can attach movement, cue, autostart, and difficulty', () => {
+    const preset = findOfficialSpomovePreset('reaction-cognition-space-direction-01')!;
+    const href = officialPresetSessionHref(preset, {
+      autostart: true,
+      movement: 'handTouch',
+      limb: 'free',
+      cueSeconds: 4,
+      difficulty: '2',
+    });
+    expect(href).toContain('autostart=1');
+    expect(href).toContain('movement=handTouch');
+    expect(href).toContain('limb=free');
+    expect(href).toContain('cueSeconds=4');
+    expect(href).toContain('difficulty=2');
+    const settingsHref = officialPresetSessionHref(preset, {
+      movement: 'footTap',
+      limb: 'free',
+      cueSeconds: 3,
+    });
+    expect(settingsHref).not.toContain('autostart=');
   });
 });

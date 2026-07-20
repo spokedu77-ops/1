@@ -1342,14 +1342,18 @@ export function officialPresetSessionHref(
     bgmPath?: string;
     autostart?: boolean;
     mode?: 'projector' | 'mobile';
-    /** 명시 시에만 URL에 부착. 바로 시작은 생략하고 세션이 family 저장을 적용 */
+    /** 명시 시에만 URL에 부착 */
     movement?: string;
     limb?: string;
+    /** 미지정 시 프리셋 기본값. Session이 URL cue를 읽음 */
+    cueSeconds?: number;
+    /** 난이도 오버라이드 (numberCart/colorTracker/mole/camouflage 값) */
+    difficulty?: string;
   },
 ) {
   const params = new URLSearchParams({
     preset: preset.id,
-    cueSeconds: String(preset.cueSeconds),
+    cueSeconds: String(options?.cueSeconds ?? preset.cueSeconds),
     rounds: String(preset.rounds),
     sound: 'on',
     mode: options?.mode ?? 'projector',
@@ -1358,6 +1362,7 @@ export function officialPresetSessionHref(
   if (options?.autostart) params.set('autostart', '1');
   if (options?.movement) params.set('movement', options.movement);
   if (options?.limb) params.set('limb', options.limb);
+  if (options?.difficulty) params.set('difficulty', options.difficulty);
   return `/spokedu-master/spomove/session?${params.toString()}`;
 }
 

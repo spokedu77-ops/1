@@ -4,22 +4,31 @@ import { X } from 'lucide-react';
 
 import { MOVEMENT_REGISTRY } from './movementRegistry';
 import { movementDisplayLabel } from './movementLabels';
-import type { MovementPick, MovementProfile } from './movementTypes';
+import type { ActivityFamilyDefinition, MovementPick, MovementProfile } from './movementTypes';
 import { listAllowedMovementPicks } from './movementResolve';
 
 type Props = {
   open: boolean;
   profile: MovementProfile;
+  family?: ActivityFamilyDefinition | null;
   selected: MovementPick;
   onSelect: (pick: MovementPick) => void;
   onClose: () => void;
   onConfirmStart?: (pick: MovementPick) => void;
 };
 
-export function MovementChangeSheet({ open, profile, selected, onSelect, onClose, onConfirmStart }: Props) {
+export function MovementChangeSheet({
+  open,
+  profile,
+  family,
+  selected,
+  onSelect,
+  onClose,
+  onConfirmStart,
+}: Props) {
   if (!open) return null;
 
-  const picks = listAllowedMovementPicks(profile);
+  const picks = listAllowedMovementPicks(profile, family);
 
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-3 sm:items-center">

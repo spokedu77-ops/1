@@ -385,11 +385,24 @@ export function useNoteBlockActions(options: {
           : (focusedEditorPartRef.current ?? 'editor');
 
     try {
-      await documentEngine.persistFieldPatches([{
-        id: block.id,
-        type,
-        content: nextContent,
-      }]);
+      const nextBlocks = await documentEngine.applyStructureCommand({
+        nextBlocks: blocksRef.current.map((item) => (
+          item.id === block.id
+            ? { ...item, type, content: nextContent }
+            : item
+        )),
+        affectedIds: [block.id],
+        orders: [],
+        fieldPatches: [{
+          id: block.id,
+          type,
+          content: nextContent,
+        }],
+        createdBlocks: [],
+        removedBlocks: [],
+      });
+      setBlocks(nextBlocks);
+      onAfterBlocksChanged?.(nextBlocks);
       bumpNoteReconcileIdle(selectedId);
       triggerSave();
       preserveEditorScrollPosition(editorScrollRef.current, () => {});
@@ -414,8 +427,10 @@ export function useNoteBlockActions(options: {
     focusedEditorPartRef,
     recordBlockUndo,
     selectedId,
+    setBlocks,
     setError,
     triggerSave,
+    onAfterBlocksChanged,
   ]);
 
   const showFormatToolbar = useCallback((

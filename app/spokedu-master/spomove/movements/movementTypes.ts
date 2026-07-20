@@ -62,16 +62,22 @@ export type MovementProfile = {
 
 export type ActivityFamilyId = string;
 
-export type ActivityFamilyDefinition = {
-  id: ActivityFamilyId;
-  movementProfileId: MovementProfileId;
-  matRequirement: { minMats: number; maxMats?: number };
-};
-
 export type MovementPick = {
   baseMovement: BaseMovementId;
   limbRule: LimbRule;
 };
+
+export type ActivityFamilyDefinition = {
+  id: ActivityFamilyId;
+  movementProfileId: MovementProfileId;
+  matRequirement: { minMats: number; maxMats?: number };
+  /** 공식 추천 — Profile.recommended보다 우선. 표시·첫 사용자 기본 */
+  recommendedMovement?: MovementPick;
+  /** 교육 검수로 제외한 조합 — URL·저장도 우회 불가 */
+  excludedMovements?: MovementPick[];
+};
+
+export type MovementResolutionStatus = 'pending' | 'ready' | 'disabled' | 'legacyFallback';
 
 export type ResolvedMovementConfiguration = {
   baseMovement: BaseMovementId;

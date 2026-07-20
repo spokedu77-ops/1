@@ -115,6 +115,27 @@ export function resolveInitialCueSeconds(preset: OfficialSpomovePreset): Spomove
   return readLastCueSeconds(preset.cueSeconds);
 }
 
+/**
+ * Wave 2 cue 우선순위:
+ * 유효 URL cueSeconds → 마지막 저장 → 프리셋 기본
+ * (동작 minimumCue floor는 Session의 resolveSessionConfiguration에서 적용)
+ */
+export function resolveSessionCueSeconds(
+  preset: OfficialSpomovePreset,
+  urlCueSeconds?: number | null,
+): SpomoveCueSpeedSec {
+  if (urlCueSeconds != null && Number.isFinite(urlCueSeconds)) {
+    return clampCueSpeedSec(urlCueSeconds);
+  }
+  return resolveInitialCueSeconds(preset);
+}
+
+export function parseCueSecondsQuery(raw: string | null | undefined): number | null {
+  if (raw == null || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function getCueSpeedGuide(sec: number): SpomoveCueSpeedGuide {
   return SPOMOVE_CUE_SPEED_GUIDES[clampCueSpeedSec(sec)];
 }

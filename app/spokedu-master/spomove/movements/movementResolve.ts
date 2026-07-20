@@ -1,8 +1,9 @@
 import { getActivityFamily } from './activityFamilies';
 import { effectiveMinimumCueSeconds, movementDisplayLabel, movementHudLabel } from './movementLabels';
-import { getMovementProfile } from './movementProfiles';
+import { getMovementProfile, MOVEMENT_PROFILES } from './movementProfiles';
 import { MOVEMENT_REGISTRY } from './movementRegistry';
 import type {
+  ActivityFamilyDefinition,
   BaseMovementId,
   LimbRule,
   MovementPick,
@@ -15,23 +16,48 @@ export const DEFAULT_SAFE_MOVEMENT: MovementPick = {
   limbRule: 'free',
 };
 
-export function listAllowedMovementPicks(profile: MovementProfile): MovementPick[] {
+function picksEqual(a: MovementPick, b: MovementPick) {
+  return a.baseMovement === b.baseMovement && a.limbRule === b.limbRule;
+}
+
+export function listAllowedMovementPicks(
+  profile: MovementProfile,
+  family?: ActivityFamilyDefinition | null,
+): MovementPick[] {
   const picks: MovementPick[] = [];
   for (const alt of profile.alternatives) {
     const def = MOVEMENT_REGISTRY[alt.baseMovement];
     for (const limb of alt.allowedLimbRules) {
       if (!def.supportedLimbRules.includes(limb)) continue;
-      picks.push({ baseMovement: alt.baseMovement, limbRule: limb });
+      const pick = { baseMovement: alt.baseMovement, limbRule: limb };
+      if (family && isExcludedByFamily(pick, family)) continue;
+      picks.push(pick);
     }
   }
   return picks;
 }
 
+export function isExcludedByFamily(
+  pick: MovementPick | null | undefined,
+  family: ActivityFamilyDefinition,
+): boolean {
+  if (!pick || !family.excludedMovements?.length) return false;
+  return family.excludedMovements.some((excluded) => picksEqual(excluded, pick));
+}
+
 export function isAllowedMovement(pick: MovementPick | null | undefined, profile: MovementProfile): boolean {
   if (!pick) return false;
-  return listAllowedMovementPicks(profile).some(
-    (allowed) => allowed.baseMovement === pick.baseMovement && allowed.limbRule === pick.limbRule,
-  );
+  return listAllowedMovementPicks(profile).some((allowed) => picksEqual(allowed, pick));
+}
+
+/** Profile 허용 + Family 제외 — URL·저장·추천 공통 */
+export function isAllowedByFamily(
+  pick: MovementPick | null | undefined,
+  family: ActivityFamilyDefinition,
+  profile: MovementProfile,
+): boolean {
+  if (!pick) return false;
+  return isAllowedMovement(pick, profile) && !isExcludedByFamily(pick, family);
 }
 
 export function resolveMovementConfiguration(
@@ -52,23 +78,66 @@ export function resolveMovementConfiguration(
   };
 }
 
-export type ResolveMovementInput = {
+/**
+ * 공식 추천만 계산. localStorage 변경 금지.
+ * Hub 카드·가이드·감사·첫 사용자 기본 표시용.
+ */
+export function resolveOfficialRecommended(
+  family: ActivityFamilyDefinition,
+  profile: MovementProfile,
+): MovementPick {
+  if (profile.selectionMode === 'disabled') return DEFAULT_SAFE_MOVEMENT;
+
+  if (family.recommendedMovement && isAllowedByFamily(family.recommendedMovement, family, profile)) {
+    return family.recommendedMovement;
+  }
+  if (isAllowedByFamily(profile.recommended, family, profile)) {
+    return profile.recommended;
+  }
+  return DEFAULT_SAFE_MOVEMENT;
+}
+
+export type ResolveEffectiveMovementInput = {
   profile: MovementProfile;
+  family: ActivityFamilyDefinition;
   urlMovement?: MovementPick | null;
   savedMovement?: MovementPick | null;
 };
 
-/** disabled → null. URL > family 저장 > recommended > DEFAULT (selectable/fixed만) */
-export function resolveMovementPick(input: ResolveMovementInput): MovementPick | null {
-  const { profile } = input;
+/**
+ * 이번 세션 실제 실행값.
+ * disabled → null. 유효 URL → 유효 저장 → Family 추천 → Profile 추천 → DEFAULT
+ */
+export function resolveEffectiveMovement(input: ResolveEffectiveMovementInput): MovementPick | null {
+  const { profile, family } = input;
   if (profile.selectionMode === 'disabled') return null;
 
+  if (isAllowedByFamily(input.urlMovement, family, profile)) return input.urlMovement!;
+  if (isAllowedByFamily(input.savedMovement, family, profile)) return input.savedMovement!;
+  return resolveOfficialRecommended(family, profile);
+}
+
+/** @deprecated resolveEffectiveMovement 사용. Family 없이 Profile만 있을 때 호환 */
+export function resolveMovementPick(input: {
+  profile: MovementProfile;
+  urlMovement?: MovementPick | null;
+  savedMovement?: MovementPick | null;
+  family?: ActivityFamilyDefinition | null;
+}): MovementPick | null {
+  const { profile } = input;
+  if (profile.selectionMode === 'disabled') return null;
+  const family = input.family;
+  if (family) {
+    return resolveEffectiveMovement({
+      profile,
+      family,
+      urlMovement: input.urlMovement,
+      savedMovement: input.savedMovement,
+    });
+  }
   if (isAllowedMovement(input.urlMovement, profile)) return input.urlMovement!;
   if (isAllowedMovement(input.savedMovement, profile)) return input.savedMovement!;
   if (isAllowedMovement(profile.recommended, profile)) return profile.recommended;
-  if (profile.selectionMode === 'fixed' && isAllowedMovement(profile.recommended, profile)) {
-    return profile.recommended;
-  }
   return DEFAULT_SAFE_MOVEMENT;
 }
 
@@ -128,5 +197,6 @@ export function familySupportsSingleMat(activityFamilyId: string) {
 export function getProfileForFamilyId(activityFamilyId: string): MovementProfile | null {
   const family = getActivityFamily(activityFamilyId);
   if (!family) return null;
+  if (!(family.movementProfileId in MOVEMENT_PROFILES)) return null;
   return getMovementProfile(family.movementProfileId);
 }

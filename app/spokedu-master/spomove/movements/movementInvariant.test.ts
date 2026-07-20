@@ -9,13 +9,17 @@ import {
   listAllowedMovementPicks,
   MOVEMENT_PROFILES,
   MOVEMENT_REGISTRY,
+  isAllowedByFamily,
   isAllowedMovement,
   isLeftSpomatColor,
   isRightSpomatColor,
+  resolveOfficialRecommended,
   profileSupportsJumpFree,
 } from './index';
+import { enrichPresetWithMovementLayerResult } from './enrichPresetMovement';
 
-describe('SPOMOVE movement coverage', () => {
+/** Core hard — 실행 안전·스키마 불변조건만. KPI는 movementAudit.test.ts */
+describe('SPOMOVE movement invariants', () => {
   const visiblePresets = OFFICIAL_SPOMOVE_LIBRARY.filter(isHubVisiblePreset);
 
   it('모든 hub-visible 프리셋에 activityFamilyId와 movementProfileId가 있다', () => {
@@ -24,20 +28,6 @@ describe('SPOMOVE movement coverage', () => {
       expect(preset.activityFamilyId, preset.id).toBeTruthy();
       expect(preset.movementProfileId, preset.id).toBeTruthy();
     }
-  });
-
-  it('패밀리 단위 1장 지원 비율이 60% 이상이다', () => {
-    const familyIds = [...new Set(visiblePresets.map((p) => p.activityFamilyId!).filter(Boolean))];
-    const singleMat = familyIds.filter((id) => getActivityFamily(id)?.matRequirement.minMats === 1);
-    expect(singleMat.length / familyIds.length).toBeGreaterThanOrEqual(0.6);
-  });
-
-  it('허브 노출 콘텐츠 1장 지원 비율이 70% 이상이다', () => {
-    const singleMat = visiblePresets.filter((p) => {
-      const family = getActivityFamily(p.activityFamilyId!);
-      return family?.matRequirement.minMats === 1;
-    });
-    expect(singleMat.length / visiblePresets.length).toBeGreaterThanOrEqual(0.7);
   });
 
   it('같은 family는 동일한 movementProfileId를 쓴다', () => {
@@ -59,11 +49,31 @@ describe('SPOMOVE movement coverage', () => {
     }
   });
 
-  it('추천 동작은 허용 목록에 포함된다', () => {
+  it('명시 Family ≠ MAP 충돌은 hard-fail한다', () => {
+    expect(() =>
+      enrichPresetWithMovementLayerResult({
+        id: 'reaction-cognition-full-color-03',
+        activityFamilyId: 'dive',
+      } as Parameters<typeof enrichPresetWithMovementLayerResult>[0]),
+    ).toThrow(/Family MAP conflict/);
+  });
+
+  it('Profile 추천은 허용 목록에 포함된다', () => {
     for (const profile of Object.values(MOVEMENT_PROFILES)) {
       if (profile.selectionMode === 'disabled') continue;
       expect(isAllowedMovement(profile.recommended, profile)).toBe(true);
-      expect(listAllowedMovementPicks(profile).length).toBeGreaterThanOrEqual(profile.minimumMovementCount);
+      expect(listAllowedMovementPicks(profile).length).toBeGreaterThanOrEqual(
+        profile.minimumMovementCount,
+      );
+    }
+  });
+
+  it('Family 공식 추천은 Profile+제외 규칙을 통과한다', () => {
+    for (const family of Object.values(ACTIVITY_FAMILIES)) {
+      const profile = MOVEMENT_PROFILES[family.movementProfileId];
+      if (profile.selectionMode === 'disabled') continue;
+      const official = resolveOfficialRecommended(family, profile);
+      expect(isAllowedByFamily(official, family, profile), family.id).toBe(true);
     }
   });
 
@@ -98,6 +108,7 @@ describe('SPOMOVE movement coverage', () => {
   it('등록된 모든 family가 ACTIVITY_FAMILIES에 있다', () => {
     for (const preset of visiblePresets) {
       expect(ACTIVITY_FAMILIES[preset.activityFamilyId!]).toBeTruthy();
+      expect(getActivityFamily(preset.activityFamilyId!)).toBeTruthy();
     }
   });
 

@@ -16,6 +16,9 @@ export type RecentProgramActivity = {
   limbRule?: string;
   movementLabel?: string;
   cueSeconds?: number;
+  /** 난이도 재현용 (optional) */
+  difficultyKind?: string;
+  difficultyValue?: string;
 };
 
 export type RecentProgramActivityInput = Omit<RecentProgramActivity, 'ownerId' | 'resumeHref'>;

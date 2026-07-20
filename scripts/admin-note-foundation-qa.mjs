@@ -15,6 +15,11 @@ import {
   runCheck,
 } from './note-qa/shared.mjs';
 import { cleanupEphemeralQaDocumentsBestEffort } from './note-qa/cleanupEphemeralDocs.mjs';
+import {
+  auditBlockInvariants,
+  countCriticalInvariantIssues,
+  countWarningInvariantIssues,
+} from './note-qa/blockInvariants.mjs';
 
 const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
@@ -60,6 +65,29 @@ async function fetchBlocks(page, documentId = documentIdFromPage(page)) {
     const json = await res.json();
     return json.blocks ?? [];
   }, documentId);
+}
+
+async function fetchActiveDocuments(page) {
+  return page.evaluate(async () => {
+    const res = await fetch('/api/admin/note/bootstrap', { credentials: 'include' });
+    if (!res.ok) throw new Error(`bootstrap ${res.status}`);
+    const json = await res.json();
+    return (json.documents ?? [])
+      .filter((doc) => !doc.deleted_at)
+      .map((doc) => ({ id: doc.id, title: doc.title ?? doc.id }));
+  });
+}
+
+function summarizeInvariantIssues(issues) {
+  const parts = [];
+  if (issues.missingParents.length) parts.push(`missingParents=${issues.missingParents.length}`);
+  if (issues.crossDocumentParents.length) parts.push(`crossDocumentParents=${issues.crossDocumentParents.length}`);
+  if (issues.cycles.length) parts.push(`cycles=${issues.cycles.length}`);
+  if (issues.forbiddenParents.length) parts.push(`forbiddenParents=${issues.forbiddenParents.length}`);
+  if (issues.duplicateSiblingOrders.length) parts.push(`duplicateSiblingOrders=${issues.duplicateSiblingOrders.length}`);
+  if (issues.nonContiguousSiblingOrders.length) parts.push(`nonContiguousSiblingOrders=${issues.nonContiguousSiblingOrders.length}`);
+  if (issues.emptyVisibleBlocks.length) parts.push(`emptyVisibleBlocks=${issues.emptyVisibleBlocks.length}`);
+  return parts.join(', ');
 }
 
 function isEmptyStoredInputBlock(block) {
@@ -268,6 +296,23 @@ async function main() {
       const apiBlocks = await fetchBlocks(page, COMMON_BOARD_ID);
       if (rows < 1 && apiBlocks.length < NOTE_QA_DOCUMENTS[0].minRows) {
         throw new Error(`too few rows: dom=${rows} api=${apiBlocks.length}`);
+      }
+    });
+
+    failed += await runCheck('all active documents satisfy block invariants', async () => {
+      const documents = await fetchActiveDocuments(page);
+      const failures = [];
+      for (const document of documents) {
+        const blocks = await fetchBlocks(page, document.id);
+        const issues = auditBlockInvariants(blocks);
+        const critical = countCriticalInvariantIssues(issues);
+        const warnings = countWarningInvariantIssues(issues);
+        if (critical > 0 || warnings > 0) {
+          failures.push(`${document.title} <${document.id}> critical=${critical} warnings=${warnings} ${summarizeInvariantIssues(issues)}`);
+        }
+      }
+      if (failures.length > 0) {
+        throw new Error(`document invariant failures:\n${failures.join('\n')}`);
       }
     });
 
