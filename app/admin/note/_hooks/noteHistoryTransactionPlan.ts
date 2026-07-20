@@ -5,22 +5,30 @@ import type { NoteBlock } from '../_lib/types';
 export type NoteHistoryTransactionPlan = {
   scopeIds: Set<string>;
   targetIds: Set<string>;
+  currentBlocks: NoteBlock[];
   deleteIds: string[];
   restoreRoots: NoteBlock[];
   fieldPatches: NoteBlockFieldPatch[];
 };
 
 export type NoteHistoryPersistStep =
-  | { type: 'softDelete'; ids: string[] }
+  | { type: 'softDelete'; ids: string[]; blocks: NoteBlock[] }
   | { type: 'restoreRoots'; roots: NoteBlock[] }
   | { type: 'patchFields'; patches: NoteBlockFieldPatch[] };
 
 export function buildHistoryPersistSteps(
-  plan: Pick<NoteHistoryTransactionPlan, 'deleteIds' | 'restoreRoots' | 'fieldPatches'>,
+  plan: Pick<NoteHistoryTransactionPlan, 'currentBlocks' | 'deleteIds' | 'restoreRoots' | 'fieldPatches'>,
 ): NoteHistoryPersistStep[] {
   const steps: NoteHistoryPersistStep[] = [];
   if (plan.deleteIds.length > 0) {
-    steps.push({ type: 'softDelete', ids: plan.deleteIds });
+    const blockById = new Map(plan.currentBlocks.map((block) => [block.id, block]));
+    steps.push({
+      type: 'softDelete',
+      ids: plan.deleteIds,
+      blocks: plan.deleteIds
+        .map((id) => blockById.get(id))
+        .filter((block): block is NoteBlock => Boolean(block)),
+    });
   }
   if (plan.restoreRoots.length > 0) {
     steps.push({ type: 'restoreRoots', roots: plan.restoreRoots });
@@ -92,6 +100,7 @@ export function buildHistoryTransactionPlan(
   return {
     scopeIds,
     targetIds,
+    currentBlocks: current,
     deleteIds,
     restoreRoots,
     fieldPatches: target.map((snapshot) => ({

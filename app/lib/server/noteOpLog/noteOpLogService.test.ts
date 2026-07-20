@@ -3,6 +3,7 @@ import {
   applyNoteBlockOpPayload,
   filterTransactionPatchesByDocument,
   filterTransactionPatchesByExistingIds,
+  normalizeOpTransactionPayloadForInvariants,
   pushNoteBlockOps,
   shouldIgnoreRegressiveContentPatch,
 } from './noteOpLogService';
@@ -11,6 +12,20 @@ import { commitNoteBlockOp } from './noteCommitBlockOp';
 vi.mock('./noteCommitBlockOp', () => ({
   commitNoteBlockOp: vi.fn(),
 }));
+
+function block(id: string, overrides = {}) {
+  return {
+    id,
+    document_id: 'doc-1',
+    parent_block_id: null,
+    type: 'text',
+    order_index: 0,
+    content: {},
+    deleted_at: null,
+    version: 1,
+    ...overrides,
+  };
+}
 
 describe('noteOpLogService transaction patch filtering', () => {
   beforeEach(() => {
@@ -43,6 +58,34 @@ describe('noteOpLogService transaction patch filtering', () => {
     ]);
   });
 
+  it('normalizes op-log transaction payloads before RPC persistence', () => {
+    const result = normalizeOpTransactionPayloadForInvariants({
+      documentId: 'doc-1',
+      existingBlocks: [
+        block('todo', { document_id: 'doc-1', type: 'todo', order_index: 0 }),
+        block('child', { document_id: 'doc-1', type: 'text', parent_block_id: 'todo', order_index: 0 }),
+      ],
+      updates: [
+        { id: 'child', parent_block_id: 'todo', order_index: 0 },
+      ],
+      creates: [
+        { id: 'toggle-child', document_id: 'doc-1', type: 'toggle', parent_block_id: 'todo', order_index: 1 },
+      ],
+      deleteIds: [],
+    });
+
+    expect(result.updates[0]).toMatchObject({
+      id: 'child',
+      parent_block_id: null,
+      order_index: 1,
+    });
+    expect(result.creates[0]).toMatchObject({
+      id: 'toggle-child',
+      parent_block_id: null,
+      order_index: 2,
+    });
+  });
+
   it('ignores stale prefix patches that would truncate saved text', () => {
     expect(shouldIgnoreRegressiveContentPatch(
       { text: '7.20 월요일 12시 송예원T OT' },
@@ -61,6 +104,24 @@ describe('noteOpLogService transaction patch filtering', () => {
       { text: '7.20 월요일 12시 송예원T OT' },
       { text: '7.20 월요일 13시 송예원T OT' },
     )).toBe(false);
+  });
+
+  it('ignores non-empty delayed patches when their base no longer matches the server', () => {
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: 'latest checklist text', html: '<p>latest checklist text</p>' },
+      { text: 'older delayed edit', html: '<p>older delayed edit</p>' },
+      { text: 'old checklist text', html: '<p>old checklist text</p>' },
+    )).toBe(true);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { text: 'latest checklist text', html: '<p>latest checklist text</p>' },
+      { text: 'latest checklist text', html: '<p>latest checklist text</p>' },
+      { text: 'old checklist text', html: '<p>old checklist text</p>' },
+    )).toBe(false);
+    expect(shouldIgnoreRegressiveContentPatch(
+      { title: 'current toggle title', collapsed: false },
+      { title: 'old delayed title', collapsed: true },
+      { title: 'old toggle title', collapsed: true },
+    )).toBe(true);
   });
 
   it('treats toggle titles and page links as protectable content', () => {

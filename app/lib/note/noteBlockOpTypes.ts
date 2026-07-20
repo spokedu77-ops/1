@@ -32,6 +32,7 @@ export type NoteBlockOpPayload =
   | {
     opType: 'soft_delete';
     ids: string[];
+    deleteMeta?: Array<{ id: string; updated_at?: string | null }>;
   }
   | {
     opType: 'create_block';
@@ -48,6 +49,7 @@ export type NoteBlockOpPayload =
     opType: 'block_transaction';
     patches: NoteBlockFieldPatchPayload[];
     deleteIds: string[];
+    deleteMeta?: Array<{ id: string; updated_at?: string | null }>;
     creates?: Array<{
       id?: string;
       document_id: string;

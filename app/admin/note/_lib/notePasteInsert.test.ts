@@ -315,6 +315,52 @@ describe('insertPastedBlockSpecsAfterBlock nested lists', () => {
     ]);
   });
 
+  it('skips blank paste rows without aborting the remaining paste transaction', async () => {
+    const anchor = block('anchor', 'text', 0);
+    const blocksRef: { current: NoteBlock[] } = { current: [anchor] };
+    const created: Array<{ id: string; parentId: string | null; type: NoteBlock['type']; index: number }> = [];
+    let seq = 0;
+
+    const ctx: PasteInsertContext = {
+      blocksRef,
+      insertBlockAmongSiblings: vi.fn(async (
+        parentId: string | null,
+        type: NoteBlock['type'],
+        insertIndex: number,
+        options?: { content?: Record<string, unknown> },
+      ) => {
+        if (!String(options?.content?.text ?? '').trim()) return null;
+        seq += 1;
+        const inserted: NoteBlock = {
+          ...block(`pasted-${seq}`, type, insertIndex, parentId),
+          content: options?.content ?? {},
+        };
+        created.push({ id: inserted.id, parentId, type, index: insertIndex });
+        blocksRef.current = [...blocksRef.current, inserted];
+        return inserted;
+      }),
+      changeBlockType: vi.fn(async () => {}),
+      syncBlockContent: vi.fn(),
+    };
+
+    await insertPastedBlockSpecsAfterBlock(
+      ctx,
+      anchor,
+      [
+        { type: 'text', text: '' },
+        { type: 'todo', text: 'keep this', checked: false },
+        { type: 'text', text: '   ' },
+        { type: 'bulletList', text: 'and this' },
+      ],
+      {},
+    );
+
+    expect(created).toEqual([
+      { id: 'pasted-1', parentId: null, type: 'todo', index: 1 },
+      { id: 'pasted-2', parentId: null, type: 'bulletList', index: 2 },
+    ]);
+  });
+
   it('keeps a mixed structural paste as one complete transaction after rewriting the anchor', async () => {
     const anchor = {
       ...block('anchor', 'text', 0),

@@ -159,7 +159,7 @@ async function insertSpecsAmongSiblings(
       clampedIndex,
       { content, focus: false, registerUndo: false, reason: 'paste' },
     );
-    if (!created) break;
+    if (!created) continue;
 
     lastFocusId = created.id;
     lastFocusPart = created.type === 'toggle' ? 'title' : 'editor';

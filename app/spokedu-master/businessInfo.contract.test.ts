@@ -41,7 +41,6 @@ describe('SPOKEDU MASTER business info contract', () => {
       'app/spokedu-master/payment/success/page.tsx',
       'app/spokedu-master/components/layout/AppShell.tsx',
       'app/spokedu-master/components/ui/SubscriptionGateWall.tsx',
-      'app/spokedu-master/director/page.tsx',
       'app/spokedu-master/onboarding/page.tsx',
       'app/spokedu-master/terms/page.tsx',
       'app/spokedu-master/privacy/page.tsx',

@@ -19,10 +19,13 @@ import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/sto
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   normalizeSpomoveGuideVideoMap,
+  normalizeSpomoveHomeFeaturedSlots,
   normalizeSpomoveThumbnailMap,
   SPOMOVE_GUIDE_VIDEO_PACK_ID,
+  SPOMOVE_HOME_FEATURED_PACK_ID,
   SPOMOVE_THUMBNAIL_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
+import { resolveHomeFeaturedSpomove } from '../lib/spomoveHomeFeatured';
 import {
   joinCatalogMeta,
   LessonCatalogCard,
@@ -153,32 +156,6 @@ function compareHomePrograms(a: Program, b: Program) {
     Number(programHasPlayableVideo(b)) - Number(programHasPlayableVideo(a)) ||
     Number(b.isNew) - Number(a.isNew)
   );
-}
-
-function selectFeaturedSpomove() {
-  const ready = OFFICIAL_SPOMOVE_LIBRARY.filter((preset) => preset.isReady);
-  const selected: OfficialSpomovePreset[] = [];
-  const axes = new Set<string>();
-  const groups = new Set<string>();
-
-  for (const preset of ready) {
-    if (selected.length >= 3) break;
-    if (axes.has(preset.axis)) continue;
-    selected.push(preset);
-    axes.add(preset.axis);
-    groups.add(preset.programGroup);
-  }
-  for (const preset of ready) {
-    if (selected.length >= 4) break;
-    if (groups.has(preset.programGroup)) continue;
-    selected.push(preset);
-    groups.add(preset.programGroup);
-  }
-  for (const preset of ready) {
-    if (selected.length >= 4) break;
-    if (!selected.some((item) => item.id === preset.id)) selected.push(preset);
-  }
-  return selected;
 }
 
 function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?: number) {
@@ -712,6 +689,12 @@ function EntitledDashboardView() {
   const [spomoveThumbnailPaths, setSpomoveThumbnailPaths] = useState<Record<string, string>>({});
   const [spomoveThumbnailCacheBust, setSpomoveThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
+  const [featuredSpomoveSlotIds, setFeaturedSpomoveSlotIds] = useState<Array<string | null>>([
+    null,
+    null,
+    null,
+    null,
+  ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
 
@@ -729,8 +712,13 @@ function EntitledDashboardView() {
         .eq('id', SPOMOVE_THUMBNAIL_PACK_ID)
         .maybeSingle(),
       supabase.from('think_asset_packs').select('assets_json').eq('id', SPOMOVE_GUIDE_VIDEO_PACK_ID).maybeSingle(),
+      supabase
+        .from('think_asset_packs')
+        .select('assets_json')
+        .eq('id', SPOMOVE_HOME_FEATURED_PACK_ID)
+        .maybeSingle(),
     ])
-      .then(([thumbnailResult, guideVideoResult]) => {
+      .then(([thumbnailResult, guideVideoResult, featuredResult]) => {
         if (!alive) return;
         const { data, error } = thumbnailResult as SpomoveThumbnailPackQueryResult;
         if (error && error.code !== 'PGRST116') {
@@ -750,12 +738,23 @@ function EntitledDashboardView() {
         } else {
           setGuideVideoUrls(normalizeSpomoveGuideVideoMap(guideVideoData?.assets_json));
         }
+
+        const { data: featuredData, error: featuredError } = featuredResult as {
+          data: { assets_json?: unknown } | null;
+          error: { code?: string } | null;
+        };
+        if (featuredError && featuredError.code !== 'PGRST116') {
+          setFeaturedSpomoveSlotIds([null, null, null, null]);
+        } else {
+          setFeaturedSpomoveSlotIds(normalizeSpomoveHomeFeaturedSlots(featuredData?.assets_json));
+        }
       })
       .catch(() => {
         if (!alive) return;
         setSpomoveThumbnailPaths({});
         setSpomoveThumbnailCacheBust(undefined);
         setGuideVideoUrls({});
+        setFeaturedSpomoveSlotIds([null, null, null, null]);
       });
     return () => {
       alive = false;
@@ -783,7 +782,10 @@ function EntitledDashboardView() {
     [programPool, weeklySelection.programs],
   );
   const weeklyIds = useMemo(() => new Set(weeklyPrograms.map((program) => program.id)), [weeklyPrograms]);
-  const featuredSpomove = useMemo(() => selectFeaturedSpomove(), []);
+  const featuredSpomove = useMemo(
+    () => resolveHomeFeaturedSpomove(featuredSpomoveSlotIds),
+    [featuredSpomoveSlotIds],
+  );
   const contextPrograms = useMemo(() => {
     const tab = CONTEXT_PROGRAM_TABS.find((item) => item.key === contextTab) ?? CONTEXT_PROGRAM_TABS[0];
     return selectContextPrograms(programs, tab.key, weeklyIds);

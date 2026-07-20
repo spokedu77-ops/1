@@ -215,6 +215,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   handleRenameDocument,
   setSelectedBlockIds,
   loadingBlocks,
+  loadSettledDocId,
   blocks,
   selectedBlockIds,
   handleBlockSelect,
@@ -229,6 +230,9 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
   focusBlockEditor,
   activeDragDocId,
 }: NoteEditorPanelProps) {
+  const blockSnapshotReady = Boolean(selectedId) && loadSettledDocId === selectedId;
+  const shouldShowBlockSkeleton = loadingBlocks || !blockSnapshotReady;
+
   return (
     <div className={`min-w-0 flex-1 flex-col overflow-hidden bg-white ${
       viewMode === 'board' ? 'hidden' : mobileTab === 'editor' ? 'flex' : 'hidden'
@@ -601,7 +605,7 @@ export const NoteEditorPanel = memo(function NoteEditorPanel({
             </div>
           )}
 
-          {loadingBlocks ? (
+          {shouldShowBlockSkeleton ? (
             <div className={NOTE_PAGE_SHELL}>
               <NoteBlockLoadSkeleton />
             </div>

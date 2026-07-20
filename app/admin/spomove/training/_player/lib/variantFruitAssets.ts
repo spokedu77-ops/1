@@ -5,10 +5,10 @@
  */
 
 import { getPublicUrl, withPublicUrlCacheBust } from '@/app/lib/admin/assets/storageClient';
+import { SPOMOVE_VARIANT_SLOT_COLOR_IDS } from '@/app/lib/admin/constants/padGrid';
 import { COLORS } from '../constants';
 import {
   SPOMOVE_VARIANT_FRUIT_SLOT_COUNT,
-  VARIANT_FRUIT_SLOT_COLOR_IDS,
   type FruitSlide,
 } from './signals';
 
@@ -52,7 +52,7 @@ export function mergeSpomoveVariantPaths(
   const list = normalizeSpomoveVariantFruitPaths(paths);
   return list.map((p, i) => {
     const color =
-      COLORS.find((c) => c.id === VARIANT_FRUIT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!;
+      COLORS.find((c) => c.id === SPOMOVE_VARIANT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!;
     if (p == null || typeof p !== 'string' || !p.trim()) {
       return { imageUrl: '', color };
     }
@@ -81,7 +81,7 @@ export function fruitSlidesForTrainingFromPaths(
       out.push({
         imageUrl: withPublicUrlCacheBust(getPublicUrl(p.trim()), cacheBust),
         color:
-          COLORS.find((c) => c.id === VARIANT_FRUIT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
+          COLORS.find((c) => c.id === SPOMOVE_VARIANT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
       });
     } catch {
       /* skip broken path */

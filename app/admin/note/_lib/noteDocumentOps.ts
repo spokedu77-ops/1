@@ -19,7 +19,7 @@ export type NotePersistOp =
     }>;
   }
   | { type: 'patchFields'; patches: NoteBlockFieldPatch[] }
-  | { type: 'softDelete'; ids: string[] }
+  | { type: 'softDelete'; ids: string[]; blocks?: NoteBlock[] }
   | {
     type: 'createBlock';
     id: string;
@@ -35,6 +35,7 @@ export type NotePersistOp =
     type: 'blockTransaction';
     patches: NoteBlockFieldPatch[];
     deleteIds: string[];
+    deletedBlocks?: NoteBlock[];
     creates?: Array<{
       id: string;
       document_id: string;

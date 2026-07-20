@@ -35,10 +35,10 @@ describe('resolveDropPositionForBlock', () => {
     expect(resolveDropPositionForBlock('toggle', rect, 133, { titleBandBottom: titleBottom })).toBe('after');
   });
 
-  it('keeps page row coordinate drops as before/after only', () => {
+  it('uses the center band for page inside drops', () => {
     const rect = { top: 0, height: 100 };
     expect(resolveDropPositionForBlock('page', rect, 10)).toBe('before');
-    expect(resolveDropPositionForBlock('page', rect, 50)).toBe('after');
+    expect(resolveDropPositionForBlock('page', rect, 50)).toBe('inside');
     expect(resolveDropPositionForBlock('page', rect, 90)).toBe('after');
   });
 
@@ -112,7 +112,7 @@ describe('resolveBlockDropTarget page insertion contract', () => {
     });
   });
 
-  it('allows non-page blocks into a child page only on the explicit inside target', () => {
+  it('allows non-page blocks into a child page from the row center or explicit inside target', () => {
     document.body.innerHTML = '<div data-note-block-row data-block-id="target"></div>';
     const row = document.querySelector<HTMLElement>('[data-block-id="target"]');
     row!.getBoundingClientRect = () => ({
@@ -150,11 +150,11 @@ describe('resolveBlockDropTarget page insertion contract', () => {
       over: { rect: { top: 100, height: 40 } },
     } as unknown as DragEndEvent, 120, 'moving')).toEqual({
       blockId: 'target',
-      position: 'after',
+      position: 'inside',
     });
   });
 
-  it('keeps page row coordinate drops as before or after in fallback resolver', () => {
+  it('uses page row edges for before/after and center for inside in fallback resolver', () => {
     const blocks = [pageBlock('moving', 0), pageBlock('target', 1)];
     const event = {
       over: {
@@ -165,11 +165,15 @@ describe('resolveBlockDropTarget page insertion contract', () => {
       },
     } as unknown as DragEndEvent;
 
-    expect(resolveBlockDropTarget('target', blocks, event, 145, 'moving')).toEqual({
+    expect(resolveBlockDropTarget('target', blocks, event, 120, 'moving')).toEqual({
       blockId: 'target',
       position: 'before',
     });
-    expect(resolveBlockDropTarget('target', blocks, event, 155, 'moving')).toEqual({
+    expect(resolveBlockDropTarget('target', blocks, event, 150, 'moving')).toEqual({
+      blockId: 'target',
+      position: 'inside',
+    });
+    expect(resolveBlockDropTarget('target', blocks, event, 180, 'moving')).toEqual({
       blockId: 'target',
       position: 'after',
     });

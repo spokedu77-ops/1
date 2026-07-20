@@ -588,6 +588,45 @@ export function planBlockForestDropAt<T extends BlockWithMeta>(
   };
 }
 
+export function applyBlockForestDropPlanInMemory<T extends BlockWithMeta>(
+  blocks: T[],
+  plan: BlockForestDropPlan<T>,
+): T[] {
+  const rootIds = new Set(plan.roots.map((block) => block.id));
+  const targetMap = new Map(plan.targetSiblings.map((item) => [item.id, item]));
+  const oldParentIds = new Set<string | null>();
+  for (const root of plan.roots) {
+    const oldParentId = root.parent_block_id ?? null;
+    if (oldParentId !== plan.targetParentId) oldParentIds.add(oldParentId);
+  }
+
+  const oldSiblingMap = new Map<string, T>();
+  for (const oldParentId of oldParentIds) {
+    for (const sibling of getBlocksInParent(blocks, oldParentId).filter((block) => !rootIds.has(block.id))) {
+      oldSiblingMap.set(sibling.id, {
+        ...sibling,
+        order_index: [...oldSiblingMap.values()]
+          .filter((item) => (item.parent_block_id ?? null) === oldParentId)
+          .length,
+      });
+    }
+  }
+
+  return blocks.map((item) => {
+    if (rootIds.has(item.id)) {
+      const target = targetMap.get(item.id);
+      return {
+        ...item,
+        parent_block_id: plan.targetParentId,
+        order_index: target?.order_index ?? item.order_index,
+      };
+    }
+    if (targetMap.has(item.id)) return targetMap.get(item.id)!;
+    if (oldSiblingMap.has(item.id)) return oldSiblingMap.get(item.id)!;
+    return item;
+  });
+}
+
 export function getBlockMergeText(block: BlockWithMeta): string {
   const text = block.content?.text;
   return typeof text === 'string' ? text : '';

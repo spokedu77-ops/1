@@ -55,18 +55,6 @@ export const COLOR_GATE_POSE_INSTRUCTIONS: Record<ColorGatePoseKey, string> = {
   star:        'star 자세를 취하세요',
 };
 
-/** @deprecated ColorGatePoseKey / COLOR_GATE_POSE_SEQUENCE 사용 */
-export type ColorGateAction = ColorGatePoseKey;
-/** @deprecated COLOR_GATE_POSE_IMAGE_MAP 사용 */
-export const COLOR_GATE_POSE_IMAGE_URL = COLOR_GATE_POSE_IMAGE_MAP['lunge-reach'];
-/** @deprecated COLOR_GATE_POSE_IMAGE_MAP 사용 */
-export const COLOR_GATE_POSE_IMAGE_URLS = Object.values(COLOR_GATE_POSE_IMAGE_MAP);
-/** @deprecated COLOR_GATE_POSE_SEQUENCE 사용 */
-export const COLOR_GATE_ACTION_SEQUENCE = COLOR_GATE_POSE_SEQUENCE;
-/** @deprecated COLOR_GATE_POSE_LABELS 사용 */
-export const COLOR_GATE_POSE_LABEL = COLOR_GATE_POSE_LABELS;
-/** @deprecated COLOR_GATE_POSE_INSTRUCTIONS 사용 */
-export const COLOR_GATE_POSE_INSTRUCTION = COLOR_GATE_POSE_INSTRUCTIONS;
 export const COLOR_GATE_FIXED_COLOR_ID = 'red' as GateColorId;
 
 const SILHOUETTE_ALPHA_MIN = 16;
@@ -87,16 +75,6 @@ function loadPoseImage(url: string): Promise<HTMLImageElement | null> {
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = url;
-  });
-}
-
-export function preloadColorGatePoseImage(): Promise<HTMLImageElement | null> {
-  const url = COLOR_GATE_POSE_IMAGE_MAP['lunge-reach'];
-  const cached = poseImageCacheByPose.get('lunge-reach');
-  if (cached) return Promise.resolve(cached);
-  return loadPoseImage(url).then((img) => {
-    if (img) poseImageCacheByPose.set('lunge-reach', img);
-    return img;
   });
 }
 

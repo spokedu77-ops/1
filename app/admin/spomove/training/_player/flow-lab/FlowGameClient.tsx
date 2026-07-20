@@ -8,6 +8,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { FlowEngine, type FlowGamePhase, type FlowStats } from './engine/FlowEngine';
 import { FLOW_MODULES } from './engine/modules/flowModules';
 import type { FlowStageConfig } from './engine/modules/stageBuilder';
@@ -210,13 +211,8 @@ export default function FlowGameClient({
 
   useEffect(() => {
     const onResize = () => engineRef.current?.resize(window.innerWidth, window.innerHeight);
-    window.addEventListener('resize', onResize);
-    // iOS Safari: 주소창 표시/숨김 시 visualViewport resize 이벤트로 캔버스 크기 갱신
-    window.visualViewport?.addEventListener('resize', onResize);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      window.visualViewport?.removeEventListener('resize', onResize);
-    };
+    // window / visualViewport / fullscreen / canvas 부모 크기 변화 모두 반영
+    return bindViewportResize(canvasRef.current, onResize);
   }, []);
 
   const handleExit = useCallback(() => {

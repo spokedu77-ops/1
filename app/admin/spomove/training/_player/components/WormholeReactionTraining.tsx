@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
@@ -25,13 +26,34 @@ export function quadrantLaneCountToResultLaneCount(
   ];
 }
 
-/** 구역별 운석 목표 X, Y 좌표(화면 모서리 쪽) */
-const TARGET_OFFSETS: { x: number; y: number }[] = [
-  { x: -390, y: 390 },
-  { x: 390, y: 390 },
-  { x: -390, y: -390 },
-  { x: 390, y: -390 },
-];
+function visibleWorldHeight(z: number, fovDeg: number): number {
+  return 2 * z * Math.tan((fovDeg * Math.PI) / 180 / 2);
+}
+
+/** passZ·FOV 110·정사각 기준 레거시 ±390과 동일한 overshoot */
+const PASS_Z = 130;
+const BASE_FOV = 110;
+const LEGACY_CORNER = 390;
+const CORNER_OVERSHOOT =
+  LEGACY_CORNER / (visibleWorldHeight(PASS_Z, BASE_FOV) / 2);
+
+/** aspect·FOV에 맞춰 사분면 코너 월드 좌표를 계산 (정사각이면 기존 ±390) */
+function cornerTargetOffsets(
+  aspect: number,
+  fovDeg: number = BASE_FOV,
+  atZ: number = PASS_Z,
+): { x: number; y: number }[] {
+  const halfH = visibleWorldHeight(atZ, fovDeg) / 2;
+  const halfW = halfH * Math.max(aspect, 0.01);
+  const ox = halfW * CORNER_OVERSHOOT;
+  const oy = halfH * CORNER_OVERSHOOT;
+  return [
+    { x: -ox, y: oy },
+    { x: ox, y: oy },
+    { x: -ox, y: -oy },
+    { x: ox, y: -oy },
+  ];
+}
 
 const LINE_COUNT_HIGH = 1800;
 const LINE_COUNT_LOW = 900;
@@ -46,6 +68,8 @@ type AsteroidData = {
   targetY: number;
   startScale: number;
   endScale: number;
+  /** visibleH 대비 endScale 비율 — 리사이즈 시 endScale 재계산용 */
+  endScaleFactor: number;
   rotX: number;
   rotY: number;
   rotZ: number;
@@ -70,10 +94,6 @@ function asteroidTravelFrames(lv: number): number {
 const WARN_MS = 1800;
 const WAVE_GAP_MIN_MS = 4000;
 const ASTEROID_EXPLOSION_SCALE_PROGRESS = 0.8;
-
-function visibleWorldHeight(z: number, fovDeg: number): number {
-  return 2 * z * Math.tan((fovDeg * Math.PI) / 180 / 2);
-}
 
 function createRockGeometry(isLow: boolean, seed: number): THREE.BufferGeometry {
   const geometry = new THREE.IcosahedronGeometry(1, isLow ? 1 : 2);
@@ -263,7 +283,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       nextWaveTimer: null,
       timer: null,
       raf: null,
-      baseFov: 110,
+      baseFov: BASE_FOV,
       shakeAmp: 0,
       fovKick: 0,
       warnActive: false,
@@ -275,7 +295,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
 
     const w0 = play.clientWidth || window.innerWidth;
     const h0 = play.clientHeight || window.innerHeight;
-    const camera = new THREE.PerspectiveCamera(110, w0 / h0, 0.1, 5000);
+    const camera = new THREE.PerspectiveCamera(BASE_FOV, w0 / Math.max(h0, 1), 0.1, 5000);
     camera.position.z = 0;
 
     const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !isLow });
@@ -292,6 +312,9 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
     scene.add(rimLight);
 
     const quadrantColorObjs = QUADRANT_COLORS.map((c) => new THREE.Color(c.hex));
+
+    let targetOffsets = cornerTargetOffsets(w0 / Math.max(h0, 1), BASE_FOV, PASS_Z);
+    let visibleH = visibleWorldHeight(PASS_Z, BASE_FOV);
 
     const linesGeometry = new THREE.BufferGeometry();
     const positions = new Float32Array(lineCount * 6);
@@ -338,8 +361,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
     const asteroidGeometries: THREE.BufferGeometry[] = [];
     const asteroidMaterials: THREE.Material[] = [];
     const travelFrames = asteroidTravelFrames(lv);
-    const passZ = 130;
-    const visibleH = visibleWorldHeight(passZ, 110);
+    const passZ = PASS_Z;
 
     const createAsteroid = (quadrantIndex: number): THREE.Group => {
       const seed = Math.floor(Math.random() * 999983) + quadrantIndex * 131;
@@ -360,8 +382,8 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       const startZ = -3600;
       // 카메라(z=0)를 넘어가면 화면 밖(-Z를 보는 카메라 기준 뒤쪽)이라 안 보임 → 그 직전에서 터뜨림
       const removeZ = -25;
-      const targetX = TARGET_OFFSETS[quadrantIndex].x;
-      const targetY = TARGET_OFFSETS[quadrantIndex].y;
+      const targetX = targetOffsets[quadrantIndex].x;
+      const targetY = targetOffsets[quadrantIndex].y;
 
       // t=0에서 스폰: x/y가 정확히 화면 중앙(0,0)에서 시작해 구역 코너로 퍼져나감
       const spawnAge = 0;
@@ -369,7 +391,8 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       const spawnSpread = asteroidSpreadProgress(0);
       const spawnScale = asteroidScaleProgress(0);
       const startScale = 3 + Math.random() * 2.5;
-      const endScale = visibleH * (0.58 + Math.random() * 0.14);
+      const endScaleFactor = 0.58 + Math.random() * 0.14;
+      const endScale = visibleH * endScaleFactor;
 
       group.position.set(
         targetX * spawnSpread,
@@ -388,6 +411,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
         targetY,
         startScale,
         endScale,
+        endScaleFactor,
         rotX: (Math.random() - 0.5) * 0.038,
         rotY: (Math.random() - 0.5) * 0.038,
         rotZ: (Math.random() - 0.5) * 0.03,
@@ -574,20 +598,33 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
       renderer.render(scene, camera);
     };
 
-    const onWinResize = () => {
+    const onResize = () => {
       const w = play.clientWidth;
       const h = play.clientHeight;
       if (w <= 0 || h <= 0) return;
-      camera.aspect = w / h;
+      const aspect = w / h;
+      camera.aspect = aspect;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+
+      targetOffsets = cornerTargetOffsets(aspect, g.baseFov, PASS_Z);
+      visibleH = visibleWorldHeight(PASS_Z, g.baseFov);
+
+      for (const obs of g.obstacles) {
+        const data = obs.userData as AsteroidData;
+        const next = targetOffsets[data.quadrantIndex];
+        if (!next) continue;
+        data.targetX = next.x;
+        data.targetY = next.y;
+        data.endScale = visibleH * data.endScaleFactor;
+      }
     };
-    window.addEventListener('resize', onWinResize);
+    const unbindResize = bindViewportResize(play, onResize);
 
     renderer.render(scene, camera);
 
     const startId = window.setTimeout(() => {
-      onWinResize();
+      onResize();
       g.raf = requestAnimationFrame(animate);
       g.waveTimer = setTimeout(triggerObstacleWave, 3000);
 
@@ -608,7 +645,7 @@ export function WormholeReactionTraining({ durationSec, speedLevel, onExit, onCo
 
     return () => {
       clearTimeout(startId);
-      window.removeEventListener('resize', onWinResize);
+      unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
       if (g.waveTimer) clearTimeout(g.waveTimer);

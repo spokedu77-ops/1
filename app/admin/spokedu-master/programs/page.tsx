@@ -70,6 +70,7 @@ import {
   setMasterParticipantFormatTag,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { ContentAuditPanel } from './ContentAuditPanel';
+import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
 type FilterKey = 'all' | 'home-ready' | 'image-needed';
@@ -2119,7 +2120,12 @@ export default function AdminSmProgramsPage() {
         </div>
       </header>
 
-      {activeTab === 'programs' ? <WeeklyRecommendationManager items={items} onSaved={load} /> : null}
+      {activeTab === 'programs' ? (
+        <>
+          <WeeklyRecommendationManager items={items} onSaved={load} />
+          <SpomoveHomeFeaturedManager />
+        </>
+      ) : null}
 
       {createOpen ? (
         <CreateProgramModal

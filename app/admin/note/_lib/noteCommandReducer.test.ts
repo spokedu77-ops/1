@@ -61,6 +61,42 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('new');
   });
 
+  it('applyPatches re-sanitizes structure after a parent loses container capability', () => {
+    const previous = [
+      block('toggle', { type: 'toggle', order_index: 0, content: { title: 'Section' } }),
+      block('child', { type: 'todo', parent_block_id: 'toggle', order_index: 0, content: { text: 'child', checked: false } }),
+      block('after', { type: 'text', order_index: 1, content: { text: 'after' } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'applyPatches', patches: [{ id: 'toggle', type: 'text' }] },
+      ctx,
+    );
+
+    expect(blocks.find((item) => item.id === 'toggle')?.type).toBe('text');
+    expect(blocks.find((item) => item.id === 'child')?.parent_block_id).toBeNull();
+    expect(blocks.filter((item) => !item.parent_block_id).map((item) => item.order_index)).toEqual([0, 1, 2]);
+  });
+
+  it('applyPatches breaks cycles introduced by stale structural patches', () => {
+    const previous = [
+      block('page-a', { type: 'page', order_index: 0 }),
+      block('page-b', { type: 'page', parent_block_id: 'page-a', order_index: 0 }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'applyPatches', patches: [{ id: 'page-a', parent_block_id: 'page-b' }] },
+      ctx,
+    );
+
+    expect(blocks.every((item) => item.parent_block_id !== item.id)).toBe(true);
+    expect(blocks.find((item) => item.id === 'page-a')?.parent_block_id).toBeNull();
+    expect(blocks.find((item) => item.id === 'page-b')?.parent_block_id).toBeNull();
+    expect(blocks.map((item) => item.order_index)).toEqual([0, 1]);
+  });
+
   it('syncSnapshot does not wipe local blocks when server snapshot is empty', () => {
     const previous = [block('a', { content: { text: '하위타이핑유지', html: '<p>하위타이핑유지</p>' } })];
     const { blocks, structural } = applyNoteCommand(

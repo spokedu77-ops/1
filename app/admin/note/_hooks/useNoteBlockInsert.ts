@@ -21,11 +21,15 @@ import {
   buildInsertBlockCommand,
   collectBlockTransactionIds,
 } from '../_lib/noteBlockCommands';
+import {
+  shouldCreateVisibleBlockFromInput,
+  type NoteInputInsertReason,
+} from '../_lib/noteInputContract';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { LoadingState, NoteBlock } from '../_lib/types';
 
-type BlockInsertReason = 'explicit' | 'enter' | 'paste' | 'duplicate' | 'system';
+type BlockInsertReason = NoteInputInsertReason;
 
 type BlockInsertOptions = {
   content?: Record<string, unknown>;
@@ -33,25 +37,6 @@ type BlockInsertOptions = {
   registerUndo?: boolean;
   reason?: BlockInsertReason;
 };
-
-function textLikeContentIsBlank(content: Record<string, unknown>): boolean {
-  const text = typeof content.text === 'string' ? content.text.trim() : '';
-  const title = typeof content.title === 'string' ? content.title.trim() : '';
-  const html = typeof content.html === 'string'
-    ? content.html.replace(/<br\s*\/?>/gi, '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim()
-    : '';
-  return !text && !title && !html;
-}
-
-function isImplicitBlankVisibleBlock(
-  type: NoteBlock['type'],
-  content: Record<string, unknown>,
-  reason: BlockInsertReason,
-): boolean {
-  if (reason !== 'system') return false;
-  if (type !== 'text' && type !== 'todo') return false;
-  return textLikeContentIsBlank(content);
-}
 
 export function useNoteBlockInsert(options: {
   blocks: NoteBlock[];
@@ -130,13 +115,20 @@ export function useNoteBlockInsert(options: {
         ? { ...baseContent, placedInToggle: true }
         : baseContent;
       const insertReason = insertOptions?.reason ?? 'system';
-      if (isImplicitBlankVisibleBlock(type, blockContent as Record<string, unknown>, insertReason)) {
+      if (!shouldCreateVisibleBlockFromInput({
+        type,
+        content: blockContent as Record<string, unknown>,
+        reason: insertReason,
+      })) {
         return null;
       }
       const normalizedExistingOrders = siblings.map((sibling, index) => ({
         id: sibling.id,
         order_index: index >= clampedIndex ? index + 1 : index,
-      }));
+      })).filter((patch) => {
+        const sibling = siblings.find((item) => item.id === patch.id);
+        return sibling ? sibling.order_index !== patch.order_index : false;
+      });
       const createdBlockId = newNoteBlockClientId();
       const now = new Date().toISOString();
       const optimisticBlock: NoteBlock = {
@@ -360,7 +352,10 @@ export function useNoteBlockInsert(options: {
       const normalizedExistingOrders = siblings.map((sibling, index) => ({
         id: sibling.id,
         order_index: index >= insertIndex ? index + 1 : index,
-      }));
+      })).filter((patch) => {
+        const sibling = siblings.find((item) => item.id === patch.id);
+        return sibling ? sibling.order_index !== patch.order_index : false;
+      });
       const createdBlockId = newNoteBlockClientId();
       const childPatches = directChildren.map((child, orderIndex) => ({
         id: child.id,

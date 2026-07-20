@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -24,17 +24,10 @@ describe('SPOKEDU MASTER service truthfulness contracts', () => {
   });
 
   it('does not present local timestamp changes or deletion as synchronization', () => {
-    const operations = read('app/spokedu-master/components/operations/OperationsPanel.tsx');
-
-    expect(operations).not.toContain('setLastSyncNow');
-    expect(operations).not.toContain('수동 동기화');
-    expect(operations).not.toContain('재시도 완료 처리');
-    expect(operations).not.toContain('수업 기록 즉시 반영');
-    expect(operations).toContain('최근 로컬 변경');
-    expect(operations).toContain('목록에서 지우기');
-
     const store = read('app/spokedu-master/store/index.ts');
     expect(store).not.toContain('setLastSyncNow');
+    expect(store).not.toContain('수동 동기화');
+    expect(existsSync(join(ROOT, 'app/spokedu-master/components/operations/OperationsPanel.tsx'))).toBe(false);
   });
 
   it('presents SPOMAT as a single product without a fake order or completion state', () => {

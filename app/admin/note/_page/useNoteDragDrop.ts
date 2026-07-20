@@ -236,6 +236,7 @@ export function useNoteDragDrop(options: {
       await documentEngine.persistBlockTransaction(
         persistOp.patches,
         persistOp.deleteIds,
+        persistOp.deletedBlocks,
       );
     }
   }, [documentEngine]);
@@ -379,16 +380,20 @@ export function useNoteDragDrop(options: {
       const targetDocumentId = overId.slice('doc:'.length);
       const movingBlock = blocksRef.current.find((b) => b.id === activeId);
       if (!movingBlock) return;
+      const movingBlockIds = groupDragIds && groupDragIds.includes(movingBlock.id)
+        ? groupDragIds
+        : [movingBlock.id];
 
       // If dropping onto current document: move block to top of this document
       if (targetDocumentId === selectedId) {
         const prevBlocks = blocksRef.current;
         const rootSiblings = sortRootBlocks(prevBlocks);
-        const firstOther = rootSiblings.find((block) => block.id !== movingBlock.id);
+        const movingSet = new Set(movingBlockIds);
+        const firstOther = rootSiblings.find((block) => !movingSet.has(block.id));
         if (!firstOther) return;
         const command = buildMoveBlockGroupCommand(
           prevBlocks,
-          [movingBlock.id],
+          movingBlockIds,
           firstOther.id,
           'before',
         );
@@ -410,7 +415,7 @@ export function useNoteDragDrop(options: {
       const previousBlocks = blocksRef.current;
       const command = buildBlockForestTransferCommand(
         previousBlocks,
-        [movingBlock.id],
+        movingBlockIds,
         targetDocumentId,
       );
       if (command.movedIds.length === 0) {

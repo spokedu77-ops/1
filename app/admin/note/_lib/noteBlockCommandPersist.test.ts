@@ -37,6 +37,10 @@ describe('noteBlockCommandPersist', () => {
       type: 'blockTransaction',
       patches: [],
       deleteIds: ['a', 'child'],
+      deletedBlocks: [
+        expect.objectContaining({ id: 'a' }),
+        expect.objectContaining({ id: 'child' }),
+      ],
     });
   });
 
@@ -50,6 +54,7 @@ describe('noteBlockCommandPersist', () => {
     expect(persistOpForBlockCommand(command!)).toMatchObject({
       type: 'blockTransaction',
       deleteIds: ['b'],
+      deletedBlocks: [expect.objectContaining({ id: 'b' })],
       patches: [{ id: 'a', content: { text: 'hello world' } }],
     });
   });
@@ -63,6 +68,7 @@ describe('noteBlockCommandPersist', () => {
       type: 'blockTransaction',
       deleteIds: [],
     });
+    expect(persistOpForBlockCommand(command)).not.toHaveProperty('deletedBlocks');
     expect(command.fieldPatches.map((patch) => patch.id)).toContain('c');
   });
 });

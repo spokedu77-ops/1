@@ -161,6 +161,7 @@ export function useNoteBlockDelete(options: {
     try {
       await documentEngine.persistSoftDelete({
         ids: command.affectedIds,
+        blocks: command.removedBlocks,
       });
       if (toggleCleanupPatches.length > 0) {
         await documentEngine.persistFieldPatches(toggleCleanupPatches);
@@ -214,6 +215,7 @@ export function useNoteBlockDelete(options: {
         await documentEngine.persistBlockTransaction(
           persistOp.patches,
           persistOp.deleteIds,
+          persistOp.deletedBlocks,
         );
       }
     } catch (e) {

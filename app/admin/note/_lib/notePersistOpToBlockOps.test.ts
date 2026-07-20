@@ -166,6 +166,7 @@ describe('persistOpToPushItems structural contracts', () => {
         { id: 'child', document_id: 'target-doc' },
       ],
       deleteIds: ['deleted'],
+      deleteMeta: [{ id: 'deleted', updated_at: null }],
     });
   });
 
@@ -188,6 +189,7 @@ describe('persistOpToPushItems structural contracts', () => {
       opType: 'block_transaction',
       patches: [{ id: 'existing', order_index: 1 }],
       deleteIds: ['deleted'],
+      deleteMeta: [{ id: 'deleted', updated_at: null }],
       creates: [{
         id: 'new-todo',
         document_id: 'doc-1',
@@ -416,6 +418,63 @@ describe('mergeServerBlocksIntoLocalSnapshot', () => {
     }));
     expect([...collectPendingTransferAwayIds(outbound, 'doc-source')]).toEqual(['todo-1']);
     expect([...collectPendingOutboundExcludedIds(outbound, 'doc-source')]).toEqual(['todo-1']);
+  });
+});
+
+describe('persistOpToPushItems delete authority', () => {
+  it('attaches updated_at metadata to soft_delete ops', () => {
+    const [item] = persistOpToPushItems({
+      type: 'softDelete',
+      ids: ['block-1'],
+      blocks: [{
+        id: 'block-1',
+        document_id: 'doc-1',
+        type: 'bulletList',
+        content: { text: 'keep authority' },
+        order_index: 0,
+        parent_block_id: null,
+        created_at: '2026-07-20T00:00:00.000Z',
+        updated_at: '2026-07-20T01:00:00.000Z',
+        version: 1,
+      }],
+    });
+
+    expect(item?.payload).toMatchObject({
+      opType: 'soft_delete',
+      ids: ['block-1'],
+      deleteMeta: [{
+        id: 'block-1',
+        updated_at: '2026-07-20T01:00:00.000Z',
+      }],
+    });
+  });
+
+  it('attaches updated_at metadata to block_transaction deletes', () => {
+    const [item] = persistOpToPushItems({
+      type: 'blockTransaction',
+      patches: [{ id: 'survivor', order_index: 0 }],
+      deleteIds: ['deleted'],
+      deletedBlocks: [{
+        id: 'deleted',
+        document_id: 'doc-1',
+        type: 'todo',
+        content: { text: 'old checklist', checked: false },
+        order_index: 1,
+        parent_block_id: null,
+        created_at: '2026-07-20T00:00:00.000Z',
+        updated_at: '2026-07-20T01:00:00.000Z',
+        version: 1,
+      }],
+    });
+
+    expect(item?.payload).toMatchObject({
+      opType: 'block_transaction',
+      deleteIds: ['deleted'],
+      deleteMeta: [{
+        id: 'deleted',
+        updated_at: '2026-07-20T01:00:00.000Z',
+      }],
+    });
   });
 });
 

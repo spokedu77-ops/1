@@ -66,6 +66,36 @@ describe('applyRemoteOpRecords', () => {
     expect(next.find((block) => block.id === 'b')?.content).toEqual({ text: 'new' });
   });
 
+  it('ignores legacy normalizeOrders on create_block replay', () => {
+    const blocks = [
+      baseBlock('a', 'first', { order_index: 0 }),
+      baseBlock('b', 'second', { order_index: 1 }),
+    ];
+
+    const next = applyRemoteOpRecords(blocks, [
+      opRecord(1, {
+        opType: 'create_block',
+        id: 'c',
+        documentId: 'doc-1',
+        blockType: 'todo',
+        content: { text: 'created', checked: false },
+        order_index: 2,
+        parent_block_id: null,
+        normalizeOrders: [
+          { id: 'a', order_index: 99 },
+          { id: 'b', order_index: 100 },
+        ],
+      }),
+    ]);
+
+    expect(next.find((block) => block.id === 'a')?.order_index).toBe(0);
+    expect(next.find((block) => block.id === 'b')?.order_index).toBe(1);
+    expect(next.find((block) => block.id === 'c')).toMatchObject({
+      order_index: 2,
+      type: 'todo',
+    });
+  });
+
   it('applies patch_fields structure including explicit root parent', () => {
     const blocks = [
       baseBlock('toggle', 'section', { type: 'toggle', order_index: 0 }),

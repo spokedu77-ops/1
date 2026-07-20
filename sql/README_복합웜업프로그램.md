@@ -97,7 +97,6 @@ VALUES (
 **해결**:
 1. 먼저 DB 상태 확인:
 ```sql
--- CHECK_WARMUP_STATUS.sql 실행
 ```
 
 2. 현재 주차 데이터 삽입:

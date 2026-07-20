@@ -125,7 +125,7 @@ export async function applyOpenServerSnapshot(
     engine.replaceBlocks(normalized);
   }
 
-  if (shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc, documentId)) {
+  if (serverForDoc.length === 0 && shouldKeepLocalOverEmptyServer(readLocalBlocksForOpen(documentId), serverForDoc, documentId)) {
     return finishOpenWithLocalBlocks(
       documentId,
       readLocalBlocksForOpen(documentId),
@@ -193,9 +193,12 @@ export async function openNoteDocument(
   });
 
   if (shouldAbort?.()) {
-    const local = readLocalBlocksForOpen(documentId);
     const { toggleMigration } = prepareLoadedNoteBlocks(serverBlocks);
-    return finishOpenWithLocalBlocks(documentId, local, toggleMigration);
+    return {
+      blocks: [],
+      emptyConfirmed: false,
+      toggleMigration,
+    };
   }
 
   return applyOpenServerSnapshot(documentId, serverBlocks, engine);

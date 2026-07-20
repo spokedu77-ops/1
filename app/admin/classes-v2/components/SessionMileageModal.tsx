@@ -9,7 +9,6 @@ import { MILEAGE_ACTIONS } from "@/app/admin/classes-shared/constants/mileage";
 import {
   extractMileageAction,
   getMileageTotal,
-  getSessionMileageLogAmount,
   parseExtraTeachers,
 } from "@/app/admin/classes-shared/lib/sessionUtils";
 
@@ -97,57 +96,79 @@ export default function SessionMileageModal({
         .eq("id", sessionId);
       if (sessionError) throw sessionError;
 
+      const sessionTitle = buildSessionTitleWithDate(title, sessionStartAt);
+      const { extraTeachers } = parseExtraTeachers(memo || "");
+      const extras = extraTeachers.slice(0, 2).filter((t) => t.id);
+      const mainId =
+        created_by && String(created_by).trim() ? String(created_by).trim() : null;
+      const teacherIds: string[] = [];
+      if (mainId) teacherIds.push(mainId);
+      for (const ex of extras) {
+        if (ex.id && !teacherIds.includes(ex.id)) teacherIds.push(ex.id);
+      }
+
+      // 포인트는 선택 합(newTotal) 기준으로만 맞춤 (목록은 아래에서 최종 1건으로 교체)
       if (diff !== 0) {
-        const sessionTitle = buildSessionTitleWithDate(title, sessionStartAt);
-        const reasonVerb =
-          diff > 0 ? (newTotal < 0 ? "조정" : "원복") : "차감";
-        const logAmount = getSessionMileageLogAmount(diff, newTotal, reasonVerb);
-
-        if (created_by && String(created_by).trim()) {
-          const mainId = String(created_by).trim();
-          const { data: user } = await supabase.from("users").select("points").eq("id", mainId).single();
-          const currentPoints = user?.points ?? 0;
-          await supabase.from("users").update({ points: currentPoints + diff }).eq("id", mainId);
-          try {
-            const { error: logError } = await supabase.from("mileage_logs").insert([
-              {
-                teacher_id: mainId,
-                amount: logAmount,
-                reason: `[수업연동] ${reasonVerb}: ${mileageAction || "해제"}`,
-                session_title: sessionTitle,
-                session_id: sessionId,
-                session_started_at: sessionStartAt,
-              },
-            ]);
-            if (logError) {
-              devLogger.error("마일리지 로그 저장 에러:", logError);
-              toast.error("경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.");
-            }
-          } catch (e) {
-            devLogger.error("마일리지 로그 에러:", e);
-            toast.error("경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.");
-          }
+        for (const teacherId of teacherIds) {
+          const { data: user } = await supabase
+            .from("users")
+            .select("points")
+            .eq("id", teacherId)
+            .single();
+          await supabase
+            .from("users")
+            .update({ points: (user?.points ?? 0) + diff })
+            .eq("id", teacherId);
         }
+      }
 
-        const { extraTeachers } = parseExtraTeachers(memo || "");
-        const extras = extraTeachers.slice(0, 2).filter((t) => t.id);
+      // 이 세션의 기존 [수업연동] 로그는 목록에서 제거하고, 최종 선택만 남긴다.
+      const { error: clearLogError } = await supabase
+        .from("mileage_logs")
+        .delete()
+        .eq("session_id", sessionId)
+        .like("reason", "[수업연동%");
+      if (clearLogError) {
+        devLogger.error("수업연동 마일리지 로그 정리 에러:", clearLogError);
+        toast.error("경고: 마일리지는 반영되었지만 이전 로그 정리에 실패했습니다.");
+      }
+
+      if (newTotal !== 0 && teacherIds.length > 0) {
+        const reasonVerb = newTotal < 0 ? "차감" : "원복";
+        const rows: Array<{
+          teacher_id: string;
+          amount: number;
+          reason: string;
+          session_title: string;
+          session_id: string;
+          session_started_at: string | null;
+        }> = [];
+        if (mainId) {
+          rows.push({
+            teacher_id: mainId,
+            amount: newTotal,
+            reason: `[수업연동] ${reasonVerb}: ${mileageAction}`,
+            session_title: sessionTitle,
+            session_id: sessionId,
+            session_started_at: sessionStartAt,
+          });
+        }
         for (const ex of extras) {
           if (!ex.id) continue;
-          try {
-            const { data: exUser } = await supabase.from("users").select("points").eq("id", ex.id).single();
-            await supabase.from("users").update({ points: (exUser?.points ?? 0) + diff }).eq("id", ex.id);
-            await supabase.from("mileage_logs").insert([
-              {
-                teacher_id: ex.id,
-                amount: logAmount,
-                reason: `[수업연동/보조] ${reasonVerb}: ${mileageAction || "해제"}`,
-                session_title: sessionTitle,
-                session_id: sessionId,
-                session_started_at: sessionStartAt,
-              },
-            ]);
-          } catch (e) {
-            devLogger.error("보조강사 마일리지 에러:", e);
+          rows.push({
+            teacher_id: ex.id,
+            amount: newTotal,
+            reason: `[수업연동/보조] ${reasonVerb}: ${mileageAction}`,
+            session_title: sessionTitle,
+            session_id: sessionId,
+            session_started_at: sessionStartAt,
+          });
+        }
+        if (rows.length > 0) {
+          const { error: logError } = await supabase.from("mileage_logs").insert(rows);
+          if (logError) {
+            devLogger.error("마일리지 로그 저장 에러:", logError);
+            toast.error("경고: 마일리지는 반영되었지만 로그 저장에 실패했습니다.");
           }
         }
       }

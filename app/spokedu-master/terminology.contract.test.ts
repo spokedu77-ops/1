@@ -24,10 +24,8 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/privacy/page.tsx',
   'app/spokedu-master/subscription/page.tsx',
   'app/spokedu-master/students/page.tsx',
-  'app/spokedu-master/director/page.tsx',
   'app/spokedu-master/error.tsx',
   'app/spokedu-master/components/ui/ClassToolsView.tsx',
-  'app/spokedu-master/components/operations/OperationsPanel.tsx',
 ] as const;
 
 const userVisibleSource = () => USER_VISIBLE_FILES.map(read).join('\n');

@@ -94,18 +94,12 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 1, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
       { id: 2, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
       { id: 3, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 4, name: '매직 아이 L1', enName: 'Camouflage L1', desc: '노이즈 속 위장 도형이 화면 중앙에 서서히 드러날 때 해당 색을 찾습니다.' },
-      { id: 41, name: '매직 아이 L2', enName: 'Camouflage L2', desc: '위장 도형이 좌·우·상·하 극단을 순환하며 나타나는 매직 아이 L2입니다.' },
+      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 드러날 때 해당 색을 찾습니다. 난이도(1/2)는 아래에서 고릅니다.' },
       { id: 6, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
-      { id: 7, name: '두더지 잡기 L1', enName: 'Mole L1', desc: '기본 외형 두더지가 1마리씩 나타납니다.' },
-      { id: 71, name: '두더지 잡기 L2', enName: 'Mole L2', desc: '변형 외형·2마리 동시 출현이 섞이는 두더지 잡기 L2입니다.' },
+      { id: 7, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
       { id: 8, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
-      { id: 91, name: '숫자 기차 L1', enName: 'Number Cart L1', desc: '1~4 단일 숫자를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다.' },
-      { id: 92, name: '숫자 기차 L2', enName: 'Number Cart L2', desc: '문마다 두 숫자를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다.' },
-      { id: 93, name: '숫자 기차 L3', enName: 'Number Cart L3', desc: '+-×÷ 식을 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다.' },
-      { id: 101, name: '흰 공 L1', enName: 'Color Tracker L1', desc: '흰 공 추적 L1(9개 공).' },
-      { id: 102, name: '흰 공 L2', enName: 'Color Tracker L2', desc: '흰 공 추적 L2(11개 공).' },
-      { id: 103, name: '흰 공 L3', enName: 'Color Tracker L3', desc: '흰 공 추적 L3(13개 공·간헐 플래시).' },
+      { id: 9, name: '숫자 기차', enName: 'Number Cart', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
+      { id: 10, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
     ],
   },
   basic: {
@@ -120,16 +114,12 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '화면 신호 · 지각 훈련',
     desc: '화면 신호를 보는 순간 판단하고 즉시 움직이는 기본 반응 훈련입니다.',
     levels: [
-      { id: 1, name: '1단계', enName: 'Spatial Orientation', desc: '화면 극단의 거대 기둥+화살표 방향을 보고 해당 방향 패드로 이동합니다.' },
-      { id: 2, name: '2단계', enName: 'Quad Color', desc: '4분할 색 신호를 보고 해당 위치로 이동합니다. 변형 색지각 테마 이미지를 쓸 수 있습니다.' },
-      { id: 7,  name: '변형 사분할 1단계', enName: 'Modified Quadrant L1', desc: '색상 자극 1개와 신체 부위(발만)가 나타납니다. 표시된 색상의 패드에 지정된 발(한 발 또는 두 발)을 접촉합니다.' },
-      { id: 8,  name: '변형 사분할 2단계', enName: 'Modified Quadrant L2', desc: '색상 자극 1~2개와 신체 부위가 나타납니다. 2개 색상일 때는 (양발+한 손) 또는 (양발+양손)만, 1개일 때는 발(한 발 포함)만 나타납니다.' },
-      { id: 9,  name: '변형 사분할 3단계', enName: 'Modified Quadrant L3', desc: '색상 자극 1~3개와 신체 부위가 나타납니다. 3개 색상에서는 각각 한 발 또는 한 손이 배정됩니다.' },
-      { id: 10, name: '변형 사분할 4단계', enName: 'Modified Quadrant L4', desc: '3개 색상에 손·발이 혼합됩니다. 발 합계와 손 합계가 각각 2개 이하가 되도록 조합됩니다.' },
-      { id: 3, name: '3단계', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다.' },
-      { id: 4, name: '전면 2패널 (서로 다른 색)', enName: 'Variant Color (1)', desc: '전면 2패널에 서로 다른 색 신호가 나타납니다.' },
-      { id: 5, name: '전면 3패널 (같은 색)', enName: 'Variant Color (2)', desc: '전면 3패널에 같은 색(이미지) 신호가 나타납니다.' },
-      { id: 6,  name: '전면 3패널 (서로 다른 색)', enName: 'Variant 3', desc: '전면 3패널에 서로 다른 색 신호가 나타납니다.' },
+      { id: 1, name: '공간방향 자극', enName: 'Spatial Orientation', desc: '화면 극단의 기둥+화살표 방향을 보고 해당 방향 패드로 이동합니다. 옵션: 기본/색상.' },
+      { id: 2, name: '사분할 자극', enName: 'Quad Color', desc: '4분할 색·이미지 신호를 보고 해당 위치로 이동합니다. 옵션: 이미지 테마.' },
+      { id: 7, name: '변형 사분할 자극', enName: 'Modified Quadrant', desc: '색과 신체 부위가 함께 나타납니다. 옵션: 쉬움/어려움 · 1~4단계.' },
+      { id: 3, name: '전면 자극', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다. 옵션: 이미지 테마.' },
+      { id: 4, name: '전면 2패널 자극', enName: 'Variant Color 1', desc: '전면 2패널에 서로 다른 색 신호가 나타납니다. 옵션: 이미지 테마.' },
+      { id: 5, name: '전면 3패널 자극', enName: 'Variant Color 2/3', desc: '전면 3패널 자극입니다. 옵션: 이미지 테마 · 같은 색/서로 다른 색.' },
     ],
   },
 
@@ -202,12 +192,9 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '색 3개 기억', enName: '3-Color Sequence', desc: '색 3개가 순서대로 나타납니다. 같은 순서로 기억·재현합니다.' },
-      { id: 2, name: '색 5개 기억', enName: '5-Color Sequence', desc: '색 5개가 순서대로 나타납니다. 항 수가 늘어난 기본 순차 기억입니다.' },
-      { id: 3, name: '색 10개 기억', enName: '10-Color Sequence', desc: '색 10개가 순서대로 나타납니다. 끝에 전체 정답 목록으로 복습합니다.' },
-      { id: 4, name: '색·번호 맞추기', enName: 'Color-Number Quiz', desc: '번호 1~10에 매칭된 색을 기억하고 질문에 답합니다.' },
-      { id: 5, name: '색·번호 전체 보기', enName: 'Color-Number Full Board', desc: '10회 제시 후 번호별 정답을 한 화면에서 확인합니다.' },
-      { id: 6, name: '10색 직접 지정', enName: 'Custom 10-Color Sequence', desc: '1~10번 슬롯에 빨·노·초·파를 직접 지정해 순서를 기억합니다.' },
+      { id: 1, name: '색 순서 기억', enName: 'Color Sequence', desc: '색이 순서대로 나타납니다. 항 수(3/5/10)는 아래에서 고릅니다.' },
+      { id: 4, name: '색·번호 기억', enName: 'Color-Number', desc: '번호에 매칭된 색을 기억합니다. 퀴즈/전체 공개는 아래에서 고릅니다.' },
+      { id: 6, name: '직접 지정 10색', enName: 'Custom 10-Color Sequence', desc: '1~10번 슬롯에 빨·노·초·파를 직접 지정해 순서를 기억합니다.' },
     ],
   },
 
@@ -257,9 +244,16 @@ export type ReactTrainUiLevelDefaults = {
   camouflagePlacement?: 'center' | 'variant';
 };
 
-/** reactTrain UI level id → engine level + tier/mode defaults (L1/L2/L3 카탈로그용) */
+/**
+ * reactTrain UI level id → engine level + tier/mode defaults.
+ * 카탈로그는 기본(4/7/9/10)만 노출하고, 난이도는 설정 버튼으로 고른다.
+ * 구 카탈로그 id(41/71/91~93/101~103)는 딥링크·복귀용으로만 매핑한다.
+ */
 export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaults {
   switch (level) {
+    case 5:
+      // 삭제된 Sweep/Pulse 자리 — FLOW로 폴백
+      return { engineLevel: 1 };
     case 41:
       return { engineLevel: 4, camouflagePlacement: 'variant' };
     case 4:
@@ -274,15 +268,77 @@ export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaul
       return { engineLevel: 9, numberCartTier: 2 };
     case 93:
       return { engineLevel: 9, numberCartTier: 3 };
+    case 9:
+      return { engineLevel: 9, numberCartTier: 1 };
     case 101:
       return { engineLevel: 10, colorTrackerTier: 1 };
     case 102:
       return { engineLevel: 10, colorTrackerTier: 2 };
     case 103:
       return { engineLevel: 10, colorTrackerTier: 3 };
+    case 10:
+      return { engineLevel: 10, colorTrackerTier: 1 };
     default:
       return { engineLevel: level };
   }
+}
+
+/** 구 티어 전용 카탈로그 id → 기본 카탈로그 id */
+export function catalogReactTrainUiLevel(level: number): number {
+  return resolveReactTrainUiLevel(level).engineLevel;
+}
+
+export function isModifiedQuadrantLevel(level: number): boolean {
+  return level >= 7 && level <= 10;
+}
+
+export function isFront3PanelLevel(level: number): boolean {
+  return level === 5 || level === 6;
+}
+
+/** basic 엔진 level → 카탈로그 대표 id (변형사분할=7, 전면3패널=5) */
+export function catalogBasicUiLevel(level: number): number {
+  if (isModifiedQuadrantLevel(level)) return 7;
+  if (level === 6) return 5;
+  return level;
+}
+
+export function modifiedQuadrantStage(level: number): 1 | 2 | 3 | 4 {
+  if (level === 8) return 2;
+  if (level === 9) return 3;
+  if (level === 10) return 4;
+  return 1;
+}
+
+export function modifiedQuadrantLevelFromStage(stage: 1 | 2 | 3 | 4): number {
+  return ([7, 8, 9, 10] as const)[stage - 1]!;
+}
+
+export function isColorSequenceLevel(level: number): boolean {
+  return level === 1 || level === 2 || level === 3;
+}
+
+export function isColorNumberLevel(level: number): boolean {
+  return level === 4 || level === 5;
+}
+
+/** spatial 엔진 level → 카탈로그 대표 id (색순서=1, 색·번호=4) */
+export function catalogSpatialUiLevel(level: number): number {
+  if (isColorSequenceLevel(level)) return 1;
+  if (isColorNumberLevel(level)) return 4;
+  return level;
+}
+
+export function colorSequenceLength(level: number): 3 | 5 | 10 {
+  if (level === 2) return 5;
+  if (level === 3) return 10;
+  return 3;
+}
+
+export function colorSequenceLevelFromLength(length: 3 | 5 | 10): number {
+  if (length === 5) return 2;
+  if (length === 10) return 3;
+  return 1;
 }
 
 export function reactTrainEngineLevelForUi(uiLevel: number): number {

@@ -635,7 +635,6 @@ describe('FlowPreset', () => {
       name: '테스트',
       features: ['faster'],
       environmentTheme: 'space',
-      colorTheme: 'neon',
       duration: 30,
     };
     saveFlowPresets([preset]);
@@ -647,7 +646,6 @@ describe('FlowPreset', () => {
     name: 'ok',
     features: [],
     environmentTheme: 'space',
-    colorTheme: 'default',
     duration: 20,
   };
 

@@ -5,7 +5,7 @@ import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 
 const DB_NAME = 'spm-note-oplog-v1';
 const DB_VERSION = 1;
-const FORCED_LOCAL_RESET_VERSION = '2026-07-20-note-global-recover-2';
+const FORCED_LOCAL_RESET_VERSION = '2026-07-20-note-global-recover-5';
 const FORCED_GLOBAL_LOCAL_RESET_KEY = 'spm-note-global-local-reset';
 
 export type NoteLocalDocumentRecord = {

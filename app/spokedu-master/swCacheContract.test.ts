@@ -113,40 +113,24 @@ describe('SPOKEDU MASTER protected response cache contract', () => {
     expect(source).toContain("'/api/spokedu-master/class-records'");
   });
 
-  it('does not describe personalized offline data as available', () => {
-    const source = read('app/spokedu-master/components/operations/PwaInstallCard.tsx');
-
-    expect(source).toContain('빠른 재진입 준비됨');
-    expect(source).toContain('수업 자료와 기록 기능은 인터넷 연결 상태에서 사용해 주세요.');
-    expect(source).not.toContain('오프라인 캐시 준비됨');
-    expect(source).not.toContain('오프라인에서도');
-    expect(source).not.toContain('자동 업로드');
+  it('does not ship a dead PwaInstallCard offline-promise UI', () => {
+    expect(existsSync(join(process.cwd(), 'app/spokedu-master/components/operations/PwaInstallCard.tsx'))).toBe(
+      false,
+    );
   });
 
   it('uses network wording without promising server health or sync completion', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
-    const operationsPanel = read('app/spokedu-master/components/operations/OperationsPanel.tsx');
 
     expect(statusBar).toContain('인터넷 연결됨');
     expect(statusBar).toContain('인터넷 연결 없음');
-    expect(operationsPanel).toContain('인터넷 연결됨');
-    expect(operationsPanel).toContain('인터넷 연결 없음');
-    expect(operationsPanel).toContain("operational.online ? '연결됨' : '연결 없음'");
     expect(read('app/spokedu-master/components/layout/AppShell.tsx')).not.toContain('OperationsBanner');
     expect(statusBar).not.toContain('서버 정상');
     expect(statusBar).not.toContain('동기화 완료');
     expect(statusBar).not.toContain('모든 자료 최신');
-    expect(operationsPanel).not.toContain('동기화 완료');
-    expect(operationsPanel).not.toContain("operational.online ? '정상' : '보관'");
-  });
-
-  it('does not show an install success CTA without a real install state', () => {
-    const source = read('app/spokedu-master/components/operations/PwaInstallCard.tsx');
-
-    expect(source).toContain('window.addEventListener(\'beforeinstallprompt\'');
-    expect(source).toContain('window.addEventListener(\'appinstalled\'');
-    expect(source).toContain('{standalone ? null : (');
-    expect(source).not.toContain("const installLabel = standalone ? '설치 완료'");
+    expect(existsSync(join(process.cwd(), 'app/spokedu-master/components/operations/OperationsPanel.tsx'))).toBe(
+      false,
+    );
   });
 
   it('describes the manifest as an online-first quick-launch app', () => {

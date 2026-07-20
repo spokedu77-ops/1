@@ -47,7 +47,7 @@ describe('spomove preset display model', () => {
     expect(getSpomovePresetDisplayModel(rc!).displayTitle).toBe('공간 방향');
 
     const magic = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
-    expect(getSpomovePresetDisplayModel(magic!).displayTitle).toBe('매직 아이 L1');
+    expect(getSpomovePresetDisplayModel(magic!).displayTitle).toBe('매직 아이');
 
     for (const preset of OFFICIAL_SPOMOVE_LIBRARY) {
       expect(getSpomovePresetDisplayModel(preset).displayTitle).not.toMatch(/^\d+번\b/);

@@ -187,18 +187,10 @@ export type VariantPanelContent = {
 /** Asset Hub 과일 슬롯 수(테마 슬롯과 동일 8칸) */
 export const SPOMOVE_VARIANT_FRUIT_SLOT_COUNT = SPOMOVE_VARIANT_SLOT_COUNT;
 
-/**
- * 레거시 참조용(런타임 기본 과일 이미지는 쓰지 않음 — 업로드된 슬롯만 반영).
- */
-export const VARIANT_FRUIT_IMAGE_URLS: readonly string[] = [];
-
-/** @deprecated SPOMOVE_VARIANT_SLOT_COLOR_IDS 사용 */
-export const VARIANT_FRUIT_SLOT_COLOR_IDS = SPOMOVE_VARIANT_SLOT_COLOR_IDS;
-
 export function buildFruitSlidesFromUrls(urls: readonly string[]): FruitSlide[] {
   return urls.map((imageUrl, i) => ({
     imageUrl,
-    color: COLORS.find((c) => c.id === VARIANT_FRUIT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
+    color: COLORS.find((c) => c.id === SPOMOVE_VARIANT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
   }));
 }
 
@@ -210,7 +202,7 @@ export function buildVariantSlidesFromThemedUrls(urls: readonly string[]): Fruit
     if (!imageUrl) continue;
     out.push({
       imageUrl,
-      color: COLORS.find((c) => c.id === VARIANT_FRUIT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
+      color: COLORS.find((c) => c.id === SPOMOVE_VARIANT_SLOT_COLOR_IDS[i]) ?? COLORS[0]!,
     });
   }
   return out;

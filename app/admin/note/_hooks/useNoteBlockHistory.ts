@@ -70,7 +70,10 @@ export function useNoteBlockHistory(options: {
         const restoredById = new Map<string, NoteBlock>();
         for (const step of buildHistoryPersistSteps(plan)) {
           if (step.type === 'softDelete') {
-            await documentEngine.persistSoftDelete({ ids: step.ids });
+            await documentEngine.persistSoftDelete({
+              ids: step.ids,
+              blocks: step.blocks,
+            });
             continue;
           }
           if (step.type === 'restoreRoots') {

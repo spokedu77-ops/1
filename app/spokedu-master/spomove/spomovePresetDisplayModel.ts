@@ -81,7 +81,7 @@ function buildBodyFunctionLabel(preset: OfficialSpomovePreset): string {
 /**
  * 카드 표시 제목: 프로그램명 태그·구 카탈로그 번호(N번) 잔여물 제거.
  * 예: "반응인지 1번 · 공간 방향" → "공간 방향"
- *     "시지각 반응 · 매직 아이 L1" → "매직 아이 L1"
+ *     "시지각 반응 · 매직 아이" → "매직 아이"
  */
 function buildDisplayTitle(preset: OfficialSpomovePreset): string {
   let title = preset.title.trim();

@@ -5,6 +5,8 @@ export interface SessionEvent {
   end: Date | string;
   teacher: string;
   teacherId: string;
+  /** memo EXTRA_TEACHERS 보조 강사 id (캘린더 선생님 필터용) */
+  extraTeacherIds?: string[];
   type: string;
   status: string | null;
   groupId?: string;

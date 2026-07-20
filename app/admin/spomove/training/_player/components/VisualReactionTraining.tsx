@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 
 import { setupCanvas } from '../lib/canvasUtils';
@@ -830,12 +831,12 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       }, 1000);
     }, 60);
 
-    window.addEventListener('resize', onWinResize);
+    const unbindResize = bindViewportResize(playAreaRef.current, onWinResize);
 
     return () => {
       clearTimeout(startId);
       if (countdownTimer) clearInterval(countdownTimer);
-      window.removeEventListener('resize', onWinResize);
+      unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);

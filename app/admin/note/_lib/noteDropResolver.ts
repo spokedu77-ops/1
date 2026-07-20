@@ -18,7 +18,7 @@ import type { BlockDropTarget } from '../_components/noteContexts';
 
 export const DROP_GAP_PX = 6;
 export const TOGGLE_TITLE_BAND_PX = 34;
-export const PAGE_DROP_EDGE_RATIO = 0.5;
+export const PAGE_DROP_EDGE_RATIO = 0.25;
 const LIST_DROP_EDGE_RATIO = 0.25;
 
 export type RowRect = { top: number; height: number };
@@ -53,7 +53,9 @@ export function resolveDropPositionForBlock(
   }
 
   if (blockType === 'page') {
-    return rel < height * PAGE_DROP_EDGE_RATIO ? 'before' : 'after';
+    if (rel <= height * PAGE_DROP_EDGE_RATIO) return 'before';
+    if (rel >= height * (1 - PAGE_DROP_EDGE_RATIO)) return 'after';
+    return 'inside';
   }
 
   if (LIST_CONTAINER_TYPES.has(blockType)) {

@@ -81,14 +81,6 @@ function applyRemoteOpRecord(blocks: NoteBlock[], op: NoteBlockOpRecord): NoteBl
       updated_at: op.createdAt,
     });
     let next = [...blocks, created];
-    if (payload.normalizeOrders?.length) {
-      const orderMap = new Map(payload.normalizeOrders.map((item) => [item.id, item.order_index]));
-      next = next.map((block) => {
-        const order = orderMap.get(block.id);
-        if (order === undefined) return block;
-        return { ...block, order_index: order };
-      });
-    }
     if (payload.transactionUpdates?.length) {
       next = applyRemoteOpRecords(next, [{
         ...op,

@@ -53,6 +53,16 @@ import {
   resolveTrainingEngine,
   resolveReactTrainUiLevel,
   reactTrainEngineLevelForUi,
+  catalogBasicUiLevel,
+  isModifiedQuadrantLevel,
+  isFront3PanelLevel,
+  isColorSequenceLevel,
+  isColorNumberLevel,
+  modifiedQuadrantStage,
+  modifiedQuadrantLevelFromStage,
+  catalogSpatialUiLevel,
+  colorSequenceLength,
+  colorSequenceLevelFromLength,
   type SpatialArrowColorMapping,
 } from './constants';
 
@@ -190,16 +200,14 @@ const defaultSettings: Settings = {
 const BASIC_DISPLAY_LEVELS = [
   { displayNo: 1, levelId: 1, label: 'Spatial Orientation' },
   { displayNo: 2, levelId: 2, label: 'Quad Color' },
-  { displayNo: 3, levelId: 7, label: 'Modified Quadrant L1' },
-  { displayNo: 4, levelId: 8, label: 'Modified Quadrant L2' },
-  { displayNo: 5, levelId: 9, label: 'Modified Quadrant L3' },
-  { displayNo: 6, levelId: 10, label: 'Modified Quadrant L4' },
-  { displayNo: 7, levelId: 3, label: 'Full-Screen Color' },
-  { displayNo: 8, levelId: 4, label: 'Variant Color 1' },
-  { displayNo: 9, levelId: 5, label: 'Variant Color 2' },
-  { displayNo: 10, levelId: 6, label: 'Variant Color 3' },
+  { displayNo: 3, levelId: 7, label: 'Modified Quadrant' },
+  { displayNo: 4, levelId: 3, label: 'Full-Screen Color' },
+  { displayNo: 5, levelId: 4, label: 'Variant Color 1' },
+  { displayNo: 6, levelId: 5, label: 'Variant Color 2/3' },
 ] as const;
 function getBasicDisplayNo(levelId: number): number | undefined {
+  if (levelId >= 7 && levelId <= 10) return 3;
+  if (levelId === 6) return 6;
   return BASIC_DISPLAY_LEVELS.find((item) => item.levelId === levelId)?.displayNo;
 }
 
@@ -227,15 +235,9 @@ export type MemoryGameAutoLaunch = {
   flowFeatures?: string[];
   /** Hub 파노라마 환경 테마 */
   diveEnvironmentTheme?: DiveThemeId;
-  /** @deprecated → diveEnvironmentTheme */
-  flowColorTheme?: 'default' | 'space' | 'neon' | 'ocean';
   flowDuration?: number;
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
-  /** @deprecated 미사용 */
-  flowBgImageUrl?: string;
-  /** @deprecated DIVE 통합 후 무시 */
-  flowVisualVariant?: 'classic' | 'plus';
   /** ????????????????????????1?? ??????????????????????????????????????????????*/
   reactTrainConcurrent?: 1 | 2 | 3;
   /** ???????????????????????????????????????8???????? engine level 9) L1/L2/L3 */
@@ -510,8 +512,14 @@ export default function MemoryGameApp({
   );
 
   const basicVariantLevel = useMemo(
-    () => settings.mode === 'basic' && basicDisplayNo !== undefined && (basicDisplayNo === 2 || (basicDisplayNo >= 7 && basicDisplayNo <= 10)),
-    [settings.mode, basicDisplayNo]
+    () =>
+      settings.mode === 'basic' &&
+      (settings.level === 2 ||
+        settings.level === 3 ||
+        settings.level === 4 ||
+        settings.level === 5 ||
+        settings.level === 6),
+    [settings.mode, settings.level],
   );
 
   /** ???????????3??Mixed Gallery): ????????????????????????? ?????????????????????????????熬곣뫖利당춯??쎾퐲???????????????????꿔꺂?㏘틠??怨몄젦????????????????????????????????????????????????곕춴???????????????*/
@@ -539,10 +547,10 @@ export default function MemoryGameApp({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [isTraining, screen, variantImagePreloadLevel, variantFruitUrls]);
 
-  /** ???????????????????????????????ㅻ깹????????????????basic 7??????0??: ??????????????????????????????????????????????????????????????????? ??????????????*/
+  /** basic 변형 사분할(engine 7~10): 신체 부위 라벨 easy/hard */
   const quadBodyLevel = useMemo(
-    () => settings.mode === 'basic' && basicDisplayNo !== undefined && basicDisplayNo >= 3 && basicDisplayNo <= 6,
-    [settings.mode, basicDisplayNo]
+    () => settings.mode === 'basic' && settings.level >= 7 && settings.level <= 10,
+    [settings.mode, settings.level],
   );
 
   const fullScreenColorDisplayLevel = settings.mode === 'basic' && basicDisplayNo === 7;
@@ -591,14 +599,9 @@ export default function MemoryGameApp({
     if (autoLaunch) {
       const {
         flowFeatures: flowFeaturesArr,
-        flowColorTheme: legacyFlowTheme,
         diveEnvironmentTheme: autoDiveTheme,
-        flowVisualVariant: _legacyVisual,
-        flowBgImageUrl: _legacyBg,
         ...restAutoLaunch
       } = autoLaunch;
-      void _legacyVisual;
-      void _legacyBg;
       const merged: Settings = {
         ...defaultSettings,
         mode: normalized.mode,
@@ -609,7 +612,7 @@ export default function MemoryGameApp({
         flowFeatures: flowFeaturesArr?.length
           ? new Set(flowFeaturesArr as FlowFeatureKey[])
           : defaultSettings.flowFeatures,
-        diveEnvironmentTheme: normalizeDiveThemeId(autoDiveTheme ?? (legacyFlowTheme === 'space' ? 'space' : undefined)),
+        diveEnvironmentTheme: normalizeDiveThemeId(autoDiveTheme),
         memoryColorSlots: normalizeMemoryColorSlots(autoLaunch.memoryColorSlots),
       };
       autoLaunchCfgRef.current = merged;
@@ -1286,9 +1289,39 @@ export default function MemoryGameApp({
               {stepNum(2, "Choose a level")}
               <p style={{ fontSize: '0.92rem', color: 'var(--text-muted)', marginBottom: '0.7rem', lineHeight: 1.55 }}>{M.desc}</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
-                {M.levels.map((lv, lvIdx) => (
-                  <button key={lv.id} type="button" onClick={() => set('level', lv.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${settings.level === lv.id ? M.accent : 'var(--border)'}`, background: settings.level === lv.id ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}>
-                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "0.82rem", color: settings.level === lv.id ? "#fff" : "var(--text)", background: settings.level === lv.id ? M.accent : "var(--subtle-bg)", border: settings.level === lv.id ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>{lvIdx + 1}</div>
+                {M.levels.map((lv, lvIdx) => {
+                  const active =
+                    settings.mode === 'basic'
+                      ? catalogBasicUiLevel(settings.level) === lv.id
+                      : settings.mode === 'spatial'
+                        ? catalogSpatialUiLevel(settings.level) === lv.id
+                        : settings.level === lv.id;
+                  return (
+                  <button
+                    key={lv.id}
+                    type="button"
+                    onClick={() => {
+                      if (settings.mode === 'basic' && lv.id === 7) {
+                        set('level', isModifiedQuadrantLevel(settings.level) ? settings.level : 7);
+                        return;
+                      }
+                      if (settings.mode === 'basic' && lv.id === 5) {
+                        set('level', isFront3PanelLevel(settings.level) ? settings.level : 5);
+                        return;
+                      }
+                      if (settings.mode === 'spatial' && lv.id === 1) {
+                        set('level', isColorSequenceLevel(settings.level) ? settings.level : 1);
+                        return;
+                      }
+                      if (settings.mode === 'spatial' && lv.id === 4) {
+                        set('level', isColorNumberLevel(settings.level) ? settings.level : 4);
+                        return;
+                      }
+                      set('level', lv.id);
+                    }}
+                    style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem', padding: '0.8rem 1rem', borderRadius: '1rem', border: `2px solid ${active ? M.accent : 'var(--border)'}`, background: active ? `${M.accent}08` : 'var(--card)', cursor: 'pointer', fontFamily: 'inherit', width: '100%', transition: 'all 0.13s', textAlign: 'left' }}
+                  >
+                    <div style={{ minWidth: 40, width: 40, height: 26, borderRadius: "0.45rem", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: "0.82rem", color: active ? "#fff" : "var(--text)", background: active ? M.accent : "var(--subtle-bg)", border: active ? `1px solid ${M.accent}` : "1px solid var(--border)", flexShrink: 0, marginTop: "0.05rem" }}>{lvIdx + 1}</div>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginBottom: '0.12rem', flexWrap: 'wrap' }}>
                         <span style={{ fontWeight: 800, fontSize: '0.96rem', color: 'var(--text)' }}>{lv.name}</span>
@@ -1297,7 +1330,8 @@ export default function MemoryGameApp({
                       <div style={{ fontSize: '0.86rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>{lv.desc}</div>
                     </div>
                   </button>
-                ))}
+                  );
+                })}
                 {settings.mode === 'basic' && (
                   <button
                     type="button"
@@ -1312,6 +1346,136 @@ export default function MemoryGameApp({
                   </button>
                 )}
               </div>
+              {settings.mode === 'basic' && isModifiedQuadrantLevel(settings.level) ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>단계</div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {([1, 2, 3, 4] as const).map((stage) => {
+                      const active = modifiedQuadrantStage(settings.level) === stage;
+                      return (
+                        <button
+                          key={stage}
+                          type="button"
+                          onClick={() => set('level', modifiedQuadrantLevelFromStage(stage))}
+                          style={{
+                            flex: 1,
+                            padding: '0.55rem 0.4rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                            background: active ? `${M.accent}12` : 'var(--card)',
+                            color: active ? M.accent : 'var(--text)',
+                            fontWeight: active ? 800 : 600,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {stage}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+              {settings.mode === 'basic' && isFront3PanelLevel(settings.level) ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>색 구성</div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {([
+                      { id: 5, label: '같은 색' },
+                      { id: 6, label: '서로 다른 색' },
+                    ] as const).map((opt) => {
+                      const active = settings.level === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => set('level', opt.id)}
+                          style={{
+                            flex: 1,
+                            padding: '0.55rem 0.75rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                            background: active ? `${M.accent}12` : 'var(--card)',
+                            color: active ? M.accent : 'var(--text)',
+                            fontWeight: active ? 800 : 600,
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+              {settings.mode === 'spatial' && isColorSequenceLevel(settings.level) ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>항 수</div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {([3, 5, 10] as const).map((length) => {
+                      const active = colorSequenceLength(settings.level) === length;
+                      return (
+                        <button
+                          key={length}
+                          type="button"
+                          onClick={() => set('level', colorSequenceLevelFromLength(length))}
+                          style={{
+                            flex: 1,
+                            padding: '0.55rem 0.4rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                            background: active ? `${M.accent}12` : 'var(--card)',
+                            color: active ? M.accent : 'var(--text)',
+                            fontWeight: active ? 800 : 600,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {length}개
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+              {settings.mode === 'spatial' && isColorNumberLevel(settings.level) ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>진행 방식</div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {([
+                      { id: 4, label: '퀴즈' },
+                      { id: 5, label: '전체 공개' },
+                    ] as const).map((opt) => {
+                      const active = settings.level === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => set('level', opt.id)}
+                          style={{
+                            flex: 1,
+                            padding: '0.55rem 0.75rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                            background: active ? `${M.accent}12` : 'var(--card)',
+                            color: active ? M.accent : 'var(--text)',
+                            fontWeight: active ? 800 : 600,
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
               {settings.mode === 'basic' && showVariantAppendix && <VariantImageGallery />}
               {settings.mode === 'simon' && settings.level === 3 ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>

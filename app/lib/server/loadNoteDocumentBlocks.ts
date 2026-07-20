@@ -1,6 +1,7 @@
 import { getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { applyToggleBodyForwardMigrations } from './applyToggleBodyForwardMigrations';
 import { applyNoteBlockTreeMigrations } from './applyNoteBlockTreeMigrations';
+import { applyNoteBlockInvariantMigrations } from './applyNoteBlockInvariantMigrations';
 import { reconcileSubPagesOnDocumentLoad } from './reconcileSubPagesOnDocumentLoad';
 
 export type LoadedNoteBlock = {
@@ -50,6 +51,7 @@ export async function loadNoteDocumentBlocks(
     actorId,
   );
   loadedBlocks = await applyNoteBlockTreeMigrations(supabase, loadedBlocks);
+  loadedBlocks = await applyNoteBlockInvariantMigrations(supabase, loadedBlocks);
 
   loadedBlocks = await reconcileSubPagesOnDocumentLoad(supabase, documentId, loadedBlocks);
 

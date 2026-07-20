@@ -21,6 +21,8 @@
     "qa:admin-note:full": "node scripts/admin-note-smoke-qa.mjs",
     "qa:admin-note-regression": "node scripts/admin-note-regression-qa.mjs",
     "audit:admin-note-data": "node scripts/admin-note-data-integrity.mjs",
+    "audit:admin-note-blocks": "node scripts/admin-note-block-invariants.mjs",
+    "audit:admin-note-blocks:all": "node scripts/admin-note-block-invariants.mjs --all --summary",
     "audit:admin-note-ops": "node scripts/admin-note-ops-materialization-integrity.mjs",
     "audit:admin-note-ops:warnings": "node scripts/admin-note-ops-materialization-integrity.mjs --warnings",
     "audit:admin-note-content": "node scripts/admin-note-content-integrity.mjs",

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
@@ -267,12 +268,11 @@ export function CamouflageReactionTraining({
       g.raf = requestAnimationFrame(loop);
     }, 60);
 
-    const onWinResize = () => calcLayout();
-    window.addEventListener('resize', onWinResize);
+    const unbindResize = bindViewportResize(play, () => calcLayout());
 
     return () => {
       clearTimeout(startId);
-      window.removeEventListener('resize', onWinResize);
+      unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);

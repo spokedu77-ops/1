@@ -1,8 +1,10 @@
 import {
   applyBlockDropPlanInMemory,
+  applyBlockForestDropPlanInMemory,
   collectBlockForestIds,
   flattenVisualBlockIds,
   planBlockDropAt,
+  planBlockForestDropAt,
   planMergeWithPreviousBlock,
   planMoveRootBlockGroup,
   planMoveSiblingBlockGroup,
@@ -214,13 +216,12 @@ export function buildMoveBlockGroupCommand(
   }
 
   const rootMovingIds = topLevelSelectedDragIds(movingIds, blocks);
-  let nextBlocks = blocks;
-  for (const movingId of rootMovingIds) {
-    const plan = planBlockDropAt(nextBlocks, movingId, targetBlockId, 'inside');
-    if (!plan) return emptyCommandResult(blocks);
-    nextBlocks = applyBlockDropPlanInMemory(nextBlocks, movingId, plan);
-  }
-  return buildStructureCommandResult(blocks, nextBlocks);
+  const forestPlan = planBlockForestDropAt(blocks, rootMovingIds, targetBlockId, 'inside');
+  if (!forestPlan) return emptyCommandResult(blocks);
+  return buildStructureCommandResult(
+    blocks,
+    applyBlockForestDropPlanInMemory(blocks, forestPlan),
+  );
 }
 
 export function buildDeleteBlockForestCommand(

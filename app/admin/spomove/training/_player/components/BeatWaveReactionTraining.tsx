@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
@@ -521,12 +522,11 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
       g.raf = requestAnimationFrame(loop);
     }, 60);
 
-    const onResize = () => calcLayout();
-    window.addEventListener('resize', onResize);
+    const unbindResize = bindViewportResize(play, () => calcLayout());
 
     return () => {
       clearTimeout(startId);
-      window.removeEventListener('resize', onResize);
+      unbindResize();
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
       if (g.timer) clearInterval(g.timer);

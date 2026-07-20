@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { collectActiveSubtreeIds } from './route';
+import { collectActiveSubtreeIds, enforceDocumentBlockInvariants } from './route';
 
 describe('collectActiveSubtreeIds', () => {
   it('expands root deletes to active descendants', () => {
@@ -28,6 +28,54 @@ describe('collectActiveSubtreeIds', () => {
       block('root'),
       block('child', { parent_block_id: 'root' }),
     ])).toEqual(['root', 'child']);
+  });
+});
+
+describe('enforceDocumentBlockInvariants', () => {
+  it('repairs sibling order drift after direct writes', async () => {
+    const rows = [
+      block('todo', { type: 'todo', order_index: 0 }),
+      block('child', { type: 'text', order_index: 0 }),
+      block('dupe', { type: 'text', order_index: 0 }),
+    ];
+    const updates: Array<{ id: string; patch: Record<string, unknown> }> = [];
+    const supabase = {
+      from(table: string) {
+        expect(table).toBe('note_blocks');
+        const chain = {
+          select() {
+            return chain;
+          },
+          eq() {
+            return chain;
+          },
+          is() {
+            return chain;
+          },
+          order() {
+            return chain;
+          },
+          limit() {
+            return Promise.resolve({ data: rows, error: null });
+          },
+          update(patch: Record<string, unknown>) {
+            updates.push({ id: '', patch });
+            return chain;
+          },
+          then(resolve: (value: unknown) => void) {
+            resolve({ error: null });
+          },
+        };
+        return chain;
+      },
+    };
+
+    await enforceDocumentBlockInvariants(supabase as never, ['doc'], 'actor', '2026-07-21T00:00:00.000Z');
+
+    expect(updates.map((item) => item.patch)).toEqual([
+      expect.objectContaining({ order_index: 1 }),
+      expect.objectContaining({ order_index: 2 }),
+    ]);
   });
 });
 

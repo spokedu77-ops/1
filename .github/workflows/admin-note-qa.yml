@@ -9,6 +9,7 @@ on:
       - 'scripts/admin-note-foundation-qa.mjs'
       - 'scripts/admin-note-regression-qa.mjs'
       - 'scripts/admin-note-smoke-qa.mjs'
+      - 'scripts/admin-note-block-invariants.mjs'
       - 'scripts/admin-note-content-integrity.mjs'
       - 'scripts/admin-note-data-integrity.mjs'
       - 'scripts/note-invariant-qa.mjs'
@@ -107,6 +108,9 @@ jobs:
       - name: Data integrity audit
         if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-data-integrity.mjs
+      - name: Block invariant audit
+        if: steps.gate.outputs.e2e_enabled == 'true'
+        run: npm run audit:admin-note-blocks:all
       - name: Content integrity audit
         if: steps.gate.outputs.e2e_enabled == 'true'
         run: node scripts/admin-note-content-integrity.mjs

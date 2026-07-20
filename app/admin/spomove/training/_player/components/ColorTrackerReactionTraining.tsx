@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { LongPressButton } from './LongPressButton';
@@ -721,12 +722,11 @@ export function ColorTrackerReactionTraining({
       g.raf = requestAnimationFrame(loop);
     }, 60);
 
-    const onWinResize = () => calcLayout();
-    window.addEventListener('resize', onWinResize);
+    const unbindResize = bindViewportResize(playRef.current, () => calcLayout());
 
     return () => {
       clearTimeout(startId);
-      window.removeEventListener('resize', onWinResize);
+      unbindResize();
       g.running = false;
       if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
       if (g.raf != null) cancelAnimationFrame(g.raf);

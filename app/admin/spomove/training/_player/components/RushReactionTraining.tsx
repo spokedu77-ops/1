@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { setupCanvas } from '../lib/canvasUtils';
@@ -415,9 +416,9 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
     }, 250);
     g.raf = requestAnimationFrame(loop);
 
-    window.addEventListener('resize', resize);
+    const unbindResize = bindViewportResize(play, resize);
     return () => {
-      window.removeEventListener('resize', resize);
+      unbindResize();
       g.running = false;
       if (g.timer) clearInterval(g.timer);
       if (g.raf != null) cancelAnimationFrame(g.raf);

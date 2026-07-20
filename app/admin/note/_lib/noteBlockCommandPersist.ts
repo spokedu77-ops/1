@@ -10,6 +10,7 @@ export function persistOpForBlockCommand(
       type: 'blockTransaction',
       patches: command.fieldPatches,
       deleteIds,
+      ...(deleteIds.length > 0 ? { deletedBlocks: command.removedBlocks } : {}),
     };
   }
   if (command.createdBlocks.length > 0) return null;

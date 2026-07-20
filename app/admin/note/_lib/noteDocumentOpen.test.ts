@@ -116,4 +116,25 @@ describe('noteDocumentOpen', () => {
     expect(syncWithServer.mock.calls[0][0]).toEqual(bootstrap);
     expect(result.blocks).toEqual(bootstrap);
   });
+
+  it('does not apply local blocks when an open is aborted as stale', async () => {
+    const bootstrap = [block('server')];
+    const syncWithServer = vi.fn();
+    const engine = {
+      isOplogSyncEnabled: () => true,
+      syncWithServer,
+      replaceBlocks: vi.fn(),
+      getBlocks: () => [block('stale-local')],
+    };
+
+    const result = await openNoteDocument({
+      documentId: 'doc-1',
+      engine,
+      bootstrapBlocks: bootstrap,
+      shouldAbort: () => true,
+    });
+
+    expect(result.blocks).toEqual([]);
+    expect(syncWithServer).not.toHaveBeenCalled();
+  });
 });

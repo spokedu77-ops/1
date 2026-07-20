@@ -13,8 +13,6 @@ import {
 export const FLOW_PRESETS_KEY = 'spomove_flow_presets_v2';
 const FLOW_PRESETS_KEY_LEGACY = 'spomove_flow_presets';
 
-/** @deprecated flowColorTheme 대체 — preset 마이그레이션용 */
-type LegacyFlowColorTheme = 'default' | 'space' | 'neon' | 'ocean';
 
 export interface FlowPreset {
   id: string;
@@ -23,10 +21,6 @@ export interface FlowPreset {
   /** Hub 파노라마 환경 테마 */
   environmentTheme: DiveThemeId;
   duration: number;
-  /** @deprecated v2 preset — environmentTheme으로 마이그레이션 */
-  colorTheme?: LegacyFlowColorTheme;
-  /** @deprecated DIVE/DIVE+ 통합 후 무시 */
-  visualVariant?: 'classic' | 'plus';
 }
 
 function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
@@ -46,20 +40,13 @@ function migratePreset(raw: Record<string, unknown>): FlowPreset | null {
     environmentTheme = 'space';
   }
 
-  const preset: FlowPreset = {
+  return {
     id,
     name,
     features: features as string[],
     environmentTheme,
     duration,
   };
-  if (raw.colorTheme === 'default' || raw.colorTheme === 'space' || raw.colorTheme === 'neon' || raw.colorTheme === 'ocean') {
-    preset.colorTheme = raw.colorTheme;
-  }
-  if (raw.visualVariant === 'classic' || raw.visualVariant === 'plus') {
-    preset.visualVariant = raw.visualVariant;
-  }
-  return preset;
 }
 
 function parsePresets(raw: string | null): FlowPreset[] {

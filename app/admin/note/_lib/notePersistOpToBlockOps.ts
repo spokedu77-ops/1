@@ -3,6 +3,7 @@ import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlockOpPushItem } from '@/app/lib/note/noteBlockOpTypes';
 import { noteBlockOpTypeFromPayload } from '@/app/lib/note/noteBlockOpTypes';
 import type { NoteLocalOutboundOp } from './noteLocalDb';
+import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import type { NoteBlock } from './types';
 
 function readBlockText(block: NoteBlock): string {
@@ -283,16 +284,31 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
   }
   case 'softDelete': {
     if (op.ids.length === 0) return [];
+    const blockById = new Map((op.blocks ?? []).map((block) => [block.id, block]));
     return [{
       clientOpId: newClientOpId(),
       opType: 'soft_delete',
-      payload: { opType: 'soft_delete', ids: op.ids },
+      payload: {
+        opType: 'soft_delete',
+        ids: op.ids,
+        deleteMeta: op.ids.map((id) => ({
+          id,
+          updated_at: blockById.get(id)?.updated_at ?? null,
+        })),
+      },
     }];
   }
   case 'createBlock': {
     if (!op.id) {
       throw new Error('[Note] createBlock requires client id before op-log push');
     }
+    const transactionUpdates: NoteBlockFieldPatch[] = [
+      ...(op.normalizeOrders ?? []).map((patch) => ({
+        id: patch.id,
+        order_index: patch.order_index,
+      })),
+      ...(op.transactionUpdates ?? []),
+    ];
     return [{
       clientOpId: newClientOpId(),
       opType: 'create_block',
@@ -304,8 +320,7 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
         content: op.content,
         order_index: op.order_index,
         parent_block_id: op.parent_block_id,
-        normalizeOrders: op.normalizeOrders,
-        transactionUpdates: op.transactionUpdates?.map((patch) => ({
+        transactionUpdates: transactionUpdates.length > 0 ? transactionUpdates.map((patch) => ({
           id: patch.id,
           ...(patch.type !== undefined ? { type: patch.type } : {}),
           ...(patch.content !== undefined ? { content: patch.content } : {}),
@@ -313,12 +328,13 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
           ...(patch.parent_block_id !== undefined ? { parent_block_id: patch.parent_block_id } : {}),
           ...(patch.document_id !== undefined ? { document_id: patch.document_id } : {}),
           ...(patch.expected_version !== undefined ? { expected_version: patch.expected_version } : {}),
-        })),
+        })) : undefined,
       },
     }];
   }
   case 'blockTransaction': {
     if (op.patches.length === 0 && op.deleteIds.length === 0 && (!op.creates || op.creates.length === 0)) return [];
+    const deletedBlockById = new Map((op.deletedBlocks ?? []).map((block) => [block.id, block]));
     return [{
       clientOpId: newClientOpId(),
       opType: 'block_transaction',
@@ -334,6 +350,14 @@ export function persistOpToPushItems(op: NotePersistOp): NoteBlockOpPushItem[] {
           ...(patch.expected_version !== undefined ? { expected_version: patch.expected_version } : {}),
         })),
         deleteIds: op.deleteIds,
+        ...(op.deleteIds.length > 0
+          ? {
+            deleteMeta: op.deleteIds.map((id) => ({
+              id,
+              updated_at: deletedBlockById.get(id)?.updated_at ?? null,
+            })),
+          }
+          : {}),
         ...(op.creates ? { creates: op.creates } : {}),
       },
     }];

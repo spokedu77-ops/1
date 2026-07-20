@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as THREE from 'three';
+import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 
@@ -934,14 +935,14 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
-    window.addEventListener('resize', onWinResize);
+    const unbindResize = bindViewportResize(play, onWinResize);
     onWinResize();
     renderer.render(scene, camera);
     g.raf = requestAnimationFrame(animate);
     startRound();
 
     return () => {
-      window.removeEventListener('resize', onWinResize);
+      unbindResize();
       g.running = false;
       if (g.roundTimer) clearTimeout(g.roundTimer);
       if (g.raf != null) cancelAnimationFrame(g.raf);

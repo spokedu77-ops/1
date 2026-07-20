@@ -884,7 +884,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
     }
   };
 
-  const handleDeleteSession = async (gid: string, sessionId: string) => {
+  const handleDeleteSession = async (_gid: string, sessionId: string) => {
     if (!supabase) return;
     if (!sessionId) return;
     if (deletingSessionId === sessionId) return;
@@ -892,6 +892,7 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
     setDeletingSessionId(sessionId);
     try {
+      // 취소 = price 0 + 해당 회차 슬롯은 진행(소진) 유지. round_index·round_total 재정렬하지 않음.
       const { data: cancelledRow, error: cancelErr } = await supabase
         .from("sessions")
         .update({ status: "cancelled", price: 0 })
@@ -900,10 +901,6 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
         .maybeSingle();
       if (cancelErr) throw cancelErr;
       if (!cancelledRow?.id) throw new Error("BUNDLE_SESSION_NOT_CANCELLED");
-      const rows = sessionsByGroupId[gid] || [];
-      if (rows.length > 1) {
-        await reindexGroupRounds(supabase, rows);
-      }
       toast.success("회차가 취소 처리되었습니다.");
       await loadAll();
       onChanged?.();

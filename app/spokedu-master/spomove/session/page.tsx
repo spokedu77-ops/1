@@ -30,6 +30,13 @@ import {
 } from '../officialSpomovePresetGuides';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
 import {
+  applySpomoveDifficulty,
+  getSpomoveDifficultyKind,
+  getSpomoveDifficultyOptions,
+  readSpomoveDifficultyValue,
+  type SpomoveDifficultyKind,
+} from '../spomoveDifficulty';
+import {
   SPOMOVE_CUE_SPEED_OPTIONS,
   clampCueSpeedSec,
   formatCueSpeedTargetLabel,
@@ -103,6 +110,9 @@ function OfficialEngineBriefing({
   launchMode,
   cueSeconds,
   onCueSecondsChange,
+  difficultyKind,
+  difficultyValue,
+  onDifficultyChange,
   onStart,
 }: {
   preset: OfficialSpomovePreset;
@@ -110,12 +120,16 @@ function OfficialEngineBriefing({
   launchMode: LaunchMode;
   cueSeconds: SpomoveCueSpeedSec;
   onCueSecondsChange: (value: SpomoveCueSpeedSec) => void;
+  difficultyKind: SpomoveDifficultyKind | null;
+  difficultyValue: string;
+  onDifficultyChange: (value: string) => void;
   onStart: () => void;
 }) {
   const isMobile = launchMode === 'mobile';
   const guide = getOfficialSpomovePresetGuide(preset);
   const display = getSpomovePresetDisplayModel(preset);
   const showCueSpeed = supportsCueSpeedOverride(preset);
+  const difficultyOptions = difficultyKind ? getSpomoveDifficultyOptions(difficultyKind) : [];
   const [detailsOpen, setDetailsOpen] = useState(false);
   const selectedGuide = getCueSpeedGuide(cueSeconds);
   const recommendedSec = recommendedCueSecondsForPreset(preset);
@@ -146,11 +160,42 @@ function OfficialEngineBriefing({
             {display.displayTitle}
           </h1>
           <p className="mt-2 text-[15px] font-black leading-snug text-[color-mix(in_srgb,var(--spm-acc)_80%,white)]">
-            {showCueSpeed ? '속도만 고르고 시작하세요' : '준비가 되면 바로 시작하세요'}
+            {difficultyKind
+              ? '난이도를 고르고 시작하세요'
+              : showCueSpeed
+                ? '속도만 고르고 시작하세요'
+                : '준비가 되면 바로 시작하세요'}
           </p>
         </div>
 
         <div className="px-5 pt-5 sm:px-7">
+          {difficultyKind ? (
+            <div className="mb-4 rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
+              <p className="text-[12px] font-black tracking-[0.08em] text-white/55">난이도</p>
+              <div className="mt-3 flex gap-2">
+                {difficultyOptions.map((opt) => {
+                  const active = difficultyValue === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => onDifficultyChange(opt.value)}
+                      className={`flex-1 rounded-xl px-2 py-3 text-center transition ${
+                        active
+                          ? 'bg-[var(--spm-acc)] text-white shadow-[0_10px_28px_rgba(0,0,0,0.28)]'
+                          : 'border border-white/15 bg-black/30 text-white/80 hover:border-white/35 hover:text-white'
+                      }`}
+                    >
+                      <span className="block text-[18px] font-black">{opt.label}</span>
+                      <span className={`mt-1 block text-[10px] font-bold ${active ? 'text-white/80' : 'text-white/45'}`}>
+                        {opt.sub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
           {showCueSpeed ? (
             <div className="rounded-[22px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[color-mix(in_srgb,var(--spm-acc)_12%,transparent)] p-4 sm:p-5">
               <div className="flex items-end justify-between gap-3">
@@ -340,7 +385,25 @@ function SpomoveSessionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const presetId = searchParams.get('preset') ?? '';
-  const officialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
+  const baseOfficialPreset = useMemo(() => findOfficialSpomovePreset(presetId), [presetId]);
+  const difficultyKind = useMemo(
+    () => (baseOfficialPreset ? getSpomoveDifficultyKind(baseOfficialPreset) : null),
+    [baseOfficialPreset],
+  );
+  const [difficultyValue, setDifficultyValue] = useState(() =>
+    baseOfficialPreset && difficultyKind
+      ? readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind)
+      : '1',
+  );
+  useEffect(() => {
+    if (!baseOfficialPreset || !difficultyKind) return;
+    setDifficultyValue(readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind));
+  }, [baseOfficialPreset, difficultyKind]);
+  const officialPreset = useMemo(() => {
+    if (!baseOfficialPreset) return null;
+    if (!difficultyKind) return baseOfficialPreset;
+    return applySpomoveDifficulty(baseOfficialPreset, difficultyKind, difficultyValue);
+  }, [baseOfficialPreset, difficultyKind, difficultyValue]);
   const displayModel = useMemo(
     () => (officialPreset ? getSpomovePresetDisplayModel(officialPreset) : null),
     [officialPreset],
@@ -567,6 +630,9 @@ function SpomoveSessionContent() {
           launchMode={launchMode}
           cueSeconds={effectiveCueSeconds}
           onCueSecondsChange={handleCueSecondsChange}
+          difficultyKind={difficultyKind}
+          difficultyValue={difficultyValue}
+          onDifficultyChange={setDifficultyValue}
           onStart={startOfficialSession}
         />
       ) : null}

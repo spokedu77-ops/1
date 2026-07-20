@@ -41,6 +41,7 @@ export type NoteDocumentEngineApi = {
   persistBlockTransaction: (
     patches: NoteBlockFieldPatch[],
     deleteIds?: string[],
+    deletedBlocks?: NoteBlock[],
   ) => Promise<void>;
   persistRestoreBlock: (blockId: string) => Promise<NoteBlock[]>;
   persistPurgeBlock: (blockId: string) => Promise<void>;
@@ -219,10 +220,11 @@ export function useNoteDocumentEngine(options: {
   const persistBlockTransaction = useCallback(async (
     patches: NoteBlockFieldPatch[],
     deleteIds: string[] = [],
+    deletedBlocks: NoteBlock[] = [],
   ) => {
     if (patches.length === 0 && deleteIds.length === 0) return;
     const pipeline = await waitForLivePipeline();
-    await pipeline.persistBlockTransaction(patches, deleteIds);
+    await pipeline.persistBlockTransaction(patches, deleteIds, deletedBlocks);
   }, [waitForLivePipeline]);
 
   const persistRestoreBlock = useCallback(async (blockId: string) => {

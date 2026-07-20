@@ -307,6 +307,7 @@ export class NoteDocumentOpQueue {
 
 export type SoftDeletePersistArgs = {
   ids: string[];
+  blocks?: NoteBlock[];
 };
 
 export type CreateBlockPersistArgs = {
@@ -318,4 +319,10 @@ export type CreateBlockPersistArgs = {
   parent_block_id: string | null;
   normalizeOrders?: Array<{ id: string; order_index: number }>;
   transactionUpdates?: NoteBlockFieldPatch[];
+};
+
+export type BlockTransactionPersistArgs = {
+  patches: NoteBlockFieldPatch[];
+  deleteIds?: string[];
+  deletedBlocks?: NoteBlock[];
 };

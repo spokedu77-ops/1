@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin, getServiceSupabase } from '@/app/lib/server/adminAuth';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { NOTE_BLOCK_PATCH_BATCH_MAX } from '@/app/lib/note/noteBlockBatch';
+import { sanitizeNoteBlockTree } from '@/app/lib/note/noteBlockSanitize';
 
 type NoteBlock = {
   id: string;
@@ -260,6 +261,61 @@ async function auditBatchBlockUpdates(
   );
 }
 
+function buildInvariantRepairPatch(before: NoteBlock, after: NoteBlock): Record<string, unknown> | null {
+  const patch: Record<string, unknown> = {};
+  if ((before.parent_block_id ?? null) !== (after.parent_block_id ?? null)) {
+    patch.parent_block_id = after.parent_block_id ?? null;
+  }
+  if (before.order_index !== after.order_index) {
+    patch.order_index = after.order_index;
+  }
+  if (before.type !== after.type) {
+    patch.type = after.type;
+  }
+  return Object.keys(patch).length > 0 ? patch : null;
+}
+
+export async function enforceDocumentBlockInvariants(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  documentIds: string[],
+  userId: string,
+  now: string,
+): Promise<void> {
+  const uniqueDocumentIds = [...new Set(documentIds.filter(Boolean))];
+  for (const documentId of uniqueDocumentIds) {
+    const { data, error } = await supabase
+      .from('note_blocks')
+      .select(BLOCK_SELECT)
+      .eq('document_id', documentId)
+      .is('deleted_at', null)
+      .order('order_index', { ascending: true })
+      .limit(5000);
+    if (error) throw new Error(error.message);
+    const before = (data ?? []) as NoteBlock[];
+    const sanitizable = before.map((block) => ({
+      ...block,
+      content: block.content && typeof block.content === 'object'
+        ? block.content as Record<string, unknown>
+        : null,
+    }));
+    const after = sanitizeNoteBlockTree(sanitizable) as NoteBlock[];
+    const beforeById = new Map(before.map((block) => [block.id, block]));
+    for (const block of after) {
+      const prev = beforeById.get(block.id);
+      if (!prev) continue;
+      const patch = buildInvariantRepairPatch(prev, block);
+      if (!patch) continue;
+      const { error: updateError } = await supabase
+        .from('note_blocks')
+        .update({ ...patch, updated_at: now, updated_by: userId })
+        .eq('id', block.id)
+        .eq('document_id', documentId)
+        .is('deleted_at', null);
+      if (updateError) throw new Error(updateError.message);
+    }
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const auth = await requireAdmin();
@@ -378,6 +434,7 @@ export async function POST(request: NextRequest) {
     }
 
     const block = data as NoteBlock;
+    await enforceDocumentBlockInvariants(supabase, [block.document_id], auth.userId, now);
     await insertAuditLog({
       documentId: block.document_id,
       blockId: block.id,
@@ -431,6 +488,10 @@ export async function PATCH(request: NextRequest) {
         devLogger.error('[admin/note/blocks] PATCH batch error', result.error);
         return NextResponse.json({ error: result.error }, { status: 500 });
       }
+      const affectedDocumentIds = [
+        ...new Set((result.blocks ?? []).map((block) => block.document_id).filter(Boolean)),
+      ];
+      await enforceDocumentBlockInvariants(supabase, affectedDocumentIds, auth.userId, now);
 
       void auditBatchBlockUpdates(
         supabase,
@@ -489,6 +550,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const block = result.block;
+    await enforceDocumentBlockInvariants(supabase, [block.document_id], auth.userId, now);
     await insertAuditLog({
       documentId: block.document_id,
       blockId: block.id,
@@ -584,6 +646,7 @@ export async function PUT(request: NextRequest) {
       }
 
       const documentIds = [...new Set((beforeRows ?? []).map((row) => row.document_id).filter(Boolean))];
+      await enforceDocumentBlockInvariants(supabase, documentIds, auth.userId, now);
       await Promise.all(documentIds.map((documentId) => insertAuditLog({
         documentId,
         actorId: auth.userId,
@@ -605,6 +668,10 @@ export async function PUT(request: NextRequest) {
         devLogger.error('[admin/note/blocks] PUT field patch error', patchResult.error);
         return NextResponse.json({ error: patchResult.error }, { status: 500 });
       }
+      const affectedDocumentIds = [
+        ...new Set((patchResult.blocks ?? []).map((block) => block.document_id).filter(Boolean)),
+      ];
+      await enforceDocumentBlockInvariants(supabase, affectedDocumentIds, auth.userId, now);
       void auditBatchBlockUpdates(
         supabase,
         fieldPatches,

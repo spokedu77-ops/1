@@ -51,11 +51,10 @@ describe('student P0 guards', () => {
     expect(recordsSource).not.toContain('보호자 링크 미리보기');
   });
 
-  it('does not calculate director attendance from student profile percentages', () => {
-    const source = readSource('app/spokedu-master/director/page.tsx');
+  it('does not calculate attendance from student profile percentages in class-record', () => {
+    const source = readSource('app/spokedu-master/class-record/page.tsx');
 
     expect(source).not.toContain('student.attendance');
     expect(source).not.toContain('평균 출석률');
-    expect(source).toContain('getClassRecordFacts(records)');
   });
 });

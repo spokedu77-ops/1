@@ -131,8 +131,8 @@ export class NoteDocumentPipeline {
   private initQueue(): void {
     if (this.oplogEnabled) {
       this.coordinator = getNoteSyncCoordinator(this.documentId, {
-        onBlocksUpdated: (blocks, _lastSeq, origin) => {
-          this.dispatchSnapshotIfChanged(blocks, origin);
+        onBlocksUpdated: (_blocks, _lastSeq, origin) => {
+          traceSnapshotDecision(origin, 'skip', 'equivalent', this.documentId);
         },
         onError: (error) => this.callbacks.onError?.(error),
       });
@@ -154,8 +154,8 @@ export class NoteDocumentPipeline {
     this.callbacks = callbacks;
     if (this.coordinator) {
       this.coordinator.updateCallbacks({
-        onBlocksUpdated: (blocks, _lastSeq, origin) => {
-          this.dispatchSnapshotIfChanged(blocks, origin);
+        onBlocksUpdated: (_blocks, _lastSeq, origin) => {
+          traceSnapshotDecision(origin, 'skip', 'equivalent', this.documentId);
         },
         onError: (error) => callbacks.onError?.(error),
       });
@@ -190,8 +190,8 @@ export class NoteDocumentPipeline {
   }
 
   applyRemoteOps(ops: NoteBlockOpRecord[]): NoteBlock[] {
-    if (ops.length === 0) return useNoteBlockStore.getState().getBlocksArray();
-    return this.dispatch({ type: 'applyRemoteOps', ops });
+    void ops;
+    return useNoteBlockStore.getState().getBlocksArray();
   }
 
   scheduleContentPatch(
@@ -232,13 +232,7 @@ export class NoteDocumentPipeline {
   }
 
   async hydrateFromLocal(): Promise<NoteBlock[] | null> {
-    const coordinator = this.coordinator;
-    if (!coordinator) return null;
-    const blocks = await coordinator.hydrateFromLocal();
-    if (this.disposed || this.coordinator !== coordinator) return null;
-    if (!blocks || blocks.length === 0) return null;
-    const recovered = this.applyEmergencyDrafts(blocks);
-    return this.dispatch({ type: 'hydrate', blocks: recovered });
+    return null;
   }
 
   async syncWithServer(
@@ -265,9 +259,7 @@ export class NoteDocumentPipeline {
     const storeForDoc = useNoteBlockStore.getState().getBlocksArray()
       .filter((block) => block.document_id === this.documentId);
     const blocks = this.applyEmergencyDrafts(this.blocksWithStoreContent(
-      options?.emptyConfirmed
-        ? initialBlocks.filter((block) => block.document_id === this.documentId)
-        : coordinator.getBlocks(),
+      initialBlocks.filter((block) => block.document_id === this.documentId),
     ));
     if (storeForDoc.length === 0 || options?.emptyConfirmed) {
       const reason = describeSnapshotDiff(
@@ -291,11 +283,11 @@ export class NoteDocumentPipeline {
   }
 
   schedulePull(): void {
-    this.coordinator?.schedulePull();
+    traceSnapshotDecision('coordinator:pull', 'skip', 'equivalent', this.documentId);
   }
 
   async persistSoftDelete(args: SoftDeletePersistArgs): Promise<void> {
-    await this.queue?.enqueue({ type: 'softDelete', ids: args.ids });
+    await this.queue?.enqueue({ type: 'softDelete', ids: args.ids, blocks: args.blocks });
   }
 
   async persistFieldPatches(patches: NoteBlockFieldPatch[]): Promise<void> {
@@ -333,11 +325,17 @@ export class NoteDocumentPipeline {
   async persistBlockTransaction(
     patches: NoteBlockFieldPatch[],
     deleteIds: string[] = [],
+    deletedBlocks: NoteBlock[] = [],
   ): Promise<void> {
     if (!this.queue) {
       throw new Error('[Note] 문서 파이프라인이 준비되지 않았습니다');
     }
-    await this.queue.enqueue({ type: 'blockTransaction', patches, deleteIds });
+    await this.queue.enqueue({
+      type: 'blockTransaction',
+      patches,
+      deleteIds,
+      deletedBlocks,
+    });
   }
 
   async persistRestoreBlock(blockId: string): Promise<NoteBlock[]> {
@@ -359,7 +357,7 @@ export class NoteDocumentPipeline {
   }
 
   getCoordinatorBlocks(): NoteBlock[] {
-    return this.coordinator?.getBlocks() ?? [];
+    return [];
   }
 
   hasPendingContent(): boolean {

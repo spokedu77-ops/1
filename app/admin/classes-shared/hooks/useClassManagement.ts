@@ -122,14 +122,18 @@ export function useClassManagement() {
 
         let displayTeacher = s.users?.name || '미정';
         const { extraTeachers } = parseExtraTeachers(s.memo || '');
-        const extraNames = extraTeachers
-          .map((ex: { id?: string }) => tList.find((t: { id?: string; name?: string }) => t.id === ex.id)?.name)
+        const extraTeacherIds = extraTeachers
+          .map((ex: { id?: string }) => (ex.id ? String(ex.id).trim() : ''))
+          .filter(Boolean);
+        const extraNames = extraTeacherIds
+          .map((id) => tList.find((t: { id?: string; name?: string }) => t.id === id)?.name)
           .filter(Boolean) as string[];
         if (extraNames.length > 0) displayTeacher += `, ${extraNames.join(', ')}`;
 
         const custom = {
           teacher: displayTeacher,
           teacherId: s.users?.id || '',
+          extraTeacherIds,
           type: s.session_type,
           status: s.status,
           groupId: s.group_id ?? undefined,
@@ -165,7 +169,13 @@ export function useClassManagement() {
     if (filterTeacher === 'ALL') {
       setFilteredEvents(allEvents);
     } else {
-      setFilteredEvents(allEvents.filter(ev => ev.teacherId === filterTeacher));
+      setFilteredEvents(
+        allEvents.filter(
+          (ev) =>
+            ev.teacherId === filterTeacher ||
+            (ev.extraTeacherIds ?? []).includes(filterTeacher)
+        )
+      );
     }
   }, [filterTeacher, allEvents]);
 

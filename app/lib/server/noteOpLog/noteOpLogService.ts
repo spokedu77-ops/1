@@ -5,8 +5,8 @@ import type {
   NoteBlockOpRecord,
   NoteBlockSnapshot,
 } from '@/app/lib/note/noteBlockOpTypes';
-import { loadNoteDocumentBlocksRaw } from '@/app/lib/server/loadNoteDocumentBlocksRaw';
 import { commitNoteBlockOp } from '@/app/lib/server/noteOpLog/noteCommitBlockOp';
+import { sanitizeNoteBlockTree, type SanitizableNoteBlock } from '@/app/lib/note/noteBlockSanitize';
 
 const BLOCK_SELECT =
   'id, document_id, parent_block_id, type, order_index, content, created_at, updated_at, deleted_at, deleted_by, version';
@@ -29,6 +29,136 @@ function stripExpectedVersion<T extends { expected_version?: number }>(patch: T)
   const next = { ...patch };
   delete next.expected_version;
   return next;
+}
+
+type TransactionLikePatch = {
+  id: string;
+  document_id?: string;
+  parent_block_id?: string | null;
+  type?: string;
+  order_index?: number;
+  content?: unknown;
+};
+
+type TransactionLikeCreate = {
+  id?: string;
+  document_id?: string;
+  parent_block_id?: string | null;
+  type?: string;
+  order_index?: number;
+  content?: unknown;
+};
+
+type OpSanitizableBlock = SanitizableNoteBlock & {
+  document_id: string;
+  deleted_at?: string | null;
+  version?: number;
+};
+
+export function normalizeOpTransactionPayloadForInvariants({
+  existingBlocks,
+  updates,
+  creates,
+  deleteIds,
+  documentId,
+}: {
+  existingBlocks: OpSanitizableBlock[];
+  updates: TransactionLikePatch[];
+  creates: TransactionLikeCreate[];
+  deleteIds: string[];
+  documentId: string;
+}): { updates: TransactionLikePatch[]; creates: TransactionLikeCreate[] } {
+  const deleted = new Set(deleteIds);
+  const updateById = new Map(updates.map((patch) => [patch.id, patch]));
+  const projectedExisting = existingBlocks
+    .filter((block) => !block.deleted_at && !deleted.has(block.id))
+    .map((block) => {
+      const update = updateById.get(block.id);
+      return {
+        ...block,
+        document_id: update?.document_id ?? block.document_id,
+        parent_block_id: update && 'parent_block_id' in update ? update.parent_block_id ?? null : block.parent_block_id ?? null,
+        type: update?.type ?? block.type,
+        order_index: typeof update?.order_index === 'number' ? update.order_index : block.order_index,
+        content: update?.content !== undefined ? update.content as Record<string, unknown> : block.content,
+      };
+    });
+  const projectedCreates = creates
+    .filter((create): create is TransactionLikeCreate & { id: string } => typeof create.id === 'string')
+    .map((create) => ({
+      id: create.id,
+      document_id: create.document_id ?? documentId,
+      parent_block_id: create.parent_block_id ?? null,
+      type: create.type ?? 'text',
+      order_index: typeof create.order_index === 'number' ? create.order_index : 0,
+      content: (create.content ?? {}) as Record<string, unknown>,
+    }));
+  const sanitized = sanitizeNoteBlockTree([...projectedExisting, ...projectedCreates]);
+  const sanitizedById = new Map(sanitized.map((block) => [block.id, block]));
+
+  return {
+    updates: updates.map((patch) => {
+      const block = sanitizedById.get(patch.id);
+      if (!block) return patch;
+      return {
+        ...patch,
+        document_id: block.document_id,
+        parent_block_id: block.parent_block_id ?? null,
+        order_index: block.order_index,
+        type: block.type,
+      };
+    }),
+    creates: creates.map((create) => {
+      if (!create.id) return create;
+      const block = sanitizedById.get(create.id);
+      if (!block) return create;
+      return {
+        ...create,
+        document_id: block.document_id,
+        parent_block_id: block.parent_block_id ?? null,
+        order_index: block.order_index,
+        type: block.type,
+      };
+    }),
+  };
+}
+
+async function normalizeRpcTransactionPayload(
+  supabase: SupabaseClient,
+  documentId: string,
+  updates: TransactionLikePatch[],
+  creates: TransactionLikeCreate[],
+  deleteIds: string[],
+): Promise<{ updates: TransactionLikePatch[]; creates: TransactionLikeCreate[] }> {
+  const rows = await fetchActiveDocumentBlocks(supabase, documentId);
+  return normalizeOpTransactionPayloadForInvariants({
+    existingBlocks: rows,
+    updates,
+    creates,
+    deleteIds,
+    documentId,
+  });
+}
+
+async function fetchActiveDocumentBlocks(
+  supabase: SupabaseClient,
+  documentId: string,
+): Promise<OpSanitizableBlock[]> {
+  const rows: OpSanitizableBlock[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from('note_blocks')
+      .select(BLOCK_SELECT)
+      .eq('document_id', documentId)
+      .is('deleted_at', null)
+      .order('order_index', { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw new Error(error.message);
+    rows.push(...((data ?? []) as OpSanitizableBlock[]));
+    if (!data || data.length < pageSize) break;
+  }
+  return rows;
 }
 
 function readContentText(content: unknown): string {
@@ -64,6 +194,39 @@ function hasStructuredContent(content: unknown): boolean {
   });
 }
 
+function softDeleteMetaMatches(
+  row: Record<string, unknown>,
+  deleteMeta: Array<{ id: string; updated_at?: string | null }> | undefined,
+): boolean {
+  const id = String(row.id);
+  const meta = deleteMeta?.find((item) => item.id === id);
+  if (!meta) {
+    return !hasStructuredContent(row.content);
+  }
+  const expectedUpdatedAt = meta.updated_at == null ? null : String(meta.updated_at);
+  if (!expectedUpdatedAt) return !hasStructuredContent(row.content);
+  return String(row.updated_at ?? '') === expectedUpdatedAt;
+}
+
+async function filterSoftDeleteIdsByMeta(
+  supabase: SupabaseClient,
+  documentId: string,
+  ids: string[],
+  deleteMeta: Array<{ id: string; updated_at?: string | null }> | undefined,
+): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('note_blocks')
+    .select(BLOCK_SELECT)
+    .in('id', ids)
+    .eq('document_id', documentId);
+  if (error) throw new Error(error.message);
+  return (data ?? [])
+    .filter((row) => !row.deleted_at)
+    .filter((row) => softDeleteMetaMatches(row as Record<string, unknown>, deleteMeta))
+    .map((row) => String(row.id));
+}
+
 export function shouldIgnoreRegressiveContentPatch(
   currentContent: unknown,
   incomingContent: unknown,
@@ -76,6 +239,13 @@ export function shouldIgnoreRegressiveContentPatch(
   const incomingHasStructuredContent = hasStructuredContent(incomingContent);
   const baseHasStructuredContent = hasStructuredContent(baseContent);
   if (!currentText && !currentHasStructuredContent) return false;
+  if ((baseText || baseHasStructuredContent) && (
+    baseText !== currentText
+    || baseHasStructuredContent !== currentHasStructuredContent
+  )) {
+    return incomingText !== currentText
+      || incomingHasStructuredContent !== currentHasStructuredContent;
+  }
   if (!incomingText && !incomingHasStructuredContent) {
     return baseText !== currentText || baseHasStructuredContent !== currentHasStructuredContent;
   }
@@ -238,11 +408,12 @@ export async function applyNoteBlockOpPayload(
       payload.patches.map(stripExpectedVersion),
     );
     if (patches.length === 0) return [];
+    const normalized = await normalizeRpcTransactionPayload(supabase, documentId, patches, [], []);
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
-      p_updates: patches,
+      p_updates: normalized.updates,
       p_delete_ids: [],
       p_actor_id: actorId,
-      p_creates: [],
+      p_creates: normalized.creates,
     });
     if (error) throw new Error(error.message);
     const result = data as { status?: string; blocks?: unknown[] };
@@ -258,7 +429,9 @@ export async function applyNoteBlockOpPayload(
       .select(BLOCK_SELECT)
       .in('id', payload.ids)
       .eq('document_id', documentId);
-    const targets = (beforeBlocks ?? []).filter((row) => !row.deleted_at);
+    const targets = (beforeBlocks ?? [])
+      .filter((row) => !row.deleted_at)
+      .filter((row) => softDeleteMetaMatches(row as Record<string, unknown>, payload.deleteMeta));
     const snapshots: NoteBlockSnapshot[] = [];
     for (const row of targets) {
       const version = (typeof row.version === 'number' ? row.version : 1) + 1;
@@ -281,10 +454,6 @@ export async function applyNoteBlockOpPayload(
   }
   case 'create_block': {
     const updates = await filterExistingTransactionPatches(supabase, documentId, [
-      ...(payload.normalizeOrders ?? []).map((order) => ({
-        id: order.id,
-        order_index: order.order_index,
-      })),
       ...(payload.transactionUpdates ?? []).map(stripExpectedVersion),
     ]);
     const creates = [{
@@ -295,11 +464,12 @@ export async function applyNoteBlockOpPayload(
       order_index: payload.order_index ?? 0,
       content: payload.content,
     }];
+    const normalized = await normalizeRpcTransactionPayload(supabase, documentId, updates, creates, []);
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
-      p_updates: updates,
+      p_updates: normalized.updates,
       p_delete_ids: [],
       p_actor_id: actorId,
-      p_creates: creates,
+      p_creates: normalized.creates,
     });
     if (error) throw new Error(error.message);
     const result = data as {
@@ -320,11 +490,21 @@ export async function applyNoteBlockOpPayload(
       documentId,
       payload.patches.map(stripExpectedVersion),
     );
+    const deleteIds = payload.deleteIds.length > 0
+      ? await filterSoftDeleteIdsByMeta(supabase, documentId, payload.deleteIds, payload.deleteMeta)
+      : [];
+    const normalized = await normalizeRpcTransactionPayload(
+      supabase,
+      documentId,
+      patches,
+      payload.creates ?? [],
+      deleteIds,
+    );
     const { data, error } = await supabase.rpc('note_apply_block_transaction', {
-      p_updates: patches,
-      p_delete_ids: payload.deleteIds,
+      p_updates: normalized.updates,
+      p_delete_ids: deleteIds,
       p_actor_id: actorId,
-      p_creates: payload.creates ?? [],
+      p_creates: normalized.creates,
     });
     if (error) throw new Error(error.message);
     const result = data as {
@@ -434,6 +614,7 @@ export async function loadNoteDocumentSnapshot(
   documentId: string,
   actorId: string,
 ): Promise<NoteBlockSnapshot[]> {
-  const rows = await loadNoteDocumentBlocksRaw(documentId, actorId);
+  void actorId;
+  const rows = await fetchActiveDocumentBlocks(supabase, documentId);
   return rows.map((row) => toSnapshot(row as unknown as Record<string, unknown>));
 }

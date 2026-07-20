@@ -63,6 +63,16 @@ function filterDocumentBlocks(blocks: NoteBlock[], documentId: string): NoteBloc
     .filter((block): block is NoteBlock => Boolean(block));
 }
 
+function normalizeCommandBlocks(
+  blocks: NoteBlock[],
+  ctx: NoteCommandContext,
+): NoteBlock[] {
+  return removeInactiveEmptyTodos(
+    filterDocumentBlocks(blocks, ctx.documentId),
+    ctx.activeBlockId,
+  );
+}
+
 function applyFieldPatches(
   blocks: NoteBlock[],
   patches: NoteBlockFieldPatch[],
@@ -185,17 +195,11 @@ export function applyNoteCommand(
   command: NoteCommand,
   ctx: NoteCommandContext,
 ): NoteCommandResult {
-  const docBlocks = removeInactiveEmptyTodos(
-    filterDocumentBlocks(previous, ctx.documentId),
-    ctx.activeBlockId,
-  );
+  const docBlocks = normalizeCommandBlocks(previous, ctx);
 
   switch (command.type) {
   case 'hydrate': {
-    const incoming = removeInactiveEmptyTodos(
-      filterDocumentBlocks(command.blocks, ctx.documentId),
-      ctx.activeBlockId,
-    );
+    const incoming = normalizeCommandBlocks(command.blocks, ctx);
     if (incoming.length === 0 && docBlocks.length > 0) {
       const emptyDecision = decideEmptySnapshotApply({
         localBlocks: docBlocks,
@@ -218,10 +222,7 @@ export function applyNoteCommand(
     return { blocks: next, structural: true };
   }
   case 'replaceBlocks': {
-    const blocks = removeInactiveEmptyTodos(
-      filterDocumentBlocks(command.blocks, ctx.documentId),
-      ctx.activeBlockId,
-    );
+    const blocks = normalizeCommandBlocks(command.blocks, ctx);
     return { blocks, structural: true };
   }
   case 'patchContent': {
@@ -236,13 +237,12 @@ export function applyNoteCommand(
   }
   case 'applyPatches': {
     return {
-      blocks: applyFieldPatches(docBlocks, command.patches),
+      blocks: normalizeCommandBlocks(applyFieldPatches(docBlocks, command.patches), ctx),
       structural: true,
     };
   }
   case 'applyRemoteOps': {
-    let next = applyRemoteOpRecords(docBlocks, command.ops);
-    next = removeInactiveEmptyTodos(next, ctx.activeBlockId);
+    let next = normalizeCommandBlocks(applyRemoteOpRecords(docBlocks, command.ops), ctx);
     next = mergeReconciledBlocks(
       docBlocks,
       next,
@@ -253,17 +253,13 @@ export function applyNoteCommand(
     return { blocks: next, structural: true };
   }
   case 'mergeSnapshots': {
-    let next = mergeSnapshotPatches(docBlocks, command.snapshots);
-    next = removeInactiveEmptyTodos(next, ctx.activeBlockId);
+    let next = normalizeCommandBlocks(mergeSnapshotPatches(docBlocks, command.snapshots), ctx);
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };
   }
   case 'syncSnapshot': {
-    let incoming = removeInactiveEmptyTodos(
-      filterDocumentBlocks(command.blocks, ctx.documentId),
-      ctx.activeBlockId,
-    );
+    let incoming = normalizeCommandBlocks(command.blocks, ctx);
     if (incoming.length === 0 && docBlocks.length > 0) {
       const emptyDecision = decideEmptySnapshotApply({
         localBlocks: docBlocks,
