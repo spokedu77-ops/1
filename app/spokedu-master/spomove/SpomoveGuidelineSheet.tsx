@@ -11,6 +11,14 @@ import { getVideoThumbnailCandidates } from '../lib/program-media';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 import { officialPresetSessionHref } from './officialSpomovePresets';
 import { buildSpomoveGuidelineNarrative, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
+import { getPresetMovementSummary } from './movements/presetMovementSummary';
+import { getMovementProfile } from './movements/movementProfiles';
+import { MOVEMENT_REGISTRY } from './movements/movementRegistry';
+import { listAllowedMovementPicks } from './movements/movementResolve';
+import { movementDisplayLabel } from './movements/movementLabels';
+import { SPOMAT_COLOR_POSITION } from './movements/spomatColorPosition';
+import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
+import { useProfile } from '../store';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
   const [mode, setMode] = useState<'projector' | 'mobile'>('projector');
@@ -69,6 +77,28 @@ function InfoBlock({ title, value }: { title: string; value: string }) {
   );
 }
 
+function SpomatColorDiagram() {
+  const cell = (color: keyof typeof SPOMAT_COLOR_POSITION, label: string, bg: string) => (
+    <div className={`flex aspect-square items-center justify-center rounded-lg text-[11px] font-black text-white ${bg}`}>
+      {label}
+    </div>
+  );
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <p className="text-[11px] font-black text-slate-500">매트 설치 · 화면 방향 ↑</p>
+      <div className="mx-auto mt-3 grid max-w-[200px] grid-cols-2 gap-1.5">
+        {cell('red', '빨강', 'bg-red-500')}
+        {cell('yellow', '노랑', 'bg-amber-400')}
+        {cell('green', '초록', 'bg-emerald-500')}
+        {cell('blue', '파랑', 'bg-blue-500')}
+      </div>
+      <p className="mt-3 text-[12px] font-semibold leading-5 text-slate-600">
+        화면 기준 빨강이 왼쪽 위로 오도록 놓습니다. 매트 중앙은 대기 위치가 아닙니다.
+      </p>
+    </div>
+  );
+}
+
 export function SpomoveGuidelineSheet({
   preset,
   guideVideoUrl = '',
@@ -79,10 +109,22 @@ export function SpomoveGuidelineSheet({
   onClose: () => void;
 }) {
   const launchMode = usePreferredLaunchMode();
+  const userProfile = useProfile();
+  const movementLayerEnabled = isSpomoveMovementLayerEnabled({
+    isAdmin: userProfile?.isAdmin,
+    userId: userProfile?.id,
+    userRole: userProfile?.isAdmin ? 'admin' : undefined,
+  });
   if (!preset) return null;
   const display = getSpomovePresetDisplayModel(preset);
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
   const startHref = officialPresetSessionHref(preset, { mode: launchMode });
+  const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
+  const movementProfile = preset.movementProfileId ? getMovementProfile(preset.movementProfileId) : null;
+  const recommendedDef =
+    movementProfile && movementProfile.selectionMode !== 'disabled'
+      ? MOVEMENT_REGISTRY[movementProfile.recommended.baseMovement]
+      : null;
 
   return (
     <BottomSheet open title="가이드 · 참고 영상" onClose={onClose} size="preview">
@@ -106,12 +148,44 @@ export function SpomoveGuidelineSheet({
           <SpomoveGuideVideo videoUrl={guideVideoUrl} />
         </section>
 
+        {movementSummary && recommendedDef && movementProfile ? (
+          <>
+            <SpomatColorDiagram />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoBlock title="시작 위치" value="매트 아래쪽 바깥에서 시작합니다." />
+              <InfoBlock
+                title="추천 동작"
+                value={movementDisplayLabel(movementProfile.recommended)}
+              />
+              <InfoBlock title="동작 방법" value={recommendedDef.instruction} />
+              <InfoBlock title="교사 멘트" value={recommendedDef.teacherCue} />
+              {recommendedDef.easyVariation ? (
+                <InfoBlock title="쉬운 변형" value={recommendedDef.easyVariation} />
+              ) : null}
+              {recommendedDef.hardVariation ? (
+                <InfoBlock title="어려운 변형" value={recommendedDef.hardVariation} />
+              ) : null}
+              {recommendedDef.safetyNote ? (
+                <InfoBlock title="안전 안내" value={recommendedDef.safetyNote} />
+              ) : null}
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4">
+              <p className="text-[11px] font-black text-slate-500">허용 동작</p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
+                {listAllowedMovementPicks(movementProfile)
+                  .map((pick) => movementDisplayLabel(pick))
+                  .join(' · ')}
+              </p>
+            </div>
+          </>
+        ) : null}
+
         <div className="flex flex-col gap-2">
           <Link
             href={startHref}
             className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
           >
-            실행
+            {movementSummary ? '바로 시작' : '실행'}
           </Link>
           <p className="text-center text-[12px] font-semibold leading-5 text-slate-500">
             {launchMode === 'mobile'

@@ -174,6 +174,39 @@ describe('applyNoteCommand', () => {
     expect(blocks.map((item) => item.id)).toEqual(['empty-todo']);
   });
 
+  it('drops inactive empty text, bullet, and numbered placeholders too', () => {
+    const previous = [
+      block('text-empty', { type: 'text', order_index: 0, content: { text: '', html: '<p></p>' } }),
+      block('bullet-empty', { type: 'bulletList', order_index: 1, content: { text: '', html: '<p></p>' } }),
+      block('numbered-empty', { type: 'numberedList', order_index: 2, content: { text: '', html: '<p></p>' } }),
+      block('text-live', { type: 'text', order_index: 3, content: { text: 'live', html: '<p>live</p>' } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'replaceBlocks', blocks: previous },
+      ctx,
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['text-live']);
+  });
+
+  it('keeps an active empty bullet while the user is editing it', () => {
+    const previous = [
+      block('bullet-empty', { type: 'bulletList', order_index: 0, content: { text: '', html: '<p></p>' } }),
+      block('todo-empty', { type: 'todo', order_index: 1, content: { text: '', html: '<p></p>', checked: false } }),
+      block('todo-live', { type: 'todo', order_index: 2, content: { text: 'live', html: '<p>live</p>', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      previous,
+      { type: 'replaceBlocks', blocks: previous },
+      { ...ctx, activeBlockId: 'bullet-empty' },
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['bullet-empty', 'todo-live']);
+  });
+
   it('preserves local checklist order from stale syncSnapshot while editing', () => {
     const local = [
       block('todo-c', { type: 'todo', order_index: 0, content: { text: 'C', checked: false } }),

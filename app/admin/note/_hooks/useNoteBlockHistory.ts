@@ -15,11 +15,11 @@ import {
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import {
   buildHistoryTransactionNextBlocks,
-  buildHistoryPersistSteps,
   buildHistoryTransactionPlan,
   buildRestoreBlocksFieldPatches,
 } from './noteHistoryTransactionPlan';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
+import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteBlock } from '../_lib/types';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
@@ -31,6 +31,32 @@ type DeleteBlockHandler = (
 ) => Promise<void>;
 
 type RestoreBlockHandler = (block: NoteBlock) => Promise<void>;
+
+function historyCommandFromSnapshots(input: {
+  next: NoteBlock[];
+  patches: ReturnType<typeof buildRestoreBlocksFieldPatches>;
+  removedBlocks?: NoteBlock[];
+  affectedIds?: string[];
+}): NoteBlockCommandResult {
+  const removedBlocks = input.removedBlocks ?? [];
+  const affectedIds = input.affectedIds ?? [
+    ...new Set([
+      ...input.patches.map((patch) => patch.id),
+      ...removedBlocks.map((block) => block.id),
+    ]),
+  ];
+  return {
+    nextBlocks: input.next,
+    affectedIds,
+    orders: input.patches.map((patch) => ({
+      id: patch.id,
+      order_index: patch.order_index ?? 0,
+    })),
+    fieldPatches: input.patches,
+    createdBlocks: [],
+    removedBlocks,
+  };
+}
 
 export function useNoteBlockHistory(options: {
   blocksRef: React.MutableRefObject<NoteBlock[]>;
@@ -68,24 +94,9 @@ export function useNoteBlockHistory(options: {
 
       try {
         const restoredById = new Map<string, NoteBlock>();
-        for (const step of buildHistoryPersistSteps(plan)) {
-          if (step.type === 'softDelete') {
-            await documentEngine.persistSoftDelete({
-              ids: step.ids,
-              blocks: step.blocks,
-            });
-            continue;
-          }
-          if (step.type === 'restoreRoots') {
-            for (const root of step.roots) {
-              const restored = await documentEngine.persistRestoreBlock(root.id);
-              restored.forEach((block) => restoredById.set(block.id, block));
-            }
-            continue;
-          }
-          if (step.type === 'patchFields') {
-            await documentEngine.persistFieldPatches(step.patches);
-          }
+        for (const root of plan.restoreRoots) {
+          const restored = await documentEngine.persistRestoreBlock(root.id);
+          restored.forEach((block) => restoredById.set(block.id, block));
         }
 
         const next = buildHistoryTransactionNextBlocks({
@@ -94,10 +105,17 @@ export function useNoteBlockHistory(options: {
           plan,
           restoredById,
         });
-        documentEngine.replaceBlocks(next);
+        const currentById = new Map(current.map((block) => [block.id, block]));
+        await documentEngine.applyStructureCommand(historyCommandFromSnapshots({
+          next,
+          patches: plan.fieldPatches,
+          removedBlocks: plan.deleteIds
+            .map((id) => currentById.get(id))
+            .filter((block): block is NoteBlock => Boolean(block)),
+          affectedIds: [...plan.scopeIds],
+        }));
       } catch (e) {
         devLogger.error('[Note] history block-transaction', e);
-        documentEngine.replaceBlocks(current);
         setError(e instanceof Error ? e.message : '실행 취소에 실패했습니다.');
       }
       return;
@@ -106,8 +124,11 @@ export function useNoteBlockHistory(options: {
       const current = mergeBlocksWithStoreContent(blocksRef.current);
       const next = applyRestoreBlockSnapshots(current, entry.snapshots);
       try {
-        await documentEngine.persistFieldPatches(buildRestoreBlocksFieldPatches(entry.snapshots));
-        documentEngine.replaceBlocks(next);
+        await documentEngine.applyStructureCommand(historyCommandFromSnapshots({
+          next,
+          patches: buildRestoreBlocksFieldPatches(entry.snapshots),
+          affectedIds: entry.snapshots.map((snapshot) => snapshot.id),
+        }));
         const active = useNoteBlockStore.getState().activeEditor;
         if (active && entry.snapshots.some((snapshot) => snapshot.id === active.blockId)) {
           const restore = active;
@@ -118,7 +139,6 @@ export function useNoteBlockHistory(options: {
         }
       } catch (e) {
         devLogger.error('[Note] history restore-blocks', e);
-        documentEngine.replaceBlocks(current);
         setError(e instanceof Error ? e.message : '실행 취소 실패');
       }
       return;

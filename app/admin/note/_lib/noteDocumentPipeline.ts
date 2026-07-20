@@ -4,6 +4,8 @@ import type { NoteBlockOpRecord } from '@/app/lib/note/noteBlockOpTypes';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import type { NoteBlockFieldPatch } from './noteBlocksApi';
 import type { NoteCommand } from './noteCommand';
+import type { NoteBlockCommandResult } from './noteBlockCommands';
+import { persistOpForBlockCommand } from './noteBlockCommandPersist';
 import { applyNoteCommand } from './noteCommandReducer';
 import {
   NoteDocumentOpQueue,
@@ -336,6 +338,34 @@ export class NoteDocumentPipeline {
       deleteIds,
       deletedBlocks,
     });
+  }
+
+  async applyStructureCommand(
+    command: NoteBlockCommandResult,
+    options?: { flush?: boolean },
+  ): Promise<NoteBlock[]> {
+    if (command.affectedIds.length === 0) {
+      return useNoteBlockStore.getState().getBlocksArray();
+    }
+    const previous = useNoteBlockStore.getState().getBlocksArray();
+    this.dispatch({ type: 'replaceBlocks', blocks: command.nextBlocks });
+    try {
+      const persistOp = persistOpForBlockCommand(command);
+      if (persistOp?.type === 'blockTransaction') {
+        await this.persistBlockTransaction(
+          persistOp.patches,
+          persistOp.deleteIds,
+          persistOp.deletedBlocks,
+        );
+      }
+      if (options?.flush !== false) {
+        await this.flushPersistQueue();
+      }
+      return useNoteBlockStore.getState().getBlocksArray();
+    } catch (error) {
+      this.dispatch({ type: 'replaceBlocks', blocks: previous });
+      throw error;
+    }
   }
 
   async persistRestoreBlock(blockId: string): Promise<NoteBlock[]> {

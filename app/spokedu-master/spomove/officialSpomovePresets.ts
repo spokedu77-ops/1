@@ -4,6 +4,8 @@ import {
   buildOfficialSpomoveExpansionPresets,
   OFFICIAL_SPOMOVE_EXPANSION_COUNT,
 } from './officialSpomovePresetExpansion';
+import type { MovementProfileId } from './movements/movementTypes';
+import { enrichOfficialSpomoveLibrary } from './movements/enrichPresetMovement';
 
 export type OfficialSpomoveAxis = SpomoveAxis;
 
@@ -73,6 +75,10 @@ export type OfficialSpomovePreset = {
   settingSummary: string;
   settingChips: string[];
   executionFacts: ExecutionFact[];
+  /** 신체동작 레이어 — enrichment 후 필수. 테마 공유 키 */
+  activityFamilyId?: string;
+  /** 신체동작 레이어 — enrichment 후 필수 */
+  movementProfileId?: MovementProfileId;
 };
 
 export const OFFICIAL_SPOMOVE_CORE_COUNT = 46;
@@ -1310,10 +1316,14 @@ function withVariantQuadrantDifficultyPresets(presets: OfficialSpomovePreset[]):
   });
 }
 
-export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] = assignSequentialSortOrders([
+const OFFICIAL_SPOMOVE_LIBRARY_RAW: OfficialSpomovePreset[] = assignSequentialSortOrders([
   ...withVariantQuadrantDifficultyPresets(OFFICIAL_SPOMOVE_CORE_LIBRARY),
   ...buildOfficialSpomoveExpansionPresets(OFFICIAL_SPOMOVE_CORE_COUNT + 1),
 ]);
+
+/** family/profile enrichment 완료본 — Hub·세션·테스트 SSOT */
+export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] =
+  enrichOfficialSpomoveLibrary(OFFICIAL_SPOMOVE_LIBRARY_RAW);
 
 export const OFFICIAL_SPOMOVE_LIBRARY_SIZE =
   OFFICIAL_SPOMOVE_CORE_COUNT + OFFICIAL_SPOMOVE_EXPANSION_COUNT;
@@ -1328,7 +1338,14 @@ export function findOfficialSpomovePreset(id: string | null | undefined) {
 
 export function officialPresetSessionHref(
   preset: OfficialSpomovePreset,
-  options?: { bgmPath?: string; autostart?: boolean; mode?: 'projector' | 'mobile' },
+  options?: {
+    bgmPath?: string;
+    autostart?: boolean;
+    mode?: 'projector' | 'mobile';
+    /** 명시 시에만 URL에 부착. 바로 시작은 생략하고 세션이 family 저장을 적용 */
+    movement?: string;
+    limb?: string;
+  },
 ) {
   const params = new URLSearchParams({
     preset: preset.id,
@@ -1339,6 +1356,8 @@ export function officialPresetSessionHref(
   });
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
+  if (options?.movement) params.set('movement', options.movement);
+  if (options?.limb) params.set('limb', options.limb);
   return `/spokedu-master/spomove/session?${params.toString()}`;
 }
 

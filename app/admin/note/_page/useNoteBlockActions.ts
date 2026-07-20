@@ -24,7 +24,6 @@ import {
 import {
   buildMoveBlockCommand,
   collectBlockTransactionIds,
-  type NoteBlockCommandResult,
 } from '../_lib/noteBlockCommands';
 import { normalizeListBlockContentRecord } from '../_components/noteBulletInput';
 import { applyBlockContentChange } from '../_lib/noteBlockContentPipeline';
@@ -108,7 +107,6 @@ export function useNoteBlockActions(options: {
       title?: string;
     },
   ) => Promise<void>;
-  persistBlockReparent: (command: NoteBlockCommandResult) => Promise<void>;
   documentEngine: NoteDocumentEngineApi;
   onAfterBlocksRemoved?: (removed: NoteBlock[], nextBlocks: NoteBlock[]) => void;
   onAfterBlocksChanged?: (nextBlocks: NoteBlock[]) => void;
@@ -143,7 +141,6 @@ export function useNoteBlockActions(options: {
     focusBlockEditor,
     syncFocusedToggleFromBlock,
     handleCreateSubPage,
-    persistBlockReparent,
     documentEngine,
     onAfterBlocksRemoved,
     onAfterBlocksChanged,
@@ -265,12 +262,29 @@ export function useNoteBlockActions(options: {
     const command = buildMoveBlockCommand(prevBlocks, moving.id, plan);
     if (command.affectedIds.length === 0) return;
     recordBlockCommandUndo(prevBlocks, command);
-    setBlocks(command.nextBlocks);
-    onAfterBlocksChanged?.(command.nextBlocks);
-    void persistBlockReparent(command);
-    syncFocusedToggleFromBlock(moving.id);
-    bumpNoteReconcileIdle(selectedId);
-  }, [blocksRef, onAfterBlocksChanged, persistBlockReparent, recordBlockCommandUndo, selectedId, setBlocks, syncFocusedToggleFromBlock]);
+    void (async () => {
+      try {
+        const nextBlocks = await documentEngine.applyStructureCommand(command);
+        setBlocks(nextBlocks);
+        onAfterBlocksChanged?.(nextBlocks);
+        syncFocusedToggleFromBlock(moving.id);
+        bumpNoteReconcileIdle(selectedId);
+      } catch (e) {
+        devLogger.error('[Note] indentBlock', e);
+        setBlocks(prevBlocks);
+        setError(e instanceof Error ? e.message : '釉붾줉 ?대룞 ????ㅽ뙣');
+      }
+    })();
+  }, [
+    blocksRef,
+    documentEngine,
+    onAfterBlocksChanged,
+    recordBlockCommandUndo,
+    selectedId,
+    setBlocks,
+    setError,
+    syncFocusedToggleFromBlock,
+  ]);
 
   const handleIndentBlock = useCallback((block: NoteBlock, direction: 'in' | 'out') => {
     const prevBlocks = blocksRef.current;

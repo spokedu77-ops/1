@@ -1,4 +1,6 @@
 import type { OfficialFlowFeatureKey, OfficialSpomovePreset } from './officialSpomovePresets';
+import { getMovementProfile } from './movements/movementProfiles';
+import { listAllowedMovementPicks } from './movements/movementResolve';
 
 export type SpomoveTargetGroup =
   | 'preschool'
@@ -177,6 +179,27 @@ function flowFeatureActions(features: OfficialFlowFeatureKey[] | undefined): Spo
 }
 
 function keyActionsForPreset(preset: OfficialSpomovePreset): SpomoveKeyAction[] {
+  if (preset.engine.mode === 'flow' || preset.programGroup === 'dive' || preset.programGroup === 'bonus') {
+    return uniqueActions(flowFeatureActions(preset.engine.flowFeatures));
+  }
+
+  if (preset.movementProfileId && preset.movementProfileId !== 'diveBuiltIn') {
+    const profile = getMovementProfile(preset.movementProfileId);
+    if (profile.selectionMode !== 'disabled') {
+      const mapped = listAllowedMovementPicks(profile).map((pick) => {
+        if (pick.baseMovement === 'handTouch') return 'handTouch' as SpomoveKeyAction;
+        if (pick.baseMovement === 'stepHold') return 'inPlaceStep' as SpomoveKeyAction;
+        return 'padMove' as SpomoveKeyAction;
+      });
+      const unique = uniqueActions(mapped);
+      if (unique.length > 0) return unique;
+    }
+  }
+
+  return legacyKeyActionsForPreset(preset);
+}
+
+function legacyKeyActionsForPreset(preset: OfficialSpomovePreset): SpomoveKeyAction[] {
   if (preset.engine.mode === 'flow') {
     return uniqueActions(flowFeatureActions(preset.engine.flowFeatures));
   }

@@ -303,10 +303,14 @@ export function useNoteDocumentActions(options: {
           parentBlockId,
           insertIndex,
         );
-        setBlocks(command.nextBlocks);
+        const nextBlocks = await documentEngine.applyStructureCommand({
+          ...command,
+          createdBlocks: [newBlock],
+        });
+        setBlocks(nextBlocks);
         noteUndo.pushBlockTransactionUndo(
           previousBlocks,
-          command.nextBlocks,
+          nextBlocks,
           command.affectedIds,
         );
       } else {
@@ -329,7 +333,7 @@ export function useNoteDocumentActions(options: {
     } finally {
       setLoadingState('idle');
     }
-  }, [selectedId, triggerSave, closeAll, router, noteUndo, blocksRef, pendingFocusDocTitleRef, setBlocks, setDocuments, setError, setLoadingState, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab, setSelectedId]);
+  }, [selectedId, triggerSave, closeAll, router, noteUndo, blocksRef, pendingFocusDocTitleRef, documentEngine, setBlocks, setDocuments, setError, setLoadingState, setFocusedEditorBlockId, setFocusedToggleId, setMobileTab, setSelectedId]);
 
   const handleCreateDocument = async (
     parentId: string | null = null,

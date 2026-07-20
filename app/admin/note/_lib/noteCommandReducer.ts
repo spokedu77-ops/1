@@ -43,10 +43,30 @@ function hasVisibleBlockContent(block: NoteBlock): boolean {
   return false;
 }
 
-function removeInactiveEmptyTodos(blocks: NoteBlock[], activeBlockId: string | null): NoteBlock[] {
+const EMPTY_INPUT_BLOCK_TYPES = new Set<NoteBlock['type']>([
+  'text',
+  'todo',
+  'bulletList',
+  'numberedList',
+]);
+
+function removeInactiveEmptyInputBlocks(
+  blocks: NoteBlock[],
+  activeBlockId: string | null,
+): NoteBlock[] {
+  const parentHasVisibleContent = new Map<string, boolean>();
+  for (const block of blocks) {
+    const parentKey = block.parent_block_id ?? '__root__';
+    if (!parentHasVisibleContent.get(parentKey) && hasVisibleBlockContent(block)) {
+      parentHasVisibleContent.set(parentKey, true);
+    }
+  }
+
   return blocks.filter((block) => {
-    if (block.type !== 'todo') return true;
+    if (!EMPTY_INPUT_BLOCK_TYPES.has(block.type)) return true;
     if (block.id === activeBlockId) return true;
+    const parentKey = block.parent_block_id ?? '__root__';
+    if (!parentHasVisibleContent.get(parentKey)) return true;
     return hasVisibleBlockContent(block);
   });
 }
@@ -67,7 +87,7 @@ function normalizeCommandBlocks(
   blocks: NoteBlock[],
   ctx: NoteCommandContext,
 ): NoteBlock[] {
-  return removeInactiveEmptyTodos(
+  return removeInactiveEmptyInputBlocks(
     filterDocumentBlocks(blocks, ctx.documentId),
     ctx.activeBlockId,
   );

@@ -12,7 +12,6 @@ import {
 } from '../_lib/noteBlockCommands';
 import {
   deletedIdsForBlockCommand,
-  persistOpForBlockCommand,
 } from '../_lib/noteBlockCommandPersist';
 import { buildToggleLegacyCleanupPatches } from '../_lib/noteToggleContent';
 import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
@@ -156,16 +155,17 @@ export function useNoteBlockDelete(options: {
       ?? null;
     // replace 전에 pending mark — 직후 patchFields/reconcile 레이스가 되살리지 않게
     applyPostBlockRemovalCache(documentId, command.affectedIds);
-    documentEngine.replaceBlocks(nextBlocks);
+    const commandWithCleanup: NoteBlockCommandResult = {
+      ...command,
+      nextBlocks,
+      fieldPatches: [
+        ...command.fieldPatches,
+        ...toggleCleanupPatches,
+      ],
+    };
 
     try {
-      await documentEngine.persistSoftDelete({
-        ids: command.affectedIds,
-        blocks: command.removedBlocks,
-      });
-      if (toggleCleanupPatches.length > 0) {
-        await documentEngine.persistFieldPatches(toggleCleanupPatches);
-      }
+      nextBlocks = await documentEngine.applyStructureCommand(commandWithCleanup);
       await finalizeBlockDelete({
         skipDeleteUndo,
         deletedBlock,
@@ -176,7 +176,7 @@ export function useNoteBlockDelete(options: {
       devLogger.error(logLabel, e);
       setError(e instanceof Error ? e.message : '블록 삭제 실패');
       if (documentId) removeStructuralExcludeIds(documentId, command.affectedIds);
-      documentEngine.replaceBlocks(prevBlocks);
+      setBlocks(prevBlocks);
     }
   }, [
     documentEngine,
@@ -184,6 +184,7 @@ export function useNoteBlockDelete(options: {
     focusToggleTitleIfChildForestEmptied,
     onAfterBlocksRemoved,
     recordBlockCommandUndo,
+    setBlocks,
     setError,
   ]);
 
@@ -192,7 +193,6 @@ export function useNoteBlockDelete(options: {
     command: MergeWithPreviousCommand,
   ) => {
     recordBlockCommandUndo(prevBlocks, command);
-    documentEngine.replaceBlocks(command.nextBlocks);
     const removedIds = deletedIdsForBlockCommand(command);
     const documentId = command.removedBlocks[0]?.document_id
       ?? command.nextBlocks.find((block) => block.document_id)?.document_id
@@ -210,19 +210,13 @@ export function useNoteBlockDelete(options: {
     focusBlockEditor(command.focusBlockId, 'editor', command.caretOffset);
 
     try {
-      const persistOp = persistOpForBlockCommand(command);
-      if (persistOp?.type === 'blockTransaction') {
-        await documentEngine.persistBlockTransaction(
-          persistOp.patches,
-          persistOp.deleteIds,
-          persistOp.deletedBlocks,
-        );
-      }
+      const nextBlocks = await documentEngine.applyStructureCommand(command);
+      setBlocks(nextBlocks);
     } catch (e) {
       devLogger.error('[Note] mergeWithPrevious', e);
       setError(e instanceof Error ? e.message : '블록 병합 실패');
       if (documentId) removeStructuralExcludeIds(documentId, removedIds);
-      documentEngine.replaceBlocks(prevBlocks);
+      setBlocks(prevBlocks);
     } finally {
       window.setTimeout(() => setMergeFocusCaretOffset(undefined), 0);
     }
@@ -230,6 +224,7 @@ export function useNoteBlockDelete(options: {
     documentEngine,
     focusBlockEditor,
     recordBlockCommandUndo,
+    setBlocks,
     setError,
     setMergeFocusCaretOffset,
   ]);

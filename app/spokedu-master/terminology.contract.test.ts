@@ -2,15 +2,20 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const read = (path: string) => readFileSync(join(process.cwd(), path), 'utf8');
+/** BOM·인코딩 노이즈로 assertion 메시지가 깨지지 않게 정규화 */
+const read = (path: string) =>
+  readFileSync(join(process.cwd(), path), 'utf8').replace(/^\uFEFF/, '');
 
 const USER_VISIBLE_FILES = [
   'app/spokedu-master/dashboard/DashboardView.tsx',
+  'app/spokedu-master/dashboard/EntitlementPreviewHome.tsx',
   'app/spokedu-master/library/LibraryView.tsx',
   'app/spokedu-master/library/[id]/LibraryDetailView.tsx',
   'app/spokedu-master/activity/page.tsx',
   'app/spokedu-master/class-record/page.tsx',
   'app/spokedu-master/components/record/RecordProgramPicker.tsx',
+  'app/spokedu-master/components/lesson/LessonCatalogCard.tsx',
+  'app/spokedu-master/components/lesson/ProgramPreviewModal.tsx',
   'app/spokedu-master/report/page.tsx',
   'app/spokedu-master/spomove/page.tsx',
   'app/spokedu-master/spomove/SpomoveHubView.tsx',
@@ -18,6 +23,7 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/components/layout/StatusBar.tsx',
   'app/spokedu-master/components/layout/TabBar.tsx',
   'app/spokedu-master/landing/page.tsx',
+  'app/spokedu-master/onboarding/page.tsx',
   'app/spokedu-master/payment/page.tsx',
   'app/spokedu-master/profile/page.tsx',
   'app/spokedu-master/terms/page.tsx',
@@ -27,6 +33,7 @@ const USER_VISIBLE_FILES = [
   'app/spokedu-master/error.tsx',
   'app/spokedu-master/components/ui/ClassToolsView.tsx',
 ] as const;
+
 
 const userVisibleSource = () => USER_VISIBLE_FILES.map(read).join('\n');
 

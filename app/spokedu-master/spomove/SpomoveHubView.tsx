@@ -3,6 +3,7 @@
 import { Bookmark, Lock, MonitorPlay, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
@@ -20,7 +21,12 @@ import {
 import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
-
+import { MovementChangeSheet } from './movements/MovementChangeSheet';
+import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
+import { getPresetMovementSummary } from './movements/presetMovementSummary';
+import { writeFamilyMovement, readFamilyMovement } from './movements/movementStorage';
+import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
+import { resolveMovementPick, profileSupportsLowImpact } from './movements/movementResolve';
 
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
@@ -633,14 +639,35 @@ function CardInfo({
   displayTitle,
   isReady,
   startHref,
+  movementLayerEnabled,
 }: {
   preset: OfficialSpomovePreset;
   displayTitle: string;
   isReady: boolean;
   startHref: string;
+  movementLayerEnabled: boolean;
 }) {
+  const router = useRouter();
   const display = getSpomovePresetDisplayModel(preset);
   const cardTags = buildSpomoveCardTags(preset);
+  const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
+  const [changeOpen, setChangeOpen] = useState(false);
+  const profile = movementSummary?.profile ?? null;
+  const [selectedPick, setSelectedPick] = useState<MovementPick | null>(null);
+
+  useEffect(() => {
+    if (!profile || !preset.activityFamilyId) {
+      setSelectedPick(null);
+      return;
+    }
+    const saved = readFamilyMovement(preset.activityFamilyId);
+    setSelectedPick(resolveMovementPick({ profile, savedMovement: saved }) ?? profile.recommended);
+  }, [preset.activityFamilyId, profile]);
+
+  const startWithPick = (pick: MovementPick) => {
+    if (preset.activityFamilyId) writeFamilyMovement(preset.activityFamilyId, pick);
+    router.push(startHref);
+  };
 
   return (
     <div className="flex flex-1 flex-col p-4 text-center">
@@ -665,16 +692,64 @@ function CardInfo({
         {preset.description}
       </p>
 
+      {movementSummary ? (
+        <div className="mt-3 space-y-1.5 text-left">
+          <p className="text-[12px] font-black text-slate-800">
+            추천 동작: <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
+          </p>
+          <p className="text-[11px] font-semibold text-slate-500">
+            매트 {movementSummary.minMats}장
+            {movementSummary.jumpFree ? ' · 점프 없이 가능' : ''}
+            {' · '}
+            변형 {movementSummary.variationCount}종
+          </p>
+        </div>
+      ) : null}
+
       {isReady ? (
-        <div className="mt-4">
-          <Link
-            href={startHref}
-            data-spm-spomove-card-action="start"
-            className="inline-flex h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] active:opacity-80"
-          >
-            <MonitorPlay className="h-3.5 w-3.5" />
-            실행
-          </Link>
+        <div className="mt-4 space-y-2">
+          {movementSummary && selectedPick && profile ? (
+            <>
+              <button
+                type="button"
+                data-spm-spomove-card-action="start"
+                onClick={() => startWithPick(selectedPick)}
+                className="inline-flex h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] active:opacity-80"
+              >
+                <MonitorPlay className="h-3.5 w-3.5" />
+                바로 시작
+              </button>
+              {movementSummary.selectionMode === 'selectable' ? (
+                <button
+                  type="button"
+                  onClick={() => setChangeOpen(true)}
+                  className="inline-flex h-10 w-full items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
+                >
+                  동작 바꾸기
+                </button>
+              ) : null}
+              <MovementChangeSheet
+                open={changeOpen}
+                profile={profile}
+                selected={selectedPick}
+                onSelect={setSelectedPick}
+                onClose={() => setChangeOpen(false)}
+                onConfirmStart={(pick) => {
+                  setChangeOpen(false);
+                  startWithPick(pick);
+                }}
+              />
+            </>
+          ) : (
+            <Link
+              href={startHref}
+              data-spm-spomove-card-action="start"
+              className="inline-flex h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98] active:opacity-80"
+            >
+              <MonitorPlay className="h-3.5 w-3.5" />
+              실행
+            </Link>
+          )}
         </div>
       ) : null}
 
@@ -709,6 +784,7 @@ function PresetCard({
   hasGuideVideo,
   favorite,
   favoriteEnabled,
+  movementLayerEnabled,
   onPreview,
   onFavorite,
 }: {
@@ -718,6 +794,7 @@ function PresetCard({
   hasGuideVideo: boolean;
   favorite: boolean;
   favoriteEnabled: boolean;
+  movementLayerEnabled: boolean;
   onPreview: () => void;
   onFavorite: () => void;
 }) {
@@ -771,6 +848,7 @@ function PresetCard({
         displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
         startHref={startHref}
+        movementLayerEnabled={movementLayerEnabled}
       />
     </>
   );
@@ -796,6 +874,7 @@ export default function SpomoveHubView() {
   const [activeProgramGroup, setActiveProgramGroup] = useState<ProgramGroupTab>('all');
   const [activeThinkingLevel, setActiveThinkingLevel] = useState<ThinkingLevelTab>('all');
   const [showSavedOnly, setShowSavedOnly] = useState(false);
+  const [movementFilter, setMovementFilter] = useState<MovementQuickFilter | 'all'>('all');
   const [thumbnailPaths, setThumbnailPaths] = useState<Record<string, string>>({});
   const [thumbnailCacheBust, setThumbnailCacheBust] = useState<number | undefined>();
   const [guideVideoUrls, setGuideVideoUrls] = useState<Record<string, string>>({});
@@ -867,11 +946,40 @@ export default function SpomoveHubView() {
     };
   }, []);
 
+  const movementLayerEnabled = useMemo(
+    () =>
+      isSpomoveMovementLayerEnabled({
+        isAdmin: profile?.isAdmin,
+        userId: profile?.id,
+        userRole: profile?.isAdmin ? 'admin' : undefined,
+      }),
+    [profile?.id, profile?.isAdmin],
+  );
+
   const filteredPresets = useMemo(() => {
     let presets = filterOfficialPresets(activeProgramGroup, activeThinkingLevel);
     if (showSavedOnly) presets = presets.filter((preset) => favoriteSpomoveIds.has(preset.id));
+    if (movementLayerEnabled && movementFilter !== 'all') {
+      presets = presets.filter((preset) => {
+        const summary = getPresetMovementSummary(preset);
+        if (!summary) return false;
+        if (movementFilter === 'singleMat') return summary.minMats === 1;
+        if (movementFilter === 'feet') return summary.feet;
+        if (movementFilter === 'hands') return summary.hands;
+        if (movementFilter === 'balance') return summary.balance;
+        if (movementFilter === 'lowImpact') return profileSupportsLowImpact(summary.profile);
+        return true;
+      });
+    }
     return sortSpomovePresetsByDisplayTitle(presets);
-  }, [activeProgramGroup, activeThinkingLevel, favoriteSpomoveIds, showSavedOnly]);
+  }, [
+    activeProgramGroup,
+    activeThinkingLevel,
+    favoriteSpomoveIds,
+    movementFilter,
+    movementLayerEnabled,
+    showSavedOnly,
+  ]);
   const showAxisSections = activeProgramGroup === 'all' && activeThinkingLevel === 'all';
   const axisSections = useMemo(() => {
     if (!showAxisSections) return [];
@@ -896,6 +1004,7 @@ export default function SpomoveHubView() {
           hasGuideVideo={Boolean(guideVideoUrls[preset.id])}
           favorite={isFavoriteProgram(ownerId, preset.id)}
           favoriteEnabled={ownerId != null && preset.isReady}
+          movementLayerEnabled={movementLayerEnabled}
           onPreview={() => setPreviewPreset(preset)}
           onFavorite={() => toggleFavoriteProgram(ownerId, preset.id)}
         />
@@ -939,8 +1048,15 @@ export default function SpomoveHubView() {
                 const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId);
                 const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : activity.programTitle;
                 return (
-                  <article key={`${activity.ownerId}-${activity.programId}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <article key={`${activity.ownerId}-${activity.programId}-${activity.occurredAt}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="line-clamp-2 text-sm font-black text-slate-950">{title}</p>
+                    {activity.movementLabel ? (
+                      <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                        {activity.movementLabel}
+                        {activity.cueSeconds ? ` · ${activity.cueSeconds}초` : ''}
+                        {' · 매트 1장'}
+                      </p>
+                    ) : null}
                     <div className="mt-3 grid gap-2">
                       <Link
                         href={
@@ -951,7 +1067,7 @@ export default function SpomoveHubView() {
                         data-spm-spomove-recent-action="rerun"
                         className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-3 text-[12px] font-black text-white"
                       >
-                        다시 실행
+                        같은 설정 실행
                       </Link>
                     </div>
                   </article>
@@ -1044,12 +1160,51 @@ export default function SpomoveHubView() {
             </div>
           </div>
         </div>
+        {movementLayerEnabled ? (
+          <div className="mt-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
+              <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
+                움직임
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    ['all', '전체'],
+                    ['singleMat', '매트 1장'],
+                    ['feet', '발 중심'],
+                    ['hands', '손 중심'],
+                    ['balance', '균형'],
+                    ['lowImpact', '낮은 강도'],
+                  ] as const
+                ).map(([id, label]) => {
+                  const active = movementFilter === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setMovementFilter(id)}
+                      className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-[11px] font-bold transition-all ${
+                        active
+                          ? 'border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] text-[var(--spm-acc)] shadow-sm'
+                          : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        ) : null}
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold leading-relaxed text-slate-600">
           <span className="font-black text-slate-800">썸네일</span>
           을 누르면{' '}
           <span className="font-black text-[var(--spm-acc)]">참고 영상</span>
           과 활동 안내를 볼 수 있습니다. 실행은 아래{' '}
-          <span className="font-black text-slate-800">실행</span>
+          <span className="font-black text-slate-800">
+            {movementLayerEnabled ? '바로 시작' : '실행'}
+          </span>
           버튼을 사용하세요.
         </p>
         {/* 카드 그리드 — 1:1 썸네일 · 2열 모바일 / 3열 / 4열 */}

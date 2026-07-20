@@ -4,6 +4,7 @@ type SpomoveRecordDraftInput = {
   elapsedMs?: number | null;
   preset: OfficialSpomovePreset;
   status: 'done' | 'ended';
+  movementLabel?: string | null;
 };
 
 export const SPOMOVE_DRAFT_STORAGE_PREFIX = 'spokedu-master:spomove-draft:';
@@ -20,17 +21,20 @@ function estimateCalories(minutes: number) {
   return `${min}-${max}kcal`;
 }
 
-export function buildSpomoveRecordDraft({ elapsedMs, preset, status }: SpomoveRecordDraftInput) {
+export function buildSpomoveRecordDraft({ elapsedMs, preset, status, movementLabel }: SpomoveRecordDraftInput) {
   const minutes = minutesFromElapsed(elapsedMs);
   const completionLabel = status === 'done' ? '완료' : '중도 종료';
   return [
     `[SPOMOVE 활동 기록 초안] ${preset.title} ${completionLabel}`,
+    movementLabel ? `사용한 동작: ${movementLabel}` : null,
     `실제 움직인 시간: 약 ${minutes}분`,
     `예상 활동량: 가벼운-중간 강도의 전신 움직임, 예상 소모 열량 ${estimateCalories(minutes)}`,
     `활동 효과: ${preset.axisTitle}을 중심으로 반응, 방향 전환, 신체 조절, 집중 유지 경험을 제공합니다.`,
     `운영 의도: 짧은 시간 안에 아이들이 규칙을 듣고 움직임으로 반응하도록 만들어 수업 초반 몰입도와 활동 참여량을 높이기 위해 실시했습니다.`,
     '참고: 위 시간과 열량은 센서 기반 정밀 측정값이 아니라 수업 기록용 일반 추정치입니다.',
-  ].join('\n');
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 export function storeSpomoveRecordDraft(draft: string, storage: Pick<Storage, 'setItem'> = sessionStorage): string {

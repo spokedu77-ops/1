@@ -32,7 +32,6 @@ import {
   buildMoveBlockCommand,
   type NoteBlockCommandResult,
 } from '../_lib/noteBlockCommands';
-import { persistOpForBlockCommand } from '../_lib/noteBlockCommandPersist';
 import type { NoteDocumentEngineApi } from '../_hooks/useNoteDocumentEngine';
 import type { BlockDropTarget } from '../_components/noteContexts';
 import { resolveBlockDropTarget, resolveBlockDropTargetFromPointer } from '../_lib/noteDropResolver';
@@ -227,20 +226,6 @@ export function useNoteDragDrop(options: {
     }
   }, [documents, onAfterBlocksChanged, selectedId, triggerSave, documentEngine, setBlocks, setDocuments, setError]);
 
-  const persistBlockReparent = useCallback(async (
-    command: NoteBlockCommandResult,
-  ) => {
-    if (command.affectedIds.length === 0) return;
-    const persistOp = persistOpForBlockCommand(command);
-    if (persistOp?.type === 'blockTransaction') {
-      await documentEngine.persistBlockTransaction(
-        persistOp.patches,
-        persistOp.deleteIds,
-        persistOp.deletedBlocks,
-      );
-    }
-  }, [documentEngine]);
-
   const runOptimisticBlockCommand = useCallback(async (
     prevBlocks: NoteBlock[],
     command: NoteBlockCommandResult,
@@ -257,17 +242,10 @@ export function useNoteDragDrop(options: {
       command.nextBlocks,
       command.affectedIds,
     );
-    if (options.optimistic !== false) {
-      setBlocks(command.nextBlocks);
-      onAfterBlocksChanged?.(command.nextBlocks);
-    }
     try {
-      await persistBlockReparent(command);
-      await documentEngine.flushPersistQueue();
-      if (options.optimistic === false) {
-        setBlocks(command.nextBlocks);
-        onAfterBlocksChanged?.(command.nextBlocks);
-      }
+      const nextBlocks = await documentEngine.applyStructureCommand(command);
+      setBlocks(nextBlocks);
+      onAfterBlocksChanged?.(nextBlocks);
       options.afterPersist?.();
       return true;
     } catch (e) {
@@ -276,7 +254,14 @@ export function useNoteDragDrop(options: {
       setError(e instanceof Error ? e.message : options.errorMessage);
       return false;
     }
-  }, [documentEngine, noteUndo, onAfterBlocksChanged, persistBlockReparent, setBlocks, setError]);
+  }, [documentEngine, noteUndo, onAfterBlocksChanged, setBlocks, setError]);
+
+  const persistBlockReparent = useCallback(async (
+    command: NoteBlockCommandResult,
+  ) => {
+    if (command.affectedIds.length === 0) return;
+    await documentEngine.applyStructureCommand(command);
+  }, [documentEngine]);
 
   const runPersistedBlockTransfer = useCallback(async (
     prevBlocks: NoteBlock[],
@@ -295,10 +280,19 @@ export function useNoteDragDrop(options: {
       markPendingBlockDeletes(selectedId, command.movedIds);
     }
     try {
-      setBlocks(command.nextBlocks);
-      onAfterBlocksChanged?.(command.nextBlocks);
-      await documentEngine.persistBlockTransaction(command.patches);
-      await documentEngine.flushPersistQueue();
+      const nextBlocks = await documentEngine.applyStructureCommand({
+        nextBlocks: command.nextBlocks,
+        affectedIds: command.movedIds,
+        orders: command.patches.map((patch) => ({
+          id: patch.id,
+          order_index: patch.order_index ?? 0,
+        })),
+        fieldPatches: command.patches,
+        createdBlocks: [],
+        removedBlocks: [],
+      });
+      setBlocks(nextBlocks);
+      onAfterBlocksChanged?.(nextBlocks);
       options.afterPersist?.();
       return true;
     } catch (e) {

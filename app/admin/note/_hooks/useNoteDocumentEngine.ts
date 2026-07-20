@@ -14,6 +14,7 @@ import type {
   SoftDeletePersistArgs,
 } from '../_lib/noteDocumentOpQueue';
 import type { NoteBlockFieldPatch } from '../_lib/noteBlocksApi';
+import type { NoteBlockCommandResult } from '../_lib/noteBlockCommands';
 import type { NoteBlock } from '../_lib/types';
 import type { NoteCommand } from '../_lib/noteCommand';
 
@@ -43,6 +44,10 @@ export type NoteDocumentEngineApi = {
     deleteIds?: string[],
     deletedBlocks?: NoteBlock[],
   ) => Promise<void>;
+  applyStructureCommand: (
+    command: NoteBlockCommandResult,
+    options?: { flush?: boolean },
+  ) => Promise<NoteBlock[]>;
   persistRestoreBlock: (blockId: string) => Promise<NoteBlock[]>;
   persistPurgeBlock: (blockId: string) => Promise<void>;
   getBlocks: () => NoteBlock[];
@@ -227,6 +232,15 @@ export function useNoteDocumentEngine(options: {
     await pipeline.persistBlockTransaction(patches, deleteIds, deletedBlocks);
   }, [waitForLivePipeline]);
 
+  const applyStructureCommand = useCallback(async (
+    command: NoteBlockCommandResult,
+    options?: { flush?: boolean },
+  ) => {
+    if (command.affectedIds.length === 0) return useNoteBlockStore.getState().getBlocksArray();
+    const pipeline = await waitForLivePipeline();
+    return pipeline.applyStructureCommand(command, options);
+  }, [waitForLivePipeline]);
+
   const persistRestoreBlock = useCallback(async (blockId: string) => {
     const pipeline = await waitForLivePipeline();
     return pipeline.persistRestoreBlock(blockId);
@@ -283,6 +297,7 @@ export function useNoteDocumentEngine(options: {
     persistFieldPatches,
     persistCreateBlock,
     persistBlockTransaction,
+    applyStructureCommand,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,
@@ -307,6 +322,7 @@ export function useNoteDocumentEngine(options: {
     persistFieldPatches,
     persistCreateBlock,
     persistBlockTransaction,
+    applyStructureCommand,
     persistRestoreBlock,
     persistPurgeBlock,
     getBlocks,

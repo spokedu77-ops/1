@@ -362,7 +362,6 @@ export function useNotePageOrchestration(): NotePageContextValue {
     focusBlockEditor,
     syncFocusedToggleFromBlock,
     handleCreateSubPage: docActions.handleCreateSubPage,
-    persistBlockReparent: dragDrop.persistBlockReparent,
     documentEngine: blockData.documentEngine,
     onAfterBlocksRemoved: handleAfterBlocksRemoved,
     onAfterBlocksChanged: handleAfterBlocksChanged,

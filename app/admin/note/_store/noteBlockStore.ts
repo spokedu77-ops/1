@@ -47,22 +47,63 @@ function excludePendingDeletes(
   return blocks.filter((block) => !pending.has(block.id));
 }
 
+type ActiveEditorPreserveState = Pick<
+  NoteBlockStoreState,
+  'activeDocumentId' | 'activeEditor' | 'byId'
+>;
+
+function preserveActiveEditorContent(
+  block: NoteBlock,
+  state: ActiveEditorPreserveState,
+): NoteBlock {
+  if (state.activeEditor?.blockId !== block.id) return block;
+  const prev = state.byId[block.id];
+  if (!prev || prev.type !== block.type || prev.content == null) return block;
+  if (state.activeDocumentId && prev.document_id !== state.activeDocumentId) return block;
+
+  const merged = mergeBlockContentWithStore(
+    block.content as Record<string, unknown> | null | undefined,
+    prev.content as Record<string, unknown>,
+  );
+  return {
+    ...block,
+    content: merged ?? prev.content,
+  };
+}
+
+function blocksToByIdPreservingActiveEditor(
+  blocks: NoteBlock[],
+  state: ActiveEditorPreserveState,
+): Record<string, NoteBlock> {
+  const byId: Record<string, NoteBlock> = {};
+  for (const block of blocks) {
+    byId[block.id] = preserveActiveEditorContent(block, state);
+  }
+  return byId;
+}
+
 export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
   byId: {},
   order: [],
   activeDocumentId: null,
   activeEditor: null,
   hydrate: (blocks) => {
-    const next = excludePendingDeletes(blocks, get().activeDocumentId);
-    const byId: Record<string, NoteBlock> = {};
-    for (const block of next) byId[block.id] = block;
-    set({ byId, order: next.map((block) => block.id) });
+    set((state) => {
+      const next = excludePendingDeletes(blocks, state.activeDocumentId);
+      return {
+        byId: blocksToByIdPreservingActiveEditor(next, state),
+        order: next.map((block) => block.id),
+      };
+    });
   },
   replaceBlocks: (blocks) => {
-    const next = excludePendingDeletes(blocks, get().activeDocumentId);
-    const byId: Record<string, NoteBlock> = {};
-    for (const block of next) byId[block.id] = block;
-    set({ byId, order: next.map((block) => block.id) });
+    set((state) => {
+      const next = excludePendingDeletes(blocks, state.activeDocumentId);
+      return {
+        byId: blocksToByIdPreservingActiveEditor(next, state),
+        order: next.map((block) => block.id),
+      };
+    });
   },
   applyBlocks: (updater) => {
     const current = get().getBlocksArray();
@@ -106,13 +147,7 @@ export const useNoteBlockStore = create<NoteBlockStoreState>((set, get) => ({
           && prev?.content != null
           && (!docId || prev.document_id === docId)
         ) {
-          nextById[block.id] = {
-            ...block,
-            content: mergeBlockContentWithStore(
-              block.content as Record<string, unknown> | null | undefined,
-              prev.content as Record<string, unknown>,
-            ) ?? prev.content,
-          };
+          nextById[block.id] = preserveActiveEditorContent(block, state);
           continue;
         }
         nextById[block.id] = block;

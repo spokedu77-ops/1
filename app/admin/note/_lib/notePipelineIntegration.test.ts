@@ -1,6 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import { useNoteBlockStore } from '../_store/noteBlockStore';
 import { applyNoteCommand } from './noteCommandReducer';
+import { buildDeleteBlockForestCommand } from './noteBlockCommands';
+import { NoteDocumentPipeline } from './noteDocumentPipeline';
 import { partitionOutboundForSafePush } from './noteSyncGuards';
 import { coalescePushItems, persistOpToPushItems } from './notePersistOpToBlockOps';
 import type { NoteBlock } from './types';
@@ -130,5 +132,31 @@ describe('double dispatch prevention', () => {
       { documentId: 'doc-1', activeBlockId: null, storeContentById: {} },
     );
     expect(blocks.map((b) => b.id)).toEqual(['new']);
+  });
+});
+
+describe('structure command atomicity', () => {
+  beforeEach(() => {
+    useNoteBlockStore.setState({
+      byId: {},
+      order: [],
+      activeDocumentId: 'doc-1',
+      activeEditor: null,
+    });
+  });
+
+  it('rolls the screen back when structure persistence fails', async () => {
+    const previous = [
+      block('a', { order_index: 0 }),
+      block('b', { order_index: 1 }),
+    ];
+    useNoteBlockStore.getState().hydrate(previous);
+    const command = buildDeleteBlockForestCommand(previous, ['a']);
+    const pipeline = new NoteDocumentPipeline('doc-1', { triggerSave: () => {} }, false);
+
+    await expect(pipeline.applyStructureCommand(command)).rejects.toThrow();
+
+    expect(useNoteBlockStore.getState().getBlocksArray().map((item) => item.id)).toEqual(['a', 'b']);
+    await pipeline.dispose();
   });
 });

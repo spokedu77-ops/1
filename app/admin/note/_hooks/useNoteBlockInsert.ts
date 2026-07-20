@@ -149,20 +149,6 @@ export function useNoteBlockInsert(options: {
         clampedIndex,
         { focus: insertOptions?.focus !== false },
       );
-      let nextBlocks = command.nextBlocks;
-      let affectedIds = [...command.affectedIds];
-      blocksRef.current = nextBlocks;
-      setBlocks(nextBlocks);
-      if (insertOptions?.focus !== false && command.focusTarget) {
-        focusBlockEditor(
-          command.focusTarget.blockId,
-          command.focusTarget.part,
-          command.focusTarget.caretOffset,
-        );
-      }
-      if (insertOptions?.registerUndo !== false && type !== COLUMN_LIST_TYPE) {
-        recordBlockCommandUndo(previousBlocks, { ...command, nextBlocks, affectedIds });
-      }
 
       const createdBlock = await documentEngine.persistCreateBlock({
         id: createdBlockId,
@@ -173,6 +159,15 @@ export function useNoteBlockInsert(options: {
         parent_block_id: parentId,
         normalizeOrders: normalizedExistingOrders,
       });
+      const persistedCommand = buildInsertBlockCommand(
+        previousBlocks,
+        createdBlock,
+        parentId,
+        clampedIndex,
+        { focus: insertOptions?.focus !== false },
+      );
+      let nextBlocks = persistedCommand.nextBlocks;
+      let affectedIds = [...persistedCommand.affectedIds];
       if (type === COLUMN_LIST_TYPE) {
         for (const spec of buildDefaultColumnChildren(createdBlock)) {
           const columnBlock = await documentEngine.persistCreateBlock({
@@ -195,6 +190,13 @@ export function useNoteBlockInsert(options: {
       }
       blocksRef.current = nextBlocks;
       setBlocks(nextBlocks);
+      if (insertOptions?.focus !== false && command.focusTarget) {
+        focusBlockEditor(
+          command.focusTarget.blockId,
+          command.focusTarget.part,
+          command.focusTarget.caretOffset,
+        );
+      }
       if (insertOptions?.focus !== false && type === COLUMN_LIST_TYPE) {
         if (type === COLUMN_LIST_TYPE) {
           const firstColumn = nextBlocks.find(
@@ -206,8 +208,8 @@ export function useNoteBlockInsert(options: {
         }
       }
 
-      if (insertOptions?.registerUndo !== false && type === COLUMN_LIST_TYPE) {
-        recordBlockCommandUndo(previousBlocks, { ...command, nextBlocks, affectedIds });
+      if (insertOptions?.registerUndo !== false) {
+        recordBlockCommandUndo(previousBlocks, { ...persistedCommand, nextBlocks, affectedIds });
       }
 
       return createdBlock;
@@ -303,12 +305,12 @@ export function useNoteBlockInsert(options: {
     },
   ): Promise<boolean> => {
     recordBlockTransactionUndo(previousBlocks, command.nextBlocks, command.affectedIds);
-    setBlocks(command.nextBlocks);
     focusBlockEditor(options.focusBlockId, options.focusPart);
     try {
-      if (options.persistFieldPatches !== false && command.fieldPatches.length > 0) {
-        await documentEngine.persistBlockTransaction(command.fieldPatches);
-      }
+      const nextBlocks = options.persistFieldPatches === false
+        ? command.nextBlocks
+        : await documentEngine.applyStructureCommand(command);
+      setBlocks(nextBlocks);
       return true;
     } catch (e) {
       devLogger.error(options.logLabel, e);

@@ -67,6 +67,47 @@ describe('syncBlocksStructure list type change', () => {
     expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('server canonical');
   });
 
+  it('preserves active editor content when replaceBlocks receives a stale snapshot', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'text', { text: 'typing now', html: '<p>typing now</p>' }),
+    ]);
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'a', field: 'text' });
+
+    useNoteBlockStore.getState().replaceBlocks([
+      block('a', 'text', { text: 'older server', html: '<p>older server</p>' }),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('typing now');
+  });
+
+  it('preserves active editor content when hydrate receives a stale snapshot', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'todo', { text: 'checked while editing', checked: true }),
+    ]);
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'a', field: 'text' });
+
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'todo', { text: 'older todo', checked: false }),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('checked while editing');
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.checked).toBe(false);
+  });
+
+  it('does not preserve active editor content across block type changes', () => {
+    useNoteBlockStore.getState().hydrate([
+      block('a', 'text', { text: 'local text' }),
+    ]);
+    useNoteBlockStore.getState().setActiveEditor({ blockId: 'a', field: 'text' });
+
+    useNoteBlockStore.getState().replaceBlocks([
+      block('a', 'bulletList', { text: 'server bullet' }),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('a')?.type).toBe('bulletList');
+    expect(useNoteBlockStore.getState().getBlock('a')?.content?.text).toBe('server bullet');
+  });
+
   it('persists title-only patchContent updates', () => {
     useNoteBlockStore.getState().hydrate([
       block('t', 'toggle', { title: '' }),

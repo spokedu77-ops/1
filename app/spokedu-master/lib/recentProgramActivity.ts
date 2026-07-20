@@ -10,6 +10,12 @@ export type RecentProgramActivity = {
   occurredAt: string;
   /** Persist v10 compatibility only. New navigation paths are derived from action. */
   resumeHref?: string;
+  /** SPOMOVE 신체동작 레이어 (optional — 구 데이터 폴백) */
+  activityFamilyId?: string;
+  baseMovement?: string;
+  limbRule?: string;
+  movementLabel?: string;
+  cueSeconds?: number;
 };
 
 export type RecentProgramActivityInput = Omit<RecentProgramActivity, 'ownerId' | 'resumeHref'>;
