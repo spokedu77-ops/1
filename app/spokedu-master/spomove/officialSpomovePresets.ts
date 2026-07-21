@@ -466,10 +466,38 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
+  // 시지각 반응 — 카탈로그 1번: 파도타기 (엔진 level 6)
+  {
+    id: 'visual-reaction-rush-39',
+    sortOrder: 15,
+    title: '시지각 반응 · 파도타기',
+    en: 'Visual Reaction',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'visual-reaction',
+    programTitle: '시지각 반응',
+    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
+    engine: { mode: 'reactTrain', level: 6 },
+    description: '파도타기처럼 빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '초고속 반응, 연속 자극 처리, 극한 집중',
+    isReady: true,
+    settingSummary: '3초 · 20회 · BGM 자동',
+    settingChips: ['파도타기', '20회', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: '파도타기' },
+      { label: '진행 방식', value: '연속 반응' },
+      { label: '실행 시간', value: '약 60초' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
   // sortOrder 27: FLOW ×1 (level 1, concurrent 1)
   {
     id: 'visual-reaction-flow-05',
-    sortOrder: 15,
+    sortOrder: 16,
     title: '시지각 반응 · 떨어지는 벽돌',
     en: 'Visual Reaction',
     axis: 'response',
@@ -630,34 +658,6 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     executionFacts: [
       { label: '자극 방식', value: '매직 아이' },
       { label: '진행 방식', value: '위장 탐지' },
-      { label: '실행 시간', value: '약 60초' },
-      { label: 'BGM', value: '자동 재생' },
-    ],
-  },
-  // sortOrder: RUSH (level 6)
-  {
-    id: 'visual-reaction-rush-39',
-    sortOrder: 22,
-    title: '시지각 반응 · 파도타기',
-    en: 'Visual Reaction',
-    axis: 'response',
-    axisTitle: SPOMOVE_AXIS_META.response.title,
-    programGroup: 'visual-reaction',
-    programTitle: '시지각 반응',
-    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 6 },
-    description: '파도타기처럼 빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동',
-    cueSeconds: 3,
-    rounds: 20,
-    bgmAutoPlay: true,
-    bgmCategory: 'spomove-training',
-    recommendedUse: '초고속 반응, 연속 자극 처리, 극한 집중',
-    isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['파도타기', '20회', 'BGM 자동'],
-    executionFacts: [
-      { label: '자극 방식', value: '파도타기' },
-      { label: '진행 방식', value: '연속 반응' },
       { label: '실행 시간', value: '약 60초' },
       { label: 'BGM', value: '자동 재생' },
     ],
@@ -1339,8 +1339,11 @@ export function officialPresetSessionHref(
   preset: OfficialSpomovePreset,
   options?: {
     bgmPath?: string;
+    /** Public UI는 생성 금지. Legacy URL·테스트용으로만 사용 */
     autostart?: boolean;
     mode?: 'projector' | 'mobile';
+    /** start | settings. 미지정 시 Session은 start로 해석 */
+    entry?: 'start' | 'settings';
     /** 명시 시에만 URL에 부착 */
     movement?: string;
     limb?: string;
@@ -1356,6 +1359,7 @@ export function officialPresetSessionHref(
     sound: 'on',
     mode: options?.mode ?? 'projector',
   });
+  if (options?.entry) params.set('entry', options.entry);
   if (options?.cueSeconds != null) params.set('cueSeconds', String(options.cueSeconds));
   if (options?.bgmPath) params.set('bgm', options.bgmPath);
   if (options?.autostart) params.set('autostart', '1');
@@ -1363,6 +1367,14 @@ export function officialPresetSessionHref(
   if (options?.limb) params.set('limb', options.limb);
   if (options?.difficulty) params.set('difficulty', options.difficulty);
   return `/spokedu-master/spomove/session?${params.toString()}`;
+}
+
+/** Public 생성기 — autostart를 절대 붙이지 않음 */
+export function publicOfficialPresetSessionHref(
+  preset: OfficialSpomovePreset,
+  options?: Omit<NonNullable<Parameters<typeof officialPresetSessionHref>[1]>, 'autostart'>,
+) {
+  return officialPresetSessionHref(preset, { ...options, autostart: false });
 }
 
 export function bgmDisplayName(path: string) {

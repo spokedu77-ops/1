@@ -169,6 +169,9 @@ export function useNoteBlockInsert(options: {
         order_index: clampedIndex,
         parent_block_id: parentId,
         normalizeOrders: normalizedExistingOrders,
+        allowEmptyVisibleCreate: insertReason === 'explicit'
+          || insertReason === 'enter'
+          || insertReason === 'duplicate',
       });
       const persistedCommand = buildInsertBlockCommand(
         previousBlocks,

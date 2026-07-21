@@ -120,6 +120,30 @@ async function readRenderedRows(page) {
   })));
 }
 
+async function waitForRenderedBlockId(page, blockId, timeout = 20_000) {
+  await page.waitForFunction((expectedBlockId) => {
+    return [...document.querySelectorAll('[data-note-block-row]')]
+      .some((el) => el.getAttribute('data-block-id') === expectedBlockId);
+  }, blockId, { timeout });
+}
+
+async function waitForRootOrder(page, documentId, expected, timeout = 30_000) {
+  await page.waitForFunction(async ({ docId, expectedOrder }) => {
+    const res = await fetch(
+      `/api/admin/note/blocks/load?documentId=${encodeURIComponent(docId)}&skipReconcile=true`,
+      { credentials: 'include' },
+    );
+    if (!res.ok) return false;
+    const json = await res.json();
+    const roots = (json.blocks ?? [])
+      .filter((block) => !block.deleted_at && !block.parent_block_id)
+      .sort((a, b) => a.order_index - b.order_index);
+    const order = roots.map((block) =>
+      block.type === 'page' ? 'page' : (block.content?.text ?? block.type));
+    return JSON.stringify(order) === JSON.stringify(expectedOrder);
+  }, { docId: documentId, expectedOrder: expected }, { timeout });
+}
+
 async function createDocument(page, title = `${FOUNDATION_PREFIX} ${Date.now()}`) {
   return page.evaluate(async (docTitle) => {
     const res = await fetch('/api/admin/note/documents', {
@@ -341,7 +365,7 @@ async function main() {
           force: true,
         }).catch(() => undefined);
         await waitForLoaded(page, JIHOON_WORK_NOTE_ID);
-        await page.waitForTimeout(500);
+        await waitForRenderedBlockId(page, JIHOON_JULY_PAGE_BLOCK_ID);
 
         const rows = await readRenderedRows(page);
         const hasJulyById = rows.some((row) => row.id === JIHOON_JULY_PAGE_BLOCK_ID);
@@ -389,12 +413,13 @@ async function main() {
           .filter((block) => !block.deleted_at && !block.parent_block_id)
           .length >= 4;
       }, { docId: documentId }, { timeout: 25_000 });
+      const expected = ['insert-anchor-0', 'insert-anchor-1', 'page', 'insert-anchor-2'];
+      await waitForRootOrder(page, documentId, expected);
       const roots = (await fetchBlocks(page, documentId))
         .filter((block) => !block.deleted_at && !block.parent_block_id)
         .sort((a, b) => a.order_index - b.order_index);
       const order = roots.map((block) =>
         block.type === 'page' ? 'page' : (block.content?.text ?? block.type));
-      const expected = ['insert-anchor-0', 'insert-anchor-1', 'page', 'insert-anchor-2'];
       if (JSON.stringify(order) !== JSON.stringify(expected)) {
         throw new Error(`page inserted at wrong position: ${JSON.stringify(order)}`);
       }

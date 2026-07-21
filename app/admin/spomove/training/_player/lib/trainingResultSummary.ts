@@ -1,4 +1,4 @@
-import { COLORS, MEMORY_ROUNDS, MODES } from '../constants';
+import { COLORS, MEMORY_ROUNDS, MODES, catalogBasicUiLevel, isFront3PanelLevel, isModifiedQuadrantLevel, modifiedQuadrantStage } from '../constants';
 import { GUIDE_BLOCKS } from '../trainingGuideContent';
 
 export type TrainingSessionResult = {
@@ -105,6 +105,17 @@ export function colorMeta(id: PadColorId) {
 /** 카탈로그 배열 순서로 1번·2번… (엔진 id와 무관) */
 export function resultLevelLabel(mode: string | undefined, level: number): string {
   if (!mode) return `${level}번`;
+  if (mode === 'basic') {
+    if (isModifiedQuadrantLevel(level)) {
+      return `3번 · ${modifiedQuadrantStage(level)}단계`;
+    }
+    if (isFront3PanelLevel(level)) {
+      return level === 6 ? '6번 · 서로 다른 색' : '6번 · 같은 색';
+    }
+    const catalogId = catalogBasicUiLevel(level);
+    const idx = MODES.basic?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
+    if (idx >= 0) return `${idx + 1}번`;
+  }
   const m = MODES[mode];
   const idx = m?.levels.findIndex((lv) => lv.id === level) ?? -1;
   if (idx >= 0) return `${idx + 1}번`;

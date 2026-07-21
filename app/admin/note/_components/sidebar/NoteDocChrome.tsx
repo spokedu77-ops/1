@@ -3,6 +3,11 @@
 import type { ReactNode } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { ChevronRight, GripVertical, Pin, Plus, Star, Trash2 } from 'lucide-react';
+import { clearAllNoteTextSelections } from '../noteCrossSelect';
+import {
+  noteBlockMarqueeGuard,
+  setNoteTextDragGuardActive,
+} from '../../_lib/noteBlockMarqueeGuard';
 import { DocIconGlyph, resolveDocIcon } from '../../_lib/noteDocumentUi';
 import type { NoteDocument } from '../../_lib/types';
 
@@ -153,6 +158,18 @@ export function DocItem({
   isChildDoc?: boolean;
   onPrefetchHover?: () => void;
 }) {
+  const selectDocument = () => {
+    noteBlockMarqueeGuard.active = false;
+    setNoteTextDragGuardActive(false);
+    if (typeof document !== 'undefined') {
+      document.body.style.userSelect = '';
+      document.body.classList.remove('note-marquee-active');
+      document.body.classList.remove('note-list-cross-active');
+    }
+    clearAllNoteTextSelections();
+    onSelect();
+  };
+
   const { setNodeRef: setDropRef, isOver } = useDroppable({
     id: `doc:${doc.id}`,
     data: { type: 'document', documentId: doc.id },
@@ -180,10 +197,16 @@ export function DocItem({
       <div
         role="button"
         tabIndex={0}
-        onClick={onSelect}
+        onClick={selectDocument}
         onMouseEnter={onPrefetchHover}
-        onMouseDown={onPrefetchHover}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(); } }}
+        onMouseDown={(e) => {
+          onPrefetchHover?.();
+          if (e.button !== 0) return;
+          const target = e.target as HTMLElement | null;
+          if (target?.closest('button, input, textarea, a, [data-note-doc-drag-handle]')) return;
+          selectDocument();
+        }}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDocument(); } }}
         className={`flex cursor-pointer select-none items-center gap-0.5 rounded-md py-[6px] pr-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
           isActive ? 'bg-neutral-200/80 text-neutral-900' : 'text-neutral-700 hover:bg-neutral-100'
         }`}
@@ -211,6 +234,7 @@ export function DocItem({
         <button
           type="button"
           ref={setDragRef}
+          data-note-doc-drag-handle
           className={`flex h-5 w-4 shrink-0 cursor-grab items-center justify-center rounded text-neutral-400 hover:bg-neutral-200 hover:text-neutral-600 active:cursor-grabbing ${
             isChildDoc ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
           }`}

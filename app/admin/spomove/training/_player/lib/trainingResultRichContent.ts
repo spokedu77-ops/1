@@ -1,4 +1,10 @@
-import { MODES } from '../constants';
+import {
+  catalogBasicUiLevel,
+  isFront3PanelLevel,
+  isModifiedQuadrantLevel,
+  modifiedQuadrantStage,
+  MODES,
+} from '../constants';
 import { GUIDE_BLOCKS, type GuidePhase } from '../trainingGuideContent';
 import {
   RESULT_COLOR_ORDER,
@@ -51,7 +57,12 @@ function findGuidePhase(mode: string, level: number): GuidePhase | undefined {
 
   const mo = MODES[mode];
   let displayNum = level;
-  if (mode === 'basic' || mode === 'reactTrain') {
+  if (mode === 'basic') {
+    // 변형사분할 7~10 → 카탈로그 3번, 전면3패널 5·6 → 카탈로그 6번
+    const catalogId = catalogBasicUiLevel(level);
+    const idx = mo?.levels.findIndex((l) => l.id === catalogId) ?? -1;
+    if (idx >= 0) displayNum = idx + 1;
+  } else if (mode === 'reactTrain') {
     const idx = mo?.levels.findIndex((l) => l.id === level) ?? -1;
     if (idx >= 0) displayNum = idx + 1;
   }
@@ -194,6 +205,12 @@ function buildPraise(mode: string): { praise: string; praiseSub: string } {
 
 function buildPhaseName(mode: string, level: number): string {
   const phase = findGuidePhase(mode, level);
+  if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
+    return `변형 사분할 자극 · ${modifiedQuadrantStage(level)}단계`;
+  }
+  if (mode === 'basic' && isFront3PanelLevel(level)) {
+    return level === 6 ? '전면 3패널 자극 · 서로 다른 색' : '전면 3패널 자극 · 같은 색';
+  }
   if (phase?.name) return phase.name;
   const mo = MODES[mode];
   const levelMeta = mo?.levels.find((l) => l.id === level);
@@ -202,6 +219,23 @@ function buildPhaseName(mode: string, level: number): string {
 
 function buildProgramSummary(mode: string, level: number): string {
   const mo = MODES[mode];
+  if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
+    const stage = modifiedQuadrantStage(level);
+    if (stage === 1) return '2×2 사분할에 색과 발 부위가 함께 나와요.';
+    if (stage === 2) return '색과 손·발 조합이 섞여 나와요.';
+    if (stage === 3) return '색이 최대 3개까지 늘어나고 부위가 배정돼요.';
+    return '3색에 손·발이 섞인 가장 어려운 단계예요.';
+  }
+  if (mode === 'basic' && level === 5) {
+    return '세 칸이 같은 색 신호로 채워져요. 그 색 패드로 바로 이동해요.';
+  }
+  if (mode === 'basic' && level === 6) {
+    return '세 칸이 서로 다른 색 신호로 채워져요. 목표 색 패드로 이동해요.';
+  }
+  if (mode === 'basic' && level === 3) {
+    return '화면 전체가 한 색(또는 이미지 색)으로 채워져요. 그 색 패드로 바로 이동해요.';
+  }
+
   const phase = findGuidePhase(mode, level);
   const levelMeta = mo?.levels.find((l) => l.id === level);
 
@@ -214,6 +248,12 @@ function buildProgramSummary(mode: string, level: number): string {
 
 function buildBenefitLine(mode: string, level: number): string {
   if (mode === 'basic' && level === 2) return '눈이 색을 잡는 순간 발이 출발합니다';
+  if (mode === 'basic' && level === 3) return '화면 색을 보는 순간 바로 그 패드로 점프해요';
+  if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
+    return '색과 부위를 함께 읽고 바로 반응해요';
+  }
+  if (mode === 'basic' && level === 5) return '같은 색 세 칸을 보고 그 패드로 바로 이동해요';
+  if (mode === 'basic' && level === 6) return '서로 다른 색 세 칸에서 목표 색만 골라 이동해요';
 
   const phase = findGuidePhase(mode, level);
   const fallbacks: Record<string, string> = {
@@ -231,6 +271,18 @@ function buildBenefitLine(mode: string, level: number): string {
 }
 
 function buildCoachTip(mode: string, level: number): string {
+  if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
+    return '색만 보지 말고 발·손 아이콘까지 같이 읽어요.';
+  }
+  if (mode === 'basic' && level === 5) {
+    return '세 칸이 같아도 색만 잡으면 돼요. 칸 개수를 세지 마세요.';
+  }
+  if (mode === 'basic' && level === 6) {
+    return '서로 다른 색이 나와도 목표 색 하나만 보고 바로 이동해요.';
+  }
+  if (mode === 'basic' && level === 3) {
+    return '이미지가 나와도 그림 내용보다 대표 색만 바로 읽어요.';
+  }
   const phase = findGuidePhase(mode, level);
   const raw = phase?.pitfall ?? GUIDE_BLOCKS.find((b) => b.id === mode)?.tip;
   if (!raw) return '다음에도 이렇게 하면 더 쉬워져요.';

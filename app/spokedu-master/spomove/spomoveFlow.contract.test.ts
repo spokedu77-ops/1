@@ -16,7 +16,7 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
     expect(hub).toContain('참고 영상');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
-    expect(hub).toContain('실행');
+    expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('최근 SPOMOVE');
   });
 
@@ -52,60 +52,56 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).toContain('참고 영상');
   });
 
-  it('separates quick start (autostart) from settings start and keeps DIVE without autostart', () => {
-    expect(hub).toContain('data-spm-spomove-start-mode="quick"');
+  it('separates start (entry=start) from settings and keeps Public without autostart', () => {
+    expect(hub).toContain('data-spm-spomove-start-mode="start"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).toContain('data-spm-spomove-start-mode="dive"');
-    expect(hub).toContain('빠른 시작');
+    expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');
-    expect(hub).toContain('startWithPick(selectedPick, true)');
-    expect(hub).toContain('startWithPick(selectedPick, false)');
-    expect(hub).toContain('autostart: true');
-    expect(hub).not.toContain('동작 바꾸기');
-    expect(hub).not.toContain('변형 ');
+    expect(hub).toContain("openWithPick(selectedPick, 'start')");
+    expect(hub).toContain("openWithPick(selectedPick, 'settings')");
+    expect(hub).not.toContain('writeFamilyMovement');
+    expect(hub).toContain('publicOfficialPresetSessionHref');
     expect(session).toContain('activationBlocked');
     expect(session).toContain('전체화면과 소리 켜기');
     expect(session).not.toContain('MovementHud');
-    // DIVE/비움직임 카드는 기본 href(autostart 없음)
     const diveLinkBlock = hub.slice(
       hub.indexOf('data-spm-spomove-start-mode="dive"') - 80,
       hub.indexOf('data-spm-spomove-start-mode="dive"') + 120,
     );
-    expect(diveLinkBlock).toContain('href={startHref}');
+    expect(diveLinkBlock).toContain('startHref');
+    expect(hub).toContain('href={startHref}');
     expect(guidelineSheet).not.toContain('autostart: true');
     expect(guidelineSheet).toContain('공식 추천으로 시작');
     expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
-    expect(session).toContain("searchParams.get('autostart') === '1'");
+    expect(session).toContain('resolveLegacyAutostart');
     expect(session).toContain('resolveSessionCueSeconds');
     expect(session).toContain('parseCueSecondsQuery');
   });
 
-  it('exposes cue speed controls on briefing (settings path)', () => {
-    expect(hub).toContain('officialPresetSessionHref(preset)');
+  it('exposes cue speed on StartBriefing', () => {
+    const startBriefing = read('app/spokedu-master/spomove/session/StartBriefing.tsx');
+    expect(hub).toContain('publicOfficialPresetSessionHref');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
-    expect(session).toContain('supportsCueSpeedOverride');
-    expect(session).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
-    expect(session).toContain('자극 속도');
-    expect(session).toContain('속도만 고르고 시작하세요');
-    expect(session).toContain('recommendedCueSecondsForPreset');
-    expect(session).toContain('이 활동 추천');
+    expect(startBriefing).toContain('supportsCueSpeedOverride');
+    expect(startBriefing).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
+    expect(startBriefing).toContain('자극 속도');
+    expect(startBriefing).toContain('이 설정으로 시작');
   });
 
   it('reproduces recent same-settings or downgrades the label', () => {
     expect(hub).toContain('canReproduceSpomoveSameSettings');
-    expect(hub).toContain('같은 설정 실행');
-    expect(hub).toContain('이 활동 다시 열기');
+    expect(hub).toContain('같은 설정으로 시작');
+    expect(hub).toContain('이 활동으로 시작');
     expect(hub).toContain('data-spm-spomove-recent-reproduce');
     expect(session).toContain('difficultyValue: difficultyKind ? difficultyValue : undefined');
   });
 
-  it('keeps briefing speed-first with a primary start CTA and collapsible details', () => {
-    expect(session).toContain('속도만 고르고 시작하세요');
-    expect(session).toContain('초로 시작');
-    expect(session).toContain('자세히 보기');
-    expect(session).toContain('자극 속도');
-    expect(session).toContain('getCueSpeedGuide');
-    expect(session).not.toContain('시작 전 확인');
+  it('keeps Start/Settings briefings without nested details modal', () => {
+    expect(session).toContain('StartBriefing');
+    expect(session).toContain('SettingsBriefing');
+    expect(session).not.toContain('자세히 보기');
+    expect(session).not.toContain('OfficialEngineBriefing');
   });
 
   it('prevents duplicate session starts and records only real starts', () => {

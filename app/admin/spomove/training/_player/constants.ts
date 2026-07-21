@@ -91,11 +91,11 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
+      { id: 6, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
       { id: 1, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
       { id: 2, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
       { id: 3, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
       { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 드러날 때 해당 색을 찾습니다. 난이도(1/2)는 아래에서 고릅니다.' },
-      { id: 6, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
       { id: 7, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
       { id: 8, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
       { id: 9, name: '숫자 기차', enName: 'Number Cart', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
@@ -379,6 +379,27 @@ export function normalizeLegacyTrainingMode(mode: string | undefined, level: num
   }
   if (mode === 'dual') return { mode: 'gonogo', level: 1 };
   return { mode, level };
+}
+
+/**
+ * 카탈로그 대표 id뿐 아니라 엔진 서브레벨도 허용한다.
+ * basic: 변형사분할 8~10, 전면3패널 서로다른색 6
+ * spatial: 색순서 2·3, 색·번호 5
+ */
+export function isKnownTrainingLevel(mode: string, level: number): boolean {
+  const modeDef = MODES[mode];
+  if (!modeDef) return false;
+  if (modeDef.levels.some((lv) => lv.id === level)) return true;
+  if (mode === 'basic') {
+    return isModifiedQuadrantLevel(level) || isFront3PanelLevel(level) || (level >= 1 && level <= 10);
+  }
+  if (mode === 'spatial') {
+    return isColorSequenceLevel(level) || isColorNumberLevel(level) || level === 6;
+  }
+  if (mode === 'reactTrain') {
+    return level >= 1 && level <= 10;
+  }
+  return false;
 }
 
 export const STUDENTS_KEY = 'spokedu_students_v1';

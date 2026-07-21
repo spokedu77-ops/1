@@ -24,7 +24,7 @@ import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
-import { writeFamilyMovement, readFamilyMovement } from './movements/movementStorage';
+import { readFamilyMovement } from './movements/movementStorage';
 import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
 import { movementDisplayLabel } from './movements/movementLabels';
 import {
@@ -37,7 +37,7 @@ import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
 
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
-  officialPresetSessionHref,
+  publicOfficialPresetSessionHref,
   type OfficialSpomovePreset,
   type OfficialSpomoveProgramGroup,
 } from './officialSpomovePresets';
@@ -530,7 +530,8 @@ function SpomoveProgramVisual({ preset }: { preset: OfficialSpomovePreset }) {
   }
   if (engine.level === 3) return <FullVisual theme={theme} />;
   if (engine.level === 4) return <TwoPanelVisual theme={theme} />;
-  if (engine.level === 5) return <ThreePanelVisual theme={theme} />;
+  if (engine.level === 5 || engine.level === 6) return <ThreePanelVisual theme={theme} />;
+  if (engine.level >= 7 && engine.level <= 10) return <QuadVisual theme={theme} />;
   return <QuadVisual theme={theme} />;
 }
 
@@ -684,21 +685,21 @@ function CardInfo({
     return clampCueSpeedSec(configured.cueSeconds);
   };
 
-  const hrefForPick = (pick: MovementPick, autostart: boolean) =>
-    officialPresetSessionHref(preset, {
-      autostart,
+  const hrefForPick = (pick: MovementPick, entry: 'start' | 'settings') =>
+    publicOfficialPresetSessionHref(preset, {
+      entry,
       movement: pick.baseMovement,
       limb: pick.limbRule,
       cueSeconds: cueForPick(pick),
     });
 
-  const startWithPick = (pick: MovementPick, autostart: boolean) => {
-    if (preset.activityFamilyId) writeFamilyMovement(preset.activityFamilyId, pick);
-    router.push(hrefForPick(pick, autostart));
+  /** Hub 클릭은 확인 화면 진입만 — Family 저장 side effect 금지 */
+  const openWithPick = (pick: MovementPick, entry: 'start' | 'settings') => {
+    router.push(hrefForPick(pick, entry));
   };
 
   return (
-    <div className="flex min-h-[188px] flex-1 flex-col p-4 text-center">
+    <div className="flex min-h-[168px] flex-1 flex-col p-4 text-center">
       <div className="flex flex-wrap items-center justify-center gap-1.5">
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
           {display.programLabel}
@@ -716,12 +717,9 @@ function CardInfo({
       <h2 className="mt-2 line-clamp-2 min-h-[2.6em] text-[17px] font-black leading-snug text-slate-950 sm:text-[18px]">
         {displayTitle}
       </h2>
-      <p className="mt-1.5 line-clamp-2 min-h-[2.6em] text-[12px] font-medium leading-snug text-slate-500">
-        {preset.description}
-      </p>
 
       {movementSummary ? (
-        <p className="mt-2 line-clamp-1 text-[12px] font-bold text-slate-700">
+        <p className="mt-3 line-clamp-1 text-[12px] font-bold text-slate-700">
           {selectedPick &&
           !movementPicksEqual(selectedPick, movementSummary.officialRecommended) ? (
             <>
@@ -736,7 +734,7 @@ function CardInfo({
           <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
         </p>
       ) : (
-        <div className="mt-2 h-[18px]" aria-hidden />
+        <div className="mt-3 h-[18px]" aria-hidden />
       )}
 
       {isReady ? (
@@ -746,18 +744,18 @@ function CardInfo({
               <button
                 type="button"
                 data-spm-spomove-card-action="start"
-                data-spm-spomove-start-mode="quick"
-                onClick={() => startWithPick(selectedPick, true)}
+                data-spm-spomove-start-mode="start"
+                onClick={() => openWithPick(selectedPick, 'start')}
                 className="inline-flex h-11 min-w-0 flex-[65] items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-2 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
               >
                 <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
-                빠른 시작
+                시작
               </button>
               <button
                 type="button"
                 data-spm-spomove-card-action="start"
                 data-spm-spomove-start-mode="settings"
-                onClick={() => startWithPick(selectedPick, false)}
+                onClick={() => openWithPick(selectedPick, 'settings')}
                 className="inline-flex h-11 min-w-0 flex-[35] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700"
               >
                 설정
@@ -771,7 +769,7 @@ function CardInfo({
               className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
             >
               <MonitorPlay className="h-3.5 w-3.5" />
-              실행
+              시작
             </Link>
           )}
         </div>
@@ -1009,7 +1007,7 @@ export default function SpomoveHubView() {
         <PresetCard
           key={preset.id}
           preset={preset}
-          startHref={officialPresetSessionHref(preset)}
+          startHref={publicOfficialPresetSessionHref(preset, { entry: 'start' })}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
           hasGuideVideo={Boolean(guideVideoUrls[preset.id])}
           favorite={isFavoriteProgram(ownerId, preset.id)}
@@ -1060,15 +1058,15 @@ export default function SpomoveHubView() {
                 const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
                 const recentHref = preset
                   ? canReproduce
-                    ? officialPresetSessionHref(preset, {
-                        autostart: true,
+                    ? publicOfficialPresetSessionHref(preset, {
+                        entry: 'start',
                         movement: activity.baseMovement,
                         limb: activity.limbRule,
                         cueSeconds: activity.cueSeconds,
                         difficulty: activity.difficultyValue,
                       })
-                    : officialPresetSessionHref(preset)
-                  : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on`;
+                    : publicOfficialPresetSessionHref(preset, { entry: 'start' })
+                  : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
                 return (
                   <article key={`${activity.ownerId}-${activity.programId}-${activity.occurredAt}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <p className="line-clamp-2 text-sm font-black text-slate-950">{title}</p>
@@ -1085,7 +1083,7 @@ export default function SpomoveHubView() {
                         data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
                         className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-3 text-[12px] font-black text-white"
                       >
-                        {canReproduce ? '같은 설정 실행' : '이 활동 다시 열기'}
+                        {canReproduce ? '같은 설정으로 시작' : '이 활동으로 시작'}
                       </Link>
                     </div>
                   </article>

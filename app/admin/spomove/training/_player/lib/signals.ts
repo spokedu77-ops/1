@@ -396,7 +396,8 @@ export function generateSignal(
         vSlides.length > 0 ? r(vSlides.filter((s) => (s.imageUrl ?? '').trim())) : null;
       if (usesImageTheme && !themed) return null;
       const c = themed?.color ?? r(activeColors);
-      const numMode = opts?.basicNumberOverlay;
+      // 숫자 오버레이는 색상 테마에서만. 이미지 테마로 바꾸면 숫자가 따라가지 않는다.
+      const numMode = usesImageTheme ? 'none' : opts?.basicNumberOverlay;
       const overlayNumber =
         numMode === '2' ? Math.floor(Math.random() * 2) + 1
         : numMode === '3' ? Math.floor(Math.random() * 3) + 1

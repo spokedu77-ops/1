@@ -22,7 +22,7 @@ describe('MovementConfigurator contract', () => {
   const configurator = read(
     'app/spokedu-master/spomove/movements/MovementConfigurator.tsx',
   );
-  const briefing = read('app/spokedu-master/spomove/session/page.tsx');
+  const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
   const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
 
   it('Configurator 내부에 Resolver·storage·URL·usage 로직이 없다', () => {
@@ -36,27 +36,29 @@ describe('MovementConfigurator contract', () => {
     expect(configurator).not.toContain('localStorage');
     expect(configurator).toContain('onChange');
     expect(configurator).toContain('allowedPicks');
+    expect(configurator).toContain("variant === 'compact'");
   });
 
-  it('Briefing은 selectionMode 3분기를 사용한다', () => {
-    expect(briefing).toContain("selectionMode === 'selectable'");
-    expect(briefing).toContain("selectionMode === 'fixed'");
-    expect(briefing).toContain("selectionMode === 'disabled'");
-    expect(briefing).toContain('<MovementConfigurator');
-    expect(briefing).toContain('<FixedMovementSummary');
-    expect(briefing).toContain('<BuiltInMovementNotice');
+  it('SettingsBriefing은 selectionMode 3분기를 사용한다', () => {
+    expect(settingsBriefing).toContain("selectionMode === 'selectable'");
+    expect(settingsBriefing).toContain("selectionMode === 'fixed'");
+    expect(settingsBriefing).toContain("selectionMode === 'disabled'");
+    expect(settingsBriefing).toContain('<MovementConfigurator');
+    expect(settingsBriefing).toContain('<FixedMovementSummary');
+    expect(settingsBriefing).toContain('<BuiltInMovementNotice');
   });
 
   it('pick 변경은 session state + Family 저장이며 URL replace가 아니다', () => {
-    expect(briefing).toContain('setMovementPick(pick)');
-    expect(briefing).toContain('writeFamilyMovement');
-    expect(briefing).not.toMatch(/onMovementPickChange[\s\S]{0,400}router\.replace/);
+    const session = read('app/spokedu-master/spomove/session/page.tsx');
+    expect(session).toContain('setMovementPick(pick)');
+    expect(session).toContain('writeFamilyMovement');
+    expect(session).not.toMatch(/onMovementPickChange[\s\S]{0,400}router\.replace/);
   });
 
   it('Hub는 Effective≠Official일 때 최근 설정 라벨을 쓴다', () => {
     expect(hub).toContain('최근 설정');
     expect(hub).toContain('movementPicksEqual');
-    expect(hub).toContain('빠른 시작');
+    expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');
   });
 

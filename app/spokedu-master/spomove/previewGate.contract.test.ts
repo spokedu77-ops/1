@@ -12,12 +12,14 @@ function read(path: string) {
 }
 
 /**
- * 제한 Preview 진입 전 최소 4게이트 — 구조는 유지, 화면 노출은 기존 SPOMOVE가 주인공.
+ * Phase 0 — 즉시 실행·과밀 설정·양산형 설명 손상 중단.
  */
-describe('SPOMOVE preview gate (최소 4가지)', () => {
+describe('SPOMOVE preview gate (Phase 0)', () => {
   const hub = read('app/spokedu-master/spomove/SpomoveHubView.tsx');
   const session = read('app/spokedu-master/spomove/session/page.tsx');
   const hrefSource = read('app/spokedu-master/spomove/officialSpomovePresets.ts');
+  const contract = read('app/spokedu-master/spomove/SPOMOVE_PRODUCT_CONTRACT.md');
+  const configurator = read('app/spokedu-master/spomove/movements/MovementConfigurator.tsx');
 
   it('1) running 중 MovementHud 없음 — Engine만', () => {
     expect(session).not.toContain('MovementHud');
@@ -27,26 +29,29 @@ describe('SPOMOVE preview gate (최소 4가지)', () => {
     expect(session).toContain("state === 'movementIntro'");
   });
 
-  it('2) 카드는 빠른 시작 / 설정 두 버튼만 (움직임 레이어)', () => {
-    expect(hub).toContain('data-spm-spomove-start-mode="quick"');
+  it('2) Hub CTA는 시작/설정 · Public autostart 없음 · description 미노출', () => {
+    expect(hub).toContain('data-spm-spomove-start-mode="start"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
-    expect(hub).toContain('빠른 시작');
+    expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');
-    expect(hub).toContain('최근 설정');
-    expect(hub).toContain('movementPicksEqual');
-    expect(hub).not.toContain('동작 바꾸기');
-    expect(hub).not.toContain('설정하고 시작');
-    expect(hub).not.toContain('변형 ');
-    expect(hub).not.toContain('점프 없이');
+    expect(hub).toContain("openWithPick(selectedPick, 'start')");
+    expect(hub).toContain("openWithPick(selectedPick, 'settings')");
+    expect(hub).toContain('publicOfficialPresetSessionHref');
+    expect(hub).not.toContain('writeFamilyMovement');
+    expect(hub).not.toContain('{preset.description}');
+    expect(hub).toContain('같은 설정으로 시작');
+    expect(hub).not.toContain('같은 설정 실행');
   });
 
-  it('2b) 설정 표면은 MovementConfigurator · selectionMode 3분기', () => {
-    expect(session).toContain('MovementConfigurator');
-    expect(session).toContain('FixedMovementSummary');
-    expect(session).toContain('BuiltInMovementNotice');
-    expect(session).toContain("selectionMode === 'selectable'");
-    expect(session).toContain("selectionMode === 'fixed'");
-    expect(session).toContain("selectionMode === 'disabled'");
+  it('2b) Session entry·legacyAutostart·Briefing 분리', () => {
+    const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
+    expect(session).toContain('parseSessionEntryMode');
+    expect(session).toContain('resolveLegacyAutostart');
+    expect(session).toContain('StartBriefing');
+    expect(session).toContain('SettingsBriefing');
+    expect(session).toContain('beginConfiguredSession');
+    expect(session).toContain('isInteractiveKeyTarget');
+    expect(settingsBriefing).toContain('variant="compact"');
   });
 
   it('3) MQ2~4는 bodyCueBuiltIn — 일반 movement summary 없음', () => {
@@ -67,11 +72,25 @@ describe('SPOMOVE preview gate (최소 4가지)', () => {
 
   it('4) cue 조건부 · difficulty 초기 URL · FS/Audio 폴백', () => {
     expect(hrefSource).toContain("if (options?.cueSeconds != null)");
-    expect(hrefSource).not.toContain('cueSeconds: String(options?.cueSeconds ?? preset.cueSeconds)');
+    expect(hrefSource).toContain('publicOfficialPresetSessionHref');
     expect(session).toContain('urlDifficulty');
     expect(session).toContain('difficultyReady');
     expect(session).toContain('activationBlocked');
     expect(session).toContain('전체화면과 소리 켜기');
     expect(session).toContain('unlockActivation');
+  });
+
+  it('5) Product Contract Phase 0·Catalog 정의', () => {
+    expect(contract).toContain('Phase 0');
+    expect(contract).toContain('Catalog Family');
+    expect(contract).toContain('Activity Family');
+    expect(contract).toContain('entry=settings');
+    expect(contract).not.toContain('Sprint 1 = Movement Configurator');
+  });
+
+  it('6) Configurator compact — 대형 도식 없음', () => {
+    expect(configurator).toContain("variant === 'compact'");
+    expect(configurator).not.toContain('SpomatMovementDiagram');
+    expect(configurator).not.toContain('MovementInstructionPanel');
   });
 });

@@ -255,6 +255,7 @@ export function applyRestoreBlockSnapshots(
 
 /** 배치 content 저장(flushContentPatches) — useNoteBlockActions에서 등록 */
 let registeredContentFlush: (() => Promise<void>) | null = null;
+const BEFORE_LEAVE_CONTENT_FLUSH_TIMEOUT_MS = 1200;
 
 export function registerNoteContentFlush(fn: (() => Promise<void>) | null): void {
   registeredContentFlush = fn;
@@ -265,7 +266,12 @@ export async function commitNoteDocumentBeforeLeave(): Promise<void> {
   commitActiveNoteEditorToStore();
   if (registeredContentFlush) {
     try {
-      await registeredContentFlush();
+      await Promise.race([
+        registeredContentFlush(),
+        new Promise<void>((resolve) => {
+          window.setTimeout(resolve, BEFORE_LEAVE_CONTENT_FLUSH_TIMEOUT_MS);
+        }),
+      ]);
     } catch {
       // 저장 실패해도 스토어 커밋은 유지
     }

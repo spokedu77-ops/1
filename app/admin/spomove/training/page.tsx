@@ -39,7 +39,6 @@ import {
   SPOMOVE_COLOR_THEME_LABELS,
   SPOMOVE_COLOR_THEME_ORDER,
   SPOMOVE_VARIANT_THEME_LS_KEY,
-  parseStoredVariantTheme,
   type SpomoveColorThemeId,
 } from './_player/lib/spomoveVariantThemeConfig';
 import { MemoryColorSlotsPicker } from './_player/components/MemoryColorSlotsPicker';
@@ -740,12 +739,10 @@ function SettingsScreen({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    // 훈련 복귀 시에는 initial(launch)에 담긴 테마를 유지
+    // 훈련 복귀 시에는 initial(launch)에 담긴 테마를 유지. 그 외에는 색상 기본값.
     if (typeof initialLevelId === 'number') return;
-    const storedTheme = parseStoredVariantTheme(localStorage.getItem(SPOMOVE_VARIANT_THEME_LS_KEY));
-    setLaunch((s) => ({ ...s, variantColorTheme: storedTheme }));
+    setLaunch((s) => ({ ...s, variantColorTheme: 'color', basicNumberOverlay: 'none' }));
   }, [initialLevelId]);
-
 
   const guideBlock = useMemo(
     () => GUIDE_BLOCKS.find((b) => b.id === modeId) ?? null,
@@ -1963,7 +1960,11 @@ function SettingsScreen({
                       key={tid}
                       type="button"
                       onClick={() => {
-                        setLaunch((s) => ({ ...s, variantColorTheme: tid }));
+                        setLaunch((s) => ({
+                          ...s,
+                          variantColorTheme: tid,
+                          basicNumberOverlay: tid === 'color' ? s.basicNumberOverlay : 'none',
+                        }));
                         if (typeof window !== 'undefined') {
                           localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, tid);
                         }

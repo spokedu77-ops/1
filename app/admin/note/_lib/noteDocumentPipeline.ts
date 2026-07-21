@@ -142,6 +142,8 @@ export class NoteDocumentPipeline {
 
     this.queue = new NoteDocumentOpQueue({
       getBlock: (blockId) => useNoteBlockStore.getState().getBlock(blockId),
+      getDocumentBlocks: (documentId) => useNoteBlockStore.getState().getBlocksArray()
+        .filter((block) => block.document_id === documentId),
       getActiveBlockId: () => useNoteBlockStore.getState().activeEditor?.blockId ?? null,
       triggerSave: () => this.callbacks.triggerSave(),
       onError: (error) => this.callbacks.onError?.(error),
@@ -309,6 +311,7 @@ export class NoteDocumentPipeline {
       parent_block_id: args.parent_block_id,
       normalizeOrders: args.normalizeOrders,
       transactionUpdates: args.transactionUpdates,
+      allowEmptyVisibleCreate: args.allowEmptyVisibleCreate,
     };
     for (let attempt = 0; attempt < 40; attempt += 1) {
       if (this.disposed) {

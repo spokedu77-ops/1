@@ -15,6 +15,13 @@ import {
 
 type StudentBadge = { name: string; color: string };
 
+/** MASTER 세션 등 — 측정 점수가 아닌 실제 사용 설정 요약 */
+export type TrainingResultSessionSettings = {
+  title?: string;
+  primary: string;
+  secondary?: string;
+};
+
 type Props = {
   cfg: TrainingResultConfig;
   elapsedMs: number;
@@ -24,6 +31,8 @@ type Props = {
   statusBadge?: string | null;
   programTitle?: string;
   student?: StudentBadge | null;
+  /** 훈련 정리 카드 안(코칭 팁 아래)에 표시. footer에 끼워 넣지 않음 */
+  sessionSettings?: TrainingResultSessionSettings | null;
   footer?: React.ReactNode;
   onBack: () => void;
   onRetry: () => void;
@@ -115,6 +124,7 @@ export function TrainingResultScreen({
   statusBadge = null,
   programTitle,
   student,
+  sessionSettings = null,
   footer,
   onBack,
   onRetry,
@@ -589,41 +599,6 @@ export function TrainingResultScreen({
               </p>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', flexShrink: 0 }}>
-              {rich.benefitTags.map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    fontSize: 'var(--tr-label)',
-                    fontWeight: 850,
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '999px',
-                    background: 'var(--subtle-bg)',
-                    color: accent,
-                    border: `1px solid ${accent}33`,
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
-            <p
-              style={{
-                margin: 0,
-                flexShrink: 0,
-                fontSize: 'var(--tr-body)',
-                lineHeight: 1.5,
-                color: accent,
-                fontWeight: 750,
-                borderLeft: `3px solid ${accent}55`,
-                paddingLeft: '0.55rem',
-                wordBreak: 'keep-all',
-              }}
-            >
-              {rich.benefitLine}
-            </p>
-
             <div
               style={{
                 flexShrink: 0,
@@ -640,6 +615,48 @@ export function TrainingResultScreen({
                 {rich.coachTip}
               </p>
             </div>
+
+            {sessionSettings?.primary ? (
+              <div
+                style={{
+                  flexShrink: 0,
+                  borderRadius: '0.75rem',
+                  border: `1px solid ${accent}30`,
+                  background: `${accent}12`,
+                  padding: '0.7rem',
+                }}
+              >
+                <div style={{ fontSize: 'var(--tr-label)', fontWeight: 900, color: accent }}>
+                  {sessionSettings.title ?? '사용한 동작'}
+                </div>
+                <p
+                  style={{
+                    margin: '0.35rem 0 0',
+                    fontSize: 'var(--tr-title)',
+                    fontWeight: 900,
+                    lineHeight: 1.3,
+                    color: 'var(--text)',
+                    wordBreak: 'keep-all',
+                  }}
+                >
+                  {sessionSettings.primary}
+                </p>
+                {sessionSettings.secondary ? (
+                  <p
+                    style={{
+                      margin: '0.3rem 0 0',
+                      fontSize: 'var(--tr-body)',
+                      lineHeight: 1.45,
+                      fontWeight: 650,
+                      color: 'var(--text-muted)',
+                      wordBreak: 'keep-all',
+                    }}
+                  >
+                    {sessionSettings.secondary}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
 
             <div style={{ flex: '1 1 auto', minHeight: 'min-content', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
               <h2 style={{ ...sectionTitle, flexShrink: 0 }}>스스로 점검</h2>

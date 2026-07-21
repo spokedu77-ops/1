@@ -171,6 +171,93 @@ describe('note block commands', () => {
     expect(roots.map((item) => item.order_index)).toEqual([0, 1, 2, 3]);
   });
 
+  it('allows stable inserts inside a page container without touching root siblings', () => {
+    const blocks = [
+      { ...block('page', 0), type: 'page' as const },
+      block('root-after', 1),
+      block('page-child-a', 0, 'page'),
+      block('page-child-b', 1, 'page'),
+    ];
+
+    const command = buildInsertBlockCommand(
+      blocks,
+      { ...block('todo-in-page', 99), type: 'todo' as const, content: { text: '', checked: false } },
+      'page',
+      1,
+    );
+
+    const pageChildren = command.nextBlocks
+      .filter((item) => item.parent_block_id === 'page')
+      .sort((left, right) => left.order_index - right.order_index);
+    expect(pageChildren.map((item) => item.id)).toEqual([
+      'page-child-a',
+      'todo-in-page',
+      'page-child-b',
+    ]);
+    expect(command.nextBlocks.find((item) => item.id === 'root-after')?.order_index).toBe(1);
+    expect(command.orders.map((item) => item.id)).toEqual([
+      'page-child-a',
+      'todo-in-page',
+      'page-child-b',
+    ]);
+  });
+
+  it('allows stable bullet and todo inserts inside an expanded toggle', () => {
+    const blocks = [
+      { ...block('toggle', 0), type: 'toggle' as const, content: { title: 'T', collapsed: false } },
+      { ...block('bullet-a', 0, 'toggle'), type: 'bulletList' as const },
+    ];
+
+    const bullet = buildInsertBlockCommand(
+      blocks,
+      { ...block('bullet-b', 99), type: 'bulletList' as const },
+      'toggle',
+      1,
+    );
+    const todo = buildInsertBlockCommand(
+      bullet.nextBlocks,
+      { ...block('todo-c', 99), type: 'todo' as const, content: { text: '', checked: false } },
+      'toggle',
+      2,
+    );
+
+    const children = todo.nextBlocks
+      .filter((item) => item.parent_block_id === 'toggle')
+      .sort((left, right) => left.order_index - right.order_index);
+    expect(children.map((item) => `${item.id}:${item.type}:${item.order_index}`)).toEqual([
+      'bullet-a:bulletList:0',
+      'bullet-b:bulletList:1',
+      'todo-c:todo:2',
+    ]);
+  });
+
+  it('allows page blocks inside page containers for nested page outlines', () => {
+    const blocks = [
+      { ...block('page-parent', 0), type: 'page' as const },
+      { ...block('existing-child-page', 0, 'page-parent'), type: 'page' as const },
+    ];
+
+    const command = buildInsertBlockCommand(
+      blocks,
+      {
+        ...block('nested-page', 99),
+        type: 'page' as const,
+        content: { title: 'Nested', page_document_id: 'child-doc' },
+      },
+      'page-parent',
+      1,
+    );
+
+    const children = command.nextBlocks
+      .filter((item) => item.parent_block_id === 'page-parent')
+      .sort((left, right) => left.order_index - right.order_index);
+    expect(children.map((item) => item.id)).toEqual(['existing-child-page', 'nested-page']);
+    expect(command.focusTarget).toEqual({
+      blockId: 'nested-page',
+      part: 'editor',
+    });
+  });
+
   it('returns title focus for inserted toggles and can suppress focus', () => {
     const blocks = [block('a', 0)];
     const created = { ...block('toggle', 99), type: 'toggle' };

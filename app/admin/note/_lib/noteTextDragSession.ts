@@ -38,6 +38,19 @@ export function startTextDragSession(options: TextDragSessionOptions): () => voi
     document.removeEventListener('pointermove', onMove, true);
     document.removeEventListener('pointerup', onUp, true);
     document.removeEventListener('pointercancel', onUp, true);
+    window.removeEventListener('blur', onAbortSession, true);
+    document.removeEventListener('visibilitychange', onVisibilityChange, true);
+  };
+
+  const onAbortSession = () => {
+    cleanup();
+    options.onAbort?.();
+  };
+
+  const onVisibilityChange = () => {
+    if (document.visibilityState === 'hidden') {
+      onAbortSession();
+    }
   };
 
   const onMove = (ev: PointerEvent) => {
@@ -134,6 +147,8 @@ export function startTextDragSession(options: TextDragSessionOptions): () => voi
   document.addEventListener('pointermove', onMove, true);
   document.addEventListener('pointerup', onUp, true);
   document.addEventListener('pointercancel', onUp, true);
+  window.addEventListener('blur', onAbortSession, true);
+  document.addEventListener('visibilitychange', onVisibilityChange, true);
 
   return cleanup;
 }

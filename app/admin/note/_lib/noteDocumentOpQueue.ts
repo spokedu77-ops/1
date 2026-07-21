@@ -6,6 +6,7 @@ import {
   type PatchedNoteBlock,
 } from './noteBlocksApi';
 import { newNoteBlockClientId } from './noteSyncGuards';
+import { assertPersistOpIsSafe } from './notePersistOpGuard';
 import type { NotePersistOp } from './noteDocumentOps';
 import type { NoteBlock } from './types';
 
@@ -44,6 +45,7 @@ function contentRecordsEqual(left: Record<string, unknown> | null | undefined, r
 
 export type NoteDocumentOpQueueDeps = {
   getBlock: (blockId: string) => NoteBlock | undefined;
+  getDocumentBlocks?: (documentId: string) => NoteBlock[];
   getActiveBlockId: () => string | null;
   triggerSave: () => void;
   onError?: (error: Error) => void;
@@ -259,6 +261,7 @@ export class NoteDocumentOpQueue {
     if (!this.deps.persistViaOpLog) {
       throw new Error('[Note] op-log persist is required; legacy HTTP create is disabled');
     }
+    assertPersistOpIsSafe(op, this.readCurrentDocumentBlocks(op.documentId));
     const blockId = op.id || newNoteBlockClientId();
     const opWithId = op.id ? op : { ...op, id: blockId };
     await this.deps.persistViaOpLog(opWithId, { immediate: true });
@@ -288,11 +291,36 @@ export class NoteDocumentOpQueue {
       if (!this.deps.persistViaOpLog) {
         throw new Error('[Note] op-log persist is required; legacy HTTP persist is disabled');
       }
+      assertPersistOpIsSafe(op, this.readCurrentDocumentBlocksForOp(op));
       await this.deps.persistViaOpLog(op, { immediate: true });
       this.deps.triggerSave();
     } finally {
       this.persistInFlight = false;
     }
+  }
+
+  private readCurrentDocumentBlocks(documentId: string): NoteBlock[] {
+    if (this.deps.getDocumentBlocks) return this.deps.getDocumentBlocks(documentId);
+    const activeId = this.deps.getActiveBlockId();
+    const activeBlock = activeId ? this.deps.getBlock(activeId) : undefined;
+    return activeBlock?.document_id === documentId ? [activeBlock] : [];
+  }
+
+  private readCurrentDocumentBlocksForOp(op: NotePersistOp): NoteBlock[] {
+    if (op.type === 'createBlock') return this.readCurrentDocumentBlocks(op.documentId);
+    if (op.type === 'blockTransaction' && op.creates?.[0]?.document_id) {
+      return this.collectKnownBlocks(op.creates[0].document_id);
+    }
+    const firstId =
+      op.type === 'patchContent' ? op.updates[0]?.id
+        : op.type === 'patchFields' ? op.patches[0]?.id
+          : op.type === 'softDelete' ? op.ids[0]
+            : op.type === 'blockTransaction' ? op.patches[0]?.id ?? op.deleteIds[0]
+              : op.type === 'purgeBlock' ? op.id
+                : undefined;
+    const block = firstId ? this.deps.getBlock(firstId) : undefined;
+    if (!block) return [];
+    return this.readCurrentDocumentBlocks(block.document_id);
   }
 
   dispose(): void {
@@ -319,6 +347,7 @@ export type CreateBlockPersistArgs = {
   parent_block_id: string | null;
   normalizeOrders?: Array<{ id: string; order_index: number }>;
   transactionUpdates?: NoteBlockFieldPatch[];
+  allowEmptyVisibleCreate?: boolean;
 };
 
 export type BlockTransactionPersistArgs = {

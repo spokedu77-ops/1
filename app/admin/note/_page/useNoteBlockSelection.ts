@@ -322,6 +322,47 @@ export function useNoteBlockSelection(options: {
     return () => document.removeEventListener('mousedown', onDown);
   }, [selectedBlockIdsRef, setSelectedBlockIds]);
 
+  useEffect(() => {
+    const clearStuckMarqueeState = () => {
+      noteBlockMarqueeGuard.active = false;
+      document.body.style.userSelect = '';
+      document.body.classList.remove('note-marquee-active');
+      document.body.classList.remove('note-list-cross-active');
+      pendingMarqueeRectRef.current = null;
+      pendingMarqueeSelectionRef.current = null;
+      if (marqueeRafRef.current !== null) {
+        window.cancelAnimationFrame(marqueeRafRef.current);
+        marqueeRafRef.current = null;
+      }
+      paintMarqueeOverlay(null);
+      blockMarqueeRef.current = null;
+      setBlockMarqueeActive(false);
+      const listeners = blockMarqueeListenersRef.current;
+      if (listeners) {
+        document.removeEventListener('pointermove', listeners.onMove);
+        document.removeEventListener('pointerup', listeners.onUp);
+        document.removeEventListener('pointercancel', listeners.onUp);
+        document.removeEventListener('selectstart', listeners.onSelectStart);
+        blockMarqueeListenersRef.current = null;
+      }
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        clearStuckMarqueeState();
+      }
+    };
+
+    window.addEventListener('blur', clearStuckMarqueeState, true);
+    document.addEventListener('pointercancel', clearStuckMarqueeState, true);
+    document.addEventListener('visibilitychange', onVisibilityChange, true);
+    return () => {
+      clearStuckMarqueeState();
+      window.removeEventListener('blur', clearStuckMarqueeState, true);
+      document.removeEventListener('pointercancel', clearStuckMarqueeState, true);
+      document.removeEventListener('visibilitychange', onVisibilityChange, true);
+    };
+  }, [paintMarqueeOverlay, setBlockMarqueeActive]);
+
   const deleteSelectedBlocks = useCallback(() => {
     const ids = [...selectedBlockIdsRef.current];
     if (ids.length === 0) return;

@@ -112,6 +112,7 @@ export function SpomoveGuidelineSheet({
   // 가이드는 Official을 설명하므로 CTA도 Official을 URL에 명시 (설명≠실행 금지)
   const startHref = officialPresetSessionHref(preset, {
     mode: launchMode,
+    entry: 'start',
     movement: officialRecommended?.baseMovement,
     limb: officialRecommended?.limbRule,
     cueSeconds: officialRecommended

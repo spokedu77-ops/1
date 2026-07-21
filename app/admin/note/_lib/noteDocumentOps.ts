@@ -30,6 +30,7 @@ export type NotePersistOp =
     parent_block_id: string | null;
     normalizeOrders?: Array<{ id: string; order_index: number }>;
     transactionUpdates?: NoteBlockFieldPatch[];
+    allowEmptyVisibleCreate?: boolean;
   }
   | {
     type: 'blockTransaction';

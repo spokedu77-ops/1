@@ -91,6 +91,32 @@ export function useNoteDragDrop(options: {
     return () => window.removeEventListener('pointermove', onPointerMove);
   }, []);
 
+  useEffect(() => {
+    const clearStuckDragState = () => {
+      noteBlockDragActiveRef.current = false;
+      multiDragBlockIdsRef.current = null;
+      dropTargetRef.current = null;
+      setActiveBlockId(null);
+      setActiveDragDocId(null);
+      setDropTarget(null);
+      setMultiDragCount(0);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        clearStuckDragState();
+      }
+    };
+
+    window.addEventListener('blur', clearStuckDragState, true);
+    document.addEventListener('pointercancel', clearStuckDragState, true);
+    document.addEventListener('visibilitychange', onVisibilityChange, true);
+    return () => {
+      window.removeEventListener('blur', clearStuckDragState, true);
+      document.removeEventListener('pointercancel', clearStuckDragState, true);
+      document.removeEventListener('visibilitychange', onVisibilityChange, true);
+    };
+  }, []);
+
   const activeBlock = useMemo(() => {
     if (!activeBlockId) return null;
     return blocks.find((b) => b.id === activeBlockId)

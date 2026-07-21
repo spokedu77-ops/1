@@ -216,6 +216,7 @@ describe('NoteDocumentOpQueue', () => {
       content: { text: '' },
       order_index: 1,
       parent_block_id: null,
+      allowEmptyVisibleCreate: true,
       normalizeOrders: [{ id: 'a', order_index: 0 }],
       transactionUpdates: [
         { id: 'child', parent_block_id: 'client-new-1', order_index: 0 },

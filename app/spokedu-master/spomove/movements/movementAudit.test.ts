@@ -23,7 +23,6 @@ describe('SPOMOVE movement audit (KPI report)', () => {
 
   it('보고: listed vs runnable 분모 및 Family/Profile 누락', () => {
     const missing = runnablePresets.filter((p) => !p.activityFamilyId || !p.movementProfileId);
-    // eslint-disable-next-line no-console
     console.log(
       `[movement-audit] listed=${listedPresets.length} runnable=${runnablePresets.length} missingFamilyOrProfile=${missing.length}${
         missing.length ? ` ids=${missing.map((p) => p.id).join(',')}` : ''
@@ -61,7 +60,6 @@ describe('SPOMOVE movement audit (KPI report)', () => {
 
     const familyTargetMet = familyRatio >= 0.6;
     const contentTargetMet = contentRatio >= 0.7;
-    // eslint-disable-next-line no-console
     console.log(
       [
         '[movement-audit]',
@@ -96,7 +94,6 @@ describe('SPOMOVE movement audit (KPI report)', () => {
       if (!anyIntersect) noopExclusionFamilies += 1;
     }
 
-    // eslint-disable-next-line no-console
     console.log(
       `[movement-audit] jumpFree=${jumpFreeOk}/${profiles.length} minCount=${minCountOk}/${profiles.length} noopExclusionFamilies=${noopExclusionFamilies}`,
     );
