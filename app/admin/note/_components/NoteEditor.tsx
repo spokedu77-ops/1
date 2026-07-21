@@ -499,6 +499,12 @@ export function NoteEditor({
 
   callbacksRef.current.flushPendingChange = flushPendingChange;
 
+  const deferPendingChangeFlush = useCallback(() => {
+    window.setTimeout(() => {
+      callbacksRef.current.flushPendingChange();
+    }, 0);
+  }, []);
+
   const scheduleChange = useCallback((change: NoteEditorChange) => {
     pendingChangeRef.current = change;
     if (changeTimerRef.current !== null) return;
@@ -791,7 +797,7 @@ export function NoteEditor({
         if (event.key === 'Backspace') {
           const atStart = selectionAtBlockStart(view);
           const editor = editorRef.current;
-          const { doc, selection } = view.state;
+          const { selection } = view.state;
           // remount 직후 editorRef가 destroyed여도 view 기준으로 빈 블록 판정
           const viewDocEmpty = view.state.doc.textContent.trim().length === 0;
           if (
@@ -1138,7 +1144,7 @@ export function NoteEditor({
           flushPendingChange();
         }
       } else {
-        flushPendingChange();
+        deferPendingChangeFlush();
       }
       cbs.onEnter({
         isEmpty: currentEditor.isEmpty,
@@ -1149,7 +1155,7 @@ export function NoteEditor({
     return () => {
       storage.handler = null;
     };
-  }, [editor, enterCreatesBlock, flushPendingChange]);
+  }, [deferPendingChangeFlush, editor, enterCreatesBlock, flushPendingChange]);
 
   useEffect(() => () => {
     flushPendingChange();

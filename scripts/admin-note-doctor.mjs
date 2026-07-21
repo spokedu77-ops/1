@@ -149,9 +149,9 @@ async function main() {
     console.log(`Backup-only complete: ${backupFile}`);
     return;
   }
-  runStep('Block invariant audit', blockInvariantArgs());
   runStep('Document/page-link integrity audit', dataIntegrityArgs());
   runStep('Content integrity audit', contentIntegrityArgs());
+  runStep('Block invariant audit', blockInvariantArgs());
   console.log('\nAdmin Note doctor complete.');
 }
 

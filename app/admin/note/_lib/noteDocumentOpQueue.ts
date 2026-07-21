@@ -309,7 +309,7 @@ export class NoteDocumentOpQueue {
   private readCurrentDocumentBlocksForOp(op: NotePersistOp): NoteBlock[] {
     if (op.type === 'createBlock') return this.readCurrentDocumentBlocks(op.documentId);
     if (op.type === 'blockTransaction' && op.creates?.[0]?.document_id) {
-      return this.collectKnownBlocks(op.creates[0].document_id);
+      return this.readCurrentDocumentBlocks(op.creates[0].document_id);
     }
     const firstId =
       op.type === 'patchContent' ? op.updates[0]?.id
