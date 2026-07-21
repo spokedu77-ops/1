@@ -17,15 +17,18 @@ describe('parseSessionEntryMode', () => {
 });
 
 describe('resolveLegacyAutostart', () => {
-  it('entry=settings면 autostart=1도 무시', () => {
-    expect(
-      resolveLegacyAutostart({ entryMode: 'settings', autostartParam: '1' }),
-    ).toBe(false);
+  it('entry 쿼리가 없으면 autostart=1만 Legacy 허용', () => {
+    expect(resolveLegacyAutostart({ entryParam: null, autostartParam: '1' })).toBe(true);
+    expect(resolveLegacyAutostart({ entryParam: undefined, autostartParam: '1' })).toBe(true);
   });
 
-  it('entry=start면 autostart=1을 Legacy로 허용', () => {
-    expect(resolveLegacyAutostart({ entryMode: 'start', autostartParam: '1' })).toBe(true);
-    expect(resolveLegacyAutostart({ entryMode: 'start', autostartParam: null })).toBe(false);
+  it('entry=start|settings 가 있으면 autostart=1도 Setup으로', () => {
+    expect(resolveLegacyAutostart({ entryParam: 'start', autostartParam: '1' })).toBe(false);
+    expect(resolveLegacyAutostart({ entryParam: 'settings', autostartParam: '1' })).toBe(false);
+  });
+
+  it('autostart 없으면 false', () => {
+    expect(resolveLegacyAutostart({ entryParam: null, autostartParam: null })).toBe(false);
   });
 });
 

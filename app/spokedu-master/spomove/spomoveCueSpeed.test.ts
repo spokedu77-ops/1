@@ -45,6 +45,7 @@ describe('spomoveCueSpeed', () => {
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-wormhole-41')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-number-cart-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')!)).toBe(false);
+    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-goalkeeper-42')!)).toBe(false);
   });
 
   it('includes reaction cognition / flanker / typical visual reaction', () => {

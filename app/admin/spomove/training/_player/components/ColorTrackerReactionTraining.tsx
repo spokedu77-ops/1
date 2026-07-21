@@ -343,13 +343,17 @@ export function ColorTrackerReactionTraining({
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
-    if (!g) return;
+    if (!g?.running) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.roundCdTimer) clearTimeout(g.roundCdTimer);
     setRoundCountdown(null);
     setShowRevealBtn(false);
-    onExitRef.current();
+    onCompleteRef.current({
+      stims: g.rounds,
+      maxCombo: g.rounds,
+      laneCount: [...g.laneCount] as [number, number, number, number],
+    });
   }, []);
 
   const endGame = useCallback(() => {

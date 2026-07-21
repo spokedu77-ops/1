@@ -13,10 +13,10 @@ export function getSpomoveDifficultyKind(
 ): SpomoveDifficultyKind | null {
   if (preset.engine.mode !== 'reactTrain') return null;
   const level = preset.engine.level;
-  if (level === 9) return 'numberCart';
-  if (level === 10) return 'colorTracker';
-  if (level === 7) return 'mole';
-  if (level === 4) return 'camouflage';
+  if (level === 8) return 'numberCart';
+  if (level === 9) return 'colorTracker';
+  if (level === 6) return 'mole';
+  if (level === 5) return 'camouflage';
   return null;
 }
 

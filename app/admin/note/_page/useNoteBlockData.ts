@@ -34,6 +34,10 @@ import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { stripToggleLegacyContentFields } from '../_lib/noteToggleContent';
 import { toNoteSyncUserMessage } from '../_lib/noteSyncErrors';
 import { useNoteDocumentEngine } from '../_hooks/useNoteDocumentEngine';
+import {
+  dispatchNoteCommandToStore,
+  replaceNoteDocumentStoreView,
+} from '../_lib/noteDocumentPipeline';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import {
   traceLoadingState,
@@ -245,7 +249,11 @@ export function useNoteBlockData(options: {
       documentEngineRef.current.replaceBlocks(next);
       return;
     }
-    useNoteBlockStore.getState().replaceBlocks(next);
+    if (selectedId) {
+      dispatchNoteCommandToStore(selectedId, { type: 'replaceBlocks', blocks: next });
+      return;
+    }
+    replaceNoteDocumentStoreView(null, next);
   }, [selectedId]);
 
   const persistToggleBodyMigration = useCallback(async (
@@ -299,8 +307,7 @@ export function useNoteBlockData(options: {
     if (!selectedId) {
       openLayoutSyncKeyRef.current = null;
       previousDocumentIdRef.current = null;
-      useNoteBlockStore.getState().setActiveDocumentId(null);
-      useNoteBlockStore.getState().replaceBlocks([]);
+      replaceNoteDocumentStoreView(null, []);
       setLoadingBlocks(false, 'selectedId:null');
       setBlocksSyncing(false, 'selectedId:null');
       setBlocksEmptyConfirmed(false, 'selectedId:null');
@@ -313,10 +320,9 @@ export function useNoteBlockData(options: {
     previousDocumentIdRef.current = selectedId;
 
     const documentId = selectedId;
-    useNoteBlockStore.getState().setActiveDocumentId(documentId);
     // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
     // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
-    useNoteBlockStore.getState().replaceBlocks([]);
+    replaceNoteDocumentStoreView(documentId, []);
     void ensureNoteLocalCacheVersion().catch((e) => {
       devLogger.warn('[Note] ensureNoteLocalCacheVersion failed', e);
     });

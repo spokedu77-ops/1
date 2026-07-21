@@ -78,6 +78,46 @@ function commitBlocksToStore(blocks: NoteBlock[], command: NoteCommand): void {
   store.syncBlocksStructure(blocks);
 }
 
+export function dispatchNoteCommandToStore(
+  documentId: string,
+  command: NoteCommand,
+  coordinator: NoteSyncCoordinator | null = null,
+): NoteBlock[] {
+  const store = useNoteBlockStore.getState();
+  const previous = store.getBlocksArray();
+  const ctx = buildCommandContext(documentId, coordinator);
+  const { blocks } = applyNoteCommand(previous, command, ctx);
+  if (
+    command.type === 'replaceBlocks'
+    || command.type === 'applyPatches'
+  ) {
+    markNoteLocalSave(documentId);
+    coordinator?.markTopologyIntent();
+  }
+  commitBlocksToStore(blocks, command);
+  return useNoteBlockStore.getState().getBlocksArray();
+}
+
+export function replaceNoteDocumentStoreView(
+  documentId: string | null,
+  blocks: NoteBlock[],
+): void {
+  const store = useNoteBlockStore.getState();
+  store.setActiveDocumentId(documentId);
+  store.replaceBlocks(blocks);
+}
+
+export function setActiveNoteDocumentStoreView(documentId: string | null): void {
+  useNoteBlockStore.getState().setActiveDocumentId(documentId);
+}
+
+export function patchNoteBlockStoreContent(
+  blockId: string,
+  content: Record<string, unknown>,
+): void {
+  useNoteBlockStore.getState().patchContent(blockId, content);
+}
+
 function blocksForDocument(blocks: NoteBlock[], documentId: string): NoteBlock[] {
   return blocks.filter((block) => block.document_id === documentId);
 }
@@ -175,20 +215,7 @@ export class NoteDocumentPipeline {
     ) {
       return useNoteBlockStore.getState().getBlocksArray();
     }
-    const store = useNoteBlockStore.getState();
-    const previous = store.getBlocksArray();
-    const ctx = buildCommandContext(this.documentId, this.coordinator);
-    const { blocks } = applyNoteCommand(previous, command, ctx);
-    if (
-      command.type === 'replaceBlocks'
-      || command.type === 'applyPatches'
-    ) {
-      markNoteLocalSave(this.documentId);
-      this.coordinator?.markTopologyIntent();
-    }
-    // Project exclude는 store write SSOT (hydrate/replace/sync) — dispatch에서 이중 필터하지 않음
-    commitBlocksToStore(blocks, command);
-    const next = useNoteBlockStore.getState().getBlocksArray();
+    const next = dispatchNoteCommandToStore(this.documentId, command, this.coordinator);
     this.coordinator?.setBlocks(next);
     return next;
   }

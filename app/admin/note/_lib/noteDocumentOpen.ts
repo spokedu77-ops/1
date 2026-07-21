@@ -3,6 +3,7 @@
 import { dedupeNoteBlocksById } from '@/app/lib/note/noteBlockTree';
 import { prepareLoadedNoteBlocks } from '../_components/noteBulletInput';
 import { useNoteBlockStore, selectDocumentBlocks } from '../_store/noteBlockStore';
+import { setActiveNoteDocumentStoreView } from './noteDocumentPipeline';
 import { noteBlocksLoadPath } from './noteBlocksLoad';
 import { traceApiEgress } from './noteFlickerTrace';
 import {
@@ -106,7 +107,7 @@ export async function applyOpenServerSnapshot(
   const normalized = dedupeNoteBlocksById(prepared);
   const serverForDoc = normalized.filter((block) => block.document_id === documentId);
 
-  useNoteBlockStore.getState().setActiveDocumentId(documentId);
+  setActiveNoteDocumentStoreView(documentId);
 
   const localBeforeSync = readLocalBlocksForOpen(documentId);
   if (shouldKeepLocalOverEmptyServer(localBeforeSync, serverForDoc, documentId)) {

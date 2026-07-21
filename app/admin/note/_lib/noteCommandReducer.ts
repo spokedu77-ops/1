@@ -273,7 +273,13 @@ export function applyNoteCommand(
     return { blocks: next, structural: true };
   }
   case 'mergeSnapshots': {
-    let next = normalizeCommandBlocks(mergeSnapshotPatches(docBlocks, command.snapshots), ctx);
+    let incoming = normalizeCommandBlocks(mergeSnapshotPatches(docBlocks, command.snapshots), ctx);
+    incoming = sortBlocksForVisualOrder(preserveExistingLocalPositions(docBlocks, incoming));
+    let next = mergeReconciledBlocks(
+      docBlocks,
+      incoming,
+      { structureAuthority: resolveStructureAuthority(docBlocks, incoming, ctx) },
+    );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
     return { blocks: next, structural: true };

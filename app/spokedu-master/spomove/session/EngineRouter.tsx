@@ -9,6 +9,7 @@ import {
 } from '@/app/admin/spomove/training/_player/lib/trainingResultSummary';
 import { normalizeColorTrackerRounds } from '@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining';
 import { normalizeNumberCartRounds } from '@/app/admin/spomove/training/_player/components/NumberCartReactionTraining';
+import { resolveReactTrainUiLevel } from '@/app/admin/spomove/training/_player/constants';
 import type { SpomoveColorThemeId } from '@/app/admin/spomove/training/_player/lib/spomoveVariantThemeConfig';
 import type { OfficialSpomoveEngineMode } from '../officialSpomovePresets';
 
@@ -57,6 +58,12 @@ const NumberCartReactionTraining = lazy(() =>
 const ColorTrackerReactionTraining = lazy(() =>
   import('@/app/admin/spomove/training/_player/components/ColorTrackerReactionTraining').then((m) => ({
     default: m.ColorTrackerReactionTraining,
+  })),
+);
+
+const GoalkeeperReactionTraining = lazy(() =>
+  import('@/app/admin/spomove/training/_player/components/GoalkeeperReactionTraining').then((m) => ({
+    default: m.GoalkeeperReactionTraining,
   })),
 );
 
@@ -216,11 +223,30 @@ export function EngineRouter({
   }
 
   if (mode === 'reactTrain') {
+    const resolved = resolveReactTrainUiLevel(level);
+    const engineLevel = resolved.engineLevel;
     const reactSpeedLevel = mapReactSpeedLevel(speedSec ?? 3);
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
+    const effectiveMoleLook = moleLookMode ?? resolved.moleLookMode ?? 'classic';
+    const effectiveCamouflage = camouflagePlacement ?? resolved.camouflagePlacement ?? 'center';
+    const effectiveNumberCartTier = numberCartTier ?? resolved.numberCartTier ?? 2;
+    const effectiveColorTrackerTier = colorTrackerTier ?? resolved.colorTrackerTier ?? 2;
 
-    if (level === 1) {
+    if (engineLevel === 1) {
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <RushReactionTraining
+            durationSec={dur}
+            speedLevel={reactSpeedLevel}
+            speedSec={sp}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    if (engineLevel === 2) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <VisualReactionTraining
@@ -234,7 +260,7 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    if (level === 2) {
+    if (engineLevel === 3) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <VisualReactionTraining
@@ -247,7 +273,7 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    if (level === 3) {
+    if (engineLevel === 4) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <BeatWaveReactionTraining
@@ -260,48 +286,35 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    if (level === 4) {
+    if (engineLevel === 5) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <CamouflageReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
-            placementMode={camouflagePlacement ?? 'center'}
+            placementMode={effectiveCamouflage}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>
       );
     }
-    if (level === 6) {
-      return (
-        <Suspense fallback={<LoadingOverlay />}>
-          <RushReactionTraining
-            durationSec={dur}
-            speedLevel={reactSpeedLevel}
-            speedSec={sp}
-            onExit={onExit}
-            onComplete={handleReactTrainComplete}
-          />
-        </Suspense>
-      );
-    }
-    if (level === 7) {
+    if (engineLevel === 6) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <RobloxMoleReactionTraining
             durationSec={dur}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
-            lookMode={moleLookMode ?? 'classic'}
+            lookMode={effectiveMoleLook}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>
       );
     }
-    if (level === 8) {
+    if (engineLevel === 7) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <WormholeReactionTraining
@@ -314,27 +327,53 @@ export function EngineRouter({
         </Suspense>
       );
     }
-    if (level === 9) {
+    if (engineLevel === 8) {
       return (
         <Suspense fallback={<LoadingOverlay />}>
           <NumberCartReactionTraining
             targetRounds={normalizeNumberCartRounds(rounds ?? 5)}
             speedLevel={reactSpeedLevel}
             speedSec={sp}
-            tier={numberCartTier ?? 2}
+            tier={effectiveNumberCartTier}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />
         </Suspense>
       );
     }
-    // level 10+
+    if (engineLevel === 9) {
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <ColorTrackerReactionTraining
+            targetRounds={normalizeColorTrackerRounds(rounds ?? 20)}
+            tier={effectiveColorTrackerTier}
+            dualPanel={colorTrackerDualPanel ?? false}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    if (engineLevel === 10) {
+      return (
+        <Suspense fallback={<LoadingOverlay />}>
+          <GoalkeeperReactionTraining
+            durationSec={Math.max(dur, 120)}
+            speedLevel={reactSpeedLevel}
+            onExit={onExit}
+            onComplete={handleReactTrainComplete}
+          />
+        </Suspense>
+      );
+    }
+    // 알 수 없는 reactTrain level → FLOW(2) 폴백
     return (
       <Suspense fallback={<LoadingOverlay />}>
-        <ColorTrackerReactionTraining
-          targetRounds={normalizeColorTrackerRounds(rounds ?? 20)}
-          tier={colorTrackerTier ?? 2}
-          dualPanel={colorTrackerDualPanel ?? false}
+        <VisualReactionTraining
+          variant="flow"
+          concurrent={1}
+          durationSec={dur}
+          speedSec={sp}
           onExit={onExit}
           onComplete={handleReactTrainComplete}
         />

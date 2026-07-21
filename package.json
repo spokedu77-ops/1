@@ -17,7 +17,9 @@
     "verify:admin-note": "vitest run app/admin/note app/lib/note && node scripts/admin-note-ops-materialization-integrity.mjs && tsc --noEmit --pretty false",
     "test:spomove": "vitest run app/admin/spomove/training/_player/spomove.test.ts",
     "test:spomove-core": "vitest run app/spokedu-master/spomove/movements/movementInvariant.test.ts app/spokedu-master/spomove/movements/movementResolve.test.ts",
-    "test:spomove-phase0": "vitest run app/spokedu-master/spomove/session/sessionEntryMode.test.ts app/spokedu-master/spomove/session/startMovementSummary.test.ts app/spokedu-master/spomove/publicSessionHref.test.ts app/spokedu-master/spomove/previewGate.contract.test.ts app/spokedu-master/spomove/spomoveFlow.contract.test.ts app/spokedu-master/spomove/movements/movementConfigurator.contract.test.ts",
+    "test:spomove-phase0": "vitest run app/spokedu-master/spomove/session/sessionEntryMode.test.ts app/spokedu-master/spomove/session/startMovementSummary.test.ts app/spokedu-master/spomove/publicSessionHref.test.ts app/spokedu-master/spomove/previewGate.contract.test.ts app/spokedu-master/spomove/spomoveFlow.contract.test.ts app/spokedu-master/spomove/movements/movementConfigurator.contract.test.ts app/spokedu-master/spomove/movements/movementPresentation.test.ts",
+    "audit:spomove-family": "tsx scripts/generate-spomove-family-audit.ts",
+    "verify:spomove-family-audit": "tsx scripts/verify-spomove-family-audit.ts",
     "test:spomove-audit": "vitest run app/spokedu-master/spomove/movements/movementAudit.test.ts",
     "lint:spomove": "eslint app/admin/spomove app/api/spokedu-master --max-warnings 0",
     "qa:admin-note": "node scripts/admin-note-foundation-qa.mjs",
@@ -116,6 +118,7 @@
     "pg": "^8.22.0",
     "playwright": "^1.61.1",
     "tailwindcss": "^4",
+    "tsx": "^4.19.4",
     "typescript": "^5",
     "vitest": "^4.1.2"
   }

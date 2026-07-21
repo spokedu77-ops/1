@@ -17,6 +17,20 @@ function block(id: string, overrides: Partial<NoteBlock> = {}): NoteBlock {
   };
 }
 
+function snapshot(item: NoteBlock) {
+  return {
+    id: item.id,
+    document_id: item.document_id,
+    parent_block_id: item.parent_block_id ?? null,
+    type: item.type,
+    order_index: item.order_index,
+    content: item.content as Record<string, unknown>,
+    version: item.version ?? 1,
+    updated_at: item.updated_at ?? '2026-07-09T00:00:00Z',
+    deleted_at: item.deleted_at ?? null,
+  };
+}
+
 const ctx = {
   documentId: 'doc-1',
   activeBlockId: null,
@@ -48,6 +62,62 @@ describe('applyNoteCommand', () => {
       ctx,
     );
     expect(blocks.map((b) => b.id).sort()).toEqual(['local-only', 'server']);
+  });
+
+  it('mergeSnapshots preserves local checklist order from stale snapshot', () => {
+    const local = [
+      block('todo-c', { type: 'todo', order_index: 0, content: { text: 'C', checked: false } }),
+      block('todo-a', { type: 'todo', order_index: 1, content: { text: 'A', checked: false } }),
+      block('todo-b', { type: 'todo', order_index: 2, content: { text: 'B', checked: false } }),
+    ];
+
+    const { blocks } = applyNoteCommand(
+      local,
+      {
+        type: 'mergeSnapshots',
+        snapshots: [
+          snapshot(block('todo-a', { type: 'todo', order_index: 0, content: { text: 'A server', checked: false }, version: 2 })),
+          snapshot(block('todo-b', { type: 'todo', order_index: 1, content: { text: 'B server', checked: false }, version: 2 })),
+          snapshot(block('todo-c', { type: 'todo', order_index: 2, content: { text: 'C server', checked: false }, version: 2 })),
+        ],
+      },
+      { ...ctx, hasUnpublishedTopology: true },
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['todo-c', 'todo-a', 'todo-b']);
+    expect(blocks.map((item) => item.order_index)).toEqual([0, 1, 2]);
+    expect(blocks.find((item) => item.id === 'todo-a')?.content).toMatchObject({ text: 'A' });
+  });
+
+  it('syncSnapshot keeps a just-created child-page todo missing from stale server snapshot', () => {
+    const page = block('page', { type: 'page', order_index: 0, content: { title: 'Center', page_document_id: 'child-doc' } });
+    const first = block('first', {
+      type: 'todo',
+      parent_block_id: 'page',
+      order_index: 0,
+      content: { text: 'first checklist', checked: false },
+    });
+    const created = block('new-local', {
+      type: 'todo',
+      parent_block_id: 'page',
+      order_index: 1,
+      created_at: new Date().toISOString(),
+      content: { text: '', html: '<p></p>', checked: false },
+    });
+    const local = [page, first, created];
+    const staleIncoming = [page, first];
+
+    const { blocks } = applyNoteCommand(
+      local,
+      { type: 'syncSnapshot', blocks: staleIncoming },
+      { ...ctx, activeBlockId: 'new-local', hasUnpublishedTopology: true },
+    );
+
+    expect(blocks.find((item) => item.id === 'new-local')).toMatchObject({
+      type: 'todo',
+      parent_block_id: 'page',
+      order_index: 1,
+    });
   });
 
   it('patchContent updates a single block', () => {

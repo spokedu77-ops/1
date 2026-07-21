@@ -126,3 +126,21 @@ export function limbMarkersForRule(limbRule: LimbRule): {
   if (limbRule === 'oppositeSide') return { left: 'R', right: 'L' };
   return { left: null, right: null };
 }
+
+/** Phase 0 Settings compact — 선택지 차이를 전달하는 한 줄 */
+export function compactMovementInstruction(pick: MovementPick): string {
+  if (pick.baseMovement === 'footTap' && pick.limbRule === 'sameSide') {
+    return '왼쪽 색은 왼발, 오른쪽 색은 오른발로 터치합니다.';
+  }
+  if (pick.baseMovement === 'footTap' && pick.limbRule === 'oppositeSide') {
+    return '왼쪽 색은 오른발, 오른쪽 색은 왼발로 터치합니다.';
+  }
+  if (pick.baseMovement === 'handTouch' && pick.limbRule === 'sameSide') {
+    return '왼쪽 색은 왼손, 오른쪽 색은 오른손으로 터치합니다.';
+  }
+  if (pick.baseMovement === 'handTouch' && pick.limbRule === 'oppositeSide') {
+    return '왼쪽 색은 오른손, 오른쪽 색은 왼손으로 터치합니다.';
+  }
+  return MOVEMENT_REGISTRY[pick.baseMovement].instruction;
+}
+

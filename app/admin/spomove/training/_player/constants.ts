@@ -91,15 +91,17 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
-      { id: 6, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
-      { id: 1, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
-      { id: 2, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
-      { id: 3, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 드러날 때 해당 색을 찾습니다. 난이도(1/2)는 아래에서 고릅니다.' },
-      { id: 7, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
-      { id: 8, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
-      { id: 9, name: '숫자 기차', enName: 'Number Cart', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
-      { id: 10, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
+      // 화면 N번 === engine level id (1~10)
+      { id: 1, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
+      { id: 2, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
+      { id: 3, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
+      { id: 4, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
+      { id: 5, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 드러날 때 해당 색을 찾습니다. 난이도(1/2)는 아래에서 고릅니다.' },
+      { id: 6, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
+      { id: 7, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
+      { id: 8, name: '숫자 기차', enName: 'Number Cart', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
+      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
+      { id: 10, name: '골키퍼 모드', enName: 'Goalkeeper', desc: '4코너로 날아오는 슛·커브·더블 블록을 보고 상단은 손, 하단은 발로 막습니다.' },
     ],
   },
   basic: {
@@ -245,41 +247,62 @@ export type ReactTrainUiLevelDefaults = {
 };
 
 /**
+ * 구(비연속) reactTrain level → 신(화면=level 1~10) 체계.
+ * 1~10은 신 SSOT이므로 그대로 두고, 구 전용 id만 보정한다.
+ *
+ * 구 체계: 6 Rush · 1 FLOW · 2 FLASH · 3 Beat · 4 Camouflage · 7 Mole · 8 Wormhole · 9 Number · 10 Color · 11 Goalkeeper
+ * 신 체계: 1 Rush · 2 FLOW · 3 FLASH · 4 Beat · 5 Camouflage · 6 Mole · 7 Wormhole · 8 Number · 9 Color · 10 Goalkeeper
+ */
+const LEGACY_REACT_TRAIN_LEVEL_REMAP: Record<number, number> = {
+  11: 10, // 구 골키퍼
+  41: 5, // 구 매직 아이 L2
+  71: 6, // 구 두더지 L2
+  91: 8,
+  92: 8,
+  93: 8,
+  101: 9,
+  102: 9,
+  103: 9,
+};
+
+/**
  * reactTrain UI level id → engine level + tier/mode defaults.
- * 카탈로그는 기본(4/7/9/10)만 노출하고, 난이도는 설정 버튼으로 고른다.
- * 구 카탈로그 id(41/71/91~93/101~103)는 딥링크·복귀용으로만 매핑한다.
+ * 카탈로그는 1~10만 노출하고, 난이도는 설정 버튼으로 고른다.
+ * 구 카탈로그 id(11/41/71/91~93/101~103)는 딥링크·복귀용으로만 매핑한다.
  */
 export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaults {
   switch (level) {
-    case 5:
-      // 삭제된 Sweep/Pulse 자리 — FLOW로 폴백
-      return { engineLevel: 1 };
     case 41:
-      return { engineLevel: 4, camouflagePlacement: 'variant' };
-    case 4:
-      return { engineLevel: 4, camouflagePlacement: 'center' };
+      return { engineLevel: 5, camouflagePlacement: 'variant' };
+    case 5:
+      return { engineLevel: 5, camouflagePlacement: 'center' };
     case 71:
-      return { engineLevel: 7, moleLookMode: 'variant' };
-    case 7:
-      return { engineLevel: 7, moleLookMode: 'classic' };
+      return { engineLevel: 6, moleLookMode: 'variant' };
+    case 6:
+      return { engineLevel: 6, moleLookMode: 'classic' };
     case 91:
-      return { engineLevel: 9, numberCartTier: 1 };
+      return { engineLevel: 8, numberCartTier: 1 };
     case 92:
-      return { engineLevel: 9, numberCartTier: 2 };
+      return { engineLevel: 8, numberCartTier: 2 };
     case 93:
-      return { engineLevel: 9, numberCartTier: 3 };
-    case 9:
-      return { engineLevel: 9, numberCartTier: 1 };
+      return { engineLevel: 8, numberCartTier: 3 };
+    case 8:
+      return { engineLevel: 8, numberCartTier: 1 };
     case 101:
-      return { engineLevel: 10, colorTrackerTier: 1 };
+      return { engineLevel: 9, colorTrackerTier: 1 };
     case 102:
-      return { engineLevel: 10, colorTrackerTier: 2 };
+      return { engineLevel: 9, colorTrackerTier: 2 };
     case 103:
-      return { engineLevel: 10, colorTrackerTier: 3 };
-    case 10:
-      return { engineLevel: 10, colorTrackerTier: 1 };
-    default:
+      return { engineLevel: 9, colorTrackerTier: 3 };
+    case 9:
+      return { engineLevel: 9, colorTrackerTier: 1 };
+    case 11:
+      return { engineLevel: 10 };
+    default: {
+      const remapped = LEGACY_REACT_TRAIN_LEVEL_REMAP[level];
+      if (remapped != null) return { engineLevel: remapped };
       return { engineLevel: level };
+    }
   }
 }
 
@@ -397,7 +420,11 @@ export function isKnownTrainingLevel(mode: string, level: number): boolean {
     return isColorSequenceLevel(level) || isColorNumberLevel(level) || level === 6;
   }
   if (mode === 'reactTrain') {
-    return level >= 1 && level <= 10;
+    if (level >= 1 && level <= 10) return true;
+    // 구 딥링크·티어 전용 id
+    return level === 11 || level === 41 || level === 71
+      || level === 91 || level === 92 || level === 93
+      || level === 101 || level === 102 || level === 103;
   }
   return false;
 }

@@ -94,8 +94,8 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
       basic('w2-rc-full-animal', '반응인지 - 전면색상: 동물', 3, 2, 'animal'),
       basic('w2-rc-full-fruit', '반응인지 - 전면색상: 과일', 3, 2, 'fruit'),
       basic('w2-rc-full-food', '반응인지 - 전면색상: 음식', 3, 2, 'food'),
-      reactTrain('w2-vr-balloon', '시지각 반응 - 풍선 터뜨리기 1개', 2, 2, 30),
-      reactTrain('w2-vr-bricks', '시지각 반응 - 떨어지는 벽돌 2개', 1, 2.5, 60, {
+      reactTrain('w2-vr-balloon', '시지각 반응 - 풍선 터뜨리기 1개', 3, 2, 30),
+      reactTrain('w2-vr-bricks', '시지각 반응 - 떨어지는 벽돌 2개', 2, 2.5, 60, {
         reactTrainConcurrent: 2,
       }),
     ],
@@ -119,7 +119,7 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
       basic('w4-rc-full-vehicle', '반응인지 - 전면색상: 탈 것', 3, 2, 'vehicle'),
       basic('w4-rc-full-nature', '반응인지 - 전면색상: 자연물', 3, 2, 'nature'),
       basic('w4-rc-full-emotion', '반응인지 - 전면색상: 감정', 3, 2, 'emotion'),
-      reactTrain('w4-vr-mole', '시지각 반응 - 두더지 잡기', 7, 2, 30),
+      reactTrain('w4-vr-mole', '시지각 반응 - 두더지 잡기', 6, 2, 30),
     ],
   },
   {
@@ -150,7 +150,7 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
         targetReps: 15,
         bodyLabelMode: 'easy',
       }),
-      reactTrain('w6-vr-camouflage-balance', '시지각 반응 - 카모플라쥬: 밸런스 무빙', 4, 3, 30),
+      reactTrain('w6-vr-camouflage-balance', '시지각 반응 - 카모플라쥬: 밸런스 무빙', 5, 3, 30),
     ],
   },
   {

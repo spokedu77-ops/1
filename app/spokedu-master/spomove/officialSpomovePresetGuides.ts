@@ -143,8 +143,12 @@ function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingL
   if (preset.engine.mode === 'simon') return preset.engine.level <= 1 ? 'normal' : 'hard';
 
   if (preset.engine.mode === 'reactTrain') {
-    if ((preset.engine.reactTrainConcurrent ?? 1) >= 3 || preset.engine.level >= 5) return 'hard';
-    if ((preset.engine.reactTrainConcurrent ?? 1) >= 2 || preset.engine.level >= 3) return 'normal';
+    // 화면=level 1~10: Rush·Mole~Goalkeeper는 hard, Beat/Camouflage는 normal, FLOW/FLASH는 easy
+    // (동시 벽돌 3개는 기존과 같이 hard)
+    const level = preset.engine.level;
+    const concurrent = preset.engine.reactTrainConcurrent ?? 1;
+    if (concurrent >= 3 || level === 1 || level >= 6) return 'hard';
+    if (concurrent >= 2 || level === 4 || level === 5) return 'normal';
     return 'easy';
   }
 

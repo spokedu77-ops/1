@@ -2,8 +2,11 @@
 
 import { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import {
+  dispatchNoteCommandToStore,
   disposeNoteDocumentPipeline,
   getNoteDocumentPipeline,
+  patchNoteBlockStoreContent,
+  replaceNoteDocumentStoreView,
   unmapNoteDocumentPipeline,
   type NoteDocumentPipeline,
 } from '../_lib/noteDocumentPipeline';
@@ -136,20 +139,28 @@ export function useNoteDocumentEngine(options: {
   const replaceBlocks = useCallback((blocks: NoteBlock[]) => {
     const pipeline = getLivePipeline();
     if (!pipeline) {
-      useNoteBlockStore.getState().replaceBlocks(blocks);
+      if (documentId) {
+        dispatchNoteCommandToStore(documentId, { type: 'replaceBlocks', blocks });
+      } else {
+        replaceNoteDocumentStoreView(null, blocks);
+      }
       return;
     }
     pipeline.dispatch({ type: 'replaceBlocks', blocks });
-  }, [getLivePipeline]);
+  }, [documentId, getLivePipeline]);
 
   const updateContent = useCallback((blockId: string, content: Record<string, unknown>) => {
     const pipeline = getLivePipeline();
     if (!pipeline) {
-      useNoteBlockStore.getState().patchContent(blockId, content);
+      if (documentId) {
+        dispatchNoteCommandToStore(documentId, { type: 'patchContent', blockId, content });
+      } else {
+        patchNoteBlockStoreContent(blockId, content);
+      }
       return;
     }
     pipeline.dispatch({ type: 'patchContent', blockId, content });
-  }, [getLivePipeline]);
+  }, [documentId, getLivePipeline]);
 
   const scheduleContentPatch = useCallback((
     blockId: string,
@@ -158,11 +169,15 @@ export function useNoteDocumentEngine(options: {
   ) => {
     const pipeline = getLivePipeline();
     if (!pipeline) {
-      useNoteBlockStore.getState().patchContent(blockId, content);
+      if (documentId) {
+        dispatchNoteCommandToStore(documentId, { type: 'patchContent', blockId, content });
+      } else {
+        patchNoteBlockStoreContent(blockId, content);
+      }
       return;
     }
     pipeline.scheduleContentPatch(blockId, content, baseContent);
-  }, [getLivePipeline]);
+  }, [documentId, getLivePipeline]);
 
   const clearContentPatch = useCallback((blockId: string) => {
     const pipeline = getLivePipeline();
@@ -195,12 +210,20 @@ export function useNoteDocumentEngine(options: {
     const pipeline = getLivePipeline();
     if (!pipeline) {
       if (!options?.skipDispatch) {
-        useNoteBlockStore.getState().hydrate(initialBlocks);
+        if (documentId) {
+          dispatchNoteCommandToStore(documentId, {
+            type: 'hydrate',
+            blocks: initialBlocks,
+            ...(options?.emptyConfirmed ? { emptyConfirmed: true } : {}),
+          });
+        } else {
+          replaceNoteDocumentStoreView(null, initialBlocks);
+        }
       }
       return;
     }
     await pipeline.syncWithServer(initialBlocks, options);
-  }, [getLivePipeline]);
+  }, [documentId, getLivePipeline]);
 
   const scheduleOplogPull = useCallback(() => {
     getLivePipeline()?.schedulePull();

@@ -5,7 +5,7 @@ export function officialPresetToTrainingResultConfig(preset: OfficialSpomovePres
   const { mode, level } = preset.engine;
 
   if (mode === 'reactTrain') {
-    if (level === 9 || level === 10) {
+    if (level === 8 || level === 9) {
       return {
         mode,
         level,

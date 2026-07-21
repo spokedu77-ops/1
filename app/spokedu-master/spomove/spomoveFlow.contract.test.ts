@@ -102,6 +102,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('SettingsBriefing');
     expect(session).not.toContain('자세히 보기');
     expect(session).not.toContain('OfficialEngineBriefing');
+    expect(session).toContain('reopenStartConfirmation');
+    expect(session).not.toContain("event.code === 'Space' && state === 'done'");
   });
 
   it('prevents duplicate session starts and records only real starts', () => {
@@ -126,7 +128,8 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('buildSpomoveRecordHref');
     expect(session).not.toContain('/spokedu-master/class-record?program=${officialPreset.id}');
     expect(session).toContain('/spokedu-master/activity');
-    expect(session).toContain('같은 프로그램 다시 실행');
+    expect(session).toContain('같은 설정으로 시작');
+    expect(session).toContain('reopenStartConfirmation');
     expect(session).toContain('다른 프로그램');
   });
 

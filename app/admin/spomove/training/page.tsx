@@ -118,7 +118,11 @@ function levelLabel(modeId: string, levelId: number): string {
       ? catalogBasicUiLevel(levelId)
       : modeId === 'spatial'
         ? catalogSpatialUiLevel(levelId)
-        : levelId;
+        : modeId === 'reactTrain'
+          ? reactTrainEngineLevelForUi(levelId)
+          : levelId;
+  // 시지각 반응: 화면 N번 === engine level id
+  if (modeId === 'reactTrain') return `${catalogId}번`;
   const idx = m?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
   if (idx >= 0) return `${idx + 1}번`;
   return `${levelId}번`;
@@ -200,6 +204,7 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Color Tracker L1': '흰 공 찾기',
   'Color Tracker L2': '흰 공 찾기',
   'Color Tracker L3': '흰 공 찾기',
+  Goalkeeper: '골키퍼 모드',
 };
 
 function levelNameKo(modeId: string, levelId: number): string {
@@ -261,15 +266,15 @@ type LaunchSettings = {
   flowDuration: number;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 숫자 기차(8번 표시, engine level 9) 전용: L1/L2/L3 */
+  /** 시지각반응(reactTrain) 숫자 기차(8번) 전용: L1/L2/L3 */
   numberCartTier: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: L1/L2/L3 */
+  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번) 전용: L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번 표시, engine level 10) 전용: 2패널 양손 모드 */
+  /** 시지각반응(reactTrain) 흰 공을 찾아라(9번) 전용: 2패널 양손 모드 */
   colorTrackerDualPanel: boolean;
-  /** 시지각반응(reactTrain) 두더지 잡기(6번 표시, engine level 7) 전용: 기존(눈·코) / 변형(모자·선글라스 등) */
+  /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 기존(눈·코) / 변형(모자·선글라스 등) */
   moleLookMode: 'classic' | 'variant';
-  /** 시지각반응(reactTrain) 매직 아이(5번 표시, engine level 4) 전용: 기존(중앙) / 변형(Simon식 극단 순환) */
+  /** 시지각반응(reactTrain) 매직 아이(5번) 전용: 기존(중앙) / 변형(Simon식 극단 순환) */
   camouflagePlacement: 'center' | 'variant';
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
@@ -900,18 +905,25 @@ function SettingsScreen({
                             colorTrackerTier: mapped.colorTrackerTier ?? next.colorTrackerTier,
                           };
                           const engineLevel = mapped.engineLevel;
-                          if (engineLevel === 9) {
+                          if (engineLevel === 8) {
                             next = {
                               ...next,
                               timeMode: 'reps',
                               targetReps: [7, 10, 15, 25].includes(next.targetReps) ? next.targetReps : 10,
                             };
                           }
-                          if (engineLevel === 10) {
+                          if (engineLevel === 9) {
                             next = {
                               ...next,
                               timeMode: 'reps',
                               targetReps: [2, 3, 5, 10].includes(next.targetReps) ? next.targetReps : 5,
+                            };
+                          }
+                          if (engineLevel === 10) {
+                            next = {
+                              ...next,
+                              timeMode: 'time',
+                              duration: [30, 60, 120, 180].includes(next.duration) ? next.duration : 120,
                             };
                           }
                         }
@@ -1053,7 +1065,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {isReactTrain && levelId === 1 ? (
+          {isReactTrain && levelId === 2 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>동시 자극 수</label>
@@ -1095,7 +1107,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 4 ? (
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 5 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
@@ -1139,7 +1151,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 7 ? (
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 6 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
@@ -1183,8 +1195,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 숫자 기차(8번 표시, engine level 9) 전용: 난이도 */}
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
+          {/* 시지각반응 숫자 기차(8번) 전용: 난이도 */}
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
@@ -1229,8 +1241,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 전용: 난이도 */}
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? (
+          {/* 시지각반응 흰 공을 찾아라(9번) 전용: 난이도 */}
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
@@ -1275,8 +1287,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 흰 공을 찾아라(9번 표시, engine level 10) 전용: 패널 모드 */}
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? (
+          {/* 시지각반응 흰 공을 찾아라(9번) 전용: 패널 모드 */}
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>패널 모드</label>
@@ -1320,8 +1332,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·흰 공 9번·순차기억 1·2번은 내부 타이밍) */}
-          {!isFlowOrChallenge && !(isReactTrain && reactTrainEngineLevelForUi(levelId) === 10) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {/* 속도 (DIVE·흰 공 9번·골키퍼 10번·순차기억 1·2번은 내부 타이밍) */}
+          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 10)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
@@ -1682,11 +1694,11 @@ function SettingsScreen({
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
-                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 10) ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
+                  {isReactTrain && (reactTrainEngineLevelForUi(levelId) === 8 || reactTrainEngineLevelForUi(levelId) === 9) ? '라운드' : isReactTrain ? '훈련 시간' : isSpatial ? '진행' : '분량'}
                 </label>
               </div>
 
-              {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
+              {isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[7, 10, 15, 25].map((r) => {
                     const active = launch.targetReps === r;
@@ -1713,7 +1725,7 @@ function SettingsScreen({
                     );
                   })}
                 </div>
-              ) : isReactTrain && levelId === 10 ? (
+              ) : isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {[2, 3, 5, 10].map((r) => {
                     const active = launch.targetReps === r;

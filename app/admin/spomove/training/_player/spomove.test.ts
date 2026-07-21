@@ -734,8 +734,36 @@ describe('training result summary', () => {
 
   test('describeSessionVolume prefers rounds for number cart and color tracker', async () => {
     const { describeSessionVolume } = await import('./lib/trainingResultSummary');
-    expect(describeSessionVolume({ mode: 'reactTrain', level: 9, timeMode: 'time', duration: 60, targetReps: 7 })).toBe('7라운드');
+    expect(describeSessionVolume({ mode: 'reactTrain', level: 8, timeMode: 'time', duration: 60, targetReps: 7 })).toBe('7라운드');
     expect(describeSessionVolume({ mode: 'basic', level: 2, timeMode: 'reps', duration: 60, targetReps: 20 })).toBe('20회');
+  });
+
+  test('resolveReactTrainUiLevel: 화면=level 1~10 SSOT + 구 id 폴백', async () => {
+    const { resolveReactTrainUiLevel, MODES } = await import('./constants');
+    const ids = MODES.reactTrain.levels.map((lv) => lv.id);
+    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
+      'Rush',
+      'FLOW',
+      'FLASH',
+      'Beat Wave',
+      'Camouflage',
+      'Mole',
+      'Wormhole',
+      'Number Cart',
+      'Color Tracker',
+      'Goalkeeper',
+    ]);
+    // 신 카탈로그 passthrough
+    expect(resolveReactTrainUiLevel(1).engineLevel).toBe(1);
+    expect(resolveReactTrainUiLevel(9).engineLevel).toBe(9);
+    expect(resolveReactTrainUiLevel(10).engineLevel).toBe(10);
+    // 구 전용 id
+    expect(resolveReactTrainUiLevel(11).engineLevel).toBe(10);
+    expect(resolveReactTrainUiLevel(41)).toEqual({ engineLevel: 5, camouflagePlacement: 'variant' });
+    expect(resolveReactTrainUiLevel(71)).toEqual({ engineLevel: 6, moleLookMode: 'variant' });
+    expect(resolveReactTrainUiLevel(91)).toEqual({ engineLevel: 8, numberCartTier: 1 });
+    expect(resolveReactTrainUiLevel(103)).toEqual({ engineLevel: 9, colorTrackerTier: 3 });
   });
 
   test('resolveTrainingResultRichContent builds positive copy and self-check items', async () => {
@@ -832,9 +860,9 @@ describe('camouflage placement', () => {
 });
 
 describe('camouflage shapes', () => {
-  test('offers twelve geometric silhouettes', async () => {
+  test('offers distinctive geometric silhouettes only', async () => {
     const { CAMO_SHAPE_BUILDERS } = await import('./lib/camouflageShapes');
-    expect(CAMO_SHAPE_BUILDERS).toHaveLength(12);
+    expect(CAMO_SHAPE_BUILDERS).toHaveLength(6);
     for (const builder of CAMO_SHAPE_BUILDERS) {
       expect(builder(400, 300, 120)).toBeTruthy();
     }

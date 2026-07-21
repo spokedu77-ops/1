@@ -89,6 +89,9 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
   'visual-color-tracker': family('visual-color-tracker', 'gameSpecific', {
     recommendedMovement: pick('footTap', 'free'),
   }),
+  'visual-goalkeeper': family('visual-goalkeeper', 'visualSearch', {
+    recommendedMovement: pick('handTouch', 'free'),
+  }),
   'simon-pole': family('simon-pole', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
   }),
@@ -156,6 +159,7 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'visual-reaction-wormhole-41': 'visual-wormhole',
   'visual-reaction-number-cart-l2': 'visual-number-cart',
   'visual-reaction-color-tracker-l2': 'visual-color-tracker',
+  'visual-reaction-goalkeeper-42': 'visual-goalkeeper',
   'simon-pole-shape-06': 'simon-pole',
   'simon-pole-arrows-41': 'simon-pole',
   'simon-mixed-gallery-exp': 'simon-mixed',

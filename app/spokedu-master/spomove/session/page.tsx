@@ -19,6 +19,7 @@ import { lockViewportScroll } from '@/app/admin/spomove/training/_player/lib/loc
 import { officialPresetToTrainingResultConfig } from './sessionResultModel';
 import {
   findOfficialSpomovePreset,
+  publicOfficialPresetSessionHref,
   standardSpomoveDurationSec,
 } from '../officialSpomovePresets';
 import { getSpomovePresetDisplayModel } from '../spomovePresetDisplayModel';
@@ -190,7 +191,7 @@ function SpomoveSessionContent() {
   const launchMode = normalizeMode(searchParams.get('mode'));
   const entryMode = parseSessionEntryMode(searchParams.get('entry'));
   const legacyAutostart = resolveLegacyAutostart({
-    entryMode,
+    entryParam: searchParams.get('entry'),
     autostartParam: searchParams.get('autostart'),
   });
   const requestedBgmPath = searchParams.get('bgm') ?? '';
@@ -607,6 +608,35 @@ function SpomoveSessionContent() {
     router.replace(`/spokedu-master/spomove/session?${params.toString()}`);
   }, [router, searchParams]);
 
+  /** Result 재실행 → Start 확인 화면 (즉시 Engine 금지) */
+  const reopenStartConfirmation = useCallback(() => {
+    if (!officialPreset) return;
+    stopBgm();
+    exitFullscreenAfterSession();
+    startLockedRef.current = false;
+    setSessionResult(null);
+    setState('idle');
+    const href = publicOfficialPresetSessionHref(officialPreset, {
+      entry: 'start',
+      mode: launchMode,
+      movement: movementPick?.baseMovement,
+      limb: movementPick?.limbRule,
+      cueSeconds: effectiveCueSeconds,
+      difficulty: difficultyKind ? difficultyValue : undefined,
+    });
+    router.replace(href);
+  }, [
+    difficultyKind,
+    difficultyValue,
+    effectiveCueSeconds,
+    exitFullscreenAfterSession,
+    launchMode,
+    movementPick,
+    officialPreset,
+    router,
+    stopBgm,
+  ]);
+
   const movementSummaryLine = useMemo(
     () => resolveStartMovementSummary(movementProfile, movementPick),
     [movementPick, movementProfile],
@@ -621,12 +651,6 @@ function SpomoveSessionContent() {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code === 'Space' && state === 'idle' && showBriefing) {
-        if (isInteractiveKeyTarget(event.target)) return;
-        event.preventDefault();
-        beginConfiguredSession();
-        return;
-      }
-      if (event.code === 'Space' && state === 'done') {
         if (isInteractiveKeyTarget(event.target)) return;
         event.preventDefault();
         beginConfiguredSession();
@@ -820,13 +844,13 @@ function SpomoveSessionContent() {
             programTitle={officialPreset.title}
             title={state === 'done' ? '훈련 완료' : '훈련 종료'}
             statusBadge={state === 'done' ? '완료' : '중도 종료'}
-            retryLabel={launchMode === 'mobile' ? '다시 실행' : '같은 프로그램 다시 실행'}
+            retryLabel="같은 설정으로 시작"
             onBack={() => {
               stopBgm();
               exitFullscreenAfterSession();
               router.push('/spokedu-master/spomove');
             }}
-            onRetry={startOfficialSession}
+            onRetry={reopenStartConfirmation}
             sessionSettings={
               resolvedMovement
                 ? {

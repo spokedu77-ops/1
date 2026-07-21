@@ -47,11 +47,25 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     const settingsBriefing = read('app/spokedu-master/spomove/session/SettingsBriefing.tsx');
     expect(session).toContain('parseSessionEntryMode');
     expect(session).toContain('resolveLegacyAutostart');
+    expect(session).toContain('entryParam:');
     expect(session).toContain('StartBriefing');
     expect(session).toContain('SettingsBriefing');
     expect(session).toContain('beginConfiguredSession');
+    expect(session).toContain('reopenStartConfirmation');
     expect(session).toContain('isInteractiveKeyTarget');
+    expect(session).toContain("event.code === 'Space' && state === 'idle' && showBriefing");
+    expect(session).not.toContain("event.code === 'Space' && state === 'done'");
     expect(settingsBriefing).toContain('variant="compact"');
+  });
+
+  it('2c) Hub 가이드 명시 · 잘못된 헤더 문구 없음', () => {
+    expect(hub).toContain('가이드 보기');
+    expect(hub).toContain('data-spm-spomove-card-action="guide"');
+    expect(hub).not.toContain('사전 설정된 공식 조건으로 실행');
+  });
+
+  it('2d) Compact side-rule 안내', () => {
+    expect(configurator).toContain('compactMovementInstruction');
   });
 
   it('3) MQ2~4는 bodyCueBuiltIn — 일반 movement summary 없음', () => {

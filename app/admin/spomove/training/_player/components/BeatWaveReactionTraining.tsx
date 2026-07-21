@@ -132,12 +132,16 @@ export function BeatWaveReactionTraining({ durationSec, speedLevel, speedSec, on
 
   const stopGame = useCallback(() => {
     const g = gRef.current;
-    if (!g) return;
+    if (!g?.running) return;
     g.running = false;
     if (g.raf != null) cancelAnimationFrame(g.raf);
     if (g.timer) clearInterval(g.timer);
     if (audioCtxRef.current) void audioCtxRef.current.suspend();
-    onExitRef.current();
+    onCompleteRef.current({
+      stims: g.stims,
+      maxCombo: g.maxCombo,
+      laneCount: [...g.laneCount] as [number, number, number, number],
+    });
   }, []);
 
   const endGame = useCallback(() => {

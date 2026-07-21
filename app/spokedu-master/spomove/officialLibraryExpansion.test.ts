@@ -98,7 +98,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(byGroup('reaction-cognition')).toHaveLength(40);
 
-    expect(byGroup('visual-reaction')).toHaveLength(17);
+    expect(byGroup('visual-reaction')).toHaveLength(18);
 
     expect(byGroup('simon')).toHaveLength(3);
 
@@ -212,24 +212,26 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   it('시지각 반응 FLOW concurrent 1/2/3 존재', () => {
 
-    expect(vr.some((preset) => preset.engine.level === 1 && (preset.engine.reactTrainConcurrent ?? 1) === 1)).toBe(true);
+    expect(vr.some((preset) => preset.engine.level === 2 && (preset.engine.reactTrainConcurrent ?? 1) === 1)).toBe(true);
 
-    expect(vr.some((preset) => preset.engine.level === 1 && preset.engine.reactTrainConcurrent === 2)).toBe(true);
+    expect(vr.some((preset) => preset.engine.level === 2 && preset.engine.reactTrainConcurrent === 2)).toBe(true);
 
-    expect(vr.some((preset) => preset.engine.level === 1 && preset.engine.reactTrainConcurrent === 3)).toBe(true);
+    expect(vr.some((preset) => preset.engine.level === 2 && preset.engine.reactTrainConcurrent === 3)).toBe(true);
 
   });
 
 
 
   it('숫자 기차·흰 공·두더지·매직 아이는 기본 1개만 카탈로그에 두고 난이도는 세션에서 고른다', () => {
+    expect(vr.filter((preset) => preset.engine.level === 8 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
     expect(vr.filter((preset) => preset.engine.level === 9 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
     expect(vr.filter((preset) => preset.engine.level === 10 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
-    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
-    expect(vr.filter((preset) => preset.engine.level === 4 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
+    expect(vr.filter((preset) => preset.engine.level === 6 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
+    expect(vr.filter((preset) => preset.engine.level === 5 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
 
     expect(findOfficialSpomovePreset('visual-reaction-number-cart-l2')?.engine.numberCartTier).toBe(1);
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.engine.colorTrackerTier).toBe(1);
+    expect(findOfficialSpomovePreset('visual-reaction-goalkeeper-42')?.engine.level).toBe(10);
     expect(findOfficialSpomovePreset('visual-reaction-mole-l1')?.engine.moleLookMode).toBe('classic');
     expect(findOfficialSpomovePreset('visual-reaction-blackout-37')?.engine.camouflagePlacement).toBe('center');
 

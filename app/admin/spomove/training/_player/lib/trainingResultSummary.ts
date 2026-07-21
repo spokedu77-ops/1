@@ -52,7 +52,7 @@ export type TrainingResultConfig = {
 };
 
 export function describeSessionVolume(cfg: TrainingResultConfig): string {
-  if (cfg.mode === 'reactTrain' && (cfg.level === 9 || cfg.level === 10)) {
+  if (cfg.mode === 'reactTrain' && (cfg.level === 8 || cfg.level === 9)) {
     return `${cfg.targetReps}라운드`;
   }
   if (cfg.mode === 'spatial') {

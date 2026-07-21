@@ -81,12 +81,12 @@ export type OfficialSpomovePreset = {
   movementProfileId?: MovementProfileId;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 46;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 47;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
 const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
-  // ─── OFFICIAL SPOMOVE CORE LIBRARY (46 presets) ───
+  // ─── OFFICIAL SPOMOVE CORE LIBRARY (47 presets after MQ easy/hard expand) ───
 
   // sortOrder 1: 공간 방향 (level 1)
   {
@@ -466,7 +466,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '효과음', value: '자동' },
     ],
   },
-  // 시지각 반응 — 카탈로그 1번: 파도타기 (엔진 level 6)
+  // 시지각 반응 — 1번: 파도타기 (engine level 1)
   {
     id: 'visual-reaction-rush-39',
     sortOrder: 15,
@@ -477,7 +477,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 6 },
+    engine: { mode: 'reactTrain', level: 1 },
     description: '파도타기처럼 빠르게 쏟아지는 자극에 연속으로 반응하는 초고속 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -505,7 +505,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 1, reactTrainConcurrent: 1 },
+    engine: { mode: 'reactTrain', level: 2, reactTrainConcurrent: 1 },
     description: '떨어지는 벽돌처럼 색 자극이 흘러내릴 때 해당 색 위치로 이동하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -533,7 +533,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 1, reactTrainConcurrent: 2 },
+    engine: { mode: 'reactTrain', level: 2, reactTrainConcurrent: 2 },
     description: '떨어지는 벽돌처럼 색 자극이 동시에 2개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -561,7 +561,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 1, reactTrainConcurrent: 3 },
+    engine: { mode: 'reactTrain', level: 2, reactTrainConcurrent: 3 },
     description: '떨어지는 벽돌처럼 색 자극이 동시에 3개씩 흘러내릴 때 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -578,7 +578,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 30: FLASH (level 2)
+  // sortOrder 30: FLASH (level 3)
   {
     id: 'visual-reaction-flash-33',
     sortOrder: 18,
@@ -589,7 +589,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 2 },
+    engine: { mode: 'reactTrain', level: 3 },
     description: '풍선 터뜨리기처럼 순간적으로 나타나는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -606,7 +606,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 31: PULSE (level 3)
+  // sortOrder 31: Beat Wave (level 4)
   {
     id: 'visual-reaction-pulse-36',
     sortOrder: 19,
@@ -617,7 +617,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 3 },
+    engine: { mode: 'reactTrain', level: 4 },
     description: '동그라미 파동처럼 리듬감 있게 제시되는 자극에 빠르게 반응하는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -634,7 +634,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 32: CAMOUFLAGE (level 4)
+  // sortOrder 32: CAMOUFLAGE (level 5)
   {
     id: 'visual-reaction-blackout-37',
     sortOrder: 20,
@@ -645,7 +645,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 4, camouflagePlacement: 'center' },
+    engine: { mode: 'reactTrain', level: 5, camouflagePlacement: 'center' },
     description: '노이즈 속에 위장된 색 사물(과일 등)이 드러날 때 해당 색을 찾는 시지각 반응 활동. 난이도 1/2는 세션에서 고릅니다.',
     cueSeconds: 3,
     rounds: 20,
@@ -662,7 +662,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 33: MOLE (level 7)
+  // sortOrder 33: MOLE (level 6)
   {
     id: 'visual-reaction-mole-l1',
     sortOrder: 23,
@@ -673,7 +673,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 7, moleLookMode: 'classic' },
+    engine: { mode: 'reactTrain', level: 6, moleLookMode: 'classic' },
     description: '화면 곳곳 구멍에서 튀어나오는 두더지 자극에 빠르게 반응하는 시지각 반응. 난이도 1/2는 세션에서 고릅니다.',
     cueSeconds: 3,
     rounds: 20,
@@ -690,7 +690,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 34: WORMHOLE (level 8)
+  // sortOrder 34: WORMHOLE (level 7)
   {
     id: 'visual-reaction-wormhole-41',
     sortOrder: 24,
@@ -701,7 +701,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 8 },
+    engine: { mode: 'reactTrain', level: 7 },
     description: '무한 가속하는 웜홀 속에서 소행성이 없는 안전한 색 구역으로 회피하는 고난도 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -718,7 +718,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 35: NUMBER CART (level 9)
+  // sortOrder 35: NUMBER CART (level 8)
   {
     id: 'visual-reaction-number-cart-l2',
     sortOrder: 25,
@@ -729,7 +729,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 9, numberCartTier: 1 },
+    engine: { mode: 'reactTrain', level: 8, numberCartTier: 1 },
     description: '숫자 기차의 목표 숫자(또는 +-×÷ 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어가는 시지각 반응 활동. 난이도 1/2/3은 세션에서 고릅니다.',
     cueSeconds: 3,
     rounds: 5,
@@ -746,7 +746,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: 'BGM', value: '자동 재생' },
     ],
   },
-  // sortOrder 36: COLOR TRACKER (level 10)
+  // sortOrder 36: COLOR TRACKER (level 9)
   {
     id: 'visual-reaction-color-tracker-l2',
     sortOrder: 26,
@@ -757,7 +757,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 10, colorTrackerTier: 1 },
+    engine: { mode: 'reactTrain', level: 9, colorTrackerTier: 1 },
     description: '흰 공을 끝까지 추적한 뒤 빨·노·초·파 구역 중 어디에 멈췄는지 맞추는 시지각 반응 활동. 난이도 1/2/3은 세션에서 고릅니다.',
     cueSeconds: 3,
     rounds: 5,
@@ -771,6 +771,34 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
       { label: '자극 방식', value: '흰 공을 찾아라' },
       { label: '진행 방식', value: '라운드 · 정답 수동 공개' },
       { label: '라운드', value: '5라운드' },
+      { label: 'BGM', value: '자동 재생' },
+    ],
+  },
+  // 10번: 골키퍼 모드 (engine level 10)
+  {
+    id: 'visual-reaction-goalkeeper-42',
+    sortOrder: 27,
+    title: '시지각 반응 · 골키퍼 모드',
+    en: 'Visual Reaction',
+    axis: 'response',
+    axisTitle: SPOMOVE_AXIS_META.response.title,
+    programGroup: 'visual-reaction',
+    programTitle: '시지각 반응',
+    salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
+    engine: { mode: 'reactTrain', level: 10 },
+    description: '4코너로 날아오는 슛·커브볼·더블 블록을 끝까지 추적해 상단은 손, 하단은 발로 막는 시지각 반응 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '전신 반응, 궤적 추적, 양손·양발 방어',
+    isReady: true,
+    settingSummary: '골키퍼 방어 · 약 120초 · BGM 자동',
+    settingChips: ['골키퍼 모드', '120초', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: '골키퍼 모드' },
+      { label: '진행 방식', value: '궤적 추적 · 손/발 방어' },
+      { label: '실행 시간', value: '약 120초' },
       { label: 'BGM', value: '자동 재생' },
     ],
   },

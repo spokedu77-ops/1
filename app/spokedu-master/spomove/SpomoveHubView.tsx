@@ -648,12 +648,14 @@ function CardInfo({
   isReady,
   startHref,
   movementLayerEnabled,
+  onGuide,
 }: {
   preset: OfficialSpomovePreset;
   displayTitle: string;
   isReady: boolean;
   startHref: string;
   movementLayerEnabled: boolean;
+  onGuide: () => void;
 }) {
   const router = useRouter();
   const display = getSpomovePresetDisplayModel(preset);
@@ -772,6 +774,14 @@ function CardInfo({
               시작
             </Link>
           )}
+          <button
+            type="button"
+            data-spm-spomove-card-action="guide"
+            onClick={onGuide}
+            className="mt-2 inline-flex h-9 w-full items-center justify-center text-[12px] font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
+          >
+            가이드 보기
+          </button>
         </div>
       ) : (
         <div className="mt-auto border-t border-slate-100 pt-3">
@@ -857,6 +867,7 @@ function PresetCard({
         isReady={preset.isReady}
         startHref={startHref}
         movementLayerEnabled={movementLayerEnabled}
+        onGuide={onPreview}
       />
     </>
   );
@@ -1035,9 +1046,6 @@ export default function SpomoveHubView() {
           <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
             수업 도입·집중 전환·마무리에 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와 인지 난이도로
             골라보세요.
-          </p>
-          <p className="mt-3 text-[12px] font-semibold text-white/30">
-            각 활동은 사전 설정된 공식 조건으로 실행됩니다.
           </p>
         </header>
 

@@ -148,6 +148,37 @@ describe('syncBlocksStructure list type change', () => {
     expect(useNoteBlockStore.getState().getBlock('b1')?.content?.text).toBe('other doc');
   });
 
+  it('replaceBlocks for an active child document does not expose stale parent rows', () => {
+    useNoteBlockStore.getState().setActiveDocumentId('parent-doc');
+    useNoteBlockStore.getState().hydrate([
+      block('parent-row', 'text', { text: 'parent visible' }, 'parent-doc'),
+    ]);
+
+    useNoteBlockStore.getState().setActiveDocumentId('child-doc');
+    useNoteBlockStore.getState().replaceBlocks([
+      block('child-row', 'text', { text: 'child visible' }, 'child-doc'),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('parent-row')).toBeUndefined();
+    expect(useNoteBlockStore.getState().getBlocksArray().map((item) => item.id)).toEqual(['child-row']);
+  });
+
+  it('syncBlocksStructure ignores late parent rows while child document is active', () => {
+    useNoteBlockStore.getState().setActiveDocumentId('child-doc');
+    useNoteBlockStore.getState().hydrate([
+      block('child-row', 'text', { text: 'child visible' }, 'child-doc'),
+    ]);
+
+    useNoteBlockStore.getState().syncBlocksStructure([
+      block('parent-row', 'text', { text: 'parent stale' }, 'parent-doc'),
+      block('child-row', 'text', { text: 'child updated' }, 'child-doc'),
+    ]);
+
+    expect(useNoteBlockStore.getState().getBlock('parent-row')).toBeUndefined();
+    expect(useNoteBlockStore.getState().getBlock('child-row')?.content.text).toBe('child updated');
+    expect(useNoteBlockStore.getState().getBlocksArray().map((item) => item.id)).toEqual(['child-row']);
+  });
+
   it('keeps canonical block order when applying structural commands', () => {
     useNoteBlockStore.getState().hydrate([
       { ...block('a', 'text', { text: 'A' }), order_index: 0 },

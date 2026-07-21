@@ -61,7 +61,7 @@ const STORAGE_KEY = 'spokedu-master.spomove.lastCueSeconds';
 
 /**
  * 브리핑에서 자극 속도(2~6초)를 고를 수 있는 프리셋.
- * 제외: DIVE, 숫자 기차, 흰 공, 소행성, 순차 기억
+ * 제외: DIVE, 숫자 기차, 흰 공, 골키퍼, 소행성, 순차 기억
  */
 export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean {
   if (preset.programGroup === 'dive' || preset.programGroup === 'bonus') return false;
@@ -70,8 +70,8 @@ export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean
   if (preset.engine.mode === 'flow') return false;
   if (preset.engine.mode === 'reactTrain') {
     const level = preset.engine.level;
-    // 8 소행성 · 9 숫자 기차 · 10 흰 공
-    if (level === 8 || level === 9 || level === 10) return false;
+    // 7 소행성 · 8 숫자 기차 · 9 흰 공 · 10 골키퍼
+    if (level === 7 || level === 8 || level === 9 || level === 10) return false;
   }
   return true;
 }

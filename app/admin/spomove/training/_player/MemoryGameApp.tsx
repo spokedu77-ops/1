@@ -26,6 +26,7 @@ import { RobloxMoleReactionTraining } from './components/RobloxMoleReactionTrain
 import { WormholeReactionTraining } from './components/WormholeReactionTraining';
 import { NumberCartReactionTraining, normalizeNumberCartRounds } from './components/NumberCartReactionTraining';
 import { ColorTrackerReactionTraining, normalizeColorTrackerRounds } from './components/ColorTrackerReactionTraining';
+import { GoalkeeperReactionTraining } from './components/GoalkeeperReactionTraining';
 import { mapSpomoveSpeedToReactTrainSpd } from './lib/mapReactTrainSpeed';
 import { TrainingGuideScreen } from './components/TrainingGuideScreen';
 import { VariantImageGallery } from './components/VariantImageAppendix';
@@ -153,9 +154,9 @@ type Settings = {
   colorTrackerTier: 1 | 2 | 3;
   /** ?????????????????????????????????????????????????????????????????9???????? engine level 10) 2????????????? ???????????????????????????*/
   colorTrackerDualPanel: boolean;
-  /** reactTrain level 7 (두더지 잡기): classic | variant */
+  /** reactTrain level 6 (두더지 잡기): classic | variant */
   moleLookMode: 'classic' | 'variant';
-  /** reactTrain level 4 (매직 아이): center | variant */
+  /** reactTrain level 5 (매직 아이): center | variant */
   camouflagePlacement: 'center' | 'variant';
   /** ???????????????????????????????6???????????? 1~10??????????????????????????????????????????????ㅻ깹??????????????????????????????????????????*/
   memoryColorSlots: SpomoveMemoryColorId[];
@@ -246,9 +247,9 @@ export type MemoryGameAutoLaunch = {
   colorTrackerTier?: 1 | 2 | 3;
   /** ?????????????????????????????????????????????????????????????????9???????? engine level 10) 2????????????? ???????????????????????????*/
   colorTrackerDualPanel?: boolean;
-  /** reactTrain level 7 (두더지 잡기): classic | variant */
+  /** reactTrain level 6 (두더지 잡기): classic | variant */
   moleLookMode?: 'classic' | 'variant';
-  /** reactTrain level 4 (매직 아이): center | variant */
+  /** reactTrain level 5 (매직 아이): center | variant */
   camouflagePlacement?: 'center' | 'variant';
   /** ???????????????????????????????ㅻ깹????????????????7??????0) ?????????????????????????????????산뭐??????????????????????????????????????????*/
   bodyLabelMode?: 'easy' | 'hard';
@@ -1008,8 +1009,13 @@ export default function MemoryGameApp({
 
   const stop = useCallback(() => {
     const stoppedColorCounts = { ...colorCountsRef.current };
-    // 색 집계 0이어도(공간방향 기본·흰 화살표) 훈련 중 종료면 결과로 보낸다.
-    const shouldShowPartialResult = screen === 'training';
+    // 색 집계 0이어도 훈련 중 종료면 결과로 보낸다.
+    // reactTrain(visualReaction)·순차기억·DIVE도 STOP 시 결과 화면이 나와야 한다.
+    const shouldShowPartialResult =
+      screen === 'training' ||
+      screen === 'visualReaction' ||
+      screen === 'memory' ||
+      screen === 'flow';
 
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -1773,7 +1779,7 @@ export default function MemoryGameApp({
                 ) : null}
 
                 {/* ??????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲?????????????????????????????????????????????????????????????????????????????????????? ???????????????????????????????????????????9??0?? / ??????????*/}
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
+                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 8 ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose rounds")}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1801,7 +1807,7 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 ) : null}
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 10 ? (
+                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) === 9 ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose rounds")}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -1829,7 +1835,7 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 ) : null}
-                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 9 && reactTrainEngineLevelForUi(settings.level) !== 10 ? (
+                {settings.mode === 'reactTrain' && reactTrainEngineLevelForUi(settings.level) !== 8 && reactTrainEngineLevelForUi(settings.level) !== 9 ? (
                   <div style={S.sec}>
                     {stepNum(stepReps, "Choose duration")}
                     <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -2075,6 +2081,13 @@ export default function MemoryGameApp({
             <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
           </div>
         ) : reactEngineLevel === 10 ? (
+          <GoalkeeperReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 120)}
+            speedLevel={safeReactSpeedLevel}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : reactEngineLevel === 9 ? (
           <ColorTrackerReactionTraining
             targetRounds={normalizeColorTrackerRounds(settings.targetReps ?? 5)}
             tier={settings.colorTrackerTier}
@@ -2082,7 +2095,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 9 ? (
+        ) : reactEngineLevel === 8 ? (
           <NumberCartReactionTraining
             targetRounds={normalizeNumberCartRounds(settings.targetReps ?? 5)}
             speedLevel={safeReactSpeedLevel}
@@ -2091,7 +2104,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 8 ? (
+        ) : reactEngineLevel === 7 ? (
           <WormholeReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2099,7 +2112,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 7 ? (
+        ) : reactEngineLevel === 6 ? (
           <RobloxMoleReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2108,15 +2121,7 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 6 ? (
-          <RushReactionTraining
-            durationSec={Math.max(1, settings.duration ?? 60)}
-            speedLevel={safeReactSpeedLevel}
-            speedSec={safeReactSpeedSec}
-            onExit={stop}
-            onComplete={handleReactTrainComplete}
-          />
-        ) : reactEngineLevel === 4 ? (
+        ) : reactEngineLevel === 5 ? (
           <CamouflageReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
@@ -2125,8 +2130,16 @@ export default function MemoryGameApp({
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
-        ) : reactEngineLevel === 3 ? (
+        ) : reactEngineLevel === 4 ? (
           <BeatWaveReactionTraining
+            durationSec={Math.max(1, settings.duration ?? 60)}
+            speedLevel={safeReactSpeedLevel}
+            speedSec={safeReactSpeedSec}
+            onExit={stop}
+            onComplete={handleReactTrainComplete}
+          />
+        ) : reactEngineLevel === 1 ? (
+          <RushReactionTraining
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
@@ -2135,10 +2148,10 @@ export default function MemoryGameApp({
           />
         ) : (
           <VisualReactionTraining
-            variant={reactEngineLevel === 1 ? 'flow' : 'flash'}
+            variant={reactEngineLevel === 2 ? 'flow' : 'flash'}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
-            concurrent={reactEngineLevel === 1 ? settings.reactTrainConcurrent : undefined}
+            concurrent={reactEngineLevel === 2 ? settings.reactTrainConcurrent : undefined}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />

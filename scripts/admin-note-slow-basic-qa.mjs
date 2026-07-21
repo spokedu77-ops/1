@@ -54,11 +54,72 @@ async function createQaDocument(page, title) {
   }, title);
 }
 
+async function createDocument(page, title, parentId = null) {
+  return page.evaluate(async ({ docTitle, parentDocumentId }) => {
+    const res = await fetch('/api/admin/note/documents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        title: docTitle,
+        ...(parentDocumentId ? { parent_id: parentDocumentId } : {}),
+      }),
+    });
+    if (!res.ok) throw new Error(`document create failed (${res.status})`);
+    const { document } = await res.json();
+    return document;
+  }, { docTitle: title, parentDocumentId: parentId });
+}
+
+async function createBlock(page, body) {
+  return page.evaluate(async (payload) => {
+    const res = await fetch('/api/admin/note/blocks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`block create failed (${res.status})`);
+    const { block } = await res.json();
+    return block;
+  }, body);
+}
+
 async function openDocument(page, documentId) {
   await page.goto(`${BASE}/admin/note?id=${encodeURIComponent(documentId)}`, {
     waitUntil: 'domcontentloaded',
   });
   await page.locator('[data-note-block-row]').first().waitFor({ state: 'visible', timeout: 30000 });
+}
+
+async function focusEditorInRow(page, row) {
+  await row.scrollIntoViewIfNeeded();
+  await row.locator('[data-note-editor-host]').first().click({ force: true });
+  const editor = row.locator('.ProseMirror').first();
+  await editor.waitFor({ state: 'visible', timeout: 15000 });
+  await editor.click({ force: true });
+  await page.keyboard.press('End');
+  return editor;
+}
+
+async function focusRowByText(page, text) {
+  const row = page
+    .locator('[data-note-block-row]')
+    .filter({ hasText: text })
+    .first();
+  await focusEditorInRow(page, row);
+  return row;
+}
+
+async function pressEnterAndExpectRows(page, expectedBefore, timeout = 2000) {
+  const startedAt = Date.now();
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(
+    (expected) => document.querySelectorAll('[data-note-block-row]').length > expected,
+    expectedBefore,
+    { timeout },
+  );
+  return Date.now() - startedAt;
 }
 
 async function waitForDocumentId(page, documentId) {
@@ -114,7 +175,31 @@ async function main() {
     const stamp = Date.now();
     const docA = await createQaDocument(page, `Slow QA A ${stamp}`);
     const docB = await createQaDocument(page, `Slow QA B ${stamp}`);
-    createdIds.push(docA, docB);
+    const parentDoc = await createDocument(page, `Slow QA Parent ${stamp}`);
+    const childDoc = await createDocument(page, `Slow QA Child ${stamp}`, parentDoc.id);
+    createdIds.push(docA, docB, childDoc.id, parentDoc.id);
+
+    await createBlock(page, {
+      documentId: childDoc.id,
+      type: 'todo',
+      content: { text: 'child todo instant', html: '<p>child todo instant</p>', checked: false },
+      order_index: 0,
+      parent_block_id: null,
+    });
+    const toggle = await createBlock(page, {
+      documentId: childDoc.id,
+      type: 'toggle',
+      content: { title: 'toggle instant', collapsed: false },
+      order_index: 1,
+      parent_block_id: null,
+    });
+    await createBlock(page, {
+      documentId: childDoc.id,
+      type: 'todo',
+      content: { text: 'toggle child todo instant', html: '<p>toggle child todo instant</p>', checked: false },
+      order_index: 0,
+      parent_block_id: toggle.id,
+    });
 
     failed += await runCheck('Enter creates a visible block under CPU throttle', async () => {
       await openDocument(page, docA);
@@ -122,12 +207,35 @@ async function main() {
       const editor = await focusFirstEditor(page);
       await editor.click({ force: true });
       await page.keyboard.press('End');
-      await page.keyboard.press('Enter');
-      await page.waitForFunction(
-        (expected) => document.querySelectorAll('[data-note-block-row]').length > expected,
-        before,
-        { timeout: 5000 },
+      await pressEnterAndExpectRows(page, before);
+    });
+
+    failed += await runCheck('Child-page todo Enter creates the next todo immediately', async () => {
+      await openDocument(page, childDoc.id);
+      const before = await page.locator('[data-note-block-row]').count();
+      await focusRowByText(page, 'child todo instant');
+      await pressEnterAndExpectRows(page, before);
+      const rows = await page.locator('[data-note-block-row]').evaluateAll((nodes) =>
+        nodes.map((node) => ({
+          parent: node.getAttribute('data-parent-block-id'),
+          text: node.textContent ?? '',
+        })),
       );
+      const anchorIndex = rows.findIndex((row) => row.text.includes('child todo instant'));
+      if (anchorIndex < 0 || !rows[anchorIndex + 1] || rows[anchorIndex + 1].parent !== '') {
+        throw new Error('child-page todo Enter did not create an adjacent root sibling');
+      }
+    });
+
+    failed += await runCheck('Toggle-child todo Enter creates an immediate child sibling', async () => {
+      await openDocument(page, childDoc.id);
+      const before = await page.locator('[data-note-block-row]').count();
+      await focusRowByText(page, 'toggle child todo instant');
+      await pressEnterAndExpectRows(page, before);
+      const childCount = await page.locator(`[data-note-block-row][data-parent-block-id="${toggle.id}"]`).count();
+      if (childCount < 2) {
+        throw new Error('toggle child todo Enter did not create a second child row');
+      }
     });
 
     failed += await runCheck('Sidebar document clicks work after slow idle', async () => {

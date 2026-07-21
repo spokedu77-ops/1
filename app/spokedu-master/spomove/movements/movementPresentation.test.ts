@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  compactMovementInstruction,
   getMovementPresentation,
   groupMovementPresentations,
   limbMarkersForRule,
@@ -65,5 +66,26 @@ describe('movementPresentation', () => {
     expect(p.startLabel).toBe('매트 밖 시작');
     expect(p.returnLabel).toBe('준비 위치로 복귀');
     expect(p.instruction.length).toBeGreaterThan(0);
+  });
+});
+
+describe('compactMovementInstruction', () => {
+  it('sameSide·oppositeSide는 손발 규칙을 설명한다', () => {
+    expect(compactMovementInstruction({ baseMovement: 'footTap', limbRule: 'sameSide' })).toContain(
+      '왼발',
+    );
+    expect(compactMovementInstruction({ baseMovement: 'footTap', limbRule: 'oppositeSide' })).toContain(
+      '오른발',
+    );
+    expect(compactMovementInstruction({ baseMovement: 'handTouch', limbRule: 'sameSide' })).toContain(
+      '왼손',
+    );
+    expect(compactMovementInstruction({ baseMovement: 'handTouch', limbRule: 'oppositeSide' })).toContain(
+      '오른손',
+    );
+  });
+
+  it('free는 base instruction을 쓴다', () => {
+    expect(compactMovementInstruction({ baseMovement: 'footTap', limbRule: 'free' })).toContain('발로');
   });
 });

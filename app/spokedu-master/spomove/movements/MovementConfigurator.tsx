@@ -1,6 +1,6 @@
 'use client';
 
-import { getMovementPresentation, groupMovementPresentations } from './movementPresentation';
+import { getMovementPresentation, groupMovementPresentations, compactMovementInstruction } from './movementPresentation';
 import { MovementOptionButton } from './MovementOptionButton';
 import { movementPicksEqual } from './movementResolve';
 import type {
@@ -33,7 +33,6 @@ export function MovementConfigurator({
   variant = 'compact',
 }: MovementConfiguratorProps) {
   const groups = groupMovementPresentations(allowedPicks);
-  const selected = getMovementPresentation(value);
   const compact = variant === 'compact';
 
   return (
@@ -72,7 +71,7 @@ export function MovementConfigurator({
           <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
             <p className="text-[11px] font-black text-white/45">선택 안내</p>
             <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-white/80">
-              {selected.instruction}
+              {compactMovementInstruction(value)}
             </p>
           </div>
         ) : null}

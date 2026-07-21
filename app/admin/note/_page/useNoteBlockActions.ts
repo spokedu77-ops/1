@@ -361,7 +361,7 @@ export function useNoteBlockActions(options: {
       commitActiveNoteEditorToStore();
     } else {
       clearPendingContentPatch(block.id);
-      useNoteBlockStore.getState().patchContent(block.id, options.contentOverride);
+      documentEngine.updateContent(block.id, options.contentOverride);
     }
     const latestBlock = blocksRef.current.find((b) => b.id === block.id) ?? block;
     const storeSnapshot = useNoteBlockStore.getState().getBlock(block.id);

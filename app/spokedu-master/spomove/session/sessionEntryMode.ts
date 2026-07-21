@@ -5,15 +5,14 @@ export function parseSessionEntryMode(value: string | null | undefined): Session
 }
 
 /**
- * entry=settings 는 Legacy autostart=1 보다 우선.
- * entry 없음 + autostart=1 → Legacy 자동 시작 허용.
+ * Legacy autostart는 entry 쿼리가 **아예 없을 때만** 허용.
+ * entry=start|settings 가 있으면 autostart=1 이어도 Setup 화면을 연다.
  */
 export function resolveLegacyAutostart(args: {
-  entryMode: SessionEntryMode;
+  entryParam: string | null | undefined;
   autostartParam: string | null | undefined;
 }): boolean {
-  if (args.entryMode === 'settings') return false;
-  return args.autostartParam === '1';
+  return args.entryParam == null && args.autostartParam === '1';
 }
 
 export function isInteractiveKeyTarget(target: EventTarget | null): boolean {
