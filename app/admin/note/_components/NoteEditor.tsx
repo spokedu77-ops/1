@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Extension } from '@tiptap/core';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -407,6 +407,11 @@ export function NoteEditor({
   const changeTimerRef = useRef<number | null>(null);
   const structuralPasteUndoArmedRef = useRef(false);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
+  /** TipTap 본문 소유 블록 — props onChange가 먼저 바뀌어도 flush는 여기로만 */
+  const contentFlushTargetRef = useRef<{
+    blockId: string | undefined;
+    onChange: (change: NoteEditorChange) => void;
+  }>({ blockId: editorBlockId, onChange });
   const isEditingRef = useRef(false);
   const lastAutoFocusSignalRef = useRef(0);
   const editorRef = useRef<Editor | null>(null);
@@ -482,10 +487,11 @@ export function NoteEditor({
       window.cancelAnimationFrame(changeTimerRef.current);
       changeTimerRef.current = null;
     }
+    const applyChange = contentFlushTargetRef.current.onChange;
     const currentEditor = editorRef.current;
     if (currentEditor && !(currentEditor as { isDestroyed?: boolean }).isDestroyed) {
       pendingChangeRef.current = null;
-      callbacksRef.current.onChange({
+      applyChange({
         text: currentEditor.getText(),
         html: currentEditor.getHTML(),
       });
@@ -494,16 +500,10 @@ export function NoteEditor({
     const pending = pendingChangeRef.current;
     if (!pending) return;
     pendingChangeRef.current = null;
-    callbacksRef.current.onChange({ text: pending.text, html: pending.html });
+    applyChange({ text: pending.text, html: pending.html });
   }, []);
 
   callbacksRef.current.flushPendingChange = flushPendingChange;
-
-  const deferPendingChangeFlush = useCallback(() => {
-    window.setTimeout(() => {
-      callbacksRef.current.flushPendingChange();
-    }, 0);
-  }, []);
 
   const scheduleChange = useCallback((change: NoteEditorChange) => {
     pendingChangeRef.current = change;
@@ -1136,7 +1136,7 @@ export function NoteEditor({
             changeTimerRef.current = null;
           }
           pendingChangeRef.current = null;
-          cbs.onChange({
+          contentFlushTargetRef.current.onChange({
             text: splitResult.beforeText,
             html: splitResult.beforeHtml,
           });
@@ -1144,7 +1144,7 @@ export function NoteEditor({
           flushPendingChange();
         }
       } else {
-        deferPendingChangeFlush();
+        flushPendingChange();
       }
       cbs.onEnter({
         isEmpty: currentEditor.isEmpty,
@@ -1155,7 +1155,7 @@ export function NoteEditor({
     return () => {
       storage.handler = null;
     };
-  }, [deferPendingChangeFlush, editor, enterCreatesBlock, flushPendingChange]);
+  }, [editor, enterCreatesBlock, flushPendingChange]);
 
   useEffect(() => () => {
     flushPendingChange();
@@ -1175,37 +1175,57 @@ export function NoteEditor({
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!editor) return;
     if ((editor as { isDestroyed?: boolean }).isDestroyed) return;
     const resetKeyChanged = lastResetKeyRef.current !== resetKey;
-    if (!resetKeyChanged) return;
-    lastResetKeyRef.current = resetKey;
-    if (changeTimerRef.current !== null) {
-      window.cancelAnimationFrame(changeTimerRef.current);
-      changeTimerRef.current = null;
-    }
-    pendingChangeRef.current = null;
-    const { from, to, empty } = editor.state.selection;
-    editor
-      .chain()
-      .command(({ tr }) => { tr.setMeta('addToHistory', false); return true; })
-      .setContent(sourceHtml, { emitUpdate: false })
-      .run();
-    // remap ghost undo가 Ctrl+Z를 가로채지 않게 history 플러그인 초기화
-    clearTipTapHistory(editor);
-    if (isEditingRef.current) {
-      if (!empty && from < to) {
-        const docSize = editor.state.doc.content.size;
-        const safeFrom = Math.min(from, docSize - 1);
-        const safeTo = Math.min(to, docSize - 1);
-        editor.commands.setTextSelection({ from: safeFrom, to: Math.max(safeFrom, safeTo) });
-      } else {
-        const pos = Math.min(from, editor.state.doc.content.size - 1);
-        editor.commands.setTextSelection({ from: pos, to: pos });
+    if (resetKeyChanged) {
+      // props onChange는 이미 새 블록을 가리킬 수 있음 — TipTap 본문은 기존 flush target으로 커밋
+      if (lastResetKeyRef.current !== undefined) {
+        if (changeTimerRef.current !== null) {
+          window.cancelAnimationFrame(changeTimerRef.current);
+          changeTimerRef.current = null;
+        }
+        try {
+          contentFlushTargetRef.current.onChange({
+            text: editor.getText(),
+            html: editor.getHTML(),
+          });
+        } catch {
+          // teardown race
+        }
+        pendingChangeRef.current = null;
+      } else if (changeTimerRef.current !== null) {
+        window.cancelAnimationFrame(changeTimerRef.current);
+        changeTimerRef.current = null;
+        pendingChangeRef.current = null;
+      }
+      lastResetKeyRef.current = resetKey;
+      const { from, to, empty } = editor.state.selection;
+      editor
+        .chain()
+        .command(({ tr }) => { tr.setMeta('addToHistory', false); return true; })
+        .setContent(sourceHtml, { emitUpdate: false })
+        .run();
+      // remap ghost undo가 Ctrl+Z를 가로채지 않게 history 플러그인 초기화
+      clearTipTapHistory(editor);
+      if (isEditingRef.current) {
+        if (!empty && from < to) {
+          const docSize = editor.state.doc.content.size;
+          const safeFrom = Math.min(from, docSize - 1);
+          const safeTo = Math.min(to, docSize - 1);
+          editor.commands.setTextSelection({ from: safeFrom, to: Math.max(safeFrom, safeTo) });
+        } else {
+          const pos = Math.min(from, editor.state.doc.content.size - 1);
+          editor.commands.setTextSelection({ from: pos, to: pos });
+        }
       }
     }
-  }, [editor, resetKey, sourceHtml]);
+    contentFlushTargetRef.current = {
+      blockId: editorBlockId,
+      onChange,
+    };
+  }, [editor, editorBlockId, onChange, resetKey, sourceHtml]);
 
   useEffect(() => {
     lastAutoFocusSignalRef.current = 0;

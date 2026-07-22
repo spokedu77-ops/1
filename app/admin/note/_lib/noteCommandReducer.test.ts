@@ -214,6 +214,57 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('typed');
   });
 
+  it('patchContent does not drop sibling empty placeholders while typing', () => {
+    const previous = [
+      block('empty-todo', {
+        type: 'todo',
+        order_index: 0,
+        content: { text: '', html: '<p></p>', checked: false },
+      }),
+      block('typing', {
+        type: 'todo',
+        order_index: 1,
+        content: { text: 'hi', html: '<p>hi</p>', checked: false },
+      }),
+    ];
+
+    const { blocks, structural } = applyNoteCommand(
+      previous,
+      {
+        type: 'patchContent',
+        blockId: 'typing',
+        content: { text: 'hello', html: '<p>hello</p>', checked: false },
+      },
+      { ...ctx, activeBlockId: 'typing' },
+    );
+
+    expect(structural).toBe(false);
+    expect(blocks.map((item) => item.id)).toEqual(['empty-todo', 'typing']);
+    expect(blocks.find((item) => item.id === 'typing')?.content).toMatchObject({ text: 'hello' });
+  });
+
+  it('keeps a just-created empty todo through syncSnapshot grace', () => {
+    const created = block('new-empty', {
+      type: 'todo',
+      order_index: 1,
+      created_at: new Date().toISOString(),
+      content: { text: '', html: '<p></p>', checked: false },
+    });
+    const live = block('live', {
+      type: 'todo',
+      order_index: 0,
+      content: { text: 'live', html: '<p>live</p>', checked: false },
+    });
+
+    const { blocks } = applyNoteCommand(
+      [live, created],
+      { type: 'syncSnapshot', blocks: [live, created] },
+      { ...ctx, activeBlockId: 'live' },
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['live', 'new-empty']);
+  });
+
   it('drops inactive empty todo placeholders from structural snapshots', () => {
     const previous = [
       block('heading', { type: 'heading3', content: { text: '총괄 체크', html: '<p>총괄 체크</p>' } }),

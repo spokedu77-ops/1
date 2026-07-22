@@ -62,9 +62,17 @@ function removeInactiveEmptyInputBlocks(
     }
   }
 
+  const now = Date.now();
   return blocks.filter((block) => {
     if (!EMPTY_INPUT_BLOCK_TYPES.has(block.type)) return true;
     if (block.id === activeBlockId) return true;
+    // Enter로 막 만든 빈 줄은 타이핑·동기화 레이스 동안 유지
+    if (block.created_at) {
+      const createdAt = new Date(block.created_at).getTime();
+      if (Number.isFinite(createdAt) && now - createdAt <= LOCAL_ONLY_BLOCK_GRACE_MS) {
+        return true;
+      }
+    }
     const parentKey = block.parent_block_id ?? '__root__';
     if (!parentHasVisibleContent.get(parentKey)) return true;
     return hasVisibleBlockContent(block);
@@ -215,10 +223,13 @@ export function applyNoteCommand(
   command: NoteCommand,
   ctx: NoteCommandContext,
 ): NoteCommandResult {
-  const docBlocks = normalizeCommandBlocks(previous, ctx);
+  // patchContent/applyPatches는 로컬 편집 — empty placeholder strip 금지
+  // (키 입력마다 옆 빈 줄이 사라지며 본문이 섞·이동하는 회귀 방지)
+  const localDocBlocks = filterDocumentBlocks(previous, ctx.documentId);
 
   switch (command.type) {
   case 'hydrate': {
+    const docBlocks = normalizeCommandBlocks(previous, ctx);
     const incoming = normalizeCommandBlocks(command.blocks, ctx);
     if (incoming.length === 0 && docBlocks.length > 0) {
       const emptyDecision = decideEmptySnapshotApply({
@@ -246,7 +257,7 @@ export function applyNoteCommand(
     return { blocks, structural: true };
   }
   case 'patchContent': {
-    const blocks = docBlocks.map((block) => {
+    const blocks = localDocBlocks.map((block) => {
       if (block.id !== command.blockId) return block;
       return ensureNoteBlockVersion({
         ...block,
@@ -257,11 +268,12 @@ export function applyNoteCommand(
   }
   case 'applyPatches': {
     return {
-      blocks: normalizeCommandBlocks(applyFieldPatches(docBlocks, command.patches), ctx),
+      blocks: filterDocumentBlocks(applyFieldPatches(localDocBlocks, command.patches), ctx.documentId),
       structural: true,
     };
   }
   case 'applyRemoteOps': {
+    const docBlocks = normalizeCommandBlocks(previous, ctx);
     let next = normalizeCommandBlocks(applyRemoteOpRecords(docBlocks, command.ops), ctx);
     next = mergeReconciledBlocks(
       docBlocks,
@@ -273,6 +285,7 @@ export function applyNoteCommand(
     return { blocks: next, structural: true };
   }
   case 'mergeSnapshots': {
+    const docBlocks = filterDocumentBlocks(previous, ctx.documentId);
     let incoming = normalizeCommandBlocks(mergeSnapshotPatches(docBlocks, command.snapshots), ctx);
     incoming = sortBlocksForVisualOrder(preserveExistingLocalPositions(docBlocks, incoming));
     let next = mergeReconciledBlocks(
@@ -285,6 +298,7 @@ export function applyNoteCommand(
     return { blocks: next, structural: true };
   }
   case 'syncSnapshot': {
+    const docBlocks = filterDocumentBlocks(previous, ctx.documentId);
     let incoming = normalizeCommandBlocks(command.blocks, ctx);
     if (incoming.length === 0 && docBlocks.length > 0) {
       const emptyDecision = decideEmptySnapshotApply({
