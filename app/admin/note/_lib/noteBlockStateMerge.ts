@@ -91,6 +91,8 @@ export function resolveBlockTextCaretOffset(block: NoteBlock): number {
 export type MergeReconciledBlocksOptions = {
   /** 기본 incoming — 미ack topology 시 local로 reorder 보호 */
   structureAuthority?: 'local' | 'incoming';
+  /** soft delete·타문서 이동 등 — remoteOnly 되살림 금지 */
+  excludedIds?: ReadonlySet<string>;
 };
 
 /** reconcile 로드 결과를 병합 — 편집 중 content는 스토어 우선, 구조는 authority에 따름 */
@@ -100,13 +102,18 @@ export function mergeReconciledBlocks(
   options?: MergeReconciledBlocksOptions,
 ): NoteBlock[] {
   const structureAuthority = options?.structureAuthority ?? 'incoming';
-  const structuralBase = structureAuthority === 'local' ? localBlocks : reconciledBlocks;
-  const incomingById = new Map(reconciledBlocks.map((block) => [block.id, block]));
+  const excludedIds = options?.excludedIds;
+  const filteredReconciled = excludedIds && excludedIds.size > 0
+    ? reconciledBlocks.filter((block) => !excludedIds.has(block.id))
+    : reconciledBlocks;
+  const structuralBase = structureAuthority === 'local' ? localBlocks : filteredReconciled;
+  const incomingById = new Map(filteredReconciled.map((block) => [block.id, block]));
   const store = useNoteBlockStore.getState();
   const activeId = store.activeEditor?.blockId;
   const activeDocumentId = store.activeDocumentId;
 
   const merged = structuralBase.map((block) => {
+    if (excludedIds?.has(block.id)) return block;
     if (activeDocumentId && block.document_id !== activeDocumentId) return block;
     const incoming = incomingById.get(block.id);
     const fromStore = store.byId[block.id];
@@ -139,10 +146,10 @@ export function mergeReconciledBlocks(
       ...nextBlock,
       content: mergeBlockContentWithStore(serverContent, storeContent),
     };
-  });
+  }).filter((block) => !excludedIds?.has(block.id));
 
   const mergedIds = new Set(merged.map((block) => block.id));
-  const remoteOnly = reconciledBlocks.filter((block) => !mergedIds.has(block.id));
+  const remoteOnly = filteredReconciled.filter((block) => !mergedIds.has(block.id));
   const combined = remoteOnly.length > 0 ? [...merged, ...remoteOnly] : merged;
 
   return dedupeNoteBlocksById(normalizeListBlocksOnly(combined));

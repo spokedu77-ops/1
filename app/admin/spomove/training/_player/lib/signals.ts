@@ -360,7 +360,8 @@ export function generateSignal(
     if (level === 1) {
       const a = r(ARROWS);
       if (opts?.spatialArrowColorMode === 'color') {
-        const fillHex = spatialArrowFillForDirection(a.id, activeColors, opts.spatialArrowColorMapping);
+        // 색상 모드: 방향→색 고정 (위 빨 / 우 노 / 좌 초 / 아래 파). random 매핑 무시.
+        const fillHex = spatialArrowFillForDirection(a.id, activeColors, 'compass');
         return {
           type: 'arrow',
           bg: '#0F172A',
@@ -1243,7 +1244,7 @@ export function createBasicSignalGenerator(
   fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
   basicNumberOverlay?: 'none' | '2' | '3',
   spatialArrowColorMode: 'basic' | 'color' = 'basic',
-  spatialArrowColorMapping: SpatialArrowColorMapping = 'random',
+  spatialArrowColorMapping: SpatialArrowColorMapping = 'compass',
 ) {
   let prev1: string | null = null;
   let prev2: string | null = null;
@@ -1273,7 +1274,8 @@ export function createBasicSignalGenerator(
     if (level === 1) {
       o.poleEdgeIndex = poleEdgeIdx;
       o.spatialArrowColorMode = spatialArrowColorMode;
-      o.spatialArrowColorMapping = spatialArrowColorMapping;
+      // 색상 모드에서는 항상 compass 고정 매핑
+      o.spatialArrowColorMapping = spatialArrowColorMode === 'color' ? 'compass' : spatialArrowColorMapping;
     }
     if (level === 3 || level === 5) o.excludeVariantImageUrl = lastVariantImageUrl;
     else if (level === 4) o.excludeVariantPairKey = lastVariantPairKey;

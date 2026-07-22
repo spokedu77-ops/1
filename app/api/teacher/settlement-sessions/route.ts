@@ -1,6 +1,6 @@
 /**
- * 선생님 정산용 세션 목록 (Service Role 사용 → RLS 무관, 보조 선생님 포함)
- * GET: 로그인한 사용자의 주강사 + 보조 강사 수업 모두 반환
+ * 선생님 정산용 세션·기타정산 목록 (Service Role 사용 → RLS 무관, 보조 선생님 포함)
+ * GET: 로그인한 사용자의 주강사 + 보조 강사 수업 + settlements(기타 정산) 반환
  */
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/app/lib/supabase/server';
@@ -44,7 +44,7 @@ export async function GET() {
     const statusFilter = ['finished', 'verified'] as const;
     const uid = String(user.id).trim();
 
-    const [mainRes, extraMemoRes, extraStudentsRes] = await Promise.all([
+    const [mainRes, extraMemoRes, extraStudentsRes, adjsRes] = await Promise.all([
       svc.from('sessions').select(selectCols).eq('created_by', user.id).in('status', statusFilter).order('start_at', { ascending: false }).limit(500),
       svc
         .from('sessions')
@@ -62,6 +62,13 @@ export async function GET() {
         .ilike('students_text', `%${uid}%`)
         .order('start_at', { ascending: false })
         .limit(500),
+      // Admin Payroll(기타 정산) — year/month/period는 클라이언트에서 필터
+      svc
+        .from('settlements')
+        .select('id, amount, reason, year, month, period')
+        .eq('teacher_id', user.id)
+        .order('id', { ascending: false })
+        .limit(200),
     ]);
 
     const mainList = (mainRes.data || []).map((s) => ({
@@ -100,7 +107,16 @@ export async function GET() {
       (a, b) => new Date(b.start_at).getTime() - new Date(a.start_at).getTime()
     );
 
-    return NextResponse.json({ data: combined });
+    const settlements = (adjsRes.data || []).map((a) => ({
+      id: a.id,
+      amount: Number(a.amount) || 0,
+      reason: String(a.reason || ''),
+      year: Number(a.year) || 0,
+      month: Number(a.month) || 0,
+      period: a.period === 'second' || a.period === '2' ? 'second' : 'first',
+    }));
+
+    return NextResponse.json({ data: combined, settlements });
   } catch (err) {
     devLogger.error('[teacher/settlement-sessions]', err);
     return NextResponse.json({ error: 'Server error' }, { status: 500 });

@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
+import { normalizeReactSpeedSec } from '../lib/reactTrainTiming';
 import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
 
@@ -15,18 +16,7 @@ const CORNERS = [
 ] as const;
 
 type CornerKey = (typeof CORNERS)[number]['key'];
-type ShotEvent = {
-  t: number;
-  type?: 'shot';
-  start?: CornerKey;
-  target?: CornerKey;
-  target2?: CornerKey;
-  isDouble?: boolean;
-  boss?: boolean;
-  msg?: string;
-  col?: string;
-  speed?: number;
-};
+const CORNER_KEYS = CORNERS.map((c) => c.key);
 
 type ProjectileData = {
   startKey: CornerKey;
@@ -38,13 +28,121 @@ type ProjectileData = {
   speed: number;
   isBoss: boolean;
   isCurve: boolean;
-  wireMesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
   coreMesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>;
 };
+
+function drawRegularPolygon(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  radius: number,
+  sides: number,
+  fill: string,
+  stroke?: string,
+  rotation = -Math.PI / 2,
+) {
+  ctx.beginPath();
+  for (let i = 0; i < sides; i++) {
+    const a = rotation + (i / sides) * Math.PI * 2;
+    const x = cx + Math.cos(a) * radius;
+    const y = cy + Math.sin(a) * radius;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  if (fill !== 'none') {
+    ctx.fillStyle = fill;
+    ctx.fill();
+  }
+  if (stroke) {
+    ctx.strokeStyle = stroke;
+    ctx.stroke();
+  }
+}
+
+/** 회색조 축구공 UV — material.color로 코너 색을 틴트한다. */
+function createSoccerBallTexture(resolution: number): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas');
+  canvas.width = resolution;
+  canvas.height = resolution;
+  const ctx = canvas.getContext('2d')!;
+  const W = resolution;
+  const H = resolution;
+
+  ctx.fillStyle = '#f2f2f2';
+  ctx.fillRect(0, 0, W, H);
+
+  const seam = '#222222';
+  const patch = '#141414';
+  ctx.lineWidth = Math.max(2, resolution / 110);
+  ctx.lineJoin = 'round';
+
+  // 구 UV에 잘 붙는 패널 격자: 어두운 오각형 + 밝은 육각형 윤곽
+  const rows = [
+    { y: 0.12, cols: 5, r: 0.055, darkEvery: 1, offset: 0 },
+    { y: 0.28, cols: 8, r: 0.07, darkEvery: 2, offset: 0.5 },
+    { y: 0.46, cols: 10, r: 0.075, darkEvery: 3, offset: 0 },
+    { y: 0.64, cols: 8, r: 0.07, darkEvery: 2, offset: 0.5 },
+    { y: 0.82, cols: 5, r: 0.055, darkEvery: 1, offset: 0 },
+  ] as const;
+
+  for (const row of rows) {
+    const cy = row.y * H;
+    const radius = row.r * W;
+    for (let i = 0; i < row.cols; i++) {
+      const cx = ((i + row.offset) / row.cols) * W;
+      const isDark = i % row.darkEvery === 0;
+      if (isDark) {
+        drawRegularPolygon(ctx, cx, cy, radius * 0.92, 5, patch, seam);
+      } else {
+        drawRegularPolygon(ctx, cx, cy, radius, 6, 'none', seam);
+      }
+      // 래핑 seam이 끊기지 않도록 좌우 가장자리 복제
+      if (cx < radius * 1.2) {
+        if (isDark) drawRegularPolygon(ctx, cx + W, cy, radius * 0.92, 5, patch, seam);
+        else drawRegularPolygon(ctx, cx + W, cy, radius, 6, 'none', seam);
+      } else if (cx > W - radius * 1.2) {
+        if (isDark) drawRegularPolygon(ctx, cx - W, cy, radius * 0.92, 5, patch, seam);
+        else drawRegularPolygon(ctx, cx - W, cy, radius, 6, 'none', seam);
+      }
+    }
+  }
+
+  // 패널 사이를 잇는 가벼운 곡선 seam
+  ctx.strokeStyle = seam;
+  ctx.globalAlpha = 0.55;
+  for (let i = 0; i < 8; i++) {
+    const x = ((i + 0.5) / 8) * W;
+    ctx.beginPath();
+    ctx.moveTo(x, H * 0.08);
+    ctx.quadraticCurveTo(x + (i % 2 === 0 ? 18 : -18), H * 0.5, x, H * 0.92);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  return texture;
+}
 
 type Trail = THREE.Mesh<THREE.BoxGeometry, THREE.MeshBasicMaterial> & { userData: { life: number } };
 type FxMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial> & {
   userData: { life: number; scale: number; kind: 'shield' | 'ring' | 'particle'; vel?: THREE.Vector3; rotSpeed?: number };
+};
+
+type SpawnPhase = {
+  id: number;
+  /** 세션 진행률 상한 (0~1) */
+  until: number;
+  speedMult: number;
+  curveChance: number;
+  doubleChance: number;
+  /** 다음 스폰까지 대기 = speedSec * [min, max] */
+  intervalMul: [number, number];
+  msg: string;
+  col: string;
 };
 
 type GoalkeeperGame = {
@@ -58,9 +156,11 @@ type GoalkeeperGame = {
   raf: number | null;
   timer: ReturnType<typeof setInterval> | null;
   startedAt: number;
-  nextEvent: number;
+  nextSpawnAt: number;
   currentSpeed: number;
-  timeline: ShotEvent[];
+  phaseId: number;
+  lastStart: CornerKey | null;
+  bossSpawned: boolean;
   projectiles: THREE.Group[];
   trails: Trail[];
   effects: FxMesh[];
@@ -69,51 +169,94 @@ type GoalkeeperGame = {
 
 const HIT_Z = -3;
 const SPAWN_Z = -120;
-const BASE_DURATION_SEC = 120;
+/** 스폰→히트 거리. speedSec초 동안 이 거리를 비행하도록 속도를 계산한다. */
+const FLIGHT_DIST = Math.abs(HIT_Z - SPAWN_Z);
 
 function cornerByKey(key: CornerKey) {
   return CORNERS.find((corner) => corner.key === key) ?? CORNERS[0];
 }
 
-function buildTimeline(durationSec: number, speedLevel: number): ShotEvent[] {
-  const scale = Math.max(0.45, Math.min(1.4, durationSec / BASE_DURATION_SEC));
-  const levelBoost = Math.max(0, Math.min(6, speedLevel - 1));
-  const keys = CORNERS.map((corner) => corner.key);
-  const events: ShotEvent[] = [
-    { t: 2, msg: '상단/하단 방어 훈련!', col: '#ffffff', speed: 54 + levelBoost * 5 },
-    { t: 4, type: 'shot', start: 'TL' },
-    { t: 6, type: 'shot', start: 'TR' },
-    { t: 8, type: 'shot', start: 'BL' },
-    { t: 10, type: 'shot', start: 'BR' },
-    { t: 16, msg: '마구(커브볼) 주의!! 끝까지 봐라!', col: '#ffd600', speed: 64 + levelBoost * 6 },
-    { t: 18, type: 'shot', start: 'TL', target: 'TR' },
-    { t: 21, type: 'shot', start: 'BL', target: 'BR' },
-    { t: 24, type: 'shot', start: 'TR', target: 'BL' },
-    { t: 27, type: 'shot', start: 'BR', target: 'TL' },
-    { t: 33, msg: '더블 블록!! 양손 방어!', col: '#00e5ff', speed: 70 + levelBoost * 6 },
-    { t: 35, type: 'shot', start: 'TL', target2: 'TR', isDouble: true },
-    { t: 39, type: 'shot', start: 'BL', target2: 'BR', isDouble: true },
-    { t: 43, type: 'shot', start: 'TL', target2: 'BL', isDouble: true },
-    { t: 47, type: 'shot', start: 'TR', target2: 'BR', isDouble: true },
-    { t: 55, msg: '무차별 폭격!! 뚫리지 마라!!', col: '#ff1744', speed: 92 + levelBoost * 8 },
+/** 신호 속도(초) → 월드 유닛/초. mult>1이면 더 빠르게. */
+function flightSpeedFromSec(speedSec: number, mult = 1): number {
+  return (FLIGHT_DIST / normalizeReactSpeedSec(speedSec)) * mult;
+}
+
+function randBetween(min: number, max: number) {
+  return min + Math.random() * (max - min);
+}
+
+function pickCorner(exclude?: CornerKey | null): CornerKey {
+  const pool = exclude ? CORNER_KEYS.filter((k) => k !== exclude) : CORNER_KEYS;
+  return pool[Math.floor(Math.random() * pool.length)]!;
+}
+
+function buildPhases(allowDouble: boolean): SpawnPhase[] {
+  return [
+    {
+      id: 0,
+      until: 0.14,
+      speedMult: 1,
+      curveChance: 0,
+      doubleChance: 0,
+      intervalMul: [0.95, 1.25],
+      msg: '상단/하단 방어 훈련!',
+      col: '#ffffff',
+    },
+    {
+      id: 1,
+      until: 0.34,
+      speedMult: 1.15,
+      curveChance: 0.5,
+      doubleChance: 0,
+      intervalMul: [0.85, 1.15],
+      msg: '마구(커브볼) 주의!! 끝까지 봐라!',
+      col: '#ffd600',
+    },
+    {
+      id: 2,
+      until: 0.52,
+      speedMult: 1.25,
+      curveChance: 0.4,
+      doubleChance: allowDouble ? 0.4 : 0,
+      intervalMul: [0.75, 1.05],
+      msg: allowDouble ? '더블 블록!! 양손 방어!' : '연속 방어!! 코너를 지켜라!',
+      col: '#00e5ff',
+    },
+    {
+      id: 3,
+      until: 0.74,
+      speedMult: 1.65,
+      curveChance: 0.45,
+      doubleChance: allowDouble ? 0.28 : 0,
+      intervalMul: [0.55, 0.9],
+      msg: '무차별 폭격!! 뚫리지 마라!!',
+      col: '#ff1744',
+    },
+    {
+      id: 4,
+      until: 0.88,
+      speedMult: 2.2,
+      curveChance: 0.35,
+      doubleChance: allowDouble ? 0.22 : 0,
+      intervalMul: [0.38, 0.65],
+      msg: '하이퍼 모드! 전신 방어!!',
+      col: '#ff4dd8',
+    },
+    {
+      id: 5,
+      until: 1,
+      speedMult: 0.78,
+      curveChance: 0.2,
+      doubleChance: 0,
+      intervalMul: [1.1, 1.4],
+      msg: '위험!! 거대 에너지 슛 접근!!',
+      col: '#ffffff',
+    },
   ];
-  for (let i = 0; i < 22; i++) {
-    const start = keys[(i * 7 + 1) % keys.length]!;
-    const target = i % 3 === 0 ? keys[(i * 5 + 2) % keys.length] : start;
-    events.push({ t: 58 + i * 1.45, type: 'shot', start, target });
-  }
-  events.push({ t: 91, msg: '하이퍼 모드! 전신 방어!!', col: '#ff4dd8', speed: 128 + levelBoost * 9 });
-  for (let i = 0; i < 24; i++) {
-    events.push({ t: 94 + i * 0.48, type: 'shot', start: keys[i % keys.length] });
-  }
-  events.push(
-    { t: 108, msg: '위험!! 거대 에너지 슛 접근!!', col: '#ffffff', speed: 42 + levelBoost * 4 },
-    { t: 111, type: 'shot', start: 'TL', boss: true },
-    { t: 116, msg: '철벽 방어 성공!!', col: '#00e676' },
-  );
-  return events
-    .map((event) => ({ ...event, t: event.t * scale }))
-    .filter((event) => event.t < durationSec - 1.5 || event.boss || event.msg);
+}
+
+function phaseForProgress(phases: SpawnPhase[], progress: number): SpawnPhase {
+  return phases.find((p) => progress < p.until) ?? phases[phases.length - 1]!;
 }
 
 const css = `
@@ -150,12 +293,21 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 
 type Props = {
   durationSec: number;
-  speedLevel: number;
+  /** 스폰→히트 기준 비행 시간(초). 기존 신호 속도와 동일 의미. */
+  speedSec: number;
+  /** 1: 항상 1개 · 2: 1~2개(더블 블록 포함) */
+  goalkeeperTier?: 1 | 2;
   onExit: () => void;
   onComplete: (stats: ReactTrainCompleteStats) => void;
 };
 
-export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, onComplete }: Props) {
+export function GoalkeeperReactionTraining({
+  durationSec,
+  speedSec,
+  goalkeeperTier = 2,
+  onExit,
+  onComplete,
+}: Props) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<GoalkeeperGame | null>(null);
@@ -210,7 +362,10 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
 
     const isLow = staticPerfTier === 'low';
     const duration = Math.max(12, Math.min(180, durationSec || 60));
-    const lv = Math.max(1, Math.min(7, Math.round(Number.isFinite(speedLevel) ? speedLevel : 4)));
+    const tier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;
+    const travelSec = normalizeReactSpeedSec(speedSec);
+    const baseSpeed = flightSpeedFromSec(travelSec, 1);
+    const phases = buildPhases(tier >= 2);
     const g: GoalkeeperGame = {
       running: true,
       timeLeft: duration,
@@ -222,9 +377,11 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
       raf: null,
       timer: null,
       startedAt: performance.now(),
-      nextEvent: 0,
-      currentSpeed: 58 + lv * 5,
-      timeline: buildTimeline(duration, lv),
+      nextSpawnAt: 1.2,
+      currentSpeed: baseSpeed,
+      phaseId: -1,
+      lastStart: null,
+      bossSpawned: false,
       projectiles: [],
       trails: [],
       effects: [],
@@ -260,19 +417,33 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
     pointLight.position.set(0, 0, HIT_Z);
     scene.add(pointLight);
 
+    const soccerMap = createSoccerBallTexture(isLow ? 128 : 256);
+    const disposeProjectile = (projectile: THREE.Group) => {
+      scene.remove(projectile);
+      projectile.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (!mesh.isMesh) return;
+        mesh.geometry.dispose();
+        const mat = mesh.material as THREE.MeshBasicMaterial;
+        // map은 세션 공유 텍스처 — material만 dispose
+        mat.map = null;
+        mat.dispose();
+      });
+    };
+
     const spawnShot = (startKey: CornerKey, targetKey?: CornerKey, speed = g.currentSpeed, isBoss = false) => {
       const start = cornerByKey(startKey);
       const target = cornerByKey(targetKey ?? startKey);
-      const size = isBoss ? 4.8 : 1.35;
+      const radius = isBoss ? 3.4 : 0.95;
+      const segs = isLow ? 12 : 20;
       const group = new THREE.Group();
-      const coreGeo = isBoss ? new THREE.IcosahedronGeometry(size, 1) : new THREE.SphereGeometry(size * 0.7, isLow ? 10 : 16, isLow ? 8 : 16);
-      const coreMat = new THREE.MeshBasicMaterial({ color: isBoss ? 0xffffff : start.hex });
+      const coreGeo = new THREE.SphereGeometry(radius, segs, isLow ? 10 : 16);
+      const coreMat = new THREE.MeshBasicMaterial({
+        map: soccerMap,
+        color: isBoss ? 0xffffff : start.hex,
+      });
       const core = new THREE.Mesh(coreGeo, coreMat);
-      const wire = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(size, 1),
-        new THREE.MeshBasicMaterial({ color: isBoss ? 0xff1744 : start.hex, wireframe: true, transparent: true, opacity: 0.85 }),
-      );
-      group.add(core, wire);
+      group.add(core);
       group.position.set(start.key.endsWith('L') ? -6 : 6, start.key.startsWith('T') ? 4 : -3, SPAWN_Z);
       group.userData = {
         startKey,
@@ -284,7 +455,6 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
         speed,
         isBoss,
         isCurve: start.key !== target.key,
-        wireMesh: wire,
         coreMesh: core,
       } satisfies ProjectileData;
       scene.add(group);
@@ -353,7 +523,7 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
     const triggerHit = (projectile: THREE.Group, index: number) => {
       const data = projectile.userData as ProjectileData;
       const corner = cornerByKey(data.targetKey);
-      scene.remove(projectile);
+      disposeProjectile(projectile);
       g.projectiles.splice(index, 1);
       if (data.isBoss) {
         flashRef.current?.style.setProperty('opacity', '1');
@@ -380,28 +550,62 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
       if (hudComboRef.current) hudComboRef.current.textContent = `${g.combo} COMBO`;
     };
 
+    const scheduleNext = (nowSec: number, phase: SpawnPhase) => {
+      const gap = travelSec * randBetween(phase.intervalMul[0], phase.intervalMul[1]);
+      g.nextSpawnAt = nowSec + Math.max(0.35, gap);
+    };
+
+    const spawnRandomWave = (phase: SpawnPhase) => {
+      g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
+      const isDouble = phase.doubleChance > 0 && Math.random() < phase.doubleChance;
+      if (isDouble) {
+        const a = pickCorner(g.lastStart);
+        const b = pickCorner(a);
+        spawnShot(a, undefined, g.currentSpeed);
+        spawnShot(b, undefined, g.currentSpeed);
+        g.lastStart = b;
+        showCallout('두 곳 방어', '#00e5ff', 800);
+        return;
+      }
+      const start = pickCorner(g.lastStart);
+      const curved = Math.random() < phase.curveChance;
+      const target = curved ? pickCorner(start) : start;
+      spawnShot(start, target, g.currentSpeed);
+      g.lastStart = start;
+      const hitCorner = cornerByKey(target);
+      showCallout(hitCorner.callout, hitCorner.css, 780);
+    };
+
     const clock = new THREE.Clock();
     const animate = () => {
       if (!g.running) return;
       const delta = Math.min(0.05, clock.getDelta());
       const nowSec = (performance.now() - g.startedAt) / 1000;
-      while (g.nextEvent < g.timeline.length && nowSec >= (g.timeline[g.nextEvent]?.t ?? Infinity)) {
-        const ev = g.timeline[g.nextEvent]!;
-        if (ev.msg) {
-          if (ev.speed) g.currentSpeed = ev.speed;
-          showCallout(ev.msg, ev.col ?? '#ffffff', 1700);
-        } else if (ev.type === 'shot' && ev.start) {
-          if (ev.isDouble && ev.target2) {
-            spawnShot(ev.start, undefined, g.currentSpeed);
-            spawnShot(ev.target2, undefined, g.currentSpeed);
-            showCallout('두 곳 방어', '#00e5ff', 800);
-          } else {
-            spawnShot(ev.start, ev.target, g.currentSpeed, !!ev.boss);
-            const target = cornerByKey(ev.boss ? 'TL' : ev.target ?? ev.start);
-            showCallout(ev.boss ? '정면 방어' : target.callout, target.css, 780);
-          }
-        }
-        g.nextEvent++;
+      const progress = Math.max(0, Math.min(1, nowSec / duration));
+      const phase = phaseForProgress(phases, progress);
+
+      if (phase.id !== g.phaseId) {
+        g.phaseId = phase.id;
+        g.currentSpeed = flightSpeedFromSec(travelSec, phase.speedMult);
+        showCallout(phase.msg, phase.col, 1700);
+      }
+
+      // 후반: 보스 1회 (랜덤 코너)
+      if (!g.bossSpawned && progress >= 0.88 && nowSec < duration - 1.2) {
+        g.bossSpawned = true;
+        g.currentSpeed = flightSpeedFromSec(travelSec, 0.78);
+        const bossStart = pickCorner(g.lastStart);
+        spawnShot(bossStart, bossStart, g.currentSpeed, true);
+        g.lastStart = bossStart;
+        showCallout('정면 방어', '#ffffff', 900);
+        scheduleNext(nowSec, phase);
+      } else if (nowSec >= g.nextSpawnAt && nowSec < duration - 1.5 && phase.id < 5) {
+        spawnRandomWave(phase);
+        scheduleNext(nowSec, phase);
+      } else if (nowSec >= g.nextSpawnAt && nowSec < duration - 1.5 && phase.id >= 5 && g.bossSpawned) {
+        // 보스 이후 가끔 일반 슛
+        if (Math.random() < 0.55) spawnRandomWave({ ...phase, doubleChance: 0, speedMult: 1.1 });
+        scheduleNext(nowSec, phase);
       }
 
       fieldGrid.position.z += g.currentSpeed * 0.5 * delta;
@@ -420,15 +624,14 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
         const swingDir = data.targetX > data.startX ? -1 : 1;
         p.position.x = THREE.MathUtils.lerp(data.startX, data.targetX, ease) + (data.isCurve ? swing * swingDir : 0);
         p.position.y = THREE.MathUtils.lerp(data.startY, data.targetY, ease);
-        if (data.isCurve) {
+        if (data.isCurve && !data.isBoss) {
           const color = new THREE.Color(cornerByKey(data.startKey).hex).lerp(new THREE.Color(cornerByKey(data.targetKey).hex), ease);
-          data.wireMesh.material.color = color;
-          if (!data.isBoss) data.coreMesh.material.color = color;
+          data.coreMesh.material.color = color;
         }
         if (!isLow || Math.random() > 0.45) {
           const trail = new THREE.Mesh(
             new THREE.BoxGeometry(0.55, 0.55, 0.55),
-            new THREE.MeshBasicMaterial({ color: data.wireMesh.material.color, transparent: true, opacity: 0.42 }),
+            new THREE.MeshBasicMaterial({ color: data.coreMesh.material.color, transparent: true, opacity: 0.42 }),
           ) as Trail;
           trail.position.copy(p.position);
           trail.userData = { life: 1 };
@@ -522,7 +725,7 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
       g.running = false;
       if (g.raf != null) cancelAnimationFrame(g.raf);
       if (g.timer) clearInterval(g.timer);
-      g.projectiles.forEach((p) => scene.remove(p));
+      g.projectiles.forEach((p) => disposeProjectile(p));
       g.trails.forEach((t) => {
         scene.remove(t);
         t.geometry.dispose();
@@ -533,6 +736,7 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
         fx.geometry.dispose();
         fx.material.dispose();
       });
+      soccerMap.dispose();
       fieldGrid.geometry.dispose();
       (fieldGrid.material as THREE.Material).dispose();
       ceilingGrid.geometry.dispose();
@@ -541,7 +745,7 @@ export function GoalkeeperReactionTraining({ durationSec, speedLevel, onExit, on
       (goalFrame.material as THREE.Material).dispose();
       renderer.dispose();
     };
-  }, [durationSec, endGame, speedLevel]);
+  }, [durationSec, endGame, goalkeeperTier, speedSec]);
 
   return (
     <div className="gk">

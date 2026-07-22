@@ -692,24 +692,31 @@ describe('SPOMOVE variant slot pad colors', () => {
 });
 
 describe('spatial arrow color mode', () => {
-  test('randomizes arrow fill color independently from direction by default', () => {
+  test('random mapping can still randomize fill independently from direction', () => {
     const originalRandom = Math.random;
     try {
       Math.random = () => 0.26;
-      expect(spatialArrowFillForDirection('up')).toBe('#3B82F6');
+      expect(spatialArrowFillForDirection('up', undefined, 'random')).toBe('#3B82F6');
 
       Math.random = () => 0.76;
-      expect(spatialArrowFillForDirection('up')).toBe('#FACC15');
+      expect(spatialArrowFillForDirection('up', undefined, 'random')).toBe('#FACC15');
     } finally {
       Math.random = originalRandom;
     }
   });
 
-  test('supports compass mapping for MASTER reaction cognition preset', () => {
+  test('compass mapping is fixed: up red, right yellow, left green, down blue', () => {
     expect(spatialArrowFillForDirection('up', undefined, 'compass')).toBe('#EF4444');
-    expect(spatialArrowFillForDirection('left', undefined, 'compass')).toBe('#22C55E');
     expect(spatialArrowFillForDirection('right', undefined, 'compass')).toBe('#FACC15');
+    expect(spatialArrowFillForDirection('left', undefined, 'compass')).toBe('#22C55E');
     expect(spatialArrowFillForDirection('down', undefined, 'compass')).toBe('#3B82F6');
+  });
+
+  test('default mapping is compass (fixed direction→color)', () => {
+    expect(spatialArrowFillForDirection('up')).toBe('#EF4444');
+    expect(spatialArrowFillForDirection('right')).toBe('#FACC15');
+    expect(spatialArrowFillForDirection('left')).toBe('#22C55E');
+    expect(spatialArrowFillForDirection('down')).toBe('#3B82F6');
   });
 });
 

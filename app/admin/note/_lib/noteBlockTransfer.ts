@@ -54,13 +54,18 @@ export function buildBlockForestTransferCommand(
   const movedIds = collectBlockForestIds(rootIds, blocks);
   const rootSet = new Set(rootIds);
   const movedSet = new Set(movedIds);
+  // 타깃 문서 루트로 올릴 때 order_index를 0..n-1로 재부여 — 중복 order로 persist guard가
+  // 트랜잭션을 막아 드래그 직후 원위치 롤백되는 회귀 방지
+  const rootOrderById = new Map(rootIds.map((id, index) => [id, index]));
   return {
     rootIds,
     movedIds,
     patches: movedIds.map((id): NoteBlockFieldPatch => ({
       id,
       document_id: targetDocumentId,
-      ...(rootSet.has(id) ? { parent_block_id: null } : {}),
+      ...(rootSet.has(id)
+        ? { parent_block_id: null, order_index: rootOrderById.get(id) ?? 0 }
+        : {}),
     })),
     nextBlocks: blocks.filter((block) => !movedSet.has(block.id)),
   };

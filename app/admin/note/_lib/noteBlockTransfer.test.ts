@@ -38,7 +38,7 @@ describe('buildBlockForestTransferCommand', () => {
     expect(command.movedIds).toEqual(['root', 'child', 'grandchild']);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
     expect(command.patches).toEqual([
-      { id: 'root', document_id: 'target', parent_block_id: null },
+      { id: 'root', document_id: 'target', parent_block_id: null, order_index: 0 },
       { id: 'child', document_id: 'target' },
       { id: 'grandchild', document_id: 'target' },
     ]);
@@ -62,7 +62,7 @@ describe('buildBlockForestTransferCommand', () => {
     expect(command.rootIds).toEqual(['root']);
     expect(command.movedIds).toEqual(['root', 'child-a', 'child-b', 'grandchild']);
     expect(command.patches).toEqual([
-      { id: 'root', document_id: 'target', parent_block_id: null },
+      { id: 'root', document_id: 'target', parent_block_id: null, order_index: 0 },
       { id: 'child-a', document_id: 'target' },
       { id: 'child-b', document_id: 'target' },
       { id: 'grandchild', document_id: 'target' },
@@ -92,7 +92,7 @@ describe('buildBlockForestTransferCommand', () => {
     expect(command.movedIds).toEqual(['toggle', 'toggle-child']);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['other']);
     expect(command.patches).toEqual([
-      { id: 'toggle', document_id: 'target', parent_block_id: null },
+      { id: 'toggle', document_id: 'target', parent_block_id: null, order_index: 0 },
       { id: 'toggle-child', document_id: 'target' },
     ]);
   });
@@ -131,7 +131,7 @@ describe('buildBlockForestTransferCommand', () => {
     expect(command.rootIds).toEqual(['safe']);
     expect(command.movedIds).toEqual(['safe']);
     expect(command.patches).toEqual([
-      { id: 'safe', document_id: 'target', parent_block_id: null },
+      { id: 'safe', document_id: 'target', parent_block_id: null, order_index: 0 },
     ]);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['parent', 'nested-page']);
   });
@@ -167,8 +167,8 @@ describe('buildBlockForestTransferCommand', () => {
     expect(command.movedIds).toEqual(['todo', 'toggle', 'toggle-child']);
     expect(command.nextBlocks.map((item) => item.id)).toEqual(['page-link']);
     expect(command.patches).toEqual([
-      { id: 'todo', document_id: 'target', parent_block_id: null },
-      { id: 'toggle', document_id: 'target', parent_block_id: null },
+      { id: 'todo', document_id: 'target', parent_block_id: null, order_index: 0 },
+      { id: 'toggle', document_id: 'target', parent_block_id: null, order_index: 1 },
       { id: 'toggle-child', document_id: 'target' },
     ]);
   });

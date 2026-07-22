@@ -721,6 +721,7 @@ function SpomoveSessionContent() {
           moleLookMode={officialPreset.engine.moleLookMode}
           numberCartTier={officialPreset.engine.numberCartTier}
           colorTrackerTier={officialPreset.engine.colorTrackerTier}
+          goalkeeperTier={officialPreset.engine.goalkeeperTier}
           colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}
           camouflagePlacement={officialPreset.engine.camouflagePlacement}
           flowFeatures={officialPreset.engine.flowFeatures}

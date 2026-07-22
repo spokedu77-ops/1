@@ -178,6 +178,19 @@ function resolveStructureAuthority(
   return decision === 'preserve_local' ? 'local' : 'incoming';
 }
 
+function mergeAuthorityOptions(
+  localBlocks: NoteBlock[],
+  incomingBlocks: NoteBlock[],
+  ctx: NoteCommandContext,
+): { structureAuthority: 'local' | 'incoming'; excludedIds?: ReadonlySet<string> } {
+  return {
+    structureAuthority: resolveStructureAuthority(localBlocks, incomingBlocks, ctx),
+    ...(ctx.pendingLeaveIds && ctx.pendingLeaveIds.size > 0
+      ? { excludedIds: ctx.pendingLeaveIds }
+      : {}),
+  };
+}
+
 function wouldReconcileRegressLocalPosition(
   localBlocks: NoteBlock[],
   incomingBlocks: NoteBlock[],
@@ -246,7 +259,7 @@ export function applyNoteCommand(
     let next = mergeReconciledBlocks(
       docBlocks,
       incoming,
-      { structureAuthority: resolveStructureAuthority(docBlocks, incoming, ctx) },
+      mergeAuthorityOptions(docBlocks, incoming, ctx),
     );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
@@ -278,7 +291,7 @@ export function applyNoteCommand(
     next = mergeReconciledBlocks(
       docBlocks,
       next,
-      { structureAuthority: resolveStructureAuthority(docBlocks, next, ctx) },
+      mergeAuthorityOptions(docBlocks, next, ctx),
     );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
@@ -291,7 +304,7 @@ export function applyNoteCommand(
     let next = mergeReconciledBlocks(
       docBlocks,
       incoming,
-      { structureAuthority: resolveStructureAuthority(docBlocks, incoming, ctx) },
+      mergeAuthorityOptions(docBlocks, incoming, ctx),
     );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);
@@ -316,7 +329,7 @@ export function applyNoteCommand(
     let next = mergeReconciledBlocks(
       docBlocks,
       incoming,
-      { structureAuthority: resolveStructureAuthority(docBlocks, incoming, ctx) },
+      mergeAuthorityOptions(docBlocks, incoming, ctx),
     );
     next = unionLocalOnlyBlocks(docBlocks, next, ctx.documentId);
     next = preserveStoreContent(next, ctx);

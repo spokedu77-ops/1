@@ -4,7 +4,9 @@ import {
   addStructuralExcludeIds,
   clearStructuralExcludeForDocument,
   getStructuralExcludeIds,
+  releaseLeaveExcludeConfirmedAbsent,
   removeStructuralExcludeIds,
+  retainLeaveExcludeAfterAck,
   syncStructuralExcludeFromOutbound,
 } from './noteStructuralExcludeRegistry';
 
@@ -33,6 +35,19 @@ function transferAwayOp(blockId: string): NoteLocalOutboundOp {
 }
 
 describe('noteStructuralExcludeRegistry', () => {
+  it('keeps leave exclude after outbound ack until server confirms absence', () => {
+    clearStructuralExcludeForDocument('doc-source');
+    addStructuralExcludeIds('doc-source', ['todo-1']);
+    syncStructuralExcludeFromOutbound('doc-source', [transferAwayOp('todo-1')]);
+    syncStructuralExcludeFromOutbound('doc-source', []);
+    // outbound 비워도 ack grace로 유지되어야 되살림이 막힌다
+    retainLeaveExcludeAfterAck('doc-source', ['todo-1']);
+    expect([...getStructuralExcludeIds('doc-source')]).toEqual(['todo-1']);
+
+    releaseLeaveExcludeConfirmedAbsent('doc-source', new Set());
+    expect(getStructuralExcludeIds('doc-source').size).toBe(0);
+  });
+
   it('keeps exclude ids until outbound op is consumed (no TTL)', () => {
     clearStructuralExcludeForDocument('doc-1');
     addStructuralExcludeIds('doc-1', ['todo-1']);

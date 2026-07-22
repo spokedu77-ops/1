@@ -214,6 +214,27 @@ describe('applyNoteCommand', () => {
     expect((blocks[0].content as { text: string }).text).toBe('typed');
   });
 
+  it('syncSnapshot does not resurrect blocks pending leave/transfer exclude', () => {
+    const kept = block('kept', {
+      type: 'todo',
+      order_index: 0,
+      content: { text: 'remain', checked: false },
+    });
+    const moved = block('moved', {
+      type: 'todo',
+      order_index: 1,
+      content: { text: 'should stay gone', checked: false },
+    });
+
+    const { blocks } = applyNoteCommand(
+      [kept],
+      { type: 'syncSnapshot', blocks: [kept, moved] },
+      { ...ctx, pendingLeaveIds: new Set(['moved']) },
+    );
+
+    expect(blocks.map((item) => item.id)).toEqual(['kept']);
+  });
+
   it('patchContent does not drop sibling empty placeholders while typing', () => {
     const previous = [
       block('empty-todo', {

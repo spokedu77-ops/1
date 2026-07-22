@@ -276,6 +276,8 @@ type LaunchSettings = {
   moleLookMode: 'classic' | 'variant';
   /** 시지각반응(reactTrain) 매직 아이(5번) 전용: 기존(중앙) / 변형(Simon식 극단 순환) */
   camouflagePlacement: 'center' | 'variant';
+  /** 시지각반응(reactTrain) 골키퍼(10번) 전용: 1=항상 1개 · 2=1~2개(더블) */
+  goalkeeperTier: 1 | 2;
   /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
   bodyLabelMode: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
@@ -305,6 +307,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   colorTrackerDualPanel: false,
   moleLookMode: 'classic',
   camouflagePlacement: 'center',
+  goalkeeperTier: 2,
   bodyLabelMode: 'hard',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -333,6 +336,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     colorTrackerDualPanel: auto.colorTrackerDualPanel ?? fallback.colorTrackerDualPanel,
     moleLookMode: auto.moleLookMode === 'variant' ? 'variant' : fallback.moleLookMode,
     camouflagePlacement: auto.camouflagePlacement === 'variant' ? 'variant' : fallback.camouflagePlacement,
+    goalkeeperTier: auto.goalkeeperTier === 1 ? 1 : fallback.goalkeeperTier,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
   };
@@ -430,6 +434,7 @@ function TrainingPortal({
     colorTrackerDualPanel: launch.colorTrackerDualPanel,
     moleLookMode: launch.moleLookMode,
     camouflagePlacement: launch.camouflagePlacement,
+    goalkeeperTier: launch.goalkeeperTier,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
   };
@@ -441,7 +446,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -712,6 +717,7 @@ function SettingsScreen({
       ...(mapped.moleLookMode ? { moleLookMode: mapped.moleLookMode } : {}),
       ...(mapped.numberCartTier ? { numberCartTier: mapped.numberCartTier } : {}),
       ...(mapped.colorTrackerTier ? { colorTrackerTier: mapped.colorTrackerTier } : {}),
+      ...(mapped.goalkeeperTier ? { goalkeeperTier: mapped.goalkeeperTier } : {}),
       ...(mapped.camouflagePlacement ? { camouflagePlacement: mapped.camouflagePlacement } : {}),
     };
   });
@@ -828,22 +834,28 @@ function SettingsScreen({
                 <SettingsGuideVideoIframe accent={accent} videoUrl={engineGuideVideoUrl} />
                 {guideBlock ? (
                   <>
-                    <p style={{ margin: '10px 0 10px', fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: '0.12em' }}>{guideBlock.tag}</p>
-                    <p style={{ margin: '0 0 14px', fontSize: 12, color: T.text, lineHeight: 1.65 }}>{guideBlock.intro}</p>
                     {guidePhase ? (
                       <div style={{ marginBottom: 14 }}>
-                        <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 800, color: accent, letterSpacing: '0.08em' }}>
+                        <p style={{ margin: '10px 0 8px', fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: '0.12em' }}>
                           {guidePhase.num} {guidePhase.name}
+                          <span style={{ fontWeight: 600, color: T.textDim }}> · {guideBlock.tag}</span>
                         </p>
-                        <p style={{ margin: '0 0 6px', fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>목표</strong> {guidePhase.goal}</p>
+                        <p style={{ margin: '0 0 12px', fontSize: 12, color: T.text, lineHeight: 1.65 }}>{guidePhase.goal}</p>
                         <p style={{ margin: '0 0 6px', fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>화면</strong> {guidePhase.screen}</p>
                         <p style={{ margin: '0 0 6px', fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>실행</strong> {guidePhase.action}</p>
-                        <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>코치</strong> {guidePhase.coach}</p>
+                        <p style={{ margin: guidePhase.pitfall ? '0 0 6px' : 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>코치</strong> {guidePhase.coach}</p>
+                        {guidePhase.pitfall ? (
+                          <p style={{ margin: 0, fontSize: 12, color: T.textDim, lineHeight: 1.6 }}><strong style={{ color: T.text }}>주의</strong> {guidePhase.pitfall}</p>
+                        ) : null}
                       </div>
                     ) : (
-                      <p style={{ margin: '0 0 12px', fontSize: 12, color: T.muted }}>
-                        이 모드·난이도에 해당하는 단계별 상세 문단은 가이드에 없습니다.
-                      </p>
+                      <>
+                        <p style={{ margin: '10px 0 10px', fontSize: 11, color: T.muted, fontWeight: 700, letterSpacing: '0.12em' }}>{guideBlock.tag}</p>
+                        <p style={{ margin: '0 0 14px', fontSize: 12, color: T.text, lineHeight: 1.65 }}>{guideBlock.intro}</p>
+                        <p style={{ margin: '0 0 12px', fontSize: 12, color: T.muted }}>
+                          이 모드·난이도에 해당하는 단계별 상세 문단은 가이드에 없습니다.
+                        </p>
+                      </>
                     )}
                   </>
                 ) : (
@@ -903,6 +915,7 @@ function SettingsScreen({
                             moleLookMode: mapped.moleLookMode ?? next.moleLookMode,
                             numberCartTier: mapped.numberCartTier ?? next.numberCartTier,
                             colorTrackerTier: mapped.colorTrackerTier ?? next.colorTrackerTier,
+                            goalkeeperTier: mapped.goalkeeperTier ?? next.goalkeeperTier,
                           };
                           const engineLevel = mapped.engineLevel;
                           if (engineLevel === 8) {
@@ -1332,13 +1345,62 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·흰 공 9번·골키퍼 10번·순차기억 1·2번은 내부 타이밍) */}
-          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 9 || reactTrainEngineLevelForUi(levelId) === 10)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {/* 시지각반응 골키퍼(10번) 전용: 동시 공 수 */}
+          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  1은 항상 공 1개, 2는 더블 블록 구간에서 1~2개가 동시에 날아옵니다. 비행 시간은 아래 신호 속도로 맞춥니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 1 as const, label: '1', sub: '항상 1개' },
+                  { id: 2 as const, label: '2', sub: '1~2개' },
+                ]).map((opt) => {
+                  const active = launch.goalkeeperTier === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, goalkeeperTier: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 속도 (DIVE·매직 아이 5번·흰 공 9번·순차기억 1·2번은 내부 타이밍) */}
+          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>신호 속도</label>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
+                  {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10 ? '비행 시간' : '신호 속도'}
+                </label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {launch.speed.toFixed(1)}초 / 자극
+                  {isReactTrain && reactTrainEngineLevelForUi(levelId) === 10
+                    ? `${launch.speed.toFixed(1)}초 / 스폰→히트`
+                    : `${launch.speed.toFixed(1)}초 / 자극`}
                 </div>
               </div>
               <SpeedSelector

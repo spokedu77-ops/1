@@ -31,7 +31,7 @@ export function useTrainingTimer({
   fruitSlides,
   basicNumberOverlay,
   spatialArrowColorMode = 'basic',
-  spatialArrowColorMapping = 'random',
+  spatialArrowColorMapping = 'compass',
   flankerStimulusType,
   onSignal,
   onFinish,

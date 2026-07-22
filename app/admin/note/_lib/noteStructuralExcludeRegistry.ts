@@ -8,6 +8,19 @@ const extraUntilOutboundSynced = new Map<string, Set<string>>();
 
 const structuralExcludeByDocument = new Map<string, Set<string>>();
 
+/** push ack 직후 서버 스냅샷이 아직 옛 위치를 줄 때 되살림 방지 */
+const LEAVE_CONFIRM_GRACE_MS = 20_000;
+const leaveConfirmUntilByDocument = new Map<string, Map<string, number>>();
+
+function pruneLeaveConfirmGrace(documentId: string, now = Date.now()): void {
+  const grace = leaveConfirmUntilByDocument.get(documentId);
+  if (!grace) return;
+  for (const [id, until] of [...grace]) {
+    if (now > until) grace.delete(id);
+  }
+  if (grace.size === 0) leaveConfirmUntilByDocument.delete(documentId);
+}
+
 function mergeExcludeSets(
   documentId: string,
   fromOutbound: Set<string>,
@@ -54,6 +67,7 @@ export function removeStructuralExcludeIds(documentId: string, ids: string[]): v
 export function clearStructuralExcludeForDocument(documentId: string): void {
   extraUntilOutboundSynced.delete(documentId);
   structuralExcludeByDocument.delete(documentId);
+  leaveConfirmUntilByDocument.delete(documentId);
 }
 
 /** outbound 큐 기준 투영 동기화 — push ack로 op 소비 시 자동 해제 */
@@ -66,10 +80,37 @@ export function syncStructuralExcludeFromOutbound(
   mergeExcludeSets(documentId, fromOutbound);
 }
 
+/** push ack된 leave/relocation — 서버 스냅샷이 빠질 때까지(또는 grace) 유지 */
+export function retainLeaveExcludeAfterAck(documentId: string, ids: string[]): void {
+  if (!documentId || ids.length === 0) return;
+  const grace = leaveConfirmUntilByDocument.get(documentId) ?? new Map<string, number>();
+  const until = Date.now() + LEAVE_CONFIRM_GRACE_MS;
+  for (const id of ids) grace.set(id, until);
+  leaveConfirmUntilByDocument.set(documentId, grace);
+}
+
+/** 서버 스냅샷에 더 이상 없으면 leave 확정으로 grace 해제 */
+export function releaseLeaveExcludeConfirmedAbsent(
+  documentId: string,
+  serverPresentIds: ReadonlySet<string>,
+): void {
+  const grace = leaveConfirmUntilByDocument.get(documentId);
+  if (!grace) return;
+  for (const id of [...grace.keys()]) {
+    if (!serverPresentIds.has(id)) grace.delete(id);
+  }
+  if (grace.size === 0) leaveConfirmUntilByDocument.delete(documentId);
+}
+
 /** pipeline·store·reconcile이 동기적으로 읽는 exclude 집합 */
 export function getStructuralExcludeIds(documentId: string): Set<string> {
-  const entry = structuralExcludeByDocument.get(documentId);
-  return entry ? new Set(entry) : new Set();
+  pruneLeaveConfirmGrace(documentId);
+  const result = new Set(structuralExcludeByDocument.get(documentId));
+  const grace = leaveConfirmUntilByDocument.get(documentId);
+  if (grace) {
+    for (const id of grace.keys()) result.add(id);
+  }
+  return result;
 }
 
 export function hasStructuralExcludeIds(documentId: string): boolean {

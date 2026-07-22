@@ -30,7 +30,7 @@ export function useIntervalTimer({
   fruitSlides,
   basicNumberOverlay,
   spatialArrowColorMode = 'basic',
-  spatialArrowColorMapping = 'random',
+  spatialArrowColorMapping = 'compass',
   flankerStimulusType,
   onSignal,
   onFinish,

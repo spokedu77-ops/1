@@ -27,6 +27,15 @@ interface SessionRecord {
   status: string;
 }
 
+interface SettlementAdj {
+  id: string;
+  amount: number;
+  reason: string;
+  year: number;
+  month: number;
+  period: 'first' | 'second';
+}
+
 /** 회차 숫자 제거하고 한글 제목만 표시 (1/2, 4/5, 7/10 등은 틀리는 경우가 많아 제외) */
 function displayTitle(title: string | undefined): string {
   if (!title) return '';
@@ -49,6 +58,7 @@ export default function TeacherReportPage() {
   const [teacher, setTeacher] = useState<TeacherInfo | null>(null);
   const [mileageLogs, setMileageLogs] = useState<MileageLog[]>([]);
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
+  const [settlements, setSettlements] = useState<SettlementAdj[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
@@ -73,8 +83,12 @@ export default function TeacherReportPage() {
 
       const res = await fetch('/api/teacher/settlement-sessions', { credentials: 'include' });
       if (!res.ok) throw new Error('정산 세션 조회 실패');
-      const { data: sessionList } = (await res.json()) as { data?: SessionRecord[] };
+      const { data: sessionList, settlements: adjList } = (await res.json()) as {
+        data?: SessionRecord[];
+        settlements?: SettlementAdj[];
+      };
       setSessions(sessionList || []);
+      setSettlements(adjList || []);
     } catch (error) {
       devLogger.error(error);
       setFetchError('데이터를 불러오지 못했습니다.');
@@ -97,8 +111,18 @@ export default function TeacherReportPage() {
     );
   }, [sessions, selectedMonth, selectedPeriod, now]);
 
-  // 정산 계산 로직
-  const beforeTax = filteredSessions.reduce((acc, s) => acc + (s.price || 0), 0);
+  // Admin Payroll period: 'first' | 'second' ↔ teacher UI: '1' | '2'
+  const filteredAdjs = useMemo(() => {
+    const periodKey = selectedPeriod === '1' ? 'first' : 'second';
+    return settlements.filter(
+      (a) => a.year === now.getFullYear() && a.month === selectedMonth && a.period === periodKey
+    );
+  }, [settlements, selectedMonth, selectedPeriod, now]);
+
+  // 정산 계산 로직 (세션 수업료 + 기타 정산, admin Payroll과 동일)
+  const sessionsTotal = filteredSessions.reduce((acc, s) => acc + (s.price || 0), 0);
+  const adjTotal = filteredAdjs.reduce((acc, a) => acc + (a.amount || 0), 0);
+  const beforeTax = sessionsTotal + adjTotal;
   const tax = Math.floor(beforeTax * 0.033); // 3.3% 원천징수 (절사)
   const afterTax = beforeTax - tax; // 최종 실수령액
 
@@ -227,21 +251,40 @@ export default function TeacherReportPage() {
             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Settlement History</h3>
           </div>
           <div className="bg-white rounded-[28px] border border-slate-100 shadow-sm overflow-hidden divide-y divide-slate-50">
-            {filteredSessions.length > 0 ? (
-              filteredSessions.map((session) => (
-                <div key={session.id} className="p-4 flex justify-between items-center">
-                  <div className="flex-1 min-w-0 pr-4">
-                    <p className="text-[12px] font-black text-slate-800 truncate">{displayTitle(session.title)}</p>
-                    <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 uppercase mt-1 inline-block">
-                      {session.status}
-                    </span>
+            {filteredSessions.length > 0 || filteredAdjs.length > 0 ? (
+              <>
+                {filteredSessions.map((session) => (
+                  <div key={session.id} className="p-4 flex justify-between items-center">
+                    <div className="flex-1 min-w-0 pr-4">
+                      <p className="text-[12px] font-black text-slate-800 truncate">{displayTitle(session.title)}</p>
+                      <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-600 uppercase mt-1 inline-block">
+                        {session.status}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[12px] font-black text-slate-900">{session.price.toLocaleString()}원</p>
+                      <p className="text-[8px] font-bold text-slate-300 tabular-nums">{new Date(session.start_at).getDate()}일</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[12px] font-black text-slate-900">{session.price.toLocaleString()}원</p>
-                    <p className="text-[8px] font-bold text-slate-300 tabular-nums">{new Date(session.start_at).getDate()}일</p>
+                ))}
+                {filteredAdjs.map((adj) => (
+                  <div key={adj.id} className="p-4 flex justify-between items-center">
+                    <div className="flex-1 min-w-0 pr-4">
+                      <p className="text-[12px] font-black text-slate-800 truncate">
+                        [기타] {adj.reason || '기타 정산'}
+                      </p>
+                      <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 uppercase mt-1 inline-block">
+                        adjustment
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-[12px] font-black ${adj.amount >= 0 ? 'text-slate-900' : 'text-red-500'}`}>
+                        {adj.amount > 0 ? '+' : ''}{adj.amount.toLocaleString()}원
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </>
             ) : (
               <div className="py-12 text-center text-slate-200 text-[10px] font-black italic uppercase">No Classes</div>
             )}

@@ -112,6 +112,7 @@ type Props = {
   moleLookMode?: 'classic' | 'variant';
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
+  goalkeeperTier?: 1 | 2;
   colorTrackerDualPanel?: boolean;
   camouflagePlacement?: 'center' | 'variant';
   flowFeatures?: string[];
@@ -158,6 +159,7 @@ export function EngineRouter({
   moleLookMode,
   numberCartTier,
   colorTrackerTier,
+  goalkeeperTier,
   colorTrackerDualPanel,
   camouflagePlacement,
   flowFeatures,
@@ -232,6 +234,7 @@ export function EngineRouter({
     const effectiveCamouflage = camouflagePlacement ?? resolved.camouflagePlacement ?? 'center';
     const effectiveNumberCartTier = numberCartTier ?? resolved.numberCartTier ?? 2;
     const effectiveColorTrackerTier = colorTrackerTier ?? resolved.colorTrackerTier ?? 2;
+    const effectiveGoalkeeperTier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;
 
     if (engineLevel === 1) {
       return (
@@ -359,7 +362,8 @@ export function EngineRouter({
         <Suspense fallback={<LoadingOverlay />}>
           <GoalkeeperReactionTraining
             durationSec={Math.max(dur, 120)}
-            speedLevel={reactSpeedLevel}
+            speedSec={sp}
+            goalkeeperTier={effectiveGoalkeeperTier}
             onExit={onExit}
             onComplete={handleReactTrainComplete}
           />

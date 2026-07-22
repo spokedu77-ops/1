@@ -1,6 +1,6 @@
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 
-export type SpomoveDifficultyKind = 'numberCart' | 'colorTracker' | 'mole' | 'camouflage';
+export type SpomoveDifficultyKind = 'numberCart' | 'colorTracker' | 'mole' | 'camouflage' | 'goalkeeper';
 
 export type SpomoveDifficultyOption = {
   value: string;
@@ -17,6 +17,7 @@ export function getSpomoveDifficultyKind(
   if (level === 9) return 'colorTracker';
   if (level === 6) return 'mole';
   if (level === 5) return 'camouflage';
+  if (level === 10) return 'goalkeeper';
   return null;
 }
 
@@ -46,6 +47,11 @@ export function getSpomoveDifficultyOptions(
         { value: 'center', label: '1', sub: '중앙' },
         { value: 'variant', label: '2', sub: '극단 순환' },
       ];
+    case 'goalkeeper':
+      return [
+        { value: '1', label: '1', sub: '항상 1개' },
+        { value: '2', label: '2', sub: '1~2개' },
+      ];
   }
 }
 
@@ -62,6 +68,8 @@ export function readSpomoveDifficultyValue(
       return preset.engine.moleLookMode ?? 'classic';
     case 'camouflage':
       return preset.engine.camouflagePlacement ?? 'center';
+    case 'goalkeeper':
+      return String(preset.engine.goalkeeperTier ?? 2);
   }
 }
 
@@ -87,6 +95,9 @@ export function applySpomoveDifficulty(
       break;
     case 'camouflage':
       engine.camouflagePlacement = value === 'variant' ? 'variant' : 'center';
+      break;
+    case 'goalkeeper':
+      engine.goalkeeperTier = value === '1' ? 1 : 2;
       break;
   }
   return { ...preset, engine };

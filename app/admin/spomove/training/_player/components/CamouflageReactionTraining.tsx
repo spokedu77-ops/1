@@ -74,8 +74,8 @@ ${REACT_TRAIN_VIEWPORT_CSS}
 
 export function CamouflageReactionTraining({
   durationSec,
-  speedLevel,
-  speedSec,
+  speedLevel: _speedLevel,
+  speedSec: _speedSec,
   placementMode = 'center',
   onExit,
   onComplete,
@@ -100,14 +100,13 @@ export function CamouflageReactionTraining({
     onExitRef.current = onExit;
   }, [onExit]);
 
-  /** 위장 해제(REVEAL) 소요 시간: speedSec(1~6초)을 그대로 사용 — 다른 reactTrain 레벨과 동일한 의미 */
-  const fallTimeSec = Math.max(1, Math.min(6, Number.isFinite(speedSec) ? speedSec : 4));
+  /** 위장 해제(REVEAL) 소요 시간 — 5초 고정 (신호 속도 설정 없음) */
+  const fallTimeSec = 5;
   const revealMs = fallTimeSec * 1000;
   const lv = Math.max(1, Math.min(7, Math.round(7 - ((fallTimeSec - 1) * 6) / 5)));
   const spName = SPD_NAMES[lv - 1] ?? '보통';
-  /** 노이즈 대기 시간: speedLevel(난이도 단계)이 높을수록 짧게 */
-  const lvClamped = Math.max(1, Math.min(7, Math.round(Number.isFinite(speedLevel) ? speedLevel : lv)));
-  const noiseMs = Math.max(700, 1700 - (lvClamped - 1) * 140);
+  /** 노이즈 대기 시간: 5초 고정에 맞춘 난이도 단계 */
+  const noiseMs = Math.max(700, 1700 - (lv - 1) * 140);
 
   const stopGame = useCallback(() => {
     const g = gRef.current;

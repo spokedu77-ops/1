@@ -17,6 +17,7 @@ const ENGINE_OPTION_KEYS = [
   'moleLookMode',
   'numberCartTier',
   'colorTrackerTier',
+  'goalkeeperTier',
   'colorTrackerDualPanel',
   'flowFeatures',
   'flowDuration',
@@ -37,6 +38,7 @@ export const MECHANIC_KEYS_BY_MODE: Record<OfficialSpomoveEngineMode, readonly s
     'moleLookMode',
     'numberCartTier',
     'colorTrackerTier',
+    'goalkeeperTier',
     'colorTrackerDualPanel',
     'camouflagePlacement',
   ],
@@ -149,6 +151,7 @@ export function buildStageSignature(preset: OfficialSpomovePreset): string {
   if (engine.reactTrainConcurrent !== undefined) payload.reactTrainConcurrent = engine.reactTrainConcurrent;
   if (engine.numberCartTier !== undefined) payload.numberCartTier = engine.numberCartTier;
   if (engine.colorTrackerTier !== undefined) payload.colorTrackerTier = engine.colorTrackerTier;
+  if (engine.goalkeeperTier !== undefined) payload.goalkeeperTier = engine.goalkeeperTier;
   if (engine.flowDuration !== undefined) payload.flowDuration = engine.flowDuration;
   if (engine.flowIncludeBonus !== undefined) payload.flowIncludeBonus = engine.flowIncludeBonus;
   if (engine.bodyLabelMode !== undefined) payload.bodyLabelMode = engine.bodyLabelMode;

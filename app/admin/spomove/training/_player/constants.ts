@@ -38,7 +38,7 @@ export type SpatialArrowColorMapping = 'random' | 'compass';
 export function spatialArrowFillForDirection(
   _arrowId: string,
   colors: typeof COLORS = COLORS,
-  mapping: SpatialArrowColorMapping = 'random',
+  mapping: SpatialArrowColorMapping = 'compass',
 ): string {
   if (mapping === 'compass') {
     const colorId = SPATIAL_ARROW_COLOR_BY_DIRECTION[_arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION];
@@ -243,6 +243,7 @@ export type ReactTrainUiLevelDefaults = {
   moleLookMode?: 'classic' | 'variant';
   numberCartTier?: 1 | 2 | 3;
   colorTrackerTier?: 1 | 2 | 3;
+  goalkeeperTier?: 1 | 2;
   camouflagePlacement?: 'center' | 'variant';
 };
 
@@ -297,7 +298,9 @@ export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaul
     case 9:
       return { engineLevel: 9, colorTrackerTier: 1 };
     case 11:
-      return { engineLevel: 10 };
+      return { engineLevel: 10, goalkeeperTier: 2 };
+    case 10:
+      return { engineLevel: 10, goalkeeperTier: 2 };
     default: {
       const remapped = LEGACY_REACT_TRAIN_LEVEL_REMAP[level];
       if (remapped != null) return { engineLevel: remapped };

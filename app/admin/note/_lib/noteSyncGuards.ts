@@ -83,13 +83,17 @@ export function outboundHasPureIdentityLeaveOrRelocation(
   return items.some(isPureIdentityLeaveOrRelocationPush);
 }
 
-/** 미ack outbound에 same-doc 구조 변경(presence/topology/mixed)이 있는지 */
+/** 미ack outbound에 구조 변경(presence/topology/relocation/mixed)이 있는지 */
 export function outboundHasUnpublishedTopology(
   items: ReadonlyArray<NoteBlockOpPushItem>,
 ): boolean {
   return items.some((item) => {
     const kind = classifyPushItem(item);
-    return kind === 'topology' || kind === 'presence' || kind === 'mixed';
+    // relocation도 포함 — 하위문서 이동 push ack 전 stale snapshot 되살림 방지
+    return kind === 'topology'
+      || kind === 'presence'
+      || kind === 'mixed'
+      || kind === 'relocation';
   });
 }
 

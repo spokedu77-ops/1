@@ -31,7 +31,7 @@ describe('noteSyncGuards', () => {
     expect(classifyPushItem(relocation)).toBe('relocation');
     expect(outboundHasIdentityLeaveOrRelocation([relocation, topology])).toBe(true);
     expect(outboundHasUnpublishedTopology([topology])).toBe(true);
-    expect(outboundHasUnpublishedTopology([relocation])).toBe(false);
+    expect(outboundHasUnpublishedTopology([relocation])).toBe(true);
     expect(outboundHasUnpublishedTopology([softDelete])).toBe(false);
   });
 

@@ -30,6 +30,7 @@ import {
   readAuthorityBlockText,
 } from './noteAuthority';
 import { buildKnownBlockIdsForPush,
+  isIdentityLeaveOrRelocationPush,
   isPureIdentityLeaveOrRelocationPush,
   outboundHasPureIdentityLeaveOrRelocation,
   outboundHasUnpublishedTopology,
@@ -47,9 +48,39 @@ import {
 } from './noteReconcileIdle';
 import {
   getStructuralExcludeIds,
+  releaseLeaveExcludeConfirmedAbsent,
+  retainLeaveExcludeAfterAck,
   syncStructuralExcludeFromOutbound,
 } from './noteStructuralExcludeRegistry';
 
+function collectLeaveIdsFromPushItems(items: ReadonlyArray<NoteBlockOpPushItem>): string[] {
+  const ids = new Set<string>();
+  for (const item of items) {
+    if (!isIdentityLeaveOrRelocationPush(item)) continue;
+    const payload = item.payload;
+    if (payload.opType === 'soft_delete') {
+      for (const id of payload.ids) ids.add(id);
+      continue;
+    }
+    if (payload.opType === 'purge_block') {
+      ids.add(payload.id);
+      continue;
+    }
+    if (payload.opType === 'patch_fields') {
+      for (const patch of payload.patches) {
+        if (typeof patch.document_id === 'string') ids.add(patch.id);
+      }
+      continue;
+    }
+    if (payload.opType === 'block_transaction') {
+      for (const id of payload.deleteIds) ids.add(id);
+      for (const patch of payload.patches) {
+        if (typeof patch.document_id === 'string') ids.add(patch.id);
+      }
+    }
+  }
+  return [...ids];
+}
 const CONTENT_PUSH_DEBOUNCE_MS = 1500;
 const STRUCTURE_PUSH_DEBOUNCE_MS = 0;
 /** outbound가 있어 push를 미룰 때 — 0이면 ops/state 폭주 */
@@ -320,7 +351,14 @@ export class NoteSyncCoordinator {
     syncStateCache.set(this.documentId, { seq: lastSeq, fetchedAt: Date.now() });
 
     const serverBlocks = dedupeNoteBlocksById(initialBlocks);
-    const excludedIds = collectPendingOutboundExcludedIds(outbound, this.documentId);
+    releaseLeaveExcludeConfirmedAbsent(
+      this.documentId,
+      new Set(serverBlocks.map((block) => block.id)),
+    );
+    const excludedIds = new Set([
+      ...collectPendingOutboundExcludedIds(outbound, this.documentId),
+      ...getStructuralExcludeIds(this.documentId),
+    ]);
     this.lastAppliedSeq = lastSeq;
     if (outbound.length > 0) {
       if (local && local.blocks.length > 0) {
@@ -647,6 +685,10 @@ export class NoteSyncCoordinator {
         fetchedAt: Date.now(),
       });
       await removeOutboundOps(consumedClientOpIds);
+      const consumedLeaveIds = collectLeaveIdsFromPushItems(safeReady);
+      if (consumedLeaveIds.length > 0) {
+        retainLeaveExcludeAfterAck(this.documentId, consumedLeaveIds);
+      }
       const remainingOutbound = await listOutboundOps(this.documentId);
       syncStructuralExcludeFromOutbound(this.documentId, remainingOutbound);
       this.cachedOutboundHasTopology = outboundHasUnpublishedTopology(remainingOutbound);

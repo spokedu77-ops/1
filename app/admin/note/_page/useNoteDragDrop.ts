@@ -21,6 +21,7 @@ import {
   type BlockDropPosition,
 } from '@/app/lib/note/noteBlockTree';
 import { isDocumentDescendantOf } from '@/app/lib/note/orphanSubPageBlocks';
+import { getChildDocumentIdFromPageContent } from '@/app/lib/note/documentParentSync';
 import { clearAllNoteTextSelections } from '../_components/noteCrossSelect';
 import { mergeBlocksWithStoreContent } from '../_lib/noteBlockStateMerge';
 import { buildBlockForestTransferCommand } from '../_lib/noteBlockTransfer';
@@ -41,6 +42,24 @@ import type { useNoteBlockUndo } from '../_hooks/useNoteBlockUndo';
 
 type NoteUndo = ReturnType<typeof useNoteBlockUndo>;
 
+/** page inside → 하위 문서 이동 (Notion 계약). page-on-page는 before/after로 강제 */
+function resolvePageInsideDropAction(
+  container: NoteBlock | undefined,
+  movingRoots: NoteBlock[],
+  currentDocumentId: string | null,
+): { kind: 'transfer'; targetDocumentId: string }
+  | { kind: 'coerce'; position: 'before' | 'after' }
+  | null {
+  if (!container || container.type !== 'page') return null;
+  if (movingRoots.some((block) => block.type === 'page')) {
+    return { kind: 'coerce', position: 'after' };
+  }
+  const childDocId = getChildDocumentIdFromPageContent(
+    (container.content ?? null) as Record<string, unknown> | null,
+  );
+  if (!childDocId || childDocId === currentDocumentId) return null;
+  return { kind: 'transfer', targetDocumentId: childDocId };
+}
 export function useNoteDragDrop(options: {
   blocks: NoteBlock[];
   blocksRef: React.MutableRefObject<NoteBlock[]>;
@@ -466,16 +485,40 @@ export function useNoteDragDrop(options: {
       if (target && !groupDragIds.includes(target.blockId)) {
         if (target.position === 'inside') {
           const container = prevBlocks.find((block) => block.id === target.blockId);
-          if (container) {
-            const visualIds = flattenVisualBlockIds(prevBlocks);
-            const ordered = [...groupDragIds].sort(
-              (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
+          const visualIds = flattenVisualBlockIds(prevBlocks);
+          const ordered = [...groupDragIds].sort(
+            (a, b) => visualIds.indexOf(a) - visualIds.indexOf(b),
+          );
+          const movingRoots = ordered
+            .map((id) => prevBlocks.find((block) => block.id === id))
+            .filter((block): block is NoteBlock => Boolean(block));
+          const pageInside = resolvePageInsideDropAction(container, movingRoots, selectedId);
+          if (pageInside?.kind === 'transfer') {
+            const command = buildBlockForestTransferCommand(
+              prevBlocks,
+              ordered,
+              pageInside.targetDocumentId,
             );
+            if (command.movedIds.length === 0) {
+              setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
+              return;
+            }
+            await runPersistedBlockTransfer(prevBlocks, command, {
+              logLabel: '[Note] moveBlockGroupIntoPageDoc',
+              errorMessage: '하위 페이지로 이동 실패',
+              afterPersist: triggerSave,
+            });
+            return;
+          }
+          const insidePosition = pageInside?.kind === 'coerce'
+            ? pageInside.position
+            : 'inside';
+          if (container && (insidePosition === 'inside' || pageInside?.kind === 'coerce')) {
             const command = buildMoveBlockGroupCommand(
               prevBlocks,
               ordered,
               target.blockId,
-              'inside',
+              insidePosition,
             );
             await runOptimisticBlockCommand(prevBlocks, command, {
               logLabel: '[Note] moveBlockGroupInsideBlock',
@@ -512,6 +555,32 @@ export function useNoteDragDrop(options: {
 
     let target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
     if (!target) return;
+
+    if (target.position === 'inside') {
+      const container = prevBlocks.find((block) => block.id === target.blockId);
+      const pageInside = resolvePageInsideDropAction(container, [moving], selectedId);
+      if (pageInside?.kind === 'transfer') {
+        const command = buildBlockForestTransferCommand(
+          prevBlocks,
+          [moving.id],
+          pageInside.targetDocumentId,
+        );
+        if (command.movedIds.length === 0) {
+          setError('페이지 링크는 해당 페이지 안으로 옮길 수 없습니다.');
+          return;
+        }
+        await runPersistedBlockTransfer(prevBlocks, command, {
+          logLabel: '[Note] moveBlockIntoPageDoc',
+          errorMessage: '하위 페이지로 이동 실패',
+          afterPersist: triggerSave,
+        });
+        return;
+      }
+      if (pageInside?.kind === 'coerce') {
+        target = { blockId: target.blockId, position: pageInside.position };
+      }
+    }
+
     const plan = planBlockDropAt(
       wasBlockDrag ? blocksRef.current : prevBlocks,
       moving.id,

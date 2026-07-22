@@ -14,18 +14,18 @@ export function normalizeNumberCartRounds(value: number): number {
   return NUMBER_CART_ROUND_OPTIONS.reduce((best, v) => (Math.abs(v - n) < Math.abs(best - n) ? v : best));
 }
 
-/** 원본 HTML 순서 그대로 유지: 빨(좌끝)·노·초·파(우끝) — 화면 양끝까지 퍼지도록 X 간격 확대 */
+/** 원본 HTML 순서: 빨(좌끝)·노·초·파(우끝) — 화면 좌우를 넓게 쓰도록 X·크기 확대 */
 const DOOR_COLORS = [
-  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -33 },
-  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -12 },
-  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 12 },
-  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 33 },
+  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -58 },
+  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -22 },
+  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 22 },
+  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 58 },
 ] as const;
 
-const DOOR_Z = -38;
-const DOOR_SIZE_SCALE = 2.6;
-/** 문이 커지고 더 바깥까지 벌어져도 터널 벽에 파묻히지 않도록 반지름 확대 */
-const CAVE_RADIUS = 46;
+const DOOR_Z = -34;
+const DOOR_SIZE_SCALE = 3.55;
+/** 문이 더 바깥·더 커져도 터널 벽에 파묻히지 않도록 반지름 확대 */
+const CAVE_RADIUS = 82;
 /** 카메라(z=64, 아래로 기울어진 시야축) 기준 화면 하단 경계에 걸리는 지점 — "화면 맨 아래에서 출발" 연출 */
 const CART_START = new THREE.Vector3(0, 0, 51);
 /** 수레(z=58) 위에 레일이 붙고, 카메라(z=64) 쪽으로 조금 더 연장 */
@@ -285,6 +285,7 @@ const css = `
 .ncart-play{position:relative;flex:1;min-height:0}
 .ncart-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(ellipse 85% 70% at 50% 42%,rgba(0,0,0,0) 0%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.78) 100%)}
+.ncart-flash{position:absolute;inset:0;z-index:22;pointer-events:none;opacity:0;background:#fff;transition:opacity .06s linear;mix-blend-mode:screen}
 .ncart-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:5px 14px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#10b981;white-space:nowrap;max-width:min(92vw,560px);overflow:hidden;text-overflow:ellipsis}
 .ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:14px;background:rgba(6,10,18,.52);border:1px solid rgba(245,158,11,.2);backdrop-filter:blur(8px);box-shadow:0 6px 22px rgba(0,0,0,.32);transition:opacity .3s ease,transform .3s ease}
 .ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
@@ -306,6 +307,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
   const targetHudRef = useRef<HTMLDivElement>(null);
   const targetNumRef = useRef<HTMLDivElement>(null);
   const targetKeyRef = useRef<HTMLDivElement>(null);
+  const flashRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<CartGame | null>(null);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
@@ -375,7 +377,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
 
     const w0 = play.clientWidth || window.innerWidth;
     const h0 = play.clientHeight || window.innerHeight;
-    const camera = new THREE.PerspectiveCamera(66, w0 / h0, 0.1, 220);
+    const camera = new THREE.PerspectiveCamera(72, w0 / h0, 0.1, 260);
     camera.position.set(0, 10, 64);
     camera.lookAt(0, CAMERA_LOOK_Y, CAMERA_LOOK_Z);
 
@@ -391,8 +393,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     const disposeMats: THREE.Material[] = [];
     const disposeTex: THREE.Texture[] = [];
 
-    // 조명: 원본은 MeshStandardMaterial 표면(동굴·바닥·선로·수레)에 빛이 거의 안 닿아
-    // 전부 새까맣게 보였다 — 반구광으로 전 구간을 고르게 밝히고 나머지는 보조광으로 둔다.
+    // 조명: 어두운 터널 톤 유지 + 문·수레만 읽히게
     const hemiLight = new THREE.HemisphereLight(0x9fb3d9, 0x3a2c1d, 2.4);
     scene.add(hemiLight);
 
@@ -447,7 +448,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       roughness: 1.0,
     });
     disposeMats.push(groundMaterial);
-    const groundGeo = new THREE.PlaneGeometry(100, TUNNEL_LENGTH + 20);
+    const groundGeo = new THREE.PlaneGeometry(180, TUNNEL_LENGTH + 20);
     disposeGeos.push(groundGeo);
     const ground = new THREE.Mesh(groundGeo, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -510,74 +511,75 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       }
     });
 
-    // 4. 문 4개 — 원본보다 밝게(emissive·라이트 강화, 사인 배경 밝게)
-    const frameMat = new THREE.MeshStandardMaterial({ color: 0x4a4a52, roughness: 0.8 });
-    disposeMats.push(frameMat);
+    // 4. 문 4개 — 전면 색 + 아주 얇은 문 형태(같은 색 테두리)
     const doors: DoorObj[] = [];
 
     DOOR_COLORS.forEach((config, index) => {
       const frameGroup = new THREE.Group();
       frameGroup.position.set(config.x, 0, DOOR_Z);
 
-      const pillarGeo = new THREE.BoxGeometry(1.5, 8, 2);
-      const leftPillar = new THREE.Mesh(pillarGeo, frameMat);
-      leftPillar.position.set(-3.0, 2, 0);
-      frameGroup.add(leftPillar);
-      const rightPillar = new THREE.Mesh(pillarGeo, frameMat);
-      rightPillar.position.set(3.0, 2, 0);
-      frameGroup.add(rightPillar);
-      disposeGeos.push(pillarGeo);
-
-      const topBeamGeo = new THREE.BoxGeometry(7.8, 1.5, 2);
-      const topBeam = new THREE.Mesh(topBeamGeo, frameMat);
-      topBeam.position.set(0, 6, 0);
-      frameGroup.add(topBeam);
-      disposeGeos.push(topBeamGeo);
-
       const doorMat = new THREE.MeshStandardMaterial({
         color: config.hex,
-        metalness: 0.6,
-        roughness: 0.4,
+        metalness: 0.35,
+        roughness: 0.35,
         emissive: config.hex,
-        emissiveIntensity: 0.45,
+        emissiveIntensity: 0.65,
       });
       disposeMats.push(doorMat);
-      const doorGeo = new THREE.BoxGeometry(4.6, 7, 0.5);
+      const doorGeo = new THREE.BoxGeometry(6.6, 9.6, 0.55);
       disposeGeos.push(doorGeo);
       const doorMesh = new THREE.Mesh(doorGeo, doorMat);
-      doorMesh.position.set(0, 1.5, -0.5);
+      doorMesh.position.set(0, 2.5, 0);
       frameGroup.add(doorMesh);
 
-      const lightGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16);
-      disposeGeos.push(lightGeo);
-      const lightMat = new THREE.MeshBasicMaterial({ color: config.hex });
-      disposeMats.push(lightMat);
-      const lightMesh = new THREE.Mesh(lightGeo, lightMat);
-      lightMesh.rotation.x = Math.PI / 2;
-      lightMesh.position.set(0, 8, 1);
-      frameGroup.add(lightMesh);
+      // 아주 얇은 문틀 — 검정 없이 같은 색·약간 더 밝게
+      const rimMat = new THREE.MeshBasicMaterial({ color: config.hex });
+      disposeMats.push(rimMat);
+      const slimPillarGeo = new THREE.BoxGeometry(0.35, 9.8, 0.7);
+      disposeGeos.push(slimPillarGeo);
+      const leftRim = new THREE.Mesh(slimPillarGeo, rimMat);
+      leftRim.position.set(-3.45, 2.5, 0.15);
+      frameGroup.add(leftRim);
+      const rightRim = new THREE.Mesh(slimPillarGeo, rimMat);
+      rightRim.position.set(3.45, 2.5, 0.15);
+      frameGroup.add(rightRim);
+      const slimTopGeo = new THREE.BoxGeometry(7.25, 0.35, 0.7);
+      disposeGeos.push(slimTopGeo);
+      const topRim = new THREE.Mesh(slimTopGeo, rimMat);
+      topRim.position.set(0, 7.5, 0.15);
+      frameGroup.add(topRim);
+      const slimBotGeo = new THREE.BoxGeometry(7.25, 0.28, 0.7);
+      disposeGeos.push(slimBotGeo);
+      const botRim = new THREE.Mesh(slimBotGeo, rimMat);
+      botRim.position.set(0, -2.35, 0.15);
+      frameGroup.add(botRim);
 
-      const doorLight = new THREE.PointLight(config.hex, 4, 18);
-      doorLight.position.set(0, 7.5, 2.5);
+      const doorLight = new THREE.PointLight(config.hex, 5, 22);
+      doorLight.position.set(0, 5, 3);
       frameGroup.add(doorLight);
 
       const haloLight = new THREE.PointLight(config.hex, 0, 55);
       haloLight.position.set(0, 4, 4);
       frameGroup.add(haloLight);
 
-      // 사인판: 검정 대신 짙은 남색 배경 + 밝은 글로우로 가독성 강화
+      // 사인판: 투명 배경 + 아주 밝은 숫자 (비조명 Basic)
       const signCanvas = document.createElement('canvas');
       signCanvas.width = 512;
       signCanvas.height = 256;
       const signCtx = signCanvas.getContext('2d')!;
       const signTex = new THREE.CanvasTexture(signCanvas);
       disposeTex.push(signTex);
-      const signMat = new THREE.MeshBasicMaterial({ map: signTex, transparent: true });
+      const signMat = new THREE.MeshBasicMaterial({
+        map: signTex,
+        transparent: true,
+        depthWrite: false,
+        toneMapped: false,
+      });
       disposeMats.push(signMat);
-      const signGeo = new THREE.BoxGeometry(6.8, 3, 0.2);
+      const signGeo = new THREE.BoxGeometry(5.6, 3.0, 0.12);
       disposeGeos.push(signGeo);
       const signMesh = new THREE.Mesh(signGeo, signMat);
-      signMesh.position.set(0, 5.5, 1.1);
+      signMesh.position.set(0, 3.7, 0.45);
       frameGroup.add(signMesh);
 
       frameGroup.scale.setScalar(DOOR_SIZE_SCALE);
@@ -599,23 +601,14 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
 
     const updateDoorSignText = (door: DoorObj, text: string) => {
       const ctx = door.signCtx;
-      const hex = DOOR_COLORS[door.colorIdx].css;
       const compact = text.replace(/\s+/g, '');
-      const fontSize = compact.length <= 2 ? 180 : compact.length <= 3 ? 150 : 120;
-      ctx.fillStyle = '#0c1420';
-      ctx.fillRect(0, 0, 512, 256);
-      ctx.strokeStyle = hex;
-      ctx.lineWidth = 6;
-      ctx.strokeRect(6, 6, 500, 244);
+      const fontSize = compact.length <= 2 ? 210 : compact.length <= 3 ? 176 : 140;
+      ctx.clearRect(0, 0, 512, 256);
+      // 어두운 박스 없이 — 순백 숫자만 (아주 밝게)
       ctx.fillStyle = '#ffffff';
       ctx.font = `900 ${fontSize}px "Arial", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = hex;
-      ctx.shadowBlur = 60;
-      ctx.fillText(text, 256, 128);
-      ctx.shadowBlur = 25;
-      ctx.fillText(text, 256, 128);
       ctx.shadowBlur = 0;
       ctx.fillText(text, 256, 128);
       door.signTex.needsUpdate = true;
@@ -625,30 +618,29 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     const resetDoorGlow = () => {
       doors.forEach((door, idx) => {
         const hex = DOOR_COLORS[idx]!.hex;
+        door.group.visible = true;
         door.doorMat.color.setHex(hex);
         door.doorMat.emissive.setHex(hex);
-        door.doorMat.emissiveIntensity = 0.45;
-        door.doorLight.intensity = 4;
-        door.doorLight.distance = 18;
+        door.doorMat.emissiveIntensity = 0.65;
+        door.doorLight.intensity = 5;
+        door.doorLight.distance = 22;
         door.haloLight.intensity = 0;
         door.group.scale.setScalar(DOOR_SIZE_SCALE);
       });
     };
 
-    const applyDoorBurstGlow = (doorIdx: number, strength: number) => {
-      const s = Math.max(0, Math.min(1, strength));
-      doors.forEach((door, idx) => {
-        const hex = DOOR_COLORS[idx]!.hex;
-        if (idx === doorIdx) {
-          door.doorMat.emissiveIntensity = 0.45 + s * 1.4;
-          door.doorMat.color.setHex(hex);
-          door.doorMat.emissive.setHex(hex);
-          door.doorLight.intensity = 4 + s * 10;
-        } else {
-          door.doorMat.emissiveIntensity = 0.25;
-          door.doorLight.intensity = 2;
-        }
-      });
+    /** 통과 순간: 정답 색 전면 번쩍(0.2초) — 문은 모두 유지(정답·오답 비교) */
+    let flashHideTimer: ReturnType<typeof setTimeout> | null = null;
+    const triggerColorFlash = (doorIdx: number) => {
+      const el = flashRef.current;
+      if (!el) return;
+      if (flashHideTimer) clearTimeout(flashHideTimer);
+      el.style.background = DOOR_COLORS[doorIdx]!.css;
+      el.style.opacity = '0.85';
+      flashHideTimer = setTimeout(() => {
+        if (flashRef.current) flashRef.current.style.opacity = '0';
+        flashHideTimer = null;
+      }, 200);
     };
 
     // 5. 수레
@@ -749,7 +741,11 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     const cartSignCtx = cartSignCanvas.getContext('2d')!;
     const cartSignTexture = new THREE.CanvasTexture(cartSignCanvas);
     disposeTex.push(cartSignTexture);
-    const displayMat = new THREE.MeshBasicMaterial({ map: cartSignTexture, side: THREE.DoubleSide });
+    const displayMat = new THREE.MeshBasicMaterial({
+      map: cartSignTexture,
+      side: THREE.DoubleSide,
+      toneMapped: false,
+    });
     disposeMats.push(displayMat);
     const displayGeo = new THREE.PlaneGeometry(3.1, 1.55);
     disposeGeos.push(displayGeo);
@@ -766,22 +762,19 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       const w = cartSignCanvas.width;
       const h = cartSignCanvas.height;
       const compact = text.replace(/\s+/g, '');
-      const fontSize = compact.length <= 2 ? 78 : compact.length <= 4 ? 64 : 52;
-      ctx.fillStyle = '#0a1224';
+      const fontSize = compact.length <= 2 ? 90 : compact.length <= 4 ? 74 : 60;
+      // 어두운 톤 없이 — 흰 판 + 아주 밝은 노란 숫자
+      ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#fbbf24';
+      ctx.strokeStyle = '#ffd24a';
       ctx.lineWidth = 6;
-      ctx.strokeRect(4, 4, w - 8, h - 8);
-      ctx.fillStyle = '#fff4d6';
-      ctx.font = `bold ${fontSize}px "Courier New", monospace`;
+      ctx.strokeRect(3, 3, w - 6, h - 6);
+      ctx.font = `900 ${fontSize}px "Courier New", monospace`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#f59e0b';
-      ctx.shadowBlur = 22;
-      ctx.fillText(text, w / 2, h / 2);
-      ctx.shadowBlur = 4;
-      ctx.fillText(text, w / 2, h / 2);
       ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillText(text, w / 2, h / 2);
       cartSignTexture.needsUpdate = true;
     };
 
@@ -789,7 +782,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     const particleCount = 1600;
     const particleGeo = new THREE.BufferGeometry();
     const particlePos = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount * 3; i++) particlePos[i] = (Math.random() - 0.5) * 50;
+    for (let i = 0; i < particleCount * 3; i++) particlePos[i] = (Math.random() - 0.5) * 90;
     particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
     disposeGeos.push(particleGeo);
     const particleMat = new THREE.PointsMaterial({
@@ -877,21 +870,11 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       // 수레 숫자판이 항상 카메라를 향하도록 — 이동 중에도 읽기 쉽게
       display.lookAt(camera.position);
 
-      const phaseElapsed = performance.now() - g.phaseStartMs;
       if (g.phase === 'PREP') {
         doors.forEach((door) => {
-          door.doorMat.emissiveIntensity = 0.45;
-          door.doorLight.intensity = 4;
+          door.doorMat.emissiveIntensity = 0.65;
+          door.doorLight.intensity = 5;
         });
-      } else if (g.phase === 'ARRIVE') {
-        const elapsed = phaseElapsed;
-        let strength: number;
-        if (elapsed < 140) {
-          strength = elapsed / 140;
-        } else {
-          strength = Math.max(0, 1 - (elapsed - 140) / 520);
-        }
-        applyDoorBurstGlow(g.targetDoorIdx, strength);
       }
 
       if (g.phase === 'TRANSIT') {
@@ -910,7 +893,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         if (t >= 1) {
           g.phase = 'ARRIVE';
           g.phaseStartMs = performance.now();
-          applyDoorBurstGlow(g.targetDoorIdx, 1);
+          triggerColorFlash(g.targetDoorIdx);
           setStatus(cartTier === 3 ? '정답 문 도착' : '도착', '#6b7280');
           g.roundTimer = setTimeout(() => {
             if (!gRef.current?.running) return;
@@ -949,6 +932,8 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       unbindResize();
       g.running = false;
       if (g.roundTimer) clearTimeout(g.roundTimer);
+      if (flashHideTimer) clearTimeout(flashHideTimer);
+      if (flashRef.current) flashRef.current.style.opacity = '0';
       if (g.raf != null) cancelAnimationFrame(g.raf);
 
       disposeGeos.forEach((geo) => geo.dispose());
@@ -985,6 +970,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       <div ref={playRef} className="ncart-play">
         <canvas className="ncart-canvas" ref={cvRef} />
         <div className="ncart-vignette" />
+        <div className="ncart-flash" ref={flashRef} aria-hidden />
         <div className="ncart-target hidden" ref={targetHudRef}>
           <div className="ncart-target-k" ref={targetKeyRef}>
             목표

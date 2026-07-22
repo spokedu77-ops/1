@@ -17,11 +17,14 @@ export function normalizeColorTrackerRounds(value: number): number {
 
 /** 4분할: 좌상 빨 · 우상 노 · 좌하 초 · 우하 파 */
 const QUADRANTS = [
-  { bg: 'rgba(255,61,79,0.24)', label: '빨', name: '빨강', accent: '#ff3d4f' },
-  { bg: 'rgba(255,214,0,0.24)', label: '노', name: '노랑', accent: '#ffd600' },
-  { bg: 'rgba(0,230,118,0.24)', label: '초', name: '초록', accent: '#00e676' },
-  { bg: 'rgba(41,121,255,0.24)', label: '파', name: '파랑', accent: '#2979ff' },
+  { bg: 'rgba(255,61,79,0.24)', lit: 'rgba(255,61,79,0.78)', label: '빨', name: '빨강', accent: '#ff3d4f' },
+  { bg: 'rgba(255,214,0,0.24)', lit: 'rgba(255,214,0,0.78)', label: '노', name: '노랑', accent: '#ffd600' },
+  { bg: 'rgba(0,230,118,0.24)', lit: 'rgba(0,230,118,0.78)', label: '초', name: '초록', accent: '#00e676' },
+  { bg: 'rgba(41,121,255,0.24)', lit: 'rgba(41,121,255,0.78)', label: '파', name: '파랑', accent: '#2979ff' },
 ] as const;
+
+/** 추적 중 3초마다 4분할 중 한 칸만 점등 */
+const QUAD_LIT_INTERVAL_MS = 3000;
 
 const BALL_BLACK = '#08080e';
 const BALL_WHITE = '#ffffff';
@@ -31,6 +34,12 @@ const FLASH_DURATION_MS = 90;
 const ROUND_COUNTDOWN_STEP_MS = 1000;
 const MIN_SPEED_RATIO = 0.78;
 const MAX_SPEED_RATIO = 1.22;
+
+function pickRandomQuadrantIdx(prevIdx: number): number {
+  let next = Math.floor(Math.random() * QUADRANTS.length);
+  if (next === prevIdx) next = (next + 1) % QUADRANTS.length;
+  return next;
+}
 
 export type ColorTrackerTier = 1 | 2 | 3;
 
@@ -251,6 +260,10 @@ type TrackerGame = {
   sepBoost: number;
   scrambleFlash: boolean;
   flashSchedule: number[];
+  /** 추적(SCRAMBLE) 중 점등된 4분할 칸 — 흰 공 소멸 시점부터 정확히 3초 슬롯 */
+  litQuadrantIdx: number;
+  litEpochMs: number;
+  litStep: number;
   panels: PanelArena[];
   rounds: number;
   laneCount: [number, number, number, number];
@@ -408,6 +421,9 @@ export function ColorTrackerReactionTraining({
       sepBoost: params.sepBoost,
       scrambleFlash: params.scrambleFlash,
       flashSchedule: [],
+      litQuadrantIdx: 0,
+      litEpochMs: 0,
+      litStep: 0,
       panels: Array.from({ length: panelCount }, makePanel),
       rounds: 0,
       laneCount: [0, 0, 0, 0],
@@ -504,11 +520,33 @@ export function ColorTrackerReactionTraining({
     const beginRound = () => {
       g.panels.forEach(spawnBalls);
       g.phase = 'REVEAL';
-      g.phaseStartMs = performance.now();
+      const now = performance.now();
+      g.phaseStartMs = now;
       g.flashSchedule = [];
+      // 흰 공 기억 구간에는 점등 없음(균일 어둡게) — 추적 시작 시 점등 개시
+      g.litEpochMs = 0;
+      g.litStep = 0;
       setShowRevealBtn(false);
       updateHudRound();
       setMsg(g.dualPanel ? '각 패널의 흰 공을 기억하세요' : '흰 공 하나를 기억하세요');
+    };
+
+    const startLitCycle = (now: number) => {
+      g.litEpochMs = now;
+      g.litStep = 0;
+      g.litQuadrantIdx = pickRandomQuadrantIdx(g.litQuadrantIdx);
+    };
+
+    const tickLitQuadrant = (now: number) => {
+      if (g.phase !== 'SCRAMBLE') return;
+      if (g.litEpochMs <= 0) return;
+      const step = Math.floor((now - g.litEpochMs) / QUAD_LIT_INTERVAL_MS);
+      if (step <= g.litStep) return;
+      // 슬롯이 넘어간 만큼만 교체 — 프레임 지연이 있어도 3초 격자는 유지
+      while (g.litStep < step) {
+        g.litStep += 1;
+        g.litQuadrantIdx = pickRandomQuadrantIdx(g.litQuadrantIdx);
+      }
     };
 
     const scheduleRoundCountdown = (onDone: () => void) => {
@@ -537,16 +575,35 @@ export function ColorTrackerReactionTraining({
     const drawBackground = (ctx: CanvasRenderingContext2D, panel: PanelArena) => {
       const halfW = panel.W / 2;
       const halfH = panel.H / 2;
+      const litActive = g.phase === 'SCRAMBLE';
+      const litIdx = litActive ? g.litQuadrantIdx : -1;
+
       ctx.fillStyle = '#0a0a0e';
       ctx.fillRect(0, 0, panel.W, panel.H);
-      ctx.fillStyle = QUADRANTS[0].bg;
-      ctx.fillRect(0, 0, halfW, halfH);
-      ctx.fillStyle = QUADRANTS[1].bg;
-      ctx.fillRect(halfW, 0, halfW, halfH);
-      ctx.fillStyle = QUADRANTS[2].bg;
-      ctx.fillRect(0, halfH, halfW, halfH);
-      ctx.fillStyle = QUADRANTS[3].bg;
-      ctx.fillRect(halfW, halfH, halfW, halfH);
+
+      const rects: [number, number, number, number][] = [
+        [0, 0, halfW, halfH],
+        [halfW, 0, halfW, halfH],
+        [0, halfH, halfW, halfH],
+        [halfW, halfH, halfW, halfH],
+      ];
+      rects.forEach(([x, y, w, h], idx) => {
+        const q = QUADRANTS[idx]!;
+        const lit = idx === litIdx;
+        ctx.fillStyle = lit ? q.lit : q.bg;
+        ctx.fillRect(x, y, w, h);
+        if (lit) {
+          // 점등 칸 글로우
+          ctx.save();
+          ctx.shadowColor = q.accent;
+          ctx.shadowBlur = Math.max(28, panel.W * 0.06);
+          ctx.strokeStyle = q.accent;
+          ctx.lineWidth = 4;
+          ctx.strokeRect(x + 3, y + 3, w - 6, h - 6);
+          ctx.restore();
+        }
+      });
+
       ctx.strokeStyle = 'rgba(255,255,255,0.16)';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -567,10 +624,11 @@ export function ColorTrackerReactionTraining({
       ];
       labels.forEach(([x, y, idx]) => {
         const q = QUADRANTS[idx]!;
+        const lit = idx === litIdx;
         ctx.textAlign = idx === 1 || idx === 3 ? 'right' : 'left';
         ctx.fillStyle = 'rgba(0,0,0,0.45)';
         ctx.fillText(q.label, x + (idx === 1 || idx === 3 ? 2 : -2), y + 2);
-        ctx.fillStyle = q.accent;
+        ctx.fillStyle = lit ? '#ffffff' : q.accent;
         ctx.fillText(q.label, x, y);
       });
 
@@ -655,12 +713,16 @@ export function ColorTrackerReactionTraining({
     const loop = (now: number) => {
       if (!gRef.current?.running) return;
 
+      tickLitQuadrant(now);
+
       if (g.phase !== 'COUNTDOWN') {
         const elapsed = now - g.phaseStartMs;
         if (g.phase === 'REVEAL' && elapsed >= g.revealMs) {
           g.phase = 'SCRAMBLE';
           g.phaseStartMs = now;
           scrambleSecShown = -1;
+          // 흰 공이 검은 공으로 바뀌는 순간부터 3초 점등 시작
+          startLitCycle(now);
           if (g.scrambleFlash) g.flashSchedule = buildFlashSchedule(g.scrambleMs);
         } else if (g.phase === 'SCRAMBLE' && elapsed >= g.scrambleMs) {
           g.phase = 'GUESS';

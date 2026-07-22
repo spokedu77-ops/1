@@ -57,6 +57,8 @@ export type OfficialSpomovePreset = {
     moleLookMode?: 'classic' | 'variant';
     numberCartTier?: 1 | 2 | 3;
     colorTrackerTier?: 1 | 2 | 3;
+    /** 골키퍼(10): 1=항상 1개 · 2=1~2개(더블) */
+    goalkeeperTier?: 1 | 2;
     colorTrackerDualPanel?: boolean;
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
@@ -647,14 +649,14 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
     engine: { mode: 'reactTrain', level: 5, camouflagePlacement: 'center' },
     description: '노이즈 속에 위장된 색 사물(과일 등)이 드러날 때 해당 색을 찾는 시지각 반응 활동. 난이도 1/2는 세션에서 고릅니다.',
-    cueSeconds: 3,
+    cueSeconds: 5,
     rounds: 20,
     bgmAutoPlay: true,
     bgmCategory: 'spomove-training',
     recommendedUse: '고난도 집중, 색 변별, 위장 탐지',
     isReady: true,
-    settingSummary: '3초 · 20회 · BGM 자동',
-    settingChips: ['매직 아이', '20회', 'BGM 자동'],
+    settingSummary: '5초 · 20회 · BGM 자동',
+    settingChips: ['매직 아이', '5초 고정', '20회', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: '매직 아이' },
       { label: '진행 방식', value: '위장 탐지' },
@@ -785,7 +787,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'visual-reaction',
     programTitle: '시지각 반응',
     salesCopy: SPOMOVE_AXIS_META.response.salesCopy,
-    engine: { mode: 'reactTrain', level: 10 },
+    engine: { mode: 'reactTrain', level: 10, goalkeeperTier: 2 },
     description: '4코너로 날아오는 슛·커브볼·더블 블록을 끝까지 추적해 상단은 손, 하단은 발로 막는 시지각 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -793,11 +795,13 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     bgmCategory: 'spomove-training',
     recommendedUse: '전신 반응, 궤적 추적, 양손·양발 방어',
     isReady: true,
-    settingSummary: '골키퍼 방어 · 약 120초 · BGM 자동',
-    settingChips: ['골키퍼 모드', '120초', 'BGM 자동'],
+    settingSummary: '골키퍼 방어 · 비행 3초 · 1~2개 · 약 120초 · BGM 자동',
+    settingChips: ['골키퍼 모드', '비행 3초', '1~2개', '120초', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: '골키퍼 모드' },
       { label: '진행 방식', value: '궤적 추적 · 손/발 방어' },
+      { label: '비행 시간', value: '약 3초(설정 가능)' },
+      { label: '동시 공', value: '1~2개' },
       { label: '실행 시간', value: '약 120초' },
       { label: 'BGM', value: '자동 재생' },
     ],
@@ -953,7 +957,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'stroop',
     programTitle: '스트룹 과제',
     salesCopy: SPOMOVE_AXIS_META.executive.salesCopy,
-    engine: { mode: 'basic', level: 1, spatialArrowColorMode: 'color' },
+    engine: { mode: 'basic', level: 1, spatialArrowColorMode: 'color', spatialArrowColorMapping: 'compass' },
     description: '방향별 색이 채워진 화살표를 보고 해당 방향 패드로 빠르게 이동하는 활동. 위 빨·좌 초·우 노·아래 파로 고정됩니다.',
     cueSeconds: 3,
     rounds: 20,
