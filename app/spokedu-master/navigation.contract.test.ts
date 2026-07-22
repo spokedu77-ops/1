@@ -9,9 +9,9 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
     const statusBar = read('app/spokedu-master/components/layout/StatusBar.tsx');
 
     expect(statusBar).toContain("href: '/spokedu-master/dashboard', label: '홈'");
-    expect(statusBar).toContain("href: '/spokedu-master/library', label: '자료'");
+    expect(statusBar).toContain("href: '/spokedu-master/library', label: '수업자료'");
     expect(statusBar).toContain("href: '/spokedu-master/spomove', label: 'SPOMOVE'");
-    expect(statusBar).toContain("href: '/spokedu-master/class-tools', label: '도구'");
+    expect(statusBar).toContain("href: '/spokedu-master/class-tools', label: '수업도구'");
     expect(statusBar).toContain("href: '/spokedu-master/activity', label: '기록'");
     expect(statusBar).toContain("href: '/spokedu-master/profile', label: '프로필'");
     expect(statusBar).toContain('whitespace-nowrap');
@@ -26,6 +26,7 @@ describe('SPOKEDU MASTER first pilot navigation', () => {
 
     expect(tabBar).toContain("key: 'dashboard'");
     expect(tabBar).toContain("key: 'library'");
+    expect(tabBar).toContain("label: '수업자료'");
     expect(tabBar).toContain("key: 'spomove'");
     expect(tabBar).toContain("key: 'class-tools'");
     expect(tabBar).toContain('수업 기록');

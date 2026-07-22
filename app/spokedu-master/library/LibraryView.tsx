@@ -13,7 +13,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
-  joinCatalogMeta,
   LessonCatalogCard,
 } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
@@ -21,7 +20,7 @@ import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
-  getLessonTarget,
+  buildLessonCardSupportMeta,
   getLessonTheme,
   parseTaggedValues,
 } from '../lib/lessonDisplay';
@@ -103,20 +102,10 @@ function getSearchText(program: Program) {
   return program.title.toLowerCase();
 }
 
-function getCardFooterMeta(program: Program, locked: boolean) {
-  const bodyFn = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction)[0];
-  const movement = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.movement)[0];
-  const activityType = bodyFn ?? movement ?? getLessonTheme(program);
+function getCardPrepMeta(program: Program, locked: boolean) {
   const primaryEquipment = program.equipment[0];
-  return {
-    activity: activityType ? (MOVEMENT_LABEL[activityType] ?? activityType) : program.category,
-    prep:
-      locked && program.isPro
-        ? '프리미엄 자료'
-        : primaryEquipment
-          ? formatLibraryCardEquipmentName(primaryEquipment)
-          : '없음',
-  };
+  if (locked && program.isPro) return '프리미엄 자료';
+  return primaryEquipment ? formatLibraryCardEquipmentName(primaryEquipment) : '없음';
 }
 
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
@@ -151,16 +140,10 @@ function ProgramCard({
   detailHref: string;
   priority?: boolean;
 }) {
-  const footerMeta = getCardFooterMeta(program, locked);
-  const targetLabel = getLessonTarget(program)
-    .split(/[,|/]/)
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .map((part) => TARGET_LABEL[part] ?? part)
-    .join(' · ');
-  // SPOMOVE 카드와 동일: 액센트=테마, 설명=대상·활동·준비
+  const prepMeta = getCardPrepMeta(program, locked);
+  // SPOMOVE 카드와 동일: 액센트=테마, 설명=대상·공간·참여형태/준비
   const decisionMeta = getLessonTheme(program) || program.category || '체육 수업';
-  const supportMeta = joinCatalogMeta([targetLabel, footerMeta.activity, footerMeta.prep]);
+  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prepMeta });
 
   return (
     <LessonCatalogCard

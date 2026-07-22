@@ -26,13 +26,11 @@ import {
   SPOMOVE_THUMBNAIL_PACK_ID,
 } from '@/app/lib/spomove/spomoveOfficialAssets';
 import { resolveHomeFeaturedSpomove } from '../lib/spomoveHomeFeatured';
-import {
-  joinCatalogMeta,
-  LessonCatalogCard,
-} from '../components/lesson/LessonCatalogCard';
+import { LessonCatalogCard } from '../components/lesson/LessonCatalogCard';
 import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
+import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
@@ -337,8 +335,7 @@ function WeeklyProgramCard({
 }) {
   const model = buildLessonDisplayModel(program);
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const target = model.target.replace(/,/g, ' · ');
-  const supportMeta = joinCatalogMeta([target, prep]) || model.space.replace(/,/g, ' · ');
+  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prep });
 
   return (
     <LessonCatalogCard

@@ -35,7 +35,7 @@ describe('LibraryView favorites contract', () => {
     expect(catalogCard).toContain('aria-label={`${title} 수업 미리보기`}');
     expect(catalogCard.match(/onClick=\{onPreview\}/g)).toHaveLength(1);
     expect(catalogCard).not.toMatch(/>\s*수업 미리보기\s*</);
-    expect(catalogCard).toContain('자료 보기');
+    expect(catalogCard).toContain('수업 준비');
     expect(catalogCard).not.toContain('전체 수업 자료 보기');
     expect(source).toContain('autoplayVideo: programHasPlayableVideo(program)');
     expect(source).toContain('전체 수업 자료 보기');

@@ -278,7 +278,7 @@ export function LessonCatalogCard({
             className="mt-auto inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
           >
             <BookOpen size={15} />
-            자료 보기
+            수업 준비
           </Link>
         )}
       </div>

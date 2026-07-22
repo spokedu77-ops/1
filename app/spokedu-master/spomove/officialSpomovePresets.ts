@@ -65,6 +65,7 @@ export type OfficialSpomovePreset = {
     flowLayout?: 'sequential' | 'random';
     flowIncludeBonus?: boolean;
     flankerStimulusType?: 'color' | 'number';
+    flankerNestedCircleCount?: 3 | 5;
     camouflagePlacement?: 'center' | 'variant';
   };
   cueSeconds: number;
@@ -83,7 +84,7 @@ export type OfficialSpomovePreset = {
   movementProfileId?: MovementProfileId;
 };
 
-export const OFFICIAL_SPOMOVE_CORE_COUNT = 47;
+export const OFFICIAL_SPOMOVE_CORE_COUNT = 48;
 
 export { OFFICIAL_SPOMOVE_EXPANSION_COUNT };
 
@@ -913,6 +914,34 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     settingChips: ['3초', '20회', '무작위 자극', 'BGM 자동'],
     executionFacts: [
       { label: '자극 방식', value: 'Random' },
+      { label: '반복', value: '20회' },
+      { label: 'BGM', value: '자동 재생' },
+      { label: '효과음', value: '자동' },
+    ],
+  },
+  // sortOrder 43.5: Nested Circles (level 4)
+  {
+    id: 'flanker-nested-circles-04',
+    sortOrder: 31.5,
+    title: '플랭커 4번 · 원 속의 원',
+    en: 'Flanker',
+    axis: 'attention',
+    axisTitle: SPOMOVE_AXIS_META.attention.title,
+    programGroup: 'flanker',
+    programTitle: '플랭커',
+    salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
+    engine: { mode: 'flanker', level: 4, flankerNestedCircleCount: 3 },
+    description: '겹쳐진 원들 중 가장 안쪽 목표 원을 보고 해당 색 위치로 반응하는 선택주의 플랭커 활동',
+    cueSeconds: 3,
+    rounds: 20,
+    bgmAutoPlay: true,
+    bgmCategory: 'spomove-training',
+    recommendedUse: '중첩 자극 처리, 목표 원 집중, 방해 정보 억제',
+    isReady: true,
+    settingSummary: '3초 · 20회 · 원 속의 원 3개 · BGM 자동',
+    settingChips: ['원 속의 원', '3개 기본', '20회', 'BGM 자동'],
+    executionFacts: [
+      { label: '자극 방식', value: 'Nested Circles' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },

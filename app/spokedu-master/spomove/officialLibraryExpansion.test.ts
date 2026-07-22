@@ -98,11 +98,11 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(byGroup('reaction-cognition')).toHaveLength(40);
 
-    expect(byGroup('visual-reaction')).toHaveLength(18);
+    expect(byGroup('visual-reaction')).toHaveLength(12);
 
     expect(byGroup('simon')).toHaveLength(3);
 
-    expect(byGroup('flanker')).toHaveLength(8);
+    expect(byGroup('flanker')).toHaveLength(9);
 
     expect(byGroup('stroop')).toHaveLength(5);
 
@@ -251,7 +251,8 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
     expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(4);
 
-    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(4);
+    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(5);
+    expect(flanker.some((preset) => preset.id === 'flanker-nested-circles-04')).toBe(true);
 
     expect(flanker.some((preset) => preset.id === 'flanker-grouped-42')).toBe(false);
 

@@ -333,6 +333,7 @@ export type GenerateSignalOptions = {
   /** basic 3번 + 색상 테마: 전면 색상 위에 오버레이할 숫자 범위 */
   basicNumberOverlay?: 'none' | '2' | '3';
   flankerStimulusType?: 'color' | 'number';
+  flankerNestedCircleCount?: 3 | 5;
   /** basic 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 (0~3) */
   poleEdgeIndex?: number;
   /** basic 1번 · 공간 방향: 기본(흰 화살표) | 색상(방향별 고정 색: 위 빨·좌 초·우 노·아래 파) */
@@ -714,16 +715,19 @@ export function generateSignal(
         : circles;
     const packRow = (
       circles: { id: string; bg: string; text: string; label?: string; sourceColorId?: string }[],
-      sizeMults?: number[]
+      sizeMults?: number[],
+      layout?: 'nestedCircles',
+      targetIndex?: number
     ) => ({
       type: 'flanker_row' as const,
       bg: '#0F172A',
       content: {
         circles,
-        centerIndex: Math.floor((circles.length - 1) / 2),
-        targetColorId: circles[Math.floor((circles.length - 1) / 2)]!.id,
-        ...(numberMode ? { targetNumber: circles[Math.floor((circles.length - 1) / 2)]!.label } : {}),
+        centerIndex: targetIndex ?? Math.floor((circles.length - 1) / 2),
+        targetColorId: circles[targetIndex ?? Math.floor((circles.length - 1) / 2)]!.id,
+        ...(numberMode ? { targetNumber: circles[targetIndex ?? Math.floor((circles.length - 1) / 2)]!.label } : {}),
         ...(sizeMults && sizeMults.length === circles.length ? { sizeMults } : {}),
+        ...(layout ? { layout } : {}),
       },
       voice: null,
     });
@@ -764,18 +768,19 @@ export function generateSignal(
     if (level === 4) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
       /** 5슬롯: 색 다양성(팔레트 크기에 맞는 상한) · 인접 동일 색 금지 — 4색이면 최대 2회 등 */
-      const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
-      const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
+      const circleCount = opts?.flankerNestedCircleCount === 5 ? 5 : 3;
+      const colorSeq = generateColorsWithPerMax(pool, circleCount, Math.max(2, Math.ceil(circleCount / Math.max(1, pool.length))));
       const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
       /** 원마다 다른 상대 크기(셔플) — 표시층에서 행 너비·30vmin 상한과 맞춤 */
-      const sizeMults = fisherYates([0.68, 0.78, 0.9, 1.05, 1.22]);
-      return packRow(maybeNumberCircles(circles), sizeMults);
+      const sizeMults = circleCount === 5 ? [1.0, 0.76, 0.54, 0.34, 0.18] : [1.0, 0.62, 0.28];
+      return packRow(circles, sizeMults, 'nestedCircles', circles.length - 1);
     }
     if (level === 5) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
-      const colorSeq = generateColorsWithPerMax(pool, 3, 2);
+      const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
+      const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
       const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
-      const sizeMults = fisherYates([1.0, 0.62, 0.28]);
+      const sizeMults = fisherYates([0.68, 0.78, 0.9, 1.05, 1.22]);
       return packRow(maybeNumberCircles(circles), sizeMults);
     }
     if (level === 6) {
@@ -1125,10 +1130,11 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
       targetColorId?: string;
       targetNumber?: string;
       sizeMults?: number[];
+      layout?: string;
     };
     const ids = (c.circles ?? []).map((x) => x.id).join(',');
     const sm = (c.sizeMults ?? []).map((x) => (Math.round(x * 1000) / 1000).toString()).join(',');
-    return `fk:${c.targetColorId ?? ''}:${c.targetNumber ?? ''}:${ids}:${sm}`;
+    return `fk:${c.targetColorId ?? ''}:${c.targetNumber ?? ''}:${c.layout ?? ''}:${ids}:${sm}`;
   }
   if (t === 'gonogo_color') {
     const c = sig.content as { colorId?: string; isGo?: boolean };

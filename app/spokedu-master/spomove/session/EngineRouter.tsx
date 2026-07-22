@@ -120,6 +120,7 @@ type Props = {
   flowLayout?: 'sequential' | 'random';
   flowIncludeBonus?: boolean;
   flankerStimulusType?: 'color' | 'number';
+  flankerNestedCircleCount?: 3 | 5;
   onComplete: (payload: EngineCompletePayload) => void;
   onExit: () => void;
 };
@@ -167,6 +168,7 @@ export function EngineRouter({
   flowLayout,
   flowIncludeBonus,
   flankerStimulusType,
+  flankerNestedCircleCount,
   onComplete,
   onExit,
 }: Props) {
@@ -214,6 +216,7 @@ export function EngineRouter({
             spatialArrowColorMode,
             spatialArrowColorMapping,
             flankerStimulusType,
+            flankerNestedCircleCount,
           }}
           embed
           disableBgm

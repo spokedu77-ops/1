@@ -126,7 +126,6 @@ function PadSignature({ dim = false }: { dim?: boolean }) {
 const THEME_LABELS: Record<string, string> = {
   fruit: '과일',
   vehicle: '탈것',
-  emotion: '감정',
   animal: '동물',
   nature: '자연',
   target: '타겟',
@@ -147,15 +146,6 @@ function ThemeIcon({ theme, className = 'h-10 w-10 text-white/80' }: { theme?: s
       <circle cx="7.5" cy="19.5" r="2.5" />
       <circle cx="16.5" cy="19.5" r="2.5" />
       <rect x="7.5" y="8" width="9" height="4.5" rx="1" fill="rgba(0,0,0,0.18)" />
-    </svg>
-  );
-  if (theme === 'emotion') return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="currentColor" fillOpacity="0.12" />
-      <circle cx="12" cy="12" r="9" />
-      <circle cx="9" cy="10.5" r="1.5" fill="currentColor" stroke="none" />
-      <circle cx="15" cy="10.5" r="1.5" fill="currentColor" stroke="none" />
-      <path d="M8.5 15.5 Q12 18.5 15.5 15.5" strokeLinecap="round" />
     </svg>
   );
   if (theme === 'animal') return (

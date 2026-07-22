@@ -1,8 +1,11 @@
 import { cleanText } from './clean';
 import { normalizeLessonTheme } from './lessonTheme';
 import {
+  getMasterParticipantFormat,
+  isMasterParticipantFormat,
   normalizeMasterSpace,
   normalizeMasterTarget,
+  parseMasterSpaces,
   parseMasterTargets,
 } from './programDisplayTags';
 import type { Program } from '../types';
@@ -94,4 +97,41 @@ export function getLessonMovement(program: Program) {
 export function getLessonSpace(program: Program) {
   const value = normalizeMasterSpace(program.space);
   return isLessonPlaceholder(value) ? '' : value;
+}
+
+const LESSON_CARD_TARGET_LABEL: Record<string, string> = {
+  '초등학생 이상': '초등학생',
+};
+
+function formatLessonCardTarget(program: Program) {
+  const detail = program.lessonDetail;
+  const values = parseMasterTargets(detail?.recommendedAge || program.grade);
+  return values.map((value) => LESSON_CARD_TARGET_LABEL[value] ?? value).join('/');
+}
+
+function formatLessonCardSpace(program: Program) {
+  return parseMasterSpaces(program.space).join('/');
+}
+
+function formatLessonCardParticipant(program: Program) {
+  const fromTags = getMasterParticipantFormat(program.tags);
+  if (fromTags) return fromTags;
+
+  const fromDetail = String(program.lessonDetail?.recommendedPlayers ?? '').trim();
+  return isMasterParticipantFormat(fromDetail) ? fromDetail : '';
+}
+
+/** Card support meta: 선택 전 판단에 필요한 기존 태그 축만 짧게 노출한다. */
+export function buildLessonCardSupportMeta(
+  program: Program,
+  options: {
+    equipmentFallback?: string;
+  } = {},
+) {
+  const target = formatLessonCardTarget(program);
+  const space = formatLessonCardSpace(program);
+  const participant = formatLessonCardParticipant(program);
+  const operation = participant || options.equipmentFallback || '';
+
+  return [target, space, operation].filter(Boolean).join(' · ');
 }

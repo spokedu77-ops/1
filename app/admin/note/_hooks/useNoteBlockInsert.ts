@@ -122,13 +122,6 @@ export function useNoteBlockInsert(options: {
       })) {
         return null;
       }
-      const normalizedExistingOrders = siblings.map((sibling, index) => ({
-        id: sibling.id,
-        order_index: index >= clampedIndex ? index + 1 : index,
-      })).filter((patch) => {
-        const sibling = siblings.find((item) => item.id === patch.id);
-        return sibling ? sibling.order_index !== patch.order_index : false;
-      });
       const createdBlockId = newNoteBlockClientId();
       const now = new Date().toISOString();
       const optimisticBlock: NoteBlock = {
@@ -150,6 +143,7 @@ export function useNoteBlockInsert(options: {
         { focus: insertOptions?.focus !== false },
       );
       if (command.affectedIds.length === 0) return null;
+      const normalizedExistingOrders = command.orders.filter((patch) => patch.id !== createdBlockId);
 
       blocksRef.current = command.nextBlocks;
       setBlocks(command.nextBlocks);
@@ -358,19 +352,32 @@ export function useNoteBlockInsert(options: {
 
     try {
       setLoadingState('saving');
-      const normalizedExistingOrders = siblings.map((sibling, index) => ({
-        id: sibling.id,
-        order_index: index >= insertIndex ? index + 1 : index,
-      })).filter((patch) => {
-        const sibling = siblings.find((item) => item.id === patch.id);
-        return sibling ? sibling.order_index !== patch.order_index : false;
-      });
       const createdBlockId = newNoteBlockClientId();
       const childPatches = directChildren.map((child, orderIndex) => ({
         id: child.id,
         parent_block_id: createdBlockId,
         order_index: orderIndex,
       }));
+      const now = new Date().toISOString();
+      const optimisticBlock: NoteBlock = {
+        id: createdBlockId,
+        document_id: selectedId,
+        parent_block_id: parentId,
+        type,
+        order_index: insertIndex,
+        content: content ?? defaultBlockContent(type),
+        created_at: now,
+        updated_at: now,
+        version: 1,
+      };
+      const optimisticCommand = buildInsertBlockAndReparentChildrenCommand(
+        previousBlocks,
+        optimisticBlock,
+        parentId,
+        insertIndex,
+        directChildren.map((child) => child.id),
+      );
+      const normalizedExistingOrders = optimisticCommand.orders.filter((patch) => patch.id !== createdBlockId);
       const createdBlock = await documentEngine.persistCreateBlock({
         id: createdBlockId,
         documentId: selectedId,

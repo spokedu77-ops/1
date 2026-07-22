@@ -407,6 +407,10 @@ export function NoteEditor({
   const changeTimerRef = useRef<number | null>(null);
   const structuralPasteUndoArmedRef = useRef(false);
   const lastResetKeyRef = useRef<string | undefined>(resetKey);
+  const isComposingRef = useRef(false);
+  const compositionFlushRafRef = useRef<number | null>(null);
+  const pendingCompositionFlushRef = useRef(false);
+  const pendingCompositionCommitRef = useRef(false);
   /** TipTap 본문 소유 블록 — props onChange가 먼저 바뀌어도 flush는 여기로만 */
   const contentFlushTargetRef = useRef<{
     blockId: string | undefined;
@@ -482,7 +486,13 @@ export function NoteEditor({
     [content, text],
   );
 
-  const flushPendingChange = useCallback(() => {
+  const cancelCompositionFlushFrame = useCallback(() => {
+    if (compositionFlushRafRef.current === null) return;
+    window.cancelAnimationFrame(compositionFlushRafRef.current);
+    compositionFlushRafRef.current = null;
+  }, []);
+
+  const flushPendingChangeNow = useCallback(() => {
     if (changeTimerRef.current !== null) {
       window.cancelAnimationFrame(changeTimerRef.current);
       changeTimerRef.current = null;
@@ -503,10 +513,46 @@ export function NoteEditor({
     applyChange({ text: pending.text, html: pending.html });
   }, []);
 
+  const flushPendingChange = useCallback(() => {
+    if (isComposingRef.current) {
+      pendingCompositionFlushRef.current = true;
+      return;
+    }
+    flushPendingChangeNow();
+  }, [flushPendingChangeNow]);
+
   callbacksRef.current.flushPendingChange = flushPendingChange;
+
+  const commitEditorBoundary = useCallback(() => {
+    if (isComposingRef.current) {
+      pendingCompositionFlushRef.current = true;
+      pendingCompositionCommitRef.current = true;
+      return;
+    }
+    flushPendingChangeNow();
+    commitActiveNoteEditorToStore();
+  }, [flushPendingChangeNow]);
+
+  const flushAfterCompositionSettles = useCallback(() => {
+    cancelCompositionFlushFrame();
+    compositionFlushRafRef.current = window.requestAnimationFrame(() => {
+      compositionFlushRafRef.current = null;
+      if (isComposingRef.current) return;
+      const shouldCommit = pendingCompositionCommitRef.current;
+      const shouldFlush = pendingCompositionFlushRef.current || shouldCommit;
+      pendingCompositionFlushRef.current = false;
+      pendingCompositionCommitRef.current = false;
+      if (!shouldFlush) return;
+      flushPendingChangeNow();
+      if (shouldCommit) {
+        commitActiveNoteEditorToStore();
+      }
+    });
+  }, [cancelCompositionFlushFrame, flushPendingChangeNow]);
 
   const scheduleChange = useCallback((change: NoteEditorChange) => {
     pendingChangeRef.current = change;
+    if (isComposingRef.current) return;
     if (changeTimerRef.current !== null) return;
     changeTimerRef.current = window.requestAnimationFrame(() => {
       changeTimerRef.current = null;
@@ -626,8 +672,19 @@ export function NoteEditor({
         return true;
       },
       handleDOMEvents: {
+        compositionstart: () => {
+          isComposingRef.current = true;
+          cancelCompositionFlushFrame();
+          if (changeTimerRef.current !== null) {
+            window.cancelAnimationFrame(changeTimerRef.current);
+            changeTimerRef.current = null;
+          }
+          return false;
+        },
         compositionend: () => {
-          callbacksRef.current.flushPendingChange();
+          isComposingRef.current = false;
+          pendingCompositionFlushRef.current = true;
+          flushAfterCompositionSettles();
           return false;
         },
         dblclick: (view, event) => {
@@ -644,6 +701,7 @@ export function NoteEditor({
           return true;
         },
         keydown: (view, event) => {
+          if (event.isComposing || isComposingRef.current) return false;
           if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z' && !event.shiftKey && structuralPasteUndoArmedRef.current) {
             event.preventDefault();
             structuralPasteUndoArmedRef.current = false;
@@ -705,6 +763,7 @@ export function NoteEditor({
         },
       },
       handleKeyDown: (view, event) => {
+        if (event.isComposing || isComposingRef.current) return false;
         const {
           tabBehavior: currentTabBehavior,
           onIndent: currentOnIndent,
@@ -969,6 +1028,7 @@ export function NoteEditor({
         return false;
       },
       handlePaste: (view, event) => {
+        if (isComposingRef.current) return false;
         const file = firstImageFile(event.clipboardData?.files);
         const currentUploadImage = callbacksRef.current.uploadImage;
         if (file && currentUploadImage) {
@@ -1101,8 +1161,7 @@ export function NoteEditor({
         callbacksRef.current.onSlashChange?.(false, '');
         return;
       }
-      callbacksRef.current.flushPendingChange();
-      commitActiveNoteEditorToStore();
+      commitEditorBoundary();
       callbacksRef.current.onHideFormatToolbar?.();
       callbacksRef.current.onSlashChange?.(false, '');
     },
@@ -1118,6 +1177,7 @@ export function NoteEditor({
       return;
     }
     storage.handler = (currentEditor, shiftKey) => {
+      if (isComposingRef.current) return false;
       const cbs = callbacksRef.current;
       if (!shiftKey && isSlashMenuActiveText(currentEditor.getText())) {
         return true;
@@ -1158,14 +1218,18 @@ export function NoteEditor({
   }, [editor, enterCreatesBlock, flushPendingChange]);
 
   useEffect(() => () => {
-    flushPendingChange();
-  }, [flushPendingChange]);
+    if (isComposingRef.current) {
+      isComposingRef.current = false;
+      pendingCompositionFlushRef.current = true;
+    }
+    cancelCompositionFlushFrame();
+    flushPendingChangeNow();
+  }, [cancelCompositionFlushFrame, flushPendingChangeNow]);
 
   useEffect(() => {
     const commitOnTabLeave = () => {
       if (document.visibilityState !== 'hidden') return;
-      callbacksRef.current.flushPendingChange();
-      commitActiveNoteEditorToStore();
+      commitEditorBoundary();
     };
     document.addEventListener('visibilitychange', commitOnTabLeave);
     window.addEventListener('pagehide', commitOnTabLeave);
@@ -1173,7 +1237,7 @@ export function NoteEditor({
       document.removeEventListener('visibilitychange', commitOnTabLeave);
       window.removeEventListener('pagehide', commitOnTabLeave);
     };
-  }, []);
+  }, [commitEditorBoundary]);
 
   useLayoutEffect(() => {
     if (!editor) return;
@@ -1186,13 +1250,15 @@ export function NoteEditor({
           window.cancelAnimationFrame(changeTimerRef.current);
           changeTimerRef.current = null;
         }
-        try {
-          contentFlushTargetRef.current.onChange({
-            text: editor.getText(),
-            html: editor.getHTML(),
-          });
-        } catch {
-          // teardown race
+        if (!isComposingRef.current) {
+          try {
+            contentFlushTargetRef.current.onChange({
+              text: editor.getText(),
+              html: editor.getHTML(),
+            });
+          } catch {
+            // teardown race
+          }
         }
         pendingChangeRef.current = null;
       } else if (changeTimerRef.current !== null) {

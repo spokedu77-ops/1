@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Program } from '../types';
+import { buildLessonCardSupportMeta } from './lessonDisplay';
 import {
   buildLessonDisplayModel,
   getPreviewCoachScript,
@@ -87,6 +88,44 @@ describe('lessonDisplayModel', () => {
     }));
 
     expect(model.functions).toEqual(['유연성', '민첩성', '근력·근지구력']);
+  });
+
+  it('builds card support meta from the configured tag axes only', () => {
+    const base = program();
+    const model = buildLessonCardSupportMeta({
+      ...base,
+      grade: '미취학,초등학생 이상',
+      space: '체육관',
+      equipment: ['라바콘 4색 각'],
+      tags: ['인원:팀전', '신체 기능:민첩성', '움직임:이동'],
+      lessonDetail: {
+        ...base.lessonDetail!,
+        recommendedAge: '미취학,초등학생 이상',
+      },
+    }, {
+      equipmentFallback: '라바콘',
+    });
+
+    expect(model).toBe('미취학/초등학생 · 체육관 · 팀전');
+  });
+
+  it('uses equipment as the card operation hint when participant format is not set', () => {
+    const base = program();
+    const model = buildLessonCardSupportMeta({
+      ...base,
+      grade: '초등학생 이상',
+      space: '교실',
+      equipment: ['원마커 4개'],
+      tags: ['신체 기능:민첩성', '움직임:이동'],
+      lessonDetail: {
+        ...base.lessonDetail!,
+        recommendedAge: '초등학생 이상',
+      },
+    }, {
+      equipmentFallback: '원마커',
+    });
+
+    expect(model).toBe('초등학생 · 교실 · 원마커');
   });
 
   it('extracts the first complete preview coach script', () => {

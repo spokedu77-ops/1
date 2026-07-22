@@ -32,6 +32,7 @@ export function useIntervalTimer({
   spatialArrowColorMode = 'basic',
   spatialArrowColorMapping = 'compass',
   flankerStimulusType,
+  flankerNestedCircleCount,
   onSignal,
   onFinish,
 }: {
@@ -49,6 +50,7 @@ export function useIntervalTimer({
   spatialArrowColorMode?: 'basic' | 'color';
   spatialArrowColorMapping?: SpatialArrowColorMapping;
   flankerStimulusType?: 'color' | 'number';
+  flankerNestedCircleCount?: 3 | 5;
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -82,7 +84,7 @@ export function useIntervalTimer({
       mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
     const fruitOpts = {
       ...(fruitSlides ? { fruitSlides } : {}),
-      ...(engineMode === 'flanker' ? { flankerStimulusType } : {}),
+      ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount } : {}),
     };
     if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
@@ -172,7 +174,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

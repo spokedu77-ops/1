@@ -13,13 +13,13 @@ const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
 describe('lesson discovery and execution flow contract', () => {
   it('shows decision metadata and non-conflicting card actions in the library', () => {
-    // 카드 footer 메타는 getCardFooterMeta → LessonCatalogCard 한 줄 메타. 예전 getCardDecisionItems 명칭은 폐기.
-    expect(library).toContain('function getCardFooterMeta');
+    // 카드 메타는 기존 태그 축을 buildLessonCardSupportMeta → LessonCatalogCard 한 줄 메타로 압축한다.
+    expect(library).toContain('buildLessonCardSupportMeta');
     expect(library).toContain('LessonCatalogCard');
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
     const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
     expect(catalogCard).toContain('event.stopPropagation()');
-    expect(catalogCard).toContain('자료 보기');
+    expect(catalogCard).toContain('수업 준비');
   });
 
   it('keeps preview focused on quick suitability information', () => {

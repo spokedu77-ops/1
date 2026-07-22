@@ -729,6 +729,7 @@ function SpomoveSessionContent() {
           flowLayout={officialPreset.engine.flowLayout}
           flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
+          flankerNestedCircleCount={officialPreset.engine.flankerNestedCircleCount}
           onExit={() => {
             finishSession('ended');
           }}

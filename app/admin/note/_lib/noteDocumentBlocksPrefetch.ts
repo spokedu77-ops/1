@@ -1,4 +1,5 @@
 import type { NoteBlock } from './types';
+import { isNoteOplogSyncEnabled } from './noteOplogSync';
 import { noteBlocksLoadPath } from './noteBlocksLoad';
 
 type PrefetchEntry = {
@@ -25,7 +26,9 @@ function pruneCache() {
 async function fetchBlocks(documentId: string): Promise<NoteBlock[] | null> {
   try {
     const res = await fetch(
-      noteBlocksLoadPath(documentId),
+      noteBlocksLoadPath(documentId, {
+        skipServerMigration: isNoteOplogSyncEnabled(),
+      }),
       { credentials: 'include' },
     );
     if (!res.ok) return null;

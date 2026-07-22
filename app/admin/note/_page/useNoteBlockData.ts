@@ -38,6 +38,7 @@ import {
   dispatchNoteCommandToStore,
   replaceNoteDocumentStoreView,
 } from '../_lib/noteDocumentPipeline';
+import { readRememberedNoteDocumentBlocks } from '../_lib/noteDocumentBlocksCache';
 import { useNoteBlocksRealtimeInvalidation } from '../_hooks/useNoteBlocksRealtimeInvalidation';
 import {
   traceLoadingState,
@@ -322,15 +323,16 @@ export function useNoteBlockData(options: {
     const documentId = selectedId;
     // UI만 비움 — engine.replaceBlocks([])는 coordinator.persistLocal([])로
     // IndexedDB 스냅샷을 지워 미푸시 드래그 순서를 날린다.
-    replaceNoteDocumentStoreView(documentId, []);
+    const rememberedBlocks = readRememberedNoteDocumentBlocks(documentId);
+    replaceNoteDocumentStoreView(documentId, rememberedBlocks ?? []);
     void ensureNoteLocalCacheVersion().catch((e) => {
       devLogger.warn('[Note] ensureNoteLocalCacheVersion failed', e);
     });
 
     setLoadSettledDocId(null, 'open:start');
-    setLoadingBlocks(true, 'open:start');
+    setLoadingBlocks(rememberedBlocks ? false : true, 'open:start');
     setBlocksEmptyConfirmed(false, 'open:start');
-    setBlocksSyncing(false, 'open:start');
+    setBlocksSyncing(rememberedBlocks ? true : false, 'open:start');
   }, [selectedId, setBlocksEmptyConfirmed, setLoadSettledDocId, setLoadingBlocks, setBlocksSyncing]);
 
   useEffect(() => {
@@ -356,13 +358,14 @@ export function useNoteBlockData(options: {
 
       let bootstrapForOpen: NoteBlock[] | null = null;
       const bootstrapPayload = bootstrapBlocksRef.current;
+      const hasInstantBlocks = readRememberedNoteDocumentBlocks(documentId) !== null;
       if (
         bootstrapPayload?.documentId === documentId
         && bootstrapAppliedDocIdRef.current !== documentId
       ) {
         bootstrapAppliedDocIdRef.current = documentId;
         bootstrapForOpen = bootstrapPayload.blocks;
-      } else if (bootstrapAppliedDocIdRef.current !== documentId) {
+      } else if (!hasInstantBlocks && bootstrapAppliedDocIdRef.current !== documentId) {
         for (let attempt = 0; attempt < 4; attempt += 1) {
           if (cancelled || blockLoadGenRef.current !== loadGen) return;
           const lateBootstrap = bootstrapBlocksRef.current;

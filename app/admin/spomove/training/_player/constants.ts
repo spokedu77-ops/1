@@ -157,7 +157,8 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '동일 플랭커', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
       { id: 3, name: '랜덤 플랭커', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
-      { id: 4, name: '크기/색 혼합', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
+      { id: 4, name: '원 속의 원', enName: 'Nested Circles', desc: '겹쳐진 원들 중 가장 안쪽 목표 원을 보고 반응합니다.' },
+      { id: 5, name: '크기/색 혼합', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
       { id: 6, name: '5원 극단 크기', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
     ],
   },

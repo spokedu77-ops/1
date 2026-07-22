@@ -104,6 +104,9 @@ export const ACTIVITY_FAMILIES: Record<string, ActivityFamilyDefinition> = {
   'flanker-random': family('flanker-random', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
   }),
+  'flanker-nested': family('flanker-nested', 'choiceReaction', {
+    recommendedMovement: pick('footTap', 'free'),
+  }),
   'flanker-5circle': family('flanker-5circle', 'choiceReaction', {
     recommendedMovement: pick('footTap', 'free'),
   }),
@@ -167,6 +170,7 @@ export const PRESET_FAMILY_MAP: Record<string, ActivityFamilyId> = {
   'flanker-uniform-number-exp': 'flanker-uniform',
   'flanker-random-43': 'flanker-random',
   'flanker-random-number-exp': 'flanker-random',
+  'flanker-nested-circles-04': 'flanker-nested',
   'flanker-5circle-46': 'flanker-5circle',
   'flanker-5circle-number-exp': 'flanker-5circle',
   'flanker-mixed-size-exp': 'flanker-mixed',

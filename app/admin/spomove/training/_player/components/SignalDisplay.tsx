@@ -670,6 +670,69 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       ? sizeMultsRaw!.map((m) => Math.max(0.35, m))
       : circles.map(() => 1);
     const gap = hasVariedSizes ? 'clamp(0px, 0.18vmin, 2px)' : 'clamp(6px, 1.5vmin, 14px)';
+    const layout = content?.layout as string | undefined;
+    if (layout === 'nestedCircles') {
+      const outerSize = 'min(78vmin, 78vw)';
+      return (
+        <div
+          key={animKey}
+          className="signal-blink"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 'clamp(10px, 2vw, 22px)',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+          }}
+        >
+          <div
+            style={{
+              position: 'relative',
+              width: outerSize,
+              height: outerSize,
+              maxWidth: '100%',
+              maxHeight: '100%',
+            }}
+          >
+            {circles.map((cell, i) => {
+              const m = Math.max(0.12, sizeMultsRaw?.[i] ?? mults[i] ?? 1);
+              const labelScale = circles.length === 5 ? 5.8 : 7.2;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    bottom: 0,
+                    width: `${m * 100}%`,
+                    height: `${m * 100}%`,
+                    transform: 'translateX(-50%)',
+                    borderRadius: '50%',
+                    background: cell.bg,
+                    border: 'clamp(2px, 0.45vmin, 5px) solid rgba(2,6,23,0.86)',
+                    boxShadow: '0 12px 30px rgba(0,0,0,0.42), inset 0 0 0 2px rgba(255,255,255,0.18)',
+                    filter: 'saturate(1.28) contrast(1.08)',
+                    color: cell.text ?? '#0F172A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 950,
+                    fontSize: `clamp(1rem, ${Math.max(1.2, m * labelScale)}vmin, 6rem)`,
+                    lineHeight: 1,
+                    zIndex: i + 1,
+                  }}
+                >
+                  {cell.label ?? ''}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
     return (
       <div
         key={animKey}

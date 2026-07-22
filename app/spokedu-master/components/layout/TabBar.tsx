@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 
 const PRIMARY_TABS = [
   { key: 'dashboard', label: '홈', shortLabel: '홈', Icon: Home },
-  { key: 'library', label: '라이브러리', shortLabel: '자료', Icon: BookOpen },
+  { key: 'library', label: '수업자료', shortLabel: '자료', Icon: BookOpen },
   { key: 'spomove', label: 'SPOMOVE', shortLabel: '무브', Icon: Tv },
   { key: 'class-tools', label: '수업 도구', shortLabel: '도구', Icon: Wrench },
 ] as const;

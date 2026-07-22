@@ -208,7 +208,7 @@ const SPOMOVE_GROUP_OPTIONS: Array<{
   { key: 'visual-reaction', label: '시지각 반응', expectedCount: 17 },
   { key: 'reaction-cognition', label: '반응 인지', expectedCount: 40 },
   { key: 'simon', label: '사이먼 효과', expectedCount: 3 },
-  { key: 'flanker', label: '플랭커', expectedCount: 6 },
+  { key: 'flanker', label: '플랭커', expectedCount: 9 },
   { key: 'stroop', label: '스트룹 과제', expectedCount: 5 },
   { key: 'sequential-memory', label: '순차 기억', expectedCount: 6 },
   { key: 'dive', label: '다이브', expectedCount: 5 },

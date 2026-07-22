@@ -24,6 +24,7 @@ const ENGINE_OPTION_KEYS = [
   'flowLayout',
   'flowIncludeBonus',
   'flankerStimulusType',
+  'flankerNestedCircleCount',
   'camouflagePlacement',
 ] as const;
 
@@ -43,7 +44,7 @@ export const MECHANIC_KEYS_BY_MODE: Record<OfficialSpomoveEngineMode, readonly s
     'camouflagePlacement',
   ],
   simon: [],
-  flanker: ['flankerStimulusType'],
+  flanker: ['flankerStimulusType', 'flankerNestedCircleCount'],
   stroop: [],
   spatial: [],
   flow: ['flowFeatures', 'flowLayout', 'flowIncludeBonus', 'flowDuration'],

@@ -261,6 +261,7 @@ type LaunchSettings = {
   /** 반응인지 1번 · 공간 방향: 기본(흰 화살표) | 색상(위 빨·좌 초·우 노·아래 파) */
   spatialArrowColorMode: 'basic' | 'color';
   flankerStimulusType: 'color' | 'number';
+  flankerNestedCircleCount: 3 | 5;
   flowFeatures: FlowFeatureKey[];
   diveEnvironmentTheme: DiveThemeId;
   flowDuration: number;
@@ -298,6 +299,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   basicNumberOverlay: 'none',
   spatialArrowColorMode: 'basic',
   flankerStimulusType: 'color',
+  flankerNestedCircleCount: 3,
   flowFeatures: [],
   diveEnvironmentTheme: 'space',
   flowDuration: 25,
@@ -327,6 +329,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     basicNumberOverlay: auto.basicNumberOverlay ?? fallback.basicNumberOverlay,
     spatialArrowColorMode: auto.spatialArrowColorMode === 'color' ? 'color' : fallback.spatialArrowColorMode,
     flankerStimulusType: auto.flankerStimulusType ?? fallback.flankerStimulusType,
+    flankerNestedCircleCount: auto.flankerNestedCircleCount === 5 ? 5 : fallback.flankerNestedCircleCount,
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
@@ -357,6 +360,10 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
 
   if (modeId === 'flow' && launch.flowFeatures.includes('colorGate')) {
     return { ...launch, flowFeatures: launch.flowFeatures.filter((key) => key !== 'colorGate') };
+  }
+
+  if (modeId === 'flanker' && levelId === 4 && launch.flankerStimulusType !== 'color') {
+    return { ...launch, flankerStimulusType: 'color' };
   }
 
   return launch;
@@ -425,6 +432,7 @@ function TrainingPortal({
     basicNumberOverlay: launch.basicNumberOverlay,
     spatialArrowColorMode: launch.spatialArrowColorMode,
     flankerStimulusType: launch.flankerStimulusType,
+    flankerNestedCircleCount: launch.flankerNestedCircleCount,
     flowFeatures: launch.flowFeatures,
     diveEnvironmentTheme: launch.diveEnvironmentTheme,
     flowDuration: launch.flowDuration,
@@ -446,7 +454,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -998,14 +1006,14 @@ function SettingsScreen({
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
                 <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                  {launch.flankerStimulusType === 'number' ? '색상 + 숫자' : '기본 색상'}
+                  {levelId === 4 ? '기본 색상' : launch.flankerStimulusType === 'number' ? '색상 + 숫자' : '기본 색상'}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {([
+                {(levelId === 4 ? ([['color', '기본 색상']] as const) : ([
                   ['color', '기본 색상'],
                   ['number', '색상 + 숫자 1~5'],
-                ] as const).map(([value, label]) => {
+                ] as const)).map(([value, label]) => {
                   const active = launch.flankerStimulusType === value;
                   return (
                     <button
@@ -1031,6 +1039,46 @@ function SettingsScreen({
                   );
                 })}
               </div>
+              {levelId === 4 ? (
+                <div style={{ marginTop: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>원 속의 원</label>
+                    <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
+                      {launch.flankerNestedCircleCount === 5 ? '옵션 1 · 5개' : '기본 · 3개'}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {([
+                      [3, '기본 3개'],
+                      [5, '옵션 1 · 5개'],
+                    ] as const).map(([value, label]) => {
+                      const active = launch.flankerNestedCircleCount === value;
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => setLaunch((s) => ({ ...s, flankerNestedCircleCount: value }))}
+                          style={{
+                            flex: '1 1 150px',
+                            padding: '11px 12px',
+                            borderRadius: 12,
+                            border: `1.5px solid ${active ? accent : T.border}`,
+                            background: active ? `${accent}16` : T.card,
+                            color: active ? accent : T.textDim,
+                            fontFamily: 'inherit',
+                            fontSize: 13,
+                            fontWeight: active ? 900 : 700,
+                            cursor: 'pointer',
+                            textAlign: 'center',
+                          }}
+                        >
+                          {active ? '✓ ' : ''}{label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </section>
           ) : null}
 
