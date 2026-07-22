@@ -32,7 +32,9 @@ export function getPresetMovementSummary(preset: OfficialSpomovePreset) {
   const family = getActivityFamily(preset.activityFamilyId);
   if (!family) return null;
 
-  const officialRecommended = resolveOfficialRecommended(family, profile);
+  const officialRecommended = resolveOfficialRecommended(family, profile, {
+    presetRecommendedMovement: preset.recommendedMovement,
+  });
   /** Family 제외가 반영된 허용 목록 — Hub 필터 SSOT */
   const picks = listAllowedMovementPicks(profile, family);
 

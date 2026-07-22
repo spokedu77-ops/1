@@ -198,6 +198,14 @@ describe('formatLibraryCardEquipmentName', () => {
     expect(formatLibraryCardEquipmentName('마커콘 4개')).toBe('마커콘');
     expect(formatLibraryCardEquipmentName('접시콘 12~15개')).toBe('접시콘');
     expect(formatLibraryCardEquipmentName('바톤 2~4개')).toBe('바톤');
+    expect(formatLibraryCardEquipmentName('라바콘 4색 각')).toBe('라바콘');
+    expect(formatLibraryCardEquipmentName('라바콘 4색 각 1개')).toBe('라바콘');
+    expect(formatLibraryCardEquipmentName('스포츠스태킹컵 인당')).toBe('스포츠스태킹컵');
+    expect(formatLibraryCardEquipmentName('스포츠스태킹컵 1인당')).toBe('스포츠스태킹컵');
+    expect(formatLibraryCardEquipmentName('스포츠스태킹컵 1인 당')).toBe('스포츠스태킹컵');
+    expect(formatLibraryCardEquipmentName('스포츠스태킹컵 개인당')).toBe('스포츠스태킹컵');
+    expect(formatLibraryCardEquipmentName('스포츠스태킹컵 인당 1세트')).toBe('스포츠스태킹컵');
+    expect(formatLibraryCardEquipmentName('스포츠스태킹컵 개인당 1개')).toBe('스포츠스태킹컵');
   });
 
   it('uses the first alternative and drops trailing notes', () => {

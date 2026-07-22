@@ -39,7 +39,7 @@ export function ProgramPreviewModal({
   return (
     <BottomSheet
       open
-      title="수업 미리보기"
+      title="간편 준비"
       onClose={onClose}
       size="preview"
       headerActions={onFavorite ? (
@@ -102,7 +102,7 @@ export function ProgramPreviewModal({
                 className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
               >
                 <BookOpen className="h-4 w-4" />
-                전체 수업 자료 보기
+                상세 준비 열기
               </Link>
             )}
           </div>

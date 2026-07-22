@@ -29,13 +29,13 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(session).toContain("state === 'movementIntro'");
   });
 
-  it('2) Hub CTA는 시작/설정 · Public autostart 없음 · description 미노출', () => {
-    expect(hub).toContain('data-spm-spomove-start-mode="start"');
+  it('2) Hub CTA는 확인 모달·설정 · Public autostart 없음 · description 미노출', () => {
+    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
     expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');
-    expect(hub).toContain("openWithPick(selectedPick, 'start')");
-    expect(hub).toContain("openWithPick(selectedPick, 'settings')");
+    expect(hub).toContain('hrefForSettings');
+    expect(hub).not.toContain("hrefForOfficial('start')");
     expect(hub).toContain('publicOfficialPresetSessionHref');
     expect(hub).not.toContain('writeFamilyMovement');
     expect(hub).not.toContain('{preset.description}');
@@ -58,9 +58,12 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(settingsBriefing).toContain('variant="compact"');
   });
 
-  it('2c) Hub 가이드 명시 · 잘못된 헤더 문구 없음', () => {
+  it('2c) Hub 시작·썸네일은 같은 확인 모달 루트', () => {
+    expect(hub).toContain('시작하기');
+    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
+    expect(hub).toContain('onClick={onGuide}');
     expect(hub).toContain('가이드 보기');
-    expect(hub).toContain('data-spm-spomove-card-action="guide"');
+    expect(hub).not.toContain('data-spm-spomove-card-action="guide"');
     expect(hub).not.toContain('사전 설정된 공식 조건으로 실행');
   });
 

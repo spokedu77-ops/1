@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, Bookmark, Check, Lock, Play } from 'lucide-react';
+import { ArrowRight, BookOpen, Bookmark, Check, Lock, Play } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -153,19 +153,25 @@ export function LessonCatalogCard({
   const { title, subtitle } = splitLessonCardTitle(rawTitle);
   const eyebrow = (decisionMeta ?? contextMeta ?? categoryFallback).trim() || categoryFallback;
   const description = (supportMeta ?? activityPrepMeta ?? subtitle).trim();
+  const descriptionParts = description.split(/\s*·\s*/).map((part) => part.trim()).filter(Boolean).slice(0, 3);
+  const cornerText = variant === 'home' ? cornerLabel?.replace(/^추천\s*/u, '') : cornerLabel;
   const showUsed = variant === 'library' && used;
   const showFavorite = variant === 'library' && Boolean(onFavorite);
+  const cardMinHeight = variant === 'home' ? 'min-h-[324px]' : 'min-h-[360px]';
+  const mediaAspect = variant === 'home' ? 'aspect-[6/5]' : 'aspect-square';
+  const cardSurface =
+    variant === 'home'
+      ? 'border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)]'
+      : locked
+        ? 'border border-amber-300/90 bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-[0_0_0_1px_rgba(251,191,36,0.25)] hover:border-amber-400 hover:shadow-[0_2px_14px_rgba(245,158,11,0.18)]'
+        : 'border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-[0_12px_26px_rgba(15,23,42,0.10)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:shadow-[0_18px_34px_rgba(79,70,229,0.16)]';
 
   return (
     <article
       {...articleProps}
-      className={`group flex h-full min-h-[360px] flex-col overflow-hidden rounded-[18px] bg-[var(--spm-s1)] text-[color:var(--spm-t)] transition duration-200 ${
-        locked
-          ? 'border border-amber-300/90 shadow-[0_0_0_1px_rgba(251,191,36,0.25)] hover:border-amber-400 hover:shadow-[0_2px_14px_rgba(245,158,11,0.18)]'
-          : 'border border-[color:var(--spm-br2)] shadow-[0_16px_34px_rgba(15,23,42,0.12)] hover:-translate-y-0.5 hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:shadow-[0_20px_42px_rgba(79,70,229,0.18)]'
-      }`}
+      className={`group flex h-full ${cardMinHeight} flex-col overflow-hidden rounded-[14px] transition duration-200 ${cardSurface}`}
     >
-      <div className="relative aspect-square w-full overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)]">
+      <div className={`relative ${mediaAspect} w-full overflow-hidden border-b ${variant === 'home' ? 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]' : 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]'}`}>
         <button
           type="button"
           onClick={onPreview}
@@ -185,11 +191,11 @@ export function LessonCatalogCard({
           <span className="pointer-events-none absolute inset-0 bg-black/0 transition-colors duration-150 group-hover:bg-black/[0.07]" />
         </button>
 
-        {(cornerLabel || locked || showUsed) && (
+        {(cornerText || locked || showUsed) && (
           <div className="pointer-events-none absolute right-3 top-3 flex max-w-[72%] flex-wrap justify-end gap-1">
-            {cornerLabel ? (
-              <span className="rounded-full border border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[11px] font-black text-[color:var(--spm-t2)] shadow-sm backdrop-blur">
-                {cornerLabel}
+            {cornerText ? (
+              <span className={`${variant === 'home' ? 'rounded-[6px] border-white/25 bg-black/36 px-2 py-1 font-mono text-white/92' : 'rounded-full border-white/80 bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] px-2.5 py-1 text-[color:var(--spm-t2)]'} border text-[11px] font-black shadow-sm backdrop-blur`}>
+                {cornerText}
               </span>
             ) : null}
             {locked ? (
@@ -238,10 +244,10 @@ export function LessonCatalogCard({
         ) : null}
 
         {hasVideo ? (
-          <span className="pointer-events-none absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+          <span className={`pointer-events-none absolute ${variant === 'home' ? 'left-2.5 top-2.5' : 'bottom-2.5 left-2.5'} flex items-center gap-1.5`}>
             <span
               aria-hidden="true"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 transition-transform duration-150 group-hover:scale-105"
+              className={`${variant === 'home' ? 'h-7 w-7' : 'h-8 w-8'} inline-flex items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 transition-transform duration-150 group-hover:scale-105`}
             >
               <Play className="h-3.5 w-3.5 fill-current" />
             </span>
@@ -254,16 +260,42 @@ export function LessonCatalogCard({
             미리보기
           </span>
         )}
+
+        {variant === 'home' ? (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
+            <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
+              {eyebrow}
+            </p>
+            <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-black leading-5 text-white drop-shadow">
+              {title}
+            </h3>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col p-4">
-        <p className="text-[11px] font-black text-[var(--spm-acc)]">{eyebrow}</p>
-        <h3 className="mt-1 line-clamp-2 min-h-10 text-[17px] font-black leading-5 text-[color:var(--spm-t)]">
-          {title}
-        </h3>
-        <p className="mt-2 line-clamp-2 min-h-10 text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
-          {description || '\u00a0'}
-        </p>
+      <div className={`flex flex-1 flex-col ${variant === 'home' ? 'bg-white p-3' : 'p-4'}`}>
+        {variant === 'home' ? null : <p className="text-[11px] font-black text-[var(--spm-acc)]">{eyebrow}</p>}
+        {variant === 'home' ? null : (
+          <h3 className="mt-1 line-clamp-2 min-h-10 text-[17px] font-black leading-5 text-[color:var(--spm-t)]">
+            {title}
+          </h3>
+        )}
+        {variant === 'home' ? (
+          <div className="mb-2 flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
+            {descriptionParts.length > 0 ? descriptionParts.map((part) => (
+              <span
+                key={part}
+                className="min-w-0 truncate after:mx-1.5 after:text-[color:var(--spm-t3)] after:content-['·'] last:after:content-none"
+              >
+                {part}
+              </span>
+            )) : <span className="text-[12px] font-semibold leading-5 text-slate-400">&nbsp;</span>}
+          </div>
+        ) : (
+          <p className="mb-4 mt-2 line-clamp-2 min-h-10 text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
+            {description || '\u00a0'}
+          </p>
+        )}
 
         {locked ? (
           <Link
@@ -275,10 +307,13 @@ export function LessonCatalogCard({
         ) : (
           <Link
             href={detailHref}
-            className="mt-auto inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className={`${variant === 'home' ? 'h-9 justify-between rounded-[9px] bg-slate-950 px-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] hover:bg-slate-800' : 'h-11 justify-center rounded-[10px] bg-[var(--spm-acc)] text-white hover:opacity-90'} mt-auto inline-flex w-full items-center gap-3 text-[13px] font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]`}
           >
-            <BookOpen size={15} />
-            수업 준비
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <BookOpen size={variant === 'home' ? 14 : 15} />
+              수업 준비
+            </span>
+            {variant === 'home' ? <ArrowRight size={14} /> : null}
           </Link>
         )}
       </div>

@@ -33,7 +33,7 @@ export function StatusBar() {
           className="flex min-h-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
           aria-label="SPOKEDU MASTER 홈"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-[var(--spm-acc)] text-[11px] font-black text-white">SM</span>
+          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">SM</span>
           <span className="hidden items-baseline gap-1.5 sm:flex">
             <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">SPOKEDU</span>
             <span className="text-[15px] font-black text-slate-900">MASTER</span>
@@ -51,7 +51,7 @@ export function StatusBar() {
                 key={href}
                 href={href}
                 className="flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[12px] px-2.5 text-[12px] font-black transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)] xl:gap-2 xl:px-3 xl:text-[13px]"
-                style={{ background: active ? 'rgba(79,70,229,0.09)' : 'transparent', color: active ? '#4338ca' : '#475569' }}
+                style={{ background: active ? 'var(--spm-s2)' : 'transparent', color: active ? '#0f172a' : '#475569' }}
                 aria-current={active ? 'page' : undefined}
               >
                 <Icon size={16} strokeWidth={1.9} className="shrink-0" />
@@ -79,7 +79,7 @@ export function StatusBar() {
           </span>
           <Link
             href="/spokedu-master/profile"
-            className="grid h-11 w-11 place-items-center rounded-[12px] bg-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className="grid h-11 w-11 place-items-center rounded-[12px] bg-slate-950 shadow-[0_12px_24px_rgba(15,23,42,0.14)] transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900"
             aria-label="계정 및 구독"
           >
             <CircleUserRound size={18} color="#fff" />

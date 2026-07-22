@@ -9,16 +9,19 @@ import { BottomSheet } from '../components/ui/BottomSheet';
 import { preferLiteMedia } from '../lib/mediaPreferences';
 import { getVideoThumbnailCandidates } from '../lib/program-media';
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
-import { officialPresetSessionHref } from './officialSpomovePresets';
+import { publicOfficialPresetSessionHref } from './officialSpomovePresets';
 import { buildSpomoveGuidelineNarrative, getSpomovePresetDisplayModel } from './spomovePresetDisplayModel';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
 import { getMovementProfile } from './movements/movementProfiles';
 import { MOVEMENT_REGISTRY } from './movements/movementRegistry';
-import { listAllowedMovementPicks } from './movements/movementResolve';
-import { movementDisplayLabel } from './movements/movementLabels';
-import { SpomatMovementDiagram } from './movements/SpomatMovementDiagram';
+import { getActivityFamily } from './movements/activityFamilies';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
+import {
+  buildDeclaredOperation,
+  operationSummaryLine,
+  resolveRequiredMatGuidance,
+} from './operations';
 import { useProfile } from '../store';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
@@ -35,7 +38,7 @@ function usePreferredLaunchMode(): 'projector' | 'mobile' {
   return mode;
 }
 
-function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
+function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
   const [liteMedia, setLiteMedia] = useState(false);
   const embed = parseVideoEmbedUrl(videoUrl);
 
@@ -43,10 +46,16 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
     setLiteMedia(preferLiteMedia());
   }, []);
 
+  const frameClassName =
+    'mx-auto w-full overflow-hidden rounded-xl border border-slate-200 bg-black sm:rounded-2xl';
+  const ratioClassName = 'aspect-video max-h-[168px] w-full sm:max-h-[260px]';
+
   if (!embed) {
     return (
-      <div className="flex aspect-video items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
-        <p className="text-sm font-bold text-slate-500">등록된 가이드 영상이 없습니다.</p>
+      <div
+        className={`${frameClassName} ${ratioClassName} flex items-center justify-center border-dashed bg-slate-50 px-4 text-center`}
+      >
+        <p className="text-sm font-bold text-slate-500">화면 미리보기가 없습니다.</p>
       </div>
     );
   }
@@ -54,11 +63,11 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
   const posterCandidates = getVideoThumbnailCandidates(videoUrl, { lite: liteMedia });
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-black">
-      <div className="aspect-video">
+    <div className={frameClassName}>
+      <div className={ratioClassName}>
         <TrackedVideoIframe
           src={embed.embedUrl}
-          title="SPOMOVE 가이드 영상"
+          title="SPOMOVE 화면 미리보기"
           className="h-full w-full"
           posterCandidates={posterCandidates}
           deferUntilPlay
@@ -68,20 +77,10 @@ function SpomoveGuideVideo({ videoUrl }: { videoUrl: string }) {
   );
 }
 
-function InfoBlock({ title, value }: { title: string; value: string }) {
-  if (!value) return null;
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4">
-      <p className="text-[11px] font-black text-slate-500">{title}</p>
-      <p className="mt-1 text-sm font-black text-slate-950">{value}</p>
-    </div>
-  );
-}
-
-function SpomatColorDiagram() {
-  return <SpomatMovementDiagram variant="light" limbRule="free" caption="매트 설치" />;
-}
-
+/**
+ * 홈/허브 공용 — 재생 직전 확인 모달.
+ * 닫기(X)는 항상 onClose만 호출 (페이지 이동 없음).
+ */
 export function SpomoveGuidelineSheet({
   preset,
   guideVideoUrl = '',
@@ -93,136 +92,155 @@ export function SpomoveGuidelineSheet({
 }) {
   const launchMode = usePreferredLaunchMode();
   const userProfile = useProfile();
+  const [detailOpen, setDetailOpen] = useState(false);
+
+  useEffect(() => {
+    setDetailOpen(false);
+  }, [preset?.id]);
+
   const movementLayerEnabled = isSpomoveMovementLayerEnabled({
     isAdmin: userProfile?.isAdmin,
     userId: userProfile?.id,
     userRole: userProfile?.isAdmin ? 'admin' : undefined,
   });
+
   if (!preset) return null;
+
   const display = getSpomovePresetDisplayModel(preset);
   const guidelineNarrative = buildSpomoveGuidelineNarrative(preset);
   const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
   const movementProfile = preset.movementProfileId ? getMovementProfile(preset.movementProfileId) : null;
   const isBodyCueBuiltIn = movementProfile?.id === 'bodyCueBuiltIn';
+
   const officialRecommended = movementSummary?.officialRecommended ?? null;
   const recommendedDef =
     officialRecommended && movementProfile && movementProfile.selectionMode !== 'disabled'
       ? MOVEMENT_REGISTRY[officialRecommended.baseMovement]
       : null;
-  // 가이드는 Official을 설명하므로 CTA도 Official을 URL에 명시 (설명≠실행 금지)
-  const startHref = officialPresetSessionHref(preset, {
+
+  const family = preset.activityFamilyId ? getActivityFamily(preset.activityFamilyId) : null;
+  const operationProfileId = preset.operationProfileId ?? family?.operationProfileId;
+  const declaredOperation =
+    operationProfileId && family
+      ? buildDeclaredOperation(operationProfileId, preset.recommendedOperation)
+      : null;
+  const operationLine = declaredOperation ? operationSummaryLine(declaredOperation) : null;
+  const matGuidance =
+    family && declaredOperation
+      ? resolveRequiredMatGuidance({
+          minMats: family.matRequirement.minMats,
+          participantScale: declaredOperation.participantScale,
+        })
+      : null;
+
+  const cueSeconds = officialRecommended
+    ? clampCueSpeedSec(
+        Math.max(
+          resolveSessionCueSeconds(preset, null),
+          MOVEMENT_REGISTRY[officialRecommended.baseMovement].minimumCueSeconds,
+        ),
+      )
+    : resolveSessionCueSeconds(preset, null);
+
+  const startHref = publicOfficialPresetSessionHref(preset, {
     mode: launchMode,
     entry: 'start',
     movement: officialRecommended?.baseMovement,
     limb: officialRecommended?.limbRule,
-    cueSeconds: officialRecommended
-      ? clampCueSpeedSec(
-          Math.max(
-            resolveSessionCueSeconds(preset, null),
-            MOVEMENT_REGISTRY[officialRecommended.baseMovement].minimumCueSeconds,
-          ),
-        )
-      : undefined,
+    cueSeconds: officialRecommended ? cueSeconds : undefined,
+    operation: declaredOperation,
   });
 
-  return (
-    <BottomSheet open title="가이드 · 참고 영상" onClose={onClose} size="preview">
-      <div className="space-y-5">
-        <div className="text-center">
-          <h2 className="text-2xl font-black text-slate-950">{display.displayTitle}</h2>
-          <p className="mt-2 text-[13px] font-semibold leading-relaxed text-slate-500">
-            실행 전 아래 참고 영상을 확인하세요.
-          </p>
-        </div>
+  const matCount = matGuidance?.recommended ?? movementSummary?.minMats ?? 1;
+  const prepLine = `매트 ${matCount}장 · 자극 ${cueSeconds}초`;
+  const intervalLine =
+    declaredOperation?.timing.pattern === 'interval'
+      ? `${declaredOperation.timing.workSeconds}초 운동 · ${declaredOperation.timing.restSeconds}초 휴식 · ${declaredOperation.timing.sets}세트`
+      : null;
 
-        <section aria-labelledby="spomove-guide-video-heading">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[var(--spm-acc-glow)] text-[var(--spm-acc)]">
-              ▶
-            </span>
-            <h3 id="spomove-guide-video-heading" className="text-[13px] font-black text-slate-950">
-              참고 영상
-            </h3>
-          </div>
-          <SpomoveGuideVideo videoUrl={guideVideoUrl} />
-        </section>
+  const detailBits = [
+    guidelineNarrative,
+    recommendedDef?.safetyNote ? `안전: ${recommendedDef.safetyNote}` : null,
+    recommendedDef?.teacherCue ? `멘트: ${recommendedDef.teacherCue}` : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <BottomSheet open title={display.displayTitle} onClose={onClose} size="launch">
+      <div className="flex min-h-0 flex-col gap-3 pb-1" data-spm-spomove-launch-confirm="">
+        <SpomoveScreenPreview videoUrl={guideVideoUrl} />
 
         {isBodyCueBuiltIn ? (
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-[11px] font-black text-slate-500">신체 안내</p>
-            <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
-              이 활동은 화면이 손·발을 직접 지정합니다. 별도의 움직임 선택 없이 화면 지시에 따라 수행하세요.
+          <div>
+            <p className="text-[11px] font-black tracking-[0.06em] text-slate-400">추천 움직임</p>
+            <p className="mt-0.5 text-[16px] font-black text-slate-950 sm:text-[17px]">화면 신체 안내</p>
+            <p className="mt-0.5 text-[13px] font-semibold leading-5 text-slate-600">
+              화면이 손·발을 직접 지정합니다. 화면 지시에 따라 수행하세요.
             </p>
+          </div>
+        ) : recommendedDef && officialRecommended ? (
+          <div>
+            <p className="text-[11px] font-black tracking-[0.06em] text-slate-400">추천 움직임</p>
+            <p className="mt-0.5 text-[16px] font-black text-slate-950 sm:text-[17px]">
+              {movementSummary?.recommendedLabel}
+            </p>
+            <p className="mt-0.5 text-[13px] font-semibold leading-5 text-slate-600">
+              {recommendedDef.instruction}
+            </p>
+          </div>
+        ) : (
+          <p className="text-[13px] font-semibold leading-5 text-slate-600">
+            실행 조건을 확인한 뒤 바로 시작하세요.
+          </p>
+        )}
+
+        {intervalLine ? (
+          <p className="text-[13px] font-bold text-slate-700">{intervalLine}</p>
+        ) : operationLine ? (
+          <div className="space-y-1">
+            <div className="flex flex-wrap gap-1.5">
+              {operationLine.split(' · ').map((chip) => (
+                <span
+                  key={chip}
+                  className="inline-flex rounded-md bg-slate-100 px-2 py-1 text-[12px] font-bold text-slate-600"
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+            <p className="text-[12px] font-medium text-slate-400">{prepLine}</p>
+          </div>
+        ) : (
+          <p className="text-[12px] font-medium text-slate-400">{prepLine}</p>
+        )}
+
+        {detailBits.length > 0 ? (
+          <div>
+            <button
+              type="button"
+              data-spm-spomove-guide-action="detail"
+              aria-expanded={detailOpen}
+              onClick={() => setDetailOpen((open) => !open)}
+              className="text-[13px] font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
+            >
+              {detailOpen ? '간단히 보기' : '안내 더보기'}
+            </button>
+            {detailOpen ? (
+              <div className="mt-2 space-y-2 rounded-xl bg-slate-50 px-3 py-3 text-[13px] font-semibold leading-5 text-slate-600">
+                {detailBits.map((line) => (
+                  <p key={line.slice(0, 24)}>{line}</p>
+                ))}
+              </div>
+            ) : null}
           </div>
         ) : null}
 
-        {movementSummary && recommendedDef && movementProfile && officialRecommended ? (
-          <>
-            <SpomatColorDiagram />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <InfoBlock title="시작 위치" value="매트 아래쪽 바깥에서 시작합니다." />
-              <InfoBlock
-                title="공식 추천 동작"
-                value={movementDisplayLabel(officialRecommended)}
-              />
-              <InfoBlock title="동작 방법" value={recommendedDef.instruction} />
-              <InfoBlock title="교사 멘트" value={recommendedDef.teacherCue} />
-              {recommendedDef.easyVariation ? (
-                <InfoBlock title="쉬운 변형" value={recommendedDef.easyVariation} />
-              ) : null}
-              {recommendedDef.hardVariation ? (
-                <InfoBlock title="어려운 변형" value={recommendedDef.hardVariation} />
-              ) : null}
-              {recommendedDef.safetyNote ? (
-                <InfoBlock title="안전 안내" value={recommendedDef.safetyNote} />
-              ) : null}
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-4">
-              <p className="text-[11px] font-black text-slate-500">허용 동작</p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">
-                {listAllowedMovementPicks(movementProfile, movementSummary.family)
-                  .map((pick) => movementDisplayLabel(pick))
-                  .join(' · ')}
-              </p>
-            </div>
-          </>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <Link
-            href={startHref}
-            data-spm-spomove-guide-action="start-official"
-            className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
-          >
-            {movementSummary ? '공식 추천으로 시작' : '실행'}
-          </Link>
-          <p className="text-center text-[12px] font-semibold leading-5 text-slate-500">
-            {movementSummary
-              ? `위에서 안내한 ${movementSummary.recommendedLabel}으로 브리핑을 엽니다.`
-              : launchMode === 'mobile'
-                ? '이 기기 레이아웃으로 엽니다. 프로젝터·TV에 연결했다면 PC에서 실행하세요.'
-                : '큰 화면(프로젝터·TV) 레이아웃으로 엽니다. 세션에서 전체화면을 켤 수 있습니다.'}
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-11 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-700"
-          >
-            닫기
-          </button>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <InfoBlock title="대상" value={display.targetLabel} />
-          <InfoBlock title="설정" value={display.settingLabel} />
-          <InfoBlock title="난이도" value={display.difficultyLabel} />
-          <InfoBlock title="신체 기능" value={display.bodyFunctionLabel} />
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <p className="text-[11px] font-black text-slate-500">활동 안내</p>
-          <p className="mt-2 text-sm font-semibold leading-7 text-slate-700">{guidelineNarrative}</p>
-        </div>
+        <Link
+          href={startHref}
+          data-spm-spomove-guide-action="start-official"
+          className="mt-0.5 inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[15px] font-black text-white shadow-sm"
+        >
+          바로 시작
+        </Link>
       </div>
     </BottomSheet>
   );

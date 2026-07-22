@@ -8,6 +8,19 @@ const SIMPLE_ALTERNATIVES: MovementAlternative[] = [
   { baseMovement: 'lungeReach', allowedLimbRules: ['free'] },
 ];
 
+const THEMED_FULL_ALTERNATIVES: MovementAlternative[] = [
+  { baseMovement: 'footTap', allowedLimbRules: ['free', 'sameSide', 'oppositeSide'] },
+  { baseMovement: 'handTouch', allowedLimbRules: ['free', 'sameSide', 'oppositeSide'] },
+  { baseMovement: 'stepHold', allowedLimbRules: ['free'] },
+  { baseMovement: 'squatTouch', allowedLimbRules: ['free'] },
+  { baseMovement: 'lungeReach', allowedLimbRules: ['free'] },
+  { baseMovement: 'twoLegJump', allowedLimbRules: ['free'] },
+  { baseMovement: 'singleLegHop', allowedLimbRules: ['free'] },
+  { baseMovement: 'boundingStep', allowedLimbRules: ['free'] },
+  { baseMovement: 'plankTouch', allowedLimbRules: ['free'] },
+  { baseMovement: 'quickStep', allowedLimbRules: ['free'] },
+];
+
 const VISUAL_ALTERNATIVES: MovementAlternative[] = [
   { baseMovement: 'footTap', allowedLimbRules: ['free', 'sameSide'] },
   { baseMovement: 'handTouch', allowedLimbRules: ['free', 'sameSide'] },
@@ -39,6 +52,14 @@ export const MOVEMENT_PROFILES: Record<MovementProfileId, MovementProfile> = {
     selectionMode: 'selectable',
     recommended: { baseMovement: 'footTap', limbRule: 'free' },
     alternatives: SIMPLE_ALTERNATIVES,
+    minimumMovementCount: 4,
+  },
+  /** 전면(reaction-full) 전용 — 테마별 대표 움직임 5종 포함 */
+  themedFullResponse: {
+    id: 'themedFullResponse',
+    selectionMode: 'selectable',
+    recommended: { baseMovement: 'twoLegJump', limbRule: 'free' },
+    alternatives: THEMED_FULL_ALTERNATIVES,
     minimumMovementCount: 4,
   },
   visualSearch: {

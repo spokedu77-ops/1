@@ -61,10 +61,10 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                 aria-current={active ? 'page' : undefined}
                 aria-label={label}
               >
-                <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? 'var(--spm-acc)' : 'transparent' }}>
+                <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? '#0f172a' : 'transparent' }}>
                   <Icon size={17} strokeWidth={1.9} color={active ? '#ffffff' : '#64748b'} />
                 </span>
-                <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}>
+                <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? '#0f172a' : '#64748b' }}>
                   {shortLabel}
                 </span>
               </button>
@@ -78,10 +78,10 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
             aria-current={activityActive ? 'page' : undefined}
             aria-label="수업 기록"
           >
-            <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: activityActive ? 'var(--spm-acc)' : 'transparent' }}>
+            <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: activityActive ? '#0f172a' : 'transparent' }}>
               <FileText size={17} strokeWidth={1.9} color={activityActive ? '#ffffff' : '#64748b'} />
             </span>
-            <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: activityActive ? 'var(--spm-acc)' : '#64748b' }}>
+            <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: activityActive ? '#0f172a' : '#64748b' }}>
               기록
             </span>
           </button>

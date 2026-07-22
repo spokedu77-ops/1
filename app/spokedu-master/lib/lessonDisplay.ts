@@ -106,11 +106,13 @@ const LESSON_CARD_TARGET_LABEL: Record<string, string> = {
 function formatLessonCardTarget(program: Program) {
   const detail = program.lessonDetail;
   const values = parseMasterTargets(detail?.recommendedAge || program.grade);
-  return values.map((value) => LESSON_CARD_TARGET_LABEL[value] ?? value).join('/');
+  const ordered = ['미취학', '초등학생 이상'].filter((value) => values.includes(value));
+  return ordered.map((value) => LESSON_CARD_TARGET_LABEL[value] ?? value).join('·');
 }
 
 function formatLessonCardSpace(program: Program) {
-  return parseMasterSpaces(program.space).join('/');
+  const values = parseMasterSpaces(program.space);
+  return values.length === 1 ? values[0]! : '';
 }
 
 function formatLessonCardParticipant(program: Program) {
@@ -131,7 +133,8 @@ export function buildLessonCardSupportMeta(
   const target = formatLessonCardTarget(program);
   const space = formatLessonCardSpace(program);
   const participant = formatLessonCardParticipant(program);
-  const operation = participant || options.equipmentFallback || '';
+  const equipment = options.equipmentFallback && options.equipmentFallback !== '없음' ? options.equipmentFallback : '';
+  const operation = equipment || participant;
 
   return [target, space, operation].filter(Boolean).join(' · ');
 }

@@ -121,6 +121,12 @@ type Props = {
   flowIncludeBonus?: boolean;
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  /** O4 — Operation timing.interval → MemoryGame intervalMode */
+  intervalLaunch?: {
+    workSeconds: number;
+    restSeconds: number;
+    sets: number;
+  } | null;
   onComplete: (payload: EngineCompletePayload) => void;
   onExit: () => void;
 };
@@ -169,6 +175,7 @@ export function EngineRouter({
   flowIncludeBonus,
   flankerStimulusType,
   flankerNestedCircleCount,
+  intervalLaunch = null,
   onComplete,
   onExit,
 }: Props) {
@@ -217,6 +224,14 @@ export function EngineRouter({
             spatialArrowColorMapping,
             flankerStimulusType,
             flankerNestedCircleCount,
+            ...(intervalLaunch
+              ? {
+                  intervalMode: true,
+                  intervalWork: intervalLaunch.workSeconds,
+                  intervalRest: intervalLaunch.restSeconds,
+                  intervalSets: intervalLaunch.sets,
+                }
+              : { intervalMode: false }),
           }}
           embed
           disableBgm

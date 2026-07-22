@@ -3,13 +3,23 @@ export type BaseMovementId =
   | 'handTouch'
   | 'stepHold'
   | 'squatTouch'
-  | 'lungeReach';
+  | 'lungeReach'
+  | 'twoLegJump'
+  | 'singleLegHop'
+  | 'boundingStep'
+  | 'plankTouch'
+  | 'quickStep';
 
 export type LimbRule = 'free' | 'sameSide' | 'oppositeSide';
 
+/** @deprecated Operation.startZone으로 이전. O1+ Resolver는 Operation을 우선. */
 export type MovementStartPosition = 'behindMat' | 'onMat';
 
+/** @deprecated 수업 복귀는 Operation.timing. 동작 완료는 MovementCompletionBehavior. */
 export type MovementReturnRule = 'returnOutside' | 'holdOnTarget' | 'stayAndTransition';
+
+/** 동작 완료 기준 (복귀·왕복 아님) */
+export type MovementCompletionBehavior = 'briefContact' | 'holdOnTarget' | 'completePose';
 
 export type MovementBodyFocus = 'feet' | 'hands' | 'wholeBody' | 'balance';
 
@@ -19,6 +29,7 @@ export type MovementSelectionMode = 'selectable' | 'fixed' | 'disabled';
 
 export type MovementProfileId =
   | 'simpleColorResponse'
+  | 'themedFullResponse'
   | 'visualSearch'
   | 'choiceReaction'
   | 'complexReaction'
@@ -37,8 +48,12 @@ export type MovementDefinition = {
   jumpFree: boolean;
   minimumCueSeconds: number;
   recommendedCueSeconds?: number;
+  /** @deprecated Operation.startZone */
   defaultStartPosition: MovementStartPosition;
+  /** @deprecated Operation / completionBehavior */
   defaultReturnRule: MovementReturnRule;
+  /** 동작 완료 기준 (복귀 아님) */
+  completionBehavior: MovementCompletionBehavior;
   supportedLimbRules: LimbRule[];
   instruction: string;
   teacherCue: string;
@@ -72,6 +87,8 @@ export type MovementPick = {
 export type ActivityFamilyDefinition = {
   id: ActivityFamilyId;
   movementProfileId: MovementProfileId;
+  /** Operation Layer — 필수. 미검수는 legacyFixed (legacyDisabled Sentinel). */
+  operationProfileId: import('../operations/operationTypes').ActivityOperationProfileId;
   matRequirement: { minMats: number; maxMats?: number };
   /** 공식 추천 — Profile.recommended보다 우선. 표시·첫 사용자 기본 */
   recommendedMovement?: MovementPick;

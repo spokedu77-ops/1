@@ -24,16 +24,13 @@ import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
-import { readFamilyMovement } from './movements/movementStorage';
 import type { MovementPick, MovementQuickFilter } from './movements/movementTypes';
-import { movementDisplayLabel } from './movements/movementLabels';
 import {
-  movementPicksEqual,
-  resolveEffectiveMovement,
   resolveMovementConfiguration,
   resolveSessionConfiguration,
 } from './movements/movementResolve';
-import { clampCueSpeedSec, resolveSessionCueSeconds } from './spomoveCueSpeed';
+import { clampCueSpeedSec, resolveSessionCueSeconds, supportsCueSpeedOverride } from './spomoveCueSpeed';
+import { getSpomoveDifficultyKind } from './spomoveDifficulty';
 
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
@@ -636,14 +633,12 @@ function CardInfo({
   preset,
   displayTitle,
   isReady,
-  startHref,
   movementLayerEnabled,
   onGuide,
 }: {
   preset: OfficialSpomovePreset;
   displayTitle: string;
   isReady: boolean;
-  startHref: string;
   movementLayerEnabled: boolean;
   onGuide: () => void;
 }) {
@@ -651,22 +646,9 @@ function CardInfo({
   const display = getSpomovePresetDisplayModel(preset);
   const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
   const profile = movementSummary?.profile ?? null;
-  const [selectedPick, setSelectedPick] = useState<MovementPick | null>(null);
-
-  useEffect(() => {
-    if (!profile || !preset.activityFamilyId || !movementSummary?.family) {
-      setSelectedPick(null);
-      return;
-    }
-    const saved = readFamilyMovement(preset.activityFamilyId);
-    setSelectedPick(
-      resolveEffectiveMovement({
-        profile,
-        family: movementSummary.family,
-        savedMovement: saved,
-      }),
-    );
-  }, [movementSummary?.family, preset.activityFamilyId, profile]);
+  const officialPick = movementSummary?.officialRecommended ?? null;
+  const showSettings =
+    supportsCueSpeedOverride(preset) || Boolean(getSpomoveDifficultyKind(preset));
 
   const cueForPick = (pick: MovementPick) => {
     if (!profile) return resolveSessionCueSeconds(preset, null);
@@ -677,17 +659,16 @@ function CardInfo({
     return clampCueSpeedSec(configured.cueSeconds);
   };
 
-  const hrefForPick = (pick: MovementPick, entry: 'start' | 'settings') =>
-    publicOfficialPresetSessionHref(preset, {
-      entry,
-      movement: pick.baseMovement,
-      limb: pick.limbRule,
-      cueSeconds: cueForPick(pick),
+  const hrefForSettings = () => {
+    if (!officialPick) {
+      return publicOfficialPresetSessionHref(preset, { entry: 'settings' });
+    }
+    return publicOfficialPresetSessionHref(preset, {
+      entry: 'settings',
+      movement: officialPick.baseMovement,
+      limb: officialPick.limbRule,
+      cueSeconds: cueForPick(officialPick),
     });
-
-  /** Hub 클릭은 확인 화면 진입만 — Family 저장 side effect 금지 */
-  const openWithPick = (pick: MovementPick, entry: 'start' | 'settings') => {
-    router.push(hrefForPick(pick, entry));
   };
 
   return (
@@ -712,17 +693,7 @@ function CardInfo({
 
       {movementSummary ? (
         <p className="mt-3 line-clamp-1 text-[12px] font-bold text-slate-700">
-          {selectedPick &&
-          !movementPicksEqual(selectedPick, movementSummary.officialRecommended) ? (
-            <>
-              최근 설정{' '}
-              <span className="text-[var(--spm-acc)]">{movementDisplayLabel(selectedPick)}</span>
-            </>
-          ) : (
-            <>
-              추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
-            </>
-          )}
+          추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
           <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
         </p>
       ) : (
@@ -731,47 +702,29 @@ function CardInfo({
 
       {isReady ? (
         <div className="mt-auto pt-3">
-          {movementSummary && selectedPick && profile ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                data-spm-spomove-card-action="start"
-                data-spm-spomove-start-mode="start"
-                onClick={() => openWithPick(selectedPick, 'start')}
-                className="inline-flex h-11 min-w-0 flex-[65] items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-2 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
-              >
-                <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
-                시작
-              </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              data-spm-spomove-card-action="start"
+              data-spm-spomove-start-mode="guide"
+              onClick={onGuide}
+              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-2 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
+            >
+              <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
+              시작하기
+            </button>
+            {showSettings ? (
               <button
                 type="button"
                 data-spm-spomove-card-action="start"
                 data-spm-spomove-start-mode="settings"
-                onClick={() => openWithPick(selectedPick, 'settings')}
-                className="inline-flex h-11 min-w-0 flex-[35] items-center justify-center rounded-[10px] border border-slate-200 bg-white px-2 text-[12px] font-black text-slate-700"
+                onClick={() => router.push(hrefForSettings())}
+                className="inline-flex h-11 min-w-0 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
               >
                 설정
               </button>
-            </div>
-          ) : (
-            <Link
-              href={startHref}
-              data-spm-spomove-card-action="start"
-              data-spm-spomove-start-mode="dive"
-              className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
-            >
-              <MonitorPlay className="h-3.5 w-3.5" />
-              시작
-            </Link>
-          )}
-          <button
-            type="button"
-            data-spm-spomove-card-action="guide"
-            onClick={onGuide}
-            className="mt-2 inline-flex h-9 w-full items-center justify-center text-[12px] font-bold text-slate-500 underline-offset-2 hover:text-slate-800 hover:underline"
-          >
-            가이드 보기
-          </button>
+            ) : null}
+          </div>
         </div>
       ) : (
         <div className="mt-auto border-t border-slate-100 pt-3">
@@ -787,7 +740,6 @@ function CardInfo({
 
 function PresetCard({
   preset,
-  startHref,
   thumbnailUrl,
   hasGuideVideo,
   favorite,
@@ -797,7 +749,6 @@ function PresetCard({
   onFavorite,
 }: {
   preset: OfficialSpomovePreset;
-  startHref: string;
   thumbnailUrl: string;
   hasGuideVideo: boolean;
   favorite: boolean;
@@ -855,7 +806,6 @@ function PresetCard({
         preset={preset}
         displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
-        startHref={startHref}
         movementLayerEnabled={movementLayerEnabled}
         onGuide={onPreview}
       />
@@ -1008,7 +958,6 @@ export default function SpomoveHubView() {
         <PresetCard
           key={preset.id}
           preset={preset}
-          startHref={publicOfficialPresetSessionHref(preset, { entry: 'start' })}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
           hasGuideVideo={Boolean(guideVideoUrls[preset.id])}
           favorite={isFavoriteProgram(ownerId, preset.id)}
@@ -1054,14 +1003,19 @@ export default function SpomoveHubView() {
                 const preset = OFFICIAL_SPOMOVE_LIBRARY.find((item) => item.id === activity.programId);
                 const title = preset ? getSpomovePresetDisplayModel(preset).displayTitle : activity.programTitle;
                 const canReproduce = canReproduceSpomoveSameSettings(activity, preset);
+                const snapshot = activity.spomoveSnapshot;
                 const recentHref = preset
                   ? canReproduce
                     ? publicOfficialPresetSessionHref(preset, {
                         entry: 'start',
-                        movement: activity.baseMovement,
-                        limb: activity.limbRule,
-                        cueSeconds: activity.cueSeconds,
-                        difficulty: activity.difficultyValue,
+                        movement: snapshot?.movement?.baseMovement ?? activity.baseMovement,
+                        limb: snapshot?.movement?.limbRule ?? activity.limbRule,
+                        cueSeconds: snapshot?.cueSeconds ?? activity.cueSeconds,
+                        difficulty: snapshot?.difficultyValue ?? activity.difficultyValue,
+                        operation:
+                          snapshot && snapshot.operationLayerStatus !== 'legacyDisabled'
+                            ? snapshot.operation
+                            : null,
                       })
                     : publicOfficialPresetSessionHref(preset, { entry: 'start' })
                   : `/spokedu-master/spomove/session?preset=${activity.programId}&mode=projector&sound=on&entry=start`;
@@ -1213,13 +1167,11 @@ export default function SpomoveHubView() {
         ) : null}
         <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold leading-relaxed text-slate-600">
           <span className="font-black text-slate-800">썸네일</span>
-          을 누르면{' '}
+          이나{' '}
+          <span className="font-black text-slate-800">시작하기</span>
+          를 누르면{' '}
           <span className="font-black text-[var(--spm-acc)]">참고 영상</span>
-          과 활동 안내를 볼 수 있습니다. 실행은 아래{' '}
-          <span className="font-black text-slate-800">
-            {movementLayerEnabled ? '바로 시작' : '실행'}
-          </span>
-          버튼을 사용하세요.
+          과 안내를 확인한 뒤 바로 시작할 수 있습니다.
         </p>
         {/* 카드 그리드 — 1:1 썸네일 · 2열 모바일 / 3열 / 4열 */}
         {filteredPresets.length > 0 ? (

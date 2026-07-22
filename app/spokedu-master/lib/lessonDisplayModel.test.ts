@@ -106,7 +106,26 @@ describe('lessonDisplayModel', () => {
       equipmentFallback: '라바콘',
     });
 
-    expect(model).toBe('미취학/초등학생 · 체육관 · 팀전');
+    expect(model).toBe('미취학·초등학생 · 체육관 · 라바콘');
+  });
+
+  it('omits space when both main spaces are available', () => {
+    const base = program();
+    const model = buildLessonCardSupportMeta({
+      ...base,
+      grade: '초등학생 이상, 미취학',
+      space: '체육관, 교실',
+      equipment: ['라바콘 4색 각'],
+      tags: ['인원:개인전'],
+      lessonDetail: {
+        ...base.lessonDetail!,
+        recommendedAge: '초등학생 이상, 미취학',
+      },
+    }, {
+      equipmentFallback: '라바콘',
+    });
+
+    expect(model).toBe('미취학·초등학생 · 라바콘');
   });
 
   it('uses equipment as the card operation hint when participant format is not set', () => {

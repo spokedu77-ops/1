@@ -19,6 +19,8 @@ export type RecentProgramActivity = {
   /** 난이도 재현용 (optional) */
   difficultyKind?: string;
   difficultyValue?: string;
+  /** O3 Operation Snapshot V2 — Recent 「같은 설정」 재현 */
+  spomoveSnapshot?: import('../spomove/operations/operationTypes').SpomoveSessionSnapshotV2;
 };
 
 export type RecentProgramActivityInput = Omit<RecentProgramActivity, 'ownerId' | 'resumeHref'>;

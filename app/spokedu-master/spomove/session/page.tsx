@@ -50,7 +50,6 @@ import {
 import {
   hasSeenMovementIntro,
   markMovementIntroSeen,
-  readFamilyMovement,
   writeFamilyMovement,
 } from '../movements/movementStorage';
 import {
@@ -71,6 +70,18 @@ import {
   resolveLegacyAutostart,
 } from './sessionEntryMode';
 import { resolveStartMovementSummary } from './startMovementSummary';
+import {
+  buildSpomoveSessionSnapshotV2,
+  operationConfigToPatch,
+  operationSummaryLine,
+  parseOperationQuery,
+  readPresetConfigPreference,
+  resolveOperationEngineCapabilities,
+  resolveOperationLayer,
+  resolveRequiredMatGuidance,
+  writePresetConfigPreference,
+  type ActivityOperationConfig,
+} from '../operations';
 type SessionState = 'idle' | 'movementIntro' | 'running' | 'done' | 'ended';
 type LaunchMode = 'projector' | 'mobile';
 
@@ -167,6 +178,12 @@ function SpomoveSessionContent() {
     if (urlDifficulty && options.some((opt) => opt.value === urlDifficulty)) {
       return urlDifficulty;
     }
+    if (typeof window !== 'undefined') {
+      const pref = readPresetConfigPreference(baseOfficialPreset.id);
+      if (pref?.difficultyValue && options.some((opt) => opt.value === pref.difficultyValue)) {
+        return pref.difficultyValue;
+      }
+    }
     return readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind);
   });
   useEffect(() => {
@@ -174,6 +191,11 @@ function SpomoveSessionContent() {
     const options = getSpomoveDifficultyOptions(difficultyKind);
     if (urlDifficulty && options.some((opt) => opt.value === urlDifficulty)) {
       setDifficultyValue(urlDifficulty);
+      return;
+    }
+    const pref = readPresetConfigPreference(baseOfficialPreset.id);
+    if (pref?.difficultyValue && options.some((opt) => opt.value === pref.difficultyValue)) {
+      setDifficultyValue(pref.difficultyValue);
       return;
     }
     setDifficultyValue(readSpomoveDifficultyValue(baseOfficialPreset, difficultyKind));
@@ -258,12 +280,13 @@ function SpomoveSessionContent() {
       setMovementResolutionStatus('disabled');
       return;
     }
-    const saved = readFamilyMovement(officialPreset.activityFamilyId!);
     const resolved = resolveEffectiveMovement({
       profile: movementProfile,
       family: movementFamily,
       urlMovement,
-      savedMovement: saved,
+      // 일반 실행: Preset 대표 움직임 고정 (Preference/Family 저장 미사용)
+      savedMovement: null,
+      presetRecommendedMovement: officialPreset.recommendedMovement,
     });
     setMovementPick(resolved);
     setMovementResolutionStatus('ready');
@@ -274,13 +297,6 @@ function SpomoveSessionContent() {
       urlMovement.limbRule === resolved.limbRule
     ) {
       setMovementSource('url');
-    } else if (
-      saved &&
-      resolved &&
-      saved.baseMovement === resolved.baseMovement &&
-      saved.limbRule === resolved.limbRule
-    ) {
-      setMovementSource('saved');
     } else {
       setMovementSource('recommended');
     }
@@ -291,11 +307,91 @@ function SpomoveSessionContent() {
     return resolveMovementConfiguration(movementPick, movementProfile);
   }, [movementPick, movementProfile, movementResolutionStatus]);
 
+  const operationCapabilities = useMemo(() => {
+    if (!officialPreset) return { interval: false, shuttle: false };
+    return resolveOperationEngineCapabilities(officialPreset.engine.mode);
+  }, [officialPreset]);
+
+  const urlOperation = useMemo(() => parseOperationQuery(searchParams), [searchParams]);
+
+  const [operationCandidate, setOperationCandidate] = useState<ActivityOperationConfig | null>(null);
+  const [operationLayerStatus, setOperationLayerStatus] = useState<
+    'pending' | 'ready' | 'legacyDisabled' | 'sanitized' | 'fallback'
+  >('pending');
+
+  useEffect(() => {
+    if (!movementLayerEnabled || !officialPreset || !movementFamily) {
+      setOperationCandidate(null);
+      setOperationLayerStatus('legacyDisabled');
+      return;
+    }
+    const resolved = resolveOperationLayer({
+      familyOperationProfileId: movementFamily.operationProfileId,
+      presetOperationProfileId: officialPreset.operationProfileId,
+      recommendedOperation: officialPreset.recommendedOperation,
+      // 일반 실행: Preference operationPatch 미적용 (URL/Recent 재현만 incoming)
+      preference: null,
+      incoming: urlOperation ? { source: 'url', operation: urlOperation } : null,
+      capabilities: operationCapabilities,
+      activityFamilyId: officialPreset.activityFamilyId,
+    });
+    setOperationCandidate(resolved.candidate);
+    setOperationLayerStatus(resolved.status);
+  }, [
+    movementFamily,
+    movementLayerEnabled,
+    officialPreset,
+    operationCapabilities,
+    urlOperation,
+  ]);
+
+  const resolvedOperationLayer = useMemo(() => {
+    if (!movementFamily || !officialPreset || !operationCandidate) return null;
+    return resolveOperationLayer({
+      familyOperationProfileId: movementFamily.operationProfileId,
+      presetOperationProfileId: officialPreset.operationProfileId,
+      recommendedOperation: officialPreset.recommendedOperation,
+      preference: {
+        schemaVersion: 1,
+        presetId: officialPreset.id,
+        operationPatch: operationConfigToPatch(operationCandidate),
+      },
+      capabilities: operationCapabilities,
+      activityFamilyId: officialPreset.activityFamilyId,
+    });
+  }, [movementFamily, officialPreset, operationCandidate, operationCapabilities]);
+
+  const effectiveOperation = resolvedOperationLayer?.effective ?? null;
+
+  const matGuidance = useMemo(() => {
+    if (!movementFamily || !operationCandidate || operationLayerStatus === 'legacyDisabled') return null;
+    return resolveRequiredMatGuidance({
+      minMats: movementFamily.matRequirement.minMats,
+      participantScale: operationCandidate.participantScale,
+    });
+  }, [movementFamily, operationCandidate, operationLayerStatus]);
+
+  const persistPresetPreference = useCallback(
+    (next: { cue?: number; difficulty?: string }) => {
+      if (!officialPreset) return;
+      const prev = readPresetConfigPreference(officialPreset.id);
+      // 일반 Hub: cue·difficulty만 Preference. movement/operation은 Class Set·Variant 영역.
+      writePresetConfigPreference(officialPreset.id, {
+        schemaVersion: 1,
+        presetId: officialPreset.id,
+        cueSeconds: next.cue ?? prev?.cueSeconds,
+        difficultyValue: next.difficulty ?? (difficultyKind ? difficultyValue : prev?.difficultyValue),
+      });
+    },
+    [difficultyKind, difficultyValue, officialPreset],
+  );
+
   const canStartSession =
     (movementResolutionStatus === 'ready' ||
       movementResolutionStatus === 'disabled' ||
       movementResolutionStatus === 'legacyFallback') &&
-    difficultyReady;
+    difficultyReady &&
+    operationLayerStatus !== 'pending';
 
   const urlCueSeconds = useMemo(
     () => parseCueSecondsQuery(searchParams.get('cueSeconds')),
@@ -307,9 +403,17 @@ function SpomoveSessionContent() {
   const [activationBlocked, setActivationBlocked] = useState<
     null | 'fullscreenBlocked' | 'audioBlocked' | 'bothBlocked'
   >(null);
-  const [cueSeconds, setCueSeconds] = useState<SpomoveCueSpeedSec>(() =>
-    officialPreset ? resolveSessionCueSeconds(officialPreset, urlCueSeconds) : 3,
-  );
+  const [cueSeconds, setCueSeconds] = useState<SpomoveCueSpeedSec>(() => {
+    if (!officialPreset) return 3;
+    if (urlCueSeconds != null) return resolveSessionCueSeconds(officialPreset, urlCueSeconds);
+    if (typeof window !== 'undefined') {
+      const pref = readPresetConfigPreference(officialPreset.id);
+      if (pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)) {
+        return resolveSessionCueSeconds(officialPreset, clampCueSpeedSec(pref.cueSeconds));
+      }
+    }
+    return resolveSessionCueSeconds(officialPreset, null);
+  });
   const bgmPlayerRef = useRef<BgmPlayer | null>(null);
   const startLockedRef = useRef(false);
   const sessionStartedAtRef = useRef<number | null>(null);
@@ -317,24 +421,34 @@ function SpomoveSessionContent() {
 
   useEffect(() => {
     if (!officialPreset) return;
-    setCueSeconds(resolveSessionCueSeconds(officialPreset, urlCueSeconds));
+    if (urlCueSeconds != null) {
+      setCueSeconds(resolveSessionCueSeconds(officialPreset, urlCueSeconds));
+      return;
+    }
+    const pref = readPresetConfigPreference(officialPreset.id);
+    const prefCue =
+      pref?.cueSeconds != null && Number.isFinite(pref.cueSeconds)
+        ? clampCueSpeedSec(pref.cueSeconds)
+        : null;
+    setCueSeconds(resolveSessionCueSeconds(officialPreset, prefCue));
   }, [officialPreset, urlCueSeconds]);
 
   const handleCueSecondsChange = useCallback(
     (value: SpomoveCueSpeedSec) => {
+      let next = value;
       if (movementPick && movementProfile) {
         const session = resolveSessionConfiguration({
           movement: resolveMovementConfiguration(movementPick, movementProfile),
           cueSeconds: value,
         });
         if (session.cueAdjusted) {
-          setCueSeconds(writeLastCueSeconds(clampCueSpeedSec(session.cueSeconds) as SpomoveCueSpeedSec));
-          return;
+          next = clampCueSpeedSec(session.cueSeconds) as SpomoveCueSpeedSec;
         }
       }
-      setCueSeconds(writeLastCueSeconds(value));
+      setCueSeconds(writeLastCueSeconds(next));
+      persistPresetPreference({ cue: next });
     },
-    [movementPick, movementProfile],
+    [movementPick, movementProfile, persistPresetPreference],
   );
 
   const effectiveCueSeconds = useMemo(() => {
@@ -438,6 +552,26 @@ function SpomoveSessionContent() {
     sessionStartedAtRef.current = Date.now();
     setState('running');
     const display = getSpomovePresetDisplayModel(officialPreset);
+    const snapshot =
+      operationLayerStatus === 'legacyDisabled' || !operationCandidate
+        ? buildSpomoveSessionSnapshotV2({
+            presetId: officialPreset.id,
+            movement: movementPick,
+            operationLayerStatus: 'legacyDisabled',
+            cueSeconds: effectiveCueSeconds,
+            difficultyKind: difficultyKind ?? undefined,
+            difficultyValue: difficultyKind ? difficultyValue : undefined,
+          })
+        : buildSpomoveSessionSnapshotV2({
+            presetId: officialPreset.id,
+            movement: movementPick,
+            operationLayerStatus:
+              operationLayerStatus === 'pending' ? 'ready' : operationLayerStatus,
+            operation: operationCandidate,
+            cueSeconds: effectiveCueSeconds,
+            difficultyKind: difficultyKind ?? undefined,
+            difficultyValue: difficultyKind ? difficultyValue : undefined,
+          });
     recordRecentProgramActivity({
       programId: officialPreset.id,
       programTitle: display.displayTitle,
@@ -450,6 +584,7 @@ function SpomoveSessionContent() {
       cueSeconds: effectiveCueSeconds,
       difficultyKind: difficultyKind ?? undefined,
       difficultyValue: difficultyKind ? difficultyValue : undefined,
+      spomoveSnapshot: snapshot,
     });
   }, [
     difficultyKind,
@@ -460,6 +595,8 @@ function SpomoveSessionContent() {
     movementResolutionStatus,
     movementSource,
     officialPreset,
+    operationCandidate,
+    operationLayerStatus,
     recordRecentProgramActivity,
     resolvedMovement,
     selectedBgmPath,
@@ -601,12 +738,15 @@ function SpomoveSessionContent() {
 
   const showBriefing = state === 'idle' && !legacyAutostart;
 
-  const openSettingsEntry = useCallback(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('entry', 'settings');
-    params.delete('autostart');
-    router.replace(`/spokedu-master/spomove/session?${params.toString()}`);
-  }, [router, searchParams]);
+  const leaveSession = useCallback(() => {
+    stopBgm();
+    exitFullscreenAfterSession();
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push('/spokedu-master/spomove');
+  }, [exitFullscreenAfterSession, router, stopBgm]);
 
   /** Result 재실행 → Start 확인 화면 (즉시 Engine 금지) */
   const reopenStartConfirmation = useCallback(() => {
@@ -623,6 +763,10 @@ function SpomoveSessionContent() {
       limb: movementPick?.limbRule,
       cueSeconds: effectiveCueSeconds,
       difficulty: difficultyKind ? difficultyValue : undefined,
+      operation:
+        operationLayerStatus !== 'legacyDisabled' && operationCandidate
+          ? operationCandidate
+          : null,
     });
     router.replace(href);
   }, [
@@ -633,6 +777,8 @@ function SpomoveSessionContent() {
     launchMode,
     movementPick,
     officialPreset,
+    operationCandidate,
+    operationLayerStatus,
     router,
     stopBgm,
   ]);
@@ -641,6 +787,11 @@ function SpomoveSessionContent() {
     () => resolveStartMovementSummary(movementProfile, movementPick),
     [movementPick, movementProfile],
   );
+
+  const operationSummary =
+    operationLayerStatus !== 'legacyDisabled' && effectiveOperation
+      ? operationSummaryLine(effectiveOperation)
+      : null;
 
   const difficultySummaryLine = useMemo(() => {
     if (!difficultyKind) return null;
@@ -678,8 +829,7 @@ function SpomoveSessionContent() {
               introTimerRef.current = null;
             }
             startLockedRef.current = false;
-            exitFullscreenAfterSession();
-            router.push('/spokedu-master/spomove');
+            leaveSession();
           }}
           className="absolute right-4 top-4 z-10 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white"
           aria-label="나가기"
@@ -730,6 +880,15 @@ function SpomoveSessionContent() {
           flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
           flankerNestedCircleCount={officialPreset.engine.flankerNestedCircleCount}
+          intervalLaunch={
+            effectiveOperation?.timing.pattern === 'interval'
+              ? {
+                  workSeconds: effectiveOperation.timing.workSeconds,
+                  restSeconds: effectiveOperation.timing.restSeconds,
+                  sets: effectiveOperation.timing.sets,
+                }
+              : null
+          }
           onExit={() => {
             finishSession('ended');
           }}
@@ -772,11 +931,7 @@ function SpomoveSessionContent() {
           mode={launchMode}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}
-          onExit={() => {
-            stopBgm();
-            exitFullscreenAfterSession();
-            router.push('/spokedu-master/spomove');
-          }}
+          onExit={leaveSession}
         />
       ) : null}
 
@@ -794,43 +949,36 @@ function SpomoveSessionContent() {
               onCueSecondsChange={handleCueSecondsChange}
               difficultyKind={difficultyKind}
               difficultyValue={difficultyValue}
-              onDifficultyChange={setDifficultyValue}
+              onDifficultyChange={(value) => {
+                setDifficultyValue(value);
+                persistPresetPreference({ difficulty: value });
+              }}
               onStart={beginConfiguredSession}
               movement={resolvedMovement}
               movementPick={movementPick}
               movementProfile={movementProfile}
               movementFamily={movementFamily}
-              onMovementPickChange={(pick) => {
-                setMovementPick(pick);
-                setMovementSource('changed');
-                if (officialPreset.activityFamilyId) {
-                  writeFamilyMovement(officialPreset.activityFamilyId, pick);
-                  appendMovementUsageEvent({
-                    eventType: 'movement_changed',
-                    sessionId: movementSessionIdRef.current,
-                    presetId: officialPreset.id,
-                    activityFamilyId: officialPreset.activityFamilyId,
-                    baseMovement: pick.baseMovement,
-                    limbRule: pick.limbRule,
-                    source: 'changed',
-                    cueSeconds: effectiveCueSeconds,
-                  });
-                }
-              }}
               cueFloorNotice={cueFloorNotice}
+              operationConfig={operationCandidate}
             />
           ) : (
             <StartBriefing
               preset={officialPreset}
               movementSummaryLine={movementSummaryLine}
               difficultySummaryLine={difficultySummaryLine}
+              operationSummaryLine={
+                operationSummary
+                  ? matGuidance && matGuidance.recommended > matGuidance.minimum
+                    ? `${operationSummary} · 매트 권장 ${matGuidance.recommended}장`
+                    : operationSummary
+                  : null
+              }
               cueSeconds={effectiveCueSeconds}
               onCueSecondsChange={handleCueSecondsChange}
               resolvedMovement={resolvedMovement}
               cueFloorNotice={cueFloorNotice}
               startDisabled={bgmLoading || !canStartSession}
               onStart={beginConfiguredSession}
-              onOpenSettings={openSettingsEntry}
             />
           )}
         </SessionSetupShell>
@@ -847,18 +995,20 @@ function SpomoveSessionContent() {
             title={state === 'done' ? '훈련 완료' : '훈련 종료'}
             statusBadge={state === 'done' ? '완료' : '중도 종료'}
             retryLabel="같은 설정으로 시작"
-            onBack={() => {
-              stopBgm();
-              exitFullscreenAfterSession();
-              router.push('/spokedu-master/spomove');
-            }}
+            onBack={leaveSession}
             onRetry={reopenStartConfirmation}
             sessionSettings={
               resolvedMovement
                 ? {
                     title: '사용한 동작',
                     primary: resolvedMovement.displayLabel,
-                    secondary: `매트 1장 · 자극 ${effectiveCueSeconds}초`,
+                    secondary: [
+                      matGuidance ? `매트 ${matGuidance.recommended}장` : '매트 1장',
+                      `자극 ${effectiveCueSeconds}초`,
+                      operationSummary,
+                    ]
+                      .filter(Boolean)
+                      .join(' · '),
                   }
                 : null
             }

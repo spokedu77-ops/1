@@ -132,6 +132,14 @@ export function formatLibraryCardEquipmentName(raw: string): string {
   const primary = text.split(/\s*또는\s*/)[0]!.trim();
   const stripped = primary
     .replace(/\s*\([^)]*\)\s*$/g, '')
+    .replace(/\s+(?:\d+\s*)?인\s*당.*$/g, '')
+    .replace(/\s+(?:\d+\s*)?인당.*$/g, '')
+    .replace(/\s+개인\s*당.*$/g, '')
+    .replace(/\s+개인당.*$/g, '')
+    .replace(/\s+개인\s*당\s*$/g, '')
+    .replace(/\s*(?:\d+\s*)?인\s*당\s*$/g, '')
+    .replace(/\s*(?:\d+\s*)?인당\s*$/g, '')
+    .replace(/\s*\d+\s*색(?:\s*각(?:\s*\d+(?:\s*[~～\-]\s*\d+)?\s*개?)?)?\s*$/g, '')
     .replace(/\s*\d+(?:\s*[~～\-]\s*\d+)?\s*개(?:\s*이상)?\s*$/g, '')
     .replace(/\s+\d+(?:\s*[~～\-]\s*\d+)?\s*$/g, '')
     .trim();

@@ -6,6 +6,13 @@ import {
 } from './officialSpomovePresetExpansion';
 import type { MovementProfileId } from './movements/movementTypes';
 import { enrichOfficialSpomoveLibrary } from './movements/enrichPresetMovement';
+import { applyFullThemeSeedsToLibrary } from './operations/fullThemeSeed';
+import { mergeOperationConfig } from './operations/operationMerge';
+import { writeOperationQuery } from './operations/operationQuery';
+import type {
+  ActivityOperationConfig,
+  ActivityOperationPatch,
+} from './operations/operationTypes';
 
 export type OfficialSpomoveAxis = SpomoveAxis;
 
@@ -82,6 +89,12 @@ export type OfficialSpomovePreset = {
   activityFamilyId?: string;
   /** 신체동작 레이어 — enrichment 후 필수 */
   movementProfileId?: MovementProfileId;
+  /** Preset 공식 대표 움직임 (O2+). Family 추천보다 우선. */
+  recommendedMovement?: import('./movements/movementTypes').MovementPick;
+  /** Preset 공식 운영 Patch (O2+). */
+  recommendedOperation?: import('./operations/operationTypes').ActivityOperationPatch;
+  /** 예외적으로 Family Operation Profile 교체. 전면 6 Seed에서는 미사용. */
+  operationProfileId?: import('./operations/operationTypes').ActivityOperationProfileId;
 };
 
 export const OFFICIAL_SPOMOVE_CORE_COUNT = 48;
@@ -1384,7 +1397,7 @@ const OFFICIAL_SPOMOVE_LIBRARY_RAW: OfficialSpomovePreset[] = assignSequentialSo
 
 /** family/profile enrichment 완료본 — Hub·세션·테스트 SSOT */
 export const OFFICIAL_SPOMOVE_LIBRARY: readonly OfficialSpomovePreset[] =
-  enrichOfficialSpomoveLibrary(OFFICIAL_SPOMOVE_LIBRARY_RAW);
+  applyFullThemeSeedsToLibrary(enrichOfficialSpomoveLibrary(OFFICIAL_SPOMOVE_LIBRARY_RAW));
 
 export const OFFICIAL_SPOMOVE_LIBRARY_SIZE = OFFICIAL_SPOMOVE_LIBRARY.length;
 
@@ -1412,6 +1425,8 @@ export function officialPresetSessionHref(
     cueSeconds?: number;
     /** 난이도 오버라이드 (numberCart/colorTracker/mole/camouflage 값) */
     difficulty?: string;
+    /** O3 Operation Layer — ActivityOperationConfig 전체 또는 Patch */
+    operation?: ActivityOperationConfig | ActivityOperationPatch | null;
   },
 ) {
   const params = new URLSearchParams({
@@ -1427,6 +1442,16 @@ export function officialPresetSessionHref(
   if (options?.movement) params.set('movement', options.movement);
   if (options?.limb) params.set('limb', options.limb);
   if (options?.difficulty) params.set('difficulty', options.difficulty);
+  if (options?.operation) {
+    const base: ActivityOperationConfig = {
+      startZone: 'onMat',
+      participantScale: 'individual',
+      equipment: { mode: 'none' },
+      timing: { pattern: 'continuous' },
+      participationFormat: 'independent',
+    };
+    writeOperationQuery(mergeOperationConfig(base, options.operation), params);
+  }
   return `/spokedu-master/spomove/session?${params.toString()}`;
 }
 

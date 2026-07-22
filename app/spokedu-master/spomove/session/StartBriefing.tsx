@@ -18,25 +18,26 @@ export function StartBriefing({
   preset,
   movementSummaryLine,
   difficultySummaryLine,
+  operationSummaryLine,
   cueSeconds,
   onCueSecondsChange,
   resolvedMovement,
   cueFloorNotice,
   startDisabled,
   onStart,
-  onOpenSettings,
 }: {
   preset: OfficialSpomovePreset;
   /** null이면 움직임 행 숨김 (DIVE) */
   movementSummaryLine: string | null;
   difficultySummaryLine: string | null;
+  /** Operation Layer 한 줄 (legacyDisabled면 null) */
+  operationSummaryLine?: string | null;
   cueSeconds: SpomoveCueSpeedSec;
   onCueSecondsChange: (value: SpomoveCueSpeedSec) => void;
   resolvedMovement: ResolvedMovementConfiguration | null;
   cueFloorNotice?: string | null;
   startDisabled: boolean;
   onStart: () => void;
-  onOpenSettings: () => void;
 }) {
   const display = getSpomovePresetDisplayModel(preset);
   const showCueSpeed = supportsCueSpeedOverride(preset);
@@ -52,12 +53,17 @@ export function StartBriefing({
         {movementSummaryLine ? (
           <p className="mt-2 text-[18px] font-black text-white">{movementSummaryLine}</p>
         ) : null}
+        {operationSummaryLine ? (
+          <p className={`text-[14px] font-bold text-white/70 ${movementSummaryLine ? 'mt-1' : 'mt-2'}`}>
+            {operationSummaryLine}
+          </p>
+        ) : null}
         {difficultySummaryLine ? (
-          <p className={`text-[14px] font-bold text-white/65 ${movementSummaryLine ? 'mt-1' : 'mt-2'}`}>
+          <p className={`text-[14px] font-bold text-white/65 ${movementSummaryLine || operationSummaryLine ? 'mt-1' : 'mt-2'}`}>
             {difficultySummaryLine}
           </p>
         ) : null}
-        {!movementSummaryLine && !difficultySummaryLine ? (
+        {!movementSummaryLine && !difficultySummaryLine && !operationSummaryLine ? (
           <p className="mt-2 text-[14px] font-semibold text-white/55">실행 조건을 확인한 뒤 시작하세요.</p>
         ) : null}
       </div>
@@ -134,15 +140,7 @@ export function StartBriefing({
         className="inline-flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-white text-[16px] font-black text-black shadow-[0_18px_55px_rgba(255,255,255,0.18)] transition hover:scale-[1.01] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Play className="h-5 w-5 fill-black" />
-        {startDisabled ? '불러오는 중…' : '이 설정으로 시작'}
-      </button>
-
-      <button
-        type="button"
-        onClick={onOpenSettings}
-        className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-white/15 bg-black/25 text-[13px] font-black text-white/75 transition hover:border-white/30 hover:text-white"
-      >
-        설정을 변경하려면
+        {startDisabled ? '불러오는 중…' : '수업 시작'}
       </button>
     </div>
   );

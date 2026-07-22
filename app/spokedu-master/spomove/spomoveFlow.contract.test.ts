@@ -44,39 +44,40 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('slice(0, 3)');
   });
 
-  it('loads guideline videos in the guideline sheet without pad layout clutter', () => {
+  it('loads launch-confirm preview without pad layout clutter', () => {
     expect(hub).toContain('SPOMOVE_GUIDE_VIDEO_PACK_ID');
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(guidelineSheet).not.toContain('SpomovePadLayoutView');
-    expect(guidelineSheet).toContain('SpomoveGuideVideo');
-    expect(guidelineSheet).toContain('참고 영상');
+    expect(guidelineSheet).toContain('SpomoveScreenPreview');
+    expect(guidelineSheet).toContain('바로 시작');
+    expect(guidelineSheet).toContain('안내 더보기');
+    expect(guidelineSheet).not.toContain('상세보기');
+    expect(guidelineSheet).not.toContain('설정 변경');
   });
 
   it('separates start (entry=start) from settings and keeps Public without autostart', () => {
-    expect(hub).toContain('data-spm-spomove-start-mode="start"');
+    expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('data-spm-spomove-start-mode="settings"');
-    expect(hub).toContain('data-spm-spomove-start-mode="dive"');
+    expect(hub).not.toContain('data-spm-spomove-start-mode="dive"');
     expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('설정');
-    expect(hub).toContain("openWithPick(selectedPick, 'start')");
-    expect(hub).toContain("openWithPick(selectedPick, 'settings')");
+    expect(hub).toContain('hrefForSettings');
+    expect(hub).not.toContain("hrefForOfficial('start')");
     expect(hub).not.toContain('writeFamilyMovement');
     expect(hub).toContain('publicOfficialPresetSessionHref');
     expect(session).toContain('activationBlocked');
     expect(session).toContain('전체화면과 소리 켜기');
     expect(session).not.toContain('MovementHud');
-    const diveLinkBlock = hub.slice(
-      hub.indexOf('data-spm-spomove-start-mode="dive"') - 80,
-      hub.indexOf('data-spm-spomove-start-mode="dive"') + 120,
-    );
-    expect(diveLinkBlock).toContain('startHref');
-    expect(hub).toContain('href={startHref}');
     expect(guidelineSheet).not.toContain('autostart: true');
-    expect(guidelineSheet).toContain('공식 추천으로 시작');
+    expect(guidelineSheet).toContain('바로 시작');
     expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
+    expect(guidelineSheet).toContain('data-spm-spomove-launch-confirm');
+    expect(guidelineSheet).not.toContain('공식 추천으로 시작');
     expect(session).toContain('resolveLegacyAutostart');
     expect(session).toContain('resolveSessionCueSeconds');
     expect(session).toContain('parseCueSecondsQuery');
+    expect(session).toContain('leaveSession');
+    expect(session).toContain('router.back()');
   });
 
   it('exposes cue speed on StartBriefing', () => {

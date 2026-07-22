@@ -18,6 +18,8 @@ export type MovementConfiguratorProps = {
   onChange: (pick: MovementPick) => void;
   /** Phase 0: compact = 그룹 버튼 + 한 줄 안내만 */
   variant?: 'full' | 'compact';
+  /** 부모 섹션이 이미 제목을 가질 때 내부 chrome 숨김 */
+  hideChrome?: boolean;
 };
 
 /**
@@ -31,9 +33,45 @@ export function MovementConfigurator({
   allowedPicks,
   onChange,
   variant = 'compact',
+  hideChrome = false,
 }: MovementConfiguratorProps) {
   const groups = groupMovementPresentations(allowedPicks);
   const compact = variant === 'compact';
+
+  const body = (
+    <>
+      <div className="space-y-4">
+        {groups.map(({ group, groupLabel, items }) => (
+          <div key={group}>
+            <p className="text-[11px] font-black text-white/45">{groupLabel}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {items.map((presentation) => {
+                const isSelected = movementPicksEqual(presentation.pick, value);
+                const isOfficial = movementPicksEqual(presentation.pick, officialRecommended);
+                return (
+                  <MovementOptionButton
+                    key={`${presentation.pick.baseMovement}:${presentation.pick.limbRule}`}
+                    presentation={presentation}
+                    selected={isSelected}
+                    isOfficialRecommended={isOfficial}
+                    onSelect={() => onChange(presentation.pick)}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      {compact && !hideChrome ? (
+        <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
+          <p className="text-[11px] font-black text-white/45">선택 안내</p>
+          <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-white/80">
+            {compactMovementInstruction(value)}
+          </p>
+        </div>
+      ) : null}
+    </>
+  );
 
   return (
     <div
@@ -43,39 +81,14 @@ export function MovementConfigurator({
       data-spm-profile={profile.id}
       data-spm-family={family.id}
     >
-      <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-        <p className="text-[12px] font-black tracking-[0.08em] text-white/55">움직임</p>
-        <div className="mt-3 space-y-4">
-          {groups.map(({ group, groupLabel, items }) => (
-            <div key={group}>
-              <p className="text-[11px] font-black text-white/45">{groupLabel}</p>
-              <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {items.map((presentation) => {
-                  const isSelected = movementPicksEqual(presentation.pick, value);
-                  const isOfficial = movementPicksEqual(presentation.pick, officialRecommended);
-                  return (
-                    <MovementOptionButton
-                      key={`${presentation.pick.baseMovement}:${presentation.pick.limbRule}`}
-                      presentation={presentation}
-                      selected={isSelected}
-                      isOfficialRecommended={isOfficial}
-                      onSelect={() => onChange(presentation.pick)}
-                    />
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
-        {compact ? (
-          <div className="mt-4 rounded-xl border border-white/10 bg-black/20 px-3 py-2.5">
-            <p className="text-[11px] font-black text-white/45">선택 안내</p>
-            <p className="mt-1 line-clamp-2 text-[13px] font-semibold leading-5 text-white/80">
-              {compactMovementInstruction(value)}
-            </p>
-          </div>
-        ) : null}
-      </section>
+      {hideChrome ? (
+        body
+      ) : (
+        <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
+          <p className="text-[12px] font-black tracking-[0.08em] text-white/55">움직임</p>
+          <div className="mt-3">{body}</div>
+        </section>
+      )}
     </div>
   );
 }

@@ -201,4 +201,43 @@ describe('local workspace migration', () => {
     expect(second.localWorkspaceOwnerId).toBe('id:user-a');
     expect(second.lessons).toEqual([lesson]);
   });
+
+  it('preserves spomoveSnapshot on recent activities', () => {
+    const snapshot = {
+      schemaVersion: 2 as const,
+      presetId: 'reaction-cognition-full-color-03',
+      movement: { baseMovement: 'twoLegJump' as const, limbRule: 'free' as const },
+      operationLayerStatus: 'ready' as const,
+      operation: {
+        startZone: 'onMat' as const,
+        participantScale: 'individual' as const,
+        equipment: { mode: 'none' as const },
+        timing: { pattern: 'continuous' as const },
+        participationFormat: 'independent' as const,
+      },
+      cueSeconds: 3,
+    };
+    const migrated = migrateMasterStore(
+      {
+        profile: { id: 'user-a', email: 'a@example.com' },
+        recentProgramActivities: [
+          {
+            ownerId: 'id:user-a',
+            programId: 'reaction-cognition-full-color-03',
+            programTitle: 'color',
+            action: 'spomove_started',
+            occurredAt: '2026-07-23T00:00:00.000Z',
+            cueSeconds: 3,
+            spomoveSnapshot: snapshot,
+          },
+        ],
+      },
+      14,
+    );
+    expect(migrated.recentProgramActivities?.[0]).toEqual(
+      expect.objectContaining({
+        spomoveSnapshot: snapshot,
+      }),
+    );
+  });
 });

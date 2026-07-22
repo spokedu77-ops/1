@@ -86,13 +86,21 @@ export function resolveMovementConfiguration(
 /**
  * 공식 추천만 계산. localStorage 변경 금지.
  * Hub 카드·가이드·감사·첫 사용자 기본 표시용.
+ * 우선: Preset 공식 → Family → Profile → DEFAULT
  */
 export function resolveOfficialRecommended(
   family: ActivityFamilyDefinition,
   profile: MovementProfile,
+  options?: { presetRecommendedMovement?: MovementPick | null },
 ): MovementPick {
   if (profile.selectionMode === 'disabled') return DEFAULT_SAFE_MOVEMENT;
 
+  if (
+    options?.presetRecommendedMovement &&
+    isAllowedByFamily(options.presetRecommendedMovement, family, profile)
+  ) {
+    return options.presetRecommendedMovement;
+  }
   if (family.recommendedMovement && isAllowedByFamily(family.recommendedMovement, family, profile)) {
     return family.recommendedMovement;
   }
@@ -107,11 +115,13 @@ export type ResolveEffectiveMovementInput = {
   family: ActivityFamilyDefinition;
   urlMovement?: MovementPick | null;
   savedMovement?: MovementPick | null;
+  /** Preset.recommendedMovement (O2+) */
+  presetRecommendedMovement?: MovementPick | null;
 };
 
 /**
  * 이번 세션 실제 실행값.
- * disabled → null. 유효 URL → 유효 저장 → Family 추천 → Profile 추천 → DEFAULT
+ * disabled → null. 유효 URL → 유효 저장 → Preset 공식 → Family → Profile → DEFAULT
  */
 export function resolveEffectiveMovement(input: ResolveEffectiveMovementInput): MovementPick | null {
   const { profile, family } = input;
@@ -119,7 +129,9 @@ export function resolveEffectiveMovement(input: ResolveEffectiveMovementInput): 
 
   if (isAllowedByFamily(input.urlMovement, family, profile)) return input.urlMovement!;
   if (isAllowedByFamily(input.savedMovement, family, profile)) return input.savedMovement!;
-  return resolveOfficialRecommended(family, profile);
+  return resolveOfficialRecommended(family, profile, {
+    presetRecommendedMovement: input.presetRecommendedMovement,
+  });
 }
 
 /** @deprecated resolveEffectiveMovement 사용. Family 없이 Profile만 있을 때 호환 */

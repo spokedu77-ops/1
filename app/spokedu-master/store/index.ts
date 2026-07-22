@@ -252,6 +252,7 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
           cueSeconds: activity.cueSeconds,
           difficultyKind: activity.difficultyKind,
           difficultyValue: activity.difficultyValue,
+          spomoveSnapshot: activity.spomoveSnapshot,
         })),
     pendingRecentProgramActivities: [],
     recentActivityOwnerResolved: false,
