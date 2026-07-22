@@ -553,11 +553,19 @@ export function useNoteDragDrop(options: {
       }
     }
 
-    let target = resolvedTarget ?? (overBlock && overId ? { blockId: overId, position: 'before' as BlockDropPosition } : null);
-    if (!target) return;
+    const fallbackTarget =
+      overBlock && resolvedOverBlockId
+        ? { blockId: resolvedOverBlockId, position: 'before' as BlockDropPosition }
+        : null;
+    const baseTarget = resolvedTarget ?? fallbackTarget;
+    if (!baseTarget) return;
 
-    if (target.position === 'inside') {
-      const container = prevBlocks.find((block) => block.id === target.blockId);
+    // let+callback 조합에서 TS가 null로 다시 넓히지 않도록 const로 고정
+    const dropBlockId = baseTarget.blockId;
+    let dropPosition: BlockDropPosition = baseTarget.position;
+
+    if (dropPosition === 'inside') {
+      const container = prevBlocks.find((block) => block.id === dropBlockId);
       const pageInside = resolvePageInsideDropAction(container, [moving], selectedId);
       if (pageInside?.kind === 'transfer') {
         const command = buildBlockForestTransferCommand(
@@ -577,15 +585,15 @@ export function useNoteDragDrop(options: {
         return;
       }
       if (pageInside?.kind === 'coerce') {
-        target = { blockId: target.blockId, position: pageInside.position };
+        dropPosition = pageInside.position;
       }
     }
 
     const plan = planBlockDropAt(
       wasBlockDrag ? blocksRef.current : prevBlocks,
       moving.id,
-      target.blockId,
-      target.position,
+      dropBlockId,
+      dropPosition,
     );
     if (!plan) return;
 
