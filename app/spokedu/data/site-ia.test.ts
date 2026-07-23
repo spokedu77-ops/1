@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { contactPageContent } from '../contact/contact-page-data';
+import { curriculumPage } from './curriculum-page';
+import { dispatchPage } from './dispatch-page';
 import { HOME_MAIN_CASE_SLUGS, homePage } from './home-page';
+import { privatePage } from './private-page';
+import { programDetailBlocks } from './program-details';
 import { seoMeta } from './seo';
 import { HOME_PROGRAM_SYSTEM_HREF, siteNav, SPOKEDU_BASE_PATH } from './site';
 
@@ -38,6 +43,8 @@ describe('spokedu site IA', () => {
     expect(homePage.proofStrip.processLine).toContain('현장 수업');
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
     expect(homePage.proofStrip.title).toBe('왜 스포키듀인가');
+    expect(homePage.trustStrip.items).toHaveLength(4);
+    expect(homePage.trustStrip.items[0]?.value).toBeTruthy();
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');
@@ -72,5 +79,61 @@ describe('spokedu site IA', () => {
 
   it('keeps program index href valid (no self-redirect target)', () => {
     expect(HOME_PROGRAM_SYSTEM_HREF).toBe(`${SPOKEDU_BASE_PATH}/programs`);
+  });
+});
+
+describe('spokedu dispatch process one-pager', () => {
+  it('exposes a 4-step flow and consult checklist', () => {
+    expect(dispatchPage.processOnePager.flow.map((s) => s.label)).toEqual([
+      '문의',
+      '조건 확인',
+      '시안·시연',
+      '운영',
+    ]);
+    expect(dispatchPage.processOnePager.checklist.items.length).toBeGreaterThanOrEqual(4);
+    expect(dispatchPage.processOnePager.formats.items).toEqual(['정규수업', '원데이 행사', '방학캠프']);
+    expect(dispatchPage.processOnePager.cta.href).toBe('#contact');
+  });
+
+  it('attributes partner reviews to real venues without anonymous ○○ names', () => {
+    for (const item of dispatchPage.partnerReviews.items) {
+      expect(item.name).not.toMatch(/○○/);
+      expect(item.org).not.toMatch(/○○|OO구/);
+      expect(item.org.length).toBeGreaterThan(2);
+    }
+  });
+});
+
+describe('spokedu audience funnel process one-pagers', () => {
+  it('keeps private and curriculum process one-pagers aligned with funnel CTAs', () => {
+    expect(privatePage.processOnePager.flow.map((s) => s.label)).toEqual([
+      '문의',
+      '상담·조율',
+      '첫 수업',
+      '피드백',
+    ]);
+    expect(privatePage.processOnePager.cta.href).toBe('#apply');
+    expect(curriculumPage.processOnePager.flow.map((s) => s.label)).toEqual([
+      '문의',
+      '범위 확인',
+      '맞춤 제안',
+      '교육·납품',
+    ]);
+    expect(curriculumPage.processOnePager.cta.href).toBe('#inquiry');
+  });
+});
+
+describe('spokedu cross-page proof grammar', () => {
+  it('attaches field-record proof links on every program detail block', () => {
+    for (const block of Object.values(programDetailBlocks)) {
+      expect(block.fieldRecordSlugs.length).toBeGreaterThan(0);
+      expect(block.trustLine.length).toBeGreaterThan(0);
+      expect(block.finalCtaSub).toContain('상담으로 이어드립니다');
+    }
+  });
+
+  it('exposes contact expect guide checklist', () => {
+    expect(contactPageContent.expectGuide.items.length).toBeGreaterThanOrEqual(4);
+    expect(contactPageContent.expectGuide.responseNote).toContain('영업일');
   });
 });

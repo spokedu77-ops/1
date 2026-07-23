@@ -12,6 +12,7 @@ import { LandingAnchorNav } from './landing-anchor-nav';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingHero } from './landing-hero';
+import { LandingProcessOnePager } from './landing-process-one-pager';
 import { MediaPanel } from './visual';
 
 const premiumPanel =
@@ -30,6 +31,7 @@ const curriculumAnchorItems = [
   { href: '#products', label: '콘텐츠' },
   { href: '#history', label: '운영 이력' },
   { href: '#training', label: '교육' },
+  { href: '#process', label: '도입 절차' },
   { href: '#inquiry', label: '문의' },
 ] as const;
 
@@ -297,6 +299,10 @@ export default function CurriculumLanding() {
       </Section>
 
       <MidConsultCta />
+
+      <Section id="process" className="scroll-mt-36">
+        <LandingProcessOnePager data={curriculumPage.processOnePager} />
+      </Section>
 
       <Section>
         <CurriculumInquiryForm />

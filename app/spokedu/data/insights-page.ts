@@ -34,8 +34,8 @@ export const insightsPage = {
   cta: {
     title: '스포키듀의 관점이 담긴 수업을 운영하고 싶다면',
     description:
-      '대상 연령, 공간, 수업 목적을 확인한 뒤 아이들에게 맞는 움직임 경험을 제안드립니다.',
-    label: '스포키듀 수업 상담하기',
+      '대상 연령, 공간, 수업 목적을 확인한 뒤 맞는 방향을 안내합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    label: '상담으로 이어가기',
     href: `${SPOKEDU_BASE_PATH}/contact`,
     trackLabel: 'insights-contact-cta',
     mediaKey: 'trackDispatch' as HomeMediaKey,

@@ -4,9 +4,11 @@ import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
 import { NewsportsThemeGrid } from './newsports-theme-grid';
+import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { monthlyNewsportsProgramPage } from '../data/monthly-newsports-program-page';
+import { programDetailBlocks } from '../data/program-details';
 import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 
 const pointCardShell =
@@ -28,6 +30,14 @@ export default function MonthlyNewsportsProgramLanding() {
           trackLabel: monthlyNewsportsProgramPage.heroCta.trackLabel,
         }}
       />
+
+      <LandingSection>
+        <ProgramRelatedProof
+          fieldRecordSlugs={programDetailBlocks['monthly-newsports'].fieldRecordSlugs}
+          trustLine={programDetailBlocks['monthly-newsports'].trustLine}
+          trackPrefix="program-monthly-newsports"
+        />
+      </LandingSection>
 
       <LandingSection className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/60 via-white to-cyan-50/40 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{monthlyNewsportsProgramPage.overview.title}</h2>

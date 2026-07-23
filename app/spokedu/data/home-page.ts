@@ -55,6 +55,11 @@ export type HomeHeroQuickLink = {
   trackLabel: string;
 };
 
+export type HomeTrustStat = {
+  value: string;
+  label: string;
+};
+
 /** 메인 홈 운영 사례 4건 — 웹 2×2 그리드용 */
 export const HOME_MAIN_CASE_SLUGS: readonly FieldRecordSlug[] = [
   'dongjak-spomove',
@@ -120,6 +125,17 @@ export const homePage = {
       label: '대표 현장',
       title: '스크린 신호에 반응하는 SPOMOVE 기관 수업',
     },
+  },
+  /** 플레이스홀더 수치 — 확정 수치로 교체 예정 */
+  trustStrip: {
+    id: 'trust',
+    eyebrow: '현장 기준',
+    items: [
+      { value: '8년+', label: '현장 수업·프로그램 운영' },
+      { value: '120+', label: '키움·학교·복지관 협업' },
+      { value: '8건', label: '공개 운영 사례' },
+      { value: '40+', label: 'SPOMOVE 현장 적용 구성' },
+    ] as const satisfies readonly HomeTrustStat[],
   },
   proofStrip: {
     id: 'proof',

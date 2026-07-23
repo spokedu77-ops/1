@@ -28,6 +28,10 @@ function matchesFilter(record: FieldRecordWithThumbnail, filter: RecordFilterId)
   return record.filters.includes(filter);
 }
 
+function isOnsiteRecord(record: FieldRecordWithThumbnail): boolean {
+  return Boolean(record.blogHref) || (!isExternalHref(record.href) && record.href.includes('/records/'));
+}
+
 function splitMeta(meta: string): string[] {
   return meta
     .split(/[·•]/)
@@ -43,6 +47,7 @@ function RecordCard({
   photoPriority?: boolean;
 }) {
   const external = isExternalHref(record.href);
+  const onsite = isOnsiteRecord(record);
   const metaItems = splitMeta(record.meta);
   const className = `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-900/[0.04] ${cardInteractive} ${focusRing}`;
   const inner = (
@@ -55,20 +60,39 @@ function RecordCard({
             className="absolute inset-0 h-full w-full"
             priority={photoPriority}
           />
+          {onsite ? (
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-indigo-800 shadow-sm">
+              온사이트 요약
+            </span>
+          ) : null}
         </div>
       ) : (
-        <MediaPanel
-          media={HOME_MEDIA[record.mediaKey]}
-          className="aspect-[5/4] max-h-[220px] shrink-0 rounded-none border-0 sm:aspect-[16/10] sm:max-h-none"
-          sizes="card3"
-          photoPriority={photoPriority}
-        />
+        <div className="relative">
+          <MediaPanel
+            media={HOME_MEDIA[record.mediaKey]}
+            className="aspect-[5/4] max-h-[220px] shrink-0 rounded-none border-0 sm:aspect-[16/10] sm:max-h-none"
+            sizes="card3"
+            photoPriority={photoPriority}
+          />
+          {onsite ? (
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-indigo-800 shadow-sm">
+              온사이트 요약
+            </span>
+          ) : null}
+        </div>
       )}
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-indigo-700">
             {record.operationType}
           </span>
+          {onsite ? (
+            <span className="rounded-full bg-slate-950 px-2 py-1 text-[10px] font-bold text-white">사례 요약</span>
+          ) : (
+            <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
+              블로그 후기
+            </span>
+          )}
           {metaItems.map((item) => (
             <span key={item} className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-600">
               {item}
@@ -86,6 +110,9 @@ function RecordCard({
         >
           {record.ctaLabel} →
         </span>
+        {onsite ? (
+          <p className="mt-1 text-xs text-slate-500 [word-break:keep-all]">블로그 원문은 요약 페이지에서 이어집니다</p>
+        ) : null}
       </div>
     </>
   );
@@ -175,10 +202,10 @@ export function RecordsLanding({ fieldRecords }: RecordsLandingProps) {
     [fieldRecords],
   );
 
-  const filteredRecords = useMemo(
-    () => fieldRecords.filter((r) => matchesFilter(r, activeFilter)),
-    [activeFilter, fieldRecords],
-  );
+  const filteredRecords = useMemo(() => {
+    const list = fieldRecords.filter((r) => matchesFilter(r, activeFilter));
+    return [...list].sort((a, b) => Number(isOnsiteRecord(b)) - Number(isOnsiteRecord(a)));
+  }, [activeFilter, fieldRecords]);
 
   return (
     <div className={recordsPageStack}>

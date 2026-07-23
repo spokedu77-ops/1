@@ -159,4 +159,32 @@ export const curriculumPage = {
       trackLabel: 'curriculum-final-inquiry',
     },
   },
+  processOnePager: {
+    eyebrow: '도입 한 장',
+    title: '문의부터 교육·납품까지, 한 장으로 정리',
+    lead: '필요한 범위(수업안·교육·SPOMOVE·라이선싱)만 알려주시면 맞춤 안내를 드립니다.',
+    flow: [
+      { label: '문의', detail: '웹 폼·상담으로 목적과 대상을 접수합니다.' },
+      { label: '범위 확인', detail: '수업안·교육·도입·라이선싱 중 필요한 축을 정합니다.' },
+      { label: '맞춤 제안', detail: '현장 조건에 맞는 교육·콘텐츠 구성을 제안합니다.' },
+      { label: '교육·납품', detail: '세미나·자료·도입 교육을 일정에 맞춰 진행합니다.' },
+    ] as const,
+    checklist: {
+      title: '문의 전에 알려주시면 빠른 제안',
+      items: [
+        '대상 (강사·기관·파트너)',
+        '필요한 콘텐츠 범위',
+        '희망 일정·인원',
+        'SPOMOVE 도입 여부',
+      ] as const,
+    },
+    formats: {
+      title: '가능한 형태',
+      items: ['수업안·매뉴얼', '지도자 세미나', 'SPOMOVE 도입 교육', '라이선싱'] as const,
+    },
+    cta: {
+      label: '커리큘럼·지도자 교육 문의',
+      href: '#inquiry',
+    },
+  },
 } as const;

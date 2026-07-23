@@ -334,46 +334,47 @@ export default function StudentsPage() {
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+      <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>학생 이력</p>
-            <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>학생 이력</h1>
-            <p className="mt-2 max-w-[720px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">학생 이력</p>
+            <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">학생 이력</h1>
+            <p className="mt-2 max-w-[720px] text-[13px] font-semibold leading-6 text-slate-600">
               수업 후 남긴 기록을 학생별로 모아 다음 수업 준비와 안내문 작성에 활용합니다.
             </p>
           </div>
-          <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="mt-1 flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-black text-white sm:w-auto" style={{ background: 'var(--spm-acc)' }}>
+          <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="mt-1 flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white sm:w-auto">
             <Plus size={15} />
             학생 추가
           </button>
         </div>
       </header>
 
-      <section className="mx-[22px] mb-5 sm:mx-8 lg:mx-10">
-        <div className="flex flex-wrap gap-x-5 gap-y-1.5 rounded-[12px] px-4 py-2.5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <section className="my-4">
+        <div className="flex flex-wrap gap-x-5 gap-y-1.5 rounded-[16px] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
           {[
             ['등록 학생', `${students.length || 0}명`],
             ['기록된 학생', `${recordedStudentCount}/${students.length || 0}명`],
             ['전체 수업 기록', `${records.length}건`],
           ].map(([label, value]) => (
-            <p key={label} className="text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>
-              {label} <span className="font-black" style={{ color: 'var(--spm-t2)' }}>{value}</span>
+            <p key={label} className="text-[12px] font-bold text-slate-500">
+              {label} <span className="font-black text-slate-800">{value}</span>
             </p>
           ))}
         </div>
       </section>
 
       {operationalLoading ? (
-        <section className="mx-[22px] mb-5 rounded-[14px] p-4 text-[13px] font-bold sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+        <section className="mb-5 rounded-[16px] border border-slate-200 bg-white/86 p-4 text-[13px] font-bold text-slate-600">
           학생 정보를 불러오는 중입니다.
         </section>
       ) : null}
 
       {operationalError ? (
-        <section className="mx-[22px] mb-5 rounded-[14px] p-4 text-[13px] font-bold sm:mx-8 lg:mx-10" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.22)', color: 'var(--spm-red)' }}>
+        <section className="mb-5 rounded-[16px] border border-red-200 bg-red-50 p-4 text-[13px] font-bold text-red-700">
           <p>학생 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
-          <button type="button" onClick={() => void operationalData.reload()} className="mt-3 h-11 rounded-[10px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-red)' }}>
+          <button type="button" onClick={() => void operationalData.reload()} className="mt-3 h-10 rounded-[9px] bg-red-600 px-4 text-[12px] font-black text-white">
             다시 시도
           </button>
         </section>
@@ -592,8 +593,8 @@ export default function StudentsPage() {
       ) : null}
 
       {operationalReady && students.length === 0 ? (
-        <section className="mx-[22px] rounded-[18px] p-6 text-center sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[16px]" style={{ background: 'var(--spm-acc-a14)', color: 'var(--spm-acc)' }}>
+        <section className="rounded-[16px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+          <div className="mx-auto grid h-14 w-14 place-items-center rounded-[16px] bg-white text-slate-800 ring-1 ring-slate-200">
             <Users size={24} />
           </div>
           <h2 className="mt-4 text-[20px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>아직 등록된 학생이 없습니다.</h2>
@@ -601,7 +602,7 @@ export default function StudentsPage() {
             학생을 추가하면 수업 기록을 학생별로 관리할 수 있습니다.
           </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-5 text-[13px] font-black text-white">
               <Plus size={15} />
               학생 추가
             </button>
@@ -609,7 +610,7 @@ export default function StudentsPage() {
         </section>
       ) : null}
 
-      <div className="grid gap-5 px-[22px] sm:px-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:px-10">
+      <div className="grid gap-4 lg:grid-cols-[340px_minmax(0,1fr)]">
         {studentDeleteError ? (
           <p className="rounded-[12px] p-3 text-[12px] font-bold" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--spm-red)' }}>
             {studentDeleteError}
@@ -621,15 +622,15 @@ export default function StudentsPage() {
             const studentRecordCount = getStudentRecordEntries(records, student.id).length;
 
             return (
-              <div key={student.id} className="flex items-center gap-1 rounded-[15px]" style={{ background: selectedId === student.id ? 'var(--spm-acc-a14)' : 'var(--spm-s2)', border: selectedId === student.id ? '1px solid var(--spm-acc-a45)' : '1px solid var(--spm-br)' }}>
+              <div key={student.id} className={`flex items-center gap-1 rounded-[14px] border ${selectedId === student.id ? 'border-slate-950 bg-white shadow-[0_10px_24px_rgba(15,23,42,0.08)]' : 'border-slate-200 bg-white/86'}`}>
                 <button type="button" onClick={() => setSelectedId(student.id)} className="flex min-w-0 flex-1 items-center gap-3 p-3 text-left">
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[15px] font-black text-white" style={{ background: 'var(--spm-acc)', fontFamily: 'var(--spm-font-display)' }}>
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-slate-950 text-[15px] font-black text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
                     {student.name.slice(0, 1)}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
                       <strong className="truncate text-[14px]" style={{ color: 'var(--spm-t)' }}>{student.name}</strong>
-                      <span className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black" style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}>누적 {studentRecordCount}건</span>
+                      <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-black text-slate-600">누적 {studentRecordCount}건</span>
                     </span>
                     <span className="mt-1 block truncate text-[11px]" style={{ color: 'var(--spm-t3)' }}>{[student.group, student.meta].filter(Boolean).join(' / ') || '학년/수준 미입력'}</span>
                   </span>
@@ -647,16 +648,16 @@ export default function StudentsPage() {
         </section> : null}
 
         {selected ? (
-          <section className="overflow-hidden rounded-[20px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <section className="overflow-hidden rounded-[16px] border border-slate-200 bg-white/86 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
             <div className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc)' }}>{selected.group}</p>
-                  <h2 className="mt-2 text-[30px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">{selected.group}</p>
+                  <h2 className="mt-1.5 text-[28px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>{selected.name}</h2>
                   {selected.meta ? <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t3)' }}>{selected.meta}</p> : null}
                 </div>
-                <span className="grid h-12 w-12 place-items-center rounded-full" style={{ background: 'var(--spm-grn-a14)' }}>
-                  <ClipboardList size={20} color="var(--spm-grn)" />
+                <span className="grid h-11 w-11 place-items-center rounded-[12px] bg-slate-950 text-white">
+                  <ClipboardList size={20} />
                 </span>
               </div>
 
@@ -686,7 +687,7 @@ export default function StudentsPage() {
                   ))}
                 </div>
 
-                <Link href="/spokedu-master/report" className="flex h-11 items-center justify-center gap-2 rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+                <Link href="/spokedu-master/report" className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
                   <FileText size={15} />
                   안내문
                 </Link>
@@ -769,11 +770,11 @@ export default function StudentsPage() {
                         </div>
                       ) : null}
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="flex h-11 items-center justify-center gap-2 rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                        <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="flex h-9 items-center justify-center gap-2 rounded-[9px] bg-slate-950 text-[12px] font-black text-white">
                           <BookOpen size={15} />
                           전체 수업 자료 보기
                         </Link>
-                        <Link href={`/spokedu-master/class-record?program=${selectedPreparationRecord.record.programId}`} className="flex h-11 items-center justify-center gap-2 rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>
+                        <Link href={`/spokedu-master/class-record?program=${selectedPreparationRecord.record.programId}`} className="flex h-9 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[12px] font-black text-slate-700">
                           <ClipboardList size={15} />
                           같은 수업으로 기록 준비
                         </Link>
@@ -836,6 +837,7 @@ export default function StudentsPage() {
           </section>
         ) : null}
       </div>
+      </div>
 
       <BottomSheet
         open={addOpen}
@@ -888,7 +890,7 @@ export default function StudentsPage() {
               {studentSaveError}
             </p>
           ) : null}
-          <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="h-11 w-full rounded-[10px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+          <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="h-10 w-full rounded-[9px] bg-slate-950 text-[13px] font-black text-white disabled:opacity-50">
             {studentSaving ? '추가 중...' : '추가'}
           </button>
         </div>
@@ -941,7 +943,7 @@ export default function StudentsPage() {
               {studentEditError}
             </p>
           ) : null}
-          <button type="button" onClick={handleEditStudent} disabled={!editName.trim() || studentEditing} className="h-11 w-full rounded-[10px] text-[13px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+          <button type="button" onClick={handleEditStudent} disabled={!editName.trim() || studentEditing} className="h-10 w-full rounded-[9px] bg-slate-950 text-[13px] font-black text-white disabled:opacity-50">
             {studentEditing ? '저장 중...' : '저장'}
           </button>
         </div>

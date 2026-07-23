@@ -74,22 +74,22 @@ export const dispatchPage = {
       {
         quote: '느린 학습자도 소외되지 않는 진짜 교육',
         body: '수준별 난이도·참여 설계로 통합반에서도 모두가 성취감을 느낍니다.',
-        name: '박○○ 센터장님',
-        org: '지역 복지관 아동 발달센터',
+        name: '센터 담당자',
+        org: '찾아가는 동행 체육교실',
         accent: 'violet',
       },
       {
         quote: '재미에만 머무르지 않고, 성장의 흐름이 보이는 수업입니다.',
         body: '연간 커리큘럼 안에서 신체 기능 목표가 분명해 교육적으로 신뢰가 갑니다.',
-        name: '김○○ 담당자님',
-        org: '거점형 키움센터 담당자',
+        name: '센터 담당자',
+        org: '양천거점형키움센터',
         accent: 'sky',
       },
       {
         quote: '공간과 인원에 꼭 맞게 수업을 정말 잘 맞춰주셨습니다.',
         body: '좁은 공간·변동 인원에도 수업 흐름이 무너지지 않도록 맞춰 주십니다.',
-        name: '이○○ 담당자님',
-        org: 'OO구 보건소 담당자',
+        name: '담당자',
+        org: '강동구 보건소 연계 수업',
         accent: 'lime',
       },
     ] satisfies DispatchReview[],
@@ -288,6 +288,35 @@ export const dispatchPage = {
       },
     ],
     mediaKey: 'programOneday' as HomeMediaKey,
+  },
+  /** 담당자 공유·내부 결재용 한 장 요약 (세부 5단계는 processSteps) */
+  processOnePager: {
+    eyebrow: '도입 한 장',
+    title: '문의부터 운영까지, 한 장으로 정리',
+    lead: '담당자 공유·내부 결재용으로 바로 전달할 수 있는 요약입니다. 가격은 조건 확인 후 안내합니다.',
+    flow: [
+      { label: '문의', detail: '웹 폼·전화·카카오로 파견 문의를 접수합니다.' },
+      { label: '조건 확인', detail: '연령·인원·공간·기간을 맞춰 운영 가능 여부를 봅니다.' },
+      { label: '시안·시연', detail: '맞춤 운영안을 제안하고, 필요 시 시연·오리엔테이션을 진행합니다.' },
+      { label: '운영', detail: '검증 강사 배정 후 첫 수업을 시작합니다.' },
+    ] as const,
+    checklist: {
+      title: '상담 전에 알려주시면 빠른 제안',
+      items: [
+        '대상 연령과 참여 인원',
+        '수업 공간과 이동 동선',
+        '희망 기간·횟수 (정규 / 원데이 / 행사)',
+        '특수 아동·통합 운영 여부',
+      ] as const,
+    },
+    formats: {
+      title: '가능한 운영 형태',
+      items: ['정규수업', '원데이 행사', '방학캠프'] as const,
+    },
+    cta: {
+      label: '기관 운영 상담',
+      href: '#contact',
+    },
   },
   processSteps: {
     eyebrow: '도입 절차',

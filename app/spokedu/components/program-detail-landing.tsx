@@ -6,6 +6,7 @@ import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
 import { CaseProofCard } from './case-proof-card';
+import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { landingCardShell, type LandingCardVariant } from './visual/card-variants';
 import { getCaseBySlug } from '../data/cases';
@@ -47,6 +48,14 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
           trackLabel: detail.primaryCta.trackLabel,
         }}
       />
+
+      <LandingSection delay={0.04}>
+        <ProgramRelatedProof
+          fieldRecordSlugs={detail.fieldRecordSlugs}
+          trustLine={detail.trustLine}
+          trackPrefix={`program-${slug}`}
+        />
+      </LandingSection>
 
       <LandingSection className="space-y-3" delay={0.05}>
         <h2 className={landingSectionTitle}>이 프로그램이 필요한 이유</h2>

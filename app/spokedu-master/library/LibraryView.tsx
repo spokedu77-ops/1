@@ -110,10 +110,10 @@ function getCardPrepMeta(program: Program, locked: boolean) {
 
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
   return (
-    <div className="mb-4 flex items-end justify-between gap-4">
+    <div className="mb-3 flex items-end justify-between gap-4">
       <div>
-        <p className="text-xs font-black tracking-[0.14em] text-[var(--spm-acc)]">{eyebrow}</p>
-        <h2 className="mt-1 text-xl font-black text-[color:var(--spm-t)]">{title}</h2>
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">{eyebrow}</p>
+        <h2 className="mt-1 text-[24px] font-black leading-tight text-[color:var(--spm-t)]">{title}</h2>
       </div>
     </div>
   );
@@ -177,9 +177,9 @@ function FilterRow({
   onFilter: (next: ActiveFilter) => void;
 }) {
   return (
-    <div className="min-w-0">
-      <p className="mb-2 text-[10px] font-black uppercase tracking-[0.14em] text-[color:var(--spm-t3)]">{group.label}</p>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-center">
+      <p className="shrink-0 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500 sm:w-16">{group.label}</p>
+      <div className="flex min-w-0 flex-wrap gap-2">
         {group.options.map((option) => {
           const active = filters.some((filter) => filter.group === group.key && filter.value === option.value);
           return (
@@ -187,10 +187,10 @@ function FilterRow({
               key={option.value}
               type="button"
               onClick={() => onFilter({ group: group.key, value: option.value })}
-              className={`min-h-11 max-w-[11rem] shrink-0 truncate rounded-full px-3 text-[11px] font-black transition ${
+              className={`h-8 max-w-[11rem] shrink-0 truncate rounded-full px-3 text-[11px] font-black transition ${
                 active
-                  ? 'bg-[var(--spm-acc)] text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]'
-                  : 'border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] text-[color:var(--spm-t2)] hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:bg-[var(--spm-acc-glow)] hover:text-[var(--spm-acc)]'
+                  ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]'
+                  : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950'
               }`}
               title={`${tagDisplayLabel(group.key, option.value)} (${option.count})`}
             >
@@ -388,38 +388,38 @@ export default function LibraryView() {
 
   return (
     <>
-      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-7 overflow-y-auto px-4 pb-24 pt-5 sm:px-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-        <header className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-          <div className="space-y-4 p-4 sm:p-5">
+      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-4 overflow-y-auto px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+        <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)]">
+          <div className="space-y-2.5 p-4 sm:p-4">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-acc)]">
                   마스터 라이브러리
                 </p>
-                <h1 className="mt-1 text-[22px] font-black text-[color:var(--spm-t)] sm:text-2xl">
+                <h1 className="mt-1 text-[23px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[27px]">
                   조건에 맞는 수업 찾기
                 </h1>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-[11px] font-black text-[color:var(--spm-t2)]">
-                <span className="rounded-full bg-[var(--spm-s3)] px-2.5 py-1">
+                <span className="rounded-full bg-slate-950 px-2.5 py-1 text-white">
                   결과 {filteredPrograms.length}개
                 </span>
               </div>
             </div>
 
-            <label className="relative block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--spm-t2)]" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="수업명 검색"
-                className="h-12 w-full rounded-xl border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] pl-12 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-[color-mix(in_srgb,var(--spm-acc)_45%,transparent)] focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--spm-acc)_20%,transparent)]"
-              />
-            </label>
-
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <label className="relative block">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--spm-t2)]" />
+                <input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="수업명 검색"
+                  className="h-11 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-12 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
+                />
+              </label>
+              <div className="flex flex-wrap items-center gap-2">
               <div
-                className="grid min-h-10 grid-cols-2 items-center rounded-xl border border-[color:var(--spm-br2)] bg-[var(--spm-s2)] p-1"
+                className="grid min-h-10 grid-cols-2 items-center rounded-xl border border-[color:var(--spm-br2)] bg-white p-1"
                 aria-label="라이브러리 보기"
               >
                 <button
@@ -427,7 +427,7 @@ export default function LibraryView() {
                   onClick={() => changeView('all')}
                   className={`min-h-8 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] ${
                     view === 'all'
-                      ? 'bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-sm'
+                      ? 'bg-slate-950 text-white shadow-sm'
                       : 'text-[color:var(--spm-t2)] hover:text-[color:var(--spm-t)]'
                   }`}
                   aria-pressed={view === 'all'}
@@ -439,7 +439,7 @@ export default function LibraryView() {
                   onClick={() => changeView('favorites')}
                   className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] ${
                     view === 'favorites'
-                      ? 'bg-[var(--spm-s1)] text-[color:var(--spm-t)] shadow-sm'
+                      ? 'bg-slate-950 text-white shadow-sm'
                       : 'text-[color:var(--spm-t2)] hover:text-[color:var(--spm-t)]'
                   }`}
                   aria-pressed={view === 'favorites'}
@@ -453,16 +453,15 @@ export default function LibraryView() {
                   초기화
                 </button>
               ) : null}
+              </div>
             </div>
 
-            <div className="rounded-[14px] border border-[color:var(--spm-br2)] bg-[color-mix(in_srgb,var(--spm-s2)_70%,transparent)] p-3">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[var(--spm-acc)]">추천 필터</p>
-                  <p className="mt-0.5 text-[12px] font-black text-[color:var(--spm-t2)]">수업 환경을 먼저 좁혀보세요.</p>
-                </div>
+            <div className="rounded-[14px] border border-slate-200 bg-white/80 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
+              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-[11px] font-black text-slate-950">빠른 필터</p>
+                <p className="text-[11px] font-bold text-slate-500">대상과 공간을 먼저 좁히세요.</p>
               </div>
-              <div className="grid gap-3 lg:grid-cols-2">
+              <div className="grid gap-2 lg:grid-cols-2">
                 {basicGroups.map((group) => (
                   <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
                 ))}
@@ -472,7 +471,7 @@ export default function LibraryView() {
             <button
               type="button"
               onClick={() => setShowAdvanced((prev) => !prev)}
-              className="flex min-h-10 w-full items-center justify-between gap-3 rounded-[12px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-3 py-2 text-left text-[12px] font-black text-[color:var(--spm-t2)] transition hover:border-[color:var(--spm-br3)] hover:text-[color:var(--spm-t)]"
+              className="flex min-h-9 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
             >
               <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
                 <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -483,7 +482,7 @@ export default function LibraryView() {
             </button>
 
             {isAdvancedOpen ? (
-              <div className="grid gap-3 rounded-[14px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-3 lg:grid-cols-2 2xl:grid-cols-3">
+              <div className="grid gap-2.5 rounded-[14px] border border-slate-200 bg-white/80 p-2.5 lg:grid-cols-2 2xl:grid-cols-3">
                 {advancedGroups.map((group) => (
                   <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
                 ))}
@@ -493,25 +492,25 @@ export default function LibraryView() {
         </header>
 
         {view === 'all' && recentProgramRecords.length > 0 ? (
-          <section className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 shadow-[0_12px_34px_rgba(15,23,42,0.05)]">
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <section className="rounded-[16px] border border-slate-200 bg-white/86 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+            <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-grn)]">최근 사용</p>
-                <h2 className="mt-1 text-lg font-black text-[color:var(--spm-t)]">최근 사용한 수업</h2>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 사용</p>
+                <h2 className="mt-0.5 text-[18px] font-black leading-tight text-[color:var(--spm-t)]">최근 사용한 수업</h2>
               </div>
             </div>
             <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
               {recentProgramRecords.map(({ program, record }) => (
-                <article key={program.id} className="rounded-[14px] border border-[color:var(--spm-br)] bg-[var(--spm-s2)] p-3">
+                <article key={program.id} className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <p className="text-[11px] font-bold text-[color:var(--spm-t3)]">
                     {formatRecentRecordSubtitle(record)}
                   </p>
                   <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-[color:var(--spm-t)]">{program.title}</h3>
                   <div className="mt-3 grid gap-2">
-                    <Link href={`/spokedu-master/class-record?record=${record.id}&program=${program.id}`} className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white">
+                    <Link href={`/spokedu-master/class-record?record=${record.id}&program=${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">
                       기록 보기
                     </Link>
-                    <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-s2)] px-3 text-[13px] font-black text-[var(--spm-t)] ring-1 ring-[var(--spm-br2)]">
+                    <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
                       전체 수업 자료 보기
                     </Link>
                   </div>
@@ -532,13 +531,13 @@ export default function LibraryView() {
               }
             />
             {hasActiveFilters ? (
-              <div className="mb-4 flex flex-wrap gap-1.5">
+              <div className="mb-3 flex flex-wrap gap-1.5">
                 {filters.map((filter) => (
                   <button
                     key={`${filter.group}:${filter.value}`}
                     type="button"
                     onClick={() => toggleFilter(filter)}
-                    className="inline-flex h-9 items-center rounded-full border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] px-3 text-[12px] font-black text-[var(--spm-acc)]"
+                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm"
                   >
                     {tagDisplayLabel(filter.group, filter.value)} ×
                   </button>
@@ -651,7 +650,7 @@ function ProgramGrid({
   setSelected: (selection: { program: Program; autoplayVideo: boolean }) => void;
 }) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       {programs.map((program, index) => (
         <ProgramCard
           key={program.id}

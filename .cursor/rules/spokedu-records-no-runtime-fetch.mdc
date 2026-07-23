@@ -1,0 +1,18 @@
+---
+description: SPOKEDU 수업 사례 썸네일은 로컬 고정 — 런타임 외부 이미지/API 금지
+alwaysApply: true
+---
+
+# SPOKEDU 사례 이미지 — API 폭탄 방지
+
+## 원칙
+
+- 홈/수업 사례(`field-records`) 카드 이미지는 **`public/images/spokedu/records/*` 로컬 파일만** 사용한다.
+- **페이지 요청·렌더 시** 네이버 블로그·`pstatic.net`·원격 `thumbnailSrc`를 fetch 하지 않는다.
+- 블로그에서 사진을 갱신할 때는 **오프라인/일회성 스크립트**로 받아 로컬에 고정한 뒤 커밋한다. 런타임 파이프라인에 넣지 않는다.
+
+## 체크
+
+- `thumbnailSrc`는 `/images/spokedu/records/...` 형태여야 한다 (`https://` 금지).
+- `resolve-field-records` / 홈·records 카드 경로에 `fetch(` + 블로그/pstatic 호출을 추가하지 않는다.
+- 링크(`href`)로 블로그 **글**을 여는 것은 허용한다. **이미지 자동 수집**만 금지한다.

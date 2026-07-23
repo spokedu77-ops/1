@@ -80,6 +80,16 @@ export const contactPageContent = {
     description:
       '문의 내용을 남겨주시면 수업 목적과 운영 환경을 확인한 뒤 적합한 방향으로 안내드립니다.',
   },
+  expectGuide: {
+    responseNote: '문의 접수 후 보통 1~2영업일 내 연락드립니다.',
+    checklistTitle: '남겨주시면 빠른 안내',
+    items: [
+      '문의 유형 (개인 / 기관 / SPOMOVE / 커리큘럼)',
+      '대상 연령·인원',
+      '희망 일정·지역',
+      '연락 가능한 시간',
+    ] as const,
+  },
   contactTracks: {
     phone: 'contact-phone-click',
     email: 'contact-email-click',

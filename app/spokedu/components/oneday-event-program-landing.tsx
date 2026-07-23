@@ -5,10 +5,12 @@ import { CaseProofCard } from './case-proof-card';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
+import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { onedayEventProgramPage } from '../data/oneday-event-program-page';
+import { programDetailBlocks } from '../data/program-details';
 import { landingPageStack, landingSectionTitle, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -38,6 +40,14 @@ export default function OnedayEventProgramLanding() {
           trackLabel: onedayEventProgramPage.heroCta.trackLabel,
         }}
       />
+
+      <LandingSection>
+        <ProgramRelatedProof
+          fieldRecordSlugs={programDetailBlocks['oneday-event'].fieldRecordSlugs}
+          trustLine={programDetailBlocks['oneday-event'].trustLine}
+          trackPrefix="program-oneday"
+        />
+      </LandingSection>
 
       <LandingSection className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/60 via-white to-cyan-50/40 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{onedayEventProgramPage.overview.title}</h2>

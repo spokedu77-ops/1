@@ -60,8 +60,8 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex h-14 min-w-[132px] items-center justify-center gap-2 rounded-[14px] px-6 text-[14px] font-black text-white transition-opacity disabled:opacity-40"
-      style={{ background: accent ?? 'var(--spm-acc)', boxShadow: '0 8px 24px var(--spm-acc-a30)' }}
+      className="flex h-12 min-w-[132px] items-center justify-center gap-2 rounded-[13px] px-6 text-[14px] font-black text-white transition-opacity disabled:opacity-40"
+      style={{ background: accent ?? 'var(--spm-acc)', boxShadow: '0 10px 22px rgba(15,23,42,0.16)' }}
     >
       {children}
     </button>
@@ -422,8 +422,7 @@ function ReturnTimerTab() {
   return (
     <div className="h-full px-3 py-3 pb-4 sm:px-5 sm:py-4">
       <div
-        className="mx-auto flex h-full w-full max-w-[1100px] flex-col items-center justify-between gap-2 overflow-hidden rounded-[22px] px-4 py-4 text-center sm:px-6 sm:py-5"
-        style={{ background: tone.soft, border: `1px solid ${tone.border}` }}
+        className="mx-auto flex h-full w-full max-w-[1040px] flex-col items-center justify-between gap-4 overflow-hidden rounded-[24px] bg-white px-4 py-5 text-center shadow-[0_18px_46px_rgba(15,23,42,0.08)] ring-1 ring-slate-200 sm:px-7 sm:py-6"
       >
         <div className="flex w-full items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
@@ -444,7 +443,7 @@ function ReturnTimerTab() {
         </div>
 
         <div
-          className="font-mono text-[clamp(3.75rem,18vmin,11rem)] font-black tabular-nums leading-[0.85]"
+          className="font-mono text-[clamp(4.5rem,18vmin,10rem)] font-black tabular-nums leading-none"
           style={{ fontFamily: 'var(--spm-font-display)', color: tone.accent, letterSpacing: 0 }}
           aria-live="polite"
           aria-label={`${Math.floor(remainingSeconds / 60)}분 ${remainingSeconds % 60}초 남음`}
@@ -452,7 +451,7 @@ function ReturnTimerTab() {
           {formatCountdown(remainingMs)}
         </div>
 
-        <div className="h-2.5 w-full max-w-[760px] overflow-hidden rounded-full" style={{ background: 'var(--spm-s3)' }}>
+        <div className="h-2 w-full max-w-[760px] overflow-hidden rounded-full bg-slate-200">
           <div className="h-full rounded-full transition-[width] duration-100" style={{ width: `${progress}%`, background: tone.accent }} />
         </div>
 
@@ -474,7 +473,7 @@ function ReturnTimerTab() {
         </div>
 
         <div className="flex w-full max-w-[760px] flex-col items-center gap-3">
-          <div className="flex flex-wrap items-end justify-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 rounded-[18px] border border-slate-200 bg-slate-50 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
             <div className="flex flex-wrap items-center justify-center gap-2" role="group" aria-label="타이머 빠른 시간 선택">
               {RETURN_TIMER_OPTIONS.map((option) => {
                 const active = selectedDurationMs === option.value;
@@ -484,7 +483,7 @@ function ReturnTimerTab() {
                     type="button"
                     onClick={() => selectDuration(option.value)}
                     disabled={durationSelectDisabled}
-                    className="h-10 min-w-[64px] rounded-[12px] px-3 text-[12px] font-black transition-opacity disabled:opacity-45"
+                    className="h-9 min-w-[58px] rounded-[11px] px-3 text-[12px] font-black transition-opacity disabled:opacity-45"
                     style={{
                       background: active ? tone.accent : 'var(--spm-s2)',
                       border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
@@ -497,8 +496,7 @@ function ReturnTimerTab() {
                 );
               })}
             </div>
-            <label className="flex items-center gap-1">
-              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>분</span>
+            <label className="order-2 flex items-center gap-1.5 rounded-[12px] bg-white px-2 py-1 ring-1 ring-slate-200">
               <input
                 type="number"
                 min={0}
@@ -507,12 +505,12 @@ function ReturnTimerTab() {
                 value={customMinutes}
                 onChange={(event) => updateCustomMinutes(event.target.value)}
                 disabled={durationSelectDisabled}
-                className="h-10 w-16 rounded-[12px] border px-2 text-center text-[16px] font-black tabular-nums disabled:opacity-45"
-                style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                className="h-9 w-14 rounded-[10px] border-0 bg-transparent px-1 text-center text-[16px] font-black tabular-nums outline-none disabled:opacity-45"
+                style={{ color: 'var(--spm-t)' }}
               />
+              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>분</span>
             </label>
-            <label className="flex items-center gap-1">
-              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>초</span>
+            <label className="order-1 flex items-center gap-1.5 rounded-[12px] bg-white px-2 py-1 ring-1 ring-slate-200">
               <input
                 type="number"
                 min={0}
@@ -521,9 +519,10 @@ function ReturnTimerTab() {
                 value={customSeconds}
                 onChange={(event) => updateCustomSeconds(event.target.value)}
                 disabled={durationSelectDisabled}
-                className="h-10 w-16 rounded-[12px] border px-2 text-center text-[16px] font-black tabular-nums disabled:opacity-45"
-                style={{ background: 'var(--spm-s1)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }}
+                className="h-9 w-14 rounded-[10px] border-0 bg-transparent px-1 text-center text-[16px] font-black tabular-nums outline-none disabled:opacity-45"
+                style={{ color: 'var(--spm-t)' }}
               />
+              <span className="text-[11px] font-black" style={{ color: 'var(--spm-t3)' }}>초</span>
             </label>
           </div>
 

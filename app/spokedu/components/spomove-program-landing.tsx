@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { CaseProofCard } from './case-proof-card';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
+import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { SPOKEDU_IMAGES } from '../data/images';
+import { programDetailBlocks } from '../data/program-details';
 import { spomoveProgramPage } from '../data/spomove-program-page';
 import {
   audienceLandingStack,
@@ -59,6 +61,12 @@ export default function SpomoveProgramLanding() {
           href: '#how',
           trackLabel: 'program-spomove-how',
         }}
+      />
+
+      <ProgramRelatedProof
+        fieldRecordSlugs={programDetailBlocks.spomove.fieldRecordSlugs}
+        trustLine={programDetailBlocks.spomove.trustLine}
+        trackPrefix="program-spomove"
       />
 
       {/* 1. 무엇인지 */}

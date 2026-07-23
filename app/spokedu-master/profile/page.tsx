@@ -48,8 +48,8 @@ type MenuRowProps = {
 function MenuRow({ icon: Icon, label, caption, href, onClick }: MenuRowProps) {
   const content = (
     <>
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'var(--spm-s3)' }}>
-        <Icon size={18} color="var(--spm-t2)" />
+      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-slate-50 text-slate-700 ring-1 ring-slate-200">
+        <Icon size={18} />
       </span>
       <span className="min-w-0 flex-1 text-left">
         <strong className="block text-[14px]" style={{ color: 'var(--spm-t)' }}>{label}</strong>
@@ -58,14 +58,13 @@ function MenuRow({ icon: Icon, label, caption, href, onClick }: MenuRowProps) {
     </>
   );
 
-  const className = 'flex w-full items-center gap-3 rounded-[14px] p-3';
-  const style = { background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' };
+  const className = 'flex w-full items-center gap-3 rounded-[14px] border border-slate-200 bg-white p-3 shadow-[0_8px_18px_rgba(15,23,42,0.04)]';
 
   if (href) {
-    return <Link href={href} className={className} style={style}>{content}</Link>;
+    return <Link href={href} className={className}>{content}</Link>;
   }
 
-  return <button type="button" onClick={onClick} className={className} style={style}>{content}</button>;
+  return <button type="button" onClick={onClick} className={className}>{content}</button>;
 }
 
 function SubscriptionSummaryCard({
@@ -80,7 +79,7 @@ function SubscriptionSummaryCard({
   const isEmpty = display.state === 'none' || display.state === 'ended';
 
   return (
-    <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+    <section className="rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>현재 이용권</p>
@@ -98,7 +97,7 @@ function SubscriptionSummaryCard({
           <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
             이용권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
           </p>
-          <button type="button" onClick={onRetry} className="mt-3 min-h-11 rounded-[12px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          <button type="button" onClick={onRetry} className="mt-3 h-10 rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white">
             다시 시도
           </button>
         </div>
@@ -118,8 +117,7 @@ function SubscriptionSummaryCard({
           {display.primaryHref && display.primaryLabel ? (
             <Link
               href={display.primaryHref}
-              className="mt-4 inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-black text-white"
-              style={{ background: 'var(--spm-acc)' }}
+              className="mt-4 inline-flex h-10 items-center justify-center rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white"
             >
               {display.primaryLabel}
             </Link>
@@ -178,7 +176,7 @@ function ProfileSheet({
             {saveError}
           </p>
         ) : null}
-        <button type="button" onClick={onSave} disabled={saving} className="h-12 w-full rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+        <button type="button" onClick={onSave} disabled={saving} className="h-10 w-full rounded-[9px] bg-slate-950 text-[14px] font-black text-white disabled:opacity-50">
           {saving ? '저장 중...' : '저장'}
         </button>
       </div>
@@ -308,16 +306,16 @@ function SpokeduMasterProfileContent() {
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <main className="mx-auto grid w-full max-w-[1040px] gap-5 px-5 py-5 sm:px-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+      <main className="mx-auto grid w-full max-w-7xl gap-4 px-4 py-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
         <section className="space-y-5">
-          <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <section className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
             <div className="flex flex-wrap items-center gap-4">
-              <div className="grid h-[68px] w-[68px] place-items-center rounded-full text-[25px] font-black text-white" style={{ background: profile?.avatarColor ?? '#312e81', fontFamily: 'var(--spm-font-display)' }}>
+              <div className="grid h-[64px] w-[64px] place-items-center rounded-[18px] bg-slate-950 text-[25px] font-black text-white" style={{ fontFamily: 'var(--spm-font-display)' }}>
                 {initial}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-black uppercase tracking-[0.12em]" style={{ color: 'var(--spm-t3)' }}>계정 정보</p>
-                <h1 className="mt-1 truncate text-[26px] font-black" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">계정 정보</p>
+                <h1 className="mt-1 truncate text-[27px] font-black leading-tight text-[color:var(--spm-t)]">
                   {profile?.name ?? '선생님'}
                 </h1>
                 <p className="mt-1 truncate text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{profile?.email || '이메일 정보 없음'}</p>
@@ -325,7 +323,7 @@ function SpokeduMasterProfileContent() {
                   <p className="mt-1 truncate text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>{profile.school}</p>
                 ) : null}
               </div>
-              <button type="button" onClick={() => setProfileOpen(true)} className="flex h-11 shrink-0 items-center justify-center gap-2 rounded-[12px] px-4 text-[14px] font-black" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
+              <button type="button" onClick={() => setProfileOpen(true)} className="flex h-10 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-700">
                 <Pencil size={15} />
                 편집
               </button>
@@ -338,7 +336,7 @@ function SpokeduMasterProfileContent() {
             onRetry={() => void loadSubscriptionSummary()}
           />
 
-          <section className="rounded-[18px] p-5" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <section className="rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
             <div className="flex items-start gap-3">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px]" style={{ background: 'rgba(239,68,68,0.12)' }}>
                 <ShieldAlert size={18} color="var(--spm-red)" />
@@ -367,7 +365,7 @@ function SpokeduMasterProfileContent() {
                   type="button"
                   onClick={() => void handleDeleteMasterData()}
                   disabled={!canDeleteMasterData}
-                  className="mt-3 h-11 w-full rounded-[12px] text-[13px] font-black disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-3 h-10 w-full rounded-[9px] text-[13px] font-black disabled:cursor-not-allowed disabled:opacity-50"
                   style={{ background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.35)', color: 'var(--spm-red)' }}
                 >
                   {deleteStatus === 'submitting' ? '삭제 중...' : 'MASTER 데이터 삭제'}
@@ -395,8 +393,7 @@ function SpokeduMasterProfileContent() {
             type="button"
             onClick={() => void handleLogout()}
             disabled={loggingOut}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-[14px] px-4 text-[13px] font-black disabled:opacity-50"
-            style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t3)' }}
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white px-4 text-[13px] font-black text-slate-500 disabled:opacity-50"
           >
             <LogOut size={15} />
             {loggingOut ? '로그아웃 중...' : '로그아웃'}

@@ -284,6 +284,34 @@ export const privatePage = {
       },
     ] satisfies PrivateReview[],
   },
+  processOnePager: {
+    eyebrow: '상담 한 장',
+    title: '문의부터 첫 수업까지, 한 장으로 정리',
+    lead: '아이 상황만 알려주시면, 맞는 수업 형태·장소·일정을 함께 맞춰 드립니다.',
+    flow: [
+      { label: '문의', detail: '웹 폼·카카오로 아이 연령·목표를 접수합니다.' },
+      { label: '상담·조율', detail: '1:1·소그룹, 장소·가능 시간을 함께 정합니다.' },
+      { label: '첫 수업', detail: '아이 반응을 보고 난이도와 흐름을 맞춥니다.' },
+      { label: '피드백', detail: '회차 후 피드백으로 다음 방향을 다시 조율합니다.' },
+    ] as const,
+    checklist: {
+      title: '상담 전에 알려주시면 빠른 안내',
+      items: [
+        '아이 연령·운동 경험',
+        '수업 목표 (자신감·체력·종목 등)',
+        '희망 지역·시간대',
+        '1:1 / 소그룹 선호',
+      ] as const,
+    },
+    formats: {
+      title: '가능한 수업 단위',
+      items: ['원데이', '단기', '정기 (8회차)'] as const,
+    },
+    cta: {
+      label: '개인수업 상담',
+      href: '#apply',
+    },
+  },
   consultFlow: {
     eyebrow: '상담',
     title: '상담은 이렇게 진행돼요',

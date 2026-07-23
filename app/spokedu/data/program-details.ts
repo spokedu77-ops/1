@@ -1,4 +1,5 @@
 import type { HomeMediaKey } from './home-media';
+import type { FieldRecordSlug } from './field-records-catalog';
 import {
   getProgramRegistryItem,
   PROGRAM_DETAIL_SLUGS,
@@ -23,11 +24,16 @@ export type ProgramDetailBlock = {
   activities: ProgramActivity[];
   targets: string[];
   caseSlugs: string[];
+  /** 온사이트/카탈로그 사례 — 프로그램 상세 신뢰·교차 링크 */
+  fieldRecordSlugs: readonly FieldRecordSlug[];
+  trustLine: string;
   finalCtaTitle: string;
   finalCtaSub: string;
   primaryCta: { label: string; href: string; trackLabel: string };
   secondaryCta: { label: string; href: string; trackLabel: string };
 };
+
+const PROGRAM_TRUST_LINE = '공개 운영 사례와 같은 현장 기준으로 프로그램을 설계합니다.';
 
 /** /spokedu/programs/[slug] 상세 전용 (목록·링크 메타는 programs-catalog) */
 export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> = {
@@ -47,8 +53,10 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
     ],
     targets: ['키움센터·방과후', '개인·소그룹 응용', '혼합 연령 기관 수업'],
     caseSlugs: ['yangcheon-spomove', 'dongjak-rhythm'],
+    fieldRecordSlugs: ['dongjak-spomove', 'dasarang-oneday'],
+    trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: 'SPOMOVE 도입 상담',
-    finalCtaSub: '공간·인원·일정을 확인한 뒤 맞는 운영안을 안내합니다.',
+    finalCtaSub: '공간·인원·일정을 확인한 뒤 맞는 운영안을 안내합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
     primaryCta: {
       label: 'SPOMOVE 수업 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=private`,
@@ -76,8 +84,10 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
     ],
     targets: ['초등 저·고학년', '기관 정규수업', '체력 경험형 프로그램'],
     caseSlugs: ['yangcheon-spomove'],
+    fieldRecordSlugs: ['yangcheon-paps'],
+    trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: 'PAPS 도입 상담',
-    finalCtaSub: '대상 연령과 운영 목적에 맞춰 구성안을 제안합니다.',
+    finalCtaSub: '대상 연령과 운영 목적에 맞춰 구성안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
     primaryCta: {
       label: 'PAPS 놀이체육 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
@@ -117,8 +127,10 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
     ],
     targets: ['키움·방과후 정규수업', '월 4회 흐름이 필요한 기관', '뉴스포츠·협동 중심 프로그램'],
     caseSlugs: ['dasarang-oneday'],
+    fieldRecordSlugs: ['yangcheon-paps', 'dasarang-oneday'],
+    trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: '월간 뉴스포츠 도입 상담',
-    finalCtaSub: '운영 주기와 공간을 확인한 뒤 월간 테마안을 제안합니다.',
+    finalCtaSub: '운영 주기와 공간을 확인한 뒤 월간 테마안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
     primaryCta: {
       label: '월간 뉴스포츠 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
@@ -146,8 +158,10 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
     ],
     targets: ['지역아동센터 행사', '어린이날·시즌 이벤트', '기관 특별활동'],
     caseSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
+    fieldRecordSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
+    trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: '원데이 행사 상담',
-    finalCtaSub: '행사 일정과 공간을 알려주시면 프로그램안을 제안합니다.',
+    finalCtaSub: '행사 일정과 공간을 알려주시면 프로그램안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
     primaryCta: {
       label: '원데이 행사 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
@@ -175,8 +189,10 @@ export const programDetailBlocks: Record<ProgramDetailSlug, ProgramDetailBlock> 
     ],
     targets: ['방학 집중 프로그램', '키즈 복합공간', '기관·공간 연계 캠프'],
     caseSlugs: ['playz-camp'],
+    fieldRecordSlugs: ['dasarang-oneday', 'seodaemun-event-booth'],
+    trustLine: PROGRAM_TRUST_LINE,
     finalCtaTitle: '방학캠프 상담',
-    finalCtaSub: '운영 기간과 공간 조건에 맞춰 캠프안을 제안합니다.',
+    finalCtaSub: '운영 기간과 공간 조건에 맞춰 캠프안을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
     primaryCta: {
       label: '방학캠프 문의',
       href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,

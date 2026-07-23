@@ -6,12 +6,13 @@ import type { ReactNode } from 'react';
 import { HOME_MEDIA } from '../data/home-media';
 import { aboutPage } from '../data/about-page';
 import { inferTrackFromHref } from '../lib/tracking';
-import { cardInteractive, fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
+import { cardInteractive, fineHover, koreanLineBreak, landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 import { AboutFounderSection } from './about-founder-section';
 import { AboutHistorySection } from './about-history-section';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { MediaPanel } from './visual';
+import { homePage } from '../data/home-page';
 
 const focusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
@@ -58,6 +59,24 @@ export function AboutLanding() {
         visualVariant="editorial"
         priority
       />
+
+      <Section className="rounded-2xl border border-slate-200/80 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
+          {homePage.trustStrip.eyebrow}
+        </p>
+        <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 sm:gap-x-6">
+          {homePage.trustStrip.items.map((item) => (
+            <li key={item.label} className="min-w-0">
+              <p className={`text-xl font-black tracking-tight text-slate-950 sm:text-2xl ${koreanLineBreak}`}>
+                {item.value}
+              </p>
+              <p className={`mt-1 text-xs font-semibold leading-snug text-slate-500 ${koreanLineBreak}`}>
+                {item.label}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </Section>
 
       <Section className="rounded-2xl border border-slate-200/80 bg-white px-4 py-6 shadow-sm sm:px-6 sm:py-8 lg:px-8">
         <AboutFounderSection />

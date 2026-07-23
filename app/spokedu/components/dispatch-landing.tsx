@@ -9,6 +9,7 @@ import { inferTrackFromHref } from '../lib/tracking';
 import { cardInteractive, fineHover, koreanLineBreak } from '../lib/ui-classes';
 import { AudienceTrustStrip } from './audience-trust-strip';
 import { DispatchComparisonSection } from './dispatch-comparison-section';
+import { DispatchProcessOnePager } from './dispatch-process-one-pager';
 import { DispatchProgramLineup } from './dispatch-program-lineup';
 import { DispatchProposalForm } from './dispatch-proposal-form';
 import { LandingAnchorNav } from './landing-anchor-nav';
@@ -336,7 +337,8 @@ export default function DispatchLanding() {
         </div>
       </Section>
 
-      <Section id="process" className="scroll-mt-36">
+      <Section id="process" className="scroll-mt-36 space-y-4">
+        <DispatchProcessOnePager />
         <LandingStepPanel steps={dispatchPage.processSteps.steps} accent="teal" columns="5">
           <LandingSectionHeading
             eyebrow={dispatchPage.processSteps.eyebrow}

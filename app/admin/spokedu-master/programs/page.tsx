@@ -33,6 +33,7 @@ import {
   uploadToStorage,
   withPublicUrlCacheBust,
 } from '@/app/lib/admin/assets/storageClient';
+import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { resolveSpomovePackCacheBust } from '@/app/lib/spomove/spomoveAssetCacheVersion';
 import {
   normalizeSpomoveGuideVideoMap,
@@ -70,6 +71,7 @@ import {
   setMasterParticipantFormatTag,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { ContentAuditPanel } from './ContentAuditPanel';
+import { StorageRecompressPanel } from './StorageRecompressPanel';
 import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -194,6 +196,9 @@ const SPACE_OPTIONS = [...MASTER_SPACE_TAGS];
 const TARGET_OPTIONS = [...MASTER_TARGET_TAGS];
 const THEME_OPTIONS = [...LESSON_THEME_OPTIONS];
 const MAX_SETUP_IMAGE_BYTES = 10 * 1024 * 1024;
+/** 화면 표시용 — 긴 변 제한. 그 이하면 해상도 유지, WebP만 재인코딩 */
+const SETUP_IMAGE_OPTIMIZE = { maxW: 1600, maxH: 1600, quality: 0.85 } as const;
+const SPOMOVE_THUMBNAIL_OPTIMIZE = { maxW: 1200, maxH: 1200, quality: 0.82 } as const;
 const ADMIN_TAB_OPTIONS: Array<{ key: AdminTabKey; label: string }> = [
   { key: 'programs', label: '수업 자료' },
   { key: 'content-audit', label: 'Phase E 감사' },
@@ -510,15 +515,6 @@ function mergeSavedProgram(
   };
 }
 
-function safeImageExtension(fileName: string, contentType: string) {
-  const fromName = fileName.split('.').pop()?.toLowerCase();
-  if (fromName && /^[a-z0-9]+$/.test(fromName) && fromName.length <= 8) return fromName;
-  if (contentType === 'image/png') return 'png';
-  if (contentType === 'image/gif') return 'gif';
-  if (contentType === 'image/webp') return 'webp';
-  return 'jpg';
-}
-
 function resolveSetupImageSrc(url: string) {
   const trimmed = url.trim();
   if (!trimmed) return '';
@@ -574,15 +570,16 @@ function SetupImageUpload({
 
     setUploading(true);
     try {
-      const ext = safeImageExtension(file.name, file.type);
       const previousPath = storagePathFromPublicUrl(value);
-      const path = `spokedu-master/programs/${curriculumId}/setup-${Date.now()}.${ext}`;
-      await uploadToStorage(path, file, file.type || 'image/jpeg');
+      const optimized = await optimizeToWebP(file, SETUP_IMAGE_OPTIMIZE);
+      const path = `spokedu-master/programs/${curriculumId}/setup-${Date.now()}.webp`;
+      await uploadToStorage(path, optimized, 'image/webp');
       onChange(withPublicUrlCacheBust(getPublicUrl(path), Date.now()));
       if (previousPath && previousPath !== path) {
         await deleteFromStorage(previousPath).catch(() => undefined);
       }
-      toast.success('세팅 이미지를 업로드했습니다.');
+      const savedKb = Math.max(1, Math.round(optimized.size / 1024));
+      toast.success(`세팅 이미지를 업로드했습니다. (${savedKb}KB)`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '이미지 업로드에 실패했습니다.');
     } finally {
@@ -719,9 +716,9 @@ function SpomoveThumbnailManager() {
     setSavingPresetId(presetId);
     setError(null);
     try {
-      const ext = safeImageExtension(file.name, file.type);
-      const path = spomoveThumbnailPath(presetId, ext);
-      await uploadToStorage(path, file, file.type || 'image/jpeg');
+      const optimized = await optimizeToWebP(file, SPOMOVE_THUMBNAIL_OPTIMIZE);
+      const path = spomoveThumbnailPath(presetId, 'webp');
+      await uploadToStorage(path, optimized, 'image/webp');
 
       const previousPath = pathsRef.current[presetId];
       const next = { ...pathsRef.current, [presetId]: path };
@@ -735,7 +732,8 @@ function SpomoveThumbnailManager() {
       }
 
       await persist(next);
-      toast.success('SPOMOVE 썸네일을 저장했습니다.');
+      const savedKb = Math.max(1, Math.round(optimized.size / 1024));
+      toast.success(`SPOMOVE 썸네일을 저장했습니다. (${savedKb}KB)`);
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : 'SPOMOVE 썸네일 저장에 실패했습니다.';
       setError(message);
@@ -2119,6 +2117,10 @@ export default function AdminSmProgramsPage() {
           ) : null}
         </div>
       </header>
+
+      <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
+        <StorageRecompressPanel />
+      </div>
 
       {activeTab === 'programs' ? (
         <>

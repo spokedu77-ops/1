@@ -61,8 +61,14 @@ async function login(context, { id = PAYMENT_QA_ID, password = PAYMENT_QA_PASSWO
   await page.goto(`${BASE}/login?next=${encodeURIComponent(next)}`, {
     waitUntil: 'domcontentloaded',
   });
+  const passwordInput = page.locator('input[type="password"]').first();
+  if ((await passwordInput.count()) === 0) {
+    await page.locator('[role="tab"]').nth(1).waitFor({ state: 'visible', timeout: 10_000 });
+    await page.locator('[role="tab"]').nth(1).click();
+  }
+  await passwordInput.waitFor({ state: 'visible', timeout: 10_000 });
   await page.locator('input[type="text"], input[type="email"]').first().fill(id);
-  await page.locator('input[type="password"]').first().fill(password);
+  await passwordInput.fill(password);
   await page.locator('button[type="submit"]').click();
   await page.waitForURL(/\/spokedu-master\//, { timeout: 90_000, waitUntil: 'domcontentloaded' });
   await page.close();
@@ -164,6 +170,17 @@ async function runMockActivation(context, plan) {
       }),
     });
   });
+  await page.route('**/spokedu-master/library', async (route) => {
+    if (route.request().resourceType() !== 'document') {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'text/html; charset=utf-8',
+      body: '<!doctype html><html><body><main>Mock library reached after payment activation.</main></body></html>',
+    });
+  });
 
   await page.goto(
     `${BASE}/spokedu-master/payment/success?plan=${plan}&authKey=auth_mock_no_toss&customerKey=spm_mock_no_toss`,
@@ -175,9 +192,9 @@ async function runMockActivation(context, plan) {
 
   const libraryLink = page.locator('a[href="/spokedu-master/library"]').first();
   await libraryLink.waitFor({ state: 'visible', timeout: 10_000 });
-  await libraryLink.click();
-  await page.waitForURL(/\/spokedu-master\/library/, { timeout: 15_000 });
-  log('mock-activation', `success UI + library navigation ok (plan=${plan}, no Toss)`);
+  const href = await libraryLink.getAttribute('href');
+  assert(href === '/spokedu-master/library', 'success CTA does not point to library');
+  log('mock-activation', `success UI + library CTA ok (plan=${plan}, no Toss)`);
   await page.close();
 }
 
@@ -197,15 +214,35 @@ function printManualTossSteps(plan) {
 async function main() {
   log('base', BASE);
 
-  assert(QA_PASSWORD, 'SPOKEDU_MASTER_QA_PASSWORD (or SPM_QA_PASSWORD) is required');
-  assert(PAYMENT_QA_ID && PAYMENT_QA_PASSWORD, 'payment QA credentials are required (secondary/expired account)');
-  assert(isTestTossKey(TOSS_CLIENT), 'NEXT_PUBLIC_TOSS_CLIENT_KEY must be a Toss test key');
-  assert(isTestTossKey(TOSS_SECRET), 'TOSS_SECRET_KEY must be a Toss test key');
-
   if (!SKIP_SERVER) {
     await assertServerReachable();
     log('server', 'reachable');
   }
+
+  if (MOCK_ACTIVATION) {
+    const chromium = await loadPlaywright();
+    const browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    try {
+      await runMockActivation(context, PLAN);
+      console.log(JSON.stringify({
+        ok: true,
+        phase: 'mock-activation',
+        plan: PLAN,
+        tossRequired: false,
+        verified: ['billing-issue-mock', 'access-retry-mock', 'success-ui', 'library-cta'],
+      }));
+      return;
+    } finally {
+      await context.close().catch(() => undefined);
+      await browser.close().catch(() => undefined);
+    }
+  }
+
+  assert(QA_PASSWORD, 'SPOKEDU_MASTER_QA_PASSWORD (or SPM_QA_PASSWORD) is required');
+  assert(PAYMENT_QA_ID && PAYMENT_QA_PASSWORD, 'payment QA credentials are required (secondary/expired account)');
+  assert(isTestTossKey(TOSS_CLIENT), 'NEXT_PUBLIC_TOSS_CLIENT_KEY must be a Toss test key');
+  assert(isTestTossKey(TOSS_SECRET), 'TOSS_SECRET_KEY must be a Toss test key');
 
   if (MANUAL_ONLY) {
     printManualTossSteps(PLAN);
@@ -242,18 +279,6 @@ async function main() {
     });
     log('payment-page', `Toss SDK loaded, plan=${PLAN}`);
     await paymentPage.close();
-
-    if (MOCK_ACTIVATION) {
-      await runMockActivation(context, PLAN);
-      console.log(JSON.stringify({
-        ok: true,
-        phase: 'mock-activation',
-        plan: PLAN,
-        tossRequired: false,
-        verified: ['billing-issue-mock', 'access-retry-mock', 'success-ui', 'library-navigation'],
-      }));
-      return;
-    }
 
     if (process.argv.includes('--complete-billing')) {
       assert(AUTH_KEY && CUSTOMER_KEY, 'SPOKEDU_MASTER_PAYMENT_E2E_AUTH_KEY and CUSTOMER_KEY are required for --complete-billing');

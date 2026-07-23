@@ -17,6 +17,7 @@ import {
 } from '@/app/lib/feedbackValidation';
 import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
+import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
 import { devLogger } from '@/app/lib/logging/devLogger';
 
 interface Session {
@@ -398,7 +399,7 @@ function MyClassesContent() {
       const rawName = file.name.normalize('NFC').trim();
       const lastDot = rawName.lastIndexOf('.');
       const basePart = lastDot > 0 ? rawName.slice(0, lastDot) : rawName;
-      const ext =
+      let ext =
         lastDot > 0 && lastDot < rawName.length - 1
           ? rawName.slice(lastDot).replace(/[^.a-zA-Z0-9]/g, '')
           : '';
@@ -409,8 +410,24 @@ function MyClassesContent() {
         .replace(/_+/g, '_')
         .replace(/^_|_$/g, '');
       const safeBase = sanitizedBase.length > 0 ? sanitizedBase : 'file';
+
+      let uploadFileBody: File = file;
+      let contentType: string | undefined;
+      // 세션 사진: 화면용 WebP로 리사이즈·압축 (원본 수 MB → 보통 100~400KB)
+      if (bucket === 'session-photos' && file.type.startsWith('image/')) {
+        try {
+          uploadFileBody = await optimizeToWebP(file, { maxW: 1600, maxH: 1600, quality: 0.82 });
+          ext = '.webp';
+          contentType = 'image/webp';
+        } catch (optimizeError) {
+          devLogger.warn('[session-photos optimize skipped]', optimizeError);
+        }
+      }
+
       const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
-      const { error } = await supabase.storage.from(bucket).upload(safeFileName, file);
+      const { error } = await supabase.storage.from(bucket).upload(safeFileName, uploadFileBody, {
+        contentType: contentType ?? (uploadFileBody.type || undefined),
+      });
       if (error) throw error;
       const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
       return { publicUrl, displayName };

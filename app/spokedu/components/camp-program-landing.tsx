@@ -5,10 +5,12 @@ import { CaseProofCard } from './case-proof-card';
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
+import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { getCaseBySlug } from '../data/cases';
 import { HOME_MEDIA } from '../data/home-media';
 import { campProgramPage } from '../data/camp-program-page';
+import { programDetailBlocks } from '../data/program-details';
 import { landingPageStack, landingSectionTitle, linkMuted } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 
@@ -38,6 +40,14 @@ export default function CampProgramLanding() {
           trackLabel: campProgramPage.heroCta.trackLabel,
         }}
       />
+
+      <LandingSection>
+        <ProgramRelatedProof
+          fieldRecordSlugs={programDetailBlocks.camp.fieldRecordSlugs}
+          trustLine={programDetailBlocks.camp.trustLine}
+          trackPrefix="program-camp"
+        />
+      </LandingSection>
 
       <LandingSection className="rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/40 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{campProgramPage.overview.title}</h2>

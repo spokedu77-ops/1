@@ -3,9 +3,11 @@
 import { LandingFinalCta } from './landing-final-cta';
 import { LandingHero } from './landing-hero';
 import { LandingSection } from './landing-section';
+import { ProgramRelatedProof } from './program-related-proof';
 import { MediaPanel } from './visual';
 import { HOME_MEDIA } from '../data/home-media';
 import { papsProgramPage } from '../data/paps-program-page';
+import { programDetailBlocks } from '../data/program-details';
 import { landingPageStack, landingSectionTitle } from '../lib/ui-classes';
 
 const elementCardShell =
@@ -27,6 +29,14 @@ export default function PapsProgramLanding() {
           trackLabel: papsProgramPage.heroCta.trackLabel,
         }}
       />
+
+      <LandingSection>
+        <ProgramRelatedProof
+          fieldRecordSlugs={programDetailBlocks.paps.fieldRecordSlugs}
+          trustLine={programDetailBlocks.paps.trustLine}
+          trackPrefix="program-paps"
+        />
+      </LandingSection>
 
       <LandingSection className="rounded-2xl border border-lime-200/70 bg-gradient-to-br from-lime-50/60 via-white to-emerald-50/40 px-5 py-6 sm:px-7 sm:py-7">
         <h2 className={landingSectionTitle}>{papsProgramPage.overview.title}</h2>

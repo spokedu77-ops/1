@@ -82,9 +82,9 @@ function OutcomeCard({ icon, label, value }: { icon: ReactNode; label: string; v
 
 function EmptyRecordState() {
   return (
-    <div className="rounded-[18px] p-6 text-center" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
-      <span className="mx-auto grid h-12 w-12 place-items-center rounded-[14px]" style={{ background: 'var(--spm-acc-a14)' }}>
-        <ClipboardList size={22} color="var(--spm-acc)" />
+    <div className="rounded-[16px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
+      <span className="mx-auto grid h-12 w-12 place-items-center rounded-[14px] bg-white text-slate-800 ring-1 ring-slate-200">
+        <ClipboardList size={22} />
       </span>
       <h2 className="mt-4 text-[18px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>아직 남긴 수업 기록이 없습니다.</h2>
       <p className="mx-auto mt-2 max-w-[440px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>날짜와 관찰 한 줄만 남겨도 학생 이력과 안내문 초안으로 이어집니다. 필요할 때 같은 기록에 출석·관찰을 보강하세요.</p>
@@ -97,7 +97,7 @@ function EmptyRecordState() {
 
 function RecordLoadingState() {
   return (
-    <div className="rounded-[18px] p-5 text-[13px] font-bold" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
+    <div className="rounded-[16px] border border-slate-200 bg-white/86 p-5 text-[13px] font-bold text-slate-600">
       수업 기록을 불러오는 중입니다.
     </div>
   );
@@ -120,7 +120,7 @@ function RecordCard({ record }: { record: ClassRecord }) {
   const isQuick = record.recordType === 'quick';
 
   return (
-    <article className="rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+    <article className="rounded-[16px] border border-slate-200 bg-white p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
       <div className="flex items-start gap-3">
         <div className="min-w-0">
           <p className="text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>
@@ -135,11 +135,11 @@ function RecordCard({ record }: { record: ClassRecord }) {
           ? (hasMemo ? '관찰 메모 있음' : '관찰 메모 없음') + (record.focusCount > 0 ? ' · 집중 관찰 있음' : '')
           : `출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
       </p>
-      <div className="mt-4 grid gap-2 sm:grid-cols-2">
-        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex h-11 max-w-full items-center justify-center gap-1.5 rounded-[10px] px-3 text-center text-[13px] font-black leading-tight text-white" style={{ background: 'var(--spm-acc)' }}>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 max-w-full items-center justify-center gap-1.5 rounded-[9px] bg-slate-950 px-3 text-center text-[12px] font-black leading-tight text-white">
           <ClipboardList size={13} /> {isQuick ? '이 기록 보강' : '기록 보기'}
         </Link>
-        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-11 max-w-full items-center justify-center gap-1.5 rounded-[10px] px-3 text-center text-[13px] font-black leading-tight" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}>
+        <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 max-w-full items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-3 text-center text-[12px] font-black leading-tight text-slate-700">
           <FileText size={13} /> 안내문 만들기
         </Link>
       </div>
@@ -171,54 +171,56 @@ function RecordListView() {
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 기록</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>수업 기록</h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>짧게 남긴 빠른 기록과 보강된 상세 기록이 학생 이력·안내문 근거로 쌓입니다.</p>
-        <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+      <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">수업 기록</p>
+        <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">수업 기록</h1>
+        <p className="mt-2 max-w-[680px] text-[13px] font-semibold leading-6 text-slate-600">짧게 남긴 빠른 기록과 보강된 상세 기록이 학생 이력·안내문 근거로 쌓입니다.</p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
           <RecordProgramPicker label="오늘 수업 기록 남기기" />
-          <Link href="/spokedu-master/students" className="inline-flex min-h-11 items-center justify-center rounded-[12px] px-3 text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>
+          <Link href="/spokedu-master/students" className="inline-flex h-10 items-center justify-center rounded-[9px] border border-slate-200 bg-white px-4 text-[12px] font-black text-slate-700">
             학생 명단 관리
           </Link>
         </div>
       </header>
 
       {operationalLoading ? (
-        <section className="px-[22px] sm:px-8 lg:px-10">
+        <section className="mt-4">
           <RecordLoadingState />
         </section>
       ) : null}
 
       {operationalError ? (
-        <section className="px-[22px] sm:px-8 lg:px-10">
+        <section className="mt-4">
           <RecordErrorState onRetry={() => void operationalData.reload()} />
         </section>
       ) : null}
 
       {operationalReady ? (
         <>
-          <section className="mb-5 px-[22px] sm:px-8 lg:px-10">
+          <section className="my-4 rounded-[16px] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
             {classes.length > 1 ? (
               <div className="mb-2 flex flex-wrap gap-2">
                 {classes.map((cls) => (
-                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className="min-h-11 max-w-[40vw] truncate rounded-full px-4 text-[12px] font-black" style={{ background: classFilter === cls ? 'var(--spm-acc)' : 'var(--spm-s2)', color: classFilter === cls ? '#fff' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }} title={cls}>{cls}</button>
+                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className={`h-8 max-w-[40vw] truncate rounded-full px-3 text-[11px] font-black ${classFilter === cls ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`} title={cls}>{cls}</button>
                 ))}
               </div>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-2">
               {([['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className="min-h-11 rounded-full px-4 text-[12px] font-black" style={{ background: periodFilter === value ? 'var(--spm-grn-a15)' : 'var(--spm-s2)', color: periodFilter === value ? 'var(--spm-grn)' : 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>{label}</button>
+                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className={`h-8 rounded-full px-3 text-[11px] font-black ${periodFilter === value ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}>{label}</button>
               ))}
             </div>
           </section>
 
-          <section className="grid gap-3 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {filteredRecords.length
               ? filteredRecords.map((record) => <RecordCard key={record.id} record={record} />)
               : <div className="md:col-span-2 xl:col-span-3"><EmptyRecordState /></div>}
           </section>
         </>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -553,12 +555,13 @@ function RecordEntryView() {
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-7" style={{ background: 'var(--spm-bg)' }}>
-      <header className="px-[22px] pb-5 pt-[22px] sm:px-8 lg:px-10">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 기록</p>
-        <h1 className="mt-1 text-[32px] font-black md:text-[42px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+      <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
+        <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">수업 기록</p>
+        <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">
           {isEnrichingQuickRecord ? '기록 보강' : '수업 기록'}
         </h1>
-        <p className="mt-2 max-w-[680px] text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+        <p className="mt-2 max-w-[680px] text-[13px] font-semibold leading-6 text-slate-600">
           {isEnrichingQuickRecord
             ? '빠른 기록에 출석·관찰을 더합니다. 새 기록이 아니라 같은 기록이 업데이트됩니다.'
             : '학생별 출석, 관찰, 동작 체크를 남기는 수업 기록 작성 화면입니다.'}
@@ -594,23 +597,23 @@ function RecordEntryView() {
         </section>
       ) : null}
 
-      <section className="mx-[22px] mb-5 overflow-hidden rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'linear-gradient(135deg, var(--spm-acc-a25), var(--spm-s2))', border: '1px solid var(--spm-acc-a34)' }}>
+      <section className="mt-4 overflow-hidden rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-acc-muted)' }}>{classId || defaultClassId} / {activePeriod}교시</p>
-            <h2 className="mt-2 text-[24px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
+            <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-600">{classId || defaultClassId} / {activePeriod}교시</p>
+            <h2 className="mt-1.5 text-[23px] font-black leading-tight" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0, wordBreak: 'keep-all' }}>
               {isEnrichingQuickRecord ? '빠른 기록 보강' : isEditingRecord ? '수업 기록 수정' : activeLessonTitle}
             </h2>
             <p className="mt-2 text-[12px] font-medium" style={{ color: 'var(--spm-t2)' }}>{[packageMeta, packageFocus].filter(Boolean).join(' · ')}</p>
           </div>
           {program ? (
-            <Link href={`/spokedu-master/library/${program.id}`} className="grid h-12 w-12 shrink-0 place-items-center rounded-full" style={{ background: 'var(--spm-acc)' }} aria-label="전체 수업 자료 보기">
+            <Link href={`/spokedu-master/library/${program.id}`} className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-slate-950" aria-label="전체 수업 자료 보기">
               <BookOpen size={18} color="#fff" />
             </Link>
           ) : null}
         </div>
-        <div className="mt-5 h-2 overflow-hidden rounded-full" style={{ background: 'rgba(255,255,255,0.12)' }}>
-          <div className="h-full rounded-full" style={{ width: `${progress}%`, background: 'linear-gradient(90deg,var(--spm-acc),var(--spm-grn))' }} />
+        <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
+          <div className="h-full rounded-full bg-slate-950" style={{ width: `${progress}%` }} />
         </div>
       </section>
 
@@ -623,10 +626,10 @@ function RecordEntryView() {
         </section>
       ) : null}
 
-      <div className="mx-[22px] mb-2 sm:mx-8 lg:mx-10">
+      <div className="mb-2 mt-4">
         <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>1. 수업 정보</h2>
       </div>
-      <section className="mx-[22px] mb-5 grid gap-3 rounded-[18px] p-4 sm:mx-8 md:grid-cols-2 xl:grid-cols-3 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <section className="mb-4 grid gap-3 rounded-[16px] border border-slate-200 bg-white/86 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] md:grid-cols-2 xl:grid-cols-3">
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>기록할 수업</span>
           <select
@@ -664,28 +667,28 @@ function RecordEntryView() {
         </label>
       </section>
 
-      <div className="mx-[22px] mb-2 sm:mx-8 lg:mx-10">
+      <div className="mb-2 mt-4">
         <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>2. 참여 학생</h2>
         <p className="mt-1 text-[12px] font-semibold" style={{ color: 'var(--spm-t2)' }}>선택 {selectedStudentCount}명 / 전체 {students.length}명</p>
       </div>
 
-      <section className="mb-3 grid grid-cols-3 gap-2 px-[22px] sm:px-8 lg:px-10">
+      <section className="mb-3 grid grid-cols-3 gap-2">
         <SummaryPill label="출석" value={String(present)} tone="var(--spm-grn)" />
         <SummaryPill label="결석" value={String(absent)} tone="var(--spm-red)" />
         <SummaryPill label="관찰" value={String(focusCount)} tone="var(--spm-amb)" />
       </section>
 
       {hasStudents ? (
-        <div className="mb-3 flex flex-wrap gap-2 px-[22px] sm:px-8 lg:px-10">
-          <button type="button" onClick={selectAllStudents} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>전체 선택</button>
-          <button type="button" onClick={clearAllStudents} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>전체 해제</button>
+        <div className="mb-3 flex flex-wrap gap-2">
+          <button type="button" onClick={selectAllStudents} className="h-9 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">전체 선택</button>
+          <button type="button" onClick={clearAllStudents} className="h-9 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">전체 해제</button>
           <button type="button" onClick={() => applyAttendanceToSelected('present')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-grn-a16)', color: 'var(--spm-grn)', border: '1px solid var(--spm-grn-a24)' }}>선택 출석</button>
           <button type="button" onClick={() => applyAttendanceToSelected('absent')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'rgba(239,68,68,0.14)', color: 'var(--spm-red)', border: '1px solid rgba(239,68,68,0.22)' }}>선택 결석</button>
           <button type="button" onClick={() => applyAttendanceToSelected('pending')} disabled={selectedStudentCount === 0} className="min-h-11 rounded-[11px] px-4 text-[12px] font-black disabled:opacity-50" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t2)', border: '1px solid var(--spm-br2)' }}>출석 초기화</button>
         </div>
       ) : null}
 
-      <section className="grid gap-2 px-[22px] sm:px-8 md:grid-cols-2 lg:px-10 xl:grid-cols-3">
+      <section className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         {hasStudents ? students.map((student) => (
           <div key={student.id} className="rounded-[18px]" style={{ outline: selectedStudentIds[student.id] ? '2px solid var(--spm-acc-a50)' : '1px solid var(--spm-br2)' }}>
             <label className="flex min-h-11 items-center gap-2 rounded-t-[18px] px-4 py-2 text-[12px] font-black" style={{ background: selectedStudentIds[student.id] ? 'var(--spm-acc-a12)' : 'var(--spm-s2)', color: 'var(--spm-t)' }}>
@@ -705,11 +708,11 @@ function RecordEntryView() {
         )}
       </section>
 
-      <div className="mx-[22px] mb-2 mt-5 sm:mx-8 lg:mx-10">
+      <div className="mb-2 mt-5">
         <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>3. 기록 내용</h2>
       </div>
 
-      <section className="mx-[22px] rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <section className="rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         <label className="block">
           <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>공통 수업 메모</span>
           <textarea value={classMemo} onChange={(event) => setClassMemo(event.target.value)} placeholder="수업 전체 흐름, 준비물, 다음 수업 참고 사항을 한 번만 적어 두세요." className="min-h-[88px] w-full rounded-[12px] border p-3 text-[13px] font-bold outline-none" style={{ background: 'var(--spm-s3)', borderColor: 'var(--spm-br2)', color: 'var(--spm-t)' }} />
@@ -723,11 +726,11 @@ function RecordEntryView() {
         </div>
       </section>
 
-      <div className="mx-[22px] mb-2 mt-5 sm:mx-8 lg:mx-10">
+      <div className="mb-2 mt-5">
         <h2 className="text-[16px] font-black" style={{ color: 'var(--spm-t)' }}>4. 저장</h2>
       </div>
 
-      <section className="mx-[22px] mt-5 rounded-[18px] p-5 sm:mx-8 lg:mx-10" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+      <section className="mt-5 rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.14em]" style={{ color: 'var(--spm-t3)' }}>수업 마무리</p>
@@ -766,11 +769,12 @@ function RecordEntryView() {
           </div>
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr]">
-          <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
-          <Link href={reportHref} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black" style={{ background: 'var(--spm-s3)', color: 'var(--spm-t)' }}><FileText size={16} />안내문 만들고 복사</Link>
+          <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] bg-slate-950 text-[14px] font-black text-white disabled:opacity-60"><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
+          <Link href={reportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[14px] font-black text-slate-700"><FileText size={16} />안내문 만들고 복사</Link>
         </div>
       </section>
 
+      </div>
       <BottomSheet open={!!selectedStudent} title="학생 동작 기록" onClose={() => setSelectedId(null)}>
         {selectedStudent ? (
           <div>

@@ -15,6 +15,7 @@ import { PrivateCurriculumSection } from './private-curriculum-section';
 import { PrivateTrustMetrics } from './private-trust-metrics';
 import { LandingAnchorNav } from './landing-anchor-nav';
 import { LandingFloatingCta } from './landing-floating-cta';
+import { LandingProcessOnePager } from './landing-process-one-pager';
 import { MediaPanel } from './visual';
 
 const premiumPanel =
@@ -27,6 +28,7 @@ const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] a
 const privateAnchorItems = [
   { href: '#class-flow', label: '수업 현장' },
   { href: '#curriculum', label: '종목' },
+  { href: '#process', label: '상담 절차' },
   { href: '#reviews', label: '후기' },
   { href: '#apply', label: '상담' },
 ] as const;
@@ -337,6 +339,10 @@ export default function PrivateLanding() {
 
       <Section>
         <MidConsultCta />
+      </Section>
+
+      <Section id="process" className="scroll-mt-36">
+        <LandingProcessOnePager data={privatePage.processOnePager} />
       </Section>
 
       <Section className="space-y-4">

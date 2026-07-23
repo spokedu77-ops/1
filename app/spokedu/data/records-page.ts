@@ -23,7 +23,7 @@ export const recordsPage = {
     kicker: '수업 사례',
     lines: ['현장에서 운영한 수업 사례'] as const,
     subtitle:
-      '실제 운영 현장의 활동 사진과 운영 설명을 블로그 후기로 모았습니다. 아래에서 기관·수업 유형별로 골라 볼 수 있습니다.',
+      '상위 사례는 목적·대상·구성·결과를 온사이트 요약으로 볼 수 있고, 나머지는 블로그 후기로 이어집니다. 기관·수업 유형별로 골라 보세요.',
     venueTypes: heroSummary.venueTypes,
     stats: [
       { value: String(heroSummary.caseCount), label: '공개 운영 사례' },

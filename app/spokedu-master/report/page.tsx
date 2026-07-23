@@ -599,18 +599,19 @@ function ReportContent() {
 
   return (
     <div className="h-full overflow-y-auto pb-28 lg:pb-8" style={{ background: 'var(--spm-bg)' }}>
-      <div className="mx-auto max-w-3xl px-[22px] pt-[22px] sm:px-8 lg:px-10">
-        <header className="pb-4">
-          <h1 className="text-[28px] font-black md:text-[34px]" style={{ fontFamily: 'var(--spm-font-display)', color: 'var(--spm-t)', letterSpacing: 0 }}>안내문 만들고 복사</h1>
-          <p className="mt-1.5 text-[13px] font-medium leading-6" style={{ color: 'var(--spm-t2)' }}>
+      <div className="mx-auto w-full max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+        <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] p-4 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5">
+          <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-700">안내문</p>
+          <h1 className="mt-1 text-[27px] font-black leading-tight text-[color:var(--spm-t)]">안내문 만들고 복사</h1>
+          <p className="mt-2 max-w-[680px] text-[13px] font-semibold leading-6 text-slate-600">
             문구 확인 → 복사 → 카톡·문자·메일에 붙여넣기. 보관은 나중에 다시 복사할 때만.
           </p>
         </header>
 
         {selectedRecord ? (
-          <section className="mb-4 rounded-[16px] p-3.5" style={{ background: 'var(--spm-acc-a12)', border: '1px solid var(--spm-acc-a24)' }}>
-            <p className="text-[12px] font-black" style={{ color: 'var(--spm-acc)' }}>{selectedRecord.programTitle}</p>
-            <p className="mt-1 text-[12px] font-bold" style={{ color: 'var(--spm-t2)' }}>
+          <section className="my-4 rounded-[16px] border border-slate-200 bg-white/86 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+            <p className="text-[12px] font-black text-slate-950">{selectedRecord.programTitle}</p>
+            <p className="mt-1 text-[12px] font-bold text-slate-600">
               {new Date(selectedRecord.date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}
               {selectedRecord.present > 0 ? ` · 출석 ${selectedRecord.present}명` : ''}
             </p>
@@ -618,7 +619,7 @@ function ReportContent() {
         ) : null}
 
         {!focused ? (
-          <section className="mb-4 space-y-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <section className="my-4 space-y-3 rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
             {classRecords.length ? (
               <label className="block">
                 <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>수업 기록</span>
@@ -667,15 +668,15 @@ function ReportContent() {
           </section>
         ) : null}
 
-        <section className="rounded-[18px] p-4 sm:p-5" style={{ background: 'linear-gradient(135deg, var(--spm-acc-a14), var(--spm-s1))', border: '1px solid var(--spm-acc-a22)' }}>
+        <section className="rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)] sm:p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-[12px] font-black" style={{ color: 'var(--spm-acc-muted)' }}>{audienceMeta.label} · {getAudienceOutputTitle(audience)}</p>
+              <p className="text-[12px] font-black text-slate-600">{audienceMeta.label} · {getAudienceOutputTitle(audience)}</p>
               <h2 className="mt-1 text-[20px] font-black leading-tight" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>
                 {program?.title ?? '수업을 선택하세요'}
               </h2>
             </div>
-            <button type="button" onClick={copyOutput} disabled={!output.trim()} className="inline-flex min-h-12 items-center gap-2 rounded-[12px] px-5 text-[14px] font-black text-white disabled:opacity-50" style={{ background: copied ? 'var(--spm-grn)' : 'var(--spm-acc)' }}>
+            <button type="button" onClick={copyOutput} disabled={!output.trim()} className={`inline-flex h-10 items-center gap-2 rounded-[9px] px-4 text-[13px] font-black text-white disabled:opacity-50 ${copied ? 'bg-emerald-600' : 'bg-slate-950'}`}>
               {copied ? <Check size={16} /> : <Clipboard size={16} />}
               {copied ? '복사 완료' : '복사해서 전달'}
             </button>
@@ -689,12 +690,7 @@ function ReportContent() {
                   key={id}
                   type="button"
                   onClick={() => { setAudience(id); if (!selectedRecord) markDraftDirty(); }}
-                  className="min-h-10 rounded-full px-3 text-[12px] font-black"
-                  style={{
-                    background: active ? 'var(--spm-acc)' : 'var(--spm-s2)',
-                    color: active ? '#fff' : 'var(--spm-t2)',
-                    border: active ? '1px solid transparent' : '1px solid var(--spm-br2)',
-                  }}
+                  className={`h-8 rounded-full px-3 text-[11px] font-black ${active ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}
                 >
                   {label}
                 </button>
@@ -705,10 +701,10 @@ function ReportContent() {
           {selectedRecord ? (
             <div className="mt-3">
               <div className="flex flex-wrap gap-1.5">
-                <button type="button" onClick={() => handleTargetChange('class')} className="min-h-10 rounded-full px-3 text-[12px] font-black" style={{ background: target === 'class' ? 'var(--spm-acc)' : 'var(--spm-s2)', color: target === 'class' ? '#fff' : 'var(--spm-t2)', border: target === 'class' ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>
+                <button type="button" onClick={() => handleTargetChange('class')} className={`h-8 rounded-full px-3 text-[11px] font-black ${target === 'class' ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}>
                   전체 수업 안내문
                 </button>
-                <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord.students.length} className="min-h-10 rounded-full px-3 text-[12px] font-black disabled:opacity-50" style={{ background: target === 'student' ? 'var(--spm-acc)' : 'var(--spm-s2)', color: target === 'student' ? '#fff' : 'var(--spm-t2)', border: target === 'student' ? '1px solid transparent' : '1px solid var(--spm-br2)' }}>
+                <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord.students.length} className={`h-8 rounded-full px-3 text-[11px] font-black disabled:opacity-50 ${target === 'student' ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}>
                   학생별 안내문
                 </button>
               </div>
@@ -795,20 +791,20 @@ function ReportContent() {
             }}
             disabled={!program}
             className="mt-4 min-h-[280px] w-full resize-y rounded-[14px] border p-3.5 text-[14px] font-semibold leading-7 outline-none sm:min-h-[320px] sm:text-[15px] sm:leading-8"
-            style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', borderColor: 'var(--spm-br2)' }}
+            style={{ background: '#f8fafc', color: 'var(--spm-t)', borderColor: '#e2e8f0' }}
           />
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <button type="button" onClick={() => replaceDraft(draft)} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+            <button type="button" onClick={() => replaceDraft(draft)} className="inline-flex h-9 items-center gap-2 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700">
               <FileText size={14} />
               다시 만들기
             </button>
-            <button type="button" data-report-action="save" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex min-h-11 items-center gap-2 rounded-[12px] px-3 text-[12px] font-black disabled:opacity-60" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)', border: '1px solid var(--spm-br2)' }}>
+            <button type="button" data-report-action="save" onClick={() => void saveOutput()} disabled={saveStatus === 'saving' || !output.trim()} className="inline-flex h-9 items-center gap-2 rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 disabled:opacity-60">
               <Save size={14} />
               {saveStatus === 'saving' ? '보관 중...' : '보관'}
             </button>
             {focused ? (
-              <button type="button" onClick={() => setShowExtras((current) => !current)} className="inline-flex min-h-11 items-center rounded-[12px] px-3 text-[12px] font-black" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t3)', border: '1px solid var(--spm-br2)' }}>
+              <button type="button" onClick={() => setShowExtras((current) => !current)} className="inline-flex h-9 items-center rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-500">
                 {showExtras ? '접기' : '다른 기록·보관함'}
               </button>
             ) : null}
@@ -816,7 +812,7 @@ function ReportContent() {
         </section>
 
         {(showExtras || !focused) ? (
-          <section className="mt-4 mb-6 space-y-3 rounded-[16px] p-4" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)' }}>
+          <section className="mb-6 mt-4 space-y-3 rounded-[16px] border border-slate-200 bg-white/86 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
             {focused && classRecords.length ? (
               <label className="block">
                 <span className="mb-1.5 block text-[12px] font-black" style={{ color: 'var(--spm-t2)' }}>다른 기록</span>
@@ -837,11 +833,11 @@ function ReportContent() {
                   <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>보관한 안내문을 불러오지 못했습니다.</p>
                 ) : explanationData.explanations.length ? explanationData.explanations.slice(0, 5).map((item) => (
                   <div key={item.id} className="flex gap-2">
-                    <button type="button" onClick={() => handleSavedExplanationSelect(item)} className="min-w-0 flex-1 rounded-[12px] p-3 text-left" style={{ background: 'var(--spm-s3)', border: '1px solid var(--spm-br2)' }}>
+                    <button type="button" onClick={() => handleSavedExplanationSelect(item)} className="min-w-0 flex-1 rounded-[12px] border border-slate-200 bg-slate-50 p-3 text-left">
                       <strong className="block line-clamp-1 text-[12px]" style={{ color: 'var(--spm-t)' }}>{item.programTitle}</strong>
                       <span className="mt-1 block text-[11px] font-bold" style={{ color: 'var(--spm-t3)' }}>{new Date(item.createdAt).toLocaleDateString('ko-KR')}</span>
                     </button>
-                    <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="shrink-0 rounded-[12px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-acc-a12)', color: 'var(--spm-acc)' }}>복사</button>
+                    <button type="button" onClick={() => { void navigator.clipboard.writeText(item.text).then(() => setCopyStatus('success')).catch(() => setCopyStatus('error')); }} className="h-9 shrink-0 rounded-[9px] border border-slate-200 bg-white px-3 text-[11px] font-black text-slate-700">복사</button>
                   </div>
                 )) : (
                   <p className="text-[12px] font-semibold" style={{ color: 'var(--spm-t3)' }}>보관한 안내문이 없습니다.</p>
@@ -849,7 +845,7 @@ function ReportContent() {
               </div>
             </div>
             {hasProgramQuery && program ? (
-              <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex min-h-10 items-center gap-2 text-[12px] font-black" style={{ color: 'var(--spm-acc)' }}>
+              <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center gap-2 rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">
                 <BookOpen size={14} />
                 전체 수업 자료 보기
               </Link>

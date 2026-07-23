@@ -12,9 +12,9 @@
   --spm-t: #0f172a;
   --spm-t2: #475569;
   --spm-t3: #94a3b8;
-  --spm-acc: #6366f1;
-  --spm-acc-muted: #818cf8;
-  --spm-acc-glow: color-mix(in srgb, var(--spm-acc) 15%, transparent);
+  --spm-acc: #0f172a;
+  --spm-acc-muted: #334155;
+  --spm-acc-glow: #f1f5f9;
   --spm-acc-a06: color-mix(in srgb, var(--spm-acc) 6%, transparent);
   --spm-acc-a08: color-mix(in srgb, var(--spm-acc) 8%, transparent);
   --spm-acc-a09: color-mix(in srgb, var(--spm-acc) 9%, transparent);

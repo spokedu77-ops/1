@@ -102,8 +102,8 @@ export const monthlyPage = {
   cta: {
     title: '우리 기관에도 월간형 체육수업을 운영하고 싶다면',
     description:
-      '대상 연령, 운영 주기, 공간, 수업 목적을 확인한 뒤 월별 테마에 맞는 수업 흐름을 제안드립니다.',
-    label: '월간 수업 문의하기',
+      '대상 연령, 운영 주기, 공간, 수업 목적을 확인한 뒤 월별 테마 흐름을 제안합니다. 프로그램이 정해지지 않았어도 상담으로 이어드립니다.',
+    label: '기관 운영 상담',
     href: `${SPOKEDU_BASE_PATH}/contact?type=dispatch`,
     trackLabel: 'monthly-dispatch-cta',
     mediaKey: 'trackDispatch' as HomeMediaKey,

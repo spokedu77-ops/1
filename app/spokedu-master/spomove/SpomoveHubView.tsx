@@ -573,11 +573,15 @@ function CardVisual({
   thumbnailUrl,
   imageFailed,
   onImageError,
+  title,
+  label,
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
   imageFailed: boolean;
   onImageError: () => void;
+  title: string;
+  label: string;
 }) {
   const showThumbnail = Boolean(thumbnailUrl) && !imageFailed;
   const [stretch, setStretch] = useState(() => /\.svg(\?|#|$)/i.test(thumbnailUrl));
@@ -586,7 +590,7 @@ function CardVisual({
     : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]';
 
   return (
-    <div className="relative aspect-square overflow-hidden bg-white">
+    <div className="relative aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white">
       {showThumbnail ? (
         <Image
           src={thumbnailUrl}
@@ -606,7 +610,7 @@ function CardVisual({
         <SpomoveProgramVisual preset={preset} />
       )}
       {preset.isReady ? (
-        <span className="pointer-events-none absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
+        <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5">
           <span
             aria-hidden="true"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-105"
@@ -625,19 +629,25 @@ function CardVisual({
           </span>
         </div>
       )}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/82 via-black/34 to-transparent px-3 pb-3 pt-16">
+        <p className="max-w-[76%] truncate text-[11px] font-black text-white/82 drop-shadow">
+          {label}
+        </p>
+        <h3 className="mt-1 line-clamp-2 max-w-[92%] text-[17px] font-black leading-5 text-white drop-shadow">
+          {title}
+        </h3>
+      </div>
     </div>
   );
 }
 
 function CardInfo({
   preset,
-  displayTitle,
   isReady,
   movementLayerEnabled,
   onGuide,
 }: {
   preset: OfficialSpomovePreset;
-  displayTitle: string;
   isReady: boolean;
   movementLayerEnabled: boolean;
   onGuide: () => void;
@@ -672,8 +682,8 @@ function CardInfo({
   };
 
   return (
-    <div className="flex min-h-[168px] flex-1 flex-col p-4 text-center">
-      <div className="flex flex-wrap items-center justify-center gap-1.5">
+    <div className="flex min-h-[86px] flex-1 flex-col p-3 text-left">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
           {display.programLabel}
         </span>
@@ -687,28 +697,24 @@ function CardInfo({
         ) : null}
       </div>
 
-      <h2 className="mt-2 line-clamp-2 min-h-[2.6em] text-[17px] font-black leading-snug text-slate-950 sm:text-[18px]">
-        {displayTitle}
-      </h2>
-
       {movementSummary ? (
-        <p className="mt-3 line-clamp-1 text-[12px] font-bold text-slate-700">
+        <p className="mt-1.5 line-clamp-1 text-[12px] font-bold text-slate-700">
           추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
           <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
         </p>
       ) : (
-        <div className="mt-3 h-[18px]" aria-hidden />
+        <div className="mt-2 h-[18px]" aria-hidden />
       )}
 
       {isReady ? (
-        <div className="mt-auto pt-3">
+        <div className="mt-auto pt-2">
           <div className="flex gap-2">
             <button
               type="button"
               data-spm-spomove-card-action="start"
               data-spm-spomove-start-mode="guide"
               onClick={onGuide}
-              className="inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-2 text-[13px] font-black text-white shadow-sm transition hover:opacity-90 active:scale-[0.98]"
+              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[9px] bg-slate-950 px-2 text-[13px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] transition hover:bg-slate-800 active:scale-[0.98]"
             >
               <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
               시작하기
@@ -719,7 +725,7 @@ function CardInfo({
                 data-spm-spomove-card-action="start"
                 data-spm-spomove-start-mode="settings"
                 onClick={() => router.push(hrefForSettings())}
-                className="inline-flex h-11 min-w-0 shrink-0 items-center justify-center rounded-[10px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
+                className="inline-flex h-9 min-w-0 shrink-0 items-center justify-center rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
               >
                 설정
               </button>
@@ -800,11 +806,12 @@ function PresetCard({
           thumbnailUrl={thumbnailUrl}
           imageFailed={imageFailed}
           onImageError={() => setImageFailed(true)}
+          title={displayModel.displayTitle}
+          label={displayModel.programLabel}
         />
       </button>
       <CardInfo
         preset={preset}
-        displayTitle={displayModel.displayTitle}
         isReady={preset.isReady}
         movementLayerEnabled={movementLayerEnabled}
         onGuide={onPreview}
@@ -814,14 +821,14 @@ function PresetCard({
 
   if (!preset.isReady) {
     return (
-      <article className="relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white opacity-75 shadow-sm">
+      <article className="relative flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white opacity-75 shadow-[0_14px_30px_rgba(15,23,42,0.08)]">
         {inner}
       </article>
     );
   }
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow-md focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
+    <article className="group relative flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)] focus-within:ring-2 focus-within:ring-[var(--spm-acc)] focus-within:ring-offset-2">
       {inner}
     </article>
   );
@@ -972,30 +979,30 @@ export default function SpomoveHubView() {
 
   return (
     <main className="h-full overflow-y-auto" style={{ background: 'var(--spm-bg)' }}>
-      <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-8 lg:pb-16">
+      <div className="mx-auto w-full max-w-7xl px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-16">
         {/* 헤더 */}
-        <header className="overflow-hidden rounded-[28px] bg-slate-950 px-6 py-10 text-white shadow-xl sm:px-10 sm:py-12">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-[12px] font-black text-white/80">
+        <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] px-4 py-5 shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:px-5 sm:py-5 lg:px-6">
+          <span className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">
             <MonitorPlay className="h-3.5 w-3.5" />
-            공식 활동
+            화면 활동
           </span>
-          <h1 className="mt-5 text-[34px] font-black leading-tight sm:text-[46px]">
-            SPOMOVE 공식 활동
+          <h1 className="mt-2 text-[28px] font-black leading-tight text-slate-950 sm:text-[34px]">
+            SPOMOVE
           </h1>
-          <p className="mt-4 max-w-2xl text-[14px] font-medium leading-7 text-white/58">
+          <p className="mt-2 max-w-2xl text-[14px] font-semibold leading-6 text-slate-600">
             수업 도입·집중 전환·마무리에 바로 쓸 수 있는 화면 반응 활동입니다. 활동 종류와 인지 난이도로
             골라보세요.
           </p>
         </header>
 
         {/* 최근 활동 */}
-        <section className="mt-6 rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+        <section className="mt-4 rounded-[16px] border border-slate-200 bg-white/86 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[12px] font-black text-[var(--spm-acc)]">최근 SPOMOVE</p>
-              <h2 className="text-xl font-black text-slate-950">최근 사용한 활동</h2>
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 SPOMOVE</p>
+              <h2 className="mt-0.5 text-[18px] font-black leading-tight text-slate-950">최근 사용한 활동</h2>
             </div>
-            <a href="#spomove-program-list" className="text-sm font-black text-[var(--spm-acc)]">활동 선택</a>
+            <a href="#spomove-program-list" className="text-sm font-black text-slate-950">활동 선택</a>
           </div>
           {recentSpomoveActivities.length ? (
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
@@ -1033,7 +1040,7 @@ export default function SpomoveHubView() {
                         href={recentHref}
                         data-spm-spomove-recent-action="rerun"
                         data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
-                        className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-3 text-[12px] font-black text-white"
+                        className="inline-flex h-9 items-center justify-center rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white transition hover:bg-slate-800"
                       >
                         {canReproduce ? '같은 설정으로 시작' : '이 활동으로 시작'}
                       </Link>
@@ -1043,21 +1050,22 @@ export default function SpomoveHubView() {
               })}
             </div>
           ) : (
-            <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
               <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 활동이 없습니다.</p>
-              <p className="mt-1 text-sm font-semibold text-slate-500">활동을 선택해 첫 실행을 시작해 보세요.</p>
-              <a href="#spomove-program-list" className="mt-3 inline-flex min-h-11 items-center justify-center rounded-xl bg-slate-950 px-4 text-sm font-black text-white">활동 선택</a>
+              <a href="#spomove-program-list" className="inline-flex h-9 items-center justify-center rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">활동 선택</a>
             </div>
           )}
         </section>
 
+        <section className="mt-4 rounded-[16px] border border-slate-200 bg-white/80 px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
         {/* 저장한 활동 */}
-        <div className="mt-6 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-[11px] font-black text-slate-950">활동 필터</p>
           <button
             type="button"
             onClick={() => setShowSavedOnly((current) => !current)}
             aria-pressed={showSavedOnly}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-full px-4 text-[13px] font-black transition ${
+            className={`inline-flex h-8 items-center gap-2 rounded-full px-3 text-[12px] font-black transition ${
               showSavedOnly
                 ? 'bg-amber-50 text-amber-700 ring-1 ring-amber-200'
                 : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950'
@@ -1070,9 +1078,9 @@ export default function SpomoveHubView() {
         </div>
 
         {/* 프로그램 필터 (1차) */}
-        <div className="mt-6">
+        <div className="mt-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-            <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
+            <span className="shrink-0 pt-[6px] text-[10px] font-black tracking-[0.08em] text-slate-500 sm:w-[4.5rem]">
               활동 종류
             </span>
             <div className="flex flex-wrap gap-2">
@@ -1084,7 +1092,7 @@ export default function SpomoveHubView() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveProgramGroup(tab)}
-                    className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[12px] font-bold transition-all ${
+                    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-all ${
                       active
                         ? 'bg-slate-950 text-white shadow-sm'
                         : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
@@ -1100,9 +1108,9 @@ export default function SpomoveHubView() {
         </div>
 
         {/* 인지 난이도 필터 (2차) */}
-        <div className="mt-3">
+        <div className="mt-2">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-            <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
+            <span className="shrink-0 pt-[6px] text-[10px] font-black tracking-[0.08em] text-slate-500 sm:w-[4.5rem]">
               인지 난이도
             </span>
             <div className="flex flex-wrap gap-2">
@@ -1114,7 +1122,7 @@ export default function SpomoveHubView() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveThinkingLevel(tab)}
-                    className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-all ${
+                    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-all ${
                       active
                         ? 'border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] text-[var(--spm-acc)] shadow-sm'
                         : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
@@ -1129,9 +1137,9 @@ export default function SpomoveHubView() {
           </div>
         </div>
         {movementLayerEnabled ? (
-          <div className="mt-3">
+          <div className="mt-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
-              <span className="shrink-0 pt-[7px] text-[11px] font-black tracking-[0.08em] text-slate-400 sm:w-[4.5rem]">
+              <span className="shrink-0 pt-[6px] text-[10px] font-black tracking-[0.08em] text-slate-500 sm:w-[4.5rem]">
                 움직임
               </span>
               <div className="flex flex-wrap gap-2">
@@ -1151,7 +1159,7 @@ export default function SpomoveHubView() {
                       key={id}
                       type="button"
                       onClick={() => setMovementFilter(id)}
-                      className={`inline-flex min-h-11 shrink-0 items-center rounded-full px-3 text-[11px] font-bold transition-all ${
+                      className={`inline-flex h-8 shrink-0 items-center rounded-full px-3 text-[11px] font-bold transition-all ${
                         active
                           ? 'border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] text-[var(--spm-acc)] shadow-sm'
                           : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
@@ -1165,7 +1173,8 @@ export default function SpomoveHubView() {
             </div>
           </div>
         ) : null}
-        <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-[12px] font-semibold leading-relaxed text-slate-600">
+        </section>
+        <p className="mt-3 rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-semibold leading-relaxed text-slate-600">
           <span className="font-black text-slate-800">썸네일</span>
           이나{' '}
           <span className="font-black text-slate-800">시작하기</span>
@@ -1173,10 +1182,10 @@ export default function SpomoveHubView() {
           <span className="font-black text-[var(--spm-acc)]">참고 영상</span>
           과 안내를 확인한 뒤 바로 시작할 수 있습니다.
         </p>
-        {/* 카드 그리드 — 1:1 썸네일 · 2열 모바일 / 3열 / 4열 */}
+        {/* 카드 그리드 */}
         {filteredPresets.length > 0 ? (
           showAxisSections ? (
-            <div id="spomove-program-list" className="mt-6 space-y-10">
+            <div id="spomove-program-list" className="mt-4 space-y-8">
               {axisSections.map((section) => (
                 <section key={section.axis}>
                   <header className="flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
@@ -1196,7 +1205,7 @@ export default function SpomoveHubView() {
               ))}
             </div>
           ) : (
-            <div className="mt-6">{renderPresetGrid(filteredPresets, 'spomove-program-list')}</div>
+            <div className="mt-4">{renderPresetGrid(filteredPresets, 'spomove-program-list')}</div>
           )
         ) : (
           <div className="mt-12 flex flex-col items-center gap-4 text-center">

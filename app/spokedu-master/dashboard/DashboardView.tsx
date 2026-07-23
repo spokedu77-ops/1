@@ -287,8 +287,8 @@ function SectionHeader({
 }) {
   const titleClass =
     size === 'lg'
-      ? `text-[26px] font-black tracking-normal sm:text-[32px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
-      : `text-[20px] font-black tracking-normal sm:text-[23px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
+      ? `break-keep text-[25px] font-black leading-tight tracking-normal sm:text-[32px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
+      : `break-keep text-[20px] font-black leading-tight tracking-normal sm:text-[23px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
   const eyebrowClass = tone === 'dark'
     ? 'mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-300'
     : tone === 'feature'
@@ -306,7 +306,7 @@ function SectionHeader({
       : 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]';
 
   return (
-    <div className="mb-4 flex items-end justify-between gap-4">
+    <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end sm:gap-4">
       <div className="min-w-0">
         {eyebrow ? (
           <p className={eyebrowClass}>
@@ -326,7 +326,7 @@ function SectionHeader({
       {href && action ? (
         <Link
           href={href}
-          className={actionClass}
+          className={`${actionClass} -mt-1 sm:mt-0`}
         >
           {action}
           <ArrowRight size={15} />
@@ -936,11 +936,11 @@ function EntitledDashboardView() {
   }
 
   return (
-    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-5 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:gap-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-      <header className="flex min-h-[72px] flex-col justify-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+      <header className="flex min-h-[64px] flex-col justify-center gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">SPOKEDU MASTER</p>
-          <h1 className="mt-1 text-[25px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[30px]">
+          <h1 className="mt-1 text-[24px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[29px]">
             오늘 수업 운영
           </h1>
           <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-600">
@@ -958,7 +958,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="featured-flow"
         aria-label="오늘의 추천 콘텐츠"
-        className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_58%,color-mix(in_srgb,var(--spm-s3)_82%,white)_100%)] p-4 shadow-[0_18px_46px_rgba(15,23,42,0.10)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5 lg:p-6"
+        className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_58%,color-mix(in_srgb,var(--spm-s3)_82%,white)_100%)] p-4 shadow-[0_18px_46px_rgba(15,23,42,0.10)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5 lg:p-5"
       >
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
           <SectionHeader
@@ -994,7 +994,7 @@ function EntitledDashboardView() {
           )}
         </section>
 
-        <div className="relative my-6 h-px bg-[color:var(--spm-br)]" />
+        <div className="relative my-5 h-px bg-[color:var(--spm-br)]" />
 
         <section data-dashboard-section="spomove" aria-labelledby="spomove-heading" className="relative">
           <SectionHeader
@@ -1025,7 +1025,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="operations-flow"
         aria-label="수업 운영 흐름"
-        className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_64%,color-mix(in_srgb,var(--spm-s3)_76%,white)_100%)] p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5 lg:p-6"
+        className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_64%,color-mix(in_srgb,var(--spm-s3)_76%,white)_100%)] p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5 lg:p-5"
       >
         <div
           className="relative space-y-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch lg:gap-5 lg:space-y-0"
