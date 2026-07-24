@@ -58,23 +58,22 @@ export function HomeAudienceGates() {
                   trackLabel={item.trackLabel}
                   className={`${homeGateCard} ${homeFocusRing} block h-full`}
                 >
-                  <div className="relative overflow-hidden">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden">
                     <MediaPanel
                       media={media}
-                      className={`aspect-[5/4] w-full border-0 rounded-none transition duration-500 ${homePhotoGrade} [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04]`}
+                      className={`absolute inset-0 h-full w-full border-0 rounded-none transition duration-500 ${homePhotoGrade} [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04]`}
                       sizes="gateCard"
                       photoPriority={index === 0}
+                      objectFit="cover"
                     />
                     <div
-                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/35 via-transparent to-transparent"
+                      className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/40 via-transparent to-transparent"
                       aria-hidden
                     />
-                    <span className="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-bold tracking-wide text-[#1D4ED8] shadow-sm backdrop-blur">
-                      {item.badge}
-                    </span>
                   </div>
                   <div className={`flex min-w-0 flex-1 flex-col ${homeCardPanelPad}`}>
-                    <h3 className={homeCardTitle}>{item.title}</h3>
+                    <p className="text-[12px] font-semibold tracking-wide text-[#1D4ED8]">{item.badge}</p>
+                    <h3 className={`${homeCardTitle} mt-2`}>{item.title}</h3>
                     <p className={`${homeBody} mt-2 line-clamp-3`}>{item.description}</p>
                     <p className={`mt-4 text-sm leading-relaxed text-slate-500 ${koreanText}`}>
                       <span className="font-semibold text-slate-700">이럴 때 · </span>

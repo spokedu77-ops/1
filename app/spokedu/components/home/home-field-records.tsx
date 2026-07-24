@@ -7,7 +7,6 @@ import type { HomeFieldRecordCardWithThumbnail } from '../../lib/resolve-field-r
 import {
   homeCaption,
   homeCaseCard,
-  homeCardPanelPad,
   homeFocusRing,
   homePhotoGrade,
   homeSectionH2,
@@ -45,25 +44,22 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           viewport={{ once: true, amount: 0.2 }}
           transition={{ duration: 0.45 }}
         >
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">현장 기록</p>
             <h2 className={`${homeSectionH2} mt-3`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
             </p>
-            <dl className="mt-5 grid max-w-2xl grid-cols-1 gap-2 sm:grid-cols-3">
+            <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
               {homePage.cases.proofStats.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-2xl border border-slate-200/80 bg-white px-3.5 py-3"
-                >
+                <div key={stat.label} className="min-w-0">
                   <dt className={`text-sm font-bold text-[#0B1220] ${koreanText}`}>{stat.value}</dt>
-                  <dd className={`mt-1 text-xs leading-snug text-slate-500 ${koreanText}`}>{stat.label}</dd>
+                  <dd className={`mt-0.5 text-xs text-slate-500 ${koreanText}`}>{stat.label}</dd>
                 </div>
               ))}
             </dl>
           </div>
-          <div className="flex flex-col gap-2.5 sm:flex-row">
+          <div className="flex shrink-0 flex-col gap-2.5 sm:flex-row">
             <TrackedLink
               href={homePage.cases.recordsCta.href}
               trackLabel={homePage.cases.recordsCta.trackLabel}
@@ -110,25 +106,25 @@ export function mergeHomeCaseCards(resolved: HomeFieldRecordCardWithThumbnail[])
 
 function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: boolean }) {
   return (
-    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group flex h-full ${homeFocusRing}`}>
-      <article className={`${homeCaseCard} h-full`}>
-        <div className="relative aspect-[16/10] w-full overflow-hidden">
+    <TrackedLink href={card.href} trackLabel={card.trackLabel} className={`group block h-full ${homeFocusRing}`}>
+      <article className={`${homeCaseCard} grid h-full grid-rows-[11.5rem_1fr] overflow-hidden sm:grid-rows-[13rem_1fr]`}>
+        <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/25 via-transparent to-transparent opacity-80"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/30 via-transparent to-transparent"
             aria-hidden
           />
         </div>
-        <div className={`flex min-h-0 flex-1 flex-col ${homeCardPanelPad}`}>
+        <div className="grid grid-rows-[auto_auto_auto_1fr_auto] gap-0 p-5 sm:p-6">
           <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-          <h3 className={`mt-2 text-lg font-bold leading-snug text-[#0B1220] sm:text-xl ${koreanText}`}>
+          <h3 className={`mt-2 line-clamp-1 text-lg font-bold leading-snug text-[#0B1220] sm:text-xl ${koreanText}`}>
             {card.programName}
           </h3>
-          <p className={`mt-2 text-sm font-semibold text-slate-700 ${koreanText}`}>{card.venue}</p>
-          <p className={`mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600 ${koreanText}`}>
+          <p className={`mt-1.5 line-clamp-1 text-sm font-semibold text-slate-700 ${koreanText}`}>{card.venue}</p>
+          <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600 ${koreanText}`}>
             {card.description}
           </p>
-          <span className="mt-5 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
+          <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
             {card.ctaLabel}
             <HomeChevron />
           </span>
@@ -150,6 +146,7 @@ function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boo
         className={`absolute inset-0 h-full w-full ${hoverZoom}`}
         fit="cover"
         priority={priority}
+        quality={90}
         sizes="(max-width: 640px) 100vw, 50vw"
       />
     );
@@ -162,6 +159,7 @@ function CaseMedia({ card, priority }: { card: CaseCardWithThumb; priority?: boo
       sizes="gateCard"
       photoPriority={priority}
       priority={priority}
+      objectFit="cover"
     />
   );
 }

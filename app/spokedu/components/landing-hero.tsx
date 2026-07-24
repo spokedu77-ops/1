@@ -7,6 +7,7 @@ import type { HomeMediaItem } from '../data/home-media';
 import {
   btnPrimary,
   btnSecondary,
+  homeFocusRing,
   homeHeroH1,
   homeHeroH1Line,
   koreanLineBreak,
@@ -18,9 +19,6 @@ import {
 } from '../lib/ui-classes';
 import { MediaPanel, MotionPoster } from './visual';
 
-const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
-
 type LandingHeroCta = {
   label: string;
   href: string;
@@ -30,19 +28,19 @@ type LandingHeroCta = {
 type LandingHeroProps = {
   kicker?: string;
   kickerClassName?: string;
-  /** kicker와 제목 사이 — 신뢰 배지·지표 등 */
   leading?: ReactNode;
   lines: readonly string[];
   subtitle?: string;
   media: HomeMediaItem;
-  /** Home Hero 메인 컷과 동일 — 가로 16:10, photoPriority */
+  /** @deprecated 무시 — 서브는 항상 split */
+  variant?: 'split' | 'cinematic';
   visualVariant?: 'poster' | 'editorial';
   priority?: boolean;
   primaryCta?: LandingHeroCta;
   secondaryCta?: LandingHeroCta;
 };
 
-/** 서브 랜딩 Hero — Home과 동일 shell·정렬 (음수 margin 없음) */
+/** 서브 랜딩 Hero — inset split + 호버 줌. 전 페이지 풀블리드 강제 없음. */
 export function LandingHero({
   kicker,
   kickerClassName = 'text-indigo-600',
@@ -50,7 +48,7 @@ export function LandingHero({
   lines,
   subtitle,
   media,
-  visualVariant = 'poster',
+  visualVariant = 'editorial',
   priority = false,
   primaryCta,
   secondaryCta,
@@ -93,7 +91,7 @@ export function LandingHero({
                   href={primaryCta.href}
                   data-track="cta-contact"
                   data-track-label={primaryCta.trackLabel}
-                  className={`${btnPrimary} min-h-12 !w-full sm:!w-auto ${focusRing}`}
+                  className={`${btnPrimary} min-h-12 !w-full sm:!w-auto ${homeFocusRing}`}
                 >
                   {primaryCta.label}
                 </Link>
@@ -103,7 +101,7 @@ export function LandingHero({
                   href={secondaryCta.href}
                   data-track="cta-contact"
                   data-track-label={secondaryCta.trackLabel}
-                  className={`${btnSecondary} min-h-12 !w-full sm:!w-auto ${focusRing}`}
+                  className={`${btnSecondary} min-h-12 !w-full sm:!w-auto ${homeFocusRing}`}
                 >
                   {secondaryCta.label}
                 </Link>
@@ -113,10 +111,10 @@ export function LandingHero({
         </div>
         <div className={landingHeroVisual}>
           {visualVariant === 'editorial' ? (
-            <div className="relative aspect-[16/10] w-full min-h-[200px] overflow-hidden rounded-[1.5rem] ring-1 ring-slate-900/10 sm:min-h-[220px] sm:rounded-[1.75rem] lg:max-h-[min(52vh,480px)] lg:rounded-[2rem]">
+            <div className="group relative aspect-[16/10] w-full min-h-[200px] overflow-hidden rounded-[1.5rem] ring-1 ring-slate-900/10 sm:min-h-[220px] sm:rounded-[1.75rem] lg:max-h-[min(52vh,480px)] lg:rounded-[2rem]">
               <MediaPanel
                 media={media}
-                className="absolute inset-0 h-full w-full rounded-none border-0"
+                className="absolute inset-0 h-full w-full rounded-none border-0 transition duration-700 [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.04]"
                 sizes="heroEditorialMain"
                 photoPriority
                 priority={priority}

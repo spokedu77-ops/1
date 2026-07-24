@@ -72,9 +72,9 @@ export const homeSectionInnerLg = 'space-y-7 sm:space-y-9 lg:space-y-10';
 export const homeBleedBand =
   'w-full border-y border-slate-200/90 bg-slate-50/70 py-8 sm:py-10';
 
-/** Home 실사 통일 톤 (보정 JPG 전 단계 — 슬라이트 과하지 않게) */
+/** 홈 실사 — 과보정 없이 선명·생생하게 */
 export const homePhotoGrade =
-  'object-cover brightness-[1.02] contrast-[1.04] saturate-[1.06]';
+  'object-cover brightness-[1.03] contrast-[1.06] saturate-[1.06]';
 
 export const landingSectionTitle = 'text-xl font-bold tracking-tight text-slate-950 sm:text-2xl';
 
@@ -117,7 +117,7 @@ export const homeHeroH1Line = 'block';
 export const homeSectionTitle = `text-[1.75rem] font-black leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-[2.65rem] ${koreanLineBreak}`;
 
 export const homeSectionEyebrow =
-  'text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600';
+  'text-[11px] font-bold uppercase tracking-[0.2em] text-[#1D4ED8]';
 
 export const homeHeroShell =
   'relative overflow-hidden rounded-[1.75rem] bg-gradient-to-b from-white via-white to-slate-50/80 px-5 py-8 shadow-sm shadow-slate-900/[0.06] ring-1 ring-slate-200/70 sm:rounded-[2rem] sm:px-8 sm:py-10 lg:px-10 lg:py-12';
@@ -206,7 +206,7 @@ export const homeHeroFullBleed =
   'relative flex min-h-[min(78svh,720px)] w-full flex-col justify-center overflow-hidden bg-[#07101f] sm:min-h-[min(84svh,780px)]';
 
 export const homeHeroFullBleedScrim =
-  'pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,rgba(7,16,31,0.82)_0%,rgba(7,16,31,0.55)_42%,rgba(7,16,31,0.28)_70%,rgba(7,16,31,0.45)_100%)]';
+  'pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(7,16,31,0.62)_0%,rgba(7,16,31,0.48)_36%,rgba(7,16,31,0.28)_58%,rgba(7,16,31,0.55)_100%)] sm:bg-[linear-gradient(105deg,rgba(7,16,31,0.72)_0%,rgba(7,16,31,0.42)_40%,rgba(7,16,31,0.18)_68%,rgba(7,16,31,0.32)_100%)]';
 
 export const homeHeroFullBleedCopy =
   'relative z-[1] w-full py-28 sm:py-32 lg:py-36';
@@ -228,9 +228,17 @@ export const homeFocusRing =
   'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D4ED8]';
 
 export const homeGateCard =
-  `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-white/80 bg-white/90 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.35)] ring-1 ring-slate-200/60 transition ${fineHover}hover:-translate-y-1 ${fineHover}hover:shadow-[0_22px_50px_-28px_rgba(29,78,216,0.35)]`;
+  `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white transition ${fineHover}hover:border-slate-300`;
 
 export const homeCaseCard =
-  `group flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-white/80 bg-white shadow-[0_12px_40px_-24px_rgba(15,23,42,0.3)] ring-1 ring-slate-200/50 transition ${fineHover}hover:-translate-y-1 ${fineHover}hover:shadow-[0_22px_50px_-28px_rgba(15,23,42,0.4)]`;
+  `group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white transition ${fineHover}hover:border-slate-300`;
 
 export const homeDarkSection = 'relative overflow-hidden bg-[#07101f] text-white';
+
+/** 서브 랜딩 — 홈과 동일 풀블리드 cinematic Hero */
+export const landingHeroCinematic =
+  'relative flex min-h-[min(72svh,680px)] w-full flex-col justify-center overflow-hidden bg-[#07101f] sm:min-h-[min(78svh,740px)]';
+
+export const landingHeroCinematicScrim = homeHeroFullBleedScrim;
+
+export const landingHeroCinematicCopy = homeHeroFullBleedCopy;

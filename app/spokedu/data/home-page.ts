@@ -94,6 +94,10 @@ export const homePage = {
     support:
       '키움센터·학교·복지관의 단체수업부터 1:1 개인수업까지, 현장에서 검증한 프로그램과 SPOMOVE 활동으로 운영합니다.',
     mediaKey: 'homeHero' as HomeMediaKey,
+    /** 클릭 재생 — 자동루프 mp4 없음. iframe은 클릭 후에만 로드 */
+    youtubeVideoId: 'vv4f7Y9ea0k',
+    youtubeTitle: '스포키듀 현장 수업 영상',
+    youtubeTrackLabel: 'cta-home-hero-youtube-play',
     primaryCta: {
       label: '기관 프로그램 보기',
       href: `${SPOKEDU_BASE_PATH}/dispatch`,

@@ -20,9 +20,7 @@ import {
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 
-/**
- * 히어로: 헤드라인 · 설명 · CTA
- */
+/** 히어로: 풀블리드 사진 · 헤드라인 · CTA (원래 구성) */
 export function HomeHero() {
   const media = HOME_MEDIA[homePage.hero.mediaKey];
   const [line1, line2] = homePage.hero.lines;

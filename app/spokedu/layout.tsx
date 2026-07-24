@@ -42,7 +42,18 @@ export default function SpokeduSiteLayout({ children }: { children: ReactNode })
   const gaMeasurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim();
 
   return (
-    <div className="min-h-screen bg-[#F6F4F0]">
+    <div
+      className="min-h-screen bg-[#F3F7FC] antialiased"
+      style={{
+        fontFamily:
+          '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif',
+      }}
+    >
+      {/* dynamic-subset: 한글 가변 폰트만, 전체 패밀리 다운로드 회피 */}
+      <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+      />
       {gaMeasurementId ? (
         <>
           <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} strategy="afterInteractive" />

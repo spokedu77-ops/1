@@ -1,15 +1,7 @@
-import ProgramsLanding from '../components/programs-landing';
-import { LandingPageRoot } from '../components/landing-page-root';
-import { programsPage } from '../data/programs-page';
-import { buildSpokeduMetadata } from '../data/seo';
+import { redirect } from 'next/navigation';
+import { SPOKEDU_BASE_PATH } from '../data/site';
 
-export const metadata = buildSpokeduMetadata('programs');
-export const revalidate = 86400;
-
-export default function SpokeduProgramsPage() {
-  return (
-    <LandingPageRoot heroMediaKey={programsPage.hero.mediaKey}>
-      <ProgramsLanding />
-    </LandingPageRoot>
-  );
+/** 상단 메뉴에 없음 — SPOMOVE로 안내 */
+export default function SpokeduProgramsIndexPage() {
+  redirect(`${SPOKEDU_BASE_PATH}/programs/spomove`);
 }

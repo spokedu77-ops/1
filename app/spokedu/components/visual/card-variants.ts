@@ -1,31 +1,31 @@
-/** 랜딩 카드 리듬용 variant 클래스 (흰 박스 단조 방지) */
+/** 랜딩 카드 — 그림자·인디고 글래스 최소화 */
 
 export type LandingCardVariant = 'image' | 'dark' | 'glass' | 'gradient';
 
 export function landingCardShell(variant: LandingCardVariant = 'image'): string {
   switch (variant) {
     case 'dark':
-      return 'border-slate-800 bg-slate-950 text-white shadow-xl shadow-slate-900/20 ring-1 ring-white/10';
+      return 'border-white/10 bg-[#07101f] text-white';
     case 'glass':
-      return 'border-white/40 bg-white/70 text-slate-900 shadow-lg shadow-indigo-900/8 backdrop-blur-md ring-1 ring-indigo-100/60';
+      return 'border-slate-200/80 bg-white/90 text-slate-900';
     case 'gradient':
-      return 'border-indigo-200/80 bg-gradient-to-br from-indigo-50 via-white to-lime-50/80 text-slate-900 shadow-md shadow-indigo-900/10';
+      return 'border-slate-200/80 bg-[#F3F7FC] text-slate-900';
     default:
-      return 'border-slate-200 bg-white text-slate-900 shadow-[0_1px_0_rgba(15,23,42,0.04)]';
+      return 'border-slate-200/80 bg-white text-slate-900';
   }
 }
 
 export function landingCardBodyText(variant: LandingCardVariant): string {
-  if (variant === 'dark') return 'text-slate-300';
+  if (variant === 'dark') return 'text-white/70';
   return 'text-slate-600';
 }
 
 export function landingCardTitleText(variant: LandingCardVariant): string {
   if (variant === 'dark') return 'text-white';
-  return 'text-slate-900';
+  return 'text-[#0B1220]';
 }
 
 export function landingCardBadgeText(variant: LandingCardVariant): string {
   if (variant === 'dark') return 'text-sky-300';
-  return 'text-indigo-600';
+  return 'text-[#1D4ED8]';
 }

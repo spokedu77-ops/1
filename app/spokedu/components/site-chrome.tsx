@@ -384,7 +384,6 @@ export function SiteFooter() {
   const infoLinks = [
     { label: '스포키듀 소개', href: `${SPOKEDU_BASE_PATH}/about`, trackLabel: 'footer-info-about' },
     { label: '수업 사례', href: `${SPOKEDU_BASE_PATH}/records`, trackLabel: 'footer-info-records' },
-    { label: '인사이트', href: `${SPOKEDU_BASE_PATH}/insights`, trackLabel: 'footer-info-insights' },
     { label: '문의', href: `${SPOKEDU_BASE_PATH}/contact`, trackLabel: 'footer-info-contact' },
   ];
 
@@ -394,18 +393,18 @@ export function SiteFooter() {
 
   return (
     <footer style={{ backgroundColor: NAVY }} className="text-white">
-      <div className={`${siteContainer} py-12 sm:py-14`}>
-        <div className="grid grid-cols-1 gap-10 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-4 min-[1200px]:items-start min-[1200px]:gap-12">
-          <div className="min-w-0 space-y-3.5 min-[640px]:col-span-2 min-[1200px]:col-span-1">
+      <div className={`${siteContainer} py-9 sm:py-11`}>
+        <div className="grid grid-cols-1 gap-8 min-[640px]:grid-cols-2 min-[1200px]:grid-cols-4 min-[1200px]:items-start min-[1200px]:gap-10">
+          <div className="min-w-0 space-y-2.5 min-[640px]:col-span-2 min-[1200px]:col-span-1">
             <BrandLogo onDark scrollHomeOnClick size="md" />
             <p className={`text-[14px] font-semibold leading-none text-white ${koreanText}`}>{brandProfile.nameKo}</p>
-            <p className={`max-w-sm text-[14px] leading-[1.65] text-white/65 ${koreanText}`}>{brandProfile.tagline}</p>
+            <p className={`max-w-sm text-[14px] leading-[1.55] text-white/65 ${koreanText}`}>{brandProfile.tagline}</p>
             <p className={`text-[13px] leading-none text-white/45 ${koreanText}`}>운영지역 {brandProfile.serviceArea}</p>
           </div>
 
           <div className="min-w-0">
             <p className={footerHeadingClass}>프로그램</p>
-            <ul className="mt-4 space-y-1">
+            <ul className="mt-3 space-y-0.5">
               {programLinks.map((link) => (
                 <li key={link.href} className="flex">
                   <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
@@ -418,7 +417,7 @@ export function SiteFooter() {
 
           <div className="min-w-0">
             <p className={footerHeadingClass}>정보</p>
-            <ul className="mt-4 space-y-1">
+            <ul className="mt-3 space-y-0.5">
               {infoLinks.map((link) => (
                 <li key={link.href} className="flex">
                   <Link href={link.href} data-track={inferTrackFromHref(link.href)} data-track-label={link.trackLabel} className={footerLinkClass}>
@@ -431,7 +430,7 @@ export function SiteFooter() {
 
           <div className="min-w-0">
             <p className={footerHeadingClass}>연락처</p>
-            <ul className="mt-4 space-y-1">
+            <ul className="mt-3 space-y-0.5">
               <li className={`flex min-h-8 items-center text-[14px] leading-none text-white/80 ${koreanText}`}>
                 <span className="text-white/45">대표&nbsp;</span>
                 {brandProfile.representative}
@@ -464,7 +463,7 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex min-h-10 items-center border-t border-white/10 pt-5">
+        <div className="mt-8 flex min-h-9 items-center border-t border-white/10 pt-4">
           <p className="text-[12px] leading-none tracking-[-0.01em] text-white/40">
             © {new Date().getFullYear()} {brandProfile.nameEn}. All rights reserved.
           </p>

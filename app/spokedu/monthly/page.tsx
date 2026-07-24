@@ -1,14 +1,7 @@
-import { MonthlyLanding } from '../components/monthly-landing';
-import { LandingPageRoot } from '../components/landing-page-root';
-import { monthlyPage } from '../data/monthly-page';
-import { buildSpokeduMetadata } from '../data/seo';
+import { redirect } from 'next/navigation';
+import { SPOKEDU_BASE_PATH } from '../data/site';
 
-export const metadata = buildSpokeduMetadata('monthly');
-
+/** 상단 메뉴에 없음 — 수업 사례로 안내 */
 export default function SpokeduMonthlyPage() {
-  return (
-    <LandingPageRoot heroMediaKey={monthlyPage.hero.mediaKey}>
-      <MonthlyLanding />
-    </LandingPageRoot>
-  );
+  redirect(`${SPOKEDU_BASE_PATH}/records`);
 }

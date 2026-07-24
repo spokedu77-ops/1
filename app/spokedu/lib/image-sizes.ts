@@ -7,6 +7,7 @@ export const IMAGE_SIZES = {
   heroEditorialMain: '(max-width: 1024px) 100vw, 56vw',
   heroEditorialThumb: '(max-width: 1024px) 46vw, 27vw',
   gateCard: '(max-width: 768px) 92vw, 33vw',
+  railCard: '(max-width: 640px) 78vw, 300px',
   fieldFeatured: '(max-width: 1024px) 100vw, 42vw',
   fieldSecondary: '(max-width: 1024px) 100vw, 38vw',
   card3: '(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw',

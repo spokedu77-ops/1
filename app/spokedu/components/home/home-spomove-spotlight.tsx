@@ -27,7 +27,8 @@ const PAD_COLORS = ['#22C55E', '#EF4444', '#3B82F6', '#EAB308'] as const;
  * 사진은 absolute fill로 오른쪽 컬럼 높이에 맞춤
  */
 export function HomeSpomoveSpotlight() {
-  const media = HOME_MEDIA.homeHeroMovement;
+  /** 스크린·스포매트 현장 — 히어로와 동일 계열의 SPOMOVE 컷 */
+  const media = HOME_MEDIA.homeHero;
   const reducedMotion = useReducedMotion();
   const { title, titleLine2, lead, flowSteps, useCases, primaryCta, secondaryCta } = homePage.spomove;
 
@@ -41,7 +42,7 @@ export function HomeSpomoveSpotlight() {
         <div className="grid gap-8 lg:grid-cols-2 lg:items-stretch lg:gap-10">
           {/* 왼쪽: 그리드 셀 높이를 그대로 채움 */}
           <motion.div
-            className="relative min-h-[18rem] overflow-hidden rounded-[1.5rem] shadow-[0_24px_48px_-28px_rgba(15,23,42,0.4)] ring-1 ring-slate-200/70 sm:min-h-[20rem] lg:h-full lg:min-h-full"
+            className="relative min-h-[18rem] overflow-hidden rounded-2xl ring-1 ring-slate-200/70 sm:min-h-[20rem] lg:h-full lg:min-h-full"
             initial={reducedMotion ? false : { opacity: 0, y: 16 }}
             whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.2 }}

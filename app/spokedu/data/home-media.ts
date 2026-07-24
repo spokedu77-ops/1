@@ -11,10 +11,17 @@ export type HomeMediaType = 'image' | 'video' | 'visual';
 
 export type HomeMediaTone = 'indigo' | 'sky' | 'lime' | 'amber' | 'rose' | 'violet' | 'slate';
 
+export type HomeMediaSource = {
+  src: string;
+  type: string;
+};
+
 export type HomeMediaItem = {
   id: string;
   type: HomeMediaType;
   src: string | null;
+  /** video: mp4/webm 등. 없으면 src 단일 사용 */
+  sources?: readonly HomeMediaSource[];
   /** 로딩 실패 시 SVG·공통 실사 fallback */
   fallbackSrc?: string | null;
   poster: string | null;
@@ -25,6 +32,14 @@ export type HomeMediaItem = {
   /** object-cover 앵커 (예: Hero KBS 로고 좌상단) */
   objectPosition?: string;
 };
+
+/** 로컬 progressive 루프용(선택). 홈 히어로는 YouTube 클릭 재생. */
+export const SPOKEDU_VIDEO = {
+  heroHome: {
+    mp4: '/videos/spokedu/hero-home.mp4',
+    webm: '/videos/spokedu/hero-home.webm',
+  },
+} as const;
 
 function fromPhoto(
   asset: SpokeduImageDef,
@@ -47,15 +62,15 @@ export const HOME_MEDIA = {
     label: 'SPOMOVE 단체 수업',
     fallbackGradient: 'from-sky-600 via-blue-800 to-slate-900',
     tone: 'sky',
-    /** 아이들 등·스크린이 가운데에 오도록 */
-    objectPosition: '50% 42%',
+    /** 아이들·매트 비중 확보 — 모바일 카피가 밝은 스크린 위에 안 앉게 */
+    objectPosition: '48% 62%',
   }),
   homeHeroMovement: fromPhoto(SPOKEDU_IMAGES.home.heroMovement, {
     id: 'home-hero-movement',
     label: '체육수업 현장',
     fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
     tone: 'sky',
-    objectPosition: '50% 42%',
+    objectPosition: '50% 35%',
   }),
   homeHeroWide: fromPhoto(SPOKEDU_IMAGES.records.dongjak, {
     id: 'home-hero-wide',
@@ -76,7 +91,7 @@ export const HOME_MEDIA = {
     label: '개인·소그룹',
     fallbackGradient: 'from-violet-500 via-indigo-600 to-slate-800',
     tone: 'violet',
-    objectPosition: '50% 42%',
+    objectPosition: '48% 35%',
   }),
   trackSmallGroup: fromPhoto(SPOKEDU_IMAGES.private.smallGroup, {
     id: 'track-small-group',
@@ -91,7 +106,7 @@ export const HOME_MEDIA = {
     label: '기관 프로그램',
     fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
     tone: 'sky',
-    objectPosition: '50% 65%',
+    objectPosition: '50% 42%',
   }),
   trackCurriculum: fromPhoto(SPOKEDU_IMAGES.curriculum.lessonPlan, {
     id: 'track-curriculum',
@@ -297,7 +312,7 @@ export const HOME_PROOF_FIELDS: HomeProofField[] = [
     title: 'PLAYZ Lounge 방학캠프',
     description: '체육과 예체능을 결합한 초등 방학캠프',
     cta: '캠프 보기',
-    href: '/spokedu/programs/camp',
+    href: '/spokedu/records',
     trackLabel: 'cta-home-proof-camp',
     cardVariant: 'glass',
   },
@@ -351,8 +366,8 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     name: 'PAPS',
     description: '초등 기초체력 요소를 놀이로 경험하는 프로그램',
     tracks: ['Dispatch', 'Curriculum'],
-    cta: 'PAPS 보기',
-    href: '/spokedu/programs/paps',
+    cta: '기관 프로그램 보기',
+    href: '/spokedu/dispatch',
     trackLabel: 'cta-home-program-paps',
     cardVariant: 'image',
   },
@@ -375,8 +390,8 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     name: '원데이 체육행사',
     description: '기관 행사와 특별활동에 맞춘 체육 프로그램',
     tracks: ['Dispatch'],
-    cta: '원데이 보기',
-    href: '/spokedu/programs/oneday-event',
+    cta: '기관 프로그램 보기',
+    href: '/spokedu/dispatch',
     trackLabel: 'cta-home-program-event',
     cardVariant: 'dark',
   },
@@ -387,8 +402,8 @@ export const HOME_SIGNATURE_PROGRAMS: HomeSignatureProgram[] = [
     name: '방학캠프',
     description: '체육과 예체능을 결합한 초등 방학 프로그램',
     tracks: ['Private', 'Dispatch'],
-    cta: '캠프 보기',
-    href: '/spokedu/programs/camp',
+    cta: '기관 프로그램 보기',
+    href: '/spokedu/dispatch',
     trackLabel: 'cta-home-program-camp',
     cardVariant: 'image',
   },

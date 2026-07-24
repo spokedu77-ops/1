@@ -202,8 +202,8 @@ export default function DispatchLanding() {
           accent="teal"
         />
         <div className="grid gap-3 lg:grid-cols-3">
-          {dispatchPage.partnerReviews.items.map((item) => (
-            <article key={item.name} className={reviewCardShell}>
+          {dispatchPage.partnerReviews.items.map((item, index) => (
+            <article key={`${item.org}-${item.quote.slice(0, 24)}-${index}`} className={reviewCardShell}>
               <p className="text-sm text-amber-500" aria-hidden>
                 ★★★★★
               </p>

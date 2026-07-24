@@ -11,6 +11,9 @@ type ExternalPhotoProps = {
   /** Hero·첫 카드 등 LCP 후보 */
   priority?: boolean;
   sizes?: string;
+  quality?: number;
+  /** object-cover 앵커 (예: `50% 40%`) */
+  objectPosition?: string;
 };
 
 /**
@@ -25,6 +28,8 @@ export function ExternalPhoto({
   fit = 'cover',
   priority = false,
   sizes = '(max-width: 768px) 100vw, 50vw',
+  quality = 88,
+  objectPosition,
 }: ExternalPhotoProps) {
   const [failed, setFailed] = useState(false);
 
@@ -44,8 +49,9 @@ export function ExternalPhoto({
         fill
         sizes={sizes}
         priority={priority}
-        quality={75}
+        quality={quality}
         className={fit === 'contain' ? 'object-contain' : 'object-cover'}
+        style={objectPosition ? { objectPosition } : undefined}
         referrerPolicy={isRemote ? 'no-referrer' : undefined}
         onError={() => setFailed(true)}
       />

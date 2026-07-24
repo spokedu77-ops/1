@@ -81,6 +81,12 @@ export const SPOKEDU_IMAGES = {
       'home-hero-spomove-class.jpg',
       'SPOMOVE 수업 현장 — 아이들이 4색 패드 위에서 스크린을 보며 움직이는 장면',
     ),
+    heroYoutubePoster: defineImage(
+      'home',
+      'home-hero-youtube-poster',
+      'hero-youtube-poster.jpg',
+      '스포키듀 현장 수업 영상 대표 장면',
+    ),
     heroSpomoveClass: defineImage(
       'home',
       'home-hero-spomove-class',

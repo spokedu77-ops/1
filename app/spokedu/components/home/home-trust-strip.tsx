@@ -16,27 +16,27 @@ export function HomeTrustStrip() {
   return (
     <section
       id={id}
-      className={`${homeSectionScrollMt} border-b border-slate-200/80 bg-white`}
+      className={`${homeSectionScrollMt} border-b border-slate-200/70 bg-[#F3F7FC]`}
       aria-label="스포키듀 운영 지표"
     >
       <div className={siteContainer}>
         <motion.div
-          className="flex flex-col gap-5 py-7 sm:py-8 lg:flex-row lg:items-center lg:justify-between lg:gap-10 lg:py-9"
+          className="flex flex-col gap-6 py-8 sm:py-10 lg:flex-row lg:items-baseline lg:justify-between lg:gap-12"
           initial={reducedMotion ? false : { opacity: 0, y: 10 }}
           whileInView={reducedMotion ? undefined : { opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.4 }}
           transition={{ duration: 0.4 }}
         >
-          <p className="shrink-0 text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">
+          <p className="shrink-0 text-[13px] font-semibold tracking-[0.18em] text-[#1D4ED8]">
             {eyebrow}
           </p>
-          <ul className="grid min-w-0 flex-1 grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-4 sm:gap-x-8">
+          <ul className="grid min-w-0 flex-1 grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
             {items.map((item) => (
               <li key={item.label} className="min-w-0">
-                <p className={`text-[1.65rem] font-black leading-none tracking-tight text-[#0B1220] sm:text-[1.85rem] ${koreanText}`}>
+                <p className={`text-[1.75rem] font-bold leading-none tracking-tight text-[#0B1220] sm:text-[2rem] ${koreanText}`}>
                   {item.value}
                 </p>
-                <p className={`mt-1.5 text-[12px] font-semibold leading-snug text-slate-500 sm:text-[13px] ${koreanText}`}>
+                <p className={`mt-2 text-[13px] leading-snug text-slate-500 ${koreanText}`}>
                   {item.label}
                 </p>
               </li>
