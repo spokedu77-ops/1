@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import DOMPurify from 'isomorphic-dompurify';
 import { Pin, ChevronDown, RefreshCw, Layout, ChevronRight, Package, Receipt, Calendar } from 'lucide-react';
 import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
 import { useTeacherMaterialsAccess } from '@/app/hooks/useTeacherMaterialsAccess';
 import TeacherMaterialsDenied from '@/app/components/teacher/TeacherMaterialsDenied';
+import { sanitizeNoticeHtml } from '@/app/lib/noticeSanitize';
 
 interface WeeklyBest {
   id: string;
@@ -19,13 +19,6 @@ interface WeeklyBest {
   feedback_session_id: string | null;
   feedback_note: string | null;
   created_at: string;
-}
-
-function sanitizeNoticeHtml(html: string): string {
-  if (typeof window !== 'undefined') {
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p', 'br', 'img', 'div', 'span'], ALLOWED_ATTR: ['src', 'alt', 'class'] });
-  }
-  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
 }
 
 type InlineImageItem = { after_line: number; url: string };

@@ -25,7 +25,8 @@ describe('SPOKEDU MASTER product catalog', () => {
     expect(lite.featureEntitlements).toMatchObject({
       canUseLibrary: true,
       canUseClassTools: true,
-      canUseRecords: true,
+      canUseAttendance: true,
+      canUseRecords: false,
       canUseSpomove: false,
     });
   });

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canBuySpomatAtMemberPrice,
+  canUseAttendance,
   canUseClassTools,
   canUseLibrary,
   canUseRecords,
@@ -50,14 +51,24 @@ describe('SPOKEDU MASTER client subscription cache', () => {
     expect(hasMasterAccess(profile({ plan: 'free', trialEndsAt: '2020-01-01T00:00:00.000Z' }))).toBe(false);
   });
 
-  it('keeps Lite-equivalent paid access open for non-SPOMOVE features', () => {
+  it('keeps Lite-equivalent paid access open for materials, tools, and attendance only', () => {
     const lite = profile({ plan: 'lite', subscriptionStatus: 'active' });
     expect(canUseLibrary(lite)).toBe(true);
     expect(canUseClassTools(lite)).toBe(true);
-    expect(canUseRecords(lite)).toBe(true);
+    expect(canUseAttendance(lite)).toBe(true);
+    expect(canUseRecords(lite)).toBe(false);
     expect(canUseSpomove(lite)).toBe(false);
     expect(hasMasterAccess(lite)).toBe(true);
     expect(hasPremiumMasterAccess(lite)).toBe(false);
+  });
+
+  it('keeps free users limited to class tools only', () => {
+    const free = profile({ plan: 'free', subscriptionStatus: 'none' });
+    expect(canUseLibrary(free)).toBe(false);
+    expect(canUseClassTools(free)).toBe(true);
+    expect(canUseAttendance(free)).toBe(false);
+    expect(canUseRecords(free)).toBe(false);
+    expect(canUseSpomove(free)).toBe(false);
   });
 
   it('keeps Premium-equivalent paid access open for SPOMOVE', () => {

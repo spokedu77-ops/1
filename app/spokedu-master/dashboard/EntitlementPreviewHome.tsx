@@ -18,19 +18,20 @@ import {
   type MasterAccessSnapshot,
 } from '../lib/masterAccessModel';
 
-const PREVIEW_PROGRAMS = PROGRAMS.slice(0, 3);
+const PREVIEW_PROGRAMS = PROGRAMS.slice(0, 1);
 
 const LITE_FEATURES = [
-  '라이브러리 전체 탐색',
+  '전체 수업 자료 열람',
   '수업 도구 (타이머·팀 나누기 등)',
-  '수업 기록·학생 명단',
-  '안내문 작성·복사',
+  '출석부',
+  '기록 저장·누적은 프리미엄',
 ] as const;
 
 const PREMIUM_FEATURES = [
   '라이트 전체',
+  '수업 기록 누적·학생 히스토리',
+  '안내문 작성·복사',
   'SPOMOVE 큰 화면 실행',
-  '프리미엄 수업 상세 자료',
   'SPOMAT 회원가 (연결 시)',
 ] as const;
 
@@ -94,12 +95,12 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
 
       <section>
         <h2 className="text-[18px] font-black" style={{ color: 'var(--spm-t)' }}>
-          수업 미리보기
+          이번 주 추천 프로그램
         </h2>
         <p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-          결제 후 라이브러리에서 바로 열 수 있는 수업 유형입니다.
+          무료 계정에서는 홈에서 추천 프로그램 1개만 확인할 수 있습니다.
         </p>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="mt-4 grid gap-3 sm:max-w-[320px]">
           {PREVIEW_PROGRAMS.map((program) => (
             <PreviewProgramCard key={program.id} title={program.title} category={program.category} />
           ))}

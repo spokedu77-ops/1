@@ -16,19 +16,20 @@ function row(overrides: Partial<SpokeduMasterSubscriptionRow>): SpokeduMasterSub
 }
 
 describe('SPOKEDU MASTER server access snapshot', () => {
-  it('returns false capabilities for no subscription', () => {
+  it('keeps no-subscription users limited to class tools', () => {
     expect(buildSpokeduMasterAccessSnapshot({ row: null, isAdmin: false })).toMatchObject({
       authenticated: true,
       plan: 'free',
       subscriptionStatus: 'none',
       canUseLibrary: false,
-      canUseClassTools: false,
+      canUseClassTools: true,
+      canUseAttendance: false,
       canUseRecords: false,
       canUseSpomove: false,
     });
   });
 
-  it('allows lite except SPOMOVE', () => {
+  it('allows lite materials, tools, and attendance but not record accumulation or SPOMOVE', () => {
     expect(buildSpokeduMasterAccessSnapshot({
       row: row({
         plan: 'lite',
@@ -42,7 +43,8 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       subscriptionStatus: 'active',
       canUseLibrary: true,
       canUseClassTools: true,
-      canUseRecords: true,
+      canUseAttendance: true,
+      canUseRecords: false,
       canUseSpomove: false,
     });
   });
@@ -70,7 +72,8 @@ describe('SPOKEDU MASTER server access snapshot', () => {
     })).toMatchObject({
       cancelAtPeriodEnd: true,
       canUseLibrary: true,
-      canUseRecords: true,
+      canUseAttendance: true,
+      canUseRecords: false,
     });
   });
 
@@ -87,6 +90,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       subscriptionStatus: 'expired',
       canUseLibrary: false,
       canUseClassTools: false,
+      canUseAttendance: false,
       canUseRecords: false,
       canUseSpomove: false,
     });
@@ -105,6 +109,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       subscriptionStatus: 'expired',
       canUseLibrary: false,
       canUseClassTools: false,
+      canUseAttendance: false,
       canUseRecords: false,
       canUseSpomove: false,
     });
@@ -117,6 +122,7 @@ describe('SPOKEDU MASTER server access snapshot', () => {
       isCenterOrTeam: true,
       canUseLibrary: true,
       canUseClassTools: true,
+      canUseAttendance: true,
       canUseRecords: true,
       canUseSpomove: true,
     });

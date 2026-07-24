@@ -72,6 +72,11 @@ export function useMasterCanUseLibrary(): boolean {
   return context?.snapshot.canUseLibrary ?? false;
 }
 
+export function useMasterCanUseAttendance(): boolean {
+  const context = useOptionalMasterAccessContext();
+  return context?.snapshot.canUseAttendance ?? false;
+}
+
 export function useMasterCanBuySpomat(): boolean {
   const context = useOptionalMasterAccessContext();
   return canBuySpomatFromSnapshot(context?.snapshot);

@@ -26,7 +26,8 @@ const freeSnapshot: MasterAccessSnapshot = {
   isAdmin: false,
   isCenterOrTeam: false,
   canUseLibrary: false,
-  canUseClassTools: false,
+  canUseClassTools: true,
+  canUseAttendance: false,
   canUseRecords: false,
   canUseSpomove: false,
 };
@@ -37,12 +38,14 @@ const liteSnapshot: MasterAccessSnapshot = {
   subscriptionStatus: 'active',
   canUseLibrary: true,
   canUseClassTools: true,
-  canUseRecords: true,
+  canUseAttendance: true,
+  canUseRecords: false,
 };
 
 const premiumSnapshot: MasterAccessSnapshot = {
   ...liteSnapshot,
   plan: 'premium',
+  canUseRecords: true,
   canUseSpomove: true,
 };
 
@@ -62,16 +65,20 @@ describe('masterAccessModel', () => {
         subscriptionStatus: 'expired',
         canUseLibrary: false,
         canUseClassTools: false,
+        canUseAttendance: false,
         canUseRecords: false,
       }),
     ).toBe('/spokedu-master/payment');
   });
 
   it('derives record, upgrade, and SPOMAT purchase rules from snapshot only', () => {
-    expect(canCreateClassRecordFromSnapshot(liteSnapshot).allowed).toBe(true);
+    expect(canCreateClassRecordFromSnapshot(liteSnapshot).allowed).toBe(false);
+    expect(canCreateClassRecordFromSnapshot(premiumSnapshot).allowed).toBe(true);
     expect(canCreateClassRecordFromSnapshot({
       ...liteSnapshot,
       subscriptionStatus: 'expired',
+      canUseClassTools: false,
+      canUseAttendance: false,
       canUseRecords: false,
     }).allowed).toBe(false);
     expect(getUpgradeHrefFromSnapshot(liteSnapshot)).toBe('/spokedu-master/subscription');

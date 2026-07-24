@@ -16,6 +16,7 @@ export type MasterBillingCycle = 'monthly' | 'sales_inquiry';
 export type MasterFeatureEntitlements = {
   canUseLibrary: boolean;
   canUseClassTools: boolean;
+  canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
 };
@@ -43,7 +44,8 @@ export type MasterProductCatalogItem = {
 export const MASTER_BASE_FEATURE_ENTITLEMENTS: MasterFeatureEntitlements = {
   canUseLibrary: true,
   canUseClassTools: true,
-  canUseRecords: true,
+  canUseAttendance: true,
+  canUseRecords: false,
   canUseSpomove: false,
 };
 
@@ -88,6 +90,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
     featureEntitlements: {
       ...MASTER_BASE_FEATURE_ENTITLEMENTS,
       canUseSpomove: true,
+      canUseRecords: true,
     },
     canBuySpomatAtMemberPrice: true,
     serverPlanKey: 'premium',
@@ -110,6 +113,7 @@ const MASTER_PRODUCT_CATALOG_BASE: Record<MasterProductKey, MasterProductCatalog
     featureEntitlements: {
       ...MASTER_BASE_FEATURE_ENTITLEMENTS,
       canUseSpomove: true,
+      canUseRecords: true,
     },
     canBuySpomatAtMemberPrice: false,
     serverPlanKey: null,
@@ -143,20 +147,20 @@ export function getMasterProductActionLabel(product: MasterProductCatalogItem) {
 
 export function getMasterProductPaymentFeatureLabels(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return ['라이브러리', '수업 도구', '수업 기록', '안내문'];
+    return ['전체 수업 자료', '수업 도구', '출석부', '기록 저장은 프리미엄'];
   }
   if (product.id === 'premium') {
-    return ['라이트의 모든 기능', 'SPOMOVE 공식 활동', '큰 화면 바로 실행', 'SPOMAT 회원가 구매'];
+    return ['라이트의 모든 기능', '기록 누적·히스토리', 'SPOMOVE 공식 활동', 'SPOMAT 회원가 구매'];
   }
   return ['별도 문의', '직접 결제 없음'];
 }
 
 export function getMasterProductPaymentDescription(product: MasterProductCatalogItem) {
   if (product.id === 'lite') {
-    return 'SPOMOVE를 제외한 수업 준비·운영 기능을 이용할 수 있습니다.';
+    return '전체 수업 자료와 수업 도구, 출석부를 이용할 수 있습니다. 기록 저장과 누적 관리는 프리미엄에서 열립니다.';
   }
   if (product.id === 'premium') {
-    return '라이트 전체 + SPOMOVE 공식 활동을 큰 화면으로 실행할 수 있습니다.';
+    return '라이트 전체 + 기록 누적, 학생 히스토리, 안내문, SPOMOVE를 모두 이용할 수 있습니다.';
   }
   return '이용 인원과 운영 방식에 맞춰 별도로 안내합니다.';
 }

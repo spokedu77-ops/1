@@ -117,7 +117,8 @@ function activeAccessSnapshot(plan) {
     isCenterOrTeam: false,
     canUseLibrary: true,
     canUseClassTools: true,
-    canUseRecords: true,
+    canUseAttendance: true,
+    canUseRecords: plan === 'premium',
     canUseSpomove: plan === 'premium',
   };
 }

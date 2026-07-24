@@ -60,8 +60,16 @@ export function canUseLibrary(profile: UserProfile | null): boolean {
 }
 
 export function canUseClassTools(profile: UserProfile | null): boolean {
+  if (profile?.plan === 'free' && profile.subscriptionStatus !== 'expired' && profile.subscriptionStatus !== 'cancelled') {
+    return true;
+  }
   const productKey = resolveMasterProductKey(profile);
   return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseClassTools : false;
+}
+
+export function canUseAttendance(profile: UserProfile | null): boolean {
+  const productKey = resolveMasterProductKey(profile);
+  return productKey ? MASTER_PRODUCT_CATALOG[productKey].featureEntitlements.canUseAttendance : false;
 }
 
 export function canUseRecords(profile: UserProfile | null): boolean {
@@ -91,8 +99,8 @@ export function canCreateClassRecord(profile: UserProfile | null): LimitStatus {
   if (!canUseRecords(profile)) {
     return {
       allowed: false,
-      label: '권한 없음',
-      reason: '활성 이용권이 필요합니다.',
+      label: '프리미엄 필요',
+      reason: '수업 기록 저장과 누적 관리는 프리미엄에서 사용할 수 있습니다.',
     };
   }
   return { allowed: true, label: '사용 가능' };

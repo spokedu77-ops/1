@@ -1,13 +1,17 @@
 'use client';
 
-import { BookOpen, FileText, Home, Tv, Wrench } from 'lucide-react';
+import { BookOpen, FileText, Home, Lock, Tv, Wrench } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useOptionalMasterAccessContext } from '../../access/MasterAccessProvider';
+import type { MasterAccessSnapshot } from '../../lib/masterAccessModel';
+import type { MasterCapability } from './masterRouteAccess';
 
 const PRIMARY_TABS = [
-  { key: 'dashboard', label: '홈', shortLabel: '홈', Icon: Home },
-  { key: 'library', label: '수업자료', shortLabel: '자료', Icon: BookOpen },
-  { key: 'spomove', label: 'SPOMOVE', shortLabel: '무브', Icon: Tv },
-  { key: 'class-tools', label: '수업 도구', shortLabel: '도구', Icon: Wrench },
+  { key: 'dashboard', label: '홈', shortLabel: '홈', Icon: Home, capability: 'authenticated' },
+  { key: 'library', label: '수업자료', shortLabel: '자료', Icon: BookOpen, capability: 'library' },
+  { key: 'class-tools', label: '수업 도구', shortLabel: '도구', Icon: Wrench, capability: 'classTools' },
+  { key: 'activity', label: '수업 기록', shortLabel: '기록', Icon: FileText, capability: 'records' },
+  { key: 'spomove', label: 'SPOMOVE', shortLabel: '무브', Icon: Tv, capability: 'spomove' },
 ] as const;
 
 function withHref<T extends { key: string }>(tabs: readonly T[], basePath: string) {
@@ -18,12 +22,20 @@ function isActivePath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function canUseTab(snapshot: MasterAccessSnapshot | null | undefined, capability: MasterCapability) {
+  if (!snapshot) return true;
+  if (capability === 'authenticated') return snapshot.authenticated;
+  if (capability === 'library') return snapshot.canUseLibrary;
+  if (capability === 'classTools') return snapshot.canUseClassTools;
+  if (capability === 'records') return snapshot.canUseRecords;
+  return snapshot.canUseSpomove;
+}
+
 export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) {
   const pathname = usePathname();
   const router = useRouter();
+  const accessContext = useOptionalMasterAccessContext();
   const primaryTabs = withHref(PRIMARY_TABS, basePath);
-  const activityHref = `${basePath}/activity`;
-  const activityActive = isActivePath(pathname, activityHref) || isActivePath(pathname, `${basePath}/class-record`);
 
   const go = (href: string) => {
     if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8);
@@ -50,8 +62,9 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
             boxShadow: '0 -14px 34px rgba(15,23,42,0.08)',
           }}
         >
-          {primaryTabs.map(({ href, label, shortLabel, Icon }) => {
-            const active = isActivePath(pathname, href);
+          {primaryTabs.map(({ href, label, shortLabel, Icon, capability }) => {
+            const active = isActivePath(pathname, href) || (href.endsWith('/activity') && isActivePath(pathname, `${basePath}/class-record`));
+            const locked = !canUseTab(accessContext?.snapshot, capability);
             return (
               <button
                 key={href}
@@ -61,8 +74,13 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                 aria-current={active ? 'page' : undefined}
                 aria-label={label}
               >
-                <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? '#0f172a' : 'transparent' }}>
+                <span className="relative grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? '#0f172a' : 'transparent' }}>
                   <Icon size={17} strokeWidth={1.9} color={active ? '#ffffff' : '#64748b'} />
+                  {locked ? (
+                    <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-slate-950">
+                      <Lock size={9} color="#ffffff" strokeWidth={2.2} />
+                    </span>
+                  ) : null}
                 </span>
                 <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? '#0f172a' : '#64748b' }}>
                   {shortLabel}
@@ -70,21 +88,6 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
               </button>
             );
           })}
-
-          <button
-            type="button"
-            onClick={() => go(activityHref)}
-            className="flex min-h-11 min-w-0 flex-col items-center justify-center gap-1 rounded-[16px] transition-opacity active:opacity-60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-            aria-current={activityActive ? 'page' : undefined}
-            aria-label="수업 기록"
-          >
-            <span className="grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: activityActive ? '#0f172a' : 'transparent' }}>
-              <FileText size={17} strokeWidth={1.9} color={activityActive ? '#ffffff' : '#64748b'} />
-            </span>
-            <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: activityActive ? '#0f172a' : '#64748b' }}>
-              기록
-            </span>
-          </button>
         </div>
       </nav>
     </>

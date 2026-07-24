@@ -25,8 +25,8 @@ const FEATURE_COPY = {
   },
   records: {
     icon: FileText,
-    title: '이 기능을 사용하려면 이용권이 필요합니다',
-    desc: '수업 기록, 안내문은 활성 이용권에서 사용할 수 있습니다.',
+    title: '기록 누적은 프리미엄에서 이용할 수 있습니다',
+    desc: '라이트에서는 출석부까지만 사용할 수 있고, 수업 기록 저장·학생 히스토리·안내문은 프리미엄에서 열립니다.',
   },
   spomove: {
     icon: MonitorPlay,
@@ -39,7 +39,9 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
   const copy = FEATURE_COPY[requirement];
   const Icon = copy.icon;
   const hasBaseSubscriptionAccess = snapshot.canUseLibrary || snapshot.canUseClassTools || snapshot.canUseRecords;
-  const subscriptionBlockedFeature = requirement === 'spomove' && hasBaseSubscriptionAccess && !snapshot.canUseSpomove;
+  const subscriptionBlockedFeature =
+    (requirement === 'spomove' && hasBaseSubscriptionAccess && !snapshot.canUseSpomove) ||
+    (requirement === 'records' && snapshot.subscriptionStatus === 'active' && !snapshot.canUseRecords);
   const primaryHref = subscriptionBlockedFeature ? '/spokedu-master/subscription' : '/spokedu-master/payment';
   const primaryLabel = subscriptionBlockedFeature ? '구독 관리' : '구독 선택';
 

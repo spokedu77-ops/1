@@ -20,6 +20,7 @@ export type MasterAccessSnapshot = {
   isCenterOrTeam: boolean;
   canUseLibrary: boolean;
   canUseClassTools: boolean;
+  canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
 };
@@ -32,7 +33,7 @@ export type MasterAccessApiResponse = MasterAccessSnapshot & {
 
 export function hasMasterEntitlement(snapshot: MasterAccessSnapshot | null | undefined): boolean {
   if (!snapshot) return false;
-  return snapshot.canUseLibrary || snapshot.canUseClassTools || snapshot.canUseRecords;
+  return snapshot.canUseLibrary || snapshot.canUseRecords || snapshot.canUseSpomove;
 }
 
 export function hasPremiumEntitlement(snapshot: MasterAccessSnapshot | null | undefined): boolean {
@@ -92,8 +93,8 @@ export function canCreateClassRecordFromSnapshot(snapshot: MasterAccessSnapshot 
   if (!snapshot.canUseRecords) {
     return {
       allowed: false,
-      label: '권한 없음',
-      reason: '활성 이용권이 필요합니다.',
+      label: '프리미엄 필요',
+      reason: '수업 기록 저장과 누적 관리는 프리미엄에서 사용할 수 있습니다.',
     };
   }
   return { allowed: true, label: '사용 가능' };

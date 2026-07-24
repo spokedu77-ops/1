@@ -62,6 +62,7 @@ function activeAccessSnapshot(overrides = {}) {
     isCenterOrTeam: false,
     canUseLibrary: true,
     canUseClassTools: true,
+    canUseAttendance: true,
     canUseRecords: true,
     canUseSpomove: true,
     ...overrides,

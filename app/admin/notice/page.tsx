@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { toast } from 'sonner';
-import DOMPurify from 'isomorphic-dompurify';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
 import { devLogger } from '@/app/lib/logging/devLogger';
+import { sanitizeNoticeHtml } from '@/app/lib/noticeSanitize';
 import { Plus, Trash2, X, Pin, ChevronDown, RefreshCw, Edit3, Image as ImageIcon, FileText, Camera, MessageSquare } from 'lucide-react';
 import { uploadToStorageSigned, getPublicUrl } from '@/app/lib/admin/assets/storageClient';
 import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
@@ -27,13 +27,6 @@ const CATEGORIES = [
   { id: 'general', label: '일반', color: 'bg-slate-50 text-slate-600 border-slate-100' },
   { id: 'event', label: '이벤트', color: 'bg-indigo-50 text-indigo-600 border-indigo-100' },
 ];
-
-function sanitizeNoticeHtml(html: string): string {
-  if (typeof window !== 'undefined') {
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS: ['p', 'br', 'img', 'div', 'span'], ALLOWED_ATTR: ['src', 'alt', 'class'] });
-  }
-  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-}
 
 function wrapImagesWithDeleteButton(container: HTMLElement): void {
   const imgs = Array.from(container.querySelectorAll('img'));

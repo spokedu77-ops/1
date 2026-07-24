@@ -39,6 +39,7 @@ export type SpokeduMasterAccessSnapshot = {
   isCenterOrTeam: boolean;
   canUseLibrary: boolean;
   canUseClassTools: boolean;
+  canUseAttendance: boolean;
   canUseRecords: boolean;
   canUseSpomove: boolean;
 };
@@ -125,8 +126,19 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canUseLibrary: true,
       canUseClassTools: true,
+      canUseAttendance: true,
       canUseRecords: true,
       canUseSpomove: true,
+    };
+  }
+
+  if (status === 'none' && plan === 'free') {
+    return {
+      canUseLibrary: false,
+      canUseClassTools: true,
+      canUseAttendance: false,
+      canUseRecords: false,
+      canUseSpomove: false,
     };
   }
 
@@ -134,6 +146,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canUseLibrary: false,
       canUseClassTools: false,
+      canUseAttendance: false,
       canUseRecords: false,
       canUseSpomove: false,
     };
@@ -143,7 +156,8 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canUseLibrary: true,
       canUseClassTools: true,
-      canUseRecords: true,
+      canUseAttendance: true,
+      canUseRecords: false,
       canUseSpomove: false,
     };
   }
@@ -152,6 +166,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
     return {
       canUseLibrary: true,
       canUseClassTools: true,
+      canUseAttendance: true,
       canUseRecords: true,
       canUseSpomove: true,
     };
@@ -160,6 +175,7 @@ function buildCapabilities(plan: SpokeduMasterAccessSnapshot['plan'], status: Sp
   return {
     canUseLibrary: false,
     canUseClassTools: false,
+    canUseAttendance: false,
     canUseRecords: false,
     canUseSpomove: false,
   };

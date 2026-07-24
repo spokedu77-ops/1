@@ -21,6 +21,7 @@ const expiredSnapshot: MasterAccessSnapshot = {
   isCenterOrTeam: false,
   canUseLibrary: false,
   canUseClassTools: false,
+  canUseAttendance: false,
   canUseRecords: false,
   canUseSpomove: false,
 };
