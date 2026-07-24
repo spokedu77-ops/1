@@ -12,7 +12,7 @@ import { fineHover, landingPageStack, landingSectionTitle } from '../lib/ui-clas
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 function BenefitCard({
   title,
@@ -102,7 +102,7 @@ export function MonthlyLanding() {
               transition={{ duration: 0.35, delay: 0.03 * index }}
               className="rounded-xl border border-slate-200/80 bg-slate-50/60 px-4 py-3.5 sm:px-4 sm:py-4"
             >
-              <h3 className="text-sm font-bold text-indigo-900 [word-break:keep-all]">{theme.title}</h3>
+              <h3 className="text-sm font-bold text-[#0B1F46] [word-break:keep-all]">{theme.title}</h3>
               <p className="mt-1.5 text-xs leading-relaxed text-slate-600 sm:text-sm [word-break:keep-all]">
                 {theme.description}
               </p>
@@ -123,7 +123,7 @@ export function MonthlyLanding() {
               transition={{ duration: 0.35, delay: 0.04 * index }}
               className="flex h-full flex-col rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5"
             >
-              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-indigo-600">{item.title}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#245DFF]">{item.title}</p>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
                 {item.description}
               </p>
@@ -135,8 +135,8 @@ export function MonthlyLanding() {
       <LandingSection className="rounded-2xl border border-slate-200/80 bg-slate-50/50 px-5 py-6 sm:px-7 sm:py-7" delay={0.11}>
         <h2 className={landingSectionTitle}>{monthlyPage.roleCompare.title}</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 sm:gap-5">
-          <div className="rounded-xl border border-indigo-200/60 bg-white px-4 py-4 sm:px-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-indigo-700">월간 수업</p>
+          <div className="rounded-xl border border-[#D6E3FF]/60 bg-white px-4 py-4 sm:px-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#174BE6]">월간 수업</p>
             <p className="mt-2 text-sm leading-relaxed text-slate-600 [word-break:keep-all]">
               {monthlyPage.roleCompare.monthlyLead}
             </p>
@@ -150,7 +150,7 @@ export function MonthlyLanding() {
               href={monthlyPage.roleCompare.curriculumHref}
               data-track={inferTrackFromHref(monthlyPage.roleCompare.curriculumHref)}
               data-track-label="monthly-to-curriculum"
-              className={`mt-3 inline-flex text-sm font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+              className={`mt-3 inline-flex text-sm font-semibold text-slate-700 ${fineHover}hover:text-[#174BE6] ${focusRing}`}
             >
               {monthlyPage.roleCompare.curriculumLinkLabel} →
             </Link>

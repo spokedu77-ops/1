@@ -88,7 +88,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
                 />
                 <div className="p-3.5 sm:p-4">
                   <p
-                    className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${variant === 'dark' ? 'text-sky-300' : 'text-indigo-600'}`}
+                    className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${variant === 'dark' ? 'text-[#9FC0FF]' : 'text-[#245DFF]'}`}
                   >
                     STEP 0{index + 1}
                   </p>
@@ -113,7 +113,7 @@ export function ProgramDetailLanding({ slug }: ProgramDetailLandingProps) {
           {detail.targets.map((target) => (
             <span
               key={target}
-              className="rounded-full border border-indigo-100 bg-white/80 px-3 py-1 text-xs font-medium text-slate-700 sm:text-sm"
+              className="rounded-full border border-[#D6E3FF] bg-white/80 px-3 py-1 text-xs font-medium text-slate-700 sm:text-sm"
             >
               {target}
             </span>

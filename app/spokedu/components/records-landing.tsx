@@ -21,7 +21,7 @@ const recordsPageStack =
   'flex w-full flex-col gap-8 overflow-x-clip pb-8 sm:gap-10 sm:pb-10 lg:pb-12';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 function matchesFilter(record: FieldRecordWithThumbnail, filter: RecordFilterId): boolean {
   if (filter === 'all') return true;
@@ -61,7 +61,7 @@ function RecordCard({
             priority={photoPriority}
           />
           {onsite ? (
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-indigo-800 shadow-sm">
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#0B1F46] shadow-sm">
               온사이트 요약
             </span>
           ) : null}
@@ -75,7 +75,7 @@ function RecordCard({
             photoPriority={photoPriority}
           />
           {onsite ? (
-            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-indigo-800 shadow-sm">
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-bold tracking-wide text-[#0B1F46] shadow-sm">
               온사이트 요약
             </span>
           ) : null}
@@ -83,7 +83,7 @@ function RecordCard({
       )}
       <div className="flex flex-1 flex-col p-5 sm:p-6">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full bg-indigo-50 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-indigo-700">
+          <span className="rounded-full bg-[#EAF1FF] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#174BE6]">
             {record.operationType}
           </span>
           {onsite ? (
@@ -106,7 +106,7 @@ function RecordCard({
           {record.description}
         </p>
         <span
-          className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}
+          className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-[#174BE6] ${fineHover}group-hover:text-[#0B1F46]`}
         >
           {record.ctaLabel} →
         </span>
@@ -149,7 +149,7 @@ function RecordsPageHeader() {
 
   return (
     <header className="border-b border-slate-200/80 pb-6 sm:pb-7">
-      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-600">
+      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#245DFF]">
         {recordsPage.hero.kicker}
       </p>
       <motion.h1
@@ -228,7 +228,7 @@ export function RecordsLanding({ fieldRecords }: RecordsLandingProps) {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${focusRing} ${
                   active
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                    ? 'border-[#9FC0FF] bg-[#EAF1FF] text-[#0B1F46]'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                 }`}
               >

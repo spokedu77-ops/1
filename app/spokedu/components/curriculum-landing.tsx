@@ -9,6 +9,7 @@ import { btnPrimary, btnSecondary, koreanLineBreak } from '../lib/ui-classes';
 import { inferTrackFromHref } from '../lib/tracking';
 import { CurriculumInquiryForm } from './curriculum-inquiry-form';
 import { LandingAnchorNav } from './landing-anchor-nav';
+import { LandingFinalCta } from './landing-final-cta';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingHero } from './landing-hero';
@@ -18,13 +19,13 @@ import { MediaPanel } from './visual';
 const premiumPanel =
   'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
 const premiumPanelDark =
-  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0F1C1A] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
+  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0B1F46] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
 const axisCardShell = 'flex h-full flex-col rounded-2xl border border-stone-200/80 bg-stone-50/70 px-4 py-3.5';
 const productCardShell = `flex h-full flex-col ${premiumPanel}`;
 const historyCardShell = `flex h-full flex-col ${premiumPanel}`;
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 const curriculumHeroNeeds = ['수업안', '지도자 교육', 'SPOMOVE'] as const;
 const curriculumAnchorItems = [
@@ -58,31 +59,6 @@ function Section({
     >
       {children}
     </motion.section>
-  );
-}
-
-function MidConsultCta() {
-  return (
-    <div className="relative overflow-hidden rounded-[1.5rem] bg-[#0F1C1A] px-6 py-6 text-white sm:px-8 sm:py-7">
-      <div
-        className="pointer-events-none absolute -right-10 top-0 h-40 w-40 rounded-full bg-teal-400/20 blur-3xl"
-        aria-hidden
-      />
-      <div className="relative flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-200/90">교육·콘텐츠</p>
-          <p className={`mt-2 text-lg font-semibold tracking-tight sm:text-xl ${koreanLineBreak}`}>
-            필요한 범위만 알려주시면, 맞는 교육·콘텐츠 방식부터 제안합니다.
-          </p>
-        </div>
-        <a
-          href="#inquiry"
-          className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#0F1C1A] transition hover:bg-teal-50"
-        >
-          커리큘럼·지도자 교육 문의
-        </a>
-      </div>
-    </div>
   );
 }
 
@@ -149,7 +125,7 @@ export default function CurriculumLanding() {
       </Section>
 
       <Section className={`${premiumPanelDark} px-5 py-6 sm:px-7 sm:py-7`}>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8FB0FF]">
           {curriculumPage.leaderAxes.eyebrow}
         </p>
         <h2 className="mt-2.5 text-xl font-black leading-tight tracking-tight sm:text-2xl [word-break:keep-all]">
@@ -298,11 +274,23 @@ export default function CurriculumLanding() {
         </div>
       </Section>
 
-      <MidConsultCta />
-
       <Section id="process" className="scroll-mt-36">
         <LandingProcessOnePager data={curriculumPage.processOnePager} />
       </Section>
+
+      <LandingFinalCta
+        eyebrow="교육·콘텐츠"
+        title={curriculumPage.finalCta.title}
+        description={curriculumPage.finalCta.description}
+        backgroundMedia={HOME_MEDIA[curriculumPage.finalCta.mediaKey]}
+        links={[
+          {
+            label: curriculumPage.finalCta.primary.label,
+            href: curriculumPage.finalCta.primary.href,
+            trackLabel: curriculumPage.finalCta.primary.trackLabel,
+          },
+        ]}
+      />
 
       <Section>
         <CurriculumInquiryForm />

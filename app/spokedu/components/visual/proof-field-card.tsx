@@ -14,7 +14,7 @@ import {
 import { MediaPanel } from './media-panel';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 type ProofFieldCardProps = {
   field: HomeProofField;
@@ -46,7 +46,7 @@ export function ProofFieldCard({ field, className = '' }: ProofFieldCardProps) {
           {field.description}
         </p>
         <span
-          className={`mt-auto inline-flex items-center pt-2.5 text-xs font-semibold sm:pt-3 sm:text-sm ${variant === 'dark' ? 'text-white' : 'text-slate-900'} ${fineHover}group-hover:text-indigo-700`}
+          className={`mt-auto inline-flex items-center pt-2.5 text-xs font-semibold sm:pt-3 sm:text-sm ${variant === 'dark' ? 'text-white' : 'text-slate-900'} ${fineHover}group-hover:text-[#174BE6]`}
         >
           {field.cta}
           <span className="ml-1 transition group-hover:translate-x-0.5" aria-hidden>

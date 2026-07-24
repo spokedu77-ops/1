@@ -10,7 +10,7 @@ import { landingCardShell, type LandingCardVariant } from './visual/card-variant
 import { MediaPanel } from './visual/media-panel';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 type CaseProofCardProps = {
   item: CaseData;
@@ -40,13 +40,13 @@ export function CaseProofCard({
         photoPriority
       />
       <div className={`flex flex-1 flex-col ${compact ? 'p-3' : 'p-3.5 sm:p-4'}`}>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">{item.institution}</p>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#245DFF]">{item.institution}</p>
         <h3 className={`mt-0.5 font-semibold leading-snug text-slate-900 ${compact ? 'text-sm line-clamp-2' : 'text-sm sm:text-base'}`}>
           {item.title}
         </h3>
         {compact ? (
           <>
-            <p className="mt-1 text-xs font-medium text-indigo-700">{item.highlight}</p>
+            <p className="mt-1 text-xs font-medium text-[#174BE6]">{item.highlight}</p>
             <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-600">{item.summary}</p>
           </>
         ) : (
@@ -66,7 +66,7 @@ export function CaseProofCard({
         )}
         <div className={`mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 ${compact ? 'pt-2.5' : 'pt-3'}`}>
           {compact ? (
-            <span className="text-xs font-semibold text-slate-900 transition duration-200 group-hover:text-indigo-700 sm:text-sm">
+            <span className="text-xs font-semibold text-slate-900 transition duration-200 group-hover:text-[#174BE6] sm:text-sm">
               사례 보기 →
             </span>
           ) : (
@@ -74,7 +74,7 @@ export function CaseProofCard({
               href={item.href}
               data-track={inferTrackFromHref(item.href)}
               data-track-label={`${trackPrefix}-detail-${item.slug}`}
-              className={`text-xs font-semibold text-slate-900 sm:text-sm ${fineHover}hover:text-indigo-700 ${focusRing}`}
+              className={`text-xs font-semibold text-slate-900 sm:text-sm ${fineHover}hover:text-[#174BE6] ${focusRing}`}
             >
               사례 보기 →
             </Link>
@@ -84,7 +84,7 @@ export function CaseProofCard({
               href={related.href}
               data-track={inferTrackFromHref(related.href)}
               data-track-label={`${trackPrefix}-program-${item.slug}`}
-              className={`text-xs font-semibold text-indigo-700 sm:text-sm ${focusRing}`}
+              className={`text-xs font-semibold text-[#174BE6] sm:text-sm ${focusRing}`}
             >
               {related.title}
             </Link>

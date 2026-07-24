@@ -25,7 +25,7 @@ function photoToneToIntensity(photoTone: PhotoTone): 'soft' | 'bold' | 'photo' {
 
 export function VisualFrame({
   media,
-  className = 'relative h-full min-h-[200px] w-full overflow-hidden rounded-3xl border border-slate-200/80 shadow-lg shadow-indigo-950/10',
+  className = 'relative h-full min-h-[200px] w-full overflow-hidden rounded-3xl border border-slate-200/80 shadow-lg shadow-[0_14px_32px_rgba(11,31,70,0.08)]',
   float = false,
   showLabel = true,
   priority = false,
@@ -38,13 +38,13 @@ export function VisualFrame({
 
   return (
     <motion.div
-      className={`${className} ${clearPhoto ? 'ring-1 ring-slate-200/90' : 'ring-1 ring-indigo-200/40'}`}
+      className={`${className} ${clearPhoto ? 'ring-1 ring-slate-200/90' : 'ring-1 ring-[#D6E3FF]/50'}`}
       animate={float && !reducedMotion && !clearPhoto ? { y: [-6, 6, -6] } : {}}
       transition={float && !reducedMotion ? { duration: 7, repeat: Infinity, ease: 'easeInOut' } : {}}
     >
       {!clearPhoto ? (
         <div
-          className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] bg-gradient-to-br from-indigo-400/25 via-transparent to-lime-300/20 opacity-80 blur-sm"
+          className="pointer-events-none absolute -inset-px z-0 rounded-[inherit] bg-gradient-to-br from-[#245DFF]/20 via-transparent to-lime-300/20 opacity-80 blur-sm"
           aria-hidden
         />
       ) : null}

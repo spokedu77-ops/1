@@ -36,7 +36,7 @@ export function AboutFounderSection() {
                   priority
                 />
               </div>
-              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
+              <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">
                 {aboutFounder.message.lead}
               </p>
               <p className={`mt-1.5 text-sm font-semibold leading-snug text-slate-900 ${koreanLineBreak}`}>
@@ -54,14 +54,14 @@ export function AboutFounderSection() {
                     key={line}
                     className={`flex gap-2 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}
                   >
-                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-indigo-400" aria-hidden />
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-[#6E9BFF]" aria-hidden />
                     <span>{line}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            <div className="bg-gradient-to-br from-indigo-50/70 via-white to-sky-50/30 px-4 py-5 sm:px-6 sm:py-6">
+            <div className="bg-gradient-to-br from-[#EAF1FF]/70 via-white to-sky-50/30 px-4 py-5 sm:px-6 sm:py-6">
               <h3 className="text-sm font-bold text-slate-950">{aboutFounder.philosophy.title}</h3>
               <ul className="mt-3 grid gap-2 sm:grid-cols-3">
                 {aboutFounder.philosophy.items.map((item) => (
@@ -69,7 +69,7 @@ export function AboutFounderSection() {
                     key={item.key}
                     className="rounded-lg border border-slate-200/70 bg-white/90 px-3 py-2.5"
                   >
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">
+                    <p className="text-[11px] font-bold uppercase tracking-wide text-[#174BE6]">
                       {item.label}
                     </p>
                     <p className={`mt-1 text-sm leading-snug text-slate-600 ${koreanLineBreak}`}>

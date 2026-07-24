@@ -6,7 +6,7 @@ import { fineHover, koreanLineBreak } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 type RecordsCaseDetailProps = {
   item: FieldRecordCatalogItem & {
@@ -24,12 +24,12 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
       <div className="border-b border-slate-200/80 pb-6 sm:pb-7">
         <Link
           href={`${SPOKEDU_BASE_PATH}/records`}
-          className={`text-sm font-semibold text-indigo-700 ${fineHover}hover:text-indigo-900 ${focusRing}`}
+          className={`text-sm font-semibold text-[#174BE6] ${fineHover}hover:text-[#0B1F46] ${focusRing}`}
         >
           ← 수업 사례 목록
         </Link>
         <div className="mt-4 flex flex-wrap items-center gap-1.5">
-          <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-indigo-700">
+          <span className="rounded-full bg-[#EAF1FF] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#174BE6]">
             {item.operationType}
           </span>
           <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-semibold text-slate-600">
@@ -61,33 +61,33 @@ export function RecordsCaseDetail({ item }: RecordsCaseDetailProps) {
 
       <div className="grid gap-4 sm:gap-5">
         <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-700">목적</h2>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">목적</h2>
           <p className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
             {onsite.purpose}
           </p>
         </section>
         <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-700">대상</h2>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">대상</h2>
           <p className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
             {onsite.audience}
           </p>
         </section>
         <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-700">구성</h2>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">구성</h2>
           <ul className="mt-3 space-y-2">
             {onsite.composition.map((line) => (
               <li
                 key={line}
                 className={`flex gap-2 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}
               >
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-500" aria-hidden />
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[#245DFF]" aria-hidden />
                 <span>{line}</span>
               </li>
             ))}
           </ul>
         </section>
         <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-4 shadow-sm shadow-slate-900/[0.03] sm:px-6 sm:py-5">
-          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-700">결과</h2>
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#174BE6]">결과</h2>
           <p className={`mt-3 text-sm leading-relaxed text-slate-700 sm:text-[15px] ${koreanLineBreak}`}>
             {onsite.outcome}
           </p>

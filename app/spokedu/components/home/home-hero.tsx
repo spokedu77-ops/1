@@ -13,6 +13,7 @@ import {
   homeHeroH1Line,
   homePhotoGrade,
   homeSectionScrollMt,
+  koreanText,
   siteBtnPrimaryOnHero,
   siteBtnSecondaryOnHero,
   siteContainer,
@@ -20,7 +21,7 @@ import {
 import { MediaPanel } from '../visual';
 import { TrackedLink } from './tracked-link';
 
-/** 히어로: 풀블리드 사진 · 헤드라인 · CTA (원래 구성) */
+/** 히어로: SPOKEDU 브랜드 · 풀블리드 사진 · H1 · CTA 2개 (사인오프) */
 export function HomeHero() {
   const media = HOME_MEDIA[homePage.hero.mediaKey];
   const [line1, line2] = homePage.hero.lines;
@@ -52,25 +53,29 @@ export function HomeHero() {
             animate={reducedMotion ? undefined : { opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h1 id="home-hero-heading" className={homeHeroFullBleedTitle}>
+            <p className={`text-[12px] font-bold uppercase tracking-[0.18em] text-[#9FC0FF] sm:text-[13px] ${koreanText}`}>
+              {homePage.hero.brand}
+            </p>
+
+            <h1 id="home-hero-heading" className={`${homeHeroFullBleedTitle} mt-4 sm:mt-5`}>
               <span className={`${homeHeroH1Line} block`}>{line1}</span>
-              <span className={`${homeHeroH1Line} mt-1 block`}>{line2}</span>
+              <span className={`${homeHeroH1Line} mt-1.5 block text-[#8FB5FF]`}>{line2}</span>
             </h1>
 
-            <p className={`${homeHeroFullBleedLead} mt-4 max-w-[28rem]`}>{homePage.hero.support}</p>
+            <p className={`${homeHeroFullBleedLead} mt-5 max-w-[28rem]`}>{homePage.hero.support}</p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-3">
+            <div className="mt-9 flex flex-wrap items-center gap-3">
               <TrackedLink
                 href={homePage.hero.primaryCta.href}
                 trackLabel={homePage.hero.primaryCta.trackLabel}
-                className={`${siteBtnPrimaryOnHero} h-12 min-h-12 whitespace-nowrap px-6 ${homeFocusRing}`}
+                className={`${siteBtnPrimaryOnHero} h-12 min-h-12 whitespace-nowrap px-7 ${homeFocusRing}`}
               >
                 {homePage.hero.primaryCta.label}
               </TrackedLink>
               <TrackedLink
                 href={homePage.hero.secondaryCta.href}
                 trackLabel={homePage.hero.secondaryCta.trackLabel}
-                className={`${siteBtnSecondaryOnHero} h-12 min-h-12 whitespace-nowrap px-6 ${homeFocusRing}`}
+                className={`${siteBtnSecondaryOnHero} h-12 min-h-12 whitespace-nowrap px-7 ${homeFocusRing}`}
               >
                 {homePage.hero.secondaryCta.label}
               </TrackedLink>

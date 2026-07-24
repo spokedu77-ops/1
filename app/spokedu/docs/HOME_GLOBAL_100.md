@@ -1,10 +1,10 @@
 # SPOKEDU Home — Global 100% 로드맵
 
 **기준:** Stripe / Linear / Apple / Nike / Awwwards SOTY 급 “첫 화면에서 브랜드·신뢰·다음 행동”이 동시에 완성된 상태.  
-**현재 추정 (코드):** **~96%** — 사진 드롭인·OG·Lighthouse·10분 수동만 남으면 100%.  
+**현재 추정 (코드):** **~98%** — 뷰포트 캡처 승인 · 카카오 OG · Lighthouse LCP만 남으면 100%.  
 **운영 가이드:** `app/spokedu/docs/PHOTO_DROPIN_100.md`  
 **승인:** `app/spokedu/docs/HOME_SIGNOFF.md`  
-**가정 작업:** `fetch-spokedu-images.mjs`로 슬롯 채운 뒤 Phase 2–4 코드 폴리시 진행 (운영 JPG 덮어쓰기 = 동일 파일명).  
+**가정 작업:** Hero = `home-hero-movement.jpg`, `.bak-src` 제거, 후기 3건, preload/OG 정렬 완료 (2026-07-24).  
 **원칙:** 카피·CTA URL·문의 `?type=` 흐름은 유지. 비주얼·리듬·증거·사진은 전면 승격.
 
 ---
@@ -22,10 +22,11 @@
 
 **100% 정의 (체크리스트)**
 
-- [ ] Hero 3초: “누구·무엇·왜 믿음”이 **우리 사진**만으로 전달
-- [ ] 스톡·건물 외관·무관 인물 0%
-- [ ] 섹션마다 시각 무게가 다름 (큰→작은→CTA)
-- [ ] 현장 4카드 = 실제 venue·프로그램과 1:1 매칭
+- [x] Hero 대표컷 슬롯 = `home-hero-movement.jpg` (코드·OG)
+- [ ] Hero 3초: “누구·무엇·왜 믿음”이 **우리 사진**만으로 전달 (시각 승인)
+- [ ] 스톡·건물 외관·무관 인물 0% (시각 승인)
+- [x] 섹션마다 시각 무게가 다름 (큰→작은→CTA)
+- [x] 현장 사례 = 카탈로그 venue·프로그램과 1:1 매칭
 - [ ] Lighthouse LCP Hero < 2.5s (desktop), 이미지 404/placeholder 0
 - [ ] 모바일 360 / 390 / 430 / desktop 캡처 승인
 

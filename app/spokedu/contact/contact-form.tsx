@@ -73,10 +73,10 @@ const OTHER_DEFAULT: OtherInquiryFields = {
 };
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 const inputClass =
-  'min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100';
+  'min-h-12 w-full rounded-lg border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 outline-none transition focus:border-[#245DFF] focus:ring-2 focus:ring-[#D6E3FF]';
 
 const accentStyles = {
   violet: {
@@ -124,7 +124,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
     <label className="block space-y-1.5">
       <span className="text-sm font-semibold text-slate-800">
         {label}
-        {required ? <span className="text-indigo-600"> *</span> : null}
+        {required ? <span className="text-[#245DFF]"> *</span> : null}
       </span>
       {children}
     </label>
@@ -620,7 +620,7 @@ export default function SpokeduContactForm() {
         <div ref={formRef}>
           <form onSubmit={onSubmit} className="space-y-5 rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
             <div className="border-b border-slate-100 pb-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-indigo-600">상담 접수</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#245DFF]">상담 접수</p>
               <h3 className="mt-1 text-lg font-bold text-slate-950 sm:text-xl">{activeOption.title}</h3>
             </div>
 

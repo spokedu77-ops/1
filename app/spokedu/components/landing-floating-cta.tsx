@@ -39,7 +39,7 @@ export function LandingFloatingCta({
   const primaryIsExternal = primaryHref.startsWith('http');
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 px-4 py-3 backdrop-blur-md sm:px-6">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#D6E3FF] bg-[#F7F9FD]/95 px-4 py-3 backdrop-blur-md sm:px-6">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
         <a
           href={secondaryHref}

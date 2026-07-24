@@ -16,12 +16,12 @@ type AudienceTrustStripProps = {
 export function AudienceTrustStrip({ badge, eyebrow, items }: AudienceTrustStripProps) {
   return (
     <div className="px-1 sm:px-2">
-      <p className="text-[13px] font-semibold tracking-[0.04em] text-[#1D4ED8]">{badge}</p>
+      <p className="text-[13px] font-semibold tracking-[0.04em] text-[#245DFF]">{badge}</p>
       <p className="mt-5 text-[13px] font-semibold uppercase tracking-[0.18em] text-slate-500">{eyebrow}</p>
       <dl className="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-3 sm:gap-8">
         {items.map((item) => (
           <div key={item.id ?? `${item.value}-${item.label}`} className="min-w-0">
-            <dt className={`text-2xl font-bold tracking-tight text-[#0B1220] sm:text-[1.75rem] ${koreanLineBreak}`}>
+            <dt className={`text-2xl font-bold tracking-tight text-[#0B1F46] sm:text-[1.75rem] ${koreanLineBreak}`}>
               {item.value}
             </dt>
             <dd className={`mt-1.5 text-sm leading-relaxed text-slate-500 ${koreanLineBreak}`}>{item.label}</dd>

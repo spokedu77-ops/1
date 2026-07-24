@@ -14,6 +14,7 @@ import { DispatchProgramLineup } from './dispatch-program-lineup';
 import { DispatchProposalForm } from './dispatch-proposal-form';
 import { LandingAnchorNav } from './landing-anchor-nav';
 import { LandingFaqList } from './landing-faq-list';
+import { LandingFinalCta } from './landing-final-cta';
 import { LandingFloatingCta } from './landing-floating-cta';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingStepPanel } from './landing-step-grid';
@@ -22,12 +23,11 @@ import { MediaPanel } from './visual';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 const premiumPanel =
-  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
-const premiumPanelDark =
-  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0F1C1A] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
+  'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';const premiumPanelDark =
+  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0B1F46] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
 const whoCardShell =
   'flex h-full flex-col rounded-2xl border border-stone-200/80 bg-stone-50/70 px-4 py-3.5';
 const reviewCardShell = `flex h-full flex-col border-l-[3px] border-l-teal-700 px-5 py-4 sm:px-5 sm:py-5 ${premiumPanel}`;
@@ -86,31 +86,6 @@ function Section({
   );
 }
 
-function MidConsultCta() {
-  return (
-    <div className="relative overflow-hidden rounded-[1.5rem] bg-[#0F1C1A] px-6 py-6 text-white sm:px-8 sm:py-7">
-      <div
-        className="pointer-events-none absolute -right-10 top-0 h-40 w-40 rounded-full bg-teal-400/20 blur-3xl"
-        aria-hidden
-      />
-      <div className="relative flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-200/90">운영 상담</p>
-          <p className={`mt-2 text-lg font-semibold tracking-tight sm:text-xl ${koreanLineBreak}`}>
-            공간·인원·일정만 알려주시면, 맞는 운영안부터 제안합니다.
-          </p>
-        </div>
-        <a
-          href="#contact"
-          className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#0F1C1A] transition hover:bg-teal-50"
-        >
-          기관 운영 상담
-        </a>
-      </div>
-    </div>
-  );
-}
-
 export default function DispatchLanding() {
   return (
     <div className="flex w-full flex-col gap-8 pb-24 sm:gap-10 lg:gap-12">
@@ -157,7 +132,7 @@ export default function DispatchLanding() {
       <Section className={`${premiumPanelDark} px-5 py-6 sm:px-7 sm:py-7`}>
         <div className="grid gap-5 lg:grid-cols-[0.38fr_0.62fr] lg:items-start lg:gap-7">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-300">기관 프로그램</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#8FB0FF]">기관 프로그램</p>
             <h2 className="mt-2.5 text-xl font-black leading-tight tracking-tight sm:text-2xl [word-break:keep-all]">
               시키는 수업이 아니라, 움직이게 만드는 운영안을 제안합니다.
             </h2>
@@ -167,7 +142,7 @@ export default function DispatchLanding() {
             </p>
             <a
               href="#process"
-              className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-bold text-slate-950 ${fineHover}hover:bg-teal-50 ${focusRing}`}
+              className={`mt-4 inline-flex min-h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-bold text-[#0B1F46] ${fineHover}hover:bg-[#EAF1FF] ${focusRing}`}
             >
               도입 절차 보기
             </a>
@@ -182,7 +157,7 @@ export default function DispatchLanding() {
               ))}
             </ul>
             <div className="rounded-xl border border-white/10 bg-white/[0.04] p-3.5">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-teal-200">제안 전에</p>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#A8C0FF]">제안 전에</p>
               <ul className="mt-2.5 grid gap-2 sm:grid-cols-2">
                 {dispatchDecisionChecks.map((item) => (
                   <li key={item} className="rounded-lg bg-white/[0.06] px-3 py-2 text-xs font-semibold text-white/80">
@@ -280,8 +255,6 @@ export default function DispatchLanding() {
         <DispatchProgramLineup />
       </Section>
 
-      <MidConsultCta />
-
       <Section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <LandingSectionHeading
@@ -349,12 +322,24 @@ export default function DispatchLanding() {
         </LandingStepPanel>
       </Section>
 
-      <MidConsultCta />
-
       <Section id="faq" className="scroll-mt-36 space-y-4">
         <LandingSectionHeading eyebrow={dispatchPage.faq.eyebrow} title={dispatchPage.faq.title} accent="teal" />
         <LandingFaqList items={dispatchPage.faq.items} accent="teal" />
       </Section>
+
+      <LandingFinalCta
+        eyebrow="운영 상담"
+        title={dispatchPage.finalCta.title}
+        description={dispatchPage.finalCta.description}
+        backgroundMedia={HOME_MEDIA[dispatchPage.finalCta.mediaKey]}
+        links={[
+          {
+            label: dispatchPage.finalCta.primary.label,
+            href: dispatchPage.finalCta.primary.href,
+            trackLabel: dispatchPage.finalCta.primary.trackLabel,
+          },
+        ]}
+      />
 
       <Section>
         <DispatchProposalForm />

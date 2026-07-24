@@ -11,7 +11,7 @@ function SectionHeader({ eyebrow, title, description }: SectionHeaderProps) {
   return (
     <div className="mx-auto w-full max-w-3xl text-center">
       {eyebrow ? (
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">{eyebrow}</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#245DFF]">{eyebrow}</p>
       ) : null}
       <h2 className="text-2xl font-semibold leading-tight text-slate-900 sm:text-3xl">{title}</h2>
       {description ? <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">{description}</p> : null}

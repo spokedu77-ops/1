@@ -15,10 +15,10 @@ import { MediaPanel } from './visual';
 import { homePage } from '../data/home-page';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 const roleAccent = [
-  'border-t-indigo-400/80',
+  'border-t-[#6E9BFF]/80',
   'border-t-sky-400/80',
   'border-t-violet-400/80',
 ] as const;
@@ -61,7 +61,7 @@ export function AboutLanding() {
       />
 
       <Section className="rounded-2xl border border-slate-200/80 bg-white px-4 py-5 shadow-sm sm:px-6 sm:py-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-indigo-600">
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">
           {homePage.trustStrip.eyebrow}
         </p>
         <ul className="mt-4 grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4 sm:gap-x-6">
@@ -116,7 +116,7 @@ export function AboutLanding() {
                     {card.description}
                   </p>
                   <span
-                    className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}
+                    className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-[#174BE6] ${fineHover}group-hover:text-[#0B1F46]`}
                   >
                     {card.linkLabel} →
                   </span>

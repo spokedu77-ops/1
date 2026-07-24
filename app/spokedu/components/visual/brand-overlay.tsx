@@ -3,13 +3,13 @@
 import type { HomeMediaTone } from '../../data/home-media';
 
 const toneGlow: Record<HomeMediaTone, string> = {
-  indigo: 'from-indigo-500/35 via-transparent to-lime-400/15',
+  indigo: 'from-[#245DFF]/30 via-transparent to-lime-400/15',
   sky: 'from-sky-400/30 via-transparent to-cyan-500/10',
   lime: 'from-lime-400/25 via-transparent to-emerald-600/15',
   amber: 'from-amber-400/30 via-transparent to-orange-500/10',
   rose: 'from-rose-400/25 via-transparent to-pink-500/10',
   violet: 'from-violet-500/30 via-transparent to-fuchsia-500/10',
-  slate: 'from-indigo-500/20 via-transparent to-slate-400/10',
+  slate: 'from-[#245DFF]/18 via-transparent to-slate-400/10',
 };
 
 type BrandOverlayProps = {
@@ -39,7 +39,7 @@ export function BrandOverlay({ tone = 'indigo', intensity = 'bold', className = 
         aria-hidden
       />
       <div
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-t via-slate-900/15 to-indigo-950/10 ${soft ? 'from-slate-950/50' : 'from-slate-950/60'}`}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-t via-slate-900/15 to-[#0B1F46]/10 ${soft ? 'from-slate-950/50' : 'from-slate-950/60'}`}
         aria-hidden
       />
       <div

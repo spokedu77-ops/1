@@ -35,24 +35,27 @@ export default function SpokeduContactPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-slate-200/80 bg-white px-5 py-5 shadow-sm sm:px-6 sm:py-6">
-        <p className={`text-sm font-semibold text-slate-950 ${koreanLineBreak}`}>{expectGuide.responseNote}</p>
-        <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-700">
-          {expectGuide.checklistTitle}
-        </p>
-        <ul className="mt-2.5 grid gap-2 sm:grid-cols-2">
-          {expectGuide.items.map((item) => (
-            <li
-              key={item}
-              className={`flex gap-2 rounded-lg border border-slate-200/70 bg-slate-50/80 px-3 py-2 text-sm leading-snug text-slate-700 ${koreanLineBreak}`}
-            >
-              <span className="mt-0.5 shrink-0 text-indigo-700" aria-hidden>
-                ✓
-              </span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
+      <section className="overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.07)]">
+        <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
+        <div className="px-5 py-5 sm:px-6 sm:py-6">
+          <p className={`text-sm font-semibold text-[#0B1F46] ${koreanLineBreak}`}>{expectGuide.responseNote}</p>
+          <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">
+            {expectGuide.checklistTitle}
+          </p>
+          <ul className="mt-2.5 grid gap-2 sm:grid-cols-2">
+            {expectGuide.items.map((item) => (
+              <li
+                key={item}
+                className={`flex gap-2 rounded-lg border border-[#DCE3EE] bg-[#F7F9FD] px-3 py-2 text-sm leading-snug text-slate-700 ${koreanLineBreak}`}
+              >
+                <span className="mt-0.5 shrink-0 text-[#245DFF]" aria-hidden>
+                  ✓
+                </span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <ContactFormShell />

@@ -12,7 +12,7 @@ import { inferTrackFromHref } from '../lib/tracking';
 import { ExternalPhoto } from './external-photo';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 const DEFAULT_TRUST_LINE = '공개 운영 사례와 같은 현장 기준으로 프로그램을 설계합니다.';
 
@@ -35,7 +35,7 @@ export function ProgramRelatedProof({
   return (
     <section className="space-y-4">
       <p
-        className={`rounded-2xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm font-semibold leading-relaxed text-indigo-950 ${koreanLineBreak}`}
+        className={`rounded-2xl border border-[#D6E3FF] bg-[#EAF1FF]/60 px-4 py-3 text-sm font-semibold leading-relaxed text-[#0B1F46] ${koreanLineBreak}`}
       >
         {trustLine}
       </p>
@@ -45,14 +45,14 @@ export function ProgramRelatedProof({
           href={`${SPOKEDU_BASE_PATH}/records`}
           data-track={inferTrackFromHref(`${SPOKEDU_BASE_PATH}/records`)}
           data-track-label={`${trackPrefix}-records`}
-          className={`shrink-0 text-sm font-semibold text-indigo-700 ${fineHover}hover:text-indigo-900 ${focusRing}`}
+          className={`shrink-0 text-sm font-semibold text-[#174BE6] ${fineHover}hover:text-[#0B1F46] ${focusRing}`}
         >
           사례 전체 →
         </Link>
       </div>
       <ul className="grid gap-3 sm:grid-cols-2">
         {items.map((item) => {
-          const className = `group flex h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ${fineHover}hover:border-indigo-200 ${focusRing}`;
+          const className = `group flex h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm ${fineHover}hover:border-[#9FC0FF] ${focusRing}`;
           const body = (
             <>
               {item.thumbnailSrc ? (
@@ -66,7 +66,7 @@ export function ProgramRelatedProof({
                 </div>
               ) : null}
               <div className="flex min-w-0 flex-1 flex-col justify-center px-4 py-3.5">
-                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-indigo-700">
+                <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-[#174BE6]">
                   {item.operationType}
                   {item.blogHref ? ' · 온사이트 요약' : ''}
                 </p>
@@ -76,7 +76,7 @@ export function ProgramRelatedProof({
                 <p className={`mt-1 line-clamp-2 text-xs leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                   {item.description}
                 </p>
-                <span className={`mt-2 text-xs font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}>
+                <span className={`mt-2 text-xs font-semibold text-[#174BE6] ${fineHover}group-hover:text-[#0B1F46]`}>
                   {item.ctaLabel} →
                 </span>
               </div>

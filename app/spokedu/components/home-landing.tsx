@@ -20,7 +20,7 @@ type SpokeduHomeLandingProps = {
 
 /**
  * 홈 흐름
- * 히어로 → 신뢰 → 사례 갤러리 → 경로 → SPOMOVE → 왜 → 후기 → CTA
+ * 히어로 → 신뢰 → 사례 갤러리 → 경로 → SPOMOVE → 왜 → 후기 → 상담 CTA
  */
 export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingProps) {
   const caseCards = mergeHomeCaseCards(proofCards);
@@ -30,7 +30,7 @@ export default function SpokeduHomeLanding({ proofCards }: SpokeduHomeLandingPro
       className={`w-full overflow-x-clip font-sans antialiased ${homePageSurface}`}
       data-spokedu-home-build={SPOKEDU_HOME_BUILD_ID}
     >
-      <a href={`#${homePage.audienceGate.id}`} className={homeSkipLink}>
+      <a href={`#${homePage.trustStrip.id}`} className={homeSkipLink}>
         본문으로 건너뛰기
       </a>
 

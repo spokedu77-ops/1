@@ -14,7 +14,7 @@ import {
 import { MediaPanel } from './media-panel';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 function TrackBadges({ tracks, variant }: { tracks: HomeSignatureProgram['tracks']; variant: LandingCardVariant }) {
   const chip =
@@ -75,7 +75,7 @@ export function ProgramShowcaseCard({ program, variant, className = '' }: Progra
           <TrackBadges tracks={program.tracks} variant={cardVariant} />
         </div>
         <span
-          className={`mt-auto inline-flex items-center font-semibold ${variant === 'featured' ? 'pt-3 text-sm' : 'pt-2 text-xs sm:text-sm'} ${cardVariant === 'dark' ? 'text-white' : 'text-slate-900'} ${fineHover}group-hover:text-indigo-700`}
+          className={`mt-auto inline-flex items-center font-semibold ${variant === 'featured' ? 'pt-3 text-sm' : 'pt-2 text-xs sm:text-sm'} ${cardVariant === 'dark' ? 'text-white' : 'text-slate-900'} ${fineHover}group-hover:text-[#174BE6]`}
         >
           {program.cta}
           <span className="ml-1 transition group-hover:translate-x-0.5" aria-hidden>

@@ -15,9 +15,9 @@ type MotionPosterProps = {
 
 const variantClass: Record<NonNullable<MotionPosterProps['variant']>, string> = {
   cinematic:
-    'relative h-[min(58vw,260px)] w-full overflow-hidden rounded-[1.25rem] border border-slate-300/70 shadow-lg shadow-indigo-950/15 sm:h-[min(48vw,300px)] sm:rounded-[1.75rem] sm:shadow-2xl lg:h-[min(68vh,600px)] lg:rounded-[2rem]',
-  hero: 'relative h-[min(52vw,240px)] w-full overflow-hidden rounded-2xl border border-slate-200/90 shadow-xl shadow-indigo-900/20 sm:h-[280px] sm:rounded-3xl lg:h-[380px]',
-  compact: 'relative h-[min(48vw,220px)] w-full overflow-hidden rounded-2xl border border-slate-200/90 shadow-lg shadow-indigo-900/15 sm:h-[240px]',
+    'relative h-[min(58vw,260px)] w-full overflow-hidden rounded-[1.25rem] border border-slate-300/70 shadow-lg shadow-[0_18px_40px_rgba(11,31,70,0.12)] sm:h-[min(48vw,300px)] sm:rounded-[1.75rem] sm:shadow-2xl lg:h-[min(68vh,600px)] lg:rounded-[2rem]',
+  hero: 'relative h-[min(52vw,240px)] w-full overflow-hidden rounded-2xl border border-slate-200/90 shadow-xl shadow-[0_18px_40px_rgba(11,31,70,0.14)] sm:h-[280px] sm:rounded-3xl lg:h-[380px]',
+  compact: 'relative h-[min(48vw,220px)] w-full overflow-hidden rounded-2xl border border-slate-200/90 shadow-lg shadow-[0_14px_32px_rgba(11,31,70,0.1)] sm:h-[240px]',
 };
 
 export function MotionPoster({

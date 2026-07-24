@@ -16,10 +16,10 @@ import { BrandLogo } from './brand-logo';
 import { isExternalHref, externalLinkProps } from '../lib/external-link';
 import { scrollSpokeduToTop } from '../lib/scroll';
 import { inferTrackFromHref } from '../lib/tracking';
-import { koreanText, siteContainer } from '../lib/ui-classes';
+import { brandBlue, brandNavy, koreanText, siteContainer } from '../lib/ui-classes';
 
-const ATHLETIC_BLUE = '#1D4ED8';
-const NAVY = '#0B1220';
+const ATHLETIC_BLUE = brandBlue;
+const NAVY = brandNavy;
 
 function normalizePath(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -169,8 +169,8 @@ export function SiteHeader() {
           ? 'text-white underline decoration-white/80 underline-offset-[6px]'
           : 'text-white/80 hover:text-white focus-visible:outline-white'
         : active
-          ? 'text-[#0B1220] underline decoration-[#1D4ED8]/70 underline-offset-[6px]'
-          : 'text-slate-600 hover:text-[#0B1220] focus-visible:outline-blue-600'
+          ? 'text-[#0B1F46] underline decoration-[#245DFF]/70 underline-offset-[6px]'
+          : 'text-slate-600 hover:text-[#0B1F46] focus-visible:outline-[#245DFF]'
     }`;
 
   const renderDesktopEntry = (entry: SiteNavEntry) => {
@@ -224,7 +224,7 @@ export function SiteHeader() {
                 key={child.href}
                 href={child.href}
                 trackLabel={child.trackLabel}
-                className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#1D4ED8]"
+                className="block px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 focus-visible:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#245DFF]"
                 onNavigate={() => setProgramsOpen(false)}
               >
                 {child.label}
@@ -291,8 +291,8 @@ export function SiteHeader() {
     <header
       className={`fixed inset-x-0 top-0 z-40 transition-all duration-300 ${
         onHero
-          ? 'border-b border-white/10 bg-[#0B1220]/35 backdrop-blur-md'
-          : 'border-b border-slate-200/70 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur-xl'
+          ? 'border-b border-white/10 bg-[#0B1F46]/40 backdrop-blur-md'
+          : 'border-b border-[#DCE3EE]/90 bg-white/92 shadow-[0_1px_0_rgba(15,33,70,0.04)] backdrop-blur-xl'
       }`}
     >
       <div className={`${siteContainer} flex h-14 items-center justify-between gap-3 sm:h-[3.75rem]`}>
@@ -308,8 +308,8 @@ export function SiteHeader() {
             trackLabel="header-contact"
             className={`hidden h-9 items-center justify-center rounded-full px-5 text-[13px] font-semibold leading-none transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 sm:inline-flex ${
               onHero
-                ? 'border border-white/35 bg-white text-[#0B1220] hover:bg-white/90 focus-visible:outline-white'
-                : 'text-white focus-visible:outline-blue-600'
+                ? 'border border-white/35 bg-white text-[#0B1F46] hover:bg-white/90 focus-visible:outline-white'
+                : 'text-white focus-visible:outline-[#245DFF]'
             }`}
             style={onHero ? undefined : { backgroundColor: ATHLETIC_BLUE }}
           >
@@ -321,7 +321,7 @@ export function SiteHeader() {
             className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border px-3 lg:hidden ${
               onHero
                 ? 'border-white/35 text-white focus-visible:outline-white'
-                : 'border-slate-300 text-[#0B1220] focus-visible:outline-blue-600'
+                : 'border-slate-300 text-[#0B1F46] focus-visible:outline-[#245DFF]'
             } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
             aria-expanded={menuOpen}
             aria-controls="mobile-nav-panel"

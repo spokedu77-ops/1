@@ -78,8 +78,8 @@ export const SPOKEDU_IMAGES = {
     hero: defineImage(
       'home',
       'home-hero',
-      'home-hero-spomove-class.jpg',
-      'SPOMOVE 수업 현장 — 아이들이 4색 패드 위에서 스크린을 보며 움직이는 장면',
+      'home-hero-movement.jpg',
+      '아동·청소년 체육수업 현장 — 지도자와 참여 활동',
     ),
     heroYoutubePoster: defineImage(
       'home',
@@ -215,7 +215,7 @@ export const SPOKEDU_IMAGES = {
     dasarang: defineImage(
       'records',
       'record-dasarang',
-      'dasarang.png',
+      'dasarang-field.jpg',
       '다사랑영등포지역아동센터 원데이 행사 기록',
     ),
     playz: defineImage(

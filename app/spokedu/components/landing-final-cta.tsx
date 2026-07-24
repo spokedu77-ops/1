@@ -4,13 +4,14 @@ import Link from 'next/link';
 import type { HomeMediaItem } from '../data/home-media';
 import { inferTrackFromHref } from '../lib/tracking';
 import {
+  homeBandSoftBlue,
   homeFocusRing,
+  homePhotoGrade,
   homeSectionH2,
   koreanText,
   siteBtnPrimary,
-  siteBtnPrimaryOnHero,
   siteBtnSecondary,
-  siteBtnSecondaryOnDark,
+  siteContainer,
 } from '../lib/ui-classes';
 import { MediaRenderer } from './visual';
 
@@ -18,7 +19,7 @@ export type LandingFinalCtaLink = {
   label: string;
   href: string;
   trackLabel: string;
-  /** light 배경: 첫 버튼 primary. dark: on-dark 버튼 */
+  /** @deprecated 시각 톤은 컴포넌트가 soft-blue 카드로 통일 — 호환용으로만 유지 */
   variant?: 'primary' | 'on-dark-primary' | 'on-dark-secondary' | 'on-light-outline';
 };
 
@@ -26,100 +27,74 @@ type LandingFinalCtaProps = {
   title: string;
   description: string;
   links: readonly LandingFinalCtaLink[];
+  /** @deprecated soft-blue 카드 톤으로 통일. 호출부 호환용 */
   tone?: 'dark' | 'light';
   backgroundMedia?: HomeMediaItem;
   eyebrow?: string;
 };
 
-function resolveLinkClass(link: LandingFinalCtaLink, index: number, tone: 'dark' | 'light') {
-  const v =
-    link.variant ??
-    (tone === 'dark' ? (index === 0 ? 'on-dark-primary' : 'on-dark-secondary') : index === 0 ? 'primary' : 'on-light-outline');
-  switch (v) {
-    case 'primary':
-      return `${siteBtnPrimary} w-full sm:w-auto`;
-    case 'on-dark-primary':
-      return `${siteBtnPrimaryOnHero} h-12 w-full sm:w-auto`;
-    case 'on-dark-secondary':
-      return `${siteBtnSecondaryOnDark} w-full sm:w-auto`;
-    case 'on-light-outline':
-      return `${siteBtnSecondary} w-full sm:w-auto`;
-    default:
-      return `${siteBtnPrimaryOnHero} h-12 w-full sm:w-auto`;
-  }
+function resolveLinkClass(link: LandingFinalCtaLink, index: number) {
+  const isPrimary =
+    link.variant === 'primary' ||
+    link.variant === 'on-dark-primary' ||
+    (!link.variant && index === 0);
+  return isPrimary ? `${siteBtnPrimary} w-full` : `${siteBtnSecondary} w-full`;
 }
 
-/** 서브 랜딩 하단 CTA — Home FinalCta와 동일 톤 (인디고/블러 orb 없음) */
+/**
+ * 서브 랜딩 하단 CTA
+ * - 남색 풀밴드 대신 soft-blue 밴드 + 화이트 카드
+ * - 사진은 배경 고스트가 아니라 카드 안 미디어 패널
+ * - 카피 | 버튼 2열
+ */
 export function LandingFinalCta({
   title,
   description,
   links,
-  tone = 'dark',
   backgroundMedia,
-  eyebrow,
+  eyebrow = '상담',
 }: LandingFinalCtaProps) {
-  const isLight = tone === 'light';
-
   return (
-    <section
-      className={
-        isLight
-          ? 'relative w-full overflow-hidden border border-slate-200/80 bg-white px-5 py-10 sm:px-8 sm:py-12'
-          : 'relative w-full overflow-hidden bg-[#07101f] px-5 py-11 text-white sm:px-8 sm:py-14 lg:px-10'
-      }
-      aria-labelledby="landing-final-cta-title"
-    >
-      {backgroundMedia ? (
-        <>
-          <div className={`pointer-events-none absolute inset-0 ${isLight ? 'opacity-30' : 'opacity-55'}`} aria-hidden>
-            <MediaRenderer media={backgroundMedia} intensity="photo" sizes="full" className="h-full w-full" />
-          </div>
-          <div
-            className={`pointer-events-none absolute inset-0 ${isLight ? 'bg-white/85' : 'bg-[#07101f]/78'}`}
-            aria-hidden
-          />
-        </>
-      ) : null}
+    <section className={`relative w-full overflow-hidden ${homeBandSoftBlue} py-10 sm:py-12 lg:py-14`} aria-labelledby="landing-final-cta-title">
+      <div className={siteContainer}>
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-[#D6E3FF] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.07)]">
+          <div className="h-1.5 w-full bg-[#0B1F46]" aria-hidden />
 
-      <div className="relative w-full max-w-3xl text-left">
-        {eyebrow ? (
-          <p
-            className={`text-[13px] font-semibold uppercase tracking-[0.18em] ${
-              isLight ? 'text-[#1D4ED8]' : 'text-sky-300'
-            }`}
-          >
-            {eyebrow}
-          </p>
-        ) : null}
-        <h2
-          id="landing-final-cta-title"
-          className={`${eyebrow ? 'mt-3' : ''} ${homeSectionH2} ${isLight ? 'text-[#0B1220]' : 'text-white'}`}
-        >
-          {title}
-        </h2>
-        <p
-          className={`mt-4 max-w-2xl text-base leading-relaxed sm:text-[17px] ${koreanText} ${
-            isLight ? 'text-slate-600' : 'text-white/75'
-          }`}
-        >
-          {description}
-        </p>
-        <div
-          className={`mt-8 grid gap-3 ${
-            links.length >= 3 ? 'sm:grid-cols-3' : links.length === 2 ? 'sm:grid-cols-2' : 'grid-cols-1'
-          }`}
-        >
-          {links.map((link, index) => (
-            <Link
-              key={`${link.href}-${link.trackLabel}`}
-              href={link.href}
-              data-track={inferTrackFromHref(link.href)}
-              data-track-label={link.trackLabel}
-              className={`${resolveLinkClass(link, index, tone)} ${homeFocusRing}`}
-            >
-              {link.label}
-            </Link>
-          ))}
+          <div className="grid gap-8 px-5 py-8 sm:px-8 sm:py-10 lg:grid-cols-[minmax(0,1.35fr)_minmax(220px,280px)] lg:items-stretch lg:gap-10 lg:px-10 lg:py-11">
+            <div className="min-w-0 text-left">
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#245DFF]">{eyebrow}</p>
+              <h2 id="landing-final-cta-title" className={`${homeSectionH2} mt-3 text-[#0B1F46]`}>
+                {title}
+              </h2>
+              <p className={`mt-4 max-w-xl text-[15px] leading-relaxed text-[#536279] sm:text-base ${koreanText}`}>
+                {description}
+              </p>
+            </div>
+
+            <div className="flex w-full min-w-0 flex-col gap-3">
+              {backgroundMedia ? (
+                <div className="relative mb-1 hidden aspect-[16/10] overflow-hidden rounded-[1.15rem] ring-1 ring-[#DCE3EE] lg:block">
+                  <MediaRenderer
+                    media={backgroundMedia}
+                    intensity="photo"
+                    sizes="card2"
+                    className={`absolute inset-0 h-full w-full ${homePhotoGrade}`}
+                  />
+                </div>
+              ) : null}
+              {links.map((link, index) => (
+                <Link
+                  key={`${link.href}-${link.trackLabel}`}
+                  href={link.href}
+                  data-track={inferTrackFromHref(link.href)}
+                  data-track-label={link.trackLabel}
+                  className={`${resolveLinkClass(link, index)} ${homeFocusRing}`}
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </section>

@@ -7,6 +7,7 @@ import { privatePage } from '../data/private-page';
 import { koreanLineBreak, landingCardFrame } from '../lib/ui-classes';
 import { ExternalPhoto } from './external-photo';
 import { LandingFaqList } from './landing-faq-list';
+import { LandingFinalCta } from './landing-final-cta';
 import { LandingSectionHeading } from './landing-section-heading';
 import { LandingHero } from './landing-hero';
 import { PrivateApplyForm } from './private-apply-form';
@@ -21,7 +22,7 @@ import { MediaPanel } from './visual';
 const premiumPanel =
   'overflow-hidden rounded-[1.5rem] border border-stone-200/70 bg-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.45)]';
 const premiumPanelDark =
-  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0F1C1A] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
+  'overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0B1F46] text-white shadow-[0_18px_50px_-36px_rgba(15,23,42,0.55)]';
 const whoCardShell = `flex h-full flex-col px-4 py-4 sm:px-5 sm:py-5 ${premiumPanel}`;
 const reviewCardShell = `flex h-full flex-col border-l-[3px] border-l-teal-700 px-5 py-5 sm:px-6 sm:py-6 ${premiumPanel}`;
 const privateHeroNeeds = ['운동 자신감', '기초체력', '종목 준비'] as const;
@@ -56,31 +57,6 @@ function Section({
     >
       {children}
     </motion.section>
-  );
-}
-
-function MidConsultCta() {
-  return (
-    <div className="relative overflow-hidden rounded-[1.5rem] bg-[#0F1C1A] px-6 py-6 text-white sm:px-8 sm:py-7">
-      <div
-        className="pointer-events-none absolute -right-10 top-0 h-40 w-40 rounded-full bg-teal-400/20 blur-3xl"
-        aria-hidden
-      />
-      <div className="relative flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-center">
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-teal-200/90">상담</p>
-          <p className={`mt-2 text-lg font-semibold tracking-tight sm:text-xl ${koreanLineBreak}`}>
-            아이 상황만 알려주시면, 맞는 수업 방향부터 제안합니다.
-          </p>
-        </div>
-        <a
-          href="#apply"
-          className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-[#0F1C1A] transition hover:bg-teal-50"
-        >
-          개인수업 상담
-        </a>
-      </div>
-    </div>
   );
 }
 
@@ -208,10 +184,6 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section>
-        <MidConsultCta />
-      </Section>
-
       <Section
         id="curriculum"
         className="scroll-mt-36 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-4 py-5 sm:px-5 sm:py-6"
@@ -254,7 +226,7 @@ export default function PrivateLanding() {
 
           <div className={`${premiumPanelDark} px-6 py-7 sm:px-8 sm:py-8`}>
             <div className="border-b border-white/10 pb-4">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-200/90">수업 사이클</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#A8C0FF]">수업 사이클</p>
               <h3 className="mt-1 text-lg font-semibold tracking-tight text-white">수업 단위</h3>
             </div>
             <ul className="mt-5 space-y-4">
@@ -290,7 +262,7 @@ export default function PrivateLanding() {
                   sizes="(max-width: 640px) 100vw, 33vw"
                 />
                 <div
-                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0F1C1A]/55 to-transparent"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-[#0B1F46]/55 to-transparent"
                   aria-hidden
                 />
               </div>
@@ -337,10 +309,6 @@ export default function PrivateLanding() {
         </div>
       </Section>
 
-      <Section>
-        <MidConsultCta />
-      </Section>
-
       <Section id="process" className="scroll-mt-36">
         <LandingProcessOnePager data={privatePage.processOnePager} />
       </Section>
@@ -349,6 +317,20 @@ export default function PrivateLanding() {
         <LandingSectionHeading eyebrow={privatePage.faq.eyebrow} title={privatePage.faq.title} accent="teal" />
         <LandingFaqList items={privatePage.faq.items.slice(0, 4)} accent="teal" />
       </Section>
+
+      <LandingFinalCta
+        eyebrow="상담"
+        title={privatePage.finalCta.title}
+        description={privatePage.finalCta.description}
+        backgroundMedia={HOME_MEDIA[privatePage.finalCta.mediaKey]}
+        links={[
+          {
+            label: privatePage.finalCta.primary.label,
+            href: privatePage.finalCta.primary.href,
+            trackLabel: privatePage.finalCta.primary.trackLabel,
+          },
+        ]}
+      />
 
       <Section>
         <PrivateApplyForm />

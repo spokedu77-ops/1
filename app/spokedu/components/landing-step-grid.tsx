@@ -9,9 +9,9 @@ export type LandingStepItem = {
 };
 
 const shellTone = {
-  violet: 'border-violet-200/60 bg-gradient-to-br from-violet-50/80 via-white to-indigo-50/50',
-  sky: 'border-sky-200/60 bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/50',
-  teal: 'border-stone-200/80 bg-[#FAFAF8]',
+  violet: 'border-violet-200/60 bg-gradient-to-br from-violet-50/80 via-white to-[#EAF1FF]/50',
+  sky: 'border-sky-200/60 bg-gradient-to-br from-sky-50/80 via-white to-[#EAF1FF]/50',
+  teal: 'border-stone-200/80 bg-[#F5F7FB]',
 } as const;
 
 const cardTone = {

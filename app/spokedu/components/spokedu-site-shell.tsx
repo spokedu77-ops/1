@@ -6,13 +6,13 @@ import { usePathname } from 'next/navigation';
 import { scrollSpokeduToTopOrHash } from '../lib/scroll';
 import { SiteFooter, SiteHeader } from './site-chrome';
 
-
 export function SpokeduSiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isContactPage = pathname === '/spokedu/contact';
   const isHomePage = pathname === '/spokedu';
+  /** Home만 full-bleed. SPOMOVE 탭 페이지는 일반 컨테이너(헤더 여백·패딩) 유지 */
+  const isFullBleedPage = isHomePage;
 
-  // 공유 layout + fullscreen 스크롤 컨테이너라 경로 변경 시 이전 위치가 남음 → 맨 위로
   useEffect(() => {
     const run = () => scrollSpokeduToTopOrHash();
     run();
@@ -32,7 +32,7 @@ export function SpokeduSiteShell({ children }: { children: ReactNode }) {
       <SiteHeader />
       <main
         className={
-          isHomePage
+          isFullBleedPage
             ? 'w-full max-w-none px-0 py-0'
             : 'mx-auto w-full max-w-6xl px-5 pb-5 pt-[calc(3.75rem+env(safe-area-inset-top,0px))] sm:px-8 sm:pb-10 sm:pt-[calc(4.25rem+env(safe-area-inset-top,0px))]'
         }

@@ -3,7 +3,7 @@ import { brandContactLinks, brandProfile, footerNavLinks, SPOKEDU_BASE_PATH } fr
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 export function ContactPageFooter() {
   return (
@@ -57,7 +57,7 @@ export function ContactPageFooter() {
                   href={link.href}
                   data-track={inferTrackFromHref(link.href)}
                   data-track-label={link.trackLabel}
-                  className={`text-sm font-medium text-slate-600 hover:text-indigo-700 ${focusRing}`}
+                  className={`text-sm font-medium text-slate-600 hover:text-[#174BE6] ${focusRing}`}
                 >
                   {link.label}
                 </Link>

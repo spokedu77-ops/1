@@ -19,7 +19,7 @@ import {
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 function InsightArticleCard({ article, photoPriority }: { article: InsightArticle; photoPriority?: boolean }) {
   return (
@@ -36,10 +36,10 @@ function InsightArticleCard({ article, photoPriority }: { article: InsightArticl
         photoPriority={photoPriority}
       />
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-indigo-600">
+        <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#245DFF]">
           {article.topic}
         </span>
-        <p className="mt-1.5 text-xs font-medium leading-snug text-indigo-800 [word-break:keep-all]">
+        <p className="mt-1.5 text-xs font-medium leading-snug text-[#0B1F46] [word-break:keep-all]">
           {article.coreQuestion}
         </p>
         <h3 className="mt-2 line-clamp-2 text-base font-bold leading-snug text-slate-950 [word-break:keep-all]">
@@ -50,7 +50,7 @@ function InsightArticleCard({ article, photoPriority }: { article: InsightArticl
         </p>
         <p className="mt-2 text-xs font-medium text-slate-500">대상: {article.audience}</p>
         <span
-          className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-indigo-700 ${fineHover}group-hover:text-indigo-900`}
+          className={`mt-3 inline-flex min-h-10 items-center text-sm font-semibold text-[#174BE6] ${fineHover}group-hover:text-[#0B1F46]`}
         >
           {article.ctaLabel} →
         </span>
@@ -98,7 +98,7 @@ export function InsightsLanding() {
                 href={item.href}
                 data-track={inferTrackFromHref(item.href)}
                 data-track-label={`insights-to-${item.label}`}
-                className={`mt-3 inline-flex text-sm font-semibold text-slate-700 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+                className={`mt-3 inline-flex text-sm font-semibold text-slate-700 ${fineHover}hover:text-[#174BE6] ${focusRing}`}
               >
                 {item.linkLabel} →
               </Link>
@@ -125,7 +125,7 @@ export function InsightsLanding() {
                 onClick={() => setActiveFilter(filter.id)}
                 className={`shrink-0 rounded-full border px-3.5 py-2 text-sm font-semibold transition ${focusRing} ${
                   active
-                    ? 'border-indigo-300 bg-indigo-50 text-indigo-900'
+                    ? 'border-[#9FC0FF] bg-[#EAF1FF] text-[#0B1F46]'
                     : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                 }`}
               >

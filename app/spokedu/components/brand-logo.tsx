@@ -53,7 +53,7 @@ export function BrandLogo({
     <Link
       href={SPOKEDU_BASE_PATH}
       onClick={scrollHomeOnClick ? () => scrollSpokeduToTop() : undefined}
-      className={`inline-flex h-8 items-center bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${className}`}
+      className={`inline-flex h-8 items-center bg-transparent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF] ${className}`}
       aria-label="SPOKEDU 홈"
     >
       {img}

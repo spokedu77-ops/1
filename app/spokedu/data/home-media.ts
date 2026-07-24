@@ -7,21 +7,14 @@
 import type { SpokeduImageDef } from './images';
 import { SPOKEDU_FALLBACK_FIELD, SPOKEDU_IMAGES } from './images';
 
-export type HomeMediaType = 'image' | 'video' | 'visual';
+export type HomeMediaType = 'image' | 'visual';
 
 export type HomeMediaTone = 'indigo' | 'sky' | 'lime' | 'amber' | 'rose' | 'violet' | 'slate';
-
-export type HomeMediaSource = {
-  src: string;
-  type: string;
-};
 
 export type HomeMediaItem = {
   id: string;
   type: HomeMediaType;
   src: string | null;
-  /** video: mp4/webm 등. 없으면 src 단일 사용 */
-  sources?: readonly HomeMediaSource[];
   /** 로딩 실패 시 SVG·공통 실사 fallback */
   fallbackSrc?: string | null;
   poster: string | null;
@@ -32,14 +25,6 @@ export type HomeMediaItem = {
   /** object-cover 앵커 (예: Hero KBS 로고 좌상단) */
   objectPosition?: string;
 };
-
-/** 로컬 progressive 루프용(선택). 홈 히어로는 YouTube 클릭 재생. */
-export const SPOKEDU_VIDEO = {
-  heroHome: {
-    mp4: '/videos/spokedu/hero-home.mp4',
-    webm: '/videos/spokedu/hero-home.webm',
-  },
-} as const;
 
 function fromPhoto(
   asset: SpokeduImageDef,
@@ -59,11 +44,11 @@ function fromPhoto(
 export const HOME_MEDIA = {
   homeHero: fromPhoto(SPOKEDU_IMAGES.home.hero, {
     id: 'home-hero',
-    label: 'SPOMOVE 단체 수업',
-    fallbackGradient: 'from-sky-600 via-blue-800 to-slate-900',
+    label: '체육수업 현장',
+    fallbackGradient: 'from-sky-500 via-blue-700 to-slate-900',
     tone: 'sky',
-    /** 아이들·매트 비중 확보 — 모바일 카피가 밝은 스크린 위에 안 앉게 */
-    objectPosition: '48% 62%',
+    /** 지도자·아이 움직임이 카피 영역과 겹치지 않게 */
+    objectPosition: '50% 35%',
   }),
   homeHeroMovement: fromPhoto(SPOKEDU_IMAGES.home.heroMovement, {
     id: 'home-hero-movement',
@@ -72,12 +57,12 @@ export const HOME_MEDIA = {
     tone: 'sky',
     objectPosition: '50% 35%',
   }),
-  homeHeroWide: fromPhoto(SPOKEDU_IMAGES.records.dongjak, {
+  homeHeroWide: fromPhoto(SPOKEDU_IMAGES.home.heroSpomoveClass, {
     id: 'home-hero-wide',
     label: 'SPOMOVE 기관 수업',
     fallbackGradient: 'from-indigo-600 via-indigo-800 to-slate-900',
     tone: 'indigo',
-    objectPosition: '50% 48%',
+    objectPosition: '48% 62%',
   }),
   heroThumbMedia: fromPhoto(SPOKEDU_IMAGES.home.heroMedia, {
     id: 'hero-thumb-media',
@@ -101,7 +86,7 @@ export const HOME_MEDIA = {
     /** 아이·코치 군집이 프레임 중앙에 오도록 */
     objectPosition: '62% 48%',
   }),
-  trackDispatch: fromPhoto(SPOKEDU_IMAGES.dispatch.groupClass, {
+  trackDispatch: fromPhoto(SPOKEDU_IMAGES.dispatch.kiwoomCenter, {
     id: 'track-dispatch',
     label: '기관 프로그램',
     fallbackGradient: 'from-sky-500 via-cyan-700 to-slate-900',
@@ -238,11 +223,12 @@ export const HOME_MEDIA = {
     fallbackGradient: 'from-indigo-400 to-slate-900',
     tone: 'indigo',
   }),
-  finalCta: fromPhoto(SPOKEDU_IMAGES.home.hero, {
+  finalCta: fromPhoto(SPOKEDU_IMAGES.home.dispatchScene, {
     id: 'final-cta',
     label: '상담 연결',
     fallbackGradient: 'from-indigo-600/40 via-transparent to-lime-400/20',
     tone: 'slate',
+    objectPosition: '50% 45%',
   }),
 } as const satisfies Record<string, HomeMediaItem>;
 

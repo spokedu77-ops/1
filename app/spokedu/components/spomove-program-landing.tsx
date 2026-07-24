@@ -45,7 +45,7 @@ export default function SpomoveProgramLanding() {
     <div className={audienceLandingStack}>
       <LandingHero
         kicker={page.hero.kicker}
-        kickerClassName="text-[#1D4ED8]"
+        kickerClassName="text-[#245DFF]"
         lines={page.hero.lines}
         subtitle={page.hero.subtitle}
         media={HOME_MEDIA[page.hero.mediaKey]}
@@ -72,7 +72,7 @@ export default function SpomoveProgramLanding() {
       {/* 1. 무엇인지 */}
       <section className="space-y-5" aria-labelledby="spomove-what">
         <div>
-          <p className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8]">01 · 무엇인지</p>
+          <p className="text-xs font-bold tracking-[0.14em] text-[#245DFF]">01 · 무엇인지</p>
           <h2 id="spomove-what" className={`${landingSectionTitle} mt-2`}>
             {page.overview.title}
           </h2>
@@ -102,7 +102,7 @@ export default function SpomoveProgramLanding() {
       {/* 2. 어떻게 — 페이지의 핵심 비주얼 */}
       <section id="how" className="scroll-mt-28 space-y-6 rounded-2xl border border-slate-200/90 bg-white px-5 py-7 sm:px-7 sm:py-9">
         <div>
-          <p className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8]">02 · 어떻게</p>
+          <p className="text-xs font-bold tracking-[0.14em] text-[#245DFF]">02 · 어떻게</p>
           <h2 className={`${landingSectionTitle} mt-2`}>{page.padSystem.title}</h2>
           <p className={`mt-3 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-[15px] ${koreanText}`}>
             {page.padSystem.body}
@@ -112,7 +112,7 @@ export default function SpomoveProgramLanding() {
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)] lg:gap-10">
           <ol className="grid gap-3 sm:grid-cols-2">
             {page.padSystem.points.map((point, index) => (
-              <li key={point.title} className={`flex gap-3 ${landingCardPanelPad} border border-slate-200/80 bg-[#FAFAF8]`}>
+              <li key={point.title} className={`flex gap-3 ${landingCardPanelPad} border border-slate-200/80 bg-[#F5F7FB]`}>
                 <span
                   className="mt-1 h-3 w-3 shrink-0 rounded-full"
                   style={{ backgroundColor: PAD_CELLS[index]?.hex }}
@@ -127,7 +127,7 @@ export default function SpomoveProgramLanding() {
           </ol>
 
           <div className="mx-auto w-full max-w-[18rem] lg:mx-0 lg:max-w-none">
-            <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-[#FAFAF8] p-2.5 shadow-sm shadow-slate-900/5">
+            <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-[#F5F7FB] p-2.5 shadow-sm shadow-slate-900/5">
               <div className="relative aspect-square overflow-hidden rounded-[1.15rem] bg-slate-200">
                 <Image
                   src={SPOKEDU_IMAGES.brand.spomat.src}
@@ -159,7 +159,7 @@ export default function SpomoveProgramLanding() {
       {/* 3. 얼마나 깊어지나 */}
       <section className="space-y-5" aria-labelledby="spomove-depth">
         <div>
-          <p className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8]">03 · 난이도</p>
+          <p className="text-xs font-bold tracking-[0.14em] text-[#245DFF]">03 · 난이도</p>
           <h2 id="spomove-depth" className={`${landingSectionTitle} mt-2`}>
             {page.reactionLevels.title}
           </h2>
@@ -170,7 +170,7 @@ export default function SpomoveProgramLanding() {
         <ol className="grid gap-3 sm:grid-cols-2">
           {page.reactionLevels.items.map((item) => (
             <li key={item.title} className={`${landingCardPanelPad} ${landingCardFrame}`}>
-              <p className="text-xs font-bold text-[#1D4ED8]">{item.level.padStart(2, '0')}</p>
+              <p className="text-xs font-bold text-[#245DFF]">{item.level.padStart(2, '0')}</p>
               <h3 className={`mt-1.5 text-base font-bold text-slate-950 ${koreanText}`}>{item.title}</h3>
               <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 ${koreanText}`}>{item.body}</p>
             </li>
@@ -185,7 +185,7 @@ export default function SpomoveProgramLanding() {
       <section className="space-y-5" aria-labelledby="spomove-field">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8]">04 · 현장</p>
+            <p className="text-xs font-bold tracking-[0.14em] text-[#245DFF]">04 · 현장</p>
             <h2 id="spomove-field" className={`${landingSectionTitle} mt-2`}>
               {page.activities.title}
             </h2>
@@ -239,9 +239,9 @@ export default function SpomoveProgramLanding() {
 
       {/* 도입 */}
       <section className={`space-y-3 ${landingCardPanelPad} ${landingCardFrame}`}>
-        <p className="text-xs font-bold tracking-[0.14em] text-[#1D4ED8]">도입</p>
+        <p className="text-xs font-bold tracking-[0.14em] text-[#245DFF]">도입</p>
         <h2 className={`text-xl font-bold text-slate-950 sm:text-2xl ${koreanText}`}>{page.institutionFit.title}</h2>
-        <p className={`text-base font-semibold text-[#1D4ED8] ${koreanText}`}>{page.institutionFit.lead}</p>
+        <p className={`text-base font-semibold text-[#245DFF] ${koreanText}`}>{page.institutionFit.lead}</p>
         <p className={`text-sm leading-relaxed text-slate-600 ${koreanText}`}>{page.institutionFit.body}</p>
         <p className={`text-sm text-slate-600 ${koreanText}`}>
           <span className="font-semibold text-slate-800">대상 · </span>

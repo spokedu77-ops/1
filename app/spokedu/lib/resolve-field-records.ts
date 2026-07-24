@@ -9,10 +9,10 @@ const stableRecordMediaBySlug: Partial<Record<string, HomeMediaKey>> = {
   'yangcheon-paps': 'proofYangcheon',
   'dasarang-oneday': 'proofDasarang',
   'seodaemun-event-booth': 'proofEvent',
-  'maedong-sports-stepup': 'proofCenter',
-  'donghaeng-special-pe': 'proofDongjak',
-  'gangdong-health-pe': 'proofYangcheon',
-  'shinwol-integrated-pe': 'proofEvent',
+  'maedong-sports-stepup': 'programMonthlyNewsports',
+  'donghaeng-special-pe': 'programPlay',
+  'gangdong-health-pe': 'proofCommunity',
+  'shinwol-integrated-pe': 'proofCenter',
 };
 
 export type FieldRecordWithThumbnail = FieldRecordItem & {

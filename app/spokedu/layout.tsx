@@ -25,9 +25,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: SPOKEDU_IMAGES.home.hero.src,
-        width: 1200,
-        height: 800,
-        alt: '스포키듀 대표 수업 장면',
+        width: 1920,
+        height: 1280,
+        alt: SPOKEDU_IMAGES.home.hero.alt,
       },
     ],
   },
@@ -35,6 +35,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: seoMeta.home.title,
     description: seoMeta.home.description,
+    images: [SPOKEDU_IMAGES.home.hero.src],
   },
 };
 
@@ -43,7 +44,7 @@ export default function SpokeduSiteLayout({ children }: { children: ReactNode })
 
   return (
     <div
-      className="min-h-screen bg-[#F3F7FC] antialiased"
+      className="min-h-screen bg-[#F5F7FB] antialiased"
       style={{
         fontFamily:
           '"Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", system-ui, sans-serif',

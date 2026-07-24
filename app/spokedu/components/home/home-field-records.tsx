@@ -34,7 +34,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
   return (
     <section
       id={homePage.cases.id}
-      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#F3F7FC]`}
+      className={`${homeSectionScrollMt} ${homeSectionPadCompact} bg-[#F5F7FB]`}
     >
       <div className={siteContainer}>
         <motion.div
@@ -45,7 +45,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
           transition={{ duration: 0.45 }}
         >
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#1D4ED8]">현장 기록</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#245DFF]">현장 기록</p>
             <h2 className={`${homeSectionH2} mt-3`}>{homePage.cases.title}</h2>
             <p className={`mt-3 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-[17px] ${koreanText}`}>
               {homePage.cases.lead}
@@ -53,7 +53,7 @@ export function HomeFieldRecords({ caseCards }: HomeFieldRecordsProps) {
             <dl className="mt-5 flex flex-wrap gap-x-6 gap-y-2">
               {homePage.cases.proofStats.map((stat) => (
                 <div key={stat.label} className="min-w-0">
-                  <dt className={`text-sm font-bold text-[#0B1220] ${koreanText}`}>{stat.value}</dt>
+                  <dt className={`text-sm font-bold text-[#0B1F46] ${koreanText}`}>{stat.value}</dt>
                   <dd className={`mt-0.5 text-xs text-slate-500 ${koreanText}`}>{stat.label}</dd>
                 </div>
               ))}
@@ -111,20 +111,20 @@ function CaseCard({ card, priority }: { card: CaseCardWithThumb; priority?: bool
         <div className="relative min-h-0 overflow-hidden">
           <CaseMedia card={card} priority={priority} />
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1220]/30 via-transparent to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0B1F46]/30 via-transparent to-transparent"
             aria-hidden
           />
         </div>
         <div className="grid grid-rows-[auto_auto_auto_1fr_auto] gap-0 p-5 sm:p-6">
-          <p className={`${homeCaption} font-semibold text-[#1D4ED8]`}>{card.programType}</p>
-          <h3 className={`mt-2 line-clamp-1 text-lg font-bold leading-snug text-[#0B1220] sm:text-xl ${koreanText}`}>
+          <p className={`${homeCaption} font-semibold text-[#245DFF]`}>{card.programType}</p>
+          <h3 className={`mt-2 line-clamp-1 text-lg font-bold leading-snug text-[#0B1F46] sm:text-xl ${koreanText}`}>
             {card.programName}
           </h3>
           <p className={`mt-1.5 line-clamp-1 text-sm font-semibold text-slate-700 ${koreanText}`}>{card.venue}</p>
           <p className={`mt-2 line-clamp-2 text-sm leading-relaxed text-slate-600 ${koreanText}`}>
             {card.description}
           </p>
-          <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#1D4ED8]">
+          <span className="mt-4 inline-flex items-center gap-1.5 text-[15px] font-semibold text-[#245DFF]">
             {card.ctaLabel}
             <HomeChevron />
           </span>

@@ -8,7 +8,6 @@ import { SPOKEDU_FALLBACK_FIELD } from '../../data/images';
 import { homePhotoGrade } from '../../lib/ui-classes';
 import { BrandOverlay } from './brand-overlay';
 import { GradientVisual } from './gradient-visual';
-import { LoopVideo } from './loop-video';
 
 type MediaRendererProps = {
   media: HomeMediaItem;
@@ -58,29 +57,6 @@ export function MediaRenderer({
       setUseImage(false);
     }
   };
-
-  if (media.type === 'video') {
-    return (
-      <div className={`relative h-full w-full overflow-hidden bg-slate-900 ${className}`}>
-        <LoopVideo
-          sources={media.sources ?? []}
-          src={media.src}
-          poster={media.poster}
-          alt={media.alt}
-          objectPosition={media.objectPosition}
-          posterPriority={priority}
-          sizes={sizes}
-          className="absolute inset-0"
-        />
-        <BrandOverlay tone={media.tone} intensity={intensity === 'photo' ? 'soft' : intensity} />
-        {showLabel && media.label ? (
-          <figcaption className="pointer-events-none absolute bottom-3 left-3 z-10 rounded-lg border border-white/25 bg-white/10 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-md">
-            {media.label}
-          </figcaption>
-        ) : null}
-      </div>
-    );
-  }
 
   if (!useImage || !imgSrc) {
     if (strictPhoto) {

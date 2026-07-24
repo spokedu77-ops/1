@@ -43,7 +43,7 @@ type LandingHeroProps = {
 /** 서브 랜딩 Hero — inset split + 호버 줌. 전 페이지 풀블리드 강제 없음. */
 export function LandingHero({
   kicker,
-  kickerClassName = 'text-indigo-600',
+  kickerClassName = 'text-[#245DFF]',
   leading,
   lines,
   subtitle,

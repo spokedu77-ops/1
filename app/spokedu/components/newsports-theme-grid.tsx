@@ -16,7 +16,7 @@ function ThemePhoto({ theme, priority }: { theme: NewsportsTheme; priority?: boo
 
   return (
     <motion.div
-      className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-indigo-500 via-sky-500 to-slate-800"
+      className="relative aspect-[4/3] overflow-hidden bg-gradient-to-br from-[#245DFF] via-[#6E9BFF] to-slate-800"
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.25 }}
     >

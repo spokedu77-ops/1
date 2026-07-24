@@ -5,7 +5,7 @@ import { contactPageContent } from './contact-page-data';
 import { btnPrimary } from '../lib/ui-classes';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 type ContactFallbackProps = {
   title: string;

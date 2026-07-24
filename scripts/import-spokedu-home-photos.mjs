@@ -12,7 +12,7 @@ const ROOT = join(__dirname, '../public/images/spokedu');
 /** @type {{ url: string; path: string }[]} */
 const DOWNLOADS = [
   // Home 1–10
-  { url: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png', path: 'home/home-hero-movement.png' },
+  { url: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png', path: 'home/home-hero-movement.jpg' },
   { url: 'https://i.postimg.cc/s2n6Dbx4/20230318-001009.png', path: 'about/founder.png' },
   { url: 'https://i.postimg.cc/Vk0txnwG/seupokidyu-laeb-cheyuggwan-hyeobchan-13.jpg', path: 'home/home-lab-energy.jpg' },
   { url: 'https://i.postimg.cc/4xWDWVRM/SE-5e4e5035-6810-11ee-a584-85f14318c83a.jpg', path: 'home/home-hero-media.jpg' },
@@ -21,7 +21,7 @@ const DOWNLOADS = [
   { url: 'https://i.postimg.cc/C1W82jzZ/IMG-7594.jpg', path: 'curriculum/curriculum-instructor-training.jpg' },
   { url: 'https://i.postimg.cc/fLbsYPgR/DSC00739.jpg', path: 'records/yangcheon.jpg' },
   { url: 'https://i.postimg.cc/6qkTjKD0/IMG-8735.jpg', path: 'records/dongjak.jpg' },
-  { url: 'https://i.postimg.cc/J0pswpW4/20260417-115503.png', path: 'records/dasarang.png' },
+  { url: 'https://i.postimg.cc/J0pswpW4/20260417-115503.png', path: 'records/dasarang.jpg' },
   { url: 'https://i.postimg.cc/dt2P4SkL/IMG-7940.jpg', path: 'records/playz.jpg' },
   // 프로그램 그리드
   { url: 'https://i.postimg.cc/Dz7dJvwW/Kakao-Talk-20260508-135643505.jpg', path: 'programs/program-spomove.jpg' },
@@ -58,12 +58,12 @@ async function main() {
   copy('dispatch/dispatch-group-class.jpg', 'dispatch/dispatch-institution-class.jpg');
   copy('dispatch/dispatch-group-class.jpg', 'home/home-dispatch-scene.jpg');
   copy('home/home-lab-energy.jpg', 'records/lab.jpg');
-  copy('home/home-hero-movement.png', 'fallback-field.png');
+  copy('home/home-hero-movement.jpg', 'fallback-field.png');
   copy('records/yangcheon.jpg', 'cases/hero.jpg');
   copy('dispatch/dispatch-group-class.jpg', 'cases/representative.jpg');
   copy('records/yangcheon.jpg', 'monthly/hero.jpg');
   copy('records/playz.jpg', 'monthly/representative.jpg');
-  copy('records/dasarang.png', 'programs/program-monthly-newsports.png');
+  copy('records/dasarang.jpg', 'programs/program-monthly-newsports.png');
 
   console.log('Done — spokedu home photos imported.');
 }

@@ -5,13 +5,13 @@ export type LandingCardVariant = 'image' | 'dark' | 'glass' | 'gradient';
 export function landingCardShell(variant: LandingCardVariant = 'image'): string {
   switch (variant) {
     case 'dark':
-      return 'border-white/10 bg-[#07101f] text-white';
+      return 'border-white/10 bg-[#0B1F46] text-white';
     case 'glass':
-      return 'border-slate-200/80 bg-white/90 text-slate-900';
+      return 'border-[#DCE3EE] bg-white/90 text-slate-900';
     case 'gradient':
-      return 'border-slate-200/80 bg-[#F3F7FC] text-slate-900';
+      return 'border-[#DCE3EE] bg-[#F5F7FB] text-slate-900';
     default:
-      return 'border-slate-200/80 bg-white text-slate-900';
+      return 'border-[#DCE3EE] bg-white text-slate-900';
   }
 }
 
@@ -22,10 +22,10 @@ export function landingCardBodyText(variant: LandingCardVariant): string {
 
 export function landingCardTitleText(variant: LandingCardVariant): string {
   if (variant === 'dark') return 'text-white';
-  return 'text-[#0B1220]';
+  return 'text-[#0B1F46]';
 }
 
 export function landingCardBadgeText(variant: LandingCardVariant): string {
-  if (variant === 'dark') return 'text-sky-300';
-  return 'text-[#1D4ED8]';
+  if (variant === 'dark') return 'text-[#9FC0FF]';
+  return 'text-[#245DFF]';
 }

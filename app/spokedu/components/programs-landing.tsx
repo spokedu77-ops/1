@@ -20,7 +20,7 @@ import { LandingSectionHeading } from './landing-section-heading';
 import { MediaPanel } from './visual';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 function Section({ children, className = '' }: { children: ReactNode; className?: string }) {
   const reducedMotion = useReducedMotion();
@@ -44,7 +44,7 @@ export default function ProgramsLanding() {
     <div className={audienceLandingStack}>
       <LandingHero
         kicker={hero.kicker}
-        kickerClassName="text-indigo-600"
+        kickerClassName="text-[#245DFF]"
         lines={[...hero.lines]}
         subtitle={hero.subtitle}
         media={HOME_MEDIA[hero.mediaKey]}
@@ -74,7 +74,7 @@ export default function ProgramsLanding() {
               />
               <div className={`flex flex-1 flex-col ${landingCardPanelPad}`}>
                 {item.featured ? (
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">대표</p>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#245DFF]">대표</p>
                 ) : null}
                 <h3
                   className={`font-semibold leading-snug text-slate-900 ${item.featured ? 'mt-0.5' : ''} text-sm sm:text-base`}
@@ -84,7 +84,7 @@ export default function ProgramsLanding() {
                 <p className={`mt-2 flex-1 text-sm leading-relaxed text-slate-600 ${koreanLineBreak}`}>
                   {item.description}
                 </p>
-                <span className="mt-4 text-sm font-semibold text-slate-900 transition group-hover:text-indigo-700">
+                <span className="mt-4 text-sm font-semibold text-slate-900 transition group-hover:text-[#174BE6]">
                   자세히 보기 →
                 </span>
               </div>

@@ -94,8 +94,8 @@ export type RecordsHeroSummary = {
   venueTypes: FieldRecordVenueType[];
 };
 
-const recordsThumb = (slug: FieldRecordSlug, ext: 'jpg' | 'png') =>
-  `/images/spokedu/records/${slug}.${ext}` as const;
+const recordsThumb = (name: string, ext: 'jpg' | 'png') =>
+  `/images/spokedu/records/${name}.${ext}` as const;
 
 export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
   {
@@ -189,7 +189,7 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-dasarang',
     homeTrackLabel: 'cta-home-proof-dasarang',
     filters: ['oneday', 'edtech'],
-    thumbnailSrc: recordsThumb('dasarang-oneday', 'jpg'),
+    thumbnailSrc: recordsThumb('dasarang-oneday-field', 'jpg'),
     onsite: {
       purpose: '하루 일정 안에서 학년 혼합 아동이 안전하게 순환하며 협동·기능 체육을 경험하게 만들기',
       audience: '초등 2~6학년 · 지역아동센터 원데이',
@@ -246,7 +246,7 @@ export const FIELD_RECORD_CATALOG: readonly FieldRecordCatalogItem[] = [
     recordsTrackLabel: 'records-donghaeng-special-blog',
     homeTrackLabel: 'cta-home-proof-donghaeng-blog',
     filters: ['regular'],
-    thumbnailSrc: recordsThumb('donghaeng-special-pe', 'jpg'),
+    thumbnailSrc: recordsThumb('donghaeng-special-pe-field', 'jpg'),
   },
   {
     slug: 'gangdong-health-pe',

@@ -44,7 +44,9 @@ describe('spokedu site IA', () => {
     expect(homePage.audienceGate.title).toBe('어떤 수업이 필요하신가요?');
     expect(homePage.proofStrip.title).toBe('왜 스포키듀인가');
     expect(homePage.trustStrip.items).toHaveLength(4);
-    expect(homePage.trustStrip.items[0]?.value).toBeTruthy();
+    expect(homePage.trustStrip.items[0]?.value).toMatch(/년\+$/);
+    expect(homePage.trustStrip.items[2]?.value).toMatch(/건$/);
+    expect(homePage.trustStrip.items.some((item) => item.value.includes('120'))).toBe(false);
     expect(homePage.audienceGate.items).toHaveLength(3);
     expect(homePage.audienceGate.items.map((item) => item.fit)).toHaveLength(3);
     expect(homePage.audienceGate.items[2]?.id).toBe('curriculum');
@@ -63,9 +65,9 @@ describe('spokedu site IA', () => {
   it('uses verified catalog slugs for home cases', () => {
     expect(HOME_MAIN_CASE_SLUGS).toEqual([
       'dongjak-spomove',
-      'yangcheon-paps',
-      'dasarang-oneday',
-      'seodaemun-event-booth',
+      'maedong-sports-stepup',
+      'donghaeng-special-pe',
+      'gangdong-health-pe',
     ]);
     expect(homePage.cases.cards.map((card) => card.slug)).toEqual([...HOME_MAIN_CASE_SLUGS]);
     expect(homePage.cases.cards).toHaveLength(4);

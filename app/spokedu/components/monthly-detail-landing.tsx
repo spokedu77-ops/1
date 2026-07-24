@@ -19,7 +19,7 @@ import {
 import { inferTrackFromHref } from '../lib/tracking';
 
 const focusRing =
-  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500';
+  'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#245DFF]';
 
 const blockVariants: LandingCardVariant[] = ['glass', 'gradient', 'image'];
 
@@ -60,7 +60,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
           href={backHref}
           data-track={inferTrackFromHref(backHref)}
           data-track-label={`monthly-detail-back-${record.slug}`}
-          className={`mb-4 inline-block text-sm font-semibold text-slate-500 ${fineHover}hover:text-indigo-700 ${focusRing}`}
+          className={`mb-4 inline-block text-sm font-semibold text-slate-500 ${fineHover}hover:text-[#174BE6] ${focusRing}`}
         >
           ← 월간형 체육수업
         </Link>
@@ -93,7 +93,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
             {record.institutions.map((name) => (
               <li
                 key={name}
-                className="rounded-full border border-indigo-100 bg-white/80 px-3 py-1.5 text-sm font-medium text-slate-700"
+                className="rounded-full border border-[#D6E3FF] bg-white/80 px-3 py-1.5 text-sm font-medium text-slate-700"
               >
                 {name}
               </li>
@@ -106,7 +106,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
             {record.programs.map((name) => (
               <li
                 key={name}
-                className="rounded-full border border-indigo-200/80 bg-white/70 px-3 py-1.5 text-sm font-semibold text-slate-800"
+                className="rounded-full border border-[#D6E3FF]/80 bg-white/70 px-3 py-1.5 text-sm font-semibold text-slate-800"
               >
                 {name}
               </li>
@@ -144,9 +144,9 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
             data-track-label={`monthly-detail-cases-${record.slug}`}
             className={`flex min-h-[120px] flex-col justify-center rounded-2xl p-5 sm:p-6 ${landingCardShell('gradient')} ${cardInteractive} ${focusRing}`}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-indigo-600">사례 아카이브</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#245DFF]">사례 아카이브</p>
             <p className="mt-2 text-lg font-bold text-slate-900">수업 사례 보기</p>
-            <span className={`mt-3 text-sm font-semibold text-slate-700 ${fineHover}group-hover:text-indigo-700`}>→</span>
+            <span className={`mt-3 text-sm font-semibold text-slate-700 ${fineHover}group-hover:text-[#174BE6]`}>→</span>
           </Link>
           {relatedLinks.map((link, index) => (
             <motion.div
@@ -163,7 +163,7 @@ export function MonthlyDetailLanding({ record }: MonthlyDetailLandingProps) {
                 className={`flex min-h-[120px] flex-col justify-between rounded-2xl p-5 sm:p-6 ${landingCardShell(blockVariants[index % blockVariants.length] ?? 'glass')} ${cardInteractive} ${focusRing}`}
               >
                 <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900">{link.label}</p>
-                <span className={`text-sm font-semibold text-slate-800 ${fineHover}group-hover:text-indigo-700`}>사례 보기 →</span>
+                <span className={`text-sm font-semibold text-slate-800 ${fineHover}group-hover:text-[#174BE6]`}>사례 보기 →</span>
               </Link>
             </motion.div>
           ))}
