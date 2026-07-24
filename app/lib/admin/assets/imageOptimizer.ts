@@ -155,6 +155,80 @@ export async function optimizeToWebP(
   });
 }
 
+export interface CompressImageForUploadOptions {
+  /** 목표 최대 바이트 (기본 1.5MB). 단계적으로 줄여 맞춤 */
+  maxBytes?: number;
+}
+
+/**
+ * 선생님 세션 사진 등 — 업로드 전 리사이즈·압축.
+ * WebP → JPEG, 해상도/품질을 단계적으로 낮춰 maxBytes 이하로 맞춤.
+ * HEIC 등 브라우저가 디코드 못 하는 형식은 명확한 오류를 던진다.
+ */
+export async function compressImageForUpload(
+  file: File,
+  options: CompressImageForUploadOptions = {}
+): Promise<File> {
+  const maxBytes = options.maxBytes ?? 1.5 * 1024 * 1024;
+
+  let img: HTMLImageElement;
+  try {
+    img = await loadImage(file);
+  } catch {
+    throw new Error(
+      '이 기기에서 변환할 수 없는 사진 형식입니다. JPG 또는 PNG로 저장한 뒤 다시 올려 주세요.'
+    );
+  }
+
+  const baseName = file.name.replace(/\.[^/.]+$/, '') || 'photo';
+  const steps: Array<{ maxEdge: number; quality: number; mime: 'image/webp' | 'image/jpeg'; ext: string }> = [
+    { maxEdge: 1600, quality: 0.82, mime: 'image/webp', ext: '.webp' },
+    { maxEdge: 1280, quality: 0.75, mime: 'image/webp', ext: '.webp' },
+    { maxEdge: 1280, quality: 0.72, mime: 'image/jpeg', ext: '.jpg' },
+    { maxEdge: 1024, quality: 0.65, mime: 'image/jpeg', ext: '.jpg' },
+    { maxEdge: 800, quality: 0.55, mime: 'image/jpeg', ext: '.jpg' },
+  ];
+
+  let best: File | null = null;
+  let lastEncodeError: unknown;
+
+  for (const step of steps) {
+    try {
+      const { width, height } = fitContain(img.width, img.height, step.maxEdge, step.maxEdge);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas context 생성 실패');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (b) => (b ? resolve(b) : reject(new Error('이미지 압축 실패'))),
+          step.mime,
+          step.quality
+        );
+      });
+
+      const out = new File([blob], `${baseName}${step.ext}`, {
+        type: step.mime,
+        lastModified: Date.now(),
+      });
+      best = out;
+      if (out.size <= maxBytes) return out;
+    } catch (err) {
+      lastEncodeError = err;
+    }
+  }
+
+  if (best && best.size <= maxBytes * 1.25) return best;
+
+  if (lastEncodeError instanceof Error) throw lastEncodeError;
+  throw new Error('사진 용량이 커서 자동 압축에 실패했습니다. 더 작은 사진으로 다시 시도해 주세요.');
+}
+
 /**
  * 이미지 최적화 (WebP 강제 통일)
  * slot: off1 | off2 | on1 | on2 (또는 레거시 off | on)

@@ -17,8 +17,41 @@ import {
 } from '@/app/lib/feedbackValidation';
 import { isCenterSessionType } from '@/app/admin/classes-v2/lib/sessionTypeCategory';
 import { getSupabaseBrowserClient } from '@/app/lib/supabase/browser';
-import { optimizeToWebP } from '@/app/lib/admin/assets/imageOptimizer';
+import { compressImageForUpload } from '@/app/lib/admin/assets/imageOptimizer';
+import { compressDocumentEmbeddedImages } from '@/app/lib/client/compressDocumentEmbeddedImages';
 import { devLogger } from '@/app/lib/logging/devLogger';
+
+/** Supabase Storage 버킷 한도보다 여유 있게 — 업로드 전 목표 용량 */
+const SESSION_PHOTO_MAX_BYTES = 1.5 * 1024 * 1024;
+
+function isImageFile(file: File): boolean {
+  if (file.type.startsWith('image/')) return true;
+  // iOS 등에서 type이 비는 경우 확장자로 보조 판별
+  return /\.(jpe?g|png|webp|gif|heic|heif|bmp)$/i.test(file.name);
+}
+
+function storageUploadErrorMessage(err: unknown): string {
+  const raw =
+    err && typeof err === 'object' && 'message' in err
+      ? String((err as { message?: unknown }).message ?? '')
+      : err instanceof Error
+        ? err.message
+        : String(err);
+  const lower = raw.toLowerCase();
+  if (
+    lower.includes('exceeded') ||
+    lower.includes('maximum allowed size') ||
+    lower.includes('payload too large') ||
+    lower.includes('entity too large') ||
+    /크기|용량/.test(raw)
+  ) {
+    return '사진 용량이 허용 한도를 초과했습니다. 자동 압축 후에도 실패하면 더 작은 사진으로 올려 주세요.';
+  }
+  if (lower === 'failed to fetch' || lower.includes('network')) {
+    return '네트워크 연결이 불안정합니다. Wi-Fi/데이터를 바꾼 뒤 다시 시도해 주세요.';
+  }
+  return raw || '업로드에 실패했습니다.';
+}
 
 interface Session {
   id: string;
@@ -413,15 +446,24 @@ function MyClassesContent() {
 
       let uploadFileBody: File = file;
       let contentType: string | undefined;
-      // 세션 사진: 화면용 WebP로 리사이즈·압축 (원본 수 MB → 보통 100~400KB)
-      if (bucket === 'session-photos' && file.type.startsWith('image/')) {
-        try {
-          uploadFileBody = await optimizeToWebP(file, { maxW: 1600, maxH: 1600, quality: 0.82 });
+      // 이미지면 업로드 전 자동 리사이즈·압축 (원본 수 MB → 보통 100~400KB, 목표 ≤1.5MB)
+      const shouldCompressImage =
+        isImageFile(file) && (bucket === 'session-photos' || bucket === SESSION_FILES_BUCKET);
+      if (shouldCompressImage) {
+        uploadFileBody = await compressImageForUpload(file, { maxBytes: SESSION_PHOTO_MAX_BYTES });
+        if (uploadFileBody.type === 'image/webp') {
           ext = '.webp';
           contentType = 'image/webp';
-        } catch (optimizeError) {
-          devLogger.warn('[session-photos optimize skipped]', optimizeError);
+        } else if (uploadFileBody.type === 'image/jpeg') {
+          ext = '.jpg';
+          contentType = 'image/jpeg';
+        } else {
+          contentType = uploadFileBody.type || undefined;
         }
+      } else if (bucket === SESSION_FILES_BUCKET) {
+        // 워드/PPT/엑셀/한글(hwpx) 문서 안 임베드 사진 리사이즈·압축
+        uploadFileBody = await compressDocumentEmbeddedImages(file);
+        contentType = uploadFileBody.type || undefined;
       }
 
       const safeFileName = `${selectedEvent.id}/${Date.now()}_${safeBase}${ext}`;
@@ -432,8 +474,7 @@ function MyClassesContent() {
       const { publicUrl } = supabase.storage.from(bucket).getPublicUrl(safeFileName).data;
       return { publicUrl, displayName };
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      toast.error(`파일 업로드 오류: ${msg}`);
+      toast.error(`파일 업로드 오류: ${storageUploadErrorMessage(err)}`);
       return null;
     } finally {
       setUploading(false);
@@ -713,6 +754,7 @@ function MyClassesContent() {
                     <p className="text-[11px] leading-relaxed text-slate-600 font-semibold rounded-xl bg-white/80 border border-blue-100/80 px-3 py-2.5">
                       센터 피드백은 <span className="text-blue-700">파일 1개만</span> 저장됩니다. 새 파일을 올리면 이전 첨부는{' '}
                       <span className="text-blue-700">자동으로 교체</span>되며, 저장소에서 이전 파일도 삭제됩니다.
+                      워드·PPT·엑셀·한글(hwpx) 문서에 들어 있는 사진도 업로드 시 자동으로 줄입니다.
                     </p>
                     <div className="grid gap-2">
                       {fileUrls.map((url, i) => (
