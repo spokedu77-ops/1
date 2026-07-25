@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import { KAKAO_CHANNEL_URL } from '../data/config';
 
@@ -51,6 +51,9 @@ export default function ApplyForm({
     f4: '',
     f5: '',
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const submittingRef = useRef(false);
 
   const setField = useCallback((id: (typeof VALUE_IDS)[number], value: string) => {
     setValues((prev) => ({ ...prev, [id]: value }));
@@ -141,6 +144,8 @@ export default function ApplyForm({
   }, [previewText, copyToClipboard, onCopyResult]);
 
   const handleSubmitConsult = useCallback(async () => {
+    if (submittingRef.current || submitted) return;
+
     const learnerLines = learners.map((l) => l.trim()).filter(Boolean);
     const isRequiredFilled =
       learnerLines.length > 0 &&
@@ -159,6 +164,8 @@ export default function ApplyForm({
       return;
     }
 
+    submittingRef.current = true;
+    setSubmitting(true);
     const nameForApi = learnerLines.join('\n');
 
     try {
@@ -183,6 +190,7 @@ export default function ApplyForm({
         });
         return;
       }
+      setSubmitted(true);
       onConsultSubmit?.({
         requiredFilled: true,
         ok: true,
@@ -200,8 +208,11 @@ export default function ApplyForm({
         emailSent: false,
         message: '네트워크 오류로 접수에 실패했습니다. 잠시 후 다시 시도해 주세요.',
       });
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
-  }, [previewText, learners, values, onConsultSubmit]);
+  }, [previewText, learners, values, onConsultSubmit, submitted]);
 
   return (
     <section id="apply">
@@ -394,9 +405,10 @@ export default function ApplyForm({
                   <button
                     type="button"
                     className="pl-btn pl-btn-kakao pl-btn-submit-consult"
+                    disabled={submitting || submitted}
                     onClick={handleSubmitConsult}
                   >
-                    상담 신청 보내기
+                    {submitted ? '접수 완료' : submitting ? '접수 중…' : '상담 신청 보내기'}
                   </button>
                   <a
                     className="pl-btn pl-btn-kakao"

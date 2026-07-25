@@ -97,11 +97,35 @@ export async function POST(req: NextRequest) {
 
     const tableName = process.env.PRIVATE_LEADS_TABLE?.trim() || 'consultations';
     const supabase = getServiceSupabase();
+    const storedContent = `[문의 type]\n${type}\n\n${content}`;
+
+    // 더블클릭·연타로 동일 접수가 연속 insert되지 않도록 최근 동일 건은 재사용
+    const dedupeSince = new Date(Date.now() - 2 * 60 * 1000).toISOString();
+    const { data: existing } = await supabase
+      .from(tableName)
+      .select('id')
+      .eq('consult_type', 'tutoring')
+      .eq('phone', phone)
+      .eq('content', storedContent)
+      .gte('created_at', dedupeSince)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing?.id) {
+      return NextResponse.json({
+        ok: true,
+        emailSent: false,
+        duplicate: true,
+        message: '접수가 저장되었습니다.',
+      });
+    }
+
     const { error } = await supabase.from(tableName).insert({
       parent_name: name,
       phone: phone || null,
       child_age: null,
-      content: `[문의 type]\n${type}\n\n${content}`,
+      content: storedContent,
       consult_type: 'tutoring',
       status: 'pending',
     });

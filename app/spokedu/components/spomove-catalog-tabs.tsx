@@ -409,8 +409,96 @@ const tabs: TabContent[] = [
   },
 ];
 
+const refinedCatalogSections: SectionBlock[] = [
+  {
+    eyebrow: 'CATALOG OVERVIEW',
+    title: '도입 검토에 필요한 구성만 한눈에 정리합니다.',
+    lead:
+      '공식 카탈로그는 교육 철학을 다시 설명하기보다, 실제 기관이 무엇을 선택하고 어떻게 운영할 수 있는지 확인하는 자료입니다. 콘텐츠 범위, 운영 환경, 난이도 설정, 스포매트, 구독과 가격 정보를 중심으로 정리합니다.',
+    tone: 'blue',
+    cards: [
+      { title: '콘텐츠 범위', body: '단순반응, 선택반응, 복합반응, DIVE, 활용 놀이체육까지 어떤 프로그램을 사용할 수 있는지 확인합니다.' },
+      { title: '운영 환경', body: '빔프로젝터, 전자칠판, 대형 모니터, 활동 공간, 스포매트 필요 여부를 기준으로 도입 가능성을 판단합니다.' },
+      { title: '난이도 설정', body: '쉬움, 보통, 어려움과 화면 제시시간을 기준으로 수업 대상에 맞는 운영 범위를 정합니다.' },
+      { title: '구독과 장비', body: '무료, 라이트, 프리미엄 구독 범위와 스포매트 구매 조건을 함께 확인합니다.' },
+    ],
+  },
+  {
+    eyebrow: 'OPERATION FLOW',
+    title: '수업 운영 흐름은 선택, 설정, 출력, 수행으로 단순합니다.',
+    cards: [
+      { eyebrow: 'STEP 01', title: '콘텐츠 선택', body: '반응 영역, 프로그램, 난이도와 수업 목적에 맞는 콘텐츠를 선택합니다.' },
+      { eyebrow: 'STEP 02', title: '수업 설정', body: '권장 속도를 확인하고 화면 제시시간과 수행 동작을 참여자 수준에 맞게 조절합니다.' },
+      { eyebrow: 'STEP 03', title: '화면 출력', body: '빔프로젝터, 전자칠판, 대형 모니터 등 수업 환경에 맞는 화면으로 출력합니다.' },
+      { eyebrow: 'STEP 04', title: '실제 수행', body: '참여자는 화면의 정보를 보고 점프, 이동, 손·발 동작, 교구 미션으로 수행합니다.' },
+    ],
+  },
+  {
+    eyebrow: 'PROGRAM LINEUP',
+    title: '카탈로그의 핵심은 프로그램 라인업입니다.',
+    tone: 'navy',
+    cards: [
+      { eyebrow: 'SIMPLE', title: '단순반응 콘텐츠', body: '한 가지 자극과 정해진 대응을 연결해 화면 확인과 움직임 시작을 돕는 기본 콘텐츠입니다.', note: '초기 도입 · 저연령 · 첫 활동' },
+      { eyebrow: 'CHOICE', title: '선택반응 콘텐츠', body: '여러 정보 중 목표자극을 고르고 방해자극과 자동 반응을 조절하는 콘텐츠입니다.', note: '선택적 주의 · 위치 선택 · 반응 억제' },
+      { eyebrow: 'COMPLEX', title: '복합반응 콘텐츠', body: '규칙, 기억, 억제, 전환을 함께 사용해 반응하도록 구성된 콘텐츠입니다.', note: '스트룹 · 순차기억 · 규칙 전환' },
+      { eyebrow: 'DIVE', title: '3D 몰입형 콘텐츠', body: '4색 패드 반응과 별도로, 화면 속 상황에 맞춰 달리고 피하고 숙이고 점프하는 전신활동 콘텐츠입니다.', note: '몰입형 전신 움직임' },
+    ],
+  },
+  {
+    eyebrow: 'DIFFICULTY & DISPLAY TIME',
+    title: '난이도는 콘텐츠 등급과 화면 제시시간을 함께 봅니다.',
+    lead:
+      '카탈로그에서는 콘텐츠를 쉬움, 보통, 어려움으로 빠르게 구분하고, 실제 수업에서는 화면 제시시간과 반복 간격을 조정해 난이도를 세밀하게 바꿉니다.',
+    tone: 'blue',
+    cards: [
+      { eyebrow: 'EASY', title: '보고 바로 움직이기', body: '단일 색상이나 방향처럼 한 가지 정보를 확인하고 정해진 방식으로 수행합니다.' },
+      { eyebrow: 'NORMAL', title: '자극을 보고 결정하기', body: '두 가지 이상의 정보를 동시에 확인하고 양발 또는 손·발 동작으로 반응합니다.' },
+      { eyebrow: 'HARD', title: '여러 규칙 처리하기', body: '색상, 위치, 방향, 신체 부위 정보를 함께 구분해 반응합니다.' },
+      { eyebrow: 'TIME', title: '제시시간 설정', body: '3초는 확인 중심, 1초는 빠른 판단과 반응 중심으로 운영할 수 있습니다.' },
+    ],
+  },
+  {
+    eyebrow: 'MAT REQUIREMENT',
+    title: '스포매트가 필요한 활동과 없어도 가능한 활동을 구분합니다.',
+    cards: [
+      { title: '스포매트 필수 활동', body: '색상과 위치를 실제 스포매트에서 정확하게 수행한 뒤 교구 미션으로 연결하는 활동입니다.' },
+      { title: '스포매트 권장 활동', body: '스포매트가 있으면 공간 구분과 활동 운영이 효율적이지만, 다른 색 마커로도 변형할 수 있습니다.' },
+      { title: '매트 없이 가능한 활동', body: '방향, 형태, 타이밍 등의 화면 정보를 활용해 이동, 타격, 던지기, 협동 활동으로 확장합니다.' },
+    ],
+  },
+  {
+    eyebrow: 'SPO-MAT SPEC',
+    title: '스포매트는 화면의 색과 위치를 바닥 공간으로 연결합니다.',
+    tone: 'blue',
+    cards: [
+      { title: '규격', body: '60 x 60cm' },
+      { title: '형태', body: '2 x 2 카펫형 컬러패드' },
+      { title: '색 배치', body: '빨강, 노랑, 초록, 파랑' },
+      { title: '활용', body: '점프, 이동, 손발 동작, 위치 반응' },
+    ],
+  },
+  {
+    eyebrow: 'SUBSCRIPTION & PRICE',
+    title: '구독 범위와 스포매트 구매 조건을 함께 확인합니다.',
+    cards: [
+      { eyebrow: 'FREE', title: '무료 이용자', body: '홈 화면 이번 주 추천 활동 1개와 기본 수업도구를 별도 구독 없이 이용합니다.', note: '0원' },
+      { eyebrow: 'LIGHT', title: '라이트', body: '놀이체육 144개, 매월 추가 놀이체육 업데이트, 수업 기록 기능을 사용하는 기본 구독입니다.', note: '9,900원 / 1개월 · 108,900원 / 12개월' },
+      { eyebrow: 'PREMIUM', title: '프리미엄', body: '라이트 기능에 SPOMOVE 전체 프로그램, 권장 난이도, 화면 제시시간 설정, 활용 놀이체육을 더합니다.', note: '28,900원 / 1개월 · 289,000원 / 12개월' },
+      { eyebrow: 'SPO-MAT', title: '스포매트 구매', body: '화면과 실제 움직임을 직관적으로 연결하는 대표 권장 교구입니다.', note: '단품 20,900원 · 프리미엄 이용 시 15,900원' },
+    ],
+    footnote: '스포매트 대량 구매는 수량과 이용 규모에 따라 별도 협의 후 진행됩니다.',
+  },
+];
+
 function getActiveTab(id: string | null) {
-  return tabs.find((tab) => tab.id === id) ?? tabs[0];
+  const tab = tabs.find((item) => item.id === id) ?? tabs[0];
+  if (tab.id !== 'catalog') return tab;
+  return {
+    ...tab,
+    description:
+      '공식 카탈로그는 교육 소개와 달리 제품 구성, 운영 흐름, 프로그램 라인업, 난이도, 스포매트, 구독과 가격을 도입 검토 관점에서 정리합니다.',
+    sections: refinedCatalogSections,
+  };
 }
 
 export default function SpomoveCatalogTabs() {
@@ -425,19 +513,20 @@ export default function SpomoveCatalogTabs() {
     else params.set('tab', id);
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 pb-10 sm:gap-12 sm:pb-14 lg:gap-16">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-7 px-5 pb-10 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:gap-9 sm:px-8 sm:pb-14 sm:pt-[calc(5rem+env(safe-area-inset-top,0px))] lg:gap-12">
       <Hero />
 
-      <CommonFoundation />
-
       <nav
-        className="sticky top-[calc(3.75rem+env(safe-area-inset-top,0px))] z-30 -mx-5 border-y border-[#DCE3EE] bg-[#F5F7FB]/95 px-5 py-3 backdrop-blur-md sm:top-[calc(4.25rem+env(safe-area-inset-top,0px))] sm:-mx-8 sm:px-8"
+        className="sticky top-[calc(4rem+env(safe-area-inset-top,0px))] z-30 rounded-[1.25rem] border border-[#DCE3EE] bg-white/92 p-2 shadow-[0_14px_40px_rgba(15,33,70,0.08)] backdrop-blur-md sm:top-[calc(4.5rem+env(safe-area-inset-top,0px))]"
         aria-label="SPOMOVE 자료 탭"
       >
-        <div className="mx-auto grid max-w-4xl grid-cols-3 gap-1.5 rounded-full border border-[#DCE3EE] bg-white p-1.5 shadow-sm shadow-slate-900/[0.04]" role="tablist">
+        <div className="grid grid-cols-3 gap-1.5" role="tablist">
           {tabs.map((tab) => {
             const selected = tab.id === active.id;
             return (
@@ -448,8 +537,10 @@ export default function SpomoveCatalogTabs() {
                 aria-selected={selected}
                 aria-controls="spomove-tab-panel"
                 onClick={() => setActiveTab(tab.id)}
-                className={`${brandFocusRing} min-h-11 rounded-full px-2 text-sm font-bold transition sm:px-4 ${
-                  selected ? 'bg-[#0B1F46] text-white shadow-sm' : 'text-[#536279] hover:bg-[#F5F7FB] hover:text-[#0B1F46]'
+                className={`${brandFocusRing} min-h-12 rounded-[0.95rem] px-2 text-sm font-bold transition sm:px-4 ${
+                  selected
+                    ? 'bg-[#0B1F46] text-white shadow-[0_10px_24px_rgba(11,31,70,0.16)]'
+                    : 'text-[#536279] hover:bg-[#F5F7FB] hover:text-[#0B1F46]'
                 } ${koreanText}`}
               >
                 {tab.label}
@@ -459,16 +550,20 @@ export default function SpomoveCatalogTabs() {
         </div>
       </nav>
 
-      <section id="spomove-tab-panel" role="tabpanel" className="scroll-mt-32 space-y-8 sm:space-y-10">
-        <div className="rounded-[1.5rem] border border-[#DCE3EE] bg-white p-6 sm:p-8">
-          <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">CURRENT TAB</p>
-          <h2 className={`mt-2 text-3xl font-black tracking-[-0.04em] text-[#14213A] ${koreanText}`}>{active.label}</h2>
-          <p className={`mt-3 max-w-3xl text-base leading-[1.75] text-[#536279] ${koreanText}`}>{active.description}</p>
+      <section id="spomove-tab-panel" role="tabpanel" className="scroll-mt-32 space-y-7 sm:space-y-8 lg:space-y-10">
+        <div className="grid gap-5 rounded-[1.35rem] border border-[#DCE3EE] bg-white px-5 py-5 shadow-sm shadow-slate-900/[0.03] sm:px-7 sm:py-6 lg:grid-cols-[minmax(0,0.42fr)_minmax(0,1fr)] lg:items-center">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SELECTED MATERIAL</p>
+            <h2 className={`mt-2 text-2xl font-black leading-tight tracking-[-0.035em] text-[#14213A] sm:text-3xl ${koreanText}`}>{active.label}</h2>
+          </div>
+          <p className={`max-w-3xl text-sm leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>{active.description}</p>
         </div>
 
         {active.sections.map((section) => (
           <Section key={`${active.id}-${section.eyebrow}`} section={section} />
         ))}
+
+        {active.id === 'catalog' ? null : <CommonFoundation />}
 
         <FinalCta activeLabel={active.label} />
       </section>
@@ -478,23 +573,38 @@ export default function SpomoveCatalogTabs() {
 
 function Hero() {
   return (
-    <section className="grid gap-7 rounded-[1.5rem] border border-[#DCE3EE] bg-white p-5 shadow-[0_18px_50px_rgba(15,33,70,0.06)] sm:p-7 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:items-center lg:p-8">
-      <div>
-        <p className="text-[12px] font-bold uppercase tracking-[0.16em] text-[#245DFF]">SPOKEDU · SPOMOVE</p>
-        <h1 className={`mt-4 text-[2.35rem] font-black leading-[1.04] tracking-[-0.055em] text-[#14213A] sm:text-[3.5rem] lg:text-[4.25rem] ${koreanText}`}>
-          화면의 정보를 실제 움직임으로.
-        </h1>
-        <p className={`mt-5 max-w-2xl text-base leading-[1.78] text-[#536279] sm:text-[17px] ${koreanText}`}>
-          SPOMOVE는 화면의 색, 위치, 방향, 순서 정보를 4색 패드와 신체 움직임으로 연결하는 스크린 기반 체육교육 프로그램입니다. 따라 하는 영상이 아니라, 보고 판단하고 움직이는 수업 구조를 만듭니다.
-        </p>
-        <div className="mt-6 flex flex-wrap gap-2">
-          {['4색 패드', '시지각 반응', '선택과 억제', 'DIVE', '교구 확장'].map((chip) => (
-            <span key={chip} className="rounded-full border border-[#DCE3EE] bg-[#F5F7FB] px-3 py-1.5 text-xs font-bold text-[#425069]">
-              {chip}
-            </span>
-          ))}
+    <section className="overflow-hidden rounded-[1.6rem] border border-[#DCE3EE] bg-white shadow-[0_18px_50px_rgba(15,33,70,0.06)]">
+      <figure className="relative bg-[#EEF2F7]">
+        <div className="relative aspect-[16/9] sm:aspect-[2.25/1]">
+          <Image
+            src="/spokedu/programs/spomove/assets/edu/edu-01.webp"
+            alt="아이들이 네 장의 4색 패드 위에서 활동하는 SPOMOVE 메인 포스터"
+            fill
+            priority
+            sizes="(max-width: 1024px) 100vw, 72rem"
+            className="object-cover"
+          />
         </div>
-        <div className="mt-7 flex flex-col gap-2 sm:flex-row">
+      </figure>
+
+      <div className="grid gap-6 px-5 py-6 sm:px-8 sm:py-7 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end lg:px-10">
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#245DFF] sm:text-xs">SPOKEDU · SPOMOVE</p>
+          <h1 className={`mt-3 max-w-3xl text-[2rem] font-black leading-[1.12] tracking-[-0.04em] text-[#14213A] sm:text-[2.75rem] lg:text-[3.2rem] ${koreanText}`}>
+            화면의 정보를 실제 움직임으로.
+          </h1>
+          <p className={`mt-4 max-w-3xl text-[15px] leading-[1.75] text-[#536279] sm:text-base ${koreanText}`}>
+            SPOMOVE는 화면의 색, 위치, 방향, 순서 정보를 4색 패드와 신체 움직임으로 연결하는 스크린 기반 체육교육 프로그램입니다. 따라 하는 영상이 아니라, 보고 판단하고 움직이는 수업 구조를 만듭니다.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {['4색 패드', '시지각 반응', '선택과 억제', 'DIVE', '교구 확장'].map((chip) => (
+              <span key={chip} className="rounded-full border border-[#DCE3EE] bg-[#F5F7FB] px-3 py-1.5 text-xs font-bold text-[#425069]">
+                {chip}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row lg:justify-end">
           <Link
             href={CONTACT_HREF}
             data-track="contact"
@@ -512,19 +622,6 @@ function Hero() {
           </button>
         </div>
       </div>
-
-      <figure className="relative overflow-hidden rounded-[1.25rem] border border-[#DCE3EE] bg-[#EEF2F7]">
-        <div className="relative aspect-[16/9]">
-          <Image
-            src="/spokedu/programs/spomove/assets/edu/edu-01.webp"
-            alt="아이들이 네 장의 4색 패드 위에서 활동하는 SPOMOVE 메인 포스터"
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 44rem"
-            className="object-contain"
-          />
-        </div>
-      </figure>
     </section>
   );
 }
@@ -600,34 +697,34 @@ function Section({ section }: { section: SectionBlock }) {
   const cards = section.cards ?? [];
 
   return (
-    <section className={`rounded-[1.5rem] p-6 sm:p-8 lg:p-10 ${shell}`}>
-      <div className="grid gap-5 lg:grid-cols-[0.82fr_1.18fr] lg:items-end">
+    <section className={`rounded-[1.35rem] p-5 sm:p-7 lg:p-8 ${shell}`}>
+      <div className="grid gap-4 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
         <div>
-          <p className={`text-[12px] font-bold uppercase tracking-[0.16em] ${dark ? 'text-[#9FC0FF]' : 'text-[#245DFF]'}`}>{section.eyebrow}</p>
-          <h2 className={`mt-3 text-2xl font-black leading-[1.14] tracking-[-0.04em] sm:text-4xl lg:text-[2.7rem] ${koreanText}`}>
+          <p className={`text-[11px] font-bold uppercase tracking-[0.16em] sm:text-xs ${dark ? 'text-[#9FC0FF]' : 'text-[#245DFF]'}`}>{section.eyebrow}</p>
+          <h2 className={`mt-3 text-[1.55rem] font-black leading-[1.16] tracking-[-0.035em] sm:text-[2.15rem] lg:text-[2.45rem] ${koreanText}`}>
             {section.title}
           </h2>
         </div>
         {section.lead ? (
-          <p className={`max-w-3xl text-sm leading-[1.8] sm:text-base ${dark ? 'text-[#CFDAEA]' : 'text-[#536279]'} ${koreanText}`}>
+          <p className={`max-w-3xl text-sm leading-[1.78] sm:text-[15px] ${dark ? 'text-[#CFDAEA]' : 'text-[#536279]'} ${koreanText}`}>
             {section.lead}
           </p>
         ) : null}
       </div>
 
       {cards.length > 0 ? (
-        <div className={`mt-7 grid gap-3 ${cards.length === 5 ? 'md:grid-cols-2 xl:grid-cols-5' : cards.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
+        <div className={`mt-6 grid gap-3 ${cards.length === 5 ? 'md:grid-cols-2 xl:grid-cols-5' : cards.length === 3 ? 'lg:grid-cols-3' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
           {cards.map((card) => (
             <article
               key={`${section.eyebrow}-${card.title}`}
-              className={`flex min-h-[13rem] flex-col rounded-[1.1rem] p-5 ${
+              className={`flex min-h-[12rem] flex-col rounded-[1rem] p-4 sm:p-5 ${
                 dark ? 'border border-white/14 bg-white/[0.075]' : 'border border-[#DCE3EE] bg-white shadow-sm shadow-slate-900/[0.03]'
               }`}
             >
               {card.eyebrow ? (
                 <p className={`text-xs font-black uppercase tracking-[0.08em] ${dark ? 'text-[#9FC0FF]' : 'text-[#245DFF]'}`}>{card.eyebrow}</p>
               ) : null}
-              <h3 className={`mt-3 text-xl font-black leading-snug tracking-[-0.03em] ${dark ? 'text-white' : 'text-[#14213A]'} ${koreanText}`}>{card.title}</h3>
+              <h3 className={`mt-3 text-lg font-black leading-snug tracking-[-0.025em] sm:text-xl ${dark ? 'text-white' : 'text-[#14213A]'} ${koreanText}`}>{card.title}</h3>
               <p className={`mt-3 text-sm leading-[1.72] ${dark ? 'text-[#CFDAEA]' : 'text-[#536279]'} ${koreanText}`}>{card.body}</p>
               {card.note ? (
                 <p className={`mt-auto pt-5 text-xs font-bold leading-relaxed ${dark ? 'text-white' : 'text-[#0B1F46]'} ${koreanText}`}>{card.note}</p>
@@ -649,14 +746,29 @@ function Section({ section }: { section: SectionBlock }) {
 }
 
 function ImageGrid({ images, dark }: { images: ImageItem[]; dark: boolean }) {
+  const single = images.length === 1;
+  const gridClass = single
+    ? 'mx-auto mt-6 w-full max-w-[26rem]'
+    : images.length === 2
+      ? 'mt-6 grid gap-3 lg:grid-cols-2'
+      : images.length === 4
+        ? 'mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'
+        : 'mt-6 grid gap-3 lg:grid-cols-3';
+
   return (
-    <div className={`mt-7 grid gap-3 ${images.length === 1 ? 'max-w-xl' : images.length === 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
+    <div className={gridClass}>
       {images.map((image) => (
-        <figure key={image.src} className={`overflow-hidden rounded-[1.1rem] border ${dark ? 'border-white/15 bg-white/10' : 'border-[#DCE3EE] bg-white'}`}>
-          <div className="relative aspect-[4/3] bg-[#EEF2F7]">
-            <Image src={image.src} alt={image.alt} fill sizes="(max-width: 1024px) 100vw, 24rem" className="object-cover" />
+        <figure key={image.src} className={`overflow-hidden rounded-[1rem] border ${dark ? 'border-white/15 bg-white/10' : 'border-[#DCE3EE] bg-white shadow-sm shadow-slate-900/[0.03]'}`}>
+          <div className={`relative bg-[#EEF2F7] ${single ? 'aspect-square' : 'aspect-[4/3]'}`}>
+            <Image
+              src={image.src}
+              alt={image.alt}
+              fill
+              sizes={single ? '(max-width: 1024px) 90vw, 26rem' : '(max-width: 1024px) 50vw, 18rem'}
+              className={single ? 'object-contain' : 'object-cover'}
+            />
           </div>
-          <figcaption className={`px-4 py-3 text-sm font-bold leading-snug ${dark ? 'text-white' : 'text-[#14213A]'} ${koreanText}`}>{image.caption}</figcaption>
+          <figcaption className={`px-4 py-3 text-[13px] font-bold leading-snug sm:text-sm ${dark ? 'text-white' : 'text-[#14213A]'} ${koreanText}`}>{image.caption}</figcaption>
         </figure>
       ))}
     </div>

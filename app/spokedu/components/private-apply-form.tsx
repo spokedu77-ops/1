@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { koreanLineBreak, siteBtnPrimary, siteBtnSecondary } from '../lib/ui-classes';
 import { KAKAO_CHANNEL_URL } from '../data/external-channels';
 
@@ -30,6 +30,8 @@ export function PrivateApplyForm() {
   const [schedule, setSchedule] = useState('');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const submittingRef = useRef(false);
   const [status, setStatus] = useState<Status>({ tone: 'idle', message: '' });
 
   useEffect(() => {
@@ -88,6 +90,8 @@ export function PrivateApplyForm() {
   );
 
   const handleSubmit = useCallback(async () => {
+    if (submittingRef.current || submitted) return;
+
     const learnerLines = learners.map((l) => l.trim()).filter(Boolean);
     if (!learnerLines.length || !phone.trim() || !sport.trim() || !region.trim() || !schedule.trim()) {
       setStatus({
@@ -97,6 +101,7 @@ export function PrivateApplyForm() {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
     try {
       const response = await fetch('/api/private/leads', {
@@ -118,6 +123,7 @@ export function PrivateApplyForm() {
         });
         return;
       }
+      setSubmitted(true);
       setStatus({
         tone: 'ok',
         message:
@@ -126,9 +132,10 @@ export function PrivateApplyForm() {
     } catch {
       setStatus({ tone: 'error', message: '네트워크 오류로 접수에 실패했습니다.' });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
-  }, [learners, phone, sport, region, schedule, previewText]);
+  }, [learners, phone, sport, region, schedule, previewText, submitted]);
 
   return (
     <section id="apply" className="scroll-mt-24 space-y-6 sm:space-y-7">
@@ -328,11 +335,11 @@ export function PrivateApplyForm() {
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
-              disabled={submitting}
+              disabled={submitting || submitted}
               onClick={handleSubmit}
               className={`${siteBtnPrimary} disabled:opacity-60`}
             >
-              {submitting ? '접수 중…' : '상담 접수하기'}
+              {submitted ? '접수 완료' : submitting ? '접수 중…' : '상담 접수하기'}
             </button>
             {KAKAO_CHANNEL_URL ? (
               <a

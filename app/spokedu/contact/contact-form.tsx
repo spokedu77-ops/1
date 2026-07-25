@@ -385,6 +385,7 @@ export default function SpokeduContactForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const formRef = useRef<HTMLDivElement>(null);
+  const submittingRef = useRef(false);
   const [inquiryType, setInquiryType] = useState<InquiryType>('private');
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState<SubmitNotice>(null);
@@ -495,9 +496,10 @@ export default function SpokeduContactForm() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!activeOption || submitting) return;
+    if (!activeOption || submitting || submittingRef.current) return;
 
     setNotice(null);
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -525,6 +527,7 @@ export default function SpokeduContactForm() {
         showFallback: true,
       });
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   }
