@@ -5,9 +5,11 @@ import {
   Bookmark,
   Check,
   Clipboard,
+  Copy,
   ExternalLink,
   FileText,
   Play,
+  Printer,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -29,6 +31,7 @@ import {
 } from '../../components/lesson/LessonPanels';
 import { TrackedVideoIframe } from '../../components/lesson/TrackedVideoIframe';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
+import { formatLessonPlanText, printLessonPlan } from '../../lib/lessonPlanExport';
 import { canOptimizeRemoteImage } from '../../lib/mediaPreferences';
 import {
   getExternalVideoUrl,
@@ -127,6 +130,11 @@ export default function LibraryDetailView({ id }: { id: string }) {
   );
   const isFavoriteProgram = useMasterStore((state) => state.isFavoriteProgram);
   const toggleFavoriteProgram = useMasterStore((state) => state.toggleFavoriteProgram);
+  const setTodayLesson = useMasterStore((state) => state.setTodayLesson);
+  const clearTodayLesson = useMasterStore((state) => state.clearTodayLesson);
+  const todayLesson = useMasterStore((state) =>
+    ownerId ? state.getTodayLesson(ownerId) : null,
+  );
   const recordRecentProgramActivity = useMasterStore((state) => state.recordRecentProgramActivity);
   const operationalData = useOperationalData();
   const classRecords = operationalData.classRecords.map(toClassRecord);
@@ -140,6 +148,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const openedProgramRef = useRef<string | null>(null);
   const videoReportedRef = useRef<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [planCopied, setPlanCopied] = useState(false);
   const [quickModalOpen, setQuickModalOpen] = useState(false);
   const [quickDate, setQuickDate] = useState('');
   const [quickClassId, setQuickClassId] = useState('');
@@ -152,6 +161,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const [quickSaveFeedback, setQuickSaveFeedback] = useState<SaveActionFeedback | null>(null);
 
   const program = useMemo(() => programs.find((item) => item.id === id), [id, programs]);
+  const isTodayLesson = Boolean(program && todayLesson?.programId === program.id);
   const usageRecords = useMemo(() => classRecords.filter((record) => record.programId === id), [classRecords, id]);
   const section = searchParams.get('section');
   const shouldAutoplayVideo = section === 'video' && searchParams.get('autoplay') === '1';
@@ -213,7 +223,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
         <BookOpenFallback />
         <h1 className="mt-5 text-xl font-black text-[color:var(--spm-t)]">수업 자료를 찾을 수 없습니다.</h1>
         <p className="mt-2 text-sm text-[color:var(--spm-t3)]">라이브러리에서 다른 수업을 선택해 주세요.</p>
-        <Link href={libraryReturnHref} className="mt-6 inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white">
+        <Link href={libraryReturnHref} className="spm-btn-primary mt-6 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">
           라이브러리로 돌아가기
         </Link>
       </main>
@@ -231,7 +241,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
           이 수업의 전체 지도안, 코치 스크립트, 영상 자료는 프리미엄 이용권에서 열람할 수 있습니다.
         </p>
         <div className="mt-6 grid w-full max-w-sm gap-2 sm:grid-cols-2">
-          <Link href="/spokedu-master/payment?plan=premium" className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white">
+          <Link href="/spokedu-master/payment?plan=premium" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none">
             프리미엄 보기
           </Link>
           <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 text-[13px] font-black text-[color:var(--spm-t2)]">
@@ -339,6 +349,12 @@ export default function LibraryDetailView({ id }: { id: string }) {
     window.setTimeout(() => setCopied(false), 1400);
   };
 
+  const copyLessonPlan = async () => {
+    await navigator.clipboard.writeText(formatLessonPlanText(model));
+    setPlanCopied(true);
+    window.setTimeout(() => setPlanCopied(false), 1400);
+  };
+
   return (
     <main className="min-h-dvh pb-[calc(5.5rem+env(safe-area-inset-bottom))] text-[color:var(--spm-t)] lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
       <header className="sticky top-0 z-30 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-[color:var(--spm-br2)] bg-[color-mix(in_srgb,var(--spm-s1)_95%,transparent)] px-3 backdrop-blur-xl sm:gap-3 sm:px-6 lg:px-8">
@@ -402,19 +418,50 @@ export default function LibraryDetailView({ id }: { id: string }) {
                 오늘 관찰을 남기면 학생 이력과 안내문 초안으로 이어집니다.
               </p>
               <div className="mt-4 grid gap-2">
-                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] bg-[var(--spm-acc)] px-3 text-[13px] font-black text-white">
+                <Link href={`/spokedu-master/class-record?program=${program.id}`} className="spm-btn-primary inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none">
                   <Clipboard className="h-4 w-4" />
                   수업 기록 시작
                 </Link>
+                <button
+                  type="button"
+                  disabled={!ownerId}
+                  onClick={() => {
+                    if (!ownerId) return;
+                    if (isTodayLesson) clearTodayLesson(ownerId);
+                    else setTodayLesson(ownerId, { id: program.id, title: program.title });
+                  }}
+                  className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-300 bg-white px-3 text-[13px] font-black text-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-pressed={isTodayLesson}
+                >
+                  {isTodayLesson ? '오늘 수업 해제' : '오늘 수업으로 지정'}
+                </button>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={openQuickModal} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-emerald-200 bg-[var(--spm-s1)] px-3 text-[13px] font-black text-emerald-700">
                     <Check className="h-4 w-4" />
                     빠른 기록
                   </button>
-                  <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-s1)] px-3 text-[13px] font-black text-[var(--spm-acc)]">
+                  <Link href={`/spokedu-master/report?program=${program.id}`} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-[var(--spm-s1)] px-3 text-[13px] font-black text-[var(--spm-acc)]">
                     <FileText className="h-4 w-4" />
                     안내문
                   </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void copyLessonPlan()}
+                    className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800"
+                  >
+                    <Copy className="h-4 w-4" />
+                    {planCopied ? '복사 완료' : '지도안 복사'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => printLessonPlan(model)}
+                    className="inline-flex h-11 items-center justify-center gap-1.5 rounded-[10px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800"
+                  >
+                    <Printer className="h-4 w-4" />
+                    지도안 인쇄
+                  </button>
                 </div>
               </div>
             </aside>
@@ -619,7 +666,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         href={`/spokedu-master/class-record?record=${record.id}&program=${program.id}`}
-                        className="inline-flex min-h-10 items-center rounded-[10px] bg-[var(--spm-acc)] px-3 text-[11px] font-black text-white"
+                        className="spm-btn-primary inline-flex min-h-10 items-center rounded-[10px] px-3 text-[11px] font-black focus-visible:outline-none"
                       >
                         {isQuick ? '이 기록 보강' : '기록 보기'}
                       </Link>
@@ -778,7 +825,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
                   type="button"
                   onClick={handleQuickSave}
                   disabled={!canSaveQuickRecord || quickSaving}
-                  className="inline-flex h-11 flex-[2] items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white disabled:opacity-50"
+                  className="spm-btn-primary inline-flex h-11 flex-[2] items-center justify-center gap-2 rounded-[10px] text-[13px] font-black focus-visible:outline-none disabled:opacity-50"
                 >
                   {quickSaving ? '저장 중…' : '기록 남기기'}
                 </button>

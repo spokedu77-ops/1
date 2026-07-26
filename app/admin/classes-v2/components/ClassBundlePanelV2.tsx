@@ -29,6 +29,7 @@ import {
 } from "@/app/admin/classes-v2/lib/bulkSessionDefaults";
 import { cloneTierFeeMap, HARD_CODED_TIER_FEES, type TierFeeMap } from "@/app/lib/teacherTierSchedule";
 import { fetchTeacherTierFeeMap } from "@/app/lib/teacherTierFeesStore";
+import { fetchTeacherLogCounts } from "@/app/admin/users/fetchTeacherLogCounts";
 import SessionMileageModal from "./SessionMileageModal";
 import type { TeacherInput } from "@/app/admin/classes-shared/types";
 
@@ -476,7 +477,15 @@ export default function ClassBundlePanelV2({ visible, bundleTitle, groupIds, onC
 
       const { data, error } = sessionsRes;
       if (usersRes.error) devLogger.error(usersRes.error);
-      const teacherRows = (usersRes.data || []) as TeacherFeeRow[];
+      const baseTeachers = (usersRes.data || []) as TeacherFeeRow[];
+      const logCountByTeacher = await fetchTeacherLogCounts(
+        supabase,
+        baseTeachers.map((t) => t.id),
+      );
+      const teacherRows = baseTeachers.map((t) => ({
+        ...t,
+        logCount: logCountByTeacher[t.id] ?? 0,
+      }));
       setTeachers(teacherRows);
       setTierFeeMap(tierRes.map);
 

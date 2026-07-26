@@ -19,7 +19,7 @@
 | Hub | 활동을 상품으로 제시 (Phase 0: 양산형 description 임시 미노출) |
 | Start | 현재 실행 조건 **확인** 후 명시 시작 |
 | Settings | 실행 조건 **변경** 후 명시 시작 |
-| Guide | 지도법 (Hub 독립 액션·기존 Sheet 허용. Start/Settings 혼입 금지) |
+| Guide | 지도법 — **카드 CTA가 아님**. Start 확인 Sheet 내부에 유지 (카드 밖 별도 「가이드 보기」 금지) |
 | Running | 화면 자극에 집중 (Engine only) |
 | Result · Recent | 실행 조합 기록·재사용 (확인 후 시작) |
 
@@ -47,7 +47,9 @@ Phase 0은 SPOMOVE를 새로 설계하는 단계가 아니다. 즉시 실행·�
 
 ### Hub
 
-- `[시작]` → `entry=start`, `[설정]` → `entry=settings`, `[가이드 보기]` → 기존 Sheet
+- `[시작]` · 썸네일 → 확인 Sheet(지도법·준비 포함). Sheet Primary만 `entry=start` (`이 설정으로 시작`)
+- `[설정]` → `entry=settings` (Secondary, Start보다 작은 무게)
+- 카드 레벨 「가이드 보기」·「바로 실행」·「바로 시작」 금지. 썸네일 aria는 `{활동명} 시작 준비 열기`
 - Hub 클릭으로 **Family 저장값 변경 금지** (`writeFamilyMovement` 없음)
 - `preset.description` 임시 미노출 · 임시 자동 카피 금지
 - 「사전 설정된 공식 조건으로 실행」 등 사실과 다른 헤더 문구 금지

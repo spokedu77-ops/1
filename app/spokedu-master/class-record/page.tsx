@@ -136,7 +136,7 @@ function RecordCard({ record }: { record: ClassRecord }) {
           : `출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 max-w-full items-center justify-center gap-1.5 rounded-[9px] bg-slate-950 px-3 text-center text-[12px] font-black leading-tight text-white">
+        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="spm-btn-primary inline-flex h-9 max-w-full items-center justify-center gap-1.5 rounded-[9px] px-3 text-center text-[12px] font-black leading-tight focus-visible:outline-none">
           <ClipboardList size={13} /> {isQuick ? '이 기록 보강' : '기록 보기'}
         </Link>
         <Link href={`/spokedu-master/report?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 max-w-full items-center justify-center gap-1.5 rounded-[9px] border border-slate-200 bg-white px-3 text-center text-[12px] font-black leading-tight text-slate-700">
@@ -769,7 +769,7 @@ function RecordEntryView() {
           </div>
         ) : null}
         <div className="mt-5 grid gap-2 sm:grid-cols-[0.7fr_1fr]">
-          <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] bg-slate-950 text-[14px] font-black text-white disabled:opacity-60"><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
+          <button type="button" onClick={() => persistRecord()} disabled={!canSaveRecord || recordSaving || editingRecordMissing || sourceRecordMissing} className="spm-btn-primary flex h-11 w-full items-center justify-center gap-2 rounded-[9px] text-[14px] font-black focus-visible:outline-none disabled:opacity-60"><Check size={16} />{recordSaving ? '저장 중...' : isEnrichingQuickRecord ? '보강 저장' : isEditingRecord ? '수업 기록 수정' : '수업 기록 저장'}</button>
           <Link href={reportHref} className="flex h-11 w-full items-center justify-center gap-2 rounded-[9px] border border-slate-200 bg-white text-[14px] font-black text-slate-700"><FileText size={16} />안내문 만들고 복사</Link>
         </div>
       </section>

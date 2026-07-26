@@ -57,7 +57,7 @@ export default function ActivityPage() {
           빠른 기록과 보강된 상세 기록이 학생 이력·안내문 근거로 쌓입니다.
         </p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-          <Link href="/spokedu-master/library" className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white">
+          <Link href="/spokedu-master/library" className="spm-btn-primary inline-flex h-10 items-center justify-center gap-2 rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none">
             <BookOpen size={17} />
             라이브러리에서 수업 고르기
           </Link>
@@ -103,7 +103,7 @@ export default function ActivityPage() {
                         : ` · 출석 ${record.present}명${hasMemo ? ' · 메모 있음' : hasObservation ? ' · 관찰 기록 있음' : ''}`}
                     </p>
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                      <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="inline-flex h-9 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">
+                      <Link href={`/spokedu-master/class-record?record=${record.id}&program=${record.programId}`} className="spm-btn-primary inline-flex h-9 items-center justify-center gap-2 rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
                         <ClipboardList size={14} />
                         {isQuick ? '이 기록 보강' : '기록 보기'}
                       </Link>
@@ -125,7 +125,7 @@ export default function ActivityPage() {
                 </p>
               </div>
               <div className="mt-5 grid gap-2 sm:grid-cols-2">
-                <Link href={`/spokedu-master/library`} className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-5 text-[13px] font-black text-white">
+                <Link href={`/spokedu-master/library`} className="spm-btn-primary inline-flex h-10 items-center justify-center gap-2 rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none">
                   <BookOpen size={16} />
                   수업 라이브러리 열기
                 </Link>

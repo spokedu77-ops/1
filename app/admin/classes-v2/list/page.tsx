@@ -9,13 +9,11 @@ import { devLogger } from '@/app/lib/logging/devLogger';
 import type { ClassGroup, EditableSession } from '@/app/admin/classes-shared/types';
 import {
   cloneTierFeeMap,
-  computeTier,
-  effectiveFees,
   HARD_CODED_TIER_FEES,
-  totalLessonsFromCounts,
   type TierFeeMap,
 } from '@/app/lib/teacherTierSchedule';
 import { fetchTeacherTierFeeMap } from '@/app/lib/teacherTierFeesStore';
+import { fetchTeacherLogCounts } from '@/app/admin/users/fetchTeacherLogCounts';
 import { GROUP_ALIAS_RULES } from '../lib/groupAliases';
 import ClassBundlePanelV2 from '../components/ClassBundlePanelV2';
 import {
@@ -25,7 +23,8 @@ import {
   getBundleTitleFromCompositeKey,
 } from '../lib/v2BundleResolve';
 import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedRoundTotal';
-import { isCenterSessionType, SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
+import { SESSION_TYPE_OPTIONS } from '../lib/sessionTypeCategory';
+import { resolveDefaultSessionPrice } from '../lib/bulkSessionDefaults';
 
 const CREATE_TYPE_ICONS: Record<(typeof SESSION_TYPE_OPTIONS)[number]['value'], string> = {
   one_day_private: '🎓',
@@ -118,6 +117,7 @@ type TeacherOption = {
   id: string;
   name: string;
   session_count?: number | null;
+  logCount?: number | null;
   fee_private?: number | null;
   fee_group?: number | null;
   fee_center_main?: number | null;
@@ -161,17 +161,7 @@ function ClassListPageV2Content() {
   const resolveDefaultPrice = useCallback(
     (teacherId: string, clsType: string): number => {
       const selectedTeacher = teachers.find((t) => t.id === teacherId);
-      if (!selectedTeacher) return 30000;
-      const tier = computeTier(totalLessonsFromCounts(selectedTeacher.session_count ?? 0, 0));
-      const fees = effectiveFees(tier, {
-        fee_private: selectedTeacher.fee_private ?? null,
-        fee_group: selectedTeacher.fee_group ?? null,
-        fee_center_main: selectedTeacher.fee_center_main ?? null,
-        fee_center_assist: selectedTeacher.fee_center_assist ?? null,
-      }, tierFeeMap);
-
-      if (isCenterSessionType(clsType)) return fees.fee_center_main;
-      return fees.fee_private;
+      return resolveDefaultSessionPrice(selectedTeacher, clsType, tierFeeMap);
     },
     [teachers, tierFeeMap],
   );
@@ -193,7 +183,15 @@ function ClassListPageV2Content() {
 
       if (usersRes.data) {
         const map: Record<string, string> = {};
-        const list = usersRes.data as TeacherOption[];
+        const base = usersRes.data as TeacherOption[];
+        const logCountByTeacher = await fetchTeacherLogCounts(
+          supabase,
+          base.map((u) => u.id),
+        );
+        const list = base.map((u) => ({
+          ...u,
+          logCount: logCountByTeacher[u.id] ?? 0,
+        }));
         list.forEach((u) => {
           map[u.id] = u.name ?? '';
         });

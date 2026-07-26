@@ -97,7 +97,7 @@ function SubscriptionSummaryCard({
           <p className="text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>
             이용권 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.
           </p>
-          <button type="button" onClick={onRetry} className="mt-3 h-10 rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white">
+          <button type="button" onClick={onRetry} className="spm-btn-primary mt-3 h-10 rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none">
             다시 시도
           </button>
         </div>
@@ -117,7 +117,7 @@ function SubscriptionSummaryCard({
           {display.primaryHref && display.primaryLabel ? (
             <Link
               href={display.primaryHref}
-              className="mt-4 inline-flex h-10 items-center justify-center rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white"
+              className="spm-btn-primary mt-4 inline-flex h-10 items-center justify-center rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none"
             >
               {display.primaryLabel}
             </Link>
@@ -176,7 +176,7 @@ function ProfileSheet({
             {saveError}
           </p>
         ) : null}
-        <button type="button" onClick={onSave} disabled={saving} className="h-10 w-full rounded-[9px] bg-slate-950 text-[14px] font-black text-white disabled:opacity-50">
+        <button type="button" onClick={onSave} disabled={saving} className="spm-btn-primary h-10 w-full rounded-[9px] text-[14px] font-black focus-visible:outline-none disabled:opacity-50">
           {saving ? '저장 중...' : '저장'}
         </button>
       </div>

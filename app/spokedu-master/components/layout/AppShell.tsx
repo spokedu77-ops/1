@@ -114,7 +114,7 @@ function MasterAccessCheckingState({ error = false, onRetry }: { error?: boolean
           <button
             type="button"
             onClick={onRetry}
-            className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
+            className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-full px-4 text-[13px] font-black focus-visible:outline-none"
           >
             다시 시도
           </button>
@@ -142,7 +142,7 @@ function MasterAccessDeniedState({ onRetry }: { onRetry: () => void }) {
           <div className="mt-6 grid gap-2">
             <Link
               href="/spokedu-master/payment"
-              className="inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white"
+              className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none"
             >
               구독 선택
             </Link>

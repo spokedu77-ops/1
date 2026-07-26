@@ -91,7 +91,7 @@ export function ProgramPreviewModal({
             {locked ? (
               <Link
                 href="/spokedu-master/payment?plan=premium"
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
+                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <Lock className="h-4 w-4" />
                 프리미엄으로 열기
@@ -99,7 +99,7 @@ export function ProgramPreviewModal({
             ) : (
               <Link
                 href={getLibraryProgramDetailHref(program.id, sourceLibraryView)}
-                className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white sm:h-10 sm:w-[168px]"
+                className="spm-btn-primary inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none sm:h-10 sm:w-[168px]"
               >
                 <BookOpen className="h-4 w-4" />
                 상세 준비 열기

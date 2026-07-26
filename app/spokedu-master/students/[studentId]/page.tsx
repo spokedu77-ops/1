@@ -68,7 +68,7 @@ export default function StudentDetailPage() {
         <section className="rounded-[16px] border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
           <h1 className="text-[22px] font-black" style={{ color: 'var(--spm-t)', fontFamily: 'var(--spm-font-display)' }}>학생 기록을 찾을 수 없습니다.</h1>
           <p className="mt-2 text-[13px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>현재 계정의 학생 목록에 있는 학생만 확인할 수 있습니다.</p>
-          <Link href="/spokedu-master/students" className="mt-5 inline-flex h-10 items-center justify-center rounded-[9px] bg-slate-950 px-5 text-[13px] font-black text-white">학생 목록으로</Link>
+          <Link href="/spokedu-master/students" className="spm-btn-primary mt-5 inline-flex h-10 items-center justify-center rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none">학생 목록으로</Link>
         </section>
       </div>
     );
@@ -179,7 +179,7 @@ export default function StudentDetailPage() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link
                         href={`/spokedu-master/class-record?record=${record.id}&student=${student.id}&program=${record.programId}`}
-                        className="inline-flex h-9 items-center gap-1 rounded-[9px] bg-slate-950 px-3 text-[11px] font-black text-white"
+                        className="spm-btn-primary inline-flex h-9 items-center gap-1 rounded-[9px] px-3 text-[11px] font-black focus-visible:outline-none"
                       >
                         <ClipboardList size={12} />
                         {isQuick ? '이 기록 보강' : '기록 보기·수정'}
@@ -234,7 +234,7 @@ export default function StudentDetailPage() {
             <p className="text-[13px] font-bold">이 학생과 연결된 안내문이 없습니다.</p>
             <p className="mt-2 text-[12px] font-semibold leading-5">수업 기록을 작성한 뒤 학생별 안내문을 만들 수 있습니다.</p>
             {latest ? (
-              <Link href={`/spokedu-master/report?record=${latest.record.id}`} className="mt-3 inline-flex h-10 items-center rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white">
+              <Link href={`/spokedu-master/report?record=${latest.record.id}`} className="spm-btn-primary mt-3 inline-flex h-10 items-center rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none">
                 최근 수업 기록 보기
               </Link>
             ) : (

@@ -16,6 +16,14 @@ import {
   toggleFavoriteByOwner,
 } from '../lib/favoriteLib';
 import {
+  clearTodayLessonForOwner,
+  getActiveTodayLesson,
+  getSeoulDayKey,
+  normalizeTodayLessonByOwner,
+  setTodayLessonForOwner,
+  type TodayLessonAssignment,
+} from '../lib/todayLesson';
+import {
   flushPendingRecentProgramActivities,
   getRecentActivityOwner,
   migrateRecentActivitiesToOwner,
@@ -80,9 +88,13 @@ interface MasterState {
   recordRecentProgramActivity: (activity: RecentProgramActivityInput) => void;
   favoriteProgramIdsByOwner: Record<string, string[]>;
   pendingLegacyFavoriteProgramIds: string[];
+  todayLessonByOwner: Record<string, TodayLessonAssignment>;
   getFavoriteProgramIds: (ownerId: string | null) => string[];
   isFavoriteProgram: (ownerId: string | null, programId: string) => boolean;
   toggleFavoriteProgram: (ownerId: string | null, programId: string) => void;
+  getTodayLesson: (ownerId: string | null) => TodayLessonAssignment | null;
+  setTodayLesson: (ownerId: string | null, program: { id: string; title: string }) => void;
+  clearTodayLesson: (ownerId: string | null) => void;
   syncFavoriteProgramsFromServer: () => Promise<boolean>;
   notifications: Notification[];
   markRead: (id: string) => void;
@@ -258,6 +270,9 @@ export function migrateMasterStore(persisted: unknown, persistedVersion?: number
     recentActivityOwnerResolved: false,
     favoriteProgramIdsByOwner,
     pendingLegacyFavoriteProgramIds,
+    todayLessonByOwner: normalizeTodayLessonByOwner(
+      (stateWithoutLegacyOperational as { todayLessonByOwner?: unknown }).todayLessonByOwner,
+    ),
   };
 
   if (!archiveResult.ok) {
@@ -347,10 +362,15 @@ export const useMasterStore = create<MasterState>()(
             ),
           );
           const favoriteProgramIdsByOwner = { ...state.favoriteProgramIdsByOwner };
-          for (const ownerId of ownerIds) delete favoriteProgramIdsByOwner[ownerId];
+          const todayLessonByOwner = { ...state.todayLessonByOwner };
+          for (const ownerId of ownerIds) {
+            delete favoriteProgramIdsByOwner[ownerId];
+            delete todayLessonByOwner[ownerId];
+          }
           return {
             ...clearedLocalWorkspace(state),
             favoriteProgramIdsByOwner,
+            todayLessonByOwner,
             recentProgramActivities: state.recentProgramActivities.filter(
               (activity) => !ownerIds.has(activity.ownerId),
             ),
@@ -595,6 +615,7 @@ export const useMasterStore = create<MasterState>()(
         }),
       favoriteProgramIdsByOwner: {},
       pendingLegacyFavoriteProgramIds: [],
+      todayLessonByOwner: {},
       getFavoriteProgramIds: (ownerId) =>
         getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId),
       isFavoriteProgram: (ownerId, programId) =>
@@ -604,6 +625,23 @@ export const useMasterStore = create<MasterState>()(
           favoriteProgramIdsByOwner: toggleFavoriteByOwner(state.favoriteProgramIdsByOwner, ownerId, programId),
         }));
         void pushFavoriteProgramsToServer(ownerId, getFavoritesByOwner(get().favoriteProgramIdsByOwner, ownerId));
+      },
+      getTodayLesson: (ownerId) =>
+        getActiveTodayLesson(get().todayLessonByOwner, ownerId, getSeoulDayKey()),
+      setTodayLesson: (ownerId, program) => {
+        set((state) => ({
+          todayLessonByOwner: setTodayLessonForOwner(
+            state.todayLessonByOwner,
+            ownerId,
+            program,
+            getSeoulDayKey(),
+          ),
+        }));
+      },
+      clearTodayLesson: (ownerId) => {
+        set((state) => ({
+          todayLessonByOwner: clearTodayLessonForOwner(state.todayLessonByOwner, ownerId),
+        }));
       },
       syncFavoriteProgramsFromServer: async () => {
         const ownerId = getServerSyncableOwnerId(getRecentActivityOwner(get().profile)?.ownerId ?? null);
@@ -647,7 +685,7 @@ export const useMasterStore = create<MasterState>()(
     }),
     {
       name: 'spokedu-master-store',
-      version: 15,
+      version: 16,
       migrate: migrateMasterStore,
       partialize: (state) => ({
         profile: state.profile,
@@ -658,6 +696,7 @@ export const useMasterStore = create<MasterState>()(
         recentProgramActivities: state.recentProgramActivities,
         favoriteProgramIdsByOwner: state.favoriteProgramIdsByOwner,
         pendingLegacyFavoriteProgramIds: state.pendingLegacyFavoriteProgramIds,
+        todayLessonByOwner: state.todayLessonByOwner,
         notifications: state.notifications,
       }),
     },

@@ -344,7 +344,7 @@ export default function StudentsPage() {
               수업 후 남긴 기록을 학생별로 모아 다음 수업 준비와 안내문 작성에 활용합니다.
             </p>
           </div>
-          <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="mt-1 flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-4 text-[13px] font-black text-white sm:w-auto">
+          <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="spm-btn-primary mt-1 flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[9px] px-4 text-[13px] font-black focus-visible:outline-none sm:w-auto">
             <Plus size={15} />
             학생 추가
           </button>
@@ -602,7 +602,7 @@ export default function StudentsPage() {
             학생을 추가하면 수업 기록을 학생별로 관리할 수 있습니다.
           </p>
           <div className="mt-5 flex flex-col justify-center gap-2 sm:flex-row">
-            <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="inline-flex h-10 items-center justify-center gap-2 rounded-[9px] bg-slate-950 px-5 text-[13px] font-black text-white">
+            <button type="button" onClick={() => { setStudentSaveError(null); setAddOpen(true); }} className="spm-btn-primary inline-flex h-10 items-center justify-center gap-2 rounded-[9px] px-5 text-[13px] font-black focus-visible:outline-none">
               <Plus size={15} />
               학생 추가
             </button>
@@ -770,7 +770,7 @@ export default function StudentsPage() {
                         </div>
                       ) : null}
                       <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                        <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="flex h-9 items-center justify-center gap-2 rounded-[9px] bg-slate-950 text-[12px] font-black text-white">
+                        <Link href={`/spokedu-master/library/${selectedPreparationRecord.record.programId}`} className="spm-btn-primary flex h-9 items-center justify-center gap-2 rounded-[9px] text-[12px] font-black focus-visible:outline-none">
                           <BookOpen size={15} />
                           전체 수업 자료 보기
                         </Link>
@@ -890,7 +890,7 @@ export default function StudentsPage() {
               {studentSaveError}
             </p>
           ) : null}
-          <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="h-10 w-full rounded-[9px] bg-slate-950 text-[13px] font-black text-white disabled:opacity-50">
+          <button type="button" onClick={handleAdd} disabled={!newName.trim() || studentSaving} className="spm-btn-primary h-10 w-full rounded-[9px] text-[13px] font-black focus-visible:outline-none disabled:opacity-50">
             {studentSaving ? '추가 중...' : '추가'}
           </button>
         </div>
@@ -943,7 +943,7 @@ export default function StudentsPage() {
               {studentEditError}
             </p>
           ) : null}
-          <button type="button" onClick={handleEditStudent} disabled={!editName.trim() || studentEditing} className="h-10 w-full rounded-[9px] bg-slate-950 text-[13px] font-black text-white disabled:opacity-50">
+          <button type="button" onClick={handleEditStudent} disabled={!editName.trim() || studentEditing} className="spm-btn-primary h-10 w-full rounded-[9px] text-[13px] font-black focus-visible:outline-none disabled:opacity-50">
             {studentEditing ? '저장 중...' : '저장'}
           </button>
         </div>

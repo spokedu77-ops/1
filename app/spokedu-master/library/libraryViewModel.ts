@@ -2,7 +2,13 @@ import type { ClassRecord } from '../types';
 
 export type LibraryViewMode = 'all' | 'favorites';
 
-export type LibraryFilterGroupKey = 'target' | 'space' | 'function' | 'movement' | 'theme';
+export type LibraryFilterGroupKey =
+  | 'target'
+  | 'space'
+  | 'participant'
+  | 'function'
+  | 'movement'
+  | 'theme';
 
 export type LibraryActiveFilter = {
   group: LibraryFilterGroupKey;

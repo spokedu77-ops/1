@@ -676,7 +676,7 @@ function ReportContent() {
                 {program?.title ?? '수업을 선택하세요'}
               </h2>
             </div>
-            <button type="button" onClick={copyOutput} disabled={!output.trim()} className={`inline-flex h-10 items-center gap-2 rounded-[9px] px-4 text-[13px] font-black text-white disabled:opacity-50 ${copied ? 'bg-emerald-600' : 'bg-slate-950'}`}>
+            <button type="button" onClick={copyOutput} disabled={!output.trim()} className={`inline-flex h-10 items-center gap-2 rounded-[9px] px-4 text-[13px] font-black text-white focus-visible:outline-none disabled:opacity-50 ${copied ? 'bg-emerald-600' : 'spm-btn-primary'}`}>
               {copied ? <Check size={16} /> : <Clipboard size={16} />}
               {copied ? '복사 완료' : '복사해서 전달'}
             </button>
@@ -845,7 +845,7 @@ function ReportContent() {
               </div>
             </div>
             {hasProgramQuery && program ? (
-              <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center gap-2 rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">
+              <Link href={`/spokedu-master/library/${program.id}`} className="spm-btn-primary inline-flex h-9 items-center gap-2 rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
                 <BookOpen size={14} />
                 전체 수업 자료 보기
               </Link>

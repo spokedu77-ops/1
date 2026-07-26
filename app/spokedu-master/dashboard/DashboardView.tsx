@@ -41,16 +41,27 @@ import {
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
 } from '../lib/program-meta';
+import { sortProgramsByAgeGroupPreference } from '../lib/homeAgePreference';
 import { isMasterFirstUser, selectMasterLoopAction } from '../lib/masterUserLoop';
 import {
-  buildProgramResumeHref,
   getRecentActivityOwnerId,
   reconcileRecentProgramActivities,
   reconcileRecentSpomoveActivities,
-  selectLatestProgramResume,
   selectRecentSpomoveActivity,
-  type RecentProgramActivity,
 } from '../lib/recentProgramActivity';
+import {
+  CLASS_RECORD_DRAFT_KEY,
+  QUICK_RECORD_DRAFT_KEY,
+  REPORT_DRAFT_KEY,
+  readSaveDraft,
+} from '../lib/saveDraftStorage';
+import { CompactOpsBar } from './CompactOpsBar';
+import {
+  resolveHomeAnchor,
+  type ClassRecordDraftSnapshot,
+  type QuickRecordDraftSnapshot,
+  type ReportDraftSnapshot,
+} from './homeOpsModel';
 import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
@@ -66,17 +77,7 @@ import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore, useProfile } from '../store';
-import type { ClassRecord, Program } from '../types';
-
-type ContinueItem = {
-  id: string;
-  type: string;
-  title: string;
-  status: string;
-  action: string;
-  time?: string;
-  href: string;
-};
+import type { Program } from '../types';
 
 type SpomoveThumbnailPackQueryResult = {
   data: { assets_json?: unknown; updated_at?: string | null } | null;
@@ -228,18 +229,6 @@ function selectContextPrograms(programs: Program[], tab: ContextProgramTab, week
   return selected;
 }
 
-function formatRelativeDate(value: string) {
-  const time = new Date(value).getTime();
-  if (!Number.isFinite(time)) return '최근';
-  const diffMs = Date.now() - time;
-  if (diffMs >= 0 && diffMs < 60 * 60 * 1000) return '방금';
-  const diffDays = Math.floor((Date.now() - time) / 86_400_000);
-  if (diffDays <= 0) return '오늘';
-  if (diffDays === 1) return '어제';
-  if (diffDays < 7) return `${diffDays}일 전`;
-  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(new Date(time));
-}
-
 /** 추천 슬롯을 최대 4개까지 풀에서 보충한다. */
 function ensureWeeklyRecommendationCount(
   selected: Program[],
@@ -287,7 +276,7 @@ function SectionHeader({
 }) {
   const titleClass =
     size === 'lg'
-      ? `break-keep text-[25px] font-black leading-tight tracking-normal sm:text-[32px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
+      ? `break-keep text-[22px] font-black leading-tight tracking-normal sm:text-[28px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
       : `break-keep text-[20px] font-black leading-tight tracking-normal sm:text-[23px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
   const eyebrowClass = tone === 'dark'
     ? 'mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-300'
@@ -306,7 +295,7 @@ function SectionHeader({
       : 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]';
 
   return (
-    <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-end sm:gap-4">
+    <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:mb-3.5 sm:flex-row sm:items-end sm:gap-4">
       <div className="min-w-0">
         {eyebrow ? (
           <p className={eyebrowClass}>
@@ -326,10 +315,10 @@ function SectionHeader({
       {href && action ? (
         <Link
           href={href}
-          className={`${actionClass} -mt-1 sm:mt-0`}
+          className={`${actionClass} -mt-1 min-h-9 text-[12px] sm:mt-0 sm:min-h-10 sm:text-[13px]`}
         >
           {action}
-          <ArrowRight size={15} />
+          <ArrowRight size={14} />
         </Link>
       ) : null}
     </div>
@@ -338,15 +327,11 @@ function SectionHeader({
 
 function WeeklyProgramCard({
   program,
-  cornerLabel,
   onPreview,
-  scope = 'weekly',
   priority = false,
 }: {
   program: Program;
-  cornerLabel?: string;
   onPreview: (program: Program) => void;
-  scope?: 'weekly' | 'context';
   priority?: boolean;
 }) {
   const model = buildLessonDisplayModel(program);
@@ -364,45 +349,53 @@ function WeeklyProgramCard({
       detailHref={`/spokedu-master/library/${program.id}`}
       decisionMeta={model.theme || '체육 수업'}
       supportMeta={supportMeta}
-      cornerLabel={cornerLabel}
       priority={priority}
       dataAttrs={{
-        'data-weekly-program': scope === 'weekly' ? program.id : undefined,
-        'data-context-program': scope === 'context' ? program.id : undefined,
+        'data-weekly-program': program.id,
       }}
       sizes="(min-width: 1280px) 290px, (min-width: 768px) 45vw, 82vw"
     />
   );
 }
 
-function ContinueSection({ item }: { item: ContinueItem }) {
+/** 하단 맞춤 추천 — 사진 선반 반복을 피하기 위한 컴팩트 리스트 */
+function ContextProgramRow({
+  program,
+  cornerLabel,
+  onPreview,
+}: {
+  program: Program;
+  cornerLabel: string;
+  onPreview: (program: Program) => void;
+}) {
+  const model = buildLessonDisplayModel(program);
+  const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
+  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const meta = [cornerLabel, supportMeta].filter(Boolean).join(' · ');
+  const hero = model.heroImageUrl?.trim() || '';
+
   return (
-    <section className="h-full rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
-      <SectionHeader
-        eyebrow="이어하기"
-        title="최근 수업"
-        description="마지막으로 연 수업을 바로 이어갑니다."
-        tone="feature"
-      />
-      <Link
-        data-continue-item={item.id}
-        href={item.href}
-        className="flex min-h-[74px] items-center gap-3 rounded-[14px] border border-[color:var(--spm-br)] bg-[var(--spm-s2)] px-3 py-2 transition-colors hover:border-slate-300 hover:bg-[var(--spm-s3)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
-      >
-        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[12px] bg-[var(--spm-s1)] text-[var(--spm-acc)] shadow-sm">
-          {item.type === 'SPOMOVE' ? <MonitorPlay size={18} /> : <BookOpen size={18} />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[11px] font-black text-[var(--spm-acc)]">{item.type}</span>
-          <span className="mt-0.5 block truncate text-[13px] font-black text-[color:var(--spm-t)]">{item.title}</span>
-          <span className="mt-0.5 block truncate text-[11px] font-semibold text-[color:var(--spm-t2)]">{item.status}</span>
-        </span>
-        <span className="shrink-0 text-right">
-          {item.time ? <span className="block text-[11px] font-bold text-[color:var(--spm-t3)]">{item.time}</span> : null}
-          <span className="mt-1 block text-[11px] font-black text-[var(--spm-acc)]">{item.action}</span>
-        </span>
-      </Link>
-    </section>
+    <button
+      type="button"
+      data-context-program={program.id}
+      onClick={() => onPreview(program)}
+      className="flex w-full min-h-14 items-center gap-3 rounded-[12px] border border-slate-200 bg-white px-2.5 py-2 text-left transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
+    >
+      <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[10px] bg-slate-100">
+        {hero ? (
+          // eslint-disable-next-line @next/next/no-img-element -- mixed local/remote program heroes
+          <img src={hero} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : null}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[13px] font-black text-[color:var(--spm-t)]">{model.title}</span>
+        <span className="mt-0.5 block truncate text-[11px] font-semibold text-slate-500">{meta}</span>
+      </span>
+      <span className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-bold text-slate-500">
+        보기
+        <ArrowRight size={13} />
+      </span>
+    </button>
   );
 }
 
@@ -460,13 +453,13 @@ function SpomoveCard({
   return (
     <article
       data-spomove-preset={preset.id}
-      className="group flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)]"
+      className="group flex h-full min-h-[324px] flex-col overflow-hidden rounded-[14px] border border-slate-200 bg-white text-[color:var(--spm-t)] shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition-[border-color,box-shadow] duration-200 hover:border-slate-300 hover:shadow-[0_18px_38px_rgba(15,23,42,0.14)]"
     >
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
         className="relative aspect-[6/5] overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
-        aria-label={`${preset.title} 미리보기`}
+        aria-label={`${preset.title} 시작 준비 열기`}
       >
         {showThumbnail ? (
           /* eslint-disable-next-line @next/next/no-img-element -- SPOMOVE 썸네일은 외부 URL이라 next/image remotePatterns 밖일 수 있음 */
@@ -520,13 +513,10 @@ function SpomoveCard({
           type="button"
           data-spm-spomove-card-action="start"
           onClick={() => onOpenGuide(preset)}
-          className="mt-auto inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] bg-slate-950 px-3 text-[13px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+          className="spm-btn-primary mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-[7px] px-3 text-[13px] font-black hover:brightness-100 focus-visible:outline-none"
         >
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <MonitorPlay size={14} />
-            시작하기
-          </span>
-          <ArrowRight size={14} />
+          <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
+          <span>시작</span>
         </button>
       </div>
     </article>
@@ -561,34 +551,37 @@ function ActivityPanel({
     href: string;
     Icon: typeof FileText;
     action?: string;
-  }> = [
-    { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
-    { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
-    { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
-  ];
+  }> = compact
+    ? [
+        { label: '안내문', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
+        { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
+      ]
+    : [
+        { label: '안내문 보관', value: reportCount, href: '/spokedu-master/report', Icon: FileText },
+        { label: '수업 기록', value: recordCount, href: '/spokedu-master/class-record', Icon: CheckCircle2 },
+        { label: '학생 메모', value: studentMemoCount, href: '/spokedu-master/students', Icon: UsersRound },
+      ];
 
   if (compact) {
     return (
-      <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.06)] ${className}`}>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+      <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[14px] border border-slate-200 bg-white px-3 py-3 ${className}`}>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">기록</p>
-            <h2 id="activity-heading" className="mt-1 text-[20px] font-black text-[color:var(--spm-t)]">수업 기록</h2>
-            <p className="mt-1 text-[13px] font-semibold text-slate-600">안내문·기록·학생 메모를 빠르게 확인하세요.</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">기록 루프</p>
+            <h2 id="activity-heading" className="mt-0.5 text-[15px] font-black text-[color:var(--spm-t)]">안내문 · 기록</h2>
           </div>
-          <Link href="/spokedu-master/profile" className="inline-flex min-h-9 items-center rounded-full bg-[var(--spm-s2)] px-3 text-[12px] font-black text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900">
+          <Link href="/spokedu-master/profile" className="inline-flex min-h-8 items-center rounded-md bg-slate-50 px-2.5 text-[11px] font-bold text-slate-600">
             {status}
           </Link>
         </div>
-        <div className="grid gap-2 sm:grid-cols-3">
+        <div className="grid gap-2 sm:grid-cols-2">
           {activities.map(({ label, value, href, Icon, action }) => (
             <Link
               key={label}
               href={href}
-              className="flex min-h-[68px] items-center gap-3 rounded-[14px] border border-slate-200 bg-white px-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)] transition-colors hover:border-slate-300 hover:bg-[var(--spm-s2)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
-              title={label === '학생 메모' ? '저장된 수업 기록 내 학생 메모 수' : undefined}
+              className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-slate-100 bg-slate-50/80 px-2.5 transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
             >
-              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[11px] bg-[var(--spm-s2)] text-emerald-700 shadow-sm"><Icon size={17} /></span>
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-white text-emerald-700 shadow-sm"><Icon size={15} /></span>
               <span className="min-w-0">
                 <span className="block text-[12px] font-bold text-[color:var(--spm-t2)]">{label}</span>
                 <span className="mt-0.5 inline-flex items-center gap-1 text-[15px] font-black text-[color:var(--spm-t)]">
@@ -636,60 +629,6 @@ function ActivityPanel({
     </section>
   );
 }
-
-// 계속 사용하기: 일반 수업과 SPOMOVE 중 가장 최근 하나만 반환.
-// 안내문은 수업 기록 섹션 전용이므로 여기에 포함하지 않는다.
-function buildContinueItem(
-  classRecords: ClassRecord[],
-  recentProgramActivities: RecentProgramActivity[],
-  recentActivityOwnerId: string | null,
-  programs: Program[],
-): ContinueItem | null {
-  const programsById = new Map(programs.map((p) => [p.id, p]));
-  const validLessonActivities = reconcileRecentProgramActivities(recentProgramActivities, programs);
-  const recentLesson = recentActivityOwnerId
-    ? selectLatestProgramResume(
-        validLessonActivities,
-        classRecords.filter((r) => programsById.has(r.programId)),
-        recentActivityOwnerId,
-      )
-    : null;
-  const validPresetIds = new Set(OFFICIAL_SPOMOVE_LIBRARY.map((p) => p.id));
-  const validSpomoveActivities = reconcileRecentSpomoveActivities(recentProgramActivities, validPresetIds);
-  const recentSpomove = recentActivityOwnerId
-    ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId)
-    : null;
-  const useSpomove =
-    recentSpomove !== null &&
-    (recentLesson === null || recentSpomove.occurredAt > recentLesson.occurredAt);
-
-  if (useSpomove && recentSpomove) {
-    return {
-      id: `spomove-${recentSpomove.programId}`,
-      type: 'SPOMOVE',
-      title: recentSpomove.programTitle,
-      status: '최근 실행한 반응 프로그램',
-      action: '다시 보기',
-      time: formatRelativeDate(recentSpomove.occurredAt),
-      href: buildProgramResumeHref(recentSpomove.programId, 'spomove_started'),
-    };
-  }
-
-  if (recentLesson) {
-    return {
-      id: `lesson-${recentLesson.programId}`,
-      type: '수업',
-      title: recentLesson.programTitle,
-      status: recentLesson.source === 'video_started' ? '최근 시청한 수업 영상' : '최근 열어본 수업',
-      action: '다시 보기',
-      time: formatRelativeDate(recentLesson.occurredAt),
-      href: recentLesson.resumeHref,
-    };
-  }
-
-  return null;
-}
-
 
 export default function DashboardView() {
   const accessSnapshot = useMasterAccessSnapshot();
@@ -756,9 +695,23 @@ function EntitledDashboardView() {
   ]);
   const [previewSpomove, setPreviewSpomove] = useState<OfficialSpomovePreset | null>(null);
   const [contextTab, setContextTab] = useState<ContextProgramTab>('classroom');
+  const [classRecordDraft, setClassRecordDraft] = useState<ClassRecordDraftSnapshot | null>(null);
+  const [reportDraft, setReportDraft] = useState<ReportDraftSnapshot | null>(null);
+  const [quickRecordDraft, setQuickRecordDraft] = useState<QuickRecordDraftSnapshot | null>(null);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const refreshDrafts = () => {
+      setClassRecordDraft(readSaveDraft<ClassRecordDraftSnapshot>(CLASS_RECORD_DRAFT_KEY));
+      setReportDraft(readSaveDraft<ReportDraftSnapshot>(REPORT_DRAFT_KEY));
+      setQuickRecordDraft(readSaveDraft<QuickRecordDraftSnapshot>(QUICK_RECORD_DRAFT_KEY));
+    };
+    refreshDrafts();
+    window.addEventListener('focus', refreshDrafts);
+    return () => window.removeEventListener('focus', refreshDrafts);
   }, []);
 
   useEffect(() => {
@@ -837,8 +790,12 @@ function EntitledDashboardView() {
   );
   const programPool = useMemo(() => uniquePrograms(programs).sort(compareHomePrograms), [programs]);
   const weeklyPrograms = useMemo(
-    () => ensureWeeklyRecommendationCount(weeklySelection.programs, programPool, WEEKLY_RECOMMENDATION_COUNT),
-    [programPool, weeklySelection.programs],
+    () =>
+      sortProgramsByAgeGroupPreference(
+        ensureWeeklyRecommendationCount(weeklySelection.programs, programPool, WEEKLY_RECOMMENDATION_COUNT),
+        profile?.ageGroups,
+      ),
+    [programPool, profile?.ageGroups, weeklySelection.programs],
   );
   const weeklyIds = useMemo(() => new Set(weeklyPrograms.map((program) => program.id)), [weeklyPrograms]);
   const featuredSpomove = useMemo(
@@ -873,11 +830,39 @@ function EntitledDashboardView() {
     setPreviewAutoplay(autoplayVideo);
     setSelectedProgram(program);
   };
-  const continueItem = useMemo(
-    () => buildContinueItem(classRecords, recentProgramActivities, recentActivityOwnerId, programs),
-    [classRecords, programs, recentActivityOwnerId, recentProgramActivities],
+  const recentSpomove = useMemo(
+    () => (recentActivityOwnerId ? selectRecentSpomoveActivity(validSpomoveActivities, recentActivityOwnerId) : null),
+    [recentActivityOwnerId, validSpomoveActivities],
   );
-  const showRecentUse = !isFirstUser && Boolean(continueItem);
+  const todayLessonAssignment = useMasterStore((state) =>
+    recentActivityOwnerId ? state.getTodayLesson(recentActivityOwnerId) : null,
+  );
+  const clearTodayLesson = useMasterStore((state) => state.clearTodayLesson);
+  const programsById = useMemo(() => new Map(programs.map((program) => [program.id, program])), [programs]);
+  const homeAnchor = useMemo(
+    () =>
+      resolveHomeAnchor({
+        classRecordDraft,
+        reportDraft,
+        quickRecordDraft,
+        todayLesson: todayLessonAssignment
+          ? {
+              programId: todayLessonAssignment.programId,
+              programTitle: todayLessonAssignment.programTitle,
+            }
+          : null,
+        recentSpomove,
+        programsById,
+      }),
+    [
+      classRecordDraft,
+      programsById,
+      quickRecordDraft,
+      recentSpomove,
+      reportDraft,
+      todayLessonAssignment,
+    ],
+  );
   const studentMemoCount = useMemo(
     () => classRecords.flatMap((record) => record.students).filter((student) => student.memo?.trim()).length,
     [classRecords],
@@ -924,11 +909,11 @@ function EntitledDashboardView() {
           <h1 className="text-xl font-black text-[color:var(--spm-t)]">수업 자료를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
           {isUnauthorized ? (
-            <Link href="/login?next=/spokedu-master/dashboard" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-5 text-sm font-black text-white">로그인하기</Link>
+            <Link href="/login?next=/spokedu-master/dashboard" className="spm-btn-primary mt-5 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-black focus-visible:outline-none">로그인하기</Link>
           ) : isForbidden ? (
-            <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white">다시 구독하기</Link>
+            <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">다시 구독하기</Link>
           ) : (
-            <button type="button" onClick={() => void reloadPrograms()} className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white">다시 시도</button>
+            <button type="button" onClick={() => void reloadPrograms()} className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">다시 시도</button>
           )}
         </section>
       </main>
@@ -936,46 +921,67 @@ function EntitledDashboardView() {
   }
 
   return (
-    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-      <header className="flex min-h-[64px] flex-col justify-center gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">SPOKEDU MASTER</p>
-          <h1 className="mt-1 text-[24px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[29px]">
-            오늘 수업 운영
-          </h1>
-          <p className="mt-1 text-[13px] font-semibold leading-5 text-slate-600">
-            수업 선택, 화면 활동, 기록을 한 화면에서 정리하세요.
-          </p>
+    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-5 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:gap-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+      {/* P1: 헤더는 브랜드만 — CompactOpsBar·사진보다 무겁지 않게 */}
+      <header className="relative px-0.5 pt-0.5 sm:px-1">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">오늘 수업</p>
+            <h1
+              className="mt-1 text-[22px] font-black leading-none tracking-[-0.03em] text-[color:var(--spm-t)] sm:text-[26px]"
+              style={{ fontFamily: 'var(--spm-font-display, inherit)' }}
+            >
+              SPOKEDU MASTER
+            </h1>
+            <p className="mt-1.5 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]">
+              현장에서 바로 쓰는 수업과 화면 활동을 이어서 준비하세요.
+            </p>
+          </div>
+          <Link
+            href="/spokedu-master/class-record"
+            className="inline-flex min-h-8 shrink-0 items-center justify-center gap-1 self-start text-[11px] font-bold text-slate-400 transition-colors hover:text-slate-700 sm:self-auto"
+            title={loopAction.label}
+          >
+            기록
+            <ArrowRight size={12} />
+          </Link>
         </div>
-        <Link href={loopAction.href} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-950 px-4 text-[13px] font-black text-white shadow-[0_12px_24px_rgba(15,23,42,0.14)] transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900">
-          <ArrowRight size={15} />
-          {loopAction.label}
-        </Link>
       </header>
 
       {isFirstUser ? <FirstStartGuide spomoveAvailable={spomoveAvailable} /> : null}
 
+      <CompactOpsBar
+        anchor={homeAnchor}
+        recordCount={classRecords.length}
+        reportCount={explanationData.status === 'loading' ? null : explanationData.total}
+        onClearTodayLesson={
+          homeAnchor.kind === 'today_lesson' && recentActivityOwnerId
+            ? () => clearTodayLesson(recentActivityOwnerId)
+            : undefined
+        }
+      />
+
       <section
         data-dashboard-section="featured-flow"
-        aria-label="오늘의 추천 콘텐츠"
-        className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_58%,color-mix(in_srgb,var(--spm-s3)_82%,white)_100%)] p-4 shadow-[0_18px_46px_rgba(15,23,42,0.10)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5 lg:p-5"
+        aria-label="이번 주 수업 추천"
+        className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-4"
       >
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
           <SectionHeader
-            eyebrow="수업"
+            eyebrow="수업 자료"
             eyebrowIcon={<BookOpen size={14} />}
-            title="이번 주 바로 준비할 수업"
+            title="현장에서 바로 펼칠 수업"
             titleId="weekly-heading"
             size="lg"
             tone="feature"
-            description="대상·공간·교구 기준으로 바로 준비할 수업을 골라보세요."
+            description="고르고 준비하면, 오늘 수업에 바로 씁니다."
             href="/spokedu-master/library"
             action="수업자료 더 보기"
           />
           {weeklyPrograms.length > 0 ? (
-            <div className="relative -mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
+            <div className="relative -mx-3.5 flex snap-x gap-3.5 overflow-x-auto px-3.5 pb-2 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:grid md:grid-cols-2 md:overflow-visible lg:-mx-0 lg:grid-cols-4 lg:px-0 [&::-webkit-scrollbar]:hidden">
               {weeklyPrograms.map((program, index) => (
-                <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
+                <div key={program.id} className="w-[78vw] max-w-[310px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
                   <WeeklyProgramCard
                     program={program}
                     onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
@@ -987,123 +993,113 @@ function EntitledDashboardView() {
           ) : (
             <div className="rounded-[18px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] p-5 text-center">
               <p className="text-[14px] font-semibold text-[color:var(--spm-t2)]">오늘 쓸 수업을 라이브러리에서 골라 보세요.</p>
-              <Link href="/spokedu-master/library" className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white">
+              <Link href="/spokedu-master/library" className="spm-btn-primary mt-4 inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-[13px] font-black focus-visible:outline-none">
                 라이브러리 열기
               </Link>
             </div>
           )}
         </section>
-
-        <div className="relative my-5 h-px bg-[color:var(--spm-br)]" />
-
-        <section data-dashboard-section="spomove" aria-labelledby="spomove-heading" className="relative">
-          <SectionHeader
-            eyebrow="화면 활동"
-            eyebrowIcon={<MonitorPlay size={14} />}
-            title="SPOMOVE"
-            titleId="spomove-heading"
-            size="lg"
-            tone="feature"
-            description="프로젝터로 바로 여는 반응 활동을 선택하세요."
-            href="/spokedu-master/spomove"
-            action="활동 더 보기"
-          />
-          <div className="relative -mx-4 flex snap-x items-stretch gap-4 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
-            {featuredSpomove.map((preset) => (
-              <div key={preset.id} className="h-full w-[76vw] max-w-[320px] shrink-0 snap-start md:w-auto md:max-w-none">
-                <SpomoveCard
-                  preset={preset}
-                  thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
-                  onOpenGuide={setPreviewSpomove}
-                />
-              </div>
-            ))}
-          </div>
-        </section>
       </section>
 
       <section
-        data-dashboard-section="operations-flow"
-        aria-label="수업 운영 흐름"
-        className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_64%,color-mix(in_srgb,var(--spm-s3)_76%,white)_100%)] p-4 shadow-[0_14px_34px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)] sm:p-5 lg:p-5"
+        data-dashboard-section="spomove"
+        aria-labelledby="spomove-heading"
+        className="relative overflow-hidden rounded-[18px] border border-slate-800 bg-slate-950 p-3.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)] sm:p-4"
       >
-        <div
-          className="relative space-y-5 lg:grid lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-stretch lg:gap-5 lg:space-y-0"
-          style={{ gridTemplateAreas: '"recent activity" "context context"' }}
-        >
-          <div className="h-full" style={{ gridArea: 'recent' }}>
-            {showRecentUse && continueItem ? <ContinueSection item={continueItem} /> : (
-              <div className="h-full rounded-[18px] border border-slate-200 bg-white p-4 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
-                <p className="text-[11px] font-black uppercase tracking-[0.15em] text-slate-700">이어하기</p>
-                <h2 className="mt-1 text-[20px] font-black text-[color:var(--spm-t)]">최근 수업</h2>
-                <p className="mt-1 text-[13px] font-semibold text-slate-600">최근에 연 수업이 여기에 표시됩니다.</p>
-              </div>
-            )}
-          </div>
-
-            {availableContextTabs.length > 0 || profile?.isAdmin ? (
-            <section data-dashboard-section="context-programs" style={{ gridArea: 'context' }}>
-              <SectionHeader
-                eyebrow="현장 맞춤"
-                title="맞춤 수업"
-                description="현장 조건에 맞는 보조 추천만 추렸습니다."
-                href="/spokedu-master/library"
-                action="맞춤 더 보기"
-                tone="feature"
+        <SectionHeader
+          eyebrow="화면 활동"
+          eyebrowIcon={<MonitorPlay size={14} />}
+          title="SPOMOVE"
+          titleId="spomove-heading"
+          size="lg"
+          tone="dark"
+          description="교실 스크린을 수업으로 바꿉니다."
+          href="/spokedu-master/spomove"
+          action="활동 더 보기"
+        />
+        <div className="relative -mx-3.5 flex snap-x items-stretch gap-3.5 overflow-x-auto px-3.5 pb-1 [scrollbar-width:none] sm:-mx-4 sm:gap-4 sm:px-4 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 lg:grid-cols-4 [&::-webkit-scrollbar]:hidden">
+          {featuredSpomove.map((preset) => (
+            <div key={preset.id} className="h-full w-[74vw] max-w-[300px] shrink-0 snap-start md:w-auto md:max-w-none">
+              <SpomoveCard
+                preset={preset}
+                thumbnailUrl={resolveSpomoveThumbnailUrl(spomoveThumbnailPaths[preset.id], spomoveThumbnailCacheBust)}
+                onOpenGuide={setPreviewSpomove}
               />
-              {showContextTypeControl ? (
-                <div className="mb-4 flex gap-2" role="group" aria-label="현장 맞춤 프로그램 유형">
-                  {contextTabsToDisplay.map((tab) => {
-                    const active = contextTab === tab.key;
-                    return (
-                      <button
-                        key={tab.key}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => setContextTab(tab.key)}
-                        className="inline-flex min-h-10 items-center rounded-[10px] px-3 text-[13px] font-black focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
-                        style={{
-                          background: active ? '#0f172a' : '#ffffff',
-                          color: active ? '#ffffff' : '#475569',
-                          border: active ? '1px solid #0f172a' : '1px solid #e2e8f0',
-                        }}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              ) : null}
-              {contextPrograms.length > 0 ? (
-                <div className="-mx-4 flex snap-x gap-4 overflow-x-auto px-4 pb-3 [scrollbar-width:none] sm:-mx-5 sm:px-5 md:grid md:grid-cols-3 md:overflow-visible xl:-mx-0 xl:px-0 [&::-webkit-scrollbar]:hidden">
-                  {contextPrograms.slice(0, 3).map((program) => (
-                    <div key={program.id} className="w-[82vw] max-w-[330px] shrink-0 snap-start [container-type:inline-size] md:w-auto md:max-w-none">
-                      <WeeklyProgramCard
-                        program={program}
-                        cornerLabel={contextTab === 'classroom' ? '교실 체육' : '미취학 체육'}
-                        onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
-                        scope="context"
-                      />
-                    </div>
-                  ))}
-                </div>
-              ) : profile?.isAdmin ? (
-                <p className="rounded-[14px] border border-[color:var(--spm-br2)] bg-[var(--spm-s1)] px-4 py-3 text-[13px] font-semibold text-[color:var(--spm-t2)]">
-                  교실체육 또는 미취학 태그가 저장된 프로그램을 확인해 주세요.
-                </p>
-              ) : null}
-            </section>
-            ) : null}
-          <div className="h-full" style={{ gridArea: 'activity' }}>
-            <ActivityPanel
-              compact
-              className="h-full"
-              reportCount={explanationData.status === 'loading' ? null : explanationData.total}
-              recordCount={classRecords.length}
-              studentMemoCount={studentMemoCount}
-            />
-          </div>
+            </div>
+          ))}
         </div>
+      </section>
+
+      {/* P1: 하단은 3순위 — 그라데이션 히어로 대신 얇은 구분만 */}
+      <div aria-hidden="true" className="border-t border-slate-200/90" />
+
+      <section
+        data-dashboard-section="operations-flow"
+        aria-label="보조 추천과 기록"
+        className="relative space-y-2.5 rounded-[14px] border border-slate-200/90 bg-slate-50/80 p-2.5 sm:p-3"
+      >
+        {availableContextTabs.length > 0 || profile?.isAdmin ? (
+          <section data-dashboard-section="context-programs">
+            <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">보조</p>
+                <h2 className="mt-0.5 text-[14px] font-black text-slate-700">조건에 맞는 보조 수업</h2>
+              </div>
+              <Link
+                href="/spokedu-master/library"
+                className="inline-flex min-h-8 items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-800"
+              >
+                수업자료에서 찾기
+                <ArrowRight size={12} />
+              </Link>
+            </div>
+            {showContextTypeControl ? (
+              <div className="mb-2.5 flex gap-1.5" role="group" aria-label="현장 맞춤 프로그램 유형">
+                {contextTabsToDisplay.map((tab) => {
+                  const active = contextTab === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setContextTab(tab.key)}
+                      className="inline-flex min-h-8 items-center rounded-md px-2.5 text-[12px] font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
+                      style={{
+                        background: active ? '#0f172a' : '#ffffff',
+                        color: active ? '#ffffff' : '#64748b',
+                        border: active ? '1px solid #0f172a' : '1px solid #e2e8f0',
+                      }}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+            {contextPrograms.length > 0 ? (
+              <div className="grid gap-2 sm:grid-cols-3">
+                {contextPrograms.slice(0, 3).map((program) => (
+                  <ContextProgramRow
+                    key={program.id}
+                    program={program}
+                    cornerLabel={contextTab === 'classroom' ? '교실 체육' : '미취학 체육'}
+                    onPreview={(item) => openPreview(item, programHasPlayableVideo(item))}
+                  />
+                ))}
+              </div>
+            ) : profile?.isAdmin ? (
+              <p className="rounded-[12px] border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-500">
+                교실체육 또는 미취학 태그가 저장된 프로그램을 확인해 주세요.
+              </p>
+            ) : null}
+          </section>
+        ) : null}
+        <ActivityPanel
+          compact
+          reportCount={explanationData.status === 'loading' ? null : explanationData.total}
+          recordCount={classRecords.length}
+          studentMemoCount={studentMemoCount}
+        />
       </section>
 
       {selectedProgram ? (

@@ -71,6 +71,7 @@ import {
   setMasterParticipantFormatTag,
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { ContentAuditPanel } from './ContentAuditPanel';
+import { readAdminJsonSafe } from './readAdminJsonSafe';
 import { StorageRecompressPanel } from './StorageRecompressPanel';
 import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
@@ -1608,10 +1609,10 @@ function WeeklyRecommendationManager({
         const res = await fetch('/api/admin/spokedu-master/programs/home-featured', {
           cache: 'no-store',
         });
-        const json = (await res.json()) as {
+        const json = await readAdminJsonSafe<{
           slots?: Array<number | null>;
           error?: string;
-        };
+        }>(res, '추천 슬롯을 불러오지 못했습니다');
         if (!res.ok) throw new Error(json.error ?? '추천 슬롯을 불러오지 못했습니다.');
         if (active) {
           setSlots(
@@ -1653,11 +1654,11 @@ function WeeklyRecommendationManager({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slots }),
       });
-      const json = (await res.json()) as {
+      const json = await readAdminJsonSafe<{
         slots?: Array<number | null>;
         message?: string;
         error?: string;
-      };
+      }>(res, '추천 슬롯 저장에 실패했습니다');
       if (!res.ok) throw new Error(json.error ?? '추천 슬롯 저장에 실패했습니다.');
       setSlots(Array.from({ length: 4 }, (_, index) => json.slots?.[index] ?? null));
       await useMasterStore.getState().reloadPrograms();
@@ -1764,7 +1765,10 @@ export default function AdminSmProgramsPage() {
     setLoading(true);
     try {
       const res = await fetch('/api/admin/spokedu-master/programs', { cache: 'no-store' });
-      const json = (await res.json()) as ProgramsResponse & { error?: string };
+      const json = await readAdminJsonSafe<ProgramsResponse & { error?: string }>(
+        res,
+        '프로그램 목록을 불러오지 못했습니다',
+      );
       if (!res.ok) throw new Error(json.error ?? '프로그램 목록을 불러오지 못했습니다.');
       const nextItems = json.data ?? [];
       setItems(nextItems);
@@ -1856,7 +1860,10 @@ export default function AdminSmProgramsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(createForm),
       });
-      const json = await res.json() as { ok?: boolean; error?: string; program?: ProgramItem };
+      const json = await readAdminJsonSafe<{ ok?: boolean; error?: string; program?: ProgramItem }>(
+        res,
+        '프로그램 추가에 실패했습니다',
+      );
       if (!res.ok || json.ok !== true || !json.program) {
         throw new Error(json.error ?? '프로그램 추가에 실패했습니다.');
       }
@@ -1885,12 +1892,12 @@ export default function AdminSmProgramsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dryRun: true }),
       });
-      const preview = await previewRes.json() as {
+      const preview = await readAdminJsonSafe<{
         error?: string;
         summary?: { toInsert: number; toUpdate: number };
         changes?: Array<{ title: string; fields: string[] }>;
         message?: string;
-      };
+      }>(previewRes, '동기화 미리보기에 실패했습니다');
       if (!previewRes.ok) throw new Error(preview.error ?? '동기화 미리보기에 실패했습니다.');
 
       const total = (preview.summary?.toInsert ?? 0) + (preview.summary?.toUpdate ?? 0);
@@ -1913,7 +1920,10 @@ export default function AdminSmProgramsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dryRun: false }),
       });
-      const applied = await applyRes.json() as { error?: string; message?: string; applied?: number };
+      const applied = await readAdminJsonSafe<{ error?: string; message?: string; applied?: number }>(
+        applyRes,
+        '동기화 적용에 실패했습니다',
+      );
       if (!applyRes.ok) throw new Error(applied.error ?? '동기화 적용에 실패했습니다.');
 
       await load();
@@ -1949,13 +1959,13 @@ export default function AdminSmProgramsPage() {
           variationMethod: form.variations,
         })),
       });
-      const json = await res.json() as {
+      const json = await readAdminJsonSafe<{
         ok?: boolean;
         partialSave?: boolean;
         failedStage?: string;
         error?: string;
         program?: SavedAdminProgram<Partial<OverlayRow>, MetaRow>;
-      };
+      }>(res, '저장에 실패했습니다');
       if (!res.ok || json.ok !== true) {
         const message = json.partialSave
           ? `일부 항목 저장 실패${json.failedStage ? ` (${json.failedStage})` : ''}. 다시 저장해 주세요.`
@@ -2009,13 +2019,13 @@ export default function AdminSmProgramsPage() {
           variationMethod: nextForm.variations,
         })),
       });
-      const json = await res.json() as {
+      const json = await readAdminJsonSafe<{
         ok?: boolean;
         partialSave?: boolean;
         failedStage?: string;
         error?: string;
         program?: SavedAdminProgram<Partial<OverlayRow>, MetaRow>;
-      };
+      }>(res, '이미지 제거 저장에 실패했습니다');
       if (!res.ok || json.ok !== true) {
         const message = json.partialSave
           ? `이미지 제거 저장 중 일부 단계가 실패했습니다${json.failedStage ? ` (${json.failedStage})` : ''}.`

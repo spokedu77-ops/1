@@ -22,11 +22,13 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
   });
 
-  it('keeps the library header as a compact search and filter control panel', () => {
-    expect(library).toContain('조건에 맞는 수업 찾기');
-    expect(library).toContain('결과 {filteredPrograms.length}개');
+  it('keeps the library header as a compact search control with curated-first IA', () => {
+    expect(library).toContain('바로 쓸 수업 고르기');
+    expect(library).toContain('전체에서 찾기');
+    expect(library).toContain('전체 {pool.length}개 수업');
     expect(library).toContain('placeholder="수업명 검색"');
     expect(library).toContain('return program.title.toLowerCase()');
+    expect(library).not.toContain('조건에 맞는 수업 찾기');
     expect(library).not.toContain('MATERIAL_VIDEO_VALUE');
     expect(library).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(library).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
@@ -38,6 +40,8 @@ describe('SPOKEDU MASTER lesson CTA hierarchy', () => {
     expect(detail).toContain('/spokedu-master/class-record?program=${program.id}');
     expect(detail).toContain('/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}');
     expect(detail).toContain('수업 기록 시작');
+    expect(detail).toContain('오늘 수업으로 지정');
+    expect(detail).toContain('오늘 수업 해제');
     expect(detail).toContain('빠른 기록');
     expect(detail).toContain('오늘 관찰을 남기면 학생 이력과 안내문 초안으로 이어집니다.');
     expect(detail).not.toContain('라이브러리 수업을 내 반 기록과 안내문으로 이어갑니다.');

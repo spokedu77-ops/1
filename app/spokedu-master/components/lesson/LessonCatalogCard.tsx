@@ -293,7 +293,11 @@ export function LessonCatalogCard({
         ) : (
           <Link
             href={detailHref}
-            className="mt-auto inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] bg-slate-950 px-3 text-[13px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] transition-colors hover:bg-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className={
+              variant === 'home'
+                ? 'mt-auto inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+                : 'spm-btn-primary mt-auto inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] px-3 text-[13px] font-black focus-visible:outline-none'
+            }
           >
             <span className="inline-flex min-w-0 items-center gap-2">
               <BookOpen size={variant === 'home' ? 14 : 15} />

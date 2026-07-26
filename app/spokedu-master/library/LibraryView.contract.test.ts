@@ -42,14 +42,34 @@ describe('LibraryView favorites contract', () => {
   });
 
   it('keeps the library search controls compact and purpose-led', () => {
-    expect(source).toContain('조건에 맞는 수업 찾기');
-    expect(source).toContain('결과 {filteredPrograms.length}개');
+    expect(source).toContain('바로 쓸 수업 고르기');
+    expect(source).toContain('전체에서 찾기');
+    expect(source).toContain('상황별 바로 고르기');
+    expect(source).toContain('전체 {pool.length}개 수업');
     expect(source).toContain('placeholder="수업명 검색"');
     expect(source).toContain('return program.title.toLowerCase()');
+    expect(source).not.toContain('조건에 맞는 수업 찾기');
+    expect(source).not.toContain('전체 수업 ${filteredPrograms.length}개');
     expect(source).not.toContain('MATERIAL_VIDEO_VALUE');
     expect(source).not.toContain('MATERIAL_SPOMOVE_VALUE');
     expect(source).not.toContain('lg:grid-cols-[minmax(0,1fr)_420px]');
     expect(source).not.toContain('href="/spokedu-master/spomove" className="inline-flex h-14');
+  });
+
+  it('leads with curated shelves before the full catalog', () => {
+    expect(source).toContain('buildLibraryShelves');
+    expect(source).toContain('LIBRARY_SITUATION_ENTRIES');
+    expect(source).toContain('formatProgramSelectionReasons');
+    expect(source).toContain('aria-label="편집 컬렉션"');
+    expect(source).toContain('aria-label="상황별 빠른 진입"');
+  });
+
+  it('adds participant format filter and routes situation shortcuts through filters only', () => {
+    expect(source).toContain("{ key: 'participant', label: '참여 형태' }");
+    expect(source).toContain('parseMasterParticipantFormats');
+    expect(source).toContain('applySituationFilter(entry.filter)');
+    expect(source).not.toContain('entry.shelfId');
+    expect(source).not.toContain('entry.reasonId');
   });
 
   it('does not expose record cloning as a default library action', () => {

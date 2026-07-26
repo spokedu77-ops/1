@@ -32,4 +32,24 @@ describe('library quick record save contracts', () => {
     expect(source).toContain('focusStudentId');
     expect(source).not.toContain('상세 기록 작성');
   });
+
+  it('exposes lesson plan copy and print with fixed export template', () => {
+    const exportSource = readFileSync(
+      join(process.cwd(), 'app/spokedu-master/lib/lessonPlanExport.ts'),
+      'utf8',
+    );
+    expect(source).toContain('formatLessonPlanText');
+    expect(source).toContain('printLessonPlan');
+    expect(source).toContain('지도안 복사');
+    expect(source).toContain('지도안 인쇄');
+    expect(exportSource).toContain("'title'");
+    expect(exportSource).toContain("'context'");
+    expect(exportSource).toContain("'equipment'");
+    expect(exportSource).toContain("'prep'");
+    expect(exportSource).toContain("'method'");
+    expect(exportSource).toContain("'variation'");
+    expect(exportSource).toContain("'coaching'");
+    expect(exportSource).toContain("'safety'");
+    expect(exportSource).toContain("'parentNote'");
+  });
 });

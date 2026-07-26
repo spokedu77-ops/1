@@ -12,10 +12,13 @@ const guidelineSheet = read('app/spokedu-master/spomove/SpomoveGuidelineSheet.ts
 const recordDraft = read('app/spokedu-master/spomove/session/spomoveRecordDraft.ts');
 
 describe('SPOMOVE pilot flow contract', () => {
-  it('shows card tags and guideline actions on hub cards', () => {
+  it('shows card tags and start/settings actions on hub cards', () => {
     expect(hub).toContain('sortSpomovePresetsByDisplayTitle');
-    expect(hub).toContain('참고 영상');
+    expect(hub).toContain('시작 준비 열기');
     expect(hub).toContain('data-spm-spomove-card-action="start"');
+    expect(hub).toContain('data-spm-spomove-start-mode="settings"');
+    expect(hub).not.toContain('가이드 보기');
+    expect(hub).not.toContain('바로 실행');
     expect(hub).not.toContain('빠른 시작');
     expect(hub).toContain('최근 SPOMOVE');
   });
@@ -49,7 +52,11 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(hub).toContain('SharedSpomoveGuidelineSheet');
     expect(guidelineSheet).not.toContain('SpomovePadLayoutView');
     expect(guidelineSheet).toContain('SpomoveScreenPreview');
-    expect(guidelineSheet).toContain('바로 시작');
+    expect(guidelineSheet).toContain('시작 준비');
+    expect(guidelineSheet).toContain('지도법');
+    expect(guidelineSheet).toContain('이 설정으로 시작');
+    expect(guidelineSheet).not.toContain('바로 시작');
+    expect(guidelineSheet).not.toContain('바로 실행');
     expect(guidelineSheet).toContain('안내 더보기');
     expect(guidelineSheet).not.toContain('상세보기');
     expect(guidelineSheet).not.toContain('설정 변경');
@@ -69,7 +76,9 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(session).toContain('전체화면과 소리 켜기');
     expect(session).not.toContain('MovementHud');
     expect(guidelineSheet).not.toContain('autostart: true');
-    expect(guidelineSheet).toContain('바로 시작');
+    expect(guidelineSheet).toContain('이 설정으로 시작');
+    expect(guidelineSheet).not.toContain('바로 시작');
+    expect(guidelineSheet).not.toContain('바로 실행');
     expect(guidelineSheet).toContain('data-spm-spomove-guide-action="start-official"');
     expect(guidelineSheet).toContain('data-spm-spomove-launch-confirm');
     expect(guidelineSheet).not.toContain('공식 추천으로 시작');
@@ -87,7 +96,10 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(startBriefing).toContain('supportsCueSpeedOverride');
     expect(startBriefing).toContain('SPOMOVE_CUE_SPEED_OPTIONS');
     expect(startBriefing).toContain('자극 속도');
-    expect(startBriefing).toContain('이 설정으로 시작');
+    // Session StartBriefing = 확인 후 엔진 진입. Sheet의「이 설정으로 시작」과 구분.
+    expect(startBriefing).toContain('수업 시작');
+    expect(startBriefing).not.toContain('바로 시작');
+    expect(startBriefing).not.toContain('바로 실행');
   });
 
   it('reproduces recent same-settings or downgrades the label', () => {

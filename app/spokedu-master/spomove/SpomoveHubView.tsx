@@ -610,15 +610,12 @@ function CardVisual({
         <SpomoveProgramVisual preset={preset} />
       )}
       {preset.isReady ? (
-        <span className="pointer-events-none absolute left-2.5 top-2.5 flex items-center gap-1.5">
+        <span className="pointer-events-none absolute left-2.5 top-2.5">
           <span
             aria-hidden="true"
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-[0_2px_10px_rgba(15,23,42,0.22)] ring-1 ring-black/5 motion-safe:transition-transform motion-safe:duration-150 group-hover:scale-105"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
-          </span>
-          <span className="rounded-md bg-black/55 px-2 py-1 text-[11px] font-semibold text-white opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-            가이드
           </span>
         </span>
       ) : null}
@@ -714,10 +711,10 @@ function CardInfo({
               data-spm-spomove-card-action="start"
               data-spm-spomove-start-mode="guide"
               onClick={onGuide}
-              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[9px] bg-slate-950 px-2 text-[13px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] transition hover:bg-slate-800 active:scale-[0.98]"
+              className="spm-btn-primary inline-flex h-10 min-w-0 flex-[1.6] items-center justify-center gap-1.5 rounded-[7px] px-2 text-[13px] font-black focus-visible:outline-none"
             >
-              <MonitorPlay className="h-3.5 w-3.5 shrink-0" />
-              시작하기
+              <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden />
+              <span>시작</span>
             </button>
             {showSettings ? (
               <button
@@ -725,7 +722,7 @@ function CardInfo({
                 data-spm-spomove-card-action="start"
                 data-spm-spomove-start-mode="settings"
                 onClick={() => router.push(hrefForSettings())}
-                className="inline-flex h-9 min-w-0 shrink-0 items-center justify-center rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700"
+                className="inline-flex h-10 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[7px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
               >
                 설정
               </button>
@@ -747,7 +744,6 @@ function CardInfo({
 function PresetCard({
   preset,
   thumbnailUrl,
-  hasGuideVideo,
   favorite,
   favoriteEnabled,
   movementLayerEnabled,
@@ -756,7 +752,6 @@ function PresetCard({
 }: {
   preset: OfficialSpomovePreset;
   thumbnailUrl: string;
-  hasGuideVideo: boolean;
   favorite: boolean;
   favoriteEnabled: boolean;
   movementLayerEnabled: boolean;
@@ -798,7 +793,7 @@ function PresetCard({
           if (!preset.isReady) return;
           onPreview();
         }}
-        aria-label={`${displayModel.displayTitle} ${hasGuideVideo ? '참고 영상과 ' : ''}가이드 보기`}
+        aria-label={`${displayModel.displayTitle} 시작 준비 열기`}
         className="relative block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
@@ -966,7 +961,6 @@ export default function SpomoveHubView() {
           key={preset.id}
           preset={preset}
           thumbnailUrl={resolveThumbnailUrl(thumbnailPaths[preset.id], thumbnailCacheBust)}
-          hasGuideVideo={Boolean(guideVideoUrls[preset.id])}
           favorite={isFavoriteProgram(ownerId, preset.id)}
           favoriteEnabled={ownerId != null && preset.isReady}
           movementLayerEnabled={movementLayerEnabled}
@@ -1040,7 +1034,7 @@ export default function SpomoveHubView() {
                         href={recentHref}
                         data-spm-spomove-recent-action="rerun"
                         data-spm-spomove-recent-reproduce={canReproduce ? '1' : '0'}
-                        className="inline-flex h-9 items-center justify-center rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white transition hover:bg-slate-800"
+                        className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none"
                       >
                         {canReproduce ? '같은 설정으로 시작' : '이 활동으로 시작'}
                       </Link>
@@ -1052,7 +1046,7 @@ export default function SpomoveHubView() {
           ) : (
             <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-[12px] border border-dashed border-slate-200 bg-slate-50 px-3 py-2.5">
               <p className="text-sm font-bold text-slate-600">아직 실행한 SPOMOVE 활동이 없습니다.</p>
-              <a href="#spomove-program-list" className="inline-flex h-9 items-center justify-center rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">활동 선택</a>
+              <a href="#spomove-program-list" className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">활동 선택</a>
             </div>
           )}
         </section>
@@ -1175,12 +1169,10 @@ export default function SpomoveHubView() {
         ) : null}
         </section>
         <p className="mt-3 rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2 text-[12px] font-semibold leading-relaxed text-slate-600">
-          <span className="font-black text-slate-800">썸네일</span>
-          이나{' '}
-          <span className="font-black text-slate-800">시작하기</span>
-          를 누르면{' '}
-          <span className="font-black text-[var(--spm-acc)]">참고 영상</span>
-          과 안내를 확인한 뒤 바로 시작할 수 있습니다.
+          <span className="font-black text-slate-800">시작</span>
+          을 누르면 실행 조건과 안내를 확인한 뒤 수업 화면에 들어갑니다.{' '}
+          <span className="font-black text-slate-800">설정</span>
+          에서는 난이도·속도를 바꾼 뒤 시작할 수 있습니다.
         </p>
         {/* 카드 그리드 */}
         {filteredPresets.length > 0 ? (

@@ -109,6 +109,9 @@
   --spm-acc: #0f172a;
   --spm-acc-muted: #334155;
   --spm-acc-glow: #f1f5f9;
+  /* 전 제품 Primary CTA (실행/시작/저장·핵심 행동) — slate-950과 섞지 말 것 */
+  --spm-cta: #2563eb;
+  --spm-cta-hover: #1d4ed8;
   --spm-acc-a06: color-mix(in srgb, var(--spm-acc) 6%, transparent);
   --spm-acc-a08: color-mix(in srgb, var(--spm-acc) 8%, transparent);
   --spm-acc-a09: color-mix(in srgb, var(--spm-acc) 9%, transparent);
@@ -268,7 +271,7 @@ body {
     cursor: not-allowed;
   }
   * {
-    @apply border-border outline-ring/50;
+    border-color: var(--border);
   }
   body {
     @apply bg-background text-foreground;
@@ -276,6 +279,37 @@ body {
   html {
     @apply font-sans;
   }
+}
+
+/*
+ * SPOKEDU MASTER Primary CTA
+ * - 색: --spm-cta (홈/SPOMOVE/상세 실행 버튼 통일)
+ * - 흰 세로선: inset shadow·전역 border AA 차단
+ */
+.spm-btn-primary {
+  -webkit-appearance: none;
+  appearance: none;
+  border-style: none !important;
+  border-width: 0 !important;
+  border-color: transparent !important;
+  outline: none;
+  box-shadow: none !important;
+  background-color: var(--spm-cta) !important;
+  background-image: linear-gradient(var(--spm-cta), var(--spm-cta)) !important;
+  color: #ffffff !important;
+  isolation: isolate;
+  transform: translateZ(0);
+}
+.spm-btn-primary:hover:not(:disabled) {
+  background-color: var(--spm-cta-hover) !important;
+  background-image: linear-gradient(var(--spm-cta-hover), var(--spm-cta-hover)) !important;
+}
+.spm-btn-primary:disabled {
+  opacity: 0.5;
+}
+.spm-btn-primary:focus-visible {
+  outline: 2px solid var(--spm-cta) !important;
+  outline-offset: 2px;
 }
 
 /* 터치 최적화가 붙은 클릭 영역 — 포인터 보강 */

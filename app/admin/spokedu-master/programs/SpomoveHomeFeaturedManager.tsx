@@ -15,6 +15,7 @@ import {
   OFFICIAL_SPOMOVE_LIBRARY,
   type OfficialSpomovePreset,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { readAdminJsonSafe } from './readAdminJsonSafe';
 
 const koreanTitleCollator = new Intl.Collator('ko');
 
@@ -217,10 +218,10 @@ export function SpomoveHomeFeaturedManager() {
         const res = await fetch('/api/admin/spokedu-master/spomove/home-featured', {
           cache: 'no-store',
         });
-        const json = (await res.json()) as {
+        const json = await readAdminJsonSafe<{
           slots?: Array<string | null>;
           error?: string;
-        };
+        }>(res, 'SPOMOVE 추천 슬롯을 불러오지 못했습니다');
         if (!res.ok) throw new Error(json.error ?? 'SPOMOVE 추천 슬롯을 불러오지 못했습니다.');
         if (active) {
           setSlots(
@@ -265,11 +266,11 @@ export function SpomoveHomeFeaturedManager() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slots }),
       });
-      const json = (await res.json()) as {
+      const json = await readAdminJsonSafe<{
         slots?: Array<string | null>;
         message?: string;
         error?: string;
-      };
+      }>(res, 'SPOMOVE 추천 슬롯 저장에 실패했습니다');
       if (!res.ok) throw new Error(json.error ?? 'SPOMOVE 추천 슬롯 저장에 실패했습니다.');
       setSlots(
         Array.from(

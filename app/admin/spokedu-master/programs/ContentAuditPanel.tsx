@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clipboard, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import type { ContentAuditItem } from '@/app/spokedu-master/lib/contentAuditReport';
+import { readAdminJsonSafe } from './readAdminJsonSafe';
 
 type AuditSummary = {
   total: number;
@@ -67,7 +68,10 @@ export function ContentAuditPanel({
       const res = await fetch(`/api/admin/spokedu-master/programs/content-audit?limit=${limit}`, {
         cache: 'no-store',
       });
-      const json = (await res.json()) as AuditResponse;
+      const json = await readAdminJsonSafe<AuditResponse>(
+        res,
+        '콘텐츠 감사를 불러오지 못했습니다',
+      );
       if (!res.ok) throw new Error(json.error ?? '콘텐츠 감사를 불러오지 못했습니다.');
       setItems(json.data ?? []);
       setSummary(json.summary ?? null);

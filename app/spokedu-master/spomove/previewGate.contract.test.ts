@@ -59,10 +59,13 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
   });
 
   it('2c) Hub 시작·썸네일은 같은 확인 모달 루트', () => {
-    expect(hub).toContain('시작하기');
+    expect(hub).toContain('<span>시작</span>');
     expect(hub).toContain('data-spm-spomove-start-mode="guide"');
     expect(hub).toContain('onClick={onGuide}');
-    expect(hub).toContain('가이드 보기');
+    expect(hub).toContain('시작 준비 열기');
+    expect(hub).not.toContain('가이드 보기');
+    expect(hub).not.toContain('바로 실행');
+    expect(hub).not.toContain('바로 시작');
     expect(hub).not.toContain('data-spm-spomove-card-action="guide"');
     expect(hub).not.toContain('사전 설정된 공식 조건으로 실행');
   });

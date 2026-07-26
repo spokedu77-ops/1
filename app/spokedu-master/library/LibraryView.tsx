@@ -20,13 +20,14 @@ import { LibrarySkeleton } from '../components/ui/Skeleton';
 import { getFavoritesOwnerId } from '../lib/favoriteLib';
 import {
   LESSON_TAG_PREFIX,
-  buildLessonCardSupportMeta,
   getLessonTheme,
   parseTaggedValues,
 } from '../lib/lessonDisplay';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
+  isMasterParticipantFormat,
+  parseMasterParticipantFormats,
   parseMasterSpaces,
   parseMasterTargets,
 } from '../lib/programDisplayTags';
@@ -34,6 +35,21 @@ import { toClassRecord } from '../lib/operationalDataAdapter';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useIsPremium, useMasterStore } from '../store';
 import type { Program } from '../types';
+import {
+  buildLibraryShelves,
+  filterProgramsByReason,
+  filterProgramsByShelf,
+  getLibraryShelfDefinition,
+  parseLibraryShelfId,
+  LIBRARY_SITUATION_ENTRIES,
+  type LibraryShelfId,
+} from './libraryCuration';
+import {
+  LIBRARY_SELECTION_REASON_IDS,
+  LIBRARY_SELECTION_REASONS,
+  formatProgramSelectionReasons,
+  type LibrarySelectionReasonId,
+} from './librarySelectionReasons';
 import {
   countValidFavoritePrograms,
   filterLibraryPrograms,
@@ -45,7 +61,6 @@ import {
   LIBRARY_PAGE_SIZE,
   matchesLibraryFilters,
   paginateLibraryPrograms,
-  formatLibraryCardEquipmentName,
   type LibraryActiveFilter,
   type LibraryFilterGroupKey,
   type LibraryViewMode,
@@ -79,8 +94,14 @@ function tagDisplayLabel(group: FilterGroupKey, value: string): string {
 }
 
 function getStructuredValues(program: Program, group: FilterGroupKey): string[] {
-  if (group === 'target') return parseMasterTargets(program.grade);
+  if (group === 'target') return parseMasterTargets(program.lessonDetail?.recommendedAge || program.grade);
   if (group === 'space') return parseMasterSpaces(program.space);
+  if (group === 'participant') {
+    const fromTags = parseMasterParticipantFormats(program.tags);
+    if (fromTags.length > 0) return fromTags;
+    const fromDetail = String(program.lessonDetail?.recommendedPlayers ?? '').trim();
+    return isMasterParticipantFormat(fromDetail) ? [fromDetail] : [];
+  }
   if (group === 'function') {
     return parseTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction);
   }
@@ -102,10 +123,11 @@ function getSearchText(program: Program) {
   return program.title.toLowerCase();
 }
 
-function getCardPrepMeta(program: Program, locked: boolean) {
-  const primaryEquipment = program.equipment[0];
-  if (locked && program.isPro) return '프리미엄 자료';
-  return primaryEquipment ? formatLibraryCardEquipmentName(primaryEquipment) : '없음';
+function parseReasonId(value: string | null): LibrarySelectionReasonId | null {
+  if (!value) return null;
+  return (LIBRARY_SELECTION_REASON_IDS as readonly string[]).includes(value)
+    ? (value as LibrarySelectionReasonId)
+    : null;
 }
 
 function SectionTitle({ eyebrow, title }: { eyebrow: string; title: string }) {
@@ -140,10 +162,8 @@ function ProgramCard({
   detailHref: string;
   priority?: boolean;
 }) {
-  const prepMeta = getCardPrepMeta(program, locked);
-  // SPOMOVE 카드와 동일: 액센트=테마, 설명=대상·공간·참여형태/준비
   const decisionMeta = getLessonTheme(program) || program.category || '체육 수업';
-  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prepMeta });
+  const supportMeta = formatProgramSelectionReasons(program);
 
   return (
     <LessonCatalogCard
@@ -220,14 +240,17 @@ export default function LibraryView() {
   const { classRecords: serverClassRecords } = useOperationalData();
   const classRecords = useMemo(() => serverClassRecords.map(toClassRecord), [serverClassRecords]);
   const isPremium = useIsPremium();
-  const favoriteIds = storedFavoriteIds ?? getFavoriteProgramIds(ownerId);
+  const favoriteIds = useMemo(
+    () => storedFavoriteIds ?? getFavoriteProgramIds(ownerId),
+    [storedFavoriteIds, getFavoriteProgramIds, ownerId],
+  );
 
   const [query, setQuery] = useState(() => searchParams.get('q') ?? '');
   const [visibleCount, setVisibleCount] = useState(LIBRARY_PAGE_SIZE);
   const [filters, setFilters] = useState<ActiveFilters>(() => {
     const group = searchParams.get('filterGroup') as FilterGroupKey | null;
     const value = searchParams.get('filter');
-    const allowedGroups: FilterGroupKey[] = ['target', 'space', 'function', 'movement', 'theme'];
+    const allowedGroups: FilterGroupKey[] = ['target', 'space', 'participant', 'function', 'movement', 'theme'];
     const legacyFilter = group && value && allowedGroups.includes(group) ? [{ group, value }] : [];
     const parsedFilters = searchParams
       .getAll('filters')
@@ -242,6 +265,8 @@ export default function LibraryView() {
     return parsedFilters.length > 0 ? parsedFilters : legacyFilter;
   });
   const view = parseLibraryView(searchParams.get('view'));
+  const shelfId = parseLibraryShelfId(searchParams.get('shelf'));
+  const reasonId = parseReasonId(searchParams.get('reason'));
   const [selected, setSelected] = useState<{ program: Program; autoplayVideo: boolean } | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -274,9 +299,11 @@ export default function LibraryView() {
       .slice(0, 4);
   }, [classRecords, pool]);
 
+  const shelves = useMemo(() => buildLibraryShelves(viewPool), [viewPool]);
+
   useEffect(() => {
     setVisibleCount(LIBRARY_PAGE_SIZE);
-  }, [query, filters, view]);
+  }, [query, filters, view, shelfId, reasonId]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -286,33 +313,40 @@ export default function LibraryView() {
       params.append('filters', `${filter.group}:${filter.value}`);
     }
     params.set('view', view);
+    if (shelfId) params.set('shelf', shelfId);
+    if (reasonId) params.set('reason', reasonId);
     const next = params.toString();
     const current = searchParams.toString();
     if (next === current) return;
     router.replace(next ? `/spokedu-master/library?${next}` : '/spokedu-master/library', { scroll: false });
-  }, [filters, query, view, router, searchParams]);
+  }, [filters, query, view, shelfId, reasonId, router, searchParams]);
 
-  const filteredPrograms = useMemo(
-    () =>
-      filterLibraryPrograms(
-        viewPool,
-        query,
-        (program, normalizedQuery) => getSearchText(program).includes(normalizedQuery),
-        (program) => matchesLibraryFilters(program, filters, getStructuredValues),
-      ),
-    [filters, viewPool, query],
-  );
+  const filteredPrograms = useMemo(() => {
+    const base = filterLibraryPrograms(
+      viewPool,
+      query,
+      (program, normalizedQuery) => getSearchText(program).includes(normalizedQuery),
+      (program) => matchesLibraryFilters(program, filters, getStructuredValues),
+    );
+    if (shelfId) return filterProgramsByShelf(base, shelfId);
+    if (reasonId) return filterProgramsByReason(base, reasonId);
+    return base;
+  }, [filters, viewPool, query, shelfId, reasonId]);
+
   const visiblePrograms = useMemo(
     () => paginateLibraryPrograms(filteredPrograms, visibleCount),
     [filteredPrograms, visibleCount],
   );
   const hasMorePrograms = visiblePrograms.length < filteredPrograms.length;
   const hasActiveFilters = filters.length > 0;
+  const hasBrowseConstraint = Boolean(shelfId || reasonId);
+  const hasSearchIntent = query.trim().length > 0 || hasActiveFilters || hasBrowseConstraint;
+  const isBrowseMode = view === 'all' && !hasSearchIntent;
   const favoritesEmptyState = getFavoritesEmptyState(
     view,
     validFavoriteCount,
     query.trim().length > 0,
-    hasActiveFilters,
+    hasActiveFilters || hasBrowseConstraint,
     filteredPrograms.length,
   );
 
@@ -327,10 +361,64 @@ export default function LibraryView() {
     });
   };
 
-  const changeView = (nextView: LibraryViewMode) => {
+  const replaceLibraryParams = (mutate: (params: URLSearchParams) => void) => {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('view', nextView);
+    mutate(params);
     router.push(`/spokedu-master/library?${params.toString()}`, { scroll: false });
+  };
+
+  const changeView = (nextView: LibraryViewMode) => {
+    replaceLibraryParams((params) => {
+      params.set('view', nextView);
+      if (nextView === 'favorites') {
+        params.delete('shelf');
+        params.delete('reason');
+      }
+    });
+  };
+
+  const openShelf = (nextShelf: LibraryShelfId) => {
+    setQuery('');
+    setFilters([]);
+    replaceLibraryParams((params) => {
+      params.set('view', 'all');
+      params.set('shelf', nextShelf);
+      params.delete('reason');
+      params.delete('q');
+      params.delete('filters');
+    });
+  };
+
+  const applySituationFilter = (filter: ActiveFilter) => {
+    setQuery('');
+    setFilters([filter]);
+    replaceLibraryParams((params) => {
+      params.set('view', 'all');
+      params.delete('shelf');
+      params.delete('reason');
+      params.delete('q');
+      params.delete('filters');
+      params.append('filters', `${filter.group}:${filter.value}`);
+    });
+  };
+
+  const clearBrowseConstraints = () => {
+    replaceLibraryParams((params) => {
+      params.delete('shelf');
+      params.delete('reason');
+    });
+  };
+
+  const clearAllSearch = () => {
+    setQuery('');
+    setFilters([]);
+    replaceLibraryParams((params) => {
+      params.delete('q');
+      params.delete('filters');
+      params.delete('shelf');
+      params.delete('reason');
+      params.set('view', view);
+    });
   };
 
   const filterGroups = useMemo<FilterGroup[]>(
@@ -341,6 +429,7 @@ export default function LibraryView() {
         [
           { key: 'target', label: '대상' },
           { key: 'space', label: '공간' },
+          { key: 'participant', label: '참여 형태' },
           { key: 'function', label: '신체 기능' },
           { key: 'movement', label: '움직임' },
           { key: 'theme', label: '테마' },
@@ -351,7 +440,10 @@ export default function LibraryView() {
   );
 
   const basicGroups = useMemo(
-    () => filterGroups.filter((g) => (['target', 'space'] as FilterGroupKey[]).includes(g.key)),
+    () =>
+      filterGroups.filter((g) =>
+        (['target', 'space', 'participant'] as FilterGroupKey[]).includes(g.key),
+      ),
     [filterGroups],
   );
   const advancedGroups = useMemo(
@@ -359,7 +451,6 @@ export default function LibraryView() {
     [filterGroups],
   );
 
-  // 상세 필터에 활성 값이 있으면 자동 펼침
   const advancedHasActive =
     filters.some((filter) => (['function', 'movement', 'theme'] as FilterGroupKey[]).includes(filter.group));
   const isAdvancedOpen = showAdvanced || advancedHasActive;
@@ -378,7 +469,7 @@ export default function LibraryView() {
           <Lock className="mx-auto h-6 w-6 text-[color:var(--spm-t3)]" />
           <h1 className="mt-3 text-xl font-black text-[color:var(--spm-t)]">수업 자료를 불러올 수 없습니다.</h1>
           <p className="mt-3 text-sm font-semibold leading-6 text-[color:var(--spm-t2)]">{message}</p>
-          <Link href="/spokedu-master/subscription" className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-5 text-[13px] font-black text-white">
+          <Link href="/spokedu-master/subscription" className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none">
             다시 구독하기
           </Link>
         </section>
@@ -386,38 +477,50 @@ export default function LibraryView() {
     );
   }
 
+  const catalogTitle = view === 'favorites'
+    ? (hasSearchIntent ? `즐겨찾기 결과 ${filteredPrograms.length}개` : `즐겨찾기한 수업 ${filteredPrograms.length}개`)
+    : shelfId
+      ? `${getLibraryShelfDefinition(shelfId).title} ${filteredPrograms.length}개`
+      : reasonId
+        ? `${LIBRARY_SELECTION_REASONS[reasonId].label} ${filteredPrograms.length}개`
+        : hasSearchIntent
+          ? `검색 결과 ${filteredPrograms.length}개`
+          : '전체에서 찾기';
+
   return (
     <>
-      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-4 overflow-y-auto px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
-        <header className="relative overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(135deg,var(--spm-s1)_0%,var(--spm-s2)_68%,color-mix(in_srgb,var(--spm-s3)_72%,white)_100%)] shadow-[0_16px_42px_rgba(15,23,42,0.08)] ring-1 ring-white/70 before:absolute before:inset-x-0 before:top-0 before:h-1 before:bg-[linear-gradient(90deg,#111827_0%,#475569_45%,rgba(71,85,105,0)_100%)]">
-          <div className="space-y-2.5 p-4 sm:p-4">
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-acc)]">
-                  마스터 라이브러리
-                </p>
-                <h1 className="mt-1 text-[23px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[27px]">
-                  조건에 맞는 수업 찾기
-                </h1>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] font-black text-[color:var(--spm-t2)]">
-                <span className="rounded-full bg-slate-950 px-2.5 py-1 text-white">
-                  결과 {filteredPrograms.length}개
-                </span>
-              </div>
+      <main className="mx-auto flex h-full w-full max-w-7xl flex-col gap-5 overflow-y-auto px-4 pb-24 pt-4 sm:px-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+        <header className="rounded-[20px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-5">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[var(--spm-acc)]">
+                수업자료
+              </p>
+              <h1 className="mt-1 text-[23px] font-black leading-tight text-[color:var(--spm-t)] sm:text-[27px]">
+                {isBrowseMode ? '바로 쓸 수업 고르기' : '맞는 수업 찾기'}
+              </h1>
+              <p className="mt-1 text-[13px] font-semibold text-slate-600">
+                {isBrowseMode
+                  ? '편집된 수업부터 보고, 필요할 때 전체에서 검색하세요.'
+                  : '검색과 조건으로 원하는 수업을 좁히세요.'}
+              </p>
             </div>
+            <p className="text-[11px] font-bold text-slate-500">
+              전체 {pool.length}개 수업
+            </p>
+          </div>
 
-            <div className="grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <label className="relative block">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[color:var(--spm-t2)]" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="수업명 검색"
-                  className="h-11 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-12 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
-                />
-              </label>
-              <div className="flex flex-wrap items-center gap-2">
+          <div className="mt-3 grid gap-2 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--spm-t2)]" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="수업명 검색"
+                className="h-10 w-full rounded-xl border border-[color:var(--spm-br2)] bg-white pl-10 pr-4 text-sm font-semibold text-[color:var(--spm-t)] outline-none placeholder:text-[color:var(--spm-t3)] focus:border-slate-400 focus-visible:ring-2 focus-visible:ring-slate-200"
+              />
+            </label>
+            <div className="flex flex-wrap items-center gap-2">
               <div
                 className="grid min-h-10 grid-cols-2 items-center rounded-xl border border-[color:var(--spm-br2)] bg-white p-1"
                 aria-label="라이브러리 보기"
@@ -432,7 +535,7 @@ export default function LibraryView() {
                   }`}
                   aria-pressed={view === 'all'}
                 >
-                  전체 <span className="ml-1 text-[11px] opacity-60">{pool.length}</span>
+                  전체
                 </button>
                 <button
                   type="button"
@@ -448,90 +551,131 @@ export default function LibraryView() {
                   즐겨찾기 <span className="text-[11px] opacity-60">{validFavoriteCount}</span>
                 </button>
               </div>
-              {hasActiveFilters ? (
-                <button type="button" onClick={() => setFilters([])} className="h-10 px-2 text-[12px] font-black text-[var(--spm-acc)]">
+              {hasSearchIntent ? (
+                <button type="button" onClick={clearAllSearch} className="h-10 px-2 text-[12px] font-black text-[var(--spm-acc)]">
                   초기화
                 </button>
               ) : null}
-              </div>
             </div>
-
-            <div className="rounded-[14px] border border-slate-200 bg-white/80 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.82)]">
-              <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-[11px] font-black text-slate-950">빠른 필터</p>
-                <p className="text-[11px] font-bold text-slate-500">대상과 공간을 먼저 좁히세요.</p>
-              </div>
-              <div className="grid gap-2 lg:grid-cols-2">
-                {basicGroups.map((group) => (
-                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowAdvanced((prev) => !prev)}
-              className="flex min-h-9 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
-            >
-              <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-                세부 조건
-                <span className="text-[11px] font-bold text-[color:var(--spm-t3)]">신체 기능 · 움직임 · 테마</span>
-              </span>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isAdvancedOpen ? (
-              <div className="grid gap-2.5 rounded-[14px] border border-slate-200 bg-white/80 p-2.5 lg:grid-cols-2 2xl:grid-cols-3">
-                {advancedGroups.map((group) => (
-                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
-                ))}
-              </div>
-            ) : null}
           </div>
         </header>
 
-        {view === 'all' && recentProgramRecords.length > 0 ? (
-          <section className="rounded-[16px] border border-slate-200 bg-white/86 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-            <div className="mb-2 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 사용</p>
-                <h2 className="mt-0.5 text-[18px] font-black leading-tight text-[color:var(--spm-t)]">최근 사용한 수업</h2>
-              </div>
-            </div>
-            <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
-              {recentProgramRecords.map(({ program, record }) => (
-                <article key={program.id} className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5">
-                  <p className="text-[11px] font-bold text-[color:var(--spm-t3)]">
-                    {formatRecentRecordSubtitle(record)}
-                  </p>
-                  <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-[color:var(--spm-t)]">{program.title}</h3>
-                  <div className="mt-3 grid gap-2">
-                    <Link href={`/spokedu-master/class-record?record=${record.id}&program=${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-slate-950 px-3 text-[12px] font-black text-white">
-                      기록 보기
-                    </Link>
-                    <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
-                      전체 수업 자료 보기
-                    </Link>
+        {isBrowseMode ? (
+          <>
+            {shelves.length > 0 ? (
+              <section aria-label="편집 컬렉션" className="space-y-5">
+                <div>
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">컬렉션</p>
+                  <h2 className="mt-1 text-[22px] font-black leading-tight text-[color:var(--spm-t)]">상황별 바로 고르기</h2>
+                </div>
+                {shelves.map(({ shelf, programs: shelfPrograms, total }) => (
+                  <div key={shelf.id} className="rounded-[18px] border border-slate-200 bg-white/90 p-3 shadow-[0_10px_24px_rgba(15,23,42,0.05)] sm:p-4">
+                    <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-500">
+                          {shelf.kind === 'editorial' ? '편집' : '규칙'} · {shelf.subtitle}
+                        </p>
+                        <h3 className="mt-0.5 text-[18px] font-black text-[color:var(--spm-t)]">{shelf.title}</h3>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openShelf(shelf.id)}
+                        className="text-[12px] font-black text-[var(--spm-acc)]"
+                      >
+                        더 보기 ({total})
+                      </button>
+                    </div>
+                    <ProgramGrid
+                      programs={shelfPrograms}
+                      isPremium={isPremium}
+                      isFavorite={(programId) => isFavoriteProgram(ownerId, programId)}
+                      favoriteEnabled={ownerId != null}
+                      sourceLibraryView={view}
+                      usedProgramIds={usedProgramIds}
+                      toggleFavorite={(id) => toggleFavoriteProgram(ownerId, id)}
+                      setSelected={setSelected}
+                    />
                   </div>
-                </article>
-              ))}
-            </div>
-          </section>
+                ))}
+              </section>
+            ) : null}
+
+            <section aria-label="상황별 빠른 진입" className="rounded-[18px] border border-slate-200 bg-white/90 p-4 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+              <div className="mb-3">
+                <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">빠른 진입</p>
+                <h2 className="mt-1 text-[20px] font-black text-[color:var(--spm-t)]">조건으로 출발하기</h2>
+                <p className="mt-1 text-[13px] font-semibold text-slate-600">대상·공간·교구·활동 성격으로 바로 들어갑니다.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {LIBRARY_SITUATION_ENTRIES.map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onClick={() => applySituationFilter(entry.filter)}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-3.5 text-[12px] font-black text-slate-700 transition hover:border-slate-300 hover:bg-white hover:text-slate-950"
+                  >
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{entry.groupLabel}</span>
+                    {entry.label}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            {recentProgramRecords.length > 0 ? (
+              <section className="rounded-[16px] border border-slate-200 bg-white/80 p-3">
+                <div className="mb-2">
+                  <p className="text-[11px] font-black uppercase tracking-[0.14em] text-slate-600">최근 사용</p>
+                  <h2 className="mt-0.5 text-[16px] font-black leading-tight text-[color:var(--spm-t)]">최근에 쓴 수업</h2>
+                </div>
+                <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+                  {recentProgramRecords.map(({ program, record }) => (
+                    <article key={program.id} className="rounded-[12px] border border-slate-200 bg-slate-50 px-3 py-2.5">
+                      <p className="text-[11px] font-bold text-[color:var(--spm-t3)]">
+                        {formatRecentRecordSubtitle(record)}
+                      </p>
+                      <h3 className="mt-1 line-clamp-2 text-[14px] font-black leading-tight text-[color:var(--spm-t)]">{program.title}</h3>
+                      <div className="mt-3 grid gap-2">
+                        <Link href={`/spokedu-master/class-record?record=${record.id}&program=${program.id}`} className="spm-btn-primary inline-flex h-9 items-center justify-center rounded-[9px] px-3 text-[12px] font-black focus-visible:outline-none">
+                          기록 보기
+                        </Link>
+                        <Link href={`/spokedu-master/library/${program.id}`} className="inline-flex h-9 items-center justify-center rounded-[9px] bg-white px-3 text-[12px] font-black text-slate-700 ring-1 ring-slate-200">
+                          전체 수업 자료 보기
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              </section>
+            ) : null}
+          </>
         ) : null}
 
-        <section>
+        <section id="library-catalog">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <SectionTitle
-              eyebrow="수업 목록"
-              title={
-                view === 'favorites'
-                  ? (query || hasActiveFilters ? `즐겨찾기 결과 ${filteredPrograms.length}개` : `즐겨찾기한 수업 ${filteredPrograms.length}개`)
-                  : (query || hasActiveFilters ? `검색 결과 ${filteredPrograms.length}개` : `전체 수업 ${filteredPrograms.length}개`)
-              }
+              eyebrow={isBrowseMode ? '전체 검색' : '수업 목록'}
+              title={catalogTitle}
             />
-            {hasActiveFilters ? (
+            {hasActiveFilters || hasBrowseConstraint ? (
               <div className="mb-3 flex flex-wrap gap-1.5">
+                {shelfId ? (
+                  <button
+                    type="button"
+                    onClick={clearBrowseConstraints}
+                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm"
+                  >
+                    {getLibraryShelfDefinition(shelfId).title} ×
+                  </button>
+                ) : null}
+                {reasonId ? (
+                  <button
+                    type="button"
+                    onClick={clearBrowseConstraints}
+                    className="inline-flex h-8 items-center rounded-full border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 shadow-sm"
+                  >
+                    {LIBRARY_SELECTION_REASONS[reasonId].label} ×
+                  </button>
+                ) : null}
                 {filters.map((filter) => (
                   <button
                     key={`${filter.group}:${filter.value}`}
@@ -545,6 +689,42 @@ export default function LibraryView() {
               </div>
             ) : null}
           </div>
+
+          <div className="mb-4 space-y-2">
+            <div className="rounded-[14px] border border-slate-200 bg-white/80 px-3 py-2">
+              {isBrowseMode ? (
+                <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-[11px] font-black text-slate-950">세부 조건</p>
+                  <p className="text-[11px] font-bold text-slate-500">필요할 때만 좁히세요.</p>
+                </div>
+              ) : null}
+              <div className="grid gap-2 lg:grid-cols-2">
+                {basicGroups.map((group) => (
+                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowAdvanced((prev) => !prev)}
+              className="flex min-h-9 w-full items-center justify-between gap-3 rounded-[12px] border border-slate-200 bg-white/72 px-3 py-2 text-left text-[12px] font-black text-slate-600 transition hover:border-slate-300 hover:text-slate-950"
+            >
+              <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                {isBrowseMode ? '더 많은 조건' : '세부 조건'}
+                <span className="text-[11px] font-bold text-[color:var(--spm-t3)]">신체 기능 · 움직임 · 테마</span>
+              </span>
+              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isAdvancedOpen ? (
+              <div className="grid gap-2.5 rounded-[14px] border border-slate-200 bg-white/80 p-2.5 lg:grid-cols-2 2xl:grid-cols-3">
+                {advancedGroups.map((group) => (
+                  <FilterRow key={group.key} group={group} filters={filters} onFilter={toggleFilter} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
           <ProgramGrid
             programs={visiblePrograms}
             isPremium={isPremium}
@@ -577,9 +757,9 @@ export default function LibraryView() {
                 <button
                   type="button"
                   onClick={() => changeView('all')}
-                  className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
+                  className="spm-btn-primary mt-4 inline-flex h-11 items-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none"
                 >
-                  전체 수업 둘러보기
+                  수업 둘러보기
                 </button>
               </div>
             ) : (
@@ -589,15 +769,12 @@ export default function LibraryView() {
                   {view === 'favorites' ? '조건에 맞는 즐겨찾기 수업이 없습니다.' : '조건에 맞는 수업이 없습니다.'}
                 </h3>
                 <p className="mt-2 text-sm font-semibold text-[color:var(--spm-t2)]">
-                  검색어를 줄이거나 선택한 필터를 해제해 보세요.
+                  검색어를 줄이거나 선택한 조건을 해제해 보세요.
                 </p>
                 <button
                   type="button"
-                  onClick={() => {
-                    setQuery('');
-                    setFilters([]);
-                  }}
-                  className="mt-4 inline-flex h-11 items-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[13px] font-black text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2"
+                  onClick={clearAllSearch}
+                  className="spm-btn-primary mt-4 inline-flex h-11 items-center rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none"
                 >
                   검색·필터 초기화
                 </button>

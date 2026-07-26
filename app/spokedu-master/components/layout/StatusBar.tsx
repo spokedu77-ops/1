@@ -33,7 +33,7 @@ export function StatusBar() {
           className="flex min-h-11 shrink-0 items-center gap-2 rounded-[12px] px-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
           aria-label="SPOKEDU MASTER 홈"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-black text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">SM</span>
+          <span className="grid h-8 w-8 place-items-center rounded-[11px] bg-slate-950 text-[11px] font-black text-white">SM</span>
           <span className="hidden items-baseline gap-1.5 sm:flex">
             <span className="text-[11px] font-black uppercase tracking-[0.16em] text-slate-400">SPOKEDU</span>
             <span className="text-[15px] font-black text-slate-900">MASTER</span>

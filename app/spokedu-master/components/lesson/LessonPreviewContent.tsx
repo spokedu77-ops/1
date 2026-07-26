@@ -1,12 +1,17 @@
 'use client';
 
-import { MessageSquareQuote, Package } from 'lucide-react';
+import { AlertTriangle, MessageSquareQuote, Package, Shuffle } from 'lucide-react';
 import type { ReactNode } from 'react';
 
+import { isLessonPlaceholder } from '../../lib/lessonDisplay';
 import { buildLessonDisplayModel } from '../../lib/lessonDisplayModel';
 import type { Program } from '../../types';
 import { LessonPreviewMedia } from './LessonPreviewMedia';
 import { LessonTitle } from './LessonPanels';
+
+function firstUsableLine(values: string[]) {
+  return values.map((value) => value.trim()).find((value) => value && !isLessonPlaceholder(value)) ?? '';
+}
 
 function quoteScript(script: string) {
   const trimmed = script.trim();
@@ -34,11 +39,15 @@ export function LessonPreviewContent({
   const previewEquipment = locked ? [] : model.equipment.slice(0, 3);
   const previewRules = locked ? [] : model.activityMethod.slice(0, 3);
   const previewScript = locked ? '' : model.previewCoachScript;
+  const previewVariation = locked ? '' : firstUsableLine(model.variationMethod);
+  const previewSafety = locked ? '' : firstUsableLine(model.safetyNotes);
   const hasSummaryContent =
     !locked &&
     (previewEquipment.length > 0 ||
       Boolean(previewScript) ||
-      previewRules.length > 0);
+      previewRules.length > 0 ||
+      Boolean(previewVariation) ||
+      Boolean(previewSafety));
   const meta = [model.target, model.space].filter(Boolean).slice(0, 3);
 
   return (
@@ -130,6 +139,26 @@ export function LessonPreviewContent({
                       </li>
                     ))}
                   </ol>
+                </section>
+              ) : null}
+
+              {previewVariation ? (
+                <section className="border-t border-slate-100 pt-4">
+                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-slate-600">
+                    <Shuffle className="h-3.5 w-3.5" />
+                    대표 변형
+                  </h3>
+                  <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-700">{previewVariation}</p>
+                </section>
+              ) : null}
+
+              {previewSafety ? (
+                <section className="border-t border-slate-100 pt-4">
+                  <h3 className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-amber-700">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    핵심 안전사항
+                  </h3>
+                  <p className="mt-2 text-[13px] font-semibold leading-6 text-slate-700">{previewSafety}</p>
                 </section>
               ) : null}
             </div>

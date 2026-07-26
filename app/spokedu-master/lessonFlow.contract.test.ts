@@ -13,8 +13,8 @@ const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
 
 describe('lesson discovery and execution flow contract', () => {
   it('shows decision metadata and non-conflicting card actions in the library', () => {
-    // 카드 메타는 기존 태그 축을 buildLessonCardSupportMeta → LessonCatalogCard 한 줄 메타로 압축한다.
-    expect(library).toContain('buildLessonCardSupportMeta');
+    // 카드 메타는 선택 이유 통제 어휘 → LessonCatalogCard 한 줄 메타로 압축한다.
+    expect(library).toContain('formatProgramSelectionReasons');
     expect(library).toContain('LessonCatalogCard');
     expect(library).not.toContain('/spokedu-master/class-record?program=${program.id}');
     const catalogCard = read('app/spokedu-master/components/lesson/LessonCatalogCard.tsx');
@@ -25,6 +25,10 @@ describe('lesson discovery and execution flow contract', () => {
   it('keeps preview focused on quick suitability information', () => {
     expect(preview).toContain('model.activityMethod.slice(0, 3)');
     expect(preview).toContain('model.equipment.slice(0, 3)');
+    expect(preview).toContain('대표 변형');
+    expect(preview).toContain('핵심 안전사항');
+    expect(preview).toContain('firstUsableLine(model.variationMethod)');
+    expect(preview).toContain('firstUsableLine(model.safetyNotes)');
   });
 
   it('declares the full lesson material hierarchy and primary CTA routes', () => {
@@ -34,24 +38,44 @@ describe('lesson discovery and execution flow contract', () => {
     expect(detail).not.toContain('getSpomoveSessionHref');
   });
 
-  it('keeps dashboard discovery first and removes duplicate home favorite re-entry', () => {
+  it('keeps photo-first home with CompactOpsBar only for ops', () => {
+    const opsBar = read('app/spokedu-master/dashboard/CompactOpsBar.tsx');
+    const model = read('app/spokedu-master/dashboard/homeOpsModel.ts');
+    const opsBarIndex = dashboard.indexOf('CompactOpsBar');
+    const featuredIndex = dashboard.indexOf('data-dashboard-section="featured-flow"');
     const weeklyIndex = dashboard.indexOf('data-dashboard-section="weekly"');
     const spomoveIndex = dashboard.indexOf('data-dashboard-section="spomove"');
-    const recentIndex = dashboard.indexOf('<ContinueSection item={continueItem} />');
     const contextIndex = dashboard.indexOf('data-dashboard-section="context-programs"');
-    const activityIndex = dashboard.indexOf('<ActivityPanel');
 
-    // 수업 레일 → SPOMOVE → 이어하기 → 맞춤 → 기록 (히어로/빌보드 없음)
-    expect(weeklyIndex).toBeGreaterThanOrEqual(0);
+    expect(dashboard).not.toContain('HomeOpsBoard');
+    expect(dashboard).toContain('CompactOpsBar');
+    expect(dashboard).toContain('resolveHomeAnchor');
+    expect(dashboard).toContain('ContextProgramRow');
+    expect(dashboard).toContain('WeeklyProgramCard');
+    expect(dashboard).not.toContain('WeeklyFeaturedCard');
+    expect(dashboard).not.toContain('data-weekly-featured');
+    expect(dashboard).toContain('현장에서 바로 쓰는 수업과 화면 활동을 이어서 준비하세요.');
+    expect(dashboard).toContain('현장에서 바로 펼칠 수업');
+    expect(dashboard).toContain('시작 준비 열기');
+    expect(dashboard).toContain('data-spm-spomove-card-action="start"');
+    expect(dashboard).not.toContain('바로 실행');
+    expect(dashboard).toContain('spm-btn-primary');
+    expect(opsBar).toContain('data-dashboard-section="compact-ops-bar"');
+    expect(opsBar).toContain('max-h-[84px]');
+    expect(opsBarIndex).toBeGreaterThanOrEqual(0);
+    expect(featuredIndex).toBeGreaterThan(opsBarIndex);
+    expect(weeklyIndex).toBeGreaterThan(featuredIndex);
     expect(spomoveIndex).toBeGreaterThan(weeklyIndex);
-    expect(recentIndex).toBeGreaterThan(spomoveIndex);
-    expect(contextIndex).toBeGreaterThan(recentIndex);
-    expect(activityIndex).toBeGreaterThan(contextIndex);
+    expect(contextIndex).toBeGreaterThan(spomoveIndex);
+    expect(model).toContain('getHomeAnchorIntensity');
+    expect(model).toContain("kind: 'record_draft'");
+    expect(model).toContain('lesson_opened / video_started / 미리보기 금지');
+    expect(dashboard).not.toContain('function ContinueSection');
+    expect(dashboard).not.toContain('data-dashboard-section="ops-anchor"');
     expect(dashboard).not.toContain('data-dashboard-section="billboard"');
     expect(dashboard).not.toContain('function SpomoveBillboard');
     expect(dashboard).not.toContain('function HomeBillboard');
     expect(dashboard).not.toContain('HERO_ROTATE_MS');
-    expect(dashboard).not.toContain('data-dashboard-section="lesson-reentry"');
     expect(dashboard).not.toContain('favoritePrograms');
     expect(dashboard).not.toContain('recentLessonPrograms');
     expect(dashboard).not.toContain('function RailRowHeader');

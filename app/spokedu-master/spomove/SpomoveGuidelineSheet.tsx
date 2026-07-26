@@ -167,11 +167,12 @@ export function SpomoveGuidelineSheet({
   return (
     <BottomSheet open title={display.displayTitle} onClose={onClose} size="launch">
       <div className="flex min-h-0 flex-col gap-3 pb-1" data-spm-spomove-launch-confirm="">
+        <p className="text-[11px] font-black tracking-[0.08em] text-slate-400">시작 준비</p>
         <SpomoveScreenPreview videoUrl={guideVideoUrl} />
 
         {isBodyCueBuiltIn ? (
           <div>
-            <p className="text-[11px] font-black tracking-[0.06em] text-slate-400">추천 움직임</p>
+            <p className="text-[11px] font-black tracking-[0.06em] text-slate-400">지도법</p>
             <p className="mt-0.5 text-[16px] font-black text-slate-950 sm:text-[17px]">화면 신체 안내</p>
             <p className="mt-0.5 text-[13px] font-semibold leading-5 text-slate-600">
               화면이 손·발을 직접 지정합니다. 화면 지시에 따라 수행하세요.
@@ -179,7 +180,7 @@ export function SpomoveGuidelineSheet({
           </div>
         ) : recommendedDef && officialRecommended ? (
           <div>
-            <p className="text-[11px] font-black tracking-[0.06em] text-slate-400">추천 움직임</p>
+            <p className="text-[11px] font-black tracking-[0.06em] text-slate-400">지도법</p>
             <p className="mt-0.5 text-[16px] font-black text-slate-950 sm:text-[17px]">
               {movementSummary?.recommendedLabel}
             </p>
@@ -189,7 +190,7 @@ export function SpomoveGuidelineSheet({
           </div>
         ) : (
           <p className="text-[13px] font-semibold leading-5 text-slate-600">
-            실행 조건을 확인한 뒤 바로 시작하세요.
+            실행 조건을 확인한 뒤 시작하세요.
           </p>
         )}
 
@@ -237,9 +238,9 @@ export function SpomoveGuidelineSheet({
         <Link
           href={startHref}
           data-spm-spomove-guide-action="start-official"
-          className="mt-0.5 inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] bg-[var(--spm-acc)] px-4 text-[15px] font-black text-white shadow-sm"
+          className="spm-btn-primary mt-0.5 inline-flex h-11 w-full shrink-0 items-center justify-center rounded-[10px] px-4 text-[15px] font-black focus-visible:outline-none"
         >
-          바로 시작
+          이 설정으로 시작
         </Link>
       </div>
     </BottomSheet>

@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { HardDrive, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { readAdminJsonSafe } from './readAdminJsonSafe';
 
 type ScopeMode = 'master' | 'media';
 
@@ -50,25 +51,36 @@ function formatMb(bytes: number) {
 
 export function StorageRecompressPanel() {
   const [mode, setMode] = useState<ScopeMode>('master');
-  const [loading, setLoading] = useState(true);
+  const [previewRequested, setPreviewRequested] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [masterSummary, setMasterSummary] = useState<MasterSummary | null>(null);
   const [mediaSummary, setMediaSummary] = useState<MediaSummary | null>(null);
   const [lastSavedMb, setLastSavedMb] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
+  const lastAutoModeRef = useRef<ScopeMode | null>(null);
 
   const loadPreview = useCallback(async (nextMode: ScopeMode = mode) => {
+    setPreviewRequested(true);
+    // effect 중복 호출 방지: 요청 시작 시점에 현재 모드를 선점
+    lastAutoModeRef.current = nextMode;
     setLoading(true);
     try {
       if (nextMode === 'master') {
         const res = await fetch('/api/admin/spokedu-master/storage/recompress', { cache: 'no-store' });
-        const json = (await res.json()) as { summary?: MasterSummary; error?: string };
+        const json = await readAdminJsonSafe<{ summary?: MasterSummary; error?: string }>(
+          res,
+          'MASTER 미리보기 실패',
+        );
         if (!res.ok) throw new Error(json.error ?? 'MASTER 미리보기 실패');
         setMasterSummary(json.summary ?? null);
       } else {
         const qs = MEDIA_SCOPES.map((s) => `scope=${s}`).join('&');
         const res = await fetch(`/api/admin/storage/cleanup-iiwarmup?${qs}`, { cache: 'no-store' });
-        const json = (await res.json()) as { summary?: MediaSummary; error?: string };
+        const json = await readAdminJsonSafe<{ summary?: MediaSummary; error?: string }>(
+          res,
+          '미디어 미리보기 실패',
+        );
         if (!res.ok) throw new Error(json.error ?? '미디어 미리보기 실패');
         setMediaSummary(json.summary ?? null);
       }
@@ -82,9 +94,12 @@ export function StorageRecompressPanel() {
     }
   }, [mode]);
 
+  // 사용자가 한 번 측정한 뒤에만 모드 전환 시 재측정 (페이지 진입·첫 클릭 중복 호출 방지)
   useEffect(() => {
+    if (!previewRequested) return;
+    if (lastAutoModeRef.current === mode) return;
     void loadPreview(mode);
-  }, [loadPreview, mode]);
+  }, [mode, previewRequested, loadPreview]);
 
   const summary =
     mode === 'master'
@@ -111,7 +126,7 @@ export function StorageRecompressPanel() {
 
   const runBatch = async () => {
     if (!summary || actionable <= 0) {
-      toast.message('줄일 대상이 없습니다.');
+      toast.message('줄일 대상이 없습니다. 먼저 용량 측정을 실행해 주세요.');
       return;
     }
 
@@ -143,7 +158,7 @@ export function StorageRecompressPanel() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      const json = (await res.json()) as ApplyResponse;
+      const json = await readAdminJsonSafe<ApplyResponse>(res, '정리에 실패했습니다');
       if (!res.ok) throw new Error(json.error ?? '정리에 실패했습니다.');
 
       const saved = json.savedMb ?? 0;
@@ -172,6 +187,7 @@ export function StorageRecompressPanel() {
           </div>
           <p className="text-[12px] font-semibold leading-5 text-amber-900/80">
             MASTER뿐 아니라 공지·주간베스트·노트·커리큘럼·레거시 폴더까지 정리합니다.
+            페이지 진입 시 자동 측정하지 않습니다.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -182,12 +198,12 @@ export function StorageRecompressPanel() {
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 text-[12px] font-black text-amber-900 disabled:opacity-50"
           >
             {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-            다시 측정
+            {previewRequested ? '다시 측정' : '용량 측정'}
           </button>
           <button
             type="button"
             onClick={() => void runBatch()}
-            disabled={loading || running || actionable <= 0}
+            disabled={loading || running || !summary || actionable <= 0}
             className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-amber-700 px-3 text-[12px] font-black text-white disabled:opacity-50"
           >
             {running ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
@@ -221,11 +237,17 @@ export function StorageRecompressPanel() {
         </button>
       </div>
 
+      {!previewRequested ? (
+        <p className="mt-3 text-[12px] font-semibold text-amber-900/80">
+          필요할 때만 「용량 측정」을 눌러 주세요. (Storage 전체 스캔이라 시간이 오래 걸리거나 실패할 수 있습니다.)
+        </p>
+      ) : null}
+
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-xl bg-white/80 px-3 py-2">
           <p className="text-[10px] font-black text-slate-500">재압축 대상</p>
           <p className="mt-0.5 text-[16px] font-black text-slate-900">
-            {loading ? '…' : summary?.recompressCount ?? 0}
+            {loading ? '…' : summary?.recompressCount ?? '—'}
           </p>
           {mode === 'master' && masterSummary ? (
             <p className="text-[10px] font-semibold text-slate-500">
@@ -236,15 +258,17 @@ export function StorageRecompressPanel() {
         <div className="rounded-xl bg-white/80 px-3 py-2">
           <p className="text-[10px] font-black text-slate-500">고아/레거시 삭제</p>
           <p className="mt-0.5 text-[16px] font-black text-slate-900">
-            {loading ? '…' : summary?.orphanCount ?? 0}
+            {loading ? '…' : summary?.orphanCount ?? '—'}
           </p>
         </div>
         <div className="rounded-xl bg-white/80 px-3 py-2">
           <p className="text-[10px] font-black text-slate-500">대상 합계</p>
           <p className="mt-0.5 text-[16px] font-black text-slate-900">
-            {loading ? '…' : `${summary?.beforeMb ?? 0}MB`}
+            {loading ? '…' : summary ? `${summary.beforeMb}MB` : '—'}
           </p>
-          <p className="text-[10px] font-semibold text-slate-500">스킵 {summary?.skipCount ?? 0}건</p>
+          <p className="text-[10px] font-semibold text-slate-500">
+            스킵 {summary?.skipCount ?? '—'}건
+          </p>
         </div>
         <div className="rounded-xl bg-white/80 px-3 py-2">
           <p className="text-[10px] font-black text-slate-500">직전 절감</p>

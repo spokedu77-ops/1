@@ -52,7 +52,7 @@ export default function SpokeduMasterError({ error, reset }: SpokeduMasterErrorP
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[var(--spm-acc)] px-4 text-sm font-black text-white transition-colors hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className="spm-btn-primary inline-flex min-h-11 items-center justify-center rounded-xl px-4 text-sm font-black focus-visible:outline-none"
           >
             새로고침
           </button>

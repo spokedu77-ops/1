@@ -150,14 +150,17 @@ describe('commercial launch architecture contracts', () => {
     expect(provider).toContain('useMasterCanBuySpomat');
   });
 
-  it('wraps SPOMOVE session with an error boundary and weekly fallback UI', () => {
+  it('wraps SPOMOVE session with an error boundary and keeps photo-first home ops bar', () => {
     const session = read('app/spokedu-master/spomove/session/page.tsx');
     const dashboard = read('app/spokedu-master/dashboard/DashboardView.tsx');
+    const homeOps = read('app/spokedu-master/dashboard/homeOpsModel.ts');
 
     expect(session).toContain('ErrorBoundary');
     expect(session).toContain('fallbackHref="/spokedu-master/spomove"');
-    expect(dashboard).toContain('weeklyPrograms.length > 0');
-    expect(dashboard).toContain('라이브러리 열기');
+    expect(dashboard).toContain('CompactOpsBar');
+    expect(dashboard).toContain('data-dashboard-section="featured-flow"');
+    expect(dashboard).not.toContain('HomeOpsBoard');
+    expect(homeOps).toContain('수업자료에서 찾기');
   });
 
   it('persists onboarding and profile through server API and access snapshot', () => {

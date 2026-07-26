@@ -35,13 +35,41 @@ export function BottomSheet({
     if (!open) return;
 
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    /** 스크롤 컨테이너 위치 저장 — body overflow 잠금/포커스 복귀 시 맨 위로 튀는 현상 방지 */
+    const scrollSnapshots: Array<{ el: HTMLElement; top: number; left: number }> = [];
+    const seen = new Set<HTMLElement>();
+    const captureScroll = (el: HTMLElement | null) => {
+      let node = el;
+      while (node) {
+        if (!seen.has(node)) {
+          const style = window.getComputedStyle(node);
+          const canScrollY = /(auto|scroll|overlay)/.test(style.overflowY);
+          const canScrollX = /(auto|scroll|overlay)/.test(style.overflowX);
+          if ((canScrollY || canScrollX) && (node.scrollHeight > node.clientHeight || node.scrollWidth > node.clientWidth)) {
+            seen.add(node);
+            scrollSnapshots.push({ el: node, top: node.scrollTop, left: node.scrollLeft });
+          }
+        }
+        node = node.parentElement;
+      }
+    };
+    captureScroll(previousFocusRef.current);
+    captureScroll(document.documentElement);
+    captureScroll(document.body);
+    if (document.scrollingElement instanceof HTMLElement) {
+      captureScroll(document.scrollingElement);
+    }
+    const windowX = window.scrollX;
+    const windowY = window.scrollY;
+
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     requestAnimationFrame(() => {
       const initialFocusTarget = initialFocusSelector && dialogRef.current
         ? dialogRef.current.querySelector<HTMLElement>(initialFocusSelector)
         : null;
-      (initialFocusTarget ?? closeButtonRef.current)?.focus();
+      (initialFocusTarget ?? closeButtonRef.current)?.focus({ preventScroll: true });
     });
 
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -63,10 +91,10 @@ export function BottomSheet({
 
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
-        last.focus();
+        last.focus({ preventScroll: true });
       } else if (!event.shiftKey && document.activeElement === last) {
         event.preventDefault();
-        first.focus();
+        first.focus({ preventScroll: true });
       }
     };
 
@@ -75,7 +103,16 @@ export function BottomSheet({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = previousOverflow;
-      previousFocusRef.current?.focus();
+      previousFocusRef.current?.focus({ preventScroll: true });
+      const restore = () => {
+        for (const snapshot of scrollSnapshots) {
+          snapshot.el.scrollTop = snapshot.top;
+          snapshot.el.scrollLeft = snapshot.left;
+        }
+        window.scrollTo(windowX, windowY);
+      };
+      restore();
+      requestAnimationFrame(restore);
     };
   }, [initialFocusSelector, open]);
 

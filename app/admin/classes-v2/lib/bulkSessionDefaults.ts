@@ -10,6 +10,8 @@ export type TeacherFeeRow = {
   id: string;
   name?: string | null;
   session_count?: number | null;
+  /** session_count_logs 건수(앱 도입 이후). 등급 합산에 포함 */
+  logCount?: number | null;
   fee_private?: number | null;
   fee_group?: number | null;
   fee_center_main?: number | null;
@@ -41,7 +43,9 @@ export function resolveDefaultSessionPrice(
   tierFeeMap: TierFeeMap
 ): number {
   if (!teacher) return 30_000;
-  const tier = computeTier(totalLessonsFromCounts(teacher.session_count ?? 0, 0));
+  const tier = computeTier(
+    totalLessonsFromCounts(teacher.session_count ?? 0, teacher.logCount ?? 0)
+  );
   const fees = effectiveFees(
     tier,
     {
@@ -63,7 +67,9 @@ export function resolveDefaultAssistSessionPrice(
   tierFeeMap: TierFeeMap
 ): number {
   if (!teacher) return 25_000;
-  const tier = computeTier(totalLessonsFromCounts(teacher.session_count ?? 0, 0));
+  const tier = computeTier(
+    totalLessonsFromCounts(teacher.session_count ?? 0, teacher.logCount ?? 0)
+  );
   const fees = effectiveFees(
     tier,
     {
