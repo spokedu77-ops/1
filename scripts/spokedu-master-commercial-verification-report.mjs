@@ -26,6 +26,7 @@ const CHECKS = [
   { id: 'owner_isolation_contract', kind: 'vitest', target: 'app/spokedu-master/ownerIsolation.contract.test.ts' },
   { id: 'billing_readiness_p5_contract', kind: 'vitest', target: 'app/spokedu-master/billingReadinessP5.contract.test.ts' },
   { id: 'live_gate_p6_contract', kind: 'vitest', target: 'app/spokedu-master/liveGateP6.contract.test.ts' },
+  { id: 'restore_readiness_p7_contract', kind: 'vitest', target: 'app/spokedu-master/restoreReadinessP7.contract.test.ts' },
   { id: 'staging_payment_preflight', kind: 'node', script: 'scripts/spokedu-master-staging-payment-e2e.mjs', args: [] },
   { id: 'payment_no_toss', kind: 'node', script: 'scripts/spokedu-master-staging-payment-e2e.mjs', args: ['--mock-activation'] },
   { id: 'profile_persist', kind: 'node', script: 'scripts/spokedu-master-profile-persist-e2e.mjs', args: [] },

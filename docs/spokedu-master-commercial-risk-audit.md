@@ -11,6 +11,15 @@ Repository code has moved past legacy one-shot confirm as the primary paid path.
 - **Score boundary:** `strictCommercialScore` from no-payment verification **≠ D 8+**. **mock only으로 D 8+ 선언 금지.** D 8+ requires Toss sandbox real charge logs + restore DB integrity run.
 - Older sections below are retained as historical audit notes; prefer this amendment for current launch blockers.
 
+## 2026-07-28 amendment (path-to-9 P7)
+
+Restore readiness is packaged in-repo; E launch close is still not claimed.
+
+- **Runbook:** `docs/spokedu-master-backup-restore-runbook.md` keeps stop criteria, named restore owner requirement, and `qa:spokedu-master:data-integrity` post-restore check.
+- **Approved-target integrity** against `SPOKEDU_MASTER_DATABASE_URL` is evidence for schema/RLS health, **not** a substitute for a temporary-database restore rehearsal.
+- **Pretend / verbal “Toss done”** does not raise D to 8+. Require success URL / `--complete-billing` log with real Toss test keys.
+- **Still confirmation required:** production backup schedule, PITR, restore rehearsal log location.
+
 This audit records only what is visible in repository code and docs. It does not claim that production infrastructure outside the repository has been verified.
 
 ## Actual Payment Grants Access

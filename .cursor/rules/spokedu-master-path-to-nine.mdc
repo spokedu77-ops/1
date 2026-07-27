@@ -6,9 +6,10 @@ alwaysApply: true
 # MASTER → 9.0 캠페인
 
 목표: **A/B/C/D/E 각 축 9.0+**. 한 숫자로 합치지 않는다.  
-현재 기준선(2026-07-28 P6): A≈7.8 / B≈7.9 / C≈8.1 / D≈7.9 readiness / E≈8.6.  
-P6: student report target smoke · reconcile --apply exit 2 실측 · ops-readiness · mock-activation(≠D 8+).  
-**D 8+ / E 출시 클로즈는 Toss sandbox `--complete-billing` + restore DB integrity 실행 로그 필수.**  
+현재 기준선(2026-07-28 P7): A≈7.8 / B≈7.9 / C≈8.1 / D≈7.9 readiness / E≈8.7.  
+P7: restore runbook·checklist·risk-audit 잠금 · approved-target integrity 재실측 · production-prep ok.  
+**구두/했다치고 Toss ≠ D 8+.** D 8+는 success URL 또는 `--complete-billing` 로그만.  
+**임시 DB restore rehearsal 로그 없으면 E 출시 클로즈 금지.**  
 `strictCommercialScore` ≠ D 8+. mock only으로 D 8+ 선언 금지.
 
 ## 선언 규칙
@@ -25,12 +26,13 @@ P6: student report target smoke · reconcile --apply exit 2 실측 · ops-readin
 | **P4** | 실행 로그·다계정·craft 하드 게이트 | B·E |
 | **P5** | D readiness (시크릿 없이) | D 준비 |
 | **P6** | live gate 패키징·학생별 안내문·reconcile 실측 | C·E |
-| **Next** | Toss 실결제 · restore integrity | D 8+ / E 출시 |
+| **P7** | restore readiness 패키징·approved integrity | E |
+| **Next** | 실제 Toss 로그 · 임시 DB restore rehearsal | D 8+ / E 출시 |
 
 ## 하지 말 것
 
 - 홈 히어로/새 선반/CompactOpsBar 확대/멀티 today
-- mock 결제만으로 D 8+/9점 선언
+- mock·구두 Toss만으로 D 8+/9점 선언
 - 캡처 3종(홈 바)만으로 제품 9점 선언
 - craft-capture에서 gated/not-logged-in soft-skip을 성공으로 처리
 - `payment-reconcile --apply`를 정책 없이 구현
