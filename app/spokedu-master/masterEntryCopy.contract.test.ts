@@ -9,9 +9,10 @@ describe('SPOKEDU MASTER entry copy alignment', () => {
     const login = read('app/login/page.tsx');
     const otpForm = read('app/components/auth/MasterEmailOtpForm.tsx');
 
-    expect(otpForm).toContain('SPOKEDU MASTER 시작하기');
+    expect(otpForm).toContain('이메일로 시작하기');
     expect(otpForm).toContain('구독 선택 후 사용할 수 있습니다');
     expect(login).toContain('이메일 인증으로 시작하기');
+    expect(login).toContain('비밀번호로 로그인');
     expect(login).toContain('MasterEmailOtpForm');
 
     expect(login).not.toContain('14일');

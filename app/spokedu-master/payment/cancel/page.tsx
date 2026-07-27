@@ -28,7 +28,7 @@ function CancelContent() {
           </p>
         </div>
         <div className="space-y-3">
-          <Link href={`/spokedu-master/payment?plan=${retryPlan}`} className="flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          <Link href={`/spokedu-master/payment?plan=${retryPlan}`} className="spm-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[14px] font-black focus-visible:outline-none">
             <CreditCard size={16} />
             다시 시도
           </Link>

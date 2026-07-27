@@ -116,9 +116,8 @@ function PlanCard({
         type="button"
         disabled={disabled || working || !planId}
         onClick={onSelect}
-        className="mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-black text-white disabled:opacity-50"
+        className="spm-btn-primary mt-5 inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] px-3 text-[13px] font-black focus-visible:outline-none disabled:opacity-50"
         data-plan-id={planId ?? undefined}
-        style={{ background: 'var(--spm-acc)' }}
       >
         {working && selected ? <Loader2 size={15} className="animate-spin" /> : null}
         {actionLabel ?? `${productShortName(product)} 구독 선택`}
@@ -279,7 +278,7 @@ function PaymentContent() {
                 ? subscriptionDisplay.description
                 : '현재 이용권이 활성화되어 있습니다.'}
             </p>
-            <Link href="/spokedu-master/subscription" className="mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <Link href="/spokedu-master/subscription" className="spm-btn-primary mx-auto mt-4 inline-flex h-11 max-w-[260px] items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
               구독 관리
             </Link>
           </section>

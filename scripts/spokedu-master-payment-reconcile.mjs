@@ -103,6 +103,14 @@ console.log(JSON.stringify({
   mode: apply ? 'apply' : 'read-only',
   checkedAt: new Date().toISOString(),
   issueCount: issues.length,
+  /** Recovery is operator-driven until an explicit apply policy ships. */
+  allowedRecoveryActions: {
+    processing_stale: 'manual_ops_review',
+    recoverable_failed: 'reapply_only',
+    order_active_subscription_mismatch: 'manual_ops_review',
+    payment_key_without_subscription: 'reapply_only',
+    subscription_active_order_not_active: 'manual_ops_review',
+  },
   issues,
 }, null, 2));
 

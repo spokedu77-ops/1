@@ -9,7 +9,7 @@ export type MasterEmailOtpFormProps = {
   otpSent: boolean;
   loading?: boolean;
   message?: string | null;
-  /** login: 둥근 블루 카드 / payment: 다크 MASTER 톤 */
+  /** login: 로그인 화면 / payment: 다크 MASTER 톤 */
   variant?: 'login' | 'payment';
   title?: string;
   description?: string;
@@ -28,8 +28,8 @@ export function MasterEmailOtpForm({
   loading = false,
   message,
   variant = 'login',
-  title = 'SPOKEDU MASTER 시작하기',
-  description = '이메일 인증 후 계정 설정(온보딩)으로 이어집니다. 기존 계정이 있다면 같은 이메일로 로그인됩니다. 수업 기능은 구독 선택 후 사용할 수 있습니다.',
+  title = '이메일로 시작하기',
+  description = '인증 후 계정 설정으로 이어집니다. 이미 계정이 있으면 같은 이메일로 로그인됩니다. 수업 기능은 구독 선택 후 사용할 수 있습니다.',
   sendLabel = '인증 코드 받기',
   verifyLabel = '시작하기',
   footer,
@@ -99,19 +99,19 @@ export function MasterEmailOtpForm({
   }
 
   return (
-    <div className="space-y-4 rounded-3xl border border-blue-100 bg-blue-50/80 p-4">
+    <div className="space-y-4">
       <div>
-        <p className="text-lg font-black text-blue-950">{title}</p>
-        <p className="mt-1 text-xs font-semibold leading-5 text-blue-900/80">{description}</p>
+        <p className="text-[17px] font-black tracking-tight text-slate-900">{title}</p>
+        <p className="mt-1.5 text-[13px] font-medium leading-6 text-slate-500">{description}</p>
       </div>
       <div className="relative">
-        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" size={18} />
+        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
         <input
           type="email"
           placeholder="이메일 주소를 입력해 주세요"
           value={email}
           onChange={(event) => onEmailChange(event.target.value)}
-          className="w-full min-h-[48px] rounded-2xl border-2 border-transparent bg-white p-4 pl-12 text-base font-bold text-black outline-none transition-all focus:border-blue-600"
+          className="w-full min-h-12 rounded-2xl border border-slate-200 bg-white p-4 pl-12 text-base font-bold text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10"
         />
       </div>
       {otpSent ? (
@@ -124,7 +124,7 @@ export function MasterEmailOtpForm({
           onKeyDown={(event) => {
             if (event.key === 'Enter') onSubmit();
           }}
-          className="w-full min-h-[48px] rounded-2xl border-2 border-transparent bg-white p-4 text-base font-bold text-black outline-none transition-all focus:border-blue-600"
+          className="w-full min-h-12 rounded-2xl border border-slate-200 bg-white p-4 text-center text-[20px] font-black tracking-[0.28em] text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10"
         />
       ) : null}
       {message ? <p className="text-xs font-bold text-blue-700">{message}</p> : null}
@@ -132,7 +132,7 @@ export function MasterEmailOtpForm({
         type="button"
         onClick={onSubmit}
         disabled={loading}
-        className="w-full min-h-[48px] rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-lg shadow-blue-100 disabled:opacity-70"
+        className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-blue-600 px-4 text-sm font-black text-white shadow-[0_12px_30px_rgba(37,99,235,0.28)] transition hover:bg-blue-700 disabled:opacity-70"
       >
         {loading ? '인증 처리 중...' : otpSent ? verifyLabel : sendLabel}
       </button>

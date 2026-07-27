@@ -24,6 +24,7 @@ import {
   parseTaggedValues,
 } from '../lib/lessonDisplay';
 import { LESSON_THEME_OPTIONS } from '../lib/lessonTheme';
+import { spmChipClass, spmSegClass } from '../lib/masterUiClasses';
 import { programHasPlayableVideo, resolveProgramHero } from '../lib/program-media';
 import {
   isMasterParticipantFormat,
@@ -207,11 +208,7 @@ function FilterRow({
               key={option.value}
               type="button"
               onClick={() => onFilter({ group: group.key, value: option.value })}
-              className={`h-8 max-w-[11rem] shrink-0 truncate rounded-full px-3 text-[11px] font-black transition ${
-                active
-                  ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]'
-                  : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-950'
-              }`}
+              className={spmChipClass(active, 'max-w-[11rem] truncate')}
               title={`${tagDisplayLabel(group.key, option.value)} (${option.count})`}
             >
               {tagDisplayLabel(group.key, option.value)}
@@ -528,11 +525,7 @@ export default function LibraryView() {
                 <button
                   type="button"
                   onClick={() => changeView('all')}
-                  className={`min-h-8 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] ${
-                    view === 'all'
-                      ? 'bg-slate-950 text-white shadow-sm'
-                      : 'text-[color:var(--spm-t2)] hover:text-[color:var(--spm-t)]'
-                  }`}
+                  className={spmSegClass(view === 'all')}
                   aria-pressed={view === 'all'}
                 >
                   전체
@@ -540,11 +533,7 @@ export default function LibraryView() {
                 <button
                   type="button"
                   onClick={() => changeView('favorites')}
-                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] ${
-                    view === 'favorites'
-                      ? 'bg-slate-950 text-white shadow-sm'
-                      : 'text-[color:var(--spm-t2)] hover:text-[color:var(--spm-t)]'
-                  }`}
+                  className={spmSegClass(view === 'favorites', 'inline-flex items-center gap-1.5')}
                   aria-pressed={view === 'favorites'}
                 >
                   <Bookmark className="h-3.5 w-3.5" />

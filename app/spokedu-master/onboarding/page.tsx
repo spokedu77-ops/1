@@ -195,7 +195,7 @@ export default function OnboardingPage() {
                     {saveError}
                   </p>
                 ) : null}
-                <button type="button" onClick={finish} disabled={saving} className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)', boxShadow: '0 6px 18px var(--spm-acc-a32)' }}>
+                <button type="button" onClick={finish} disabled={saving} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none disabled:opacity-50">
                   {saving ? '저장 중...' : '시작하기'}
                 </button>
               </div>
@@ -204,7 +204,7 @@ export default function OnboardingPage() {
             {step < 3 ? (
               <div className="mt-6 grid grid-cols-[auto_1fr] gap-2">
                 <button type="button" onClick={() => setStep((value) => Math.max(0, value - 1))} disabled={step === 0} className="h-12 rounded-[12px] px-5 text-[13px] font-black disabled:opacity-40" style={{ background: 'var(--spm-s2)', color: 'var(--spm-t)' }}>이전</button>
-                <button type="button" onClick={() => setStep((value) => Math.min(3, value + 1))} disabled={!canNext} className="flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black text-white disabled:opacity-50" style={{ background: 'var(--spm-acc)' }}>
+                <button type="button" onClick={() => setStep((value) => Math.min(3, value + 1))} disabled={!canNext} className="spm-btn-primary flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-black focus-visible:outline-none disabled:opacity-50">
                   다음
                   <ArrowRight size={16} />
                 </button>

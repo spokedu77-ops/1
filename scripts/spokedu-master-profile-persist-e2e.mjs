@@ -46,7 +46,7 @@ async function gotoLogin(page, nextPath) {
 }
 
 async function ensurePasswordForm(page) {
-  const passwordLogin = page.getByRole('button', { name: '기존 계정으로 로그인' });
+  const passwordLogin = page.getByRole('button', { name: /비밀번호로 로그인|기존 계정으로 로그인/ });
   if (await passwordLogin.isVisible().catch(() => false)) {
     await passwordLogin.click();
     await page.waitForTimeout(400);

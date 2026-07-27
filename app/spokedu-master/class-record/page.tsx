@@ -18,10 +18,10 @@ import {
 } from '../lib/saveActionFeedback';
 import {
   CLASS_RECORD_DRAFT_KEY,
-  clearSaveDraft,
+  clearOwnerSaveDraft,
   hasMeaningfulClassRecordDraft,
-  readSaveDraft,
-  writeSaveDraft,
+  readOwnerSaveDraft,
+  writeOwnerSaveDraft,
 } from '../lib/saveDraftStorage';
 import { resolveSpomoveDraftFromQuery } from '../spomove/session/spomoveRecordDraft';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
@@ -30,6 +30,8 @@ import {
   getUpgradeHrefFromSnapshot,
   getUpgradeLabelFromSnapshot,
 } from '../lib/masterAccessModel';
+import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
+import { spmChipClass } from '../lib/masterUiClasses';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
 import type { AttendanceStatus, ClassRecord, StudentProfile } from '../types';
@@ -202,13 +204,13 @@ function RecordListView() {
             {classes.length > 1 ? (
               <div className="mb-2 flex flex-wrap gap-2">
                 {classes.map((cls) => (
-                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className={`h-8 max-w-[40vw] truncate rounded-full px-3 text-[11px] font-black ${classFilter === cls ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`} title={cls}>{cls}</button>
+                  <button key={cls} type="button" onClick={() => setClassFilter(cls)} className={spmChipClass(classFilter === cls, 'max-w-[40vw] truncate')} title={cls}>{cls}</button>
                 ))}
               </div>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-2">
               {([['week', '이번 주'], ['month', '이번 달'], ['all', '전체 기간']] as const).map(([value, label]) => (
-                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className={`h-8 rounded-full px-3 text-[11px] font-black ${periodFilter === value ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}>{label}</button>
+                <button key={value} type="button" onClick={() => setPeriodFilter(value)} className={spmChipClass(periodFilter === value)}>{label}</button>
               ))}
             </div>
           </section>
@@ -265,6 +267,8 @@ function RecordEntryView() {
   const records = useMemo(() => operationalData.classRecords.map(toClassRecord), [operationalData.classRecords]);
   const programs = useMasterStore((state) => state.programs);
   const isOnline = useMasterStore((state) => state.operational.online);
+  const profile = useMasterStore((state) => state.profile);
+  const draftOwnerId = getRecentActivityOwnerId(profile);
   const todayLesson = lessons.find((l) => isSameDay(new Date(l.date), new Date()) && !l.done) ?? lessons.find((l) => isSameDay(new Date(l.date), new Date()));
   const { programId: requestedProgramId, recordId: requestedRecordId, sourceRecordId, studentId: requestedStudentId, spomoveDraft } = getClassRecordQuery(searchParams);
   const editingRecord = requestedRecordId ? records.find((record) => record.id === requestedRecordId) ?? null : null;
@@ -336,8 +340,12 @@ function RecordEntryView() {
   }, [students]);
 
   useEffect(() => {
+    draftHydratedRef.current = false;
+  }, [draftOwnerId]);
+
+  useEffect(() => {
     if (!canUseLocalDraft || draftHydratedRef.current) return;
-    const draft = readSaveDraft<ClassRecordDraft>(CLASS_RECORD_DRAFT_KEY);
+    const draft = readOwnerSaveDraft<ClassRecordDraft>(CLASS_RECORD_DRAFT_KEY, draftOwnerId);
     draftHydratedRef.current = true;
     if (!hasMeaningfulClassRecordDraft(draft) || !draft) return;
     // URL로 다른 프로그램 기록에 들어왔으면 이전 프로그램 초안(출석·메모)을 섞지 않는다.
@@ -354,11 +362,11 @@ function RecordEntryView() {
       setSelectedStudentIds((prev) => ({ ...prev, ...draft.selectedStudentIds }));
     }
     if (draft.bulkStudentMemo) setBulkStudentMemo(draft.bulkStudentMemo);
-  }, [canUseLocalDraft, requestedProgramId]);
+  }, [canUseLocalDraft, draftOwnerId, requestedProgramId]);
 
   useEffect(() => {
     if (!canUseLocalDraft || !draftHydratedRef.current || savedOnly || savedRecordId) return;
-    writeSaveDraft(CLASS_RECORD_DRAFT_KEY, {
+    writeOwnerSaveDraft(CLASS_RECORD_DRAFT_KEY, draftOwnerId, {
       selectedProgramId,
       recordDate,
       classId,
@@ -377,6 +385,7 @@ function RecordEntryView() {
     checkedSkills,
     classId,
     classMemo,
+    draftOwnerId,
     focused,
     recordDate,
     savedOnly,
@@ -542,7 +551,7 @@ function RecordEntryView() {
     void request.then((saved) => {
       setSavedRecordId(saved.id);
       setSavedOnly(true);
-      clearSaveDraft(CLASS_RECORD_DRAFT_KEY);
+      clearOwnerSaveDraft(CLASS_RECORD_DRAFT_KEY, draftOwnerId);
     }).catch((caught) => {
       setRecordSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
       setSavedOnly(false);
@@ -702,7 +711,7 @@ function RecordEntryView() {
             <p className="text-[15px] font-black" style={{ color: 'var(--spm-t)' }}>아직 등록된 학생이 없습니다.</p>
             <p className="mt-2 text-[12px] font-semibold leading-5" style={{ color: 'var(--spm-t2)' }}>학생을 추가하면 수업 기록을 학생별로 관리할 수 있습니다.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href="/spokedu-master/students?add=1" className="inline-flex h-11 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>학생 추가</Link>
+              <Link href="/spokedu-master/students?add=1" className="spm-btn-primary inline-flex h-11 items-center gap-2 rounded-[11px] px-4 text-[13px] font-black focus-visible:outline-none">학생 추가</Link>
             </div>
           </div>
         )}
@@ -754,6 +763,7 @@ function RecordEntryView() {
             <div className="mt-2 flex flex-wrap gap-2">
               <Link href={reportHref} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>안내문 만들고 복사</Link>
               <Link href={savedRecordId && program ? `/spokedu-master/class-record?record=${savedRecordId}&program=${program.id}` : '/spokedu-master/class-record'} className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>저장한 기록 보기</Link>
+              <Link href="/spokedu-master/dashboard" data-loop-action="home" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>홈으로</Link>
               <Link href="/spokedu-master/activity" className="inline-flex min-h-11 items-center rounded-[10px] px-3 text-[11px] font-black" style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}>수업 기록으로</Link>
             </div>
           </div>

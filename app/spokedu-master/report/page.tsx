@@ -14,13 +14,15 @@ import {
 } from '../lib/saveActionFeedback';
 import {
   REPORT_DRAFT_KEY,
-  clearSaveDraft,
-  readSaveDraft,
-  writeSaveDraft,
+  clearOwnerSaveDraft,
+  readOwnerSaveDraft,
+  writeOwnerSaveDraft,
 } from '../lib/saveDraftStorage';
 import { toClassRecord } from '../lib/operationalDataAdapter';
+import { spmChipClass } from '../lib/masterUiClasses';
 import { useMasterAccessSnapshot } from '../access/MasterAccessProvider';
 import { normalizeMasterSpace, normalizeMasterTarget } from '../lib/programDisplayTags';
+import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
 import { useExplanationData } from '../explanations/ExplanationDataProvider';
 import { useOperationalData } from '../operational/OperationalDataProvider';
 import { useMasterStore } from '../store';
@@ -318,6 +320,8 @@ function ReportContent() {
   const programs = useMasterStore((state) => state.programs);
   const programsError = useMasterStore((state) => state.programsError);
   const isOnline = useMasterStore((state) => state.operational.online);
+  const profile = useMasterStore((state) => state.profile);
+  const draftOwnerId = getRecentActivityOwnerId(profile);
   const accessSnapshot = useMasterAccessSnapshot();
   const operationalData = useOperationalData();
   const explanationData = useExplanationData();
@@ -353,8 +357,12 @@ function ReportContent() {
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    draftHydratedRef.current = false;
+  }, [draftOwnerId]);
+
+  useEffect(() => {
     if (savedExplanationId || queryRecordId || draftHydratedRef.current) return;
-    const draft = readSaveDraft<ReportDraft>(REPORT_DRAFT_KEY);
+    const draft = readOwnerSaveDraft<ReportDraft>(REPORT_DRAFT_KEY, draftOwnerId);
     draftHydratedRef.current = true;
     if (!draft?.generated?.trim() && !draft?.note?.trim()) return;
     // URL로 다른 프로그램 안내문에 들어왔으면 이전 프로그램 초안을 덮어쓰지 않는다.
@@ -369,12 +377,12 @@ function ReportContent() {
     if (draft.focusSkills?.length) setFocusSkills(draft.focusSkills);
     if (draft.note) setNote(draft.note);
     if (draft.generated) setGenerated(draft.generated);
-  }, [queryProgramId, queryRecordId, savedExplanationId]);
+  }, [draftOwnerId, queryProgramId, queryRecordId, savedExplanationId]);
 
   useEffect(() => {
     if (savedExplanationId || saveStatus === 'success') return;
     if (!generated.trim() && !note.trim()) return;
-    writeSaveDraft(REPORT_DRAFT_KEY, {
+    writeOwnerSaveDraft(REPORT_DRAFT_KEY, draftOwnerId, {
       programId,
       selectedRecordId,
       audience,
@@ -388,6 +396,7 @@ function ReportContent() {
     } satisfies ReportDraft);
   }, [
     audience,
+    draftOwnerId,
     focusSkills,
     generated,
     mood,
@@ -495,7 +504,15 @@ function ReportContent() {
   };
 
   const replaceDraft = (nextDraft: string) => {
-    if (output.trim() && generated.trim() && !window.confirm('현재 수정한 안내문이 새 초안으로 교체됩니다.')) return;
+    // Only confirm when the textarea diverges from the current canonical draft.
+    // Target/record switches must not prompt after an untouched generated draft.
+    const currentCanonical = selectedRecord
+      ? buildRecordDraft(selectedRecord, target, target === 'student' ? selectedStudentId : null)
+      : program
+        ? buildExplanation({ audience, program, mood, reaction, focusSkills, note })
+        : '';
+    const edited = Boolean(generated.trim() && generated.trim() !== currentCanonical.trim());
+    if (edited && !window.confirm('현재 수정한 안내문이 새 초안으로 교체됩니다.')) return;
     setGenerated(nextDraft);
     setSaveStatus('idle');
     setSaveFeedback(null);
@@ -587,7 +604,7 @@ function ReportContent() {
       }
       router.replace(`/spokedu-master/report?program=${saved.programId}&saved=${saved.id}`);
       setSaveStatus('success');
-      clearSaveDraft(REPORT_DRAFT_KEY);
+      clearOwnerSaveDraft(REPORT_DRAFT_KEY, draftOwnerId);
     } catch (caught) {
       setSaveStatus('error');
       setSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
@@ -690,7 +707,7 @@ function ReportContent() {
                   key={id}
                   type="button"
                   onClick={() => { setAudience(id); if (!selectedRecord) markDraftDirty(); }}
-                  className={`h-8 rounded-full px-3 text-[11px] font-black ${active ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}
+                  className={spmChipClass(active)}
                 >
                   {label}
                 </button>
@@ -701,10 +718,10 @@ function ReportContent() {
           {selectedRecord ? (
             <div className="mt-3">
               <div className="flex flex-wrap gap-1.5">
-                <button type="button" onClick={() => handleTargetChange('class')} className={`h-8 rounded-full px-3 text-[11px] font-black ${target === 'class' ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}>
+                <button type="button" onClick={() => handleTargetChange('class')} className={spmChipClass(target === 'class')}>
                   전체 수업 안내문
                 </button>
-                <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord.students.length} className={`h-8 rounded-full px-3 text-[11px] font-black disabled:opacity-50 ${target === 'student' ? 'bg-slate-950 text-white shadow-[0_8px_18px_rgba(15,23,42,0.18)]' : 'border border-slate-200 bg-white text-slate-600'}`}>
+                <button type="button" onClick={() => handleTargetChange('student')} disabled={!selectedRecord.students.length} className={`${spmChipClass(target === 'student')} disabled:opacity-50`}>
                   학생별 안내문
                 </button>
               </div>
@@ -766,6 +783,14 @@ function ReportContent() {
           {saveStatus === 'success' ? (
             <div className="mt-3 rounded-[12px] p-3" style={{ background: 'var(--spm-grn-a10)', color: 'var(--spm-grn)' }}>
               <p className="text-[12px] font-bold">보관했습니다. 아래 보관함에서 다시 복사할 수 있습니다.</p>
+              <Link
+                href="/spokedu-master/dashboard"
+                data-loop-action="home"
+                className="mt-2 inline-flex min-h-10 items-center rounded-[10px] px-3 text-[11px] font-black"
+                style={{ background: 'var(--spm-grn-a08)', color: 'var(--spm-grn)' }}
+              >
+                홈으로 이어가기
+              </Link>
             </div>
           ) : null}
           {saveStatus === 'error' && saveFeedback ? (

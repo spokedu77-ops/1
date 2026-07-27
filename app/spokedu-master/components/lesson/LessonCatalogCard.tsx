@@ -171,7 +171,12 @@ export function LessonCatalogCard({
       {...articleProps}
       className={`group flex h-full ${cardMinHeight} flex-col overflow-hidden rounded-[14px] transition duration-200 ${cardSurface}`}
     >
-      <div className={`relative ${mediaAspect} w-full overflow-hidden border-b ${variant === 'home' ? 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]' : 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]'}`}>
+      {/* Opt-1: 남는 높이는 미디어가 흡수 — 푸터 흰 공백 금지 (App Store형) */}
+      <div
+        className={`relative min-h-0 w-full flex-1 overflow-hidden border-b ${mediaAspect} ${
+          variant === 'home' ? 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]' : 'border-[color:var(--spm-br)] bg-[var(--spm-s1)]'
+        }`}
+      >
         <button
           type="button"
           onClick={onPreview}
@@ -271,8 +276,8 @@ export function LessonCatalogCard({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col bg-white p-3">
-        <div className="mb-2 flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
+      <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
+        <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
           {descriptionParts.length > 0 ? descriptionParts.map((part) => (
             <span
               key={part}
@@ -286,7 +291,7 @@ export function LessonCatalogCard({
         {locked ? (
           <Link
             href="/spokedu-master/payment?plan=premium"
-            className="mt-auto inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-black text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-[10px] border border-amber-300 bg-amber-50 text-[13px] font-black text-amber-800 transition-colors hover:bg-amber-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--spm-acc)]"
           >
             프리미엄 자료
           </Link>
@@ -295,8 +300,8 @@ export function LessonCatalogCard({
             href={detailHref}
             className={
               variant === 'home'
-                ? 'mt-auto inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
-                : 'spm-btn-primary mt-auto inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] px-3 text-[13px] font-black focus-visible:outline-none'
+                ? 'inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] border border-slate-200 bg-white px-3 text-[13px] font-black text-slate-800 transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-900'
+                : 'spm-btn-primary inline-flex h-9 w-full items-center justify-between gap-3 rounded-[9px] px-3 text-[13px] font-black focus-visible:outline-none'
             }
           >
             <span className="inline-flex min-w-0 items-center gap-2">

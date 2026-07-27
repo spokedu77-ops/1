@@ -1,17 +1,24 @@
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 const BASE = (process.argv.find((arg) => /^https?:\/\//.test(arg)) || 'http://localhost:3000').replace(/\/$/, '');
 const SKIP_SMOKE = process.argv.includes('--skip-smoke');
+const SKIP_INTEGRITY = process.argv.includes('--skip-integrity');
+const SKIP_CRAFT = process.argv.includes('--skip-craft');
 const OUTPUT_DIR = join(process.cwd(), 'commercial-verification');
 
 const SMOKE_FLOWS = [
   'unauth',
   '403',
+  'entitlement matrix',
+  'owner isolation',
   'student',
   'record',
   'report',
+  'report to home',
+  'day loop',
+  'spomove session',
   'library',
   'shop',
   'mobile',
@@ -128,6 +135,38 @@ function main() {
     });
   }
 
+  if (!SKIP_INTEGRITY) {
+    console.log('[release-automated] running data-integrity (hard release gate)...');
+    const integrity = runNpm('qa:spokedu-master:data-integrity');
+    steps.push({
+      id: 'data_integrity',
+      ok: integrity.ok,
+      exitCode: integrity.exitCode,
+      durationMs: integrity.durationMs,
+      detail: extractLastJson(integrity.stdout) ?? undefined,
+      stderrTail: integrity.stderr.trim() ? integrity.stderr.trim().slice(-800) : undefined,
+      note: 'Pass --skip-integrity only for local non-release dry runs. Missing DB URL fails this gate.',
+    });
+  } else {
+    console.log('[release-automated] skipping data-integrity (--skip-integrity)');
+  }
+
+  if (!SKIP_CRAFT) {
+    console.log('[release-automated] running craft-capture (hard B gate)...');
+    const craft = runNode('scripts/spokedu-master-craft-capture-qa.mjs', [BASE]);
+    steps.push({
+      id: 'craft_capture',
+      ok: craft.ok,
+      exitCode: craft.exitCode,
+      durationMs: craft.durationMs,
+      detail: extractLastJson(craft.stdout) ?? undefined,
+      stderrTail: craft.stderr.trim() ? craft.stderr.trim().slice(-500) : undefined,
+      note: 'Pass --skip-craft only for local non-release dry runs. Soft-skip of library/bar is not allowed.',
+    });
+  } else {
+    console.log('[release-automated] skipping craft-capture (--skip-craft)');
+  }
+
   const failed = steps.filter((step) => !step.ok);
   const report = {
     ok: failed.length === 0,
@@ -135,6 +174,8 @@ function main() {
     baseUrl: BASE,
     phase: 'release-automated-no-payment',
     paymentDeferred: true,
+    integrityRequired: !SKIP_INTEGRITY,
+    craftRequired: !SKIP_CRAFT,
     steps,
     blockers: failed.map((step) => step.id),
     next: failed.length === 0

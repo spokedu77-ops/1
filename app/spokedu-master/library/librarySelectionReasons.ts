@@ -1,4 +1,5 @@
 import { LESSON_TAG_PREFIX, parseTaggedValues } from '../lib/lessonDisplay';
+import { hasExplicitSpomoveLink } from '../lib/program-meta';
 import {
   getMasterParticipantFormat,
   parseMasterSpaces,
@@ -9,7 +10,8 @@ import type { Program } from '../types';
 /**
  * 카드용 선택 이유 — 통제 어휘.
  * 장식이 아니라 교사가 믿고 고르는 계약. 자동 매핑 근거가 있을 때만 노출한다.
- * P0: 근거 없는 칩 금지 원칙. P1.5: 어휘/매핑 표준. P3: 구 ID·문자열 단독 강제 제거.
+ * P0: 근거 없는 칩 금지 원칙. P1.5: 어휘/매핑 표준.
+ * P3: 구 ID·문자열 태그 단독 금지. SPOMOVE는 공식 preset 교차 또는 명시 플래그만.
  */
 
 /** 근거 품질 — P1.5 표준. UI 칩 종류를 늘리지 않는다. */
@@ -78,10 +80,10 @@ export const LIBRARY_SELECTION_REASON_STANDARD: Record<
   narrow_space: {
     id: 'narrow_space',
     label: '좁은 공간',
-    evidenceLevel: 'structured_with_text_fallback',
+    evidenceLevel: 'structured',
     autoAllowed: true,
-    pendingP3Tighten: true,
-    requiredEvidence: 'parseMasterSpaces에 교실 포함, 또는 space 구조화 값',
+    pendingP3Tighten: false,
+    requiredEvidence: 'parseMasterSpaces(program.space)에 교실 포함',
   },
   low_equipment: {
     id: 'low_equipment',
@@ -96,8 +98,8 @@ export const LIBRARY_SELECTION_REASON_STANDARD: Record<
     label: '바로 진행',
     evidenceLevel: 'text_only',
     autoAllowed: true,
-    pendingP3Tighten: true,
-    requiredEvidence: '카피/태그에 즉시 운영 신호(바로 진행·준비 없이 등)',
+    pendingP3Tighten: false,
+    requiredEvidence: '설명·태그에 즉시 운영 신호(바로 진행·준비 없이 등). 제목 단독 금지',
   },
   team: {
     id: 'team',
@@ -118,10 +120,10 @@ export const LIBRARY_SELECTION_REASON_STANDARD: Record<
   reaction: {
     id: 'reaction',
     label: '반응 훈련',
-    evidenceLevel: 'text_only',
+    evidenceLevel: 'structured_with_text_fallback',
     autoAllowed: true,
-    pendingP3Tighten: true,
-    requiredEvidence: '제목·설명·태그에 반응 (가능하면 신체기능 태그로 이관)',
+    pendingP3Tighten: false,
+    requiredEvidence: '신체기능 태그 반응 우선, 없으면 태그 어휘만(제목·설명 blob 금지)',
   },
   balance: {
     id: 'balance',
@@ -142,11 +144,11 @@ export const LIBRARY_SELECTION_REASON_STANDARD: Record<
   spomove: {
     id: 'spomove',
     label: 'SPOMOVE 연계',
-    evidenceLevel: 'legacy_mixed',
+    evidenceLevel: 'structured',
     autoAllowed: true,
-    pendingP3Tighten: true,
+    pendingP3Tighten: false,
     requiredEvidence:
-      'P3: hasSpomoveConnection 또는 relatedSpomoveIds∩공식 preset. 문자열 태그·구 엔진 ID 단독 금지',
+      'hasSpomoveConnection 또는 relatedSpomoveIds∩공식 preset. 문자열 태그·구 엔진 ID 단독 금지',
   },
 };
 
@@ -188,21 +190,22 @@ function isNoOrLowEquipment(program: Program): boolean {
 }
 
 function matchesNarrowSpace(program: Program): boolean {
-  const spaces = parseMasterSpaces(program.space);
-  if (spaces.includes('교실')) return true;
-  const blob = textBlob(program);
-  return /좁은\s*공간|교실|복도|작은\s*공간/.test(blob);
+  return parseMasterSpaces(program.space).includes('교실');
 }
 
 function matchesSpomove(program: Program): boolean {
   if (program.hasSpomoveConnection) return true;
-  if ((program.lessonDetail?.relatedSpomoveIds?.length ?? 0) > 0) return true;
-  return (program.tags ?? []).some((tag) => /spomove/i.test(tag));
+  return hasExplicitSpomoveLink(program);
+}
+
+function readyNowEvidenceBlob(program: Program): string {
+  return [program.description, ...(program.tags ?? [])].join(' ').toLowerCase();
 }
 
 function matchesReaction(program: Program): boolean {
-  const blob = textBlob(program);
-  return /반응/.test(blob);
+  const functions = parseTaggedValues(program.tags, LESSON_TAG_PREFIX.bodyFunction);
+  if (functions.some((value) => /반응/.test(value))) return true;
+  return (program.tags ?? []).some((tag) => /반응/.test(tag));
 }
 
 function matchesAgility(program: Program): boolean {
@@ -227,8 +230,8 @@ export function programMatchesSelectionReason(
     case 'low_equipment':
       return isNoOrLowEquipment(program);
     case 'ready_now':
-      // 교구 적음과 겹치지 않게 — 카피/태그에 즉시 운영 신호가 있을 때만
-      return /바로\s*(진행|시작|운영|활용)|준비\s*없이|곧바로|전환에\s*바로/.test(textBlob(program));
+      // 교구 적음과 겹치지 않게 — 설명·태그에 즉시 운영 신호가 있을 때만(제목 단독 금지)
+      return /바로\s*(진행|시작|운영|활용)|준비\s*없이|곧바로|전환에\s*바로/.test(readyNowEvidenceBlob(program));
     case 'team':
       return getMasterParticipantFormat(program.tags) === '팀전';
     case 'solo':

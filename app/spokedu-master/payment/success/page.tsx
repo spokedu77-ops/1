@@ -23,6 +23,9 @@ type BillingIssueResponse = {
   plan?: string;
   periodEnd?: string | null;
   nextBillingAt?: string | null;
+  error?: string;
+  charged?: boolean;
+  recoverable?: boolean;
 };
 
 type AccessResponse = Partial<MasterAccessSnapshot> & {
@@ -146,6 +149,15 @@ function SuccessContent() {
         const json = await response.json().catch(() => null) as BillingIssueResponse | null;
 
         if (!response.ok || json?.ok !== true || json.plan !== plan) {
+          // 청구는 됐는데 이용권 apply만 실패한 경우 — 재결제 CTA가 아니라 권한 재확인
+          const chargedButPending =
+            json?.charged === true ||
+            (typeof json?.error === 'string' && json.error.includes('결제는 승인'));
+          if (chargedButPending) {
+            setStatus('delayed');
+            await checkAccessActivation();
+            return;
+          }
           setStatus('failed');
           return;
         }
@@ -209,7 +221,7 @@ function SuccessContent() {
           </div>
         </dl>
         <div className="grid gap-3">
-          <Link href="/spokedu-master/library" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+          <Link href="/spokedu-master/library" className="spm-btn-primary inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
             첫 수업 고르기
           </Link>
           <Link href="/spokedu-master/subscription" className="inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
@@ -236,7 +248,7 @@ function SuccessContent() {
             첫 결제는 처리되었지만 접근 권한 확인이 지연되고 있습니다. 결제를 반복하지 말고 이용권 상태만 다시 확인해 주세요.
           </p>
         </div>
-        <button type="button" onClick={() => void checkAccessActivation()} className="flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+        <button type="button" onClick={() => void checkAccessActivation()} className="spm-btn-primary flex h-12 w-full items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none">
           이용권 다시 확인
         </button>
       </PaymentStatusShell>
@@ -258,7 +270,7 @@ function SuccessContent() {
         </p>
       </div>
       <div className="grid gap-3">
-        <Link href={`/spokedu-master/payment?plan=${isPaidPlanId(plan) ? plan : 'premium'}`} className="flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+        <Link href={`/spokedu-master/payment?plan=${isPaidPlanId(plan) ? plan : 'premium'}`} className="spm-btn-primary flex h-12 items-center justify-center rounded-[12px] text-[14px] font-black focus-visible:outline-none">
           다시 시도
         </Link>
         <a href={MASTER_CUSTOMER_SERVICE_HREF} className="flex h-11 items-center justify-center gap-2 rounded-[12px] text-[13px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>

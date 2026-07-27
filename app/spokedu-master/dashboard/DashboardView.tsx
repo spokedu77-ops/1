@@ -31,12 +31,14 @@ import { ProgramPreviewModal } from '../components/lesson/ProgramPreviewModal';
 import { DashboardSkeleton } from '../components/ui/Skeleton';
 import { cleanText, hasBrokenText } from '../lib/clean';
 import { buildLessonCardSupportMeta } from '../lib/lessonDisplay';
+import { formatProgramSelectionReasons } from '../library/librarySelectionReasons';
 import { buildLessonDisplayModel } from '../lib/lessonDisplayModel';
 import {
   programHasPlayableVideo,
   resolveProgramHero,
 } from '../lib/program-media';
 import { formatLibraryCardEquipmentName } from '../library/libraryViewModel';
+import { spmChipClass } from '../lib/masterUiClasses';
 import {
   getProgramHomeReadiness,
   isProgramHomeRecommendationEligible,
@@ -53,10 +55,13 @@ import {
   CLASS_RECORD_DRAFT_KEY,
   QUICK_RECORD_DRAFT_KEY,
   REPORT_DRAFT_KEY,
-  readSaveDraft,
+  hasMeaningfulClassRecordDraft,
+  readOwnerSaveDraft,
 } from '../lib/saveDraftStorage';
 import { CompactOpsBar } from './CompactOpsBar';
 import {
+  hasMeaningfulPrepDraft,
+  hasMeaningfulReportDraft,
   resolveHomeAnchor,
   type ClassRecordDraftSnapshot,
   type QuickRecordDraftSnapshot,
@@ -276,26 +281,26 @@ function SectionHeader({
 }) {
   const titleClass =
     size === 'lg'
-      ? `break-keep text-[22px] font-black leading-tight tracking-normal sm:text-[28px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
-      : `break-keep text-[20px] font-black leading-tight tracking-normal sm:text-[23px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
+      ? `break-keep text-[20px] font-black leading-tight tracking-[-0.02em] sm:text-[24px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`
+      : `break-keep text-[18px] font-black leading-tight tracking-[-0.02em] sm:text-[20px] ${tone === 'dark' ? 'text-white' : 'text-[color:var(--spm-t)]'}`;
   const eyebrowClass = tone === 'dark'
-    ? 'mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-300'
+    ? 'mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400'
     : tone === 'feature'
-      ? 'mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-slate-700'
-      : 'mb-1 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.15em] text-[var(--spm-acc)]';
+      ? 'mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500'
+      : 'mb-1 inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-500';
   const descriptionClass = tone === 'dark'
-    ? 'mt-1.5 max-w-2xl text-[13px] font-semibold leading-5 text-slate-300 sm:text-sm'
+    ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-400 sm:text-[13px]'
     : tone === 'feature'
-      ? 'mt-1.5 max-w-2xl text-[13px] font-semibold leading-5 text-slate-600 sm:text-sm'
-      : 'mt-1.5 max-w-2xl text-[13px] font-semibold leading-5 text-[color:var(--spm-t2)] sm:text-sm';
+      ? 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]'
+      : 'mt-1 max-w-xl text-[12px] font-semibold leading-5 text-slate-500 sm:text-[13px]';
   const actionClass = tone === 'dark'
-    ? 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-white/90 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white'
+    ? 'inline-flex min-h-9 shrink-0 items-center gap-1 text-[12px] font-bold text-white/75 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-white'
     : tone === 'feature'
-      ? 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-slate-800 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900'
-      : 'inline-flex min-h-11 shrink-0 items-center gap-1 text-[13px] font-black text-[var(--spm-acc)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]';
+      ? 'inline-flex min-h-9 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900'
+      : 'inline-flex min-h-9 shrink-0 items-center gap-1 text-[12px] font-bold text-slate-500 hover:text-slate-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900';
 
   return (
-    <div className="mb-3 flex flex-col items-start justify-between gap-2 sm:mb-3.5 sm:flex-row sm:items-end sm:gap-4">
+    <div className="mb-2.5 flex flex-col items-start justify-between gap-1.5 sm:mb-3 sm:flex-row sm:items-end sm:gap-3">
       <div className="min-w-0">
         {eyebrow ? (
           <p className={eyebrowClass}>
@@ -315,10 +320,10 @@ function SectionHeader({
       {href && action ? (
         <Link
           href={href}
-          className={`${actionClass} -mt-1 min-h-9 text-[12px] sm:mt-0 sm:min-h-10 sm:text-[13px]`}
+          className={`${actionClass} -mt-0.5 min-h-8 text-[11px] sm:mt-0 sm:min-h-9 sm:text-[12px]`}
         >
           {action}
-          <ArrowRight size={14} />
+          <ArrowRight size={13} />
         </Link>
       ) : null}
     </div>
@@ -336,7 +341,8 @@ function WeeklyProgramCard({
 }) {
   const model = buildLessonDisplayModel(program);
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const selectionMeta = formatProgramSelectionReasons(program);
+  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
 
   return (
     <LessonCatalogCard
@@ -358,7 +364,7 @@ function WeeklyProgramCard({
   );
 }
 
-/** 하단 맞춤 추천 — 사진 선반 반복을 피하기 위한 컴팩트 리스트 */
+/** 하단 보조 추천 행 — 사진 선반 반복을 피하기 위한 컴팩트 리스트 */
 function ContextProgramRow({
   program,
   cornerLabel,
@@ -370,7 +376,8 @@ function ContextProgramRow({
 }) {
   const model = buildLessonDisplayModel(program);
   const prep = program.equipment[0] ? formatLibraryCardEquipmentName(program.equipment[0]) : '';
-  const supportMeta = buildLessonCardSupportMeta(program, { equipmentFallback: prep });
+  const selectionMeta = formatProgramSelectionReasons(program);
+  const supportMeta = selectionMeta || buildLessonCardSupportMeta(program, { equipmentFallback: prep });
   const meta = [cornerLabel, supportMeta].filter(Boolean).join(' · ');
   const hero = model.heroImageUrl?.trim() || '';
 
@@ -405,30 +412,30 @@ function FirstStartGuide({ spomoveAvailable }: { spomoveAvailable: boolean }) {
     <section
       data-dashboard-section="first-start"
       aria-labelledby="first-start-heading"
-      className="rounded-[20px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-acc-glow)] p-4 shadow-[0_8px_24px_rgba(79,70,229,0.06)] sm:p-5"
+      className="rounded-[16px] border border-slate-200 bg-white p-3.5 sm:p-4"
     >
       <div>
-        <p className="text-[11px] font-black uppercase tracking-[0.15em] text-[var(--spm-acc)]">시작하기</p>
-        <h2 id="first-start-heading" className="mt-1 text-[20px] font-black tracking-[-0.03em] text-[color:var(--spm-t)]">
-          SPOKEDU MASTER 시작하기
+        <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">처음이라면</p>
+        <h2 id="first-start-heading" className="mt-1 text-[17px] font-black tracking-[-0.02em] text-[color:var(--spm-t)]">
+          오늘 수업부터 이어서
         </h2>
-        <p className="mt-1 text-[13px] font-semibold leading-5 text-[color:var(--spm-t2)]">
-          오늘 바로 쓸 수업을 먼저 고르고, {spomoveAvailable ? 'SPOMOVE 화면 활동까지 이어서 실행해 보세요.' : 'SPOMOVE는 프리미엄에서 함께 사용할 수 있습니다.'}
+        <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
+          수업을 고르고{spomoveAvailable ? ', SPOMOVE로 화면 활동을 시작한 뒤' : ' 준비한 뒤'} 기록까지 이어가세요.
         </p>
       </div>
-      <div className="mt-4 grid gap-2 md:grid-cols-3">
+      <div className="mt-3 grid gap-1.5 md:grid-cols-3">
         {firstStartSteps.map(({ title, href, Icon }, index) => (
           <Link
             key={href}
             href={href}
-            className="flex min-h-11 items-center gap-3 rounded-[14px] border border-[color-mix(in_srgb,var(--spm-acc)_22%,transparent)] bg-[var(--spm-s1)] px-3 text-[13px] font-black text-[color:var(--spm-t)] transition-colors hover:border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] hover:bg-[color-mix(in_srgb,var(--spm-s1)_90%,transparent)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
+            className="flex min-h-10 items-center gap-2.5 rounded-[12px] border border-slate-200 bg-slate-50 px-3 text-[12px] font-black text-[color:var(--spm-t)] transition-colors hover:border-slate-300 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]"
           >
-            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-[var(--spm-acc)] text-[12px] text-white">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-slate-900 text-[11px] text-white">
               {index + 1}
             </span>
-            <Icon size={16} className="shrink-0 text-[var(--spm-acc)]" aria-hidden="true" />
+            <Icon size={14} className="shrink-0 text-slate-500" aria-hidden="true" />
             <span className="min-w-0 flex-1 break-keep">{title}</span>
-            <ArrowRight size={14} className="shrink-0 text-[var(--spm-acc)]" aria-hidden="true" />
+            <ArrowRight size={13} className="shrink-0 text-slate-400" aria-hidden="true" />
           </Link>
         ))}
       </div>
@@ -458,7 +465,7 @@ function SpomoveCard({
       <button
         type="button"
         onClick={() => onOpenGuide(preset)}
-        className="relative aspect-[6/5] overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
+        className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-[color:var(--spm-br)] bg-[var(--spm-s1)] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[var(--spm-acc)]"
         aria-label={`${preset.title} 시작 준비 열기`}
       >
         {showThumbnail ? (
@@ -505,15 +512,15 @@ function SpomoveCard({
           </h3>
         </div>
       </button>
-      <div className="flex flex-1 flex-col bg-white p-3">
-        <div className="mb-2 flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
+      <div className="flex shrink-0 flex-col gap-2 bg-white p-3">
+        <div className="flex min-h-5 min-w-0 items-center overflow-hidden text-[12px] font-semibold leading-5 text-[color:var(--spm-t2)]">
           <span className="min-w-0 truncate">{preset.axisTitle}</span>
         </div>
         <button
           type="button"
           data-spm-spomove-card-action="start"
           onClick={() => onOpenGuide(preset)}
-          className="spm-btn-primary mt-auto inline-flex h-10 w-full items-center justify-center gap-2 rounded-[7px] px-3 text-[13px] font-black hover:brightness-100 focus-visible:outline-none"
+          className="spm-btn-primary inline-flex h-9 w-full items-center justify-center gap-2 rounded-[9px] px-3 text-[13px] font-black hover:brightness-100 focus-visible:outline-none"
         >
           <Play className="h-3.5 w-3.5 fill-current" aria-hidden />
           <span>시작</span>
@@ -564,29 +571,29 @@ function ActivityPanel({
 
   if (compact) {
     return (
-      <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[14px] border border-slate-200 bg-white px-3 py-3 ${className}`}>
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+      <section data-dashboard-section="activity" aria-labelledby="activity-heading" className={`relative rounded-[12px] border border-slate-200/80 bg-white/90 px-2.5 py-2.5 ${className}`}>
+        <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">기록 루프</p>
-            <h2 id="activity-heading" className="mt-0.5 text-[15px] font-black text-[color:var(--spm-t)]">안내문 · 기록</h2>
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">기록 루프</p>
+            <h2 id="activity-heading" className="mt-0.5 text-[14px] font-black text-slate-700">안내문 · 기록</h2>
           </div>
-          <Link href="/spokedu-master/profile" className="inline-flex min-h-8 items-center rounded-md bg-slate-50 px-2.5 text-[11px] font-bold text-slate-600">
+          <Link href="/spokedu-master/profile" className="inline-flex min-h-8 items-center rounded-md bg-slate-50 px-2.5 text-[11px] font-bold text-slate-500">
             {status}
           </Link>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid gap-1.5 sm:grid-cols-2">
           {activities.map(({ label, value, href, Icon, action }) => (
             <Link
               key={label}
               href={href}
-              className="flex min-h-12 items-center gap-2.5 rounded-[10px] border border-slate-100 bg-slate-50/80 px-2.5 transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
+              className="flex min-h-11 items-center gap-2 rounded-[9px] border border-slate-100 bg-slate-50/70 px-2.5 transition-colors hover:border-slate-200 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
             >
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-[9px] bg-white text-emerald-700 shadow-sm"><Icon size={15} /></span>
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-[8px] bg-white text-emerald-700 shadow-sm"><Icon size={14} /></span>
               <span className="min-w-0">
-                <span className="block text-[12px] font-bold text-[color:var(--spm-t2)]">{label}</span>
-                <span className="mt-0.5 inline-flex items-center gap-1 text-[15px] font-black text-[color:var(--spm-t)]">
+                <span className="block text-[11px] font-bold text-slate-500">{label}</span>
+                <span className="mt-0.5 inline-flex items-center gap-1 text-[14px] font-black text-slate-800">
                   {action ?? (value === null ? '확인 중' : `${value}개`)}
-                  {action ? <ArrowRight size={14} className="text-[var(--spm-acc)]" /> : null}
+                  {action ? <ArrowRight size={13} className="text-slate-400" /> : null}
                 </span>
               </span>
             </Link>
@@ -705,14 +712,14 @@ function EntitledDashboardView() {
 
   useEffect(() => {
     const refreshDrafts = () => {
-      setClassRecordDraft(readSaveDraft<ClassRecordDraftSnapshot>(CLASS_RECORD_DRAFT_KEY));
-      setReportDraft(readSaveDraft<ReportDraftSnapshot>(REPORT_DRAFT_KEY));
-      setQuickRecordDraft(readSaveDraft<QuickRecordDraftSnapshot>(QUICK_RECORD_DRAFT_KEY));
+      setClassRecordDraft(readOwnerSaveDraft<ClassRecordDraftSnapshot>(CLASS_RECORD_DRAFT_KEY, recentActivityOwnerId));
+      setReportDraft(readOwnerSaveDraft<ReportDraftSnapshot>(REPORT_DRAFT_KEY, recentActivityOwnerId));
+      setQuickRecordDraft(readOwnerSaveDraft<QuickRecordDraftSnapshot>(QUICK_RECORD_DRAFT_KEY, recentActivityOwnerId));
     };
     refreshDrafts();
     window.addEventListener('focus', refreshDrafts);
     return () => window.removeEventListener('focus', refreshDrafts);
-  }, []);
+  }, [recentActivityOwnerId]);
 
   useEffect(() => {
     let alive = true;
@@ -921,7 +928,7 @@ function EntitledDashboardView() {
   }
 
   return (
-    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-5 overflow-y-auto px-4 pb-28 pt-4 sm:px-6 sm:pt-5 lg:gap-6 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
+    <main className="mx-auto flex h-full w-full max-w-[1376px] flex-col gap-4 overflow-y-auto px-4 pb-28 pt-4 sm:gap-5 sm:px-6 sm:pt-5 lg:gap-5 lg:px-8 lg:pb-12" style={{ background: 'var(--spm-bg)' }}>
       {/* P1: 헤더는 브랜드만 — CompactOpsBar·사진보다 무겁지 않게 */}
       <header className="relative px-0.5 pt-0.5 sm:px-1">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
@@ -948,7 +955,13 @@ function EntitledDashboardView() {
         </div>
       </header>
 
-      {isFirstUser ? <FirstStartGuide spomoveAvailable={spomoveAvailable} /> : null}
+      {isFirstUser
+      && !todayLessonAssignment
+      && !hasMeaningfulClassRecordDraft(classRecordDraft)
+      && !hasMeaningfulReportDraft(reportDraft)
+      && !hasMeaningfulPrepDraft(quickRecordDraft)
+        ? <FirstStartGuide spomoveAvailable={spomoveAvailable} />
+        : null}
 
       <CompactOpsBar
         anchor={homeAnchor}
@@ -964,7 +977,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="featured-flow"
         aria-label="이번 주 수업 추천"
-        className="relative overflow-hidden rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_10px_28px_rgba(15,23,42,0.06)] sm:p-4"
+        className="relative overflow-hidden rounded-[16px] border border-slate-200/90 bg-white p-3 sm:p-3.5"
       >
         <section data-dashboard-section="weekly" aria-labelledby="weekly-heading" className="relative">
           <SectionHeader
@@ -1004,7 +1017,7 @@ function EntitledDashboardView() {
       <section
         data-dashboard-section="spomove"
         aria-labelledby="spomove-heading"
-        className="relative overflow-hidden rounded-[18px] border border-slate-800 bg-slate-950 p-3.5 shadow-[0_12px_32px_rgba(15,23,42,0.18)] sm:p-4"
+        className="relative overflow-hidden rounded-[16px] border border-slate-800 bg-slate-950 p-3 sm:p-3.5"
       >
         <SectionHeader
           eyebrow="화면 활동"
@@ -1030,13 +1043,13 @@ function EntitledDashboardView() {
         </div>
       </section>
 
-      {/* P1: 하단은 3순위 — 그라데이션 히어로 대신 얇은 구분만 */}
-      <div aria-hidden="true" className="border-t border-slate-200/90" />
+      {/* P1: 하단은 3순위 — 얇은 구분 + 조용한 면 */}
+      <div aria-hidden="true" className="border-t border-slate-200/80" />
 
       <section
         data-dashboard-section="operations-flow"
         aria-label="보조 추천과 기록"
-        className="relative space-y-2.5 rounded-[14px] border border-slate-200/90 bg-slate-50/80 p-2.5 sm:p-3"
+        className="relative space-y-2 rounded-[12px] border border-slate-200/70 bg-slate-50/60 p-2 sm:p-2.5"
       >
         {availableContextTabs.length > 0 || profile?.isAdmin ? (
           <section data-dashboard-section="context-programs">
@@ -1063,12 +1076,7 @@ function EntitledDashboardView() {
                       type="button"
                       aria-pressed={active}
                       onClick={() => setContextTab(tab.key)}
-                      className="inline-flex min-h-8 items-center rounded-md px-2.5 text-[12px] font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-slate-900"
-                      style={{
-                        background: active ? '#0f172a' : '#ffffff',
-                        color: active ? '#ffffff' : '#64748b',
-                        border: active ? '1px solid #0f172a' : '1px solid #e2e8f0',
-                      }}
+                      className={spmChipClass(active)}
                     >
                       {tab.label}
                     </button>

@@ -371,6 +371,62 @@ export function AppShell({ children, basePath = '/spokedu-master' }: { children:
     };
   }, [accessRetryKey, isProtectedRoute, pathname, router]);
 
+  // SPOMOVE session: soft entitlement recheck without flipping to "checking" (no mid-play interrupt).
+  useEffect(() => {
+    if (!isSession || !isProtectedRoute) return;
+
+    let cancelled = false;
+    const softRecheck = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
+      try {
+        const response = await fetch('/api/spokedu-master/access', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
+        if (cancelled) return;
+
+        if (response.status === 401) {
+          setAccessGuard({ pathname, status: 'redirecting', snapshot: null, spomatShopAvailable: false });
+          router.replace(currentLoginRedirectHref());
+          return;
+        }
+
+        if (response.status === 403) {
+          setAccessGuard({ pathname, status: 'denied', snapshot: null, spomatShopAvailable: false });
+          return;
+        }
+
+        if (!response.ok) return;
+
+        const payload = await response.json() as MasterAccessApiResponse;
+        const { ok, allowed, spomatShopAvailable, ...snapshot } = payload;
+        void ok;
+        void allowed;
+        setAccessGuard({
+          pathname,
+          status: 'allowed',
+          snapshot: snapshot as MasterAccessSnapshot,
+          spomatShopAvailable: spomatShopAvailable === true,
+        });
+      } catch {
+        // Keep current session UI on transient network errors.
+      }
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void softRecheck();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    const intervalId = window.setInterval(() => void softRecheck(), 60_000);
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+      window.clearInterval(intervalId);
+    };
+  }, [isProtectedRoute, isSession, pathname, router]);
+
   if (isSession) {
     return (
       <div className="min-h-dvh bg-black text-white" style={{ fontFamily: SPOKEDU_MASTER_FONT }}>

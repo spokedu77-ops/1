@@ -78,9 +78,8 @@ export function RecordProgramPicker({
         type="button"
         onClick={() => setOpen(true)}
         className={size === 'compact'
-          ? 'inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-black text-white'
-          : 'inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] px-5 text-[14px] font-black text-white sm:w-auto'}
-        style={{ background: 'var(--spm-acc)' }}
+          ? 'spm-btn-primary inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-2 text-[11px] font-black focus-visible:outline-none'
+          : 'spm-btn-primary inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[14px] px-5 text-[14px] font-black focus-visible:outline-none sm:w-auto'}
       >
         <ClipboardList size={size === 'compact' ? 13 : 17} />
         {label}

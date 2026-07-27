@@ -20,6 +20,12 @@ const CHECKS = [
   { id: 'api_route_imports', kind: 'vitest', target: API_ROUTE_IMPORTS_CONTRACT_TEST },
   { id: 'production_build', kind: 'npm', script: 'build' },
   { id: 'entry_copy_contract', kind: 'vitest', target: ENTRY_COPY_CONTRACT_TEST },
+  { id: 'entitlement_matrix_contract', kind: 'vitest', target: 'app/spokedu-master/entitlementMatrix.contract.test.ts' },
+  { id: 'day_loop_contract', kind: 'vitest', target: 'app/spokedu-master/dayLoop.contract.test.ts' },
+  { id: 'craft_p3_contract', kind: 'vitest', target: 'app/spokedu-master/craftP3.contract.test.ts' },
+  { id: 'owner_isolation_contract', kind: 'vitest', target: 'app/spokedu-master/ownerIsolation.contract.test.ts' },
+  { id: 'billing_readiness_p5_contract', kind: 'vitest', target: 'app/spokedu-master/billingReadinessP5.contract.test.ts' },
+  { id: 'live_gate_p6_contract', kind: 'vitest', target: 'app/spokedu-master/liveGateP6.contract.test.ts' },
   { id: 'staging_payment_preflight', kind: 'node', script: 'scripts/spokedu-master-staging-payment-e2e.mjs', args: [] },
   { id: 'payment_no_toss', kind: 'node', script: 'scripts/spokedu-master-staging-payment-e2e.mjs', args: ['--mock-activation'] },
   { id: 'profile_persist', kind: 'node', script: 'scripts/spokedu-master-profile-persist-e2e.mjs', args: [] },
@@ -127,6 +133,11 @@ function buildScore(results) {
     api_route_imports: 0,
     production_build: 2,
     entry_copy_contract: 1,
+    entitlement_matrix_contract: 1,
+    day_loop_contract: 1,
+    craft_p3_contract: 1,
+    owner_isolation_contract: 1,
+    billing_readiness_p5_contract: 1,
     staging_payment_preflight: 1,
     payment_no_toss: 1,
     profile_persist: 1,
@@ -142,7 +153,7 @@ function buildScore(results) {
     maxWithoutTossSandbox: base + maxEarned,
     passed,
     total: results.length,
-    nextMilestone: 'Toss sandbox real payment + webhook/subscription verification (+2~3)',
+    nextMilestone: 'Toss sandbox real payment + webhook/subscription verification (+2~3). strictCommercialScore ≠ D 8+.',
   };
 }
 

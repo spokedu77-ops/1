@@ -78,7 +78,7 @@ export function MovementChangeSheet({
           <button
             type="button"
             onClick={() => onConfirmStart(selected)}
-            className="mt-4 flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white"
+            className="spm-btn-primary mt-4 flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
           >
             이 동작으로 시작
           </button>
@@ -86,7 +86,7 @@ export function MovementChangeSheet({
           <button
             type="button"
             onClick={onClose}
-            className="mt-4 flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white"
+            className="spm-btn-primary mt-4 flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
           >
             적용
           </button>

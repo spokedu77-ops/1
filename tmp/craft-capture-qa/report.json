@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "id": "landing_primary",
+      "ok": true,
+      "count": 6
+    },
+    {
+      "id": "library_selection_reasons",
+      "ok": true,
+      "sample": "좁은 공간"
+    },
+    {
+      "id": "ops_bar_height",
+      "ok": true,
+      "height": 56
+    }
+  ],
+  "generatedAt": "2026-07-27T16:01:31.745Z",
+  "mode": "live"
+}

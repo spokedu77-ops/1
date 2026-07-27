@@ -73,8 +73,7 @@ function SubscriptionStatusCard({
       {display.canUpgradeToPremium && display.upgradeHref && display.upgradeLabel ? (
         <Link
           href={display.upgradeHref}
-          className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black text-white"
-          style={{ background: 'var(--spm-acc)' }}
+          className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
         >
           {display.upgradeLabel}
         </Link>
@@ -83,8 +82,7 @@ function SubscriptionStatusCard({
       {display.primaryHref === '/spokedu-master/payment' && display.primaryLabel ? (
         <Link
           href="/spokedu-master/payment"
-          className="mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black text-white"
-          style={{ background: 'var(--spm-acc)' }}
+          className="spm-btn-primary mt-5 inline-flex h-11 items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none"
         >
           {display.primaryLabel}
         </Link>
@@ -176,8 +174,7 @@ export default function SubscriptionPage() {
             <button
               type="button"
               onClick={() => void loadSubscription()}
-              className="mt-4 flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black text-white"
-              style={{ background: 'var(--spm-acc)' }}
+              className="spm-btn-primary mt-4 flex h-11 items-center justify-center rounded-[12px] px-5 text-[13px] font-black focus-visible:outline-none"
             >
               다시 시도
             </button>

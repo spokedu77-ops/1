@@ -57,8 +57,7 @@ export function LandingLoggedInBanner() {
         </div>
         <Link
           href={destination}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[12px] font-black text-white"
-          style={{ background: 'var(--spm-acc)' }}
+          className="spm-btn-primary inline-flex min-h-11 shrink-0 items-center justify-center rounded-full px-5 text-[12px] font-black focus-visible:outline-none"
         >
           앱으로 바로가기
         </Link>

@@ -96,7 +96,7 @@ export class ErrorBoundary extends Component<Props, State> {
           >
             다시 시도
           </button>
-          <Link href={fallbackHref} className="flex h-11 items-center rounded-[12px] px-5 text-[13px] font-black text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--spm-acc)]" style={{ background: 'var(--spm-acc)' }}>
+          <Link href={fallbackHref} className="spm-btn-primary flex h-11 items-center rounded-[12px] px-5 text-[13px] font-black focus-visible:outline-none">
             {fallbackLabel}
           </Link>
         </div>

@@ -624,7 +624,7 @@ function EmptyStudentsForTools() {
           학생 관리에서 학생을 먼저 등록해 주세요.
         </p>
       </div>
-      <Link href="/spokedu-master/students?add=1" className="inline-flex h-11 items-center gap-2 rounded-[10px] px-4 text-[13px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+      <Link href="/spokedu-master/students?add=1" className="spm-btn-primary inline-flex h-11 items-center gap-2 rounded-[10px] px-4 text-[13px] font-black focus-visible:outline-none">
         <UserPlus size={14} />
         학생 추가
       </Link>

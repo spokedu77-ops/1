@@ -50,6 +50,7 @@
     "qa:spokedu-master:production-prep": "node scripts/spokedu-master-production-prep.mjs",
     "qa:spokedu-master:configure-billing-cron": "node scripts/spokedu-master-configure-billing-cron.mjs",
     "qa:spokedu-master:data-integrity": "node scripts/spokedu-master-data-integrity.mjs",
+    "qa:spokedu-master:craft-capture": "node scripts/spokedu-master-craft-capture-qa.mjs",
     "qa:spokedu-master:release-automated": "node scripts/spokedu-master-release-automated.mjs",
     "qa:spokedu-master:logged": "node scripts/spokedu-master-home-logged-qa.mjs"
   },

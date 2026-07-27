@@ -30,4 +30,11 @@ describe('MASTER execution screen access boundary', () => {
     expect(spomove).not.toContain("fetch('/api/spokedu-master/access'");
     expect(spomove).not.toContain('OfficialAccessState');
   });
+
+  it('soft-rechecks access on SPOMOVE session without flipping to checking', () => {
+    expect(shell).toContain('// SPOMOVE session: soft entitlement recheck');
+    expect(shell).toContain('setInterval(() => void softRecheck(), 60_000)');
+    expect(shell).toContain("document.addEventListener('visibilitychange', onVisible)");
+    expect(shell).toContain("status: 'allowed'");
+  });
 });

@@ -77,10 +77,15 @@ describe('class record entry flow contract', () => {
 
   it('persists in-progress drafts across refresh for new records', () => {
     expect(source).toContain('CLASS_RECORD_DRAFT_KEY');
-    expect(source).toContain('writeSaveDraft(CLASS_RECORD_DRAFT_KEY');
-    expect(source).toContain('clearSaveDraft(CLASS_RECORD_DRAFT_KEY)');
+    expect(source).toContain('writeOwnerSaveDraft(CLASS_RECORD_DRAFT_KEY');
+    expect(source).toContain('clearOwnerSaveDraft(CLASS_RECORD_DRAFT_KEY');
     expect(source).toContain('hasMeaningfulClassRecordDraft');
     expect(source).toContain('if (requestedProgramId && draft.selectedProgramId && draft.selectedProgramId !== requestedProgramId) return');
+  });
+
+  it('offers home loop CTA after successful save', () => {
+    expect(source).toContain('data-loop-action="home"');
+    expect(source).toContain('href="/spokedu-master/dashboard"');
   });
 
   it('resets student observations when the selected program changes', () => {

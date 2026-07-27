@@ -404,7 +404,7 @@ export default function StudentsPage() {
                 </p>
               ) : null}
             </div>
-            <button type="button" onClick={handlePreviewLegacyImport} className="h-10 shrink-0 rounded-[11px] px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)' }}>
+            <button type="button" onClick={handlePreviewLegacyImport} className="spm-btn-primary h-10 shrink-0 rounded-[11px] px-4 text-[12px] font-black focus-visible:outline-none">
               가져오기 내용 확인
             </button>
           </div>

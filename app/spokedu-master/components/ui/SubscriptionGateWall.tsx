@@ -20,8 +20,8 @@ const FEATURE_COPY = {
   },
   classTools: {
     icon: Timer,
-    title: '이 기능을 사용하려면 이용권이 필요합니다',
-    desc: '수업 도구는 활성 이용권에서 사용할 수 있습니다.',
+    title: '수업 도구를 다시 쓰려면 이용권이 필요합니다',
+    desc: '로그인 직후 무료로 써 볼 수 있는 수업 도구는, 이용 기간이 끝나면 다시 활성 이용권이 필요합니다.',
   },
   records: {
     icon: FileText,
@@ -31,7 +31,7 @@ const FEATURE_COPY = {
   spomove: {
     icon: MonitorPlay,
     title: 'SPOMOVE는 프리미엄에서 이용할 수 있습니다',
-    desc: '수업 중 프로젝터·TV·태블릿에 연결해 SPOMOVE 공식 활동을 큰 화면으로 바로 실행하려면 프리미엄이 필요합니다.',
+    desc: '수업 중 프로젝터·TV·태블릿에 연결해 SPOMOVE 공식 활동을 큰 화면으로 시작하려면 프리미엄이 필요합니다.',
   },
 } as const;
 
@@ -80,7 +80,7 @@ export function SubscriptionGateWall({ requirement, snapshot }: SubscriptionGate
           </div>
         </div>
         <div className="mt-7 grid gap-2">
-          <Link href={primaryHref} className="inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[var(--spm-acc)] text-[13px] font-black text-white">
+          <Link href={primaryHref} className="spm-btn-primary inline-flex h-11 w-full items-center justify-center rounded-[10px] text-[13px] font-black focus-visible:outline-none">
             {primaryLabel}
           </Link>
           {!subscriptionBlockedFeature ? (

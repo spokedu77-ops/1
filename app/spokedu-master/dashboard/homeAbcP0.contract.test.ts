@@ -118,6 +118,14 @@ describe('home A/B/C P0 component contracts', () => {
     expect(dashboard).toContain('getTodayLesson');
   });
 
+  it('hides first-start guide when today lesson or drafts already exist', () => {
+    expect(dashboard).toContain('!todayLessonAssignment');
+    expect(dashboard).toContain('!hasMeaningfulClassRecordDraft(classRecordDraft)');
+    expect(dashboard).toContain('!hasMeaningfulReportDraft(reportDraft)');
+    expect(dashboard).toContain('!hasMeaningfulPrepDraft(quickRecordDraft)');
+    expect(dashboard).toContain('readOwnerSaveDraft');
+  });
+
   it('locks selection-reason principle: controlled vocab and max chips (enforce later in P3)', () => {
     expect(reasons).toContain('자동 매핑 근거가 있을 때만 노출');
     expect(LIBRARY_SELECTION_REASON_MAX).toBeLessThanOrEqual(3);

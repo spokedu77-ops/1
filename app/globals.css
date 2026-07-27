@@ -285,6 +285,7 @@ body {
  * SPOKEDU MASTER Primary CTA
  * - 색: --spm-cta (홈/SPOMOVE/상세 실행 버튼 통일)
  * - 흰 세로선: inset shadow·전역 border AA 차단
+ * - 선택 칩은 .spm-chip-* / masterUiClasses (acc). Primary와 혼용 금지
  */
 .spm-btn-primary {
   -webkit-appearance: none;

@@ -74,15 +74,15 @@ export function TabBar({ basePath = '/spokedu-master' }: { basePath?: string }) 
                 aria-current={active ? 'page' : undefined}
                 aria-label={label}
               >
-                <span className="relative grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? '#0f172a' : 'transparent' }}>
+                <span className="relative grid h-7 w-7 place-items-center rounded-[9px]" style={{ background: active ? 'var(--spm-acc)' : 'transparent' }}>
                   <Icon size={17} strokeWidth={1.9} color={active ? '#ffffff' : '#64748b'} />
                   {locked ? (
-                    <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-slate-950">
+                    <span className="absolute -right-1 -top-1 grid h-4 w-4 place-items-center rounded-full bg-[var(--spm-acc)]">
                       <Lock size={9} color="#ffffff" strokeWidth={2.2} />
                     </span>
                   ) : null}
                 </span>
-                <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? '#0f172a' : '#64748b' }}>
+                <span className="max-w-full px-0.5 text-center text-[10px] font-bold leading-none whitespace-nowrap" style={{ color: active ? 'var(--spm-acc)' : '#64748b' }}>
                   {shortLabel}
                 </span>
               </button>

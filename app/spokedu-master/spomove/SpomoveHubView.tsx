@@ -21,6 +21,7 @@ import {
 import { SPOMOVE_AXIS_META, SPOMOVE_AXIS_ORDER } from '@/app/lib/spomove/spomoveAxisMeta';
 import { useMasterStore, useProfile } from '../store';
 import { getRecentActivityOwnerId } from '../lib/recentProgramActivity';
+import { spmChipClass } from '../lib/masterUiClasses';
 import { isSpomoveMovementLayerEnabled } from './movements/movementFlag';
 import { canReproduceSpomoveSameSettings } from './movements/canReproduceSpomoveSameSettings';
 import { getPresetMovementSummary } from './movements/presetMovementSummary';
@@ -590,7 +591,7 @@ function CardVisual({
     : 'object-cover object-center motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-[1.03]';
 
   return (
-    <div className="relative aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white">
+    <div className="relative min-h-0 w-full flex-1 aspect-[6/5] overflow-hidden border-b border-slate-200 bg-white">
       {showThumbnail ? (
         <Image
           src={thumbnailUrl}
@@ -679,7 +680,7 @@ function CardInfo({
   };
 
   return (
-    <div className="flex min-h-[86px] flex-1 flex-col p-3 text-left">
+    <div className="flex shrink-0 flex-col gap-2 p-3 text-left">
       <div className="flex flex-wrap items-center gap-1.5">
         <span className="inline-flex rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-black tracking-wide text-slate-600">
           {display.programLabel}
@@ -695,42 +696,38 @@ function CardInfo({
       </div>
 
       {movementSummary ? (
-        <p className="mt-1.5 line-clamp-1 text-[12px] font-bold text-slate-700">
+        <p className="line-clamp-1 text-[12px] font-bold text-slate-700">
           추천 <span className="text-[var(--spm-acc)]">{movementSummary.recommendedLabel}</span>
           <span className="font-semibold text-slate-400"> · 매트 {movementSummary.minMats}장</span>
         </p>
-      ) : (
-        <div className="mt-2 h-[18px]" aria-hidden />
-      )}
+      ) : null}
 
       {isReady ? (
-        <div className="mt-auto pt-2">
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          <button
+            type="button"
+            data-spm-spomove-card-action="start"
+            data-spm-spomove-start-mode="guide"
+            onClick={onGuide}
+            className="spm-btn-primary inline-flex h-9 min-w-0 flex-[1.6] items-center justify-center gap-1.5 rounded-[9px] px-2 text-[13px] font-black focus-visible:outline-none"
+          >
+            <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden />
+            <span>시작</span>
+          </button>
+          {showSettings ? (
             <button
               type="button"
               data-spm-spomove-card-action="start"
-              data-spm-spomove-start-mode="guide"
-              onClick={onGuide}
-              className="spm-btn-primary inline-flex h-10 min-w-0 flex-[1.6] items-center justify-center gap-1.5 rounded-[7px] px-2 text-[13px] font-black focus-visible:outline-none"
+              data-spm-spomove-start-mode="settings"
+              onClick={() => router.push(hrefForSettings())}
+              className="inline-flex h-9 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[9px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
             >
-              <Play className="h-3.5 w-3.5 shrink-0 fill-current" aria-hidden />
-              <span>시작</span>
+              설정
             </button>
-            {showSettings ? (
-              <button
-                type="button"
-                data-spm-spomove-card-action="start"
-                data-spm-spomove-start-mode="settings"
-                onClick={() => router.push(hrefForSettings())}
-                className="inline-flex h-10 min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[7px] border border-slate-200 bg-white px-3 text-[12px] font-black text-slate-700 hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400"
-              >
-                설정
-              </button>
-            ) : null}
-          </div>
+          ) : null}
         </div>
       ) : (
-        <div className="mt-auto border-t border-slate-100 pt-3">
+        <div className="border-t border-slate-100 pt-2">
           <span className="inline-flex items-center justify-center gap-1 text-[11px] font-bold text-slate-400">
             <Lock className="h-3 w-3" />
             제공 예정
@@ -794,7 +791,7 @@ function PresetCard({
           onPreview();
         }}
         aria-label={`${displayModel.displayTitle} 시작 준비 열기`}
-        className="relative block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
+        className="relative flex min-h-0 w-full flex-1 cursor-pointer flex-col text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--spm-acc)] focus-visible:ring-offset-2 disabled:cursor-default"
       >
         <CardVisual
           preset={preset}
@@ -1086,11 +1083,7 @@ export default function SpomoveHubView() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveProgramGroup(tab)}
-                    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-all ${
-                      active
-                        ? 'bg-slate-950 text-white shadow-sm'
-                        : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
-                    }`}
+                    className={spmChipClass(active, 'gap-1.5 font-bold')}
                   >
                     {PROGRAM_GROUP_LABELS[tab]}
                     <span className="text-[10px] font-semibold opacity-60">{count}</span>
@@ -1116,11 +1109,7 @@ export default function SpomoveHubView() {
                     key={tab}
                     type="button"
                     onClick={() => setActiveThinkingLevel(tab)}
-                    className={`inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[11px] font-bold transition-all ${
-                      active
-                        ? 'border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] text-[var(--spm-acc)] shadow-sm'
-                        : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                    }`}
+                    className={spmChipClass(active, 'gap-1.5 font-bold')}
                   >
                     {THINKING_LEVEL_FILTER_LABELS[tab]}
                     <span className="text-[10px] font-semibold opacity-60">{count}</span>
@@ -1153,11 +1142,7 @@ export default function SpomoveHubView() {
                       key={id}
                       type="button"
                       onClick={() => setMovementFilter(id)}
-                      className={`inline-flex h-8 shrink-0 items-center rounded-full px-3 text-[11px] font-bold transition-all ${
-                        active
-                          ? 'border border-[color-mix(in_srgb,var(--spm-acc)_35%,transparent)] bg-[var(--spm-acc-glow)] text-[var(--spm-acc)] shadow-sm'
-                          : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                      }`}
+                      className={spmChipClass(active, 'font-bold')}
                     >
                       {label}
                     </button>

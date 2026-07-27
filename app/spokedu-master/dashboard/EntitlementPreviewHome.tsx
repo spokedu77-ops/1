@@ -72,13 +72,12 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <p className="mt-3 max-w-[560px] text-[14px] font-semibold leading-6" style={{ color: 'var(--spm-t2)' }}>
           {isLapsed
             ? '수업 자료, 기록, 안내문을 다시 쓰려면 구독을 선택해 주세요. 기존 계정과 프로필은 그대로 유지됩니다.'
-            : '라이브러리에서 수업을 고르고, 수업 중 도구로 진행하고, 기록과 안내문까지 이어지는 흐름은 활성 이용권에서 이용할 수 있습니다.'}
+            : '수업 도구는 로그인 후 바로 써 볼 수 있습니다. 라이브러리·기록·안내문·SPOMOVE는 이용권에서 이어집니다.'}
         </p>
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <Link
             href={paymentHref}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black text-white"
-            style={{ background: 'var(--spm-acc)' }}
+            className="spm-btn-primary inline-flex h-11 items-center justify-center gap-2 rounded-[10px] px-5 text-[13px] font-black focus-visible:outline-none"
           >
             <ArrowRight size={16} />
             {primaryLabel}
@@ -98,7 +97,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
           이번 주 추천 프로그램
         </h2>
         <p className="mt-1 text-[13px] font-semibold" style={{ color: 'var(--spm-t3)' }}>
-          무료 계정에서는 홈에서 추천 프로그램 1개만 확인할 수 있습니다.
+          무료로는 수업 도구를 먼저 써 보고, 추천 프로그램 미리보기 1개를 확인할 수 있습니다.
         </p>
         <div className="mt-4 grid gap-3 sm:max-w-[320px]">
           {PREVIEW_PROGRAMS.map((program) => (
@@ -146,7 +145,7 @@ export function EntitlementPreviewHome({ snapshot }: { snapshot: MasterAccessSna
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
           {[
             { icon: BookOpen, label: '수업 전', desc: '라이브러리에서 오늘 수업 고르기' },
-            { icon: Timer, label: '수업 중', desc: '수업 도구·SPOMOVE(프리미엄)로 진행' },
+            { icon: Timer, label: '수업 중', desc: '수업 도구는 무료로, SPOMOVE는 프리미엄에서' },
             { icon: ClipboardList, label: '수업 후', desc: '관찰 남기고 같은 기록 보강하기' },
             { icon: FileText, label: '안내문', desc: '학부모·기관용 안내문 작성·복사' },
           ].map(({ icon: Icon, label, desc }) => (

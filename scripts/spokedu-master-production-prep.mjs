@@ -55,8 +55,12 @@ function main() {
   record(
     'database_url_for_integrity',
     Boolean(databaseUrl),
-    'warning',
-    databaseUrl ? 'loaded' : 'optional until restore rehearsal',
+    PRODUCTION ? 'blocker' : 'warning',
+    databaseUrl
+      ? 'loaded — required for release-automated data_integrity gate'
+      : PRODUCTION
+        ? 'required for production release (data-integrity hard gate)'
+        : 'set before release-automated / restore rehearsal',
   );
 
   if (tossClient) {

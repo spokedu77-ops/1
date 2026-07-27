@@ -17,9 +17,14 @@ describe('library quick record save contracts', () => {
 
   it('restores and clears quick-record drafts in the same tab', () => {
     expect(source).toContain('QUICK_RECORD_DRAFT_KEY');
-    expect(source).toContain('readSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY)');
-    expect(source).toContain('writeSaveDraft(QUICK_RECORD_DRAFT_KEY');
-    expect(source).toContain('clearSaveDraft(QUICK_RECORD_DRAFT_KEY)');
+    expect(source).toContain('readOwnerSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY');
+    expect(source).toContain('writeOwnerSaveDraft(QUICK_RECORD_DRAFT_KEY');
+    expect(source).toContain('clearOwnerSaveDraft(QUICK_RECORD_DRAFT_KEY');
+  });
+
+  it('offers home loop CTA after quick-record save', () => {
+    expect(source).toContain('data-loop-action="home"');
+    expect(source).toContain('href="/spokedu-master/dashboard"');
   });
 
   it('prefills class from recent records and frames memo as observation', () => {

@@ -50,9 +50,9 @@ import {
 } from '../../lib/saveActionFeedback';
 import {
   QUICK_RECORD_DRAFT_KEY,
-  clearSaveDraft,
-  readSaveDraft,
-  writeSaveDraft,
+  clearOwnerSaveDraft,
+  readOwnerSaveDraft,
+  writeOwnerSaveDraft,
 } from '../../lib/saveDraftStorage';
 import { useMasterAccessSnapshot } from '../../access/MasterAccessProvider';
 import { useOperationalData } from '../../operational/OperationalDataProvider';
@@ -202,7 +202,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
 
   useEffect(() => {
     if (!quickModalOpen || quickSaved || !program) return;
-    writeSaveDraft(QUICK_RECORD_DRAFT_KEY, {
+    writeOwnerSaveDraft(QUICK_RECORD_DRAFT_KEY, ownerId, {
       programId: program.id,
       date: quickDate,
       classId: quickClassId,
@@ -210,7 +210,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
       parentNote: quickParentNote,
       focusStudentId: quickFocusStudentId,
     } satisfies QuickRecordDraft);
-  }, [program, quickClassId, quickDate, quickFocusStudentId, quickMemo, quickModalOpen, quickParentNote, quickSaved]);
+  }, [ownerId, program, quickClassId, quickDate, quickFocusStudentId, quickMemo, quickModalOpen, quickParentNote, quickSaved]);
 
   const defaultQuickClassId = useMemo(
     () => resolveQuickRecordClassId(classRecords, operationalData.students.map((student) => student.group)),
@@ -265,7 +265,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
   const recentEvidenceRecords = sortedUsageRecords.slice(0, 3);
 
   const openQuickModal = () => {
-    const draft = readSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY);
+    const draft = readOwnerSaveDraft<QuickRecordDraft>(QUICK_RECORD_DRAFT_KEY, ownerId);
     const useDraft = draft?.programId === program.id;
     setQuickDate(useDraft && draft.date ? draft.date : new Date().toISOString().slice(0, 10));
     setQuickClassId(useDraft ? draft.classId : defaultQuickClassId);
@@ -324,7 +324,7 @@ export default function LibraryDetailView({ id }: { id: string }) {
     void operationalData.saveClassRecord(classRecordToCreateInput(record, operationalData.students)).then((saved) => {
       setQuickSavedRecordId(saved.id);
       setQuickSaved(true);
-      clearSaveDraft(QUICK_RECORD_DRAFT_KEY);
+      clearOwnerSaveDraft(QUICK_RECORD_DRAFT_KEY, ownerId);
     }).catch((caught) => {
       setQuickSaveFeedback(resolveSaveActionFeedback(caught, accessSnapshot));
       setQuickSaved(false);
@@ -797,9 +797,10 @@ export default function LibraryDetailView({ id }: { id: string }) {
               <p className="mt-1 text-[11px] font-semibold leading-4 text-emerald-700/80">
                 같은 기록에 출석·관찰을 더하거나, 안내문으로 이어갈 수 있습니다.
               </p>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 <Link href={`/spokedu-master/class-record?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-[var(--spm-s1)] px-3 text-center text-xs font-black text-emerald-700">이 기록 보강</Link>
                 <Link href={`/spokedu-master/report?record=${quickSavedRecordId}&program=${program.id}`} onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-[var(--spm-s1)] px-3 text-center text-xs font-black text-emerald-700">안내문</Link>
+                <Link href="/spokedu-master/dashboard" data-loop-action="home" onClick={() => setQuickModalOpen(false)} className="inline-flex min-h-11 items-center justify-center rounded-lg border border-emerald-200 bg-[var(--spm-s1)] px-3 text-center text-xs font-black text-emerald-700">홈으로</Link>
               </div>
             </div>
           ) : (

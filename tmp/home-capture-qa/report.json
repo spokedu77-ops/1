@@ -1,0 +1,38 @@
+[
+  {
+    "id": "1-today-long",
+    "file": "C:\\Users\\joker\\Documents\\GitHub\\1\\tmp\\home-capture-qa\\1-today-long.png",
+    "kind": "today_lesson",
+    "height": 56,
+    "title": "미취학·초등 혼합반을 위한 반응·균형·협동 통합 수업 — 좁은 교실에서도 바로 펼치는 현장 준비형 프로그램",
+    "titleOverflow": true,
+    "kindOk": true,
+    "heightOk": true,
+    "text": "오늘미취학·초등 혼합반을 위한 반응·균형·협동 통합 수업 — 좁은 교실에서도 바로 펼치는 현장 준비형 프로그램준비기록",
+    "pass": true
+  },
+  {
+    "id": "2-draft-priority",
+    "file": "C:\\Users\\joker\\Documents\\GitHub\\1\\tmp\\home-capture-qa\\2-draft-priority.png",
+    "kind": "record_draft",
+    "height": 56,
+    "title": "작성 중인 수업 기록",
+    "titleOverflow": false,
+    "kindOk": true,
+    "heightOk": true,
+    "text": "오늘 이어갈 작업기록 0개 · 안내문 0개작성 중인 수업 기록이어서 기록",
+    "pass": true
+  },
+  {
+    "id": "3-empty",
+    "file": "C:\\Users\\joker\\Documents\\GitHub\\1\\tmp\\home-capture-qa\\3-empty.png",
+    "kind": "empty",
+    "height": 56,
+    "title": "오늘 이어갈 수업을 고르세요",
+    "titleOverflow": false,
+    "kindOk": true,
+    "heightOk": true,
+    "text": "오늘 이어갈 수업을 고르세요기록 0개 · 안내문 0개수업자료에서 찾기",
+    "pass": true
+  }
+]

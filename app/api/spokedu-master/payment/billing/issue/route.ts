@@ -459,9 +459,23 @@ export async function POST(request: Request) {
       },
     });
     if (applyResult.status >= 500) {
-      return fail(500, '결제는 승인됐지만 이용권 반영에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+      return NextResponse.json(
+        {
+          error: '결제는 승인됐지만 이용권 반영에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+          charged: true,
+          recoverable: true,
+        },
+        { status: 500 },
+      );
     }
-    return fail(applyResult.status, '결제는 승인됐지만 이용권 반영에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    return NextResponse.json(
+      {
+        error: '결제는 승인됐지만 이용권 반영에 실패했습니다. 잠시 후 다시 시도해 주세요.',
+        charged: true,
+        recoverable: true,
+      },
+      { status: applyResult.status },
+    );
   }
 
   return NextResponse.json({

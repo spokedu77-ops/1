@@ -30,7 +30,7 @@ function makeProgram(overrides: Partial<Program> = {}): Program {
 }
 
 describe('librarySelectionReasons', () => {
-  it('locks P1.5 vocab and mapping standard without adding chip UI', () => {
+  it('locks P3 vocab/mapping with no pending tighten leftovers', () => {
     expect(LIBRARY_SELECTION_REASON_MAX).toBe(3);
     expect(LIBRARY_SELECTION_REASON_IDS).toHaveLength(Object.keys(LIBRARY_SELECTION_REASONS).length);
     for (const id of LIBRARY_SELECTION_REASON_IDS) {
@@ -38,11 +38,12 @@ describe('librarySelectionReasons', () => {
       expect(standard.id).toBe(id);
       expect(standard.label).toBe(LIBRARY_SELECTION_REASONS[id].label);
       expect(standard.requiredEvidence.length).toBeGreaterThan(8);
+      expect(standard.pendingP3Tighten).toBe(false);
     }
     expect(LIBRARY_SELECTION_REASON_STANDARD.team.evidenceLevel).toBe('structured');
     expect(LIBRARY_SELECTION_REASON_STANDARD.solo.evidenceLevel).toBe('structured');
-    expect(LIBRARY_SELECTION_REASON_STANDARD.spomove.evidenceLevel).toBe('legacy_mixed');
-    expect(LIBRARY_SELECTION_REASON_STANDARD.spomove.pendingP3Tighten).toBe(true);
+    expect(LIBRARY_SELECTION_REASON_STANDARD.narrow_space.evidenceLevel).toBe('structured');
+    expect(LIBRARY_SELECTION_REASON_STANDARD.spomove.evidenceLevel).toBe('structured');
     expect(LIBRARY_SELECTION_REASON_STANDARD.ready_now.evidenceLevel).toBe('text_only');
   });
 
@@ -60,10 +61,71 @@ describe('librarySelectionReasons', () => {
     expect(labels.length).toBeLessThanOrEqual(3);
   });
 
-  it('maps SPOMOVE linkage from flags and tags (legacy until P3)', () => {
+  it('maps SPOMOVE only from explicit flag or official preset intersection (no tag-only)', () => {
     expect(programMatchesSelectionReason(makeProgram({ hasSpomoveConnection: true }), 'spomove')).toBe(true);
     expect(
       programMatchesSelectionReason(makeProgram({ tags: ['SPOMOVE 연계'] }), 'spomove'),
+    ).toBe(false);
+    expect(
+      programMatchesSelectionReason(
+        makeProgram({
+          lessonDetail: {
+            recommendedAge: '',
+            recommendedPlayers: '',
+            objective: '',
+            developmentFocus: '',
+            coachScript: '',
+            parentNote: '',
+            fieldTips: [],
+            variations: [],
+            safetyNotes: [],
+            relatedSpomoveIds: ['reactTrain'],
+            briefingNotes: [],
+          },
+        }),
+        'spomove',
+      ),
+    ).toBe(false);
+    expect(
+      programMatchesSelectionReason(
+        makeProgram({
+          lessonDetail: {
+            recommendedAge: '',
+            recommendedPlayers: '',
+            objective: '',
+            developmentFocus: '',
+            coachScript: '',
+            parentNote: '',
+            fieldTips: [],
+            variations: [],
+            safetyNotes: [],
+            relatedSpomoveIds: ['reaction-cognition-space-direction-01'],
+            briefingNotes: [],
+          },
+        }),
+        'spomove',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not treat title-only ready_now or description-only reaction as enough', () => {
+    expect(
+      programMatchesSelectionReason(
+        makeProgram({ title: '바로 진행 워밍업', description: '일반 설명' }),
+        'ready_now',
+      ),
+    ).toBe(false);
+    expect(
+      programMatchesSelectionReason(
+        makeProgram({ title: '반응 수업', description: '반응을 키웁니다', tags: [] }),
+        'reaction',
+      ),
+    ).toBe(false);
+    expect(
+      programMatchesSelectionReason(
+        makeProgram({ tags: ['반응'] }),
+        'reaction',
+      ),
     ).toBe(true);
   });
 

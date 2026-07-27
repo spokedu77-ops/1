@@ -2,6 +2,15 @@
 
 Date: 2026-06-21
 
+## 2026-07-28 amendment (path-to-9 P5)
+
+Repository code has moved past legacy one-shot confirm as the primary paid path.
+
+- **Access grant path:** `POST /api/spokedu-master/payment/billing/issue` (billing key → charge → vault → apply). Legacy `payment/confirm` is closed (410) for MASTER checkout.
+- **Cancel path:** `POST /api/spokedu-master/payment/billing/cancel` schedules `cancel_at_period_end` and removes vault billing key without immediately clearing entitlement.
+- **Score boundary:** `strictCommercialScore` from no-payment verification **≠ D 8+**. **mock only으로 D 8+ 선언 금지.** D 8+ requires Toss sandbox real charge logs + restore DB integrity run.
+- Older sections below are retained as historical audit notes; prefer this amendment for current launch blockers.
+
 This audit records only what is visible in repository code and docs. It does not claim that production infrastructure outside the repository has been verified.
 
 ## Actual Payment Grants Access

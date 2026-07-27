@@ -44,7 +44,7 @@ describe('report writing flow contract', () => {
   });
 
   it('uses a single-column focused layout instead of a dual sidebar browser', () => {
-    expect(source).toContain('max-w-3xl');
+    expect(source).toContain('max-w-7xl');
     expect(source).not.toContain('lg:grid-cols-[360px_minmax(0,1fr)]');
     expect(source).toContain('보관함');
   });
@@ -58,6 +58,7 @@ describe('report writing flow contract', () => {
   it('protects edited text before regenerating a draft', () => {
     expect(source).toContain('현재 수정한 안내문이 새 초안으로 교체됩니다.');
     expect(source).toContain('replaceDraft(buildRecordDraft');
+    expect(source).toContain('generated.trim() !== currentCanonical.trim()');
   });
 
   it('prevents duplicate saves and exposes safe save/copy status', () => {
@@ -77,9 +78,14 @@ describe('report writing flow contract', () => {
 
   it('restores unsaved report drafts after refresh', () => {
     expect(source).toContain('REPORT_DRAFT_KEY');
-    expect(source).toContain('writeSaveDraft(REPORT_DRAFT_KEY');
-    expect(source).toContain('clearSaveDraft(REPORT_DRAFT_KEY)');
+    expect(source).toContain('writeOwnerSaveDraft(REPORT_DRAFT_KEY');
+    expect(source).toContain('clearOwnerSaveDraft(REPORT_DRAFT_KEY');
     expect(source).toContain('if (queryProgramId && draft.programId && draft.programId !== queryProgramId) return');
+  });
+
+  it('offers home loop CTA after successful archive', () => {
+    expect(source).toContain('data-loop-action="home"');
+    expect(source).toContain('홈으로 이어가기');
   });
 
   it('clears saved context when the restored output is edited', () => {

@@ -17,7 +17,7 @@ const FEATURES = [
     color: 'var(--spm-grn-a15)',
     ic: 'var(--spm-grn)',
     title: 'SPOMOVE',
-    desc: '설치 없이 웹에서 바로 실행하는 화면 기반 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다. 프리미엄 이용권에서 SPOMOVE 공식 활동을 큰 화면으로 실행할 수 있습니다.',
+    desc: '설치 없이 웹에서 화면으로 실행하는 반응훈련입니다. 프로젝터·TV·태블릿에 연결하면 아이들이 화면 신호를 보고 몸을 움직입니다. 프리미엄 이용권에서 SPOMOVE 공식 활동을 큰 화면으로 시작할 수 있습니다.',
     items: ['빔·TV·태블릿 실행', '색상·방향·숫자 신호', '화면 신호 반응 활동 (프리미엄)'],
   },
   {
@@ -37,8 +37,8 @@ const PRICING = [
     badge: '수업 운영 기본',
     price: MASTER_PRODUCT_CATALOG.lite.priceLabel.replace(/원$/, ''),
     period: MASTER_PRODUCT_CATALOG.lite.billingCycleLabel,
-    desc: '라이브러리·수업 도구·기록·안내문까지 수업 운영의 기본',
-    includes: ['라이브러리 전체', '수업 도구 전체', '수업 기록·학생 명단', '안내문 작성·복사'],
+    desc: '라이브러리·수업 도구·출석부로 수업 운영을 시작하는 기본',
+    includes: ['라이브러리 전체', '수업 도구 전체', '출석부', '기록·안내문은 프리미엄'],
     accent: 'var(--spm-s2)',
     border: 'var(--spm-br2)',
     badgeColor: 'var(--spm-t3)',
@@ -51,7 +51,7 @@ const PRICING = [
     price: MASTER_PRODUCT_CATALOG.premium.priceLabel.replace(/원$/, ''),
     period: MASTER_PRODUCT_CATALOG.premium.billingCycleLabel,
     desc: '전문 강사가 매주 쓰는 수업 준비 환경',
-    includes: ['라이트의 모든 기능', 'SPOMOVE 큰 화면 실행', 'Pro 수업 상세 자료', 'SPOMAT 회원가 (연결 시)'],
+    includes: ['라이트의 모든 기능', '수업 기록·학생 명단', '안내문 작성·복사', 'SPOMOVE 큰 화면 실행', 'Pro 수업 상세 자료', 'SPOMAT 회원가 (연결 시)'],
     accent: 'var(--spm-acc-a18)',
     border: 'var(--spm-acc-a42)',
     badgeColor: 'var(--spm-acc)',
@@ -131,7 +131,7 @@ export default function LandingPage() {
           <Link href="/login?next=/spokedu-master/dashboard" className="flex min-h-11 items-center rounded-full px-4 text-[12px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t2)' }}>
             로그인
           </Link>
-          <Link href="/login?next=/spokedu-master/onboarding" className="flex min-h-11 items-center rounded-full px-4 text-[12px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 4px 14px var(--spm-acc-a30)' }}>
+          <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex min-h-11 items-center rounded-full px-4 text-[12px] font-black focus-visible:outline-none">
             시작하기
           </Link>
         </div>
@@ -161,8 +161,8 @@ export default function LandingPage() {
               오늘 체육수업을 고르고, 체육관 TV에 바로 띄우고, 수업 후 가치를 설명하는 흐름까지 이어지는 한국형 체육수업 운영 서비스입니다.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Link href="/login?next=/spokedu-master/onboarding" className="flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black text-white sm:w-auto sm:min-w-[200px]" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px var(--spm-acc-a36)' }}>
-              <Play size={16} fill="#fff" />
+            <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary flex h-14 w-full items-center justify-center gap-2 rounded-[14px] text-[16px] font-black focus-visible:outline-none sm:w-auto sm:min-w-[200px]">
+              <Play size={16} fill="currentColor" />
               SPOKEDU MASTER 시작하기
             </Link>
             <Link href="#pricing" className="flex h-14 w-full items-center justify-center gap-1.5 rounded-[14px] text-[15px] font-black sm:w-auto sm:min-w-[160px]" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>
@@ -271,7 +271,15 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={p.id === 'center' ? MASTER_CENTER_INQUIRY_HREF : `/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : p.id === 'lite' ? '?plan=lite' : ''}`} className="mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white" style={{ background: p.recommended ? 'var(--spm-acc)' : p.id === 'center' ? 'var(--spm-grn-a80)' : 'var(--spm-t)', boxShadow: p.recommended ? '0 8px 24px var(--spm-acc-a32)' : 'none' }}>
+                <Link
+                  href={p.id === 'center' ? MASTER_CENTER_INQUIRY_HREF : `/spokedu-master/payment${p.id === 'premium' ? '?plan=premium' : p.id === 'lite' ? '?plan=lite' : ''}`}
+                  className={
+                    p.id === 'center'
+                      ? 'mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black text-white'
+                      : 'spm-btn-primary mt-6 flex h-12 w-full items-center justify-center rounded-[13px] text-[14px] font-black focus-visible:outline-none'
+                  }
+                  style={p.id === 'center' ? { background: 'var(--spm-grn-a80)' } : undefined}
+                >
                   {p.id === 'center' ? 'Center 도입 상담' : `${p.title} 시작하기`}
                 </Link>
               </div>
@@ -296,11 +304,11 @@ export default function LandingPage() {
             오늘 첫 수업을 골라보세요
           </h2>
           <p className="mt-4 text-[14px] font-medium leading-7" style={{ color: 'var(--spm-t2)' }}>
-            라이브러리와 수업 도구는 라이트부터, SPOMOVE·프리미엄 자료는 프리미엄에서 이용해 보세요.
+            수업 도구는 로그인 후 바로 써 보고, 라이브러리는 라이트부터, 기록·안내문·SPOMOVE는 프리미엄에서 이용해 보세요.
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/login?next=/spokedu-master/onboarding" className="inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black text-white" style={{ background: 'var(--spm-acc)', boxShadow: '0 12px 32px var(--spm-acc-a36)' }}>
-            <Play size={16} fill="#fff" />
+          <Link href="/login?next=/spokedu-master/onboarding" className="spm-btn-primary inline-flex h-14 items-center gap-2 rounded-[14px] px-8 text-[16px] font-black focus-visible:outline-none">
+            <Play size={16} fill="currentColor" />
             시작하기
           </Link>
           <Link href="/login?next=/spokedu-master/dashboard" className="inline-flex h-14 items-center rounded-[14px] px-8 text-[15px] font-black" style={{ background: 'var(--spm-s2)', border: '1px solid var(--spm-br2)', color: 'var(--spm-t)' }}>

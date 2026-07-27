@@ -14,4 +14,13 @@ describe('SPOKEDU MASTER landing billing copy', () => {
     expect(landing).not.toContain('14일 후 자동 만료');
     expect(landing).not.toContain('결제 후 30일 이용');
   });
+
+  it('keeps Lite includes honest to server entitlements (no records/explanations on Lite)', () => {
+    expect(landing).toContain("'기록·안내문은 프리미엄'");
+    expect(landing).toContain("'출석부'");
+    expect(landing).not.toMatch(/id: 'lite'[\s\S]*?'수업 기록·학생 명단'/);
+    expect(landing).not.toMatch(/id: 'lite'[\s\S]*?'안내문 작성·복사'/);
+    expect(landing).toMatch(/id: 'premium'[\s\S]*?'수업 기록·학생 명단'/);
+    expect(landing).toMatch(/id: 'premium'[\s\S]*?'안내문 작성·복사'/);
+  });
 });
