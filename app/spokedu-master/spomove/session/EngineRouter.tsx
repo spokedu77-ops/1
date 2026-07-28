@@ -121,6 +121,8 @@ type Props = {
   flowIncludeBonus?: boolean;
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerArrowMode?: 'lr' | 'udlr';
+  stroopWordMode?: 'bg' | 'missing';
   /** O4 — Operation timing.interval → MemoryGame intervalMode */
   intervalLaunch?: {
     workSeconds: number;
@@ -175,6 +177,8 @@ export function EngineRouter({
   flowIncludeBonus,
   flankerStimulusType,
   flankerNestedCircleCount,
+  flankerArrowMode,
+  stroopWordMode,
   intervalLaunch = null,
   onComplete,
   onExit,
@@ -204,6 +208,24 @@ export function EngineRouter({
     [level, mode, onComplete],
   );
 
+  if (mode === 'simon' && level === 4) {
+    const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 5);
+    const sp = speedSec ?? 5;
+    const reactSpeedLevel = mapReactSpeedLevel(sp);
+    return (
+      <Suspense fallback={<LoadingOverlay />}>
+        <CamouflageReactionTraining
+          durationSec={dur}
+          speedLevel={reactSpeedLevel}
+          speedSec={sp}
+          placementMode="variant"
+          onExit={onExit}
+          onComplete={handleReactTrainComplete}
+        />
+      </Suspense>
+    );
+  }
+
   if (mode === 'basic' || mode === 'simon' || mode === 'flanker' || mode === 'stroop') {
     const safeLevel = mode === 'basic' ? Math.min(Math.max(level, 1), 10) : Math.max(level, 1);
     return (
@@ -218,12 +240,14 @@ export function EngineRouter({
             warmup: 3,
             audioMode: soundEnabled ? 'beep' : 'off',
             variantColorTheme: variantColorTheme as SpomoveColorThemeId | undefined,
-            bodyLabelMode,
-            hideBodyLabelModeControls,
+            bodyLabelMode: 'easy',
+            hideBodyLabelModeControls: true,
             spatialArrowColorMode,
             spatialArrowColorMapping,
             flankerStimulusType,
             flankerNestedCircleCount,
+            flankerArrowMode,
+            stroopWordMode: (mode === 'stroop' && level === 5) || stroopWordMode === 'missing' ? 'missing' : 'bg',
             ...(intervalLaunch
               ? {
                   intervalMode: true,
@@ -249,10 +273,11 @@ export function EngineRouter({
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
     const effectiveMoleLook = moleLookMode ?? resolved.moleLookMode ?? 'classic';
-    const effectiveCamouflage = camouflagePlacement ?? resolved.camouflagePlacement ?? 'center';
+    const effectiveCamouflage = 'variant';
     const effectiveNumberCartTier = numberCartTier ?? resolved.numberCartTier ?? 2;
-    const effectiveColorTrackerTier = colorTrackerTier ?? resolved.colorTrackerTier ?? 2;
+    const effectiveColorTrackerTier = colorTrackerTier ?? resolved.colorTrackerTier ?? 1;
     const effectiveGoalkeeperTier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;
+    const effectiveConcurrent = 2 as const;
 
     if (engineLevel === 1) {
       return (
@@ -272,7 +297,7 @@ export function EngineRouter({
         <Suspense fallback={<LoadingOverlay />}>
           <VisualReactionTraining
             variant="flow"
-            concurrent={reactTrainConcurrent ?? 1}
+            concurrent={effectiveConcurrent}
             durationSec={dur}
             speedSec={sp}
             onExit={onExit}
@@ -393,7 +418,7 @@ export function EngineRouter({
       <Suspense fallback={<LoadingOverlay />}>
         <VisualReactionTraining
           variant="flow"
-          concurrent={1}
+          concurrent={2}
           durationSec={dur}
           speedSec={sp}
           onExit={onExit}

@@ -34,6 +34,8 @@ export function useTrainingTimer({
   spatialArrowColorMapping = 'compass',
   flankerStimulusType,
   flankerNestedCircleCount,
+  flankerArrowMode,
+  stroopWordMode,
   onSignal,
   onFinish,
 }: {
@@ -54,6 +56,8 @@ export function useTrainingTimer({
   spatialArrowColorMapping?: SpatialArrowColorMapping;
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerArrowMode?: 'lr' | 'udlr';
+  stroopWordMode?: 'bg' | 'missing';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -96,7 +100,8 @@ export function useTrainingTimer({
     } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
       const fruitOpts = {
         ...(fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : {}),
-        ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount } : {}),
+        ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerArrowMode } : {}),
+        ...(engineMode === 'stroop' ? { stroopWordMode } : {}),
       };
       genRef.current = createModeColorDupGenerator(engineMode, engineLevel, colors, fruitOpts);
     } else {
@@ -193,7 +198,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

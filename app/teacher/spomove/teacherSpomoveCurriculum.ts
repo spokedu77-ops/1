@@ -138,14 +138,14 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 6,
     label: '6주차',
-    summary: '변형 사분할 3,4단계와 카모플라쥬 밸런스 무빙을 진행합니다.',
+    summary: '변형 사분할 2·3단계와 카모플라쥬 밸런스 무빙을 진행합니다.',
     programs: [
-      p('w6-rc-mod-quad-3-easy', '반응인지 - 변형 사분할 3단계', 'basic', 9, {
+      p('w6-rc-mod-quad-2-easy', '반응인지 - 변형 사분할 2단계', 'basic', 8, {
         speed: 4,
         targetReps: 15,
         bodyLabelMode: 'easy',
       }),
-      p('w6-rc-mod-quad-4-easy', '반응인지 - 변형 사분할 4단계', 'basic', 10, {
+      p('w6-rc-mod-quad-3-easy', '반응인지 - 변형 사분할 3단계', 'basic', 9, {
         speed: 4,
         targetReps: 15,
         bodyLabelMode: 'easy',
@@ -156,17 +156,17 @@ export const TEACHER_SPOMOVE_WEEKS: TeacherSpomoveWeek[] = [
   {
     week: 7,
     label: '7주차',
-    summary: '사이먼 믹스 갤러리와 랜덤·크기/색 혼합 플랭커로 선택·억제 반응을 연습합니다.',
+    summary: '사이먼 믹스 갤러리와 랜덤·화살표 플랭커로 선택·억제 반응을 연습합니다.',
     programs: [
       p('w7-simon-effect', '사이먼 효과 - 믹스 갤러리', 'simon', 3, {
         speed: 2,
         targetReps: 15,
       }),
-      p('w7-flanker-random', '플랭커 - 랜덤 플랭커', 'flanker', 3, {
+      p('w7-flanker-random', '플랭커 - 랜덤 플랭커', 'flanker', 2, {
         speed: 2.5,
         targetReps: 15,
       }),
-      p('w7-flanker-mixed', '플랭커 - 크기/색 혼합', 'flanker', 4, {
+      p('w7-flanker-arrow', '플랭커 - 화살표 플랭커', 'flanker', 5, {
         speed: 2.5,
         targetReps: 15,
       }),

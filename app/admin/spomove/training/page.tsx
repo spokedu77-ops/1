@@ -26,8 +26,9 @@ import {
   isColorNumberLevel,
   modifiedQuadrantStage,
   modifiedQuadrantLevelFromStage,
-  colorSequenceLength,
-  colorSequenceLevelFromLength,
+  colorSequenceOption,
+  colorSequenceLevelFromOption,
+  type ColorSequenceOption,
   type SpomoveAxis,
 } from './_player/constants';
 import { GUIDE_BLOCKS } from './_player/trainingGuideContent';
@@ -121,8 +122,6 @@ function levelLabel(modeId: string, levelId: number): string {
         : modeId === 'reactTrain'
           ? reactTrainEngineLevelForUi(levelId)
           : levelId;
-  // 시지각 반응: 화면 N번 === engine level id
-  if (modeId === 'reactTrain') return `${catalogId}번`;
   const idx = m?.levels.findIndex((lv) => lv.id === catalogId) ?? -1;
   if (idx >= 0) return `${idx + 1}번`;
   return `${levelId}번`;
@@ -159,6 +158,9 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Pole Arrows': '폴 화살표',
   'Uniform Flankers': '동일 플랭커',
   'Random Flankers': '랜덤 플랭커',
+  'Nested Circles': '원 속의 원',
+  'Arrow Flanker': '화살표 플랭커',
+  'Theme Flanker': '테마 플랭커',
   'Mixed Size & Color': '크기/색 혼합',
   '5-Circle Extreme Sizes': '5원 극단 크기',
   'Go / No-Go (Color)': '색상 고/노고',
@@ -185,10 +187,10 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Color & Arrow': '색상 & 화살표',
   'Flow Program': '플로우 프로그램',
   'Rhythm Program': '리듬 프로그램',
-  FLOW: '떨어지는 벽돌',
+  FLOW: '떨어지는 벽돌들',
   FLASH: '풍선 터뜨리기',
   'Beat Wave': '동그라미 파동',
-  Rush: '파도타기',
+  Rush: '파도 피하기',
   Camouflage: '매직 아이',
   'Camouflage L1': '매직 아이',
   'Camouflage L2': '매직 아이',
@@ -196,10 +198,10 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Mole L1': '두더지 잡기',
   'Mole L2': '두더지 잡기',
   Wormhole: '소행성을 피해라',
-  'Number Cart': '숫자 기차',
-  'Number Cart L1': '숫자 기차',
-  'Number Cart L2': '숫자 기차',
-  'Number Cart L3': '숫자 기차',
+  'Number Cart': '숫자 연산 기차',
+  'Number Cart L1': '숫자 연산 기차',
+  'Number Cart L2': '숫자 연산 기차',
+  'Number Cart L3': '숫자 연산 기차',
   'Color Tracker': '흰 공 찾기',
   'Color Tracker L1': '흰 공 찾기',
   'Color Tracker L2': '흰 공 찾기',
@@ -262,12 +264,14 @@ type LaunchSettings = {
   spatialArrowColorMode: 'basic' | 'color';
   flankerStimulusType: 'color' | 'number';
   flankerNestedCircleCount: 3 | 5;
+  flankerArrowMode: 'lr' | 'udlr';
+  stroopWordMode: 'bg' | 'missing';
   flowFeatures: FlowFeatureKey[];
   diveEnvironmentTheme: DiveThemeId;
   flowDuration: number;
   /** 시지각반응(reactTrain) 플로우(1번) 전용: 동시 낙하 신호 수 */
   reactTrainConcurrent: 1 | 2 | 3;
-  /** 시지각반응(reactTrain) 숫자 기차(8번) 전용: L1/L2/L3 */
+  /** 시지각반응(reactTrain) 숫자 연산 기차(엔진 8) 전용: L1/L2/L3 */
   numberCartTier: 1 | 2 | 3;
   /** 시지각반응(reactTrain) 흰 공을 찾아라(9번) 전용: L1/L2/L3 */
   colorTrackerTier: 1 | 2 | 3;
@@ -275,11 +279,11 @@ type LaunchSettings = {
   colorTrackerDualPanel: boolean;
   /** 시지각반응(reactTrain) 두더지 잡기(6번) 전용: 기존(눈·코) / 변형(모자·선글라스 등) */
   moleLookMode: 'classic' | 'variant';
-  /** 시지각반응(reactTrain) 매직 아이(5번) 전용: 기존(중앙) / 변형(Simon식 극단 순환) */
+  /** 레거시·사이먼 매직 아이: 극단(variant)만 사용 */
   camouflagePlacement: 'center' | 'variant';
   /** 시지각반응(reactTrain) 골키퍼(10번) 전용: 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier: 1 | 2;
-  /** 변형 사분할(7·8·9·10) 라벨 표시 모드 */
+  /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
   bodyLabelMode: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
   memoryColorSlots: SpomoveMemoryColorId[];
@@ -299,18 +303,20 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   basicNumberOverlay: 'none',
   spatialArrowColorMode: 'basic',
   flankerStimulusType: 'color',
-  flankerNestedCircleCount: 3,
+  flankerNestedCircleCount: 5,
+  flankerArrowMode: 'lr',
+  stroopWordMode: 'bg',
   flowFeatures: [],
   diveEnvironmentTheme: 'space',
   flowDuration: 25,
-  reactTrainConcurrent: 1,
+  reactTrainConcurrent: 2,
   numberCartTier: 2,
-  colorTrackerTier: 2,
+  colorTrackerTier: 1,
   colorTrackerDualPanel: false,
   moleLookMode: 'classic',
-  camouflagePlacement: 'center',
+  camouflagePlacement: 'variant',
   goalkeeperTier: 2,
-  bodyLabelMode: 'hard',
+  bodyLabelMode: 'easy',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
 
@@ -329,7 +335,9 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     basicNumberOverlay: auto.basicNumberOverlay ?? fallback.basicNumberOverlay,
     spatialArrowColorMode: auto.spatialArrowColorMode === 'color' ? 'color' : fallback.spatialArrowColorMode,
     flankerStimulusType: auto.flankerStimulusType ?? fallback.flankerStimulusType,
-    flankerNestedCircleCount: auto.flankerNestedCircleCount === 5 ? 5 : fallback.flankerNestedCircleCount,
+    flankerNestedCircleCount: auto.flankerNestedCircleCount === 3 ? 3 : (fallback.flankerNestedCircleCount ?? 5),
+    flankerArrowMode: auto.flankerArrowMode === 'udlr' ? 'udlr' : (fallback.flankerArrowMode ?? 'lr'),
+    stroopWordMode: auto.stroopWordMode === 'missing' ? 'missing' : (fallback.stroopWordMode ?? 'bg'),
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
     flowDuration: auto.flowDuration ?? fallback.flowDuration,
@@ -338,7 +346,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     colorTrackerTier: (auto.colorTrackerTier as 1 | 2 | 3 | undefined) ?? fallback.colorTrackerTier,
     colorTrackerDualPanel: auto.colorTrackerDualPanel ?? fallback.colorTrackerDualPanel,
     moleLookMode: auto.moleLookMode === 'variant' ? 'variant' : fallback.moleLookMode,
-    camouflagePlacement: auto.camouflagePlacement === 'variant' ? 'variant' : fallback.camouflagePlacement,
+    camouflagePlacement: 'variant',
     goalkeeperTier: auto.goalkeeperTier === 1 ? 1 : fallback.goalkeeperTier,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
@@ -362,7 +370,7 @@ function launchSettingsForLevel(modeId: string, levelId: number, launch: LaunchS
     return { ...launch, flowFeatures: launch.flowFeatures.filter((key) => key !== 'colorGate') };
   }
 
-  if (modeId === 'flanker' && levelId === 4 && launch.flankerStimulusType !== 'color') {
+  if (modeId === 'flanker' && (levelId === 4 || levelId === 5 || levelId === 6) && launch.flankerStimulusType !== 'color') {
     return { ...launch, flankerStimulusType: 'color' };
   }
 
@@ -433,6 +441,8 @@ function TrainingPortal({
     spatialArrowColorMode: launch.spatialArrowColorMode,
     flankerStimulusType: launch.flankerStimulusType,
     flankerNestedCircleCount: launch.flankerNestedCircleCount,
+    flankerArrowMode: launch.flankerArrowMode,
+    stroopWordMode: launch.stroopWordMode,
     flowFeatures: launch.flowFeatures,
     diveEnvironmentTheme: launch.diveEnvironmentTheme,
     flowDuration: launch.flowDuration,
@@ -454,7 +464,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -781,6 +791,7 @@ function SettingsScreen({
 
   const isReactTrain = modeId === 'reactTrain';
   const isSpatial = modeId === 'spatial';
+  const isSimon = modeId === 'simon';
   const isFlowOrChallenge = modeId === 'flow';
   const isColorGateTheme = isFlowColorGateLevel(modeId, levelId);
 
@@ -919,7 +930,8 @@ function SettingsScreen({
                           const mapped = resolveReactTrainUiLevel(lv.id);
                           next = {
                             ...next,
-                            camouflagePlacement: mapped.camouflagePlacement ?? next.camouflagePlacement,
+                            reactTrainConcurrent: 2,
+                            camouflagePlacement: 'variant',
                             moleLookMode: mapped.moleLookMode ?? next.moleLookMode,
                             numberCartTier: mapped.numberCartTier ?? next.numberCartTier,
                             colorTrackerTier: mapped.colorTrackerTier ?? next.colorTrackerTier,
@@ -1001,7 +1013,7 @@ function SettingsScreen({
           </section>
 
           {/* 시지각반응 플로우(1번) 전용: 동시 자극 수 */}
-          {modeId === 'flanker' ? (
+          {modeId === 'flanker' && levelId !== 5 && levelId !== 6 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>시작 옵션</label>
@@ -1044,13 +1056,13 @@ function SettingsScreen({
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                     <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>원 속의 원</label>
                     <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
-                      {launch.flankerNestedCircleCount === 5 ? '옵션 1 · 5개' : '기본 · 3개'}
+                      {launch.flankerNestedCircleCount === 3 ? '옵션 · 3개' : '기본 · 5개'}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {([
-                      [3, '기본 3개'],
-                      [5, '옵션 1 · 5개'],
+                      [5, '기본 5개'],
+                      [3, '옵션 · 3개'],
                     ] as const).map(([value, label]) => {
                       const active = launch.flankerNestedCircleCount === value;
                       return (
@@ -1079,6 +1091,102 @@ function SettingsScreen({
                   </div>
                 </div>
               ) : null}
+            </section>
+          ) : null}
+
+          {modeId === 'flanker' && levelId === 5 ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>5단계 옵션</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  가운데 화살표 방향만 보고 이동합니다. 기본은 좌·우, 응용은 상·하·좌·우입니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'lr' as const, label: '기본', sub: '좌우만' },
+                  { id: 'udlr' as const, label: '응용', sub: '상하좌우' },
+                ]).map((opt) => {
+                  const active = launch.flankerArrowMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, flankerArrowMode: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ marginTop: 4, fontSize: 11, fontWeight: 700, opacity: 0.85 }}>{opt.sub}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 플랭커 6번 · 이미지 테마 (변형 색지각과 동일 7종) */}
+          {modeId === 'flanker' && levelId === 6 ? (
+            <section style={{ marginBottom: 26 }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>이미지 테마</label>
+                <div style={{ fontSize: 12, color: T.textDim, fontWeight: 700 }}>
+                  {SPOMOVE_COLOR_THEME_LABELS[launch.variantColorTheme]}
+                </div>
+              </div>
+              <p style={{ margin: '0 0 10px', fontSize: 12, color: T.textDim, lineHeight: 1.65 }}>
+                변형 색지각과 동일한 7가지입니다. 선택한 테마 이미지가 다섯 원 안에 나오고, 가운데 원 색으로 반응합니다. 「색상」은 이미지 없이 원만 사용합니다.
+              </p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {SPOMOVE_COLOR_THEME_ORDER
+                  .slice()
+                  .sort((a, b) =>
+                    SPOMOVE_COLOR_THEME_LABELS[a].localeCompare(SPOMOVE_COLOR_THEME_LABELS[b], 'ko')
+                  )
+                  .map((tid) => {
+                  const active = launch.variantColorTheme === tid;
+                  return (
+                    <button
+                      key={tid}
+                      type="button"
+                      onClick={() => {
+                        setLaunch((s) => ({
+                          ...s,
+                          variantColorTheme: tid,
+                          basicNumberOverlay: tid === 'color' ? s.basicNumberOverlay : 'none',
+                        }));
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, tid);
+                        }
+                      }}
+                      style={{
+                        padding: '10px 12px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 12,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {active ? '✓ ' : ''}{SPOMOVE_COLOR_THEME_LABELS[tid]}
+                    </button>
+                  );
+                })}
+              </div>
             </section>
           ) : null}
 
@@ -1131,83 +1239,22 @@ function SettingsScreen({
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>동시 자극 수</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  한 번에 떨어지는 신호 개수입니다. 2개는 패턴 방식, 3개는 고강도입니다.
+                  떨어지는 벽돌들은 동시에 2개로 고정됩니다.
                 </p>
               </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {([1, 2, 3] as const).map((n) => {
-                  const active = launch.reactTrainConcurrent === n;
-                  const sub = n === 1 ? '기본' : n === 2 ? '패턴' : '트리플';
-                  return (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, reactTrainConcurrent: n }))}
-                      style={{
-                        flex: 1,
-                        padding: '11px 8px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.textDim,
-                        fontFamily: 'inherit',
-                        fontSize: 15,
-                        fontWeight: active ? 900 : 700,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {n}개
-                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
-                        {sub}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 5 ? (
-            <section style={{ marginBottom: 22 }}>
-              <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
-                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  1은 중앙 고정, 2는 좌·우·상·하 극단을 순환하며 나타납니다.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {([
-                  { id: 'center' as const, label: '1', sub: '중앙' },
-                  { id: 'variant' as const, label: '2', sub: '극단 순환' },
-                ]).map((opt) => {
-                  const active = launch.camouflagePlacement === opt.id;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, camouflagePlacement: opt.id }))}
-                      style={{
-                        flex: 1,
-                        padding: '11px 8px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.textDim,
-                        fontFamily: 'inherit',
-                        fontSize: 15,
-                        fontWeight: active ? 900 : 700,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {opt.label}
-                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
-                        {opt.sub}
-                      </div>
-                    </button>
-                  );
-                })}
+              <div
+                style={{
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: `1.5px solid ${accent}`,
+                  background: `${accent}16`,
+                  color: accent,
+                  fontSize: 15,
+                  fontWeight: 900,
+                  textAlign: 'center',
+                }}
+              >
+                2개 고정
               </div>
             </section>
           ) : null}
@@ -1256,13 +1303,13 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 숫자 기차(8번) 전용: 난이도 */}
+          {/* 시지각반응 숫자 연산 기차(엔진 8) 전용: 난이도 */}
           {isReactTrain && reactTrainEngineLevelForUi(levelId) === 8 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  L1은 1~4 단일 숫자, L2는 문마다 두 숫자, L3는 수레에 식(+-×÷)이 뜨고 문에는 답이 표시됩니다. 보고 맞는 문을 미리 찾는 시지각 반응입니다.
+                  L1은 1~4 단일 숫자, L2는 문마다 두 숫자, L3는 기차에 식(+-×÷)이 뜨고 문에는 답이 표시됩니다. 보고 맞는 문을 미리 찾는 시지각 반응입니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -1302,72 +1349,35 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 시지각반응 흰 공을 찾아라(9번) 전용: 난이도 */}
+          {/* 시지각반응 흰 공 찾기(9번): 통합 3단계 */}
           {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
                 <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  추적 난이도(공 개수·속도·기억·추적 시간)와 라운드 수를 함께 정합니다. 정답은 선생님이 버튼으로 공개합니다.
+                  1 입문(느림·단일) → 2 집중(빠름·단일) → 3 집중(빠름·2패널). 정답은 선생님이 버튼으로 공개합니다.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {([
-                  { id: 1 as const, label: '1', sub: '입문 · 느림' },
-                  { id: 2 as const, label: '2', sub: '기본' },
-                  { id: 3 as const, label: '3', sub: '집중 · 빠름' },
+                  { id: 1 as const, label: '1', sub: '입문 · 단일', tier: 1 as const, dual: false },
+                  { id: 2 as const, label: '2', sub: '집중 · 단일', tier: 3 as const, dual: false },
+                  { id: 3 as const, label: '3', sub: '집중 · 2패널', tier: 3 as const, dual: true },
                 ]).map((opt) => {
-                  const active = launch.colorTrackerTier === opt.id;
+                  const stage =
+                    launch.colorTrackerDualPanel ? 3 : launch.colorTrackerTier === 3 || launch.colorTrackerTier === 2 ? 2 : 1;
+                  const active = stage === opt.id;
                   return (
                     <button
                       key={opt.id}
                       type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, colorTrackerTier: opt.id }))}
-                      style={{
-                        flex: 1,
-                        padding: '11px 8px',
-                        borderRadius: 12,
-                        border: `1.5px solid ${active ? accent : T.border}`,
-                        background: active ? `${accent}16` : T.card,
-                        color: active ? accent : T.textDim,
-                        fontFamily: 'inherit',
-                        fontSize: 15,
-                        fontWeight: active ? 900 : 700,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                      }}
-                    >
-                      {opt.label}
-                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
-                        {opt.sub}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
-
-          {/* 시지각반응 흰 공을 찾아라(9번) 전용: 패널 모드 */}
-          {isReactTrain && reactTrainEngineLevelForUi(levelId) === 9 ? (
-            <section style={{ marginBottom: 22 }}>
-              <div style={{ marginBottom: 8 }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>패널 모드</label>
-                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                  단일 화면은 한 필드에서 추적합니다. 2패널 양손은 좌·우 각각 독립 공을 동시에 추적합니다.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: 8 }}>
-                {([
-                  { id: false, label: '단일 화면', sub: '기본' },
-                  { id: true, label: '2패널 양손', sub: '양손' },
-                ] as const).map((opt) => {
-                  const active = launch.colorTrackerDualPanel === opt.id;
-                  return (
-                    <button
-                      key={opt.label}
-                      type="button"
-                      onClick={() => setLaunch((s) => ({ ...s, colorTrackerDualPanel: opt.id }))}
+                      onClick={() =>
+                        setLaunch((s) => ({
+                          ...s,
+                          colorTrackerTier: opt.tier,
+                          colorTrackerDualPanel: opt.dual,
+                        }))
+                      }
                       style={{
                         flex: 1,
                         padding: '11px 8px',
@@ -1438,8 +1448,8 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 속도 (DIVE·매직 아이 5번·흰 공 9번·순차기억 1·2번은 내부 타이밍) */}
-          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
+          {/* 속도 (DIVE·매직 아이·흰 공·순차기억 1·2번은 내부 타이밍) */}
+          {!isFlowOrChallenge && !(isReactTrain && (reactTrainEngineLevelForUi(levelId) === 5 || reactTrainEngineLevelForUi(levelId) === 9)) && !(isSimon && levelId === 4) && !(isSpatial && isColorSequenceLevel(levelId)) ? (
             <section style={{ marginBottom: 26 }}>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>
@@ -1465,17 +1475,21 @@ function SettingsScreen({
                 <div style={{ marginBottom: 8 }}>
                   <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>항 수</label>
                   <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                    순서대로 제시되는 색의 개수입니다.
+                    3·5개는 고정 항 수입니다. 「추가」는 5라운드 동안 3→7개로 늘어납니다.
                   </p>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  {([3, 5, 10] as const).map((length) => {
-                    const active = colorSequenceLength(levelId) === length;
+                  {([
+                    { id: 3 as const, label: '3개' },
+                    { id: 5 as const, label: '5개' },
+                    { id: 'ramp' as const, label: '추가' },
+                  ] satisfies { id: ColorSequenceOption; label: string }[]).map((opt) => {
+                    const active = colorSequenceOption(levelId) === opt.id;
                     return (
                       <button
-                        key={length}
+                        key={String(opt.id)}
                         type="button"
-                        onClick={() => setLevelId(colorSequenceLevelFromLength(length))}
+                        onClick={() => setLevelId(colorSequenceLevelFromOption(opt.id))}
                         style={{
                           flex: 1,
                           padding: '11px 8px',
@@ -1490,7 +1504,7 @@ function SettingsScreen({
                           textAlign: 'center',
                         }}
                       >
-                        {length}개
+                        {opt.label}
                       </button>
                     );
                   })}
@@ -1924,86 +1938,91 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {/* 변형 사분할: 단계 + 쉬움/어려움 */}
+          {/* 변형 사분할: 단계 1~3 */}
           {modeId === 'basic' && isModifiedQuadrantLevel(levelId) ? (
-            <>
-              <section style={{ marginBottom: 22 }}>
-                <div style={{ marginBottom: 8 }}>
-                  <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>단계</label>
-                  <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                    1단계는 발만, 단계가 올라갈수록 색·손발 조합이 늘어납니다.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {([1, 2, 3, 4] as const).map((stage) => {
-                    const active = modifiedQuadrantStage(levelId) === stage;
-                    return (
-                      <button
-                        key={stage}
-                        type="button"
-                        onClick={() => setLevelId(modifiedQuadrantLevelFromStage(stage))}
-                        style={{
-                          flex: 1,
-                          padding: '11px 8px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 15,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {stage}
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-              <section style={{ marginBottom: 26 }}>
-                <div style={{ marginBottom: 8 }}>
-                  <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
-                  <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
-                    쉬움은 부위 글자를 숨기고, 어려움은 왼발·오른손 등 글자를 표시합니다.
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {([
-                    { id: 'easy' as const, label: '쉬움', sub: '글자 숨김' },
-                    { id: 'hard' as const, label: '어려움', sub: '글자 표시' },
-                  ]).map((opt) => {
-                    const active = launch.bodyLabelMode === opt.id;
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setLaunch((s) => ({ ...s, bodyLabelMode: opt.id }))}
-                        style={{
-                          flex: 1,
-                          padding: '11px 8px',
-                          borderRadius: 12,
-                          border: `1.5px solid ${active ? accent : T.border}`,
-                          background: active ? `${accent}16` : T.card,
-                          color: active ? accent : T.textDim,
-                          fontFamily: 'inherit',
-                          fontSize: 14,
-                          fontWeight: active ? 900 : 700,
-                          cursor: 'pointer',
-                          textAlign: 'center',
-                        }}
-                      >
-                        {opt.label}
-                        <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
-                          {opt.sub}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            </>
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>단계</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  1=발만 · 2=1~3색 손발 혼합 · 3=3색 손발 혼합
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([1, 2, 3] as const).map((stage) => {
+                  const active = modifiedQuadrantStage(levelId) === stage;
+                  return (
+                    <button
+                      key={stage}
+                      type="button"
+                      onClick={() => setLevelId(modifiedQuadrantLevelFromStage(stage))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {stage}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 스트룹 4단계: 기본(단어+배경) / 누락 */}
+          {modeId === 'stroop' && (levelId === 4 || levelId === 5) ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>4단계 옵션</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  기본은 단어+배경 간섭, 누락은 화면에 없는 색을 찾아 말합니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 'bg' as const, label: '기본', sub: '단어+배경' },
+                  { id: 'missing' as const, label: '누락', sub: '누락 색상 찾기' },
+                ]).map((opt) => {
+                  const active = launch.stroopWordMode === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setLevelId(4);
+                        setLaunch((s) => ({ ...s, stroopWordMode: opt.id }));
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 14,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
           ) : null}
 
           {/* 전면 3패널: 같은 색 / 서로 다른 색 */}

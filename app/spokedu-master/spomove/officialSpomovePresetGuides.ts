@@ -87,11 +87,8 @@ function uniqueActions(actions: SpomoveKeyAction[]): SpomoveKeyAction[] {
 }
 
 function targetGroupsForPreset(preset: OfficialSpomovePreset): SpomoveTargetGroup[] {
-  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10 && preset.engine.bodyLabelMode === 'easy') {
+  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10) {
     return ['preschool', 'elementaryLower', 'specialSupport'];
-  }
-  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10 && preset.engine.bodyLabelMode === 'hard') {
-    return ['elementaryLower', 'elementaryUpper', 'specialSupport'];
   }
 
   if (preset.engine.mode === 'flow') {
@@ -122,8 +119,8 @@ function targetGroupsForPreset(preset: OfficialSpomovePreset): SpomoveTargetGrou
 }
 
 function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingLevel {
-  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10 && preset.engine.bodyLabelMode) {
-    return preset.engine.bodyLabelMode;
+  if (preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10) {
+    return 'easy';
   }
 
   if (preset.engine.mode === 'flow') {
@@ -143,10 +140,9 @@ function thinkingLevelForPreset(preset: OfficialSpomovePreset): SpomoveThinkingL
   if (preset.engine.mode === 'simon') return preset.engine.level <= 1 ? 'normal' : 'hard';
 
   if (preset.engine.mode === 'reactTrain') {
-    // 화면=level 1~10: Rush·Mole~Goalkeeper는 hard, Beat/Camouflage는 normal, FLOW/FLASH는 easy
-    // (동시 벽돌 3개는 기존과 같이 hard)
+    // 화면 카탈로그: Rush·Mole~Goalkeeper hard, FLOW(×2)·FLASH easy
     const level = preset.engine.level;
-    const concurrent = preset.engine.reactTrainConcurrent ?? 1;
+    const concurrent = preset.engine.reactTrainConcurrent ?? 2;
     if (concurrent >= 3 || level === 1 || level >= 6) return 'hard';
     if (concurrent >= 2 || level === 4 || level === 5) return 'normal';
     return 'easy';

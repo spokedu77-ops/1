@@ -39,10 +39,9 @@ describe('spomoveCueSpeed', () => {
     expect(recommendedCueSecondsForPreset(easy!)).toBeGreaterThanOrEqual(4);
   });
 
-  it('excludes dive, sequential memory, wormhole, number cart, color tracker, camouflage', () => {
+  it('excludes dive, sequential memory, number cart, color tracker, magic eye (simon L4)', () => {
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('dive-standard')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('sequential-memory-3color-09')!)).toBe(false);
-    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-wormhole-41')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-number-cart-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')!)).toBe(false);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-blackout-37')!)).toBe(false);
@@ -51,7 +50,7 @@ describe('spomoveCueSpeed', () => {
   it('includes reaction cognition / flanker / typical visual reaction / goalkeeper flight time', () => {
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('reaction-cognition-space-direction-01')!)).toBe(true);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('flanker-uniform-07')!)).toBe(true);
-    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-flow-05')!)).toBe(true);
+    expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-flow-2x-31')!)).toBe(true);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-mole-l1')!)).toBe(true);
     expect(supportsCueSpeedOverride(findOfficialSpomovePreset('visual-reaction-goalkeeper-42')!)).toBe(true);
   });

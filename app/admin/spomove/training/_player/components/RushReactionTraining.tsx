@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { bindViewportResize } from '../lib/bindViewportResize';
 import { REACT_TRAIN_VIEWPORT_CSS } from '../lib/embedViewport';
@@ -75,17 +75,6 @@ const css = `
 .rrt-stop:hover{background:rgba(255,255,255,.07);color:#fff}
 .rrt-play{position:relative;flex:1;min-height:0}
 .rrt-cv{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:10}
-.rrt-pads{position:absolute;bottom:0;left:0;right:0;height:clamp(70px,10vh,88px);z-index:20;display:flex;border-top:2px solid rgba(255,255,255,.05);padding-bottom:max(0px,env(safe-area-inset-bottom))}
-.rrt-pad{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;border-right:1px solid rgba(255,255,255,.04);transition:background .08s}
-.rrt-pad:last-child{border-right:none}
-.rrt-pad-dot{width:clamp(6px,1.2vw,10px);height:clamp(6px,1.2vw,10px);border-radius:50%;opacity:.18;transition:all .08s}
-.rrt-pad-label{font-family:Bebas Neue,sans-serif;font-size:clamp(12px,2vw,18px);letter-spacing:.1em;opacity:.2;transition:opacity .08s}
-.rrt-pad[data-c="0"] .rrt-pad-dot,.rrt-pad[data-c="0"] .rrt-pad-label{background:#FF1744;color:#FF1744}
-.rrt-pad[data-c="1"] .rrt-pad-dot,.rrt-pad[data-c="1"] .rrt-pad-label{background:#FFD600;color:#FFD600}
-.rrt-pad[data-c="2"] .rrt-pad-dot,.rrt-pad[data-c="2"] .rrt-pad-label{background:#2979FF;color:#2979FF}
-.rrt-pad[data-c="3"] .rrt-pad-dot,.rrt-pad[data-c="3"] .rrt-pad-label{background:#00E676;color:#00E676}
-.rrt-pad.lit .rrt-pad-dot{opacity:1;box-shadow:0 0 14px 3px currentColor;transform:scale(1.5)}
-.rrt-pad.lit .rrt-pad-label{opacity:1}
 .rrt-combo{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%) scale(.7);z-index:40;text-align:center;pointer-events:none;opacity:0;transition:opacity .08s,transform .15s cubic-bezier(.34,1.56,.64,1)}
 .rrt-combo.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
 .rrt-combo-n{font-family:Bebas Neue,sans-serif;font-size:clamp(60px,12vw,110px);color:#fff;text-shadow:0 0 40px rgba(255,255,255,.5);line-height:1}
@@ -109,7 +98,6 @@ function project(g: RushState, z: number, laneOffset: number) {
 }
 
 export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete }: Props) {
-  const uid = useId();
   const cvRef = useRef<HTMLCanvasElement>(null);
   const playRef = useRef<HTMLDivElement>(null);
   const gRef = useRef<RushState | null>(null);
@@ -118,7 +106,6 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
   const hudMaxRef = useRef<HTMLDivElement>(null);
   const comboRef = useRef<HTMLDivElement>(null);
   const comboNRef = useRef<HTMLDivElement>(null);
-  const padRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [warn, setWarn] = useState(false);
 
   const stopGame = useCallback(() => {
@@ -195,12 +182,11 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       dpr = result.dpr;
       g.W = result.cssW;
       g.H = result.cssH;
-      const padH = Math.max(70, Math.min(88, h * 0.1));
       g.playTop = 72;
-      g.playBot = h - padH;
+      g.playBot = h;
       g.vpX = w / 2;
       g.vpY = g.playTop + (g.playBot - g.playTop) * 0.28;
-      g.hitY = g.playBot - (g.playBot - g.playTop) * 0.12;
+      g.hitY = g.playBot - (g.playBot - g.playTop) * 0.1;
       g.railHalfW = w * 0.38;
       g.railVPHalfW = w * 0.018;
     };
@@ -212,15 +198,6 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       setWarn(g.timeLeft <= 10);
     };
 
-    const flashPad = (lane: number) => {
-      const p = padRefs.current[lane];
-      if (!p) return;
-      p.classList.add('lit');
-      const pp = p as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> };
-      clearTimeout(pp._t);
-      pp._t = setTimeout(() => p.classList.remove('lit'), 260);
-    };
-
     const onStim = (lane: number) => {
       g.stims += 1;
       g.combo += 1;
@@ -228,19 +205,53 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
       if (g.combo > g.maxCombo) g.maxCombo = g.combo;
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
       if (hudMaxRef.current) hudMaxRef.current.textContent = String(g.maxCombo);
-      flashPad(lane);
-      for (let i = 0; i < 24; i++) {
+      // 히트라인 전체 폭으로 대형 파도 붕괴
+      const hitL = project(g, 0, -0.5);
+      const hitR = project(g, 0, 0.5);
+      const cx = (hitL.x + hitR.x) * 0.5;
+      const cy = g.hitY;
+      const span = Math.max(g.W * 0.55, hitR.x - hitL.x);
+      const col = C[lane].main;
+      // 코어 폭발
+      for (let i = 0; i < 90; i++) {
         const a = Math.random() * Math.PI * 2;
-        const s = Math.random() * 10 + 3;
+        const s = Math.random() * 36 + 14;
         g.particles.push({
-          x: g.vpX + (Math.random() - 0.5) * g.railHalfW * 1.2,
-          y: g.hitY,
+          x: cx + (Math.random() - 0.5) * span * 0.55,
+          y: cy + (Math.random() - 0.5) * 28,
           vx: Math.cos(a) * s,
-          vy: Math.sin(a) * s - 2,
-          color: C[lane].main,
+          vy: Math.sin(a) * s * 0.75 - 10,
+          color: col,
           life: 1,
-          dec: 0.024 + Math.random() * 0.02,
-          r: 2 + Math.random() * 5,
+          dec: 0.008 + Math.random() * 0.01,
+          r: 10 + Math.random() * 28,
+        });
+      }
+      // 가로로 퍼지는 파도 시트
+      for (let i = 0; i < 48; i++) {
+        const side = Math.random() < 0.5 ? -1 : 1;
+        g.particles.push({
+          x: cx + (Math.random() - 0.5) * span * 0.2,
+          y: cy + (Math.random() - 0.5) * 16,
+          vx: side * (18 + Math.random() * 42),
+          vy: -4 - Math.random() * 14,
+          color: col,
+          life: 1,
+          dec: 0.01 + Math.random() * 0.012,
+          r: 14 + Math.random() * 36,
+        });
+      }
+      // 위로 솟는 큰 물보라
+      for (let i = 0; i < 28; i++) {
+        g.particles.push({
+          x: cx + (Math.random() - 0.5) * span * 0.7,
+          y: cy,
+          vx: (Math.random() - 0.5) * 12,
+          vy: -(18 + Math.random() * 32),
+          color: col,
+          life: 1,
+          dec: 0.009 + Math.random() * 0.01,
+          r: 16 + Math.random() * 40,
         });
       }
       if (g.combo >= 5 && g.combo % 5 === 0 && comboRef.current && comboNRef.current) {
@@ -345,17 +356,29 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
         const p = g.particles[i];
         p.x += p.vx * t;
         p.y += p.vy * t;
-        p.vy += 0.18 * t;
-        p.vx *= Math.pow(0.97, t);
+        p.vy += 0.22 * t;
+        p.vx *= Math.pow(0.965, t);
         p.life -= p.dec * t;
+        const alpha = Math.max(0, p.life);
         ctx.save();
-        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.globalAlpha = alpha;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = 12;
+        ctx.shadowBlur = 18 + p.r * 1.8;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
+        // 외곽 번짐 후광
+        ctx.globalAlpha = alpha * 0.28;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 2.4, 0, Math.PI * 2);
+        ctx.fill();
+        if (p.r > 18 && p.life > 0.4) {
+          ctx.globalAlpha = alpha * 0.16;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * 3.6, 0, Math.PI * 2);
+          ctx.fill();
+        }
         ctx.restore();
         if (p.life <= 0) g.particles.splice(i, 1);
       }
@@ -460,21 +483,6 @@ export function RushReactionTraining({ durationSec, speedSec, onExit, onComplete
 
       <div ref={playRef} className="rrt-play">
         <canvas ref={cvRef} className="rrt-cv" />
-        <div className="rrt-pads">
-          {[0, 1, 2, 3].map((lane) => (
-            <div
-              key={uid + 'p' + lane}
-              className="rrt-pad"
-              data-c={lane}
-              ref={(el) => {
-                padRefs.current[lane] = el;
-              }}
-            >
-              <div className="rrt-pad-dot" />
-              <div className="rrt-pad-label">{C[lane].name}</div>
-            </div>
-          ))}
-        </div>
         <div className="rrt-combo" ref={comboRef}>
           <div className="rrt-combo-n" ref={comboNRef}>
             0

@@ -880,6 +880,8 @@ function SpomoveSessionContent() {
           flowIncludeBonus={officialPreset.engine.flowIncludeBonus}
           flankerStimulusType={officialPreset.engine.flankerStimulusType}
           flankerNestedCircleCount={officialPreset.engine.flankerNestedCircleCount}
+          flankerArrowMode={officialPreset.engine.flankerArrowMode}
+          stroopWordMode={officialPreset.engine.stroopWordMode}
           intervalLaunch={
             effectiveOperation?.timing.pattern === 'interval'
               ? {

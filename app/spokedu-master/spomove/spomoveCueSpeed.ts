@@ -61,7 +61,7 @@ const STORAGE_KEY = 'spokedu-master.spomove.lastCueSeconds';
 
 /**
  * 브리핑에서 자극 속도(2~6초)를 고를 수 있는 프리셋.
- * 제외: DIVE, 숫자 기차, 흰 공, 소행성, 매직 아이, 순차 기억
+ * 제외: DIVE, 숫자 연산 기차, 흰 공, 매직 아이(사이먼 4·레거시 reactTrain 5), 순차 기억
  * 골키퍼(10)는 비행 시간(초)으로 cueSeconds를 사용한다.
  */
 export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean {
@@ -69,9 +69,10 @@ export function supportsCueSpeedOverride(preset: OfficialSpomovePreset): boolean
   if (preset.programGroup === 'sequential-memory') return false;
   if (preset.engine.mode === 'spatial') return false;
   if (preset.engine.mode === 'flow') return false;
+  if (preset.engine.mode === 'simon' && preset.engine.level === 4) return false;
   if (preset.engine.mode === 'reactTrain') {
     const level = preset.engine.level;
-    // 5 매직 아이(5초 고정) · 7 소행성 · 8 숫자 기차 · 9 흰 공
+    // 레거시 5 매직 아이 · 8 숫자 연산 기차 · 9 흰 공 (7 소행성은 카탈로그 삭제·딥링크만)
     if (level === 5 || level === 7 || level === 8 || level === 9) return false;
   }
   return true;

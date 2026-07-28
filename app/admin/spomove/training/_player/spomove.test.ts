@@ -745,22 +745,32 @@ describe('training result summary', () => {
     expect(describeSessionVolume({ mode: 'basic', level: 2, timeMode: 'reps', duration: 60, targetReps: 20 })).toBe('20회');
   });
 
-  test('resolveReactTrainUiLevel: 화면=level 1~10 SSOT + 구 id 폴백', async () => {
+  test('resolveReactTrainUiLevel: 화면 카탈로그 엔진 id + 구 id 폴백', async () => {
     const { resolveReactTrainUiLevel, MODES } = await import('./constants');
     const ids = MODES.reactTrain.levels.map((lv) => lv.id);
-    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(ids).toEqual([1, 2, 3, 6, 8, 9, 10]);
     expect(MODES.reactTrain.levels.map((lv) => lv.enName)).toEqual([
       'Rush',
       'FLOW',
       'FLASH',
-      'Beat Wave',
-      'Camouflage',
       'Mole',
-      'Wormhole',
       'Number Cart',
       'Color Tracker',
       'Goalkeeper',
     ]);
+    expect(MODES.reactTrain.levels.map((lv) => lv.name)).toEqual([
+      '파도 피하기',
+      '떨어지는 벽돌들',
+      '풍선 터뜨리기',
+      '두더지 잡기',
+      '숫자 연산 기차',
+      '흰 공 찾기',
+      '골키퍼 모드',
+    ]);
+    // 화면 순번(1-based index) ≠ 엔진 id (예: 화면 4번 = 두더지 eng 6)
+    expect(MODES.reactTrain.levels[3]?.id).toBe(6);
+    expect(MODES.simon.levels.map((lv) => lv.id)).toEqual([1, 2, 3, 4]);
+    expect(MODES.simon.levels[3]?.enName).toBe('Camouflage');
     // 신 카탈로그 passthrough
     expect(resolveReactTrainUiLevel(1).engineLevel).toBe(1);
     expect(resolveReactTrainUiLevel(9).engineLevel).toBe(9);

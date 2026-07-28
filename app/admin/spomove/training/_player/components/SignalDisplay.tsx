@@ -37,7 +37,7 @@ function VariantFruitImg({ slide }: { slide: FruitSlide }) {
 export const SignalDisplay = React.memo(function SignalDisplay({
   signal,
   animKey,
-  bodyLabelMode = 'hard',
+  bodyLabelMode = 'easy',
 }: {
   signal: Record<string, unknown> | null;
   animKey: number;
@@ -478,7 +478,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   if (type === 'stroop_arrow') {
     const arrowId = content?.arrowId as string | undefined;
     const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
-    const pageBg = (signal.bg as string) ?? '#FFFFFF';
+    const pageBg = (signal.bg as string) ?? '#000000';
     const lightPage =
       pageBg === '#FFFFFF' ||
       pageBg.toLowerCase() === '#fff' ||
@@ -523,7 +523,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   }
 
   if (type === 'stroop') {
-    const pageBg = (signal.bg as string) ?? '#FFFFFF';
+    const pageBg = (signal.bg as string) ?? '#000000';
     const light =
       pageBg === '#FFFFFF' ||
       pageBg.toLowerCase() === '#fff' ||
@@ -659,7 +659,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   }
 
   if (type === 'flanker_row') {
-    const circles = (content?.circles as { bg: string; id: string; text?: string; label?: string }[] | undefined) ?? [];
+    const circles = (content?.circles as { bg: string; id: string; text?: string; label?: string; imageUrl?: string | null }[] | undefined) ?? [];
     const sizeMultsRaw = content?.sizeMults as number[] | undefined;
     const hasVariedSizes =
       Array.isArray(sizeMultsRaw) &&
@@ -667,10 +667,32 @@ export const SignalDisplay = React.memo(function SignalDisplay({
       sizeMultsRaw.length > 0;
     /** 4번: grow 비율로 크기 차등. 1~3번: 균등. %·vmin 혼합 calc는 부모 너비 미확정 시 0이 되어 원이 안 보일 수 있어 사용하지 않음 */
     const mults = hasVariedSizes
-      ? sizeMultsRaw!.map((m) => Math.max(0.35, m))
+      ? sizeMultsRaw!.map((m) => Math.max(0.06, m))
       : circles.map(() => 1);
     const gap = hasVariedSizes ? 'clamp(0px, 0.18vmin, 2px)' : 'clamp(6px, 1.5vmin, 14px)';
     const layout = content?.layout as string | undefined;
+    const renderCircleInner = (cell: { bg: string; text?: string; label?: string; imageUrl?: string | null }) => {
+      const img = (cell.imageUrl ?? '').trim();
+      if (img) {
+        return (
+          <img
+            src={img}
+            alt=""
+            draggable={false}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              borderRadius: '50%',
+              display: 'block',
+              pointerEvents: 'none',
+              userSelect: 'none',
+            }}
+          />
+        );
+      }
+      return cell.label ?? '';
+    };
     if (layout === 'nestedCircles') {
       const outerSize = 'min(78vmin, 78vw)';
       return (
@@ -706,15 +728,15 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                   style={{
                     position: 'absolute',
                     left: '50%',
-                    bottom: 0,
+                    top: '50%',
                     width: `${m * 100}%`,
                     height: `${m * 100}%`,
-                    transform: 'translateX(-50%)',
+                    transform: 'translate(-50%, -50%)',
                     borderRadius: '50%',
-                    background: cell.bg,
+                    background: (cell.imageUrl ?? '').trim() ? '#000' : cell.bg,
                     border: 'clamp(2px, 0.45vmin, 5px) solid rgba(2,6,23,0.86)',
                     boxShadow: '0 12px 30px rgba(0,0,0,0.42), inset 0 0 0 2px rgba(255,255,255,0.18)',
-                    filter: 'saturate(1.28) contrast(1.08)',
+                    filter: (cell.imageUrl ?? '').trim() ? undefined : 'saturate(1.28) contrast(1.08)',
                     color: cell.text ?? '#0F172A',
                     display: 'flex',
                     alignItems: 'center',
@@ -723,9 +745,10 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                     fontSize: `clamp(1rem, ${Math.max(1.2, m * labelScale)}vmin, 6rem)`,
                     lineHeight: 1,
                     zIndex: i + 1,
+                    overflow: 'hidden',
                   }}
                 >
-                  {cell.label ?? ''}
+                  {renderCircleInner(cell)}
                 </div>
               );
             })}
@@ -772,26 +795,26 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                   hasVariedSizes && circles.length === 3
                     ? `min(${(mults[i] ?? 1) * 58}vmin, ${(mults[i] ?? 1) * 58}vw)`
                     : hasVariedSizes && circles.length === 5
-                      ? `min(${(mults[i] ?? 1) * 52}vmin, ${(mults[i] ?? 1) * 52}vw)`
+                      ? `min(${(mults[i] ?? 1) * 42}vmin, ${(mults[i] ?? 1) * 42}vw)`
                     : undefined,
                 minWidth:
                   hasVariedSizes && circles.length === 3
                     ? `min(${(mults[i] ?? 1) * 12}vmin, ${(mults[i] ?? 1) * 12}vw)`
                     : hasVariedSizes && circles.length === 5
-                      ? `min(${(mults[i] ?? 1) * 12}vmin, ${(mults[i] ?? 1) * 12}vw)`
+                      ? `min(${Math.max(0.04, mults[i] ?? 1) * 10}vmin, ${Math.max(0.04, mults[i] ?? 1) * 10}vw)`
                     : 'clamp(6px, 2.2vmin, 28px)',
                 maxWidth:
                   hasVariedSizes && circles.length === 3
                     ? `min(${(mults[i] ?? 1) * 58}vmin, ${(mults[i] ?? 1) * 58}vw)`
                     : hasVariedSizes && circles.length === 5
-                      ? `min(${(mults[i] ?? 1) * 52}vmin, ${(mults[i] ?? 1) * 52}vw)`
+                      ? `min(${(mults[i] ?? 1) * 42}vmin, ${(mults[i] ?? 1) * 42}vw)`
                     : hasVariedSizes
                       ? 'min(38vmin, 46vw)'
                       : 'min(30vmin, 24vw)',
                 aspectRatio: '1',
                 flexShrink: 1,
                 borderRadius: '50%',
-                background: cell.bg,
+                background: (cell.imageUrl ?? '').trim() ? '#000' : cell.bg,
                 boxSizing: 'border-box',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
                 display: 'flex',
@@ -801,11 +824,79 @@ export const SignalDisplay = React.memo(function SignalDisplay({
                 fontWeight: 900,
                 fontSize: hasVariedSizes ? 'clamp(1.3rem, 9vmin, 8rem)' : 'clamp(2rem, 11vmin, 9rem)',
                 lineHeight: 1,
+                overflow: 'hidden',
               }}
             >
-              {cell.label ?? ''}
+              {renderCircleInner(cell)}
             </div>
           ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === 'flanker_arrows') {
+    const arrows = (content?.arrows as { id: string; fillHex?: string }[] | undefined) ?? [];
+    const centerIndex = typeof content?.centerIndex === 'number' ? content.centerIndex : 2;
+    return (
+      <div
+        key={animKey}
+        className="signal-blink"
+        style={{
+          position: 'absolute',
+          inset: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 'clamp(4px, 1vw, 12px)',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 'min(98vw, 1400px)',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 'clamp(2px, 0.6vmin, 10px)',
+          }}
+        >
+          {arrows.map((a, i) => {
+            const rot = a.id === 'up' ? 0 : a.id === 'right' ? 90 : a.id === 'down' ? 180 : -90;
+            const fill = a.fillHex ?? '#FFFFFF';
+            const isCenter = i === centerIndex;
+            const size = isCenter
+              ? 'clamp(7.5rem, 32vmin, 20rem)'
+              : 'clamp(6.2rem, 26vmin, 16rem)';
+            return (
+              <svg
+                key={i}
+                viewBox="0 0 100 130"
+                preserveAspectRatio="xMidYMid meet"
+                style={{
+                  width: size,
+                  height: size,
+                  flex: '0 0 auto',
+                  opacity: isCenter ? 1 : 0.92,
+                  filter: isCenter ? 'drop-shadow(0 0 18px rgba(255,255,255,0.32))' : undefined,
+                }}
+                aria-hidden
+              >
+                <g transform={`rotate(${rot} 50 67)`}>
+                  <path
+                    d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+                    fill={fill}
+                    stroke="rgba(255,255,255,0.26)"
+                    strokeWidth={5}
+                    strokeLinejoin="round"
+                  />
+                </g>
+              </svg>
+            );
+          })}
         </div>
       </div>
     );

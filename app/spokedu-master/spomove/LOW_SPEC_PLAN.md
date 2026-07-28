@@ -7,11 +7,10 @@
 
 | 구분 | 프로그램 | 저사양 | 비고 |
 |------|----------|--------|------|
-| 2D 시그널 | 반응 인지, 사이먼, 플랭커, 스트룹, 순차 기억 | ✅ 즉시 OK | Canvas/DOM 기반 |
-| 2D 시지각 | FLOW, FLASH, Beat Wave, Camouflage, Rush, 두더지 L1/L2, 숫자 기차, 흰 공 | ✅ 즉시 OK | `kidsSafeMode`로 속도 완화 가능 |
+| 2D 시그널 | 반응 인지, 사이먼(1~4 매직 아이 포함), 플랭커, 스트룹, 순차 기억 | ✅ 즉시 OK | Canvas/DOM 기반 |
+| 2D 시지각 | 파도 피하기, 떨어지는 벽돌들(×2), 풍선, 두더지, 숫자 연산 기차, 흰 공, 골키퍼 | ✅ 즉시 OK | `kidsSafeMode`로 속도 완화 가능 |
 | WebGL | DIVE 3종 (flow-lab) | ❌ 미지원 | Three.js 필수 |
-| WebGL | 소행성을 피해라 (reactTrain L8) | ❌ 미지원 | Three.js wormhole |
-| WebGL | 숫자 기차 L3 일부 연출 | ⚠️ 부분 | tier 3 연출·문 애니메이션 — 2D 폴백 필요 |
+| WebGL | 숫자 연산 기차 L3 일부 연출 | ⚠️ 부분 | tier 3 연출·문 애니메이션 — 2D 폴백 필요 |
 
 ## 우선순위 1 — WebGL 필수 프로그램 (차단 위험)
 
@@ -24,25 +23,17 @@
   3. `FlowGameClient`에 `renderMode: 'webgl' | '2d-fallback'` prop 추가.
   4. MASTER `EngineRouter` → embed `MemoryGameApp` autoLaunch에 `lowSpec?: boolean` 전달.
 
-### 소행성을 피해라 (reactTrain engine level 8)
-
-- **문제**: `WormholeReactionTraining` Three.js 전용.
-- **계획**:
-  1. 2D top-down 레인 회피 미니게임 폴백 (4색 구역 + 운석 스프라이트).
-  2. probe 실패 또는 `prefers-reduced-motion` + 저사양 플래그 시 폴백 자동 선택.
-  3. 공식 프리셋 `visual-reaction-wormhole-41`에 `lowSpecPlan` 메타 연결 (추후 UI).
-
 ## 우선순위 2 — 연출만 무거운 프로그램
 
-### 숫자 기차 L3
+### 숫자 연산 기차 L3
 
 - **문제**: WebGL/고해상도 연출 구간 존재 시 프레임 드랍.
-- **계획**: tier 3에서 `lowSpec` 시 문·수레 애니메이션 단순화, 파티클 off, 고정 FPS cap.
+- **계획**: tier 3에서 `lowSpec` 시 문·기차 애니메이션 단순화, 파티클 off, 고정 FPS cap.
 
-### 흰 공 L3
+### 흰 공 단계 3 (2패널)
 
-- **문제**: 13개 공 + 간헐 플래시 — CPU 부담.
-- **계획**: 저사양 시 공 개수 11개 cap, 플래시 빈도 50% 감소, motion blur off.
+- **문제**: 이중 패널 + 다수 공 — CPU 부담.
+- **계획**: 저사양 시 공 개수 cap, 플래시 빈도 감소, motion blur off.
 
 ## 우선순위 3 — 공통 인프라
 
@@ -61,16 +52,14 @@
 ## WebGL 필수 공식 프리셋 ID (저사양 계획 대상)
 
 - `dive-standard`, `dive-random`, `dive-color-gate-61`
-- `visual-reaction-wormhole-41`
 
 ## 2D 즉시 지원 (추가 작업 없음)
 
-나머지 **79종** (반응 인지 40, 시지각 16 WebGL 제외, 사이먼 3, 플랭커 9, 스트룹 5, 순차 기억 6) — `kidsSafeMode` 속도 완화만으로 저사양 대응 가능.
+나머지 공식 프리셋(반응 인지·시지각 7종·사이먼 4종·플랭커·스트룹·순차 기억 등) — `kidsSafeMode` 속도 완화만으로 저사양 대응 가능.
 
 ## 구현 순서 제안
 
 1. WebGL probe 유틸 (`_player/lib/webglCapability.ts`)
 2. DIVE 2D 폴백 MVP (Color Gate 제외 punch/kick/duck/reach만)
-3. Wormhole 2D 폴백
-4. MASTER Hub 저사양 뱃지 + 브리핑 문구
-5. 숫자 기차 L3 / 흰 공 L3 연출 경량화
+3. MASTER Hub 저사양 뱃지 + 브리핑 문구
+4. 숫자 연산 기차 L3 / 흰 공 단계 3 연출 경량화

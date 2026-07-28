@@ -26,9 +26,12 @@ const DOOR_Z = -34;
 const DOOR_SIZE_SCALE = 3.55;
 /** 문이 더 바깥·더 커져도 터널 벽에 파묻히지 않도록 반지름 확대 */
 const CAVE_RADIUS = 82;
-/** 카메라(z=64, 아래로 기울어진 시야축) 기준 화면 하단 경계에 걸리는 지점 — "화면 맨 아래에서 출발" 연출 */
-const CART_START = new THREE.Vector3(0, 0, 51);
-/** 수레(z=58) 위에 레일이 붙고, 카메라(z=64) 쪽으로 조금 더 연장 */
+/**
+ * 긴 기차 뒤판(로컬 +Z ≈ 5.15)이 카메라 시야 하단 가장자리에 오도록.
+ * 카메라(0,10,64) → lookAt(0,0,-14) 기준 — 숫자판이 잘리지 않는 선에서 최대한 하단.
+ */
+const CART_START = new THREE.Vector3(0, 0, 48);
+/** 기차 위에 레일이 붙고, 카메라(z=64) 쪽으로 조금 더 연장 */
 const RAIL_NEAR_Z = 62;
 const CAMERA_LOOK_Y = 0;
 const CAMERA_LOOK_Z = -14;
@@ -271,12 +274,13 @@ function generateMetalTexture(): THREE.CanvasTexture {
 }
 
 const css = `
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap');
 .ncart{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#000;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .ncart,.ncart *{box-sizing:border-box}
 .ncart-hud{height:72px;display:flex;align-items:stretch;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
 .ncart-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 .ncart-hc.grow{flex:1;align-items:center;border-right:none}
-.ncart-hk{font-size:9px;font-weight:700;letter-spacing:.2em;color:rgba(255,255,255,.28);text-transform:uppercase}
+.ncart-hk{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.28)}
 .ncart-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
 .ncart-hv.warn{animation:ncartw .5s ease-in-out infinite}
 @keyframes ncartw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
@@ -291,7 +295,7 @@ const css = `
 .ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
 .ncart-target-k{font-size:clamp(9px,1.15vw,11px);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.36);text-transform:uppercase;line-height:1}
 .ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#ffe8b8;text-shadow:0 0 14px rgba(245,158,11,.5);-webkit-text-stroke:1px rgba(245,158,11,.22);white-space:nowrap}
-.ncart-target-v.expr{font-family:"Courier New",Courier,monospace;font-size:clamp(32px,5.8vw,48px);font-weight:700;letter-spacing:.12em;-webkit-text-stroke:0;text-shadow:0 0 12px rgba(245,158,11,.45),0 0 2px rgba(255,232,184,.8);font-variant-ligatures:none;font-feature-settings:"liga" 0}
+.ncart-target-v.expr{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(34px,6vw,52px);font-weight:400;letter-spacing:.08em;-webkit-text-stroke:0;text-shadow:0 0 12px rgba(245,158,11,.45),0 0 2px rgba(255,232,184,.8)}
 .ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#f59e0b;margin-top:2px}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
@@ -393,7 +397,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     const disposeMats: THREE.Material[] = [];
     const disposeTex: THREE.Texture[] = [];
 
-    // 조명: 어두운 터널 톤 유지 + 문·수레만 읽히게
+    // 조명: 어두운 터널 톤 유지 + 문·기차만 읽히게
     const hemiLight = new THREE.HemisphereLight(0x9fb3d9, 0x3a2c1d, 2.4);
     scene.add(hemiLight);
 
@@ -405,7 +409,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     cartLight.shadow.bias = -0.001;
     scene.add(cartLight);
 
-    // 수레 대기 위치까지 닿도록 스포트 조준
+    // 기차 대기 위치까지 닿도록 스포트 조준
     const spotLight = new THREE.SpotLight(0xffffff, 3);
     spotLight.position.set(0, 22, CART_START.z + 8);
     spotLight.target.position.set(0, 0, CART_START.z);
@@ -643,103 +647,150 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       }, 200);
     };
 
-    // 5. 수레
+    // 5. 기차 (기관차 + 객차 2량)
     const cart = new THREE.Group();
     const cartMetalTex = generateMetalTexture();
     disposeTex.push(cartMetalTex);
-    // 원본 색(0x5a5a5a/0x222222)이 검정 배경과 거의 구분 안 돼 밝은 톤으로 조정
     const cartMetal = new THREE.MeshStandardMaterial({ map: cartMetalTex, color: 0x9a9ca6, metalness: 0.7, roughness: 0.35 });
     const frameMetal = new THREE.MeshStandardMaterial({ color: 0x565a66, metalness: 0.85, roughness: 0.45 });
-    disposeMats.push(cartMetal, frameMetal);
+    const locoRed = new THREE.MeshStandardMaterial({ color: 0x9b2c2c, metalness: 0.55, roughness: 0.42 });
+    const windowMat = new THREE.MeshStandardMaterial({
+      color: 0x1a2840,
+      metalness: 0.85,
+      roughness: 0.25,
+      emissive: 0x223355,
+      emissiveIntensity: 0.18,
+    });
+    disposeMats.push(cartMetal, frameMetal, locoRed, windowMat);
 
-    const chassisGeo = new THREE.BoxGeometry(3, 0.3, 4.5);
+    const chassisGeo = new THREE.BoxGeometry(3.2, 0.38, 11.2);
     disposeGeos.push(chassisGeo);
     const chassis = new THREE.Mesh(chassisGeo, frameMetal);
-    chassis.position.y = -0.6;
+    chassis.position.y = -0.62;
     chassis.castShadow = true;
     cart.add(chassis);
 
-    const wheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.3, 24);
+    const bolsterGeo = new THREE.BoxGeometry(3.0, 0.22, 0.45);
+    disposeGeos.push(bolsterGeo);
+    [4.2, 1.6, -1.0, -3.6].forEach((z) => {
+      const bolster = new THREE.Mesh(bolsterGeo, frameMetal);
+      bolster.position.set(0, -0.42, z);
+      cart.add(bolster);
+    });
+
+    const wheelGeo = new THREE.CylinderGeometry(0.58, 0.58, 0.36, 24);
     wheelGeo.rotateZ(Math.PI / 2);
     disposeGeos.push(wheelGeo);
-    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x333640, metalness: 0.85, roughness: 0.5 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x2a2d36, metalness: 0.85, roughness: 0.5 });
     disposeMats.push(wheelMat);
-    const axleGeo = new THREE.CylinderGeometry(0.15, 0.15, 3.2, 8);
+    const axleGeo = new THREE.CylinderGeometry(0.16, 0.16, 3.35, 8);
     axleGeo.rotateZ(Math.PI / 2);
     disposeGeos.push(axleGeo);
 
-    [1.3, -1.3].forEach((z) => {
+    [4.55, 2.55, 0.55, -1.45, -3.45, -5.25].forEach((z) => {
       const axle = new THREE.Mesh(axleGeo, frameMetal);
-      axle.position.set(0, -0.6, z);
+      axle.position.set(0, -0.62, z);
       cart.add(axle);
-      [-1.6, 1.6].forEach((x) => {
+      [-1.7, 1.7].forEach((x) => {
         const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-        wheel.position.set(x, -0.6, z);
+        wheel.position.set(x, -0.62, z);
         wheel.castShadow = true;
         cart.add(wheel);
       });
     });
 
-    const bucketGroup = new THREE.Group();
-    bucketGroup.position.y = 0.2;
+    const trainBody = new THREE.Group();
+    trainBody.position.y = 0.2;
 
-    const bottomGeo = new THREE.BoxGeometry(2.8, 0.2, 4.2);
-    disposeGeos.push(bottomGeo);
-    const bottom = new THREE.Mesh(bottomGeo, cartMetal);
-    bottom.position.y = -0.5;
-    bottom.castShadow = true;
-    bucketGroup.add(bottom);
+    const coachGeo = new THREE.BoxGeometry(2.85, 2.05, 3.7);
+    const roofGeo = new THREE.BoxGeometry(2.95, 0.28, 3.8);
+    const winGeo = new THREE.PlaneGeometry(0.52, 0.72);
+    const couplerGeo = new THREE.BoxGeometry(0.55, 0.28, 0.55);
+    disposeGeos.push(coachGeo, roofGeo, winGeo, couplerGeo);
 
-    const sideGeo = new THREE.BoxGeometry(0.15, 1.8, 4.2);
-    disposeGeos.push(sideGeo);
-    const leftSide = new THREE.Mesh(sideGeo, cartMetal);
-    leftSide.position.set(-1.5, 0.3, 0);
-    leftSide.rotation.z = -0.15;
-    leftSide.castShadow = true;
-    bucketGroup.add(leftSide);
-    const rightSide = new THREE.Mesh(sideGeo, cartMetal);
-    rightSide.position.set(1.5, 0.3, 0);
-    rightSide.rotation.z = 0.15;
-    rightSide.castShadow = true;
-    bucketGroup.add(rightSide);
+    const addCoach = (zCenter: number) => {
+      const coach = new THREE.Mesh(coachGeo, cartMetal);
+      coach.position.set(0, 0.18, zCenter);
+      coach.castShadow = true;
+      trainBody.add(coach);
 
-    const frontBackGeo = new THREE.BoxGeometry(2.8, 1.8, 0.15);
-    disposeGeos.push(frontBackGeo);
-    const frontSide = new THREE.Mesh(frontBackGeo, cartMetal);
-    frontSide.position.set(0, 0.3, -2.1);
-    frontSide.rotation.x = -0.15;
-    frontSide.castShadow = true;
-    bucketGroup.add(frontSide);
-    const backSide = new THREE.Mesh(frontBackGeo, cartMetal);
-    backSide.position.set(0, 0.3, 2.1);
-    backSide.rotation.x = 0.15;
-    backSide.castShadow = true;
-    bucketGroup.add(backSide);
+      const roof = new THREE.Mesh(roofGeo, frameMetal);
+      roof.position.set(0, 1.28, zCenter);
+      trainBody.add(roof);
 
-    const rimGeoX = new THREE.BoxGeometry(3.4, 0.15, 0.2);
-    const rimGeoZ = new THREE.BoxGeometry(0.2, 0.15, 4.6);
-    disposeGeos.push(rimGeoX, rimGeoZ);
-    const topRimFront = new THREE.Mesh(rimGeoX, frameMetal);
-    topRimFront.position.set(0, 1.2, -2.3);
-    bucketGroup.add(topRimFront);
-    const topRimBack = new THREE.Mesh(rimGeoX, frameMetal);
-    topRimBack.position.set(0, 1.2, 2.3);
-    bucketGroup.add(topRimBack);
-    const topRimLeft = new THREE.Mesh(rimGeoZ, frameMetal);
-    topRimLeft.position.set(-1.7, 1.2, 0);
-    bucketGroup.add(topRimLeft);
-    const topRimRight = new THREE.Mesh(rimGeoZ, frameMetal);
-    topRimRight.position.set(1.7, 1.2, 0);
-    bucketGroup.add(topRimRight);
+      for (const sx of [-1.44, 1.44]) {
+        for (const wz of [-1.1, -0.35, 0.35, 1.1]) {
+          const win = new THREE.Mesh(winGeo, windowMat);
+          win.position.set(sx, 0.38, zCenter + wz);
+          win.rotation.y = sx < 0 ? Math.PI / 2 : -Math.PI / 2;
+          trainBody.add(win);
+        }
+      }
+    };
 
-    cart.add(bucketGroup);
+    // 객차 2량 + 연결부 (앞=−Z, 뒤=+Z)
+    addCoach(-0.95);
+    const coupler = new THREE.Mesh(couplerGeo, frameMetal);
+    coupler.position.set(0, 0.05, 1.15);
+    trainBody.add(coupler);
+    addCoach(3.25);
 
-    // 목표 숫자판: 카메라(뒤쪽)를 향한 뒷면에 부착 — 대기 상태에서도 즉시 보이도록
+    const locoGroup = new THREE.Group();
+    locoGroup.position.set(0, 0, -4.55);
+
+    const boilerGeo = new THREE.CylinderGeometry(0.92, 1.02, 2.55, 18);
+    boilerGeo.rotateX(Math.PI / 2);
+    disposeGeos.push(boilerGeo);
+    const boiler = new THREE.Mesh(boilerGeo, locoRed);
+    boiler.position.y = 0.58;
+    boiler.castShadow = true;
+    locoGroup.add(boiler);
+
+    const cabGeo = new THREE.BoxGeometry(1.55, 1.45, 1.05);
+    disposeGeos.push(cabGeo);
+    const cab = new THREE.Mesh(cabGeo, locoRed);
+    cab.position.set(0, 0.98, 0.95);
+    cab.castShadow = true;
+    locoGroup.add(cab);
+
+    const cowGeo = new THREE.ConeGeometry(1.05, 0.85, 4);
+    cowGeo.rotateX(-Math.PI / 2);
+    disposeGeos.push(cowGeo);
+    const cow = new THREE.Mesh(cowGeo, frameMetal);
+    cow.position.set(0, 0.12, -1.48);
+    locoGroup.add(cow);
+
+    const chimneyGeo = new THREE.CylinderGeometry(0.17, 0.21, 0.75, 10);
+    disposeGeos.push(chimneyGeo);
+    const chimney = new THREE.Mesh(chimneyGeo, frameMetal);
+    chimney.position.set(0, 1.38, -0.15);
+    locoGroup.add(chimney);
+
+    const headGeo = new THREE.CircleGeometry(0.24, 14);
+    disposeGeos.push(headGeo);
+    const headlight = new THREE.Mesh(headGeo, new THREE.MeshBasicMaterial({ color: 0xfff0c8 }));
+    disposeMats.push(headlight.material as THREE.Material);
+    headlight.position.set(0, 0.58, -1.38);
+    headlight.rotation.y = Math.PI;
+    locoGroup.add(headlight);
+
+    trainBody.add(locoGroup);
+
+    const bufferGeo = new THREE.BoxGeometry(2.6, 0.35, 0.35);
+    disposeGeos.push(bufferGeo);
+    const buffer = new THREE.Mesh(bufferGeo, frameMetal);
+    buffer.position.set(0, 0.05, 5.15);
+    trainBody.add(buffer);
+
+    cart.add(trainBody);
+
+    // 목표 숫자판: 맨 뒤 객차 — 대기 시 화면 하단 가장에 걸리도록
     const cartSignCanvas = document.createElement('canvas');
-    cartSignCanvas.width = 256;
-    cartSignCanvas.height = 128;
+    cartSignCanvas.width = 512;
+    cartSignCanvas.height = 256;
     const cartSignCtx = cartSignCanvas.getContext('2d')!;
     const cartSignTexture = new THREE.CanvasTexture(cartSignCanvas);
+    cartSignTexture.anisotropy = 4;
     disposeTex.push(cartSignTexture);
     const displayMat = new THREE.MeshBasicMaterial({
       map: cartSignTexture,
@@ -747,36 +798,77 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       toneMapped: false,
     });
     disposeMats.push(displayMat);
-    const displayGeo = new THREE.PlaneGeometry(3.1, 1.55);
+    const displayGeo = new THREE.PlaneGeometry(4.2, 2.15);
     disposeGeos.push(displayGeo);
     const display = new THREE.Mesh(displayGeo, displayMat);
-    display.position.set(0, 2.35, 2.35);
-    bucketGroup.add(display);
+    display.position.set(0, 2.55, 5.15);
+    trainBody.add(display);
+
+    // 숫자판 전용 조명 — 어두운 터널에서도 첫 화면부터 읽히게
+    const signLight = new THREE.PointLight(0xffffff, 4.5, 18, 1.6);
+    signLight.position.set(0, 3.2, 7.2);
+    trainBody.add(signLight);
 
     cart.position.copy(CART_START);
     scene.add(cart);
     display.visible = true;
 
+    const SIGN_FONT = '"Bebas Neue", "Barlow Condensed", "Noto Sans KR", sans-serif';
+    let lastCartSign = '';
     const updateCartSign = (text: string) => {
+      lastCartSign = text;
       const ctx = cartSignCtx;
       const w = cartSignCanvas.width;
       const h = cartSignCanvas.height;
+      const padX = 52;
+      const maxW = w - padX * 2;
       const compact = text.replace(/\s+/g, '');
-      const fontSize = compact.length <= 2 ? 90 : compact.length <= 4 ? 74 : 60;
-      // 어두운 톤 없이 — 흰 판 + 아주 밝은 노란 숫자
-      ctx.fillStyle = '#ffffff';
+
+      ctx.clearRect(0, 0, w, h);
+      // 크림 판 + 안쪽 여백 있는 테두리
+      ctx.fillStyle = '#f7f2e8';
       ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#ffd24a';
-      ctx.lineWidth = 6;
-      ctx.strokeRect(3, 3, w - 6, h - 6);
-      ctx.font = `900 ${fontSize}px "Courier New", monospace`;
+      ctx.strokeStyle = '#c9a227';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(14, 14, w - 28, h - 28);
+      ctx.strokeStyle = 'rgba(201,162,39,.35)';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(24, 24, w - 48, h - 48);
+
+      let fontSize = compact.length <= 2 ? 128 : compact.length <= 4 ? 102 : 84;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#ffcc00';
-      ctx.fillText(text, w / 2, h / 2);
+      ctx.fillStyle = '#1c1914';
+      // 판 안에 여유 두고 글자 크기 맞추기
+      do {
+        ctx.font = `400 ${fontSize}px ${SIGN_FONT}`;
+        if (ctx.measureText(text).width <= maxW) break;
+        fontSize -= 2;
+      } while (fontSize > 48);
+
+      // 자간을 살짝 벌려 세련되게
+      const gap = Math.max(2, Math.round(fontSize * 0.04));
+      const chars = [...text];
+      let total = 0;
+      const widths = chars.map((ch) => {
+        const cw = ctx.measureText(ch).width;
+        total += cw;
+        return cw;
+      });
+      total += gap * Math.max(0, chars.length - 1);
+      let x = (w - total) / 2;
+      const y = h / 2 + 2;
+      for (let i = 0; i < chars.length; i++) {
+        const ch = chars[i]!;
+        const cw = widths[i]!;
+        ctx.fillText(ch, x + cw / 2, y);
+        x += cw + gap;
+      }
       cartSignTexture.needsUpdate = true;
     };
+    void document.fonts.load('400 96px "Bebas Neue"').then(() => {
+      if (lastCartSign) updateCartSign(lastCartSign);
+    });
 
     // 6. 먼지 파티클
     const particleCount = 1600;
@@ -849,7 +941,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         if (!gRef.current?.running) return;
         g.phase = 'TRANSIT';
         g.phaseStartMs = performance.now();
-        setStatus('이동 중 · 수레 뒤판 확인', '#10b981');
+        setStatus('이동 중 · 기차 목표 확인', '#10b981');
         activeRailPath = buildRailPath(targetDoor.x);
       }, g.prepMs);
     };
@@ -867,7 +959,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       cartLight.position.y += 1.5;
       cartLight.intensity = 2 + Math.random() * 0.2;
 
-      // 수레 숫자판이 항상 카메라를 향하도록 — 이동 중에도 읽기 쉽게
+      // 기차 숫자판이 항상 카메라를 향하도록 — 이동 중에도 읽기 쉽게
       display.lookAt(camera.position);
 
       if (g.phase === 'PREP') {
@@ -886,7 +978,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         cart.position.set(x, CART_START.y, z);
         if (t > 0.005 && t < 0.995) {
           const dir = new THREE.Vector3(x - prevX, 0, z - prevZ);
-          // 수레 앞면(frontSide)이 로컬 -Z를 향해 만들어져 있어 atan2(dir.x, dir.z)를 그대로 쓰면
+          // 객차 뒤판(display)이 로컬 +Z — 이동 방향에 맞춰 회전
           // 대기 중 rotation.y=0(뒤판=숫자판이 카메라 쪽)에서 출발과 동시에 180° 튐 → 부호 반전으로 보정
           if (dir.lengthSq() > 1e-6) cart.rotation.y = Math.atan2(-dir.x, -dir.z);
         }
@@ -948,12 +1040,12 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       <style>{css}</style>
       <div className="ncart-hud">
         <div className="ncart-hc">
-          <div className="ncart-hk">Round</div>
+          <div className="ncart-hk">라운드</div>
           <div className="ncart-hv" ref={hudRoundRef} />
         </div>
         <div className="ncart-hc grow">
           <div className="ncart-hv" style={{ fontSize: 'clamp(12px,2vw,19px)' }}>
-            NUMBER CART
+            숫자 연산 기차
           </div>
           <div className="ncart-tier" ref={hudTierRef} />
         </div>
@@ -963,7 +1055,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
               <rect x="6" y="6" width="4" height="12" rx="1" />
               <rect x="14" y="6" width="4" height="12" rx="1" />
             </svg>
-            STOP
+            중지
           </button>
         </div>
       </div>

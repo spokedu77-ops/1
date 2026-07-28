@@ -62,6 +62,7 @@ export function getBeepForSignal(sig: { type?: string } | null): BeepType | null
   if (type === 'simon_shape') return 'mid';
   if (type === 'simon_arrow') return 'high';
   if (type === 'flanker_row') return 'mid';
+  if (type === 'flanker_arrows') return 'high';
   if (type === 'gonogo_color') return 'mid';
   if (type === 'gonogo_shape' || type === 'gonogo_dual') return 'mid';
   if (type === 'gonogo_action') return 'high';

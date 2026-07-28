@@ -33,6 +33,8 @@ export function useIntervalTimer({
   spatialArrowColorMapping = 'compass',
   flankerStimulusType,
   flankerNestedCircleCount,
+  flankerArrowMode,
+  stroopWordMode,
   onSignal,
   onFinish,
 }: {
@@ -51,6 +53,8 @@ export function useIntervalTimer({
   spatialArrowColorMapping?: SpatialArrowColorMapping;
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerArrowMode?: 'lr' | 'udlr';
+  stroopWordMode?: 'bg' | 'missing';
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -82,10 +86,11 @@ export function useIntervalTimer({
     const { engineMode, engineLevel } = resolveTrainingEngine(mode, level);
     const effectiveArrowColorMode: 'basic' | 'color' =
       mode === 'stroop' && level === 1 ? 'color' : spatialArrowColorMode;
-    const fruitOpts = {
-      ...(fruitSlides ? { fruitSlides } : {}),
-      ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount } : {}),
-    };
+      const fruitOpts = {
+        ...(fruitSlides ? { fruitSlides } : {}),
+        ...(engineMode === 'flanker' ? { flankerStimulusType, flankerNestedCircleCount, flankerArrowMode } : {}),
+        ...(engineMode === 'stroop' ? { stroopWordMode } : {}),
+      };
     if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
     } else if (engineMode === 'simon') {
@@ -174,7 +179,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

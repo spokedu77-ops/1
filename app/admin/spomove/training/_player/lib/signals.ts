@@ -2,7 +2,7 @@
  * 신호 생성: 메모리 패턴, 일반 신호 (basic/stroop/dual)
  */
 
-import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection, type SpatialArrowColorMapping } from '../constants';
+import { COLORS, ARROWS, NUMBERS, DUAL_TWO_COLORS, DUAL_LR_ARROWS, spatialArrowFillForDirection, SPATIAL_ARROW_COLOR_BY_DIRECTION, type SpatialArrowColorMapping } from '../constants';
 import {
   SPOMOVE_VARIANT_SLOT_COLOR_IDS,
   SPOMOVE_VARIANT_SLOT_COUNT,
@@ -139,10 +139,18 @@ const randomFoot = (): BodyActionId => (Math.random() < 0.5 ? randomSingleFoot()
 const randomHand = (): BodyActionId => (Math.random() < 0.5 ? randomSingleHand() : 'bothHands');
 
 export function generateMemoryPattern(level: number, colors: ColorItem[] = COLORS): ColorItem[] {
-  if (level === 1) return generateWithMaxDup(colors, 3);
-  if (level === 2) return generateWithMaxDup(colors, 5);
-  if (level === 3) return generateColorsWithPerMax(colors, 10, 3);
+  if (level === 1) return generateMemoryPatternOfLength(3, colors);
+  if (level === 2) return generateMemoryPatternOfLength(5, colors);
+  if (level === 3) return generateMemoryPatternOfLength(7, colors);
   return [];
+}
+
+/** 순차 기억 색 순서: 지정 길이 패턴 생성 */
+export function generateMemoryPatternOfLength(length: number, colors: ColorItem[] = COLORS): ColorItem[] {
+  const n = Math.max(1, Math.floor(length));
+  const pool = colors.length >= 2 ? colors : COLORS;
+  if (n <= 5) return generateWithMaxDup(pool, n);
+  return generateColorsWithPerMax(pool, n, Math.max(2, Math.ceil(n / Math.max(1, pool.length))));
 }
 
 /**
@@ -334,11 +342,15 @@ export type GenerateSignalOptions = {
   basicNumberOverlay?: 'none' | '2' | '3';
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  /** flanker 5번: 기본 좌우 | 응용 상하좌우 */
+  flankerArrowMode?: 'lr' | 'udlr';
   /** basic 1번 · 공간 방향: 좌→우→상→하 극단 기둥 순환 (0~3) */
   poleEdgeIndex?: number;
   /** basic 1번 · 공간 방향: 기본(흰 화살표) | 색상(방향별 고정 색: 위 빨·좌 초·우 노·아래 파) */
   spatialArrowColorMode?: 'basic' | 'color';
   spatialArrowColorMapping?: SpatialArrowColorMapping;
+  /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
+  stroopWordMode?: 'bg' | 'missing';
 };
 
 export function generateSignal(
@@ -362,15 +374,16 @@ export function generateSignal(
       const a = r(ARROWS);
       if (opts?.spatialArrowColorMode === 'color') {
         // 색상 모드: 방향→색 고정 (위 빨 / 우 노 / 좌 초 / 아래 파). random 매핑 무시.
+        // 스트룹 1번과 동일 — 배경 간섭 없을 때 검정으로 통일
         const fillHex = spatialArrowFillForDirection(a.id, activeColors, 'compass');
         return {
           type: 'arrow',
-          bg: '#0F172A',
+          bg: '#000000',
           content: { ...a, fillHex },
           voice: null,
         };
       }
-      return { type: 'arrow', bg: '#0F172A', content: a, voice: null };
+      return { type: 'arrow', bg: '#000000', content: a, voice: null };
     }
     if (level === 2) {
       const vSlides = opts?.fruitSlides ?? DEFAULT_FRUIT_SLIDES;
@@ -484,59 +497,59 @@ export function generateSignal(
       };
     }
 
-    // level 8: 변형 사분할 2단계 — 1~2개 색상, 1색 30% / 2색 70%
-    // 2색: (양발+한손) | (양발+양손) 만 허용 — 반드시 양발 포함, 한 발씩·손끼리만 불가
+    // level 8: 변형 사분할 2단계 — 구 2·3단계 통합
+    // 1색 20% / 2색 65% / 3색 15%
+    // 1색: 발만 · 2색: 양발 + (한손|양손) · 3색: 한발+한손+(양발|양손) — 양발·양손 동시 금지
     if (level === 8) {
-      const twoColors = Math.random() < 0.70 && activeColors.length >= 2;
-      if (!twoColors) {
-        const c = r(activeColors);
-        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(c, randomFoot())] }, voice: null };
-      }
-      const [c1, c2] = pickN(activeColors, 2) as [ColorItem, ColorItem];
-      const handAction: BodyActionId = Math.random() < 0.5 ? randomSingleHand() : 'bothHands';
-      const feetFirst = Math.random() < 0.5;
-      const a1 = feetFirst ? 'bothFeet' : handAction;
-      const a2 = feetFirst ? handAction : 'bothFeet';
-      return {
-        type: 'think_quad_body',
-        bg: '#0F172A',
-        content: { cells: [makeQuadCell(c1, a1), makeQuadCell(c2, a2)] },
-        voice: null,
-      };
-    }
-
-    // level 9: 변형 사분할 3단계 — 1/2/3개 색상 (10%/80%/10%)
-    if (level === 9) {
-      const p = Math.random();
-      const n = p < 0.10 ? 1 : p < 0.90 ? 2 : 3;
-      const picked = pickN(activeColors, n);
+      const roll = Math.random();
+      const n = roll < 0.2 ? 1 : roll < 0.85 ? 2 : 3;
       if (n === 1) {
-        return { type: 'think_quad_body', bg: '#0F172A', content: { cells: [makeQuadCell(picked[0]!, randomFoot())] }, voice: null };
-      }
-      if (n === 2 || picked.length === 2) {
-        const [c1, c2] = picked as [ColorItem, ColorItem];
-        const footFirst = Math.random() < 0.5;
+        const c = r(activeColors);
         return {
           type: 'think_quad_body',
           bg: '#0F172A',
-          content: { cells: [makeQuadCell(c1, footFirst ? randomFoot() : randomHand()), makeQuadCell(c2, footFirst ? randomHand() : randomFoot())] },
+          content: { cells: [makeQuadCell(c, randomFoot())] },
           voice: null,
         };
       }
-      // n === 3: 4개 단일 동작 셔플 후 3개 선택 — 같은 신체 부위 중복 방지
-      const [c1, c2, c3] = picked as [ColorItem, ColorItem, ColorItem];
-      const [a1, a2, a3] = fisherYates<BodyActionId>(['rightFoot', 'leftFoot', 'rightHand', 'leftHand']) as [BodyActionId, BodyActionId, BodyActionId];
+      if (n === 2) {
+        const [c1, c2] = pickN(activeColors, 2) as [ColorItem, ColorItem];
+        const handAction: BodyActionId = Math.random() < 0.5 ? randomSingleHand() : 'bothHands';
+        const feetFirst = Math.random() < 0.5;
+        const a1 = feetFirst ? 'bothFeet' : handAction;
+        const a2 = feetFirst ? handAction : 'bothFeet';
+        return {
+          type: 'think_quad_body',
+          bg: '#0F172A',
+          content: { cells: [makeQuadCell(c1, a1), makeQuadCell(c2, a2)] },
+          voice: null,
+        };
+      }
+      const [c1, c2, c3] = pickN(activeColors.length >= 3 ? activeColors : COLORS, 3) as [
+        ColorItem,
+        ColorItem,
+        ColorItem,
+      ];
+      const pairBoth: BodyActionId = Math.random() < 0.5 ? 'bothFeet' : 'bothHands';
+      const [a1, a2, a3] = fisherYates<BodyActionId>([
+        randomSingleFoot(),
+        randomSingleHand(),
+        pairBoth,
+      ]) as [BodyActionId, BodyActionId, BodyActionId];
       return {
         type: 'think_quad_body',
         bg: '#0F172A',
-        content: { cells: [makeQuadCell(c1, a1), makeQuadCell(c2, a2), makeQuadCell(c3, a3)] },
+        content: {
+          cells: [makeQuadCell(c1, a1), makeQuadCell(c2, a2), makeQuadCell(c3, a3)],
+        },
         voice: null,
       };
     }
 
-    // level 10: 변형 사분할 4단계 — 3개 색상, 발 합계 ≤ 2 & 손 합계 ≤ 2
+    // level 9: 변형 사분할 3단계 (구 4단계) — 3색, 발 합≤2 & 손 합≤2
     // 유효 패턴: A) 오른발+왼발 + singleton 손  B) 오른손+왼손 + singleton 발
-    if (level === 10) {
+    // level 10: 레거시 4단계 → 동일 규칙
+    if (level === 9 || level === 10) {
       const [c1, c2, c3] = pickN(activeColors.length >= 3 ? activeColors : COLORS, 3) as [ColorItem, ColorItem, ColorItem];
       const colorList = [c1, c2, c3];
       const singletonIdx = Math.floor(Math.random() * 3);
@@ -544,13 +557,11 @@ export function generateSignal(
       const otherIdxs = [0, 1, 2].filter(i => i !== singletonIdx) as [number, number];
       const actions: BodyActionId[] = new Array(3) as BodyActionId[];
       if (patternA) {
-        // 오른발+왼발 (순서 무작위) + singleton 손 — 같은 발 중복 방지
         const [f1, f2] = fisherYates<BodyActionId>(['rightFoot', 'leftFoot']);
         actions[singletonIdx] = randomHand();
         actions[otherIdxs[0]] = f1!;
         actions[otherIdxs[1]] = f2!;
       } else {
-        // 오른손+왼손 (순서 무작위) + singleton 발 — 같은 손 중복 방지
         const [h1, h2] = fisherYates<BodyActionId>(['rightHand', 'leftHand']);
         actions[singletonIdx] = randomFoot();
         actions[otherIdxs[0]] = h1!;
@@ -567,7 +578,7 @@ export function generateSignal(
 
   if (mode === 'stroop') {
     const stroopPool = activeColors.map((c) => ({ name: c.name, hex: c.bg }));
-    const WHITE = '#FFFFFF';
+    const NEUTRAL_BG = '#000000';
 
     /** 1~4: 화살표 채움 — 신호마다 방향 말하기 vs 채움 색 말하기 무작위; 3·4는 역규칙(힌트 음성이 반대 차원) */
     const pickArrowStroop = (bgHex: string, reverse: boolean) => {
@@ -599,8 +610,8 @@ export function generateSignal(
       return (candidates.length ? r(candidates) : r(stroopPool)).hex;
     };
 
-    // 1~2: 화살표 스트룹/역스트룹 통합 (배경 흰색 / 배경 간섭)
-    if (level === 1) return pickArrowStroop(WHITE, Math.random() < 0.5);
+    // 1~2: 화살표 스트룹/역스트룹 통합 (배경 검정 / 배경 간섭)
+    if (level === 1) return pickArrowStroop(NEUTRAL_BG, Math.random() < 0.5);
     if (level === 2) {
       const reverse = Math.random() < 0.5;
       const fill = r(stroopPool);
@@ -621,14 +632,14 @@ export function generateSignal(
       };
     }
 
-    // 3: 글자 스트룹/역스트룹 통합(배경 흰색)
+    // 3: 글자 스트룹/역스트룹 통합(배경 검정)
     if (level === 3) {
       const [w, tc] = pair(stroopPool);
       const sayMeaning = Math.random() < 0.5;
       const reverse = Math.random() < 0.5;
       return {
         type: 'stroop',
-        bg: WHITE,
+        bg: NEUTRAL_BG,
         content: {
           word: w.name,
           textHex: tc.hex,
@@ -640,8 +651,27 @@ export function generateSignal(
       };
     }
 
-    // 4~5: 기존 6·8번 유지
-    if (level === 4) {
+    // 4: 단어+배경(기본) / 누락 색상 — stroopWordMode 또는 레거시 level 5
+    if (level === 4 || level === 5) {
+      const missing = level === 5 || opts?.stroopWordMode === 'missing';
+      if (missing) {
+        const shuffled = fisherYates([...stroopPool]);
+        const w = shuffled[0]!;
+        const tc = shuffled[1]!;
+        const bg = shuffled[2]!;
+        const miss = shuffled[3]!;
+        return {
+          type: 'stroop',
+          bg: bg.hex,
+          content: {
+            word: w.name,
+            textHex: tc.hex,
+            stroopKind: 'missing' as const,
+            missingColorName: miss.name,
+          },
+          voice: miss.name,
+        };
+      }
       for (let retry = 0; retry < 25; retry++) {
         const [w, tc, bg] = triple(stroopPool);
         const textHex = tc.hex;
@@ -662,24 +692,6 @@ export function generateSignal(
         bg: bg.hex,
         content: { word: w.name, textHex: tc.hex, stroopKind: 'bg_interference' as const },
         voice: tc.name,
-      };
-    }
-    if (level === 5) {
-      const shuffled = fisherYates([...stroopPool]);
-      const w = shuffled[0]!;
-      const tc = shuffled[1]!;
-      const bg = shuffled[2]!;
-      const miss = shuffled[3]!;
-      return {
-        type: 'stroop',
-        bg: bg.hex,
-        content: {
-          word: w.name,
-          textHex: tc.hex,
-          stroopKind: 'missing' as const,
-          missingColorName: miss.name,
-        },
-        voice: miss.name,
       };
     }
   }
@@ -714,7 +726,7 @@ export function generateSignal(
           })()
         : circles;
     const packRow = (
-      circles: { id: string; bg: string; text: string; label?: string; sourceColorId?: string }[],
+      circles: { id: string; bg: string; text: string; label?: string; sourceColorId?: string; imageUrl?: string | null }[],
       sizeMults?: number[],
       layout?: 'nestedCircles',
       targetIndex?: number
@@ -731,6 +743,8 @@ export function generateSignal(
       },
       voice: null,
     });
+
+    // 1: 동일 플랭커
     if (level === 1) {
       const c = r(activeColors);
       const circles = Array.from({ length: 5 }, () => ({
@@ -740,57 +754,87 @@ export function generateSignal(
       }));
       return packRow(maybeNumberCircles(circles));
     }
+
+    // 2: 랜덤 플랭커 (레거시 그룹형 2도 랜덤으로 통합)
     if (level === 2) {
-      const pool = activeColors.length >= 2 ? activeColors : COLORS;
-      const pickThree = (): [ColorItem, ColorItem, ColorItem] => {
-        if (pool.length >= 3) {
-          const s = fisherYates([...pool]);
-          return [s[0]!, s[1]!, s[2]!];
-        }
-        if (pool.length === 2) {
-          return [pool[0]!, pool[1]!, r(pool)];
-        }
-        return [pool[0]!, pool[0]!, pool[0]!];
-      };
-      const [left, mid, right] = pickThree();
-      const cell = (c: ColorItem) => ({ id: c.id, bg: c.bg, text: c.text });
-      /** 1번·5번 / 2·3·4번 / 서로 다른 색 그룹(가능 시 3색) */
-      const circles = [cell(left), cell(mid), cell(mid), cell(mid), cell(right)];
-      return packRow(maybeNumberCircles(circles));
-    }
-    if (level === 3) {
       const circles = Array.from({ length: 5 }, () => {
         const c = r(activeColors);
         return { id: c.id, bg: c.bg, text: c.text };
       });
       return packRow(maybeNumberCircles(circles));
     }
+
+    // 3: 5원 극단 크기
+    if (level === 3) {
+      const pool = activeColors.length >= 2 ? activeColors : COLORS;
+      const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
+      const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
+      const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
+      // 매우 큰 원 ↔ 매우 작은 원 — 크기 대비 극대화
+      const sizeMults = fisherYates([1.72, 1.28, 0.72, 0.22, 0.07]);
+      return packRow(maybeNumberCircles(circles), sizeMults);
+    }
+
+    // 4: 원 속의 원 (동심 — 가운데 축 공유) · 기본 5개
     if (level === 4) {
       const pool = activeColors.length >= 2 ? activeColors : COLORS;
-      /** 5슬롯: 색 다양성(팔레트 크기에 맞는 상한) · 인접 동일 색 금지 — 4색이면 최대 2회 등 */
-      const circleCount = opts?.flankerNestedCircleCount === 5 ? 5 : 3;
-      const colorSeq = generateColorsWithPerMax(pool, circleCount, Math.max(2, Math.ceil(circleCount / Math.max(1, pool.length))));
+      const circleCount = opts?.flankerNestedCircleCount === 3 ? 3 : 5;
+      const colorSeq = generateColorsWithPerMax(
+        pool,
+        circleCount,
+        Math.max(2, Math.ceil(circleCount / Math.max(1, pool.length)))
+      );
       const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
-      /** 원마다 다른 상대 크기(셔플) — 표시층에서 행 너비·30vmin 상한과 맞춤 */
       const sizeMults = circleCount === 5 ? [1.0, 0.76, 0.54, 0.34, 0.18] : [1.0, 0.62, 0.28];
       return packRow(circles, sizeMults, 'nestedCircles', circles.length - 1);
     }
+
+    // 5: 화살표 플랭커 — 옵션 기본(좌우) / 응용(상하좌우)
     if (level === 5) {
-      const pool = activeColors.length >= 2 ? activeColors : COLORS;
-      const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
-      const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
-      const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
-      const sizeMults = fisherYates([0.68, 0.78, 0.9, 1.05, 1.22]);
-      return packRow(maybeNumberCircles(circles), sizeMults);
+      const modeKey = opts?.flankerArrowMode === 'udlr' ? 'udlr' : 'lr';
+      const pool = modeKey === 'lr' ? DUAL_LR_ARROWS : ARROWS;
+      const target = r(pool);
+      const congruent = Math.random() < 0.5;
+      const flanker = congruent
+        ? target
+        : r(pool.filter((a) => a.id !== target.id).length > 0
+            ? pool.filter((a) => a.id !== target.id)
+            : pool);
+      const arrows = Array.from({ length: 5 }, (_, i) => (i === 2 ? target : flanker));
+      const fillHex = '#FFFFFF';
+      return {
+        type: 'flanker_arrows' as const,
+        bg: '#0F172A',
+        content: {
+          arrows: arrows.map((a) => ({ id: a.id, fillHex })),
+          centerIndex: 2,
+          targetArrowId: target.id,
+          flankerArrowMode: modeKey,
+          fillHex,
+        },
+        voice: null,
+      };
     }
+
+    // 6: 테마 플랭커 — 사이먼 믹스 갤러리처럼 원 안에 이미지
     if (level === 6) {
-      const pool = activeColors.length >= 2 ? activeColors : COLORS;
-      const maxPer = Math.max(2, Math.ceil(5 / Math.max(1, pool.length)));
-      const colorSeq = generateColorsWithPerMax(pool, 5, maxPer);
-      const circles = colorSeq.map((c) => ({ id: c.id, bg: c.bg, text: c.text }));
-      const sizeMults = fisherYates([1.0, 0.62, 0.44, 0.28, 0.14]);
-      return packRow(maybeNumberCircles(circles), sizeMults);
+      const vSlides = (opts?.fruitSlides ?? []).filter((s) => (s.imageUrl ?? '').trim());
+      const circles = Array.from({ length: 5 }, () => {
+        if (vSlides.length > 0) {
+          const slide = r(vSlides);
+          return {
+            id: slide.color.id,
+            bg: slide.color.bg,
+            text: slide.color.text,
+            imageUrl: slide.imageUrl,
+          };
+        }
+        const c = r(activeColors);
+        return { id: c.id, bg: c.bg, text: c.text };
+      });
+      return packRow(circles);
     }
+
     return null;
   }
 
@@ -1126,15 +1170,24 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
   }
   if (t === 'flanker_row') {
     const c = sig.content as {
-      circles?: { id: string }[];
+      circles?: { id: string; imageUrl?: string | null }[];
       targetColorId?: string;
       targetNumber?: string;
       sizeMults?: number[];
       layout?: string;
     };
-    const ids = (c.circles ?? []).map((x) => x.id).join(',');
+    const ids = (c.circles ?? []).map((x) => `${x.id}:${x.imageUrl ?? ''}`).join(',');
     const sm = (c.sizeMults ?? []).map((x) => (Math.round(x * 1000) / 1000).toString()).join(',');
     return `fk:${c.targetColorId ?? ''}:${c.targetNumber ?? ''}:${c.layout ?? ''}:${ids}:${sm}`;
+  }
+  if (t === 'flanker_arrows') {
+    const c = sig.content as {
+      arrows?: { id: string }[];
+      targetArrowId?: string;
+      flankerArrowMode?: string;
+    };
+    const ids = (c.arrows ?? []).map((x) => x.id).join(',');
+    return `fka:${c.targetArrowId ?? ''}:${c.flankerArrowMode ?? ''}:${ids}`;
   }
   if (t === 'gonogo_color') {
     const c = sig.content as { colorId?: string; isGo?: boolean };
@@ -1217,6 +1270,12 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
   }
   if (t === 'simon_shape') return uniqueColorKeys([content.colorId as string | undefined]);
   if (t === 'flanker_row') return uniqueColorKeys([content.targetColorId as string | undefined]);
+  if (t === 'flanker_arrows') {
+    const arrowId = content.targetArrowId as string | undefined;
+    if (!arrowId) return [];
+    const colorId = SPATIAL_ARROW_COLOR_BY_DIRECTION[arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION];
+    return uniqueColorKeys([colorId]);
+  }
   if (t === 'gonogo_color') return uniqueColorKeys([content.colorId as string | undefined]);
   if (t === 'gonogo_shape') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
   if (t === 'task_switch') return uniqueColorKeys([content.colorId as string | undefined]);
@@ -1405,6 +1464,10 @@ export function colorDupFingerprint(sig: Record<string, unknown>): string {
   if (t === 'flanker_row') {
     const c = sig.content as { targetColorId?: string; targetNumber?: string };
     return `cd:${c.targetColorId ?? ''}:${c.targetNumber ?? ''}`;
+  }
+  if (t === 'flanker_arrows') {
+    const c = sig.content as { targetArrowId?: string };
+    return `cd:fka:${c.targetArrowId ?? ''}`;
   }
   if (t === 'gonogo_color') {
     const c = sig.content as { colorId?: string; isGo?: boolean };

@@ -8,7 +8,6 @@ const WEBGL_LOW_SPEC_PLANNED_IDS = [
   'dive-standard',
   'dive-random',
   'dive-color-gate-61',
-  'visual-reaction-wormhole-41',
 ] as const;
 
 describe('저사양 모드 계획', () => {
