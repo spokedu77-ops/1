@@ -13,6 +13,23 @@ export function insertTypeForMultilinePasteFollowUp(blockType: NoteBlock['type']
   return blockType;
 }
 
+/**
+ * HTML/MD 파서가 전부 `text`로 준 멀티라인 paste를 앵커 타입에 맞춘다.
+ * 첫 줄만 고치면 후속 줄이 text로 남고, callout 장식(icon)만 묻어 콜아웃이 “사라진” 것처럼 보인다.
+ */
+export function normalizeMultilinePasteSpecsForAnchor<T extends { type: NoteBlock['type'] }>(
+  blockType: NoteBlock['type'],
+  specs: T[],
+): T[] {
+  if (specs.length <= 1) return specs;
+  if (specs[0]?.type !== 'text' || blockType === 'text') return specs;
+  const followType = insertTypeForMultilinePasteFollowUp(blockType);
+  return specs.map((spec, index) => {
+    if (spec.type !== 'text') return spec;
+    return { ...spec, type: index === 0 ? blockType : followType };
+  });
+}
+
 export function contentForMultilinePasteLine(
   blockType: NoteBlock['type'],
   line: string,

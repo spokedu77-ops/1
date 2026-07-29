@@ -13,6 +13,14 @@ describe('notePasteBlocks', () => {
     ]);
   });
 
+  it('keeps callout follow-up lines as callout for plain multiline', () => {
+    expect(pastedBlocksFromPlainLines('callout', ['A', 'B', 'C'])).toEqual([
+      { type: 'callout', text: 'A' },
+      { type: 'callout', text: 'B' },
+      { type: 'callout', text: 'C' },
+    ]);
+  });
+
   it('keeps html and todo checked on pasted content', () => {
     const content = contentForPastedBlock(
       { type: 'todo', text: 'Task', html: '<p><strong>Task</strong></p>', checked: true },

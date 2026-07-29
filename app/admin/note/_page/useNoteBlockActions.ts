@@ -40,6 +40,7 @@ import { notePointerTargetElement } from '../_lib/notePointerTarget';
 import { buildContentForTypeChange, getBlockedTypeChangeReason } from '../_lib/noteBlockTypeChange';
 import {
   canSplitMultilinePasteToBlocks,
+  normalizeMultilinePasteSpecsForAnchor,
 } from '../_lib/noteMultilinePaste';
 import {
   isStructuralHtmlPasteSpec,
@@ -459,9 +460,7 @@ export function useNoteBlockActions(options: {
 
   const handleMultilinePaste = useCallback(async (block: NoteBlock, specs: PastedBlockSpec[]) => {
     if (!selectedId || specs.length === 0) return;
-    const normalizedSpecs = specs.length > 1 && specs[0]?.type === 'text' && block.type !== 'text'
-      ? [{ ...specs[0], type: block.type }, ...specs.slice(1)]
-      : specs;
+    const normalizedSpecs = normalizeMultilinePasteSpecsForAnchor(block.type, specs);
     const singleSpecialPaste = normalizedSpecs.length === 1 && (
       isStructuralHtmlPasteSpec(normalizedSpecs[0])
       || normalizedSpecs[0].type !== block.type

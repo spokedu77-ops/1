@@ -1,26 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import {
-  canSplitMultilinePasteToBlocks,
-  contentForMultilinePasteLine,
   insertTypeForMultilinePasteFollowUp,
+  normalizeMultilinePasteSpecsForAnchor,
 } from './noteMultilinePaste';
 
-describe('noteMultilinePaste', () => {
-  it('allows split for text blocks', () => {
-    expect(canSplitMultilinePasteToBlocks('text')).toBe(true);
-    expect(canSplitMultilinePasteToBlocks('code')).toBe(false);
+describe('normalizeMultilinePasteSpecsForAnchor', () => {
+  it('rewrites every HTML text row to callout when pasting into a callout', () => {
+    const specs = [
+      { type: 'text' as const, text: 'first' },
+      { type: 'text' as const, text: 'second' },
+      { type: 'text' as const, text: 'third' },
+    ];
+    expect(normalizeMultilinePasteSpecsForAnchor('callout', specs)).toEqual([
+      { type: 'callout', text: 'first' },
+      { type: 'callout', text: 'second' },
+      { type: 'callout', text: 'third' },
+    ]);
   });
 
-  it('follow-up after heading becomes text', () => {
-    expect(insertTypeForMultilinePasteFollowUp('heading2')).toBe('text');
-    expect(insertTypeForMultilinePasteFollowUp('bulletList')).toBe('bulletList');
+  it('keeps heading follow-ups as text', () => {
+    expect(insertTypeForMultilinePasteFollowUp('heading')).toBe('text');
+    expect(normalizeMultilinePasteSpecsForAnchor('heading', [
+      { type: 'text', text: 'Title' },
+      { type: 'text', text: 'Body' },
+    ])).toEqual([
+      { type: 'heading', text: 'Title' },
+      { type: 'text', text: 'Body' },
+    ]);
   });
 
-  it('builds line content without html', () => {
-    const content = contentForMultilinePasteLine('todo', '할 일', {});
-    expect(content.text).toBe('할 일');
-    expect(content.checked).toBe(false);
-    expect(content.depth).toBeUndefined();
-    expect(content.html).toBeUndefined();
+  it('does not rewrite already typed non-text rows', () => {
+    const specs = [
+      { type: 'callout' as const, text: 'A' },
+      { type: 'text' as const, text: 'B' },
+    ];
+    expect(normalizeMultilinePasteSpecsForAnchor('callout', specs)).toEqual(specs);
   });
 });
