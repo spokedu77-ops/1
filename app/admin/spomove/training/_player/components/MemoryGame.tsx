@@ -4,9 +4,9 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { EMBED_FIXED_VIEWPORT } from '../lib/embedViewport';
 import { playBeep } from '../lib/audio';
 import { buildMemoryPatternFromSlots, DEFAULT_MEMORY_COLOR_SLOTS } from '../lib/memoryColorSlots';
-import { generateMemoryPattern } from '../lib/signals';
+import { MEMORY_ROUNDS, COLOR_SEQUENCE_RAMP_LENGTHS, COLOR_SEQUENCE_RAMP_ROUNDS } from '../constants';
+import { generateMemoryPattern, generateMemoryPatternOfLength } from '../lib/signals';
 import { LongPressButton } from './LongPressButton';
-import { MEMORY_ROUNDS } from '../constants';
 
 type ColorItem = { id: string; name: string; bg: string; text: string; symbol: string };
 type Phase = 'idle' | 'showing' | 'waiting' | 'reveal' | 'summaryIntro' | 'summary' | 'done';
@@ -36,9 +36,10 @@ function colorShowMs(level: number, speedSec: number, schedule: number[], index:
   return Math.max(100, Math.round((Number(speedSec) || 1) * 1000));
 }
 
-function patternLengthLabel(level: number) {
+function patternLengthLabel(level: number, currentLen?: number) {
   if (level === 1) return '3색';
   if (level === 2) return '5색';
+  if (level === 3) return typeof currentLen === 'number' ? `추가 · ${currentLen}색` : '추가';
   return '10색';
 }
 
@@ -61,15 +62,19 @@ export function MemoryGame({
   slotColorIds?: string[];
   roundCount?: number;
 }) {
-  const total = Math.max(1, roundCount);
+  const isRampLevel = level === 3;
+  const total = isRampLevel ? COLOR_SEQUENCE_RAMP_ROUNDS : Math.max(1, roundCount);
   const patterns = useMemo<ColorItem[][]>(() => {
     if (level === 6) {
       const ids = slotColorIds?.length ? slotColorIds : DEFAULT_MEMORY_COLOR_SLOTS;
       const fixed = buildMemoryPatternFromSlots(ids);
       return Array.from({ length: total }, () => fixed);
     }
+    if (isRampLevel) {
+      return COLOR_SEQUENCE_RAMP_LENGTHS.map((len) => generateMemoryPatternOfLength(len));
+    }
     return Array.from({ length: total }, () => generateMemoryPattern(level));
-  }, [level, slotColorIds, total]);
+  }, [isRampLevel, level, slotColorIds, total]);
 
   const [round, setRound] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
@@ -197,7 +202,7 @@ export function MemoryGame({
         <span style={{ opacity: 0.35 }}>|</span>
         <span style={{ color: '#FCD34D' }}>{level}번</span>
         <span style={{ opacity: 0.35 }}>|</span>
-        <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{patternLengthLabel(level)}</span>
+        <span style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{patternLengthLabel(level, currentPattern.length)}</span>
       </div>
       <button type="button" onClick={onExit} style={{ border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', background: 'rgba(0,0,0,0.55)', padding: '0.6rem 1rem', color: '#fff', fontSize: '1rem', fontWeight: 800, cursor: 'pointer', letterSpacing: '0.08em' }}>
         STOP

@@ -1,12 +1,31 @@
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 
-export type SpomoveDifficultyKind = 'numberCart' | 'colorTracker' | 'mole' | 'camouflage' | 'goalkeeper';
+export type SpomoveDifficultyKind = 'numberCart' | 'colorTracker' | 'mole' | 'goalkeeper';
 
 export type SpomoveDifficultyOption = {
   value: string;
   label: string;
   sub: string;
 };
+
+/** 흰 공 찾기 통합 3단계 → engine tier+dual 매핑 */
+export function colorTrackerStageToEngine(stage: 1 | 2 | 3): {
+  colorTrackerTier: 1 | 3;
+  colorTrackerDualPanel: boolean;
+} {
+  if (stage === 3) return { colorTrackerTier: 3, colorTrackerDualPanel: true };
+  if (stage === 2) return { colorTrackerTier: 3, colorTrackerDualPanel: false };
+  return { colorTrackerTier: 1, colorTrackerDualPanel: false };
+}
+
+export function colorTrackerEngineToStage(
+  tier: number | undefined,
+  dualPanel: boolean | undefined,
+): 1 | 2 | 3 {
+  if (dualPanel) return 3;
+  if (tier === 3 || tier === 2) return 2;
+  return 1;
+}
 
 export function getSpomoveDifficultyKind(
   preset: OfficialSpomovePreset,
@@ -16,7 +35,6 @@ export function getSpomoveDifficultyKind(
   if (level === 8) return 'numberCart';
   if (level === 9) return 'colorTracker';
   if (level === 6) return 'mole';
-  if (level === 5) return 'camouflage';
   if (level === 10) return 'goalkeeper';
   return null;
 }
@@ -33,19 +51,14 @@ export function getSpomoveDifficultyOptions(
       ];
     case 'colorTracker':
       return [
-        { value: '1', label: '1', sub: '입문' },
-        { value: '2', label: '2', sub: '기본' },
-        { value: '3', label: '3', sub: '집중' },
+        { value: '1', label: '1', sub: '입문 · 단일' },
+        { value: '2', label: '2', sub: '집중 · 단일' },
+        { value: '3', label: '3', sub: '집중 · 2패널' },
       ];
     case 'mole':
       return [
         { value: 'classic', label: '1', sub: '기본 · 1마리' },
         { value: 'variant', label: '2', sub: '변형 · 1·2마리' },
-      ];
-    case 'camouflage':
-      return [
-        { value: 'center', label: '1', sub: '중앙' },
-        { value: 'variant', label: '2', sub: '극단 순환' },
       ];
     case 'goalkeeper':
       return [
@@ -63,11 +76,14 @@ export function readSpomoveDifficultyValue(
     case 'numberCart':
       return String(preset.engine.numberCartTier ?? 1);
     case 'colorTracker':
-      return String(preset.engine.colorTrackerTier ?? 1);
+      return String(
+        colorTrackerEngineToStage(
+          preset.engine.colorTrackerTier,
+          preset.engine.colorTrackerDualPanel,
+        ),
+      );
     case 'mole':
       return preset.engine.moleLookMode ?? 'classic';
-    case 'camouflage':
-      return preset.engine.camouflagePlacement ?? 'center';
     case 'goalkeeper':
       return String(preset.engine.goalkeeperTier ?? 2);
   }
@@ -86,15 +102,14 @@ export function applySpomoveDifficulty(
       break;
     }
     case 'colorTracker': {
-      const tier = Number(value);
-      engine.colorTrackerTier = tier === 2 || tier === 3 ? tier : 1;
+      const stage = value === '2' ? 2 : value === '3' ? 3 : 1;
+      const mapped = colorTrackerStageToEngine(stage);
+      engine.colorTrackerTier = mapped.colorTrackerTier;
+      engine.colorTrackerDualPanel = mapped.colorTrackerDualPanel;
       break;
     }
     case 'mole':
       engine.moleLookMode = value === 'variant' ? 'variant' : 'classic';
-      break;
-    case 'camouflage':
-      engine.camouflagePlacement = value === 'variant' ? 'variant' : 'center';
       break;
     case 'goalkeeper':
       engine.goalkeeperTier = value === '1' ? 1 : 2;

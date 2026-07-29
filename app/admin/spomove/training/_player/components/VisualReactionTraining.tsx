@@ -6,7 +6,7 @@ import { staticPerfTier, PerfMonitor } from '../lib/reactTrainPerf';
 
 import { setupCanvas } from '../lib/canvasUtils';
 
-/** 하단 패드(#vrt-pads)는 DOM 분리 — 플레이 캔버스 높이에는 포함되지 않음. 히트 라인은 캔버스 하단에서만 약간 올린다. */
+/** 하단 패드/가시 영역은 DOM 분리 — 플레이 캔버스 높이에는 포함되지 않음. 히트 라인은 캔버스 하단에서만 약간 올린다. */
 function playBottomHitY(cvHeight: number): number {
   return cvHeight - Math.max(cvHeight * 0.035, 16);
 }
@@ -337,6 +337,17 @@ const css = `
 #vrt .vrt-pad[data-l="3"].lit{background:linear-gradient(to top,rgba(255,214,0,.18),transparent)}
 #vrt .vrt-pad.lit .vrt-pad-dot{opacity:1;box-shadow:0 0 18px 4px currentColor;transform:scale(1.5)}
 #vrt .vrt-pad.lit .vrt-pad-lbl{opacity:1}
+/* 풍선 터뜨리기: 하단 4색 패드 대신 가시 침대 */
+#vrt #vrt-spikes{height:var(--pad-h);flex-shrink:0;z-index:40;pointer-events:none;padding-bottom:max(0px,env(safe-area-inset-bottom));background:linear-gradient(to top,#080810 0%,#101018 100%);border-top:1px solid rgba(255,255,255,.08);display:flex;overflow:hidden}
+#vrt .vrt-spike-col{flex:1;display:flex;align-items:flex-end;justify-content:space-evenly;gap:2px;padding:0 clamp(2px,1vw,8px) 6px;border-right:1px solid rgba(255,255,255,.05);transition:background .08s}
+#vrt .vrt-spike-col:last-child{border-right:none}
+#vrt .vrt-spike-col[data-l="0"]{--spike-color:#FF1744}
+#vrt .vrt-spike-col[data-l="1"]{--spike-color:#2979FF}
+#vrt .vrt-spike-col[data-l="2"]{--spike-color:#00E676}
+#vrt .vrt-spike-col[data-l="3"]{--spike-color:#FFD600}
+#vrt .vrt-spike-up{width:0;height:0;border-left:clamp(5px,1.2vw,9px) solid transparent;border-right:clamp(5px,1.2vw,9px) solid transparent;border-bottom:clamp(28px,6vh,46px) solid var(--spike-color);filter:drop-shadow(0 -2px 6px rgba(255,255,255,.12));opacity:.85}
+#vrt .vrt-spike-col.lit{background:linear-gradient(to top,rgba(255,255,255,.06),transparent)}
+#vrt .vrt-spike-col.lit .vrt-spike-up{opacity:1;filter:drop-shadow(0 -4px 14px var(--spike-color))}
 #vrt #vrt-hud{height:var(--hud-h);flex-shrink:0;z-index:50;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0}
 #vrt .vrt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 #vrt .vrt-hc.vrt-cen{flex:1;align-items:center;border-right:none}
@@ -385,6 +396,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   const comboNRef = useRef<HTMLDivElement>(null);
   const laneExplRefs = useRef<(HTMLDivElement | null)[]>([]);
   const padRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const spikeColRefs = useRef<(HTMLDivElement | null)[]>([]);
   const milestoneRootRef = useRef<HTMLDivElement>(null);
   const [hudTimeWarn, setHudTimeWarn] = useState(false);
   const [countdown, setCountdown] = useState(3);
@@ -470,10 +482,19 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         }, 110);
       }
       const pad = padRefs.current[lane];
-      if (pad) {
+      if (pad && g.mode !== 'flash') {
         pad.classList.add('lit');
         clearTimeout((pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
         (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => pad.classList.remove('lit'), 260);
+      }
+      const spikeCol = spikeColRefs.current[lane];
+      if (spikeCol && g.mode === 'flash') {
+        spikeCol.classList.add('lit');
+        clearTimeout((spikeCol as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
+        (spikeCol as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(
+          () => spikeCol.classList.remove('lit'),
+          260,
+        );
       }
 
       const c = RT_COLORS[lane].main;
@@ -612,8 +633,19 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
     };
 
     const drawHitLine = (ctx: CanvasRenderingContext2D) => {
-      if (g.mode === 'flash') return;
       const y = g.hitY;
+      if (g.mode === 'flash') {
+        // 히트 라인만 — 가시 실루엣은 DOM #vrt-spikes
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(g.W, y);
+        ctx.stroke();
+        ctx.restore();
+        return;
+      }
       ctx.save();
       ctx.shadowColor = '#fff';
       ctx.shadowBlur = 18;
@@ -936,21 +968,40 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
           <div className="vrt-cw">COMBO</div>
         </div>
       </div>
-      <div id="vrt-pads">
-        {['RED', 'BLU', 'GRN', 'YEL'].map((label, i) => (
-          <div
-            key={uid + 'p' + i}
-            className="vrt-pad"
-            data-l={i}
-            ref={(el) => {
-              padRefs.current[i] = el;
-            }}
-          >
-            <div className="vrt-pad-dot" />
-            <div className="vrt-pad-lbl">{label}</div>
-          </div>
-        ))}
-      </div>
+      {variant === 'flash' ? (
+        <div id="vrt-spikes" aria-hidden>
+          {[0, 1, 2, 3].map((lane) => (
+            <div
+              key={uid + 'sc' + lane}
+              className="vrt-spike-col"
+              data-l={lane}
+              ref={(el) => {
+                spikeColRefs.current[lane] = el;
+              }}
+            >
+              {Array.from({ length: 5 }, (_, i) => (
+                <div key={i} className="vrt-spike-up" aria-hidden />
+              ))}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div id="vrt-pads">
+          {['RED', 'BLU', 'GRN', 'YEL'].map((label, i) => (
+            <div
+              key={uid + 'p' + i}
+              className="vrt-pad"
+              data-l={i}
+              ref={(el) => {
+                padRefs.current[i] = el;
+              }}
+            >
+              <div className="vrt-pad-dot" />
+              <div className="vrt-pad-lbl">{label}</div>
+            </div>
+          ))}
+        </div>
+      )}
       <style>{`#vrt #vrt-mtime.warn{animation:vrtw .5s ease-in-out infinite}`}</style>
     </div>
   );

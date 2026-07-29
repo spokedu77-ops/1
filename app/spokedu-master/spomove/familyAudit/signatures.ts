@@ -25,7 +25,9 @@ const ENGINE_OPTION_KEYS = [
   'flowIncludeBonus',
   'flankerStimulusType',
   'flankerNestedCircleCount',
+  'flankerArrowMode',
   'camouflagePlacement',
+  'stroopWordMode',
 ] as const;
 
 /**
@@ -44,8 +46,8 @@ export const MECHANIC_KEYS_BY_MODE: Record<OfficialSpomoveEngineMode, readonly s
     'camouflagePlacement',
   ],
   simon: [],
-  flanker: ['flankerStimulusType', 'flankerNestedCircleCount'],
-  stroop: [],
+  flanker: ['flankerStimulusType', 'flankerNestedCircleCount', 'flankerArrowMode', 'variantColorTheme'],
+  stroop: ['stroopWordMode'],
   spatial: [],
   flow: ['flowFeatures', 'flowLayout', 'flowIncludeBonus', 'flowDuration'],
 };

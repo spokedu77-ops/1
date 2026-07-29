@@ -60,32 +60,20 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
 
 
-  it('변형 사분할은 1~4단계가 easy/hard로 분리된다', () => {
-
+  it('변형 사분할은 1~3단계이며 easy 고정이다', () => {
     const variantQuadrants = OFFICIAL_SPOMOVE_LIBRARY.filter(
-
-      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 10,
-
+      (preset) => preset.engine.mode === 'basic' && preset.engine.level >= 7 && preset.engine.level <= 9,
     );
-
-    expect(variantQuadrants).toHaveLength(8);
-
-    for (const level of [7, 8, 9, 10]) {
-
+    expect(variantQuadrants).toHaveLength(3);
+    for (const level of [7, 8, 9]) {
       const byLevel = variantQuadrants.filter((preset) => preset.engine.level === level);
-
-      expect(byLevel.map((preset) => preset.engine.bodyLabelMode).sort()).toEqual(['easy', 'hard']);
-
-      expect(byLevel.every((preset) => preset.engine.hideBodyLabelModeControls)).toBe(true);
-
-      expect(byLevel.every((preset) => preset.engine.variantColorTheme === 'color')).toBe(true);
-
-      expect(byLevel.find((preset) => preset.engine.bodyLabelMode === 'easy')?.cueSeconds).toBe(5);
-
-      expect(byLevel.find((preset) => preset.engine.bodyLabelMode === 'hard')?.cueSeconds).toBe(6);
-
+      expect(byLevel).toHaveLength(1);
+      expect(byLevel[0]?.engine.bodyLabelMode).toBe('easy');
+      expect(byLevel[0]?.engine.hideBodyLabelModeControls).toBe(true);
+      expect(byLevel[0]?.engine.variantColorTheme).toBe('color');
+      expect(byLevel[0]?.cueSeconds).toBe(5);
     }
-
+    expect(OFFICIAL_SPOMOVE_LIBRARY.some((p) => p.id.includes('mq4') || p.id.endsWith('-hard'))).toBe(false);
   });
 
 
@@ -96,13 +84,13 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   it('그룹별 개수가 확장 목표와 일치한다', () => {
 
-    expect(byGroup('reaction-cognition')).toHaveLength(40);
+    expect(byGroup('reaction-cognition')).toHaveLength(35);
 
-    expect(byGroup('visual-reaction')).toHaveLength(12);
+    expect(byGroup('visual-reaction')).toHaveLength(7);
 
-    expect(byGroup('simon')).toHaveLength(3);
+    expect(byGroup('simon')).toHaveLength(4);
 
-    expect(byGroup('flanker')).toHaveLength(9);
+    expect(byGroup('flanker')).toHaveLength(10);
 
     expect(byGroup('stroop')).toHaveLength(5);
 
@@ -210,53 +198,71 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
   const vr = byGroup('visual-reaction');
 
-  it('시지각 반응 FLOW concurrent 1/2/3 존재', () => {
-
-    expect(vr.some((preset) => preset.engine.level === 2 && (preset.engine.reactTrainConcurrent ?? 1) === 1)).toBe(true);
-
-    expect(vr.some((preset) => preset.engine.level === 2 && preset.engine.reactTrainConcurrent === 2)).toBe(true);
-
-    expect(vr.some((preset) => preset.engine.level === 2 && preset.engine.reactTrainConcurrent === 3)).toBe(true);
-
+  it('시지각 반응 FLOW concurrent 2만 카탈로그에 둔다', () => {
+    const flow = vr.filter((preset) => preset.engine.level === 2 && preset.engine.mode === 'reactTrain');
+    expect(flow).toHaveLength(1);
+    expect(flow[0]?.engine.reactTrainConcurrent).toBe(2);
+    expect(findOfficialSpomovePreset('visual-reaction-flow-05')).toBeNull();
+    expect(findOfficialSpomovePreset('visual-reaction-flow-3x-32')).toBeNull();
   });
 
-
-
-  it('숫자 기차·흰 공·두더지·매직 아이는 기본 1개만 카탈로그에 두고 난이도는 세션에서 고른다', () => {
+  it('숫자 연산 기차·흰 공·두더지는 기본 1개만 카탈로그에 두고 난이도는 세션에서 고른다', () => {
     expect(vr.filter((preset) => preset.engine.level === 8 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
     expect(vr.filter((preset) => preset.engine.level === 9 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
     expect(vr.filter((preset) => preset.engine.level === 10 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
     expect(vr.filter((preset) => preset.engine.level === 6 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
-    expect(vr.filter((preset) => preset.engine.level === 5 && preset.engine.mode === 'reactTrain')).toHaveLength(1);
+    expect(vr.filter((preset) => preset.engine.level === 5 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
+    expect(vr.filter((preset) => preset.engine.level === 4 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
+    expect(vr.filter((preset) => preset.engine.level === 7 && preset.engine.mode === 'reactTrain')).toHaveLength(0);
 
     expect(findOfficialSpomovePreset('visual-reaction-number-cart-l2')?.engine.numberCartTier).toBe(1);
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.engine.colorTrackerTier).toBe(1);
+    expect(findOfficialSpomovePreset('visual-reaction-color-tracker-l2')?.engine.colorTrackerDualPanel).toBe(false);
     expect(findOfficialSpomovePreset('visual-reaction-goalkeeper-42')?.engine.level).toBe(10);
     expect(findOfficialSpomovePreset('visual-reaction-mole-l1')?.engine.moleLookMode).toBe('classic');
-    expect(findOfficialSpomovePreset('visual-reaction-blackout-37')?.engine.camouflagePlacement).toBe('center');
+
+    const magic = findOfficialSpomovePreset('visual-reaction-blackout-37');
+    expect(magic?.programGroup).toBe('simon');
+    expect(magic?.engine).toEqual({ mode: 'simon', level: 4, camouflagePlacement: 'variant' });
 
     expect(findOfficialSpomovePreset('visual-reaction-mole-l2')).toBeNull();
     expect(findOfficialSpomovePreset('visual-reaction-camouflage-l2')).toBeNull();
     expect(findOfficialSpomovePreset('visual-reaction-number-cart-tier1-exp')).toBeNull();
     expect(findOfficialSpomovePreset('visual-reaction-color-tracker-tier3-exp')).toBeNull();
+    expect(findOfficialSpomovePreset('visual-reaction-pulse-36')).toBeNull();
+    expect(findOfficialSpomovePreset('visual-reaction-wormhole-41')).toBeNull();
 
     expect(vr.some((preset) => preset.id === 'visual-reaction-sweep-38')).toBe(false);
   });
 
+  it('시지각 반응 카탈로그는 엔진 7종(파도·벽돌·풍선·두더지·기차·흰공·골키퍼)', () => {
+    expect(vr).toHaveLength(7);
+    expect(vr.map((p) => p.engine.level).sort((a, b) => a - b)).toEqual([1, 2, 3, 6, 8, 9, 10]);
+  });
+
+  it('사이먼 그룹에 매직 아이(level 4)가 포함된다', () => {
+    const simon = byGroup('simon');
+    expect(simon.some((preset) => preset.id === 'visual-reaction-blackout-37')).toBe(true);
+    expect(simon.some((preset) => preset.engine.level === 4 && preset.engine.mode === 'simon')).toBe(true);
+  });
 
 
-  it('플랭커 색 4종 + 숫자 4종', () => {
+
+  it('플랭커 색 7종 + 숫자 3종', () => {
 
     const flanker = byGroup('flanker');
 
-    expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(4);
+    expect(flanker.filter((preset) => preset.engine.flankerStimulusType === 'number')).toHaveLength(3);
 
-    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(5);
+    expect(flanker.filter((preset) => !preset.engine.flankerStimulusType || preset.engine.flankerStimulusType === 'color')).toHaveLength(7);
     expect(flanker.some((preset) => preset.id === 'flanker-nested-circles-04')).toBe(true);
+    expect(flanker.some((preset) => preset.id === 'flanker-arrow-05')).toBe(true);
+    expect(flanker.some((preset) => preset.id === 'flanker-theme-06')).toBe(true);
 
     expect(flanker.some((preset) => preset.id === 'flanker-grouped-42')).toBe(false);
 
     expect(flanker.some((preset) => preset.id === 'flanker-3circle-exp')).toBe(false);
+    expect(flanker.some((preset) => preset.id === 'flanker-mixed-size-exp')).toBe(false);
 
   });
 
@@ -272,7 +278,7 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
 
 
 
-  it('기존 9개 legacy ID 유지', () => {
+  it('기존 legacy ID 유지(제거된 FLOW×1 제외)', () => {
 
     const legacyIds = [
 
@@ -283,8 +289,6 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
       'reaction-cognition-full-color-03',
 
       'reaction-cognition-split-color-04',
-
-      'visual-reaction-flow-05',
 
       'simon-pole-shape-06',
 
@@ -301,6 +305,8 @@ describe(`OFFICIAL_SPOMOVE_LIBRARY ${OFFICIAL_SPOMOVE_LIBRARY_SIZE}개 확장 �
       expect(findOfficialSpomovePreset(id)).not.toBeNull();
 
     }
+
+    expect(findOfficialSpomovePreset('visual-reaction-flow-05')).toBeNull();
 
   });
 

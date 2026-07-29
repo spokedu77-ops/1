@@ -12,7 +12,8 @@ describe('spomove preset display model', () => {
 
     const visual = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'visual-reaction-blackout-37');
     expect(visual).toBeTruthy();
-    expect(getSpomovePresetDisplayModel(visual!).durationLabel).toBe('3초 · 20회');
+    expect(getSpomovePresetDisplayModel(visual!).durationLabel).toBe('5초 · 20회');
+    expect(visual!.programGroup).toBe('simon');
 
     const dive = OFFICIAL_SPOMOVE_LIBRARY.find((preset) => preset.id === 'dive-random');
     expect(dive).toBeTruthy();

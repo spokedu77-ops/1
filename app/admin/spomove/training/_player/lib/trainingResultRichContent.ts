@@ -222,8 +222,7 @@ function buildProgramSummary(mode: string, level: number): string {
   if (mode === 'basic' && isModifiedQuadrantLevel(level)) {
     const stage = modifiedQuadrantStage(level);
     if (stage === 1) return '2×2 사분할에 색과 발 부위가 함께 나와요.';
-    if (stage === 2) return '색과 손·발 조합이 섞여 나와요.';
-    if (stage === 3) return '색이 최대 3개까지 늘어나고 부위가 배정돼요.';
+    if (stage === 2) return '색 1~3개와 손·발 조합이 섞여 나와요.';
     return '3색에 손·발이 섞인 가장 어려운 단계예요.';
   }
   if (mode === 'basic' && level === 5) {
@@ -292,6 +291,7 @@ function buildCoachTip(mode: string, level: number): string {
 function spatialPatternLabel(level: number): string {
   if (level === 1) return '3색';
   if (level === 2) return '5색';
+  if (level === 3) return '추가(3→7)';
   if (level === 4 || level === 5) return '색·번호';
   return '10색';
 }

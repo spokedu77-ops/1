@@ -46,6 +46,12 @@ export function getAssetRequirement(params: {
 
   // color 테마: 이미지 없이 색상 신호만 사용
   if (theme === 'color') return NO_REQUIREMENT;
+
+  // 플랭커 6번 테마: 변형 색지각과 동일 — 선택한 테마 이미지 1장 이상
+  if (mode === 'flanker' && level === 6) {
+    return { minimumCount: 1, requiresDistinctImages: false, requiresDistinctColors: false };
+  }
+
   // basic 외 모드: 이미지 미사용
   if (mode !== 'basic') return NO_REQUIREMENT;
   // level 1: arrow — 이미지 미사용

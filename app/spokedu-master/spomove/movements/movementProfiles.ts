@@ -112,7 +112,7 @@ export const MOVEMENT_PROFILES: Record<MovementProfileId, MovementProfile> = {
     alternatives: [{ baseMovement: 'footTap', allowedLimbRules: ['free'] }],
     minimumMovementCount: 1,
   },
-  /** 변형 사분할 2~4단계 — 엔진이 손·발을 직접 제시, 일반 selector 비활성 */
+  /** 변형 사분할 2~3단계 — 엔진이 손·발을 직접 제시, 일반 selector 비활성 */
   bodyCueBuiltIn: {
     id: 'bodyCueBuiltIn',
     selectionMode: 'disabled',

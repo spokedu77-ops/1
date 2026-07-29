@@ -63,8 +63,9 @@ import {
   modifiedQuadrantStage,
   modifiedQuadrantLevelFromStage,
   catalogSpatialUiLevel,
-  colorSequenceLength,
-  colorSequenceLevelFromLength,
+  colorSequenceOption,
+  colorSequenceLevelFromOption,
+  type ColorSequenceOption,
   type SpatialArrowColorMapping,
 } from './constants';
 
@@ -136,6 +137,10 @@ type Settings = {
   spatialArrowColorMapping: SpatialArrowColorMapping;
   flankerStimulusType: 'color' | 'number';
   flankerNestedCircleCount: 3 | 5;
+  /** flanker 5번: 기본 좌우 | 응용 상하좌우 */
+  flankerArrowMode: 'lr' | 'udlr';
+  /** stroop 4단계: 단어+배경(기본) | 누락 색상 */
+  stroopWordMode: 'bg' | 'missing';
   /** ???????????????????????????????????????곕춴???????? ????????????????????????????????????*/
   flowFeatures: Set<FlowFeatureKey>;
   /** ???????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲?????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹?????????????????????????????????????????????????????ㅻ깹???????????????????????????????????????????????*/
@@ -157,7 +162,7 @@ type Settings = {
   colorTrackerDualPanel: boolean;
   /** reactTrain level 6 (두더지 잡기): classic | variant */
   moleLookMode: 'classic' | 'variant';
-  /** reactTrain level 5 (매직 아이): center | variant */
+  /** reactTrain legacy L5 / simon L4: always variant */
   camouflagePlacement: 'center' | 'variant';
   /** reactTrain level 10 (골키퍼): 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier: 1 | 2;
@@ -187,18 +192,20 @@ const defaultSettings: Settings = {
   spatialArrowColorMode: 'basic',
   spatialArrowColorMapping: 'compass',
   flankerStimulusType: 'color',
-  flankerNestedCircleCount: 3,
+  flankerNestedCircleCount: 5,
+  flankerArrowMode: 'lr' as const,
+  stroopWordMode: 'bg' as const,
   flowFeatures: new Set<FlowFeatureKey>(),
   diveEnvironmentTheme: 'space',
   flowDuration: 25,
   flowLayout: 'sequential',
   flowIncludeBonus: true,
-  reactTrainConcurrent: 1,
+  reactTrainConcurrent: 2,
   numberCartTier: 2,
-  colorTrackerTier: 2,
+  colorTrackerTier: 1,
   colorTrackerDualPanel: false,
   moleLookMode: 'classic',
-  camouflagePlacement: 'center',
+  camouflagePlacement: 'variant',
   goalkeeperTier: 2,
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -242,6 +249,8 @@ export type MemoryGameAutoLaunch = {
   spatialArrowColorMapping?: SpatialArrowColorMapping;
   flankerStimulusType?: 'color' | 'number';
   flankerNestedCircleCount?: 3 | 5;
+  flankerArrowMode?: 'lr' | 'udlr';
+  stroopWordMode?: 'bg' | 'missing';
   /** Flow 2.0: ?????????????????????????????????????????????????곕춴???????? ???????????????????????????????????????????????諛몃마嶺뚮?????????????硫λ젒????????????????????遺얘턁??????얜Ŧ堉??????⑤뜪?????????????????????????癲??????????????????????????????????????????????????????????????????????????????????????????????????????????Set<FlowFeatureKey>?????????????????????????????????ㅻ깹???????????*/
   flowFeatures?: string[];
   /** Hub 파노라마 환경 테마 */
@@ -259,7 +268,7 @@ export type MemoryGameAutoLaunch = {
   colorTrackerDualPanel?: boolean;
   /** reactTrain level 6 (두더지 잡기): classic | variant */
   moleLookMode?: 'classic' | 'variant';
-  /** reactTrain level 5 (매직 아이): center | variant */
+  /** reactTrain legacy L5 / simon L4: always variant */
   camouflagePlacement?: 'center' | 'variant';
   /** reactTrain level 10 (골키퍼): 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier?: 1 | 2;
@@ -298,6 +307,8 @@ export function settingsToExitResume(s: Settings): TrainingExitResume {
       variantColorTheme: s.variantColorTheme,
       flankerStimulusType: s.flankerStimulusType,
       flankerNestedCircleCount: s.flankerNestedCircleCount,
+      flankerArrowMode: s.flankerArrowMode,
+      stroopWordMode: s.stroopWordMode,
       flowFeatures: [...s.flowFeatures],
       diveEnvironmentTheme: s.diveEnvironmentTheme,
       flowDuration: s.flowDuration,
@@ -374,8 +385,6 @@ export default function MemoryGameApp({
   const [isOffline, setIsOffline] = useState(false);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [showVariantAppendix, setShowVariantAppendix] = useState(false);
-  const [bodyLabelMode, setBodyLabelMode] = useState<'easy' | 'hard'>(autoLaunch?.bodyLabelMode ?? 'hard');
-  const hideBodyLabelModeControls = autoLaunch?.hideBodyLabelModeControls === true;
   const settingsRef = useRef(settings);
 
   const [isTraining, setIsTraining] = useState(false);
@@ -461,6 +470,7 @@ export default function MemoryGameApp({
   }, []);
 
   const simonMixedVariantLevel = settings.mode === 'simon' && settings.level === 3;
+  const flankerThemeLevel = settings.mode === 'flanker' && settings.level === 6;
 
   const { slides: allVariantSlides, status: allAssetStatus, reload: reloadAllAssets } =
     useSpomoveAllVariantSlidesForTraining(simonMixedVariantLevel);
@@ -543,7 +553,7 @@ export default function MemoryGameApp({
   );
 
   /** ???????????3??Mixed Gallery): ????????????????????????? ?????????????????????????????熬곣뫖利당춯??쎾퐲???????????????????꿔꺂?㏘틠??怨몄젦????????????????????????????????????????????????곕춴???????????????*/
-  const variantImagePreloadLevel = basicVariantLevel || simonMixedVariantLevel;
+  const variantImagePreloadLevel = basicVariantLevel || simonMixedVariantLevel || flankerThemeLevel;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -567,7 +577,7 @@ export default function MemoryGameApp({
     void preloadVariantFruitImages(variantFruitUrls);
   }, [isTraining, screen, variantImagePreloadLevel, variantFruitUrls]);
 
-  /** basic 변형 사분할(engine 7~10): 신체 부위 라벨 easy/hard */
+  /** basic 변형 사분할(engine 7~10): 부위 아이콘(easy) 고정 */
   const quadBodyLevel = useMemo(
     () => settings.mode === 'basic' && settings.level >= 7 && settings.level <= 10,
     [settings.mode, settings.level],
@@ -611,10 +621,14 @@ export default function MemoryGameApp({
     if (!(normalized.mode in MODES)) return;
     const modeDef = MODES[normalized.mode];
     if (!modeDef) return;
-    const targetLevel =
+    const targetLevelRaw =
       typeof normalized.level === 'number' && isKnownTrainingLevel(normalized.mode, normalized.level)
         ? normalized.level
         : modeDef.levels[0]?.id ?? 1;
+    const targetLevel = normalized.mode === 'stroop' && targetLevelRaw === 5
+      ? 4
+      : targetLevelRaw;
+    const legacyStroopMissing = normalized.mode === 'stroop' && targetLevelRaw === 5;
 
     if (autoLaunch) {
       const {
@@ -627,6 +641,11 @@ export default function MemoryGameApp({
         mode: normalized.mode,
         level: targetLevel,
         ...restAutoLaunch,
+        stroopWordMode: legacyStroopMissing
+          ? 'missing'
+          : restAutoLaunch.stroopWordMode === 'missing'
+            ? 'missing'
+            : 'bg',
         /** Training ??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝???????????????????????????????????????????????????????????????????????????????????????????????????????? ????3???????????????????????????????????????????⑤벡??????????????????????????????????????????????????????????산뭐??????????????????????????????????????(??????????????????????????꾩룆梨띰쭕?뚢뵾??????????????嶺뚮죭?댁젘??????????????????????釉먮폁???????????????????살몝?????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????????ㅻ깹??????????거???????????轅붽틓???????????????????????????????????????猷맣????????????濾?????????????????????????????????????????怨뺤떪?????????????????????怨뺤떪?????????0?????????????????????????????????????????? */
         warmup: 3,
         flowFeatures: flowFeaturesArr?.length
@@ -640,7 +659,12 @@ export default function MemoryGameApp({
       // setScreen('setup') ?????????????????????????????????????home ????????????????? ???????????????????????early-return??????????????????????????????????????????????????猷몄굣???????????????????
       setPendingAutoStart(true);
     } else {
-      setSettings((s) => ({ ...s, mode: normalized.mode, level: targetLevel }));
+      setSettings((s) => ({
+        ...s,
+        mode: normalized.mode,
+        level: targetLevel,
+        stroopWordMode: legacyStroopMissing ? 'missing' : s.stroopWordMode,
+      }));
       setScreen('setup');
     }
   }, [initialMode, initialLevel, autoLaunch]);
@@ -654,7 +678,8 @@ export default function MemoryGameApp({
         if (mapped.numberCartTier) next.numberCartTier = mapped.numberCartTier;
         if (mapped.colorTrackerTier) next.colorTrackerTier = mapped.colorTrackerTier;
         if (mapped.goalkeeperTier) next.goalkeeperTier = mapped.goalkeeperTier;
-        if (mapped.camouflagePlacement) next.camouflagePlacement = mapped.camouflagePlacement;
+        if (mapped.camouflagePlacement) next.camouflagePlacement = 'variant';
+        next.reactTrainConcurrent = 2;
       }
       if (key === 'variantColorTheme' && typeof window !== 'undefined' && typeof value === 'string') {
         localStorage.setItem(SPOMOVE_VARIANT_THEME_LS_KEY, value);
@@ -748,6 +773,8 @@ export default function MemoryGameApp({
     spatialArrowColorMapping: settings.spatialArrowColorMapping,
     flankerStimulusType: settings.flankerStimulusType,
     flankerNestedCircleCount: settings.flankerNestedCircleCount,
+    flankerArrowMode: settings.flankerArrowMode,
+    stroopWordMode: settings.stroopWordMode,
     onSignal,
     onFinish,
   });
@@ -768,6 +795,8 @@ export default function MemoryGameApp({
     spatialArrowColorMapping: settings.spatialArrowColorMapping,
     flankerStimulusType: settings.flankerStimulusType,
     flankerNestedCircleCount: settings.flankerNestedCircleCount,
+    flankerArrowMode: settings.flankerArrowMode,
+    stroopWordMode: settings.stroopWordMode,
     onSignal,
     onFinish,
   });
@@ -1381,7 +1410,7 @@ export default function MemoryGameApp({
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>단계</div>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([1, 2, 3, 4] as const).map((stage) => {
+                    {([1, 2, 3] as const).map((stage) => {
                       const active = modifiedQuadrantStage(settings.level) === stage;
                       return (
                         <button
@@ -1442,17 +1471,61 @@ export default function MemoryGameApp({
                   </div>
                 </div>
               ) : null}
+              {settings.mode === 'stroop' && (settings.level === 4 || settings.level === 5) ? (
+                <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>4단계 옵션</div>
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    {([
+                      { id: 'bg' as const, label: '기본 · 단어+배경' },
+                      { id: 'missing' as const, label: '누락 색상 찾기' },
+                    ]).map((opt) => {
+                      const active = (settings.stroopWordMode ?? 'bg') === opt.id;
+                      return (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          onClick={() => {
+                            set('level', 4);
+                            set('stroopWordMode', opt.id);
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '0.55rem 0.75rem',
+                            borderRadius: '0.75rem',
+                            border: `2px solid ${active ? M.accent : 'var(--border)'}`,
+                            background: active ? `${M.accent}12` : 'var(--card)',
+                            color: active ? M.accent : 'var(--text)',
+                            fontWeight: active ? 800 : 600,
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
               {settings.mode === 'spatial' && isColorSequenceLevel(settings.level) ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
                   <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text)', marginBottom: '0.55rem' }}>항 수</div>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.5 }}>
+                    「추가」는 5라운드 · 3→7개로 늘어납니다.
+                  </p>
                   <div style={{ display: 'flex', gap: '0.4rem' }}>
-                    {([3, 5, 10] as const).map((length) => {
-                      const active = colorSequenceLength(settings.level) === length;
+                    {([
+                      { id: 3 as const, label: '3개' },
+                      { id: 5 as const, label: '5개' },
+                      { id: 'ramp' as const, label: '추가' },
+                    ] satisfies { id: ColorSequenceOption; label: string }[]).map((opt) => {
+                      const active = colorSequenceOption(settings.level) === opt.id;
                       return (
                         <button
-                          key={length}
+                          key={String(opt.id)}
                           type="button"
-                          onClick={() => set('level', colorSequenceLevelFromLength(length))}
+                          onClick={() => set('level', colorSequenceLevelFromOption(opt.id))}
                           style={{
                             flex: 1,
                             padding: '0.55rem 0.4rem',
@@ -1466,7 +1539,7 @@ export default function MemoryGameApp({
                             fontFamily: 'inherit',
                           }}
                         >
-                          {length}개
+                          {opt.label}
                         </button>
                       );
                     })}
@@ -1516,11 +1589,15 @@ export default function MemoryGameApp({
                   </p>
                 </div>
               ) : null}
-              {basicVariantLevel ? (
+              {basicVariantLevel || flankerThemeLevel ? (
                 <div style={{ marginTop: '1.15rem', paddingTop: '1.15rem', borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text)", marginBottom: "0.35rem" }}>Variant image theme</div>
+                  <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text)", marginBottom: "0.35rem" }}>
+                    {flankerThemeLevel ? '이미지 테마' : 'Variant image theme'}
+                  </div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                    Select the Asset Hub theme used for variant color signals.
+                    {flankerThemeLevel
+                      ? '변형 색지각과 동일한 7가지 테마를 고릅니다. 색상은 이미지 없이 원만 사용합니다.'
+                      : 'Select the Asset Hub theme used for variant color signals.'}
                   </p>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
                     {sortedColorThemeIds.map((tid) => (
@@ -1540,7 +1617,7 @@ export default function MemoryGameApp({
                           fontFamily: 'inherit',
                         }}
                       >
-                        {settings.variantColorTheme === tid ? '??' : ''}
+                        {settings.variantColorTheme === tid ? '✓ ' : ''}
                         {SPOMOVE_COLOR_THEME_LABELS[tid]}
                       </button>
                     ))}
@@ -1933,39 +2010,6 @@ export default function MemoryGameApp({
                     </div>
                   </div>
                 )}
-                {quadBodyLevel && !hideBodyLabelModeControls && (
-                  <div style={S.sec}>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 800, color: "var(--text)", marginBottom: "0.35rem" }}>Label display</div>
-                    <p style={{ fontSize: '0.86rem', color: 'var(--text-muted)', marginBottom: '0.65rem', lineHeight: 1.55 }}>
-                      Choose Easy or Hard label display.
-                    </p>
-                    <div style={{ display: 'flex', gap: '0.45rem' }}>
-                      {(['easy', 'hard'] as const).map((mode) => {
-                        const active = bodyLabelMode === mode;
-                        return (
-                          <button
-                            key={mode}
-                            type="button"
-                            onClick={() => setBodyLabelMode(mode)}
-                            style={{
-                              padding: '0.55rem 1.1rem',
-                              borderRadius: '0.75rem',
-                              border: `2px solid ${active ? M.accent : 'var(--border)'}`,
-                              background: active ? `${M.accent}12` : 'var(--card)',
-                              color: active ? M.accent : 'var(--text)',
-                              fontWeight: active ? 800 : 600,
-                              fontSize: '0.92rem',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            {active ? "* " : ""}{mode === "easy" ? "Easy" : "Hard"}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
                 <div style={S.sec}>
                   <button type="button" onClick={() => setAdvancedOpen((o) => !o)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.65rem 0', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '0.96rem', fontWeight: 700, color: '#64748B' }}>
                     <span>{advancedOpen ? "v" : ">"}</span>
@@ -2147,7 +2191,7 @@ export default function MemoryGameApp({
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedLevel={safeReactSpeedLevel}
             speedSec={safeReactSpeedSec}
-            placementMode={settings.camouflagePlacement}
+            placementMode="variant"
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -2172,7 +2216,7 @@ export default function MemoryGameApp({
             variant={reactEngineLevel === 2 ? 'flow' : 'flash'}
             durationSec={Math.max(1, settings.duration ?? 60)}
             speedSec={safeReactSpeedSec}
-            concurrent={reactEngineLevel === 2 ? settings.reactTrainConcurrent : undefined}
+            concurrent={reactEngineLevel === 2 ? 2 : undefined}
             onExit={stop}
             onComplete={handleReactTrainComplete}
           />
@@ -2217,6 +2261,34 @@ export default function MemoryGameApp({
   }
 
   if (screen === 'training') {
+    if (settings.mode === 'simon' && settings.level === 4) {
+      const rawReactSpeedLevel = mapSpomoveSpeedToReactTrainSpd(settings.speed);
+      const safeReactSpeedLevel = settings.kidsSafeMode
+        ? Math.max(1, rawReactSpeedLevel - 2)
+        : rawReactSpeedLevel;
+      const safeReactSpeedSec = settings.kidsSafeMode
+        ? Math.min(6, settings.speed * 1.25)
+        : settings.speed;
+      return (
+        <div ref={trainingContainerRef} style={{ ...EMBED_FIXED_VIEWPORT, zIndex: 320 }}>
+          <style>{CSS}</style>
+          {countdown !== null ? (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div key={countdown} className="countdown-pop" style={{ fontSize: 'clamp(120px,30vw,240px)', fontWeight: 900, color: '#F97316', lineHeight: 1 }}>{countdown}</div>
+            </div>
+          ) : (
+            <CamouflageReactionTraining
+              durationSec={Math.max(1, settings.duration ?? 60)}
+              speedLevel={safeReactSpeedLevel}
+              speedSec={safeReactSpeedSec}
+              placementMode="variant"
+              onExit={stop}
+              onComplete={handleReactTrainComplete}
+            />
+          )}
+        </div>
+      );
+    }
     const bg = (signal?.bg as string) ?? '#0F172A';
     const dark = bg === '#0F172A' || bg.startsWith('#0') || bg.startsWith('#1');
     return (
@@ -2384,45 +2456,6 @@ export default function MemoryGameApp({
             })}
           </div>
         )}
-        {!embed && quadBodyLevel && !hideBodyLabelModeControls && (
-          <div
-            style={{
-              position: 'absolute',
-              bottom: EMBED_SAFE_BOTTOM,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 20,
-              display: 'flex',
-              gap: '0.5rem',
-            }}
-          >
-            {(['easy', 'hard'] as const).map((mode) => {
-              const active = bodyLabelMode === mode;
-              return (
-                <button
-                  key={mode}
-                  type="button"
-                  onClick={() => setBodyLabelMode(mode)}
-                  style={{
-                    padding: '0.4rem 0.9rem',
-                    borderRadius: '2rem',
-                    border: `2px solid ${active ? '#fff' : 'rgba(255,255,255,0.3)'}`,
-                    background: active ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.45)',
-                    backdropFilter: 'blur(10px)',
-                    color: active ? '#fff' : 'rgba(255,255,255,0.6)',
-                    fontWeight: active ? 800 : 600,
-                    fontSize: 'clamp(0.72rem,2vw,0.88rem)',
-                    cursor: 'pointer',
-                    fontFamily: 'inherit',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  {mode === 'easy' ? 'Easy' : 'Hard'}
-                </button>
-              );
-            })}
-          </div>
-        )}
         <div style={{ position: 'absolute', top: EMBED_SAFE_TOP, left: '1.25rem', right: '1.25rem', display: 'flex', justifyContent: 'space-between', zIndex: 20 }}>
           <div style={{ background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '1rem', padding: '0.6rem 1.2rem', color: '#fff', fontWeight: 700, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             {settings.intervalMode ? <><span style={{ color: intervalPhase === "work" ? "#FCA5A5" : "#86EFAC" }}>{intervalPhase === "work" ? "WORK" : "REST"}</span><span>{intervalLeft}s</span><span style={{ fontSize: "0.7rem", opacity: 0.6 }}>{intervalSet}/{settings.intervalSets}</span></> : settings.timeMode === "time" ? <><span style={{ color: "#FCA5A5" }}>TIME</span> {stats.timeLeft}s</> : <><span style={{ color: "#86EFAC" }}>REPS</span> {stats.repsLeft}</>}
@@ -2444,7 +2477,7 @@ export default function MemoryGameApp({
           </div>
         )}
         <div style={{ position: 'absolute', inset: 0 }}>
-          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} bodyLabelMode={quadBodyLevel ? bodyLabelMode : undefined} /> : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: "2rem", fontWeight: 700 }}>Get ready</div>}
+          {countdown !== null ? null : signal ? <SignalDisplay signal={signal} animKey={signalKey} bodyLabelMode={quadBodyLevel ? 'easy' : undefined} /> : <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#475569", fontSize: "2rem", fontWeight: 700 }}>Get ready</div>}
           {dupFlashVisible && countdown === null ? (
             <div
               key={dupFlashNonce}

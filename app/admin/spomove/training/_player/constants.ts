@@ -91,16 +91,13 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '색 자극 · 반응 훈련',
     desc: '색 자극이 떨어질 때 해당 색 위치를 밟는 시지각 및 반응 훈련입니다.',
     levels: [
-      // 화면 N번 === engine level id (1~10)
-      { id: 1, name: '파도타기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
-      { id: 2, name: '떨어지는 벽돌', enName: 'FLOW', desc: '색 자극이 자연스럽게 흘러내립니다.' },
+      // id = engine level (불변). 화면 N번은 카탈로그 배열 순번.
+      { id: 1, name: '파도 피하기', enName: 'Rush', desc: '파도처럼 빠르게 쏟아지는 자극에 연속으로 반응합니다.' },
+      { id: 2, name: '떨어지는 벽돌들', enName: 'FLOW', desc: '색 자극이 동시에 2개씩 흘러내립니다.' },
       { id: 3, name: '풍선 터뜨리기', enName: 'FLASH', desc: '짧게 나타나는 색 자극에 빠르게 반응합니다.' },
-      { id: 4, name: '동그라미 파동', enName: 'Beat Wave', desc: '중앙에서 퍼지는 색 링이 목표 원에 닿는 박자에 맞춰 해당 색 위치를 반응합니다.' },
-      { id: 5, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 드러날 때 해당 색을 찾습니다. 난이도(1/2)는 아래에서 고릅니다.' },
       { id: 6, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
-      { id: 7, name: '소행성을 피해라', enName: 'Wormhole', desc: '무한 가속하는 웜홀 속에서 운석이 없는 안전한 색 구역으로 회피합니다.' },
-      { id: 8, name: '숫자 기차', enName: 'Number Cart', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 수레가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
-      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
+      { id: 8, name: '숫자 연산 기차', enName: 'Number Cart', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
+      { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 단계(1/2/3)는 아래에서 고릅니다.' },
       { id: 10, name: '골키퍼 모드', enName: 'Goalkeeper', desc: '4코너로 날아오는 슛·커브·더블 블록을 보고 상단은 손, 하단은 발로 막습니다.' },
     ],
   },
@@ -118,7 +115,7 @@ export const MODES: Record<string, SpomoveMode> = {
     levels: [
       { id: 1, name: '공간방향 자극', enName: 'Spatial Orientation', desc: '화면 극단의 기둥+화살표 방향을 보고 해당 방향 패드로 이동합니다. 옵션: 기본/색상.' },
       { id: 2, name: '사분할 자극', enName: 'Quad Color', desc: '4분할 색·이미지 신호를 보고 해당 위치로 이동합니다. 옵션: 이미지 테마.' },
-      { id: 7, name: '변형 사분할 자극', enName: 'Modified Quadrant', desc: '색과 신체 부위가 함께 나타납니다. 옵션: 쉬움/어려움 · 1~4단계.' },
+      { id: 7, name: '변형 사분할 자극', enName: 'Modified Quadrant', desc: '색과 신체 부위가 함께 나타납니다. 옵션: 1~3단계.' },
       { id: 3, name: '전면 자극', enName: 'Full-Screen Color', desc: '화면 전체 색 신호를 보고 해당 위치로 이동합니다. 옵션: 이미지 테마.' },
       { id: 4, name: '전면 2패널 자극', enName: 'Variant Color 1', desc: '전면 2패널에 서로 다른 색 신호가 나타납니다. 옵션: 이미지 테마.' },
       { id: 5, name: '전면 3패널 자극', enName: 'Variant Color 2/3', desc: '전면 3패널 자극입니다. 옵션: 이미지 테마 · 같은 색/서로 다른 색.' },
@@ -141,6 +138,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 1, name: '1단계', enName: 'Pole Shape', desc: '도형의 위치와 색을 분리해서 판단합니다.' },
       { id: 2, name: '2단계', enName: 'Pole Arrows', desc: '화살표가 가리키는 방향과 색 규칙을 구분합니다.' },
       { id: 3, name: '믹스 갤러리', enName: 'Mixed Gallery', desc: '과일·동물 등 변형 색상 이미지가 섞여 극단 위치에 나타납니다. 이미지 색(패드) 위치로 이동합니다.' },
+      { id: 4, name: '매직 아이', enName: 'Camouflage', desc: '노이즈 속 위장 도형이 화면 극단에 드러날 때 해당 색을 찾습니다.' },
     ],
   },
   flanker: {
@@ -153,13 +151,14 @@ export const MODES: Record<string, SpomoveMode> = {
     axis: 'attention',
     axisTitle: SPOMOVE_AXIS_META.attention.title,
     tag: '방해 자극 · 목표 선택',
-    desc: '가로로 나란히 다섯 개의 원이 보입니다. 가운데 원의 색에 맞는 색 위치로만 이동합니다.',
+    desc: '가로로 나란히 다섯 개의 원이 보이거나, 동심 원·화살표 자극이 나타납니다. 가운데(또는 가장 안쪽) 목표만 보고 반응합니다.',
     levels: [
       { id: 1, name: '동일 플랭커', enName: 'Uniform Flankers', desc: '다섯 원이 같은 색입니다. 가운데 색에 반응합니다.' },
-      { id: 3, name: '랜덤 플랭커', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
-      { id: 4, name: '원 속의 원', enName: 'Nested Circles', desc: '겹쳐진 원들 중 가장 안쪽 목표 원을 보고 반응합니다.' },
-      { id: 5, name: '크기/색 혼합', enName: 'Mixed Size & Color', desc: '크기와 색이 섞인 자극에서 목표 원을 찾습니다.' },
-      { id: 6, name: '5원 극단 크기', enName: '5-Circle Extreme Sizes', desc: '다섯 개의 원이 서로 다른 크기로 나타납니다.' },
+      { id: 2, name: '랜덤 플랭커', enName: 'Random Flankers', desc: '무작위 색 원 중 가운데 색만 보고 판단합니다.' },
+      { id: 3, name: '5원 극단 크기', enName: '5-Circle Extreme Sizes', desc: '매우 큰 원과 매우 작은 원이 섞입니다. 가운데 색에 반응합니다.' },
+      { id: 4, name: '원 속의 원', enName: 'Nested Circles', desc: '동심으로 겹친 원 중 가장 안쪽 목표 원을 보고 반응합니다.' },
+      { id: 5, name: '화살표 플랭커', enName: 'Arrow Flanker', desc: '다섯 화살표 중 가운데 방향만 보고 해당 방향으로 이동합니다. 옵션에서 좌우/상하좌우를 고릅니다.' },
+      { id: 6, name: '테마 플랭커', enName: 'Theme Flanker', desc: '변형 색지각과 동일한 7가지 이미지 테마를 고릅니다. 가운데 원(이미지) 색에 반응합니다.' },
     ],
   },
 
@@ -174,13 +173,12 @@ export const MODES: Record<string, SpomoveMode> = {
     axis: 'executive',
     axisTitle: SPOMOVE_AXIS_META.executive.title,
     tag: '통제 제어 · 인지 지연',
-    desc: '배경은 기본 흰색입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
+    desc: '배경은 기본 검정입니다. 화살표와 글자 과제에서 규칙에 따라 방향, 색, 의미를 말합니다.',
     levels: [
       { id: 1, name: '1단계', enName: 'Spatial Orientation (Color)', desc: '방향별 색이 채워진 화살표를 보고 해당 방향 패드로 이동합니다.' },
       { id: 2, name: '2단계', enName: 'Arrow + BG Interference', desc: '화살표와 배경 간섭을 함께 처리합니다.' },
       { id: 3, name: '3단계', enName: 'Word Stroop / Reverse', desc: '글자 의미와 반대 규칙을 처리합니다.' },
-      { id: 4, name: '4단계', enName: 'Word + BG', desc: '글자와 배경색 간섭을 함께 처리합니다.' },
-      { id: 5, name: '5단계', enName: 'Missing Color', desc: '나오지 않은 색을 찾아 말합니다.' },
+      { id: 4, name: '4단계', enName: 'Word + BG / Missing', desc: '단어+배경(기본) 또는 누락 색상 찾기. 옵션은 아래에서 고릅니다.' },
     ],
   },
   spatial: {
@@ -195,7 +193,7 @@ export const MODES: Record<string, SpomoveMode> = {
     tag: '작업기억 · 순서 재생',
     desc: '색깔이 하나씩 차례로 나타납니다. 머릿속에 순서를 담아 재현하세요.',
     levels: [
-      { id: 1, name: '색 순서 기억', enName: 'Color Sequence', desc: '색이 순서대로 나타납니다. 항 수(3/5/10)는 아래에서 고릅니다.' },
+      { id: 1, name: '색 순서 기억', enName: 'Color Sequence', desc: '색이 순서대로 나타납니다. 항 수(3/5/추가)는 아래에서 고릅니다.' },
       { id: 4, name: '색·번호 기억', enName: 'Color-Number', desc: '번호에 매칭된 색을 기억합니다. 퀴즈/전체 공개는 아래에서 고릅니다.' },
       { id: 6, name: '직접 지정 10색', enName: 'Custom 10-Color Sequence', desc: '1~10번 슬롯에 빨·노·초·파를 직접 지정해 순서를 기억합니다.' },
     ],
@@ -277,7 +275,8 @@ export function resolveReactTrainUiLevel(level: number): ReactTrainUiLevelDefaul
     case 41:
       return { engineLevel: 5, camouflagePlacement: 'variant' };
     case 5:
-      return { engineLevel: 5, camouflagePlacement: 'center' };
+      // 레거시 reactTrain 매직 아이 — 카탈로그에서는 사이먼 4번으로 이동, 극단만
+      return { engineLevel: 5, camouflagePlacement: 'variant' };
     case 71:
       return { engineLevel: 6, moleLookMode: 'variant' };
     case 6:
@@ -316,6 +315,7 @@ export function catalogReactTrainUiLevel(level: number): number {
 }
 
 export function isModifiedQuadrantLevel(level: number): boolean {
+  // 10 = 레거시 4단계 → UI·신호는 3단계(level 9)와 동일 취급
   return level >= 7 && level <= 10;
 }
 
@@ -330,15 +330,14 @@ export function catalogBasicUiLevel(level: number): number {
   return level;
 }
 
-export function modifiedQuadrantStage(level: number): 1 | 2 | 3 | 4 {
+export function modifiedQuadrantStage(level: number): 1 | 2 | 3 {
   if (level === 8) return 2;
-  if (level === 9) return 3;
-  if (level === 10) return 4;
+  if (level === 9 || level === 10) return 3;
   return 1;
 }
 
-export function modifiedQuadrantLevelFromStage(stage: 1 | 2 | 3 | 4): number {
-  return ([7, 8, 9, 10] as const)[stage - 1]!;
+export function modifiedQuadrantLevelFromStage(stage: 1 | 2 | 3): number {
+  return ([7, 8, 9] as const)[stage - 1]!;
 }
 
 export function isColorSequenceLevel(level: number): boolean {
@@ -349,6 +348,22 @@ export function isColorNumberLevel(level: number): boolean {
   return level === 4 || level === 5;
 }
 
+/** stroop 4단계 하위 옵션 — 기본(단어+배경) / 누락 색상 */
+export type StroopWordMode = 'bg' | 'missing';
+
+export function normalizeStroopWordMode(
+  level: number,
+  wordMode?: StroopWordMode | null,
+): StroopWordMode {
+  if (level === 5) return 'missing';
+  return wordMode === 'missing' ? 'missing' : 'bg';
+}
+
+/** stroop 카탈로그 대표 id (레거시 5 → 4) */
+export function catalogStroopUiLevel(level: number): number {
+  return level === 5 ? 4 : level;
+}
+
 /** spatial 엔진 level → 카탈로그 대표 id (색순서=1, 색·번호=4) */
 export function catalogSpatialUiLevel(level: number): number {
   if (isColorSequenceLevel(level)) return 1;
@@ -356,6 +371,25 @@ export function catalogSpatialUiLevel(level: number): number {
   return level;
 }
 
+export type ColorSequenceOption = 3 | 5 | 'ramp';
+
+export function colorSequenceOption(level: number): ColorSequenceOption {
+  if (level === 2) return 5;
+  if (level === 3) return 'ramp';
+  return 3;
+}
+
+/** 색 순서 「추가」: 5라운드 · 항 수 3→7 점증 */
+export const COLOR_SEQUENCE_RAMP_LENGTHS = [3, 4, 5, 6, 7] as const;
+export const COLOR_SEQUENCE_RAMP_ROUNDS = COLOR_SEQUENCE_RAMP_LENGTHS.length;
+
+export function colorSequenceLevelFromOption(option: ColorSequenceOption): number {
+  if (option === 5) return 2;
+  if (option === 'ramp') return 3;
+  return 1;
+}
+
+/** @deprecated colorSequenceOption 사용 — 레거시 10은 ramp와 동일 취급 */
 export function colorSequenceLength(level: number): 3 | 5 | 10 {
   if (level === 2) return 5;
   if (level === 3) return 10;
@@ -389,6 +423,10 @@ export function resolveTrainingEngine(mode: string, level: number): { engineMode
   if (mode === 'stroop' && level === 1) {
     return { engineMode: 'basic', engineLevel: 1 };
   }
+  if (mode === 'stroop' && level === 5) {
+    // 레거시 5단계 → 4단계 + 누락 모드
+    return { engineMode: 'stroop', engineLevel: 4 };
+  }
   if (mode === 'reactTrain') {
     return { engineMode: 'reactTrain', engineLevel: resolveReactTrainUiLevel(level).engineLevel };
   }
@@ -410,7 +448,7 @@ export function normalizeLegacyTrainingMode(mode: string | undefined, level: num
 
 /**
  * 카탈로그 대표 id뿐 아니라 엔진 서브레벨도 허용한다.
- * basic: 변형사분할 8~10, 전면3패널 서로다른색 6
+ * basic: 변형사분할 8·9(·레거시10), 전면3패널 서로다른색 6
  * spatial: 색순서 2·3, 색·번호 5
  */
 export function isKnownTrainingLevel(mode: string, level: number): boolean {
@@ -419,6 +457,14 @@ export function isKnownTrainingLevel(mode: string, level: number): boolean {
   if (modeDef.levels.some((lv) => lv.id === level)) return true;
   if (mode === 'basic') {
     return isModifiedQuadrantLevel(level) || isFront3PanelLevel(level) || (level >= 1 && level <= 10);
+  }
+  if (mode === 'stroop') {
+    // 1~4 + 레거시 5(누락 → 4단계 옵션)
+    return level >= 1 && level <= 5;
+  }
+  if (mode === 'flanker') {
+    // 1~5 + 레거시 6(극단 크기)
+    return level >= 1 && level <= 6;
   }
   if (mode === 'spatial') {
     return isColorSequenceLevel(level) || isColorNumberLevel(level) || level === 6;

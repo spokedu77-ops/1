@@ -74,13 +74,11 @@ describe('SPOMOVE preview gate (Phase 0)', () => {
     expect(configurator).toContain('compactMovementInstruction');
   });
 
-  it('3) MQ2~4는 bodyCueBuiltIn — 일반 movement summary 없음', () => {
+  it('3) MQ2~3는 bodyCueBuiltIn — 일반 movement summary 없음', () => {
     const mqBody = OFFICIAL_SPOMOVE_LIBRARY.filter((p) =>
-      ['reaction-cognition-mq2-33', 'reaction-cognition-mq3-34', 'reaction-cognition-mq4-35'].includes(
-        p.id,
-      ),
+      ['reaction-cognition-mq2-33', 'reaction-cognition-mq3-34'].includes(p.id),
     );
-    expect(mqBody.length).toBeGreaterThanOrEqual(3);
+    expect(mqBody.length).toBeGreaterThanOrEqual(2);
     for (const preset of mqBody) {
       expect(preset.activityFamilyId).toBe('reaction-variant-body-cue');
       expect(preset.movementProfileId).toBe('bodyCueBuiltIn');
