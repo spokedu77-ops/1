@@ -240,8 +240,8 @@ export function EngineRouter({
             warmup: 3,
             audioMode: soundEnabled ? 'beep' : 'off',
             variantColorTheme: variantColorTheme as SpomoveColorThemeId | undefined,
-            bodyLabelMode: 'easy',
-            hideBodyLabelModeControls: true,
+            bodyLabelMode: bodyLabelMode ?? 'easy',
+            hideBodyLabelModeControls: hideBodyLabelModeControls ?? true,
             spatialArrowColorMode,
             spatialArrowColorMapping,
             flankerStimulusType,
@@ -273,11 +273,12 @@ export function EngineRouter({
     const dur = durationSec ?? (rounds ?? 20) * (speedSec ?? 3);
     const sp = speedSec ?? 3;
     const effectiveMoleLook = moleLookMode ?? resolved.moleLookMode ?? 'classic';
-    const effectiveCamouflage = 'variant';
+    const effectiveCamouflage = camouflagePlacement === 'center' ? 'center' : 'variant';
     const effectiveNumberCartTier = numberCartTier ?? resolved.numberCartTier ?? 2;
     const effectiveColorTrackerTier = colorTrackerTier ?? resolved.colorTrackerTier ?? 1;
     const effectiveGoalkeeperTier: 1 | 2 = goalkeeperTier === 1 ? 1 : 2;
-    const effectiveConcurrent = 2 as const;
+    const effectiveConcurrent: 1 | 2 | 3 =
+      reactTrainConcurrent === 1 || reactTrainConcurrent === 3 ? reactTrainConcurrent : 2;
 
     if (engineLevel === 1) {
       return (
