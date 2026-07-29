@@ -791,16 +791,19 @@ export function generateSignal(
 
     // 5: 화살표 플랭커 — 옵션 기본(좌우) / 응용(상하좌우)
     if (level === 5) {
-      const modeKey = opts?.flankerArrowMode === 'udlr' ? 'udlr' : 'lr';
-      const pool = modeKey === 'lr' ? DUAL_LR_ARROWS : ARROWS;
+      const modeKey = 'udlr';
+      const pool = ARROWS;
       const target = r(pool);
-      const congruent = Math.random() < 0.5;
-      const flanker = congruent
-        ? target
-        : r(pool.filter((a) => a.id !== target.id).length > 0
-            ? pool.filter((a) => a.id !== target.id)
-            : pool);
-      const arrows = Array.from({ length: 5 }, (_, i) => (i === 2 ? target : flanker));
+      const distractors = pool.filter((a) => a.id !== target.id);
+      const shuffledDistractors = fisherYates([...distractors]);
+      let distractorCursor = 0;
+      const arrows = Array.from({ length: 5 }, (_, i) => {
+        if (i === 2) return target;
+        if (Math.random() < 0.2) return target;
+        const next = shuffledDistractors[distractorCursor % shuffledDistractors.length] ?? r(distractors);
+        distractorCursor += 1;
+        return next;
+      });
       const fillHex = '#FFFFFF';
       return {
         type: 'flanker_arrows' as const,

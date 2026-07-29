@@ -198,10 +198,10 @@ const LEVEL_KO_ALIAS_BY_EN: Record<string, string> = {
   'Mole L1': '두더지 잡기',
   'Mole L2': '두더지 잡기',
   Wormhole: '소행성을 피해라',
-  'Number Cart': '숫자 연산 기차',
-  'Number Cart L1': '숫자 연산 기차',
-  'Number Cart L2': '숫자 연산 기차',
-  'Number Cart L3': '숫자 연산 기차',
+  'Number Train': '숫자 연산 기차',
+  'Number Train L1': '숫자 연산 기차',
+  'Number Train L2': '숫자 연산 기차',
+  'Number Train L3': '숫자 연산 기차',
   'Color Tracker': '흰 공 찾기',
   'Color Tracker L1': '흰 공 찾기',
   'Color Tracker L2': '흰 공 찾기',
@@ -304,7 +304,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   spatialArrowColorMode: 'basic',
   flankerStimulusType: 'color',
   flankerNestedCircleCount: 5,
-  flankerArrowMode: 'lr',
+  flankerArrowMode: 'udlr',
   stroopWordMode: 'bg',
   flowFeatures: [],
   diveEnvironmentTheme: 'space',
@@ -336,7 +336,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     spatialArrowColorMode: auto.spatialArrowColorMode === 'color' ? 'color' : fallback.spatialArrowColorMode,
     flankerStimulusType: auto.flankerStimulusType ?? fallback.flankerStimulusType,
     flankerNestedCircleCount: auto.flankerNestedCircleCount === 3 ? 3 : (fallback.flankerNestedCircleCount ?? 5),
-    flankerArrowMode: auto.flankerArrowMode === 'udlr' ? 'udlr' : (fallback.flankerArrowMode ?? 'lr'),
+    flankerArrowMode: 'udlr',
     stroopWordMode: auto.stroopWordMode === 'missing' ? 'missing' : (fallback.stroopWordMode ?? 'bg'),
     flowFeatures: (auto.flowFeatures ?? fallback.flowFeatures) as FlowFeatureKey[],
     diveEnvironmentTheme: normalizeDiveThemeId(auto.diveEnvironmentTheme ?? fallback.diveEnvironmentTheme),
@@ -1094,7 +1094,7 @@ function SettingsScreen({
             </section>
           ) : null}
 
-          {modeId === 'flanker' && levelId === 5 ? (
+          {false && modeId === 'flanker' && levelId === 5 ? (
             <section style={{ marginBottom: 22 }}>
               <div style={{ marginBottom: 8 }}>
                 <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>5단계 옵션</label>

@@ -193,7 +193,7 @@ const defaultSettings: Settings = {
   spatialArrowColorMapping: 'compass',
   flankerStimulusType: 'color',
   flankerNestedCircleCount: 5,
-  flankerArrowMode: 'lr' as const,
+  flankerArrowMode: 'udlr' as const,
   stroopWordMode: 'bg' as const,
   flowFeatures: new Set<FlowFeatureKey>(),
   diveEnvironmentTheme: 'space',

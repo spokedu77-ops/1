@@ -124,6 +124,31 @@ describe('getAssetRequirement', () => {
     expect(['up', 'down', 'left', 'right']).toContain(content.id);
   });
 
+  test('flanker arrow level uses UDLR and varied flankers', () => {
+    const seen = new Set<string>();
+    let sameFlankerCount = 0;
+    let totalFlankers = 0;
+    for (let i = 0; i < 80; i++) {
+      const sig = generateSignal('flanker', 5, Object.values(COLORS_META), { flankerArrowMode: 'lr' });
+      expect(sig?.type).toBe('flanker_arrows');
+      const content = sig?.content as {
+        arrows: { id: string }[];
+        centerIndex: number;
+        targetArrowId: string;
+        flankerArrowMode: string;
+      };
+      expect(content.flankerArrowMode).toBe('udlr');
+      content.arrows.forEach((arrow) => seen.add(arrow.id));
+      content.arrows.forEach((arrow, idx) => {
+        if (idx === content.centerIndex) return;
+        totalFlankers += 1;
+        if (arrow.id === content.targetArrowId) sameFlankerCount += 1;
+      });
+    }
+    expect(seen).toEqual(new Set(['up', 'right', 'down', 'left']));
+    expect(sameFlankerCount / totalFlankers).toBeLessThan(0.35);
+  });
+
   test('basic level 2 non-color: minimumCount=1 (think_quad 이미지 지원)', () => {
     const r = getAssetRequirement({ mode: 'basic', level: 2, theme: 'fruit' });
     expect(r.minimumCount).toBe(1);
@@ -754,7 +779,7 @@ describe('training result summary', () => {
       'FLOW',
       'FLASH',
       'Mole',
-      'Number Cart',
+      'Number Train',
       'Color Tracker',
       'Goalkeeper',
     ]);

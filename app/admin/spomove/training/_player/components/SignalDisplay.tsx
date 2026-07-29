@@ -861,7 +861,7 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: 'clamp(2px, 0.6vmin, 10px)',
+            gap: 'clamp(0px, 0.25vmin, 4px)',
           }}
         >
           {arrows.map((a, i) => {
@@ -869,8 +869,8 @@ export const SignalDisplay = React.memo(function SignalDisplay({
             const fill = a.fillHex ?? '#FFFFFF';
             const isCenter = i === centerIndex;
             const size = isCenter
-              ? 'clamp(7.5rem, 32vmin, 20rem)'
-              : 'clamp(6.2rem, 26vmin, 16rem)';
+              ? 'clamp(11.25rem, 48vmin, 30rem)'
+              : 'clamp(9.3rem, 39vmin, 24rem)';
             return (
               <svg
                 key={i}

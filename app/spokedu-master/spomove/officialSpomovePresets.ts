@@ -863,7 +863,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'flanker',
     programTitle: '플랭커',
     salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
-    engine: { mode: 'flanker', level: 5, flankerArrowMode: 'lr' },
+    engine: { mode: 'flanker', level: 5, flankerArrowMode: 'udlr' },
     description: '다섯 화살표 중 가운데 방향만 보고 해당 방향으로 이동하는 화살표 플랭커 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -874,7 +874,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     settingSummary: '3초 · 20회 · 좌우 · BGM 자동',
     settingChips: ['화살표', '좌우 기본', '20회', 'BGM 자동'],
     executionFacts: [
-      { label: '자극 방식', value: 'Arrow Flanker · LR' },
+      { label: '자극 방식', value: 'Arrow Flanker · UDLR' },
       { label: '반복', value: '20회' },
       { label: 'BGM', value: '자동 재생' },
       { label: '효과음', value: '자동' },

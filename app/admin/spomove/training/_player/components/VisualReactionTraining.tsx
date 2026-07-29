@@ -175,19 +175,23 @@ class FlashBubble {
   dead: boolean;
   wobble: number;
   t: number;
+  triggerMs: number;
+  needleScale: number;
 
   constructor(g: GameState) {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
-    const r0 = Math.max(g.W * 0.07, 30);
-    this.r = r0 + Math.random() * r0 * 0.5;
-    this.x = this.r + Math.random() * (g.W - this.r * 2);
-    this.y = -this.r * 2;
-    this.speed = g.baseSpd * (0.75 + Math.random() * 0.5);
+    const r0 = Math.max(Math.min(g.W, g.H) * 0.055, 34);
+    this.r = r0 * (0.78 + Math.random() * 1.25);
+    this.x = this.r + Math.random() * Math.max(1, g.W - this.r * 2);
+    this.y = this.r + Math.random() * Math.max(1, g.hitY - this.r * 2 - 12);
+    this.speed = 0;
     this.fired = false;
     this.dead = false;
     this.wobble = (Math.random() - 0.5) * 0.4;
     this.t = 0;
+    this.triggerMs = 360 + Math.random() * 280;
+    this.needleScale = 0.75 + Math.random() * 1.2;
   }
 
   update(
@@ -197,12 +201,10 @@ class FlashBubble {
     deltaSec: number,
     onBubbleStim: (lane: number, x: number, y: number) => void
   ) {
-    this.t++;
+    this.t += deltaSec * 1000;
     if (!this.fired) {
-      this.y += this.speed * deltaSec;
-      this.x += Math.sin(this.t * 0.04 + this.wobble) * 0.8;
-      if (this.y + this.r >= g.hitY) {
-        this.y = g.hitY - this.r;
+      this.x += Math.sin(this.t * 0.01 + this.wobble) * 0.5;
+      if (this.t >= this.triggerMs) {
         const ready = nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
         if (ready) {
           this.fired = true;
@@ -249,6 +251,22 @@ class FlashBubble {
     ctx.beginPath();
     ctx.arc(this.x - this.r * 0.28, this.y - this.r * 0.28, this.r * 0.22, 0, Math.PI * 2);
     ctx.fill();
+    const needleH = this.r * 1.25 * this.needleScale;
+    const needleW = this.r * 0.2 * this.needleScale;
+    const nx = this.x + this.r * (0.25 + this.wobble);
+    const ny = this.y + this.r * 0.75;
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = '#f8fafc';
+    ctx.shadowColor = '#ffffff';
+    ctx.shadowBlur = g.isLow ? 2 : 12;
+    ctx.beginPath();
+    ctx.moveTo(nx, ny - needleH);
+    ctx.lineTo(nx - needleW, ny);
+    ctx.lineTo(nx + needleW, ny);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(nx - needleW * 0.32, ny, needleW * 0.64, needleH * 0.28);
     ctx.restore();
   }
 }
@@ -263,18 +281,18 @@ class Particle {
   dec: number;
   r: number;
   grav: number;
-  constructor(x: number, y: number, color: string) {
+  constructor(x: number, y: number, color: string, burstScale = 1) {
     this.x = x;
     this.y = y;
     this.color = color;
     const a = Math.random() * Math.PI * 2;
-    const s = Math.random() * 10 + 3;
+    const s = (Math.random() * 10 + 3) * burstScale;
     this.vx = Math.cos(a) * s;
-    this.vy = Math.sin(a) * s - 2;
+    this.vy = Math.sin(a) * s - 2 * burstScale;
     this.life = 1;
-    this.dec = Math.random() * 0.03 + 0.02;
-    this.r = Math.random() * 5 + 2;
-    this.grav = 0.2;
+    this.dec = (Math.random() * 0.022 + 0.012) / Math.sqrt(burstScale);
+    this.r = (Math.random() * 5 + 2) * Math.sqrt(burstScale);
+    this.grav = 0.2 * Math.sqrt(burstScale);
   }
   update() {
     this.x += this.vx;
@@ -396,7 +414,6 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
   const comboNRef = useRef<HTMLDivElement>(null);
   const laneExplRefs = useRef<(HTMLDivElement | null)[]>([]);
   const padRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const spikeColRefs = useRef<(HTMLDivElement | null)[]>([]);
   const milestoneRootRef = useRef<HTMLDivElement>(null);
   const [hudTimeWarn, setHudTimeWarn] = useState(false);
   const [countdown, setCountdown] = useState(3);
@@ -472,7 +489,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
       if (hudStimsRef.current) hudStimsRef.current.textContent = String(g.stims);
 
       const el = laneExplRefs.current[lane];
-      if (el) {
+      if (el && g.mode !== 'flash') {
         el.style.transition = 'none';
         el.style.opacity = '1';
         clearTimeout((el as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
@@ -487,19 +504,12 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         clearTimeout((pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
         (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => pad.classList.remove('lit'), 260);
       }
-      const spikeCol = spikeColRefs.current[lane];
-      if (spikeCol && g.mode === 'flash') {
-        spikeCol.classList.add('lit');
-        clearTimeout((spikeCol as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t);
-        (spikeCol as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(
-          () => spikeCol.classList.remove('lit'),
-          260,
-        );
-      }
-
       const c = RT_COLORS[lane].main;
-      for (let i = 0; i < 38; i++) g.particles.push(new Particle(x, y, c));
-      for (let i = 0; i < 8; i++) g.particles.push(new Particle(x, y, '#ffffff'));
+      const burstScale = g.mode === 'flash' ? 2.8 : 1;
+      const colorParticles = g.mode === 'flash' ? 96 : 38;
+      const whiteParticles = g.mode === 'flash' ? 28 : 8;
+      for (let i = 0; i < colorParticles; i++) g.particles.push(new Particle(x, y, c, burstScale));
+      for (let i = 0; i < whiteParticles; i++) g.particles.push(new Particle(x, y, '#ffffff', burstScale * 0.85));
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;
         const nEl = comboNRef.current;
@@ -634,7 +644,8 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
 
     const drawHitLine = (ctx: CanvasRenderingContext2D) => {
       const y = g.hitY;
-      if (g.mode === 'flash') {
+      if (g.mode === 'flash') return;
+      if (false) {
         // 히트 라인만 — 가시 실루엣은 DOM #vrt-spikes
         ctx.save();
         ctx.strokeStyle = 'rgba(255,255,255,.12)';
@@ -968,24 +979,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
           <div className="vrt-cw">COMBO</div>
         </div>
       </div>
-      {variant === 'flash' ? (
-        <div id="vrt-spikes" aria-hidden>
-          {[0, 1, 2, 3].map((lane) => (
-            <div
-              key={uid + 'sc' + lane}
-              className="vrt-spike-col"
-              data-l={lane}
-              ref={(el) => {
-                spikeColRefs.current[lane] = el;
-              }}
-            >
-              {Array.from({ length: 5 }, (_, i) => (
-                <div key={i} className="vrt-spike-up" aria-hidden />
-              ))}
-            </div>
-          ))}
-        </div>
-      ) : (
+      {variant !== 'flash' ? (
         <div id="vrt-pads">
           {['RED', 'BLU', 'GRN', 'YEL'].map((label, i) => (
             <div
@@ -1001,7 +995,7 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
             </div>
           ))}
         </div>
-      )}
+      ) : null}
       <style>{`#vrt #vrt-mtime.warn{animation:vrtw .5s ease-in-out infinite}`}</style>
     </div>
   );

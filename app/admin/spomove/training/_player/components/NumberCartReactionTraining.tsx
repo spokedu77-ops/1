@@ -16,16 +16,16 @@ export function normalizeNumberCartRounds(value: number): number {
 
 /** 원본 HTML 순서: 빨(좌끝)·노·초·파(우끝) — 화면 좌우를 넓게 쓰도록 X·크기 확대 */
 const DOOR_COLORS = [
-  { hex: 0xff3333, css: '#ff3333', name: 'RED', x: -58 },
-  { hex: 0xffcc00, css: '#ffcc00', name: 'YELLOW', x: -22 },
-  { hex: 0x33ff33, css: '#33ff33', name: 'GREEN', x: 22 },
-  { hex: 0x3388ff, css: '#3388ff', name: 'BLUE', x: 58 },
+  { hex: 0xff0000, css: '#ff0000', name: 'RED', x: -58 },
+  { hex: 0xffff00, css: '#ffff00', name: 'YELLOW', x: -22 },
+  { hex: 0x00ff00, css: '#00ff00', name: 'GREEN', x: 22 },
+  { hex: 0x0000ff, css: '#0000ff', name: 'BLUE', x: 58 },
 ] as const;
 
 const DOOR_Z = -34;
 const DOOR_SIZE_SCALE = 3.55;
 /** 문이 더 바깥·더 커져도 터널 벽에 파묻히지 않도록 반지름 확대 */
-const CAVE_RADIUS = 82;
+const MOUNTAIN_FIELD_WIDTH = 190;
 /**
  * 긴 기차 뒤판(로컬 +Z ≈ 5.15)이 카메라 시야 하단 가장자리에 오도록.
  * 카메라(0,10,64) → lookAt(0,0,-14) 기준 — 숫자판이 잘리지 않는 선에서 최대한 하단.
@@ -77,7 +77,7 @@ type DoorObj = {
   group: THREE.Group;
   signCtx: CanvasRenderingContext2D;
   signTex: THREE.CanvasTexture;
-  doorMat: THREE.MeshStandardMaterial;
+  doorMat: THREE.MeshBasicMaterial;
   doorLight: THREE.PointLight;
   haloLight: THREE.PointLight;
   label: string;
@@ -273,30 +273,41 @@ function generateMetalTexture(): THREE.CanvasTexture {
   return texture;
 }
 
+function createArchShape(width: number, straightHeight: number, radius: number): THREE.Shape {
+  const half = width / 2;
+  const shape = new THREE.Shape();
+  shape.moveTo(-half, -straightHeight / 2);
+  shape.lineTo(-half, straightHeight / 2);
+  shape.absarc(0, straightHeight / 2, radius, Math.PI, 0, true);
+  shape.lineTo(half, -straightHeight / 2);
+  shape.lineTo(-half, -straightHeight / 2);
+  return shape;
+}
+
 const css = `
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700;900&family=Noto+Sans+KR:wght@500;700;900&display=swap');
-.ncart{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#000;color:#fff;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
+.ncart{position:fixed;inset:0;height:100dvh;max-height:100dvh;background:#43b9ff;color:#172033;z-index:320;display:flex;flex-direction:column;font-family:Barlow Condensed,Noto Sans KR,sans-serif;overflow:hidden}
 .ncart,.ncart *{box-sizing:border-box}
-.ncart-hud{height:72px;display:flex;align-items:stretch;background:rgba(0,0,0,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
-.ncart-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
+.ncart-hud{height:72px;display:flex;align-items:stretch;background:rgba(255,255,255,.82);backdrop-filter:blur(20px);border-bottom:1px solid rgba(42,77,105,.16);box-shadow:0 8px 28px rgba(55,91,120,.12);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0;z-index:30;flex-shrink:0}
+.ncart-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(42,77,105,.14)}
 .ncart-hc.grow{flex:1;align-items:center;border-right:none}
-.ncart-hk{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.28)}
-.ncart-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#fff;line-height:1.1}
+.ncart-hk{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(23,32,51,.48)}
+.ncart-hv{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(22px,3.5vw,34px);letter-spacing:.04em;color:#172033;line-height:1.1}
 .ncart-hv.warn{animation:ncartw .5s ease-in-out infinite}
 @keyframes ncartw{0%,100%{color:#ef4444;text-shadow:0 0 16px #ef4444}50%{color:#fff;text-shadow:none}}
-.ncart-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.4);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
-.ncart-stop:hover{background:rgba(255,255,255,.07);color:#fff}
+.ncart-stop{align-self:center;margin-left:auto;padding:8px 16px;border-radius:10px;border:1px solid rgba(23,32,51,.14);background:rgba(255,255,255,.42);color:rgba(23,32,51,.62);font-size:13px;font-weight:700;letter-spacing:.12em;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.ncart-stop:hover{background:rgba(255,255,255,.88);color:#172033}
 .ncart-play{position:relative;flex:1;min-height:0}
 .ncart-canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
-.ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:radial-gradient(ellipse 85% 70% at 50% 42%,rgba(0,0,0,0) 0%,rgba(0,0,0,.35) 55%,rgba(0,0,0,.78) 100%)}
+.ncart-vignette{position:absolute;inset:0;z-index:15;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,244,214,.12) 72%,rgba(56,86,48,.16))}
 .ncart-flash{position:absolute;inset:0;z-index:22;pointer-events:none;opacity:0;background:#fff;transition:opacity .06s linear;mix-blend-mode:screen}
-.ncart-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:5px 14px;border-radius:999px;background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.1);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#10b981;white-space:nowrap;max-width:min(92vw,560px);overflow:hidden;text-overflow:ellipsis}
-.ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:14px;background:rgba(6,10,18,.52);border:1px solid rgba(245,158,11,.2);backdrop-filter:blur(8px);box-shadow:0 6px 22px rgba(0,0,0,.32);transition:opacity .3s ease,transform .3s ease}
+.ncart-status{position:absolute;left:50%;top:clamp(10px,1.8vw,16px);transform:translateX(-50%);z-index:20;pointer-events:none;text-align:center;padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.72);border:1px solid rgba(23,32,51,.12);font-family:monospace;font-size:clamp(10px,1.35vw,13px);letter-spacing:.06em;color:#0f8f64;white-space:nowrap;max-width:min(92vw,560px);overflow:hidden;text-overflow:ellipsis;box-shadow:0 8px 24px rgba(54,83,103,.14)}
+.ncart-target{position:absolute;left:50%;bottom:clamp(24%,26vh,32%);top:auto;transform:translateX(-50%);z-index:18;pointer-events:none;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 22px 9px;border-radius:12px;background:rgba(255,255,255,.72);border:1px solid rgba(184,115,28,.22);backdrop-filter:blur(8px);box-shadow:0 8px 24px rgba(70,92,112,.18);transition:opacity .3s ease,transform .3s ease}
 .ncart-target.hidden{opacity:0;transform:translateX(-50%) translateY(10px)}
-.ncart-target-k{font-size:clamp(9px,1.15vw,11px);font-weight:800;letter-spacing:.2em;color:rgba(255,255,255,.36);text-transform:uppercase;line-height:1}
-.ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#ffe8b8;text-shadow:0 0 14px rgba(245,158,11,.5);-webkit-text-stroke:1px rgba(245,158,11,.22);white-space:nowrap}
-.ncart-target-v.expr{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(34px,6vw,52px);font-weight:400;letter-spacing:.08em;-webkit-text-stroke:0;text-shadow:0 0 12px rgba(245,158,11,.45),0 0 2px rgba(255,232,184,.8)}
-.ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#f59e0b;margin-top:2px}
+.ncart-target-k{font-size:clamp(9px,1.15vw,11px);font-weight:800;letter-spacing:.2em;color:rgba(23,32,51,.48);text-transform:uppercase;line-height:1}
+.ncart-target-v{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(40px,7.2vw,58px);line-height:.95;color:#172033;text-shadow:0 2px 0 rgba(255,255,255,.8);-webkit-text-stroke:0;white-space:nowrap}
+.ncart-target-v.expr{font-family:Bebas Neue,Barlow Condensed,sans-serif;font-size:clamp(34px,6vw,52px);font-weight:400;letter-spacing:.08em;-webkit-text-stroke:0;text-shadow:0 2px 0 rgba(255,255,255,.8)}
+.ncart-tier{font-size:clamp(10px,1.3vw,12px);font-weight:800;letter-spacing:.16em;color:#b45309;margin-top:2px}
 ${REACT_TRAIN_VIEWPORT_CSS}
 `;
 
@@ -376,8 +387,8 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     gRef.current = g;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x000000, 0.009);
+    scene.background = new THREE.Color(0x55c6ff);
+    scene.fog = new THREE.Fog(0x8fe0ff, 120, 260);
 
     const w0 = play.clientWidth || window.innerWidth;
     const h0 = play.clientHeight || window.innerHeight;
@@ -391,35 +402,34 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.35;
 
     const disposeGeos: THREE.BufferGeometry[] = [];
     const disposeMats: THREE.Material[] = [];
     const disposeTex: THREE.Texture[] = [];
 
     // 조명: 어두운 터널 톤 유지 + 문·기차만 읽히게
-    const hemiLight = new THREE.HemisphereLight(0x9fb3d9, 0x3a2c1d, 2.4);
+    const hemiLight = new THREE.HemisphereLight(0xe8fbff, 0x4d9f45, 3.5);
     scene.add(hemiLight);
 
-    const ambientLight = new THREE.AmbientLight(0x50525f, 0.9);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.15);
     scene.add(ambientLight);
 
-    const cartLight = new THREE.PointLight(0xffb347, 4.5, 34);
+    const cartLight = new THREE.PointLight(0xfff1c2, 2.8, 34);
     cartLight.castShadow = true;
     cartLight.shadow.bias = -0.001;
     scene.add(cartLight);
 
     // 기차 대기 위치까지 닿도록 스포트 조준
-    const spotLight = new THREE.SpotLight(0xffffff, 3);
-    spotLight.position.set(0, 22, CART_START.z + 8);
-    spotLight.target.position.set(0, 0, CART_START.z);
-    spotLight.angle = Math.PI / 2.4;
-    spotLight.penumbra = 0.6;
-    spotLight.decay = 1;
-    spotLight.distance = 110;
-    spotLight.castShadow = true;
-    scene.add(spotLight);
-    scene.add(spotLight.target);
+    const sunLight = new THREE.DirectionalLight(0xfff4d5, 3.6);
+    sunLight.position.set(-42, 64, 46);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.camera.left = -95;
+    sunLight.shadow.camera.right = 95;
+    sunLight.shadow.camera.top = 90;
+    sunLight.shadow.camera.bottom = -50;
+    scene.add(sunLight);
 
     // 1. 동굴
     const rockColorMap = generateNoiseTexture(512, 78, 76, 82, 26, true);
@@ -434,16 +444,17 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       side: THREE.BackSide,
     });
     disposeMats.push(caveMaterial);
-    const caveGeometry = new THREE.CylinderGeometry(CAVE_RADIUS, CAVE_RADIUS, TUNNEL_LENGTH, 32);
+    const caveGeometry = new THREE.CylinderGeometry(1, 1, 1, 8);
     caveGeometry.rotateX(Math.PI / 2);
     disposeGeos.push(caveGeometry);
     const cave = new THREE.Mesh(caveGeometry, caveMaterial);
     cave.position.set(0, 5, (CART_START.z + DOOR_Z) / 2);
     cave.receiveShadow = true;
+    cave.visible = false;
     scene.add(cave);
 
     // 2. 바닥
-    const groundTex = generateNoiseTexture(512, 58, 50, 42, 18, false);
+    const groundTex = generateNoiseTexture(512, 55, 153, 55, 36, true);
     disposeTex.push(groundTex);
     const groundMaterial = new THREE.MeshStandardMaterial({
       map: groundTex,
@@ -452,7 +463,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       roughness: 1.0,
     });
     disposeMats.push(groundMaterial);
-    const groundGeo = new THREE.PlaneGeometry(180, TUNNEL_LENGTH + 20);
+    const groundGeo = new THREE.PlaneGeometry(MOUNTAIN_FIELD_WIDTH, TUNNEL_LENGTH + 40);
     disposeGeos.push(groundGeo);
     const ground = new THREE.Mesh(groundGeo, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -460,9 +471,60 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     ground.receiveShadow = true;
     scene.add(ground);
 
+    const mountainMats = [
+      new THREE.MeshStandardMaterial({ color: 0x5fa941, roughness: 1 }),
+      new THREE.MeshStandardMaterial({ color: 0x39894a, roughness: 1 }),
+      new THREE.MeshStandardMaterial({ color: 0x9abd4a, roughness: 1 }),
+    ];
+    disposeMats.push(...mountainMats);
+    [
+      { x: -72, y: 13, z: -92, sx: 58, sy: 34, mat: mountainMats[0]! },
+      { x: -25, y: 18, z: -105, sx: 70, sy: 42, mat: mountainMats[1]! },
+      { x: 44, y: 15, z: -96, sx: 64, sy: 35, mat: mountainMats[2]! },
+      { x: 88, y: 11, z: -82, sx: 46, sy: 26, mat: mountainMats[0]! },
+    ].forEach((m) => {
+      const geo = new THREE.ConeGeometry(m.sx, m.sy, 4);
+      disposeGeos.push(geo);
+      const mesh = new THREE.Mesh(geo, m.mat);
+      mesh.position.set(m.x, m.y, m.z);
+      mesh.rotation.y = Math.PI / 4;
+      mesh.receiveShadow = true;
+      scene.add(mesh);
+    });
+
+    const treeTrunkMat = new THREE.MeshStandardMaterial({ color: 0x7c4f2d, roughness: 0.9 });
+    const treeLeafMat = new THREE.MeshStandardMaterial({ color: 0x178f38, roughness: 0.85 });
+    disposeMats.push(treeTrunkMat, treeLeafMat);
+    const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 2.2, 8);
+    const leafGeo = new THREE.ConeGeometry(1.25, 3.2, 10);
+    disposeGeos.push(trunkGeo, leafGeo);
+    [-76, -64, -48, 48, 62, 78].forEach((x, i) => {
+      const z = -12 - (i % 3) * 18;
+      const trunk = new THREE.Mesh(trunkGeo, treeTrunkMat);
+      trunk.position.set(x, -0.9, z);
+      trunk.castShadow = true;
+      scene.add(trunk);
+      const leaf = new THREE.Mesh(leafGeo, treeLeafMat);
+      leaf.position.set(x, 1.6, z);
+      leaf.castShadow = true;
+      scene.add(leaf);
+    });
+
     // 3. 선로
-    const railMaterial = new THREE.MeshStandardMaterial({ color: 0x555555, metalness: 0.8, roughness: 0.4 });
-    const tieMaterial = new THREE.MeshStandardMaterial({ color: 0x2d2013, roughness: 1.0 });
+    const ballastTex = generateNoiseTexture(512, 145, 128, 105, 34, true);
+    disposeTex.push(ballastTex);
+    const ballastMat = new THREE.MeshStandardMaterial({ map: ballastTex, roughness: 1 });
+    disposeMats.push(ballastMat);
+    const ballastGeo = new THREE.PlaneGeometry(14, TUNNEL_LENGTH + 28);
+    disposeGeos.push(ballastGeo);
+    const ballast = new THREE.Mesh(ballastGeo, ballastMat);
+    ballast.rotation.x = -Math.PI / 2;
+    ballast.position.set(0, -1.96, (CART_START.z + DOOR_Z) / 2 + 8);
+    ballast.receiveShadow = true;
+    scene.add(ballast);
+
+    const railMaterial = new THREE.MeshStandardMaterial({ color: 0x70747a, metalness: 0.75, roughness: 0.36 });
+    const tieMaterial = new THREE.MeshStandardMaterial({ color: 0x6b4a2e, roughness: 1.0 });
     disposeMats.push(railMaterial, tieMaterial);
     const railGeo = new THREE.BoxGeometry(0.2, 0.2, 1);
     const tieGeo = new THREE.BoxGeometry(3, 0.2, 0.5);
@@ -522,43 +584,78 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       const frameGroup = new THREE.Group();
       frameGroup.position.set(config.x, 0, DOOR_Z);
 
-      const doorMat = new THREE.MeshStandardMaterial({
+      const doorMat = new THREE.MeshBasicMaterial({
         color: config.hex,
-        metalness: 0.35,
-        roughness: 0.35,
-        emissive: config.hex,
-        emissiveIntensity: 0.65,
+        toneMapped: false,
       });
       disposeMats.push(doorMat);
-      const doorGeo = new THREE.BoxGeometry(6.6, 9.6, 0.55);
+      const doorGeo = new THREE.ShapeGeometry(createArchShape(6.6, 6.4, 3.3));
       disposeGeos.push(doorGeo);
       const doorMesh = new THREE.Mesh(doorGeo, doorMat);
-      doorMesh.position.set(0, 2.5, 0);
+      doorMesh.position.set(0, 1.8, 0.72);
       frameGroup.add(doorMesh);
 
+      const portalStoneMat = new THREE.MeshStandardMaterial({ color: 0xb8b1a4, roughness: 0.82, metalness: 0.02 });
+      const tunnelShadowMat = new THREE.MeshStandardMaterial({ color: 0x38434a, roughness: 0.95 });
+      const hillMat = new THREE.MeshStandardMaterial({ color: 0x6f9b54, roughness: 0.9 });
+      disposeMats.push(portalStoneMat, tunnelShadowMat, hillMat);
+      const hillGeo = new THREE.BoxGeometry(11.6, 10.4, 1.1);
+      const recessGeo = new THREE.ShapeGeometry(createArchShape(8.0, 7.0, 4.0));
+      const portalTopGeo = new THREE.ShapeGeometry(createArchShape(10.0, 7.7, 5.0));
+      const portalSideGeo = new THREE.BoxGeometry(1.05, 8.8, 1.3);
+      disposeGeos.push(hillGeo, recessGeo, portalTopGeo, portalSideGeo);
+
+      const hillFace = new THREE.Mesh(hillGeo, hillMat);
+      hillFace.position.set(0, 2.55, -0.42);
+      hillFace.castShadow = true;
+      hillFace.receiveShadow = true;
+      frameGroup.add(hillFace);
+
+      const recess = new THREE.Mesh(recessGeo, tunnelShadowMat);
+      recess.position.set(0, 2.0, 0.16);
+      frameGroup.add(recess);
+
+      const portalTop = new THREE.Mesh(portalTopGeo, portalStoneMat);
+      portalTop.position.set(0, 1.92, 0.04);
+      portalTop.castShadow = true;
+      frameGroup.add(portalTop);
+      [-4.15, 4.15].forEach((x) => {
+        const side = new THREE.Mesh(portalSideGeo, portalStoneMat);
+        side.position.set(x, 2.55, 0.28);
+        side.castShadow = true;
+        frameGroup.add(side);
+      });
+
+      doorMesh.renderOrder = 2;
+
       // 아주 얇은 문틀 — 검정 없이 같은 색·약간 더 밝게
-      const rimMat = new THREE.MeshBasicMaterial({ color: config.hex });
+      const rimMat = new THREE.MeshStandardMaterial({
+        color: 0xd9d7cc,
+        roughness: 0.72,
+        metalness: 0.02,
+      });
       disposeMats.push(rimMat);
-      const slimPillarGeo = new THREE.BoxGeometry(0.35, 9.8, 0.7);
+      const slimPillarGeo = new THREE.BoxGeometry(0.42, 7.4, 0.7);
       disposeGeos.push(slimPillarGeo);
       const leftRim = new THREE.Mesh(slimPillarGeo, rimMat);
-      leftRim.position.set(-3.45, 2.5, 0.15);
+      leftRim.position.set(-3.45, 1.0, 0.95);
       frameGroup.add(leftRim);
       const rightRim = new THREE.Mesh(slimPillarGeo, rimMat);
-      rightRim.position.set(3.45, 2.5, 0.15);
+      rightRim.position.set(3.45, 1.0, 0.95);
       frameGroup.add(rightRim);
-      const slimTopGeo = new THREE.BoxGeometry(7.25, 0.35, 0.7);
+      const slimTopGeo = new THREE.TorusGeometry(3.32, 0.22, 8, 32, Math.PI);
       disposeGeos.push(slimTopGeo);
       const topRim = new THREE.Mesh(slimTopGeo, rimMat);
-      topRim.position.set(0, 7.5, 0.15);
+      topRim.position.set(0, 5.02, 0.98);
+      topRim.rotation.z = Math.PI;
       frameGroup.add(topRim);
       const slimBotGeo = new THREE.BoxGeometry(7.25, 0.28, 0.7);
       disposeGeos.push(slimBotGeo);
       const botRim = new THREE.Mesh(slimBotGeo, rimMat);
-      botRim.position.set(0, -2.35, 0.15);
+      botRim.position.set(0, -1.45, 0.95);
       frameGroup.add(botRim);
 
-      const doorLight = new THREE.PointLight(config.hex, 5, 22);
+      const doorLight = new THREE.PointLight(config.hex, 2.4, 22);
       doorLight.position.set(0, 5, 3);
       frameGroup.add(doorLight);
 
@@ -576,14 +673,16 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
       const signMat = new THREE.MeshBasicMaterial({
         map: signTex,
         transparent: true,
+        depthTest: false,
         depthWrite: false,
         toneMapped: false,
       });
       disposeMats.push(signMat);
-      const signGeo = new THREE.BoxGeometry(5.6, 3.0, 0.12);
+      const signGeo = new THREE.PlaneGeometry(5.7, 1.15);
       disposeGeos.push(signGeo);
       const signMesh = new THREE.Mesh(signGeo, signMat);
-      signMesh.position.set(0, 3.7, 0.45);
+      signMesh.position.set(0, 6.6, 1.55);
+      signMesh.renderOrder = 5;
       frameGroup.add(signMesh);
 
       frameGroup.scale.setScalar(DOOR_SIZE_SCALE);
@@ -605,15 +704,63 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
 
     const updateDoorSignText = (door: DoorObj, text: string) => {
       const ctx = door.signCtx;
+      const parts = text.trim().split(/\s+/).filter(Boolean);
+      const isPair = parts.length === 2 && parts.every((part) => part.length <= 2);
+      const compactForTopSign = text.replace(/\s+/g, '');
+      const topSignFontSize = isPair ? 132 : compactForTopSign.length <= 2 ? 166 : compactForTopSign.length <= 3 ? 140 : 112;
+      ctx.clearRect(0, 0, 512, 256);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `900 ${topSignFontSize}px "Arial", sans-serif`;
+      ctx.shadowColor = 'rgba(255,255,255,.9)';
+      ctx.shadowBlur = 4;
+      if (isPair) {
+        parts.forEach((part, i) => {
+          const x = i === 0 ? 166 : 346;
+          ctx.fillStyle = 'rgba(255,255,255,.94)';
+          ctx.beginPath();
+          ctx.roundRect(x - 76, 62, 152, 132, 18);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(24,32,51,.22)';
+          ctx.lineWidth = 6;
+          ctx.stroke();
+          ctx.fillStyle = '#111827';
+          ctx.fillText(part, x, 131);
+        });
+        ctx.fillStyle = 'rgba(17,24,39,.5)';
+        ctx.fillRect(253, 78, 6, 104);
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.94)';
+        ctx.beginPath();
+        ctx.roundRect(146, 62, 220, 132, 18);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(24,32,51,.22)';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.fillStyle = '#111827';
+        ctx.fillText(text, 256, 131);
+      }
+      ctx.shadowBlur = 0;
+      door.signTex.needsUpdate = true;
+      door.label = text;
+      return;
       const compact = text.replace(/\s+/g, '');
-      const fontSize = compact.length <= 2 ? 210 : compact.length <= 3 ? 176 : 140;
+      const fontSize = compact.length <= 2 ? 190 : compact.length <= 3 ? 162 : 132;
       ctx.clearRect(0, 0, 512, 256);
       // 어두운 박스 없이 — 순백 숫자만 (아주 밝게)
-      ctx.fillStyle = '#ffffff';
+      ctx.fillStyle = 'rgba(255,255,255,.88)';
+      ctx.beginPath();
+      ctx.roundRect(42, 32, 428, 192, 24);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(20,28,44,.18)';
+      ctx.lineWidth = 10;
+      ctx.stroke();
+      ctx.fillStyle = '#182033';
       ctx.font = `900 ${fontSize}px "Arial", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowBlur = 0;
+      ctx.shadowColor = 'rgba(255,255,255,.8)';
+      ctx.shadowBlur = 2;
       ctx.fillText(text, 256, 128);
       door.signTex.needsUpdate = true;
       door.label = text;
@@ -624,9 +771,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         const hex = DOOR_COLORS[idx]!.hex;
         door.group.visible = true;
         door.doorMat.color.setHex(hex);
-        door.doorMat.emissive.setHex(hex);
-        door.doorMat.emissiveIntensity = 0.65;
-        door.doorLight.intensity = 5;
+        door.doorLight.intensity = 2.4;
         door.doorLight.distance = 22;
         door.haloLight.intensity = 0;
         door.group.scale.setScalar(DOOR_SIZE_SCALE);
@@ -826,19 +971,34 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
 
       ctx.clearRect(0, 0, w, h);
       // 크림 판 + 안쪽 여백 있는 테두리
-      ctx.fillStyle = '#f7f2e8';
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0, '#26394a');
+      bg.addColorStop(0.52, '#142434');
+      bg.addColorStop(1, '#0d1722');
+      ctx.fillStyle = bg;
       ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = '#c9a227';
-      ctx.lineWidth = 10;
-      ctx.strokeRect(14, 14, w - 28, h - 28);
-      ctx.strokeStyle = 'rgba(201,162,39,.35)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(24, 24, w - 48, h - 48);
+      ctx.fillStyle = 'rgba(255,255,255,.08)';
+      ctx.fillRect(0, 0, w, 34);
+      ctx.strokeStyle = '#9ca3af';
+      ctx.lineWidth = 12;
+      ctx.strokeRect(12, 12, w - 24, h - 24);
+      ctx.strokeStyle = '#4b5563';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(28, 28, w - 56, h - 56);
+      ctx.fillStyle = '#cbd5e1';
+      [[38, 38], [w - 38, 38], [38, h - 38], [w - 38, h - 38]].forEach(([x, y]) => {
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+      });
 
       let fontSize = compact.length <= 2 ? 128 : compact.length <= 4 ? 102 : 84;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#1c1914';
+      ctx.fillStyle = '#fff7d6';
+      ctx.shadowColor = 'rgba(0,0,0,.6)';
+      ctx.shadowBlur = 8;
+      ctx.shadowOffsetY = 3;
       // 판 안에 여유 두고 글자 크기 맞추기
       do {
         ctx.font = `400 ${fontSize}px ${SIGN_FONT}`;
@@ -864,6 +1024,8 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
         ctx.fillText(ch, x + cw / 2, y);
         x += cw + gap;
       }
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
       cartSignTexture.needsUpdate = true;
     };
     void document.fonts.load('400 96px "Bebas Neue"').then(() => {
@@ -878,10 +1040,10 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
     particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
     disposeGeos.push(particleGeo);
     const particleMat = new THREE.PointsMaterial({
-      color: 0xaaaaaa,
-      size: 0.1,
+      color: 0xfff7d6,
+      size: 0.08,
       transparent: true,
-      opacity: 0.3,
+      opacity: 0.22,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -964,8 +1126,7 @@ export function NumberCartReactionTraining({ targetRounds, speedLevel, speedSec,
 
       if (g.phase === 'PREP') {
         doors.forEach((door) => {
-          door.doorMat.emissiveIntensity = 0.65;
-          door.doorLight.intensity = 5;
+          door.doorLight.intensity = 2.4;
         });
       }
 
