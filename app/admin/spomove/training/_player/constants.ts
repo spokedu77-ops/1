@@ -98,7 +98,7 @@ export const MODES: Record<string, SpomoveMode> = {
       { id: 6, name: '두더지 잡기', enName: 'Mole', desc: '구멍에서 튀어나오는 두더지에 반응합니다. 난이도(1/2)는 아래에서 고릅니다.' },
       { id: 8, name: '숫자 연산 기차', enName: 'Number Train', desc: '목표 숫자(또는 식)를 보고 같은 답이 붙은 색 문으로 기차가 들어갑니다. 난이도(1/2/3)는 아래에서 고릅니다.' },
       { id: 9, name: '흰 공 찾기', enName: 'Color Tracker', desc: '흰 공을 끝까지 추적한 뒤 멈춘 구역을 맞춥니다. 단계(1/2/3)는 아래에서 고릅니다.' },
-      { id: 10, name: '골키퍼 모드', enName: 'Goalkeeper', desc: '4코너로 날아오는 슛·커브·더블 블록을 보고 상단은 손, 하단은 발로 막습니다.' },
+      { id: 10, name: '골키퍼 모드', enName: 'Goalkeeper', desc: '4코너로 날아오는 슛·커브·더블을 눈으로 보고 도착 위치에 맞춰 반응합니다. 가운데 위치 구령 없음.' },
     ],
   },
   basic: {

@@ -665,7 +665,10 @@ function CardInfo({
 }) {
   const router = useRouter();
   const display = getSpomovePresetDisplayModel(preset);
-  const movementSummary = movementLayerEnabled ? getPresetMovementSummary(preset) : null;
+  const movementSummary = useMemo(
+    () => (movementLayerEnabled ? getPresetMovementSummary(preset) : null),
+    [movementLayerEnabled, preset],
+  );
   const profile = movementSummary?.profile ?? null;
   const officialPick = movementSummary?.officialRecommended ?? null;
   const [savedMovement, setSavedMovement] = useState<MovementPick | null>(null);
@@ -681,7 +684,7 @@ function CardInfo({
     setSavedMovement(
       saved && isAllowedByFamily(saved, movementSummary.family, profile) ? saved : null,
     );
-  }, [movementSummary?.family.id, profile?.id]);
+  }, [movementSummary?.family, profile]);
 
   const effectivePick =
     savedMovement && officialPick && !movementPicksEqual(savedMovement, officialPick)

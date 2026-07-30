@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { HardDrive, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { readAdminJsonSafe } from './readAdminJsonSafe';
+import { readAdminJsonSafe } from './spokedu-master/programs/readAdminJsonSafe';
 
 type ScopeMode = 'master' | 'media';
 

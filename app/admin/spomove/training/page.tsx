@@ -283,6 +283,8 @@ type LaunchSettings = {
   camouflagePlacement: 'center' | 'variant';
   /** 시지각반응(reactTrain) 골키퍼(10번) 전용: 1=항상 1개 · 2=1~2개(더블) */
   goalkeeperTier: 1 | 2;
+  /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
+  simonPoleCount: 1 | 2;
   /** 변형 사분할(7·8·9) — easy 고정(레거시 필드) */
   bodyLabelMode: 'easy' | 'hard';
   /** 순차 기억 6단계: 1~10번 슬롯 색상 */
@@ -316,6 +318,7 @@ const DEFAULT_LAUNCH: LaunchSettings = {
   moleLookMode: 'classic',
   camouflagePlacement: 'variant',
   goalkeeperTier: 2,
+  simonPoleCount: 1,
   bodyLabelMode: 'easy',
   memoryColorSlots: [...DEFAULT_MEMORY_COLOR_SLOTS],
 };
@@ -348,6 +351,7 @@ function autoLaunchToLaunchSettings(auto: MemoryGameAutoLaunch, fallback: Launch
     moleLookMode: auto.moleLookMode === 'variant' ? 'variant' : fallback.moleLookMode,
     camouflagePlacement: 'variant',
     goalkeeperTier: auto.goalkeeperTier === 1 ? 1 : fallback.goalkeeperTier,
+    simonPoleCount: auto.simonPoleCount === 2 ? 2 : fallback.simonPoleCount,
     bodyLabelMode: auto.bodyLabelMode ?? fallback.bodyLabelMode,
     memoryColorSlots: normalizeMemoryColorSlots(auto.memoryColorSlots ?? fallback.memoryColorSlots),
   };
@@ -453,6 +457,7 @@ function TrainingPortal({
     moleLookMode: launch.moleLookMode,
     camouflagePlacement: launch.camouflagePlacement,
     goalkeeperTier: launch.goalkeeperTier,
+    simonPoleCount: launch.simonPoleCount,
     bodyLabelMode: launch.bodyLabelMode,
     memoryColorSlots: launch.memoryColorSlots,
   };
@@ -464,7 +469,7 @@ function TrainingPortal({
       background: '#020617',
     }}>
       <MemoryGameApp
-        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.memoryColorSlots.join(',')}`}
+        key={`${modeId}-${levelId}-${launch.speed}-${launch.timeMode}-${launch.duration}-${launch.targetReps}-${launch.warmup}-${launch.accel}-${launch.intervalMode}-${launch.kidsSafeMode}-${launch.numberRule}-${launch.variantColorTheme}-${launch.spatialArrowColorMode}-${launch.flankerStimulusType}-${launch.flankerNestedCircleCount}-${launch.flankerArrowMode}-${launch.stroopWordMode}-${launch.flowFeatures.join(',')}-${launch.diveEnvironmentTheme}-${launch.flowDuration}-${launch.numberCartTier}-${launch.colorTrackerTier}-${launch.colorTrackerDualPanel}-${launch.moleLookMode}-${launch.camouflagePlacement}-${launch.goalkeeperTier}-${launch.simonPoleCount}-${launch.memoryColorSlots.join(',')}`}
         initialMode={modeId}
         initialLevel={levelId}
         autoLaunch={autoLaunch}
@@ -1423,6 +1428,51 @@ function SettingsScreen({
                       key={opt.id}
                       type="button"
                       onClick={() => setLaunch((s) => ({ ...s, goalkeeperTier: opt.id }))}
+                      style={{
+                        flex: 1,
+                        padding: '11px 8px',
+                        borderRadius: 12,
+                        border: `1.5px solid ${active ? accent : T.border}`,
+                        background: active ? `${accent}16` : T.card,
+                        color: active ? accent : T.textDim,
+                        fontFamily: 'inherit',
+                        fontSize: 15,
+                        fontWeight: active ? 900 : 700,
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                      }}
+                    >
+                      {opt.label}
+                      <div style={{ fontSize: 10, fontWeight: 700, color: active ? accent : T.muted, marginTop: 3, letterSpacing: '0.06em' }}>
+                        {opt.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
+
+          {/* 사이먼 폴 도형(1)·화살표(2): 기본 1개 / 응용 2개 */}
+          {isSimon && (levelId === 1 || levelId === 2) ? (
+            <section style={{ marginBottom: 22 }}>
+              <div style={{ marginBottom: 8 }}>
+                <label style={{ fontSize: 11, fontWeight: 800, color: T.muted, letterSpacing: '0.14em' }}>난이도</label>
+                <p style={{ margin: '3px 0 0', fontSize: 11, color: T.textDim, lineHeight: 1.5 }}>
+                  기본은 극단에 {levelId === 1 ? '도형' : '화살표'} 1개, 응용은 서로 다른 극단 2곳에 동시에 뜹니다. 같은 답 쌍은 10% 미만입니다.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([
+                  { id: 1 as const, label: '기본', sub: '1개' },
+                  { id: 2 as const, label: '응용', sub: '2개' },
+                ]).map((opt) => {
+                  const active = launch.simonPoleCount === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setLaunch((s) => ({ ...s, simonPoleCount: opt.id }))}
                       style={{
                         flex: 1,
                         padding: '11px 8px',

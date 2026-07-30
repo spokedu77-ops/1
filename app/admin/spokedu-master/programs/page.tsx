@@ -58,6 +58,13 @@ import {
   type OfficialSpomoveProgramGroup,
 } from '@/app/spokedu-master/spomove/officialSpomovePresets';
 import {
+  SPOMOVE_CORE_KEYWORD_AXIS,
+  normalizeSpomoveCoreKeywordsList,
+  parseSpomoveCoreKeywordsOverride,
+  serializeSpomoveCoreKeywords,
+  type SpomoveCoreKeywords,
+} from '@/app/spokedu-master/spomove/spomoveCoreKeywords';
+import {
   buildAdminProgramSavePayload,
   replaceAdminProgramByCurriculumId,
   resolveAdminBriefingNotes,
@@ -78,7 +85,6 @@ import {
 } from '@/app/spokedu-master/lib/programDisplayTags';
 import { ContentAuditPanel } from './ContentAuditPanel';
 import { readAdminJsonSafe } from './readAdminJsonSafe';
-import { StorageRecompressPanel } from './StorageRecompressPanel';
 import { SpomoveHomeFeaturedManager } from './SpomoveHomeFeaturedManager';
 type MaterialStatus = 'incomplete' | 'needs-improvement' | 'ready' | 'home-ready';
 type PublicationStatus = 'draft' | 'ready' | 'featured' | 'hidden';
@@ -656,7 +662,7 @@ function resolveSpomoveThumbnailUrl(path: string | null | undefined, cacheBust?:
 
 function normalizeContentDraft(value: SpomovePresetContentOverride | undefined): SpomovePresetContentOverride {
   return {
-    coreKeywords: value?.coreKeywords ?? [],
+    coreKeywords: normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []),
     activityMethod: value?.activityMethod ?? '',
     activityConcept: value?.activityConcept ?? '',
   };
@@ -666,8 +672,39 @@ function contentDraftIsEmpty(value: SpomovePresetContentOverride | undefined) {
   return (
     !value?.activityMethod?.trim() &&
     !value?.activityConcept?.trim() &&
-    !(value?.coreKeywords ?? []).some((item) => item.trim())
+    normalizeSpomoveCoreKeywordsList(value?.coreKeywords ?? []).length === 0
   );
+}
+
+function patchCoreKeywordAxis(
+  current: string[] | undefined,
+  key: keyof SpomoveCoreKeywords,
+  value: string | null,
+): string[] {
+  const parsed = parseSpomoveCoreKeywordsOverride(current);
+  const next: Partial<SpomoveCoreKeywords> = { ...parsed };
+  if (key === 'startPosition') {
+    if (!value) delete next.startPosition;
+    else next.startPosition = value as SpomoveCoreKeywords['startPosition'];
+  } else if (key === 'participation') {
+    if (!value) delete next.participation;
+    else next.participation = value as SpomoveCoreKeywords['participation'];
+  } else {
+    if (!value) delete next.difficulty;
+    else next.difficulty = value as SpomoveCoreKeywords['difficulty'];
+  }
+  if (next.startPosition && next.participation && next.difficulty) {
+    return serializeSpomoveCoreKeywords({
+      startPosition: next.startPosition,
+      participation: next.participation,
+      difficulty: next.difficulty,
+    });
+  }
+  return normalizeSpomoveCoreKeywordsList([
+    next.startPosition,
+    next.participation,
+    next.difficulty,
+  ].filter(Boolean) as string[]);
 }
 
 function SpomoveContentManager() {
@@ -740,7 +777,7 @@ function SpomoveContentManager() {
   const saveContent = useCallback(async (presetId: string) => {
     const draft = normalizeContentDraft(draftMap[presetId]);
     const nextEntry: SpomovePresetContentOverride = {
-      coreKeywords: (draft.coreKeywords ?? []).map((item) => item.trim()).filter(Boolean).slice(0, 3),
+      coreKeywords: normalizeSpomoveCoreKeywordsList(draft.coreKeywords ?? []),
       activityMethod: draft.activityMethod?.trim() ?? '',
       activityConcept: draft.activityConcept?.trim() ?? '',
     };
@@ -791,7 +828,7 @@ function SpomoveContentManager() {
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-indigo-600">SPOMOVE content</p>
               <h2 className="mt-1 text-[18px] font-black text-slate-950">SPOMOVE 공식 설명</h2>
               <p className="mt-1 text-[12px] font-semibold leading-5 text-slate-500">
-                가이드 모달의 핵심 키워드, 활동방법, 활동 개념을 프리셋별로 수기 수정합니다.
+                가이드 모달의 핵심 키워드(시작 위치·참여 인원·난이도), 활동방법, 활동 개념을 프리셋별로 수정합니다.
               </p>
             </div>
             <button
@@ -856,16 +893,30 @@ function SpomoveContentManager() {
                       <article key={preset.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                         <p className="text-[13px] font-black text-slate-950">{preset.title}</p>
                         <p className="mt-1 truncate text-[10px] font-bold text-slate-500">{preset.id}</p>
-                        <label className="mt-3 block text-[11px] font-black text-slate-500">
-                          핵심 키워드
-                          <input
-                            value={(draft.coreKeywords ?? []).join(', ')}
-                            onChange={(event) => updateDraft(preset.id, { coreKeywords: csvToList(event.target.value).slice(0, 3) })}
-                            placeholder="매트 위, 개인, 어려움"
-                            disabled={savingThis || deletingThis}
-                            className="mt-1 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-[12px] font-semibold outline-none focus:border-indigo-400"
-                          />
-                        </label>
+                        <div className="mt-3 space-y-2">
+                          <p className="text-[11px] font-black text-slate-500">핵심 키워드</p>
+                          {SPOMOVE_CORE_KEYWORD_AXIS.map((axis) => {
+                            const parsed = parseSpomoveCoreKeywordsOverride(draft.coreKeywords);
+                            const selected = parsed[axis.key] ? [parsed[axis.key]!] : [];
+                            return (
+                              <label key={axis.key} className="block text-[10px] font-black text-slate-400">
+                                {axis.label}
+                                <div className="mt-1">
+                                  <ChoiceChips
+                                    options={[...axis.values]}
+                                    selected={selected}
+                                    onChange={(next) => {
+                                      const picked = next.at(-1) ?? null;
+                                      updateDraft(preset.id, {
+                                        coreKeywords: patchCoreKeywordAxis(draft.coreKeywords, axis.key, picked),
+                                      });
+                                    }}
+                                  />
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
                         <label className="mt-3 block text-[11px] font-black text-slate-500">
                           활동방법
                           <textarea
@@ -2421,12 +2472,6 @@ export default function AdminSmProgramsPage() {
           ) : null}
         </div>
       </header>
-
-      {!isSpomoveAdmin ? (
-        <div className="border-b border-slate-200 bg-slate-50 px-5 py-3">
-          <StorageRecompressPanel />
-        </div>
-      ) : null}
 
       {activeTab === 'programs' ? (
         <>

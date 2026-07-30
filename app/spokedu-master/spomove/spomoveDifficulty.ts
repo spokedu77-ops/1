@@ -1,6 +1,11 @@
 import type { OfficialSpomovePreset } from './officialSpomovePresets';
 
-export type SpomoveDifficultyKind = 'numberCart' | 'colorTracker' | 'mole' | 'goalkeeper';
+export type SpomoveDifficultyKind =
+  | 'numberCart'
+  | 'colorTracker'
+  | 'mole'
+  | 'goalkeeper'
+  | 'simonPole';
 
 export type SpomoveDifficultyOption = {
   value: string;
@@ -30,6 +35,9 @@ export function colorTrackerEngineToStage(
 export function getSpomoveDifficultyKind(
   preset: OfficialSpomovePreset,
 ): SpomoveDifficultyKind | null {
+  if (preset.engine.mode === 'simon' && (preset.engine.level === 1 || preset.engine.level === 2)) {
+    return 'simonPole';
+  }
   if (preset.engine.mode !== 'reactTrain') return null;
   const level = preset.engine.level;
   if (level === 8) return 'numberCart';
@@ -65,6 +73,11 @@ export function getSpomoveDifficultyOptions(
         { value: '1', label: '1', sub: '항상 1개' },
         { value: '2', label: '2', sub: '1~2개' },
       ];
+    case 'simonPole':
+      return [
+        { value: '1', label: '기본', sub: '1개' },
+        { value: '2', label: '응용', sub: '2개' },
+      ];
   }
 }
 
@@ -86,6 +99,8 @@ export function readSpomoveDifficultyValue(
       return preset.engine.moleLookMode ?? 'classic';
     case 'goalkeeper':
       return String(preset.engine.goalkeeperTier ?? 2);
+    case 'simonPole':
+      return String(preset.engine.simonPoleCount ?? 1);
   }
 }
 
@@ -113,6 +128,9 @@ export function applySpomoveDifficulty(
       break;
     case 'goalkeeper':
       engine.goalkeeperTier = value === '1' ? 1 : 2;
+      break;
+    case 'simonPole':
+      engine.simonPoleCount = value === '2' ? 2 : 1;
       break;
   }
   return { ...preset, engine };

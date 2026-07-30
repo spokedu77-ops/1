@@ -912,102 +912,157 @@ export const SignalDisplay = React.memo(function SignalDisplay({
   }
 
   if (type === 'simon_arrow') {
-    const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
-    const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
-    const arrowId = content?.arrowId as string | undefined;
-    const fillHex = (content?.fillHex as string | undefined) ?? '#FFFFFF';
-    const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
+    type ArrowItem = {
+      arrowId?: string;
+      fillHex?: string;
+      posX?: number;
+      posY?: number;
+    };
+    const rawItems = Array.isArray(content?.items) ? (content.items as ArrowItem[]) : null;
+    const items: ArrowItem[] =
+      rawItems && rawItems.length > 0
+        ? rawItems
+        : [
+            {
+              arrowId: content?.arrowId as string | undefined,
+              fillHex: content?.fillHex as string | undefined,
+              posX: typeof content?.posX === 'number' ? content.posX : 0.5,
+              posY: typeof content?.posY === 'number' ? content.posY : 0.5,
+            },
+          ];
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div
-          className="signal-blink"
-          style={{
-            position: 'absolute',
-            left: `${posX * 100}%`,
-            top: `${posY * 100}%`,
-            transform: 'translate(-50%, -50%)',
-            // posX/posY가 극단(0/1)에 가까울 때도 화면 밖으로 잘리지 않게, 뷰포트 대비 사이즈를 보수적으로 제한한다.
-            width: 'min(40vw, 40vh)',
-            height: 'min(40vw, 40vh)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxSizing: 'border-box',
-          }}
-        >
-          <svg
-            viewBox="0 0 100 130"
-            preserveAspectRatio="xMidYMid meet"
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'block',
-              filter: 'drop-shadow(0 8px 44px rgba(0,0,0,0.45))',
-            }}
-            aria-hidden
-          >
-            <g transform={`rotate(${rot} 50 67)`}>
-              <path
-                d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
-                fill={fillHex}
-                stroke="rgba(255,255,255,0.24)"
-                strokeWidth={6}
-                strokeLinejoin="round"
-              />
-            </g>
-          </svg>
-        </div>
+        {items.map((item, idx) => {
+          const posX = typeof item.posX === 'number' ? item.posX : 0.5;
+          const posY = typeof item.posY === 'number' ? item.posY : 0.5;
+          const arrowId = item.arrowId;
+          const fillHex = item.fillHex ?? '#FFFFFF';
+          const rot = arrowId === 'up' ? 0 : arrowId === 'right' ? 90 : arrowId === 'down' ? 180 : -90;
+          return (
+            <div
+              key={`sa-${idx}`}
+              className="signal-blink"
+              style={{
+                position: 'absolute',
+                left: `${posX * 100}%`,
+                top: `${posY * 100}%`,
+                transform: 'translate(-50%, -50%)',
+                width: items.length > 1 ? 'min(32vw, 32vh)' : 'min(40vw, 40vh)',
+                height: items.length > 1 ? 'min(32vw, 32vh)' : 'min(40vw, 40vh)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxSizing: 'border-box',
+              }}
+            >
+              <svg
+                viewBox="0 0 100 130"
+                preserveAspectRatio="xMidYMid meet"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'block',
+                  filter: 'drop-shadow(0 8px 44px rgba(0,0,0,0.45))',
+                }}
+                aria-hidden
+              >
+                <g transform={`rotate(${rot} 50 67)`}>
+                  <path
+                    d="M 50 8 L 88 62 L 62 62 L 62 122 L 38 122 L 38 62 L 12 62 Z"
+                    fill={fillHex}
+                    stroke="rgba(255,255,255,0.24)"
+                    strokeWidth={6}
+                    strokeLinejoin="round"
+                  />
+                </g>
+              </svg>
+            </div>
+          );
+        })}
       </div>
     );
   }
 
   if (type === 'simon_shape') {
-    const shape = content?.shape as 'circle' | 'triangle' | 'square' | null | undefined;
-    const fillHex = (content?.fillHex as string) ?? '#EF4444';
-    const symbol = content?.symbol as string | undefined;
-    const textColor = (content?.textColor as string) ?? '#fff';
-    const imageUrl = (content?.imageUrl as string | null | undefined) ?? null;
-    const posX = typeof content?.posX === 'number' ? content.posX : 0.5;
-    const posY = typeof content?.posY === 'number' ? content.posY : 0.5;
-    const size = 'min(25vw, 25vh)';
-    const common: React.CSSProperties = {
-      width: '100%',
-      height: '100%',
-      background: fillHex,
-      flexShrink: 0,
+    type ShapeItem = {
+      shape?: 'circle' | 'triangle' | 'square' | null;
+      fillHex?: string;
+      symbol?: string;
+      textColor?: string;
+      imageUrl?: string | null;
+      posX?: number;
+      posY?: number;
     };
-    const frameStyle: React.CSSProperties = {
-      position: 'absolute',
-      left: `${posX * 100}%`,
-      top: `${posY * 100}%`,
-      transform: 'translate(-50%, -50%)',
-      width: size,
-      height: size,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxSizing: 'border-box',
-      overflow: 'hidden',
-      borderRadius: shape === 'square' ? '12%' : '50%',
-      border: imageUrl ? `3px solid ${fillHex}` : undefined,
-      boxShadow: imageUrl ? '0 8px 36px rgba(0,0,0,0.45)' : undefined,
-      background: imageUrl ? '#000' : undefined,
-    };
+    const rawItems = Array.isArray(content?.items) ? (content.items as ShapeItem[]) : null;
+    const items: ShapeItem[] =
+      rawItems && rawItems.length > 0
+        ? rawItems
+        : [
+            {
+              shape: content?.shape as ShapeItem['shape'],
+              fillHex: (content?.fillHex as string) ?? '#EF4444',
+              symbol: content?.symbol as string | undefined,
+              textColor: (content?.textColor as string) ?? '#fff',
+              imageUrl: (content?.imageUrl as string | null | undefined) ?? null,
+              posX: typeof content?.posX === 'number' ? content.posX : 0.5,
+              posY: typeof content?.posY === 'number' ? content.posY : 0.5,
+            },
+          ];
+    const size = items.length > 1 ? 'min(20vw, 20vh)' : 'min(25vw, 25vh)';
     return (
       <div key={animKey} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-        <div className="signal-blink" style={frameStyle}>
-          {imageUrl ? (
-            <VariantFruitImg slide={{ imageUrl, color: { id: '', name: '', bg: fillHex, text: textColor, symbol: symbol ?? '' } }} />
-          ) : shape === 'circle' ? (
-            <div style={{ ...common, borderRadius: '50%' }} />
-          ) : shape === 'square' ? (
-            <div style={{ ...common, borderRadius: '6%' }} />
-          ) : (
-            <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }} aria-hidden>
-              <polygon points="50,6 94,94 6,94" fill={fillHex} />
-            </svg>
-          )}
-        </div>
+        {items.map((item, idx) => {
+          const shape = item.shape;
+          const fillHex = item.fillHex ?? '#EF4444';
+          const symbol = item.symbol;
+          const textColor = item.textColor ?? '#fff';
+          const imageUrl = item.imageUrl ?? null;
+          const posX = typeof item.posX === 'number' ? item.posX : 0.5;
+          const posY = typeof item.posY === 'number' ? item.posY : 0.5;
+          const common: React.CSSProperties = {
+            width: '100%',
+            height: '100%',
+            background: fillHex,
+            flexShrink: 0,
+          };
+          const frameStyle: React.CSSProperties = {
+            position: 'absolute',
+            left: `${posX * 100}%`,
+            top: `${posY * 100}%`,
+            transform: 'translate(-50%, -50%)',
+            width: size,
+            height: size,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxSizing: 'border-box',
+            overflow: 'hidden',
+            borderRadius: shape === 'square' ? '12%' : '50%',
+            border: imageUrl ? `3px solid ${fillHex}` : undefined,
+            boxShadow: imageUrl ? '0 8px 36px rgba(0,0,0,0.45)' : undefined,
+            background: imageUrl ? '#000' : undefined,
+          };
+          return (
+            <div key={`ss-${idx}`} className="signal-blink" style={frameStyle}>
+              {imageUrl ? (
+                <VariantFruitImg
+                  slide={{
+                    imageUrl,
+                    color: { id: '', name: '', bg: fillHex, text: textColor, symbol: symbol ?? '' },
+                  }}
+                />
+              ) : shape === 'circle' ? (
+                <div style={{ ...common, borderRadius: '50%' }} />
+              ) : shape === 'square' ? (
+                <div style={{ ...common, borderRadius: '6%' }} />
+              ) : (
+                <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', display: 'block' }} aria-hidden>
+                  <polygon points="50,6 94,94 6,94" fill={fillHex} />
+                </svg>
+              )}
+            </div>
+          );
+        })}
       </div>
     );
   }

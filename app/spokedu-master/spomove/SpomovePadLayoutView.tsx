@@ -5,12 +5,21 @@ type SpomovePadLayoutViewProps = {
   variant: SpomovePadLayoutVariant;
   compact?: boolean;
   dark?: boolean;
+  /** 진행 방식·매트 장수 등 — 배치 카드에 붙여 고아 메타 블록을 만들지 않음 */
+  meta?: string | null;
 };
 
-export function SpomovePadLayoutView({ variant, compact = false, dark = false }: SpomovePadLayoutViewProps) {
+export function SpomovePadLayoutView({
+  variant,
+  compact = false,
+  dark = false,
+  meta = null,
+}: SpomovePadLayoutViewProps) {
   const [red, yellow, green, blue] = SPOMOVE_PAD_GRID_HEX;
   const borderClass = dark ? 'border-white/10 bg-black/20' : 'border-slate-200 bg-slate-50';
   const titleClass = dark ? 'text-white' : 'text-slate-950';
+  const mutedClass = dark ? 'text-white/55' : 'text-slate-500';
+  const metaLine = meta?.trim() || null;
 
   if (variant === 'compass') {
     const size = compact ? 'h-32 w-32' : 'h-40 w-40';
@@ -19,7 +28,7 @@ export function SpomovePadLayoutView({ variant, compact = false, dark = false }:
     return (
       <div className={`rounded-2xl border p-4 ${borderClass}`}>
         <p className={`text-sm font-black ${titleClass}`}>스포무브 매트 배치 방법</p>
-        <p className={`mt-1 text-xs font-semibold ${dark ? 'text-white/55' : 'text-slate-500'}`}>
+        <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
           다이아몬드: 빨강(위) · 노랑(왼) · 초록(오) · 파랑(아래)
         </p>
         <div className="mt-4 flex justify-center">
@@ -33,29 +42,37 @@ export function SpomovePadLayoutView({ variant, compact = false, dark = false }:
             <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 rounded-xl font-black text-white shadow-sm ${padClass} grid place-items-center`} style={{ background: blue }}>파</div>
           </div>
         </div>
+        {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
       </div>
     );
   }
 
-  const cellClass = compact ? 'min-h-12 text-xs' : 'min-h-14 text-sm';
+  const boardClass = compact ? 'w-[148px]' : 'w-[200px]';
+  const cellClass = compact ? 'text-xs' : 'text-sm';
 
   return (
     <div className={`rounded-2xl border p-3 ${borderClass}`}>
       <p className={`text-sm font-black ${titleClass}`}>스포무브 매트 배치 방법</p>
-        <p className={`mt-1 text-xs font-semibold ${dark ? 'text-white/55' : 'text-slate-500'}`}>
-          정사각형: 빨강 · 노랑 · 초록 · 파랑
+      <p className={`mt-1 text-xs font-semibold ${mutedClass}`}>
+        정사각형: 빨강 · 노랑 · 초록 · 파랑
       </p>
-      <div className="mt-3 grid grid-cols-2 gap-2" aria-label="패드 배치: 빨강, 노랑, 초록, 파랑">
-        {SPOMOVE_PAD_LAYOUT_LABELS.map((label, index) => (
-          <div
-            key={label}
-            className={`flex items-center justify-center rounded-xl font-black text-white shadow-sm ${cellClass}`}
-            style={{ background: SPOMOVE_PAD_GRID_HEX[index] }}
-          >
-            {label}
-          </div>
-        ))}
+      <div className="mt-3 flex justify-center">
+        <div
+          className={`grid aspect-square ${boardClass} grid-cols-2 gap-1.5`}
+          aria-label="패드 배치: 빨강, 노랑, 초록, 파랑"
+        >
+          {SPOMOVE_PAD_LAYOUT_LABELS.map((label, index) => (
+            <div
+              key={label}
+              className={`flex aspect-square items-center justify-center rounded-xl font-black text-white shadow-sm ${cellClass}`}
+              style={{ background: SPOMOVE_PAD_GRID_HEX[index] }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
       </div>
+      {metaLine ? <p className={`mt-3 text-xs font-semibold ${mutedClass}`}>{metaLine}</p> : null}
     </div>
   );
 }

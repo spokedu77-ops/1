@@ -171,7 +171,7 @@ function scheduleStats(schedule: (string | null)[]) {
 
 describe('generateObstacleSchedule', () => {
   for (const [label, mods, dur, isBonus, sessionReach] of OBS_CASES) {
-    test(`${label} — 인접 동일 타입 없음`, () => {
+    test(`${label} — 장애물 모듈 있으면 브릿지마다 스폰`, () => {
       const opts = {
         durationSec: dur,
         speedMult: 1.0,
@@ -180,10 +180,54 @@ describe('generateObstacleSchedule', () => {
         activeModules: makeActiveModules(...mods),
       };
       const sched = labGenerateObstacleSchedule(opts);
+      const hasObstacleModule =
+        mods.includes('punch' as AnyModuleKey) ||
+        mods.includes('duck' as AnyModuleKey) ||
+        mods.includes('kick' as AnyModuleKey) ||
+        mods.includes('reach' as AnyModuleKey) ||
+        isBonus;
+      const reachOnlyExhausted =
+        mods.length === 1 &&
+        mods.includes('reach' as AnyModuleKey) &&
+        !isBonus &&
+        sessionReach >= 2;
+
+      if (!hasObstacleModule || reachOnlyExhausted) {
+        expect(sched.every((s) => s === null)).toBe(true);
+        return;
+      }
+
+      expect(sched.length).toBeGreaterThan(0);
+      expect(sched.every((s) => s !== null)).toBe(true);
+    });
+
+    test(`${label} — 복수 타입이면 가능 시 인접 동일 타입 회피`, () => {
+      const opts = {
+        durationSec: dur,
+        speedMult: 1.0,
+        sessionReachPlaced: sessionReach,
+        isBonus,
+        activeModules: makeActiveModules(...mods),
+      };
+      const typeCount = [
+        mods.includes('punch' as AnyModuleKey),
+        mods.includes('duck' as AnyModuleKey),
+        mods.includes('kick' as AnyModuleKey),
+        mods.includes('reach' as AnyModuleKey) && (isBonus || sessionReach < 2),
+      ].filter(Boolean).length;
+      if (typeCount < 2 && !isBonus) return;
+
+      const sched = labGenerateObstacleSchedule(opts);
+      let sameAdjacent = 0;
+      let pairs = 0;
       for (let i = 1; i < sched.length; i++) {
-        if (sched[i - 1] !== null && sched[i] !== null) {
-          expect(sched[i]).not.toBe(sched[i - 1]);
-        }
+        if (sched[i - 1] === null || sched[i] === null) continue;
+        pairs++;
+        if (sched[i] === sched[i - 1]) sameAdjacent++;
+      }
+      // 선호만 하므로 전량 금지는 아니지만, 대부분 달라야 함
+      if (pairs > 0) {
+        expect(sameAdjacent / pairs).toBeLessThan(0.5);
       }
     });
 

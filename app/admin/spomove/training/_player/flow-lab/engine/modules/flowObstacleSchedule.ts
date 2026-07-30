@@ -4,8 +4,9 @@
  * 알고리즘:
  *   1. 필수 이벤트 먼저 (단일 특기 ≥2회, 보너스는 각 타입 1회 이상)
  *   2. reach 벽 세션 제한 (REACH_CAP_SESSION) 적용 (보너스는 최대 3회 별도 허용)
- *   3. 필수 이벤트를 셔플해 짝수 위치(0,2,4...)에 배치 — 엄격한 교대 패턴
- *   4. 나머지 짝수 위치를 확정 채움 (타입만 랜덤) — 밀도 2브릿지당 1개 보장
+ *   3. 필수 이벤트를 셔플해 앞쪽부터 배치
+ *   4. 나머지 슬롯을 모두 채움 — 장애물 단계는 브릿지마다 스폰
+ *   5. 가능하면 직전 슬롯과 다른 타입을 선호 (단일 특기는 동일 타입 연속 허용)
  */
 
 import type { FlowModuleKey } from './flowModules';
@@ -67,6 +68,18 @@ function pickRandomObstacle(pool: NonNullable<ObstacleSlot>[]): ObstacleSlot {
   return pool[Math.floor(Math.random() * pool.length)]!;
 }
 
+function pickFromPool(
+  pool: NonNullable<ObstacleSlot>[],
+  avoidType: ObstacleSlot | undefined,
+): ObstacleSlot {
+  if (pool.length === 0) return null;
+  if (avoidType && pool.length > 1) {
+    const filtered = pool.filter((t) => t !== avoidType);
+    if (filtered.length > 0) return pickRandomObstacle(filtered);
+  }
+  return pickRandomObstacle(pool);
+}
+
 // ─── 공개 API ────────────────────────────────────────────────────────────────
 
 export interface ObstacleScheduleOptions {
@@ -77,6 +90,22 @@ export interface ObstacleScheduleOptions {
   /** 이번 세션에서 지금까지 배치된 reach 벽 수 */
   sessionReachPlaced: number;
   isBonus: boolean;
+}
+
+/**
+ * 스케줄이 끝난 뒤에도 브릿지마다 장애물을 붙일 때 사용 (reach는 스케줄 예산만 사용).
+ */
+export function pickOverflowObstacleSlot(
+  activeModules: Set<FlowModuleKey>,
+  avoidType?: ObstacleSlot,
+): ObstacleSlot {
+  const pool = buildObstaclePool(
+    activeModules.has('duck'),
+    activeModules.has('punch'),
+    activeModules.has('kick'),
+    false,
+  );
+  return pickFromPool(pool, avoidType);
 }
 
 /**
@@ -131,28 +160,26 @@ export function generateObstacleSchedule(opts: ObstacleScheduleOptions): Obstacl
 
   shuffleInPlace(required);
 
-  // ── 2. 스케줄 조립 (엄격한 교대 패턴: 나오고-안나오고-나오고-안나오고) ───
+  // ── 2. 스케줄 조립 (브릿지마다 스폰) ───────────────────────────────────────
   const schedule: ObstacleSlot[] = new Array(bridgeCount).fill(null) as ObstacleSlot[];
   let reachInSchedule = 0;
 
-  // required 배치 (짝수 위치)
+  // required 배치 (앞에서부터)
   for (let k = 0; k < required.length; k++) {
-    const pos = k * 2;
-    if (pos >= bridgeCount) break;
+    if (k >= bridgeCount) break;
     const req = required[k]!;
-    schedule[pos] = req;
+    schedule[k] = req;
     if (req === 'reach') reachInSchedule++;
   }
 
-  // 빈 슬롯 채움 (연속 방지 + 타입 랜덤, 밀도는 확정적)
+  // 빈 슬롯 전부 채움
   for (let i = 0; i < bridgeCount; i++) {
     if (schedule[i] !== null) continue;
-    const prev = i > 0 ? schedule[i - 1] : null;
-    if (prev !== null) continue;
 
     const canReach = hasReach && reachInSchedule < reachBudget;
     const pool = buildObstaclePool(hasDuck, hasPunch, hasKick, canReach);
-    const type = pickRandomObstacle(pool);
+    const prev = i > 0 ? schedule[i - 1] : null;
+    const type = pickFromPool(pool, prev);
 
     if (type === null) continue;
     if (type === 'reach') reachInSchedule++;

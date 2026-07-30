@@ -8,6 +8,7 @@ import { buildGroupPlannedTotals } from '@/app/admin/classes-shared/lib/plannedR
 import { clampRoundIndex } from '@/app/admin/classes-shared/lib/roundFields';
 import { BarChart3, Calendar, MessageSquare, Pin, RefreshCw, Plus, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { StorageRecompressPanel } from './StorageRecompressPanel';
 
 // --- Interfaces ---
 interface IClassSession {
@@ -589,6 +590,8 @@ export default function SpokeduHQDashboard() {
             </button>
           </div>
         </header>
+
+        <StorageRecompressPanel />
 
         {/* 관리 홈: 패널 2개 — (1) 오늘 수업·연기·휴강 (2) 공지·상담·MOVE·안내 링크 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 w-full min-w-0">

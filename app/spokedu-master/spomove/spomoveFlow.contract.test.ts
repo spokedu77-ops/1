@@ -67,9 +67,14 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(guidelineSheet).toContain('data-preview-column="media"');
     expect(guidelineSheet).toContain('핵심 키워드');
     expect(guidelineSheet).toContain('contentOverride');
+    expect(guidelineSheet).toContain('resolveSpomoveCoreKeywords');
+    expect(guidelineSheet).toContain('buildSpomoveCoreKeywordTags');
     expect(guidelineSheet).toContain('시작 위치');
     expect(guidelineSheet).toContain('참여 인원');
     expect(guidelineSheet).toContain('난이도');
+    expect(guidelineSheet).not.toContain('핵심 키워드 ${index + 1}');
+    expect(guidelineSheet).not.toContain('매트 바로 밖');
+    expect(guidelineSheet).not.toContain('소집단');
     expect(guidelineSheet).toContain('활동방법');
     expect(guidelineSheet).toContain('활동 개념');
     expect(guidelineSheet).not.toContain('{activityMethod.title}');
@@ -140,6 +145,9 @@ describe('SPOMOVE pilot flow contract', () => {
     expect(settingsBriefing).toContain('추천');
     expect(padLayoutView).toContain('정사각형: 빨강 · 노랑 · 초록 · 파랑');
     expect(padLayoutView).toContain('다이아몬드: 빨강(위) · 노랑(왼) · 초록(오) · 파랑(아래)');
+    expect(padLayoutView).toContain('aspect-square');
+    expect(settingsBriefing).toContain('meta={intervalLine ? null : prepLine}');
+    expect(settingsBriefing).not.toContain('text-white/70">{prepLine}');
   });
 
   it('reproduces recent same-settings or downgrades the label', () => {

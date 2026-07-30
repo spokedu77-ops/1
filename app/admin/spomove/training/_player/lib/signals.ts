@@ -1041,23 +1041,95 @@ export function buildPoleArrowSignal(
   };
 }
 
-/** 사이먼 전용: 1번=도형+색 / 2번=↑↓←→ 화살표+방향 / 3번=믹스 갤러리(전체 변형 색상 이미지)+색 · 색(또는 방향) 중복 규칙 + 좌→우→상→하 극단 순환 */
+/** 사이먼 전용: 1번=도형+색 / 2번=↑↓←→ 화살표+방향 / 3번=믹스 갤러리(전체 변형 색상 이미지)+색
+ * · 색(또는 방향) 중복 규칙 + 좌→우→상→하 극단 순환
+ * · poleCount=2(응용): 극단 2개 동시 · 쌍 내 동일 답 비율 <10%
+ */
 export function createSimonSignalGenerator(
   level: number,
   colors: ColorItem[],
   fruitSlides: FruitSlide[] | (() => FruitSlide[] | undefined) | undefined = undefined,
+  poleCount: 1 | 2 = 1,
 ) {
   const activeColors = colors.length >= 2 ? colors : COLORS;
+  const effectivePoleCount: 1 | 2 =
+    (level === 1 || level === 2) && poleCount === 2 ? 2 : 1;
   let edgeIdx = 0;
   const readSlides = (): FruitSlide[] | undefined => {
     const slides = typeof fruitSlides === 'function' ? fruitSlides() : fruitSlides;
     return slides;
   };
+
+  type ShapeItem = {
+    shape: 'circle' | 'triangle' | 'square' | null;
+    fillHex: string;
+    colorId: string;
+    name: string;
+    textColor: string;
+    symbol: string;
+    imageUrl: string | null;
+    posX: number;
+    posY: number;
+  };
+
+  const buildShapeItem = (edge: number, color: ColorItem, imageUrl: string | null): ShapeItem => {
+    const { posX, posY } = pickSimonPolePosition(edge);
+    const shapes = ['circle', 'triangle', 'square'] as const;
+    return {
+      shape: imageUrl ? null : shapes[Math.floor(Math.random() * shapes.length)]!,
+      fillHex: color.bg,
+      colorId: color.id,
+      name: color.name,
+      textColor: color.text,
+      symbol: color.symbol,
+      imageUrl,
+      posX,
+      posY,
+    };
+  };
+
+  const pickTwoEdges = (): [number, number] => {
+    const a = Math.floor(Math.random() * 4);
+    let b = Math.floor(Math.random() * 3);
+    if (b >= a) b += 1;
+    return [a, b % 4];
+  };
+
+  /** 응용(2개) 쌍 내 동일 답 확률 — 10% 미만 */
+  const PAIR_DUP_CHANCE = 0.09;
+
+  const pickPairColors = (): [ColorItem, ColorItem] => {
+    const first = r(activeColors);
+    if (Math.random() < PAIR_DUP_CHANCE) return [first, first];
+    const others = activeColors.filter((c) => c.id !== first.id);
+    return [first, others.length > 0 ? r(others) : first];
+  };
+
+  const pickPairArrows = (): [(typeof ARROWS)[number], (typeof ARROWS)[number]] => {
+    const first = r(ARROWS);
+    if (Math.random() < PAIR_DUP_CHANCE) return [first, first];
+    const others = ARROWS.filter((a) => a.id !== first.id);
+    return [first, others.length > 0 ? r(others) : first];
+  };
+
   return createColorDupConstrainedGenerator(
     () => {
-      const { posX, posY } = pickSimonPolePosition(edgeIdx % 4);
       if (level === 1 || level === 3) {
-        const shapes = ['circle', 'triangle', 'square'] as const;
+        if (effectivePoleCount === 2 && level === 1) {
+          const [e0, e1] = pickTwoEdges();
+          const [c0, c1] = pickPairColors();
+          const items = [buildShapeItem(e0, c0, null), buildShapeItem(e1, c1, null)];
+          return {
+            type: 'simon_shape',
+            bg: '#0F172A',
+            content: {
+              ...items[0],
+              items,
+            },
+            voice: null,
+          };
+        }
+
         let c = r(activeColors);
         let imageUrl: string | null = null;
         if (level === 3) {
@@ -1069,25 +1141,32 @@ export function createSimonSignalGenerator(
             imageUrl = themed.imageUrl;
           }
         }
-        const shape = imageUrl ? null : shapes[Math.floor(Math.random() * shapes.length)]!;
+        const item = buildShapeItem(edgeIdx % 4, c, imageUrl);
         return {
           type: 'simon_shape',
           bg: '#0F172A',
-          content: {
-            shape,
-            fillHex: c.bg,
-            colorId: c.id,
-            name: c.name,
-            textColor: c.text,
-            symbol: c.symbol,
-            imageUrl,
-            posX,
-            posY,
-          },
+          content: item,
           voice: null,
         };
       }
       if (level === 2) {
+        if (effectivePoleCount === 2) {
+          const [e0, e1] = pickTwoEdges();
+          const [a0, a1] = pickPairArrows();
+          const items = [
+            { arrowId: a0.id, icon: a0.icon, label: a0.label, ...pickSimonPolePosition(e0) },
+            { arrowId: a1.id, icon: a1.icon, label: a1.label, ...pickSimonPolePosition(e1) },
+          ];
+          return {
+            type: 'simon_arrow',
+            bg: '#0F172A',
+            content: {
+              ...items[0],
+              items,
+            },
+            voice: null,
+          };
+        }
         const a = ARROWS[Math.floor(Math.random() * ARROWS.length)]!;
         return buildPoleArrowSignal(a, edgeIdx % 4);
       }
@@ -1095,7 +1174,7 @@ export function createSimonSignalGenerator(
     },
     colorDupFingerprint,
     () => {
-      edgeIdx = (edgeIdx + 1) % 4;
+      edgeIdx = (edgeIdx + (effectivePoleCount === 2 ? 2 : 1)) % 4;
     },
     level === 2 ? ARROWS.length : Math.max(1, activeColors.length || COLORS.length)
   );
@@ -1164,11 +1243,40 @@ export function signalFingerprint(sig: Record<string, unknown>): string {
     return `sta:${String(sig.bg ?? '')}:${c.arrowId}:${c.fillHex}:${c.stroopArrowTask}:${c.stroopArrowReverse}`;
   }
   if (t === 'simon_shape') {
-    const c = sig.content as { shape?: string; fillHex?: string; imageUrl?: string | null; posX?: number; posY?: number };
+    const c = sig.content as {
+      shape?: string;
+      fillHex?: string;
+      imageUrl?: string | null;
+      posX?: number;
+      posY?: number;
+      items?: { shape?: string; fillHex?: string; imageUrl?: string | null; posX?: number; posY?: number }[];
+    };
+    if (Array.isArray(c.items) && c.items.length > 0) {
+      return `simon:${c.items
+        .map(
+          (it) =>
+            `${it.shape ?? ''}:${it.fillHex ?? ''}:${it.imageUrl ?? ''}:${((it.posX ?? 0) * 1000) | 0}:${((it.posY ?? 0) * 1000) | 0}`,
+        )
+        .join('|')}`;
+    }
     return `simon:${c.shape ?? ''}:${c.fillHex}:${c.imageUrl ?? ''}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
   }
   if (t === 'simon_arrow') {
-    const c = sig.content as { arrowId?: string; fillHex?: string; posX?: number; posY?: number };
+    const c = sig.content as {
+      arrowId?: string;
+      fillHex?: string;
+      posX?: number;
+      posY?: number;
+      items?: { arrowId?: string; fillHex?: string; posX?: number; posY?: number }[];
+    };
+    if (Array.isArray(c.items) && c.items.length > 0) {
+      return `simon_ar:${c.items
+        .map(
+          (it) =>
+            `${it.arrowId ?? ''}:${it.fillHex ?? ''}:${((it.posX ?? 0) * 1000) | 0}:${((it.posY ?? 0) * 1000) | 0}`,
+        )
+        .join('|')}`;
+    }
     return `simon_ar:${c.arrowId}:${c.fillHex ?? ''}:${((c.posX ?? 0) * 1000) | 0}:${((c.posY ?? 0) * 1000) | 0}`;
   }
   if (t === 'flanker_row') {
@@ -1263,6 +1371,24 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
     );
   }
   if (t === 'arrow' || t === 'simon_arrow') {
+    const items = (content.items as { arrowId?: string }[] | undefined) ?? null;
+    if (t === 'simon_arrow' && Array.isArray(items) && items.length > 0) {
+      return uniqueColorKeys(
+        items.map((it) =>
+          it.arrowId
+            ? SPATIAL_ARROW_COLOR_BY_DIRECTION[it.arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION]
+            : undefined,
+        ),
+      );
+    }
+    if (t === 'simon_arrow') {
+      const arrowId = content.arrowId as string | undefined;
+      if (arrowId) {
+        return uniqueColorKeys([
+          SPATIAL_ARROW_COLOR_BY_DIRECTION[arrowId as keyof typeof SPATIAL_ARROW_COLOR_BY_DIRECTION],
+        ]);
+      }
+    }
     return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
   }
   if (t === 'stroop_arrow') return uniqueColorKeys([colorIdFromHex(content.fillHex)]);
@@ -1271,7 +1397,13 @@ export function extractStimulusColorIds(sig: Record<string, unknown>): string[] 
     const color = content.color as { id?: string } | undefined;
     return uniqueColorKeys([color?.id]);
   }
-  if (t === 'simon_shape') return uniqueColorKeys([content.colorId as string | undefined]);
+  if (t === 'simon_shape') {
+    const items = (content.items as { colorId?: string }[] | undefined) ?? null;
+    if (Array.isArray(items) && items.length > 0) {
+      return uniqueColorKeys(items.map((it) => it.colorId));
+    }
+    return uniqueColorKeys([content.colorId as string | undefined]);
+  }
   if (t === 'flanker_row') return uniqueColorKeys([content.targetColorId as string | undefined]);
   if (t === 'flanker_arrows') {
     const arrowId = content.targetArrowId as string | undefined;
@@ -1457,11 +1589,25 @@ export function createBasicSignalGenerator(
 export function colorDupFingerprint(sig: Record<string, unknown>): string {
   const t = sig.type as string;
   if (t === 'simon_shape') {
-    const c = sig.content as { colorId?: string };
+    const c = sig.content as { colorId?: string; items?: { colorId?: string }[] };
+    if (Array.isArray(c.items) && c.items.length > 0) {
+      return `cd:${c.items
+        .map((it) => it.colorId ?? '')
+        .slice()
+        .sort()
+        .join('|')}`;
+    }
     return `cd:${c.colorId ?? ''}`;
   }
   if (t === 'simon_arrow') {
-    const c = sig.content as { arrowId?: string };
+    const c = sig.content as { arrowId?: string; items?: { arrowId?: string }[] };
+    if (Array.isArray(c.items) && c.items.length > 0) {
+      return `cd:${c.items
+        .map((it) => it.arrowId ?? '')
+        .slice()
+        .sort()
+        .join('|')}`;
+    }
     return `cd:${c.arrowId ?? ''}`;
   }
   if (t === 'flanker_row') {

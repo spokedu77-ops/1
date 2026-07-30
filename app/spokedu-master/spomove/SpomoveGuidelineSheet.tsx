@@ -24,7 +24,8 @@ import {
   buildDeclaredOperation,
   resolveRequiredMatGuidance,
 } from './operations';
-import type { ActivityOperationConfig, ParticipantScale, StartZone } from './operations/operationTypes';
+import { buildSpomoveCoreKeywordTags, resolveSpomoveCoreKeywords } from './spomoveCoreKeywords';
+import { getOfficialSpomovePresetGuide } from './officialSpomovePresetGuides';
 import { useProfile } from '../store';
 
 function usePreferredLaunchMode(): 'projector' | 'mobile' {
@@ -80,19 +81,6 @@ function SpomoveScreenPreview({ videoUrl }: { videoUrl: string }) {
   );
 }
 
-const START_ZONE_LABEL: Record<StartZone, string> = {
-  onMat: '매트 위',
-  adjacentToMat: '매트 바로 밖',
-  externalSpot: '외부 스팟',
-};
-
-const PARTICIPANT_SCALE_LABEL: Record<ParticipantScale, string> = {
-  individual: '개인',
-  pair: '짝',
-  smallGroup: '소집단',
-  team: '팀',
-};
-
 function getActivityMethodText({
   isBodyCueBuiltIn,
   movementLabel,
@@ -120,32 +108,6 @@ function getActivityMethodText({
     title: '실행 조건 확인',
     body: '실행 조건을 확인한 뒤 시작하세요.',
   };
-}
-
-function buildKeywordTags(operation: ActivityOperationConfig | null, difficultyLabel: string) {
-  return [
-    {
-      label: '시작 위치',
-      value: operation ? START_ZONE_LABEL[operation.startZone] : '매트 위',
-    },
-    {
-      label: '참여 인원',
-      value: operation ? PARTICIPANT_SCALE_LABEL[operation.participantScale] : '개인',
-    },
-    {
-      label: '난이도',
-      value: difficultyLabel || '-',
-    },
-  ];
-}
-
-function buildOverrideKeywordTags(contentOverride?: SpomovePresetContentOverride) {
-  const values = contentOverride?.coreKeywords?.map((item) => item.trim()).filter(Boolean).slice(0, 3) ?? [];
-  if (values.length === 0) return null;
-  return values.map((value, index) => ({
-    label: `핵심 키워드 ${index + 1}`,
-    value,
-  }));
 }
 
 /**
@@ -228,7 +190,16 @@ export function SpomoveGuidelineSheet({
       ? `${declaredOperation.timing.workSeconds}초 운동 · ${declaredOperation.timing.restSeconds}초 휴식 · ${declaredOperation.timing.sets}세트`
       : null;
 
-  const keywordTags = buildOverrideKeywordTags(contentOverride) ?? buildKeywordTags(declaredOperation, display.difficultyLabel);
+  const guide = getOfficialSpomovePresetGuide(preset);
+  const keywordTags = buildSpomoveCoreKeywordTags(
+    resolveSpomoveCoreKeywords({
+      override: contentOverride?.coreKeywords,
+      startZone: declaredOperation?.startZone,
+      participantScale: declaredOperation?.participantScale,
+      thinkingLevel: guide.thinkingLevel,
+      movementStartPosition: recommendedDef?.defaultStartPosition,
+    }),
+  );
   const activityMethod = getActivityMethodText({
     isBodyCueBuiltIn,
     movementLabel: movementSummary?.recommendedLabel,
@@ -265,10 +236,11 @@ export function SpomoveGuidelineSheet({
               <section>
                 <p className="sr-only">SPOMOVE 핵심 키워드</p>
                 <h3 className="text-[11px] font-black uppercase tracking-[0.08em] text-emerald-700">핵심 키워드</h3>
+                <p className="sr-only">시작 위치 · 참여 인원 · 난이도</p>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {keywordTags.map((tag) => (
                     <span
-                      key={tag.label}
+                      key={tag.key}
                       className="inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-[9px] border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[12px] font-bold leading-4 text-emerald-900"
                       title={tag.label}
                     >

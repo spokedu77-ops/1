@@ -27,7 +27,12 @@ describe('admin SPOKEDU MASTER split contract', () => {
     expect(programsPage).toContain('SpomoveContentManager');
     expect(programsPage).toContain('SPOMOVE_CONTENT_PACK_ID');
     expect(programsPage).toContain('핵심 키워드');
+    expect(programsPage).toContain('SPOMOVE_CORE_KEYWORD_AXIS');
+    expect(programsPage).toContain('시작 위치');
+    expect(programsPage).toContain('참여 인원');
+    expect(programsPage).toContain('난이도');
     expect(programsPage).toContain('활동방법');
     expect(programsPage).toContain('활동 개념');
+    expect(programsPage).not.toContain('placeholder="매트 위, 개인, 어려움"');
   });
 });

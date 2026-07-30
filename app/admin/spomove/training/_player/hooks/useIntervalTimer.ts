@@ -35,6 +35,7 @@ export function useIntervalTimer({
   flankerNestedCircleCount,
   flankerArrowMode,
   stroopWordMode,
+  simonPoleCount = 1,
   onSignal,
   onFinish,
 }: {
@@ -55,6 +56,8 @@ export function useIntervalTimer({
   flankerNestedCircleCount?: 3 | 5;
   flankerArrowMode?: 'lr' | 'udlr';
   stroopWordMode?: 'bg' | 'missing';
+  /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
+  simonPoleCount?: 1 | 2;
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -94,7 +97,8 @@ export function useIntervalTimer({
     if (engineMode === 'basic') {
       genRef.current = createBasicSignalGenerator(engineLevel, colors, fruitSlides, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
     } else if (engineMode === 'simon') {
-      genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides);
+      const pole: 1 | 2 = simonPoleCount === 2 ? 2 : 1;
+      genRef.current = createSimonSignalGenerator(engineLevel, colors, fruitSlides, pole);
     } else if (engineMode === 'taskswitch') {
       genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
     } else if (engineMode === 'stroop' || engineMode === 'flanker' || engineMode === 'gonogo') {
@@ -179,7 +183,7 @@ export function useIntervalTimer({
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       ttsClear();
     };
-  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, onSignal, onFinish]);
+  }, [active, workSec, restSec, sets, speed, mode, level, audioMode, colors, fruitSlides, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
 
   return { intervalPhase, intervalSet, intervalLeft };
 }

@@ -787,6 +787,7 @@ function SpomoveSessionContent() {
           numberCartTier={officialPreset.engine.numberCartTier}
           colorTrackerTier={officialPreset.engine.colorTrackerTier}
           goalkeeperTier={officialPreset.engine.goalkeeperTier}
+          simonPoleCount={officialPreset.engine.simonPoleCount}
           colorTrackerDualPanel={officialPreset.engine.colorTrackerDualPanel}
           camouflagePlacement={officialPreset.engine.camouflagePlacement}
           flowFeatures={officialPreset.engine.flowFeatures}
@@ -870,7 +871,6 @@ function SpomoveSessionContent() {
                 persistPresetPreference({ difficulty: value });
               }}
               onStart={beginConfiguredSession}
-              movement={resolvedMovement}
               movementFamily={movementFamily}
               cueFloorNotice={cueFloorNotice}
               operationConfig={operationCandidate}

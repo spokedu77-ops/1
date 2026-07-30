@@ -27,6 +27,7 @@ import type { FlowModuleKey } from './modules/flowModules';
 import {
   generateObstacleSchedule,
   countReachInSchedule,
+  pickOverflowObstacleSlot,
   type ObstacleSlot,
 } from './modules/flowObstacleSchedule';
 import { SpaceEnvironment } from './renderers/SpaceEnvironment';
@@ -225,6 +226,7 @@ export class FlowEngine {
   // 장애물 스케줄
   private stageSchedule:    ObstacleSlot[] = [];
   private stageScheduleIdx  = 0;
+  private lastObstacleSlot: ObstacleSlot = null;
   private sessionReachPlaced = 0;
   // 펀치 벽 타격 시퀀스
   private wallBreakActive  = false;
@@ -626,10 +628,15 @@ export class FlowEngine {
     this.bridges.push(bridgeObj);
 
     if (!isFirst && this.obstacles) {
-      const slot: ObstacleSlot = this.stageScheduleIdx < this.stageSchedule.length
+      let slot: ObstacleSlot = this.stageScheduleIdx < this.stageSchedule.length
         ? (this.stageSchedule[this.stageScheduleIdx++] ?? null)
         : null;
       this.stageScheduleIdx = Math.min(this.stageScheduleIdx, this.stageSchedule.length);
+
+      // 스케줄 소진 후에도 장애물 단계면 브릿지마다 계속 스폰
+      if (slot === null && this.stageSchedule.length > 0 && this.stageScheduleIdx >= this.stageSchedule.length) {
+        slot = pickOverflowObstacleSlot(this.activeModules, this.lastObstacleSlot);
+      }
 
       if (slot === 'ufo') {
         this.obstacles.attachUfo(bridgeObj);
@@ -640,6 +647,7 @@ export class FlowEngine {
       } else if (slot === 'kick') {
         this.obstacles.attachKick(bridgeObj);
       }
+      if (slot) this.lastObstacleSlot = slot;
     }
 
   }
@@ -752,6 +760,7 @@ export class FlowEngine {
       this.sessionReachPlaced += countReachInSchedule(this.stageSchedule);
     }
     this.stageScheduleIdx = 0;
+    this.lastObstacleSlot = null;
 
     const initialPose = stage.colorGatePose ?? stage.colorGateAction;
     if (stage.isColorGate && initialPose) {

@@ -40,4 +40,18 @@ describe('spomoveDifficulty', () => {
     expect(stage2.engine.colorTrackerTier).toBe(3);
     expect(stage2.engine.colorTrackerDualPanel).toBe(false);
   });
+
+  it('사이먼 폴 도형·화살표 기본/응용', () => {
+    const pole = findOfficialSpomovePreset('simon-pole-shape-06')!;
+    expect(getSpomoveDifficultyKind(pole)).toBe('simonPole');
+    expect(getSpomoveDifficultyOptions('simonPole').map((o) => o.label)).toEqual(['기본', '응용']);
+    expect(readSpomoveDifficultyValue(pole, 'simonPole')).toBe('1');
+
+    const advanced = applySpomoveDifficulty(pole, 'simonPole', '2');
+    expect(advanced.engine.simonPoleCount).toBe(2);
+    expect(readSpomoveDifficultyValue(advanced, 'simonPole')).toBe('2');
+
+    const arrows = findOfficialSpomovePreset('simon-pole-arrows-41')!;
+    expect(getSpomoveDifficultyKind(arrows)).toBe('simonPole');
+  });
 });

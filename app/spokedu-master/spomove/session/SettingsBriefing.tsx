@@ -15,9 +15,7 @@ import {
   type SpomoveDifficultyKind,
 } from '../spomoveDifficulty';
 import type { OfficialSpomovePreset } from '../officialSpomovePresets';
-import type { ResolvedMovementConfiguration } from '../movements/movementTypes';
 import { resolveRequiredMatGuidance } from '../operations/operationConstraints';
-import { operationSummaryLine } from '../operations/OperationConfigurator';
 import type { ActivityOperationConfig } from '../operations/operationTypes';
 import { SpomovePadLayoutView } from '../SpomovePadLayoutView';
 import { getSpomovePadLayoutVariant } from '../spomovePadLayout';
@@ -35,7 +33,6 @@ export function SettingsBriefing({
   difficultyValue,
   onDifficultyChange,
   onStart,
-  movement,
   movementFamily,
   cueFloorNotice,
   operationConfig,
@@ -48,7 +45,6 @@ export function SettingsBriefing({
   difficultyValue: string;
   onDifficultyChange: (value: string) => void;
   onStart: () => void;
-  movement?: ResolvedMovementConfiguration | null;
   movementFamily?: ActivityFamilyDefinition | null;
   cueFloorNotice?: string | null;
   operationConfig?: ActivityOperationConfig | null;
@@ -56,7 +52,6 @@ export function SettingsBriefing({
   const showCueSpeed = supportsCueSpeedOverride(preset);
   const difficultyOptions = difficultyKind ? getSpomoveDifficultyOptions(difficultyKind) : [];
 
-  const operationLine = operationConfig ? operationSummaryLine(operationConfig) : null;
   const intervalLine =
     operationConfig?.timing.pattern === 'interval'
       ? `${operationConfig.timing.workSeconds}초 운동 · ${operationConfig.timing.restSeconds}초 휴식 · ${operationConfig.timing.sets}세트`
@@ -85,15 +80,16 @@ export function SettingsBriefing({
 
   return (
     <div className="space-y-4">
-      <SpomovePadLayoutView variant={padLayoutVariant} compact dark />
+      <SpomovePadLayoutView
+        variant={padLayoutVariant}
+        compact
+        dark
+        meta={intervalLine ? null : prepLine}
+      />
 
-      {operationConfig ? (
+      {intervalLine ? (
         <section className="rounded-[22px] border border-white/10 bg-black/25 p-4 sm:p-5">
-          {intervalLine ? (
-            <p className="text-[14px] font-bold text-white/85">{intervalLine}</p>
-          ) : prepLine ? (
-            <p className="text-[13px] font-semibold text-white/70">{prepLine}</p>
-          ) : null}
+          <p className="text-[14px] font-bold text-white/85">{intervalLine}</p>
         </section>
       ) : null}
 

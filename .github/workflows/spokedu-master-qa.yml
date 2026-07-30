@@ -75,9 +75,9 @@ jobs:
       NEXT_PUBLIC_TOSS_CLIENT_KEY: test_ci_client_key
       TOSS_SECRET_KEY: test_ci_secret_key
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
@@ -140,7 +140,7 @@ jobs:
 
       - name: Upload gate artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: spokedu-master-gate-artifacts
           path: commercial-verification/master-gate-report.json
@@ -160,9 +160,9 @@ jobs:
       NEXT_PUBLIC_TOSS_CLIENT_KEY: test_ci_client_key
       TOSS_SECRET_KEY: test_ci_secret_key
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
@@ -210,7 +210,7 @@ jobs:
 
       - name: Upload commercial smoke artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: spokedu-master-commercial-smoke-artifacts
           path: |
@@ -273,9 +273,9 @@ jobs:
       TOSS_SECRET_KEY: ${{ secrets.STAGING_TOSS_SECRET_KEY }}
       CI_RELEASE_BRANCH: ${{ startsWith(github.ref_name, 'release/') || startsWith(github.ref_name, 'commercial/') }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
@@ -345,7 +345,7 @@ jobs:
 
       - name: Upload Lane B artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: spokedu-master-lane-b-artifacts
           path: commercial-verification/commercial-verification-report.json

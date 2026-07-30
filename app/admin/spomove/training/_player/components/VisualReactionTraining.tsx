@@ -225,10 +225,12 @@ class FlashBubble {
   }
 }
 
-/** 풍선 사이먼: 화면 임의 위치에 나타나 잠시 후 터짐(바늘 없음) */
+/** 풍선 사이먼: 화면 임의 위치에 나타나 ~50% 커진 뒤 터짐(바늘 없음) */
 class SimonBalloon {
   lane: number;
   color: (typeof RT_COLORS)[number];
+  /** 스폰 반경 */
+  baseR: number;
   r: number;
   x: number;
   y: number;
@@ -242,14 +244,17 @@ class SimonBalloon {
     this.lane = Math.floor(Math.random() * 4);
     this.color = RT_COLORS[this.lane];
     const r0 = Math.max(Math.min(g.W, g.H) * 0.055, 34);
-    this.r = r0 * (0.78 + Math.random() * 1.25);
-    this.x = this.r + Math.random() * Math.max(1, g.W - this.r * 2);
-    this.y = this.r + Math.random() * Math.max(1, g.hitY - this.r * 2 - 12);
+    this.baseR = r0 * (0.78 + Math.random() * 1.25);
+    this.r = this.baseR;
+    // 최종 크기(1.5×) 기준으로 여유 두고 배치
+    const maxR = this.baseR * 1.5;
+    this.x = maxR + Math.random() * Math.max(1, g.W - maxR * 2);
+    this.y = maxR + Math.random() * Math.max(1, g.hitY - maxR * 2 - 12);
     this.fired = false;
     this.dead = false;
     this.wobble = (Math.random() - 0.5) * 0.4;
     this.t = 0;
-    // 신호 속도(cueMs)에 맞춰 체류 후 터짐 — 다음 풍선 스폰과 같은 주기
+    // 신호 속도(cueMs)에 맞춰 성장 후 터짐 — 다음 풍선 스폰과 같은 주기
     const cue = Math.max(800, g.cueMs);
     this.triggerMs = cue * (0.82 + Math.random() * 0.12);
   }
@@ -263,6 +268,9 @@ class SimonBalloon {
   ) {
     this.t += deltaSec * 1000;
     if (!this.fired) {
+      const growT = Math.min(1, this.t / Math.max(1, this.triggerMs));
+      const eased = 1 - (1 - growT) * (1 - growT);
+      this.r = this.baseR * (1 + 0.5 * eased);
       this.x += Math.sin(this.t * 0.01 + this.wobble) * 0.5;
       if (this.t >= this.triggerMs) {
         const ready = nowMs - g.lastStimWallMs >= g.minStimGapMs && !g.stimConsumedThisFrame;
@@ -422,9 +430,9 @@ const css = `
 #vrt .vrt-pad.lit .vrt-pad-dot{opacity:1;box-shadow:0 0 18px 4px currentColor;transform:scale(1.5)}
 #vrt .vrt-pad.lit .vrt-pad-lbl{opacity:1}
 /* 풍선 터뜨리기: 하단 날카로운 무채색 바늘 — 틀·선·띠 없음(플레이 영역 오버레이) */
-#vrt .vrt-spikes-overlay{position:absolute;left:0;right:0;bottom:0;height:clamp(56px,12vh,96px);z-index:35;pointer-events:none;overflow:visible}
+#vrt .vrt-spikes-overlay{position:absolute;left:0;right:0;bottom:0;height:clamp(110px,22vh,190px);z-index:35;pointer-events:none;overflow:visible}
 #vrt .vrt-spike-needle{position:absolute;bottom:0;transform-origin:50% 100%;pointer-events:none;overflow:visible}
-#vrt .vrt-spike-needle svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 -2px 3px rgba(0,0,0,.45))}
+#vrt .vrt-spike-needle svg{display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 -3px 4px rgba(0,0,0,.5))}
 #vrt #vrt-hud{height:var(--hud-h);flex-shrink:0;z-index:50;display:flex;align-items:stretch;background:rgba(7,7,15,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.05);padding:max(0px,env(safe-area-inset-top)) clamp(12px,2.5vw,30px) 0}
 #vrt .vrt-hc{display:flex;flex-direction:column;justify-content:center;padding:0 clamp(10px,2vw,26px);border-right:1px solid rgba(255,255,255,.05)}
 #vrt .vrt-hc.vrt-cen{flex:1;align-items:center;border-right:none}
@@ -470,8 +478,9 @@ function buildFlashSpikeLayout(count = 26): {
     return {
       id,
       leftPct: 1.5 + t * 97 + (Math.random() - 0.5) * 0.8,
-      heightPx: tall ? 58 + Math.random() * 42 : 36 + Math.random() * 28,
-      widthPx: tall ? 3.5 + Math.random() * 2.8 : 4.5 + Math.random() * 3.5,
+      // 이전 대비 두께·길이 2배 (시인성)
+      heightPx: tall ? 116 + Math.random() * 84 : 72 + Math.random() * 56,
+      widthPx: tall ? 7 + Math.random() * 5.6 : 9 + Math.random() * 7,
       rotateDeg: -14 + Math.random() * 28,
       opacity: 0.55 + Math.random() * 0.4,
     };
@@ -595,15 +604,18 @@ export function VisualReactionTraining({ variant, durationSec, speedSec, concurr
         (pad as HTMLDivElement & { _t?: ReturnType<typeof setTimeout> })._t = setTimeout(() => pad.classList.remove('lit'), 260);
       }
       const c = RT_COLORS[lane].main;
-      const isBalloonBurst = g.mode === 'flash' || g.mode === 'balloonSimon';
-      if (isBalloonBurst) {
-        // 팡: 큰 방울이 느리게 퍼짐 (화면을 훑지 않음)
+      if (g.mode === 'flash') {
+        // 풍선 터뜨리기: 큰 방울이 느리게 퍼짐
         const n = g.isLow ? 36 : 56;
         for (let i = 0; i < n; i++) g.particles.push(new Particle(x, y, c, 2.6, true));
         for (let i = 0; i < (g.isLow ? 12 : 20); i++) g.particles.push(new Particle(x, y, '#ffffff', 2.2, true));
       } else {
-        for (let i = 0; i < 38; i++) g.particles.push(new Particle(x, y, c, 1));
-        for (let i = 0; i < 8; i++) g.particles.push(new Particle(x, y, '#ffffff', 1));
+        // 파도 피하기·풍선 사이먼: 파편처럼 부서짐 (사이먼은 더 크게)
+        const scale = g.mode === 'balloonSimon' ? 2.6 : 1;
+        const shards = g.mode === 'balloonSimon' ? (g.isLow ? 48 : 72) : 38;
+        const sparks = g.mode === 'balloonSimon' ? (g.isLow ? 16 : 24) : 8;
+        for (let i = 0; i < shards; i++) g.particles.push(new Particle(x, y, c, scale));
+        for (let i = 0; i < sparks; i++) g.particles.push(new Particle(x, y, '#ffffff', scale * 0.9));
       }
       if (g.combo >= 5 && g.combo % 5 === 0) {
         const pop = comboRef.current;

@@ -1,4 +1,5 @@
 import { OFFICIAL_SPOMOVE_LIBRARY } from '@/app/spokedu-master/spomove/officialSpomovePresets';
+import { normalizeSpomoveCoreKeywordsList } from '@/app/spokedu-master/spomove/spomoveCoreKeywords';
 
 export const SPOMOVE_THUMBNAIL_PACK_ID = 'spokedu_master_official_spomove_thumbnails';
 export const SPOMOVE_THUMBNAIL_PACK_NAME = 'SPOKEDU MASTER SPOMOVE 공식 프리셋 썸네일';
@@ -55,23 +56,6 @@ export function normalizeSpomoveGuideVideoMap(raw: unknown): Record<string, stri
   return normalizePresetStringMap(raw, 'guideVideos');
 }
 
-function normalizeStringList(value: unknown, maxItems: number): string[] {
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => (typeof item === 'string' ? item.trim() : ''))
-      .filter(Boolean)
-      .slice(0, maxItems);
-  }
-  if (typeof value === 'string') {
-    return value
-      .split(/\r?\n|,/u)
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .slice(0, maxItems);
-  }
-  return [];
-}
-
 export function normalizeSpomoveContentMap(raw: unknown): Record<string, SpomovePresetContentOverride> {
   const source = (raw as SpomoveContentAssetsJson | null)?.content;
   if (!source || typeof source !== 'object') return {};
@@ -81,7 +65,8 @@ export function normalizeSpomoveContentMap(raw: unknown): Record<string, Spomove
   for (const [presetId, value] of Object.entries(source)) {
     if (!validPresetIds.has(presetId) || !value || typeof value !== 'object') continue;
     const entry = value as Record<string, unknown>;
-    const coreKeywords = normalizeStringList(entry.coreKeywords, 3);
+    /** 핵심 키워드: 시작 위치 · 참여 인원 · 난이도 고정 어휘만 */
+    const coreKeywords = normalizeSpomoveCoreKeywordsList(entry.coreKeywords);
     const activityMethod = typeof entry.activityMethod === 'string' ? entry.activityMethod.trim() : '';
     const activityConcept = typeof entry.activityConcept === 'string' ? entry.activityConcept.trim() : '';
     const normalized: SpomovePresetContentOverride = {};

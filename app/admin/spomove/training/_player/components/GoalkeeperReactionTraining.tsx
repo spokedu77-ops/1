@@ -9,10 +9,10 @@ import type { ReactTrainCompleteStats } from './VisualReactionTraining';
 import { staticPerfTier } from '../lib/reactTrainPerf';
 
 const CORNERS = [
-  { key: 'TL', lane: 0, hex: 0xff1744, css: '#ff1744', label: 'RED', callout: '좌상(손)!' },
-  { key: 'TR', lane: 3, hex: 0xffd600, css: '#ffd600', label: 'YELLOW', callout: '우상(손)!' },
-  { key: 'BL', lane: 2, hex: 0x00e676, css: '#00e676', label: 'GREEN', callout: '좌하(발)!' },
-  { key: 'BR', lane: 1, hex: 0x2979ff, css: '#2979ff', label: 'BLUE', callout: '우하(발)!' },
+  { key: 'TL', lane: 0, hex: 0xff1744, css: '#ff1744', label: 'RED' },
+  { key: 'TR', lane: 3, hex: 0xffd600, css: '#ffd600', label: 'YELLOW' },
+  { key: 'BL', lane: 2, hex: 0x00e676, css: '#00e676', label: 'GREEN' },
+  { key: 'BR', lane: 1, hex: 0x2979ff, css: '#2979ff', label: 'BLUE' },
 ] as const;
 
 type CornerKey = (typeof CORNERS)[number]['key'];
@@ -199,7 +199,7 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
       curveChance: 0,
       doubleChance: 0,
       intervalMul: [0.95, 1.25],
-      msg: '상단/하단 방어 훈련!',
+      msg: '공을 보고 반응!',
       col: '#ffffff',
     },
     {
@@ -209,7 +209,7 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
       curveChance: 0.5,
       doubleChance: 0,
       intervalMul: [0.85, 1.15],
-      msg: '마구(커브볼) 주의!! 끝까지 봐라!',
+      msg: '커브볼 주의! 끝까지 봐라!',
       col: '#ffd600',
     },
     {
@@ -219,7 +219,7 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
       curveChance: 0.4,
       doubleChance: allowDouble ? 0.4 : 0,
       intervalMul: [0.75, 1.05],
-      msg: allowDouble ? '더블 블록!! 양손 방어!' : '연속 방어!! 코너를 지켜라!',
+      msg: allowDouble ? '더블 슛! 집중!' : '연속 슛! 집중!',
       col: '#00e5ff',
     },
     {
@@ -239,7 +239,7 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
       curveChance: 0.35,
       doubleChance: allowDouble ? 0.22 : 0,
       intervalMul: [0.38, 0.65],
-      msg: '하이퍼 모드! 전신 방어!!',
+      msg: '하이퍼 모드!!',
       col: '#ff4dd8',
     },
     {
@@ -249,7 +249,7 @@ function buildPhases(allowDouble: boolean): SpawnPhase[] {
       curveChance: 0.2,
       doubleChance: 0,
       intervalMul: [1.1, 1.4],
-      msg: '위험!! 거대 에너지 슛 접근!!',
+      msg: '위험!! 거대 슛 접근!!',
       col: '#ffffff',
     },
   ];
@@ -564,7 +564,7 @@ export function GoalkeeperReactionTraining({
         spawnShot(a, undefined, g.currentSpeed);
         spawnShot(b, undefined, g.currentSpeed);
         g.lastStart = b;
-        showCallout('두 곳 방어', '#00e5ff', 800);
+        // 시지각만 — 가운데 위치/손발 디렉션 콜아웃 금지
         return;
       }
       const start = pickCorner(g.lastStart);
@@ -572,8 +572,6 @@ export function GoalkeeperReactionTraining({
       const target = curved ? pickCorner(start) : start;
       spawnShot(start, target, g.currentSpeed);
       g.lastStart = start;
-      const hitCorner = cornerByKey(target);
-      showCallout(hitCorner.callout, hitCorner.css, 780);
     };
 
     const clock = new THREE.Clock();
@@ -597,7 +595,6 @@ export function GoalkeeperReactionTraining({
         const bossStart = pickCorner(g.lastStart);
         spawnShot(bossStart, bossStart, g.currentSpeed, true);
         g.lastStart = bossStart;
-        showCallout('정면 방어', '#ffffff', 900);
         scheduleNext(nowSec, phase);
       } else if (nowSec >= g.nextSpawnAt && nowSec < duration - 1.5 && phase.id < 5) {
         spawnRandomWave(phase);

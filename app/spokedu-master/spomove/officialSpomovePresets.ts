@@ -66,6 +66,8 @@ export type OfficialSpomovePreset = {
     colorTrackerTier?: 1 | 2 | 3;
     /** 골키퍼(10): 1=항상 1개 · 2=1~2개(더블) */
     goalkeeperTier?: 1 | 2;
+    /** 사이먼 폴 도형(1)·폴 화살표(2): 1=기본 1개 · 2=응용 2개 */
+    simonPoleCount?: 1 | 2;
     colorTrackerDualPanel?: boolean;
     flowFeatures?: OfficialFlowFeatureKey[];
     flowDuration?: number;
@@ -667,7 +669,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'simon',
     programTitle: '사이먼 효과',
     salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
-    engine: { mode: 'simon', level: 1 },
+    engine: { mode: 'simon', level: 1, simonPoleCount: 1 },
     description: '도형이 나타난 위치에 끌려가지 않고, 도형의 색을 기준으로 반응하는 선택 반응 활동',
     cueSeconds: 3,
     rounds: 20,
@@ -695,7 +697,7 @@ const OFFICIAL_SPOMOVE_CORE_LIBRARY: OfficialSpomovePreset[] = [
     programGroup: 'simon',
     programTitle: '사이먼 효과',
     salesCopy: SPOMOVE_AXIS_META.attention.salesCopy,
-    engine: { mode: 'simon', level: 2 },
+    engine: { mode: 'simon', level: 2, simonPoleCount: 1 },
     description: '화살표 방향과 위치가 충돌할 때 위치가 아닌 화살표 색상에 반응하는 고급 선택 반응 활동',
     cueSeconds: 3,
     rounds: 20,

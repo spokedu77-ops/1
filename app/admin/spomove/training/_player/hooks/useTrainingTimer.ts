@@ -36,6 +36,7 @@ export function useTrainingTimer({
   flankerNestedCircleCount,
   flankerArrowMode,
   stroopWordMode,
+  simonPoleCount = 1,
   onSignal,
   onFinish,
 }: {
@@ -58,6 +59,8 @@ export function useTrainingTimer({
   flankerNestedCircleCount?: 3 | 5;
   flankerArrowMode?: 'lr' | 'udlr';
   stroopWordMode?: 'bg' | 'missing';
+  /** 사이먼 폴 도형·화살표: 1=기본 1개 · 2=응용 2개 */
+  simonPoleCount?: 1 | 2;
   onSignal: (sig: Record<string, unknown>) => void;
   onFinish: (dupStats?: DupStats | null) => void;
 }) {
@@ -93,7 +96,8 @@ export function useTrainingTimer({
       genRef.current = createBasicSignalGenerator(engineLevel, colors, getSlidesRef, basicNumberOverlay, effectiveArrowColorMode, spatialArrowColorMapping);
     } else if (engineMode === 'simon') {
       const getSlidesRef = () => fruitSlidesRef.current;
-      genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef);
+      const pole: 1 | 2 = simonPoleCount === 2 ? 2 : 1;
+      genRef.current = createSimonSignalGenerator(engineLevel, colors, getSlidesRef, pole);
     } else if (engineMode === 'taskswitch') {
       const fruitOpts = fruitSlidesRef.current ? { fruitSlides: fruitSlidesRef.current } : undefined;
       genRef.current = createTaskSwitchSignalGenerator(engineLevel, colors, fruitOpts);
@@ -198,7 +202,7 @@ export function useTrainingTimer({
       ttsClear();
     };
   // fruitSlides는 의존성 제외 — ref로 추적하므로 슬라이드 변경 시 타이머 재시작 없음
-  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, onSignal, onFinish]);
+  }, [active, speed, accel, timeMode, duration, targetReps, mode, level, audioMode, colors, basicNumberOverlay, spatialArrowColorMode, spatialArrowColorMapping, flankerStimulusType, flankerNestedCircleCount, flankerArrowMode, stroopWordMode, simonPoleCount, onSignal, onFinish]);
 
   const getProgress = useCallback(() => {
     if (!startRef.current) return { timeLeft: duration, repsLeft: targetReps, progress: 0 };

@@ -18,6 +18,7 @@ const ENGINE_OPTION_KEYS = [
   'numberCartTier',
   'colorTrackerTier',
   'goalkeeperTier',
+  'simonPoleCount',
   'colorTrackerDualPanel',
   'flowFeatures',
   'flowDuration',
@@ -45,7 +46,7 @@ export const MECHANIC_KEYS_BY_MODE: Record<OfficialSpomoveEngineMode, readonly s
     'colorTrackerDualPanel',
     'camouflagePlacement',
   ],
-  simon: [],
+  simon: ['simonPoleCount'],
   flanker: ['flankerStimulusType', 'flankerNestedCircleCount', 'flankerArrowMode', 'variantColorTheme'],
   stroop: ['stroopWordMode'],
   spatial: [],
@@ -155,6 +156,7 @@ export function buildStageSignature(preset: OfficialSpomovePreset): string {
   if (engine.numberCartTier !== undefined) payload.numberCartTier = engine.numberCartTier;
   if (engine.colorTrackerTier !== undefined) payload.colorTrackerTier = engine.colorTrackerTier;
   if (engine.goalkeeperTier !== undefined) payload.goalkeeperTier = engine.goalkeeperTier;
+  if (engine.simonPoleCount !== undefined) payload.simonPoleCount = engine.simonPoleCount;
   if (engine.flowDuration !== undefined) payload.flowDuration = engine.flowDuration;
   if (engine.flowIncludeBonus !== undefined) payload.flowIncludeBonus = engine.flowIncludeBonus;
   if (engine.bodyLabelMode !== undefined) payload.bodyLabelMode = engine.bodyLabelMode;
